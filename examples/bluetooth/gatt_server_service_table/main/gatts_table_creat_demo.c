@@ -8,9 +8,10 @@
 
 /****************************************************************************
 *
-* This file is for gatt server. It can send adv data, be connected by client.
+* This demo showcases creating a GATT database using a predefined attribute table.
+* It acts as a GATT server and can send adv data, be connected by client.
 * Run the gatt_client demo, the client demo will automatically connect to the gatt_server_service_table demo.
-* Client demo will enable gatt_server_service_table's notify after connection. Then two devices will exchange
+* Client demo will enable GATT server's notify after connection. The two devices will then exchange
 * data.
 *
 ****************************************************************************/
@@ -38,7 +39,7 @@
 #define SAMPLE_DEVICE_NAME          "ESP_GATTS_DEMO"
 #define SVC_INST_ID                 0
 
-/* The max length of characteristic value. When the gatt client write or prepare write, 
+/* The max length of characteristic value. When the GATT client performs a write or prepare write operation,
 *  the data length must be less than GATTS_DEMO_CHAR_VAL_LEN_MAX. 
 */
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX 500
@@ -116,7 +117,7 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .p_manufacturer_data = NULL, //&test_manufacturer[0],
     .service_data_len    = 0,
     .p_service_data      = NULL,
-    .service_uuid_len    = 16,
+    .service_uuid_len    = sizeof(service_uuid),
     .p_service_uuid      = service_uuid,
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
@@ -443,7 +444,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             esp_log_buffer_hex(GATTS_TABLE_TAG, param->connect.remote_bda, 6);
             esp_ble_conn_update_params_t conn_params = {0};
             memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
-            /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
+            /* For the iOS system, please refer to Apple official documents about the BLE connection parameters restrictions. */
             conn_params.latency = 0;
             conn_params.max_int = 0x20;    // max_int = 0x20*1.25ms = 40ms
             conn_params.min_int = 0x10;    // min_int = 0x10*1.25ms = 20ms
