@@ -10,7 +10,7 @@ Structure
 - If the example has additional functionality, split it logically into separate C or C++ source files under ``main`` and place a corresponding header file in the same directory.
 - If the example has a lot of additional functionality, consider adding a ``components`` directory to the example project and make some example-specific components with library functionality. Only do this if the components are specific to the example, if they're generic or common functionality then they should be added to ESP-IDF itself.
 - The example should have a ``README.md`` file. Use the :idf_file:`template example README <docs/TEMPLATE_EXAMPLE_README.md>` and adapt it for your particular example.
-- Examples should have an ``example_test.py`` file for running an automated example test. If submitting a GitHub Pull Request which includes an example, it's OK not to include this file initially. The details can be discussed as part of the PR.
+- Examples should have an ``example_test.py`` file for running an automated example test. If submitting a GitHub Pull Request which includes an example, it's OK not to include this file initially. The details can be discussed as part of the `Pull Request <https://help.github.com/articles/creating-a-pull-request/>`_.
 
 General Guidelines
 ------------------
