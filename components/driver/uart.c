@@ -204,7 +204,7 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
     } else {
         uart_clk_freq = esp_clk_apb_freq();
     }
-    uint32_t clk_div = (((uart_clk_freq) << 4) / baud_rate);
+    uint32_t clk_div = ((uart_clk_freq << 4) + (baud_rate >> 1)) / baud_rate;
     if (clk_div < 16) {
         /* baud rate is too high for this clock frequency */
         ret = ESP_ERR_INVALID_ARG;
