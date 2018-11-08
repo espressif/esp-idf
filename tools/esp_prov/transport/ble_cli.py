@@ -126,6 +126,8 @@ class BLE_Bluez_Client:
                     break
 
         if srv_path == None:
+            self.device.Disconnect(dbus_interface='org.bluez.Device1')
+            self.device = None
             raise RuntimeError("Provisioning service not found")
 
         self.characteristics = dict()
@@ -148,6 +150,7 @@ class BLE_Bluez_Client:
             self.device.Disconnect(dbus_interface='org.bluez.Device1')
             if self.adapter:
                 self.adapter.RemoveDevice(self.device)
+            self.device = None
         if self.adapter_props:
             self.adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(0))
 
