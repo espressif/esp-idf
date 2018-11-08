@@ -53,11 +53,11 @@ def test_examples_provisioning_ble(env, extra_data):
     dut1.start_app()
 
     # Parse BLE devname
-    devname = dut1.expect(re.compile(r"(?:[\s\S]*) Provisioning started with BLE devname : (PROV_\S\S\S\S\S\S)"))[0]
+    devname = dut1.expect(re.compile(r"Provisioning started with BLE devname : '(PROV_\S\S\S\S\S\S)'"), timeout=60)[0]
     print("BLE Device Alias for DUT :", devname)
 
     # Match additional headers sent in the request
-    dut1.expect("BLE Provisioning started")
+    dut1.expect("BLE Provisioning started", timeout=30)
 
     print("Starting Provisioning")
     verbose = False

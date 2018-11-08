@@ -114,7 +114,7 @@ static esp_err_t app_prov_start_service(void)
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Provisioning started with BLE devname : %s", config.device_name);
+    ESP_LOGI(TAG, "Provisioning started with BLE devname : '%s'", config.device_name);
     return ESP_OK;
 }
 
