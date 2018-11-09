@@ -21,7 +21,7 @@ config DMA_TX_BUF_NUM
 
 config EMAC_L2_TO_L3_RX_BUF_MODE
     bool "Enable copy between Layer2 and Layer3"
-    default n
+    default y
     help
         If this options is selected, a copy of each received buffer will be created when
         passing it from the Ethernet MAC (L2) to the IP stack (L3). Otherwise, IP stack
