@@ -1692,6 +1692,37 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
 
 }
 
+/*******************************************************************************
+**
+** Function         BTM_BleWriteLongAdvData
+**
+** Description      This function is called to write long advertising data.
+**
+** Parameters:      adv_data: long advertising data
+**                  adv_data_len: the length of long advertising data
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleWriteLongAdvData(uint8_t *adv_data, uint8_t adv_data_len)
+{
+    tBTM_STATUS status = BTM_NO_RESOURCES;
+    if (!controller_get_interface()->supports_ble()) {
+        return BTM_ILLEGAL_VALUE;
+    }
+    if(!adv_data || adv_data_len <= 0 || adv_data_len > BTM_BLE_LONG_ADV_MAX_LEN) {
+        return BTM_ILLEGAL_VALUE;
+    }
+    uint8_t long_adv[BTM_BLE_LONG_ADV_MAX_LEN + 1] = {0};
+    long_adv[0] = adv_data_len;
+    memcpy(&long_adv[1], adv_data, adv_data_len);
+    status = BTM_VendorSpecificCommand(HCI_VENDOR_BLE_LONG_ADV_DATA, BTM_BLE_LONG_ADV_MAX_LEN + 1, long_adv, NULL);
+    if(status == BTM_CMD_STARTED) {
+        status = BTM_SUCCESS;
+    }
+
+    return status;
+}
 
 /*******************************************************************************
 **
