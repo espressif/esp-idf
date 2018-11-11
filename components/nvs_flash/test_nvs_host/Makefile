@@ -21,7 +21,7 @@ SOURCE_FILES = \
 	crc.cpp \
 	main.cpp
 
-CPPFLAGS += -I../include -I../src -I./ -I../../esp32/include -I ../../esp_mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -DCONFIG_NVS_ENCRYPTION
+CPPFLAGS += -I../include -I../src -I./ -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -DCONFIG_NVS_ENCRYPTION
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
@@ -33,8 +33,8 @@ COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 $(OBJ_FILES): %.o: %.cpp
 
 $(TEST_PROGRAM): $(OBJ_FILES)
-	$(MAKE) -C ../../esp_mbedtls/mbedtls/ lib
-	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) ../../esp_mbedtls/mbedtls/library/libmbedcrypto.a
+	$(MAKE) -C ../../mbedtls/mbedtls/ lib
+	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) ../../mbedtls/mbedtls/library/libmbedcrypto.a
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
@@ -56,7 +56,7 @@ coverage_report: coverage.info
 	@echo "Coverage report is in coverage_report/index.html"
 
 clean:
-	$(MAKE) -C ../../esp_mbedtls/mbedtls/ clean
+	$(MAKE) -C ../../mbedtls/mbedtls/ clean
 	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
 	rm -f $(COVERAGE_FILES) *.gcov
 	rm -rf coverage_report/
