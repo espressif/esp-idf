@@ -43,9 +43,9 @@ typedef struct {
 static esp_err_t create_packet_file(void)
 {
     uint32_t file_no = 0;
-    char filename[PCAP_FILE_NAME_MAX_LEN];
+    char filename[PCAP_FILE_NAME_MAX_LEN + 15];
     do {
-        snprintf(filename, PCAP_FILE_NAME_MAX_LEN, "%s%d.pcap", packet_filepath, file_no);
+        snprintf(filename, sizeof(filename), "%s%d.pcap", packet_filepath, file_no);
         file_no++;
     } while (0 == access(filename, F_OK));
     /* Create file to write, binary format */
