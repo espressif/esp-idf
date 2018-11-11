@@ -1,3 +1,7 @@
+if(NOT IDF_BUILD_ARTIFACTS)
+    return()
+endif()
+
 # Set some global esptool.py variables
 #
 # Many of these are read when generating flash_app_args & flash_project_args
@@ -60,38 +64,44 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     set(PHY_PARTITION_BIN_FILE "esp32/phy_init_data.bin")
 endif()
 
+get_filename_component(IDF_PROJECT_NAME ${IDF_PROJECT_EXECUTABLE} NAME_WE)
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
-    set(unsigned_project_binary "${PROJECT_NAME}-unsigned.bin")
+    set(unsigned_project_binary "${IDF_PROJECT_NAME}-unsigned.bin")
 else()
-    set(unsigned_project_binary "${PROJECT_NAME}.bin")
+    set(unsigned_project_binary "${IDF_PROJECT_NAME}.bin")
 endif()
 
 #
 # Add 'app.bin' target - generates with elf2image
 #
-add_custom_command(OUTPUT "${unsigned_project_binary}"
+add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}"
     COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS}
-        -o "${unsigned_project_binary}" "${PROJECT_NAME}.elf"
-    DEPENDS ${PROJECT_NAME}.elf
+        -o "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}" "${IDF_PROJECT_EXECUTABLE}"
+    DEPENDS ${IDF_PROJECT_EXECUTABLE}
     VERBATIM
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
+
+get_filename_component(IDF_PROJECT_BIN ${IDF_PROJECT_EXECUTABLE} NAME_WE)
+set(IDF_PROJECT_BIN ${IDF_PROJECT_BIN}.bin)
 
 if(NOT BOOTLOADER_BUILD AND
     CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+
     # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
-    add_custom_target(gen_unsigned_project_binary ALL DEPENDS "${unsigned_project_binary}")
-    add_custom_command(OUTPUT "${PROJECT_NAME}.bin"
+    add_custom_target(gen_unsigned_project_binary ALL DEPENDS "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}")
+    add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/${IDF_PROJECT_BIN}"
         COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
-            -o "${PROJECT_NAME}.bin" "${unsigned_project_binary}"
+            -o "${IDF_BUILD_ARTIFACTS_DIR}/${IDF_PROJECT_BIN}" "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}"
         DEPENDS gen_unsigned_project_binary
         VERBATIM
         )
 endif()
 
 if(NOT BOOTLOADER_BUILD)
-    add_custom_target(app ALL DEPENDS "${PROJECT_NAME}.bin")
+    add_custom_target(app ALL DEPENDS "${IDF_BUILD_ARTIFACTS_DIR}/${IDF_PROJECT_BIN}")
 else()
-    add_custom_target(bootloader ALL DEPENDS "${PROJECT_NAME}.bin")
+    add_custom_target(bootloader ALL DEPENDS "${IDF_BUILD_ARTIFACTS_DIR}/${IDF_PROJECT_BIN}")
 endif()
 
 if(NOT BOOTLOADER_BUILD AND
@@ -101,7 +111,7 @@ if(NOT BOOTLOADER_BUILD AND
         COMMAND ${CMAKE_COMMAND} -E echo
             "App built but not signed. Sign app before flashing"
         COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.bin"
+            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${IDF_BUILD_ARTIFACTS_DIR}/${IDF_PROJECT_BIN}"
         VERBATIM)
 endif()
 
@@ -114,7 +124,7 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
         -D IDF_PATH="${IDF_PATH}"
         -D ESPTOOLPY="${ESPTOOLPY}"
         -D ESPTOOL_ARGS="write_flash;@flash_${flasher_filename}_args"
-        -D ESPTOOL_WORKING_DIR="${CMAKE_CURRENT_BINARY_DIR}"
+        -D ESPTOOL_WORKING_DIR="${IDF_BUILD_ARTIFACTS_DIR}"
         -P run_esptool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         USES_TERMINAL

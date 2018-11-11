@@ -1,6 +1,6 @@
 register_config_only_component()
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT BOOTLOADER_BUILD AND IDF_BUILD_ARTIFACTS)
 
 set(partition_csv "${PARTITION_CSV_PATH}")
 
@@ -28,25 +28,28 @@ else()
     set(partition_secure_opt "")
 endif()
 
-add_custom_command(OUTPUT "${unsigned_partition_bin}"
-    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
-        -q --offset ${PARTITION_TABLE_OFFSET} ${md5_opt} ${flashsize_opt}
-        ${partition_secure_opt} ${partition_csv} ${unsigned_partition_bin}
+add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}"
+    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" 
+    -q --offset ${PARTITION_TABLE_OFFSET} ${md5_opt} ${flashsize_opt}
+    ${partition_secure_opt} ${partition_csv} ${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}
     DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
     VERBATIM)
 
 # Add signing steps
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_target(gen_unsigned_partition_bin ALL DEPENDS "${unsigned_partition_bin}")
-    add_custom_command(OUTPUT "${final_partition_bin}"
+    add_custom_target(gen_unsigned_partition_bin ALL DEPENDS 
+                    "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}")
+
+    add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin}"
         COMMAND ${ESPSECUREPY} sign_data --keyfile "${secure_boot_signing_key}"
-            -o "${final_partition_bin}" "${unsigned_partition_bin}"
-        DEPENDS gen_unsigned_partition_bin gen_secure_boot_signing_key
+        -o "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin}" 
+        "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}"
+        DEPENDS "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}"
         VERBATIM)
 endif()
 
 if(EXISTS ${partition_csv})
-    add_custom_target(partition_table ALL DEPENDS "${final_partition_bin}")
+    add_custom_target(partition_table ALL DEPENDS "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin}")
 else()
     # If the partition input CSV is not found, create a phony partition_table target that
     # fails the build. fail_at_build_time also touches CMakeCache.txt to cause a cmake run next time
@@ -73,6 +76,7 @@ add_dependencies(app partition_table)
 # the list of esptool write arguments for flashing
 set_property(GLOBAL APPEND_STRING PROPERTY
     ESPTOOL_WRITE_FLASH_ARGS
-    "${PARTITION_TABLE_OFFSET} ${final_partition_bin} ")
+    "${PARTITION_TABLE_OFFSET}  ${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin} ")
 
 endif()
+

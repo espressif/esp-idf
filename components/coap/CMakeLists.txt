@@ -24,7 +24,7 @@ register_component()
 # Needed for coap headers in public builds, also.
 #
 # TODO: find a way to move this to a port header
-target_compile_definitions(coap PUBLIC WITH_POSIX)
+target_compile_definitions(${COMPONENT_TARGET} PUBLIC WITH_POSIX)
 
 set_source_files_properties(
     libcoap/src/debug.c
