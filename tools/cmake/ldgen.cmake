@@ -67,6 +67,8 @@ endfunction()
 # ldgen_create_commands
 #
 # Create the command to generate the output scripts from templates presented.
-function(ldgen_add_dependencies executable_name)
-    add_dependencies(${executable_name} ldgen)
+function(ldgen_add_dependencies)
+    if(IDF_PROJECT_EXECUTABLE)
+        add_dependencies(${IDF_PROJECT_EXECUTABLE} ldgen)
+    endif()
 endfunction()

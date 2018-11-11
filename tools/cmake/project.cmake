@@ -2,7 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-# Set IDF_PATH, as nothing else will work without this
+# Set IDF_PATH, as nothing else will work without this.
 set(IDF_PATH "$ENV{IDF_PATH}")
 if(NOT IDF_PATH)
     # Documentation says you should set IDF_PATH in your environment, but we
@@ -12,177 +12,135 @@ endif()
 file(TO_CMAKE_PATH "${IDF_PATH}" IDF_PATH)
 set(ENV{IDF_PATH} ${IDF_PATH})
 
+# Set the path of idf.py.
+set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
 
-#
-# Load cmake modules
-#
-set(CMAKE_MODULE_PATH
-    "${IDF_PATH}/tools/cmake"
-    "${IDF_PATH}/tools/cmake/third_party"
-    ${CMAKE_MODULE_PATH})
-include(GetGitRevisionDescription)
-include(utilities)
-include(components)
-include(targets)
-include(kconfig)
-include(git_submodules)
-include(idf_functions)
-include(ldgen)
+# Trick to temporarily redefine project(). When functions are overriden in CMake, the originals can still be accessed
+# using an underscore prefixed function of the same name. The following lines make sure that __project  calls
+# the original project(). See https://cmake.org/pipermail/cmake/2015-October/061751.html.
+function(project)
+endfunction()
 
-set_default(PYTHON "python")
+function(_project)
+endfunction()
 
-if(NOT PYTHON_DEPS_CHECKED AND NOT BOOTLOADER_BUILD)
-    message(STATUS "Checking Python dependencies...")
-    execute_process(COMMAND "${PYTHON}" "${IDF_PATH}/tools/check_python_dependencies.py"
-        RESULT_VARIABLE result)
-    if(NOT result EQUAL 0)
-        message(FATAL_ERROR "Some Python dependencies must be installed. Check above message for details.")
-    endif()
-endif()
+include(${IDF_PATH}/tools/cmake/idf_functions.cmake)
 
-# project
-#
-# This macro wraps the cmake 'project' command to add
-# all of the IDF-specific functionality required
-#
-# Implementation Note: This macro wraps 'project' on purpose, because cmake has
-# some backwards-compatible magic where if you don't call "project" in the
-# top-level CMakeLists file, it will call it implicitly. However, the implicit
-# project will not have CMAKE_TOOLCHAIN_FILE set and therefore tries to
-# create a native build project.
-#
-# Therefore, to keep all the IDF "build magic", the cleanest way is to keep the
-# top-level "project" call but customize it to do what we want in the IDF build.
-#
 macro(project name)
-    # Determine the build target
-    idf_set_target()
 
-    # Set global variables used by rest of the build
-    idf_set_global_variables()
+    # Bridge existing documented variable names with library namespaced variables in order for old projects to work.
+    if(COMPONENT_DIRS)
+        spaces2list(COMPONENT_DIRS)
 
-    # Sort the components list, as it may be found via filesystem
-    # traversal and therefore in a non-deterministic order
-    list(SORT COMPONENTS)
+        foreach(component_dir ${COMPONENT_DIRS})
+            get_filename_component(full_path ${component_dir} ABSOLUTE)
+            get_filename_component(idf_path "${IDF_PATH}/components" ABSOLUTE)
 
-    execute_process(COMMAND "${CMAKE_COMMAND}"
-        -D "COMPONENTS=${COMPONENTS}"
-        -D "COMPONENT_REQUIRES_COMMON=${COMPONENT_REQUIRES_COMMON}"
-        -D "EXCLUDE_COMPONENTS=${EXCLUDE_COMPONENTS}"
-        -D "TEST_COMPONENTS=${TEST_COMPONENTS}"
-        -D "TEST_EXCLUDE_COMPONENTS=${TEST_EXCLUDE_COMPONENTS}"
-        -D "TESTS_ALL=${TESTS_ALL}"
-        -D "DEPENDENCIES_FILE=${CMAKE_BINARY_DIR}/component_depends.cmake"
-        -D "COMPONENT_DIRS=${COMPONENT_DIRS}"
-        -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
-        -D "IDF_PATH=${IDF_PATH}"
-        -D "IDF_TARGET=${IDF_TARGET}"
-        -D "DEBUG=${DEBUG}"
-        -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
-        WORKING_DIRECTORY "${PROJECT_PATH}")
-    include("${CMAKE_BINARY_DIR}/component_depends.cmake")
-
-    # We now have the following component-related variables:
-    # COMPONENTS is the list of initial components set by the user (or empty to include all components in the build).
-    # BUILD_COMPONENTS is the list of components to include in the build.
-    # BUILD_COMPONENT_PATHS is the paths to all of these components.
-
-    # Print list of components
-    string(REPLACE ";" " " BUILD_COMPONENTS_SPACES "${BUILD_COMPONENTS}")
-    message(STATUS "Component names: ${BUILD_COMPONENTS_SPACES}")
-    unset(BUILD_COMPONENTS_SPACES)
-    message(STATUS "Component paths: ${BUILD_COMPONENT_PATHS}")
-
-    # Print list of test components
-    if(TESTS_ALL EQUAL 1 OR TEST_COMPONENTS)
-        string(REPLACE ";" " " BUILD_TEST_COMPONENTS_SPACES "${BUILD_TEST_COMPONENTS}")
-        message(STATUS "Test component names: ${BUILD_TEST_COMPONENTS_SPACES}")
-        unset(BUILD_TEST_COMPONENTS_SPACES)
-        message(STATUS "Test component paths: ${BUILD_TEST_COMPONENT_PATHS}")
+            if(NOT full_path STREQUAL idf_path)
+                set(IDF_EXTRA_COMPONENT_DIRS "${IDF_EXTRA_COMPONENT_DIRS} ${component_dir}")
+            endif()
+        endforeach()
+    else()
+        if(MAIN_SRCS)
+            set(IDF_EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} ${CMAKE_SOURCE_DIR}/components")
+        else()
+            set(IDF_EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} \
+                                        ${CMAKE_SOURCE_DIR}/components ${CMAKE_SOURCE_DIR}/main")
+        endif()
     endif()
 
-    kconfig_set_variables()
+    if(COMPONENTS)
+        set(IDF_COMPONENTS "${COMPONENTS}")
+    endif()
 
-    kconfig_process_config()
+    if(COMPONENT_REQUIRES_COMMON)
+        set(IDF_COMPONENT_REQUIRES_COMMON "${COMPONENT_REQUIRES_COMMON}")
+    endif()
 
-    # Include sdkconfig.cmake so rest of the build knows the configuration
-    include(${SDKCONFIG_CMAKE})
+    if(EXCLUDE_COMPONENTS)
+        set(IDF_EXCLUDE_COMPONENTS "${COMPONENT_EXCLUDES}")
+    endif()
 
-    # Check that the targets set in cache, sdkconfig, and in environment all match
-    idf_check_config_target()
+    if(TESTS_ALL EQUAL 1 OR TEST_COMPONENTS)
+        set(IDF_BUILD_TESTS 1)
+    endif()
+
+    if(TEST_COMPONENTS)
+        set(IDF_TEST_COMPONENTS "${TEST_COMPONENTS}")
+    endif()
+
+    if(TEST_EXCLUDE_COMPONENTS)
+        set(IDF_TEST_EXCLUDE_COMPONENTS "${TEST_EXCLUDE_COMPONENTS}")
+    endif()
+
+    if(NOT SDKCONFIG_DEFAULTS)
+        if(EXISTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults)
+            set(IDF_SDKCONFIG_DEFAULTS ${CMAKE_SOURCE_DIR}/sdkconfig.defaults)
+        endif()
+    else()
+        set(IDF_SDKCONFIG_DEFAULTS ${SDKCONFIG_DEFAULTS})
+    endif()
+
+    # Set build variables
+    idf_set_variables()
 
     # Now the configuration is loaded, set the toolchain appropriately
     idf_set_toolchain()
 
-    # Declare the actual cmake-level project
-    _project(${name} ASM C CXX)
+    __project(${name} C CXX ASM)
 
-    # generate compile_commands.json (needs to come after project)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+    set(IDF_BUILD_ARTIFACTS ON)
+    set(IDF_PROJECT_EXECUTABLE ${CMAKE_PROJECT_NAME}.elf)
+    set(IDF_BUILD_ARTIFACTS_DIR ${CMAKE_BINARY_DIR})
 
-    # Verify the environment is configured correctly
-    idf_verify_environment()
+    if(MAIN_SRCS)
+        spaces2list(MAIN_SRCS)
+        add_executable(${IDF_PROJECT_EXECUTABLE} ${MAIN_SRCS})
+    else()
+        # Create a dummy file to work around CMake requirement of having a source
+        # file while adding an executable
+        add_executable(${IDF_PROJECT_EXECUTABLE} "${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c")
+        add_custom_command(OUTPUT dummy_main_src.c
+            COMMAND ${CMAKE_COMMAND} -E touch dummy_main_src.c
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM)
 
-    # Add some idf-wide definitions
-    idf_set_global_compiler_options()
+        add_custom_target(dummy_main_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c)
 
-    # Check git revision (may trigger reruns of cmake)
-    ##  sets IDF_VER to IDF git revision
-    idf_get_git_revision()
-    ## if project uses git, retrieve revision
-    git_describe(PROJECT_VER "${CMAKE_CURRENT_SOURCE_DIR}")
+        add_dependencies(${IDF_PROJECT_EXECUTABLE} dummy_main_src)
+    endif()
 
-    #
-    # Add the app executable to the build (has name of PROJECT.elf)
-    #
-    idf_add_executable()
+    set(mapfile "${CMAKE_PROJECT_NAME}.map")
 
-    #
-    # Setup variables for linker script generation
-    #
-    ldgen_set_variables()
+    target_link_libraries(${IDF_PROJECT_EXECUTABLE} "-Wl,--gc-sections \
+                        -Wl,--cref -Wl,--Map=${mapfile}")
 
-    # Include any top-level project_include.cmake files from components
-    foreach(component ${BUILD_COMPONENT_PATHS})
-        set(COMPONENT_PATH "${component}")
-        include_if_exists("${component}/project_include.cmake")
-        unset(COMPONENT_PATH)
-    endforeach()
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${mapfile}")
 
-    #
-    # Add each component to the build as a library
-    #
-    foreach(COMPONENT_PATH ${BUILD_COMPONENT_PATHS})
-        list(FIND BUILD_TEST_COMPONENT_PATHS ${COMPONENT_PATH} idx)
+    # Add size targets, depend on map file, run idf_size.py
+    add_custom_target(size
+        DEPENDS ${exe_target}
+        COMMAND ${PYTHON} ${IDF_PATH}/tools/idf_size.py ${mapfile}
+        )
+    add_custom_target(size-files
+        DEPENDS ${exe_target}
+        COMMAND ${PYTHON} ${IDF_PATH}/tools/idf_size.py --files ${mapfile}
+        )
+    add_custom_target(size-components
+        DEPENDS ${exe_target}
+        COMMAND ${PYTHON} ${IDF_PATH}/tools/idf_size.py --archives ${mapfile}
+        )
 
-        if(NOT idx EQUAL -1)
-            list(GET BUILD_TEST_COMPONENTS ${idx} test_component)
-            set(COMPONENT_NAME ${test_component})
-        else()
-            get_filename_component(COMPONENT_NAME ${COMPONENT_PATH} NAME)
-        endif()
+    # Since components can import third-party libraries, the original definition of project() should be restored
+    # before the call to add components to the build.
+    function(project)
+        set(project_ARGV ARGV)
+        __project(${${project_ARGV}})
+    endfunction()
 
-        add_subdirectory(${COMPONENT_PATH} ${COMPONENT_NAME})
-    endforeach()
-    unset(COMPONENT_NAME)
-    unset(COMPONENT_PATH)
-
-    # At this point the fragment files have been collected, generate
-    # the commands needed to generate the output linker scripts
-    ldgen_add_dependencies(${PROJECT_NAME}.elf)
-
-    # Write project description JSON file
-    make_json_list("${BUILD_COMPONENTS}" build_components_json)
-    make_json_list("${BUILD_COMPONENT_PATHS}" build_component_paths_json)
-    configure_file("${IDF_PATH}/tools/cmake/project_description.json.in"
-        "${CMAKE_BINARY_DIR}/project_description.json")
-    unset(build_components_json)
-    unset(build_component_paths_json)
-
-    #
-    # Finish component registration (add cross-dependencies, make
-    # executable dependent on all components)
-    #
-    components_finish_registration()
-
+    # Finally, add the rest of the components to the build.
+    idf_import_components(components $ENV{IDF_PATH} esp-idf)
+    idf_link_components(${IDF_PROJECT_EXECUTABLE} "${components}")
 endmacro()
