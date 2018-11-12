@@ -129,6 +129,7 @@ static void btc_disable_bluetooth_evt(void)
 }
 
 #if (SMP_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE)
 void btc_dm_load_ble_local_keys(void)
 {
     memset(&btc_dm_cb.ble_local_key_cb, 0, sizeof(btc_dm_local_key_cb_t));
@@ -296,6 +297,7 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
     return;
 
 }
+#endif  ///BLE_INCLUDED == TRUE
 #endif ///SMP_INCLUDED == TRUE
 
 static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
@@ -569,8 +571,10 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         btc_clear_services_mask();
 #if (SMP_INCLUDED == TRUE)
         btc_storage_load_bonded_devices();
+#if (BLE_INCLUDED == TRUE)
         //load the bonding device to the btm layer
         btc_storage_load_bonded_ble_devices();
+#endif  ///BLE_INCLUDED == TRUE
 #endif  ///SMP_INCLUDED == TRUE
 
         /* Set initial device name, it can be overwritten later */
@@ -633,6 +637,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 #endif /* #if (SMP_INCLUDED == TRUE) */
         break;
     }
+#if (BLE_INCLUDED == TRUE)
     case BTA_DM_BLE_DEV_UNPAIRED_EVT: {
 #if (SMP_INCLUDED == TRUE)
         bt_bdaddr_t bd_addr;
@@ -654,6 +659,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
 #endif /* #if (SMP_INCLUDED == TRUE) */
         break;
     }
+#endif  ///BLE_INCLUDED == TRUE
     case BTA_DM_BUSY_LEVEL_EVT:
 #if (BTC_GAP_BT_INCLUDED == TRUE)
         {
@@ -668,7 +674,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_HW_ERROR_EVT:
         BTC_TRACE_DEBUG( "btc_dm_sec_cback : unhandled event (%d)\n", msg->act );
         break;
-#if (defined(BLE_INCLUDED) && (BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
+#if ((BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     case BTA_DM_BLE_AUTH_CMPL_EVT: {
         rsp_app = true;
         ble_msg.act = ESP_GAP_BLE_AUTH_CMPL_EVT;

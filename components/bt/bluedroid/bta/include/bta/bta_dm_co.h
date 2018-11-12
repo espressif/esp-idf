@@ -25,6 +25,7 @@
 #define BTA_DM_CO_H
 
 #include "bta/bta_sys.h"
+#include "esp_err.h"
 
 /*****************************************************************************
 **  Function Declarations

@@ -203,6 +203,7 @@ typedef struct {
     UINT8               data[];
 }tBTA_DM_API_CONFIG_EIR;
 
+#if (BLE_INCLUDED == TRUE)
 typedef struct {
     BT_HDR    hdr;
     BOOLEAN   add_remove;
@@ -223,6 +224,7 @@ typedef struct {
     BT_HDR       hdr;
     tBTA_CMPL_CB *read_tx_power_cb;
 }tBTA_DM_API_READ_ADV_TX_POWER;
+#endif  ///BLE_INCLUDED == TRUE
 
 typedef struct {
     BT_HDR        hdr;
@@ -402,8 +404,8 @@ typedef struct {
     UINT8           hci_status;
 #if BLE_INCLUDED == TRUE
     UINT16          handle;
-    tBT_TRANSPORT   transport;
 #endif
+    tBT_TRANSPORT   transport;
 } tBTA_DM_ACL_CHANGE;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
@@ -801,9 +803,12 @@ typedef union {
     tBTA_DM_API_SET_NAME set_name;
     tBTA_DM_API_CONFIG_EIR config_eir;
 
+#if (BLE_INCLUDED == TRUE)
     tBTA_DM_API_UPDATE_WHITE_LIST white_list;
     tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
     tBTA_DM_API_READ_RSSI rssi;
+#endif  ///BLE_INCLUDED == TRUE
+
     tBTA_DM_API_SET_VISIBILITY set_visibility;
 
     tBTA_DM_API_ADD_DEVICE  add_dev;
@@ -939,8 +944,8 @@ typedef struct {
     BOOLEAN                     remove_dev_pending;
 #if BLE_INCLUDED == TRUE
     UINT16                      conn_handle;
-    tBT_TRANSPORT               transport;
 #endif
+    tBT_TRANSPORT               transport;
 } tBTA_DM_PEER_DEVICE;
 
 
@@ -1031,6 +1036,8 @@ typedef struct {
     BOOLEAN                     disable_pair_mode;          /* disable pair mode or not */
     BOOLEAN                     conn_paired_only;   /* allow connectable to paired device only or not */
     tBTA_DM_API_SEARCH          search_msg;
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16                      page_scan_interval;
     UINT16                      page_scan_window;
     UINT16                      inquiry_scan_interval;
@@ -1040,8 +1047,10 @@ typedef struct {
     BD_ADDR                     pin_bd_addr;
     DEV_CLASS                   pin_dev_class;
     tBTA_DM_SEC_EVT             pin_evt;
-    UINT32          num_val;        /* the numeric value for comparison. If just_works, do not show this number to UI */
-    BOOLEAN         just_works;     /* TRUE, if "Just Works" association model */
+    UINT32                      num_val;        /* the numeric value for comparison. If just_works, do not show this number to UI */
+    BOOLEAN                     just_works;     /* TRUE, if "Just Works" association model */
+#endif
+
 #if ( BTA_EIR_CANNED_UUID_LIST != TRUE )
     /* store UUID list for EIR */
     TIMER_LIST_ENT              app_ready_timer;

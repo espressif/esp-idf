@@ -1436,6 +1436,7 @@ static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len)
 #if (SMP_INCLUDED == TRUE)
 static void btu_hcif_pin_code_request_evt (UINT8 *p)
 {
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BD_ADDR  bda;
 
     STREAM_TO_BDADDR (bda, p);
@@ -1445,6 +1446,7 @@ static void btu_hcif_pin_code_request_evt (UINT8 *p)
     l2c_pin_code_request (bda);
 
     btm_sec_pin_code_request (bda);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
 
 

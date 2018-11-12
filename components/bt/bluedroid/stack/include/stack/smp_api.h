@@ -29,7 +29,7 @@
 #define SMP_PIN_CODE_LEN_MAX    PIN_CODE_LEN
 #define SMP_PIN_CODE_LEN_MIN    6
 
-#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+// #if SMP_INCLUDED == TRUE
 /* SMP command code */
 #define SMP_OPCODE_PAIRING_REQ            0x01
 #define SMP_OPCODE_PAIRING_RSP            0x02
@@ -48,7 +48,7 @@
 #define SMP_OPCODE_MAX                    SMP_OPCODE_PAIR_KEYPR_NOTIF
 #define SMP_OPCODE_MIN                    SMP_OPCODE_PAIRING_REQ
 #define SMP_OPCODE_PAIR_COMMITM           0x0F
-#endif
+// #endif
 
 /* SMP event type */
 #define SMP_IO_CAP_REQ_EVT      1       /* IO capability request event */

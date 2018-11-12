@@ -163,7 +163,8 @@ enum {
     SMP_SM_NO_ACTION
 };
 
-static const tSMP_ACT smp_sm_action[] = {
+#if (BLE_INCLUDED == TRUE)
+static const tSMP_ACT smp_sm_action[SMP_SM_NO_ACTION] = {
     smp_proc_sec_req,
     smp_send_pair_req,
     smp_send_pair_rsp,
@@ -226,6 +227,9 @@ static const tSMP_ACT smp_sm_action[] = {
     smp_idle_terminate,
     smp_fast_conn_param
 };
+#else
+static const tSMP_ACT smp_sm_action[SMP_SM_NO_ACTION] = {NULL};
+#endif  ///BLE_INCLUDED == TRUE
 
 /************ SMP Master FSM State/Event Indirection Table **************/
 static const UINT8 smp_master_entry_map[][SMP_STATE_MAX] = {
@@ -766,7 +770,7 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
     /* execute action */
     /* execute action functions */
     for (i = 0; i < SMP_NUM_ACTIONS; i++) {
-        if ((action = state_table[entry - 1][i]) != SMP_SM_NO_ACTION) {
+        if ((action = state_table[entry - 1][i]) != SMP_SM_NO_ACTION && smp_sm_action[action] != NULL) {
             (*smp_sm_action[action])(p_cb, (tSMP_INT_DATA *)p_data);
         } else {
             break;

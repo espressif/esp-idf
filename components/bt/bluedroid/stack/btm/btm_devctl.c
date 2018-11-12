@@ -190,9 +190,9 @@ static void reset_complete(void)
         l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
     }
 #endif
-#if (SMP_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
     BTM_SetPinType (btm_cb.cfg.pin_type, btm_cb.cfg.pin_code, btm_cb.cfg.pin_code_len);
-#endif  ///SMP_INCLUDED == TRUE
+#endif  ///SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE
     for (int i = 0; i <= controller->get_last_features_classic_index(); i++) {
         btm_decode_ext_features_page(i, controller->get_features_classic(i)->as_array);
     }

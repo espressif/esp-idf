@@ -225,6 +225,7 @@ void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
     }
 }
 
+#if (BLE_INCLUDED == TRUE)
 void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
@@ -248,6 +249,7 @@ void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb)
 {
@@ -475,10 +477,10 @@ void BTA_DmBondCancel(BD_ADDR bd_addr)
         bdcpy(p_msg->bd_addr, bd_addr);
         bta_sys_sendmsg(p_msg);
     }
-
-
 }
+#endif  ///SMP_INCLUDED == TRUE
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DMSetPinType
@@ -529,6 +531,7 @@ void BTA_DmPinReply(BD_ADDR bd_addr, BOOLEAN accept, UINT8 pin_len, UINT8 *p_pin
     }
 
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 /*******************************************************************************
@@ -594,6 +597,7 @@ void BTA_DmOobReply(BD_ADDR bd_addr, UINT8 len, UINT8 *p_value)
 ** Returns          void
 **
 *******************************************************************************/
+#if (SMP_INCLUDED == TRUE)
 void BTA_DmConfirm(BD_ADDR bd_addr, BOOLEAN accept)
 {
     tBTA_DM_API_CONFIRM    *p_msg;
@@ -629,6 +633,7 @@ void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passkey)
     }
 }
 #endif ///BT_SSP_INCLUDED == TRUE
+#endif  ///SMP_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         BTA_DmAddDevice
@@ -705,7 +710,7 @@ tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr, tBT_TRANSPORT transport)
 
     return BTA_SUCCESS;
 }
-#endif  ///SMP_INCLUDED == TRUE
+// #endif  ///SMP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -989,7 +994,6 @@ void BTA_DmBleSecurityGrant(BD_ADDR bd_addr, tBTA_DM_BLE_SEC_GRANT res)
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
-#endif  ///BLE_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -1207,7 +1211,7 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
     }
 #endif
 }
-
+#endif  ///BLE_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -1796,6 +1800,8 @@ void BTA_DmBleUpdateConnectionParam(BD_ADDR bd_addr, UINT16 min_int,
     }
 #endif
 }
+
+#if BLE_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         BTA_DmBleConfigLocalPrivacy
@@ -1826,7 +1832,6 @@ void BTA_DmBleConfigLocalPrivacy(BOOLEAN privacy_enable, tBTA_SET_LOCAL_PRIVACY_
 #endif
 }
 
-#if BLE_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         BTA_DmBleConfigLocalIcon

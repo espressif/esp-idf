@@ -23,7 +23,7 @@
  ******************************************************************************/
 #include "common/bt_target.h"
 
-#if SMP_INCLUDED == TRUE
+#if (BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
 #if SMP_DEBUG == TRUE
 #include <stdio.h>
 #endif
@@ -380,10 +380,13 @@ void smp_generate_ltk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     BOOLEAN div_status;
     SMP_TRACE_DEBUG ("%s\n", __FUNCTION__);
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING) {
         smp_br_process_link_key(p_cb, NULL);
         return;
-    } else if (p_cb->le_secure_connections_mode_is_used) {
+    }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
+    if (p_cb->le_secure_connections_mode_is_used) {
         smp_process_secure_connection_long_term_key();
         return;
     }
@@ -432,7 +435,9 @@ void smp_compute_csrk(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     if (!SMP_Encrypt(er, BT_OCTET16_LEN, buffer, 4, &output)) {
         SMP_TRACE_ERROR("smp_generate_csrk failed\n");
         if (p_cb->smp_over_br) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &status);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         } else {
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &status);
         }

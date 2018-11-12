@@ -223,28 +223,6 @@ UINT8 L2CA_GetBleConnRole (BD_ADDR bd_addr)
 
     return role;
 }
-/*******************************************************************************
-**
-** Function         L2CA_GetDisconnectReason
-**
-** Description      This function returns the disconnect reason code.
-**
-** Returns          disconnect reason
-**
-*******************************************************************************/
-UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport)
-{
-    tL2C_LCB            *p_lcb;
-    UINT16              reason = 0;
-
-    if ((p_lcb = l2cu_find_lcb_by_bd_addr (remote_bda, transport)) != NULL) {
-        reason = p_lcb->disc_reason;
-    }
-
-    L2CAP_TRACE_DEBUG ("L2CA_GetDisconnectReason=%d ", reason);
-
-    return reason;
-}
 
 /*******************************************************************************
 **
@@ -1491,3 +1469,25 @@ BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
 }
 #endif /* #if (SMP_INCLUDED == TRUE) */
 #endif /* (BLE_INCLUDED == TRUE) */
+/*******************************************************************************
+**
+** Function         L2CA_GetDisconnectReason
+**
+** Description      This function returns the disconnect reason code.
+**
+** Returns          disconnect reason
+**
+*******************************************************************************/
+UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport)
+{
+    tL2C_LCB            *p_lcb;
+    UINT16              reason = 0;
+
+    if ((p_lcb = l2cu_find_lcb_by_bd_addr (remote_bda, transport)) != NULL) {
+        reason = p_lcb->disc_reason;
+    }
+
+    L2CAP_TRACE_DEBUG ("L2CA_GetDisconnectReason=%d ", reason);
+
+    return reason;
+}

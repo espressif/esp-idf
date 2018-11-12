@@ -32,12 +32,13 @@
 #include "stack/rfcdefs.h"
 
 #include "stack/btm_api.h"
+#include "osi/fixed_queue.h"
 
 #if (BLE_INCLUDED == TRUE)
 #include "btm_ble_int.h"
+#endif
 #if (SMP_INCLUDED == TRUE)
 #include "stack/smp_api.h"
-#endif
 #endif
 
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
@@ -855,9 +856,12 @@ typedef struct {
     BOOLEAN                  pairing_disabled;
     BOOLEAN                  connect_only_paired;
     BOOLEAN                  security_mode_changed;  /* mode changed during bonding */
-    BOOLEAN                  pin_type_changed;       /* pin type changed during bonding */
     BOOLEAN                  sec_req_pending;       /*   TRUE if a request is pending */
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    BOOLEAN                  pin_type_changed;       /* pin type changed during bonding */
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 #if (SMP_INCLUDED == TRUE)
+#if (CLASSIC_BT_INCLUDED == TRUE)
 // btla-specific ++
 #ifdef PORCHE_PAIRING_CONFLICT
     UINT8                    pin_code_len_saved;     /* for legacy devices */
@@ -866,12 +870,14 @@ typedef struct {
 
     UINT8                    pin_code_len;  /* for legacy devices */
     PIN_CODE                 pin_code;      /* for legacy devices */
+    UINT8                    disc_reason;   /* for legacy devices */
+    UINT16                   disc_handle;   /* for legacy devices */
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     tBTM_PAIRING_STATE       pairing_state; /* The current pairing state    */
     UINT8                    pairing_flags; /* The current pairing flags    */
     BD_ADDR                  pairing_bda;   /* The device currently pairing */
     TIMER_LIST_ENT           pairing_tle;   /* Timer for pairing process    */
-    UINT16                   disc_handle;   /* for legacy devices */
-    UINT8                    disc_reason;   /* for legacy devices */
+
 #endif  ///SMP_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE || CLASSIC_BT_INCLUDED == TRUE
     tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
@@ -1122,9 +1128,9 @@ BOOLEAN btm_sec_is_le_capable_dev (BD_ADDR bda);
 BOOLEAN btm_ble_init_pseudo_addr (tBTM_SEC_DEV_REC *p_dev_rec, BD_ADDR new_pseudo_addr);
 extern BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
                             tBTM_SEC_CALLBACK *p_callback, void *p_ref_data);
-extern tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UINT16 psm);
-
 #endif /* BLE_INCLUDED */
+
+extern tBTM_SEC_SERV_REC *btm_sec_find_first_serv (CONNECTION_TYPE conn_type, UINT16 psm);
 
 tINQ_DB_ENT *btm_inq_db_new (BD_ADDR p_bda);
 

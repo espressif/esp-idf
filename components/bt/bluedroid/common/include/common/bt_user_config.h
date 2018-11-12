@@ -86,6 +86,12 @@
 #define UC_BT_SSP_ENABLED                   CONFIG_BT_SSP_ENABLED
 #else
 #define UC_BT_SSP_ENABLED                   FALSE
+
+//BLE
+#ifdef CONFIG_BT_BLE_ENABLED
+#define UC_BT_BLE_ENABLED                   CONFIG_BT_BLE_ENABLED
+#else
+#define UC_BT_BLE_ENABLED                   FALSE
 #endif
 
 //GATTS

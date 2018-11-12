@@ -46,10 +46,17 @@ const UINT8 smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] = {
 
 #define SMP_KEY_DIST_TYPE_MAX       4
 const tSMP_ACT smp_distribute_act [] = {
+#if (BLE_INCLUDED == TRUE)
     smp_generate_ltk,
     smp_send_id_info,
     smp_generate_csrk,
     smp_set_derive_link_key
+#else
+    NULL,
+    NULL,
+    NULL,
+    NULL
+#endif  ///BLE_INCLUDED == TRUE
 };
 
 extern UINT8 bta_dm_co_ble_get_accept_auth_enable(void);
@@ -191,7 +198,7 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
                 smp_sm_event(p_cb, SMP_IO_RSP_EVT, NULL);
                 break;
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
             case SMP_BR_KEYS_REQ_EVT:
                 p_cb->loc_enc_size = cb_data.io_req.max_key_size;
                 p_cb->local_i_key = cb_data.io_req.init_keys;
@@ -206,6 +213,7 @@ void smp_send_app_cback(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
                 smp_br_state_machine_event(p_cb, SMP_BR_KEYS_RSP_EVT, NULL);
                 break;
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
             }
         }
     }
@@ -241,13 +249,15 @@ void smp_send_pair_fail(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_send_pair_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (p_cb->pairing_bda);
     SMP_TRACE_DEBUG("%s\n", __func__);
 
+#if (BLE_INCLUDED == TRUE)
+    tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev (p_cb->pairing_bda);
     /* erase all keys when master sends pairing req*/
     if (p_dev_rec) {
         btm_sec_clear_ble_keys(p_dev_rec);
     }
+#endif  ///BLE_INCLUDED == TRUE
     /* do not manipulate the key, let app decide,
        leave out to BTM to mandate key distribution for bonding case */
     smp_send_cmd(SMP_OPCODE_PAIRING_REQ, p_cb);
@@ -261,6 +271,7 @@ void smp_send_pair_rsp(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
 
+#if (BLE_INCLUDED == TRUE)
     p_cb->local_i_key &= p_cb->peer_i_key;
     p_cb->local_r_key &= p_cb->peer_r_key;
 
@@ -271,6 +282,7 @@ void smp_send_pair_rsp(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             smp_decide_association_model(p_cb, NULL);
         }
     }
+#endif  ///BLE_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -365,6 +377,7 @@ void smp_send_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     le_key.key_size = p_cb->loc_enc_size;
     le_key.sec_level = p_cb->sec_level;
 
+#if (BLE_INCLUDED == TRUE)
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC,
                             (tBTM_LE_KEY_VALUE *)&le_key, TRUE);
@@ -373,6 +386,7 @@ void smp_send_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG ("%s\n", __func__);
 
     smp_key_distribution(p_cb, NULL);
+#endif  ///BLE_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -381,21 +395,24 @@ void smp_send_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_send_id_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-    tBTM_LE_KEY_VALUE   le_key;
     SMP_TRACE_DEBUG("%s\n", __func__);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ID, FALSE);
 
     smp_send_cmd(SMP_OPCODE_IDENTITY_INFO, p_cb);
     smp_send_cmd(SMP_OPCODE_ID_ADDR, p_cb);
 
+#if (BLE_INCLUDED == TRUE)
+    tBTM_LE_KEY_VALUE   le_key;
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LID,
                             &le_key, TRUE);
     }
+#endif  ///BLE_INCLUDED == TRUE
 
     smp_key_distribution_by_transport(p_cb, NULL);
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_send_csrk_info
 ** Description  send CSRK command.
@@ -441,7 +458,6 @@ void smp_proc_sec_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s auth_req=0x%x", __func__, auth_req);
 
     p_cb->cb_evt = 0;
-
     btm_ble_link_sec_check(p_cb->pairing_bda, auth_req,  &sec_req_act);
 
     SMP_TRACE_DEBUG("%s sec_req_act=0x%x", __func__, sec_req_act);
@@ -478,6 +494,7 @@ void smp_proc_sec_req(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         break;
     }
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Function     smp_proc_sec_grant
@@ -532,6 +549,7 @@ uint16_t smp_get_auth_mode (tSMP_ASSO_MODEL model)
     return auth;
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_proc_pair_cmd
 ** Description  Process the SMP pairing request/response from peer device
@@ -652,6 +670,7 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         }
     }
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Function     smp_proc_confirm
@@ -823,6 +842,7 @@ void smp_process_keypress_notification(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     p_cb->cb_evt = SMP_PEER_KEYPR_NOT_EVT;
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_br_process_pairing_command
 ** Description  Process the SMP pairing request/response from peer device via
@@ -842,10 +862,12 @@ void smp_br_process_pairing_command(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         return;
     }
 
+#if (BLE_INCLUDED == TRUE)
     /* erase all keys if it is slave proc pairing req*/
     if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE)) {
         btm_sec_clear_ble_keys(p_dev_rec);
     }
+#endif  ///BLE_INCLUDED == TRUE
 
     p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
 
@@ -966,7 +988,9 @@ void smp_br_select_next_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         }
     }
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_proc_enc_info
 ** Description  process encryption information from peer device
@@ -980,6 +1004,8 @@ void smp_proc_enc_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     smp_key_distribution(p_cb, NULL);
 }
+#endif  ///BLE_INCLUDED == TRUE
+
 /*******************************************************************************
 ** Function     smp_proc_master_id
 ** Description  process master ID from slave device
@@ -1001,6 +1027,7 @@ void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     le_key.sec_level = p_cb->sec_level;
     le_key.key_size  = p_cb->loc_enc_size;
 
+#if (BLE_INCLUDED == TRUE)
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
         btm_sec_save_le_key(p_cb->pairing_bda,
                             BTM_LE_KEY_PENC,
@@ -1008,6 +1035,7 @@ void smp_proc_master_id(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     }
 
     smp_key_distribution(p_cb, NULL);
+#endif  ///BLE_INCLUDED == TRUE
 }
 
 /*******************************************************************************
@@ -1044,11 +1072,14 @@ void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     p_cb->id_addr_type = pid_key.addr_type;
     memcpy(p_cb->id_addr, pid_key.static_addr, BD_ADDR_LEN);
 
+#if (BLE_INCLUDED == TRUE)
     /* store the ID key from peer device */
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PID,
                             (tBTM_LE_KEY_VALUE *)&pid_key, TRUE);
     }
+#endif  ///BLE_INCLUDED == TRUE
+
     smp_key_distribution_by_transport(p_cb, NULL);
 }
 
@@ -1058,6 +1089,7 @@ void smp_proc_id_addr(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_proc_srk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
+#if (BLE_INCLUDED == TRUE)
     tBTM_LE_PCSRK_KEYS   le_key;
 
     SMP_TRACE_DEBUG("%s", __func__);
@@ -1073,6 +1105,8 @@ void smp_proc_srk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                             BTM_LE_KEY_PCSRK,
                             (tBTM_LE_KEY_VALUE *)&le_key, TRUE);
     }
+
+#endif  ///BLE_INCLUDED == TRUE
     smp_key_distribution_by_transport(p_cb, NULL);
 }
 
@@ -1107,6 +1141,7 @@ void smp_proc_compare(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     }
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_proc_sl_key
 ** Description  process key ready events.
@@ -1147,6 +1182,7 @@ void smp_start_enc(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
     }
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Function     smp_proc_discard
@@ -1246,7 +1282,7 @@ void smp_key_pick_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     while (i < SMP_KEY_DIST_TYPE_MAX) {
         SMP_TRACE_DEBUG("key to send = %02x, i = %d\n",  key_to_dist, i);
 
-        if (key_to_dist & (1 << i)) {
+        if (key_to_dist & (1 << i) && smp_distribute_act[i] != NULL) {
             SMP_TRACE_DEBUG("smp_distribute_act[%d]\n", i);
             (* smp_distribute_act[i])(p_cb, p_data);
             break;
@@ -1254,6 +1290,8 @@ void smp_key_pick_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         i ++;
     }
 }
+
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_key_distribution
 ** Description  start key distribution if required.
@@ -1417,6 +1455,7 @@ void smp_process_io_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         smp_send_pair_rsp(p_cb, NULL);
     }
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Function     smp_br_process_slave_keys_response
@@ -1481,6 +1520,7 @@ void smp_idle_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     }
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_fast_conn_param
 ** Description  apply default connection parameter for pairing process
@@ -1706,6 +1746,7 @@ void smp_process_peer_nonce(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     SMP_TRACE_DEBUG("%s end\n ", __FUNCTION__);
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Function     smp_match_dhkey_checks
@@ -1793,6 +1834,7 @@ void smp_wait_for_both_public_keys(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     }
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function     smp_start_passkey_verification
 ** Description  Starts SC passkey entry verification.
@@ -2059,7 +2101,9 @@ void smp_derive_link_key_from_long_term_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
         return;
     }
 }
+#endif  ///BLE_INCLUDED == TRUE
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         smp_br_process_link_key
@@ -2087,6 +2131,7 @@ void smp_br_process_link_key(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_ENC, FALSE);
     smp_br_select_next_key(p_cb, NULL);
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 ** Function     smp_key_distribution_by_transport
@@ -2097,9 +2142,13 @@ void smp_key_distribution_by_transport(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     SMP_TRACE_DEBUG("%s\n", __func__);
     if (p_cb->smp_over_br) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         smp_br_select_next_key(p_cb, NULL);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     } else {
+#if (BLE_INCLUDED == TRUE)
         smp_key_distribution(p_cb, NULL);
+#endif  ///BLE_INCLUDED == TRUE
     }
 }
 
