@@ -8,6 +8,22 @@ config IDF_CMAKE
     bool
     option env="IDF_CMAKE"
 
+
+# A proxy to get environment variable $IDF_TARGET
+config IDF_TARGET_ENV
+	string
+	option env="IDF_TARGET"
+
+# This option records the IDF target when sdkconfig is generated the first time.
+# It is not updated if environment variable $IDF_TARGET changes later, and
+# the build system is responsible for detecting the mismatch between
+# CONFIG_IDF_TARGET and $IDF_TARGET. 
+config IDF_TARGET
+	string
+	default "IDF_TARGET_NOT_SET" if IDF_TARGET_ENV=""
+	default IDF_TARGET_ENV
+
+
 menu "SDK tool configuration"
 config TOOLPREFIX
     string "Compiler toolchain path/prefix"

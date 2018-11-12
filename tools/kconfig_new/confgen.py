@@ -46,9 +46,10 @@ def main():
                         default=None)
 
     parser.add_argument('--defaults',
-                        help='Optional project defaults file, used if --config file doesn\'t exist',
+                        help='Optional project defaults file, used if --config file doesn\'t exist. Multiple files can be specified using multiple --defaults arguments.',
                         nargs='?',
-                        default=None)
+                        default=[],
+                        action='append')
 
     parser.add_argument('--create-config-if-missing',
                         help='If set, a new config file will be saved if the old one is not found',
@@ -84,12 +85,14 @@ def main():
 
     config = kconfiglib.Kconfig(args.kconfig)
 
-    if args.defaults is not None:
+    if len(args.defaults) > 0:
         # always load defaults first, so any items which are not defined in that config
         # will have the default defined in the defaults file
-        if not os.path.exists(args.defaults):
-            raise RuntimeError("Defaults file not found: %s" % args.defaults)
-        config.load_config(args.defaults)
+        for name in args.defaults:
+            print("Loading defaults file %s..." % name)
+            if not os.path.exists(name):
+                raise RuntimeError("Defaults file not found: %s" % name)
+            config.load_config(name, replace=False)
 
     if args.config is not None:
         if os.path.exists(args.config):
@@ -97,7 +100,7 @@ def main():
         elif args.create_config_if_missing:
             print("Creating config file %s..." % args.config)
             config.write_config(args.config)
-        elif args.default is None:
+        elif args.config is None:
             raise RuntimeError("Config file not found: %s" % args.config)
 
         for output_type, filename in args.output:
