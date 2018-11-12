@@ -1,5 +1,5 @@
 ****************************************
-Eclipse IDE 的创建和烧录指南 (CMake)
+Eclipse IDE 创建和烧录指南 (CMake)
 ****************************************
 
 :link_to_translation:`en:[English]`
