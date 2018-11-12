@@ -133,6 +133,12 @@ function(add_component_dependencies target dep dep_type)
     endif()
 endfunction()
 
+function(require_idf_targets)
+    if(NOT ${IDF_TARGET} IN_LIST ARGN)
+        message(FATAL_ERROR "Component ${COMPONENT_NAME} only supports targets: ${ARGN}")
+    endif()
+endfunction()
+
 function(components_finish_registration)
 
     # have the executable target depend on all components in the build

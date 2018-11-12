@@ -1,3 +1,5 @@
+require_idf_targets(esp32)
+
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32 is headers
     set(COMPONENT_ADD_INCLUDEDIRS include)

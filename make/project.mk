@@ -91,6 +91,15 @@ ifndef IDF_PATH
 $(error IDF_PATH variable is not set to a valid directory.)
 endif
 
+ifdef IDF_TARGET
+ifneq ($(IDF_TARGET),esp32)
+$(error GNU Make based build system only supports esp32 target, but IDF_TARGET is set to $(IDF_TARGET))
+endif
+else
+export IDF_TARGET := esp32
+endif
+
+
 ifneq ("$(IDF_PATH)","$(SANITISED_IDF_PATH)")
 # implies IDF_PATH was overriden on make command line.
 # Due to the way make manages variables, this is hard to account for

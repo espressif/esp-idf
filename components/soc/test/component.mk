@@ -1,5 +1,4 @@
-# currently the only SoC supported; to be moved into Kconfig
-SOC_NAME := esp32
+SOC_NAME := $(IDF_TARGET)
 
 COMPONENT_SRCDIRS := ../$(SOC_NAME)/test
 
