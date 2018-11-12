@@ -114,8 +114,9 @@ function(target_add_binary_data target embed_file embed_type)
         -D "FILE_TYPE=${embed_type}"
         -P "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
         MAIN_DEPENDENCY "${embed_file}"
-        DEPENDENCIES "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
-        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
+        DEPENDS "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        VERBATIM)
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${embed_srcfile}")
 
@@ -188,4 +189,25 @@ function(add_prefix var prefix)
         list(APPEND newlist "${prefix}${elm}")
     endforeach()
     set(${var} "${newlist}" PARENT_SCOPE)
+endfunction()
+
+# fail_at_build_time
+#
+# Creates a phony target which fails the build and touches CMakeCache.txt to cause a cmake run next time.
+#
+# This is used when a missing file is required at CMake runtime, but we can't fail the build if it is not found,
+# because the "menuconfig" target may be required to fix the problem.
+#
+# We cannot use CMAKE_CONFIGURE_DEPENDS instead because it only works for files which exist at CMake runtime.
+#
+function(fail_at_build_time target_name message_line0)
+    set(message_lines COMMAND ${CMAKE_COMMAND} -E echo "${message_line0}")
+    foreach(message_line ${ARGN})
+        set(message_lines ${message_lines} COMMAND ${CMAKE_COMMAND} -E echo "${message_line}")
+    endforeach()
+    add_custom_target(${target_name} ALL
+        ${message_lines}
+        COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/CMakeCache.txt"
+        COMMAND ${CMAKE_COMMAND} -P ${IDF_PATH}/tools/cmake/scripts/fail.cmake
+        VERBATIM)
 endfunction()
