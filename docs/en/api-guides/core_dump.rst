@@ -89,6 +89,7 @@ Generic command syntax:
     * info_corefile. Retrieve core dump and print useful info.
     * dbg_corefile. Retrieve core dump and start GDB session with it.
 :Command Arguments:
+    * --debug,-d DEBUG.             Log level (0..3).
     * --gdb,-g GDB.                 Path to gdb to use for data retrieval.
     * --core,-c CORE.               Path to core dump file to use (if skipped core dump will be read from flash).
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
