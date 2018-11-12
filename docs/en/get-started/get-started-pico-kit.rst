@@ -26,11 +26,12 @@ ESP32-PICO-KIT is a mini development board produced by `Espressif <https://espre
 
 The development board integrates a USB-UART Bridge circuit, allowing the developers to connect the board to a PC's USB port for downloads and debugging. 
 
-For easy interfacing, all the IO signals and system power on ESP32-PICO-D4 are led out through two rows of 20 x 0.1" pitch header pads on both sides of the development board. To make the ESP32-PICO-KIT fit into mini breadboards, the header pads are populated with two rows of 17 pin headers. Remaining 2 x 3 pads grouped on each side of the board besides the antenna are not populated. The remaining 2 x 3 pin headers may be soldered later by the user. 
+For easy interfacing, all the IO signals and system power on ESP32-PICO-D4 are led out through two rows of 20 x 0.1" pitch header pads on both sides of the development board. To make the ESP32-PICO-KIT easier for Dupont wires, 2 x 17 header pads are populated with two rows of female pin headers. The remaining 2 x 3 header pads grouped on each side of the board besides the antenna are not populated, and may be populated later by the user if required.  
 
 .. note::
 
-    The 2 x 3 pads not populated with pin headers are internally connected to the flash memory embedded in the ESP32-PICO-D4 SiP module. For more details see module's datasheet in `Related Documents`_.
+    1. The 2 x 3 pads not populated with female pin headers are internally connected to the flash memory embedded in the ESP32-PICO-D4 SiP module. For more details see module's datasheet in `Related Documents`_.
+    2. Earlier versions of ESP32-PICO-KIT come with male headers by default.
 
 The board dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4"), see section `Board Dimensions`_. An overview functional block diagram is shown below.
 
@@ -55,18 +56,18 @@ USB-UART Bridge
     A single chip USB-UART bridge: CP2102 in V4 of the board and CP2102N in V4.1. The first provides up to 1 Mbps transfer rates, while the latter up to 3 Mbps transfers rates.
 Micro USB Port
     USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32-PICO-KIT.
-5V Power On LED
-    This light emitting diode lits when the USB or an external 5V power supply is applied to the board. For details see schematic in `Related Documents`_.
+Power On LED
+    Turns on when the power supply is applied to the board. For details see schematic in `Related Documents`_.
 I/O
-    All the pins on ESP32-PICO-D4 are broken out to the pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details please see section `Pin Descriptions`_.
+    All the pins on ESP32-PICO-D4 are broken out to the female pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details please see section `Pin Descriptions`_.
 BOOT Button
     Holding down the Boot button and pressing the EN button initiates the firmware download mode. Then user can download firmware through the serial port.
 EN Button
-    Reset button; pressing this button resets the system.
+    Reset button: pressing this button resets the system.
 
 .. _get-started-pico-kit-v4-board-front:
 
-.. figure:: ../../_static/esp32-pico-kit-v4.1-layout.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
     :alt: ESP32-PICO-KIT board layout
     :figclass: align-center
@@ -104,7 +105,7 @@ To start development of applications, proceed to section :doc:`index`, that will
 Pin Descriptions
 ----------------
 
-The two tables below provide the **Name** and **Function** of I/O headers on both sides of the board, see :ref:`get-started-pico-kit-v4-board-front`. The pin numbering and header names are the same as on a schematic in `Related Documents`_.
+The two tables below provide the **Name** and **Function** of I/O female headers on both sides of the board, see :ref:`get-started-pico-kit-v4-board-front`. The pin numbering and header names are the same as on a schematic in `Related Documents`_.
 
 
 Header J2
@@ -187,21 +188,14 @@ No.     Name               Type    Function
 Board Dimensions
 ----------------
 
-.. figure:: ../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4.1-dimensions-back.jpeg
     :align: center
     :alt: ESP32-PICO-KIT dimensions - back
     :figclass: align-center
 
     ESP32-PICO-KIT dimensions - back
 
-.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-side.jpg
-    :align: center
-    :alt: ESP32-PICO-KIT dimensions - side
-    :figclass: align-center
-
-    ESP32-PICO-KIT dimensions - side
-
-For the board physical construction details please refer to Reference Design listed below.
+For the board physical construction details, please refer to Reference Design listed below.
 
 
 Related Documents

@@ -22,17 +22,18 @@ ESP32-PICO-KIT V4 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板
 
 ESP32-PICO-KIT V4  集成了一个 USB-UART 桥接电路，可连接至 PC 的 USB 端口进行下载和调试。
 
-为了便于连接，ESP32-PICO-D4 上的所有 IO 信号和系统电源管脚均通过开发板两侧的排针（每侧 20 个 x 0.1 英寸间隔）引出。为了方便在微型面包板上的使用，ESP32-PICO-KIT V4 开发板每侧的 20 个管脚中，有 17 个引出了排针，另外 3 个靠近天线的管脚不引出，可供用户最后焊接使用。
+为了便于连接，ESP32-PICO-D4 上的所有 IO 信号和系统电源管脚均通过开发板两侧焊盘（每侧 20 个 x 0.1 英寸间隔）引出。为了方便杜邦线的使用，ESP32-PICO-KIT V4 开发板每侧的 20 个焊盘中，有 17 个引出至排母，另外 3 个靠近天线的焊盘未引出，可供用户日后焊接使用。
 
 .. note::
 
-    每排未引出排针的 3 个管脚已连接至 ESP32-PICO-D4 SIP 模组的内置 flash 模块。更多信息，请见 `相关文档`_ 中的模组技术规格书。
+    1. 每排未引出至排母的 3 个管脚已连接至 ESP32-PICO-D4 SIP 模组的内置 flash 模块。更多信息，请见 `相关文档`_ 中的模组技术规格书。
+    2. 较早版本的 ESP32-PICO-D4 开发板默认采用排针。
 
 ESP32-PICO-KIT V4 开发板的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")，具体请见 `开发板尺寸`_ 章节。本迷你开发板的功能框图如下图所示。
 
 .. figure:: ../../_static/esp32-pico-kit-v4-functional-block-diagram.png
     :align: center
-    :alt: ESP32-PICO-KIT V4 functional block diagram
+    :alt: ESP32-PICO-KIT V4 功能框图
     :figclass: align-center
 
     ESP32-PICO-KIT V4 功能框图
@@ -55,11 +56,11 @@ USB-UART 桥接器
 Micro USB 接口
     USB 接口，可用作电路板的供电电源及连接 PC 端的通信接口。
 
-5V LED 电源指示灯
-    当开发板通电后（USB 或外部 5V），该指示灯将亮起。更多信息，请见 `相关文档`_ 中的原理图。
+LED 电源指示灯
+    当开发板通电后（USB 或外部 5 V），该指示灯将亮起。更多信息，请见 `相关文档`_ 中的原理图。
         
 I/O
-    I/O      ESP32-PICO-D4 上的所有管脚均通过开发板的排针引出。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。更多信息，请见章节 `管脚说明`_。
+    ESP32-PICO-D4 上的所有管脚均通过开发板的排母引出。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。更多信息，请见章节 `管脚说明`_。
 
 BOOT 键
     按下 BOOT 键并保持，同时按一下 EN 键（此时不要松开 BOOT 键）进入固件下载模式，通过串口下载固件。
@@ -69,9 +70,9 @@ EN 键
 
 .. _get-started-pico-kit-v4-board-front:
 
-.. figure:: ../../_static/esp32-pico-kit-v4-layout.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
-    :alt: ESP32-PICO-KIT V4 board layout
+    :alt: ESP32-PICO-KIT V4 开发板布局
     :figclass: align-center
 
     ESP32-PICO-KIT V4 开发板布局
@@ -191,20 +192,12 @@ Header J3
 开发板尺寸
 ----------
 
-.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-back.jpg
+.. figure:: ../../_static/esp32-pico-kit-v4.1-dimensions-back.jpeg
     :align: center
-    :alt: ESP32-PICO-KIT V4 dimensions - back
+    :alt: ESP32-PICO-KIT V4 尺寸图 - 背面
     :figclass: align-center
 
     ESP32-PICO-KIT V4 尺寸图 - 背面
-
-.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-side.jpg
-    :align: center
-    :alt: ESP32-PICO-KIT V4 dimensions - side
-    :figclass: align-center
-
-    ESP32-PICO-KIT V4 尺寸图 - 侧面
-
 
 相关文档
 -----------------
