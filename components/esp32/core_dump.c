@@ -46,6 +46,7 @@ typedef uint32_t core_dump_crc_t;
 #endif
 
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
+#define COREDUMP_VERSION                    1
 
 
 typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len);
@@ -75,6 +76,7 @@ typedef struct _core_dump_write_config_t
 typedef struct _core_dump_header_t
 {
     uint32_t data_len;  // data length
+    uint32_t version;   // core dump struct version
     uint32_t tasks_num; // number of tasks
     uint32_t tcb_sz;    // size of TCB
 } core_dump_header_t;
@@ -189,6 +191,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
     }
     // write header
     dump_data.hdr.data_len  = data_len;
+    dump_data.hdr.version   = COREDUMP_VERSION;
     dump_data.hdr.tasks_num = task_num - write_cfg->bad_tasks_num;
     dump_data.hdr.tcb_sz    = tcb_sz;
     err = write_cfg->write(write_cfg->priv, &dump_data, sizeof(core_dump_header_t));

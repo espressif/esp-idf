@@ -457,7 +457,8 @@ class ESPCoreDumpLoaderError(ESPCoreDumpError):
 class ESPCoreDumpLoader(object):
     """Core dump loader base class
     """
-    ESP32_COREDUMP_HDR_FMT      = '<3L'
+    ESP32_COREDUMP_VESION       = 1
+    ESP32_COREDUMP_HDR_FMT      = '<4L'
     ESP32_COREDUMP_HDR_SZ       = struct.calcsize(ESP32_COREDUMP_HDR_FMT)
     ESP32_COREDUMP_TSK_HDR_FMT  = '<3L'
     ESP32_COREDUMP_TSK_HDR_SZ   = struct.calcsize(ESP32_COREDUMP_TSK_HDR_FMT)
@@ -580,7 +581,9 @@ class ESPCoreDumpLoader(object):
         """
         core_off = off
         data = self.read_data(core_off, self.ESP32_COREDUMP_HDR_SZ)
-        tot_len,task_num,tcbsz = struct.unpack_from(self.ESP32_COREDUMP_HDR_FMT, data)
+        tot_len,coredump_ver,task_num,tcbsz = struct.unpack_from(self.ESP32_COREDUMP_HDR_FMT, data)
+        if coredump_ver > self.ESP32_COREDUMP_VESION:
+            raise ESPCoreDumpLoaderError("Core dump version '%d' is not supported! Should be up to '%d'." % (coredump_ver, self.ESP32_COREDUMP_VESION))
         tcbsz_aligned = tcbsz
         if tcbsz_aligned % 4:
             tcbsz_aligned = 4*(old_div(tcbsz_aligned,4) + 1)
