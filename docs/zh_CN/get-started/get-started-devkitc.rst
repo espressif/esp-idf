@@ -2,7 +2,7 @@ ESP32-DevKitC V4 入门指南
 ======================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP32-DevKitC V4 开发板。有关 ESP32-DevKitC 其他版本的介绍，请见：`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-DevKitC V4 开发板。有关 ESP32-DevKitC 其他版本的介绍，请见：:doc:`../hw-reference/index`。
 
 准备工作
 -------------
@@ -15,16 +15,20 @@ ESP32-DevKitC V4 入门指南
 简介
 --------
 
-ESP32-DevKitC V4 是一款来自 `乐鑫 <https://espressif.com>`_ 的迷你开发板，板上模组的绝大部分管脚均已引出，可根据用户需求，轻松连接多种外围器件。此外，本开发板还采用了标准排针，可便利面包板的使用。
+ESP32-DevKitC V4 是一款来自 `乐鑫 <https://espressif.com>`_ 的迷你开发板，板上模组的绝大部分管脚均已引出，可根据用户需求，轻松连接多种外围器件。此外，本开发板还采用了标准排母，可便利杜邦线的使用。
 
 本开发板可支持多款 ESP32 模组，包括 :ref:`esp-modules-and-boards-esp32-wroom-32`，:ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`，:ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>`，:ref:`esp-modules-and-boards-esp32-solo-1` 及 :ref:`esp-modules-and-boards-esp32-wrover` 系列。
+
+ .. note::
+
+    乐鑫还同时提供多种 ESP32-DevKitC 型号，采用不同模组或排针/排母设计，用户可按需选择。更多详情，请见 `乐鑫产品订购信息`_ 。
 
 功能说明
 ----------------------
 ESP32-DevKitC V4 开发板的主要组件、接口及控制方式如下文所示。
 
-ESP32-WROOM-32
-    ESP32-DevKitC V4 开发板上焊接的标准 :ref:`esp-modules-and-boards-esp32-wroom-32` 模组。
+ESP32-WROOM-32D
+    ESP32-DevKitC V4 开发板上焊接的标准 :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>` 模组。
 
 额外空间
     本开发板的还预留了部分额外空间，用于焊接其他 ESP32-WROOM-32 之外的较长模组，比如 :ref:`esp-modules-and-boards-esp32-wrover` 模组。
@@ -41,8 +45,8 @@ EN 按键
 Micro USB 端口
     USB 接口，可用作电路板的供电电源，或连接 PC 端的通信接口。
 
-5V LED 电源指示灯
-    更多信息，请见 `相关文档`_ 中的原理图。
+LED 电源指示灯
+    开发板通电后（USB 或外部 5 V），该指示灯将亮起。更多信息，请见 `相关文档`_ 中的原理图。
 
 I/O 连接器
     ESP32-DevKitC V4 迷你开发板，板上模组的绝大部分管脚均已引出。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
@@ -53,12 +57,12 @@ I/O 连接器
 
 .. _get-started-esp32-devkitc-board-front:
 
-.. figure:: ../../_static/esp32-devkitc-functional-overview.jpg
+.. figure:: ../../_static/esp32-devkitc-functional-overview-f.jpeg
     :align: center
     :alt: ESP32-DevKitC V4 with ESP32-WROOM-32 module soldered
     :figclass: align-center
 
-    图为 ESP32-DevKitC V4（贴 ESP32-WROOM-32）
+    图为 ESP32-DevKitC V4（贴 ESP32-WROOM-32D）
 
 
 电源选项
@@ -124,6 +128,7 @@ ESP32-DevKitC 上电前，请首先确认电路板完好无损。
 * `ESP32 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-WROOM-32 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
 * `ESP32-WROOM-32D/U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
+* `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)
 
 
 .. toctree::
