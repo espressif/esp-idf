@@ -708,6 +708,37 @@ extern void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK  *p_vsc_c
     return ;
 }
 
+void BTM_VendorHciEchoCmdCallback(tBTM_VSC_CMPL *p1)
+{
+    if (!p1) {
+        return;
+    }
+    uint8_t *p = p1->p_param_buf;
+    uint8_t status, echo;
+    STREAM_TO_UINT8  (status, p);
+    STREAM_TO_UINT8  (echo, p);
+    BTM_TRACE_DEBUG("%s status 0x%x echo 0x%x", __func__, status, echo);
+}
+
+/******************************************************************************
+**
+** Function         BTM_VendorHciEchoCmdTest
+**
+** Description      vendor common echo hci cmd test, controller will return status and echo
+**
+** Parameters:      echo : echo value
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_VendorHciEchoCmdTest(uint8_t echo)
+{
+    BTM_VendorSpecificCommand (HCI_VENDOR_COMMON_ECHO_CMD_OPCODE,
+                                1,
+                                &echo, 
+                                BTM_VendorHciEchoCmdCallback);
+}
+
 /*******************************************************************************
 **
 ** Function         BTM_BleEnableMixedPrivacyMode
