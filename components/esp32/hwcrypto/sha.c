@@ -35,6 +35,7 @@
 #include "rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
+#include "driver/periph_ctrl.h"
 
 inline static uint32_t SHA_LOAD_REG(esp_sha_type sha_type) {
     return SHA_1_LOAD_REG + sha_type * 0x10;
@@ -160,11 +161,7 @@ static void esp_sha_lock_engine_inner(sha_engine_state *engine)
 
     if (sha_engines_all_idle()) {
         /* Enable SHA hardware */
-        DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
-        /* also clear reset on secure boot, otherwise SHA is held in reset */
-        DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG,
-                           DPORT_PERI_EN_SHA
-                           | DPORT_PERI_EN_SECUREBOOT);
+        periph_module_enable(PERIPH_SHA_MODULE);
         DPORT_STALL_OTHER_CPU_START();
         ets_sha_enable();
         DPORT_STALL_OTHER_CPU_END();
@@ -188,9 +185,7 @@ void esp_sha_unlock_engine(esp_sha_type sha_type)
 
     if (sha_engines_all_idle()) {
         /* Disable SHA hardware */
-        /* Don't assert reset on secure boot, otherwise AES is held in reset */
-        DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_SHA);
-        DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
+        periph_module_disable(PERIPH_SHA_MODULE);
     }
 
     _lock_release(&state_change_lock);
@@ -276,9 +271,9 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 
     SHA_CTX ctx;
     ets_sha_init(&ctx);
+    esp_sha_lock_memory_block();
     while(ilen > 0) {
         size_t chunk_len = (ilen > block_len) ? block_len : ilen;
-        esp_sha_lock_memory_block();
         esp_sha_wait_idle();
         DPORT_STALL_OTHER_CPU_START();
         {
@@ -286,11 +281,9 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
             ets_sha_update(&ctx, sha_type, input, chunk_len * 8);
         }
         DPORT_STALL_OTHER_CPU_END();
-        esp_sha_unlock_memory_block();
         input += chunk_len;
         ilen -= chunk_len;
     }
-    esp_sha_lock_memory_block();
     esp_sha_wait_idle();
     DPORT_STALL_OTHER_CPU_START();
     {

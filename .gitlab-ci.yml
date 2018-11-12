@@ -218,6 +218,8 @@ build_esp_idf_tests:
 
 .build_examples_make_template: &build_examples_make_template
   <<: *build_template
+  # This is a workaround for a rarely encountered issue with building examples in CI.
+  # Probably related to building of Kconfig in 'make clean' stage
   retry: 1
   artifacts:
     when: always
@@ -251,7 +253,6 @@ build_esp_idf_tests:
 # same as above, but for CMake
 .build_examples_cmake_template: &build_examples_cmake_template
   <<: *build_template
-  retry: 1
   artifacts:
     when: always
     paths:
@@ -362,7 +363,7 @@ build_docs:
     - ./check_lang_folder_sync.sh
     - cd en
     - make gh-linkcheck
-    - make html || cat /tmp/sphinx-err*.log
+    - make html
     - ../check_doc_warnings.sh
     - cd ../zh_CN
     - make gh-linkcheck
@@ -939,7 +940,7 @@ example_test_002_01:
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
-    - Example_ShieldBox
+    - Example_ShieldBox_Basic
 
 example_test_003_01:
   <<: *example_test_template
@@ -958,6 +959,16 @@ example_test_005_01:
   tags:
     - ESP32
     - Example_WIFI_BT
+
+example_test_006_01:
+  <<: *example_test_template
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  only:
+    variables:
+      - $BOT_LABEL_IPERF_STRESS_TEST
+  tags:
+    - ESP32
+    - Example_ShieldBox
 
 UT_001_01:
   <<: *unit_test_template
@@ -1182,6 +1193,18 @@ UT_001_37:
     - UT_T1_1
 
 UT_001_38:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_39:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_40:
   <<: *unit_test_template
   tags:
     - ESP32_IDF

@@ -53,8 +53,11 @@ SIMPLE_TEST_ID = 0
 MULTI_STAGE_ID = 1
 MULTI_DEVICE_ID = 2
 
-STARTUP_TIMEOUT=10
 DEFAULT_TIMEOUT=20
+
+DUT_STARTUP_CHECK_RETRY_COUNT = 5
+TEST_HISTROY_CHECK_TIMEOUT = 1
+
 
 def format_test_case_config(test_case_data):
     """
@@ -139,19 +142,22 @@ def replace_app_bin(dut, name, new_app_bin):
             Utility.console_log("The replaced application binary is {}".format(new_app_bin), "O")
             break
 
-
 def reset_dut(dut):
-    # We do flush before test, in case we already have bootup pattern in data cache
-    dut.write("", flush=True)
     dut.reset()
     # esptool ``run`` cmd takes quite long time.
     # before reset finish, serial port is closed. therefore DUT could already bootup before serial port opened.
     # this could cause checking bootup print failed.
-    # now we input cmd `-`, and check either bootup print or test history,
-    # to determine if DUT is ready to test.
-    dut.write("-", flush=False)
-    dut.expect_any(UT_APP_BOOT_UP_DONE,
-                   "0 Tests 0 Failures 0 Ignored", timeout=STARTUP_TIMEOUT)
+    # now use input cmd `-` and check test history to check if DUT is bootup.
+    # we'll retry this step for a few times in case `dut.reset` returns during DUT bootup (when DUT can't process any command).
+    for _ in range(DUT_STARTUP_CHECK_RETRY_COUNT):
+        dut.write("-")
+        try:
+            dut.expect("0 Tests 0 Failures 0 Ignored", timeout=TEST_HISTROY_CHECK_TIMEOUT)
+            break
+        except ExpectTimeout:
+            pass
+    else:
+        raise AssertationError("Reset {} ({}) failed!".format(dut.name, dut.port))
 
 
 @IDF.idf_unit_test(env_tag="UT_T1_1")

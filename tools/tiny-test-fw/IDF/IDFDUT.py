@@ -174,7 +174,11 @@ class IDFDUT(DUT.SerialDUT):
             # Filter out invalid port by our own will be much simpler.
             return [x for x in ports if not cls.INVALID_PORT_PATTERN.search(x)]
 
-        port_hint = espport.decode('utf8')
+        # On MacOs with python3.6: type of espport is already utf8
+        if type(espport) is type(u''):
+            port_hint = espport
+        else:
+            port_hint = espport.decode('utf8')
 
         # If $ESPPORT is a valid port, make it appear first in the list
         if port_hint in ports:

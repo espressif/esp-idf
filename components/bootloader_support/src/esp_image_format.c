@@ -23,6 +23,7 @@
 #include <bootloader_flash.h>
 #include <bootloader_random.h>
 #include <bootloader_sha.h>
+#include "bootloader_util.h"
 
 /* Checking signatures as part of verifying images is necessary:
    - Always if secure boot is enabled
@@ -56,6 +57,10 @@ static const char *TAG = "esp_image";
    (Means loaded code isn't executable until after the secure boot check.)
 */
 static uint32_t ram_obfs_value[2];
+
+/* Range of IRAM used by the loader, defined in ld script */
+extern int _loader_text_start;
+extern int _loader_text_end;
 #endif
 
 /* Return true if load_addr is an address the bootloader should load into */
@@ -328,18 +333,41 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
                  (do_load)?"load":(is_mapping)?"map":"");
     }
 
+
+#ifdef BOOTLOADER_BUILD
+    /* Before loading segment, check it doesn't clobber bootloader RAM. */
     if (do_load) {
-        /* Before loading segment, check it doesn't clobber bootloader RAM... */
-        uint32_t end_addr = load_addr + data_len;
-        if (end_addr < 0x40000000) {
+        const intptr_t load_end = load_addr + data_len;
+        if (load_end <= (intptr_t) SOC_DIRAM_DRAM_HIGH) {
+            /* Writing to DRAM */
             intptr_t sp = (intptr_t)get_sp();
-            if (end_addr > sp - STACK_LOAD_HEADROOM) {
-                ESP_LOGE(TAG, "Segment %d end address 0x%08x too high (bootloader stack 0x%08x liimit 0x%08x)",
-                         index, end_addr, sp, sp - STACK_LOAD_HEADROOM);
+            if (load_end > sp - STACK_LOAD_HEADROOM) {
+                /* Bootloader .data/.rodata/.bss is above the stack, so this
+                 * also checks that we aren't overwriting these segments.
+                 *
+                 * TODO: This assumes specific arrangement of sections we have
+                 * in the ESP32. Rewrite this in a generic way to support other
+                 * layouts.
+                 */
+                ESP_LOGE(TAG, "Segment %d end address 0x%08x too high (bootloader stack 0x%08x limit 0x%08x)",
+                         index, load_end, sp, sp - STACK_LOAD_HEADROOM);
+                return ESP_ERR_IMAGE_INVALID;
+            }
+        } else {
+            /* Writing to IRAM */
+            const intptr_t loader_iram_start = (intptr_t) &_loader_text_start;
+            const intptr_t loader_iram_end = (intptr_t) &_loader_text_end;
+
+            if (bootloader_util_regions_overlap(loader_iram_start, loader_iram_end,
+                    load_addr, load_end)) {
+                ESP_LOGE(TAG, "Segment %d (0x%08x-0x%08x) overlaps bootloader IRAM (0x%08x-0x%08x)",
+                         index, load_addr, load_end, loader_iram_start, loader_iram_end);
                 return ESP_ERR_IMAGE_INVALID;
             }
         }
     }
+#endif // BOOTLOADER_BUILD
+
 #ifndef BOOTLOADER_BUILD
     uint32_t free_page_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
     ESP_LOGD(TAG, "free data page_count 0x%08x",free_page_count);
