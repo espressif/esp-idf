@@ -19,6 +19,11 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 
+typedef enum {
+    HTTPD_SSL_TRANSPORT_SECURE,      // SSL Enabled
+    HTTPD_SSL_TRANSPORT_INSECURE     // SSL disabled
+} httpd_ssl_transport_mode_t;
+
 /**
  * HTTPS server config struct
  *
@@ -44,13 +49,13 @@ struct httpd_ssl_config {
     /** Private key byte length */
     size_t prvtkey_len;
 
-    /** Enable SSL (default true) */
-    bool secure_enable;
+    /** Transport Mode (default secure) */
+    httpd_ssl_transport_mode_t transport_mode;
 
-    /** Port used when SSL is enabled (default 443) */
+    /** Port used when transport mode is secure (default 443) */
     uint16_t port_secure;
 
-    /** Port used when SSL is disabled (default 80) */
+    /** Port used when transport mode is insecure (default 80) */
     uint16_t port_insecure;
 };
 
@@ -62,7 +67,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
  * (http_server default config had to be copied for customization)
  *
  * Notes:
- * - port is set when starting the server, according to 'secure_enable'
+ * - port is set when starting the server, according to 'transport_mode'
  * - one socket uses ~ 40kB RAM with SSL, we reduce the default socket count to 4
  * - SSL sockets are usually long-lived, closing LRU prevents pool exhaustion DOS
  * - Stack size may need adjustments depending on the user application
@@ -87,7 +92,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .open_fn = NULL,                          \
         .close_fn = NULL,                         \
     },                                            \
-    .secure_enable = true,                        \
+    .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
 }
