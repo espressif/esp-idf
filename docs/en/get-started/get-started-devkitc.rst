@@ -16,9 +16,13 @@ What You Need
 Overview
 --------
 
-ESP32-DevKitC V4 is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard headers also make development easy and convenient when using a breadboard. 
+ESP32-DevKitC V4 is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the female pin headers on both sides for easy interfacing. Developers can connect these pins to peripherals as needed. Standard female headers also make development easy and convenient when using Dupont wires. 
 
 The board supports various ESP32 modules, including :ref:`esp-modules-and-boards-esp32-wroom-32`, :ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`, :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>`, :ref:`esp-modules-and-boards-esp32-solo-1`, and :ref:`esp-modules-and-boards-esp32-wrover` series.
+
+.. note::
+
+    Espressif also provides several variants of ESP32-DevKitC that come with specific ESP32 module and female or male pin headers, supporting different requirements of different users. For details please refer to `Espressif Product Ordering Information`_.
 
 
 Functional Description
@@ -26,8 +30,8 @@ Functional Description
 
 The following list and figure below describe key components, interfaces and controls of ESP32-DevKitC V4 board.
 
-ESP32-WROOM-32
-    :ref:`esp-modules-and-boards-esp32-wroom-32` module soldered to the ESP32-DevKitC V4 board. 
+ESP32-WROOM-32D
+    :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>` soldered to the ESP32-DevKitC V4 board. 
 Optional Space for ESP32-WROVER
     Longer :ref:`esp-modules-and-boards-esp32-wrover` modules may be soldered instead of the ESP32-WROOM-32.
 USB-to-UART Bridge
@@ -38,10 +42,10 @@ EN Button
     Reset button: pressing this button resets the system.
 Micro USB Port
     USB interface. It functions as the power supply for the board and the communication interface between PC and the ESP module.
-5V Power On LED
-    This LED lights when the USB or an external 5V power supply is applied to the board. For details see schematic in `Related Documents`_.
+Power On LED
+    Turns on when the power supply is applied to the board. For details see schematic in `Related Documents`_.
 I/O Connector
-    Most of the pins on the ESP module are broken out to the pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
+    Most of the pins on the ESP module are broken out to the female pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
     .. note::
 
@@ -49,12 +53,12 @@ I/O Connector
 
 .. _get-started-esp32-devkitc-board-front:
 
-.. figure:: ../../_static/esp32-devkitc-functional-overview.jpg
+.. figure:: ../../_static/esp32-devkitc-functional-overview-f.jpeg
     :align: center
     :alt: ESP32-DevKitC V4 with ESP32-WROOM-32 module soldered
     :figclass: align-center
 
-    ESP32-DevKitC V4 with ESP32-WROOM-32 module soldered
+    ESP32-DevKitC V4 with ESP32-WROOM-32D module soldered
 
 
 Power Supply Options
@@ -106,7 +110,7 @@ To start development of applications, proceed to section :doc:`index`, that will
 Board Dimensions
 ----------------
 
-.. figure:: ../../_static/esp32-devkitc-dimensions-back.jpg
+.. figure:: ../../_static/esp32-devkitc-v4-dimensions-back.jpeg
     :align: center
     :alt: ESP32-DevKitC board dimensions - back
     :figclass: align-center
@@ -121,6 +125,7 @@ Related Documents
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROOM-32D/U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_ (PDF)
+* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
 
 
 .. toctree::
