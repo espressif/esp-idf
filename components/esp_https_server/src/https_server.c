@@ -118,9 +118,9 @@ static esp_err_t httpd_ssl_open(httpd_handle_t server, int sockfd)
     httpd_sess_set_transport_ctx(server, sockfd, ssl, httpd_ssl_close);
 
     // Set rx/tx/pending override functions
-    httpd_set_sess_send_override(server, sockfd, httpd_ssl_send);
-    httpd_set_sess_recv_override(server, sockfd, httpd_ssl_recv);
-    httpd_set_sess_pending_override(server, sockfd, httpd_ssl_pending);
+    httpd_sess_set_send_override(server, sockfd, httpd_ssl_send);
+    httpd_sess_set_recv_override(server, sockfd, httpd_ssl_recv);
+    httpd_sess_set_pending_override(server, sockfd, httpd_ssl_pending);
 
     // all access should now go through SSL
 
@@ -183,7 +183,7 @@ esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *conf
 
     ESP_LOGI(TAG, "Starting server");
 
-    if (config->secure_enable) {
+    if (HTTPD_SSL_TRANSPORT_SECURE == config->transport_mode) {
         SSL_CTX *ctx = create_secure_context(config);
         if (!ctx) {
             return ESP_FAIL;
