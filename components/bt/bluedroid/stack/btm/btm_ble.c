@@ -24,8 +24,6 @@
  ******************************************************************************/
 #include "common/bt_target.h"
 
-#if BLE_INCLUDED == TRUE
-
 #include <string.h>
 
 #include "stack/bt_types.h"
@@ -41,7 +39,7 @@
 
 //#define LOG_TAG "bt_btm_ble"
 //#include "osi/include/log.h"
-
+#if BLE_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE
 // The temp variable to pass parameter between functions when in the connected event callback.
 static BOOLEAN temp_enhanced = FALSE;
@@ -667,7 +665,7 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
 
     BTM_TRACE_DEBUG ("btm_find_dev_type - device_type = %d addr_type = %d", *p_dev_type , *p_addr_type);
 }
-
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -703,7 +701,7 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
         }
         return FALSE;
     }
-
+#if (BLE_INCLUDED == TRUE)
     if (transport == BT_TRANSPORT_LE) {
         memcpy(remote_bda, p_dev_rec->ble.pseudo_addr, BD_ADDR_LEN);
         if (btm_bda_to_acl(p_dev_rec->ble.pseudo_addr, transport) != NULL) {
@@ -712,10 +710,11 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
             return FALSE;
         }
     }
-
+#endif  ///BLE_INCLUDED == TRUE
     return FALSE;
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleReceiverTest
@@ -1104,6 +1103,7 @@ void btm_ble_increment_sign_ctr(BD_ADDR bd_addr, BOOLEAN is_local )
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1116,6 +1116,7 @@ void btm_ble_increment_sign_ctr(BD_ADDR bd_addr, BOOLEAN is_local )
 **
 *******************************************************************************/
 #if (SMP_INCLUDED == TRUE)
+#if (BLE_INCLUDED == TRUE)
 BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types)
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
@@ -1159,7 +1160,6 @@ BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div)
     BTM_TRACE_DEBUG ("btm_get_local_div status=%d (1-OK) DIV=0x%x", status, *p_div);
     return status;
 }
-
 
 /*******************************************************************************
 **
@@ -1420,9 +1420,10 @@ void btm_ble_link_sec_check(BD_ADDR bd_addr, tBTM_LE_AUTH_REQ auth_req, tBTM_BLE
 
 
 }
+#endif  ///BLE_INCLUDED == TRUE
 #endif  ///SMP_INCLUDED == TRUE
 
-
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_set_encryption
@@ -2113,10 +2114,9 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
                 }
 #endif
 
-                BTM_TRACE_DEBUG ("btm_cb pairing_state=%x pairing_flags=%x pin_code_len=%x",
+                BTM_TRACE_DEBUG ("btm_cb pairing_state=%x pairing_flags=%x",
                                  btm_cb.pairing_state,
-                                 btm_cb.pairing_flags,
-                                 btm_cb.pin_code_len  );
+                                 btm_cb.pairing_flags);
                 BTM_TRACE_DEBUG ("btm_cb.pairing_bda %02x:%02x:%02x:%02x:%02x:%02x",
                                  btm_cb.pairing_bda[0], btm_cb.pairing_bda[1], btm_cb.pairing_bda[2],
                                  btm_cb.pairing_bda[3], btm_cb.pairing_bda[4], btm_cb.pairing_bda[5]);
@@ -2737,7 +2737,7 @@ void btm_ble_set_keep_rfu_in_auth_req(BOOLEAN keep_rfu)
 ** Function         btm_get_current_conn_params
 **
 ** Description      This function is called to get current connection parameters
-**                  information of the device           
+**                  information of the device
 **
 ** Returns          TRUE if the information is geted, else FALSE
 **
@@ -2758,7 +2758,7 @@ BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *laten
         return TRUE;
     }
     BTM_TRACE_WARNING("%s Device is not connected", __func__);
-    
+
     return FALSE;
 }
 

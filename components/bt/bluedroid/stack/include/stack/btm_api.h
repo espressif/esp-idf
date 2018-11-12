@@ -645,8 +645,8 @@ typedef struct {
     INT8        rssi;       /* Set to BTM_INQ_RES_IGNORE_RSSI if  not valid */
     UINT32      eir_uuid[BTM_EIR_SERVICE_ARRAY_SIZE];
     BOOLEAN     eir_complete_list;
-#if (BLE_INCLUDED == TRUE)
     tBT_DEVICE_TYPE         device_type;
+#if (BLE_INCLUDED == TRUE)
     UINT8       inq_result_type;
     UINT8       ble_addr_type;
     tBTM_BLE_EVT_TYPE       ble_evt_type;
@@ -1394,12 +1394,12 @@ typedef UINT8 tBTM_SP_EVT;
 #define BTM_IO_CAP_IO       1   /* DisplayYesNo */
 #define BTM_IO_CAP_IN       2   /* KeyboardOnly */
 #define BTM_IO_CAP_NONE     3   /* NoInputNoOutput */
-#if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
+// #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 #define BTM_IO_CAP_KBDISP   4   /* Keyboard display */
 #define BTM_IO_CAP_MAX      5
-#else
-#define BTM_IO_CAP_MAX      4
-#endif
+// #else
+// #define BTM_IO_CAP_MAX      4
+// #endif
 
 typedef UINT8 tBTM_IO_CAP;
 

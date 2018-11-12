@@ -2038,6 +2038,8 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_C
     /* If here, no BD Addr found */
     return (BTM_UNKNOWN_ADDR);
 }
+
+#if (BLE_INCLUDED == TRUE)
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
 {
     BOOLEAN ret;
@@ -2074,6 +2076,7 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
     *length = p_cb->white_list_avail_size;
     return;
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 **

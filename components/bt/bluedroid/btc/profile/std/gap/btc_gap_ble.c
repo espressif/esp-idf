@@ -31,6 +31,7 @@
 #include "osi/mutex.h"
 #include "esp_bt.h"
 
+#if (BLE_INCLUDED == TRUE)
 #if BTC_DYNAMIC_MENDRY == FALSE
 static tBTA_BLE_ADV_DATA gl_bta_adv_data;
 static tBTA_BLE_ADV_DATA gl_bta_scan_rsp_data;
@@ -1372,3 +1373,4 @@ void btc_adv_list_unlock(void)
     osi_mutex_unlock(&adv_list_lock);
 }
 #endif
+#endif  ///BLE_INCLUDED == TRUE

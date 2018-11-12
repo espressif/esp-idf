@@ -69,7 +69,11 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if (GATTS_INCLUDED == TRUE || GATTC_INCLUDED == TRUE)
     [BTC_PID_GATT_COMMON] = {btc_gatt_com_call_handler,   NULL                    },
 #endif //GATTC_INCLUDED == TRUE || GATTS_INCLUDED == TRUE
+#if (BLE_INCLUDED == TRUE)
     [BTC_PID_GAP_BLE]     = {btc_gap_ble_call_handler,    btc_gap_ble_cb_handler  },
+#else
+    [BTC_PID_GAP_BLE]     = {NULL, NULL},
+#endif  ///BLE_INCLUDED == TRUE
     [BTC_PID_BLE_HID]     = {NULL, NULL},
     [BTC_PID_SPPLIKE]     = {NULL, NULL},
 #if (GATTS_INCLUDED == TRUE)
@@ -183,6 +187,7 @@ static bt_status_t btc_init_mem(void) {
     }
     memset((void *)btc_profile_cb_tab, 0, sizeof(void *) * BTC_PID_NUM);
 
+#if (BLE_INCLUDED == TRUE)
     if ((gl_bta_adv_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {
         return BT_STATUS_NOMEM;
     }
@@ -192,6 +197,7 @@ static bt_status_t btc_init_mem(void) {
         return BT_STATUS_NOMEM;
     }
     memset((void *)gl_bta_scan_rsp_data_ptr, 0, sizeof(tBTA_BLE_ADV_DATA));
+#endif  ///BLE_INCLUDED == TRUE
 
 #if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
     if ((btc_creat_tab_env_ptr = (esp_btc_creat_tab_t *)osi_malloc(sizeof(esp_btc_creat_tab_t))) == NULL) {
@@ -273,7 +279,10 @@ int btc_init(void)
     }
 #endif
 
+#if (BLE_INCLUDED == TRUE)
     btc_gap_callback_init();
+#endif  ///BLE_INCLUDED == TRUE
+
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_init();
 #endif

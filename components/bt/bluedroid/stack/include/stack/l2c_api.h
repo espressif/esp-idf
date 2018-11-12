@@ -1210,6 +1210,7 @@ extern BOOLEAN L2CA_EnableUpdateBleConnParams (BD_ADDR rem_bda, BOOLEAN enable);
 **
 *******************************************************************************/
 extern UINT8 L2CA_GetBleConnRole (BD_ADDR bd_addr);
+#endif /* (BLE_INCLUDED == TRUE) */
 
 /*******************************************************************************
 **
@@ -1228,7 +1229,6 @@ extern UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transp
 extern BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, UINT16 handle);
 
 
-#endif /* (BLE_INCLUDED == TRUE) */
 
 #ifdef __cplusplus
 }

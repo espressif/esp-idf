@@ -35,10 +35,12 @@
 
 
 static void smp_tx_complete_callback(UINT16 cid, UINT16 num_pkt);
+#if (BLE_INCLUDED == TRUE)
 
 static void smp_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN connected, UINT16 reason,
                                  tBT_TRANSPORT transport);
 static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf);
+#endif  ///BLE_INCLUDED == TRUE
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void smp_br_connect_callback(UINT16 channel, BD_ADDR bd_addr, BOOLEAN connected, UINT16 reason,
                                     tBT_TRANSPORT transport);
@@ -64,8 +66,6 @@ void smp_l2cap_if_init (void)
     fixed_reg.fixed_chnl_opts.mps          = 0;
     fixed_reg.fixed_chnl_opts.tx_win_sz    = 0;
 
-    fixed_reg.pL2CA_FixedConn_Cb = smp_connect_callback;
-    fixed_reg.pL2CA_FixedData_Cb = smp_data_received;
     fixed_reg.pL2CA_FixedTxComplete_Cb = smp_tx_complete_callback;
 
     fixed_reg.pL2CA_FixedCong_Cb = NULL;    /* do not handle congestion on this channel */
@@ -75,7 +75,12 @@ void smp_l2cap_if_init (void)
                                             will cause the disconnect event to go back up for a long time.
                                             Set to 0 will be disconnected directly, and it will come up
                                             pairing failure, so it will not cause adverse effects. */
+#if (BLE_INCLUDED == TRUE)
+    fixed_reg.pL2CA_FixedConn_Cb = smp_connect_callback;
+    fixed_reg.pL2CA_FixedData_Cb = smp_data_received;
     L2CA_RegisterFixedChannel (L2CAP_SMP_CID, &fixed_reg);
+#endif  ///BLE_INCLUDED == TRUE
+
 #if (CLASSIC_BT_INCLUDED == TRUE)
     fixed_reg.pL2CA_FixedConn_Cb = smp_br_connect_callback;
     fixed_reg.pL2CA_FixedData_Cb = smp_br_data_received;
@@ -84,6 +89,7 @@ void smp_l2cap_if_init (void)
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         smp_connect_callback
@@ -107,7 +113,7 @@ static void smp_connect_callback (UINT16 channel, BD_ADDR bd_addr, BOOLEAN conne
     }
     if(!connected && &p_cb->rsp_timer_ent) {
         //free timer
-        btu_free_timer(&p_cb->rsp_timer_ent);      
+        btu_free_timer(&p_cb->rsp_timer_ent);
     }
     if (memcmp(bd_addr, p_cb->pairing_bda, BD_ADDR_LEN) == 0) {
         SMP_TRACE_EVENT ("%s()  for pairing BDA: %08x%04x  Event: %s\n",
@@ -200,6 +206,7 @@ static void smp_data_received(UINT16 channel, BD_ADDR bd_addr, BT_HDR *p_buf)
 
     osi_free (p_buf);
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -223,7 +230,9 @@ static void smp_tx_complete_callback (UINT16 cid, UINT16 num_pkt)
         if (cid == L2CAP_SMP_CID) {
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         } else {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &reason);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         }
     }
 }
