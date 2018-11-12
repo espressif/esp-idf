@@ -252,9 +252,11 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
         goto exit;
     }
 
+#ifdef CONFIG_MBEDTLS_SSL_ALPN
     if (cfg->alpn_protos) {
         mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos);
     }
+#endif
 
     if (cfg->use_global_ca_store == true) {
         if (global_cacert == NULL) {
