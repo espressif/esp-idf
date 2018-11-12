@@ -45,8 +45,6 @@ typedef uint32_t core_dump_crc_t;
 #define ESP_COREDUMP_LOG_PROCESS( format, ... )  do{/*(__VA_ARGS__);*/}while(0)
 #endif
 
-// TODO: allow user to set this in menuconfig or get tasks iteratively
-#define COREDUMP_MAX_TASKS_NUM              32
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
 
 
@@ -104,7 +102,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
 {
     int cur_task_bad = 0;
     esp_err_t err;
-    TaskSnapshot_t tasks[COREDUMP_MAX_TASKS_NUM];
+    TaskSnapshot_t tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
     UBaseType_t tcb_sz, tcb_sz_padded, task_num;
     uint32_t data_len = 0, i, len;
     union
@@ -113,7 +111,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
         core_dump_task_header_t task_hdr;
     } dump_data;
 
-    task_num = uxTaskGetSnapshotAll(tasks, COREDUMP_MAX_TASKS_NUM, &tcb_sz);
+    task_num = uxTaskGetSnapshotAll(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM, &tcb_sz);
     // take TCB padding into account, actual TCB size will be stored in header
     if (tcb_sz % sizeof(uint32_t))
         tcb_sz_padded = (tcb_sz / sizeof(uint32_t) + 1) * sizeof(uint32_t);

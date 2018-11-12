@@ -18,13 +18,15 @@ Configuration
 
 There are a number of core dump related configuration options which user can choose in configuration menu of the application (`make menuconfig`).
 
-1. Core dump data destination (`Components -> ESP32-specific config -> Core dump destination`):
+1. Core dump data destination (`Components -> ESP32-specific config -> Core dump -> Data destination`):
 
 * Disable core dump generation
 * Save core dump to flash
 * Print core dump to UART
 
-2. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
+2. Maximum number of tasks snapshots in core dump (`Components -> ESP32-specific config -> Core dump -> Maximum number of tasks`).
+
+3. Delay before core dump is printed to UART (`Components -> ESP32-specific config -> Core dump -> Delay before print to UART`). Value is in ms.
 
 
 Save core dump to flash
