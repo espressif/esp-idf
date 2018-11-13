@@ -166,6 +166,8 @@ A sample CSV file is provided with the utility::
     python nvs_partition_gen.py --input sample_singlepage_blob.csv --output partition_single_page.bin --size 0x3000 --version v1
 
 
+.. note::  *Minimum NVS Partition Size needed is 0x3000 bytes.*
+
 .. note::  *When flashing the binary onto the device, make sure it is consistent with the application's sdkconfig.*
 
 Caveats

@@ -593,7 +593,7 @@ class InsufficientSizeError(RuntimeError):
     to accomodate the data in the given csv file
     """
     def __init__(self, e):
-       super(InsufficientSizeError, self).__init__(e)
+        super(InsufficientSizeError, self).__init__(e)
 
 def nvs_open(result_obj, input_size):
     """ Wrapper to create and NVS class object. This object can later be used to set key-value pairs
@@ -691,13 +691,13 @@ encrypt_mode=None, key_file=None, version_no=None, print_arg_str=None, print_enc
         input_size = int(input_size, 0)
 
         if input_size % 4096 !=0:
-            sys.exit("Size of partition (must be multiple of 4096)")
+            sys.exit("Size of partition must be multiple of 4096")
 
         # Update size as a page needs to be reserved of size 4KB
         input_size = input_size - Page.PAGE_PARAMS["max_size"]
 
-        if input_size == 0:
-            sys.exit("Size parameter is insufficient.")
+        if input_size < (2 * Page.PAGE_PARAMS["max_size"]):
+            sys.exit("Minimum NVS partition size needed is 0x3000 bytes.")
 
 
 
