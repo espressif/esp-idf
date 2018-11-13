@@ -31,6 +31,7 @@ class Parser(object):
     TAG_PATTERN = re.compile("([^=]+)(=)?(.+)?")
     DESCRIPTION_PATTERN = re.compile("\[([^]\[]+)\]")
     CONFIG_PATTERN = re.compile(r"{([^}]+)}")
+    TEST_GROUPS_PATTERN = re.compile(r"TEST_GROUPS=(.*)$")
 
     # file path (relative to idf path)
     TAG_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "TagDefinition.yml")
@@ -39,6 +40,7 @@ class Parser(object):
     MODULE_ARTIFACT_FILE = os.path.join("components", "idf_test", "ModuleDefinition.yml")
     TEST_CASE_FILE = os.path.join("components", "idf_test", "unit_test", "TestCaseAll.yml")
     UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "output")
+    UT_CONFIG_FOLDER = os.path.join("tools", "unit-test-app", "configs")
     ELF_FILE = "unit-test-app.elf"
     SDKCONFIG_FILE = "sdkconfig"
 
@@ -54,12 +56,15 @@ class Parser(object):
         self.test_case_names = set()
         self.parsing_errors = []
 
-    def parse_test_cases_for_one_config(self, config_output_folder, config_name):
+    def parse_test_cases_for_one_config(self, configs_folder, config_output_folder, config_name):
         """
         parse test cases from elf and save test cases need to be executed to unit test folder
+        :param configs_folder: folder where per-config sdkconfig framents are located (i.e. tools/unit-test-app/configs)
         :param config_output_folder: build folder of this config
         :param config_name: built unit test config name
         """
+        test_groups = self.get_test_groups(os.path.join(configs_folder, config_name))
+
         elf_file = os.path.join(config_output_folder, self.ELF_FILE)
         subprocess.check_output('xtensa-esp32-elf-objdump -t {} | grep test_desc > case_address.tmp'.format(elf_file),
                                 shell=True)
@@ -94,7 +99,11 @@ class Parser(object):
                 else:
                     self.test_case_names.add(tc["summary"] + config_name)
 
-                if tc["CI ready"] == "Yes":
+                test_group_included = True
+                if test_groups is not None and tc["group"] not in test_groups:
+                    test_group_included = False
+
+                if tc["CI ready"] == "Yes" and test_group_included:
                     # update test env list and the cases of same env list
                     if tc["test environment"] in self.test_env_tags:
                         self.test_env_tags[tc["test environment"]].append(tc["ID"])
@@ -127,6 +136,9 @@ class Parser(object):
         assert len(tags) > 0
         p = dict([(k, self.tag_def[k]["omitted"]) for k in self.tag_def])
         p["module"] = tags[0]
+
+        # Use the original value of the first tag as test group name
+        p["group"] = p["module"]
 
         if p["module"] not in self.module_map:
             p["module"] = "misc"
@@ -201,6 +213,20 @@ class Parser(object):
 
         return self.parse_tags_internal(configs, self.config_dependencies, self.CONFIG_PATTERN)
 
+
+    def get_test_groups(self, config_file):
+        """
+        If the config file includes TEST_GROUPS variable, return its value as a list of strings.
+        :param config_file file under configs/ directory for given configuration
+        :return: list of test groups, or None if TEST_GROUPS wasn't set
+        """
+        with open(config_file, "r") as f:
+            for line in f:
+                match = self.TEST_GROUPS_PATTERN.match(line)
+                if match is not None:
+                    return match.group(1).split(' ')
+        return None
+
     def parse_one_test_case(self, name, description, file_name, config_name, tags):
         """
         parse one test case
@@ -216,6 +242,7 @@ class Parser(object):
         test_case = deepcopy(TEST_CASE_PATTERN)
         test_case.update({"config": config_name,
                           "module": self.module_map[prop["module"]]['module'],
+                          "group": prop["group"],
                           "CI ready": "No" if prop["ignore"] == "Yes" else "Yes",
                           "ID": name,
                           "test point 2": prop["module"],
@@ -249,11 +276,12 @@ class Parser(object):
         test_cases = []
 
         output_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER)
+        configs_folder = os.path.join(self.idf_path, self.UT_CONFIG_FOLDER)
         test_configs = os.listdir(output_folder)
         for config in test_configs:
             config_output_folder = os.path.join(output_folder, config)
             if os.path.exists(config_output_folder):
-                test_cases.extend(self.parse_test_cases_for_one_config(config_output_folder, config))
+                test_cases.extend(self.parse_test_cases_for_one_config(configs_folder, config_output_folder, config))
 
         self.dump_test_cases(test_cases)
 
