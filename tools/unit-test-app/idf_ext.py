@@ -82,9 +82,9 @@ def add_action_extensions(base_functions, base_actions):
         config_name = re.match(r"ut-apply-config-(.*)", ut_apply_config_name).group(1)
 
         def set_config_build_variables(prop, defval = None):
-            property_value = re.match(r"^%s=(.*)" % prop, config_file_content)
+            property_value = re.findall(r"^%s=(.+)" % prop, config_file_content, re.MULTILINE)
             if (property_value):
-                property_value = property_value.group(1)
+                property_value = property_value[0]
             else:
                 property_value = defval
 
