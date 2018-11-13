@@ -817,6 +817,8 @@ assign_test:
     paths:
       - $LOG_PATH
     expire_in: 1 week
+    reports:
+        junit: $LOG_PATH/*/XUNIT_RESULT.xml
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
