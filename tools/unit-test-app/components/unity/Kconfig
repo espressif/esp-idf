@@ -13,14 +13,3 @@ config UNITY_FREERTOS_STACK_SIZE
 	default 8192
 
 endmenu
-
-menu "Test options"
-
-config TEST_ESP32_SUBTEST_ONLY
-    bool "Test only 4M PSRAM cases for esp32 component"
-    depends on SPIRAM_SUPPORT
-    default n
-    help
-        If this option is enabled, only 4M PSRAM cases are compiled. Otherwise all cases are included.
-
-endmenu
