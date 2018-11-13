@@ -442,14 +442,14 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
     duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
     eff_clk = spi_cal_clock(apbclk, dev_config->clock_speed_hz, duty_cycle, (uint32_t*)&clk_reg);
     int freq_limit = spi_get_freq_limit(!(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS), dev_config->input_delay_ns);
-    //GPIO matrix can only change data at 80Mhz rate, which only allows 40MHz SPI clock.
-    SPI_CHECK(eff_clk <= 40*1000*1000 || spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS, "80MHz only supported on iomux pins", ESP_ERR_INVALID_ARG);
+
     //Speed >=40MHz over GPIO matrix needs a dummy cycle, but these don't work for full-duplex connections.
     spi_get_timing(!(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS), dev_config->input_delay_ns, eff_clk, &dummy_required, &miso_delay);
     SPI_CHECK( dev_config->flags & SPI_DEVICE_HALFDUPLEX || dummy_required == 0 ||
             dev_config->flags & SPI_DEVICE_NO_DUMMY,
-"When GPIO matrix is used in full-duplex mode at frequency > %.1fMHz, device cannot read correct data.\n\
-Please note the SPI can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
+"When work in full-duplex mode at frequency > %.1fMHz, device cannot read correct data.\n\
+Try to use IOMUX pins to increase the frequency limit, or use the half duplex mode.\n\
+Please note the SPI master can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
 Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output data at higher speed, or read data at your own risk.",
             ESP_ERR_INVALID_ARG, freq_limit/1000./1000 );
 
