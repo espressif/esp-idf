@@ -188,6 +188,8 @@ void gatt_free(void)
 
 #if (GATTS_INCLUDED == TRUE)
     for (i = 0; i < GATT_MAX_SR_PROFILES; i++) {
+        gatt_remove_an_item_from_list(&gatt_cb.hdl_list_info, &gatt_cb.hdl_list[i]);
+        gatt_free_attr_value_buffer(&gatt_cb.hdl_list[i]);
         gatt_free_hdl_buffer(&gatt_cb.hdl_list[i]);
     }
 #endif /* #if (GATTS_INCLUDED == TRUE) */
