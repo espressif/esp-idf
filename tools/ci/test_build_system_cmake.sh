@@ -156,7 +156,7 @@ function run_tests()
     idf.py build
     take_build_snapshot
     # need to actually change config, or cmake is too smart to rebuild
-    sed -i s/CONFIG_FREERTOS_UNICORE=/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
+    sed -i s/^\#\ CONFIG_FREERTOS_UNICORE\ is\ not\ set/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
     idf.py build
     # check the sdkconfig.h file was rebuilt
     assert_rebuilt config/sdkconfig.h
