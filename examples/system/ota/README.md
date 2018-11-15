@@ -97,8 +97,8 @@ It allows to run the newly loaded app from a factory partition.
 make flash
 ```
 
-After first update, if you want to return back to factory app (or the first OTA partition, if factory partition is not present) then use the command `make erase_ota`. 
-It erases ota_data partition to initial.
+After first update, if you want to return back to factory app (or the first OTA partition, if factory partition is not present) then use the command `make erase_otadata`. 
+It erases the ota_data partition to initial state. **Take note that this assumes that the partition table of this project is the one that is on the device**.
 
 ### Step 5: Run the OTA Example
 
