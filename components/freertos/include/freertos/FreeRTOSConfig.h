@@ -300,7 +300,12 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-#define configENABLE_TASK_SNAPSHOT			1
+#if CONFIG_ESP32_ENABLE_COREDUMP
+#define configENABLE_TASK_SNAPSHOT          1
+#endif
+#ifndef configENABLE_TASK_SNAPSHOT
+#define configENABLE_TASK_SNAPSHOT          1
+#endif
 
 #if CONFIG_SYSVIEW_ENABLE
 #ifndef __ASSEMBLER__

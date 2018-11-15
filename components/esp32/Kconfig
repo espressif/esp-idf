@@ -272,8 +272,10 @@ config TRACEMEM_RESERVE_DRAM
     default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
     default 0x0
 
+menu "Core dump"
+
 choice ESP32_COREDUMP_TO_FLASH_OR_UART
-    prompt "Core dump destination"
+    prompt "Data destination"
     default ESP32_ENABLE_COREDUMP_TO_NONE
     help
         Select place to store core dump: flash, uart or none (to disable core dumps generation).
@@ -298,20 +300,22 @@ config ESP32_ENABLE_COREDUMP
     help
         Enables/disable core dump module.
 
+config ESP32_CORE_DUMP_MAX_TASKS_NUM
+    int "Maximum number of tasks"
+    depends on ESP32_ENABLE_COREDUMP
+    default 64
+    help
+        Maximum number of tasks snapshots in core dump.
+
 config ESP32_CORE_DUMP_UART_DELAY
-    int "Core dump print to UART delay"
+    int "Delay before print to UART"
     depends on ESP32_ENABLE_COREDUMP_TO_UART
     default 0
     help
         Config delay (in ms) before printing core dump to UART.
         Delay can be interrupted by pressing Enter key.
 
-config ESP32_CORE_DUMP_LOG_LEVEL
-    int "Core dump module logging level"
-    depends on ESP32_ENABLE_COREDUMP
-    default 1
-    help
-        Config core dump module logging level (0-5).
+endmenu
 
 choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     bool "Number of universally administered (by IEEE) MAC address"
