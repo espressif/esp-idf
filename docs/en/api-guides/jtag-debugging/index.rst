@@ -17,7 +17,7 @@ GDB. The document is structured as follows:
 :ref:`jtag-debugging-launching-debugger`
     Steps to start up a debug session with GDB from :ref:`jtag-debugging-using-debugger-eclipse` and from :ref:`jtag-debugging-using-debugger-command-line`.
 :ref:`jtag-debugging-examples`
-    If you are not familiar with GDB, check this section for debugging examples provided from from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
+    If you are not familiar with GDB, check this section for debugging examples provided from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 :ref:`jtag-debugging-building-openocd`
     Procedure to build OpenOCD from sources for :doc:`Windows <building-openocd-windows>`, :doc:`Linux <building-openocd-linux>` and :doc:`MacOS <building-openocd-macos>` operating systems.
 :ref:`jtag-debugging-tips-and-quirks`
