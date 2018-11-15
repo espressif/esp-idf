@@ -18,15 +18,15 @@ Configuration
 
 There are a number of core dump related configuration options which user can choose in configuration menu of the application (`make menuconfig`).
 
-1. Core dump data destination (`Components -> ESP32-specific config -> Core dump destination`):
+1. Core dump data destination (`Components -> ESP32-specific config -> Core dump -> Data destination`):
 
 * Disable core dump generation
 * Save core dump to flash
 * Print core dump to UART
 
-2. Logging level of core dump module (`Components -> ESP32-specific config -> Core dump module logging level`). Value is a number from 0 (no output) to 5 (most verbose).
+2. Maximum number of tasks snapshots in core dump (`Components -> ESP32-specific config -> Core dump -> Maximum number of tasks`).
 
-3. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
+3. Delay before core dump is printed to UART (`Components -> ESP32-specific config -> Core dump -> Delay before print to UART`). Value is in ms.
 
 
 Save core dump to flash
@@ -89,6 +89,7 @@ Generic command syntax:
     * info_corefile. Retrieve core dump and print useful info.
     * dbg_corefile. Retrieve core dump and start GDB session with it.
 :Command Arguments:
+    * --debug,-d DEBUG.             Log level (0..3).
     * --gdb,-g GDB.                 Path to gdb to use for data retrieval.
     * --core,-c CORE.               Path to core dump file to use (if skipped core dump will be read from flash).
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
