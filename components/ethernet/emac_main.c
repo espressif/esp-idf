@@ -1067,7 +1067,18 @@ esp_err_t IRAM_ATTR emac_post(emac_sig_t sig, emac_par_t par)
 
 esp_err_t esp_eth_init(eth_config_t *config)
 {
+    esp_event_set_default_eth_handlers();
+    return esp_eth_init_internal(config);
+}
+
+esp_err_t esp_eth_init_internal(eth_config_t *config)
+{
     int i = 0;
+    esp_err_t ret = ESP_OK;
+    if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
+        goto _initialised;
+    }
+
     /* dynamically alloc memory for ethernet dma */
     emac_dma_rx_chain_buf = (dma_extended_desc_t *)heap_caps_malloc(sizeof(dma_extended_desc_t) * DMA_RX_BUF_NUM, MALLOC_CAP_DMA);
     emac_dma_tx_chain_buf = (dma_extended_desc_t *)heap_caps_malloc(sizeof(dma_extended_desc_t) * DMA_TX_BUF_NUM, MALLOC_CAP_DMA);
@@ -1076,16 +1087,6 @@ esp_err_t esp_eth_init(eth_config_t *config)
     }
     for (i = 0; i < DMA_TX_BUF_NUM; i++) {
         emac_dma_tx_buf[i] = (uint8_t *)heap_caps_malloc(DMA_TX_BUF_SIZE, MALLOC_CAP_DMA);
-    }
-    esp_event_set_default_eth_handlers();
-    return esp_eth_init_internal(config);
-}
-
-esp_err_t esp_eth_init_internal(eth_config_t *config)
-{
-    esp_err_t ret = ESP_OK;
-    if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
-        goto _exit;
     }
 
     emac_init_default_data();
@@ -1097,7 +1098,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
     ret = emac_verify_args();
 
     if (ret != ESP_OK) {
-        goto _exit;
+        goto _verify_err;
     }
 
     emac_config.emac_phy_power_enable(true);
@@ -1110,7 +1111,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
         if (esp_spiram_is_initialized()) {
             ESP_LOGE(TAG, "GPIO16 and GPIO17 has been occupied by PSRAM, Only ETH_CLOCK_GPIO_IN is supported!");
             ret = ESP_FAIL;
-            goto _exit;
+            goto _verify_err;
         } else {
             ESP_LOGW(TAG, "GPIO16/17 is used for clock of EMAC, Please Make Sure you're not using PSRAM.");
         }
@@ -1173,15 +1174,36 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 
     emac_config.emac_status = EMAC_RUNTIME_INIT;
 
-_exit:
+    return ESP_OK;
+
+_verify_err:
+    free(emac_dma_rx_chain_buf);
+    free(emac_dma_tx_chain_buf);
+    emac_dma_rx_chain_buf = NULL;
+    emac_dma_tx_chain_buf = NULL;
+    for (i = 0; i < DMA_RX_BUF_NUM; i++) {
+        free(emac_dma_rx_buf[i]);
+        emac_dma_rx_buf[i] = NULL;
+    }
+    for (i = 0; i < DMA_TX_BUF_NUM; i++) {
+        free(emac_dma_tx_buf[i]);
+        emac_dma_tx_buf[i] = NULL;
+    }
+_initialised:
     return ret;
 }
 
 esp_err_t esp_eth_deinit(void)
 {
-    esp_err_t ret = ESP_FAIL;
+    esp_err_t ret = ESP_OK;
     int i = 0;
 
+    if (emac_config.emac_status == EMAC_RUNTIME_NOT_INIT) {
+        goto _exit;
+    }
+    if (emac_config.emac_status == EMAC_RUNTIME_START) {
+        esp_eth_disable();
+    }
     if (!emac_task_hdl) {
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
@@ -1213,7 +1235,6 @@ esp_err_t esp_eth_deinit(void)
         emac_dma_tx_buf[i] = NULL;
     }
     esp_intr_free(eth_intr_handle);
-    ret = ESP_OK;
 _exit:
     return ret;
 }
