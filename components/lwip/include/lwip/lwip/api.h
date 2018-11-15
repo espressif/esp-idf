@@ -195,6 +195,15 @@ struct netconn {
       by the application thread */
   sys_mbox_t acceptmbox;
 #endif /* LWIP_TCP */
+
+#if ESP_THREAD_SAFE
+  /** point to the same mbox as recvmbox */
+  sys_mbox_t recvmbox_ref;
+#if LWIP_TCP
+  /** point to the same mbox as acceptmbox */
+  sys_mbox_t acceptmbox_ref;
+#endif
+#endif
   /** only used for socket layer */
 #if LWIP_SOCKET
   int socket;
