@@ -68,3 +68,5 @@ tools/ldgen/ldgen.py
 tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
 examples/build_system/cmake/idf_as_lib/build.sh
+examples/storage/parttool/parttool_example.py
+examples/system/ota/otatool/otatool_example.py
