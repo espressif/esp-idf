@@ -413,22 +413,38 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
         int error_cnt;
         int64_t total_sq_error;
         int64_t max_error;
+        int64_t avg_diff;
+        int64_t dummy;
     } test_state_t;
 
     void timer_test_task(void* arg) {
         test_state_t* state = (test_state_t*) arg;
         state->pass = true;
-        int64_t start_time = ref_clock_get();
-        int64_t delta = esp_timer_get_time() - start_time;
 
+        /* make sure both functions are in cache */
+        state->dummy = esp_timer_get_time();
+        state->dummy += ref_clock_get();
+
+        /* calculate the difference between the two clocks */
+        portDISABLE_INTERRUPTS();
+        int64_t hs_start_time = esp_timer_get_time();
+        int64_t start_time = ref_clock_get();
+        portENABLE_INTERRUPTS();
+        int64_t delta = hs_start_time - start_time;
+        
         int64_t now = start_time;
         int error_repeat_cnt = 0;
         while (now - start_time < 10000000) {  /* 10 seconds */
+            /* Get values of both clocks again, and check that they are close to 'delta'.
+             * We don't disable interrupts here, because esp_timer_get_time doesn't lock
+             * interrupts internally, so we check if it can get "broken" by a well placed
+             * interrupt.
+             */
             int64_t hs_now = esp_timer_get_time();
             now = ref_clock_get();
             int64_t diff = hs_now - (now + delta);
             /* Allow some difference due to rtos tick interrupting task between
-             * getting 'now' and 'ref_now'.
+             * getting 'hs_now' and 'now'.
              */
             if (abs(diff) > 100) {
                 error_repeat_cnt++;
@@ -440,10 +456,12 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
                 printf("diff=%lld\n", diff);
                 state->pass = false;
             }
+            state->avg_diff += diff;
             state->max_error = MAX(state->max_error, abs(diff));
             state->test_cnt++;
             state->total_sq_error += diff * diff;
         }
+        state->avg_diff /= state->test_cnt;
         xSemaphoreGive(state->done);
         vTaskDelete(NULL);
     }
@@ -460,10 +478,11 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         TEST_ASSERT_TRUE( xSemaphoreTake(done, portMAX_DELAY) );
-        printf("CPU%d: %s test_cnt=%d error_cnt=%d std_error=%d |max_error|=%d\n",
+        printf("CPU%d: %s test_cnt=%d error_cnt=%d std_error=%d avg_diff=%d |max_error|=%d\n",
                 i, states[i].pass ? "PASS" : "FAIL",
                 states[i].test_cnt, states[i].error_cnt,
-                (int) sqrt(states[i].total_sq_error / states[i].test_cnt), (int) states[i].max_error);
+                (int) sqrt(states[i].total_sq_error / states[i].test_cnt),
+                (int) states[i].avg_diff, (int) states[i].max_error);
     }
 
     vSemaphoreDelete(done);
