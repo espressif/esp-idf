@@ -35,6 +35,9 @@ MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in
 MD5_PARTITION_BEGIN = b"\xEB\xEB" + b"\xFF" * 14 # The first 2 bytes are like magic numbers for MD5 sum
 PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 
+MIN_PARTITION_SUBTYPE_APP_OTA = 0x10
+NUM_PARTITION_SUBTYPE_APP_OTA = 16
+
 __version__ = '1.2'
 
 APP_TYPE = 0x00
@@ -254,8 +257,8 @@ class PartitionDefinition(object):
     }
 
     # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
-    for ota_slot in range(16):
-        SUBTYPES[TYPES["app"]]["ota_%d" % ota_slot] = 0x10 + ota_slot
+    for ota_slot in range(NUM_PARTITION_SUBTYPE_APP_OTA):
+        SUBTYPES[TYPES["app"]]["ota_%d" % ota_slot] = MIN_PARTITION_SUBTYPE_APP_OTA + ota_slot
 
     def __init__(self):
         self.name = ""
