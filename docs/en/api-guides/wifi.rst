@@ -1632,7 +1632,7 @@ The following diagram shows how buffer is allocated/freed in the RX direction:
 
 Description:
 
- - The  Wi-Fi hardware receives a packet over the air and puts the packet content to the "Static Rx Buffer", which is also called "RX DMA Buffer".
+ - The Wi-Fi hardware receives a packet over the air and puts the packet content to the "Static Rx Buffer", which is also called "RX DMA Buffer".
  - The Wi-Fi driver allocates a "Dynamic Rx Buffer", makes a copy of the "Static Rx Buffer", and returns the "Static Rx Buffer" to hardware.
  - The Wi-Fi driver delivers the packet to the upper-layer (LwIP), and allocates a PBUF for holding the "Dynamic Rx Buffer".
  - The application receives data from LwIP.
@@ -1705,3 +1705,15 @@ If the Wi-Fi NVS flash is enabled, all Wi-Fi configurations set via the Wi-Fi AP
 Wi-Fi AMPDU
 +++++++++++++++++++++
 Generally, the AMPDU should be enabled, because it can greatly improve the Wi-Fi throughput. Disabling AMPDU is usually for debugging purposes. It may be removed from future releases.
+
+
+Troubleshooting
+---------------
+
+Please refer to a separate document with :doc:`wireshark-user-guide`.
+
+.. toctree::
+    :hidden:
+
+    wireshark-user-guide
+    
