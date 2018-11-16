@@ -34,7 +34,7 @@ static void test_psram_content()
 }
 
 // NOTE: this unit test rely on the config that PSRAM of 8MB is used only when CONFIG_SPIRAM_BNKSWITCH_ENABLE is set
-TEST_CASE("can use spi when not being used by psram", "[esp32]")
+TEST_CASE("can use spi when not being used by psram", "[psram_4m]")
 {
     spi_host_device_t host;
 #if !CONFIG_SPIRAM_SUPPORT || !CONFIG_SPIRAM_SPEED_80M || CONFIG_SPIRAM_BANKSWITCH_ENABLE
