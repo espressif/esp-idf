@@ -303,9 +303,9 @@ typedef struct {
                                                     Value of 0xFFFF indicates no specific minimum.
                                                     Values not defined above are reserved for future use.*/
 
-    int                     max_interval;           /*!< Advertising data show slave preferred connection max interval. 
+    int                     max_interval;           /*!< Advertising data show slave preferred connection max interval.
                                                     The connection interval in the following manner:
-                                                    connIntervalmax = Conn_Interval_Max * 1.25 ms 
+                                                    connIntervalmax = Conn_Interval_Max * 1.25 ms
                                                     Conn_Interval_Max range: 0x0006 to 0x0C80
                                                     Conn_Interval_Max shall be equal to or greater than the Conn_Interval_Min.
                                                     Value of 0xFFFF indicates no specific maximum.
@@ -366,8 +366,8 @@ typedef struct {
                                                       Range: 0x0004 to 0x4000 Default: 0x0010 (10 ms)
                                                       Time = N * 0.625 msec
                                                       Time Range: 2.5 msec to 10240 msec */
-    esp_ble_scan_duplicate_t  scan_duplicate;       /*!< The Scan_Duplicates parameter controls whether the Link Layer should filter out 
-                                                        duplicate advertising reports (BLE_SCAN_DUPLICATE_ENABLE) to the Host, or if the Link Layer should generate 
+    esp_ble_scan_duplicate_t  scan_duplicate;       /*!< The Scan_Duplicates parameter controls whether the Link Layer should filter out
+                                                        duplicate advertising reports (BLE_SCAN_DUPLICATE_ENABLE) to the Host, or if the Link Layer should generate
                                                         advertising reports for each packet received */
 } esp_ble_scan_params_t;
 
@@ -962,8 +962,7 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
  * @param[in]       type   - finding ADV data type
  * @param[out]      length - return the length of ADV data not including type
  *
- * @return          - ESP_OK : success
- *                  - other  : failed
+ * @return          pointer of ADV data
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
