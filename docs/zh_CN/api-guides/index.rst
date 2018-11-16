@@ -24,7 +24,7 @@ API 指南
    单元测试 <unit-tests>
    单元测试 (CMake) <unit-tests-cmake>
    Application Level Tracing <app_trace>
-   Console Component <console>
+   控制台终端组件 <console>
    ROM debug console <romconsole>
    WiFi Driver <wifi>
    ESP-MESH <mesh>
