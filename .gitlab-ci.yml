@@ -121,12 +121,15 @@ build_template_app:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_REGULAR_TEST
   script:
-    - git clone https://github.com/espressif/esp-idf-template.git
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - git clone ${ESP_IDF_TEMPLATE_GIT}
     - cd esp-idf-template
     # Try to use the same branch name for esp-idf-template that we're
     # using on esp-idf. If it doesn't exist then just stick to the default
     # branch
     - python $CHECKOUT_REF_SCRIPT esp-idf-template
+    - make defconfig
     # Test debug build (default)
     - make all V=1
     # Now test release build
