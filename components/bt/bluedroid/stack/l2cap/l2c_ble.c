@@ -813,17 +813,17 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
             memcpy(peer_addr, p_dev_rec->ble.current_addr, 6);
         } else {
             /* find security device information but not find the real address information
-             * This state may be directly open whithout scanning. In this case, you must 
+             * This state may be directly open without scanning. In this case, you must
              * use the current adv address of the device to open*/
-        } 
+        }
     } else {
         //not find security device information, We think this is a new device, connect directly
     }
 
     /* It will cause that scanner doesn't send scan request to advertiser
     * which has sent IRK to us and we have stored the IRK in controller.
-    * It is a design problem of hardware. The temporal solution is not to 
-    * send the key to the controller and then resolve the random address in host.
+    * It is a hardware limitation. The preliminary solution is not to
+    * send key to the controller, but to resolve the random address in host.
     * so we need send the real address information to controller. */
     /*
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
