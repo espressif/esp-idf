@@ -297,10 +297,10 @@ void esp_perip_clk_init(void)
 //a weird mode where clock to the peripheral is disabled but reset is also disabled, it 'hangs'
 //in a state where it outputs a continuous 80MHz signal. Mask its bit here because we should
 //not modify that state, regardless of what we calculated earlier.
-    if (!spicommon_periph_in_use(HSPI_HOST)) {
+    if (spicommon_periph_in_use(HSPI_HOST)) {
         common_perip_clk &= ~DPORT_SPI2_CLK_EN;
     }
-    if (!spicommon_periph_in_use(VSPI_HOST)) {
+    if (spicommon_periph_in_use(VSPI_HOST)) {
         common_perip_clk &= ~DPORT_SPI3_CLK_EN;
     }
 #endif
