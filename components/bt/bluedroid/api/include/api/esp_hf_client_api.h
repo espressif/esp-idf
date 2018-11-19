@@ -251,9 +251,9 @@ typedef union {
 } esp_hf_client_cb_param_t;
 
 /**
- * @brief           HFP client incoming data callback function, the callback is useful in case of 
+ * @brief           HFP client incoming data callback function, the callback is useful in case of
  *                  Voice Over HCI.
- * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the 
+ * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
  *                  buffer is allocated inside bluetooth protocol stack and will be released after
  *                  invoke of the callback is finished.
  * @param[in]       len : size(in bytes) in buf
@@ -261,13 +261,13 @@ typedef union {
 typedef void (* esp_hf_client_incoming_data_cb_t)(const uint8_t *buf, uint32_t len);
 
 /**
- * @brief           HFP client outgoing data callback function, the callback is useful in case of 
- *                  Voice Over HCI. Once audio connection is set up and the application layer has 
- *                  prepared data to send, the lower layer will call this function to read data 
+ * @brief           HFP client outgoing data callback function, the callback is useful in case of
+ *                  Voice Over HCI. Once audio connection is set up and the application layer has
+ *                  prepared data to send, the lower layer will call this function to read data
  *                  and then send. This callback is supposed to be implemented as non-blocking,
  *                  and if data is not enough, return value 0 is supposed.
- *                  
- * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the 
+ *
+ * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
  *                  buffer is allocated inside bluetooth protocol stack and will be released after
  *                  invoke of the callback is finished.
  * @param[in]       len : size(in bytes) in buf
@@ -326,7 +326,7 @@ esp_err_t esp_hf_client_deinit(void);
 
 /**
  *
- * @brief           Connect to remote bluetooth HFP audio gateway(AG) device, must after esp_a2d_hf_client_init()
+ * @brief           Connect to remote bluetooth HFP audio gateway(AG) device, must after esp_hf_client_init()
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
@@ -606,7 +606,7 @@ void esp_hf_client_outgoing_data_ready(void);
 
 /**
  * @brief           Initialize the down sampling converter. This is a utility function that can
- *                  only be used in the case that Voice Over HCI is enabled. 
+ *                  only be used in the case that Voice Over HCI is enabled.
  *
  * @param[in]       src_sps: original samples per second(source audio data, i.e. 48000, 32000,
  *                  16000, 44100, 22050, 11025)
