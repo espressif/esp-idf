@@ -124,6 +124,7 @@ void IRAM_ATTR call_start_cpu0()
     RESET_REASON rst_reas[2];
 #endif
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
     //Move exception vectors to IRAM
     asm volatile (\
@@ -249,6 +250,7 @@ void IRAM_ATTR call_start_cpu1()
 
     ets_set_appcpu_boot_addr(0);
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
 #if CONFIG_CONSOLE_UART_NONE
     ets_install_putc1(NULL);
