@@ -96,11 +96,12 @@ Running the utility
 
 
 You can run this utility in two modes:
-    -   Normal mode - Binary generated in this mode is an unencrypted binary file.
+    -   Default mode - Binary generated in this mode is an unencrypted binary file.
     -   Encryption mode - Binary generated in this mode is an encrypted binary file.
 
 
-**In normal mode:**
+**In default mode:**
+--------------------
 
 *Usage*::
 
@@ -116,6 +117,7 @@ You can run the utility using below command::
 
 
 **In encryption mode:**
+-----------------------
 
 *Usage*::
 
@@ -151,6 +153,7 @@ You can also provide the format version number (in any of the two modes):
 
 
 **Multipage Blob Support Enabled (v2):**
+----------------------------------------
 
 You can run the utility in this format by setting the version parameter to v2, as shown below.
 A sample CSV file is provided with the utility::
@@ -159,6 +162,7 @@ A sample CSV file is provided with the utility::
 
 
 **Multipage Blob Support Disabled (v1):**
+-----------------------------------------
 
 You can run the utility in this format by setting the version parameter to v1, as shown below.
 A sample CSV file is provided with the utility::
