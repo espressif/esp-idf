@@ -1,6 +1,8 @@
 Add IDF_PATH & idf.py PATH to User Profile (CMake)
 ==================================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. include:: ../cmake-warning.rst
 
 To use the CMake-based build system and the idf.py tool, two modifications need to be made to system environment variables:
@@ -59,7 +61,7 @@ Run the following command to check if ``IDF_PATH`` is set::
 
 The path previously entered in ``~/.profile`` file (or set manually) should be printed out.
 
-To verify idf.py is now on the ``PATH``, you can run the following::
+To verify ``idf.py`` is now on the ``PATH``, you can run the following::
 
   which idf.py
 

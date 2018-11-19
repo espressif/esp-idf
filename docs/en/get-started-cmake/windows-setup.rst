@@ -2,6 +2,8 @@
 Standard Setup of Toolchain for Windows (CMake)
 ***********************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. include:: ../cmake-warning.rst
 
 .. note::
