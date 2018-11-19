@@ -27,6 +27,7 @@ include(targets)
 include(kconfig)
 include(git_submodules)
 include(idf_functions)
+include(ldgen)
 
 set_default(PYTHON "python")
 
@@ -131,6 +132,16 @@ macro(project name)
     ## if project uses git, retrieve revision
     git_describe(PROJECT_VER "${CMAKE_CURRENT_SOURCE_DIR}")
 
+    #
+    # Add the app executable to the build (has name of PROJECT.elf)
+    #
+    idf_add_executable()
+
+    #
+    # Setup variables for linker script generation
+    #
+    ldgen_set_variables()
+
     # Include any top-level project_include.cmake files from components
     foreach(component ${BUILD_COMPONENT_PATHS})
         set(COMPONENT_PATH "${component}")
@@ -156,10 +167,9 @@ macro(project name)
     unset(COMPONENT_NAME)
     unset(COMPONENT_PATH)
 
-    #
-    # Add the app executable to the build (has name of PROJECT.elf)
-    #
-    idf_add_executable()
+    # At this point the fragment files have been collected, generate
+    # the commands needed to generate the output linker scripts
+    ldgen_add_dependencies(${PROJECT_NAME}.elf)
 
     # Write project description JSON file
     make_json_list("${BUILD_COMPONENTS}" build_components_json)

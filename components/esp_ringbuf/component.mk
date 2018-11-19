@@ -1,0 +1,1 @@
+COMPONENT_ADD_LDFRAGMENTS += linker.lf

@@ -12,7 +12,7 @@ if(CONFIG_HEAP_TASK_TRACKING)
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")
-
+set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 set(COMPONENT_REQUIRES "")
 
 register_component()

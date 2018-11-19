@@ -1,0 +1,5 @@
+[mapping]
+archive: libapp_trace.a
+entries: 
+    * (noflash)
+
