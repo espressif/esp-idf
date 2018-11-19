@@ -286,7 +286,7 @@ typedef struct {
     esp_ble_adv_type_t      adv_type;           /*!< Advertising type */
     esp_ble_addr_type_t     own_addr_type;      /*!< Owner bluetooth device address type */
     esp_bd_addr_t           peer_addr;          /*!< Peer device bluetooth device address */
-    esp_ble_addr_type_t     peer_addr_type;     /*!< Peer device bluetooth device address type */
+    esp_ble_addr_type_t     peer_addr_type;     /*!< Peer device bluetooth device address type, only support public address type and random address type */
     esp_ble_adv_channel_t   channel_map;        /*!< Advertising channel map */
     esp_ble_adv_filter_t    adv_filter_policy;  /*!< Advertising filter policy */
 } esp_ble_adv_params_t;
