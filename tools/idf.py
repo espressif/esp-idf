@@ -422,6 +422,8 @@ ACTIONS = {
     "bootloader-flash":      (flash,        ["bootloader"], ["erase_flash"]),
     "app":                   (build_target, [], ["clean", "fullclean", "reconfigure"]),
     "app-flash":             (flash,        ["app"], ["erase_flash"]),
+    "efuse_common_table":    (build_target, [], ["reconfigure"]),
+    "efuse_custom_table":    (build_target, [], ["reconfigure"]),
     "partition_table":       (build_target, [], ["reconfigure"]),
     "partition_table-flash": (flash,        ["partition_table"], ["erase_flash"]),
     "flash":                 (flash,        ["all"], ["erase_flash"]),
