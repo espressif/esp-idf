@@ -20,8 +20,8 @@ extern "C" {
 #endif
 
 // Defines for declaring and defining event base
-#define ESP_EVENT_DECLARE_BASE(id) extern esp_event_base_t id;
-#define ESP_EVENT_DEFINE_BASE(id) esp_event_base_t id = #id;
+#define ESP_EVENT_DECLARE_BASE(id) extern esp_event_base_t id
+#define ESP_EVENT_DEFINE_BASE(id) esp_event_base_t id = #id
 
 // Event loop library types
 typedef const char*  esp_event_base_t; /**< unique pointer to a subsystem that exposes events */

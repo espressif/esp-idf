@@ -33,7 +33,7 @@
  * @brief Define of NMEA Parser Event base
  *
  */
-ESP_EVENT_DEFINE_BASE(ESP_NMEA_EVENT)
+ESP_EVENT_DEFINE_BASE(ESP_NMEA_EVENT);
 
 static const char *GPS_TAG = "nmea_parser";
 
