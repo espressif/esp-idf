@@ -18,7 +18,7 @@
 #include "sdkconfig.h"
 #include "unity.h"
 
-#include "idf_performance.h"
+#include "test_utils.h"
 
 static const char* TAG = "test_event";
 

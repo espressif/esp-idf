@@ -20,6 +20,7 @@
 #include "rom/ets_sys.h"
 
 #include "unity.h"
+#include "test_utils.h"
 
 #define NO_OF_TSKS  3
 #define DELAY_TICKS 2

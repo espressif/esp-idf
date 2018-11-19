@@ -9,10 +9,12 @@
 #include "freertos/xtensa_timer.h"
 #include "soc/cpu.h"
 #include "unity.h"
+#include "test_utils.h"
 #include "rom/uart.h"
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
+
 #define MHZ (1000000)
 static volatile bool exit_flag;
 static bool dport_test_result;

@@ -1,4 +1,4 @@
-menu "Unity test framework"
+menu "IDF unit test"
 
 config UNITY_FREERTOS_PRIORITY
 	int "Priority of Unity test task"

@@ -108,11 +108,24 @@ build_example () {
 
     local EXAMPLE_DIR=$(dirname "${MAKE_FILE}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
+    
+    # Check if the example needs a different base directory.
+    # Path of the Makefile relative to $IDF_PATH
+    local MAKE_FILE_REL=${MAKE_FILE#"${IDF_PATH}/"}
+    # Look for it in build_example_dirs.txt:
+    local COPY_ROOT_REL=$(sed -n -E "s|${MAKE_FILE_REL}[[:space:]]+(.*)|\1|p" < ${IDF_PATH}/tools/ci/build_example_dirs.txt)
+    if [[ -n "${COPY_ROOT_REL}" && -d "${IDF_PATH}/${COPY_ROOT_REL}/" ]]; then
+        local COPY_ROOT=${IDF_PATH}/${COPY_ROOT_REL}
+    else
+        local COPY_ROOT=${EXAMPLE_DIR}
+    fi
 
     echo "Building ${EXAMPLE_NAME} as ${ID}..."
     mkdir -p "example_builds/${ID}"
-    cp -r "${EXAMPLE_DIR}" "example_builds/${ID}"
-    pushd "example_builds/${ID}/${EXAMPLE_NAME}"
+    cp -r "${COPY_ROOT}" "example_builds/${ID}"
+    local COPY_ROOT_PARENT=$(dirname ${COPY_ROOT})
+    local EXAMPLE_DIR_REL=${EXAMPLE_DIR#"${COPY_ROOT_PARENT}"}
+    pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
@@ -142,7 +155,7 @@ build_example () {
 
 EXAMPLE_NUM=0
 
-find ${IDF_PATH}/examples/ -type f -name Makefile | sort | \
+find ${IDF_PATH}/examples -type f -name Makefile | sort | \
 while read FN
 do
     if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]

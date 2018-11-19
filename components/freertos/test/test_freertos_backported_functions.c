@@ -27,6 +27,7 @@
 #include "freertos/semphr.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
+#include "test_utils.h"
 
 /* ---------------------Test 1: Backported Timer functions-----------------------
  * Test xTimerCreateStatic(), vTimerSetTimerId(), xTimerGetPeriod(), xTimerGetExpiryTime()
