@@ -7,17 +7,19 @@
  * @author morris
  * @date 2018-08-24
  */
+#include <stdio.h>
 #include <string.h>
-#include "unity.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
+#include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_err.h"
 #include "esp_event_loop.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_eth.h"
+#include "unity.h"
 
 #include "rom/gpio.h"
 
@@ -36,6 +38,9 @@ static const char *TAG = "eth_test_deinit";
 #define PIN_SMI_MDIO 18
 #define CONFIG_PHY_ADDRESS 31
 #define CONFIG_PHY_CLOCK_MODE 0
+
+static EventGroupHandle_t eth_event_group = NULL;
+static const int GOTIP_BIT = BIT0;
 
 static void phy_device_power_enable_via_gpio(bool enable)
 {
@@ -67,6 +72,47 @@ static void eth_gpio_config_rmii(void)
     phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
 }
 
+static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
+{
+    tcpip_adapter_ip_info_t ip;
+
+    switch (event->event_id) {
+    case SYSTEM_EVENT_ETH_CONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Up");
+        break;
+    case SYSTEM_EVENT_ETH_DISCONNECTED:
+        ESP_LOGI(TAG, "Ethernet Link Down");
+        break;
+    case SYSTEM_EVENT_ETH_START:
+        ESP_LOGI(TAG, "Ethernet Started");
+        break;
+    case SYSTEM_EVENT_ETH_GOT_IP:
+        memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
+        ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip));
+        ESP_LOGI(TAG, "Ethernet Got IP Addr");
+        ESP_LOGI(TAG, "~~~~~~~~~~~");
+        ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip.ip));
+        ESP_LOGI(TAG, "ETHMASK:" IPSTR, IP2STR(&ip.netmask));
+        ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip.gw));
+        ESP_LOGI(TAG, "~~~~~~~~~~~");
+        xEventGroupSetBits(eth_event_group, GOTIP_BIT);
+        break;
+    case SYSTEM_EVENT_ETH_STOP:
+        ESP_LOGI(TAG, "Ethernet Stopped");
+        break;
+    default:
+        break;
+    }
+    return ESP_OK;
+}
+
+TEST_CASE("start event loop", "[ethernet][ignore]")
+{
+    eth_event_group = xEventGroupCreate();
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_init(eth_event_handler, NULL));
+}
+
 TEST_CASE("test emac deinit", "[ethernet][ignore]")
 {
     eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
@@ -79,7 +125,8 @@ TEST_CASE("test emac deinit", "[ethernet][ignore]")
     ESP_ERROR_CHECK(esp_eth_init(&config));
     ESP_ERROR_CHECK(esp_eth_enable());
 
-    vTaskDelay(2000 / portTICK_RATE_MS);
+    xEventGroupWaitBits(eth_event_group, GOTIP_BIT, true, true, portMAX_DELAY);
+    vTaskDelay(15000 / portTICK_RATE_MS);
 
     ESP_ERROR_CHECK(esp_eth_disable());
     ESP_ERROR_CHECK(esp_eth_deinit());

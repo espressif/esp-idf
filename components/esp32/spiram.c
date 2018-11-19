@@ -1,5 +1,5 @@
 /*
-Abstraction layer for spi-ram. For now, it's no more than a stub for the spiram_psram functions, but if 
+Abstraction layer for spi-ram. For now, it's no more than a stub for the spiram_psram functions, but if
 we add more types of external RAM memory, this can be made into a more intelligent dispatcher.
 */
 
@@ -159,7 +159,7 @@ esp_err_t esp_spiram_init()
     }
 #endif
 
-    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device", 
+    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device",
                                           (esp_spiram_get_size()*8)/(1024*1024));
     ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
                                           PSRAM_SPEED == PSRAM_CACHE_F80M_S40M ? "flash 80m sram 40m" : \
@@ -225,7 +225,7 @@ size_t esp_spiram_get_size()
  Note that this routine assumes some unique mapping for the first 2 banks of the PSRAM memory range, as well as the
  2 banks after the 2 MiB mark.
 */
-void IRAM_ATTR esp_spiram_writeback_cache() 
+void IRAM_ATTR esp_spiram_writeback_cache()
 {
     int x;
     volatile int i=0;
@@ -234,7 +234,7 @@ void IRAM_ATTR esp_spiram_writeback_cache()
 
     if (!spiram_inited) return;
 
-    //We need cache enabled for this to work. Re-enable it if needed; make sure we 
+    //We need cache enabled for this to work. Re-enable it if needed; make sure we
     //disable it again on exit as well.
     if (DPORT_REG_GET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE)==0) {
         cache_was_disabled|=(1<<0);
@@ -257,10 +257,10 @@ void IRAM_ATTR esp_spiram_writeback_cache()
     }
 #else
     /*
-    Low/high psram cache mode uses one 32K cache for the lowest 2MiB of SPI flash and another 32K for the highest 
+    Low/high psram cache mode uses one 32KB cache for the lowest 2MiB of SPI flash and another 32K for the highest
     2MiB. Clear this by reading from both regions.
-    Note: this assumes the amount of external RAM is >2M. If it is 2M or less, what this code does is undefined. If 
-    we ever support external RAM chips of 2M or smaller, this may need adjusting.
+    Note: this assumes the amount of external RAM is >2MB. If it is 2MB or less, what this code does is undefined. If
+    we ever support external RAM chips of 2MB or smaller, this may need adjusting.
     */
     for (x=0; x<1024*64; x+=32) {
         i+=psram[x];
@@ -278,6 +278,17 @@ void IRAM_ATTR esp_spiram_writeback_cache()
         DPORT_SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL_REG, 1, 0, DPORT_APP_CACHE_ENABLE_S);
     }
 #endif
+}
+
+/**
+ * @brief If SPI RAM(PSRAM) has been initialized
+ *
+ * @return true SPI RAM has been initialized successfully
+ * @return false SPI RAM hasn't been initialized or initialized failed
+ */
+bool esp_spiram_is_initialized()
+{
+    return spiram_inited;
 }
 
 #endif
