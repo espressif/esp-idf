@@ -23,7 +23,7 @@
 #include "freertos/ringbuf.h"
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
-#include "unity_config.h"
+#include "test_utils.h"
 
 const static char TAG[] = "test_spi";
 

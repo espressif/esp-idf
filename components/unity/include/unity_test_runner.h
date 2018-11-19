@@ -1,25 +1,24 @@
-#ifndef UNITY_CONFIG_H
-#define UNITY_CONFIG_H
+// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#pragma once
 
-// This file gets included from unity.h via unity_internals.h
+#include <stdint.h>
+#include <stdbool.h>
+
+// This file gets included from unity.h via unity_internals.h via unity_config.h
 // It is inside #ifdef __cplusplus / extern "C" block, so we can
 // only use C features here
-
-// Adapt Unity to our environment, disable FP support
-
-#include <esp_err.h>
-#include <sdkconfig.h>
-
-/* Some definitions applicable to Unity running in FreeRTOS */
-#define UNITY_FREERTOS_PRIORITY CONFIG_UNITY_FREERTOS_PRIORITY
-#define UNITY_FREERTOS_CPU CONFIG_UNITY_FREERTOS_CPU
-#define UNITY_FREERTOS_STACK_SIZE CONFIG_UNITY_FREERTOS_STACK_SIZE
-
-#define UNITY_EXCLUDE_FLOAT
-#define UNITY_EXCLUDE_DOUBLE
-
-#define UNITY_OUTPUT_CHAR unity_putc
-#define UNITY_OUTPUT_FLUSH unity_flush
 
 // Define helpers to register test cases from multiple files
 #define UNITY_EXPAND2(a, b) a ## b
@@ -56,7 +55,7 @@
 
 typedef void (* test_func)(void);
 
-struct test_desc_t
+typedef struct test_desc_t
 {
     const char* name;
     const char* desc;
@@ -66,26 +65,21 @@ struct test_desc_t
     uint8_t test_fn_count;
     const char ** test_fn_name;
     struct test_desc_t* next;
-};
+} test_desc_t;
 
-void unity_testcase_register(struct test_desc_t* desc);
+void unity_testcase_register(test_desc_t* desc);
 
-void unity_run_menu() __attribute__((noreturn));
-
-void unity_run_tests_with_filter(const char* filter);
-
-void unity_run_all_tests();
 
 /*  Test case macro, a-la CATCH framework.
-	First argument is a free-form description,
-	second argument is (by convention) a list of identifiers, each one in square brackets.
-	Identifiers are used to group related tests, or tests with specific properties.
+    First argument is a free-form description,
+    second argument is (by convention) a list of identifiers, each one in square brackets.
+    Identifiers are used to group related tests, or tests with specific properties.
     Use like:
 
-	TEST_CASE("Frobnicator forbnicates", "[frobnicator][rom]")
-	{
-		// test goes here
-	}
+    TEST_CASE("Frobnicator forbnicates", "[frobnicator][rom]")
+    {
+        // test goes here
+    }
 */
 
 #define TEST_CASE(name_, desc_) \
@@ -93,7 +87,7 @@ void unity_run_all_tests();
     static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
     { \
         static test_func test_fn_[] = {&UNITY_TEST_UID(test_func_)}; \
-        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+        static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
             .desc = desc_, \
             .fn = test_fn_, \
@@ -123,7 +117,7 @@ void unity_run_all_tests();
     UNITY_TEST_FN_SET(__VA_ARGS__); \
     static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
     { \
-        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+        static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
             .desc = desc_"[multi_stage]", \
             .fn = UNITY_TEST_UID(test_functions), \
@@ -148,7 +142,7 @@ void unity_run_all_tests();
     UNITY_TEST_FN_SET(__VA_ARGS__); \
     static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
     { \
-        static struct test_desc_t UNITY_TEST_UID(test_desc_) = { \
+        static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
             .desc = desc_"[multi_device]", \
             .fn = UNITY_TEST_UID(test_functions), \
@@ -170,9 +164,11 @@ void unity_run_all_tests();
  * order. Also make sure all the fields are initialized.
  */
 
-// shorthand to check esp_err_t return code
-#define TEST_ESP_OK(rc)	TEST_ASSERT_EQUAL_HEX32(ESP_OK, rc)
-#define TEST_ESP_ERR(err, rc) TEST_ASSERT_EQUAL_HEX32(err, rc)
+void unity_run_test_by_name(const char *name);
 
+void unity_run_tests_by_tag(const char *tag, bool invert);
 
-#endif //UNITY_CONFIG_H
+void unity_run_all_tests();
+
+void unity_run_menu();
+

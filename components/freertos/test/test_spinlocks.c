@@ -17,7 +17,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/cpu.h"
 
-#include "idf_performance.h"
+#include "test_utils.h"
 
 #define REPEAT_OPS 10000
 

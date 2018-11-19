@@ -1,6 +1,6 @@
 set(COMPONENT_SRCDIRS ".")
 set(COMPONENT_ADD_INCLUDEDIRS ".")
 
-set(COMPONENT_REQUIRES unity vfs fatfs spiffs)
+set(COMPONENT_REQUIRES unity test_utils vfs fatfs spiffs)
 
 register_component()

@@ -1,7 +1,7 @@
 set(COMPONENT_SRCDIRS ".")
 set(COMPONENT_ADD_INCLUDEDIRS ". ${CMAKE_CURRENT_BINARY_DIR}")
 
-set(COMPONENT_REQUIRES unity nvs_flash ulp)
+set(COMPONENT_REQUIRES unity test_utils nvs_flash ulp)
 
 register_component()
 

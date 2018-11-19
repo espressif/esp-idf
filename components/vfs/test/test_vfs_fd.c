@@ -23,6 +23,7 @@
 #include "esp_vfs.h"
 #include "unity.h"
 #include "esp_log.h"
+#include "test_utils.h"
 
 #define VFS_PREF1       "/vfs1"
 #define VFS_PREF2       "/vfs2"
