@@ -7,6 +7,9 @@
 #if __has_include("esp32/ulp.h")
 #include "esp32/ulp.h"
 #endif
+#if __has_include("esp_efuse.h")
+#include "esp_efuse.h"
+#endif
 #if __has_include("esp_err.h")
 #include "esp_err.h"
 #endif
