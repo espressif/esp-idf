@@ -96,7 +96,7 @@ static void timer_stopped_handler(void* handler_args, esp_event_base_t base, int
 }
 
 /* Event source task related definitions */
-ESP_EVENT_DEFINE_BASE(TASK_EVENTS)
+ESP_EVENT_DEFINE_BASE(TASK_EVENTS);
 
 static void task_iteration_handler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data)
 {
@@ -115,7 +115,7 @@ static void task_event_source(void* args)
         // that data passed during event posting is a deep copy of the original data.
         ESP_ERROR_CHECK(esp_event_post(TASK_EVENTS, TASK_ITERATION_EVENT, &iteration, sizeof(iteration), portMAX_DELAY));
 
-        if (iteration == TASK_ITERATIONS_UNREGISTER){
+        if (iteration == TASK_ITERATIONS_UNREGISTER) {
             ESP_LOGI(TAG, "%s:%s: unregistering task_iteration_handler", TASK_EVENTS, get_id_string(TASK_EVENTS, TASK_ITERATION_EVENT));
             ESP_ERROR_CHECK(esp_event_handler_unregister(TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler));
         }

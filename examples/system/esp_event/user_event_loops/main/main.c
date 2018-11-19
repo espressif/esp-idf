@@ -31,7 +31,7 @@ static void application_task(void* args)
 }
 
 /* Event source task related definitions */
-ESP_EVENT_DEFINE_BASE(TASK_EVENTS)
+ESP_EVENT_DEFINE_BASE(TASK_EVENTS);
 
 TaskHandle_t g_task;
 
