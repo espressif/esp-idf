@@ -94,3 +94,8 @@ register_component()
 target_compile_definitions(mbedtls PUBLIC
     -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"
 )
+
+# Catch usage of deprecated mbedTLS functions when building tests
+if(mbedtls_test IN_LIST BUILD_TEST_COMPONENTS)
+    add_definitions(-DMBEDTLS_DEPRECATED_WARNING)
+endif()
