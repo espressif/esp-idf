@@ -44,13 +44,13 @@ if __name__ == "__main__":
             import cryptography
         except ImportError:
             print("Please run the following command to install MSYS2's MINGW Python cryptography package:")
-            print("pacman -S mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
+            print("pacman -Sy mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
             failed = True
         try:
             import setuptools
         except ImportError:
             print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
-            print("pacman -S mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
+            print("pacman -Sy mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
             failed = True
         if failed:
             sys.exit(1)
