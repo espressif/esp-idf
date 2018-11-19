@@ -150,6 +150,10 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
  *          DMA-capable memory.
  *
+ * @warning The ISR of SPI is always executed on the core which calls this
+ *          function. Never starve the ISR on this core or the SPI transactions will not
+ *          be handled.
+ *
  * @return
  *         - ESP_ERR_INVALID_ARG   if configuration is invalid
  *         - ESP_ERR_INVALID_STATE if host already is in use
