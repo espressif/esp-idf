@@ -288,9 +288,9 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 
     SHA_CTX ctx;
     ets_sha_init(&ctx);
+    esp_sha_lock_memory_block();
     while(ilen > 0) {
         size_t chunk_len = (ilen > block_len) ? block_len : ilen;
-        esp_sha_lock_memory_block();
         esp_sha_wait_idle();
         DPORT_STALL_OTHER_CPU_START();
         {
@@ -298,11 +298,9 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
             ets_sha_update(&ctx, sha_type, input, chunk_len * 8);
         }
         DPORT_STALL_OTHER_CPU_END();
-        esp_sha_unlock_memory_block();
         input += chunk_len;
         ilen -= chunk_len;
     }
-    esp_sha_lock_memory_block();
     esp_sha_wait_idle();
     DPORT_STALL_OTHER_CPU_START();
     {
