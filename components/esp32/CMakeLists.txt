@@ -158,7 +158,7 @@ else()
     endif()
 
     # Enable dynamic esp_timer overflow value if building unit tests
-    if(NOT "${BUILD_TEST_COMPONENTS}" EQUAL "")
+    if(esp32_test IN_LIST BUILD_TEST_COMPONENTS)
         add_definitions(-DESP_TIMER_DYNAMIC_OVERFLOW_VAL)
     endif()
 endif()
