@@ -552,6 +552,24 @@ static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
     memset(ra->resp_hdrs, 0, config->max_resp_headers * sizeof(struct resp_hdr));
 }
 
+static void httpd_req_cleanup(httpd_req_t *r)
+{
+    struct httpd_req_aux *ra = r->aux;
+
+    /* Retrieve session info from the request into the socket database */
+    if (ra->sd->ctx != r->sess_ctx) {
+        /* Free previous context */
+        httpd_sess_free_ctx(ra->sd->ctx, ra->sd->free_ctx);
+        ra->sd->ctx = r->sess_ctx;
+    }
+    ra->sd->free_ctx = r->free_ctx;
+
+    /* Clear out the request and request_aux structures */
+    ra->sd = NULL;
+    r->handle = NULL;
+    r->aux = NULL;
+}
+
 /* Function that processes incoming TCP data and
  * updates the http request data httpd_req_t
  */
@@ -563,7 +581,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     r->handle = hd;
     r->aux = &hd->hd_req_aux;
     /* Associate the request to the socket */
-    struct httpd_req_aux *ra  = r->aux;
+    struct httpd_req_aux *ra = r->aux;
     ra->sd = sd;
     /* Set defaults */
     ra->status = (char *)HTTPD_200;
@@ -573,7 +591,11 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     r->sess_ctx = sd->ctx;
     r->free_ctx = sd->free_ctx;
     /* Parse request */
-    return httpd_parse_req(hd);
+    esp_err_t err = httpd_parse_req(hd);
+    if (err != ESP_OK) {
+        httpd_req_cleanup(r);
+    }
+    return err;
 }
 
 /* Function that resets the http request data
@@ -592,6 +614,7 @@ esp_err_t httpd_req_delete(struct httpd_data *hd)
         int recv_len = MIN(sizeof(dummy) - 1, ra->remaining_len);
         int ret = httpd_req_recv(r, dummy, recv_len);
         if (ret <  0) {
+            httpd_req_cleanup(r);
             return ESP_FAIL;
         }
 
@@ -599,20 +622,14 @@ esp_err_t httpd_req_delete(struct httpd_data *hd)
         ESP_LOGD(TAG, LOG_FMT("purging data : %s"), dummy);
     }
 
-    /* Retrieve session info from the request into the socket database */
-    ra->sd->ctx = r->sess_ctx;
-    ra->sd->free_ctx = r->free_ctx;
-
-    /* Clear out the request and request_aux structures */
-    ra->sd = NULL;
-    r->aux = NULL;
+    httpd_req_cleanup(r);
     return ESP_OK;
 }
 
 /* Validates the request to prevent users from calling APIs, that are to
  * be called only inside URI handler, outside the handler context
  */
-bool httpd_valid_req(httpd_req_t *r)
+bool httpd_validate_req_ptr(httpd_req_t *r)
 {
     if (r) {
         struct httpd_data *hd = (struct httpd_data *) r->handle;
