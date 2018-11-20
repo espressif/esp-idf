@@ -8,10 +8,16 @@
 */
 
 /*
-   Showing how to use WPS.
+   This example demonstrates how to use WPS.
+   It supports two modes, which can be selected in menuconfig.
 
-   WPS_TYPE_PBC: Start esp32 and it will enter wps PBC mode. Then push the button of wps on router down. The esp32 will connected to the router.
-   WPS_TYPE_PIN: Start esp32, You'll see PIN code which is a eight-digit number showing on COM. Enter the PIN code in router and then the esp32 will connected to router.
+   WPS_TYPE_PBC:
+        Start ESP32 and it will enter WPS PBC mode. Then push WPS button on the router.
+        ESP32 will receive SSID and password, and connect to the router.
+
+   WPS_TYPE_PIN:
+        Start ESP32, you'll see an eight-digit PIN number in log output. 
+        Enter the PIN code on the router and then the ESP32 will get connected to router.
 */
 
 #include "freertos/FreeRTOS.h"
@@ -19,17 +25,17 @@
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp_wps.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "nvs_flash.h"
 
 
 /*set wps mode via "make menuconfig"*/
 #if CONFIG_EXAMPLE_WPS_TYPE_PBC
-#define WPS_TEST_MODE WPS_TYPE_PBC
+#define WPS_MODE WPS_TYPE_PBC
 #elif CONFIG_EXAMPLE_WPS_TYPE_PIN
-#define WPS_TEST_MODE WPS_TYPE_PIN
+#define WPS_MODE WPS_TYPE_PIN
 #else
-#define WPS_TEST_MODE WPS_TYPE_DISABLE
+#define WPS_MODE WPS_TYPE_DISABLE
 #endif /*CONFIG_EXAMPLE_WPS_TYPE_PBC*/
 
 
@@ -38,72 +44,73 @@
 #define PINSTR "%c%c%c%c%c%c%c%c"
 #endif
 
-
 static const char *TAG = "example_wps";
-static esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(WPS_TEST_MODE);
+static esp_wps_config_t config = WPS_CONFIG_INIT_DEFAULT(WPS_MODE);
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
 {
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-	ESP_LOGI(TAG, "got ip:%s\n",
-		ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-	ESP_ERROR_CHECK(esp_wifi_connect());
-        break;
-    case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
-	/*point: the function esp_wifi_wps_start() only get ssid & password
-	 * so call the function esp_wifi_connect() here
-	 * */
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_SUCCESS");
-	ESP_ERROR_CHECK(esp_wifi_wps_disable());
-	ESP_ERROR_CHECK(esp_wifi_connect());
-	break;
-    case SYSTEM_EVENT_STA_WPS_ER_FAILED:
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_FAILED");
-	ESP_ERROR_CHECK(esp_wifi_wps_disable());
-	ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-	ESP_ERROR_CHECK(esp_wifi_wps_start(0));
-	break;
-    case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_TIMEOUT");
-	ESP_ERROR_CHECK(esp_wifi_wps_disable());
-	ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
-	ESP_ERROR_CHECK(esp_wifi_wps_start(0));
- 	break;
-    case SYSTEM_EVENT_STA_WPS_ER_PIN:
-	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_WPS_ER_PIN");
-	/*show the PIN code here*/
-	ESP_LOGI(TAG, "WPS_PIN = "PINSTR, PIN2STR(event->event_info.sta_er_pin.pin_code));
-	break;
-    default:
-        break;
+    switch (event_id) {
+        case WIFI_EVENT_STA_START:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
+            break;
+        case WIFI_EVENT_STA_DISCONNECTED:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
+            ESP_ERROR_CHECK(esp_wifi_connect());
+            break;
+        case WIFI_EVENT_STA_WPS_ER_SUCCESS:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_SUCCESS");
+            /* esp_wifi_wps_start() only gets ssid & password, so call esp_wifi_connect() here. */
+            ESP_ERROR_CHECK(esp_wifi_wps_disable());
+            ESP_ERROR_CHECK(esp_wifi_connect());
+            break;
+        case WIFI_EVENT_STA_WPS_ER_FAILED:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_FAILED");
+            ESP_ERROR_CHECK(esp_wifi_wps_disable());
+            ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
+            ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+            break;
+        case WIFI_EVENT_STA_WPS_ER_TIMEOUT:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_TIMEOUT");
+            ESP_ERROR_CHECK(esp_wifi_wps_disable());
+            ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
+            ESP_ERROR_CHECK(esp_wifi_wps_start(0));
+            break;
+        case WIFI_EVENT_STA_WPS_ER_PIN:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_WPS_ER_PIN");
+            /* display the PIN code */
+            wifi_event_sta_wps_er_pin_t* event = (wifi_event_sta_wps_er_pin_t*) event_data;
+            ESP_LOGI(TAG, "WPS_PIN = " PINSTR, PIN2STR(event->pin_code));
+            break;
+        default:
+            break;
     }
-    return ESP_OK;
+}
+
+static void got_ip_event_handler(void* arg, esp_event_base_t event_base,
+                             int32_t event_id, void* event_data)
+{
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+    ESP_LOGI(TAG, "got ip: %s", ip4addr_ntoa(&event->ip_info.ip));
 }
 
 /*init wifi as sta and start wps*/
 static void start_wps(void)
 {
     tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    
+
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &got_ip_event_handler, NULL));
+
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
-    
+
     ESP_LOGI(TAG, "start wps...");
-    
-       
+
     ESP_ERROR_CHECK(esp_wifi_wps_enable(&config));
     ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 }
