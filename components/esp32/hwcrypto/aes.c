@@ -36,6 +36,7 @@
 
 #include "soc/cpu.h"
 #include <stdio.h>
+#include "driver/periph_ctrl.h"
 
 
 /* AES uses a spinlock mux not a lock as the underlying block operation
@@ -50,9 +51,9 @@ static portMUX_TYPE aes_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 void esp_aes_acquire_hardware( void )
 {
-    /* newlib locks lazy initialize on ESP-IDF */
     portENTER_CRITICAL(&aes_spinlock);
 
+#if defined(DPORT_PROTECT_STALL_OTHER_CPU_USE)
     DPORT_STALL_OTHER_CPU_START();
     {
         /* Enable AES hardware */
@@ -65,10 +66,15 @@ void esp_aes_acquire_hardware( void )
                            | DPORT_PERI_EN_SECUREBOOT);
     }
     DPORT_STALL_OTHER_CPU_END();
+#else
+    /* Enable AES hardware */
+    periph_module_enable(PERIPH_AES_MODULE);
+#endif
 }
 
 void esp_aes_release_hardware( void )
 {
+#if defined(DPORT_PROTECT_STALL_OTHER_CPU_USE)
     DPORT_STALL_OTHER_CPU_START();
     {
         /* Disable AES hardware */
@@ -78,7 +84,10 @@ void esp_aes_release_hardware( void )
         _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_AES);
     }
     DPORT_STALL_OTHER_CPU_END();
-
+#else
+    /* Disable AES hardware */
+    periph_module_disable(PERIPH_AES_MODULE);
+#endif
     portEXIT_CRITICAL(&aes_spinlock);
 }
 

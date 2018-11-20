@@ -53,6 +53,9 @@ typedef enum {
     PERIPH_WIFI_MODULE,
     PERIPH_BT_MODULE,
     PERIPH_WIFI_BT_COMMON_MODULE,
+    PERIPH_AES_MODULE,
+    PERIPH_SHA_MODULE,
+    PERIPH_RSA_MODULE,
 } periph_module_t;
 
 /**

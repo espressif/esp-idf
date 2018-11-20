@@ -35,6 +35,7 @@ void esp_dport_access_int_abort(void);
 #define DPORT_STALL_OTHER_CPU_START()
 #define DPORT_STALL_OTHER_CPU_END()
 #else
+#define DPORT_PROTECT_STALL_OTHER_CPU_USE
 #define DPORT_STALL_OTHER_CPU_START()   esp_dport_access_stall_other_cpu_start()
 #define DPORT_STALL_OTHER_CPU_END()     esp_dport_access_stall_other_cpu_end()
 #endif

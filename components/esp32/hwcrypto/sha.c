@@ -35,6 +35,7 @@
 #include "rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
+#include "driver/periph_ctrl.h"
 
 inline static uint32_t SHA_LOAD_REG(esp_sha_type sha_type) {
     return SHA_1_LOAD_REG + sha_type * 0x10;
@@ -159,6 +160,7 @@ static void esp_sha_lock_engine_inner(sha_engine_state *engine)
     _lock_acquire(&state_change_lock);
 
     if (sha_engines_all_idle()) {
+#if defined(DPORT_PROTECT_STALL_OTHER_CPU_USE)
         DPORT_STALL_OTHER_CPU_START();
         {
             /* Enable SHA hardware */
@@ -170,6 +172,11 @@ static void esp_sha_lock_engine_inner(sha_engine_state *engine)
             ets_sha_enable();
         }
         DPORT_STALL_OTHER_CPU_END();
+#else
+        /* Enable SHA hardware */
+        periph_module_enable(PERIPH_SHA_MODULE);
+        ets_sha_enable();
+#endif
     }
 
     assert( !engine->in_use && "in_use flag should be cleared" );
@@ -189,6 +196,7 @@ void esp_sha_unlock_engine(esp_sha_type sha_type)
     engine->in_use = false;
 
     if (sha_engines_all_idle()) {
+#if defined(DPORT_PROTECT_STALL_OTHER_CPU_USE)
         /* Disable SHA hardware */
         /* Don't assert reset on secure boot, otherwise AES is held in reset */
         DPORT_STALL_OTHER_CPU_START();
@@ -197,6 +205,9 @@ void esp_sha_unlock_engine(esp_sha_type sha_type)
             _DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_SHA);
         }
         DPORT_STALL_OTHER_CPU_END();
+#else
+    periph_module_disable(PERIPH_SHA_MODULE);
+#endif
     }
 
     _lock_release(&state_change_lock);
