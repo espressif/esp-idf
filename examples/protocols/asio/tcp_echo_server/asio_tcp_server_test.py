@@ -42,7 +42,7 @@ def test_examples_protocol_asio_tcp_server(env, extra_data):
     # 3. create tcp client and connect to server
     cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli.settimeout(30)
-    cli.connect((data[0],80))
+    cli.connect((data[0], 2222))
     cli.send(test_msg)
     data = cli.recv(1024)
     # 4. check the message received back from the server
@@ -51,7 +51,7 @@ def test_examples_protocol_asio_tcp_server(env, extra_data):
         pass
     else:
         print("Failure!")
-        raise ValueError('Wrong data received from asi tcp server: {} (expoected:{})'.format(data, test_msg))
+        raise ValueError('Wrong data received from asi tcp server: {} (expected:{})'.format(data, test_msg))
     # 5. check the client message appears also on server terminal
     dut1.expect(test_msg.decode())
 

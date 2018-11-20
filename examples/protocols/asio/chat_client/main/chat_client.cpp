@@ -14,6 +14,10 @@
 #include <thread>
 #include "asio.hpp"
 #include "chat_message.hpp"
+#include "protocol_examples_common.h"
+#include "esp_event.h"
+#include "tcpip_adapter.h"
+#include "nvs_flash.h"
 
 using asio::ip::tcp;
 
@@ -130,8 +134,21 @@ private:
 void read_line(char * line, int max_chars);
 
 
-void asio_main()
+extern "C" void app_main()
 {
+    ESP_ERROR_CHECK(nvs_flash_init());
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
+
+    /* This helper function configures blocking UART I/O */
+    ESP_ERROR_CHECK(example_configure_stdin_stdout());
+
     std::string name(CONFIG_EXAMPLE_SERVER_IP);
     std::string port(CONFIG_EXAMPLE_PORT);
     char line[chat_message::max_body_length + 1] = { 0 };
@@ -152,7 +169,7 @@ void asio_main()
 
     std::thread t([&io_context](){ io_context.run(); });
 
-    while (std::cin.getline(line, chat_message::max_body_length + 1) && std::string(line) != "exit\n") {
+    while (std::cin.getline(line, chat_message::max_body_length + 1) && std::string(line) != "exit") {
       chat_message msg;
       msg.body_length(std::strlen(line));
       std::memcpy(msg.body(), line, msg.body_length());
@@ -162,4 +179,6 @@ void asio_main()
 
     c.close();
     t.join();
+
+    ESP_ERROR_CHECK(example_disconnect());
 }

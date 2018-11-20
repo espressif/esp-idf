@@ -40,7 +40,7 @@ def test_examples_protocol_asio_chat_server(env, extra_data):
     # 3. create tcp client and connect to server
     cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cli.settimeout(30)
-    cli.connect((data[0],80))
+    cli.connect((data[0], 2222))
     cli.send(test_msg)
     data = cli.recv(1024)
     # 4. check the message received back from the server
