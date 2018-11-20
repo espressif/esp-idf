@@ -337,15 +337,18 @@ void SEGGER_SYSVIEW_X_RTT_Unlock()
 {
 }
 
-void SEGGER_SYSVIEW_X_SysView_Lock()
+unsigned SEGGER_SYSVIEW_X_SysView_Lock()
 {
     esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, SEGGER_LOCK_WAIT_TMO);
     esp_apptrace_lock_take(&s_sys_view_lock, &tmo);
+    // to be recursive save IRQ status on the stack of the caller to keep it from overwriting
+    return s_sys_view_lock.int_state;
 }
 
-void SEGGER_SYSVIEW_X_SysView_Unlock()
+void SEGGER_SYSVIEW_X_SysView_Unlock(unsigned int_state)
 {
+    s_sys_view_lock.int_state = int_state;
     esp_apptrace_lock_give(&s_sys_view_lock);
 }
 
