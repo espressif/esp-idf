@@ -1,19 +1,5 @@
 menu "Example Configuration"
 
-    config WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
-        help
-            SSID (network name) for the example to connect to.
-
-    config WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
-        help
-            WiFi password (WPA or WPA2) for the example to use.
-
-            Can be left blank if the network has no security set.
-
     choice EXAMPLE_IP_MODE
         prompt "Multicast IP type"
         help
@@ -38,6 +24,7 @@ menu "Example Configuration"
         bool
     config EXAMPLE_IPV6
         bool
+        select EXAMPLE_CONNECT_IPV6
 
     config EXAMPLE_MULTICAST_IPV4_ADDR
         string "Multicast IPV4 Address (send & receive)"
@@ -53,8 +40,9 @@ menu "Example Configuration"
         help
             IPV6 multicast address. Example will both send to and listen to this address.
 
-            The default FF02::FC address is a link-local multicast address. Consult IPV6 specifications or
-            documentation for information about meaning of different IPV6 multicast ranges.
+            The default FF02::FC address is a link-local multicast address.
+            Consult IPV6 specifications or documentation for information about
+            meaning of different IPV6 multicast ranges.
 
     config EXAMPLE_PORT
         int "Multicast port (send & receive)"
@@ -78,14 +66,15 @@ menu "Example Configuration"
 
     choice EXAMPLE_MULTICAST_IF
         prompt "Multicast Interface"
+        default EXAMPLE_MULTICAST_LISTEN_DEFAULT_IF
         help
             Multicast socket can bind to default interface, or all interfaces.
 
+        config EXAMPLE_MULTICAST_LISTEN_ALL_IF
+            bool "All interfaces"
+
         config EXAMPLE_MULTICAST_LISTEN_DEFAULT_IF
             bool "Default interface"
-
-        config EXAMPLE_MULTICAST_LISTEN_STA_IF
-            bool "WiFi STA interface"
 
     endchoice
 
