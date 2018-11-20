@@ -58,25 +58,36 @@ copy_if_modified('xml/', 'xml_in/')
 # Generate 'api_name.inc' files using the XML files by Doxygen
 call_with_python('../gen-dxd.py')
 
+def find_component_files(parent_dir, target_filename):
+    parent_dir = os.path.abspath(parent_dir)
+    result = []
+    for (dirpath, dirnames, filenames) in os.walk(parent_dir):
+        try:
+            # note: trimming "examples" dir as MQTT submodule
+            # has its own examples directory in the submodule, not part of IDF
+            dirnames.remove("examples")
+        except ValueError:
+            pass
+        if target_filename in filenames:
+            result.append(os.path.join(dirpath, target_filename))
+    print("List of %s: %s" % (target_filename, ", ".join(result)))
+    return result
+
 # Generate 'kconfig.inc' file from components' Kconfig files
 print("Generating kconfig.inc from kconfig contents")
 kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
 temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
-# note: trimming "examples" dir from KConfig/KConfig.projbuild as MQTT submodule
-# has its own examples in the submodule.
-kconfigs = subprocess.check_output(["find", "../../components",
-                                    "-name", "examples", "-prune",
-                                    "-o", "-name", "Kconfig", "-print"]).decode()
-kconfig_projbuilds = subprocess.check_output(["find", "../../components",
-                                              "-name", "examples", "-prune",
-                                              "-o", "-name", "Kconfig.projbuild", "-print"]).decode()
+
+kconfigs = find_component_files("../../components", "Kconfig")
+kconfig_projbuilds = find_component_files("../../components", "Kconfig.projbuild")
+
 confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
                 "--config", temp_sdkconfig_path,
                 "--create-config-if-missing",
-                "--env", "COMPONENT_KCONFIGS={}".format(kconfigs),
-                "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(kconfig_projbuilds),
+                "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
+                "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
                 "--env", "IDF_PATH={}".format(idf_path),
                 "--output", "docs", kconfig_inc_path + '.in'
 ]
