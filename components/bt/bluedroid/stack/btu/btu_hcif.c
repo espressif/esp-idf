@@ -43,7 +43,7 @@
 #include "common/bt_trace.h"
 
 #include "osi/thread.h"
-
+//#include "osi/mutex.h"
 // TODO(zachoverflow): remove this horrible hack
 #include "stack/btu.h"
 
@@ -136,6 +136,17 @@ static void btu_ble_rc_param_req_evt(UINT8 *p);
 //#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 static void btu_ble_proc_enhanced_conn_cmpl (UINT8 *p, UINT16 evt_len);
 //#endif
+
+extern osi_sem_t adv_enable_sem;
+extern osi_sem_t adv_data_sem;
+extern osi_sem_t adv_param_sem;
+extern osi_sem_t scan_enable_sem;
+extern osi_sem_t scan_param_sem;
+extern uint8_t adv_enable_status;
+extern uint8_t adv_data_status;
+extern uint8_t adv_param_status;
+extern uint8_t scan_enable_status;
+extern uint8_t scan_param_status;
 
 #endif
 
@@ -1026,6 +1037,40 @@ static void btu_hcif_command_complete_evt_on_task(BT_HDR *event)
 
 static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 {
+#if (BLE_INCLUDED == TRUE)
+    command_opcode_t opcode;
+    uint8_t *stream = response->data + response->offset + 3;
+    STREAM_TO_UINT16(opcode, stream);
+    switch (opcode) {
+        case HCI_BLE_WRITE_ADV_DATA:
+            adv_data_status = *stream;
+            osi_sem_give(&adv_data_sem);
+            break;
+        case HCI_BLE_WRITE_SCAN_RSP_DATA:
+            adv_data_status = *stream;
+            osi_sem_give(&adv_data_sem);
+            break;
+        case HCI_BLE_WRITE_ADV_ENABLE: {
+            adv_enable_status = *stream;
+            osi_sem_give(&adv_enable_sem);
+            break;
+        }
+        case HCI_BLE_WRITE_ADV_PARAMS:
+            adv_param_status = *stream;
+            osi_sem_give(&adv_param_sem);
+            break;
+        case HCI_BLE_WRITE_SCAN_PARAMS:
+            scan_param_status = *stream;
+            osi_sem_give(&scan_param_sem);
+            break;
+        case HCI_BLE_WRITE_SCAN_ENABLE:
+            scan_enable_status = *stream;
+            osi_sem_give(&scan_enable_sem);
+            break;
+        default:
+            break;
+    }
+#endif
     BT_HDR *event = osi_calloc(sizeof(BT_HDR) + sizeof(command_complete_hack_t));
     command_complete_hack_t *hack = (command_complete_hack_t *)&event->data[0];
 
