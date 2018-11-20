@@ -125,7 +125,6 @@ exclude =
         tools/esp_prov/utils/convenience.py,
         tools/gen_esp_err_to_name.py,
         tools/idf.py,
-        tools/idf_monitor.py,
         tools/idf_size.py,
         tools/kconfig_new/confgen.py,
         tools/kconfig_new/confserver.py,
