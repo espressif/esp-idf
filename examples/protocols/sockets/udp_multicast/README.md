@@ -12,9 +12,12 @@ The behaviour of the example is:
 
 ## Configuration
 
-The "Example Configuration" menu "make menuconfig" allows you to configure the details of the example:
+Run `make menuconfig` (or `idf.py menuconfig` if using CMake build system).
 
-* WiFi SSD & Password
+Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+
+The "Example Configuration" menu allows you to configure the details of the example:
+
 * IP Mode: IPV4 & IPV6 dual, IPV4 only, or IPv6 only.
 * Multicast addresses for IPV4 and/or IPV6.
 * Enable multicast socket loopback (ie should the socket receive its own multicast transmissions.)
