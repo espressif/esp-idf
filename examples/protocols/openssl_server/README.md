@@ -2,10 +2,11 @@
 
 The Example contains of OpenSSL server demo.
 
-First you should configure the project by "make menuconfig":
-  Example Configuration -> 
-    1. WIFI SSID: WIFI network to which your PC is also connected to. 
-    2. WIFI Password: WIFI password
+To configure the project, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system).
+
+* Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+
+* When using Make build system, set `Default serial port` under `Serial flasher config`.
     
 IF you want to test the OpenSSL server demo: 
   1. compile the code and load the firmware 
