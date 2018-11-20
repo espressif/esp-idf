@@ -831,7 +831,7 @@ static void btc_ble_set_rand_addr (BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *
             BTA_DmSetRandAddress(rand_addr, btc_set_rand_addr_callback);
         } else {
             btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);
-            BTC_TRACE_ERROR("Invalid random address, the high bit should be 0b11, all bits of the random part shall not be to 1 or 0");
+            BTC_TRACE_ERROR("Invalid random address, the high bit should be 0b11, bits of the random part shall not be all 1 or 0");
         }
     } else {
         btc_set_rand_addr_callback(BTM_INVALID_STATIC_RAND_ADDR);

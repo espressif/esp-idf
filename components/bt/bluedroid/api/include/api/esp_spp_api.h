@@ -190,8 +190,7 @@ esp_err_t esp_spp_register_callback(esp_spp_cb_t callback);
 /**
  * @brief       This function is called to init SPP.
  *
- * @param[in]   mode: Choose the mode of SPP, ESP_SPP_MODE_CB or ESP_SPP_MODE_CB.
- *                    Now only supports ESP_SPP_MODE_CB mode, we will continue to update.
+ * @param[in]   mode: Choose the mode of SPP, ESP_SPP_MODE_CB or ESP_SPP_MODE_VFS.
  *
  * @return
  *              - ESP_OK: success
