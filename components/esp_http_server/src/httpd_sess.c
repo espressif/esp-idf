@@ -33,11 +33,23 @@ bool httpd_is_sess_available(struct httpd_data *hd)
     return false;
 }
 
-static struct sock_db *httpd_sess_get(struct httpd_data *hd, int newfd)
+struct sock_db *httpd_sess_get(struct httpd_data *hd, int sockfd)
 {
+    if (hd == NULL) {
+        return NULL;
+    }
+
+    /* Check if called inside a request handler, and the
+     * session sockfd in use is same as the parameter */
+    if ((hd->hd_req_aux.sd) && (hd->hd_req_aux.sd->fd == sockfd)) {
+        /* Just return the pointer to the sock_db
+         * corresponding to the request */
+        return hd->hd_req_aux.sd;
+    }
+
     int i;
     for (i = 0; i < hd->config.max_open_sockets; i++) {
-        if (hd->hd_sd[i].fd == newfd) {
+        if (hd->hd_sd[i].fd == sockfd) {
             return &hd->hd_sd[i];
         }
     }
@@ -61,6 +73,12 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
             hd->hd_sd[i].handle = (httpd_handle_t) hd;
             hd->hd_sd[i].send_fn = httpd_default_send;
             hd->hd_sd[i].recv_fn = httpd_default_recv;
+
+            /* Call user-defined session opening function */
+            if (hd->config.open_fn) {
+                esp_err_t ret = hd->config.open_fn(hd, hd->hd_sd[i].fd);
+                if (ret != ESP_OK) return ret;
+            }
             return ESP_OK;
         }
     }
@@ -68,19 +86,92 @@ esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd)
     return ESP_FAIL;
 }
 
+void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn)
+{
+    if (ctx) {
+        if (free_fn) {
+            free_fn(ctx);
+        } else {
+            free(ctx);
+        }
+    }
+}
+
 void *httpd_sess_get_ctx(httpd_handle_t handle, int sockfd)
 {
-    if (handle == NULL) {
-        return NULL;
-    }
-
-    struct httpd_data *hd = (struct httpd_data *) handle;
-    struct sock_db    *sd = httpd_sess_get(hd, sockfd);
+    struct sock_db *sd = httpd_sess_get(handle, sockfd);
     if (sd == NULL) {
         return NULL;
     }
 
+    /* Check if the function has been called from inside a
+     * request handler, in which case fetch the context from
+     * the httpd_req_t structure */
+    struct httpd_data *hd = (struct httpd_data *) handle;
+    if (hd->hd_req_aux.sd == sd) {
+        return hd->hd_req.sess_ctx;
+    }
+
     return sd->ctx;
+}
+
+void httpd_sess_set_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free_ctx_fn_t free_fn)
+{
+    struct sock_db *sd = httpd_sess_get(handle, sockfd);
+    if (sd == NULL) {
+        return;
+    }
+
+    /* Check if the function has been called from inside a
+     * request handler, in which case set the context inside
+     * the httpd_req_t structure */
+    struct httpd_data *hd = (struct httpd_data *) handle;
+    if (hd->hd_req_aux.sd == sd) {
+        if (hd->hd_req.sess_ctx != ctx) {
+            /* Don't free previous context if it is in sockdb
+             * as it will be freed inside httpd_req_cleanup() */
+            if (sd->ctx != hd->hd_req.sess_ctx) {
+                /* Free previous context */
+                httpd_sess_free_ctx(hd->hd_req.sess_ctx, hd->hd_req.free_ctx);
+            }
+            hd->hd_req.sess_ctx = ctx;
+        }
+        hd->hd_req.free_ctx = free_fn;
+        return;
+    }
+
+    /* Else set the context inside the sock_db structure */
+    if (sd->ctx != ctx) {
+        /* Free previous context */
+        httpd_sess_free_ctx(sd->ctx, sd->free_ctx);
+        sd->ctx = ctx;
+    }
+    sd->free_ctx = free_fn;
+}
+
+void *httpd_sess_get_transport_ctx(httpd_handle_t handle, int sockfd)
+{
+    struct sock_db *sd = httpd_sess_get(handle, sockfd);
+    if (sd == NULL) {
+        return NULL;
+    }
+
+    return sd->transport_ctx;
+}
+
+void httpd_sess_set_transport_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free_ctx_fn_t free_fn)
+{
+    struct sock_db *sd = httpd_sess_get(handle, sockfd);
+    if (sd == NULL) {
+        return;
+    }
+
+    if (sd->transport_ctx != ctx) {
+        /* Free previous transport context */
+        httpd_sess_free_ctx(sd->transport_ctx, sd->free_transport_ctx);
+        sd->transport_ctx = ctx;
+    }
+    sd->free_transport_ctx = free_fn;
 }
 
 void httpd_sess_set_descriptors(struct httpd_data *hd,
@@ -98,6 +189,22 @@ void httpd_sess_set_descriptors(struct httpd_data *hd,
     }
 }
 
+/** Check if a FD is valid */
+static int fd_is_valid(int fd)
+{
+    return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+}
+
+void httpd_sess_delete_invalid(struct httpd_data *hd)
+{
+    for (int i = 0; i < hd->config.max_open_sockets; i++) {
+        if (hd->hd_sd[i].fd != -1 && !fd_is_valid(hd->hd_sd[i].fd)) {
+            ESP_LOGW(TAG, LOG_FMT("Closing invalid socket %d"), hd->hd_sd[i].fd);
+            httpd_sess_delete(hd, hd->hd_sd[i].fd);
+        }
+    }
+}
+
 int httpd_sess_delete(struct httpd_data *hd, int fd)
 {
     ESP_LOGD(TAG, LOG_FMT("fd = %d"), fd);
@@ -105,7 +212,12 @@ int httpd_sess_delete(struct httpd_data *hd, int fd)
     int pre_sess_fd = -1;
     for (i = 0; i < hd->config.max_open_sockets; i++) {
         if (hd->hd_sd[i].fd == fd) {
-            hd->hd_sd[i].fd = -1;
+            /* global close handler */
+            if (hd->config.close_fn) {
+                hd->config.close_fn(hd, fd);
+            }
+
+            /* release 'user' context */
             if (hd->hd_sd[i].ctx) {
                 if (hd->hd_sd[i].free_ctx) {
                     hd->hd_sd[i].free_ctx(hd->hd_sd[i].ctx);
@@ -115,6 +227,20 @@ int httpd_sess_delete(struct httpd_data *hd, int fd)
                 hd->hd_sd[i].ctx = NULL;
                 hd->hd_sd[i].free_ctx = NULL;
             }
+
+            /* release 'transport' context */
+            if (hd->hd_sd[i].transport_ctx) {
+                if (hd->hd_sd[i].free_transport_ctx) {
+                    hd->hd_sd[i].free_transport_ctx(hd->hd_sd[i].transport_ctx);
+                } else {
+                    free(hd->hd_sd[i].transport_ctx);
+                }
+                hd->hd_sd[i].transport_ctx = NULL;
+                hd->hd_sd[i].free_transport_ctx = NULL;
+            }
+
+            /* mark session slot as available */
+            hd->hd_sd[i].fd = -1;
             break;
         } else if (hd->hd_sd[i].fd != -1) {
             /* Return the fd just preceding the one being
@@ -140,6 +266,12 @@ bool httpd_sess_pending(struct httpd_data *hd, int fd)
     struct sock_db *sd = httpd_sess_get(hd, fd);
     if (! sd) {
         return ESP_FAIL;
+    }
+
+    if (sd->pending_fn) {
+        // test if there's any data to be read (besides read() function, which is handled by select() in the main httpd loop)
+        // this should check e.g. for the SSL data buffer
+        if (sd->pending_fn(hd, fd) > 0) return true;
     }
 
     return (sd->pending_len != 0);
@@ -206,7 +338,7 @@ esp_err_t httpd_sess_close_lru(struct httpd_data *hd)
         }
     }
     ESP_LOGD(TAG, LOG_FMT("fd = %d"), lru_fd);
-    return httpd_trigger_sess_close(hd, lru_fd);
+    return httpd_sess_trigger_close(hd, lru_fd);
 }
 
 int httpd_sess_iterate(struct httpd_data *hd, int start_fd)
@@ -243,14 +375,9 @@ static void httpd_sess_close(void *arg)
     }
 }
 
-esp_err_t httpd_trigger_sess_close(httpd_handle_t handle, int sockfd)
+esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd)
 {
-    if (handle == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    struct httpd_data *hd = (struct httpd_data *) handle;
-    struct sock_db *sock_db = httpd_sess_get(hd, sockfd);
+    struct sock_db *sock_db = httpd_sess_get(handle, sockfd);
     if (sock_db) {
         return httpd_queue_work(handle, httpd_sess_close, sock_db);
     }

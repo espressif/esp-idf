@@ -8,6 +8,7 @@ Protocols API
    ESP-TLS <esp_tls>
    HTTP Client <esp_http_client>
    HTTP Server <esp_http_server>
+   HTTPS Server <esp_https_server>
    ASIO <asio>
    ESP-MQTT <mqtt>
    Modbus slave <modbus>
