@@ -2368,7 +2368,7 @@ void SEGGER_SYSVIEW_RegisterModule(SEGGER_SYSVIEW_MODULE* pModule) {
     _pFirstModule = pModule;
     _NumModules++;
   }
-  SEGGER_SYSVIEW_SendModule(0);
+  SEGGER_SYSVIEW_SendModule(_NumModules-1);
   if (pModule->pfSendModuleDesc) {
     pModule->pfSendModuleDesc();
   }
