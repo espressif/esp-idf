@@ -298,8 +298,10 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_trans(spi_host_device_t host, const spi
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
 			"txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer),
-			"rxdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL ||
+        (esp_ptr_dma_capable(trans_desc->rx_buffer) && esp_ptr_word_aligned(trans_desc->rx_buffer) &&
+            (trans_desc->length%4==0)),
+        "rxdata not in DMA-capable memory or not WORD aligned", ESP_ERR_INVALID_ARG);
 
     SPI_CHECK(trans_desc->length <= spihost[host]->max_transfer_sz * 8, "data transfer > host maximum", ESP_ERR_INVALID_ARG);
     r = xQueueSend(spihost[host]->trans_queue, (void *)&trans_desc, ticks_to_wait);
