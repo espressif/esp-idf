@@ -722,6 +722,18 @@ check_examples_cmake_make:
   script:
     - tools/ci/check_examples_cmake_make.sh
 
+check_python_style:
+  <<: *check_job_template
+  artifacts:
+    when: on_failure
+    paths:
+      - flake8_output.txt
+    expire_in: 1 week
+  before_script: *do_nothing_before
+  script:
+    # run it only under Python 3 (it is very slow under Python 2)
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
+
 check_ut_cmake_make:
   stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
