@@ -17,7 +17,7 @@
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "tcpip_adapter.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "iperf.h"
 
 typedef struct {
@@ -53,7 +53,8 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
 
-static void scan_done_handler(void)
+static void scan_done_handler(void* arg, esp_event_base_t event_base, 
+                              int32_t event_id, void* event_data)
 {
     uint16_t sta_number = 0;
     uint8_t i;
@@ -72,34 +73,29 @@ static void scan_done_handler(void)
         }
     }
     free(ap_list_buffer);
+    ESP_LOGI(TAG, "sta scan done");
 }
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void got_ip_handler(void* arg, esp_event_base_t event_base, 
+                           int32_t event_id, void* event_data)
 {
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-        break;
-    case SYSTEM_EVENT_SCAN_DONE:
-        scan_done_handler();
-        ESP_LOGI(TAG, "sta scan done");
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        if (reconnect) {
-            ESP_LOGI(TAG, "sta disconnect, reconnect...");
-            esp_wifi_connect();
-        } else {
-            ESP_LOGI(TAG, "sta disconnect");
-        }
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-        xEventGroupSetBits(wifi_event_group, DISCONNECTED_BIT);
-        break;
-    default:
-        break;
-    }
-    return ESP_OK;
+    xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
+    xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 }
+
+static void disconnect_handler(void* arg, esp_event_base_t event_base, 
+                               int32_t event_id, void* event_data)
+{
+    if (reconnect) {
+        ESP_LOGI(TAG, "sta disconnect, reconnect...");
+        esp_wifi_connect();
+    } else {
+        ESP_LOGI(TAG, "sta disconnect");
+    }
+    xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+    xEventGroupSetBits(wifi_event_group, DISCONNECTED_BIT);
+}
+
 
 void initialise_wifi(void)
 {
@@ -112,9 +108,12 @@ void initialise_wifi(void)
 
     tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+    ESP_ERROR_CHECK( esp_event_loop_create_default() );
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+    ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &scan_done_handler, NULL) );
+    ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, NULL) );
+    ESP_ERROR_CHECK( esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &got_ip_handler, NULL) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_NULL) );
     ESP_ERROR_CHECK( esp_wifi_start() );
