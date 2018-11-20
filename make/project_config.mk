@@ -4,6 +4,12 @@
 COMPONENT_KCONFIGS := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig))
 COMPONENT_KCONFIGS_PROJBUILD := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig.projbuild))
 
+ifdef MSYSTEM
+# kconfiglib requires Windows-style paths for kconfig files
+COMPONENT_KCONFIGS := $(shell cygpath -w $(COMPONENT_KCONFIGS))
+COMPONENT_KCONFIGS_PROJBUILD := $(shell cygpath -w $(COMPONENT_KCONFIGS_PROJBUILD))
+endif
+
 #For doing make menuconfig etc
 KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 
