@@ -64,7 +64,7 @@ static void btc_init_bluetooth(void)
     bte_main_boot_entry(btc_init_callback);
 #if (SMP_INCLUDED)
     btc_config_init();
-    //load the ble local key whitch has been store in the flash
+    //load the ble local key which has been stored in the flash
     btc_dm_load_ble_local_keys();
 #endif /* #if (SMP_INCLUDED) */
 }

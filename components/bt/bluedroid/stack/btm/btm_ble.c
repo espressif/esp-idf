@@ -43,7 +43,7 @@
 //#include "osi/include/log.h"
 
 #if SMP_INCLUDED == TRUE
-// The temp variable to pass parameter between functions when in the connected event comeback.
+// The temp variable to pass parameter between functions when in the connected event callback.
 static BOOLEAN temp_enhanced = FALSE;
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
                                         UINT16 tlen, UINT8 *p_signature);
@@ -629,7 +629,7 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
 
     *p_addr_type = BLE_ADDR_PUBLIC;
 
-    if (!p_dev_rec) {  
+    if (!p_dev_rec) {
         *p_dev_type = BT_DEVICE_TYPE_BREDR;
         /* Check with the BT manager if details about remote device are known */
         if (p_inq_info != NULL) {
@@ -1471,7 +1471,7 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
         if(link_role == BTM_ROLE_SLAVE && (p_rec->ble.key_type & BTM_LE_KEY_PENC)) {
             p_rec->ble.skip_update_conn_param = true;
         } else {
-            p_rec->ble.skip_update_conn_param = false;    
+            p_rec->ble.skip_update_conn_param = false;
         }
         if (SMP_Pair(bd_addr) == SMP_STARTED) {
             cmd = BTM_CMD_STARTED;
@@ -1620,7 +1620,7 @@ void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable)
     /* to notify GATT to send data if any request is pending */
     gatt_notify_enc_cmpl(p_dev_rec->ble.pseudo_addr);
 }
-#endif  ///SMP_INCLUDED == TRUE 
+#endif  ///SMP_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -1946,10 +1946,10 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
 
         /* It will cause that scanner doesn't send scan request to advertiser
         * which has sent IRK to us and we have stored the IRK in controller.
-        * It is a design problem of hardware. The temporal solution is not to 
-        * send the key to the controller and then resolve the random address in host.
-        * so we need send the real address information to controller to connect. 
-        * Once the connection is successful, resolve device address whether it is 
+        * It is a hardware limitation. The preliminary solution is not to
+        * send key to the controller, but to resolve the random address in host.
+        * so we need send the real address information to controller to connect.
+        * Once the connection is successful, resolve device address whether it is
         * slave or master*/
 
         /* if (!match && role == HCI_ROLE_SLAVE && BTM_BLE_IS_RESOLVE_BDA(bda)) { */
