@@ -24,7 +24,6 @@ else()
                    "hw_random.c"
                    "int_wdt.c"
                    "intr_alloc.c"
-                   "mesh_event.c"
                    "panic.c"
                    "pm_esp32.c"
                    "pm_trace.c"

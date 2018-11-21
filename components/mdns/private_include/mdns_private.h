@@ -14,6 +14,8 @@
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
+#include "esp_event_base.h"
+
 //#define MDNS_ENABLE_DEBUG
 
 #ifdef MDNS_ENABLE_DEBUG
@@ -346,7 +348,8 @@ typedef struct {
         char * hostname;
         char * instance;
         struct {
-            system_event_id_t event_id;
+            esp_event_base_t event_base;
+            int32_t event_id;
             tcpip_adapter_if_t interface;
         } sys_event;
         struct {
