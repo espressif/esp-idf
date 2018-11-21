@@ -183,13 +183,13 @@ build_ssc_02:
 
 # If you want to add new build ssc jobs, please add it into dependencies of `assign_test` and `.test_template`
 
-build_esp_idf_tests:
+
+.build_esp_idf_unit_test_template: &build_esp_idf_unit_test_template
   <<: *build_template
   artifacts:
     paths:
       - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
-      - components/idf_test/unit_test/CIConfigs/*.yml
     expire_in: 2 days
   only:
     variables:
@@ -197,11 +197,30 @@ build_esp_idf_tests:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_REGULAR_TEST
+
+build_esp_idf_tests_make:
+  <<: *build_esp_idf_unit_test_template
   script:
-    - export PATH="$IDF_PATH/tools:$PATH"
-    - cd $CI_PROJECT_DIR/tools/unit-test-app
     - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
     - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
+    - make ut-clean-all-configs
+    - make ut-build-all-configs
+    - python tools/UnitTestParser.py
+    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
+    # If Make, delete the CMake built artifacts
+    - rm -rf builds output sdkconfig
+    - rm -rf $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+    - rm -rf $CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/*.yml
+
+build_esp_idf_tests_cmake:
+  <<: *build_esp_idf_unit_test_template
+  script:
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
     # Build with CMake first
     - idf.py ut-clean-all-configs
     - idf.py ut-build-all-configs
@@ -210,14 +229,8 @@ build_esp_idf_tests:
     - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
     # If Make, delete the CMake built artifacts
     - rm -rf builds output sdkconfig
-    - rm -rf components/idf_test/unit_test/TestCaseAll.yml
-    - rm -rf components/idf_test/unit_test/CIConfigs/*.yml
-    # Then build with Make
-    - cd $CI_PROJECT_DIR/tools/unit-test-app
-    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
-    - make ut-clean-all-configs
-    - make ut-build-all-configs
-    - python tools/UnitTestParser.py
+    - rm -rf $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+    - rm -rf $CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/*.yml
 
 .build_examples_make_template: &build_examples_make_template
   <<: *build_template
@@ -752,7 +765,8 @@ assign_test:
     - build_ssc_00
     - build_ssc_01
     - build_ssc_02
-    - build_esp_idf_tests
+    - build_esp_idf_tests_make
+    - build_esp_idf_tests_cmake
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
@@ -841,7 +855,8 @@ assign_test:
   stage: unit_test
   dependencies:
     - assign_test
-    - build_esp_idf_tests
+    - build_esp_idf_tests_make
+    - build_esp_idf_tests_cmake
   only:
     refs:
       - master
