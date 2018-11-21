@@ -15,8 +15,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
-
-// md5_digest 963d6d14dc4bd997fd5d4b9de351745d
+// md5_digest_table 20db0282fe17fec59ea46716026f5fce
 // This file was generated automatically from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file then build system will generate this header file
 // To show efuse_table run the command 'make show_efuse_table'.
@@ -169,6 +168,10 @@ static const esp_efuse_desc_t ADC1_TP_HIGH[] = {
 
 static const esp_efuse_desc_t ADC2_TP_HIGH[] = {
     {EFUSE_BLK3, 119, 9}, 	 // TP_REG EFUSE_RD_ADC2_TP_HIGH,
+};
+
+static const esp_efuse_desc_t SECURE_VERSION[] = {
+    {EFUSE_BLK3, 128, 32}, 	 // Secure version for anti-rollback,
 };
 
 
@@ -357,6 +360,11 @@ const esp_efuse_desc_t* ESP_EFUSE_ADC1_TP_HIGH[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_ADC2_TP_HIGH[] = {
     &ADC2_TP_HIGH[0],    		// TP_REG EFUSE_RD_ADC2_TP_HIGH
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
+    &SECURE_VERSION[0],    		// Secure version for anti-rollback
     NULL
 };
 
