@@ -2,8 +2,8 @@ menu "Example Configuration"
 
 config MESH_CHANNEL
     int "channel"
-    range 1 14
-    default 1
+    range 0 14
+    default 0
     help
         mesh network channel.
 
