@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest 963d6d14dc4bd997fd5d4b9de351745d
+// md5_digest_table 20db0282fe17fec59ea46716026f5fce
 // This file was generated automatically from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file then build system will generate this header file
 // To show efuse_table run the command 'make show_efuse_table'.
@@ -59,6 +59,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_TP_LOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_TP_LOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_TP_HIGH[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_TP_HIGH[];
+extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
 
 #ifdef __cplusplus
 }

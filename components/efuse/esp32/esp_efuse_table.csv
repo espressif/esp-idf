@@ -78,3 +78,7 @@ ADC1_TP_LOW,            EFUSE_BLK3,    96,    7,    TP_REG EFUSE_RD_ADC1_TP_LOW
 ADC2_TP_LOW,            EFUSE_BLK3,    112,   7,    TP_REG EFUSE_RD_ADC2_TP_LOW
 ADC1_TP_HIGH,           EFUSE_BLK3,    103,   9,    TP_REG EFUSE_RD_ADC1_TP_HIGH
 ADC2_TP_HIGH,           EFUSE_BLK3,    119,   9,    TP_REG EFUSE_RD_ADC2_TP_HIGH
+
+# anti-rollback #
+#################
+SECURE_VERSION,         EFUSE_BLK3,    128,  32,    Secure version for anti-rollback
