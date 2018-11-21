@@ -186,6 +186,7 @@ typedef enum {
     MESH_EVENT_SCAN_DONE,               /**< if self-organized networking is disabled, user can call esp_wifi_scan_start() to trigger
                                              this event, and add the corresponding scan done handler in this event. */
     MESH_EVENT_NETWORK_STATE,           /**< network state, such as whether current mesh network has a root. */
+    MESH_EVENT_STOP_RECONNECTION,       /**< the root stops reconnecting to the router and non-root devices stop reconnecting to their parents. */
     MESH_EVENT_MAX,
 } mesh_event_id_t;
 
@@ -941,9 +942,9 @@ bool esp_mesh_is_root(void);
  * @attention  This API is used to dynamically modify whether to enable the self organizing.
  *
  * @param[in]  enable  enable or disable self-organized networking
- * @param[in]  select_parent
- *                            - If self-organized networking is enabled, let the device search for a new parent or
- *            keep connecting to the previous parent.
+ * @param[in]  select_parent  Only valid when self-organized networking is enabled.
+ *             - if select_parent is set to true, the root will give up its mesh root status and search for a new parent
+ *             like other non-root devices.
  *
  * @return
  *    - ESP_OK
@@ -1394,6 +1395,22 @@ esp_err_t esp_mesh_get_subnet_nodes_num(const mesh_addr_t *child_mac, int *nodes
  *    - ESP_ERR_MESH_ARGUMENT
  */
 esp_err_t esp_mesh_get_subnet_nodes_list(const mesh_addr_t *child_mac, mesh_addr_t *nodes, int nodes_num);
+
+/**
+ * @brief      Disconnect from current parent
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_disconnect(void);
+
+/**
+ * @brief      Connect to current parent
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_connect(void);
 
 #ifdef __cplusplus
 }
