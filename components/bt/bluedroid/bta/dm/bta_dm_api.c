@@ -1232,6 +1232,35 @@ void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleSetLongAdv
+**
+** Description      This function is called to set long Advertising data
+**
+** Parameters       adv_data : long advertising data.
+**                  adv_data_len : long advertising data length.
+**                  p_adv_data_cback : set long adv data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
+                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
+{
+    tBTA_DM_API_SET_LONG_ADV  *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_LONG_ADV *)
+                 osi_malloc(sizeof(tBTA_DM_API_SET_LONG_ADV))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_LONG_ADV_EVT;
+        p_msg->p_adv_data_cback = p_adv_data_cback;
+        p_msg->adv_data = adv_data;
+        p_msg->adv_data_len = adv_data_len;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleSetScanRsp
 **
 ** Description      This function is called to override the BTA scan response.

@@ -358,6 +358,8 @@ typedef  UINT32  tBTM_BLE_AD_MASK;
 #define BTM_BLE_AD_TYPE_MANU            HCI_EIR_MANUFACTURER_SPECIFIC_TYPE      /* 0xff */
 typedef UINT8   tBTM_BLE_AD_TYPE;
 
+#define BTM_BLE_LONG_ADV_MAX_LEN  249
+
 /*  Security settings used with L2CAP LE COC */
 #define BTM_SEC_LE_LINK_ENCRYPTED           0x01
 #define BTM_SEC_LE_LINK_PAIRED_WITHOUT_MITM 0x02
@@ -990,6 +992,20 @@ tBTM_STATUS BTM_BleStartAdv(void);
 //extern
 tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK  data_mask,
                                 tBTM_BLE_ADV_DATA *p_data);
+
+/*******************************************************************************
+**
+** Function         BTM_BleWriteLongAdvData
+**
+** Description      This function is called to write long advertising data.
+**
+** Parameters:      adv_data: long advertising data
+**                  adv_data_len: the length of long advertising data
+**
+** Returns          void
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleWriteLongAdvData(uint8_t *adv_data, uint8_t adv_data_len);
 
 /*******************************************************************************
 **

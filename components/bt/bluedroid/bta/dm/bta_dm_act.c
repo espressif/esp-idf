@@ -4930,6 +4930,29 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_set_long_adv
+**
+** Description      This function set the long ADV data
+**
+** Parameters:
+**
+*******************************************************************************/
+void bta_dm_ble_set_long_adv (tBTA_DM_MSG *p_data)
+{
+    tBTA_STATUS status = BTA_FAILURE;
+
+    if (BTM_BleWriteLongAdvData(p_data->ble_set_long_adv_data.adv_data,
+                                p_data->ble_set_long_adv_data.adv_data_len) == BTM_SUCCESS) {
+        status = BTA_SUCCESS;
+    }
+
+    if (p_data->ble_set_adv_data.p_adv_data_cback) {
+        (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_adv_config_raw
 **
 ** Description      This function set the customized ADV data configuration
