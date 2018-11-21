@@ -161,6 +161,7 @@ typedef enum {
     ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
     ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT,                     /*!< When read the rssi complete, the event comes */
     ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT,              /*!< When add or remove whitelist complete, the event comes */
+    ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT,  /*!< When update duplicate exceptional list complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
 /// This is the old name, just for backwards compatibility
@@ -571,6 +572,28 @@ typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
 }esp_ble_wl_opration_t;
+
+typedef enum {
+    ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_ADD      = 0,  /*!< Add device info into duplicate scan exceptional list */
+    ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_REMOVE,        /*!< Remove device info from duplicate scan exceptional list */
+    ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_CLEAN,         /*!< Clean duplicate scan exceptional list */
+} esp_bt_duplicate_exceptional_subcode_type_t;
+
+#define BLE_BIT(n) (1UL<<(n))
+
+typedef enum {
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR       = 0,  /*!< BLE advertising address , device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID,        /*!< BLE mesh link ID, it is for BLE mesh, device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST */
+} esp_ble_duplicate_exceptional_info_type_t;
+
+typedef enum {
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST         = BLE_BIT(0), /*!< duplicate scan exceptional addr list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST = BLE_BIT(1), /*!< duplicate scan exceptional mesh link ID list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST = (BLE_BIT(0) | BLE_BIT(1)), /*!< duplicate scan exceptional all list */
+} esp_duplicate_scan_exceptional_list_type_t;
+
+typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
+
 /**
  * @brief Gap callback parameters union
  */
@@ -717,6 +740,15 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
         esp_ble_wl_opration_t wl_opration;          /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
     } update_whitelist_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT
+     */
+    struct ble_update_duplicate_exceptional_list_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate update duplicate scan exceptional list operation success status */
+        uint8_t         subcode;                    /*!< Define in esp_bt_duplicate_exceptional_subcode_type_t */
+        uint16_t         length;                     /*!< The length of device_info */
+        esp_duplicate_info_t device_info;           /*!< device information, when subcode is ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_CLEAN, the value is invalid */
+    } update_duplicate_exceptional_list_cmpl;       /*!< Event parameter of ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -1008,6 +1040,43 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
+
+/**
+ * @brief           This function is called to add a device info into the duplicate scan exceptional list.
+ *
+ *
+ * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ * @param[in]       device_info: the device information.
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_exceptional_info_type_t type, esp_duplicate_info_t device_info);
+
+/**
+ * @brief           This function is called to remove a device info from the duplicate scan exceptional list.
+ *
+ *
+ * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ * @param[in]       device_info: the device information.
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_remove_duplicate_scan_exceptional_device(esp_ble_duplicate_exceptional_info_type_t type, esp_duplicate_info_t device_info);
+
+/**
+ * @brief           This function is called to clean the duplicate scan exceptional list.
+ *                  This API will delete all device information in the duplicate scan exceptional list.
+ *
+ *
+ * @param[in]       list_type: duplicate scan exceptional list type, the value can be one or more of esp_duplicate_scan_exceptional_list_type_t.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_clean_duplicate_scan_exceptional_list(esp_duplicate_scan_exceptional_list_type_t list_type);
 
 #if (SMP_INCLUDED == TRUE)
 /**

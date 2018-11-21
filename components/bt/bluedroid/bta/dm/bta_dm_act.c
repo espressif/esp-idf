@@ -4881,6 +4881,22 @@ void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
+** Function         bta_dm_ble_update_duplicate_exceptional_list
+**
+** Description      This function is to update duplicate scan exceptional list
+**
+**
+*******************************************************************************/
+void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
+{
+    BTM_UpdateBleDuplicateExceptionalList(p_data->ble_duplicate_exceptional_list.subcode,
+                                          p_data->ble_duplicate_exceptional_list.type,
+                                          p_data->ble_duplicate_exceptional_list.device_info,
+                                          p_data->ble_duplicate_exceptional_list.exceptional_list_cb);
+}
+
+/*******************************************************************************
+**
 ** Function         bta_dm_ble_set_adv_config
 **
 ** Description      This function set the customized ADV data configuration

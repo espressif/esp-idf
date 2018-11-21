@@ -1649,6 +1649,52 @@ tBTM_STATUS BTM_BleWriteScanRspRaw(UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_le
 
 /*******************************************************************************
 **
+** Function         BTM_UpdateBleDuplicateExceptionalList
+**
+** Description      This function is called to update duplicate scan exceptional list.
+**
+** Parameters:      subcode: add, remove or clean duplicate scan exceptional list.
+**                  type: device info type
+**                  device_info: device information
+**                  update_exceptional_list_cmp_cb: complete callback
+**
+** Returns          status
+**
+*******************************************************************************/
+tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type, BD_ADDR device_info, 
+                                                tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK update_exceptional_list_cmp_cb)
+{
+    tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
+    ble_cb->update_exceptional_list_cmp_cb = update_exceptional_list_cmp_cb;
+    tBTM_STATUS status = BTM_NO_RESOURCES;
+    if (!controller_get_interface()->supports_ble()) {
+        return BTM_ILLEGAL_VALUE;
+    }
+    if(!device_info) {
+        return BTM_ILLEGAL_VALUE;
+    }
+    // subcoe + type + device info
+    uint8_t device_info_array[1 + 4 + BD_ADDR_LEN] = {0};
+    device_info_array[0] = subcode;
+    device_info_array[1] = type & 0xff;
+    device_info_array[2] = (type >> 8) & 0xff;
+    device_info_array[3] = (type >> 16) & 0xff;
+    device_info_array[4] = (type >> 24) & 0xff;
+    if(type == BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR) {
+        bt_rcopy(&device_info_array[5], device_info, BD_ADDR_LEN);
+    } else {
+        memcpy(&device_info_array[5], device_info, 4);
+    }
+    status = BTM_VendorSpecificCommand(HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST, 1 + 4 + BD_ADDR_LEN, device_info_array, NULL);
+    if(status == BTM_CMD_STARTED) {
+        status = BTM_SUCCESS;
+    }
+
+    return status;
+}
+
+/*******************************************************************************
+**
 ** Function         BTM_BleWriteAdvData
 **
 ** Description      This function is called to write advertising data.
