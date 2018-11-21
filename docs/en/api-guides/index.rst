@@ -10,6 +10,7 @@ API Guides
    Build System (CMake) <build-system-cmake>
    Error Handling <error-handling>
    Fatal Errors <fatal-errors>
+   Event Handling <event-handling>
    Deep Sleep Wake Stubs <deep-sleep-stub>
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>
