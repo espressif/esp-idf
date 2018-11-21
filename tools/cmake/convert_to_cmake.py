@@ -42,7 +42,7 @@ def get_make_variables(path, makefile="Makefile", expected_failure=False, variab
     result = {}
     BUILT_IN_VARS = set(["MAKEFILE_LIST", "SHELL", "CURDIR", "MAKEFLAGS"])
 
-    for line in output.decode().split("\n"):
+    for line in output.decode('utf-8').split("\n"):
         if line.startswith("# makefile"):  # this line appears before any variable defined in the makefile itself
             next_is_makefile = True
         elif next_is_makefile:
@@ -92,8 +92,8 @@ def get_component_variables(project_path, component_path):
             srcs += glob.glob(os.path.join(component_srcdir_path, "*.cpp"))
             srcs = [('"%s"' % str(os.path.relpath(s, component_path))) for s in srcs]
 
-    make_vars["COMPONENT_ADD_INCLUDEDIRS"] = make_vars.get("COMPONENT_ADD_INCLUDEDIRS", "include")
-            component_srcs += srcs
+        make_vars["COMPONENT_ADD_INCLUDEDIRS"] = make_vars.get("COMPONENT_ADD_INCLUDEDIRS", "include")
+        component_srcs += srcs
         make_vars["COMPONENT_SRCS"] = " ".join(component_srcs)
 
 
