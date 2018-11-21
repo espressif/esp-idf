@@ -125,6 +125,8 @@ typedef esp_err_t (*system_event_handler_t)(system_event_t *event);
 /**
   * @brief  Send a event to event task
   *
+  * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
+  *
   * Other task/modules, such as the tcpip_adapter, can call this API to send an event to event task
   *
   * @param event Event to send
@@ -136,6 +138,8 @@ esp_err_t esp_event_send(system_event_t *event);
 
 /**
  * @brief  Default event handler for system events
+ *
+ * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
  *
  * This function performs default handling of system events.
  * When using esp_event_loop APIs, it is called automatically before invoking the user-provided
@@ -152,17 +156,23 @@ esp_err_t esp_event_process_default(system_event_t *event);
 /**
   * @brief  Install default event handlers for Ethernet interface
   *
+  * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
+  *
   */
 void esp_event_set_default_eth_handlers();
 
 /**
   * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
   *
+  * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
   */
 void esp_event_set_default_wifi_handlers();
 
 /**
  * @brief  Application specified event callback function
+ *
+ * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
+ *
  *
  * @param  ctx    reserved for user
  * @param  event  event type defined in this file
@@ -175,7 +185,9 @@ typedef esp_err_t (*system_event_cb_t)(void *ctx, system_event_t *event);
 
 /**
  * @brief  Initialize event loop
- *         
+ *
+ * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
+ *
  * Create the event handler and task
  *
  * @param  cb   application specified event callback, it can be modified by call esp_event_set_cb
@@ -190,11 +202,14 @@ esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx);
 /**
  * @brief  Set application specified event callback function
  *
+ * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
+ *
  * @attention 1. If cb is NULL, means application don't need to handle
  *               If cb is not NULL, it will be call when an event is received, after the default event callback is completed
  *
  * @param  cb   application callback function
  * @param  ctx  argument to be passed to callback
+ *
  *
  * @return old callback
  */

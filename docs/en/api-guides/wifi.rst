@@ -37,7 +37,7 @@ Refer to <`ESP32 Wi-Fi Station General Scenario`_>, <`ESP32 Wi-Fi AP General Sce
 
 Event-Handling
 ++++++++++++++
-Generally, it is easy to write code in "sunny-day" scenarios, such as <`SYSTEM_EVENT_STA_START`_>, <`SYSTEM_EVENT_STA_CONNECTED`_> etc. The hard part is to write routines in "rainy-day" scenarios, such as <`SYSTEM_EVENT_STA_DISCONNECTED`_> etc. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to <`ESP32 Wi-Fi Event Description`_>, <`ESP32 Wi-Fi Station General Scenario`_>, <`ESP32 Wi-Fi AP General Scenario`_>
+Generally, it is easy to write code in "sunny-day" scenarios, such as <`WIFI_EVENT_STA_START`_>, <`WIFI_EVENT_STA_CONNECTED`_> etc. The hard part is to write routines in "rainy-day" scenarios, such as <`WIFI_EVENT_STA_DISCONNECTED`_> etc. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to <`ESP32 Wi-Fi Event Description`_>, <`ESP32 Wi-Fi Station General Scenario`_>, <`ESP32 Wi-Fi AP General Scenario`_>. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
 
 Write Error-Recovery Routines Correctly at All Times 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -72,8 +72,10 @@ When initializing struct parameters for the API, one of two approaches should be
 
 Initializing or getting the entire structure is very important because most of the time the value 0 indicates the default value is used. More fields may be added to the struct in the future and initializing these to zero ensures the application will still work correctly after IDF is updated to a new release.
 
+.. _wifi-programming-model:
+
 ESP32 Wi-Fi Programming Model
-------------------------------
+-----------------------------
 The ESP32 Wi-Fi programming model is depicted as follows:
 
 .. blockdiag::
@@ -118,29 +120,18 @@ The ESP32 Wi-Fi programming model is depicted as follows:
     }
 
 
-The Wi-Fi driver can be considered a black box that knows nothing about high-layer code, such as the
-TCPIP stack, application task, event task, etc. All the Wi-Fi driver can do is receive API calls from the high layer,
-or post an event-queue to a specified queue which is initialized by API esp_wifi_init().
+The Wi-Fi driver can be considered a black box that knows nothing about high-layer code, such as the TCP/IP stack, application task, event task, etc. The application task (code) generally calls :doc:`Wi-Fi driver APIs <../api-reference/network/esp_wifi>` to initialize Wi-Fi and handles Wi-Fi events when necessary. Wi-Fi driver receives API calls, handles them, and post events to the application.
 
-The event task is a daemon task which receives events from the Wi-Fi driver or from other subsystems, such
-as the TCPIP stack. The event task will call the default callback function upon receiving the event. For example,
-upon receiving SYSTEM_EVENT_STA_CONNECTED, it will call tcpip_adapter_start() to start the DHCP
-client in its default handler.
-
-An application can register its own event callback function by using API esp_event_init. Then, the application callback
-function will be called after the default callback. Also, if the application does not want to execute the callback
-in the event task, it needs to post the relevant event to the application task in the application callback function.
-
-The application task (code) generally mixes all these things together: it calls APIs to initialize the system/Wi-Fi and
-handle the events when necessary.
+Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`tcpip_adapter component <../api-reference/network/tcpip_adapter>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, tcpip_adapter will automatically start the DHCP client.
 
 ESP32 Wi-Fi Event Description
 ------------------------------------
-SYSTEM_EVENT_WIFI_READY
+
+WIFI_EVENT_WIFI_READY
 ++++++++++++++++++++++++++++++++++++
 The Wi-Fi driver will never generate this event, which, as a result, can be ignored by the application event callback. This event may be removed in future releases.
 
-SYSTEM_EVENT_SCAN_DONE
+WIFI_EVENT_SCAN_DONE
 ++++++++++++++++++++++++++++++++++++
 The scan-done event is triggered by esp_wifi_scan_start() and will arise in the following scenarios:
 
@@ -156,19 +147,19 @@ The scan-done event will not arise in the following scenarios:
 Upon receiving this event, the event task does nothing. The application event callback needs to call esp_wifi_scan_get_ap_num() and esp_wifi_scan_get_ap_records() to fetch the scanned AP list and trigger the Wi-Fi driver to free the internal memory which is allocated during the scan **(do not forget to do this)**! 
 Refer to 'ESP32 Wi-Fi Scan' for a more detailed description.
 
-SYSTEM_EVENT_STA_START
+WIFI_EVENT_STA_START
 ++++++++++++++++++++++++++++++++++++
 If esp_wifi_start() returns ESP_OK and the current Wi-Fi mode is Station or AP+Station, then this event will arise. Upon receiving this event, the event task will initialize the LwIP network interface (netif). Generally, the application event callback needs to call esp_wifi_connect() to connect to the configured AP.
 
-SYSTEM_EVENT_STA_STOP
+WIFI_EVENT_STA_STOP
 ++++++++++++++++++++++++++++++++++++
 If esp_wifi_stop() returns ESP_OK and the current Wi-Fi mode is Station or AP+Station, then this event will arise. Upon receiving this event, the event task will release the station's IP address, stop the DHCP client, remove TCP/UDP-related connections and clear the LwIP station netif, etc. The application event callback generally does not need to do anything.
 
-SYSTEM_EVENT_STA_CONNECTED
+WIFI_EVENT_STA_CONNECTED
 ++++++++++++++++++++++++++++++++++++
 If esp_wifi_connect() returns ESP_OK and the station successfully connects to the target AP, the connection event will arise. Upon receiving this event, the event task starts the DHCP client and begins the DHCP process of getting the IP address. Then, the Wi-Fi driver is ready for sending and receiving data. This moment is good for beginning the application work, provided that the application does not depend on LwIP, namely the IP address. However, if the application is LwIP-based, then you need to wait until the *got ip* event comes in.
   
-SYSTEM_EVENT_STA_DISCONNECTED
+WIFI_EVENT_STA_DISCONNECTED
 ++++++++++++++++++++++++++++++++++++
 This event can be generated in the following scenarios:
 
@@ -185,17 +176,17 @@ The most common event handle code for this event in application is to call esp_w
 Another thing deserves our attention is that the default behavior of LwIP is to abort all TCP socket connections on receiving the disconnect. Most of time it is not a problem. However, for some special application, this may not be what they want, consider following scenarios:
 
 - The application creates a TCP connection to maintain the application-level keep-alive data that is sent out every 60 seconds.
-- Due to certain reasons, the Wi-Fi connection is cut off, and the <SYSTEM_EVENT_STA_DISCONNECTED> is raised. According to the current implementation, all TCP connections will be removed and the keep-alive socket will be in a wrong status. However, since the application designer believes that the network layer should NOT care about this error at the Wi-Fi layer, the application does not close the socket.
+- Due to certain reasons, the Wi-Fi connection is cut off, and the <`WIFI_EVENT_STA_DISCONNECTED`> is raised. According to the current implementation, all TCP connections will be removed and the keep-alive socket will be in a wrong status. However, since the application designer believes that the network layer should NOT care about this error at the Wi-Fi layer, the application does not close the socket.
 - Five seconds later, the Wi-Fi connection is restored because esp_wifi_connect() is called in the application event callback function. **Moreover, the station connects to the same AP and gets the same IPV4 address as before**.
 - Sixty seconds later, when the application sends out data with the keep-alive socket, the socket returns an error and the application closes the socket and re-creates it when necessary.
 
 In above scenario, ideally, the application sockets and the network layer should not be affected, since the Wi-Fi connection only fails temporarily and recovers very quickly. The application can enable "Keep TCP connections when IP changed" via LwIP menuconfig. 
 
-SYSTEM_EVENT_STA_AUTHMODE_CHANGE
+WIFI_EVENT_STA_AUTHMODE_CHANGE
 ++++++++++++++++++++++++++++++++++++
 This event arises when the AP to which the station is connected changes its authentication mode, e.g., from no auth to WPA. Upon receiving this event, the event task will do nothing. Generally, the application event callback does not need to handle this either.
 
-SYSTEM_EVENT_STA_GOT_IP
+IP_EVENT_STA_GOT_IP
 ++++++++++++++++++++++++++++++++++++
 This event arises when the DHCP client successfully gets the IPV4 address from the DHCP server, or when the IPV4 address is changed. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
 
@@ -205,35 +196,35 @@ The IPV4 may be changed because of the following reasons:
   - The DHCP client rebinds to a different address.
   - The static-configured IPV4 address is changed.
 
-Whether the IPV4 address is changed or NOT is indicated by field "ip_change" of system_event_sta_got_ip_t.
+Whether the IPV4 address is changed or NOT is indicated by field ``ip_change`` of ``ip_event_got_ip_t``.
 
 The socket is based on the IPV4 address, which means that, if the IPV4 changes, all sockets relating to this IPV4 will become abnormal. Upon receiving this event, the application needs to close all sockets and recreate the application when the IPV4 changes to a valid one.
 
-SYSTEM_EVENT_AP_STA_GOT_IP6
+IP_EVENT_GOT_IP6
 ++++++++++++++++++++++++++++++++++++
-This event arises when the IPV6 SLAAC supports auto-configures an address for the ESP32, or when this address changes. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
+This event arises when the IPV6 SLAAC support auto-configures an address for the ESP32, or when this address changes. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
 
-SYSTEM_EVENT_STA_LOST_IP
+IP_STA_LOST_IP
 ++++++++++++++++++++++++++++++++++++
 This event arises when the IPV4 address become invalid.
 
-SYSTEM_EVENT_STA_LOST_IP doesn't arise immediately after the WiFi disconnects, instead it starts an IPV4 address lost timer, if the IPV4 address is got before ip lost timer expires, SYSTEM_EVENT_STA_LOST_IP doesn't happen. Otherwise, the event arises when IPV4 address lost timer expires. 
+IP_STA_LOST_IP doesn't arise immediately after the WiFi disconnects, instead it starts an IPV4 address lost timer, if the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP doesn't happen. Otherwise, the event arises when IPV4 address lost timer expires. 
 
 Generally the application don't need to care about this event, it is just a debug event to let the application know that the IPV4 address is lost.
 
-SYSTEM_EVENT_AP_START
+WIFI_EVENT_AP_START
 ++++++++++++++++++++++++++++++++++++
-Similar to <`SYSTEM_EVENT_STA_START`_>.
+Similar to <`WIFI_EVENT_STA_START`_>.
 
-SYSTEM_EVENT_AP_STOP
+WIFI_EVENT_AP_STOP
 ++++++++++++++++++++++++++++++++++++
-Similar to <`SYSTEM_EVENT_STA_STOP`_>.
+Similar to <`WIFI_EVENT_STA_STOP`_>.
 
-SYSTEM_EVENT_AP_STACONNECTED
+WIFI_EVENT_AP_STACONNECTED
 ++++++++++++++++++++++++++++++++++++
-Every time a station is connected to ESP32 AP, the <`SYSTEM_EVENT_AP_STACONNECTED`_> will arise. Upon receiving this event, the event task will do nothing, and the application callback can also ignore it. However, you may want to do something, for example, to get the info of the connected STA, etc.
+Every time a station is connected to ESP32 AP, the <`WIFI_EVENT_AP_STACONNECTED`_> will arise. Upon receiving this event, the event task will do nothing, and the application callback can also ignore it. However, you may want to do something, for example, to get the info of the connected STA, etc.
 
-SYSTEM_EVENT_AP_STADISCONNECTED
+WIFI_EVENT_AP_STADISCONNECTED
 ++++++++++++++++++++++++++++++++++++
 This event can happen in the following scenarios:
 
@@ -243,7 +234,7 @@ This event can happen in the following scenarios:
 
 When this event happens, the event task will do nothing, but the application event callback needs to do something, e.g., close the socket which is related to this station, etc.
 
-SYSTEM_EVENT_AP_PROBEREQRECVED
+WIFI_EVENT_AP_PROBEREQRECVED
 ++++++++++++++++++++++++++++++++++++
 
 This event is disabled by default. The application can enable it via API esp_wifi_set_event_mask().
@@ -281,24 +272,24 @@ Below is a "big scenario" which describes some small scenarios in Station mode:
         MAIN_TASK  ->  WIFI_TASK   [label="2> Configure Wi-Fi"];
         === 3. Start Phase ===
         MAIN_TASK  ->  WIFI_TASK   [label="3.1> Start Wi-Fi"];
-        EVENT_TASK <-  WIFI_TASK   [label="3.2> SYSTEM_EVENT_STA_START"];
-        APP_TASK   <-  EVENT_TASK  [label="3.3> SYSTEM_EVENT_STA_START"];
+        EVENT_TASK <-  WIFI_TASK   [label="3.2> WIFI_EVENT_STA_START"];
+        APP_TASK   <-  EVENT_TASK  [label="3.3> WIFI_EVENT_STA_START"];
         === 4. Connect Phase ===
         APP_TASK   ->  WIFI_TASK   [label="4.1> Connect Wi-Fi"];
-        EVENT_TASK <-  WIFI_TASK   [label="4.2> SYSTEM_EVENT_STA_CONNECTED"];
-        APP_TASK   <- EVENT_TASK   [label="4.3> SYSTEM_EVENT_STA_CONNECTED"];
+        EVENT_TASK <-  WIFI_TASK   [label="4.2> WIFI_EVENT_STA_CONNECTED"];
+        APP_TASK   <- EVENT_TASK   [label="4.3> WIFI_EVENT_STA_CONNECTED"];
         === 5. Got IP Phase ===
         EVENT_TASK ->  LwIP_TASK   [label="5.1> Start DHCP client"];
-        EVENT_TASK <-  LwIP_TASK   [label="5.2> SYSTEM_EVENT_STA_GOT_IP"];
-        APP_TASK   <-  EVENT_TASK  [label="5.3> SYSTEM_EVENT_STA_GOT_IP"];
+        EVENT_TASK <-  LwIP_TASK   [label="5.2> IP_EVENT_STA_GOT_IP"];
+        APP_TASK   <-  EVENT_TASK  [label="5.3> IP_EVENT_STA_GOT_IP"];
         APP_TASK   ->  APP_TASK    [label="5.4> socket related init"];
         === 6. Disconnect Phase ===
-        EVENT_TASK <-  WIFI_TASK   [label="6.1> SYSTEM_EVENT_STA_DISCONNECTED"];
-        APP_TASK   <-  EVENT_TASK  [label="6.2> SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK   [label="6.1> WIFI_EVENT_STA_DISCONNECTED"];
+        APP_TASK   <-  EVENT_TASK  [label="6.2> WIFI_EVENT_STA_DISCONNECTED"];
         APP_TASK   ->  APP_TASK    [label="6.3> disconnect handling"];
         === 7. IP Change Phase ===
-        EVENT_TASK <-  LwIP_TASK   [label="7.1> SYSTEM_EVENT_STA_GOT_IP"];
-        APP_TASK   <-  EVENT_TASK  [label="7.2> SYSTEM_EVENT_STA_GOT_IP"];
+        EVENT_TASK <-  LwIP_TASK   [label="7.1> IP_EVENT_STA_GOT_IP"];
+        APP_TASK   <-  EVENT_TASK  [label="7.2> IP_EVENT_STA_GOT_IP"];
         APP_TASK   ->  APP_TASK    [label="7.3> Socket error handling"];
         === 8. Deinit Phase ===
         APP_TASK   ->  WIFI_TASK   [label="8.1> Disconnect Wi-Fi"];
@@ -330,35 +321,35 @@ If the Wi-Fi NVS flash is enabled by menuconfig, all Wi-Fi configuration in this
 3. Wi-Fi Start Phase
 ++++++++++++++++++++++++++++++++
  - s3.1: Call esp_wifi_start to start the Wi-Fi driver.
- - s3.2: The Wi-Fi driver posts <`SYSTEM_EVENT_STA_START`_> to the event task; then, the event task will do some common things and will call the application event callback function.
- - s3.3: The application event callback function relays the <`SYSTEM_EVENT_STA_START`_> to the application task. We recommend that you call esp_wifi_connect(). However, you can also call esp_wifi_connect() in other phrases after the <`SYSTEM_EVENT_STA_START`_> arises.
+ - s3.2: The Wi-Fi driver posts <`WIFI_EVENT_STA_START`_> to the event task; then, the event task will do some common things and will call the application event callback function.
+ - s3.3: The application event callback function relays the <`WIFI_EVENT_STA_START`_> to the application task. We recommend that you call esp_wifi_connect(). However, you can also call esp_wifi_connect() in other phrases after the <`WIFI_EVENT_STA_START`_> arises.
  
 4. Wi-Fi Connect Phase
 +++++++++++++++++++++++++++++++++
  - s4.1: Once esp_wifi_connect() is called, the Wi-Fi driver will start the internal scan/connection process.
 
- - s4.2: If the internal scan/connection process is successful, the <`SYSTEM_EVENT_STA_CONNECTED`_> will be generated. In the event task, it starts the DHCP client, which will finally trigger the DHCP process. 
+ - s4.2: If the internal scan/connection process is successful, the <`WIFI_EVENT_STA_CONNECTED`_> will be generated. In the event task, it starts the DHCP client, which will finally trigger the DHCP process. 
 
  - s4.3: In the above-mentioned scenario, the application event callback will relay the event to the application task. Generally, the application needs to do nothing, and you can do whatever you want, e.g., print a log, etc.
 
-In step 4.2, the Wi-Fi connection may fail because, for example, the password is wrong, the AP is not found, etc. In a case like this, <`SYSTEM_EVENT_STA_DISCONNECTED`_> will arise and the reason for such a failure will be provided. For handling events that disrupt Wi-Fi connection, please refer to phase 6.
+In step 4.2, the Wi-Fi connection may fail because, for example, the password is wrong, the AP is not found, etc. In a case like this, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason for such a failure will be provided. For handling events that disrupt Wi-Fi connection, please refer to phase 6.
 
 5. Wi-Fi 'Got IP' Phase
 +++++++++++++++++++++++++++++++++
 
  - s5.1: Once the DHCP client is initialized in step 4.2, the *got IP* phase will begin.
- - s5.2: If the IP address is successfully received from the DHCP server, then <`SYSTEM_EVENT_STA_GOT_IP`_> will arise and the event task will perform common handling.
- - s5.3: In the application event callback, <`SYSTEM_EVENT_STA_GOT_IP`_> is relayed to the application task. For LwIP-based applications, this event is very special and means that everything is ready for the application to begin its tasks, e.g. creating the TCP/UDP socket, etc. A very common mistake is to initialize the socket before <`SYSTEM_EVENT_STA_GOT_IP`_> is received. **DO NOT start the socket-related work before the IP is received.**
+ - s5.2: If the IP address is successfully received from the DHCP server, then <`IP_EVENT_STA_GOT_IP`_> will arise and the event task will perform common handling.
+ - s5.3: In the application event callback, <`IP_EVENT_STA_GOT_IP`_> is relayed to the application task. For LwIP-based applications, this event is very special and means that everything is ready for the application to begin its tasks, e.g. creating the TCP/UDP socket, etc. A very common mistake is to initialize the socket before <`IP_EVENT_STA_GOT_IP`_> is received. **DO NOT start the socket-related work before the IP is received.**
 
 6. Wi-Fi Disconnect Phase
 +++++++++++++++++++++++++++++++++
- - s6.1: When the Wi-Fi connection is disrupted, e.g. because the AP is powered off, the RSSI is poor, etc., <`SYSTEM_EVENT_STA_DISCONNECTED`_> will arise. This event may also arise in phase 3. Here, the event task will notify the LwIP task to clear/remove all UDP/TCP connections. Then, all application sockets will be in a wrong status. In other words, no socket can work properly when this event happens.
- - s6.2: In the scenario described above, the application event callback function relays <`SYSTEM_EVENT_STA_DISCONNECTED`_> to the application task. We recommend that esp_wifi_connect() be called to reconnect the Wi-Fi, close all sockets and re-create them if necessary. Refer to <`SYSTEM_EVENT_STA_DISCONNECTED`_>.
+ - s6.1: When the Wi-Fi connection is disrupted, e.g. because the AP is powered off, the RSSI is poor, etc., <`WIFI_EVENT_STA_DISCONNECTED`_> will arise. This event may also arise in phase 3. Here, the event task will notify the LwIP task to clear/remove all UDP/TCP connections. Then, all application sockets will be in a wrong status. In other words, no socket can work properly when this event happens.
+ - s6.2: In the scenario described above, the application event callback function relays <`WIFI_EVENT_STA_DISCONNECTED`_> to the application task. We recommend that esp_wifi_connect() be called to reconnect the Wi-Fi, close all sockets and re-create them if necessary. Refer to <`WIFI_EVENT_STA_DISCONNECTED`_>.
        
 7. Wi-Fi IP Change Phase
 ++++++++++++++++++++++++++++++++++
 
- - s7.1: If the IP address is changed, the <`SYSTEM_EVENT_STA_GOT_IP`_> will arise with "ip_change" set to true.
+ - s7.1: If the IP address is changed, the <`IP_EVENT_STA_GOT_IP`_> will arise with "ip_change" set to true.
  - s7.2: **This event is important to the application. When it occurs, the timing is good for closing all created sockets and recreating them.**
 
 
@@ -402,14 +393,14 @@ Below is a "big scenario" which describes some small scenarios in AP mode:
         MAIN_TASK  ->  WIFI_TASK   [label="2> Configure Wi-Fi"];
         === 3. Start Phase ===
         MAIN_TASK  ->  WIFI_TASK   [label="3.1> Start Wi-Fi"];
-        EVENT_TASK <-  WIFI_TASK   [label="3.2> SYSTEM_EVENT_AP_START"];
-        APP_TASK   <-  EVENT_TASK  [label="3.3> SYSTEM_EVENT_AP_START"];
+        EVENT_TASK <-  WIFI_TASK   [label="3.2> WIFI_EVENT_AP_START"];
+        APP_TASK   <-  EVENT_TASK  [label="3.3> WIFI_EVENT_AP_START"];
         === 4. Connect Phase ===
-        EVENT_TASK <-  WIFI_TASK   [label="4.1> SYSTEM_EVENT_AP_STA_CONNECTED"];
-        APP_TASK   <- EVENT_TASK   [label="4.2> SYSTEM_EVENT_AP_STA_CONNECTED"];
+        EVENT_TASK <-  WIFI_TASK   [label="4.1> WIFI_EVENT_AP_STA_CONNECTED"];
+        APP_TASK   <- EVENT_TASK   [label="4.2> WIFI_EVENT_AP_STA_CONNECTED"];
         === 5. Disconnect Phase ===
-        EVENT_TASK <-  WIFI_TASK   [label="5.1> SYSTEM_EVENT_STA_DISCONNECTED"];
-        APP_TASK   <-  EVENT_TASK  [label="5.2> SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK   [label="5.1> WIFI_EVENT_STA_DISCONNECTED"];
+        APP_TASK   <-  EVENT_TASK  [label="5.2> WIFI_EVENT_STA_DISCONNECTED"];
         APP_TASK   ->  APP_TASK    [label="5.3> disconnect handling"];
         === 6. Deinit Phase ===
         APP_TASK   ->  WIFI_TASK   [label="6.1> Disconnect Wi-Fi"];
@@ -552,8 +543,8 @@ Scenario:
         WIFI_TASK  ->  WIFI_TASK  [label="2.2 > Scan channel 2"];
         WIFI_TASK  ->  WIFI_TASK  [label="..."];
         WIFI_TASK  ->  WIFI_TASK  [label="2.x > Scan channel N"];
-        EVENT_TASK <-  WIFI_TASK  [label="3.1 > SYSTEM_EVENT_SCAN_DONE"];
-        APP_TASK   <-  EVENT_TASK [label="3.2 > SYSTEM_EVENT_SCAN_DONE"];
+        EVENT_TASK <-  WIFI_TASK  [label="3.1 > WIFI_EVENT_SCAN_DONE"];
+        APP_TASK   <-  EVENT_TASK [label="3.2 > WIFI_EVENT_SCAN_DONE"];
     }
 
 
@@ -578,8 +569,8 @@ Wi-Fi Driver's Internal Scan Phase
 Scan-Done Event Handling Phase
 *********************************
 
- - s3.1: When all channels are scanned, <`SYSTEM_EVENT_SCAN_DONE`_> will arise.
- - s3.2: The application's event callback function notifies the application task that <`SYSTEM_EVENT_SCAN_DONE`_> is received. esp_wifi_scan_get_ap_num() is called to get the number of APs that have been found in this scan. Then, it allocates enough entries and calls esp_wifi_scan_get_ap_records() to get the AP records. Please note that the AP records in the Wi-Fi driver will be freed, once esp_wifi_scan_get_ap_records() is called. Do not call esp_wifi_scan_get_ap_records() twice for a single scan-done event. If esp_wifi_scan_get_ap_records() is not called when the scan-done event occurs, the AP records allocated by the Wi-Fi driver will not be freed. So, make sure you call esp_wifi_scan_get_ap_records(), yet only once.
+ - s3.1: When all channels are scanned, <`WIFI_EVENT_SCAN_DONE`_> will arise.
+ - s3.2: The application's event callback function notifies the application task that <`WIFI_EVENT_SCAN_DONE`_> is received. esp_wifi_scan_get_ap_num() is called to get the number of APs that have been found in this scan. Then, it allocates enough entries and calls esp_wifi_scan_get_ap_records() to get the AP records. Please note that the AP records in the Wi-Fi driver will be freed, once esp_wifi_scan_get_ap_records() is called. Do not call esp_wifi_scan_get_ap_records() twice for a single scan-done event. If esp_wifi_scan_get_ap_records() is not called when the scan-done event occurs, the AP records allocated by the Wi-Fi driver will not be freed. So, make sure you call esp_wifi_scan_get_ap_records(), yet only once.
 
 Scan All APs on All Channels(background)
 ++++++++++++++++++++++++++++++++++++++++
@@ -611,8 +602,8 @@ Scenario:
         WIFI_TASK  ->  WIFI_TASK  [label="..."];
         WIFI_TASK  ->  WIFI_TASK  [label="2.x-1 > Scan channel N"];
         WIFI_TASK  ->  WIFI_TASK  [label="2.x > Back to home channel H"];
-        EVENT_TASK <-  WIFI_TASK  [label="3.1 > SYSTEM_EVENT_SCAN_DONE"];
-        APP_TASK   <-  EVENT_TASK [label="3.2 > SYSTEM_EVENT_SCAN_DONE"];
+        EVENT_TASK <-  WIFI_TASK  [label="3.1 > WIFI_EVENT_SCAN_DONE"];
+        APP_TASK   <-  EVENT_TASK [label="3.2 > WIFI_EVENT_SCAN_DONE"];
     }
 
 The scenario above is an all-channel background scan. Compared to `Scan All APs In All Channels(foreground)`_ , the difference in the all-channel background scan is that the Wi-Fi driver will scan the back-to-home channel for 30 ms before it switches to the next channel to give the Wi-Fi connection a chance to transmit/receive data.
@@ -644,8 +635,8 @@ Scenario:
         WIFI_TASK  ->  WIFI_TASK  [label="2.2 > Scan channel C2"];
         WIFI_TASK  ->  WIFI_TASK  [label="..."];
         WIFI_TASK  ->  WIFI_TASK  [label="2.x > Scan channel CN, or the AP is found"];
-        EVENT_TASK <-  WIFI_TASK  [label="3.1 > SYSTEM_EVENT_SCAN_DONE"];
-        APP_TASK   <-  EVENT_TASK [label="3.2 > SYSTEM_EVENT_SCAN_DONE"];
+        EVENT_TASK <-  WIFI_TASK  [label="3.1 > WIFI_EVENT_SCAN_DONE"];
+        APP_TASK   <-  EVENT_TASK [label="3.2 > WIFI_EVENT_SCAN_DONE"];
     }
 
 This scan is similar to `Scan All APs In All Channels(foreground)`_. The differences are:
@@ -660,7 +651,7 @@ You can scan a specific AP, or all of them, in any given channel. These two scen
 Scan in Wi-Fi Connect
 +++++++++++++++++++++++++
 
-When esp_wifi_connect() is called, then the Wi-Fi driver will try to scan the configured AP first. The scan in "Wi-Fi Connect" is the same as `Scan for a Specific AP In All Channels`_, except that no scan-done event will be generated when the scan is completed. If the target AP is found, then the Wi-Fi driver will start the Wi-Fi connection; otherwise, <`SYSTEM_EVENT_STA_DISCONNECTED`_> will be generated. Refer to `Scan for a Specific AP in All Channels`_
+When esp_wifi_connect() is called, then the Wi-Fi driver will try to scan the configured AP first. The scan in "Wi-Fi Connect" is the same as `Scan for a Specific AP In All Channels`_, except that no scan-done event will be generated when the scan is completed. If the target AP is found, then the Wi-Fi driver will start the Wi-Fi connection; otherwise, <`WIFI_EVENT_STA_DISCONNECTED`_> will be generated. Refer to `Scan for a Specific AP in All Channels`_
 
 Scan In Blocked Mode
 ++++++++++++++++++++
@@ -677,7 +668,7 @@ Scan When Wi-Fi Is Connecting
 The esp_wifi_scan_start() fails immediately if the Wi-Fi is in connecting process because the connecting has higher priority than the scan. If scan fails because of connecting, the recommended strategy is to delay sometime and retry scan again, the scan will succeed once the connecting is completed.
 
 However, the retry/delay strategy may not work all the time. Considering following scenario:
-- The station is connecting a non-existed AP or if the station connects the existed AP with a wrong password, it always raises the event <`SYSTEM_EVENT_STA_DISCONNECTED`_>.
+- The station is connecting a non-existed AP or if the station connects the existed AP with a wrong password, it always raises the event <`WIFI_EVENT_STA_DISCONNECTED`_>.
 - The application call esp_wifi_connect() to do reconnection on receiving the disconnect event.
 - Another application task, e.g. the console task, call esp_wifi_scan_start() to do scan, the scan always fails immediately because the station is keeping connecting.
 - When scan fails, the application simply delay sometime and retry the scan.
@@ -716,27 +707,27 @@ Scenario:
 
         === 1. Scan Phase ===
         WIFI_TASK  ->  WIFI_TASK [label="1.1 > Scan"];
-        EVENT_TASK <-  WIFI_TASK [label="1.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="1.2 > WIFI_EVENT_STA_DISCONNECTED"];
         === 2. Auth Phase ===
         WIFI_TASK  ->  AP        [label="2.1 > Auth request"];
-        EVENT_TASK <-  WIFI_TASK [label="2.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="2.2 > WIFI_EVENT_STA_DISCONNECTED"];
         WIFI_TASK  <-  AP        [label="2.3 > Auth response"];
-        EVENT_TASK <-  WIFI_TASK [label="2.4 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="2.4 > WIFI_EVENT_STA_DISCONNECTED"];
         === 3. Assoc Phase ===
         WIFI_TASK  ->  AP        [label="3.1 > Assoc request"];
-        EVENT_TASK <-  WIFI_TASK [label="3.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="3.2 > WIFI_EVENT_STA_DISCONNECTED"];
         WIFI_TASK  <-  AP        [label="3.3 > Assoc response"];
-        EVENT_TASK <-  WIFI_TASK [label="3.4 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="3.4 > WIFI_EVENT_STA_DISCONNECTED"];
         === 4. 4-way Handshake Phase ===
         WIFI_TASK  ->  AP        [label="4.1 > 1/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.2 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.2 > WIFI_EVENT_STA_DISCONNECTED"];
         WIFI_TASK  ->  AP        [label="4.3 > 2/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.4 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.4 > WIFI_EVENT_STA_DISCONNECTED"];
         WIFI_TASK  ->  AP        [label="4.5 > 3/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.6 > SYSTEM_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.6 > WIFI_EVENT_STA_DISCONNECTED"];
         WIFI_TASK  ->  AP        [label="4.7 > 4/4 EAPOL"];
-        EVENT_TASK <-  WIFI_TASK [label="4.8 > SYSTEM_EVENT_STA_DISCONNECTED"];
-        EVENT_TASK <-  WIFI_TASK [label="4.9 > SYSTEM_EVENT_STA_CONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.8 > WIFI_EVENT_STA_DISCONNECTED"];
+        EVENT_TASK <-  WIFI_TASK [label="4.9 > WIFI_EVENT_STA_CONNECTED"];
     }
 
 
@@ -744,32 +735,32 @@ Scan Phase
 +++++++++++++++++++++
 
  - s1.1, The Wi-Fi driver begins scanning in "Wi-Fi Connect". Refer to <`Scan in Wi-Fi Connect`_> for more details.
- - s1.2, If the scan fails to find the target AP, <`SYSTEM_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_NO_AP_FOUND. Refer to <`Wi-Fi Reason Code`_>. 
+ - s1.2, If the scan fails to find the target AP, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_NO_AP_FOUND. Refer to <`Wi-Fi Reason Code`_>. 
 
 Auth Phase
 +++++++++++++++++++++
 
  - s2.1, The authentication request packet is sent and the auth timer is enabled.
- - s2.2, If the authentication response packet is not received before the authentication timer times out, <`SYSTEM_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_AUTH_EXPIRE. Refer to <`Wi-Fi Reason Code`_>. 
+ - s2.2, If the authentication response packet is not received before the authentication timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_AUTH_EXPIRE. Refer to <`Wi-Fi Reason Code`_>. 
  - s2.3, The auth-response packet is received and the auth-timer is stopped.
- - s2.4, The AP rejects authentication in the response and <`SYSTEM_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is WIFI_REASON_AUTH_FAIL or the reasons specified by the AP. Refer to <`Wi-Fi Reason Code`_>.
+ - s2.4, The AP rejects authentication in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is WIFI_REASON_AUTH_FAIL or the reasons specified by the AP. Refer to <`Wi-Fi Reason Code`_>.
 
 Association Phase
 +++++++++++++++++++++
 
  - s3.1, The association request is sent and the association timer is enabled.
- - s3.2, If the association response is not received before the association timer times out, <`SYSTEM_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>.
+ - s3.2, If the association response is not received before the association timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>.
  - s3.3, The association response is received and the association timer is stopped.
- - s3.4, The AP rejects the association in the response and <`SYSTEM_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>. 
+ - s3.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>. 
 
 
 Four-way Handshake Phase
 ++++++++++++++++++++++++++
 
  - s4.1, The four-way handshake is sent out and the association timer is enabled.
- - s4.2, If the association response is not received before the association timer times out, <`SYSTEM_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>. 
+ - s4.2, If the association response is not received before the association timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>. 
  - s4.3, The association response is received and the association timer is stopped.
- - s4.4, The AP rejects the association in the response and <`SYSTEM_EVENT_STA_DISCONNECTED`_> arises and the reason-code will be the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>. 
+ - s4.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises and the reason-code will be the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>. 
 
 
 Wi-Fi Reason Code
@@ -1023,13 +1014,13 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 ESP32 Wi-Fi Station Connecting When Multiple APs Are Found
 ---------------------------------------------------------------
 
-This scenario is similar as <`ESP32 Wi-Fi Station Connecting Scenario`_>, the difference is the station will not raise the event <`SYSTEM_EVENT_STA_DISCONNECTED`_> unless it fails to connect all of the found APs.
+This scenario is similar as <`ESP32 Wi-Fi Station Connecting Scenario`_>, the difference is the station will not raise the event <`WIFI_EVENT_STA_DISCONNECTED`_> unless it fails to connect all of the found APs.
 
 
 Wi-Fi Reconnect
 ---------------------------
 
-The station may disconnect due to many reasons, e.g. the connected AP is restarted etc. It's the application's responsibility to do the reconnect. The recommended reconnect strategy is to call esp_wifi_connect() on receiving event <`SYSTEM_EVENT_STA_DISCONNECTED`_>.
+The station may disconnect due to many reasons, e.g. the connected AP is restarted etc. It's the application's responsibility to do the reconnect. The recommended reconnect strategy is to call esp_wifi_connect() on receiving event <`WIFI_EVENT_STA_DISCONNECTED`_>.
 
 Sometimes the application needs more complex reconnect strategy:
 - If the disconnect event is raised because the esp_wifi_disconnect() is called, the application may not want to do reconnect.
@@ -1042,7 +1033,7 @@ Wi-Fi Beacon Timeout
 
 The beacon timeout mechanism is used by ESP32 station to detect whether the AP is alive or not. If the station continuously loses 60 beacons of the connected AP, the beacon timeout happens. 
 
-After the beacon timeout happens, the station sends 5 probe requests to AP, it disconnects the AP and raises the event <`SYSTEM_EVENT_STA_DISCONNECTED`_> if still no probe response or beacon is received from AP.
+After the beacon timeout happens, the station sends 5 probe requests to AP, it disconnects the AP and raises the event <`WIFI_EVENT_STA_DISCONNECTED`_> if still no probe response or beacon is received from AP.
 
 ESP32 Wi-Fi Configuration
 ---------------------------
