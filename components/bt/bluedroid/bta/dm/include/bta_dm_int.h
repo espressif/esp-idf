@@ -128,7 +128,7 @@ enum {
     BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT,
     BTA_DM_API_BLE_BROADCAST_EVT,
     BTA_DM_API_SET_DATA_LENGTH_EVT,
-
+    BTA_DM_API_BLE_SET_LONG_ADV_EVT,
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     BTA_DM_API_CFG_FILTER_COND_EVT,
     BTA_DM_API_SCAN_FILTER_SETUP_EVT,
@@ -658,6 +658,13 @@ typedef struct {
 
 typedef struct {
     BT_HDR                  hdr;
+    UINT8                   *adv_data;
+    UINT8                   adv_data_len;
+    tBTA_SET_ADV_DATA_CMPL_CBACK    *p_adv_data_cback;
+} tBTA_DM_API_SET_LONG_ADV;
+
+typedef struct {
+    BT_HDR                  hdr;
     UINT8                   batch_scan_full_max;
     UINT8                   batch_scan_trunc_max;
     UINT8                   batch_scan_notify_threshold;
@@ -836,6 +843,7 @@ typedef union {
     tBTA_DM_API_BLE_ADV_PARAMS_ALL      ble_set_adv_params_all;
     tBTA_DM_API_SET_ADV_CONFIG          ble_set_adv_data;
     tBTA_DM_API_SET_ADV_CONFIG_RAW      ble_set_adv_data_raw;
+    tBTA_DM_API_SET_LONG_ADV            ble_set_long_adv_data;
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     tBTA_DM_API_SCAN_FILTER_PARAM_SETUP ble_scan_filt_param_setup;
     tBTA_DM_API_CFG_FILTER_COND         ble_cfg_filter_cond;
@@ -1247,6 +1255,7 @@ extern void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_params_all(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_set_long_adv (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data);

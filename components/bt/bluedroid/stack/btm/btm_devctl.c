@@ -689,6 +689,13 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
 void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback)
 {
+    switch(opcode) {
+        case HCI_VENDOR_BLE_LONG_ADV_DATA:
+            BTM_TRACE_EVENT("Set long adv data complete\n");
+            break;
+        default:
+        break;
+    }
     tBTM_VSC_CMPL   vcs_cplt_params;
 
     /* If there was a callback address for vcs complete, call it */
