@@ -247,8 +247,8 @@ static void mdns_example_task(void *pvParameters)
 void app_main()
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
-    initialise_mdns();
     initialise_wifi();
+    initialise_mdns();
     initialise_button();
     xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
 }
