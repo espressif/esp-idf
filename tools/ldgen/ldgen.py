@@ -92,7 +92,7 @@ def main():
 
         script_model.write(output_file)
 
-    except Exception, e:
+    except Exception as e:
         print("linker script generation failed for %s\nERROR: %s" % (input_file.name, e.message))
         # Delete the file so the entire build will fail; and not use an outdated script.
         os.remove(output_file.name)
