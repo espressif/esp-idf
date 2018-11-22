@@ -20,3 +20,5 @@ COMPONENT_ADD_LDFLAGS := $(LIBC_PATH) $(LIBM_PATH) -lnewlib
 COMPONENT_ADD_LINKER_DEPS := $(LIBC_PATH) $(LIBM_PATH)
 
 COMPONENT_ADD_INCLUDEDIRS := platform_include include
+
+syscalls.o: CFLAGS += -fno-builtin
