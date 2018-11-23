@@ -815,7 +815,7 @@ List_t* xDeletedTimerList = NULL;
 					}
 					/* Check if this timer pointer is already present in the list of
 					deleted timers */
-					bool found = pdFALSE;
+					BaseType_t xTimerAlreadyDeleted = pdFALSE;
 					if (xDeletedTimerList != NULL) {
 						if (!listLIST_IS_EMPTY( xDeletedTimerList )) {
 							ListItem_t* item = listGET_HEAD_ENTRY( xDeletedTimerList );
@@ -824,12 +824,12 @@ List_t* xDeletedTimerList = NULL;
 								/* If the list item owner pointer matches the current timer,
 								indicate the result has been found and stop checking */
 								if (listGET_LIST_ITEM_OWNER(item) == pxTimer) {
-									found = pdTRUE;
+									xTimerAlreadyDeleted = pdTRUE;
 									break;
 								}
 							}
 						}
-						if (found) {
+						if (xTimerAlreadyDeleted) {
 							break;
 						}
 						else {
