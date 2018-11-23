@@ -452,6 +452,10 @@ static void btc_ble_start_advertising (esp_ble_adv_params_t *ble_adv_params, tBT
         status = ESP_BT_STATUS_PARM_INVALID;
         BTC_TRACE_ERROR("Invalid advertisting channel map parameters.\n");
     }
+    if (!BLE_ISVALID_PARAM(ble_adv_params->peer_addr_type, BLE_ADDR_TYPE_PUBLIC, BLE_ADDR_TYPE_RANDOM)) {
+        status = ESP_BT_STATUS_PARM_INVALID;
+        BTC_TRACE_ERROR("Invalid advertisting peer address type parameters.\n");
+    }
     if(status != ESP_BT_STATUS_SUCCESS) {
         if(start_adv_cback) {
             start_adv_cback(status);
