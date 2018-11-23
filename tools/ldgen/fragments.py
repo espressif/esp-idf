@@ -183,15 +183,20 @@ class Mapping(Fragment):
     def _process_entries(self):
         processed = []
 
-        for normal_group in self.entries.normal_groups:
+        for normal_group in self.entries[0]:
             # Get the original string of the condition
             condition  = next(iter(normal_group.condition.asList())).strip()
-            mappings = self._create_mappings_set(normal_group.mappings)
-
+            mappings = self._create_mappings_set(normal_group[1])  
+            
             processed.append((condition, mappings))
+    
+        default_group = self.entries[1]
 
-        default_group = self.entries.default_group
-        mappings = self._create_mappings_set(default_group.mappings)
+        if len(default_group) > 1:
+            mappings = self._create_mappings_set(default_group[1])
+        else:
+            mappings = self._create_mappings_set(default_group[0])
+
         processed.append(("default", mappings))
 
         self.entries = processed
