@@ -595,7 +595,7 @@ TEST_CASE("opendir, readdir, rewinddir, seekdir work as expected", "[spiffs]")
     test_teardown();
 }
 
-TEST_CASE("readdir with large number of files", "[spiffs][timeout=15]")
+TEST_CASE("readdir with large number of files", "[spiffs][timeout=30]")
 {
     test_setup();
     test_spiffs_readdir_many_files("/spiffs/dir2");
