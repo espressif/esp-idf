@@ -809,7 +809,9 @@ List_t* xDeletedTimerList = NULL;
 					more than once */
 					if (xDeletedTimerList == NULL) {
 						xDeletedTimerList = pvPortMalloc(sizeof(List_t));
-						vListInitialise( xDeletedTimerList );
+						if (xDeletedTimerList != NULL) {
+							vListInitialise( xDeletedTimerList );
+						}
 					}
 					/* Check if this timer pointer is already present in the list of
 					deleted timers */
