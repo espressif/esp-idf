@@ -79,6 +79,7 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_SLAVE_SDA_HOLD_DEFAULT     (10)        /* I2C slave hold time after scl negative edge default value */
 #define I2C_MASTER_TOUT_CNUM_DEFAULT   (8)         /* I2C master timeout cycle number of I2C clock, after which the timeout interrupt will be triggered */
 #define I2C_ACKERR_CNT_MAX             (10)
+#define I2C_FILTER_CYC_NUM_DEF         (7)         /* The number of apb cycles filtered by default*/
 
 typedef struct {
     uint8_t byte_num;  /*!< cmd byte number */
@@ -660,6 +661,8 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
         //set timing for stop signal
         I2C[i2c_num]->scl_stop_hold.time = half_cycle;
         I2C[i2c_num]->scl_stop_setup.time = half_cycle;
+        //Default, we enable hardware filter
+        i2c_filter_enable(i2c_num, I2C_FILTER_CYC_NUM_DEF);
     }
 
     I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
@@ -689,6 +692,28 @@ esp_err_t i2c_get_period(i2c_port_t i2c_num, int* high_period, int* low_period)
     if (low_period) {
         *low_period = I2C[i2c_num]->scl_low_period.period;
     }
+    I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
+    return ESP_OK;
+}
+
+esp_err_t i2c_filter_enable(i2c_port_t i2c_num, uint8_t cyc_num)
+{
+    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
+    I2C[i2c_num]->scl_filter_cfg.thres = cyc_num;
+    I2C[i2c_num]->sda_filter_cfg.thres = cyc_num;
+    I2C[i2c_num]->scl_filter_cfg.en = 1;
+    I2C[i2c_num]->sda_filter_cfg.en = 1;
+    I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
+    return ESP_OK;
+}
+
+esp_err_t i2c_filter_disable(i2c_port_t i2c_num)
+{
+    I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
+    I2C[i2c_num]->scl_filter_cfg.en = 0;
+    I2C[i2c_num]->sda_filter_cfg.en = 0;
     I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
     return ESP_OK;
 }
