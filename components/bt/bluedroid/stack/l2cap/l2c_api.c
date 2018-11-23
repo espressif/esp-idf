@@ -1842,10 +1842,10 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
 
 BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, UINT16 handle)
 {
-    tL2C_LCB *p_lcb;
-    p_lcb = l2cu_find_lcb_by_handle(handle);
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_handle(handle);
+    size_t chnl = fixed_cid - L2CAP_FIRST_FIXED_CHNL;
 
-    if (p_lcb != NULL) {
+    if (p_lcb != NULL && p_lcb->p_fixed_ccbs[chnl] != NULL) {
         return p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]->cong_sent;
     }
 
