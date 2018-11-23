@@ -808,7 +808,7 @@ List_t* xDeletedTimerList = NULL;
 					/* Maintain a dynamic list of deleted timers, avoid deleting them
 					more than once */
 					if (xDeletedTimerList == NULL) {
-						xDeletedTimerList = malloc(sizeof(List_t));
+						xDeletedTimerList = pvPortMalloc(sizeof(List_t));
 						vListInitialise( xDeletedTimerList );
 					}
 					/* Check if this timer pointer is already present in the list of
@@ -876,9 +876,9 @@ List_t* xDeletedTimerList = NULL;
 		while (!listLIST_IS_EMPTY( xDeletedTimerList )) {
 			ListItem_t* item = listGET_HEAD_ENTRY( xDeletedTimerList );
 			uxListRemove( item );
-			free( item );
+			vPortFree( item );
 		}
-		free( xDeletedTimerList );
+		vPortFree( xDeletedTimerList );
 	}
 }
 /*-----------------------------------------------------------*/
