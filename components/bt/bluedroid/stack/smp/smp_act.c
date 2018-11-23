@@ -596,6 +596,7 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                     }
                     reason = SMP_PAIR_AUTH_FAIL;
                     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+                    return;
                 }
             }
 
@@ -634,6 +635,7 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                 }
                 reason = SMP_PAIR_AUTH_FAIL;
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+                return;
             }
         }
 
@@ -1395,6 +1397,7 @@ void smp_process_io_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                 }
                 reason = SMP_PAIR_AUTH_FAIL;
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+                return;
             }
         }
 
