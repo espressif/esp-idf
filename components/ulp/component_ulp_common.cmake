@@ -21,6 +21,10 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
                         ${ulp_artifacts_prefix}.sym
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/esp32.ulp.ld)
 
+    # Replace the separator for the list of ULP source files that will be passed to
+    # the external ULP project. This is a workaround to the bug https://public.kitware.com/Bug/view.php?id=16137.
+    string(REPLACE ";" "|" ulp_s_sources "${ulp_s_sources}")
+
     externalproject_add(${ULP_APP_NAME}
         SOURCE_DIR ${IDF_PATH}/components/ulp/cmake
         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}
@@ -29,6 +33,8 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
                     -DCMAKE_TOOLCHAIN_FILE=${IDF_PATH}/components/ulp/cmake/toolchain-ulp.cmake
                     -DULP_S_SOURCES=${ulp_s_sources} -DULP_APP_NAME=${ULP_APP_NAME}
                     -DCOMPONENT_PATH=${COMPONENT_PATH}
+                    # Even though this resolves to a ';' separated list, this is fine. This must be special behavior
+                    # for generator expressions.
                     -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_NAME},INTERFACE_INCLUDE_DIRECTORIES>
                     -DIDF_PATH=${IDF_PATH}
                     -DSDKCONFIG=${SDKCONFIG_HEADER}
@@ -36,6 +42,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
         BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}
         BUILD_ALWAYS 1
+        LIST_SEPARATOR |
         )
 
     spaces2list(ULP_EXP_DEP_SRCS)
