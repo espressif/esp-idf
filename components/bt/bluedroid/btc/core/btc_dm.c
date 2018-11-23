@@ -261,6 +261,10 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         BTC_TRACE_DEBUG ("%s, -  pairing_cb.bd_addr: %08x%04x", __func__,
                              (pairing_cb.bd_addr[0] << 24) + (pairing_cb.bd_addr[1] << 16) + (pairing_cb.bd_addr[2] << 8) + pairing_cb.bd_addr[3],
                              (pairing_cb.bd_addr[4] << 8) + pairing_cb.bd_addr[5]);
+        // Check if need to save BLE keys
+        if((p_auth_cmpl->auth_mode & SMP_AUTH_GEN_BOND) == 0) {
+            return;
+        }
          if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
             btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type, true);
         }
