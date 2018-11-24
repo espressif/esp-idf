@@ -362,6 +362,9 @@
 #ifndef BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS
 #define BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS 7000
 #endif
+#ifndef BTA_FTC_OPS_IDLE_TO_SNIFF_DELAY_MS
+#define BTA_FTC_OPS_IDLE_TO_SNIFF_DELAY_MS 5000
+#endif
 
 //------------------End added from bdroid_buildcfg.h---------------------
 
@@ -617,9 +620,18 @@
 */
 #define BTA_DM_COD_LOUDSPEAKER {0x2C, 0x04, 0x14}
 
+/*
+* {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
+*
+* SERVICE_CLASS:0x00 None
+* MAJOR_CLASS:0x1f - Uncategorized: device code not specified
+* MINOR_CLASS:0x00 - None
+*/
+#define BTA_DM_COD_UNCLASSIFIED {0x00, 0x1f, 0x00}
+
 /* Default class of device */
 #ifndef BTA_DM_COD
-#define BTA_DM_COD BTA_DM_COD_LOUDSPEAKER
+#define BTA_DM_COD BTA_DM_COD_UNCLASSIFIED
 #endif
 
 /* The number of SCO links. */

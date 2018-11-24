@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <utime.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_err.h"
@@ -180,6 +181,10 @@ typedef struct
         int (*truncate_p)(void* ctx, const char *path, off_t length);
         int (*truncate)(const char *path, off_t length);
     };
+    union {
+        int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);
+        int (*utime)(const char *path, const struct utimbuf *times);
+    };
 #ifdef CONFIG_SUPPORT_TERMIOS
     union {
         int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);
@@ -330,6 +335,7 @@ int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st);
 int esp_vfs_link(struct _reent *r, const char* n1, const char* n2);
 int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
+int esp_vfs_utime(const char *path, const struct utimbuf *times);
 /**@}*/
 
 /**

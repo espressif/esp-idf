@@ -347,7 +347,8 @@ esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 
 /**
- * @brief           This function is called to request a GATT service discovery
+ * @brief           This function is called to get service from local cache. 
+ *                  If it does not exist, request a GATT service discovery
  *                  on a GATT server. This function report service search result
  *                  by a callback event, and followed by a service search complete
  *                  event.

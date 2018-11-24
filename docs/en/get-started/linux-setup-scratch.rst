@@ -2,8 +2,9 @@
 Setup Linux Toolchain from Scratch
 **********************************
 
-The following instructions are alternative to downloading binary toolchain from Espressif website. To quickly setup the binary toolchain, instead of compiling it yourself, backup and proceed to section :doc:`linux-setup`.
-
+.. note::
+    
+    Standard process for installing the toolchain is described :doc:`here <linux-setup>`. See :ref:`Customized Setup of Toolchain <get-started-customized-setup>` section for some of the reasons why installing the toolchain from scratch may be necessary.
 
 Install Prerequisites
 =====================
@@ -48,6 +49,11 @@ Compile the Toolchain from Source
   - Arch::
 
         TODO
+
+Create the working directory and go into it::
+
+  mkdir -p ~/esp
+  cd ~/esp
 
 Download ``crosstool-NG`` and build it:
 

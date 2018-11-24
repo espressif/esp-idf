@@ -165,7 +165,7 @@ config LWIP_DHCP_RESTORE_LAST_IP
     default n
     help
         When this option is enabled, DHCP client tries to re-obtain last valid IP address obtained from DHCP server.
-        Last valid DHCP configuration is stored in nvs and restored afrer reset/power-up. If IP is still available,
+        Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still available,
         there is no need for sending discovery message to DHCP server and save some time.
 
 menu "DHCP server"

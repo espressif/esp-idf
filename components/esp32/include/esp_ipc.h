@@ -33,21 +33,6 @@ typedef void (*esp_ipc_func_t)(void* arg);
  * These APIs can only be used when FreeRTOS scheduler is running.
  */
 
-
-/*
- * Initialize inter-processor call module. This function is called automatically
- * on CPU start and should not be called from the application.
- *
- * This function start two tasks, one on each CPU. These tasks are started
- * with high priority. These tasks are normally inactive, waiting until one of
- * the esp_ipc_call_* functions to be used. One of these tasks will be
- * woken up to execute the callback provided to esp_ipc_call_nonblocking or
- * esp_ipc_call_blocking.
- */
-/** @cond */
-void esp_ipc_init();
-/** @endcond */
-
 /**
  * @brief Execute a function on the given CPU
  *

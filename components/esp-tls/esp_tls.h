@@ -60,7 +60,22 @@ typedef struct esp_tls_cfg {
  
     unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
                                                  pointed to by cacert_pem_buf */
+
+    const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer */
  
+    unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
+                                                 clientcert_pem_buf */
+
+    const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer */
+
+    unsigned int clientkey_pem_bytes;       /*!< Size of client key pointed to by
+                                                 clientkey_pem_buf */
+
+    const unsigned char *clientkey_password;/*!< Client key decryption password string */
+
+    unsigned int clientkey_password_len;    /*!< String length of the password pointed to by
+                                                 clientkey_password */
+
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
                                                  underneath socket will be configured in non 
                                                  blocking mode after tls session is established */
@@ -89,9 +104,14 @@ typedef struct esp_tls {
  
     mbedtls_net_context server_fd;                                              /*!< mbedTLS wrapper type for sockets */
  
-    mbedtls_x509_crt cacert;                                                    /*!< Container for an X.509 certificate */
- 
+    mbedtls_x509_crt cacert;                                                    /*!< Container for the X.509 CA certificate */
+
     mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
+
+    mbedtls_x509_crt clientcert;                                                /*!< Container for the X.509 client certificate */
+
+    mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
+                                                                                     certificate */
 
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
  
@@ -138,7 +158,7 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
  */
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
    
-/*
+/**
  * @brief      Create a new non-blocking TLS/SSL connection
  *
  * This function initiates a non-blocking TLS/SSL connection with the specified host, but due to
@@ -151,9 +171,10 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
  *                       this structure should be set to be true.
  * @param[in]  tls       pointer to esp-tls as esp-tls handle.
  *
- * @return     - 1       If connection establishment fails.
- *             - 0       If connection establishment is in progress.
- *             - 1       If connection establishment is successful.
+ * @return
+ *             - -1      If connection establishment fails.
+ *             -  0      If connection establishment is in progress.
+ *             -  1      If connection establishment is successful.
  */
 int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
@@ -163,12 +184,13 @@ int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const es
  * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
  *
  * @param[in]  url     url of host.
- * @param[in]  tls     pointer to esp-tls as esp-tls handle.
  * @param[in]  cfg     TLS configuration as esp_tls_cfg_t.
+ * @param[in]  tls     pointer to esp-tls as esp-tls handle.
  *
- * @return     - 1     If connection establishment fails.
- *             - 0     If connection establishment is in progress.
- *             - 1     If connection establishment is successful.
+ * @return
+ *             - -1     If connection establishment fails.
+ *             -  0     If connection establishment is in progress.
+ *             -  1     If connection establishment is successful.
  */
 int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 

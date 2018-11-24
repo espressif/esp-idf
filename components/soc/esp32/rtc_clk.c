@@ -548,7 +548,7 @@ void rtc_clk_cpu_freq_to_config(rtc_cpu_freq_t cpu_freq, rtc_cpu_freq_config_t* 
             source = RTC_CPU_FREQ_SRC_XTAL;
             if (cpu_freq == RTC_CPU_FREQ_2M) {
                 freq_mhz = 2;
-                divider = out_config->source_freq_mhz / 2;
+                divider = source_freq_mhz / 2;
             } else {
                 freq_mhz = source_freq_mhz;
                 divider = 1;

@@ -483,24 +483,19 @@ def build_iperf_with_config(config_name):
         os.chdir(cwd)
 
 
-def get_configs(env):
-    att_port = env.get_variable("attenuator_port")
-    ap_list = env.get_variable("ap_list")
-    pc_nic_ip = env.get_pc_nic_info("pc_nic", "ipv4")["addr"]
-    apc_ip = env.get_variable("apc_ip")
-    pc_iperf_log_file = os.path.join(env.log_path, "pc_iperf_log.md")
-    return att_port, ap_list, pc_nic_ip, apc_ip, pc_iperf_log_file
-
-
-@IDF.idf_example_test(env_tag="Example_ShieldBox", category="stress")
+@IDF.idf_example_test(env_tag="Example_ShieldBox_Basic", category="stress")
 def test_wifi_throughput_with_different_configs(env, extra_data):
     """
     steps: |
       1. build iperf with specified configs
       2. test throughput for all routers
     """
-    att_port, ap_list, pc_nic_ip, apc_ip, pc_iperf_log_file = get_configs(env)
-    ap_info = ap_list[0]
+    pc_nic_ip = env.get_pc_nic_info("pc_nic", "ipv4")["addr"]
+    pc_iperf_log_file = os.path.join(env.log_path, "pc_iperf_log.md")
+    ap_info = {
+        "ssid": env.get_variable("ap_ssid"),
+        "password": env.get_variable("ap_password"),
+    }
 
     config_names_raw = subprocess.check_output(["ls", os.path.dirname(os.path.abspath(__file__))])
 
@@ -529,14 +524,6 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
         test_utility = IperfTestUtility(dut, config_name, ap_info["ssid"],
                                         ap_info["password"], pc_nic_ip, pc_iperf_log_file, test_result[config_name])
 
-        PowerControl.Control.control_rest(apc_ip, ap_info["outlet"], "OFF")
-        PowerControl.Control.control(apc_ip, {ap_info["outlet"]: "ON"})
-        assert Attenuator.set_att(att_port, 0) is True
-
-        if not test_utility.wait_ap_power_on():
-            Utility.console_log("[{}] failed to power on, skip testing this AP"
-                                .format(ap_info["ssid"]), color="red")
-
         for _ in range(RETRY_COUNT_FOR_BEST_PERFORMANCE):
             test_utility.run_all_cases(0)
 
@@ -563,8 +550,10 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
       3. set attenuator value from 0-60 for each router
       4. test TCP tx rx and UDP tx rx throughput
     """
-    att_port, ap_list, pc_nic_ip, apc_ip, pc_iperf_log_file = get_configs(env)
-
+    att_port = env.get_variable("attenuator_port")
+    ap_list = env.get_variable("ap_list")
+    pc_nic_ip = env.get_pc_nic_info("pc_nic", "ipv4")["addr"]
+    apc_ip = env.get_variable("apc_ip")
     pc_iperf_log_file = os.path.join(env.log_path, "pc_iperf_log.md")
 
     test_result = {
@@ -609,15 +598,19 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     report.generate_report()
 
 
-@IDF.idf_example_test(env_tag="Example_ShieldBox")
+@IDF.idf_example_test(env_tag="Example_ShieldBox_Basic")
 def test_wifi_throughput_basic(env, extra_data):
     """
     steps: |
       1. test TCP tx rx and UDP tx rx throughput
       2. compare with the pre-defined pass standard
     """
-    att_port, ap_list, pc_nic_ip, apc_ip, pc_iperf_log_file = get_configs(env)
-    ap_info = ap_list[0]
+    pc_nic_ip = env.get_pc_nic_info("pc_nic", "ipv4")["addr"]
+    pc_iperf_log_file = os.path.join(env.log_path, "pc_iperf_log.md")
+    ap_info = {
+        "ssid": env.get_variable("ap_ssid"),
+        "password": env.get_variable("ap_password"),
+    }
 
     # 1. build iperf with best config
     build_iperf_with_config(BEST_PERFORMANCE_CONFIG)
@@ -637,14 +630,6 @@ def test_wifi_throughput_basic(env, extra_data):
 
     test_utility = IperfTestUtility(dut, BEST_PERFORMANCE_CONFIG, ap_info["ssid"],
                                     ap_info["password"], pc_nic_ip, pc_iperf_log_file, test_result)
-
-    PowerControl.Control.control_rest(apc_ip, ap_info["outlet"], "OFF")
-    PowerControl.Control.control(apc_ip, {ap_info["outlet"]: "ON"})
-    assert Attenuator.set_att(att_port, 0) is True
-
-    if not test_utility.wait_ap_power_on():
-        Utility.console_log("[{}] failed to power on, skip testing this AP"
-                            .format(ap_info["ssid"]), color="red")
 
     # 4. run test for TCP Tx, Rx and UDP Tx, Rx
     for _ in range(RETRY_COUNT_FOR_BEST_PERFORMANCE):

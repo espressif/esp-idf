@@ -2,6 +2,8 @@
 Setup Linux Toolchain from Scratch (CMake)
 ******************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. include:: ../cmake-warning.rst
 
 The following instructions are alternative to downloading binary toolchain from Espressif website. To quickly setup the binary toolchain, instead of compiling it yourself, backup and proceed to section :doc:`linux-setup`.
@@ -51,12 +53,14 @@ Compile the Toolchain from Source
 
         TODO
 
-Download ``crosstool-NG`` and build it::
+Create the working directory and go into it::
 
-    cd ~/esp
-    git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
-    cd crosstool-NG
-    ./bootstrap && ./configure --enable-local && make install
+  mkdir -p ~/esp
+  cd ~/esp
+
+Download ``crosstool-NG`` and build it:
+
+.. include:: /_build/inc/scratch-build-code.inc
 
 Build the toolchain::
 
@@ -64,7 +68,7 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-linux-toolchain-add-it-to-path-cmake>` to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow `instructions for standard setup <setup-linux-toolchain-add-it-to-path-cmake>`_ to add the toolchain to your ``PATH``.
 
 
 Next Steps

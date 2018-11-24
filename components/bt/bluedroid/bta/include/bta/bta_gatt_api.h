@@ -555,6 +555,7 @@ typedef struct {
     BD_ADDR             remote_bda;
     UINT32              trans_id;
     UINT16              conn_id;
+    UINT16              handle;                
     tBTA_GATTS_REQ_DATA *p_data;
     UINT16  data_len;
     UINT8   *value;

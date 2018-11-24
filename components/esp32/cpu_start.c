@@ -124,6 +124,7 @@ void IRAM_ATTR call_start_cpu0()
     RESET_REASON rst_reas[2];
 #endif
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
     //Move exception vectors to IRAM
     asm volatile (\
@@ -249,6 +250,7 @@ void IRAM_ATTR call_start_cpu1()
 
     ets_set_appcpu_boot_addr(0);
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
 #if CONFIG_CONSOLE_UART_NONE
     ets_install_putc1(NULL);
@@ -361,7 +363,6 @@ void start_cpu0_default(void)
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
-    esp_ipc_init();
 #ifndef CONFIG_FREERTOS_UNICORE
     esp_dport_access_int_init();
 #endif
@@ -383,6 +384,11 @@ void start_cpu0_default(void)
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
+    size_t core_data_sz = 0;
+    size_t core_data_addr = 0;
+    if (esp_core_dump_image_get(&core_data_addr, &core_data_sz) == ESP_OK && core_data_sz > 0) {
+        ESP_LOGI(TAG, "Found core dump %d bytes in flash @ 0x%x", core_data_sz, core_data_addr);
+    }
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",

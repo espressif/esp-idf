@@ -210,4 +210,6 @@ extern void bta_dm_co_ble_set_accept_auth_enable(UINT8 enable);
 extern UINT8 bta_dm_co_ble_get_accept_auth_enable(void);
 
 extern UINT8 bta_dm_co_ble_get_auth_req(void);
+
+extern void bta_dm_co_ble_oob_support(UINT8 enable);
 #endif

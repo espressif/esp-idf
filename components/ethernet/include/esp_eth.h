@@ -28,10 +28,10 @@ typedef enum {
     ETH_MODE_MII,
 } eth_mode_t;
 
-typedef enum  {
+typedef enum {
     ETH_CLOCK_GPIO0_IN = 0,
     ETH_CLOCK_GPIO16_OUT = 2,
-    ETH_CLOCK_GPIO17_OUT = 3,
+    ETH_CLOCK_GPIO17_OUT = 3
 } eth_clock_mode_t;
 
 typedef enum {
@@ -94,28 +94,26 @@ typedef void (*eth_phy_power_enable_func)(bool enable);
  *
  */
 typedef struct {
-    eth_phy_base_t  phy_addr;                   /*!< phy base addr (0~31) */
-    eth_mode_t mac_mode;                        /*!< mac mode only support RMII now */
-    eth_clock_mode_t clock_mode;                /*!< external/internal clock mode selecton */
-    eth_tcpip_input_func tcpip_input;           /*!< tcpip input func  */
-    eth_phy_func phy_init;                      /*!< phy init func  */
-    eth_phy_check_link_func phy_check_link;     /*!< phy check link func  */
-    eth_phy_check_init_func phy_check_init;     /*!< phy check init func  */
-    eth_phy_get_speed_mode_func phy_get_speed_mode;     /*!< phy check init func  */
-    eth_phy_get_duplex_mode_func phy_get_duplex_mode;     /*!< phy check init func  */
-    eth_gpio_config_func gpio_config;           /*!< gpio config func  */
-    bool flow_ctrl_enable;                      /*!< flag of flow ctrl enable */
-    eth_phy_get_partner_pause_enable_func  phy_get_partner_pause_enable; /*!< get partner pause enable */
-    eth_phy_power_enable_func  phy_power_enable;  /*!< enable or disable phy power */
-    uint32_t reset_timeout_ms;                  /*!< timeout value for reset emac */
-
+    eth_phy_base_t phy_addr;                                            /*!< phy base addr (0~31) */
+    eth_mode_t mac_mode;                                                /*!< mac mode only support RMII now */
+    eth_clock_mode_t clock_mode;                                        /*!< external/internal clock mode selecton */
+    eth_tcpip_input_func tcpip_input;                                   /*!< tcpip input func  */
+    eth_phy_func phy_init;                                              /*!< phy init func  */
+    eth_phy_check_link_func phy_check_link;                             /*!< phy check link func  */
+    eth_phy_check_init_func phy_check_init;                             /*!< phy check init func  */
+    eth_phy_get_speed_mode_func phy_get_speed_mode;                     /*!< phy check init func  */
+    eth_phy_get_duplex_mode_func phy_get_duplex_mode;                   /*!< phy check init func  */
+    eth_gpio_config_func gpio_config;                                   /*!< gpio config func  */
+    bool flow_ctrl_enable;                                              /*!< flag of flow ctrl enable */
+    eth_phy_get_partner_pause_enable_func phy_get_partner_pause_enable; /*!< get partner pause enable */
+    eth_phy_power_enable_func phy_power_enable;                         /*!< enable or disable phy power */
+    uint32_t reset_timeout_ms;                                          /*!< timeout value for reset emac */
 } eth_config_t;
-
 
 /**
  * @brief  Init ethernet mac
  *
- * @note   config can not be NULL,and phy chip must be suitable to phy init func.
+ * @note   config can not be NULL, and phy chip must be suitable to phy init func.
  *
  * @param[in] config  mac init data.
  *
@@ -144,7 +142,7 @@ esp_err_t esp_eth_deinit(void);
  * This function may be called, if you only need to initialize the Ethernet
  * driver without having to use the network stack on top.
  *
- * @note   config can not be NULL,and phy chip must be suitable to phy init func.
+ * @note   config can not be NULL, and phy chip must be suitable to phy init func.
  * @param[in] config  mac init data.
  *
  * @return
@@ -156,7 +154,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config);
 /**
  * @brief  Send packet from tcp/ip to mac
  *
- * @note   buf can not be NULL,size must be less than 1580
+ * @note   buf can not be NULL, size must be less than 1580
  *
  * @param[in] buf:  start address of packet data.
  *
@@ -171,7 +169,7 @@ esp_err_t esp_eth_tx(uint8_t *buf, uint16_t size);
 /**
  * @brief  Enable ethernet interface
  *
- * @note   Shout be called after esp_eth_init
+ * @note   Should be called after esp_eth_init
  *
  * @return
  *      - ESP_OK
@@ -182,7 +180,7 @@ esp_err_t esp_eth_enable(void);
 /**
  * @brief  Disable ethernet interface
  *
- * @note   Shout be called after esp_eth_init
+ * @note   Should be called after esp_eth_init
  *
  * @return
  *      - ESP_OK
@@ -200,24 +198,24 @@ esp_err_t esp_eth_disable(void);
 void esp_eth_get_mac(uint8_t mac[6]);
 
 /**
- * @brief  Read phy reg with smi interface.
+ * @brief  Write PHY reg with SMI interface.
  *
- * @note  phy base addr must be right.
+ * @note  PHY base addr must be right.
  *
- * @param[in] reg_num:  phy reg num.
+ * @param[in] reg_num:  PHY reg num.
  *
- * @param[in] value: value which write to phy reg.
+ * @param[in] value: value which is written to PHY reg.
  */
 void esp_eth_smi_write(uint32_t reg_num, uint16_t value);
 
 /**
- * @brief  Read phy reg with smi interface.
+ * @brief  Read PHY reg with SMI interface.
  *
- * @note  phy base addr must be right.
+ * @note  PHY base addr must be right.
  *
- * @param[in] reg_num:  phy reg num.
+ * @param[in] reg_num:  PHY reg num.
  *
- * @return value what read from phy reg
+ * @return value that is read from PHY reg
  */
 uint16_t esp_eth_smi_read(uint32_t reg_num);
 
@@ -254,9 +252,9 @@ static inline esp_err_t esp_eth_smi_wait_set(uint32_t reg_num, uint16_t value_ma
 /**
  * @brief  Free emac rx buf.
  *
- * @note  buf can not be null,and it is tcpip input buf.
+ * @note  buf can not be null, and it is tcpip input buf.
  *
- * @param[in] buf: start address of recevie packet data.
+ * @param[in] buf: start address of received packet data.
  *
  */
 void esp_eth_free_rx_buf(void *buf);
@@ -264,7 +262,7 @@ void esp_eth_free_rx_buf(void *buf);
 /**
  * @brief  Set mac of ethernet interface.
  *
- * @note user can call this function after emac_init,and the new mac address will be enabled after emac_enable.
+ * @note user can call this function after emac_init, and the new mac address will be enabled after emac_enable.
  *
  * @param[in] mac: the Mac address.
  *

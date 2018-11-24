@@ -69,19 +69,26 @@ static spi_flash_counters_t s_flash_stats;
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 static esp_err_t spi_flash_translate_rc(esp_rom_spiflash_result_t rc);
+static bool is_safe_write_address(size_t addr, size_t size);
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
-    .start     = spi_flash_disable_interrupts_caches_and_other_cpu,
-    .end       = spi_flash_enable_interrupts_caches_and_other_cpu,
-    .op_lock   = spi_flash_op_lock,
-    .op_unlock = spi_flash_op_unlock
+    .start                  = spi_flash_disable_interrupts_caches_and_other_cpu,
+    .end                    = spi_flash_enable_interrupts_caches_and_other_cpu,
+    .op_lock                = spi_flash_op_lock,
+    .op_unlock              = spi_flash_op_unlock,
+#if !CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+    .is_safe_write_address  = is_safe_write_address
+#endif
 };
 
 const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
-    .start      = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
-    .end        = spi_flash_enable_interrupts_caches_no_os,
-    .op_lock    = 0,
-    .op_unlock  = 0
+    .start                  = spi_flash_disable_interrupts_caches_and_other_cpu_no_os,
+    .end                    = spi_flash_enable_interrupts_caches_no_os,
+    .op_lock                = 0,
+    .op_unlock              = 0,
+#if !CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+    .is_safe_write_address  = 0
+#endif
 };
 
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
@@ -100,7 +107,7 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE)
 #else /* FAILS or ABORTS */
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE) do {                            \
-        if (!is_safe_write_address(ADDR, SIZE)) {                       \
+        if (s_flash_guard_ops && s_flash_guard_ops->is_safe_write_address && !s_flash_guard_ops->is_safe_write_address(ADDR, SIZE)) {                       \
             return ESP_ERR_INVALID_ARG;                                 \
         }                                                               \
     } while(0)

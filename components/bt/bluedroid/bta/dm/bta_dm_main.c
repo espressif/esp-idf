@@ -82,6 +82,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif  ///SMP_INCLUDED == TRUE
 #if (BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE)
     bta_dm_loc_oob,                         /* BTA_DM_API_LOC_OOB_EVT */
+    bta_dm_oob_reply,                       /* BTA_DM_API_OOB_REPLY_EVT */
     bta_dm_ci_io_req_act,                   /* BTA_DM_CI_IO_REQ_EVT */
     bta_dm_ci_rmt_oob_act,                  /* BTA_DM_CI_RMT_OOB_EVT */
 #endif /* BTM_OOB_INCLUDED */
@@ -130,6 +131,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
     bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
     bta_dm_ble_set_data_length,             /* BTA_DM_API_SET_DATA_LENGTH_EVT */
+    bta_dm_ble_set_long_adv,                /* BTA_DM_API_BLE_SET_LONG_ADV_EVT */
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     bta_dm_cfg_filter_cond,                 /* BTA_DM_API_CFG_FILTER_COND_EVT */
     bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */

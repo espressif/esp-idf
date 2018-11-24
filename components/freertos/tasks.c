@@ -302,10 +302,8 @@ when the scheduler is unsuspended.  The pending ready list itself can only be
 accessed from a critical section. */
 PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[ portNUM_PROCESSORS ]	= { ( UBaseType_t ) pdFALSE };
 
-/* For now, we use just one mux for all the critical sections. ToDo: give everything a bit more granularity;
-  that could improve performance by not needlessly spinning in spinlocks for unrelated resources. */
+/* We use just one spinlock for all the critical sections. */
 PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
-PRIVILEGED_DATA static portMUX_TYPE xTickCountMutex = portMUX_INITIALIZER_UNLOCKED;
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
 
@@ -1346,9 +1344,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		{
 			/* Minor optimisation.  The tick count cannot change in this
 			block. */
-//			portTICK_TYPE_ENTER_CRITICAL( &xTickCountMutex );
 			const TickType_t xConstTickCount = xTickCount;
-//			portTICK_TYPE_EXIT_CRITICAL( &xTickCountMutex );
 
 			/* Generate the tick time at which the task wants to wake. */
 			xTimeToWake = *pxPreviousWakeTime + xTimeIncrement;
@@ -1455,9 +1451,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 				/* Calculate the time to wake - this may overflow but this is
 				not a problem. */
-//				portTICK_TYPE_ENTER_CRITICAL( &xTickCountMutex );
 				xTimeToWake = xTickCount + xTicksToDelay;
-//				portTICK_TYPE_EXIT_CRITICAL( &xTickCountMutex );
 
 				/* We must remove ourselves from the ready list before adding
 				ourselves to the blocked list as the same list item is used for
@@ -2153,6 +2147,8 @@ void vTaskSuspendAll( void )
 
 #if ( configUSE_TICKLESS_IDLE != 0 )
 
+#if ( portNUM_PROCESSORS > 1 )
+
 	static BaseType_t xHaveReadyTasks()
 	{
 		for (int i = tskIDLE_PRIORITY + 1; i < configMAX_PRIORITIES; ++i)
@@ -2169,6 +2165,7 @@ void vTaskSuspendAll( void )
 		return pdFALSE;
 	}
 
+#endif // portNUM_PROCESSORS > 1
 
 	static TickType_t prvGetExpectedIdleTime( void )
 	{
@@ -2200,9 +2197,7 @@ void vTaskSuspendAll( void )
 		}
 		else
 		{
-			portTICK_TYPE_ENTER_CRITICAL( &xTickCountMutex );
 			xReturn = xNextTaskUnblockTime - xTickCount;
-			portTICK_TYPE_EXIT_CRITICAL( &xTickCountMutex );
 		}
 		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
@@ -2308,31 +2303,13 @@ BaseType_t xAlreadyYielded = pdFALSE;
 
 TickType_t xTaskGetTickCount( void )
 {
-TickType_t xTicks;
-
-	/* Critical section required if running on a 16 bit processor. */
-	portTICK_TYPE_ENTER_CRITICAL( &xTickCountMutex );
-	{
-		xTicks = xTickCount;
-	}
-	portTICK_TYPE_EXIT_CRITICAL( &xTickCountMutex );
-
-	return xTicks;
+	return xTickCount;
 }
 /*-----------------------------------------------------------*/
 
 TickType_t xTaskGetTickCountFromISR( void )
 {
-TickType_t xReturn;
-
-	taskENTER_CRITICAL_ISR(&xTickCountMutex);
-	{
-		xReturn = xTickCount;
-//		vPortCPUReleaseMutex( &xTickCountMutex );
-	}
-	taskEXIT_CRITICAL_ISR(&xTickCountMutex);
-
-	return xReturn;
+	return xTickCount;
 }
 /*-----------------------------------------------------------*/
 
@@ -2467,10 +2444,10 @@ implementations require configUSE_TICKLESS_IDLE to be set to a value other than
 		/* Correct the tick count value after a period during which the tick
 		was suppressed.  Note this does *not* call the tick hook function for
 		each stepped tick. */
-		portTICK_TYPE_ENTER_CRITICAL( &xTickCountMutex );
+		portENTER_CRITICAL( &xTaskQueueMutex );
 		configASSERT( ( xTickCount + xTicksToJump ) <= xNextTaskUnblockTime );
 		xTickCount += xTicksToJump;
-		portTICK_TYPE_EXIT_CRITICAL( &xTickCountMutex );
+		portEXIT_CRITICAL( &xTaskQueueMutex );
 		traceINCREASE_TICK_COUNT( xTicksToJump );
 	}
 
@@ -2512,14 +2489,10 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] == ( UBaseType_t ) pdFALSE )
 	{
-		portTICK_TYPE_ENTER_CRITICAL( &xTickCountMutex );
+		taskENTER_CRITICAL_ISR( &xTaskQueueMutex );
 		/* Increment the RTOS tick, switching the delayed and overflowed
 		delayed lists if it wraps to 0. */
 		++xTickCount;
-		portTICK_TYPE_EXIT_CRITICAL( &xTickCountMutex );
-
-		//The other CPU may decide to mess with the task queues, so this needs a mux.
-		taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 		{
 			/* Minor optimisation.  The tick count cannot change in this
 			block. */
@@ -3288,7 +3261,7 @@ BaseType_t xReturn;
 	configASSERT( pxTimeOut );
 	configASSERT( pxTicksToWait );
 
-	taskENTER_CRITICAL(&xTickCountMutex);
+	taskENTER_CRITICAL(&xTaskQueueMutex);
 	{
 		/* Minor optimisation.  The tick count cannot change in this block. */
 		const TickType_t xConstTickCount = xTickCount;
@@ -3324,7 +3297,7 @@ BaseType_t xReturn;
 			xReturn = pdTRUE;
 		}
 	}
-	taskEXIT_CRITICAL(&xTickCountMutex);
+	taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 	return xReturn;
 }
@@ -4081,7 +4054,7 @@ TCB_t *pxTCB;
 	{
 	TCB_t * const pxTCB = ( TCB_t * ) pxMutexHolder;
 
-		taskENTER_CRITICAL(&xTickCountMutex);
+		taskENTER_CRITICAL(&xTaskQueueMutex);
 		/* If the mutex was given back by an interrupt while the queue was
 		locked then the mutex holder might now be NULL. */
 		if( pxMutexHolder != NULL )
@@ -4138,7 +4111,7 @@ TCB_t *pxTCB;
 			mtCOVERAGE_TEST_MARKER();
 		}
 
-		taskEXIT_CRITICAL(&xTickCountMutex);
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
 
 	}
 
@@ -4151,7 +4124,7 @@ TCB_t *pxTCB;
 	{
 	TCB_t * const pxTCB = ( TCB_t * ) pxMutexHolder;
 	BaseType_t xReturn = pdFALSE;
-		taskENTER_CRITICAL(&xTickCountMutex);
+		taskENTER_CRITICAL(&xTaskQueueMutex);
 
 		if( pxMutexHolder != NULL )
 		{
@@ -4215,7 +4188,7 @@ TCB_t *pxTCB;
 			mtCOVERAGE_TEST_MARKER();
 		}
 
-		taskEXIT_CRITICAL(&xTickCountMutex);
+		taskEXIT_CRITICAL(&xTaskQueueMutex);
 		return xReturn;
 	}
 

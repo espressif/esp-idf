@@ -156,7 +156,7 @@ int esp_transport_connect(esp_transport_handle_t t, const char *host, int port, 
 int esp_transport_connect_async(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     int ret = -1;
-    if (t && t->_connect) {
+    if (t && t->_connect_async) {
         return t->_connect_async(t, host, port, timeout_ms);
     }
     return ret;

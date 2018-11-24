@@ -1222,4 +1222,13 @@ esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif)
     return ESP_OK;
 }
 
+bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if)
+{
+    if (esp_netif[tcpip_if] != NULL && netif_is_up(esp_netif[tcpip_if])) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 #endif /* CONFIG_TCPIP_LWIP */

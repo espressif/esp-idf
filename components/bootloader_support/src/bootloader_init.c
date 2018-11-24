@@ -72,6 +72,7 @@ static void wdt_reset_check(void);
 esp_err_t bootloader_init()
 {
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
     /* Sanity check that static RAM is after the stack */
 #ifndef NDEBUG

@@ -14,6 +14,7 @@ System API
    Inter-Processor Call <ipc>
    High Resolution Timer <esp_timer>
    Logging <log>
+   Event Loop Library <esp_event>
    Application Level Tracing <app_trace>
    Power Management <power_management>
    Sleep Modes <sleep_modes>

@@ -16,8 +16,7 @@ endfunction()
 #
 function(register_component)
     get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
-    get_filename_component(component ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-
+    set(component ${COMPONENT_NAME})
 
     spaces2list(COMPONENT_SRCDIRS)
     spaces2list(COMPONENT_ADD_INCLUDEDIRS)
@@ -103,6 +102,16 @@ function(register_component)
         endif()
         target_include_directories(${component} PRIVATE ${abs_dir})
     endforeach()
+
+    if(component IN_LIST BUILD_TEST_COMPONENTS)
+        target_link_libraries(${component} "-L${CMAKE_CURRENT_BINARY_DIR}")
+        target_link_libraries(${component} "-Wl,--whole-archive -l${component} -Wl,--no-whole-archive")
+    endif()
+
+    if(COMPONENT_ADD_LDFRAGMENTS)
+        spaces2list(COMPONENT_ADD_LDFRAGMENTS)
+        ldgen_add_fragment_files(${component} "${COMPONENT_ADD_LDFRAGMENTS}")
+    endif()
 endfunction()
 
 function(register_config_only_component)
@@ -126,6 +135,12 @@ function(add_component_dependencies target dep dep_type)
             target_compile_options(${target} ${dep_type}
                 $<TARGET_PROPERTY:${dep},INTERFACE_COMPILE_OPTIONS>)
         endif()
+    endif()
+endfunction()
+
+function(require_idf_targets)
+    if(NOT ${IDF_TARGET} IN_LIST ARGN)
+        message(FATAL_ERROR "Component ${COMPONENT_NAME} only supports targets: ${ARGN}")
     endif()
 endfunction()
 
@@ -154,7 +169,7 @@ function(components_finish_registration)
 
             get_target_property(a_type ${a} TYPE)
             if(${a_type} MATCHES .+_LIBRARY)
-                set(COMPONENT_LIBRARIES "${COMPONENT_LIBRARIES};${a}")
+                list(APPEND COMPONENT_LIBRARIES ${a})
             endif()
         endif()
     endforeach()

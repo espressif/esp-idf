@@ -75,7 +75,8 @@ else
     [ -z ${JOB_PATTERN} ] && die "JOB_PATTERN is bad"
 
     # parse number 'NUM' at the end of string 'some_your_text_NUM'
-    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_([0-9]+)$/\1/p' )
+    # NOTE: Getting rid of the leading zero to get the decimal
+    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_0*([0-9]+)$/\1/p' )
     [ -z ${JOB_NUM} ] && die "JOB_NUM is bad"
 
     # count number of the jobs
@@ -107,11 +108,24 @@ build_example () {
 
     local EXAMPLE_DIR=$(dirname "${MAKE_FILE}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
+    
+    # Check if the example needs a different base directory.
+    # Path of the Makefile relative to $IDF_PATH
+    local MAKE_FILE_REL=${MAKE_FILE#"${IDF_PATH}/"}
+    # Look for it in build_example_dirs.txt:
+    local COPY_ROOT_REL=$(sed -n -E "s|${MAKE_FILE_REL}[[:space:]]+(.*)|\1|p" < ${IDF_PATH}/tools/ci/build_example_dirs.txt)
+    if [[ -n "${COPY_ROOT_REL}" && -d "${IDF_PATH}/${COPY_ROOT_REL}/" ]]; then
+        local COPY_ROOT=${IDF_PATH}/${COPY_ROOT_REL}
+    else
+        local COPY_ROOT=${EXAMPLE_DIR}
+    fi
 
     echo "Building ${EXAMPLE_NAME} as ${ID}..."
     mkdir -p "example_builds/${ID}"
-    cp -r "${EXAMPLE_DIR}" "example_builds/${ID}"
-    pushd "example_builds/${ID}/${EXAMPLE_NAME}"
+    cp -r "${COPY_ROOT}" "example_builds/${ID}"
+    local COPY_ROOT_PARENT=$(dirname ${COPY_ROOT})
+    local EXAMPLE_DIR_REL=${EXAMPLE_DIR#"${COPY_ROOT_PARENT}"}
+    pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
@@ -120,13 +134,18 @@ build_example () {
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         touch ${BUILDLOG}
 
+        local FLASH_ARGS=build/download.config
+
         make clean >>${BUILDLOG} 2>&1 &&
         make defconfig >>${BUILDLOG} 2>&1 &&
         make all >>${BUILDLOG} 2>&1 &&
-        ( make print_flash_cmd | tail -n 1 >build/download.config ) >>${BUILDLOG} 2>&1 ||
+        make print_flash_cmd >${FLASH_ARGS}.full 2>>${BUILDLOG} ||
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }
+
+        tail -n 1 ${FLASH_ARGS}.full > ${FLASH_ARGS} || :
+        test -s ${FLASH_ARGS} || die "Error: ${FLASH_ARGS} file is empty"
 
         cat ${BUILDLOG}
     popd
@@ -136,7 +155,7 @@ build_example () {
 
 EXAMPLE_NUM=0
 
-find ${IDF_PATH}/examples/ -type f -name Makefile | sort | \
+find ${IDF_PATH}/examples -type f -name Makefile | sort | \
 while read FN
 do
     if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]

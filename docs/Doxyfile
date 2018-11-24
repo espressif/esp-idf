@@ -97,7 +97,8 @@ INPUT = \
     ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
-    ../../components/http_server/include/http_server.h \
+    ../../components/esp_http_server/include/esp_http_server.h \
+    ../../components/esp_https_server/include/esp_https_server.h \
     ##
     ## Provisioning - API Reference
     ##
@@ -184,6 +185,9 @@ INPUT = \
     ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
     ../../components/esp32/include/esp_timer.h \
+    ### esp_event, Event Loop Library
+    ../../components/esp_event/include/esp_event.h \
+    ../../components/esp_event/include/esp_event_base.h \
     ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
     ###

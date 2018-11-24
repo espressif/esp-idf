@@ -14,8 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+
 #include "rom/ets_sys.h"
 #include "rom/gpio.h"
 
@@ -98,4 +97,5 @@ void emac_mac_init(void)
     REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACDUPLEX);
     REG_SET_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACMII);
     REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACFESPEED);
+    REG_SET_BIT(EMAC_GMACFF_REG, EMAC_PAM);
 }

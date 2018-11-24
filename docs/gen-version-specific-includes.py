@@ -170,9 +170,9 @@ def get_version():
     # No tag, look for a branch
     refs = subprocess.check_output(["git", "for-each-ref", "--points-at", "HEAD", "--format", "%(refname)"])
     print("refs:\n%s" % refs)
-    refs = refs.split("\n")
+    refs = refs.split(b"\n")
     # Note: this looks for branches in 'origin' because GitLab CI doesn't check out a local branch
-    branches = [ r.replace("refs/remotes/origin/","").strip() for r in refs if r.startswith("refs/remotes/origin/") ]
+    branches = [ r.replace(b"refs/remotes/origin/",b"").strip() for r in refs if r.startswith(b"refs/remotes/origin/") ]
     if len(branches) == 0:
         # last resort, return the commit (may happen on Gitlab CI sometimes, unclear why)
         return (subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip(), "commit", False)

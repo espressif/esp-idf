@@ -9,6 +9,9 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
+#ifndef CONFIG_SPIRAM_SUPPORT
+//This test should be removed once the timing test is merged.
+
 #define PIN_NUM_MISO 25
 #define PIN_NUM_MOSI 23
 #define PIN_NUM_CLK  19
@@ -74,9 +77,6 @@ static void slave_init()
     //Initialize SPI slave interface
     TEST_ESP_OK( spi_slave_initialize(VSPI_HOST, &buscfg, &slvcfg, 2) );
 }
-
-#ifndef CONFIG_SPIRAM_SUPPORT
-//This test should be removed once the timing test is merged.
 
 TEST_CASE("test slave startup","[spi]")
 {
@@ -144,4 +144,4 @@ TEST_CASE("test slave startup","[spi]")
     ESP_LOGI(MASTER_TAG, "test passed.");
 }
 
-#endif
+#endif // !CONFIG_SPIRAM_SUPPORT

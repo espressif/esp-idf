@@ -2,6 +2,10 @@
 从零开始设置 Mac OS 环境下的工具链
 **********************************
 
+.. note::
+    
+    安装工具链的标准流程可以通过阅读文档 :doc:`在 MacOS 上安装 ESP32 工具链 <macos-setup>` 来获得， :ref:`工具链的自定义设置 <get-started-customized-setup>` 章节会介绍哪些情况下我们必须要重新定义工具链。
+
 安装必要的工具
 =====================
 
@@ -41,8 +45,12 @@
 
 创建指向你工作目录的符号链接::
 
-    cd ~/esp
-    ln -s /Volumes/ctng crosstool-NG
+    mkdir -p ~/esp
+    ln -s /Volumes/ctng ~/esp/ctng-volume
+
+进入新创建的工作目录::
+
+    cd ~/esp/ctng-volume
 
 下载 ``crosstool-NG`` 然后编译:
 
@@ -54,7 +62,7 @@
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-编译得到的工具链会被保存到 ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``。根据 :ref:`Mac OS 下设置环境变量的标准方法 <setup-macos-toolchain-add-it-to-path>` 中的介绍，将工具链添加到 ``PATH`` 中。
+编译得到的工具链会被保存到 ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``。根据 :ref:`Mac OS 下设置环境变量的标准方法 <setup-macos-toolchain-add-it-to-path>` 中的介绍，将工具链添加到 ``PATH`` 中。
 
 
 下一步

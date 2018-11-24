@@ -52,6 +52,9 @@ const tSMP_ACT smp_distribute_act [] = {
     smp_set_derive_link_key
 };
 
+extern UINT8 bta_dm_co_ble_get_accept_auth_enable(void);
+extern UINT8 bta_dm_co_ble_get_auth_req(void);
+
 static bool lmp_version_below(BD_ADDR bda, uint8_t version)
 {
     tACL_CONN *acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
@@ -499,6 +502,33 @@ void smp_proc_pair_fail(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 }
 
 /*******************************************************************************
+** Function     smp_get_auth_mode
+** Description  Get the SMP pairing auth mode
+*******************************************************************************/
+uint16_t smp_get_auth_mode (tSMP_ASSO_MODEL model)
+{
+    SMP_TRACE_DEBUG("%s model %d", __func__, model);
+    uint16_t auth = 0;
+    if (model == SMP_MODEL_ENCRYPTION_ONLY || model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
+        //No MITM
+        if(model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
+            //SC SMP_SC_SUPPORT_BIT
+            auth |=  SMP_SC_SUPPORT_BIT;
+        }
+    } else if (model <= SMP_MODEL_KEY_NOTIF) {
+        //NO SC, MITM
+        auth |= SMP_AUTH_YN_BIT;
+    } else if (model <= SMP_MODEL_SEC_CONN_OOB) {
+        //SC, MITM
+        auth |= SMP_SC_SUPPORT_BIT;
+        auth |= SMP_AUTH_YN_BIT;
+    } else {
+        auth = 0;
+    }
+    return auth;
+} 
+
+/*******************************************************************************
 ** Function     smp_proc_pair_cmd
 ** Description  Process the SMP pairing request/response from peer device
 *******************************************************************************/
@@ -528,7 +558,8 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
-
+    p_cb->accept_specified_sec_auth = bta_dm_co_ble_get_accept_auth_enable();
+    p_cb->origin_loc_auth_req = bta_dm_co_ble_get_auth_req();
     if (p_cb->role == HCI_ROLE_SLAVE) {
         if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
             /* peer (master) started pairing sending Pairing Request */
@@ -551,10 +582,18 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
                 return;
             }
-            if(p_cb->accept_specified_sec_auth) {
-                if((p_cb->origin_loc_auth_req & p_cb->peer_auth_req & p_cb->loc_auth_req) != p_cb->origin_loc_auth_req ) {
-                    SMP_TRACE_ERROR("%s pairing failed - slave requires 0x%x auth but peer auth req 0x%x local auth req 0x%x",
+            uint16_t auth = smp_get_auth_mode(p_cb->selected_association_model);
+            if(p_cb->peer_auth_req & p_cb->loc_auth_req & SMP_AUTH_GEN_BOND) {
+                auth |= SMP_AUTH_GEN_BOND;
+            }
+            p_cb->auth_mode = auth;
+            if (p_cb->accept_specified_sec_auth) {
+                if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
+                    SMP_TRACE_ERROR("%s pairing failed - slave requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
                                     __func__, p_cb->origin_loc_auth_req, p_cb->peer_auth_req, p_cb->loc_auth_req);
+                    if (BTM_IsAclConnectionUp(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+                        btm_remove_acl (p_cb->pairing_bda, BT_TRANSPORT_LE);
+                    }
                     reason = SMP_PAIR_AUTH_FAIL;
                     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
                 }
@@ -581,10 +620,18 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
             return;
         }
 
+        uint16_t auth = smp_get_auth_mode(p_cb->selected_association_model);
+        if(p_cb->peer_auth_req & p_cb->loc_auth_req & SMP_AUTH_GEN_BOND) {
+            auth |= SMP_AUTH_GEN_BOND;
+        }
+         p_cb->auth_mode = auth;
         if (p_cb->accept_specified_sec_auth) {
-            if ((p_cb->origin_loc_auth_req & p_cb->peer_auth_req & p_cb->loc_auth_req) != p_cb->origin_loc_auth_req ) {
-                SMP_TRACE_ERROR("%s pairing failed - master requires 0x%x auth but peer auth req 0x%x local auth req 0x%x",
+            if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
+                SMP_TRACE_ERROR("%s pairing failed - master requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
                                     __func__, p_cb->origin_loc_auth_req, p_cb->peer_auth_req, p_cb->loc_auth_req);
+                if (BTM_IsAclConnectionUp(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+                    btm_remove_acl (p_cb->pairing_bda, BT_TRANSPORT_LE);
+                }
                 reason = SMP_PAIR_AUTH_FAIL;
                 smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             }
@@ -1333,6 +1380,22 @@ void smp_process_io_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
                               but it can't be provided -> Slave fails pairing\n");
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
             return;
+        }
+        uint16_t auth = smp_get_auth_mode(p_cb->selected_association_model);
+        if(p_cb->peer_auth_req & p_cb->loc_auth_req & SMP_AUTH_GEN_BOND) {
+            auth |= SMP_AUTH_GEN_BOND;
+        }
+        p_cb->auth_mode = auth;
+        if (p_cb->accept_specified_sec_auth) {
+            if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
+                SMP_TRACE_ERROR("pairing failed - slave requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
+                                    p_cb->origin_loc_auth_req, p_cb->peer_auth_req, p_cb->loc_auth_req);
+                if (BTM_IsAclConnectionUp(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+                    btm_remove_acl (p_cb->pairing_bda, BT_TRANSPORT_LE);
+                }
+                reason = SMP_PAIR_AUTH_FAIL;
+                smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+            }
         }
 
         if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {

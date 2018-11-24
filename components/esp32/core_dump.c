@@ -24,12 +24,14 @@
 #include "esp_panic.h"
 #include "esp_partition.h"
 #include "esp_clk.h"
+#include "esp_core_dump.h"
+
+#include "esp_log.h"
+const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump";
+
+typedef uint32_t core_dump_crc_t;
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
-#define LOG_LOCAL_LEVEL CONFIG_ESP32_CORE_DUMP_LOG_LEVEL
-#include "esp_log.h"
-const static DRAM_ATTR char TAG[] = "esp_core_dump";
-
 #define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { ets_printf(DRAM_STR(format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
 #define ESP_COREDUMP_LOGE( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_ERROR, LOG_FORMAT(E, format), ##__VA_ARGS__)
 #define ESP_COREDUMP_LOGW( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_WARN, LOG_FORMAT(W, format), ##__VA_ARGS__)
@@ -43,9 +45,9 @@ const static DRAM_ATTR char TAG[] = "esp_core_dump";
 #define ESP_COREDUMP_LOG_PROCESS( format, ... )  do{/*(__VA_ARGS__);*/}while(0)
 #endif
 
-// TODO: allow user to set this in menuconfig or get tasks iteratively
-#define COREDUMP_MAX_TASKS_NUM              32
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
+#define COREDUMP_VERSION                    1
+
 
 typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len);
 typedef esp_err_t (*esp_core_dump_write_start_t)(void *priv);
@@ -74,6 +76,7 @@ typedef struct _core_dump_write_config_t
 typedef struct _core_dump_header_t
 {
     uint32_t data_len;  // data length
+    uint32_t version;   // core dump struct version
     uint32_t tasks_num; // number of tasks
     uint32_t tcb_sz;    // size of TCB
 } core_dump_header_t;
@@ -101,7 +104,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
 {
     int cur_task_bad = 0;
     esp_err_t err;
-    TaskSnapshot_t tasks[COREDUMP_MAX_TASKS_NUM];
+    TaskSnapshot_t tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
     UBaseType_t tcb_sz, tcb_sz_padded, task_num;
     uint32_t data_len = 0, i, len;
     union
@@ -110,7 +113,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
         core_dump_task_header_t task_hdr;
     } dump_data;
 
-    task_num = uxTaskGetSnapshotAll(tasks, COREDUMP_MAX_TASKS_NUM, &tcb_sz);
+    task_num = uxTaskGetSnapshotAll(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM, &tcb_sz);
     // take TCB padding into account, actual TCB size will be stored in header
     if (tcb_sz % sizeof(uint32_t))
         tcb_sz_padded = (tcb_sz / sizeof(uint32_t) + 1) * sizeof(uint32_t);
@@ -143,9 +146,9 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
             else {
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
                 XtExcFrame *task_frame2 = (XtExcFrame *)tasks[i].pxTopOfStack;
-#endif
                 ESP_COREDUMP_LOG_PROCESS("Task EXIT/PC/PS/A0/SP %x %x %x %x %x",
                     task_frame2->exit, task_frame2->pc, task_frame2->ps, task_frame2->a0, task_frame2->a1);
+#endif
             }
         }
         len = (uint32_t)tasks[i].pxEndOfStack - (uint32_t)tasks[i].pxTopOfStack;
@@ -188,6 +191,7 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
     }
     // write header
     dump_data.hdr.data_len  = data_len;
+    dump_data.hdr.version   = COREDUMP_VERSION;
     dump_data.hdr.tasks_num = task_num - write_cfg->bad_tasks_num;
     dump_data.hdr.tcb_sz    = tcb_sz;
     err = write_cfg->write(write_cfg->priv, &dump_data, sizeof(core_dump_header_t));
@@ -248,13 +252,10 @@ static void esp_core_dump_write(XtExcFrame *frame, core_dump_write_config_t *wri
 
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 
-// magic numbers to control core dump data consistency
-#define COREDUMP_FLASH_MAGIC_START    0xE32C04EDUL
-#define COREDUMP_FLASH_MAGIC_END      0xE32C04EDUL
-
 typedef struct _core_dump_write_flash_data_t
 {
-    uint32_t    off;
+    uint32_t        off; // current offset in partition
+    core_dump_crc_t crc; // CRC of dumped data
 } core_dump_write_flash_data_t;
 
 typedef struct _core_dump_partition_t
@@ -267,14 +268,19 @@ typedef struct _core_dump_partition_t
 
 typedef struct _core_dump_flash_config_t
 {
-    // core dump partition start
+    // core dump partition config
     core_dump_partition_t partition;
-    // core dump partition size
-    uint32_t              crc;
+    // CRC of core dump partition config
+    core_dump_crc_t       partition_config_crc;
 } core_dump_flash_config_t;
 
 // core dump flash data
 static core_dump_flash_config_t s_core_flash_config;
+
+static inline core_dump_crc_t esp_core_dump_calc_flash_config_crc(void)
+{
+    return crc32_le(0, (uint8_t const *)&s_core_flash_config.partition, sizeof(s_core_flash_config.partition));
+}
 
 static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint32_t data_size)
 {
@@ -302,8 +308,9 @@ static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint
     if (len) {
         // write last bytes with padding, actual TCB len can be retrieved by esptool from core dump header
         rom_data.data32 = 0;
-        for (k = 0; k < len; k++)
+        for (k = 0; k < len; k++) {
             rom_data.data8[k] = *(data + data_len + k);
+        }
         err = spi_flash_write(off + data_len, &rom_data, sizeof(uint32_t));
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to finish write data to flash (%d)!", err);
@@ -322,18 +329,19 @@ static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_le
     core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
 
     // check for available space in partition
-    // add space for 2 magics. TODO: change to CRC
-    if ((*data_len + 2*sizeof(uint32_t)) > s_core_flash_config.partition.size) {
+    if ((*data_len + sizeof(uint32_t)) > s_core_flash_config.partition.size) {
         ESP_COREDUMP_LOGE("Not enough space to save core dump!");
         return ESP_ERR_NO_MEM;
     }
-    *data_len += 2*sizeof(uint32_t);
+    // add space for CRC
+    *data_len += sizeof(core_dump_crc_t);
 
-    wr_data->off = 0;
+    memset(wr_data, 0, sizeof(*wr_data));
 
     sec_num = *data_len / SPI_FLASH_SEC_SIZE;
-    if (*data_len % SPI_FLASH_SEC_SIZE)
+    if (*data_len % SPI_FLASH_SEC_SIZE) {
         sec_num++;
+    }
     assert(sec_num * SPI_FLASH_SEC_SIZE <= s_core_flash_config.partition.size);
     err = spi_flash_erase_range(s_core_flash_config.partition.start + 0, sec_num * SPI_FLASH_SEC_SIZE);
     if (err != ESP_OK) {
@@ -362,9 +370,7 @@ static esp_err_t esp_core_dump_flash_write_word(core_dump_write_flash_data_t *wr
 
 static esp_err_t esp_core_dump_flash_write_start(void *priv)
 {
-    core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
-    // save magic 1
-    return esp_core_dump_flash_write_word(wr_data, COREDUMP_FLASH_MAGIC_START);
+    return ESP_OK;
 }
 
 static esp_err_t esp_core_dump_flash_write_end(void *priv)
@@ -381,17 +387,16 @@ static esp_err_t esp_core_dump_flash_write_end(void *priv)
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to read flash (%d)!", err);
         return err;
-    }
-    else {
+    } else {
         ESP_COREDUMP_LOG_PROCESS("Data from flash:");
         for (uint32_t i = 0; i < sizeof(rom_data)/sizeof(rom_data.data32[0]); i++) {
             ESP_COREDUMP_LOG_PROCESS("%x", rom_data.data32[i]);
         }
     }
 #endif
-
-    // save magic 2
-    return esp_core_dump_flash_write_word(wr_data, COREDUMP_FLASH_MAGIC_END);
+    // write core dump CRC
+    ESP_COREDUMP_LOG_PROCESS("Dump data CRC = 0x%x", wr_data->crc);
+    return esp_core_dump_flash_write_word(wr_data, wr_data->crc);
 }
 
 static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_t data_len)
@@ -400,10 +405,12 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_
     core_dump_write_flash_data_t *wr_data = (core_dump_write_flash_data_t *)priv;
 
     uint32_t len = esp_core_dump_write_flash_padded(s_core_flash_config.partition.start + wr_data->off, data, data_len);
-    if (len != data_len)
+    if (len != data_len) {
         return ESP_FAIL;
+    }
 
     wr_data->off += len;
+    wr_data->crc = crc32_le(wr_data->crc, data, data_len);
 
     return err;
 }
@@ -413,10 +420,14 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
     core_dump_write_config_t wr_cfg;
     core_dump_write_flash_data_t wr_data;
 
-    uint32_t crc = crc32_le(UINT32_MAX, (uint8_t const *)&s_core_flash_config.partition,
-                            sizeof(s_core_flash_config.partition));
-    if (s_core_flash_config.crc != crc) {
-        ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.crc);
+    core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
+    if (s_core_flash_config.partition_config_crc != crc) {
+        ESP_COREDUMP_LOGE("Core dump flash config is corrupted! CRC=0x%x instead of 0x%x", crc, s_core_flash_config.partition_config_crc);
+        return;
+    }
+    // check that partition can hold at least core dump data length
+    if (s_core_flash_config.partition.start == 0 || s_core_flash_config.partition.size < sizeof(uint32_t)) {
+        ESP_COREDUMP_LOGE("Invalid flash partition config!");
         return;
     }
 
@@ -500,10 +511,11 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
 static int esp_core_dump_uart_get_char() {
     int i;
     uint32_t reg = (READ_PERI_REG(UART_STATUS_REG(0)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT;
-    if (reg)
+    if (reg) {
         i = READ_PERI_REG(UART_FIFO_REG(0));
-    else
+    } else {
         i = -1;
+    }
     return i;
 }
 
@@ -532,8 +544,9 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
     ch = esp_core_dump_uart_get_char();
     while (!(ch == '\n' || ch == '\r')) {
         tm_cur = xthal_get_ccount() / cpu_ticks_per_ms;
-        if (tm_cur >= tm_end)
+        if (tm_cur >= tm_end){
             break;
+        }
         ch = esp_core_dump_uart_get_char();
     }
     ESP_COREDUMP_LOGI("Print core dump to uart...");
@@ -554,15 +567,66 @@ void esp_core_dump_init()
         return;
     }
     ESP_COREDUMP_LOGI("Found partition '%s' @ %x %d bytes", core_part->label, core_part->address, core_part->size);
-    s_core_flash_config.partition.start = core_part->address;
-    s_core_flash_config.partition.size  = core_part->size;
-    s_core_flash_config.crc             = crc32_le(UINT32_MAX, (uint8_t const *)&s_core_flash_config.partition,
-                                                    sizeof(s_core_flash_config.partition));
+    s_core_flash_config.partition.start      = core_part->address;
+    s_core_flash_config.partition.size       = core_part->size;
+    s_core_flash_config.partition_config_crc = esp_core_dump_calc_flash_config_crc();
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART
     ESP_COREDUMP_LOGI("Init core dump to UART");
 #endif
 }
 
-#endif
+esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size)
+{
+    esp_err_t err;
+    const void *core_data;
+    spi_flash_mmap_handle_t core_data_handle;
 
+
+    if (out_addr == NULL || out_size == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const esp_partition_t *core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
+    if (!core_part) {
+        ESP_LOGE(TAG, "No core dump partition found!");
+        return ESP_FAIL;
+    }
+    if (core_part->size < sizeof(uint32_t)) {
+        ESP_LOGE(TAG, "Too small core dump partition!");
+        return ESP_FAIL;
+    }
+
+    err = esp_partition_mmap(core_part, 0,  sizeof(uint32_t),
+                             SPI_FLASH_MMAP_DATA, &core_data, &core_data_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to mmap core dump data (%d)!", err);
+        return err;
+    }
+    uint32_t *dw = (uint32_t *)core_data;
+    *out_size = *dw;
+    spi_flash_munmap(core_data_handle);
+
+    // remap full core dump with CRC
+    err = esp_partition_mmap(core_part, 0, *out_size,
+                             SPI_FLASH_MMAP_DATA, &core_data, &core_data_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to mmap core dump data (%d)!", err);
+        return err;
+    }
+    uint32_t *crc = (uint32_t *)(((uint8_t *)core_data) + *out_size);
+    crc--; // Point to CRC field
+    // Calc CRC over core dump data except for CRC field
+    core_dump_crc_t cur_crc = crc32_le(0, (uint8_t const *)core_data, *out_size - sizeof(core_dump_crc_t));
+    if (*crc != cur_crc) {
+        ESP_LOGE(TAG, "Core dump data CRC check failed: 0x%x -> 0x%x!", *crc, cur_crc);
+        spi_flash_munmap(core_data_handle);
+        return ESP_FAIL;
+    }
+
+    spi_flash_munmap(core_data_handle);
+
+    *out_addr = core_part->address;
+    return ESP_OK;
+}
+#endif

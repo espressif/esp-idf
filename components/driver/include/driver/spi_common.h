@@ -87,6 +87,11 @@ typedef struct {
     int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
     int max_transfer_sz;            ///< Maximum transfer size, in bytes. Defaults to 4094 if 0.
     uint32_t flags;                 ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
+    int intr_flags;    /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see
+                         *  ``esp_intr_alloc.h``. Note that the EDGE, INTRDISABLED attribute are ignored
+                         *  by the driver. Note that if ESP_INTR_FLAG_IRAM is set, ALL the callbacks of
+                         *  the driver, and their callee functions, should be put in the IRAM.
+                         */
 } spi_bus_config_t;
 
 
@@ -96,9 +101,32 @@ typedef struct {
  * Call this if your driver wants to manage a SPI peripheral.
  *
  * @param host Peripheral to claim
+ * @param source The caller indentification string.
+ *
  * @return True if peripheral is claimed successfully; false if peripheral already is claimed.
  */
-bool spicommon_periph_claim(spi_host_device_t host);
+bool spicommon_periph_claim(spi_host_device_t host, const char* source);
+
+// The macro is to keep the back-compatibility of IDF v3.2 and before
+// In this way we can call spicommon_periph_claim with two arguments, or the host with the source set to the calling function name
+// When two arguments (host, func) are given, __spicommon_periph_claim2 is called
+// or if only one arguments (host) is given, __spicommon_periph_claim1 is called
+#define spicommon_periph_claim(host...) __spicommon_periph_claim(host, 2, 1)
+#define __spicommon_periph_claim(host, source, n, ...) __spicommon_periph_claim ## n(host, source)
+#define __spicommon_periph_claim1(host, _)    ({ \
+    char* warning_str = "calling spicommon_periph_claim without source string is deprecated.";\
+    spicommon_periph_claim(host, __FUNCTION__); })
+
+#define __spicommon_periph_claim2(host, func) spicommon_periph_claim(host, func)
+
+/**
+ * @brief Check whether the spi periph is in use.
+ *
+ * @param host Peripheral to check.
+ *
+ * @return True if in use, otherwise false.
+ */
+bool spicommon_periph_in_use(spi_host_device_t host);
 
 /**
  * @brief Return the SPI peripheral so another driver can claim it.
@@ -118,6 +146,15 @@ bool spicommon_periph_free(spi_host_device_t host);
  * @return True if success; false otherwise.
  */
 bool spicommon_dma_chan_claim(int dma_chan);
+
+/**
+ * @brief Check whether the spi DMA channel is in use.
+ *
+ * @param dma_chan DMA channel to check.
+ *
+ * @return True if in use, otherwise false.
+ */
+bool spicommon_dma_chan_in_use(int dma_chan);
 
 /**
  * @brief Return the SPI DMA channel so other driver can claim it, or just to power down DMA.

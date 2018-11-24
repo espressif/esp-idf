@@ -79,8 +79,26 @@ typedef struct {
     int spics_io_num;               ///< CS GPIO pin for this device, or -1 if not used
     uint32_t flags;                 ///< Bitwise OR of SPI_DEVICE_* flags
     int queue_size;                 ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_device_queue_trans but not yet finished using spi_device_get_trans_result) at the same time
-    transaction_cb_t pre_cb;        ///< Callback to be called before a transmission is started. This callback is called within interrupt context.
-    transaction_cb_t post_cb;       ///< Callback to be called after a transmission has completed. This callback is called within interrupt context.
+    transaction_cb_t pre_cb;   /**< Callback to be called before a transmission is started.
+                                 *
+                                 *  This callback is called within interrupt
+                                 *  context should be in IRAM for best
+                                 *  performance, see "Transferring Speed"
+                                 *  section in the SPI Master documentation for
+                                 *  full details. If not, the callback may crash
+                                 *  during flash operation when the driver is
+                                 *  initialized with ESP_INTR_FLAG_IRAM.
+                                 */
+    transaction_cb_t post_cb;  /**< Callback to be called after a transmission has completed.
+                                 *
+                                 *  This callback is called within interrupt
+                                 *  context should be in IRAM for best
+                                 *  performance, see "Transferring Speed"
+                                 *  section in the SPI Master documentation for
+                                 *  full details. If not, the callback may crash
+                                 *  during flash operation when the driver is
+                                 *  initialized with ESP_INTR_FLAG_IRAM.
+                                 */
 } spi_device_interface_config_t;
 
 
@@ -149,6 +167,10 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  *
  * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
  *          DMA-capable memory.
+ *
+ * @warning The ISR of SPI is always executed on the core which calls this
+ *          function. Never starve the ISR on this core or the SPI transactions will not
+ *          be handled.
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   if configuration is invalid

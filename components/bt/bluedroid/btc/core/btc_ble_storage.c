@@ -38,14 +38,9 @@ static void _btc_storage_save(void)
         //store the next iter, if remove section, then will not loss the point
 
         const char *section = btc_config_section_name(iter);
-        if (!string_is_bdaddr(section) ||
-            !btc_config_get_int(section, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
-            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
-            iter = btc_config_section_next(iter);
-            continue;
-        }
 
-        if (!btc_config_exist(section, BTC_BLE_STORAGE_DEV_TYPE_STR) && 
+        if (string_is_bdaddr(section) &&
+                !btc_config_exist(section, BTC_BLE_STORAGE_DEV_TYPE_STR) &&
                 !btc_config_exist(section, BTC_BLE_STORAGE_ADDR_TYPE_STR) &&
                 !btc_config_exist(section, BTC_BLE_STORAGE_LINK_KEY_STR) &&
                 !btc_config_exist(section, BTC_BLE_STORAGE_LE_KEY_PENC_STR) &&
@@ -57,6 +52,14 @@ static void _btc_storage_save(void)
             btc_config_remove_section(section);
             continue;
         }
+
+        if (!string_is_bdaddr(section) ||
+            !btc_config_get_int(section, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
+            ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
+            iter = btc_config_section_next(iter);
+            continue;
+        }
+
         if(addr_section_count == BONED_DEVICES_MAX_COUNT) {
             need_remove_iter = iter;
         }
@@ -238,6 +241,9 @@ static bt_status_t _btc_storage_remove_ble_bonding_keys(bt_bdaddr_t *remote_bd_a
     }
     if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR)) {
         ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_LCSRK_STR);
+    }
+    if (btc_config_exist(bdstr, BTC_BLE_STORAGE_LE_KEY_LID_STR)) {
+        ret |= btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_KEY_LID_STR);
     }
     //here don't remove section, because config_save will check it
     _btc_storage_save();
@@ -761,7 +767,6 @@ bt_status_t btc_storage_load_bonded_ble_devices(void)
 bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev, int dev_num)
 {
     bt_bdaddr_t bd_addr;
-    uint32_t device_type = 0;
     char buffer[sizeof(tBTM_LE_KEY_VALUE)] = {0};
 
     btc_config_lock();
@@ -771,12 +776,13 @@ bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev
         if (dev_num-- <= 0) {
             break;
         }
-
+        uint32_t device_type = 0;
         const char *name = btc_config_section_name(iter);
 
         if (!string_is_bdaddr(name) ||
                 !btc_config_get_int(name, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
                 !(device_type & BT_DEVICE_TYPE_BLE)) {
+            dev_num ++;
             continue;
         }
 

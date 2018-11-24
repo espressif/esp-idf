@@ -2,6 +2,8 @@
 Setup Toolchain for Mac OS from Scratch (CMake)
 ***********************************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. include:: ../cmake-warning.rst
 
 Package Manager
@@ -13,6 +15,8 @@ MacPorts needs a full XCode installation, while homebrew only needs XCode comman
 
     .. _homebrew: https://brew.sh/
     .. _MacPorts: https://www.macports.org/install.php
+
+See :ref:`Customized Setup of Toolchain <get-started-customized-setup>` section for some of the reasons why installing the toolchain from scratch may be necessary.
 
 Install Prerequisites
 =====================
@@ -58,15 +62,16 @@ Mount it::
 
 Create a symlink to your work directory::
 
-    cd ~/esp
-    ln -s /Volumes/ctng crosstool-NG
+    mkdir -p ~/esp
+    ln -s /Volumes/ctng ~/esp/ctng-volume
 
-Download ``crosstool-NG`` and build it::
+Go into the newly created directory::
 
-    cd ~/esp
-    git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
-    cd crosstool-NG
-    ./bootstrap && ./configure --enable-local && make install
+    cd ~/esp/ctng-volume
+
+Download ``crosstool-NG`` and build it:
+
+.. include:: /_build/inc/scratch-build-code.inc
 
 Build the toolchain::
 
@@ -74,7 +79,7 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-macos-toolchain-add-it-to-path-cmake>` to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-macos-toolchain-add-it-to-path-cmake>` to add the toolchain to your ``PATH``.
 
 
 Next Steps

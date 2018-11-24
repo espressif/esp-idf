@@ -166,7 +166,7 @@ For example, to follow the branch for ESP-IDF v3.1, including any bugfixes for f
   git fetch
   git checkout release/v3.1
   git pull
-  git submodule --update --init --recursive
+  git submodule update --init --recursive
 
 Each time you ``git pull`` this branch, ESP-IDF will be updated with fixes for this release.
 

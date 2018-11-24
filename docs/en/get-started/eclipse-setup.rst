@@ -18,11 +18,6 @@ The Eclipse IDE gives you a graphical integrated development environment for wri
 
 * When running the Eclipse Installer, choose "Eclipse for C/C++ Development" (in other places you'll see this referred to as CDT.)
 
-Windows Users
-=============
-
-Using ESP-IDF with Eclipse on Windows requires different configuration steps. :ref:`See the Eclipse IDE on Windows guide <eclipse-windows-setup>`.
-
 Setting up Eclipse
 ==================
 
@@ -49,11 +44,13 @@ Project Properties
 
 * Click on the "Environment" properties page under "C/C++ Build". Click "Add..." and enter name ``BATCH_BUILD`` and value ``1``.
 
-* Click "Add..." again, and enter name ``IDF_PATH``. The value should be the full path where ESP-IDF is installed.
+* Click "Add..." again, and enter name ``IDF_PATH``. The value should be the full path where ESP-IDF is installed. Windows users can copy the ``IDF_PATH`` from windows explorer.
 
-* Edit the ``PATH`` environment variable. Keep the current value, and append the path to the Xtensa toolchain installed as part of IDF setup, if this is not already listed on the PATH. A typical path to the toolchain looks like ``/home/user-name/esp/xtensa-esp32-elf/bin``. Note that you need to add a colon ``:`` before the appended path.
+* Edit the ``PATH`` environment variable. Keep the current value, and append the path to the Xtensa toolchain installed as part of IDF setup, if this is not already listed on the PATH. A typical path to the toolchain looks like ``/home/user-name/esp/xtensa-esp32-elf/bin``. Note that you need to add a colon ``:`` before the appended path. Windows users will need to prepend ``C:\msys32\mingw32\bin;C:\msys32\opt\xtensa-esp32-elf\bin;C:\msys32\usr\bin`` to ``PATH`` environment variable (If you installed msys32 to a different directory then you’ll need to change these paths to match).
 
 * On macOS, add a ``PYTHONPATH`` environment variable and set it to ``/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages``. This is so that the system Python, which has pyserial installed as part of the setup steps, overrides any built-in Eclipse Python.
+
+**ADDITIONAL NOTE**: If either the IDF_PATH directory or the project directory is located outside ``C:\msys32\home`` directory, you will have to give custom build command in C/C++ Build properties as: ``python ${IDF_PATH}/tools/windows/eclipse_make.py`` (Please note that the build time may get significantly increased by this method.)
 
 Navigate to "C/C++ General" -> "Preprocessor Include Paths" property page:
 
@@ -106,14 +103,6 @@ You can integrate the "make flash" target into your Eclipse project to flash usi
 Note that you will need to use "make menuconfig" to set the serial port and other config options for flashing. "make menuconfig" still requires a command line terminal (see the instructions for your platform.)
 
 Follow the same steps to add ``bootloader`` and ``partition_table`` targets, if necessary.
-
-Related Documents
------------------
-
-.. toctree::
-    :maxdepth: 1
-
-    eclipse-setup-windows
 
 
 .. _eclipse.org: https://www.eclipse.org/

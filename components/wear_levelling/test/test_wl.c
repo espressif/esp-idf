@@ -279,27 +279,29 @@ TEST_CASE("Version update test", "[wear_levelling]")
     esp_partition_erase_range(&fake_partition, 0, fake_partition.size);
 
     esp_partition_write(&fake_partition, 0, test_partition_v1_bin_start,  fake_partition.size);
+    for (int i=0 ; i< 3 ; i++)
+    {
+        printf("Pass %i\n", i);
+        wl_handle_t handle;
+        TEST_ESP_OK(wl_mount(&fake_partition, &handle));
+        size_t sector_size = wl_sector_size(handle);
+        uint32_t* buff = (uint32_t*)malloc(sector_size);
 
-    wl_handle_t handle;
-    TEST_ESP_OK(wl_mount(&fake_partition, &handle));
-    size_t sector_size = wl_sector_size(handle);
-    uint32_t* buff = (uint32_t*)malloc(sector_size);
+        uint32_t init_val = COMPARE_START_CONST;
+        int test_count = fake_partition.size/sector_size - 4;
 
-    uint32_t init_val = COMPARE_START_CONST;
-    int test_count = fake_partition.size/sector_size - 4;
-
-    for (int m=0 ; m <  test_count; m++) {
-        TEST_ESP_OK(wl_read(handle, sector_size * m, buff, sector_size));
-        for (int i=0 ; i< sector_size/sizeof(uint32_t) ; i++) {
-            uint32_t compare_val = init_val + i +  m*sector_size;
-            if (buff[i] != compare_val)
-            {
-                printf("error compare: 0x%08x != 0x%08x \n", buff[i], compare_val);
+        for (int m=0 ; m <  test_count; m++) {
+            TEST_ESP_OK(wl_read(handle, sector_size * m, buff, sector_size));
+            for (int i=0 ; i< sector_size/sizeof(uint32_t) ; i++) {
+                uint32_t compare_val = init_val + i +  m*sector_size;
+                if (buff[i] != compare_val)
+                {
+                    printf("error compare: 0x%08x != 0x%08x \n", buff[i], compare_val);
+                }
+                TEST_ASSERT_EQUAL( buff[i], compare_val);
             }
-            TEST_ASSERT_EQUAL( buff[i], compare_val);
         }
+        free(buff);
+        wl_unmount(handle);
     }
-
-    free(buff);
-    wl_unmount(handle);
 }

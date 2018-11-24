@@ -643,10 +643,17 @@ BOOLEAN bta_jv_check_psm(UINT16 psm)
 *******************************************************************************/
 void bta_jv_enable(tBTA_JV_MSG *p_data)
 {
+    tBTA_UTL_COD   cod;
+
     tBTA_JV_STATUS status = BTA_JV_SUCCESS;
     bta_jv_cb.p_dm_cback = p_data->enable.p_cback;
     bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, (tBTA_JV *)&status, 0);
     memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
+
+    /* Set the Class of Device */
+    cod.major = BTM_COD_MAJOR_UNCLASSIFIED;
+    cod.minor = BTM_COD_MINOR_UNCLASSIFIED;
+    utl_set_device_class(&cod, BTA_UTL_SET_COD_MAJOR_MINOR);
 }
 
 /*******************************************************************************
@@ -662,8 +669,6 @@ void bta_jv_enable(tBTA_JV_MSG *p_data)
 void bta_jv_disable (tBTA_JV_MSG *p_data)
 {
     UNUSED(p_data);
-
-    APPL_TRACE_ERROR("%s", __func__);
 }
 
 

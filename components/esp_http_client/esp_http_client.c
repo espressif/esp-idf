@@ -894,7 +894,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
 
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
         buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
-        if (buffer->len < 0) {
+        if (buffer->len <= 0) {
             return ESP_FAIL;
         }
         http_parser_execute(client->parser, client->parser_settings, buffer->data, buffer->len);
@@ -943,6 +943,10 @@ static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
             int ret = esp_transport_connect_async(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms);
             if (ret == ASYNC_TRANS_CONNECT_FAIL) {
                 ESP_LOGE(TAG, "Connection failed");
+                if (strcasecmp(client->connection_info.scheme, "http") == 0) {
+                    ESP_LOGE(TAG, "Asynchronous mode doesn't work for HTTP based connection");
+                    return ESP_ERR_INVALID_ARG;
+                }
                 return ESP_ERR_HTTP_CONNECT;
             } else if (ret == ASYNC_TRANS_CONNECTING) {
                 ESP_LOGD(TAG, "Connection not yet established");
@@ -1171,9 +1175,9 @@ bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
 
 esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client)
 {
-    if (!strcmp(client->connection_info.scheme, "https") ) {
+    if (!strcasecmp(client->connection_info.scheme, "https") ) {
         return HTTP_TRANSPORT_OVER_SSL;
-    } else if (!strcmp(client->connection_info.scheme, "http")) {
+    } else if (!strcasecmp(client->connection_info.scheme, "http")) {
         return HTTP_TRANSPORT_OVER_TCP;
     } else {
         return HTTP_TRANSPORT_UNKNOWN;

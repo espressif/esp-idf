@@ -1,5 +1,7 @@
 # SD Card example
 
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
+
 This example demonstrates how to use an SD card with ESP32. Example does the following steps:
 
 1. Use an "all-in-one" `esp_vfs_fat_sdmmc_mount` function to:
@@ -16,15 +18,17 @@ This example support SD (SDSC, SDHC, SDXC) cards and eMMC chips.
 
 ## Hardware
 
-To run this example, ESP32 development board needs to be connected to SD card as follows:
+This example runs on ESP-WROVER-KIT boards without any extra modifications required, only the SD card needs to be inserted into the slot.
+
+Other ESP32 development boards need to be connected to SD card as follows:
 
 ESP32 pin     | SD card pin | SPI pin | Notes
 --------------|-------------|---------|------------
 GPIO14 (MTMS) | CLK         | SCK     | 10k pullup in SD mode
 GPIO15 (MTDO) | CMD         | MOSI    | 10k pullup, both in SD and SPI modes
-GPIO2         | D0          | MISO    | 10k pullup in SD mode, pull low to go into download mode (see note below!)
+GPIO2         | D0          | MISO    | 10k pullup in SD mode, pull low to go into download mode (see Note about GPIO2 below!)
 GPIO4         | D1          | N/C     | not used in 1-line SD mode; 10k pullup in 4-line SD mode
-GPIO12 (MTDI) | D2          | N/C     | not used in 1-line SD mode; 10k pullup in 4-line SD mode (see note below!)
+GPIO12 (MTDI) | D2          | N/C     | not used in 1-line SD mode; 10k pullup in 4-line SD mode (see Note about GPIO12 below!)
 GPIO13 (MTCK) | D3          | CS      | not used in 1-line SD mode, but card's D3 pin must have a 10k pullup
 N/C           | CD          |         | optional, not used in the example
 N/C           | WP          |         | optional, not used in the example
@@ -32,7 +36,7 @@ N/C           | WP          |         | optional, not used in the example
 This example doesn't utilize card detect (CD) and write protect (WP) signals from SD card slot.
 
 With the given pinout for SPI mode, same connections between the SD card and ESP32 can be used to test both SD and SPI modes, provided that the appropriate pullups are in place. 
-See document `sd_pullup_requirements.rst` in `docs/en/api-reference/peripherals/` for more details about pullup support and compatiblities about modules and devkits. 
+See [the document about pullup requirements](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/sd_pullup_requirements.html) for more details about pullup support and compatibility of modules and development boards.
 
 In SPI mode, pins can be customized. See the initialization of ``sdspi_slot_config_t`` structure in the example code.
 
@@ -62,7 +66,17 @@ This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG`
 
 `espefuse.py` has a `--do-not-confirm` option if running from an automated flashing script.
 
-## 4-line and 1-line modes
+## How to use example
+
+### Configure the project
+
+If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
+
+If using CMake based build system, no configuration is required.
+
+SD card can be used in various modes. See below on choosing the mode to be used.
+
+### 4-line and 1-line SD modes
 
 By default, example code uses the following initializer for SDMMC slot configuration:
 
@@ -74,30 +88,76 @@ Among other things, this sets `slot_config.width = 0`, which means that SD/MMC d
 
 Note that even if card's D3 line is not connected to the ESP32, it still has to be pulled up, otherwise the card will go into SPI protocol mode.
 
-## SPI mode
+### SPI mode
 
-By default, the example uses SDMMC Host peripheral to access SD card. To use SPI peripheral instead, uncomment ``#define USE_SPI_MODE`` in the example code.
+By default, the example uses SDMMC Host peripheral to access the card using SD protocol. To use SPI peripheral instead (and SPI protocol), uncomment ``#define USE_SPI_MODE`` line in the example code.
+
+### Build and flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+make -j4 flash monitor
+```
+
+Or, for CMake based build system (replace PORT with serial port name):
+
+```
+idf.py -p PORT flash monitor
+```
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
 
 ## Example output
 
 Here is an example console output. In this case a 128MB SDSC card was connected, and `format_if_mount_failed` parameter was set to `true` in the source code. Card was unformatted, so the initial mount has failed. Card was then partitioned, formatted, and mounted again.
 
 ```
-I (1776) example: Initializing SD card
-W (1856) vfs_fat_sdmmc: failed to mount card (13)
-W (1856) vfs_fat_sdmmc: partitioning card
-W (1856) vfs_fat_sdmmc: formatting card
-W (2726) vfs_fat_sdmmc: mounting again
-I (2736) example: Card info:
-I (2736) example: Name: SU128
-I (2736) example: Type: SDSC
-I (2736) example: Capacity: 120 MB
-I (2736) example: Max clock speed: 25 MHz
-I (2736) example: Opening file
-I (2756) example: File written
-I (2756) example: Renaming file
-I (2756) example: Reading file
-I (2756) example: Read from file: 'Hello SU128!'
-I (2756) example: Card unmounted
+I (336) example: Initializing SD card
+I (336) example: Using SDMMC peripheral
+I (336) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+W (596) vfs_fat_sdmmc: failed to mount card (13)
+W (596) vfs_fat_sdmmc: partitioning card
+W (596) vfs_fat_sdmmc: formatting card, allocation unit size=16384
+W (7386) vfs_fat_sdmmc: mounting again
+Name: XA0E5
+Type: SDHC/SDXC
+Speed: 20 MHz
+Size: 61068MB
+I (7386) example: Opening file
+I (7396) example: File written
+I (7396) example: Renaming file
+I (7396) example: Reading file
+I (7396) example: Read from file: 'Hello XA0E5!'
+I (7396) example: Card unmounted
 ```
 
+## Troubleshooting
+
+### Failure to upload the example
+
+```
+Connecting........_____....._____....._____....._____....._____....._____....._____
+
+A fatal error occurred: Failed to connect to Espressif device: Invalid head of packet (0x34)
+```
+
+Disconnect the SD card D0/MISO line from GPIO2 and try uploading again. Read "Note about GPIO2" above.
+
+### Card fails to initialize with `sdmmc_init_sd_scr: send_scr (1) returned 0x107` error
+
+Check connections between the card and the ESP32. For example, if you have disconnected GPIO2 to work around the flashing issue, connect it back and reset the ESP32 (using a button on the development board, or by pressing Ctrl-T Ctrl-R in IDF Monitor).
+
+### Card fails to initialize with `sdmmc_check_scr: send_scr returned 0xffffffff` error
+
+Connections between the card and the ESP32 are too long for the frequency used. Try using shorter connections, or try reducing the clock speed of SD interface.
+
+### Failure to mount filesystem
+
+```
+example: Failed to mount filesystem. If you want the card to be formatted, set format_if_mount_failed = true.
+```
+The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Modify `format_if_mount_failed = false` to `format_if_mount_failed = true` in the example code, then build and flash the example.

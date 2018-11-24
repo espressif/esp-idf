@@ -14,24 +14,40 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* This header contains register/bit masks for the standard
    PHY MII registers that should be supported by all PHY models.
 */
 
-#define MII_BASIC_MODE_CONTROL_REG          (0x0)
-#define MII_SOFTWARE_RESET                     BIT(15)
+#define MII_BASIC_MODE_CONTROL_REG              (0x0)
+#define MII_SOFTWARE_RESET                      BIT(15)
+#define MII_SPEED_SELECT                        BIT(13)
+#define MII_AUTO_NEGOTIATION_ENABLE             BIT(12)
+#define MII_POWER_DOWN                          BIT(11)
+#define MII_RESTART_AUTO_NEGOTIATION            BIT(9)
+#define MII_DUPLEX_MODE                         BIT(8)
 
-#define MII_BASIC_MODE_STATUS_REG           (0x1)
-#define MII_AUTO_NEGOTIATION_COMPLETE          BIT(5)
-#define MII_LINK_STATUS                        BIT(2)
+#define MII_BASIC_MODE_STATUS_REG               (0x1)
+#define MII_AUTO_NEGOTIATION_COMPLETE           BIT(5)
+#define MII_LINK_STATUS                         BIT(2)
 
-#define MII_PHY_IDENTIFIER_1_REG              (0x2)
-#define MII_PHY_IDENTIFIER_2_REG              (0x3)
+#define MII_PHY_IDENTIFIER_1_REG                (0x2)
+#define MII_PHY_IDENTIFIER_2_REG                (0x3)
 
-#define MII_AUTO_NEG_ADVERTISEMENT_REG      (0x4)
-#define MII_ASM_DIR                            BIT(11)
-#define MII_PAUSE                              BIT(10)
+#define MII_AUTO_NEGOTIATION_ADVERTISEMENT_REG  (0x4)
+#define MII_ASM_DIR                             BIT(11)
+#define MII_PAUSE                               BIT(10)
 
-#define MII_PHY_LINK_PARTNER_ABILITY_REG    (0x5)
-#define MII_PARTNER_ASM_DIR                    BIT(11)
-#define MII_PARTNER_PAUSE                      BIT(10)
+#define MII_PHY_LINK_PARTNER_ABILITY_REG        (0x5)
+#define MII_PARTNER_ASM_DIR                     BIT(11)
+#define MII_PARTNER_PAUSE                       BIT(10)
+
+/******************************legacy*******************************/
+#define MII_AUTO_NEG_ADVERTISEMENT_REG MII_AUTO_NEGOTIATION_ADVERTISEMENT_REG
+
+#ifdef __cplusplus
+}
+#endif

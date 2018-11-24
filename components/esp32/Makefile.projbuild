@@ -39,6 +39,12 @@ CXXFLAGS+=-mfix-esp32-psram-cache-issue
 endif
 
 # Enable dynamic esp_timer overflow value if building unit tests 
-ifneq ("$(TEST_COMPONENTS_LIST)","")
+ifneq ("$(filter esp32,$(TEST_COMPONENTS_LIST))","")
 CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
 endif
+ESP32_LINKER_SCRIPT_TEMPLATE := $(COMPONENT_PATH)/ld/esp32.common.ld.in
+ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(abspath $(BUILD_DIR_BASE)/esp32)
+
+# Target to generate linker script generator from fragments presented by each of
+# the components
+$(eval $(call ldgen_process_template, $(ESP32_LINKER_SCRIPT_TEMPLATE), $(ESP32_LINKER_SCRIPT_OUTPUT_DIR)/esp32.common.ld))

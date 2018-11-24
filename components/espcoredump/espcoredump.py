@@ -24,6 +24,8 @@ import struct
 import array
 import errno
 import base64
+import binascii
+import logging
 
 idf_path = os.getenv('IDF_PATH')
 if idf_path:
@@ -35,7 +37,7 @@ except ImportError:
     print("Esptool is not found! Set proper $IDF_PATH in environment.")
     sys.exit(2)
 
-__version__ = "0.2-dev"
+__version__ = "0.3-dev"
 
 if os.name == 'nt':
     CLOSE_FDS = False
@@ -327,7 +329,7 @@ class ESPCoreDumpElfFile(esptool.ELFFile):
         if len(section_header) == 0:
             raise ESPCoreDumpError("No section header found at offset %04x in ELF file." % section_header_offs)
         if len(section_header) % LEN_SEC_HEADER != 0:
-            print('WARNING: Unexpected ELF section header length %04x is not mod-%02x' % (len(section_header),LEN_SEC_HEADER))
+            logging.warning('Unexpected ELF section header length %04x is not mod-%02x' % (len(section_header),LEN_SEC_HEADER))
 
         # walk through the section header and extract all sections
         section_header_offsets = range(0, len(section_header), LEN_SEC_HEADER)
@@ -343,7 +345,7 @@ class ESPCoreDumpElfFile(esptool.ELFFile):
             raise ESPCoreDumpError("ELF file has no STRTAB section at shstrndx %d" % shstrndx)
         _,sec_type,_,_,sec_size,sec_offs = read_section_header(shstrndx * LEN_SEC_HEADER)
         if sec_type != esptool.ELFFile.SEC_TYPE_STRTAB:
-            print('WARNING: ELF file has incorrect STRTAB section type 0x%02x' % sec_type)
+            logging.warning('ELF file has incorrect STRTAB section type 0x%02x' % sec_type)
         f.seek(sec_offs)
         string_table = f.read(sec_size)
 
@@ -370,7 +372,7 @@ class ESPCoreDumpElfFile(esptool.ELFFile):
         if len(seg_table) == 0:
             raise ESPCoreDumpError("No program header table found at offset %04x in ELF file." % seg_table_offs)
         if len(seg_table) % LEN_SEG_HEADER != 0:
-            print('WARNING: Unexpected ELF program header table length %04x is not mod-%02x' % (len(seg_table),LEN_SEG_HEADER))
+            logging.warning('Unexpected ELF program header table length %04x is not mod-%02x' % (len(seg_table),LEN_SEG_HEADER))
 
         # walk through the program segment table and extract all segments
         seg_table_offs = range(0, len(seg_table), LEN_SEG_HEADER)
@@ -456,7 +458,8 @@ class ESPCoreDumpLoaderError(ESPCoreDumpError):
 class ESPCoreDumpLoader(object):
     """Core dump loader base class
     """
-    ESP32_COREDUMP_HDR_FMT      = '<3L'
+    ESP32_COREDUMP_VESION       = 1
+    ESP32_COREDUMP_HDR_FMT      = '<4L'
     ESP32_COREDUMP_HDR_SZ       = struct.calcsize(ESP32_COREDUMP_HDR_FMT)
     ESP32_COREDUMP_TSK_HDR_FMT  = '<3L'
     ESP32_COREDUMP_TSK_HDR_SZ   = struct.calcsize(ESP32_COREDUMP_TSK_HDR_FMT)
@@ -564,7 +567,7 @@ class ESPCoreDumpLoader(object):
             os.remove(fname)
         except OSError as e:
             if e.errno != errno.ENOENT:
-                print("Warning failed to remove temp file '%s' (%d)!" % (fname, e.errno))
+                logging.warning("Failed to remove temp file '%s' (%d)!" % (fname, e.errno))
 
     def cleanup(self):
         """Cleans up loader resources
@@ -579,7 +582,9 @@ class ESPCoreDumpLoader(object):
         """
         core_off = off
         data = self.read_data(core_off, self.ESP32_COREDUMP_HDR_SZ)
-        tot_len,task_num,tcbsz = struct.unpack_from(self.ESP32_COREDUMP_HDR_FMT, data)
+        tot_len,coredump_ver,task_num,tcbsz = struct.unpack_from(self.ESP32_COREDUMP_HDR_FMT, data)
+        if coredump_ver > self.ESP32_COREDUMP_VESION:
+            raise ESPCoreDumpLoaderError("Core dump version '%d' is not supported! Should be up to '%d'." % (coredump_ver, self.ESP32_COREDUMP_VESION))
         tcbsz_aligned = tcbsz
         if tcbsz_aligned % 4:
             tcbsz_aligned = 4*(old_div(tcbsz_aligned,4) + 1)
@@ -601,16 +606,25 @@ class ESPCoreDumpLoader(object):
                 stack_len_aligned = 4*(old_div(stack_len_aligned,4) + 1)
                 
             core_off += self.ESP32_COREDUMP_TSK_HDR_SZ
+            logging.info("Read TCB %d bytes @ 0x%x" % (tcbsz_aligned, tcb_addr))
             data = self.read_data(core_off, tcbsz_aligned)
-            if tcbsz != tcbsz_aligned:
-                core_elf.add_program_segment(tcb_addr, data[:tcbsz - tcbsz_aligned], ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
-            else:
-                core_elf.add_program_segment(tcb_addr, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+            try:
+                if tcbsz != tcbsz_aligned:
+                    core_elf.add_program_segment(tcb_addr, data[:tcbsz - tcbsz_aligned], ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+                else:
+                    core_elf.add_program_segment(tcb_addr, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+            except ESPCoreDumpError as e:
+                logging.warning("Skip TCB %d bytes @ 0x%x. (Reason: %s)" % (tcbsz_aligned, tcb_addr, e))
+
             core_off += tcbsz_aligned
+            logging.info("Read stack %d bytes @ 0x%x" % (stack_len_aligned, stack_base))
             data = self.read_data(core_off, stack_len_aligned)
             if stack_len != stack_len_aligned:
                 data = data[:stack_len - stack_len_aligned]
-            core_elf.add_program_segment(stack_base, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+            try:
+                core_elf.add_program_segment(stack_base, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
+            except ESPCoreDumpError as e:
+                logging.warning("Skip task's (%x) stack %d bytes @ 0x%x. (Reason: %s)" % (tcb_addr, stack_len_aligned, stack_base, e))
             core_off += stack_len_aligned
             try:
                 task_regs = self._get_registers_from_stack(data, stack_end > stack_top)
@@ -624,12 +638,18 @@ class ESPCoreDumpLoader(object):
             notes += note
 
         # add notes
-        core_elf.add_program_segment(0, notes, ESPCoreDumpElfFile.PT_NOTE, 0)
+        try:
+            core_elf.add_program_segment(0, notes, ESPCoreDumpElfFile.PT_NOTE, 0)
+        except ESPCoreDumpError as e:
+            logging.warning("Skip NOTES segment %d bytes @ 0x%x. (Reason: %s)" % (len(notes), 0, e))
         # add ROM text sections
         if rom_elf:
             for ps in rom_elf.program_segments:
                 if ps.flags & ESPCoreDumpSegment.PF_X:
-                    core_elf.add_program_segment(ps.addr, ps.data, ESPCoreDumpElfFile.PT_LOAD, ps.flags)
+                    try:
+                        core_elf.add_program_segment(ps.addr, ps.data, ESPCoreDumpElfFile.PT_LOAD, ps.flags)
+                    except ESPCoreDumpError as e:
+                        logging.warning("Skip ROM segment %d bytes @ 0x%x. (Reason: %s)" % (len(ps.data), ps.addr, e))
     
         core_elf.e_type = ESPCoreDumpElfFile.ET_CORE
         core_elf.e_machine = ESPCoreDumpElfFile.EM_XTENSA
@@ -690,12 +710,10 @@ class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
 class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     """Core dump flash loader class
     """
-    ESP32_COREDUMP_FLASH_MAGIC_START    = 0xE32C04ED
-    ESP32_COREDUMP_FLASH_MAGIC_END      = 0xE32C04ED
-    ESP32_COREDUMP_FLASH_MAGIC_FMT      = '<L'
-    ESP32_COREDUMP_FLASH_MAGIC_SZ       = struct.calcsize(ESP32_COREDUMP_FLASH_MAGIC_FMT)
-    ESP32_COREDUMP_FLASH_HDR_FMT        = '<4L'
-    ESP32_COREDUMP_FLASH_HDR_SZ         = struct.calcsize(ESP32_COREDUMP_FLASH_HDR_FMT)
+    ESP32_COREDUMP_FLASH_CRC_FMT    = '<L'
+    ESP32_COREDUMP_FLASH_CRC_SZ     = struct.calcsize(ESP32_COREDUMP_FLASH_CRC_FMT)
+    ESP32_COREDUMP_FLASH_LEN_FMT    = '<L'
+    ESP32_COREDUMP_FLASH_LEN_SZ     = struct.calcsize(ESP32_COREDUMP_FLASH_LEN_FMT)
 
     def __init__(self, off, tool_path=None, chip='esp32', port=None, baud=None):
         """Constructor for core dump flash loader
@@ -722,7 +740,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             tool_args.extend(['-p', self.port])
         if self.baud:
             tool_args.extend(['-b', str(self.baud)])
-        tool_args.extend(['read_flash', str(off), str(self.ESP32_COREDUMP_FLASH_HDR_SZ), ''])
+        tool_args.extend(['read_flash', str(off), str(self.ESP32_COREDUMP_FLASH_LEN_SZ), ''])
 
         self.fcore_name = None
         try:
@@ -737,11 +755,11 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
             tool_args[-2] = str(self. dump_sz)
             et_out = subprocess.check_output(tool_args)
             print(et_out.decode('utf-8'))
-        except subprocess.CalledProcessError as e: 
-            print("esptool script execution failed with err %d" % e.returncode)
-            print("Command ran: '%s'" % e.cmd)
-            print("Command out:")
-            print(e.output)
+        except subprocess.CalledProcessError as e:
+            logging.error("esptool script execution failed with err %d" % e.returncode)
+            logging.info("Command ran: '%s'" % e.cmd)
+            logging.info("Command out:")
+            logging.info(e.output)
             if self.fcore_name:
                 self.remove_tmp_file(self.fcore_name)
             raise e
@@ -750,26 +768,20 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     def _read_core_dump_length(self, f):
         """Reads core dump length
         """
-        data = f.read(4*4)
-        mag1,tot_len,task_num,tcbsz = struct.unpack_from(self.ESP32_COREDUMP_FLASH_HDR_FMT, data)
-        if mag1 != self.ESP32_COREDUMP_FLASH_MAGIC_START:
-            raise ESPCoreDumpLoaderError("Invalid start magic number!")
+        data = f.read(self.ESP32_COREDUMP_FLASH_LEN_SZ)
+        tot_len, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_LEN_FMT, data)
         return tot_len
 
     def create_corefile(self, core_fname=None, rom_elf=None):
         """Checks flash coredump data integrity and creates ELF file
         """
-        data = self.read_data(0, self.ESP32_COREDUMP_FLASH_MAGIC_SZ)
-        mag1, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_MAGIC_FMT, data)
-        if mag1 != self.ESP32_COREDUMP_FLASH_MAGIC_START:
-            raise ESPCoreDumpLoaderError("Invalid start marker %x" % mag1)
-
-        data = self.read_data(self.dump_sz-self.ESP32_COREDUMP_FLASH_MAGIC_SZ, self.ESP32_COREDUMP_FLASH_MAGIC_SZ)
-        mag2, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_MAGIC_FMT, data)
-        if mag2 != self.ESP32_COREDUMP_FLASH_MAGIC_END:
-            raise ESPCoreDumpLoaderError("Invalid end marker %x" % mag2)
-        
-        return super(ESPCoreDumpFlashLoader, self).create_corefile(core_fname, off=self.ESP32_COREDUMP_FLASH_MAGIC_SZ, rom_elf=rom_elf)
+        data = self.read_data(self.dump_sz - self.ESP32_COREDUMP_FLASH_CRC_SZ, self.ESP32_COREDUMP_FLASH_CRC_SZ)
+        dump_crc, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_CRC_FMT, data)
+        data = self.read_data(0, self.dump_sz - self.ESP32_COREDUMP_FLASH_CRC_SZ)
+        data_crc = binascii.crc32(data) & 0xffffffff
+        if dump_crc != data_crc:
+            raise ESPCoreDumpLoaderError("Invalid core dump CRC %x, should be %x" % (data_crc, dump_crc))        
+        return super(ESPCoreDumpFlashLoader, self).create_corefile(core_fname)
 
 
 class GDBMIOutRecordHandler(object):
@@ -836,7 +848,7 @@ class GDBMIResultHandler(GDBMIOutRecordHandler):
                 if self.result_str.startswith(','):
                     self.result_str = self.result_str[1:]
                 else:
-                    print("Invalid result format: '%s'" % ln)
+                    logging.error("Invalid result format: '%s'" % ln)
             else:
                 self.result_str = ''
             return True
@@ -856,7 +868,7 @@ class GDBMIResultHandler(GDBMIOutRecordHandler):
             return
         if self._parse_rc(ln, self.RC_EXIT):
             return
-        print("Unknown GDB/MI result: '%s'" % ln)
+        logging.error("Unknown GDB/MI result: '%s'" % ln)
 
 
 class GDBMIStreamConsoleHandler(GDBMIOutStreamHandler):
@@ -886,7 +898,7 @@ def dbg_corefile(args):
         loader = ESPCoreDumpFlashLoader(args.off, port=args.port)
         core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
         if not core_fname:
-            print("Failed to create corefile!")
+            logging.error("Failed to create corefile!")
             loader.cleanup()
             return
     else:
@@ -895,7 +907,7 @@ def dbg_corefile(args):
             loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
             core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
             if not core_fname:
-                print("Failed to create corefile!")
+                logging.error("Failed to create corefile!")
                 loader.cleanup()
                 return
 
@@ -964,12 +976,12 @@ def info_corefile(args):
         p.stdin.write(bytearray("-interpreter-exec console \"%s\"\n" % gdb_cmd, encoding='utf-8'))
         gdbmi_read2prompt(p.stdout, handlers)
         if not handlers[GDBMIResultHandler.TAG].result_class or handlers[GDBMIResultHandler.TAG].result_class == GDBMIResultHandler.RC_EXIT:
-            print("GDB exited (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
+            logging.error("GDB exited (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
             p.wait()
-            print("Problem occured! GDB exited, restart it.")
+            logging.error("Problem occured! GDB exited, restart it.")
             p = gdbmi_start(handlers, [])
         elif handlers[GDBMIResultHandler.TAG].result_class != GDBMIResultHandler.RC_DONE:
-            print("GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
+            logging.error("GDB/MI command failed (%s / %s)!" % (handlers[GDBMIResultHandler.TAG].result_class, handlers[GDBMIResultHandler.TAG].result_str))
         return p
 
     loader = None
@@ -978,7 +990,7 @@ def info_corefile(args):
         loader = ESPCoreDumpFlashLoader(args.off, port=args.port)
         core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
         if not core_fname:
-            print("Failed to create corefile!")
+            logging.error("Failed to create corefile!")
             loader.cleanup()
             return
     else:
@@ -987,7 +999,7 @@ def info_corefile(args):
             loader = ESPCoreDumpFileLoader(core_fname, args.core_format == 'b64')
             core_fname = loader.create_corefile(args.save_core, rom_elf=rom_elf)
             if not core_fname:
-                print("Failed to create corefile!")
+                logging.error("Failed to create corefile!")
                 loader.cleanup()
                 return
 
@@ -1115,6 +1127,7 @@ def main():
     parser_debug_coredump = subparsers.add_parser(
         'dbg_corefile',
         help='Starts GDB debugging session with specified corefile')
+    parser_debug_coredump.add_argument('--debug', '-d', help='Log level (0..3)', type=int, default=2)
     parser_debug_coredump.add_argument('--gdb', '-g', help='Path to gdb', default='xtensa-esp32-elf-gdb')
     parser_debug_coredump.add_argument('--core', '-c', help='Path to core dump file (if skipped core dump will be read from flash)', type=str)
     parser_debug_coredump.add_argument('--core-format', '-t', help='(elf, raw or b64). File specified with "-c" is an ELF ("elf"), raw (raw) or base64-encoded (b64) binary', type=str, default='elf')
@@ -1126,6 +1139,7 @@ def main():
     parser_info_coredump = subparsers.add_parser(
         'info_corefile',
         help='Print core dump info from file')
+    parser_info_coredump.add_argument('--debug', '-d', help='Log level (0..3)', type=int, default=0)
     parser_info_coredump.add_argument('--gdb', '-g', help='Path to gdb', default='xtensa-esp32-elf-gdb')
     parser_info_coredump.add_argument('--core', '-c', help='Path to core dump file (if skipped core dump will be read from flash)', type=str)
     parser_info_coredump.add_argument('--core-format', '-t', help='(elf, raw or b64). File specified with "-c" is an ELF ("elf"), raw (raw) or base64-encoded (b64) binary', type=str, default='elf')
@@ -1140,6 +1154,21 @@ def main():
         assert operation in globals(), "%s should be a module function" % operation
 
     args = parser.parse_args()
+
+    log_level = logging.CRITICAL
+    if args.debug == 0:
+        log_level = logging.CRITICAL
+    elif args.debug == 1:
+        log_level = logging.ERROR
+    elif args.debug == 2:
+        log_level = logging.WARNING
+    elif args.debug == 3:
+        log_level = logging.INFO
+    else:
+        log_level = logging.DEBUG
+    # logging.warning('Watch out!')  # will print a message to the console
+    # logging.info('I told you so')  # will not print anything
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=log_level)
 
     print('espcoredump.py v%s' % __version__)
 

@@ -116,6 +116,13 @@ TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
+TEST_CASE("(SD) utime sets modification time", "[fatfs][test_env=UT_T1_SDMODE]")
+{
+    test_setup();
+    test_fatfs_utime("/sdcard/utime.txt", "/sdcard");
+    test_teardown();
+}
+
 TEST_CASE("(SD) unlink removes a file", "[fatfs][test_env=UT_T1_SDMODE]")
 {
     test_setup();

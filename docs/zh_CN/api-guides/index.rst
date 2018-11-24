@@ -17,15 +17,17 @@ API 指南
    High Level Interrupts <hlinterrupts>
    JTAG Debugging <jtag-debugging/index>
    Bootloader <bootloader>
-   Partition Tables <partition-tables>
+   分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
    ULP Coprocessor (CMake) <ulp-cmake>
    单元测试 <unit-tests>
+   单元测试 (CMake) <unit-tests-cmake>
    Application Level Tracing <app_trace>
-   Console Component <console>
+   控制台终端组件 <console>
    ROM debug console <romconsole>
    WiFi Driver <wifi>
    ESP-MESH <mesh>
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
+   Linker Script Generation <linker-script-generation>

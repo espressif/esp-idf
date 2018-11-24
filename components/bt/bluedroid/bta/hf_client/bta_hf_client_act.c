@@ -73,9 +73,11 @@ void bta_hf_client_register(tBTA_HF_CLIENT_DATA *p_data)
     /* create SDP records */
     bta_hf_client_create_record(p_data);
 
-    /* Set the Audio service class bit */
+    /* Set the Class of Device (Audio service class bit) */
     cod.service = BTM_COD_SERVICE_AUDIO;
-    utl_set_device_class(&cod, BTA_UTL_SET_COD_SERVICE_CLASS);
+    cod.major = BTM_COD_MAJOR_AUDIO;
+    cod.minor = BTM_COD_MINOR_CONFM_HANDSFREE;
+    utl_set_device_class(&cod, BTA_UTL_SET_COD_ALL);
 
     /* start RFCOMM server */
     bta_hf_client_start_server();
@@ -98,7 +100,13 @@ void bta_hf_client_register(tBTA_HF_CLIENT_DATA *p_data)
 *******************************************************************************/
 void bta_hf_client_deregister(tBTA_HF_CLIENT_DATA *p_data)
 {
+    tBTA_UTL_COD   cod;
+
     bta_hf_client_cb.scb.deregister = TRUE;
+
+    /* Clear the Audio service class bit */
+    cod.service = BTM_COD_SERVICE_AUDIO;
+    utl_set_device_class(&cod, BTA_UTL_CLR_COD_SERVICE_CLASS);
 
     /* remove sdp record */
     bta_hf_client_del_record(p_data);
@@ -653,7 +661,7 @@ void bta_hf_client_ccwa(char *number)
     if ((evt = osi_calloc(sizeof(tBTA_HF_CLIENT_NUMBER))) != NULL) {
         strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
         evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
-        
+
 
         (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CCWA_EVT, evt);
         osi_free(evt);
@@ -709,7 +717,7 @@ void bta_hf_client_clcc(UINT32 idx, BOOLEAN incoming, UINT8 status, BOOLEAN mpty
             strlcpy(evt->number, number, BTA_HF_CLIENT_NUMBER_LEN + 1);
             evt->number[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
         }
-        
+
         (*bta_hf_client_cb.p_cback)(BTA_HF_CLIENT_CLCC_EVT, evt);
         osi_free(evt);
     } else {

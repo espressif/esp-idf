@@ -44,13 +44,13 @@ if __name__ == "__main__":
             import cryptography
         except ImportError:
             print("Please run the following command to install MSYS2's MINGW Python cryptography package:")
-            print("pacman -S mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
+            print("pacman -Sy mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
             failed = True
         try:
             import setuptools
         except ImportError:
             print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
-            print("pacman -S mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
+            print("pacman -Sy mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
             failed = True
         if failed:
             sys.exit(1)
@@ -68,7 +68,9 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        print('Please run "{} -m pip install --user -r {}" for resolving the issue.'.format(sys.executable, args.requirements))
+        print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required '
+              'packages. Alternatively, you can run "{} -m pip install --user -r {}" for resolving the issue.'
+              ''.format(sys.executable, args.requirements))
         sys.exit(1)
 
     print('Python requirements from {} are satisfied.'.format(args.requirements))

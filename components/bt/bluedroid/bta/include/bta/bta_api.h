@@ -181,6 +181,7 @@ typedef UINT16 tBTA_SEC;
 /* Ignore for Discoverable, Connectable only for LE modes */
 #define BTA_DM_LE_IGNORE           0xFF00
 
+#define BTA_APP_ID_1               1    /* PM example profile 1 */
 #define BTA_APP_ID_PAN_MULTI    0xFE    /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID          0xFF
 
@@ -1218,6 +1219,10 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_SNIFF_A2DP_IDX      BTA_DM_PM_SNIFF
 #endif
 
+#ifndef BTA_DM_PM_SNIFF_JV_IDX
+#define BTA_DM_PM_SNIFF_JV_IDX      BTA_DM_PM_SNIFF
+#endif
+
 #ifndef BTA_DM_PM_SNIFF_HD_IDLE_IDX
 #define BTA_DM_PM_SNIFF_HD_IDLE_IDX   BTA_DM_PM_SNIFF2
 #endif
@@ -1611,6 +1616,22 @@ extern void BTA_DmPinReply(BD_ADDR bd_addr, BOOLEAN accept, UINT8 pin_len,
 **
 *******************************************************************************/
 extern void BTA_DmLocalOob(void);
+
+/*******************************************************************************
+**
+** Function         BTA_DmOobReply
+**
+**                  This function is called to provide the OOB data for
+**                  SMP in response to BTM_LE_OOB_REQ_EVT
+**
+** Parameters:      bd_addr     - Address of the peer device
+**                  len         - length of simple pairing Randomizer  C
+**                  p_value     - simple pairing Randomizer  C.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmOobReply(BD_ADDR bd_addr, UINT8 len, UINT8 *p_value);
 #endif /* BTM_OOB_INCLUDED */
 
 /*******************************************************************************
@@ -2198,6 +2219,22 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 **
 *******************************************************************************/
 extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
+                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetLongAdv
+**
+** Description      This function is called to set long Advertising data
+**
+** Parameters       adv_data : long advertising data.
+**                  adv_data_len : long advertising data length.
+**                  p_adv_data_cback : set long adv data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
                             tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
 
 /*******************************************************************************

@@ -1017,13 +1017,13 @@ test cases:
   - - "SSC SSC2 bleadv -D -z start"
     - ["R SSC2 C +BLEADV:OK"]
   - *dut1_stop_adv
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0004"
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0004 -w 0x0004"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4000"
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4000 -w 0x4000"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0003"
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0003 -w 0x0003"
     - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4001"
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4001 -i 0x4001"
     - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
 - ID: BTSTK_GAP_04004
   <<: *GAP_CASE
@@ -1043,13 +1043,13 @@ test cases:
   test environment: SSC_T1_4
   cmd set:
   - ""
-  - - "SSC SSC1 blescan -L -c 0 -w 0x0004"
+  - - "SSC SSC1 blescan -L -c 0 -w 0x0004 -i 0x0004"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -w 0x4000"
+  - - "SSC SSC1 blescan -L -c 0 -w 0x4000 -i 0x4000"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -w 0x0003"
+  - - "SSC SSC1 blescan -L -c 0 -w 0x0003 -i 0x0003"
     - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
-  - - "SSC SSC1 blescan -L -c 0 -w 0x4001"
+  - - "SSC SSC1 blescan -L -c 0 -w 0x4001 -i 0x4001"
     - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
 - ID: BTSTK_GAP_05001
   <<: *GAP_CASE

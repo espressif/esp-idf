@@ -321,6 +321,7 @@ esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *l
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (attr_handle == ESP_GATT_ILLEGAL_HANDLE) {
+        *length = 0;
         return ESP_GATT_INVALID_HANDLE;
     }
 

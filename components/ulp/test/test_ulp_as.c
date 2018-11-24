@@ -2,17 +2,17 @@
 #include "unity.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp32/ulp.h"
-#include "ulp_test.h"
+#include "ulp_test_app.h"
 
 
-extern const uint8_t ulp_test_bin_start[] asm("_binary_ulp_test_bin_start");
-extern const uint8_t ulp_test_bin_end[]   asm("_binary_ulp_test_bin_end");
+extern const uint8_t ulp_test_app_bin_start[] asm("_binary_ulp_test_app_bin_start");
+extern const uint8_t ulp_test_app_bin_end[]   asm("_binary_ulp_test_app_bin_end");
 
 
 TEST_CASE("jumps condition", "[ulp]")
 {
-    esp_err_t err = ulp_load_binary(0, ulp_test_bin_start,
-            (ulp_test_bin_end - ulp_test_bin_start) / sizeof(uint32_t));
+    esp_err_t err = ulp_load_binary(0, ulp_test_app_bin_start,
+            (ulp_test_app_bin_end - ulp_test_app_bin_start) / sizeof(uint32_t));
     TEST_ESP_OK(err);
 
     REG_CLR_BIT(RTC_CNTL_INT_RAW_REG, RTC_CNTL_ULP_CP_INT_RAW);

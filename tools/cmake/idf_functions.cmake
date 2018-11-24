@@ -15,7 +15,7 @@ macro(idf_set_global_variables)
 
     # Commmon components, required by every component in the build
     #
-    set_default(COMPONENT_REQUIRES_COMMON "cxx esp32 newlib freertos heap log soc")
+    set_default(COMPONENT_REQUIRES_COMMON "cxx ${IDF_TARGET} newlib freertos heap log soc")
 
     # PROJECT_PATH has the path to the IDF project (top-level cmake directory)
     #
@@ -76,7 +76,7 @@ function(idf_set_global_compiler_options)
     endif()
 
     # Default compiler configuration
-    add_compile_options(-ffunction-sections -fdata-sections -fstrict-volatile-bitfields -mlongcalls -nostdlib)
+    add_compile_options(-ffunction-sections -fdata-sections -fstrict-volatile-bitfields -nostdlib)
 
     # Default warnings configuration
     add_compile_options(
@@ -188,7 +188,10 @@ function(idf_add_executable)
         # Create a dummy file to work around CMake requirement of having a source
         # file while adding an executable
         add_executable(${exe_target} "${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c")
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c)
+        add_custom_command(OUTPUT dummy_main_src.c
+            COMMAND ${CMAKE_COMMAND} -E touch dummy_main_src.c
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            VERBATIM)
 
         add_custom_target(dummy_main_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dummy_main_src.c)
 

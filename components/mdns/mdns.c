@@ -3465,7 +3465,7 @@ static mdns_tx_packet_t * _mdns_create_search_packet(mdns_search_once_t * search
 static void _mdns_search_send_pcb(mdns_search_once_t * search, tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
 {
     mdns_tx_packet_t * packet = NULL;
-    if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb && _mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].state == PCB_RUNNING) {
+    if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb && _mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].state > PCB_INIT) {
         packet = _mdns_create_search_packet(search, tcpip_if, ip_protocol);
         if (!packet) {
             return;
@@ -3794,13 +3794,14 @@ static esp_err_t _mdns_send_search_action(mdns_action_type_t type, mdns_search_o
  */
 static void _mdns_scheduler_run()
 {
+    MDNS_SERVICE_LOCK();
     mdns_tx_packet_t * p = _mdns_server->tx_queue_head;
     mdns_action_t * action = NULL;
 
     if (!p) {
+        MDNS_SERVICE_UNLOCK();
         return;
     }
-    MDNS_SERVICE_LOCK();
     if ((int32_t)(p->send_at - (xTaskGetTickCount() * portTICK_PERIOD_MS)) < 0) {
         action = (mdns_action_t *)malloc(sizeof(mdns_action_t));
         if (action) {

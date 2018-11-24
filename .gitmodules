@@ -61,3 +61,6 @@
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c
+[submodule "components/unity/unity"]
+	path = components/unity/unity
+	url = https://github.com/ThrowTheSwitch/Unity

@@ -50,8 +50,7 @@ typedef xTaskHandle sys_thread_t;
 
 typedef struct sys_mbox_s {
   xQueueHandle os_mbox;
-  sys_mutex_t  lock;
-  uint8_t      alive;
+  void *owner;
 }* sys_mbox_t;
 
 

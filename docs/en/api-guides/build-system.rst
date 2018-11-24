@@ -76,7 +76,7 @@ An example project directory tree might look like this::
 
 This example "myProject" contains the following elements:
 
-- A top-level project Makefile. This Makefile set the ``PROJECT_NAME`` variable and (optionally) defines
+- A top-level project Makefile. This Makefile sets the ``PROJECT_NAME`` variable and (optionally) defines
   other project-wide make variables. It includes the core ``$(IDF_PATH)/make/project.mk`` makefile which
   implements the rest of the ESP-IDF build system.
 
@@ -274,6 +274,8 @@ The following variables can be set inside ``component.mk`` to control the build 
   settings. Component-specific additions can be made via ``CXXFLAGS
   +=``. It is also possible (although not recommended) to override
   this variable completely for a component.
+- ``COMPONENT_ADD_LDFRAGMENTS``: Paths to linker fragment files for the linker 
+  script generation functionality. See :doc:`Linker Script Generation <linker-script-generation>`.
 
 To apply compilation flags to a single source file, you can add a variable override as a target, ie::
 
@@ -570,6 +572,13 @@ The names are generated from the full name of the file, as given in COMPONENT_EM
 
 For an example of using this technique, see :example:`protocols/https_request` - the certificate file contents are loaded from the text .pem file at compile time.
 
+Code and Data Placements
+------------------------
+
+ESP-IDF has a feature called linker script generation that enables components to define where its code and data will be placed in memory through 
+linker fragment files. These files are processed by the build system, and is used to augment the linker script used for linking 
+app binary. See :doc:`Linker Script Generation <linker-script-generation>` for a quick start guide as well as a detailed discussion
+of the mechanism.
 
 Fully Overriding The Component Makefile
 ---------------------------------------

@@ -22,7 +22,7 @@ TEST_CASE("pthread create join", "[pthread]")
     volatile int num = 7;
     volatile bool attr_init = false;
     void *thread_rval = NULL;
-    pthread_t new_thread = NULL;
+    pthread_t new_thread = (pthread_t)NULL;
     pthread_attr_t attr;
 
     if (TEST_PROTECT()) {

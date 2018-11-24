@@ -32,6 +32,7 @@ typedef struct {
     UINT8   ble_resp_key;
     UINT8   ble_max_key_size;
     UINT8   ble_accept_auth_enable;
+    UINT8   oob_support;
 #endif
 
 } tBTE_APPL_CFG;

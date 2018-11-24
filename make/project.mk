@@ -91,6 +91,15 @@ ifndef IDF_PATH
 $(error IDF_PATH variable is not set to a valid directory.)
 endif
 
+ifdef IDF_TARGET
+ifneq ($(IDF_TARGET),esp32)
+$(error GNU Make based build system only supports esp32 target, but IDF_TARGET is set to $(IDF_TARGET))
+endif
+else
+export IDF_TARGET := esp32
+endif
+
+
 ifneq ("$(IDF_PATH)","$(SANITISED_IDF_PATH)")
 # implies IDF_PATH was overriden on make command line.
 # Due to the way make manages variables, this is hard to account for
@@ -195,6 +204,7 @@ COMPONENT_INCLUDES :=
 COMPONENT_LDFLAGS :=
 COMPONENT_SUBMODULES :=
 COMPONENT_LIBRARIES :=
+COMPONENT_LDFRAGMENTS :=
 
 # COMPONENT_PROJECT_VARS is the list of component_project_vars.mk generated makefiles
 # for each component.
@@ -372,6 +382,7 @@ CC ?= gcc
 LD ?= ld
 AR ?= ar
 OBJCOPY ?= objcopy
+OBJDUMP ?= objdump
 SIZE ?= size
 
 # Set host compiler and binutils
@@ -389,8 +400,9 @@ CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
 LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
 AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
 OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
+OBJDUMP := $(call dequote,$(CONFIG_TOOLPREFIX))objdump
 SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
-export CC CXX LD AR OBJCOPY SIZE
+export CC CXX LD AR OBJCOPY OBJDUMP SIZE
 
 COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
 COMPILER_VERSION_NUM := $(subst .,,$(COMPILER_VERSION_STR))
@@ -407,6 +419,18 @@ APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
 APP_MAP:=$(APP_ELF:.elf=.map)
 APP_BIN:=$(APP_ELF:.elf=.bin)
 
+# once we know component paths, we can include the config generation targets
+#
+# (bootloader build doesn't need this, config is exported from top-level)
+ifndef IS_BOOTLOADER_BUILD
+include $(IDF_PATH)/make/project_config.mk
+endif
+
+# include linker script generation utils makefile
+include $(IDF_PATH)/make/ldgen.mk
+
+$(eval $(call ldgen_create_commands))
+
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
@@ -417,13 +441,6 @@ endef
 $(foreach componentpath,$(COMPONENT_PATHS), \
 	$(if $(wildcard $(componentpath)/Makefile.projbuild), \
 		$(eval $(call includeProjBuildMakefile,$(componentpath)))))
-
-# once we know component paths, we can include the config generation targets
-#
-# (bootloader build doesn't need this, config is exported from top-level)
-ifndef IS_BOOTLOADER_BUILD
-include $(IDF_PATH)/make/project_config.mk
-endif
 
 # ELF depends on the library archive files for COMPONENT_LIBRARIES
 # the rules to build these are emitted as part of GenerateComponentTarget below
@@ -529,7 +546,7 @@ endif
 # _config-clean), so config remains valid during all component clean
 # targets
 config-clean: app-clean bootloader-clean
-clean: app-clean bootloader-clean config-clean
+clean: app-clean bootloader-clean config-clean ldgen-clean
 
 # phony target to check if any git submodule listed in COMPONENT_SUBMODULES are missing
 # or out of date, and exit if so. Components can add paths to this variable.

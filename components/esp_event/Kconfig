@@ -1,0 +1,11 @@
+menu "Event Loop Library"
+
+config EVENT_LOOP_PROFILING
+    bool "Enable event loop profiling"
+    default n
+    help
+        Enables collections of statistics in the event loop library such as the number of events posted to/recieved by an event loop, number of   
+        callbacks involved, number of events dropped to to a full event loop queue, run time of event handlers, and number of times/run 
+        time of each event handler.
+
+endmenu

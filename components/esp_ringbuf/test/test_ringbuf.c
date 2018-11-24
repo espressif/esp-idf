@@ -8,6 +8,7 @@
 #include "driver/timer.h"
 #include "esp_spi_flash.h"
 #include "unity.h"
+#include "test_utils.h"
 
 //Definitions used in multiple test cases
 #define TIMEOUT_TICKS               10

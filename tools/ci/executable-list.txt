@@ -50,6 +50,7 @@ tools/windows/eclipse_make.sh
 tools/ci/build_examples_cmake.sh
 tools/ci/test_build_system_cmake.sh
 tools/ci/check_examples_cmake_make.sh
+tools/ci/check_ut_cmake_make.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
 tools/idf.py
@@ -63,3 +64,6 @@ docs/gen-dxd.py
 tools/ci/multirun_with_pyenv.sh
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
+tools/ldgen/ldgen.py
+tools/ldgen/test/test_fragments.py
+tools/ldgen/test/test_generation.py

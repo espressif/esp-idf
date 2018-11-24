@@ -29,7 +29,7 @@ Functionality Overview
 
 The block diagram below illustrates the ESP-WROVER-KIT's main components and their interconnections.
 
-.. figure:: ../../_static/esp32-wrover-kit-block-diagram.png
+.. figure:: ../../_static/esp-wrover-kit-block-diagram.png
     :align: center
     :alt: ESP-WROVER-KIT block diagram
     :figclass: align-center

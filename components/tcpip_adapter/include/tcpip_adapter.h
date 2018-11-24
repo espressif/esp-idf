@@ -618,6 +618,16 @@ esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **h
  */
 esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
 
+/**
+ * @brief  Test if supplied interface is up or down
+ *
+ * @param[in]   tcpip_if: the interface which we will get the hostname
+ *
+ * @return  true:  tcpip_if is UP
+ *          false: tcpip_if id DOWN
+ */
+bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
+
 #ifdef __cplusplus
 }
 #endif

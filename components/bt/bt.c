@@ -221,34 +221,34 @@ extern uint32_t _btdm_data_end;
  *********************************************************************
  */
 #if CONFIG_SPIRAM_USE_MALLOC
-static bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue);
-static bool IRAM_ATTR btdm_queue_generic_deregister(btdm_queue_item_t *queue);
+static bool btdm_queue_generic_register(const btdm_queue_item_t *queue);
+static bool btdm_queue_generic_deregister(btdm_queue_item_t *queue);
 #endif /* CONFIG_SPIRAM_USE_MALLOC */
 static void IRAM_ATTR interrupt_disable(void);
 static void IRAM_ATTR interrupt_restore(void);
 static void IRAM_ATTR task_yield_from_isr(void);
-static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init);
-static void IRAM_ATTR semphr_delete_wrapper(void *semphr);
+static void *semphr_create_wrapper(uint32_t max, uint32_t init);
+static void semphr_delete_wrapper(void *semphr);
 static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw);
 static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw);
-static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
-static int32_t IRAM_ATTR semphr_give_wrapper(void *semphr);
-static void *IRAM_ATTR mutex_create_wrapper(void);
-static void IRAM_ATTR mutex_delete_wrapper(void *mutex);
-static int32_t IRAM_ATTR mutex_lock_wrapper(void *mutex);
-static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex);
-static void *IRAM_ATTR queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
-static void IRAM_ATTR queue_delete_wrapper(void *queue);
-static int32_t IRAM_ATTR queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t  semphr_take_wrapper(void *semphr, uint32_t block_time_ms);
+static int32_t  semphr_give_wrapper(void *semphr);
+static void *mutex_create_wrapper(void);
+static void mutex_delete_wrapper(void *mutex);
+static int32_t mutex_lock_wrapper(void *mutex);
+static int32_t mutex_unlock_wrapper(void *mutex);
+static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size);
+static void queue_delete_wrapper(void *queue);
+static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms);
 static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, void *hptw);
-static int32_t IRAM_ATTR queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
+static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms);
 static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, void *hptw);
-static int32_t IRAM_ATTR task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
-static void IRAM_ATTR task_delete_wrapper(void *task_handle);
+static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id);
+static void task_delete_wrapper(void *task_handle);
 static bool IRAM_ATTR is_in_isr_wrapper(void);
 static void IRAM_ATTR cause_sw_intr(void *arg);
 static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no);
-static void * IRAM_ATTR malloc_internal_wrapper(size_t size);
+static void *malloc_internal_wrapper(size_t size);
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6]);
 static void IRAM_ATTR srand_wrapper(unsigned int seed);
 static int IRAM_ATTR rand_wrapper(void);
@@ -347,7 +347,7 @@ static esp_pm_lock_handle_t s_pm_lock;
 #endif
 
 #if CONFIG_SPIRAM_USE_MALLOC
-static bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue)
+static bool btdm_queue_generic_register(const btdm_queue_item_t *queue)
 {
     if (!btdm_queue_table_mux || !queue) {
         return NULL;
@@ -368,7 +368,7 @@ static bool IRAM_ATTR btdm_queue_generic_register(const btdm_queue_item_t *queue
     return ret;
 }
 
-static bool IRAM_ATTR btdm_queue_generic_deregister(btdm_queue_item_t *queue)
+static bool btdm_queue_generic_deregister(btdm_queue_item_t *queue)
 {
     if (!btdm_queue_table_mux || !queue) {
         return false;
@@ -415,7 +415,7 @@ static void IRAM_ATTR task_yield_from_isr(void)
     portYIELD_FROM_ISR();
 }
 
-static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
+static void *semphr_create_wrapper(uint32_t max, uint32_t init)
 {
 #if !CONFIG_SPIRAM_USE_MALLOC
     return (void *)xSemaphoreCreateCounting(max, init);
@@ -456,7 +456,7 @@ static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
 #endif
 }
 
-static void IRAM_ATTR semphr_delete_wrapper(void *semphr)
+static void semphr_delete_wrapper(void *semphr)
 {
 #if !CONFIG_SPIRAM_USE_MALLOC
     vSemaphoreDelete(semphr);
@@ -486,7 +486,7 @@ static int32_t IRAM_ATTR semphr_give_from_isr_wrapper(void *semphr, void *hptw)
     return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
 }
 
-static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
+static int32_t semphr_take_wrapper(void *semphr, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
         return (int32_t)xSemaphoreTake(semphr, portMAX_DELAY);
@@ -495,12 +495,12 @@ static int32_t IRAM_ATTR semphr_take_wrapper(void *semphr, uint32_t block_time_m
     }
 }
 
-static int32_t IRAM_ATTR semphr_give_wrapper(void *semphr)
+static int32_t semphr_give_wrapper(void *semphr)
 {
     return (int32_t)xSemaphoreGive(semphr);
 }
 
-static void *IRAM_ATTR mutex_create_wrapper(void)
+static void *mutex_create_wrapper(void)
 {
 #if CONFIG_SPIRAM_USE_MALLOC
     StaticQueue_t *queue_buffer = NULL;
@@ -541,7 +541,7 @@ static void *IRAM_ATTR mutex_create_wrapper(void)
 #endif
 }
 
-static void IRAM_ATTR mutex_delete_wrapper(void *mutex)
+static void mutex_delete_wrapper(void *mutex)
 {
 #if !CONFIG_SPIRAM_USE_MALLOC
     vSemaphoreDelete(mutex);
@@ -561,17 +561,17 @@ static void IRAM_ATTR mutex_delete_wrapper(void *mutex)
 #endif
 }
 
-static int32_t IRAM_ATTR mutex_lock_wrapper(void *mutex)
+static int32_t mutex_lock_wrapper(void *mutex)
 {
     return (int32_t)xSemaphoreTake(mutex, portMAX_DELAY);
 }
 
-static int32_t IRAM_ATTR mutex_unlock_wrapper(void *mutex)
+static int32_t mutex_unlock_wrapper(void *mutex)
 {
     return (int32_t)xSemaphoreGive(mutex);
 }
 
-static void *IRAM_ATTR queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
+static void *queue_create_wrapper(uint32_t queue_len, uint32_t item_size)
 {
 #if CONFIG_SPIRAM_USE_MALLOC
     StaticQueue_t *queue_buffer = NULL;
@@ -622,7 +622,7 @@ static void *IRAM_ATTR queue_create_wrapper(uint32_t queue_len, uint32_t item_si
 #endif
 }
 
-static void IRAM_ATTR queue_delete_wrapper(void *queue)
+static void queue_delete_wrapper(void *queue)
 {
 #if !CONFIG_SPIRAM_USE_MALLOC
     vQueueDelete(queue);
@@ -643,7 +643,7 @@ static void IRAM_ATTR queue_delete_wrapper(void *queue)
 #endif
 }
 
-static int32_t IRAM_ATTR queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms)
+static int32_t queue_send_wrapper(void *queue, void *item, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
         return (int32_t)xQueueSend(queue, item, portMAX_DELAY);
@@ -657,7 +657,7 @@ static int32_t IRAM_ATTR queue_send_from_isr_wrapper(void *queue, void *item, vo
     return (int32_t)xQueueSendFromISR(queue, item, hptw);
 }
 
-static int32_t IRAM_ATTR queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms)
+static int32_t queue_recv_wrapper(void *queue, void *item, uint32_t block_time_ms)
 {
     if (block_time_ms == OSI_FUNCS_TIME_BLOCKING) {
         return (int32_t)xQueueReceive(queue, item, portMAX_DELAY);
@@ -671,12 +671,12 @@ static int32_t IRAM_ATTR queue_recv_from_isr_wrapper(void *queue, void *item, vo
     return (int32_t)xQueueReceiveFromISR(queue, item, hptw);
 }
 
-static int32_t IRAM_ATTR task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
+static int32_t task_create_wrapper(void *task_func, const char *name, uint32_t stack_depth, void *param, uint32_t prio, void *task_handle, uint32_t core_id)
 {
     return (uint32_t)xTaskCreatePinnedToCore(task_func, name, stack_depth, param, prio, task_handle, (core_id < portNUM_PROCESSORS ? core_id : tskNO_AFFINITY));
 }
 
-static void IRAM_ATTR task_delete_wrapper(void *task_handle)
+static void task_delete_wrapper(void *task_handle)
 {
     vTaskDelete(task_handle);
 }
@@ -706,7 +706,7 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
     return err;
 }
 
-static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
+static void *malloc_internal_wrapper(size_t size)
 {
     return heap_caps_malloc(size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 }

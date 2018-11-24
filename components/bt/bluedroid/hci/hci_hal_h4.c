@@ -25,10 +25,10 @@
 #include "hci/hci_layer.h"
 #include "osi/thread.h"
 #include "esp_bt.h"
+#include "stack/hcimsgs.h"
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
-#include "stack/hcimsgs.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
@@ -332,7 +332,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
     fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-    hci_hal_h4_task_post(100 / portTICK_PERIOD_MS);
+    hci_hal_h4_task_post(0);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 

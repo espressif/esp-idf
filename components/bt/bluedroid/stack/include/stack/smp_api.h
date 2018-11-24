@@ -417,8 +417,6 @@ extern void SMP_PasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey);
 *******************************************************************************/
 extern void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey);
 
-extern void SMP_SetAcceptAuthMode (UINT8 enable, UINT8 auth_mode);
-
 /*******************************************************************************
 **
 ** Function         SMP_ConfirmReply

@@ -26,6 +26,7 @@
 #include "driver/uart.h"
 #include "sdkconfig.h"
 #include "driver/uart_select.h"
+#include "rom/uart.h"
 
 // TODO: make the number of UARTs chip dependent
 #define UART_NUM 3
@@ -302,6 +303,15 @@ static int uart_access(const char *path, int amode)
     }
 
     return ret;
+}
+
+static int uart_fsync(int fd)
+{
+    assert(fd >= 0 && fd < 3);
+    _lock_acquire_recursive(&s_uart_write_locks[fd]);
+    uart_tx_wait_idle((uint8_t) fd);
+    _lock_release_recursive(&s_uart_write_locks[fd]);
+    return 0;
 }
 
 static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart_select_notif, BaseType_t *task_woken)
@@ -883,6 +893,7 @@ void esp_vfs_dev_uart_register()
         .close = &uart_close,
         .read = &uart_read,
         .fcntl = &uart_fcntl,
+        .fsync = &uart_fsync,
         .access = &uart_access,
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,

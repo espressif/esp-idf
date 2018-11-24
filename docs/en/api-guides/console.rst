@@ -125,7 +125,7 @@ A few other functions are provided by the command registration module:
 ``esp_console_run``
   This function takes the command line string, splits it into argc/argv argument list using ``esp_console_split_argv``, looks up the command in the list of registered components, and if it is found, executes its handler.
 
-``esp_console_split_argv``
+``esp_console_register_help_command``
   Adds ``help`` command to the list of registered commands. This command prints the list of all the registered commands, along with their arguments and help texts.
 
 ``esp_console_get_completion``
