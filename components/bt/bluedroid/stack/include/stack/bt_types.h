@@ -790,4 +790,22 @@ static inline void bdsetany(BD_ADDR a)
 {
     bdcpy(a, bd_addr_any);
 }
+
+/*******************************************************************************
+**
+** Function         bt_rcopy
+**
+** Description      memory reverse and copy.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+static inline void bt_rcopy(UINT8 *dst, UINT8 const *src, UINT16 len)
+{
+    src += len;
+    while (len --) {
+        *dst++ = *--src;
+    }
+}
 #endif
