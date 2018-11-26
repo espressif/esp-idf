@@ -13,24 +13,17 @@
 # limitations under the License.
 
 """ Interface for test cases. """
-import sys
 import os
 import time
 import traceback
-import inspect
 import functools
 
-import xunitgen
+import junit_xml
 
 import Env
 import DUT
 import App
 import Utility
-
-
-XUNIT_FILE_NAME = "XUNIT_RESULT.xml"
-XUNIT_RECEIVER = xunitgen.EventReceiver()
-XUNIT_DEFAULT_TEST_SUITE = "test-suite"
 
 
 class DefaultEnvConfig(object):
@@ -69,46 +62,67 @@ set_default_config = DefaultEnvConfig.set_default_config
 get_default_config = DefaultEnvConfig.get_default_config
 
 
-class TestResult(object):
-    TEST_RESULT = {
-        "pass": [],
-        "fail": [],
-    }
-
-    @classmethod
-    def get_failed_cases(cls):
-        """
-        :return: failed test cases
-        """
-        return cls.TEST_RESULT["fail"]
-
-    @classmethod
-    def get_passed_cases(cls):
-        """
-        :return: passed test cases
-        """
-        return cls.TEST_RESULT["pass"]
-
-    @classmethod
-    def set_result(cls, result, case_name):
-        """
-        :param result: True or False
-        :param case_name: test case name
-        :return: None
-        """
-        cls.TEST_RESULT["pass" if result else "fail"].append(case_name)
-
-
-get_failed_cases = TestResult.get_failed_cases
-get_passed_cases = TestResult.get_passed_cases
-
-
 MANDATORY_INFO = {
     "execution_time": 1,
     "env_tag": "default",
     "category": "function",
     "ignore": False,
 }
+
+
+class JunitReport(object):
+    # wrapper for junit test report
+    # TODO: Don't support by multi-thread (although not likely to be used this way).
+
+    JUNIT_FILE_NAME = "XUNIT_RESULT.xml"
+    JUNIT_DEFAULT_TEST_SUITE = "test-suite"
+    JUNIT_TEST_SUITE = junit_xml.TestSuite(JUNIT_DEFAULT_TEST_SUITE)
+    JUNIT_CURRENT_TEST_CASE = None
+    _TEST_CASE_CREATED_TS = 0
+
+    @classmethod
+    def output_report(cls, junit_file_path):
+        """ Output current test result to file. """
+        with open(os.path.join(junit_file_path, cls.JUNIT_FILE_NAME), "w") as f:
+            cls.JUNIT_TEST_SUITE.to_file(f, [cls.JUNIT_TEST_SUITE], prettyprint=False)
+
+    @classmethod
+    def get_current_test_case(cls):
+        """
+        By default, the test framework will handle junit test report automatically.
+        While some test case might want to update some info to test report.
+        They can use this method to get current test case created by test framework.
+
+        :return: current junit test case instance created by ``JunitTestReport.create_test_case``
+        """
+        return cls.JUNIT_CURRENT_TEST_CASE
+
+    @classmethod
+    def test_case_finish(cls, test_case):
+        """
+        Append the test case to test suite so it can be output to file.
+        Execution time will be automatically updated (compared to ``create_test_case``).
+        """
+        test_case.elapsed_sec = time.time() - cls._TEST_CASE_CREATED_TS
+        cls.JUNIT_TEST_SUITE.test_cases.append(test_case)
+
+    @classmethod
+    def create_test_case(cls, name):
+        """
+        Extend ``junit_xml.TestCase`` with:
+
+        1. save create test case so it can be get by ``get_current_test_case``
+        2. log create timestamp, so ``elapsed_sec`` can be auto updated in ``test_case_finish``.
+
+        :param name: test case name
+        :return: instance of ``junit_xml.TestCase``
+        """
+        # set stdout to empty string, so we can always append string to stdout.
+        # It won't affect output logic. If stdout is empty, it won't be put to report.
+        test_case = junit_xml.TestCase(name, stdout="")
+        cls.JUNIT_CURRENT_TEST_CASE = test_case
+        cls._TEST_CASE_CREATED_TS = time.time()
+        return test_case
 
 
 def test_method(**kwargs):
@@ -124,14 +138,15 @@ def test_method(**kwargs):
     :keyword env_config_file: test env config file. usually will not set this keyword when define case
     :keyword test_suite_name: test suite name, used for generating log folder name and adding xunit format test result.
                               usually will not set this keyword when define case
+    :keyword junit_report_by_case: By default the test fw will handle junit report generation.
+                                   In some cases, one test function might test many test cases.
+                                   If this flag is set, test case can update junit report by its own.
     """
     def test(test_func):
-        # get test function file name
-        frame = inspect.stack()
-        test_func_file_name = frame[1][1]
 
         case_info = MANDATORY_INFO.copy()
         case_info["name"] = case_info["ID"] = test_func.__name__
+        case_info["junit_report_by_case"] = False
         case_info.update(kwargs)
 
         @functools.wraps(test_func)
@@ -151,11 +166,12 @@ def test_method(**kwargs):
 
             env_config.update(overwrite)
             env_inst = Env.Env(**env_config)
+
             # prepare for xunit test results
-            xunit_file = os.path.join(env_inst.app_cls.get_log_folder(env_config["test_suite_name"]),
-                                      XUNIT_FILE_NAME)
-            XUNIT_RECEIVER.begin_case(test_func.__name__, time.time(), test_func_file_name)
+            junit_file_path = env_inst.app_cls.get_log_folder(env_config["test_suite_name"])
+            junit_test_case = JunitReport.create_test_case(case_info["name"])
             result = False
+
             try:
                 Utility.console_log("starting running test: " + test_func.__name__, color="green")
                 # execute test function
@@ -166,21 +182,20 @@ def test_method(**kwargs):
                 # handle all the exceptions here
                 traceback.print_exc()
                 # log failure
-                XUNIT_RECEIVER.failure(str(e), test_func_file_name)
+                junit_test_case.add_failure_info(str(e) + ":\r\n" + traceback.format_exc())
             finally:
+                if not case_info["junit_report_by_case"]:
+                    JunitReport.test_case_finish(junit_test_case)
                 # do close all DUTs, if result is False then print DUT debug info
                 env_inst.close(dut_debug=(not result))
+
             # end case and output result
-            XUNIT_RECEIVER.end_case(test_func.__name__, time.time())
-            with open(xunit_file, "ab+") as f:
-                f.write(xunitgen.toxml(XUNIT_RECEIVER.results(),
-                                       XUNIT_DEFAULT_TEST_SUITE))
+            JunitReport.output_report(junit_file_path)
 
             if result:
                 Utility.console_log("Test Succeed: " + test_func.__name__, color="green")
             else:
                 Utility.console_log(("Test Fail: " + test_func.__name__), color="red")
-            TestResult.set_result(result, test_func.__name__)
             return result
 
         handle_test.case_info = case_info

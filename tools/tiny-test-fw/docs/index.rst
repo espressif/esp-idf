@@ -186,7 +186,7 @@ The following 3rd party lib is required:
 
     * pyserial
     * pyyaml
-    * xunitgen
+    * junit_xml
     * netifaces
     * matplotlib (if use Utility.LineChart)
 
