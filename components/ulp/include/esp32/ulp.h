@@ -898,6 +898,9 @@ esp_err_t ulp_run(uint32_t entry_point);
  * i.e. period number 0. ULP program code can use SLEEP instruction to select
  * which of the SENS_ULP_CP_SLEEP_CYCx_REG should be used for subsequent wakeups.
  *
+ * However, please note that SLEEP instruction issued (from ULP program) while the system
+ * is in deep sleep mode does not have effect, and sleep cycle count 0 is used.
+ *
  * @param period_index wakeup period setting number (0 - 4)
  * @param period_us wakeup period, us
  * @note  The ULP FSM requires two clock cycles to wakeup before being able to run the program.
