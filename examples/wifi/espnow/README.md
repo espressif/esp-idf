@@ -44,6 +44,9 @@ make menuconfig
   The sending device and the recving device must be on the same channel.
 * Set Send count and Send delay under Example Configuration Options.
 * Set Send len under Example Configuration Options.
+* Set Enable Long Range Options.
+  When this parameter is enabled, the ESP32 device will send data at the PHY rate of 512Kbps or 256Kbps
+  then the data can be transmitted over long range between two ESP32 devices. 
 
 ### Build and Flash
 
