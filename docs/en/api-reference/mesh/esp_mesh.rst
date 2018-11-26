@@ -1,8 +1,7 @@
 ESP-MESH Programming Guide
 ==========================
 
-This is a programming guide for ESP-MESH, including the API reference and coding 
-examples. This guide is split into the following parts:
+This is a programming guide for ESP-MESH, including the API reference and coding examples. This guide is split into the following parts:
 
 1. :ref:`mesh-programming-model`
 
@@ -12,8 +11,7 @@ examples. This guide is split into the following parts:
 
 4. :ref:`mesh-api-reference`
 
-For documentation regarding the ESP-MESH protocol, please see the 
-:doc:`ESP-MESH API Guide<../../api-guides/mesh>`.
+For documentation regarding the ESP-MESH protocol, please see the :doc:`ESP-MESH API Guide<../../api-guides/mesh>`.
 
 
 .. ---------------------- ESP-MESH Programming Model --------------------------
@@ -26,9 +24,7 @@ ESP-MESH Programming Model
 Software Stack
 ^^^^^^^^^^^^^^
 
-The ESP-MESH software stack is built atop the Wi-Fi Driver/FreeRTOS and may use 
-the LwIP Stack in some instances (i.e. the root node). The following diagram 
-illustrates the ESP-MESH software stack.
+The ESP-MESH software stack is built atop the Wi-Fi Driver/FreeRTOS and may use the LwIP Stack in some instances (i.e. the root node). The following diagram illustrates the ESP-MESH software stack.
 
 .. _mesh-going-to-software-stack:
 
@@ -42,10 +38,7 @@ illustrates the ESP-MESH software stack.
 System Events
 ^^^^^^^^^^^^^
 
-An application interfaces with ESP-MESH via **ESP-MESH Events**. Since ESP-MESH 
-is built atop the Wi-Fi stack, it is also possible for the application to interface 
-with the Wi-Fi driver via the **Wi-Fi Event Task**. The following diagram illustrates 
-the interfaces for the various System Events in an ESP-MESH application.
+An application interfaces with ESP-MESH via **ESP-MESH Events**. Since ESP-MESH is built atop the Wi-Fi stack, it is also possible for the application to interface with the Wi-Fi driver via the **Wi-Fi Event Task**. The following diagram illustrates the interfaces for the various System Events in an ESP-MESH application.
 
 .. figure:: ../../../_static/mesh-events-delivery.png
     :align: center
@@ -54,41 +47,19 @@ the interfaces for the various System Events in an ESP-MESH application.
 
     ESP-MESH System Events Delivery
 
-The :cpp:type:`mesh_event_id_t` defines all possible ESP-MESH system events and
-can indicate events such as the connection/disconnection of parent/child. Before 
-ESP-MESH system events can be used, the application must register a **Mesh Event 
-Callback** via :cpp:func:`esp_mesh_set_config`. The callback is used to receive 
-events from the ESP-MESH stack as well as the LwIP Stack and should contain handlers 
-for each event relevant to the application.
+The :cpp:type:`mesh_event_id_t` defines all possible ESP-MESH system events and can indicate events such as the connection/disconnection of parent/child. Before ESP-MESH system events can be used, the application must register a **Mesh Event Callback** via :cpp:func:`esp_mesh_set_config`. The callback is used to receive events from the ESP-MESH stack as well as the LwIP Stack and should contain handlers for each event relevant to the application.
 
-Typical use cases of system events include using events such as 
-:cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` 
-to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, 
-:cpp:enumerator:`MESH_EVENT_ROOT_GOT_IP` and :cpp:enumerator:`MESH_EVENT_ROOT_LOST_IP` can be 
-used to indicate when the root node can and cannot transmit data to the external IP 
-network.
+Typical use cases of system events include using events such as :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, :cpp:enumerator:`MESH_EVENT_ROOT_GOT_IP` and :cpp:enumerator:`MESH_EVENT_ROOT_LOST_IP` can be used to indicate when the root node can and cannot transmit data to the external IP network.
 
 .. warning::
-    When using ESP-MESH under self-organized mode, users must ensure that no calls 
-    to Wi-Fi API are made. This is due to the fact that the self-organizing mode 
-    will internally make Wi-Fi API calls to connect/disconnect/scan etc. 
-    **Any Wi-Fi calls from the application (including calls from callbacks and 
-    handlers of Wi-Fi events) may interfere with ESP-MESH's self-organizing behavior**. 
-    Therefore, user's should not call Wi-Fi APIs after :cpp:func:`esp_mesh_start` 
-    is called, and before :cpp:func:`esp_mesh_stop` is called.
+    When using ESP-MESH under self-organized mode, users must ensure that no calls to Wi-Fi API are made. This is due to the fact that the self-organizing mode will internally make Wi-Fi API calls to connect/disconnect/scan etc. **Any Wi-Fi calls from the application (including calls from callbacks and handlers of Wi-Fi events) may interfere with ESP-MESH's self-organizing behavior**. Therefore, user's should not call Wi-Fi APIs after :cpp:func:`esp_mesh_start` is called, and before :cpp:func:`esp_mesh_stop` is called.
 
 LwIP & ESP-MESH
 ^^^^^^^^^^^^^^^
 
-The application can access the ESP-MESH stack directly without having to go through 
-the LwIP stack. The LwIP stack is only required by the root node to transmit/receive 
-data to/from an external IP network. However, since every node can potentially 
-become the root node (due to automatic root node selection), each node must still 
-initialize the LwIP stack.
+The application can access the ESP-MESH stack directly without having to go through the LwIP stack. The LwIP stack is only required by the root node to transmit/receive data to/from an external IP network. However, since every node can potentially become the root node (due to automatic root node selection), each node must still initialize the LwIP stack.
 
-**Each node is required to initialize LwIP by calling** :cpp:func:`tcpip_adapter_init`. 
-In order to prevent non-root node access to LwIP, the application should stop the 
-following services after LwIP initialization:
+**Each node is required to initialize LwIP by calling** :cpp:func:`tcpip_adapter_init`. In order to prevent non-root node access to LwIP, the application should stop the following services after LwIP initialization:
 
     - DHCP server service on the softAP interface.
     - DHCP client service on the station interface.
@@ -111,11 +82,7 @@ The following code snippet demonstrates how to initialize LwIP for ESP-MESH appl
 
 .. note::
 
-    ESP-MESH requires a root node to be connected with a router. Therefore, in 
-    the event that a node becomes the root, **the corresponding handler must start 
-    the DHCP client service and immediately obtain an IP address**. Doing so will 
-    allow other nodes to begin transmitting/receiving packets to/from the external 
-    IP network. However, this step is unnecessary if static IP settings are used.
+    ESP-MESH requires a root node to be connected with a router. Therefore, in the event that a node becomes the root, **the corresponding handler must start the DHCP client service and immediately obtain an IP address**. Doing so will allow other nodes to begin transmitting/receiving packets to/from the external IP network. However, this step is unnecessary if static IP settings are used.
 
 
 .. ---------------------- Writing a Mesh Application --------------------------
@@ -125,9 +92,7 @@ The following code snippet demonstrates how to initialize LwIP for ESP-MESH appl
 Writing an ESP-MESH Application 
 -------------------------------
 
-The prerequisites for starting ESP-MESH is to initialize LwIP and Wi-Fi, The 
-following code snippet demonstrates the necessary prerequisite steps before 
-ESP-MESH itself can be initialized.
+The prerequisites for starting ESP-MESH is to initialize LwIP and Wi-Fi, The following code snippet demonstrates the necessary prerequisite steps before ESP-MESH itself can be initialized.
 
 .. code-block:: c
 
@@ -148,8 +113,7 @@ ESP-MESH itself can be initialized.
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-After initializing LwIP and Wi-Fi, the process of getting an ESP-MESH network 
-up and running can be summarized into the following three steps:
+After initializing LwIP and Wi-Fi, the process of getting an ESP-MESH network up and running can be summarized into the following three steps:
 
 1. :ref:`mesh-initialize-mesh`
 2. :ref:`mesh-configuring-mesh`
@@ -174,9 +138,7 @@ Configuring an ESP-MESH Network
 
 .. todo - Add note about unified configuration
 
-ESP-MESH is configured via :cpp:func:`esp_mesh_set_config` which receives its arguments
-using the :cpp:type:`mesh_cfg_t` structure. The structure contains the following
-parameters used to configure ESP-MESH:
+ESP-MESH is configured via :cpp:func:`esp_mesh_set_config` which receives its arguments using the :cpp:type:`mesh_cfg_t` structure. The structure contains the following parameters used to configure ESP-MESH:
 
 +------------------+-------------------------------------+
 | Parameter        | Description                         |
@@ -234,10 +196,7 @@ The following code snippet demonstrates how to start ESP-MESH.
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
 
-After starting ESP-MESH, the application should check for ESP-MESH events to determine 
-when it has connected to the network. After connecting, the application can start 
-transmitting and receiving packets over the ESP-MESH network using 
-:cpp:func:`esp_mesh_send` and :cpp:func:`esp_mesh_recv`.
+After starting ESP-MESH, the application should check for ESP-MESH events to determine when it has connected to the network. After connecting, the application can start transmitting and receiving packets over the ESP-MESH network using :cpp:func:`esp_mesh_send` and :cpp:func:`esp_mesh_recv`.
 
 .. --------------------- ESP-MESH Application Examples ------------------------
 
@@ -248,14 +207,9 @@ Application Examples
 
 ESP-IDF contains these ESP-MESH example projects:
 
-:example:`The Internal Communication Example<mesh/internal_communication>` demonstrates
-how to setup a ESP-MESH network and have the root node send a data packet to 
-every node within the network.
+:example:`The Internal Communication Example<mesh/internal_communication>` demonstrates how to setup a ESP-MESH network and have the root node send a data packet to every node within the network.
 
-:example:`The Manual Networking Example<mesh/manual_networking>` demonstrates
-how to use ESP-MESH without the self-organizing features. This example shows how
-to program a node to manually scan for a list of potential parent nodes and select 
-a parent node based on custom criteria.
+:example:`The Manual Networking Example<mesh/manual_networking>` demonstrates how to use ESP-MESH without the self-organizing features. This example shows how to program a node to manually scan for a list of potential parent nodes and select a parent node based on custom criteria.
 
 
 .. ------------------------- ESP-MESH API Reference ---------------------------
