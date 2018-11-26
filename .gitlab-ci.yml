@@ -547,7 +547,7 @@ test_idf_monitor:
     expire_in: 1 week
   script:
     - cd ${IDF_PATH}/tools/test_idf_monitor
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./run_test_idf_monitor.py
+    - ./run_test_idf_monitor.py
 
 test_idf_size:
   <<: *host_test_template
