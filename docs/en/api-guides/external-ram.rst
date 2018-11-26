@@ -36,29 +36,84 @@ Connections for the ESP32D2W* chips are TBD.
    Espressif sells an ESP-WROVER module which contains an ESP32, 1.8V flash and the ESP-PSRAM32 integrated in a module, ready for inclusion
    on an end product PCB.
 
-Software
-========
+.. _external_ram_config:
 
-ESP-IDF fully supports integrating external memory use into your applications. ESP-IDF can be configured to handle external RAM in several ways:
- * Only initialize RAM. This allows the application to manually place data here by dereferencing pointers pointed at the external RAM memory
-   region (0x3F800000 and up).
- * Initialize RAM and add it to the capability allocator. This allows a program to specifically allocate a chunk of external RAM using
-   ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. This memory can be used and subsequently freed using a normal ``free()`` call.
- * Initialize RAM, add it to the capability allocator and add memory to the pool of RAM that can be returned by ``malloc()``. This allows
-   any application to use the external RAM without having to rewrite the code to use ``heap_caps_malloc``.
- * Initialize RAM, use a region start from 0x3F800000 for storing zero initialized data(BSS segment) of lwip,net802.11,pp,bluedroid library
-   by enabling :ref: `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` in menuconfig, this way can save some internal memory，because the BSS segment
-   originally stored in internal memory，and the rest of external RAM can be add the capability allocator and add memory to the pool of RAM as above way
+Configuring External RAM
+========================
 
-All these options can be selected from the menuconfig menu.
+ESP-IDF fully supports using external memory in applications. ESP-IDF can be configured to handle external RAM in several ways after it is initialized at startup:
+
+ * :ref:`external_ram_config_memory_map`
+ * :ref:`external_ram_config_capability_allocator`
+ * :ref:`external_ram_config_malloc` (default)
+ * :ref:`external_ram_config_bss`
+
+.. _external_ram_config_memory_map:
+
+Integrate RAM into ESP32 memory map
+-----------------------------------
+
+Select this option by choosing "Integrate RAM into ESP32 memory map" from :ref:`CONFIG_SPIRAM_USE`.
+
+This is the most basic option for external SPIRAM integration. Most users will want one of the other, more advanced, options.
+
+During ESP-IDF startup, external RAM is mapped into the data address space starting at at address 0x3F800000 (byte-accessible). The length of this region is the same as the SPIRAM size (up to the limit of 4MiB).
+
+The application can manually place data in external memory by creating pointers to this region. The application is responsible for all management of the external SPIRAM: coordinating buffer usage, preventing corruption, etc.
+
+.. _external_ram_config_capability_allocator:
+
+Add external RAM to the capability allocator
+--------------------------------------------
+
+Select this option by choosing "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" from :ref:`CONFIG_SPIRAM_USE`.
+
+When enabled, memory is mapped to address 0x3F800000 but also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+
+To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
+
+.. _external_ram_config_malloc:
+
+Provide external RAM via malloc()
+---------------------------------
+
+Select this option by choosing "Make RAM allocatable using malloc() as well" from :ref:`CONFIG_SPIRAM_USE`. This is the default selection.
+
+Using this option, memory is added to the capability allocator as described for the previous option. However it is also added to the pool of RAM that can be returned by standard ``malloc()``.
+
+This allows any application to use the external RAM without having to rewrite the code to use ``heap_caps_malloc(..., MALLOC_CAP_SPIRAM)``.
+
+An additional configuration item, :ref:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL`, can be used to set the size threshold when a single allocation should prefer external memory:
+
+- When allocating a size less than the threshold, the allocator will try internal memory first.
+- When allocating a size equal to or larger than the threshold, the allocator will try external memory first.
+
+If a suitable block of preferred internal/external memory is not available, allocation will try the other type of memory.
+
+Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
+
+.. _external_ram_config_bss:
+
+Allow .bss segment placed in external memory
+--------------------------------------------
+
+Enable this option by setting :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
+
+If enabled, a region of the address space starting from 0x3F800000 will be to used to store zero initialized data (BSS segment) from the lwip, net80211, libpp and bluedroid ESP-IDF libraries.
+
+Additional data can be moved from the internal BSS segment to external RAM by applying the ``EXT_RAM_ATTR`` macro to any static declaration (which is not initialized to a non-zero value).
+
+This option reduces the internal static memory used by the BSS segment.
+
+Remaining external RAM can also be added to the capability heap allocator, by the method shown above.
 
 Restrictions
-------------
+============
 
-The use of external RAM has a few restrictions:
- * When disabling flash cache (for example, because the flash is being written to), the external RAM also becomes inaccessible; any reads from or
-   writes to it will lead to an illegal cache access exception. This is also the reason that ESP-IDF will never allocate a tasks stack in external
-   RAM.
+External RAM use has the following restrictions:
+
+ * When flash cache is disabled (for example, because the flash is being written to), the external RAM also becomes inaccessible; any reads from or
+   writes to it will lead to an illegal cache access exception. This is also the reason that ESP-IDF does not by default allocate any task stacks in external RAM (see below).
  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Any
    buffers that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` (and can be freed using a
    standard ``free()`` call.)
@@ -66,22 +121,12 @@ The use of external RAM has a few restrictions:
    modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32K), the cache can be insufficient and speeds
    will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can 'push out' cached flash, possibly making
    execution of code afterwards slower.
- * External RAM cannot be used as task stack memory; because of this, xTaskCreate and similar functions will always allocate internal memory
-   for stack and task TCBs and xTaskCreateStatic-type functions will check if the buffers passed are internal. However, for tasks not calling
+ * External RAM cannot be used as task stack memory. Because of this, :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory
+   for stack and task TCBs and functions like :cpp:func:`xTaskCreateStatic` will check if the buffers passed are internal. However, for tasks not calling
    on code in ROM in any way, directly or indirectly, the menuconfig option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` will eliminate
-   the check in xTaskCreateStatic, allowing task stack in external RAM. Using this is not advised, however.
- * External RAM initialized failed can not be ignored if enabled :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`; because of this, some BSS segment
-   can not be placed into external memory if PSRAM can't work normally and can not be moved to internal memory at runtime because the address of
-   them is defined by linkfile, the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` can't handle this situation,if you want to enable :ref:
-   `CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` the :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` will be disabled, and if initialize SPIRAM failed,the system
-   will invoke abort.
- * External RAM of 4MBit (test up to know) has to be used with one of HSPI/VSPI occupied under 80MHz. Select which SPI host to be used by :ref:`CONFIG_SPIRAM_OCCUPY_SPI_HOST`.
-
-Because there are a fair few situations that have a specific need for internal memory, but it is also possible to use malloc() to exhaust
-internal memory, there is a pool reserved specifically for requests that cannot be resolved from external memory; allocating task
-stack, DMA buffers and memory that stays accessible when cache is disabled is drawn from this pool. The size of this pool is configurable
-in menuconfig.
-
+   the check in xTaskCreateStatic, allowing a task's stack to be in external RAM. Using this is not advised, however.
+ * By default, failure to initialize external RAM will cause ESP-IDF startup to abort. This can be disabled by enabling config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`. If :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
+ * When used at 80MHz clock speed, external RAM must also occupy either the HSPI or VSPI bus. Select which SPI host will be used by :ref:`CONFIG_SPIRAM_OCCUPY_SPI_HOST`.
 
 Chip revisions
 ==============
