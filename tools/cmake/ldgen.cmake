@@ -22,7 +22,12 @@ function(ldgen_add_fragment_files target fragment_files)
     endforeach()
 
     set_property(TARGET ldgen APPEND PROPERTY FRAGMENT_FILES ${fragment_files_full_path})
+endfunction()
 
+# ldgen_generate_sections_info
+#
+# Generate sections info for specified target to be used in linker script generation
+function(ldgen_generate_sections_info target)
     get_filename_component(target_sections_info ${CMAKE_CURRENT_BINARY_DIR}/${target}.sections_info ABSOLUTE)
 
     add_custom_command(
