@@ -14,6 +14,9 @@ execute_process(
 string(REGEX MATCH "GNU assembler \\(GNU Binutils\\) (${version_pattern})" as_version ${as_output})
 set(as_version ${CMAKE_MATCH_1})
 
+message(STATUS "Building ULP app ${ULP_APP_NAME}")
+message(STATUS "ULP assembler version: ${as_version}")
+
 # Check the supported assembler version
 file(STRINGS ${IDF_PATH}/components/ulp/toolchain_ulp_version.mk version_file_contents)
 string(REGEX MATCH "SUPPORTED_ULP_ASSEMBLER_VERSION = (${version_pattern})" as_supported_version ${version_file_contents})
