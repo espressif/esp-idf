@@ -17,6 +17,8 @@
 
 import argparse
 import os
+import traceback
+import sys
 
 from fragments import FragmentFileModel
 from sdkconfig import SDKConfig
@@ -95,6 +97,9 @@ def main():
         print("linker script generation failed for %s\nERROR: %s" % (input_file.name, e.message))
         # Delete the file so the entire build will fail; and not use an outdated script.
         os.remove(output_file.name)
+        # Print traceback and exit
+        traceback.print_exc()
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
