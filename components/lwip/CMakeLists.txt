@@ -84,6 +84,7 @@ set(COMPONENT_SRCS "apps/dhcpserver/dhcpserver.c"
                    "port/esp32/vfs_lwip.c"
                    "port/esp32/debug/lwip_debug.c"
                    "port/esp32/freertos/sys_arch.c"
+                   "port/esp32/netif/dhcp_state.c"
                    "port/esp32/netif/ethernetif.c"
                    "port/esp32/netif/wlanif.c")
 
@@ -121,7 +122,7 @@ if(CONFIG_PPP_SUPPORT)
 endif()
 
 set(COMPONENT_REQUIRES vfs)
-set(COMPONENT_PRIV_REQUIRES ethernet tcpip_adapter)
+set(COMPONENT_PRIV_REQUIRES ethernet tcpip_adapter nvs_flash)
 
 register_component()
 
