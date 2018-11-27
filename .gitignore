@@ -68,3 +68,6 @@ test_multi_heap_host
 
 # VS Code Settings
 .vscode/
+
+# Results for the checking of the Python coding style
+flake8_output.txt
