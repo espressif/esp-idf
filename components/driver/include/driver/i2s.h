@@ -188,6 +188,14 @@ typedef struct {
     int data_in_num;    /*!< DATA in pin*/
 } i2s_pin_config_t;
 
+/**
+ * @brief I2S PDM RX downsample mode
+ */
+typedef enum {
+    I2S_PDM_DSR_8S = 0,  /*!< downsampling number is 8 for PDM RX mode*/
+    I2S_PDM_DSR_16S,     /*!< downsampling number is 16 for PDM RX mode*/
+    I2S_PDM_DSR_MAX,
+} i2s_pdm_dsr_t;
 
 typedef intr_handle_t i2s_isr_handle_t;
 /**
@@ -213,6 +221,25 @@ typedef intr_handle_t i2s_isr_handle_t;
  *     - ESP_FAIL            IO error
  */
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
+
+/**
+ * @brief Set PDM mode down-sample rate
+ *        In PDM RX mode, there would be 2 rounds of downsample process in hardware.
+ *        In the first downsample process, the sampling number can be 16 or 8.
+ *        In the second downsample process, the sampling number is fixed as 8.
+ *        So the clock frequency in PDM RX mode would be (fpcm * 64) or (fpcm * 128) accordingly.
+ * @param i2s_num I2S_NUM_0, I2S_NUM_1
+ * @param dsr i2s RX down sample rate for PDM mode.
+ *
+ * @note After calling this function, it would call i2s_set_clk inside to update the clock frequency.
+ *       Please call this function after I2S driver has been initialized.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_NO_MEM      Out of memory
+ */
+esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr);
 
 /**
  * @brief Set I2S dac mode, I2S built-in DAC is disabled by default
