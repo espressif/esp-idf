@@ -66,7 +66,10 @@ static void uart_select_task()
                 if (FD_ISSET(fd, &rfds)) {
                     char buf;
                     if (read(fd, &buf, 1) > 0) {
-                            ESP_LOGI(TAG, "Received: %c", buf);
+                        ESP_LOGI(TAG, "Received: %c", buf);
+                        // Note: Only one character was read even the buffer contains more. The other characters will
+                        // be read one-by-one by subsequent calls to select() which will then return immediately
+                        // without timeout.
                     } else {
                         ESP_LOGE(TAG, "UART read error");
                         break;
