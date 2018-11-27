@@ -581,8 +581,6 @@ and names
 """
 class SectionsInfo(dict):
 
-    PATH = Optional("/") + ZeroOrMore(Regex(r"[^/.]+") + Literal("/"))
-
     __info = collections.namedtuple("__info", "filename content")
 
     def __init__(self):
@@ -591,8 +589,8 @@ class SectionsInfo(dict):
     def add_sections_info(self, sections_info_file):
         first_line = sections_info_file.readline()
 
-        archive = Literal("In archive").suppress() + SectionsInfo.PATH.suppress() + Fragment.ENTITY.setResultsName("archive") + Literal(":").suppress()
-        parser = archive
+        archive_path = Literal("In archive").suppress() + Regex(r"[^:]+").setResultsName("archive_path") + Literal(":").suppress()
+        parser = archive_path
 
         results = None
 
@@ -601,7 +599,8 @@ class SectionsInfo(dict):
         except ParseException as p:
             raise ParseException("File " + sections_info_file.name + " is not a valid sections info file. " + p.message)
 
-        self.sections[results.archive] = SectionsInfo.__info(sections_info_file.name, sections_info_file.read())
+        archive = os.path.basename(results.archive_path)
+        self.sections[archive] = SectionsInfo.__info(sections_info_file.name, sections_info_file.read())
 
     def _get_infos_from_file(self, info):
         # Object file line: '{object}:  file format elf32-xtensa-le'
