@@ -119,7 +119,7 @@ build_example () {
     cp -r "${EXAMPLE_DIR}" "example_builds/${ID}"
     pushd "example_builds/${ID}/${EXAMPLE_NAME}"
         # be stricter in the CI build than the default IDF settings
-        export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+        export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
 
         # build non-verbose first
