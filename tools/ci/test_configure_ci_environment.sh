@@ -30,5 +30,9 @@ assert_branch_public v1.2-rc77 1
 assert_branch_public v1.2.3-rc1 1
 assert_branch_public v1.2.3invalid
 
-rm -f .gitmodules
+(
+    . ./configure_ci_environment.sh
+    [[ $PEDANTIC_CFLAGS ]] || { echo "PEDANTIC_CFLAGS is not defined"; exit 1; }
+) || { exit 1; }
 
+rm -f .gitmodules
