@@ -384,9 +384,17 @@ build_docs:
     - make html
     - ../check_doc_warnings.sh
 
-verify_cmake_style:
-  stage: build
+.check_job_template: &check_job_template
+  stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  dependencies: []
+  before_script: *do_nothing_before_no_filter
+
+verify_cmake_style:
+  <<: *check_job_template
+  stage: build
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -676,14 +684,6 @@ check_doc_links:
     - test "${CI_COMMIT_REF_NAME}" = "master" || exit 0
     - cd docs
     - make linkcheck
-
-.check_job_template: &check_job_template
-  stage: check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
-  dependencies: []
-  before_script: *do_nothing_before_no_filter
 
 check_line_endings:
   <<: *check_job_template
