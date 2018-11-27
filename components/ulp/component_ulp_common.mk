@@ -28,6 +28,9 @@ ULP_PREPROCESSOR_ARGS := \
 include $(IDF_PATH)/components/ulp/toolchain_ulp_version.mk
 ULP_AS_VER := $(shell $(ULP_AS) --version | sed -E -n 's|GNU assembler \(GNU Binutils\) ([a-z0-9\.-]+)|\1|gp')
 
+$(info Building ULP app $(ULP_APP_NAME))
+$(info ULP assembler version: $(ULP_AS_VER))
+
 ifeq (,$(findstring $(ULP_AS_VER), $(SUPPORTED_ULP_ASSEMBLER_VERSION)))
 $(info WARNING: ULP assembler version $(ULP_AS_VER) is not supported.)
 $(info Expected to see version: $(SUPPORTED_ULP_ASSEMBLER_VERSION))
