@@ -29,13 +29,13 @@ import threading
 
 test_list = (
         # Add new tests here. All files should be placed in IN_DIR. Columns are:
-        # Input file            Filter string                                               File with expected output
-        ('in1.txt',             '',                                                         'in1f1.txt'),
-        ('in1.txt',             '*:V',                                                      'in1f1.txt'),
-        ('in1.txt',             'hello_world',                                              'in1f2.txt'),
-        ('in1.txt',             '*:N',                                                      'in1f3.txt'),
-        ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt'),
-        ('in2.txt',             'vfs',                                                      'in2f2.txt'),
+        # Input file            Filter string                                               File with expected output   Timeout
+        ('in1.txt',             '',                                                         'in1f1.txt',                60),
+        ('in1.txt',             '*:V',                                                      'in1f1.txt',                60),
+        ('in1.txt',             'hello_world',                                              'in1f2.txt',                60),
+        ('in1.txt',             '*:N',                                                      'in1f3.txt',                60),
+        ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               240),
+        ('in2.txt',             'vfs',                                                      'in2f2.txt',               240),
         )
 
 IN_DIR = 'tests/'       # tests are in this directory
@@ -48,8 +48,6 @@ IDF_MONITOR = '{}/tools/idf_monitor.py'.format(os.getenv("IDF_PATH"))
 HOST = 'localhost'
 # blocking socket operations are used with timeout:
 SOCKET_TIMEOUT = 30
-# idf_monitor is killed if it doesn't respond:
-MONITOR_TIMEOUT = 60
 # the test is restarted after failure (idf_monitor has to be killed):
 RETRIES_PER_TEST = 5
 
@@ -58,7 +56,7 @@ def monitor_timeout(process):
         # idf_monitor is still running
         try:
             process.kill()
-            print('\tidf_monitor was killed because it did not finish in {} seconds.'.format(MONITOR_TIMEOUT))
+            print('\tidf_monitor was killed because it did not finish in time.')
         except OSError as e:
             if e.errno == errno.ESRCH:
                 # ignores a possible race condition which can occur when the process exits between poll() and kill()
@@ -96,6 +94,7 @@ def test_iteration(runner, test, startup_timeout):
             (master_fd, slave_fd) = pty.openpty()
             print('\t', ' '.join(monitor_cmd), sep='')
             print('\tstdout="{}" stderr="{}" stdin="{}"'.format(o_f.name, e_f.name, os.ttyname(slave_fd)))
+            print('\tMonitor timeout: {} seconds'.format(test[3]))
             start = time.time()
             # the server socket is alive so idf_monitor can start now
             proc = subprocess.Popen(monitor_cmd, stdin=slave_fd, stdout=o_f, stderr=e_f, close_fds=True, bufsize=-1)
@@ -103,7 +102,7 @@ def test_iteration(runner, test, startup_timeout):
             #   used at all
             # - setting bufsize is needed because the default value is different on Python 2 and 3
             # - the default close_fds is also different on Python 2 and 3
-            monitor_watchdog = threading.Timer(MONITOR_TIMEOUT, monitor_timeout, [proc])
+            monitor_watchdog = threading.Timer(test[3], monitor_timeout, [proc])
             monitor_watchdog.start()
             client = runner.accept_connection()
             # The connection is ready but idf_monitor cannot yet receive data. This seems to happen on Ubuntu 16.04 LTS
@@ -163,7 +162,7 @@ def main():
                     if i < RETRIES_PER_TEST - 1:
                         print('Test has failed with exception:', e)
                         print('Another attempt will be made.')
-                        startup_timeout += 0.5
+                        startup_timeout += 1
                     else:
                         raise
 
