@@ -164,6 +164,20 @@ function(idf_set_global_compile_options)
     # go into the final binary so have no impact on size)
     list(APPEND compile_options "-ggdb")
 
+    # Use EXTRA_CFLAGS, EXTRA_CXXFLAGS and EXTRA_CPPFLAGS to add more priority options to the compiler
+    # EXTRA_CPPFLAGS is used for both C and C++
+    # Unlike environments' CFLAGS/CXXFLAGS/CPPFLAGS which work for both host and target build,
+    # these works only for target build
+    set(EXTRA_CFLAGS "$ENV{EXTRA_CFLAGS}")
+    set(EXTRA_CXXFLAGS "$ENV{EXTRA_CXXFLAGS}")
+    set(EXTRA_CPPFLAGS "$ENV{EXTRA_CPPFLAGS}")
+    spaces2list(EXTRA_CFLAGS)
+    spaces2list(EXTRA_CXXFLAGS)
+    spaces2list(EXTRA_CPPFLAGS)
+    list(APPEND c_compile_options ${EXTRA_CFLAGS})
+    list(APPEND cxx_compile_options ${EXTRA_CXXFLAGS})
+    list(APPEND compile_options ${EXTRA_CPPFLAGS})
+
     # Temporary trick to support both gcc5 and gcc8 builds
     list(APPEND compile_definitions "GCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
 
