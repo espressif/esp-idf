@@ -85,7 +85,6 @@ void esp_mesh_p2p_tx_main(void *arg)
             vTaskDelay(10 * 1000 / portTICK_RATE_MS);
             continue;
         }
-
         esp_mesh_get_routing_table((mesh_addr_t *) &route_table,
                                    CONFIG_MESH_ROUTE_TABLE_SIZE * 6, &route_table_size);
         if (send_count && !(send_count % 100)) {
@@ -309,11 +308,26 @@ void mesh_event_handler(mesh_event_t event)
                  event.info.root_conflict.capacity);
         break;
     case MESH_EVENT_CHANNEL_SWITCH:
-        ESP_LOGI(MESH_TAG, "<MESH_EVENT_CHANNEL_SWITCH>");
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_CHANNEL_SWITCH>new channel:%d", event.info.channel_switch.channel);
         break;
     case MESH_EVENT_SCAN_DONE:
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_SCAN_DONE>number:%d",
                  event.info.scan_done.number);
+        break;
+    case MESH_EVENT_NETWORK_STATE:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_NETWORK_STATE>is_rootless:%d",
+                 event.info.network_state.is_rootless);
+        break;
+    case MESH_EVENT_STOP_RECONNECTION:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_STOP_RECONNECTION>");
+        break;
+    case MESH_EVENT_FIND_NETWORK:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_FIND_NETWORK>new channel:%d, router BSSID:"MACSTR"",
+                 event.info.find_network.channel, MAC2STR(event.info.find_network.router_bssid));
+        break;
+    case MESH_EVENT_ROUTER_SWITCH:
+        ESP_LOGI(MESH_TAG, "<MESH_EVENT_ROUTER_SWITCH>new router:%s, channel:%d, "MACSTR"",
+                 event.info.router_switch.ssid, event.info.router_switch.channel, MAC2STR(event.info.router_switch.bssid));
         break;
     default:
         ESP_LOGI(MESH_TAG, "unknown id:%d", event.id);
