@@ -37,8 +37,10 @@ try:
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
     from cryptography.hazmat.backends import default_backend
 except ImportError:
-    print("cryptography package needs to be installed.\nRun: pip install cryptography>=2.1.4")
-    sys.exit(0)
+    print('The cryptography package is not installed.'
+          'Please refer to the Get Started section of the ESP-IDF Programming Guide for '
+          'setting up the required packages.')
+    raise
 
 VERSION1_PRINT = "v1 - Multipage Blob Support Disabled"
 VERSION2_PRINT = "v2 - Multipage Blob Support Enabled"
@@ -621,7 +623,7 @@ def write_entry(nvs_instance, key, datatype, encoding, value):
     if datatype == "file":
         abs_file_path = value
         if os.path.isabs(value) is False:
-            script_dir = os.path.dirname(__file__)
+            script_dir = os.getcwd()
             abs_file_path = os.path.join(script_dir, value)
 
         with open(abs_file_path, 'rb') as f:
