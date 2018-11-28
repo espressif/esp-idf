@@ -280,6 +280,15 @@ ESP-IDF 编译系统会在命令行中添加以下 C 预处理定义：
 -  如果项目配置缺少新配置项（来自新组件或者 ESP-IDF 更新），则项目使用默认值，而不是提示用户输入每个项目。
 -  如果构建系统需要调用 ``menuconfig`` ，则会打印错误并且构建失败。
 
+.. _make-size:
+
+构建目标的进阶用法
+~~~~~~~~~~~~~~~~~~
+
+- ``make app``，``make bootloader``，``make partition table`` 可以根据需要为项目单独编译生成应用程序文件、启动引导文件和分区表文件。
+- ``make erase_flash`` 和 ``make erase_ota`` 会调用 esptool.py 脚本分别擦除整块闪存芯片或者其中 OTA 分区的内容。
+- ``make size`` 会打印应用程序的大小信息。``make size-components`` 和 ``make size-files`` 两者功能相似，分别打印每个组件或者每个源文件大小的详细信息。
+
 调试 Make 的过程
 ~~~~~~~~~~~~~~~~
 
