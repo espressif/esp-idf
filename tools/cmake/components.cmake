@@ -62,6 +62,8 @@ function(register_component)
         set(include_type PUBLIC)
 
         set_property(TARGET ${COMPONENT_TARGET} PROPERTY OUTPUT_NAME ${COMPONENT_NAME})
+
+        ldgen_generate_sections_info(${COMPONENT_TARGET})
     else()
         add_library(${COMPONENT_TARGET} INTERFACE) # header-only component
         set(include_type INTERFACE)
