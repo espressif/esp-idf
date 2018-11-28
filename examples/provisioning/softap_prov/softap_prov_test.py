@@ -39,6 +39,9 @@ idf_path = os.environ['IDF_PATH']
 esp_prov   = imp.load_source("esp_prov",   idf_path + "/tools/esp_prov/esp_prov.py")
 wifi_tools = imp.load_source("wifi_tools", idf_path + "/examples/provisioning/softap_prov/utils/wifi_tools.py")
 
+# Have esp_prov throw exception
+esp_prov.config_throw_except = True
+
 @IDF.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_softap(env, extra_data):
     # Acquire DUT
