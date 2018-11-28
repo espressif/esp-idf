@@ -26,7 +26,9 @@ kxgettext
 
 # configuration programs, Windows
 conf.exe
+conf-idf.exe
 mconf.exe
+mconf-idf.exe
 nconf.exe
 qconf.exe
 gconf.exe
