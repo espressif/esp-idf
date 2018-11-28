@@ -16,7 +16,6 @@ endfunction()
 #
 function(register_component)
     get_filename_component(component_dir ${CMAKE_CURRENT_LIST_FILE} DIRECTORY)
-    set(component ${COMPONENT_NAME})
 
     spaces2list(COMPONENT_SRCDIRS)
     spaces2list(COMPONENT_ADD_INCLUDEDIRS)
@@ -59,10 +58,12 @@ function(register_component)
 
     # add as a PUBLIC library (if there are source files) or INTERFACE (if header only)
     if(COMPONENT_SRCS OR embed_binaries)
-        add_library(${component} STATIC ${COMPONENT_SRCS})
+        add_library(${COMPONENT_TARGET} STATIC ${COMPONENT_SRCS})
         set(include_type PUBLIC)
+
+        set_property(TARGET ${COMPONENT_TARGET} PROPERTY OUTPUT_NAME ${COMPONENT_NAME})
     else()
-        add_library(${component} INTERFACE) # header-only component
+        add_library(${COMPONENT_TARGET} INTERFACE) # header-only component
         set(include_type INTERFACE)
     endif()
 
@@ -75,7 +76,7 @@ function(register_component)
         else()
             set(embed_type "BINARY")
         endif()
-        target_add_binary_data("${component}" "${embed_data}" "${embed_type}")
+        target_add_binary_data("${COMPONENT_TARGET}" "${embed_data}" "${embed_type}")
     endforeach()
 
     # add component public includes
@@ -85,7 +86,7 @@ function(register_component)
             message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: "
                 "COMPONENT_ADD_INCLUDEDIRS entry '${include_dir}' not found")
         endif()
-        target_include_directories(${component} ${include_type} ${abs_dir})
+        target_include_directories(${COMPONENT_TARGET} ${include_type} ${abs_dir})
     endforeach()
 
     # add component private includes
@@ -100,17 +101,25 @@ function(register_component)
             message(FATAL_ERROR "${CMAKE_CURRENT_LIST_FILE}: "
                 "COMPONENT_PRIV_INCLUDEDIRS entry '${include_dir}' does not exist")
         endif()
-        target_include_directories(${component} PRIVATE ${abs_dir})
+        target_include_directories(${COMPONENT_TARGET} PRIVATE ${abs_dir})
     endforeach()
 
-    if(component IN_LIST BUILD_TEST_COMPONENTS)
-        target_link_libraries(${component} "-L${CMAKE_CURRENT_BINARY_DIR}")
-        target_link_libraries(${component} "-Wl,--whole-archive -l${component} -Wl,--no-whole-archive")
+    if(${COMPONENT_NAME} IN_LIST BUILD_TEST_COMPONENTS)
+        target_link_libraries(${COMPONENT_TARGET} "-L${CMAKE_CURRENT_BINARY_DIR}")
+        target_link_libraries(${COMPONENT_TARGET} "-Wl,--whole-archive -l${COMPONENT_NAME} -Wl,--no-whole-archive")
+    endif()
+
+    if(COMPONENT_SRCS OR embed_binaries)
+        target_include_directories(${COMPONENT_TARGET} PUBLIC ${IDF_INCLUDE_DIRECTORIES})
+        target_compile_options(${COMPONENT_TARGET} PUBLIC ${IDF_COMPILE_OPTIONS})
+        target_compile_options(${COMPONENT_TARGET} PUBLIC $<$<COMPILE_LANGUAGE:C>:${IDF_C_COMPILE_OPTIONS}>)
+        target_compile_options(${COMPONENT_TARGET} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${IDF_CXX_COMPILE_OPTIONS}>)
+        target_compile_definitions(${COMPONENT_TARGET} PUBLIC ${IDF_COMPILE_DEFINITIONS})
     endif()
 
     if(COMPONENT_ADD_LDFRAGMENTS)
         spaces2list(COMPONENT_ADD_LDFRAGMENTS)
-        ldgen_add_fragment_files(${component} "${COMPONENT_ADD_LDFRAGMENTS}")
+        ldgen_add_fragment_files(${COMPONENT_TARGET} "${COMPONENT_ADD_LDFRAGMENTS}")
     endif()
 endfunction()
 
@@ -144,56 +153,24 @@ function(require_idf_targets)
     endif()
 endfunction()
 
-function(components_finish_registration)
+# component_compile_options
+#
+# Wrapper around target_compile_options that passes the component name
+function(component_compile_options)
+    target_compile_options(${COMPONENT_TARGET} PRIVATE ${ARGV})
+endfunction()
 
-    # have the executable target depend on all components in the build
-    set_target_properties(${CMAKE_PROJECT_NAME}.elf PROPERTIES INTERFACE_COMPONENT_REQUIRES "${BUILD_COMPONENTS}")
+# component_compile_definitions
+#
+# Wrapper around target_compile_definitions that passes the component name
+function(component_compile_definitions)
+    target_compile_definitions(${COMPONENT_TARGET} PRIVATE ${ARGV})
+endfunction()
 
-    spaces2list(COMPONENT_REQUIRES_COMMON)
-
-    # each component should see the include directories of its requirements
-    #
-    # (we can't do this until all components are registered and targets exist in cmake, as we have
-    # a circular requirements graph...)
-    foreach(a ${BUILD_COMPONENTS})
-        if(TARGET ${a})
-            get_component_requirements("${a}" a_deps a_priv_deps)
-            list(APPEND a_priv_deps ${COMPONENT_REQUIRES_COMMON})
-            foreach(b ${a_deps})
-                add_component_dependencies(${a} ${b} PUBLIC)
-            endforeach()
-
-            foreach(b ${a_priv_deps})
-                add_component_dependencies(${a} ${b} PRIVATE)
-            endforeach()
-
-            get_target_property(a_type ${a} TYPE)
-            if(${a_type} MATCHES .+_LIBRARY)
-                list(APPEND COMPONENT_LIBRARIES ${a})
-            endif()
-        endif()
-    endforeach()
-
-    # Add each component library's link-time dependencies (which are otherwise ignored) to the executable
-    # LINK_DEPENDS in order to trigger a re-link when needed (on Ninja/Makefile generators at least).
-    # (maybe this should probably be something CMake does, but it doesn't do it...)
-    foreach(component ${BUILD_COMPONENTS})
-        if(TARGET ${component})
-            get_target_property(imported ${component} IMPORTED)
-            get_target_property(type ${component} TYPE)
-            if(NOT imported)
-                if(${type} STREQUAL STATIC_LIBRARY OR ${type} STREQUAL EXECUTABLE)
-                    get_target_property(link_depends "${component}" LINK_DEPENDS)
-                    if(link_depends)
-                        set_property(TARGET ${CMAKE_PROJECT_NAME}.elf APPEND PROPERTY LINK_DEPENDS "${link_depends}")
-                    endif()
-                endif()
-            endif()
-        endif()
-    endforeach()
-
-    target_link_libraries(${CMAKE_PROJECT_NAME}.elf ${COMPONENT_LIBRARIES})
-
-    message(STATUS "Component libraries: ${COMPONENT_LIBRARIES}")
-
+# component_get_target
+#
+# Get the library target created for the given component
+function(component_get_target var component)
+    get_property(prefix GLOBAL PROPERTY __IDF_COMPONENTS_PREFIX)
+    set(${var} ${prefix}_${component} PARENT_SCOPE)
 endfunction()

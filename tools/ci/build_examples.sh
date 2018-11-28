@@ -62,6 +62,8 @@ RESULT_ISSUES=22  # magic number result code for issues found
 LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
 
+EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
+
 if [ $# -eq 0 ]
 then
     START_NUM=0
@@ -84,7 +86,7 @@ else
     [ -z ${NUM_OF_JOBS} ] && die "NUM_OF_JOBS is bad"
 
     # count number of examples
-    NUM_OF_EXAMPLES=$( find ${IDF_PATH}/examples/ -type f -name Makefile | wc -l )
+    NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
     [ -z ${NUM_OF_EXAMPLES} ] && die "NUM_OF_EXAMPLES is bad"
 
     # separate intervals
@@ -155,17 +157,16 @@ build_example () {
 
 EXAMPLE_NUM=0
 
-find ${IDF_PATH}/examples -type f -name Makefile | sort | \
-while read FN
+for EXAMPLE_PATH in ${EXAMPLE_PATHS}
 do
     if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]
     then
         EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
         continue
     fi
-    echo ">>> example [ ${EXAMPLE_NUM} ] - $FN"
+    echo ">>> example [ ${EXAMPLE_NUM} ] - $EXAMPLE_PATH"
 
-    build_example "${EXAMPLE_NUM}" "${FN}"
+    build_example "${EXAMPLE_NUM}" "${EXAMPLE_PATH}"
 
     EXAMPLE_NUM=$(( $EXAMPLE_NUM + 1 ))
 done

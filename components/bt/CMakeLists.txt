@@ -281,6 +281,6 @@ if(CONFIG_BT_ENABLED)
         component_compile_options(-Wno-implicit-fallthrough -Wno-unused-const-variable)
     endif()
 
-    target_link_libraries(bt "-L${CMAKE_CURRENT_LIST_DIR}/lib")
-    target_link_libraries(bt btdm_app)
+    target_link_libraries(${COMPONENT_TARGET} "-L${CMAKE_CURRENT_LIST_DIR}/lib")
+    target_link_libraries(${COMPONENT_TARGET} btdm_app)
 endif()

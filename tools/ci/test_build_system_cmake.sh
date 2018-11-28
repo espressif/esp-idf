@@ -58,6 +58,7 @@ function run_tests()
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
     PARTITION_BIN="partition_table/partition-table.bin"
+    IDF_COMPONENT_PREFIX="idf_component"
 
     print_status "Initial clean build"
     # if build fails here, everything fails
@@ -71,14 +72,14 @@ function run_tests()
     take_build_snapshot
     touch ${IDF_PATH}/components/esp32/cpu_start.c
     idf.py build || failure "Failed to partial build"
-    assert_rebuilt ${APP_BINS} esp32/libesp32.a esp32/CMakeFiles/esp32.dir/cpu_start.c.obj
-    assert_not_rebuilt lwip/liblwip.a freertos/libfreertos.a ${BOOTLOADER_BINS} ${PARTITION_BIN}
+    assert_rebuilt ${APP_BINS} esp-idf/esp32/libesp32.a esp-idf/esp32/CMakeFiles/${IDF_COMPONENT_PREFIX}_esp32.dir/cpu_start.c.obj
+    assert_not_rebuilt esp-idf/lwip/liblwip.a esp-idf/freertos/libfreertos.a ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "Bootloader source file rebuilds bootloader"
     take_build_snapshot
     touch ${IDF_PATH}/components/bootloader/subproject/main/bootloader_start.c
     idf.py build || failure "Failed to partial build bootloader"
-    assert_rebuilt ${BOOTLOADER_BINS} bootloader/main/CMakeFiles/main.dir/bootloader_start.c.obj
+    assert_rebuilt ${BOOTLOADER_BINS} bootloader/esp-idf/main/CMakeFiles/${IDF_COMPONENT_PREFIX}_main.dir/bootloader_start.c.obj
     assert_not_rebuilt ${APP_BINS} ${PARTITION_BIN}
 
     print_status "Partition CSV file rebuilds partitions"
@@ -172,9 +173,9 @@ function run_tests()
     assert_rebuilt config/sdkconfig.h
     # pick one each of .c, .cpp, .S that #includes sdkconfig.h
     # and therefore should rebuild
-    assert_rebuilt newlib/CMakeFiles/newlib.dir/syscall_table.c.obj
-    assert_rebuilt nvs_flash/CMakeFiles/nvs_flash.dir/src/nvs_api.cpp.obj
-    assert_rebuilt freertos/CMakeFiles/freertos.dir/xtensa_vectors.S.obj
+    assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/syscall_table.c.obj
+    assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
+    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/xtensa_vectors.S.obj
 
     print_status "Updating project CMakeLists.txt triggers full recompile"
     clean_build_dir
@@ -186,9 +187,9 @@ function run_tests()
     idf.py build || failure "Build failed"
     mv CMakeLists.bak CMakeLists.txt
     # similar to previous test
-    assert_rebuilt newlib/CMakeFiles/newlib.dir/syscall_table.c.obj
-    assert_rebuilt nvs_flash/CMakeFiles/nvs_flash.dir/src/nvs_api.cpp.obj
-    assert_rebuilt freertos/CMakeFiles/freertos.dir/xtensa_vectors.S.obj
+    assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/syscall_table.c.obj
+    assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
+    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/xtensa_vectors.S.obj
 
     print_status "Can build with Ninja (no idf.py)"
     clean_build_dir

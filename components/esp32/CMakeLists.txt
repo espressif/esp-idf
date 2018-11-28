@@ -3,19 +3,9 @@ require_idf_targets(esp32)
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32 is headers
     set(COMPONENT_ADD_INCLUDEDIRS include)
-    set(COMPONENT_REQUIRES ${COMPONENTS})
+    set(COMPONENT_REQUIRES ${IDF_COMPONENTS})
     set(COMPONENT_SRCS )
-    register_component(esp32)
-
-    # as cmake won't attach linker args to a header-only library, attach
-    # linker args directly to the bootloader.elf
-    set(ESP32_BOOTLOADER_LINKER_SCRIPTS
-        "${CMAKE_CURRENT_SOURCE_DIR}/ld/esp32.rom.ld"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ld/esp32.rom.spiram_incompatible_fns.ld"
-        "${CMAKE_CURRENT_SOURCE_DIR}/ld/esp32.peripherals.ld"
-        PARENT_SCOPE
-        )
-
+    register_component()
 else()
     # Regular app build
 
@@ -75,29 +65,31 @@ else()
 
     register_component()
 
-    target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
+    target_link_libraries(${COMPONENT_TARGET} "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
     if(NOT CONFIG_NO_BLOBS)
-        target_link_libraries(esp32 coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
+        target_link_libraries(${COMPONENT_TARGET} coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
     endif()
-    target_linker_script(esp32 "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
+    target_linker_script(${COMPONENT_TARGET} "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
 
     if(CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY)
         # This has to be linked before esp32.common.ld
-        target_linker_script(esp32 "ld/esp32.extram.bss.ld")
+        target_linker_script(${COMPONENT_TARGET} "ld/esp32.extram.bss.ld")
     endif()
 
-    # Process the template file through the linker script generation mechanism, and use the output for linking the
-    # final binary
-    set(esp32_common_script "${CMAKE_CURRENT_BINARY_DIR}/esp32.common.ld")
-    set(esp32_common_template "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.common.ld.in")
+    if(IDF_PROJECT_EXECUTABLE)
+        # Process the template file through the linker script generation mechanism, and use the output for linking the
+        # final binary
+        set(esp32_common_script "${CMAKE_CURRENT_BINARY_DIR}/esp32.common.ld")
+        set(esp32_common_template "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.common.ld.in")
 
-    ldgen_process_template(${esp32_common_template} ${esp32_common_script})
+        ldgen_process_template(${esp32_common_template} ${esp32_common_script})
 
-    target_link_libraries(esp32 "-T ${esp32_common_script}")
+        target_link_libraries(${COMPONENT_TARGET} "-T ${esp32_common_script}")
+        
+        set_property(TARGET ${IDF_PROJECT_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS ${esp32_common_script})
+    endif()
 
-    set_property(TARGET ${PROJECT_NAME}.elf APPEND PROPERTY LINK_DEPENDS ${esp32_common_script})
-
-    target_linker_script(esp32
+    target_linker_script(${COMPONENT_TARGET}
         "ld/esp32.rom.ld"
         "ld/esp32.peripherals.ld"
         "ld/esp32.rom.libgcc.ld"
@@ -106,25 +98,25 @@ else()
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
         add_compile_options(-mfix-esp32-psram-cache-issue)
     else()
-        target_linker_script(esp32 "ld/esp32.rom.spiram_incompatible_fns.ld")
+        target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.spiram_incompatible_fns.ld")
     endif()
 
     if(CONFIG_NEWLIB_NANO_FORMAT)
-        target_linker_script(esp32 "ld/esp32.rom.nanofmt.ld")
+        target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.nanofmt.ld")
     endif()
 
     if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-        target_linker_script(esp32 "ld/esp32.rom.spiflash.ld")
+        target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.spiflash.ld")
     endif()
 
-    target_link_libraries(esp32 "${CMAKE_CURRENT_SOURCE_DIR}/libhal.a")
-    target_link_libraries(esp32 gcc)
-    target_link_libraries(esp32 "-u call_user_start_cpu0")
+    target_link_libraries(${COMPONENT_TARGET} "${CMAKE_CURRENT_SOURCE_DIR}/libhal.a")
+    target_link_libraries(${COMPONENT_TARGET} gcc)
+    target_link_libraries(${COMPONENT_TARGET} "-u call_user_start_cpu0")
 
     #ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
     #linker will ignore panic_highint_hdl.S as it has no other files depending on any
     #symbols in it.
-    target_link_libraries(esp32 "-u ld_include_panic_highint_hdl")
+    target_link_libraries(${COMPONENT_TARGET} "-u ld_include_panic_highint_hdl")
 
     # Preprocess esp32.ld linker script to include configuration, becomes esp32_out.ld
     set(LD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ld)
@@ -136,10 +128,10 @@ else()
         VERBATIM)
 
     add_custom_target(esp32_linker_script DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld)
-    add_dependencies(esp32 esp32_linker_script)
+    add_dependencies(${COMPONENT_TARGET} esp32_linker_script)
 
-    if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
-        set(PHY_INIT_DATA_BIN phy_init_data.bin)
+    if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION AND IDF_BUILD_ARTIFACTS)
+        set(PHY_INIT_DATA_BIN ${IDF_BUILD_ARTIFACTS_DIR}/${PHY_PARTITION_BIN_FILE})
 
         # To get the phy_init_data.bin file, compile phy_init_data.h as a C file and then objcopy
         # the object file to a raw binary
@@ -147,14 +139,13 @@ else()
             OUTPUT ${PHY_INIT_DATA_BIN}
             DEPENDS ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
             COMMAND ${CMAKE_C_COMPILER} -x c -c
-            -I ${CMAKE_CURRENT_LIST_DIR} -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${CMAKE_BINARY_DIR}
+            -I ${CMAKE_CURRENT_LIST_DIR} -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${IDF_BUILD_ARTIFACTS_DIR}
             -o phy_init_data.obj
             ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
             COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${PHY_INIT_DATA_BIN}
             )
         add_custom_target(phy_init_data ALL DEPENDS ${PHY_INIT_DATA_BIN})
         add_dependencies(flash phy_init_data)
-
     endif()
 
     # Enable dynamic esp_timer overflow value if building unit tests

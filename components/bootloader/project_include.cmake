@@ -2,7 +2,7 @@
 if(BOOTLOADER_BUILD)
     set(main_project_path "${CMAKE_BINARY_DIR}/../..")
 else()
-    set(main_project_path "${PROJECT_PATH}")
+    set(main_project_path "${IDF_PROJECT_PATH}")
 endif()
 
 get_filename_component(secure_boot_signing_key
@@ -19,15 +19,15 @@ else()
     add_custom_target(gen_secure_boot_signing_key)
 endif()
 
-if(BOOTLOADER_BUILD)
-    return()  # don't keep recursing!
+if(BOOTLOADER_BUILD OR NOT IDF_BUILD_ARTIFACTS)
+    return()  # don't keep recursing, generate on project builds
 endif()
 
 # Glue to build the bootloader subproject binary as an external
 # cmake project under this one
 #
 #
-set(bootloader_build_dir "${CMAKE_BINARY_DIR}/bootloader")
+set(bootloader_build_dir "${IDF_BUILD_ARTIFACTS_DIR}/bootloader")
 set(bootloader_binary_files
     "${bootloader_build_dir}/bootloader.elf"
     "${bootloader_build_dir}/bootloader.bin"

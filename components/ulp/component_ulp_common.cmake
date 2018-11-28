@@ -35,7 +35,7 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
                     -DCOMPONENT_PATH=${COMPONENT_PATH}
                     # Even though this resolves to a ';' separated list, this is fine. This must be special behavior
                     # for generator expressions.
-                    -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_NAME},INTERFACE_INCLUDE_DIRECTORIES>
+                    -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                     -DIDF_PATH=${IDF_PATH}
                     -DSDKCONFIG=${SDKCONFIG_HEADER}
         BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME} --target build
@@ -52,8 +52,8 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
 
     add_custom_target(${ULP_APP_NAME}_artifacts DEPENDS ${ULP_APP_NAME})
 
-    add_dependencies(${COMPONENT_NAME} ${ULP_APP_NAME}_artifacts)
+    add_dependencies(${COMPONENT_TARGET} ${ULP_APP_NAME}_artifacts)
 
-    target_linker_script(${COMPONENT_NAME} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.ld)
-    target_add_binary_data(${COMPONENT_NAME} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.bin BINARY)
+    target_linker_script(${COMPONENT_TARGET} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.ld)
+    target_add_binary_data(${COMPONENT_TARGET} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.bin BINARY)
 endif()
