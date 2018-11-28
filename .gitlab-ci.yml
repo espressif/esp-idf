@@ -730,6 +730,31 @@ UT_002_07:
     - UT_T1_1
     - psram
 
+UT_003_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+
+UT_003_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+
+UT_003_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+
+UT_004_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+    - psram
+
 IT_001_01:
   <<: *test_template
   tags:
