@@ -29,6 +29,15 @@ import security
 import transport
 import prov
 
+# Set this to true to allow exceptions to be thrown
+config_throw_except = False
+
+def on_except(err):
+    if config_throw_except:
+        raise RuntimeError(err)
+    else:
+        print(err)
+
 def get_security(secver, pop=None, verbose=False):
     if secver == 1:
         return security.Security1(pop, verbose)
@@ -53,7 +62,7 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
             tp = transport.Transport_Console()
         return tp
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 def version_match(tp, protover):
@@ -63,7 +72,7 @@ def version_match(tp, protover):
             return False
         return True
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 def establish_session(tp, sec):
@@ -78,7 +87,7 @@ def establish_session(tp, sec):
                 return False
         return True
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 def custom_config(tp, sec, custom_info, custom_ver):
@@ -87,7 +96,7 @@ def custom_config(tp, sec, custom_info, custom_ver):
         response = tp.send_data('custom-config', message)
         return (prov.custom_config_response(sec, response) == 0)
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 def send_wifi_config(tp, sec, ssid, passphrase):
@@ -96,7 +105,7 @@ def send_wifi_config(tp, sec, ssid, passphrase):
         response = tp.send_data('prov-config', message)
         return (prov.config_set_config_response(sec, response) == 0)
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 def apply_wifi_config(tp, sec):
@@ -105,7 +114,7 @@ def apply_wifi_config(tp, sec):
         response = tp.send_data('prov-config', message)
         return (prov.config_set_config_response(sec, response) == 0)
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 def get_wifi_config(tp, sec):
@@ -114,7 +123,7 @@ def get_wifi_config(tp, sec):
         response = tp.send_data('prov-config', message)
         return prov.config_get_status_response(sec, response)
     except RuntimeError as e:
-        print(e)
+        on_except(e)
         return None
 
 if __name__ == '__main__':
