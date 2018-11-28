@@ -150,11 +150,11 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .utime_p = &vfs_fat_utime,
     };
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
-    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) calloc(1, ctx_size);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ff_memcalloc(1, ctx_size);
     if (fat_ctx == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    fat_ctx->o_append = malloc(max_files * sizeof(bool));
+    fat_ctx->o_append = ff_memalloc(max_files * sizeof(bool));
     if (fat_ctx->o_append == NULL) {
         free(fat_ctx);
         return ESP_ERR_NO_MEM;
@@ -512,9 +512,9 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
     prepend_drive_to_path(fat_ctx, &n1, &n2);
     const size_t copy_buf_size = fat_ctx->fs.csize;
     FRESULT res;
-    FIL* pf1 = calloc(1, sizeof(FIL));
-    FIL* pf2 = calloc(1, sizeof(FIL));
-    void* buf = malloc(copy_buf_size);
+    FIL* pf1 = ff_memcalloc(1, sizeof(FIL));
+    FIL* pf2 = ff_memcalloc(1, sizeof(FIL));
+    void* buf = ff_memalloc(copy_buf_size);
     if (buf == NULL || pf1 == NULL || pf2 == NULL) {
         _lock_release(&fat_ctx->lock);
         ESP_LOGD(TAG, "alloc failed, pf1=%p, pf2=%p, buf=%p", pf1, pf2, buf);
@@ -591,7 +591,7 @@ static DIR* vfs_fat_opendir(void* ctx, const char* name)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &name, NULL);
-    vfs_fat_dir_t* fat_dir = calloc(1, sizeof(vfs_fat_dir_t));
+    vfs_fat_dir_t* fat_dir = ff_memcalloc(1, sizeof(vfs_fat_dir_t));
     if (!fat_dir) {
         _lock_release(&fat_ctx->lock);
         errno = ENOMEM;
@@ -766,7 +766,7 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &path, NULL);
 
-    file = (FIL*) calloc(1, sizeof(FIL));
+    file = (FIL*) ff_memcalloc(1, sizeof(FIL));
     if (file == NULL) {
         _lock_release(&fat_ctx->lock);
         ESP_LOGD(TAG, "truncate alloc failed");
