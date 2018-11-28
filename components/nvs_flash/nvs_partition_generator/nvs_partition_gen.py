@@ -31,8 +31,14 @@ import array
 import csv
 import zlib
 import codecs
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
+import datetime
+import distutils.dir_util
+try:
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+    from cryptography.hazmat.backends import default_backend
+except ImportError:
+    print("cryptography package needs to be installed.\nRun: pip install cryptography>=2.1.4")
+    sys.exit(0)
 
 VERSION1_PRINT = "v1 - Multipage Blob Support Disabled"
 VERSION2_PRINT = "v2 - Multipage Blob Support Enabled"
@@ -637,7 +643,8 @@ def nvs_close(nvs_instance):
 
 
 def check_input_args(input_filename=None, output_filename=None, input_part_size=None, is_key_gen=None,
-                     encrypt_mode=None, key_file=None, version_no=None, print_arg_str=None, print_encrypt_arg_str=None):
+                     encrypt_mode=None, key_file=None, version_no=None, print_arg_str=None, print_encrypt_arg_str=None,
+                     output_dir=None):
 
     global version, is_encrypt_data, input_size, key_gen
 
@@ -645,6 +652,12 @@ def check_input_args(input_filename=None, output_filename=None, input_part_size=
     is_encrypt_data = encrypt_mode
     key_gen = is_key_gen
     input_size = input_part_size
+
+    if not output_dir == os.getcwd() and (key_file and os.path.isabs(key_file)):
+        sys.exit("Error. Cannot provide --outdir argument as --keyfile is absolute path.")
+
+    if not os.path.isdir(output_dir):
+        distutils.dir_util.mkpath(output_dir)
 
     if is_encrypt_data.lower() == 'true':
         is_encrypt_data = True
@@ -668,18 +681,25 @@ def check_input_args(input_filename=None, output_filename=None, input_part_size=
         elif any(arg is not None for arg in [input_filename, output_filename, input_size]):
             sys.exit(print_arg_str)
     else:
-        if not input_size:
-            if not all(arg is not None for arg in [input_filename, output_filename]):
-                sys.exit(print_arg_str)
+        if not (input_filename and output_filename and input_size):
+            sys.exit(print_arg_str)
 
-    if is_encrypt_data and not key_gen and not key_file:
-        sys.exit(print_encrypt_arg_str)
+        if is_encrypt_data and not key_gen and not key_file:
+            sys.exit(print_encrypt_arg_str)
 
-    if is_encrypt_data and key_gen and key_file:
-        sys.exit(print_encrypt_arg_str)
+        if not is_encrypt_data and key_file:
+            sys.exit("Invalid. Cannot give --keyfile as --encrypt is set to false.")
 
-    if not is_encrypt_data and key_file:
-        sys.exit("Invalid. Cannot give --keyfile as --encrypt is set to false.")
+    if key_file:
+        key_file_name, key_file_ext = os.path.splitext(key_file)
+        if key_file_ext:
+            if not key_file_ext == '.bin':
+                sys.exit("--keyfile argument can be a filename with no extension or .bin extension only")
+
+    # If only one of the arguments - input_filename, output_filename, input_size is given
+    if ((any(arg is None for arg in [input_filename, output_filename, input_size])) is True) and \
+            ((all(arg is None for arg in [input_filename, output_filename, input_size])) is False):
+            sys.exit(print_arg_str)
 
     if input_size:
         # Set size
@@ -695,7 +715,8 @@ def check_input_args(input_filename=None, output_filename=None, input_part_size=
             sys.exit("Minimum NVS partition size needed is 0x3000 bytes.")
 
 
-def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None, is_key_gen=None, encrypt_mode=None, key_file=None, version_no=None):
+def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None, is_key_gen=None, encrypt_mode=None,
+                 key_file=None, encr_key_prefix=None, version_no=None, output_dir=None):
     """ Wrapper to generate nvs partition binary
 
     :param input_filename: Name of input file containing data
@@ -709,6 +730,9 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None
     """
 
     global key_input, key_len_needed
+    encr_key_bin_file = None
+    encr_keys_dir = None
+    backslash = ['/','\\']
 
     key_len_needed = 64
     key_input = bytearray()
@@ -720,6 +744,8 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None
             key_input = key_f.read(64)
 
     if all(arg is not None for arg in [input_filename, output_filename, input_size]):
+        if not os.path.isabs(output_filename) and not any(ch in output_filename for ch in backslash):
+            output_filename = os.path.join(output_dir, '') + output_filename
         input_file = open(input_filename, 'rt', encoding='utf8')
         output_file = open(output_filename, 'wb')
 
@@ -737,6 +763,8 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None
         input_file.close()
         output_file.close()
 
+        print("NVS binary created: " + output_filename)
+
     if key_gen:
         keys_page_buf = bytearray(b'\xff') * Page.PAGE_PARAMS["max_size"]
         key_bytes = bytearray()
@@ -750,57 +778,87 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None
         crc_data = bytes(crc_data)
         crc = zlib.crc32(crc_data, 0xFFFFFFFF)
         struct.pack_into('<I', keys_page_buf, key_len,  crc & 0xFFFFFFFF)
-        with open("encryption_keys.bin",'wb') as output_keys_file:
+
+        if not key_file or (key_file and not os.path.isabs(key_file)):
+            # Create encryption keys bin file with timestamp
+            if not encr_key_prefix:
+                timestamp = datetime.datetime.now().strftime('%m-%d_%H-%M')
+            output_dir = os.path.join(output_dir, '')
+            encr_keys_dir = output_dir + "keys"
+            if not os.path.isdir(encr_keys_dir):
+                distutils.dir_util.mkpath(encr_keys_dir)
+
+            # Add backslash to `keys` dir if it is not present
+            encr_keys_dir = os.path.join(encr_keys_dir, '')
+
+        if key_file:
+            key_file_name, ext  = os.path.splitext(key_file)
+            if ext:
+                if ".bin" not in ext:
+                    sys.exit("Error: --keyfile must have .bin extension")
+                encr_key_bin_file = os.path.basename(key_file)
+            else:
+                encr_key_bin_file = key_file_name + ".bin"
+            if encr_keys_dir:
+                encr_key_bin_file = encr_keys_dir + encr_key_bin_file
+        else:
+            if encr_key_prefix:
+                encr_key_bin_file = encr_keys_dir + encr_key_prefix + "-keys" + ".bin"
+            else:
+                encr_key_bin_file = encr_keys_dir + "encryption_keys_" + timestamp + ".bin"
+
+        with open(encr_key_bin_file,'wb') as output_keys_file:
             output_keys_file.write(keys_page_buf)
 
-    print("Binary created.")
+        print("Encryption keys binary created: " + encr_key_bin_file)
 
 
 def main():
     parser = argparse.ArgumentParser(description="ESP32 NVS partition generation utility")
     nvs_part_gen_group = parser.add_argument_group('To generate NVS partition')
-    nvs_part_gen_group.add_argument(
-        "--input",
-        help="Path to CSV file to parse.",
-        default=None)
+    nvs_part_gen_group.add_argument("--input",
+                                    help="Path to CSV file to parse.",
+                                    default=None)
 
-    nvs_part_gen_group.add_argument(
-        "--output",
-        help='Path to output converted binary file.',
-        default=None)
+    nvs_part_gen_group.add_argument("--output",
+                                    help='Path to output converted binary file.',
+                                    default=None)
 
-    nvs_part_gen_group.add_argument(
-        "--size",
-        help='Size of NVS Partition in bytes (must be multiple of 4096)')
+    nvs_part_gen_group.add_argument("--size",
+                                    help='Size of NVS Partition in bytes (must be multiple of 4096)')
 
-    nvs_part_gen_group.add_argument(
-        "--version",
-        help='Set version. Default: v2',
-        choices=['v1','v2'],
-        default='v2',
-        type=str.lower)
+    nvs_part_gen_group.add_argument("--version",
+                                    help='Set version. Default: v2',
+                                    choices=['v1','v2'],
+                                    default='v2',
+                                    type=str.lower)
 
-    keygen_action = nvs_part_gen_group.add_argument(
-        "--keygen",
-        help='Generate keys for encryption. Creates an `encryption_keys.bin` file. Default: false',
-        choices=['true','false'],
-        default='false',
-        type=str.lower)
+    keygen_action_key = nvs_part_gen_group.add_argument("--keygen",
+                                                        help='Generate keys for encryption.',
+                                                        choices=['true','false'],
+                                                        default='false',
+                                                        type=str.lower)
 
-    nvs_part_gen_group.add_argument(
-        "--encrypt",
-        help='Set encryption mode. Default: false',
-        choices=['true','false'],
-        default='false',
-        type=str.lower)
+    nvs_part_gen_group.add_argument("--encrypt",
+                                    help='Set encryption mode. Default: false',
+                                    choices=['true','false'],
+                                    default='false',
+                                    type=str.lower)
 
-    nvs_part_gen_group.add_argument(
-        "--keyfile",
-        help='File having key for encryption (Applicable only if encryption mode is true)',
-        default=None)
+    keygen_action_file = nvs_part_gen_group.add_argument("--keyfile",
+                                                         help='File having key for encryption (Applicable only if encryption mode is true).',
+                                                         default=None)
+
+    keygen_action_dir = nvs_part_gen_group.add_argument('--outdir',
+                                                        dest='outdir',
+                                                        default=os.getcwd(),
+                                                        help='the output directory to store the files created\
+                                                        (Default: current directory)')
 
     key_gen_group = parser.add_argument_group('To generate encryption keys')
-    key_gen_group._group_actions.append(keygen_action)
+    key_gen_group._group_actions.append(keygen_action_key)
+    key_gen_group._group_actions.append(keygen_action_file)
+    key_gen_group._group_actions.append(keygen_action_dir)
 
     args = parser.parse_args()
     input_filename = args.input
@@ -810,13 +868,17 @@ def main():
     is_key_gen = args.keygen
     is_encrypt_data = args.encrypt
     key_file = args.keyfile
+    output_dir_path = args.outdir
+    encr_keys_prefix = None
 
-    print_arg_str = "Invalid.\nTo generate nvs partition binary --input, --output and --size arguments are mandatory.\n \
-        To generate encryption keys --keygen argument is mandatory."
+    print_arg_str = "Invalid.\nTo generate nvs partition binary --input, --output and --size arguments are mandatory.\
+                    \nTo generate encryption keys --keygen argument is mandatory."
     print_encrypt_arg_str = "Missing parameter. Enter --keyfile or --keygen."
 
-    check_input_args(input_filename,output_filename, part_size, is_key_gen, is_encrypt_data, key_file, version_no, print_arg_str, print_encrypt_arg_str)
-    nvs_part_gen(input_filename, output_filename, part_size, is_key_gen, is_encrypt_data, key_file, version_no)
+    check_input_args(input_filename,output_filename, part_size, is_key_gen, is_encrypt_data, key_file, version_no,
+                     print_arg_str, print_encrypt_arg_str, output_dir_path)
+    nvs_part_gen(input_filename, output_filename, part_size, is_key_gen, is_encrypt_data, key_file,
+                 encr_keys_prefix, version_no, output_dir_path)
 
 
 if __name__ == "__main__":

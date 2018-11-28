@@ -21,8 +21,10 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <dirent.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <string.h>
 
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
@@ -2358,32 +2360,68 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 {
     int childpid = fork();
     int status;
-    if (childpid == 0) {
-        exit(execlp("python", "python",
-                    "../nvs_partition_generator/nvs_partition_gen.py",
-                    "--input",
-                    "../nvs_partition_generator/sample_multipage_blob.csv",
-                    "--output",
-                    "../nvs_partition_generator/partition_encrypted_using_keygen.bin",
-                    "--size",
-                    "0x4000",
-                    "--encrypt",
-                    "True",
-                    "--keygen",
-                    "true",NULL));
 
+    if (childpid == 0) {
+        exit(execlp("rm", " rm",
+                    "-rf",
+                    "keys",NULL));
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
         CHECK(WEXITSTATUS(status) != -1);
+
+        childpid = fork();
+        if (childpid == 0) {
+            exit(execlp("python", "python",
+                        "../nvs_partition_generator/nvs_partition_gen.py",
+                        "--input",
+                        "../nvs_partition_generator/sample_multipage_blob.csv",
+                        "--output",
+                        "../nvs_partition_generator/partition_encrypted_using_keygen.bin",
+                        "--size",
+                        "0x4000",
+                        "--encrypt",
+                        "True",
+                        "--keygen",
+                        "true",NULL));
+
+        } else {
+            CHECK(childpid > 0);
+            waitpid(childpid, &status, 0);
+            CHECK(WEXITSTATUS(status) != -1);
+
+        }
     }
 
+
+    DIR *dir;
+    struct dirent *file;
+    char *filename;
+    char *files;
+    char *file_ext;
+
+    dir = opendir("keys");
+    while ((file = readdir(dir)) != NULL)
+    {
+        filename = file->d_name;
+        files = strrchr(filename, '.');
+        if (files != NULL)
+        {
+            file_ext = files+1;
+            if (strncmp(file_ext,"bin",3) == 0)
+            {
+                break;
+            }
+        }
+    }
+
+    std::string encr_file = std::string("keys/") + std::string(filename);
     SpiFlashEmulator emu("../nvs_partition_generator/partition_encrypted_using_keygen.bin");
  
     char buffer[64];
     FILE *fp;
 
-    fp = fopen("encryption_keys.bin","rb");
+    fp = fopen(encr_file.c_str(),"rb");
     fread(buffer,sizeof(buffer),1,fp);
 
     fclose(fp);
@@ -2398,14 +2436,37 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
     check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
 
-
 }
 
 TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using keyfile", "[nvs_part_gen]")
 {
     int childpid = fork();
     int status;
-    if (childpid == 0) {
+
+    DIR *dir;
+    struct dirent *file;
+    char *filename;
+    char *files;
+    char *file_ext;
+
+    dir = opendir("keys");
+    while ((file = readdir(dir)) != NULL)
+    {
+        filename = file->d_name;
+        files = strrchr(filename, '.');
+        if (files != NULL)
+        {
+            file_ext = files+1;
+            if (strncmp(file_ext,"bin",3) == 0)
+            {
+                break;
+            }
+        }
+    }
+
+    std::string encr_file = std::string("keys/") + std::string(filename);
+
+     if (childpid == 0) {
         exit(execlp("python", "python",
                 "../nvs_partition_generator/nvs_partition_gen.py",
                 "--input",
@@ -2417,7 +2478,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                 "--encrypt",
                 "True",
                 "--keyfile",
-                "encryption_keys.bin",NULL));
+                encr_file.c_str(),NULL));
 
     } else {
         CHECK(childpid > 0);
@@ -2430,7 +2491,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     char buffer[64];
     FILE *fp;
 
-    fp = fopen("encryption_keys.bin","rb");
+    fp = fopen(encr_file.c_str(),"rb");
     fread(buffer,sizeof(buffer),1,fp);
 
     fclose(fp);
@@ -2448,7 +2509,8 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     childpid = fork();
     if (childpid == 0) {
         exit(execlp("rm", " rm",
-                    "encryption_keys.bin",NULL));
+                    "-rf",
+                    "keys",NULL));
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
