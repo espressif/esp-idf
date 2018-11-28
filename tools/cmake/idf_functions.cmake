@@ -62,6 +62,8 @@ macro(idf_set_variables)
 
     set(IDF_PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 
+    set(ESP_PLATFORM 1 CACHE BOOL INTERNAL)
+
     spaces2list(IDF_COMPONENT_DIRS)
     spaces2list(IDF_COMPONENTS)
     spaces2list(IDF_COMPONENT_REQUIRES_COMMON)
