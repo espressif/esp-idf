@@ -774,6 +774,37 @@ a shallower parent node. Due to parent node switching, a self-organized ESP-MESH
 network can dynamically adjust its network layout to ensure each connection has a good 
 RSSI and that the number of layers in the network is minimized.
 
+Network Channel Switching
+-------------------------
+
+The list shows network changes allowed by different combinations of four parameters channel, allow_channel_switch,
+router BSSID and allow_router_switch. More information will be added soon.
+
++-------------------------------------------------------------------------+------------------------------+
+|                          Mesh Configuration                             |        Network Changes       |
++===========+======================+================+=====================+==============================+
+|  channel  | allow_channel_switch |  router BSSID  | allow_router_switch |       when no root appears   |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|  not set  |           X          |    not set     |          X          |   channel and router BSSID   |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|  not set  |           X          |      set       |          0          |           channel            |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|  not set  |           X          |      set       |          1          |   channel and router BSSID   |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|    set    |           1          |    not set     |          X          |   channel and router BSSID   |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|    set    |           0          |    not set     |          X          |        router BSSID          |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|    set    |           1          |      set       |          0          |           channel            |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|    set    |           0          |      set       |          0          |                              |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|    set    |           1          |      set       |          1          |   channel and router BSSID   |
++-----------+----------------------+----------------+---------------------+------------------------------+
+|    set    |           0          |      set       |          1          |        router BSSID          |
++-----------+----------------------+----------------+---------------------+------------------------------+
+
+
 .. --------------------------- Data Transmission ------------------------------
 
 .. _mesh-data-transmission:
