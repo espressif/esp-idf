@@ -80,7 +80,7 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
             result = ESP_FAIL;
             goto fail;
         }
-        workbuf = malloc(workbuf_size);
+        workbuf = ff_memalloc(workbuf_size);
         if (workbuf == NULL) {
             result = ESP_ERR_NO_MEM;
             goto fail;
