@@ -1,3 +1,9 @@
+function(debug message)
+    if(DEBUG)
+        message(STATUS "${message}")
+    endif()
+endfunction()
+
 # Given a component name (find_name) and a list of component paths (component_paths),
 # return the path to the component in 'variable'
 #

@@ -27,4 +27,4 @@ add_definitions(-DWIFI_CRYPTO_MD5=\"${WIFI_CRYPTO_MD5}\")
 
 add_custom_target(esp32_test_logo DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h")
 
-add_dependencies(${COMPONENT_NAME} esp32_test_logo)
+add_dependencies(${COMPONENT_TARGET} esp32_test_logo)

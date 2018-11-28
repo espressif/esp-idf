@@ -71,3 +71,6 @@ test_multi_heap_host
 
 # Results for the checking of the Python coding style
 flake8_output.txt
+
+# ESP-IDF library 
+build

@@ -15,6 +15,7 @@
 #include <esp_attr.h>
 #include <esp_heap_caps.h>
 #include <sdkconfig.h>
+#include "esp_mem.h"
 
 #ifndef CONFIG_MBEDTLS_CUSTOM_MEM_ALLOC
 

@@ -14,7 +14,7 @@ endif()
 
 register_component()
 
-target_compile_definitions(unity PUBLIC
+target_compile_definitions(${COMPONENT_TARGET} PUBLIC
     -DUNITY_INCLUDE_CONFIG_H
 )
 

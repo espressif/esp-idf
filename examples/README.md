@@ -15,6 +15,7 @@ The examples are grouped into subdirectories by category. Each category director
 * `storage` contains examples showing data storage methods using SPI flash or external storage like the SD/MMC interface.
 * `system` contains examples which demonstrate some internal chip features, or debugging & development tools.
 * `wifi` contains examples of advanced Wi-Fi features. (For network protocol examples, see `protocols` instead.)
+* `build_system` contains examples of build system features
 
 # Using Examples
 
