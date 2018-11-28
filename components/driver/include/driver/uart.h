@@ -801,7 +801,7 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
  * light sleep. This function allows setting the threshold value.
  *
  * Stop bit and parity bits (if enabled) also contribute to the number of edges.
- * For example, letter 'a' with ASCII code 97 is encoded as 010001101 on the wire
+ * For example, letter 'a' with ASCII code 97 is encoded as 0100001101 on the wire
  * (with 8n1 configuration), start and stop bits included. This sequence has 3
  * positive edges (transitions from 0 to 1). Therefore, to wake up the system
  * when 'a' is sent, set wakeup_threshold=3.
@@ -813,7 +813,10 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
  * correct baud rate all the time, select REF_TICK as UART clock source,
  * by setting use_ref_tick field in uart_config_t to true.
  *
- * @note in ESP32, UART2 does not support light sleep wakeup feature.
+ * @note in ESP32, the wakeup signal can only be input via IO_MUX (i.e.
+ *       GPIO3 should be configured as function_1 to wake up UART0,
+ *       GPIO9 should be configured as function_5 to wake up UART1), UART2
+ *       does not support light sleep wakeup feature.
  *
  * @param uart_num  UART number
  * @param wakeup_threshold  number of RX edges for light sleep wakeup, value is 3 .. 0x3ff.
