@@ -22,9 +22,11 @@ The ESP-MESH guide is split into the following sections:
 
 5. :ref:`mesh-data-transmission`
 
-6. :ref:`mesh-network-performance`
+6. :ref:`mesh-channel-switching`
 
-7. :ref:`mesh-further-notes`
+7. :ref:`mesh-network-performance`
+
+8. :ref:`mesh-further-notes`
 
 
 .. ----------------------------- Introduction ---------------------------------
@@ -455,36 +457,6 @@ Parent Node Switching entails a child node switching its upstream connection to 
 
 All potential parent nodes periodically transmit beacon frames (see `Beacon Frames & RSSI Thresholding`_) allowing for a child node to scan for the availability of a shallower parent node. Due to parent node switching, a self-organized ESP-MESH network can dynamically adjust its network layout to ensure each connection has a good RSSI and that the number of layers in the network is minimized.
 
-Network Channel Switching
--------------------------
-
-The list shows network changes allowed by different combinations of four parameters channel, allow_channel_switch,
-router BSSID and allow_router_switch. More information will be added soon.
-
-+-------------------------------------------------------------------------+------------------------------+
-|                          Mesh Configuration                             |        Network Changes       |
-+===========+======================+================+=====================+==============================+
-|  channel  | allow_channel_switch |  router BSSID  | allow_router_switch |       when no root appears   |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|  not set  |           X          |    not set     |          X          |   channel and router BSSID   |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|  not set  |           X          |      set       |          0          |           channel            |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|  not set  |           X          |      set       |          1          |   channel and router BSSID   |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|    set    |           1          |    not set     |          X          |   channel and router BSSID   |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|    set    |           0          |    not set     |          X          |        router BSSID          |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|    set    |           1          |      set       |          0          |           channel            |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|    set    |           0          |      set       |          0          |                              |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|    set    |           1          |      set       |          1          |   channel and router BSSID   |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-|    set    |           0          |      set       |          1          |        router BSSID          |
-+-----------+----------------------+----------------+---------------------+------------------------------+
-
 
 .. --------------------------- Data Transmission ------------------------------
 
@@ -580,6 +552,116 @@ The following diagram illustrates the various network layers involved in an ESP-
 
 Due to the use of `Routing Tables`_, **ESP-MESH is able to handle pack forwarding entirely on the mesh layer**. A TCP/IP layer is only required on the root node when it transmits/receives a packet to/from an external IP network.
 
+
+.. --------------------------- Channel Switching -------------------------------
+
+.. _mesh-channel-switching:
+
+Channel Switching
+-----------------
+
+Background
+^^^^^^^^^^
+
+In traditional Wi-Fi networks, **channels** are predetermined frequency ranges. In an infrastructure basic service set (BSS), the serving AP and its connected stations must be on the same operating channels (1 to 14) in which beacons are transmitted. Physically adjacent BSS (Basic Service Sets) operating on the same channel can lead to interference and degraded performance.
+
+In order to allow a BSS adapt to changing physical layer conditions and maintain performance, Wi-Fi contains mechanisms for **network channel switching**. A network channel switch is an attempt to move a BSS to a new operating channel whilst minimizing disruption to the BSS during this process. However it should be recognized that a channel switch may be unsuccessful in  moving all stations to the new operating channel.
+
+In an infrastructure Wi-Fi network, network channel switches are triggered by the AP with the aim of having the AP and all connected stations synchronously switch to a new channel. Network channel switching is implemented by embedding a **Channel Switch Announcement (CSA)** element within the AP's periodically transmitted beacon frames. The CSA element is used to advertise to all connected stations regarding an upcoming network channel switch and will be included in multiple beacon frames up until the switch occurs.
+
+A CSA element contains information regarding the **New Channel Number** and a **Channel Switch Count** which indicates the number of beacon frame intervals (TBTTs) remaining until the network channel switch occurs. Therefore, the Channel Switch Count is decremented every beacon frame and allows connected stations to synchronize their channel switch with the AP.
+
+ESP-MESH Network Channel Switching
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ESP-MESH Network Channel Switching also utilize beacon frames that contain a CSA element. However, being a multi-hop network makes the switching process in ESP-MESH is more complex due to the fact that a beacon frame might not be able to reach all nodes within the network (i.e. in a single hop). Therefore, an ESP-MESH network relies on nodes to forward the CSA element so that it is propagated throughout the network. 
+
+When an intermediate parent node with one or more child nodes receives a beacon frame containing a CSA, the node will forward the CSA element by including the element in its next transmitted beacon frame (i.e. with the same **New Channel Number** and **Channel Switch Count**). Given that all nodes within an ESP-MESH network receive the same CSA, the nodes can synchronize their channel switches using the Channel Switch Count, albeit with a short delay due to CSA element forwarding.
+
+An ESP-MESH network channel switch can be triggered by either the router or the root node.
+
+Root Node Triggered
+"""""""""""""""""""
+**A root node triggered channel switch can only occur when the ESP-MESH network is not connected to a router**. By calling :cpp:func:`esp_mesh_switch_channel`, the root node will set an initial Channel Switch Count value and begin including a CSA element in its beacon frames. Each CSA element is then received by second layer nodes, and forwarded downstream in the their own beacon frames.
+
+Router Triggered
+""""""""""""""""
+When an ESP-MESH network is connected to a router, the entire network must use the same channel as the router. Therefore, **the root node will not be permitted to trigger a channel switch when it is connected to a router**. 
+
+When the root node receives beacon frame containing a CSA element from the router, **the root node will set Channel Switch Count value in the CSA element to a custom value before forwarding it downstream via beacon frames**. It will also decrement the Channel Switch Count of subsequent CSA elements relative to the custom value. This custom value can be based on factors such as the number of network layers, the current number of nodes etc.
+
+The setting the Channel Switch Count value to a custom value is due to the fact that the ESP-MESH network and its router may have a different and varying beacon intervals. Therefore, the Channel Switch Count value provided by the router is irrelevant to an ESP-MESH network. By using a custom value, nodes within the ESP-MESH network are able to switch channels synchronously relative to the ESP-MESH network's beacon interval. However, this will also result in the ESP-MESH network's channel switch being unsynchronized with the channel switch of the router and its connected stations.
+
+Impact of Network Channel Switching
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Due to the ESP-MESH network channel switch being unsynchronized with the router's channel switch, there will be a **temporary channel discrepancy** between the ESP-MESH network and the router.
+    - The ESP-MESH network's channel switch time is dependent on the ESP-MESH network's beacon interval and the root node's custom Channel Switch Count value.
+    - The channel discrepancy prevents any data exchange between the root node and the router during that ESP-MESH network's switch.
+    - In the ESP-MESH network, the root node and intermediate parent nodes will request their connected child nodes to stop transmissions until the channel switch takes place by setting the **Channel Switch Mode** field in the CSA element to 1.
+    - Frequent router triggered network channel switches can degrade the ESP-MESH network's performance. Note that this can be caused by the ESP-MESH network itself (e.g. due to wireless medium contention with ESP-MESH network). If this is the case, users should disable the automatic channel switching on the router and use a specified channel instead.
+
+- When there is a **temporary channel discrepancy**, the root node remains technically connected to the router.
+    - Disconnection occurs after the root node fails to receive any beacon frames or probe responses from the router over a fixed number of router beacon intervals.
+    - Upon disconnection, the root node will automatically re-scan all channels for the presence of a router.
+
+- If the root node is unable to receive any of the router's CSA beacon frames (e.g. due to short switch time given by the router), the router will switch channels without the ESP-MESH network's knowledge.
+    - After the router switches channels, the root node will no longer be able to receive the router's beacon frames and probe responses and result in a disconnection after a fixed number of beacon intervals.
+    - The root node will re-scan all channels for the router after disconnection.
+    - The root node will maintain downstream connections throughout this process.
+
+.. note::
+    Although ESP-MESH network channel switching aims to move all nodes within the network to a new operating channel, it should be recognized that a channel switch might not successfully move all nodes (e.g. due to reasons such as node failures).
+
+Channel and Router Switching Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ESP-MESH allows for autonomous channel switching to be enabled/disabled via configuration. Likewise, autonomous router switching (i.e. when a root node autonomously connects to another router) can also be enabled/disabled by configuration. Autonomous channel switching and router switching is dependent on the following configuration parameters and run-time conditions.
+
+**Allow Channel Switch:** This parameter is set via the ``allow_channel_switch`` field of the :cpp:type:`mesh_cfg_t` structure and permits an ESP-MESH network to dynamically switch channels when set.
+
+**Preset Channel:** An ESP-MESH network can have a preset channel by setting the ``channel`` field of the :cpp:type:`mesh_cfg_t` structure to the desired channel number. If this field is unset, the ``allow_channel_switch`` parameter is overridden such that channel switches are always permitted.
+
+**Allow Router Switch:** This parameter is set via the ``allow_router_switch`` field of the :cpp:type:`mesh_router_t` and permits an ESP-MESH to dynamically switch to a different router when set.
+
+**Preset Router BSSID:** An ESP-MESH network can have a preset router by setting the ``bssid`` field of the :cpp:type:`mesh_router_t` structure to the 
+BSSID of the desired router. If this field is unset, the ``allow_router_switch`` parameter is overridden such that router switches are always permitted.
+
+**Root Node Present:** The presence of a root node will can also affect whether or a channel or router switch is permitted.
+
+The following table illustrates how the different combinations of parameters/conditions affect whether channel switching and/or router switching is permitted. Note that `X` represents a "don't care" for the parameter.
+
++-------------------------------------------------------------------------------------------------------+--------------------+
+| Configuration and Conditions                                                                          | Result             |
++================+======================+=====================+=====================+===================+====================+
+| Preset Channel | Allow Channel Switch | Preset Router BSSID | Allow Router Switch | Root Node Present | Permitted Switches |
++----------------+----------------------+---------------------+---------------------+-------------------+--------------------+
+| N              | X                    | N                   | X                   | X                 | Channel & Router   |
+|                |                      +---------------------+---------------------+                   +--------------------+
+|                |                      | Y                   | N                   |                   | Channel Only       |
+|                |                      +---------------------+---------------------+                   +--------------------+
+|                |                      | Y                   | Y                   |                   | Channel & Router   |
++----------------+----------------------+---------------------+---------------------+-------------------+--------------------+
+| Y              | Y                    | N                   | X                   | X                 | Channel & Router   |
++                +----------------------+                     +                     +-------------------+--------------------+
+|                | N                    |                     |                     | N                 | Router Only        |
++                +----------------------+                     +                     +-------------------+--------------------+
+|                | N                    |                     |                     | Y                 | Channel & Router   |
++                +----------------------+---------------------+---------------------+-------------------+--------------------+
+|                | Y                    | Y                   | N                   | X                 | Channel Only       |
++                +----------------------+                     +                     +-------------------+--------------------+
+|                | N                    |                     |                     | N                 | None               |
++                +----------------------+                     +                     +-------------------+--------------------+
+|                | N                    |                     |                     | Y                 | Channel Only       |
++                +----------------------+                     +---------------------+-------------------+--------------------+
+|                | Y                    |                     | Y                   | X                 | Channel & Router   |
++                +----------------------+                     +                     +-------------------+--------------------+
+|                | N                    |                     |                     | N                 | Router Only        |
++                +----------------------+                     +                     +-------------------+--------------------+
+|                | N                    |                     |                     | Y                 | Channel & Router   |
++----------------+----------------------+---------------------+---------------------+-------------------+--------------------+
+
+
 .. ------------------------------ Performance ---------------------------------
 
 .. _mesh-network-performance:
@@ -623,7 +705,8 @@ The following table lists the common performance figures of an ESP-MESH network.
 
 .. note::
     The throughput of root node's access to the external IP network is directly affected by the number of nodes in the ESP-MESH network and the bandwidth of the router.
-    
+
+
 .. ----------------------------- Further Notes --------------------------------
 
 .. _mesh-further-notes:
