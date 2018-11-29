@@ -76,7 +76,7 @@ def _run_tool(tool_name, args, cwd):
         return arg
     display_args = " ".join(quote_arg(arg) for arg in args)
     print("Running %s in directory %s" % (tool_name, quote_arg(cwd)))
-    print('Executing "%s"...' % display_args)
+    print('Executing "%s"...' % str(display_args))
     try:
         # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
         subprocess.check_call(args, env=os.environ, cwd=cwd)
@@ -290,7 +290,7 @@ def monitor(action, args):
     idf_py = [ PYTHON ] + get_commandline_options()  # commands to re-run idf.py
     monitor_args += [ "-m", " ".join("'%s'" % a for a in idf_py) ]
 
-    if "MSYSTEM" is os.environ:
+    if "MSYSTEM" in os.environ:
         monitor_args = [ "winpty" ] + monitor_args
     _run_tool("idf_monitor", monitor_args, args.project_dir)
 
