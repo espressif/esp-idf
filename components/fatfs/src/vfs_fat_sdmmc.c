@@ -55,6 +55,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
         return ESP_ERR_NO_MEM;
     }
     esp_err_t err = ESP_OK;
+    // not using ff_memalloc here, as allocation in internal RAM is preferred
     s_card = malloc(sizeof(sdmmc_card_t));
     if (s_card == NULL) {
         err = ESP_ERR_NO_MEM;
@@ -113,7 +114,7 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
             goto fail;
         }
         ESP_LOGW(TAG, "partitioning card");
-        workbuf = malloc(workbuf_size);
+        workbuf = ff_memalloc(workbuf_size);
         if (workbuf == NULL) {
             err = ESP_ERR_NO_MEM;
             goto fail;
