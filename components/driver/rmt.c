@@ -48,6 +48,7 @@
 #define RMT_PSRAM_BUFFER_WARN_STR    "Using buffer allocated from psram"
 #define RMT_TRANSLATOR_NULL_STR    "RMT translator is null"
 #define RMT_TRANSLATOR_UNINIT_STR  "RMT translator not init"
+#define RMT_PARAM_ERR_STR          "RMT param error"
 
 static const char* RMT_TAG = "rmt";
 static uint8_t s_rmt_driver_channels; // Bitmask (bits 0-7) of installed drivers' channels
@@ -90,7 +91,7 @@ rmt_obj_t* p_rmt_obj[RMT_CHANNEL_MAX] = {0};
 // Event called when transmission is ended
 static rmt_tx_end_callback_t rmt_tx_end_callback;
 
-static void rmt_set_tx_wrap_en(rmt_channel_t channel, bool en)
+static void rmt_set_tx_wrap_en(bool en)
 {
     portENTER_CRITICAL(&rmt_spinlock);
     RMT.apb_conf.mem_tx_wrap_en = en;
@@ -373,7 +374,7 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
         portENTER_CRITICAL(&rmt_spinlock);
         RMT.tx_lim_ch[channel].limit = evt_thresh;
         portEXIT_CRITICAL(&rmt_spinlock);
-        rmt_set_tx_wrap_en(channel, true);
+        rmt_set_tx_wrap_en(true);
         rmt_set_intr_enable_mask(BIT(channel + 24));
     } else {
         rmt_clr_intr_enable_mask(BIT(channel + 24));
@@ -569,6 +570,8 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         p_rmt->tx_len_rem = 0;
                         p_rmt->tx_offset = 0;
                         p_rmt->tx_sub_len = 0;
+                        p_rmt->sample_cur = NULL;
+                        p_rmt->translator = false;
                         if(rmt_tx_end_callback.function != NULL) {
                             rmt_tx_end_callback.function(channel, rmt_tx_end_callback.arg);
                         }
@@ -804,10 +807,8 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t* rmt_item, i
     // fill the memory block first
     if(item_num >= item_block_len) {
         rmt_fill_memory(channel, rmt_item, item_block_len, 0);
-        RMT.tx_lim_ch[channel].limit = item_sub_len;
-        RMT.apb_conf.mem_tx_wrap_en = 1;
         len_rem -= item_block_len;
-        RMT.conf_ch[channel].conf1.tx_conti_mode = 0;
+        rmt_set_tx_loop_mode(channel, false);
         rmt_set_tx_thr_intr_en(channel, 1, item_sub_len);
         p_rmt->tx_data = rmt_item + item_block_len;
         p_rmt->tx_len_rem = len_rem;
@@ -927,6 +928,25 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
     if (wait_tx_done) {
         xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
         xSemaphoreGive(p_rmt->tx_sem);
+    }
+    return ESP_OK;
+}
+
+esp_err_t rmt_get_channel_status(rmt_channel_status_result_t *channel_status)
+{
+    RMT_CHECK(channel_status != NULL, RMT_PARAM_ERR_STR, ESP_ERR_INVALID_ARG);
+    for(int i = 0; i < RMT_CHANNEL_MAX; i++) {
+        channel_status->status[i]= RMT_CHANNEL_UNINIT;
+        if( p_rmt_obj[i] != NULL ) {
+            if( p_rmt_obj[i]->tx_sem != NULL ) {
+                if( xSemaphoreTake(p_rmt_obj[i]->tx_sem, (TickType_t)0) == pdTRUE ) {
+                    channel_status->status[i] = RMT_CHANNEL_IDLE;
+                    xSemaphoreGive(p_rmt_obj[i]->tx_sem); 
+                } else {
+                    channel_status->status[i] = RMT_CHANNEL_BUSY;
+                }
+            }
+        }
     }
     return ESP_OK;
 }
