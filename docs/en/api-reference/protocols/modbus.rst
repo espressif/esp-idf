@@ -18,7 +18,7 @@ Modbus slave interface API overview
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-ISP-IDF supports Modbus slave protocol and provides modbus_controller interface API to interact with user application. The interface API functions below are used to setup and use Modbus slave stack from application and could be executed in next order:
+ESP-IDF supports Modbus slave protocol and provides modbus_controller interface API to interact with user application. The interface API functions below are used to setup and use Modbus slave stack from application and could be executed in next order:
 
 
 The files deviceparams.c/h contain the user structures which represent Modbus parameters accessed by stack. These parameters should be prepared by user and be assigned to the modbus_controller interface using :cpp:func:`mbcontroller_set_descriptor()` API call before start of communication.  
