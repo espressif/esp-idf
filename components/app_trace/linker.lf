@@ -3,3 +3,10 @@ archive: libapp_trace.a
 entries: 
     * (noflash)
 
+[mapping]
+archive: libdriver.a
+entries:
+    : SYSVIEW_TS_SOURCE_TIMER_00 = y || SYSVIEW_TS_SOURCE_TIMER_01 = y 
+      || SYSVIEW_TS_SOURCE_TIMER_10 = y || SYSVIEW_TS_SOURCE_TIMER_11 = y
+    timer (noflash)
+
