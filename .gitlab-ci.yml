@@ -1633,6 +1633,31 @@ UT_015_04:
     - UT_T1_MCPWM
     - psram
 
+UT_016_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_I2S
+
+UT_016_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_I2S
+
+UT_016_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_I2S
+
+UT_016_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_I2S
+    - psram
+
 UT_601_01:
   <<: *unit_test_template
   tags:
