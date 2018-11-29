@@ -530,7 +530,7 @@ class BaseDUT(object):
             data = BaseDUT.u_to_bytearray(data)
         match = pattern.search(data)
         if match:
-            ret = tuple(x.decode() for x in match.groups())
+            ret = tuple(None if x is None else x.decode() for x in match.groups())
             index = match.end()
         else:
             index = -1
