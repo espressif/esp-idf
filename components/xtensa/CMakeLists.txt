@@ -1,4 +1,4 @@
-set(COMPONENT_SRCS "eri.c" "trax.c")
+set(COMPONENT_SRCS "eri.c" "trax.c" "debug_helpers.c" "debug_helpers_asm.S")
 
 set(COMPONENT_ADD_INCLUDEDIRS "include" "${IDF_TARGET}/include")
 

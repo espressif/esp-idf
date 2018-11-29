@@ -42,4 +42,12 @@ menu "Unity unit testing library"
             the build. These provide an optional set of macros and functions to
             implement test groups.
 
+    config UNITY_ENABLE_BACKTRACE_ON_FAIL
+        bool "Print a backtrace when a unit test fails"
+        default n
+        help
+            If set, the unity framework will print the backtrace information before
+            jumping back to the test menu. The jumping is usually occurs in assert
+            functions such as TEST_ASSERT, TEST_FAIL etc.
+
 endmenu # "Unity unit testing library"
