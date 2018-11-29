@@ -4,11 +4,14 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <string.h>
 #include "ff.h"
+#include "sdkconfig.h"
+#ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
+#include "esp_heap_caps.h"
+#endif
 
 
-
-#if FF_USE_LFN == 3	/* Dynamic memory allocation */
 
 /*------------------------------------------------------------------------*/
 /* Allocate a memory block                                                */
@@ -18,7 +21,27 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on no
 	UINT msize		/* Number of bytes to allocate */
 )
 {
-	return malloc(msize);	/* Allocate a new memory block with POSIX API */
+#ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
+	return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+											MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+#else
+	return malloc(msize);
+#endif
+}
+
+/*------------------------------------------------------------------------*/
+/* Allocate and zero out memory block                                     */
+/*------------------------------------------------------------------------*/
+
+
+void* ff_memcalloc (UINT num, UINT size)
+{
+#ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
+	return heap_caps_calloc_prefer(num, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+												MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+#else
+	return calloc(num, size);
+#endif
 }
 
 
@@ -33,7 +56,6 @@ void ff_memfree (
 	free(mblock);	/* Free the memory block with POSIX API */
 }
 
-#endif
 
 
 

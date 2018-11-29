@@ -301,4 +301,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
+/* Some memory allocation functions are declared here in addition to ff.h, so that
+   they can be used also by external code when LFN feature is disabled.
+ */
+void* ff_memalloc (UINT msize);
+void* ff_memcalloc (UINT num, UINT size);
+
+
 /*--- End of configuration options ---*/

@@ -167,6 +167,17 @@ config FATFS_PER_FILE_CACHE
       all open files, size is also equal to _MAX_SS variable. This reduces the
       amount of heap used when multiple files are open, but increases the number
       of read and write operations which FATFS needs to make.
-      
+
+
+config FATFS_ALLOC_PREFER_EXTRAM
+    bool "Perfer external RAM when allocating FATFS buffers"
+    default y
+    depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    help
+        When the option is enabled, internal buffers used by FATFS will be allocated
+        from external RAM. If the allocation from external RAM fails, the buffer will
+        be allocated from the internal RAM.
+        Disable this option if optimizing for performance. Enable this option if
+        optimizing for internal memory size.
 
 endmenu
