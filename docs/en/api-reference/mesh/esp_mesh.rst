@@ -7,9 +7,11 @@ This is a programming guide for ESP-MESH, including the API reference and coding
 
 2. :ref:`mesh-writing-mesh-application`
 
-3. :ref:`mesh-application-examples`
+3. :ref:`mesh-self-organized-behavior`
 
-4. :ref:`mesh-api-reference`
+4. :ref:`mesh-application-examples`
+
+5. :ref:`mesh-api-reference`
 
 For documentation regarding the ESP-MESH protocol, please see the :doc:`ESP-MESH API Guide<../../api-guides/mesh>`.
 
@@ -197,6 +199,117 @@ The following code snippet demonstrates how to start ESP-MESH.
     ESP_ERROR_CHECK(esp_mesh_start());
 
 After starting ESP-MESH, the application should check for ESP-MESH events to determine when it has connected to the network. After connecting, the application can start transmitting and receiving packets over the ESP-MESH network using :cpp:func:`esp_mesh_send` and :cpp:func:`esp_mesh_recv`.
+
+
+.. --------------------- ESP-MESH Application Examples ------------------------
+
+.. _mesh-self-organized-behavior:
+
+Self Organized Networking
+-------------------------
+
+Self organized networking is a feature of ESP-MESH where nodes can autonomously scan/select/connect/reconnect to other nodes and routers. This feature allows an ESP-MESH network to operate with high degree of autonomy by making the network robust to dynamic network topologies and conditions. With self organized networking enabled, nodes in an ESP-MESH network are able to carryout the following actions without autonomously:
+
+- Selection or election of the root node (see **Automatic Root Node Selection** in :ref:`mesh-building-a-network`)
+- Selection of a preferred parent node (see **Parent Node Selection** in :ref:`mesh-building-a-network`)
+- Automatic reconnection upon detecting a disconnection (see **Intermediate Parent Node Failure** in :ref:`mesh-managing-a-network`)
+
+When self organized networking is enabled, the ESP-MESH stack will internally make calls to Wi-Fi driver APIs. Therefore, **the application layer should not make any calls to Wi-Fi driver APIs whilst self organized networking is enabled as doing so would risk interfering with ESP-MESH**.
+
+Toggling Self Organized Networking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Self organized networking can be enabled or disabled by the application at runtime by calling the :cpp:func:`esp_mesh_set_self_organized` function. The function has the two following parameters: 
+
+- ``bool enable`` specifies whether to enable or disable self organized networking.
+
+- ``bool select_parent`` specifies whether a new parent node should be selected when enabling self organized networking. Selecting a new parent has different effects depending the node type and the node's current state. This parameter is unused when disabling self organized networking.
+
+Disabling Self Organized Networking
+"""""""""""""""""""""""""""""""""""
+The following code snippet demonstrates how to disable self organized networking.
+
+.. code-block:: c
+
+    //Disable self organized networking
+    esp_mesh_set_self_organized(false, false);
+
+ESP-MESH will attempt to maintain the node's current Wi-Fi state when disabling self organized networking.
+
+- If the node was previously connected to other nodes, it will remain connected.
+- If the node was previously disconnected and was scanning for a parent node or router, it will stop scanning.
+- If the node was previously attempting to reconnect to a parent node or router, it will stop reconnecting.
+
+Enabling Self Organized Networking
+""""""""""""""""""""""""""""""""""
+
+ESP-MESH will attempt to maintain the node's current Wi-Fi state when enabling self organized networking. However, depending on the node type and whether a new parent is selected, the Wi-Fi state of the node can change. The following table shows effects of enabling self organized networking.
+
++---------------+--------------+------------------------------------------------------------------------------------------------------------------+
+| Select Parent | Is Root Node | Effects                                                                                                          |
++===============+==============+==================================================================================================================+
+| N             | N            | - Nodes already connected to a parent node will remain connected.                                                |
+|               |              | - Nodes previously scanning for a parent nodes will stop scanning. Call :cpp:func:`esp_mesh_connect` to restart. |
+|               +--------------+------------------------------------------------------------------------------------------------------------------+
+|               | Y            | - A root node already connected to router will stay connected.                                                   |
+|               |              | - A root node disconnected from router will need to call :cpp:func:`esp_mesh_connect` to reconnect.              |                                   
++---------------+--------------+------------------------------------------------------------------------------------------------------------------+
+| Y             | N            | - Nodes without a parent node will automatically select a preferred parent and connect.                          |
+|               |              | - Nodes already connected to a parent node will disconnect, reselect a preferred parent node, and connect.       |
+|               +--------------+------------------------------------------------------------------------------------------------------------------+
+|               | Y            | - For a root node to connect to a parent node, it must give up it's role as root. Therefore, a root node will    |
+|               |              |   disconnect from the router and all child nodes, select a preferred parent node, and connect.                   |
++---------------+--------------+------------------------------------------------------------------------------------------------------------------+
+
+The following code snipping demonstrates how to enable self organized networking.
+
+.. code-block:: c
+
+    //Enable self organized networking and select a new parent
+    esp_mesh_set_self_organized(true, true);
+
+    ...
+
+    //Enable self organized networking and manually reconnect
+    esp_mesh_set_self_organized(true, false);
+    esp_mesh_connect();
+
+
+Calling Wi-Fi Driver API
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+There can be instances in which an application may want to directly call Wi-Fi driver API whilst using ESP-MESH. For example, an application may want to manually scan for neighboring APs. However, **self organized networking must be disabled before the application calls any Wi-Fi driver APIs**. This will prevent the ESP-MESH stack from attempting to call any Wi-Fi driver APIs and potentially interfering with the application's calls.
+
+Therefore, application calls to Wi-Fi driver APIs should be placed in between calls of :cpp:func:`esp_mesh_set_self_organized` which disable and enable self organized networking. The following code snippet demonstrates how an application can safely call :cpp:func:`esp_wifi_scan_start` whilst using ESP-MESH.
+
+.. code-block:: c
+
+    //Disable self organized networking
+    esp_mesh_set_self_organized(0, 0);
+
+    //Stop any scans already in progress
+    esp_wifi_scan_stop();
+    //Manually start scan. Will automatically stop when run to completion 
+    esp_wifi_scan_start();
+
+    //Process scan results
+
+    ...
+
+    //Re-enable self organized networking if still connected
+    esp_mesh_set_self_organized(1, 0);
+
+    ...
+
+    //Re-enable self organized networking if non-root and disconnected
+    esp_mesh_set_self_organized(1, 1);
+
+    ...
+
+    //Re-enable self organized networking if root and disconnected
+    esp_mesh_set_self_organized(1, 0);  //Don't select new parent
+    esp_mesh_connect();                 //Manually reconnect to router
+
 
 .. --------------------- ESP-MESH Application Examples ------------------------
 
