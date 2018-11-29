@@ -383,6 +383,17 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     FD_ZERO(writefds);
     FD_ZERO(exceptfds);
 
+    for (int i = 0; i < max_fds; ++i) {
+        if (FD_ISSET(i, _readfds_orig)) {
+            size_t buffered_size;
+            if (uart_get_buffered_data_len(i, &buffered_size) == ESP_OK && buffered_size > 0) {
+                // signalize immediately when data is buffered
+                FD_SET(i, _readfds);
+                esp_vfs_select_triggered(_signal_sem);
+            }
+        }
+    }
+
     portEXIT_CRITICAL(uart_get_selectlock());
     // s_one_select_lock is not released on successfull exit - will be
     // released in uart_end_select()
