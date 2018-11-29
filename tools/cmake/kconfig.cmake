@@ -67,7 +67,7 @@ function(kconfig_process_config)
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${SDKCONFIG}"
-        ${MCONF} ${ROOT_KCONFIG}
+        ${CMAKE_BINARY_DIR}/${MCONF} ${ROOT_KCONFIG}
         VERBATIM
         USES_TERMINAL)
 
@@ -157,6 +157,7 @@ if(NOT MCONF)
         BUILD_BYPRODUCTS ${MCONF}
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL 1
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR} # Put built files on top level build directory
         )
 
     file(GLOB mconf_srcfiles ${IDF_PATH}/tools/kconfig/*.c)
