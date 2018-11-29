@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
 #
@@ -25,6 +24,7 @@ import fnmatch
 from sdkconfig import SDKConfig
 from fragments import FragmentFileModel, Sections, Scheme, Mapping, Fragment
 from pyparsing import *
+from common import LdGenFailure
 
 """
 Encapsulates a generated placement rule placed under a target
@@ -561,7 +561,7 @@ class TemplateModel:
 Exception for linker script generation failures such as undefined references/ failure to
 evaluate conditions, duplicate mappings, etc.
 """
-class GenerationException(Exception):
+class GenerationException(LdGenFailure):
 
     UNDEFINED_REFERENCE = "Undefined reference"
 
