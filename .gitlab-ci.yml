@@ -1007,6 +1007,8 @@ test_weekend_mqtt:
     - build_ssc_02
   artifacts:
     when: always
+    reports:
+        junit: $LOG_PATH/*/XUNIT_RESULT.xml
     paths:
       - $LOG_PATH
     expire_in: 1 week
