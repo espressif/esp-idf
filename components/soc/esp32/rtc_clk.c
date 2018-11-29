@@ -395,7 +395,6 @@ void rtc_clk_cpu_freq_to_xtal(int freq, int div)
     REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, freq * MHZ / REF_CLK_FREQ - 1);
     /* switch clock source */
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
-    DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); /* clear DPORT_CPUPERIOD_SEL */
     rtc_clk_apb_freq_update(freq * MHZ);
     /* lower the voltage */
     if (freq <= 2) {
@@ -411,7 +410,6 @@ static void rtc_clk_cpu_freq_to_8m()
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_8M);
-    DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); // clear DPORT_CPUPERIOD_SEL
     rtc_clk_apb_freq_update(RTC_FAST_CLK_FREQ_8M);
 }
 
