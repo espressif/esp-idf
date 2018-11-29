@@ -17,8 +17,7 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(LDGEN_SECTIONS_INFO_FILES)
 		--kconfig       $(IDF_PATH)/Kconfig \
 		--env           "COMPONENT_KCONFIGS=$(COMPONENT_KCONFIGS)" \
 		--env           "COMPONENT_KCONFIGS_PROJBUILD=$(COMPONENT_KCONFIGS_PROJBUILD)" \
-		--env           "IDF_CMAKE=n" \
-		--env           "IDF_TARGET=$(IDF_TARGET)"
+		--env           "IDF_CMAKE=n"
 endef
 
 define ldgen_create_commands

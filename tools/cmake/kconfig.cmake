@@ -61,13 +61,14 @@ function(kconfig_process_config)
     add_custom_target(menuconfig
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
-        COMMAND ${confgen_basecommand} --output config ${SDKCONFIG}
+        COMMAND ${confgen_basecommand} --env "IDF_TARGET=${IDF_TARGET}" --output config ${SDKCONFIG}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS=${kconfigs}"
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${SDKCONFIG}"
-        ${MCONF} ${ROOT_KCONFIG}
+        "IDF_TARGET=${IDF_TARGET}"
+        ${CMAKE_BINARY_DIR}/${MCONF} ${ROOT_KCONFIG}
         VERBATIM
         USES_TERMINAL)
 
@@ -157,6 +158,7 @@ if(NOT MCONF)
         BUILD_BYPRODUCTS ${MCONF}
         INSTALL_COMMAND ""
         EXCLUDE_FROM_ALL 1
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR} # Put built files on top level build directory
         )
 
     file(GLOB mconf_srcfiles ${IDF_PATH}/tools/kconfig/*.c)
