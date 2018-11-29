@@ -14,6 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "esp_panic.h"
+#include "soc/soc_memory_layout.h"
 #include "esp_core_dump_priv.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
