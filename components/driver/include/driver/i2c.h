@@ -421,6 +421,35 @@ esp_err_t i2c_set_period(i2c_port_t i2c_num, int high_period, int low_period);
 esp_err_t i2c_get_period(i2c_port_t i2c_num, int* high_period, int* low_period);
 
 /**
+ * @brief enable hardware filter on I2C bus
+ *        Sometimes the I2C bus is disturbed by high frequency noise(about 20ns), or the rising edge of
+ *        the SCL clock is very slow, these may cause the master state machine broken. enable hardware
+ *        filter can filter out high frequency interference and make the master more stable.
+ *        @note
+ *        Enable filter will slow the SCL clock.
+ *
+ * @param i2c_num I2C port number
+ * @param cyc_num the APB cycles need to be filtered(0<= cyc_num <=7).
+ *        When the period of a pulse is less than cyc_num * APB_cycle, the I2C controller will ignore this pulse.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t i2c_filter_enable(i2c_port_t i2c_num, uint8_t cyc_num);
+
+/**
+ * @brief disable filter on I2C bus
+ *
+ * @param i2c_num I2C port number
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t i2c_filter_disable(i2c_port_t i2c_num);
+
+/**
  * @brief set I2C master start signal timing
  *
  * @param i2c_num I2C port number
