@@ -2,13 +2,20 @@
 # Load cmake modules
 #
 
-if(NOT IDF_PATH)
-    set(IDF_PATH $ENV{IDF_PATH})
-endif()
-
 get_property(__idf_environment_set GLOBAL PROPERTY __IDF_ENVIRONMENT_SET)
 
 if(NOT __idf_environment_set)
+
+    # Set IDF_PATH, as nothing else will work without this.
+    set(IDF_PATH "$ENV{IDF_PATH}")
+    if(NOT IDF_PATH)
+        # Documentation says you should set IDF_PATH in your environment, but we
+        # can infer it relative to tools/cmake directory if it's not set.
+        get_filename_component(IDF_PATH "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+    endif()
+    file(TO_CMAKE_PATH "${IDF_PATH}" IDF_PATH)
+    set(ENV{IDF_PATH} ${IDF_PATH})
+
     set(CMAKE_MODULE_PATH
         "${IDF_PATH}/tools/cmake"
         "${IDF_PATH}/tools/cmake/third_party"
