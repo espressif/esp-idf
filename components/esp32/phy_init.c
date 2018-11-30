@@ -471,6 +471,30 @@ esp_err_t esp_phy_store_cal_data_to_nvs(const esp_phy_calibration_data_t* cal_da
     }
 }
 
+esp_err_t esp_phy_erase_cal_data_in_nvs(void)
+{
+    nvs_handle handle;
+    esp_err_t err = nvs_open(PHY_NAMESPACE, NVS_READWRITE, &handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: failed to open NVS phy namespace (0x%x)", __func__, err);
+        return err;
+    }
+    else {
+        err = nvs_erase_all(handle);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: failed to erase NVS phy namespace (0x%x)", __func__, err);
+        }
+        else {
+            err = nvs_commit(handle);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: failed to commit NVS phy namespace (0x%x)", __func__, err);
+            }
+        }
+    }
+    nvs_close(handle);
+    return err;
+}
+
 static esp_err_t load_cal_data_from_nvs_handle(nvs_handle handle,
         esp_phy_calibration_data_t* out_cal_data)
 {
