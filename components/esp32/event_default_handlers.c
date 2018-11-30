@@ -46,6 +46,57 @@ do{\
     }\
 } while(0)
 
+typedef struct {
+    int err;
+    const char *reason;
+} wifi_reason_t;
+  
+static const wifi_reason_t wifi_reason[] =
+{   
+    {0,                                    "wifi reason: other reason"},
+    {WIFI_REASON_UNSPECIFIED,              "wifi reason: unspecified"},
+    {WIFI_REASON_AUTH_EXPIRE,              "wifi reason: auth expire"},
+    {WIFI_REASON_AUTH_LEAVE,               "wifi reason: auth leave"},
+    {WIFI_REASON_ASSOC_EXPIRE,             "wifi reason: assoc expire"},
+    {WIFI_REASON_ASSOC_TOOMANY,            "wifi reason: assoc too many"},
+    {WIFI_REASON_NOT_AUTHED,               "wifi reason: not authed"},
+    {WIFI_REASON_NOT_ASSOCED,              "wifi reason: not assoced"},
+    {WIFI_REASON_ASSOC_LEAVE,              "wifi reason: assoc leave"},
+    {WIFI_REASON_ASSOC_NOT_AUTHED,         "wifi reason: assoc not authed"},
+    {WIFI_REASON_BEACON_TIMEOUT,           "wifi reason: beacon timeout"},
+    {WIFI_REASON_NO_AP_FOUND,              "wifi reason: no ap found"},
+    {WIFI_REASON_AUTH_FAIL,                "wifi reason: auth fail"},
+    {WIFI_REASON_ASSOC_FAIL,               "wifi reason: assoc fail"},
+    {WIFI_REASON_HANDSHAKE_TIMEOUT,        "wifi reason: hanshake timeout"},
+    {WIFI_REASON_DISASSOC_PWRCAP_BAD,      "wifi reason: bad Power Capability, disassoc"},
+    {WIFI_REASON_DISASSOC_SUPCHAN_BAD,     "wifi reason: bad Supported Channels, disassoc"},
+    {WIFI_REASON_IE_INVALID,               "wifi reason: invalid IE"},
+    {WIFI_REASON_MIC_FAILURE,              "wifi reason: MIC failure"},
+    {WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT,   "wifi reason: 4-way keying handshake timeout"},
+    {WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT, "wifi reason: Group key handshake"},
+    {WIFI_REASON_IE_IN_4WAY_DIFFERS,       "wifi reason: IE in 4-way differs"},
+    {WIFI_REASON_GROUP_CIPHER_INVALID,     "wifi reason: invalid group cipher"},
+    {WIFI_REASON_PAIRWISE_CIPHER_INVALID,  "wifi reason: invalid pairwise cipher"},
+    {WIFI_REASON_AKMP_INVALID,             "wifi reason: invalid AKMP"},
+    {WIFI_REASON_UNSUPP_RSN_IE_VERSION,    "wifi reason: unsupported RSN IE version"},
+    {WIFI_REASON_INVALID_RSN_IE_CAP,       "wifi reason: invalid RSN IE capability"},
+    {WIFI_REASON_802_1X_AUTH_FAILED,       "wifi reason: 802.1x auth failed"},
+    {WIFI_REASON_CIPHER_SUITE_REJECTED,    "wifi reason: cipher suite rejected"}                                                                                                              
+};
+  
+const char* wifi_get_reason(int err)
+{
+    int i=0;
+                   
+    for (i=0;  i< sizeof(wifi_reason)/sizeof(wifi_reason_t); i++){
+        if (err == wifi_reason[i].err){
+            return wifi_reason[i].reason;
+        }
+    }   
+                         
+    return wifi_reason[0].reason;
+}
+
 typedef esp_err_t (*system_event_handler_t)(system_event_t *e);
 
 static esp_err_t system_event_ap_start_handle_default(system_event_t *event);
@@ -277,8 +328,8 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
     }
     case SYSTEM_EVENT_STA_DISCONNECTED: {
         system_event_sta_disconnected_t *disconnected = &event->event_info.disconnected;
-        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", reason:%d", \
-                   disconnected->ssid, disconnected->ssid_len, MAC2STR(disconnected->bssid), disconnected->reason);
+        ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", reason:%d,%s", \
+                   disconnected->ssid, disconnected->ssid_len, MAC2STR(disconnected->bssid), disconnected->reason, wifi_get_reason(disconnected->reason));
         break;
     }
     case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: {
