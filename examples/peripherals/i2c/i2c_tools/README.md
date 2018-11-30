@@ -24,17 +24,10 @@ To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit)
 
 **Note:** The following pin assignments are used by default, you can change them with `i2cconfig` command at any time.
 
-|                  | SDA    | SCL    |
-| ---------------- | ------ | ------ |
-| ESP32 I2C Master | GPIO18 | GPIO19 |
-| Sensor           | SDA    | SCL    |
-
-- master:
-  - GPIO18 is assigned as the data signal of I2C master port
-  - GPIO19 is assigned as the clock signal of I2C master port
-
-- connection:
-  - connect SDA/SCL of CCS811 sensor with GPIO18/GPIO19
+|                  | SDA    | SCL    | GND  | Other | VCC  |
+| ---------------- | ------ | ------ | ---- | ----- | ---- |
+| ESP32 I2C Master | GPIO18 | GPIO19 | GND  | GND   | 3.3V |
+| Sensor           | SDA    | SCL    | GND  | WAK   | VCC  |
 
 **Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors itself.
 
@@ -43,6 +36,8 @@ To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit)
 Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
 
 - You can choose whether or not to save command history into flash in `Store command history in flash` option.
+- You can set the maximum number of command line arguments under `Maximum number of command line arguments` option.
+- You can set the command line buffer length under `Command line buffer length` option.
 
 ### Build and Flash
 
@@ -199,9 +194,11 @@ esp32> i2cget -c 0x5b -r 0x02 -l 8
 * I don’t find any available address when running `i2cdetect` command.
   * Make sure your wiring connection is right.
   * Some sensor will have a “wake up” pin, via which user can put the sensor into a sleep mode. So make sure your sensor in **not** in the sleep state.
-  * Have a try resetting you I2C device, and then re-run `i2cdetect`.
+  * Reset you I2C device, and then run `i2cdetect` again.
 * I can’t get the right content when running `i2cdump` command.
-  * Currently the `i2cdump` only support those who have the same content length of registers inside the I2C device. For example, if a device have three legal addresses, and the content length at these address are 1 byte, 2 bytes and 4 bytes. Then you should not expect this command to dump the register correctly.
+  * Currently the `i2cdump` only support those who have the same content length of registers inside the I2C device. For example, if a device have three register addresses, and the content length at these address are 1 byte, 2 bytes and 4 bytes. In this case you should not expect this command to dump the register correctly.
+* I really input argument correctly, but the command line “discard” the last few arguements from time to time.
+  * Enlarge the maximum number of arguments in the menuconfig.
 
 
 

@@ -1009,6 +1009,12 @@ example_test_006_01:
     - ESP32
     - Example_ShieldBox
 
+example_test_007_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_I2C_CCS811_SENSOR
+
 UT_001_01:
   <<: *unit_test_template
   tags:
