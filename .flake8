@@ -212,7 +212,6 @@ exclude =
         examples/system/ota/otatool/example_test.py,
         examples/wifi/iperf/iperf_test.py,
         examples/wifi/iperf/test_report.py,
-        tools/check_python_dependencies.py,
         tools/ci/apply_bot_filter.py,
         tools/cmake/convert_to_cmake.py,
         tools/esp_app_trace/apptrace_proc.py,
