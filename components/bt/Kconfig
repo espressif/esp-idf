@@ -124,6 +124,7 @@ config BT_HCI_UART_BAUDRATE
     default 921600
     help
         UART Baudrate for HCI. Please use standard baudrate.
+
 endmenu
 
 menu "MODEM SLEEP Options"
@@ -238,7 +239,13 @@ config MESH_DUPLICATE_SCAN_CACHE_SIZE
         Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
 
-
+config BTDM_CONTROLLER_FULL_SCAN_SUPPORTED
+    bool "BLE full scan feature supported"
+    depends on BTDM_CONTROLLER_MODE_BLE_ONLY
+    default n
+    help
+        The full scan function is mainly used to provide BLE scan performance.
+        This is required for scenes with high scan performance requirements, such as BLE Mesh scenes.
 
 endmenu
 
