@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
 #
@@ -22,6 +21,7 @@ import os
 
 from sdkconfig import SDKConfig
 from pyparsing import *
+from common import LdGenFailure
 
 """
 Fragment file internal representation. Parses and stores instances of the fragment definitions
@@ -43,7 +43,13 @@ class FragmentFileModel():
         # Set any text beginnning with # as comment
         parser.ignore("#" + restOfLine)
 
-        self.fragments = parser.parseFile(fragment_file, parseAll=True)
+        try:
+            self.fragments = parser.parseFile(fragment_file, parseAll=True)
+        except ParseBaseException as e:
+            # the actual parse error is kind of useless for normal users, so just point to the location of
+            # the error
+            raise LdGenFailure("Parse error in linker fragment %s: error at line %d col %d (char %d)" % (
+                fragment_file.name, e.lineno, e.column, e.loc))
 
         for fragment in self.fragments:
             fragment.path = path

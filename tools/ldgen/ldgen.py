@@ -19,10 +19,12 @@ import argparse
 import os
 import traceback
 import sys
+import tempfile
 
 from fragments import FragmentFileModel
 from sdkconfig import SDKConfig
 from generation import GenerationModel, TemplateModel, SectionsInfo
+from common import LdGenFailure
 
 def main():
 
@@ -48,7 +50,7 @@ def main():
     argparser.add_argument(
         "--output", "-o",
         help = "Output linker script",
-        type = argparse.FileType("w"))
+        type = str)
 
     argparser.add_argument(
         "--config", "-c",
@@ -70,10 +72,10 @@ def main():
     input_file = args.input
     fragment_files = [] if not args.fragments else args.fragments
     config_file = args.config
-    output_file = args.output
+    output_path = args.output
     sections_info_files = [] if not args.sections else args.sections
     kconfig_file = args.kconfig
-    
+
     try:
         sections_infos = SectionsInfo()
 
@@ -92,13 +94,13 @@ def main():
         script_model = TemplateModel(input_file)
         script_model.fill(mapping_rules, sdkconfig)
 
-        script_model.write(output_file)
-    except Exception as e:
-        print("linker script generation failed for %s\nERROR: %s" % (input_file.name, e.message))
-        # Delete the file so the entire build will fail; and not use an outdated script.
-        os.remove(output_file.name)
-        # Print traceback and exit
-        traceback.print_exc()
+        with tempfile.TemporaryFile("w+") as output:
+            script_model.write(output)
+            output.seek(0)
+            with open(output_path, "w") as f:  # only create output file after generation has suceeded
+                f.write(output.read())
+    except LdGenFailure as e:
+        print("linker script generation failed for %s\nERROR: %s" % (input_file.name, e))
         sys.exit(1)
 
 if __name__ == "__main__":
