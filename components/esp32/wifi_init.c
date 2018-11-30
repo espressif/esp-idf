@@ -36,6 +36,53 @@ static void __attribute__((constructor)) s_set_default_wifi_log_level()
     esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 }
 
+static void esp_wifi_set_debug_log()
+{
+    /* set WiFi log level and module */
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
+    uint32_t g_wifi_log_level = WIFI_LOG_INFO;
+    uint32_t g_wifi_log_module = 0;
+    uint32_t g_wifi_log_submodule = 0;
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_DEBUG
+    g_wifi_log_level = WIFI_LOG_DEBUG;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_VERBOSE
+    g_wifi_log_level = WIFI_LOG_VERBOSE;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_ALL
+    g_wifi_log_module = WIFI_LOG_MODULE_ALL;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
+    g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_COEX
+    g_wifi_log_module = WIFI_LOG_MODULE_COEX;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_MESH
+    g_wifi_log_module = WIFI_LOG_MODULE_MESH;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
+#endif
+#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
+    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
+#endif
+    esp_wifi_internal_set_log_level(g_wifi_log_level);
+    esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
+
+#endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
+
+}
+
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
 #ifdef CONFIG_PM_ENABLE
@@ -48,7 +95,10 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     }
 #endif
     esp_event_set_default_wifi_handlers();
-    return esp_wifi_init_internal(config);
+    esp_err_t result = esp_wifi_init_internal(config);
+    esp_wifi_set_debug_log();
+
+    return result;
 }
 
 #ifdef CONFIG_PM_ENABLE
