@@ -33,13 +33,17 @@ extern "C" {
  * Uses SDMMC peripheral, with 4-bit mode enabled, and max frequency set to 20MHz
  */
 #define SDMMC_HOST_DEFAULT() {\
-    .flags = SDMMC_HOST_FLAG_4BIT, \
+    .flags = SDMMC_HOST_FLAG_8BIT | \
+             SDMMC_HOST_FLAG_4BIT | \
+             SDMMC_HOST_FLAG_1BIT | \
+             SDMMC_HOST_FLAG_DDR, \
     .slot = SDMMC_HOST_SLOT_1, \
     .max_freq_khz = SDMMC_FREQ_DEFAULT, \
     .io_voltage = 3.3f, \
     .init = &sdmmc_host_init, \
     .set_bus_width = &sdmmc_host_set_bus_width, \
     .get_bus_width = &sdmmc_host_get_slot_width, \
+    .set_bus_ddr_mode = &sdmmc_host_set_bus_ddr_mode, \
     .set_card_clk = &sdmmc_host_set_card_clk, \
     .do_transaction = &sdmmc_host_do_transaction, \
     .deinit = &sdmmc_host_deinit, \
@@ -55,6 +59,12 @@ typedef struct {
     gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
     gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
     uint8_t width;          ///< Bus width used by the slot (might be less than the max width supported)
+    uint32_t flags;         ///< Features used by this slot
+#define SDMMC_SLOT_FLAG_INTERNAL_PULLUP  BIT(0) 
+        /**< Enable internal pullups on enabled pins. The internal pullups
+         are insufficient however, please make sure external pullups are
+         connected on the bus. This is for debug / example purpose only.
+         */
 } sdmmc_slot_config_t;
 
 #define SDMMC_SLOT_NO_CD      ((gpio_num_t) -1)     ///< indicates that card detect line is not used
@@ -68,6 +78,7 @@ typedef struct {
     .gpio_cd = SDMMC_SLOT_NO_CD, \
     .gpio_wp = SDMMC_SLOT_NO_WP, \
     .width   = SDMMC_SLOT_WIDTH_DEFAULT, \
+    .flags = 0, \
 }
 
 /**
@@ -144,6 +155,16 @@ size_t sdmmc_host_get_slot_width(int slot);
 esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz);
 
 /**
+ * @brief Enable or disable DDR mode of SD interface
+ * @param slot  slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param ddr_enabled  enable or disable DDR mode
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if DDR mode is not supported on this slot
+ */
+esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled);
+
+/**
  * @brief Send command to the card and get response
  *
  * This function returns when command is sent and response is received,
@@ -198,6 +219,23 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
  *      - ESP_ERR_INVALID_STATE if sdmmc_host_init function has not been called
  */
 esp_err_t sdmmc_host_deinit();
+
+/**
+ * @brief Enable the pull-ups of sd pins.
+ * 
+ * @note You should always place actual pullups on the lines instead of using
+ * this function. Internal pullup resistance are high and not sufficient, may
+ * cause instability in products. This is for debug or examples only.
+ * 
+ * @param slot Slot to use, normally set it to 1.
+ * @param width Bit width of your configuration, 1 or 4.
+ * 
+ * @return
+ *      - ESP_OK: if success
+ *      - ESP_ERR_INVALID_ARG: if configured width larger than maximum the slot can
+ *              support
+ */
+esp_err_t sdmmc_host_pullup_en(int slot, int width);
 
 #ifdef __cplusplus
 }

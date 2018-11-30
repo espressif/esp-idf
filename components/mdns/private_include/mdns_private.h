@@ -20,6 +20,9 @@
 #define _mdns_dbg_printf(...) printf(__VA_ARGS__)
 #endif
 
+/** The maximum number of services */
+#define MDNS_MAX_SERVICES           CONFIG_MDNS_MAX_SERVICES
+
 #define MDNS_ANSWER_PTR_TTL         4500
 #define MDNS_ANSWER_TXT_TTL         4500
 #define MDNS_ANSWER_SRV_TTL         120
@@ -361,8 +364,7 @@ typedef struct {
         } srv_port;
         struct {
             mdns_srv_item_t * service;
-            uint8_t num_items;
-            mdns_txt_item_t * txt;
+            mdns_txt_linked_item_t * txt;
         } srv_txt_replace;
         struct {
             mdns_srv_item_t * service;

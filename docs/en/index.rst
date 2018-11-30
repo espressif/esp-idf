@@ -4,8 +4,6 @@ ESP-IDF Programming Guide
 
 This is the documentation for Espressif IoT Development Framework (`esp-idf <https://github.com/espressif/esp-idf>`_). ESP-IDF is the official development framework for the `ESP32 <https://espressif.com/en/products/hardware/esp32/overview>`_ chip.
 
-The documentation has different language versions (:link_to_translation:`en:English`, :link_to_translation:`zh_CN:中文版`, :doc:`How to switch between languages? <languages>`). However, please refer to the English version if there is any discrepancy.
-
 ==================  ==================  ==================
 |Get Started|_      |API Reference|_    |H/W Reference|_
 ------------------  ------------------  ------------------
@@ -15,7 +13,6 @@ The documentation has different language versions (:link_to_translation:`en:Engl
 ------------------  ------------------  ------------------
 `API Guides`_       `Contribute`_       `Resources`_
 ==================  ==================  ==================
-
 
 .. |Get Started| image:: ../_static/get-started.gif
 .. _Get Started: get-started/index.html
@@ -40,13 +37,19 @@ The documentation has different language versions (:link_to_translation:`en:Engl
    :hidden:
 
    Get Started <get-started/index>
+   Get Started (CMake Preview) <get-started-cmake/index>
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>
    Contribute <contribute/index>
+   Versions <versions>
    Resources <resources>
    Copyrights <COPYRIGHT>
    About <about>
-   [语言/Languages] <languages>
+   语言/Languages <languages>
+   Guide Downloads <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
    
 * :ref:`genindex`
+
+
+

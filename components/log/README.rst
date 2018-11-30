@@ -8,11 +8,11 @@ Log library has two ways of managing log verbosity: compile time, set via menuco
 
 The log levels are Error, Warning, Info, Debug, and Verbose (from lowest to highest level of verbosity).
 
-At compile time, filtering is done using :ref:`CONFIG_LOG_DEFAULT_LEVEL` option, set via menuconfig. All logging statements for levels higher than :ref:`CONFIG_LOG_DEFAULT_LEVEL` will be removed by the preprocessor.
+At compile time, filtering is done using :envvar:`CONFIG_LOG_DEFAULT_LEVEL` option, set via menuconfig. All logging statements for levels higher than :envvar:`CONFIG_LOG_DEFAULT_LEVEL` will be removed by the preprocessor.
 
-At run time, all logs below :ref:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. :cpp:func:`esp_log_level_set` function may be used to reduce logging level per module. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings. 
+At run time, all logs below :envvar:`CONFIG_LOG_DEFAULT_LEVEL` are enabled by default. :cpp:func:`esp_log_level_set` function may be used to reduce logging level per module. Modules are identified by their tags, which are human-readable ASCII zero-terminated strings. 
 
-Note that :cpp:func:`esp_log_level_set` can not increase logging level beyound that set by :ref:`CONFIG_LOG_DEFAULT_LEVEL`. To increase log level for a specific file at compile time, `LOG_LOCAL_LEVEL` macro can be used (see below for details).
+Note that :cpp:func:`esp_log_level_set` can not increase logging level beyound that set by :envvar:`CONFIG_LOG_DEFAULT_LEVEL`. To increase log level for a specific file at compile time, `LOG_LOCAL_LEVEL` macro can be used (see below for details).
 
 How to use this library
 -----------------------

@@ -18,15 +18,15 @@ Configuration
 
 There are a number of core dump related configuration options which user can choose in configuration menu of the application (`make menuconfig`).
 
-1. Core dump data destination (`Components -> ESP32-specific config -> Core dump destination`):
+1. Core dump data destination (`Components -> ESP32-specific config -> Core dump -> Data destination`):
 
 * Disable core dump generation
 * Save core dump to flash
 * Print core dump to UART
 
-2. Logging level of core dump module (`Components -> ESP32-specific config -> Core dump module logging level`). Value is a number from 0 (no output) to 5 (most verbose).
+2. Maximum number of tasks snapshots in core dump (`Components -> ESP32-specific config -> Core dump -> Maximum number of tasks`).
 
-3. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
+3. Delay before core dump is printed to UART (`Components -> ESP32-specific config -> Core dump -> Delay before print to UART`). Value is in ms.
 
 
 Save core dump to flash
@@ -63,6 +63,17 @@ Base64-encoded body of core dump will be between the following header and footer
  <body of base64-encoded core dump, save it to file on disk>
  ================= CORE DUMP END ===================
 
+The `CORE DUMP START` and `CORE DUMP END` lines must not be included in core dump text file.
+
+ROM Functions in Backtraces
+---------------------------
+
+It is possible situation that at the moment of crash some tasks or/and crashed task itself have one or more ROM functions in their callstacks.
+Since ROM is not part of the program ELF it will be impossible for GDB to parse such callstacks, because it tries to analyse functions' prologues to acomplish that.
+In that case callstack printing will be broken with error message at the first ROM function.
+To overcome this issue you can use ROM ELF provided by Espressif (https://dl.espressif.com/dl/esp32_rom.elf) and pass it to 'espcoredump.py'.
+
+
 Running 'espcoredump.py'
 ------------------------------------
 
@@ -78,9 +89,11 @@ Generic command syntax:
     * info_corefile. Retrieve core dump and print useful info.
     * dbg_corefile. Retrieve core dump and start GDB session with it.
 :Command Arguments:
+    * --debug,-d DEBUG.             Log level (0..3).
     * --gdb,-g GDB.                 Path to gdb to use for data retrieval.
     * --core,-c CORE.               Path to core dump file to use (if skipped core dump will be read from flash).
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
-    * --off,-o OFF.                 Ofsset of coredump partition in flash (type "make partition_table" to see it).
+    * --off,-o OFF.                 Offset of coredump partition in flash (type `make partition_table` to see it).
     * --save-core,-s SAVE_CORE.     Save core to file. Othwerwise temporary core file will be deleted. Ignored with "-c".
+    * --rom-elf,-r ROM_ELF.         Path to ROM ELF file to use (if skipped "esp32_rom.elf" is used).
     * --print-mem,-m                Print memory dump. Used only with "info_corefile".

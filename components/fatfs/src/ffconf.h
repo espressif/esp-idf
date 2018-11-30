@@ -52,7 +52,7 @@
 /* This option switches f_expand function. (0:Disable or 1:Enable) */
 
 
-#define FF_USE_CHMOD	0
+#define FF_USE_CHMOD	1
 /* This option switches attribute manipulation functions, f_chmod() and f_utime().
 /  (0:Disable or 1:Enable) Also FF_FS_READONLY needs to be 0 to enable this option. */
 
@@ -300,5 +300,12 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+
+/* Some memory allocation functions are declared here in addition to ff.h, so that
+   they can be used also by external code when LFN feature is disabled.
+ */
+void* ff_memalloc (UINT msize);
+void* ff_memcalloc (UINT num, UINT size);
+
 
 /*--- End of configuration options ---*/

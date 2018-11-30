@@ -77,6 +77,7 @@ struct emac_config_data {
     bool emac_flow_ctrl_partner_support;
     eth_phy_get_partner_pause_enable_func  emac_phy_get_partner_pause_enable;
     eth_phy_power_enable_func  emac_phy_power_enable;
+    uint32_t reset_timeout_ms;
 };
 
 enum emac_post_type {
@@ -106,6 +107,7 @@ struct emac_close_cmd {
 #define DMA_RX_BUF_NUM CONFIG_DMA_RX_BUF_NUM
 #define DMA_TX_BUF_NUM CONFIG_DMA_TX_BUF_NUM
 #define EMAC_TASK_PRIORITY CONFIG_EMAC_TASK_PRIORITY
+#define EMAC_TASK_STACK_SIZE  CONFIG_EMAC_TASK_STACK_SIZE
 
 #define DMA_RX_BUF_SIZE 1600
 #define DMA_TX_BUF_SIZE 1600

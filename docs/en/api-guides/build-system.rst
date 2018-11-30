@@ -76,7 +76,7 @@ An example project directory tree might look like this::
 
 This example "myProject" contains the following elements:
 
-- A top-level project Makefile. This Makefile set the ``PROJECT_NAME`` variable and (optionally) defines
+- A top-level project Makefile. This Makefile sets the ``PROJECT_NAME`` variable and (optionally) defines
   other project-wide make variables. It includes the core ``$(IDF_PATH)/make/project.mk`` makefile which
   implements the rest of the ESP-IDF build system.
 
@@ -124,6 +124,7 @@ These variables all have default values that can be overridden for custom behavi
 - ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components.
 - ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the COMPONENT_DIRS directories.
 - ``EXCLUDE_COMPONENTS``: Optional list of component names to exclude during the build process. Note that this decreases build time, but not binary size.
+- ``TEST_EXCLUDE_COMPONENTS``: Optional list of component names to exclude during the build process of unit tests.
 
 Any paths in these Makefile variables should be absolute paths. You can convert relative paths using ``$(PROJECT_PATH)/xxx``, ``$(IDF_PATH)/xxx``, or use the Make function ``$(abspath xxx)``.
 
@@ -273,6 +274,8 @@ The following variables can be set inside ``component.mk`` to control the build 
   settings. Component-specific additions can be made via ``CXXFLAGS
   +=``. It is also possible (although not recommended) to override
   this variable completely for a component.
+- ``COMPONENT_ADD_LDFRAGMENTS``: Paths to linker fragment files for the linker 
+  script generation functionality. See :doc:`Linker Script Generation <linker-script-generation>`.
 
 To apply compilation flags to a single source file, you can add a variable override as a target, ie::
 
@@ -340,6 +343,16 @@ Setting ``BATCH_BUILD`` implies the following:
 - Verbose output (same as ``V=1``, see below). If you don't want verbose output, also set ``V=0``.
 - If the project configuration is missing new configuration items (from new components or esp-idf updates) then the project use the default values, instead of prompting the user for each item.
 - If the build system needs to invoke ``menuconfig``, an error is printed and the build fails.
+
+.. _make-size:
+
+Advanced Make Targets
+---------------------
+
+- ``make app``, ``make bootloader``, ``make partition table`` can be used to build only the app, bootloader, or partition table from the project as applicable.
+- ``make erase_flash`` and ``make erase_ota`` will use esptool.py to erase the entire flash chip and the OTA selection setting from the flash chip, respectively.
+- ``make size`` prints some size information about the app. ``make size-components`` and ``make size-files`` are similar targets which print more detailed per-component or per-source-file information, respectively.
+
 
 Debugging The Make Process
 --------------------------
@@ -569,6 +582,13 @@ The names are generated from the full name of the file, as given in COMPONENT_EM
 
 For an example of using this technique, see :example:`protocols/https_request` - the certificate file contents are loaded from the text .pem file at compile time.
 
+Code and Data Placements
+------------------------
+
+ESP-IDF has a feature called linker script generation that enables components to define where its code and data will be placed in memory through 
+linker fragment files. These files are processed by the build system, and is used to augment the linker script used for linking 
+app binary. See :doc:`Linker Script Generation <linker-script-generation>` for a quick start guide as well as a detailed discussion
+of the mechanism.
 
 Fully Overriding The Component Makefile
 ---------------------------------------

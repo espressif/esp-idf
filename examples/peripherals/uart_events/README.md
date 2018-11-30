@@ -1,10 +1,56 @@
 # UART Events Example
 
-This example shows how to use the UART driver to handle special UART events. It also reads data from UART0 directly, and echoes it to console.
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-# How to use it?
+This example shows how to use the UART driver to handle special UART events. It also reads data from `UART0` directly,
+and echoes it back to the monitoring console.
 
-1. Compile and load example from terminl running `make flash monitor`
-2. Being in 'monotor' type samething to see the `UART_DATA` events and the typed data displayed.
+## How to use example
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+### Hardware Required
+
+The example can be used with any ESP32 development board connected to a computer with a USB cable.
+
+### Configure the project
+
+```
+make menuconfig
+```
+or
+```
+idf.py menuconfig
+```
+
+* Set serial port under Serial Flasher Options.
+
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+make -j4 flash monitor
+```
+or
+```
+idf.py flash monitor
+```
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+## Example Output
+
+Pushing `a` followed by a `b` on the keyboard will generate the following output:
+```
+...
+I (0) cpu_start: Starting scheduler on APP CPU.
+I (299) uart: queue free spaces: 20
+I (2249) uart_events: uart[0] event:
+I (2249) uart_events: [UART DATA]: 1
+I (2249) uart_events: [DATA EVT]:
+aI (12089) uart_events: uart[0] event:
+I (12089) uart_events: [UART DATA]: 1
+I (12089) uart_events: [DATA EVT]:
+b
+```

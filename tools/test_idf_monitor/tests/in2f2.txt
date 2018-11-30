@@ -1,0 +1,995 @@
+D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1[0m
+D (59342) vfs: esp_vfs_select starts with nfds = 55[0m
+D (59343) vfs: FDs in readfds =[0m
+D (59343) vfs: 54[0m
+D (59355) vfs: calling socket_select with the following FDs[0m
+D (59356) vfs: FDs in readfds =[0m
+D (59356) vfs: 54[0m
+D (59857) vfs: socket_select returned 0 and the FDs are the following[0m
+D (59858) vfs: FDs in readfds =[0m
+D (59858) vfs: esp_vfs_select returns 0[0m
+D (59869) vfs: FDs in readfds =[0m
+D (59870) vfs: esp_vfs_select starts with nfds = 55[0m
+D (59871) vfs: FDs in readfds =[0m
+D (59871) vfs: 54[0m
+D (59882) vfs: calling socket_select with the following FDs[0m
+D (59883) vfs: FDs in readfds =[0m
+D (59884) vfs: 54[0m
+D (60384) vfs: socket_select returned 0 and the FDs are the following[0m
+D (60385) vfs: FDs in readfds =[0m
+D (60385) vfs: esp_vfs_select returns 0[0m
+D (60396) vfs: FDs in readfds =[0m
+D (60397) vfs: esp_vfs_select starts with nfds = 55[0m
+D (60397) vfs: FDs in readfds =[0m
+D (60408) vfs: 54[0m
+D (60409) vfs: calling socket_select with the following FDs[0m
+D (60409) vfs: FDs in readfds =[0m
+D (60410) vfs: 54[0m
+D (60921) vfs: socket_select returned 0 and the FDs are the following[0m
+D (60922) vfs: FDs in readfds =[0m
+D (60922) vfs: esp_vfs_select returns 0[0m
+D (60933) vfs: FDs in readfds =[0m
+D (60934) vfs: esp_vfs_select starts with nfds = 55[0m
+D (60935) vfs: FDs in readfds =[0m
+D (60935) vfs: 54[0m
+D (60946) vfs: calling socket_select with the following FDs[0m
+D (60947) vfs: FDs in readfds =[0m
+D (60947) vfs: 54[0m
+D (61458) vfs: socket_select returned 0 and the FDs are the following[0m
+D (61459) vfs: FDs in readfds =[0m
+D (61460) vfs: esp_vfs_select returns 0[0m
+D (61471) vfs: FDs in readfds =[0m
+D (61471) vfs: esp_vfs_select starts with nfds = 55[0m
+D (61472) vfs: FDs in readfds =[0m
+D (61483) vfs: 54[0m
+D (61483) vfs: calling socket_select with the following FDs[0m
+D (61484) vfs: FDs in readfds =[0m
+D (61484) vfs: 54[0m
+D (61995) vfs: socket_select returned 0 and the FDs are the following[0m
+D (61996) vfs: FDs in readfds =[0m
+D (61996) vfs: esp_vfs_select returns 0[0m
+D (62007) vfs: FDs in readfds =[0m
+D (62008) vfs: esp_vfs_select starts with nfds = 55[0m
+D (62008) vfs: FDs in readfds =[0m
+D (62019) vfs: 54[0m
+D (62021) vfs: calling socket_select with the following FDs[0m
+D (62021) vfs: FDs in readfds =[0m
+D (62022) vfs: 54[0m
+D (62523) vfs: socket_select returned 0 and the FDs are the following[0m
+D (62524) vfs: FDs in readfds =[0m
+D (62524) vfs: esp_vfs_select returns 0[0m
+D (62535) vfs: FDs in readfds =[0m
+D (62536) vfs: esp_vfs_select starts with nfds = 55[0m
+D (62536) vfs: FDs in readfds =[0m
+D (62547) vfs: 54[0m
+D (62548) vfs: calling socket_select with the following FDs[0m
+D (62548) vfs: FDs in readfds =[0m
+D (62549) vfs: 54[0m
+D (63060) vfs: socket_select returned 0 and the FDs are the following[0m
+D (63061) vfs: FDs in readfds =[0m
+D (63061) vfs: esp_vfs_select returns 0[0m
+D (63072) vfs: FDs in readfds =[0m
+D (63073) vfs: esp_vfs_select starts with nfds = 55[0m
+D (63073) vfs: FDs in readfds =[0m
+D (63084) vfs: 54[0m
+D (63085) vfs: calling socket_select with the following FDs[0m
+D (63086) vfs: FDs in readfds =[0m
+D (63086) vfs: 54[0m
+D (63597) vfs: socket_select returned 0 and the FDs are the following[0m
+D (63599) vfs: FDs in readfds =[0m
+D (63599) vfs: esp_vfs_select returns 0[0m
+D (63610) vfs: FDs in readfds =[0m
+D (63611) vfs: esp_vfs_select starts with nfds = 55[0m
+D (63611) vfs: FDs in readfds =[0m
+D (63612) vfs: 54[0m
+D (63623) vfs: calling socket_select with the following FDs[0m
+D (63623) vfs: FDs in readfds =[0m
+D (63624) vfs: 54[0m
+D (64134) vfs: socket_select returned 0 and the FDs are the following[0m
+D (64135) vfs: FDs in readfds =[0m
+D (64135) vfs: esp_vfs_select returns 0[0m
+D (64146) vfs: FDs in readfds =[0m
+D (64147) vfs: esp_vfs_select starts with nfds = 55[0m
+D (64147) vfs: FDs in readfds =[0m
+D (64158) vfs: 54[0m
+D (64159) vfs: calling socket_select with the following FDs[0m
+D (64159) vfs: FDs in readfds =[0m
+D (64160) vfs: 54[0m
+D (64671) vfs: socket_select returned 0 and the FDs are the following[0m
+D (64672) vfs: FDs in readfds =[0m
+D (64674) vfs: esp_vfs_select returns 0[0m
+D (64674) vfs: FDs in readfds =[0m
+D (64685) vfs: esp_vfs_select starts with nfds = 55[0m
+D (64686) vfs: FDs in readfds =[0m
+D (64686) vfs: 54[0m
+D (64697) vfs: calling socket_select with the following FDs[0m
+D (64699) vfs: FDs in readfds =[0m
+D (64699) vfs: 54[0m
+D (65200) vfs: socket_select returned 0 and the FDs are the following[0m
+D (65201) vfs: FDs in readfds =[0m
+D (65201) vfs: esp_vfs_select returns 0[0m
+D (65212) vfs: FDs in readfds =[0m
+D (65213) vfs: esp_vfs_select starts with nfds = 55[0m
+D (65213) vfs: FDs in readfds =[0m
+D (65224) vfs: 54[0m
+D (65225) vfs: calling socket_select with the following FDs[0m
+D (65227) vfs: FDs in readfds =[0m
+D (65227) vfs: 54[0m
+D (65728) vfs: socket_select returned 0 and the FDs are the following[0m
+D (65729) vfs: FDs in readfds =[0m
+D (65729) vfs: esp_vfs_select returns 0[0m
+D (65740) vfs: FDs in readfds =[0m
+D (65741) vfs: esp_vfs_select starts with nfds = 55[0m
+D (65741) vfs: FDs in readfds =[0m
+D (65752) vfs: 54[0m
+D (65753) vfs: calling socket_select with the following FDs[0m
+D (65753) vfs: FDs in readfds =[0m
+D (65754) vfs: 54[0m
+D (66265) vfs: socket_select returned 0 and the FDs are the following[0m
+D (66266) vfs: FDs in readfds =[0m
+D (66266) vfs: esp_vfs_select returns 0[0m
+D (66277) vfs: FDs in readfds =[0m
+D (66278) vfs: esp_vfs_select starts with nfds = 55[0m
+D (66278) vfs: FDs in readfds =[0m
+D (66289) vfs: 54[0m
+D (66290) vfs: calling socket_select with the following FDs[0m
+D (66291) vfs: FDs in readfds =[0m
+D (66291) vfs: 54[0m
+D (66802) vfs: socket_select returned 0 and the FDs are the following[0m
+D (66803) vfs: FDs in readfds =[0m
+D (66803) vfs: esp_vfs_select returns 0[0m
+D (66814) vfs: FDs in readfds =[0m
+D (66815) vfs: esp_vfs_select starts with nfds = 55[0m
+D (66816) vfs: FDs in readfds =[0m
+D (66816) vfs: 54[0m
+D (66827) vfs: calling socket_select with the following FDs[0m
+D (66828) vfs: FDs in readfds =[0m
+D (66828) vfs: 54[0m
+D (67339) vfs: socket_select returned 0 and the FDs are the following[0m
+D (67340) vfs: FDs in readfds =[0m
+D (67340) vfs: esp_vfs_select returns 0[0m
+D (67351) vfs: FDs in readfds =[0m
+D (67352) vfs: esp_vfs_select starts with nfds = 55[0m
+D (67353) vfs: FDs in readfds =[0m
+D (67353) vfs: 54[0m
+D (67364) vfs: calling socket_select with the following FDs[0m
+D (67365) vfs: FDs in readfds =[0m
+D (67365) vfs: 54[0m
+D (67877) vfs: socket_select returned 0 and the FDs are the following[0m
+D (67878) vfs: FDs in readfds =[0m
+D (67879) vfs: esp_vfs_select returns 0[0m
+D (67889) vfs: FDs in readfds =[0m
+D (67890) vfs: esp_vfs_select starts with nfds = 55[0m
+D (67891) vfs: FDs in readfds =[0m
+D (67901) vfs: 54[0m
+D (67902) vfs: calling socket_select with the following FDs[0m
+D (67903) vfs: FDs in readfds =[0m
+D (67903) vfs: 54[0m
+D (68414) vfs: socket_select returned 0 and the FDs are the following[0m
+D (68415) vfs: FDs in readfds =[0m
+D (68415) vfs: esp_vfs_select returns 0[0m
+D (68417) vfs: FDs in readfds =[0m
+D (68428) vfs: esp_vfs_select starts with nfds = 55[0m
+D (68428) vfs: FDs in readfds =[0m
+D (68429) vfs: 54[0m
+D (68440) vfs: calling socket_select with the following FDs[0m
+D (68440) vfs: FDs in readfds =[0m
+D (68441) vfs: 54[0m
+D (68941) vfs: socket_select returned 0 and the FDs are the following[0m
+D (68942) vfs: FDs in readfds =[0m
+D (68942) vfs: esp_vfs_select returns 0[0m
+D (68953) vfs: FDs in readfds =[0m
+D (68954) vfs: esp_vfs_select starts with nfds = 55[0m
+D (68954) vfs: FDs in readfds =[0m
+D (68965) vfs: 54[0m
+D (68966) vfs: calling socket_select with the following FDs[0m
+D (68966) vfs: FDs in readfds =[0m
+D (68967) vfs: 54[0m
+D (69478) vfs: socket_select returned 0 and the FDs are the following[0m
+D (69479) vfs: FDs in readfds =[0m
+D (69480) vfs: esp_vfs_select returns 0[0m
+D (69490) vfs: FDs in readfds =[0m
+D (69491) vfs: esp_vfs_select starts with nfds = 55[0m
+D (69492) vfs: FDs in readfds =[0m
+D (69492) vfs: 54[0m
+D (69503) vfs: calling socket_select with the following FDs[0m
+D (69504) vfs: FDs in readfds =[0m
+D (69504) vfs: 54[0m
+D (70015) vfs: socket_select returned 0 and the FDs are the following[0m
+D (70016) vfs: FDs in readfds =[0m
+D (70016) vfs: esp_vfs_select returns 0[0m
+D (70027) vfs: FDs in readfds =[0m
+D (70028) vfs: esp_vfs_select starts with nfds = 55[0m
+D (70028) vfs: FDs in readfds =[0m
+D (70040) vfs: 54[0m
+D (70041) vfs: calling socket_select with the following FDs[0m
+D (70042) vfs: FDs in readfds =[0m
+D (70042) vfs: 54[0m
+D (70553) vfs: socket_select returned 0 and the FDs are the following[0m
+D (70554) vfs: FDs in readfds =[0m
+D (70555) vfs: esp_vfs_select returns 0[0m
+D (70566) vfs: FDs in readfds =[0m
+D (70566) vfs: esp_vfs_select starts with nfds = 55[0m
+D (70567) vfs: FDs in readfds =[0m
+D (70578) vfs: 54[0m
+D (70578) vfs: calling socket_select with the following FDs[0m
+D (70579) vfs: FDs in readfds =[0m
+D (70590) vfs: 54[0m
+D (71091) vfs: socket_select returned 0 and the FDs are the following[0m
+D (71092) vfs: FDs in readfds =[0m
+D (71092) vfs: esp_vfs_select returns 0[0m
+D (71103) vfs: FDs in readfds =[0m
+D (71104) vfs: esp_vfs_select starts with nfds = 55[0m
+D (71104) vfs: FDs in readfds =[0m
+D (71115) vfs: 54[0m
+D (71116) vfs: calling socket_select with the following FDs[0m
+D (71116) vfs: FDs in readfds =[0m
+D (71117) vfs: 54[0m
+D (71628) vfs: socket_select returned 0 and the FDs are the following[0m
+D (71629) vfs: FDs in readfds =[0m
+D (71630) vfs: esp_vfs_select returns 0[0m
+D (71640) vfs: FDs in readfds =[0m
+D (71641) vfs: esp_vfs_select starts with nfds = 55[0m
+D (71642) vfs: FDs in readfds =[0m
+D (71642) vfs: 54[0m
+D (71653) vfs: calling socket_select with the following FDs[0m
+D (71654) vfs: FDs in readfds =[0m
+D (71654) vfs: 54[0m
+D (72165) vfs: socket_select returned 0 and the FDs are the following[0m
+D (72166) vfs: FDs in readfds =[0m
+D (72166) vfs: esp_vfs_select returns 0[0m
+D (72177) vfs: FDs in readfds =[0m
+D (72178) vfs: esp_vfs_select starts with nfds = 55[0m
+D (72178) vfs: FDs in readfds =[0m
+D (72190) vfs: 54[0m
+D (72191) vfs: calling socket_select with the following FDs[0m
+D (72191) vfs: FDs in readfds =[0m
+D (72192) vfs: 54[0m
+D (72692) vfs: socket_select returned 0 and the FDs are the following[0m
+D (72693) vfs: FDs in readfds =[0m
+D (72693) vfs: esp_vfs_select returns 0[0m
+D (72704) vfs: FDs in readfds =[0m
+D (72705) vfs: esp_vfs_select starts with nfds = 55[0m
+D (72705) vfs: FDs in readfds =[0m
+D (72716) vfs: 54[0m
+D (72717) vfs: calling socket_select with the following FDs[0m
+D (72718) vfs: FDs in readfds =[0m
+D (72718) vfs: 54[0m
+D (73229) vfs: socket_select returned 0 and the FDs are the following[0m
+D (73231) vfs: FDs in readfds =[0m
+D (73231) vfs: esp_vfs_select returns 0[0m
+D (73242) vfs: FDs in readfds =[0m
+D (73243) vfs: esp_vfs_select starts with nfds = 55[0m
+D (73243) vfs: FDs in readfds =[0m
+D (73254) vfs: 54[0m
+D (73255) vfs: calling socket_select with the following FDs[0m
+D (73255) vfs: FDs in readfds =[0m
+D (73266) vfs: 54[0m
+D (73767) vfs: socket_select returned 0 and the FDs are the following[0m
+D (73768) vfs: FDs in readfds =[0m
+D (73768) vfs: esp_vfs_select returns 0[0m
+D (73779) vfs: FDs in readfds =[0m
+D (73780) vfs: esp_vfs_select starts with nfds = 55[0m
+D (73780) vfs: FDs in readfds =[0m
+D (73791) vfs: 54[0m
+D (73792) vfs: calling socket_select with the following FDs[0m
+D (73793) vfs: FDs in readfds =[0m
+D (73793) vfs: 54[0m
+D (74304) vfs: socket_select returned 0 and the FDs are the following[0m
+D (74305) vfs: FDs in readfds =[0m
+D (74305) vfs: esp_vfs_select returns 0[0m
+D (74316) vfs: FDs in readfds =[0m
+D (74317) vfs: esp_vfs_select starts with nfds = 55[0m
+D (74317) vfs: FDs in readfds =[0m
+D (74328) vfs: 54[0m
+D (74329) vfs: calling socket_select with the following FDs[0m
+D (74330) vfs: FDs in readfds =[0m
+D (74330) vfs: 54[0m
+D (74841) vfs: socket_select returned 0 and the FDs are the following[0m
+D (74842) vfs: FDs in readfds =[0m
+D (74842) vfs: esp_vfs_select returns 0[0m
+D (74853) vfs: FDs in readfds =[0m
+D (74854) vfs: esp_vfs_select starts with nfds = 55[0m
+D (74854) vfs: FDs in readfds =[0m
+D (74865) vfs: 54[0m
+D (74866) vfs: calling socket_select with the following FDs[0m
+D (74867) vfs: FDs in readfds =[0m
+D (74868) vfs: 54[0m
+D (75368) vfs: socket_select returned 0 and the FDs are the following[0m
+D (75369) vfs: FDs in readfds =[0m
+D (75369) vfs: esp_vfs_select returns 0[0m
+D (75380) vfs: FDs in readfds =[0m
+D (75381) vfs: esp_vfs_select starts with nfds = 55[0m
+D (75381) vfs: FDs in readfds =[0m
+D (75392) vfs: 54[0m
+D (75393) vfs: calling socket_select with the following FDs[0m
+D (75394) vfs: FDs in readfds =[0m
+D (75394) vfs: 54[0m
+D (75905) vfs: socket_select returned 0 and the FDs are the following[0m
+D (75906) vfs: FDs in readfds =[0m
+D (75906) vfs: esp_vfs_select returns 0[0m
+D (75917) vfs: FDs in readfds =[0m
+D (75918) vfs: esp_vfs_select starts with nfds = 55[0m
+D (75918) vfs: FDs in readfds =[0m
+D (75929) vfs: 54[0m
+D (75930) vfs: calling socket_select with the following FDs[0m
+D (75931) vfs: FDs in readfds =[0m
+D (75931) vfs: 54[0m
+D (76442) vfs: socket_select returned 0 and the FDs are the following[0m
+D (76443) vfs: FDs in readfds =[0m
+D (76444) vfs: esp_vfs_select returns 0[0m
+D (76454) vfs: FDs in readfds =[0m
+D (76455) vfs: esp_vfs_select starts with nfds = 55[0m
+D (76456) vfs: FDs in readfds =[0m
+D (76456) vfs: 54[0m
+D (76467) vfs: calling socket_select with the following FDs[0m
+D (76468) vfs: FDs in readfds =[0m
+D (76468) vfs: 54[0m
+D (76979) vfs: socket_select returned 0 and the FDs are the following[0m
+D (76980) vfs: FDs in readfds =[0m
+D (76980) vfs: esp_vfs_select returns 0[0m
+D (76991) vfs: FDs in readfds =[0m
+D (76992) vfs: esp_vfs_select starts with nfds = 55[0m
+D (76992) vfs: FDs in readfds =[0m
+D (77003) vfs: 54[0m
+D (77004) vfs: calling socket_select with the following FDs[0m
+D (77004) vfs: FDs in readfds =[0m
+D (77005) vfs: 54[0m
+D (77516) vfs: socket_select returned 0 and the FDs are the following[0m
+D (77517) vfs: FDs in readfds =[0m
+D (77517) vfs: esp_vfs_select returns 0[0m
+D (77528) vfs: FDs in readfds =[0m
+D (77529) vfs: esp_vfs_select starts with nfds = 55[0m
+D (77529) vfs: FDs in readfds =[0m
+D (77540) vfs: 54[0m
+D (77541) vfs: calling socket_select with the following FDs[0m
+D (77542) vfs: FDs in readfds =[0m
+D (77542) vfs: 54[0m
+D (78053) vfs: socket_select returned 0 and the FDs are the following[0m
+D (78054) vfs: FDs in readfds =[0m
+D (78054) vfs: esp_vfs_select returns 0[0m
+D (78065) vfs: FDs in readfds =[0m
+D (78066) vfs: esp_vfs_select starts with nfds = 55[0m
+D (78066) vfs: FDs in readfds =[0m
+D (78077) vfs: 54[0m
+D (78078) vfs: calling socket_select with the following FDs[0m
+D (78078) vfs: FDs in readfds =[0m
+D (78079) vfs: 54[0m
+D (78590) vfs: socket_select returned 0 and the FDs are the following[0m
+D (78591) vfs: FDs in readfds =[0m
+D (78591) vfs: esp_vfs_select returns 0[0m
+D (78602) vfs: FDs in readfds =[0m
+D (78603) vfs: esp_vfs_select starts with nfds = 55[0m
+D (78604) vfs: FDs in readfds =[0m
+D (78604) vfs: 54[0m
+D (78615) vfs: calling socket_select with the following FDs[0m
+D (78616) vfs: FDs in readfds =[0m
+D (78616) vfs: 54[0m
+D (79127) vfs: socket_select returned 0 and the FDs are the following[0m
+D (79128) vfs: FDs in readfds =[0m
+D (79128) vfs: esp_vfs_select returns 0[0m
+D (79139) vfs: FDs in readfds =[0m
+D (79140) vfs: esp_vfs_select starts with nfds = 55[0m
+D (79140) vfs: FDs in readfds =[0m
+D (79151) vfs: 54[0m
+D (79152) vfs: calling socket_select with the following FDs[0m
+D (79152) vfs: FDs in readfds =[0m
+D (79153) vfs: 54[0m
+D (79664) vfs: socket_select returned 0 and the FDs are the following[0m
+D (79665) vfs: FDs in readfds =[0m
+D (79665) vfs: esp_vfs_select returns 0[0m
+D (79676) vfs: FDs in readfds =[0m
+D (79677) vfs: esp_vfs_select starts with nfds = 55[0m
+D (79677) vfs: FDs in readfds =[0m
+D (79688) vfs: 54[0m
+D (79689) vfs: calling socket_select with the following FDs[0m
+D (79689) vfs: FDs in readfds =[0m
+D (79690) vfs: 54[0m
+D (80201) vfs: socket_select returned 0 and the FDs are the following[0m
+D (80202) vfs: FDs in readfds =[0m
+D (80202) vfs: esp_vfs_select returns 0[0m
+D (80213) vfs: FDs in readfds =[0m
+D (80214) vfs: esp_vfs_select starts with nfds = 55[0m
+D (80214) vfs: FDs in readfds =[0m
+D (80225) vfs: 54[0m
+D (80226) vfs: calling socket_select with the following FDs[0m
+D (80226) vfs: FDs in readfds =[0m
+D (80227) vfs: 54[0m
+D (80738) vfs: socket_select returned 0 and the FDs are the following[0m
+D (80739) vfs: FDs in readfds =[0m
+D (80739) vfs: esp_vfs_select returns 0[0m
+D (80750) vfs: FDs in readfds =[0m
+D (80751) vfs: esp_vfs_select starts with nfds = 55[0m
+D (80751) vfs: FDs in readfds =[0m
+D (80752) vfs: 54[0m
+D (80763) vfs: calling socket_select with the following FDs[0m
+D (80763) vfs: FDs in readfds =[0m
+D (80764) vfs: 54[0m
+D (81275) vfs: socket_select returned 0 and the FDs are the following[0m
+D (81276) vfs: FDs in readfds =[0m
+D (81276) vfs: esp_vfs_select returns 0[0m
+D (81287) vfs: FDs in readfds =[0m
+D (81288) vfs: esp_vfs_select starts with nfds = 55[0m
+D (81288) vfs: FDs in readfds =[0m
+D (81299) vfs: 54[0m
+D (81300) vfs: calling socket_select with the following FDs[0m
+D (81301) vfs: FDs in readfds =[0m
+D (81301) vfs: 54[0m
+D (81812) vfs: socket_select returned 0 and the FDs are the following[0m
+D (81813) vfs: FDs in readfds =[0m
+D (81813) vfs: esp_vfs_select returns 0[0m
+D (81824) vfs: FDs in readfds =[0m
+D (81825) vfs: esp_vfs_select starts with nfds = 55[0m
+D (81825) vfs: FDs in readfds =[0m
+D (81836) vfs: 54[0m
+D (81837) vfs: calling socket_select with the following FDs[0m
+D (81837) vfs: FDs in readfds =[0m
+D (81838) vfs: 54[0m
+D (82349) vfs: socket_select returned 0 and the FDs are the following[0m
+D (82350) vfs: FDs in readfds =[0m
+D (82350) vfs: esp_vfs_select returns 0[0m
+D (82361) vfs: FDs in readfds =[0m
+D (82362) vfs: esp_vfs_select starts with nfds = 55[0m
+D (82362) vfs: FDs in readfds =[0m
+D (82373) vfs: 54[0m
+D (82374) vfs: calling socket_select with the following FDs[0m
+D (82374) vfs: FDs in readfds =[0m
+D (82375) vfs: 54[0m
+D (82886) vfs: socket_select returned 0 and the FDs are the following[0m
+D (82887) vfs: FDs in readfds =[0m
+D (82887) vfs: esp_vfs_select returns 0[0m
+D (82898) vfs: FDs in readfds =[0m
+D (82899) vfs: esp_vfs_select starts with nfds = 55[0m
+D (82899) vfs: FDs in readfds =[0m
+D (82910) vfs: 54[0m
+D (82911) vfs: calling socket_select with the following FDs[0m
+D (82912) vfs: FDs in readfds =[0m
+D (82912) vfs: 54[0m
+D (83423) vfs: socket_select returned 0 and the FDs are the following[0m
+D (83424) vfs: FDs in readfds =[0m
+D (83424) vfs: esp_vfs_select returns 0[0m
+D (83435) vfs: FDs in readfds =[0m
+D (83436) vfs: esp_vfs_select starts with nfds = 55[0m
+D (83436) vfs: FDs in readfds =[0m
+D (83447) vfs: 54[0m
+D (83448) vfs: calling socket_select with the following FDs[0m
+D (83449) vfs: FDs in readfds =[0m
+D (83449) vfs: 54[0m
+D (83960) vfs: socket_select returned 0 and the FDs are the following[0m
+D (83961) vfs: FDs in readfds =[0m
+D (83961) vfs: esp_vfs_select returns 0[0m
+D (83972) vfs: FDs in readfds =[0m
+D (83973) vfs: esp_vfs_select starts with nfds = 55[0m
+D (83973) vfs: FDs in readfds =[0m
+D (83984) vfs: 54[0m
+D (83985) vfs: calling socket_select with the following FDs[0m
+D (83986) vfs: FDs in readfds =[0m
+D (83986) vfs: 54[0m
+D (84497) vfs: socket_select returned 0 and the FDs are the following[0m
+D (84498) vfs: FDs in readfds =[0m
+D (84498) vfs: esp_vfs_select returns 0[0m
+D (84509) vfs: FDs in readfds =[0m
+D (84510) vfs: esp_vfs_select starts with nfds = 55[0m
+D (84511) vfs: FDs in readfds =[0m
+D (84521) vfs: 54[0m
+D (84522) vfs: calling socket_select with the following FDs[0m
+D (84523) vfs: FDs in readfds =[0m
+D (84523) vfs: 54[0m
+D (85035) vfs: socket_select returned 0 and the FDs are the following[0m
+D (85047) vfs: FDs in readfds =[0m
+D (85048) vfs: esp_vfs_select returns 0[0m
+D (85059) vfs: FDs in readfds =[0m
+D (85059) vfs: esp_vfs_select starts with nfds = 55[0m
+D (85060) vfs: FDs in readfds =[0m
+D (85071) vfs: 54[0m
+D (85071) vfs: calling socket_select with the following FDs[0m
+D (85072) vfs: FDs in readfds =[0m
+D (85083) vfs: 54[0m
+D (85583) vfs: socket_select returned 0 and the FDs are the following[0m
+D (85584) vfs: FDs in readfds =[0m
+D (85584) vfs: esp_vfs_select returns 0[0m
+D (85595) vfs: FDs in readfds =[0m
+D (85596) vfs: esp_vfs_select starts with nfds = 55[0m
+D (85596) vfs: FDs in readfds =[0m
+D (85607) vfs: 54[0m
+D (85608) vfs: calling socket_select with the following FDs[0m
+D (85608) vfs: FDs in readfds =[0m
+D (85609) vfs: 54[0m
+D (86120) vfs: socket_select returned 0 and the FDs are the following[0m
+D (86121) vfs: FDs in readfds =[0m
+D (86121) vfs: esp_vfs_select returns 0[0m
+D (86132) vfs: FDs in readfds =[0m
+D (86133) vfs: esp_vfs_select starts with nfds = 55[0m
+D (86133) vfs: FDs in readfds =[0m
+D (86144) vfs: 54[0m
+D (86145) vfs: calling socket_select with the following FDs[0m
+D (86145) vfs: FDs in readfds =[0m
+D (86146) vfs: 54[0m
+D (86657) vfs: socket_select returned 0 and the FDs are the following[0m
+D (86658) vfs: FDs in readfds =[0m
+D (86658) vfs: esp_vfs_select returns 0[0m
+D (86669) vfs: FDs in readfds =[0m
+D (86670) vfs: esp_vfs_select starts with nfds = 55[0m
+D (86670) vfs: FDs in readfds =[0m
+D (86681) vfs: 54[0m
+D (86682) vfs: calling socket_select with the following FDs[0m
+D (86683) vfs: FDs in readfds =[0m
+D (86683) vfs: 54[0m
+D (87194) vfs: socket_select returned 0 and the FDs are the following[0m
+D (87195) vfs: FDs in readfds =[0m
+D (87196) vfs: esp_vfs_select returns 0[0m
+D (87206) vfs: FDs in readfds =[0m
+D (87207) vfs: esp_vfs_select starts with nfds = 55[0m
+D (87208) vfs: FDs in readfds =[0m
+D (87208) vfs: 54[0m
+D (87219) vfs: calling socket_select with the following FDs[0m
+D (87220) vfs: FDs in readfds =[0m
+D (87220) vfs: 54[0m
+D (87731) vfs: socket_select returned 0 and the FDs are the following[0m
+D (87732) vfs: FDs in readfds =[0m
+D (87732) vfs: esp_vfs_select returns 0[0m
+D (87743) vfs: FDs in readfds =[0m
+D (87744) vfs: esp_vfs_select starts with nfds = 55[0m
+D (87744) vfs: FDs in readfds =[0m
+D (87755) vfs: 54[0m
+D (87756) vfs: calling socket_select with the following FDs[0m
+D (87757) vfs: FDs in readfds =[0m
+D (87757) vfs: 54[0m
+D (88268) vfs: socket_select returned 0 and the FDs are the following[0m
+D (88269) vfs: FDs in readfds =[0m
+D (88269) vfs: esp_vfs_select returns 0[0m
+D (88281) vfs: FDs in readfds =[0m
+D (88281) vfs: esp_vfs_select starts with nfds = 55[0m
+D (88282) vfs: FDs in readfds =[0m
+D (88283) vfs: 54[0m
+D (88294) vfs: calling socket_select with the following FDs[0m
+D (88294) vfs: FDs in readfds =[0m
+D (88295) vfs: 54[0m
+D (88795) vfs: socket_select returned 0 and the FDs are the following[0m
+D (88796) vfs: FDs in readfds =[0m
+D (88796) vfs: esp_vfs_select returns 0[0m
+D (88807) vfs: FDs in readfds =[0m
+D (88808) vfs: esp_vfs_select starts with nfds = 55[0m
+D (88809) vfs: FDs in readfds =[0m
+D (88819) vfs: 54[0m
+D (88820) vfs: calling socket_select with the following FDs[0m
+D (88821) vfs: FDs in readfds =[0m
+D (88821) vfs: 54[0m
+D (89332) vfs: socket_select returned 0 and the FDs are the following[0m
+D (89333) vfs: FDs in readfds =[0m
+D (89333) vfs: esp_vfs_select returns 0[0m
+D (89344) vfs: FDs in readfds =[0m
+D (89345) vfs: esp_vfs_select starts with nfds = 55[0m
+D (89346) vfs: FDs in readfds =[0m
+D (89346) vfs: 54[0m
+D (89357) vfs: calling socket_select with the following FDs[0m
+D (89358) vfs: FDs in readfds =[0m
+D (89358) vfs: 54[0m
+D (89869) vfs: socket_select returned 0 and the FDs are the following[0m
+D (89870) vfs: FDs in readfds =[0m
+D (89871) vfs: esp_vfs_select returns 0[0m
+D (89881) vfs: FDs in readfds =[0m
+D (89882) vfs: esp_vfs_select starts with nfds = 55[0m
+D (89883) vfs: FDs in readfds =[0m
+D (89893) vfs: 54[0m
+D (89894) vfs: calling socket_select with the following FDs[0m
+D (89895) vfs: FDs in readfds =[0m
+D (89895) vfs: 54[0m
+D (90406) vfs: socket_select returned 0 and the FDs are the following[0m
+D (90407) vfs: FDs in readfds =[0m
+D (90407) vfs: esp_vfs_select returns 0[0m
+D (90418) vfs: FDs in readfds =[0m
+D (90419) vfs: esp_vfs_select starts with nfds = 55[0m
+D (90419) vfs: FDs in readfds =[0m
+D (90430) vfs: 54[0m
+D (90432) vfs: calling socket_select with the following FDs[0m
+D (90432) vfs: FDs in readfds =[0m
+D (90433) vfs: 54[0m
+D (90933) vfs: socket_select returned 0 and the FDs are the following[0m
+D (90934) vfs: FDs in readfds =[0m
+D (90935) vfs: esp_vfs_select returns 0[0m
+D (90945) vfs: FDs in readfds =[0m
+D (90946) vfs: esp_vfs_select starts with nfds = 55[0m
+D (90947) vfs: FDs in readfds =[0m
+D (90957) vfs: 54[0m
+D (90958) vfs: calling socket_select with the following FDs[0m
+D (90959) vfs: FDs in readfds =[0m
+D (90959) vfs: 54[0m
+D (91470) vfs: socket_select returned 0 and the FDs are the following[0m
+D (91471) vfs: FDs in readfds =[0m
+D (91471) vfs: esp_vfs_select returns 0[0m
+D (91482) vfs: FDs in readfds =[0m
+D (91483) vfs: esp_vfs_select starts with nfds = 55[0m
+D (91483) vfs: FDs in readfds =[0m
+D (91494) vfs: 54[0m
+D (91495) vfs: calling socket_select with the following FDs[0m
+D (91496) vfs: FDs in readfds =[0m
+D (91496) vfs: 54[0m
+D (92007) vfs: socket_select returned 0 and the FDs are the following[0m
+D (92009) vfs: FDs in readfds =[0m
+D (92009) vfs: esp_vfs_select returns 0[0m
+D (92010) vfs: FDs in readfds =[0m
+D (92021) vfs: esp_vfs_select starts with nfds = 55[0m
+D (92022) vfs: FDs in readfds =[0m
+D (92022) vfs: 54[0m
+D (92033) vfs: calling socket_select with the following FDs[0m
+D (92034) vfs: FDs in readfds =[0m
+D (92034) vfs: 54[0m
+D (92535) vfs: socket_select returned 0 and the FDs are the following[0m
+D (92536) vfs: FDs in readfds =[0m
+D (92536) vfs: esp_vfs_select returns 0[0m
+D (92547) vfs: FDs in readfds =[0m
+D (92548) vfs: esp_vfs_select starts with nfds = 55[0m
+D (92548) vfs: FDs in readfds =[0m
+D (92559) vfs: 54[0m
+D (92560) vfs: calling socket_select with the following FDs[0m
+D (92560) vfs: FDs in readfds =[0m
+D (92561) vfs: 54[0m
+D (93072) vfs: socket_select returned 0 and the FDs are the following[0m
+D (93073) vfs: FDs in readfds =[0m
+D (93073) vfs: esp_vfs_select returns 0[0m
+D (93084) vfs: FDs in readfds =[0m
+D (93085) vfs: esp_vfs_select starts with nfds = 55[0m
+D (93085) vfs: FDs in readfds =[0m
+D (93096) vfs: 54[0m
+D (93097) vfs: calling socket_select with the following FDs[0m
+D (93098) vfs: FDs in readfds =[0m
+D (93098) vfs: 54[0m
+D (93609) vfs: socket_select returned 0 and the FDs are the following[0m
+D (93610) vfs: FDs in readfds =[0m
+D (93610) vfs: esp_vfs_select returns 0[0m
+D (93621) vfs: FDs in readfds =[0m
+D (93622) vfs: esp_vfs_select starts with nfds = 55[0m
+D (93622) vfs: FDs in readfds =[0m
+D (93633) vfs: 54[0m
+D (93634) vfs: calling socket_select with the following FDs[0m
+D (93634) vfs: FDs in readfds =[0m
+D (93635) vfs: 54[0m
+D (94146) vfs: socket_select returned 0 and the FDs are the following[0m
+D (94147) vfs: FDs in readfds =[0m
+D (94147) vfs: esp_vfs_select returns 0[0m
+D (94158) vfs: FDs in readfds =[0m
+D (94159) vfs: esp_vfs_select starts with nfds = 55[0m
+D (94160) vfs: FDs in readfds =[0m
+D (94160) vfs: 54[0m
+D (94171) vfs: calling socket_select with the following FDs[0m
+D (94172) vfs: FDs in readfds =[0m
+D (94172) vfs: 54[0m
+D (94683) vfs: socket_select returned 0 and the FDs are the following[0m
+D (94684) vfs: FDs in readfds =[0m
+D (94684) vfs: esp_vfs_select returns 0[0m
+D (94695) vfs: FDs in readfds =[0m
+D (94696) vfs: esp_vfs_select starts with nfds = 55[0m
+D (94696) vfs: FDs in readfds =[0m
+D (94707) vfs: 54[0m
+D (94708) vfs: calling socket_select with the following FDs[0m
+D (94708) vfs: FDs in readfds =[0m
+D (94709) vfs: 54[0m
+D (95220) vfs: socket_select returned 0 and the FDs are the following[0m
+D (95221) vfs: FDs in readfds =[0m
+D (95221) vfs: esp_vfs_select returns 0[0m
+D (95232) vfs: FDs in readfds =[0m
+D (95233) vfs: esp_vfs_select starts with nfds = 55[0m
+D (95234) vfs: FDs in readfds =[0m
+D (95234) vfs: 54[0m
+D (95245) vfs: calling socket_select with the following FDs[0m
+D (95246) vfs: FDs in readfds =[0m
+D (95246) vfs: 54[0m
+D (95757) vfs: socket_select returned 0 and the FDs are the following[0m
+D (95758) vfs: FDs in readfds =[0m
+D (95758) vfs: esp_vfs_select returns 0[0m
+D (95769) vfs: FDs in readfds =[0m
+D (95770) vfs: esp_vfs_select starts with nfds = 55[0m
+D (95770) vfs: FDs in readfds =[0m
+D (95781) vfs: 54[0m
+D (95782) vfs: calling socket_select with the following FDs[0m
+D (95782) vfs: FDs in readfds =[0m
+D (95783) vfs: 54[0m
+D (96049) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96051) vfs: FDs in readfds =[0m
+D (96051) vfs: 54[0m
+D (96051) vfs: esp_vfs_select returns 1[0m
+D (96063) vfs: FDs in readfds =[0m
+D (96063) vfs: 54[0m
+D (96077) vfs: esp_vfs_select starts with nfds = 58[0m
+D (96078) vfs: FDs in readfds =[0m
+D (96088) vfs: 54[0m
+D (96088) vfs: 57[0m
+D (96089) vfs: calling socket_select with the following FDs[0m
+D (96090) vfs: FDs in readfds =[0m
+D (96101) vfs: 54[0m
+D (96102) vfs: 57[0m
+D (96102) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96103) vfs: FDs in readfds =[0m
+D (96113) vfs: 57[0m
+D (96114) vfs: esp_vfs_select returns 1[0m
+D (96114) vfs: FDs in readfds =[0m
+D (96115) vfs: 57[0m
+D (96179) vfs: esp_vfs_select starts with nfds = 58[0m
+D (96180) vfs: FDs in readfds =[0m
+D (96181) vfs: 54[0m
+D (96181) vfs: 57[0m
+D (96192) vfs: calling socket_select with the following FDs[0m
+D (96194) vfs: FDs in readfds =[0m
+D (96194) vfs: 54[0m
+D (96194) vfs: 57[0m
+D (96583) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96584) vfs: FDs in readfds =[0m
+D (96585) vfs: 57[0m
+D (96585) vfs: esp_vfs_select returns 1[0m
+D (96596) vfs: FDs in readfds =[0m
+D (96596) vfs: 57[0m
+D (96624) vfs: esp_vfs_select starts with nfds = 55[0m
+D (96626) vfs: FDs in readfds =[0m
+D (96626) vfs: 54[0m
+D (96627) vfs: calling socket_select with the following FDs[0m
+D (96638) vfs: FDs in readfds =[0m
+D (96638) vfs: 54[0m
+D (96986) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96988) vfs: FDs in readfds =[0m
+D (96988) vfs: 54[0m
+D (96989) vfs: esp_vfs_select returns 1[0m
+D (96999) vfs: FDs in readfds =[0m
+D (97000) vfs: 54[0m
+D (97013) vfs: esp_vfs_select starts with nfds = 59[0m
+D (97014) vfs: FDs in readfds =[0m
+D (97025) vfs: 54[0m
+D (97025) vfs: 58[0m
+D (97026) vfs: calling socket_select with the following FDs[0m
+D (97026) vfs: FDs in readfds =[0m
+D (97037) vfs: 54[0m
+D (97038) vfs: 58[0m
+D (97038) vfs: socket_select returned 1 and the FDs are the following[0m
+D (97049) vfs: FDs in readfds =[0m
+D (97051) vfs: 58[0m
+D (97051) vfs: esp_vfs_select returns 1[0m
+D (97052) vfs: FDs in readfds =[0m
+D (97052) vfs: 58[0m
+D (97207) vfs: esp_vfs_select starts with nfds = 59[0m
+D (97218) vfs: FDs in readfds =[0m
+D (97219) vfs: 54[0m
+D (97219) vfs: 58[0m
+D (97220) vfs: calling socket_select with the following FDs[0m
+D (97231) vfs: FDs in readfds =[0m
+D (97232) vfs: 54[0m
+D (97232) vfs: 58[0m
+D (97356) vfs: socket_select returned 1 and the FDs are the following[0m
+D (97358) vfs: FDs in readfds =[0m
+D (97358) vfs: 58[0m
+D (97358) vfs: esp_vfs_select returns 1[0m
+D (97369) vfs: FDs in readfds =[0m
+D (97370) vfs: 58[0m
+D (97397) vfs: esp_vfs_select starts with nfds = 55[0m
+D (97398) vfs: FDs in readfds =[0m
+D (97398) vfs: 54[0m
+D (97399) vfs: calling socket_select with the following FDs[0m
+D (97410) vfs: FDs in readfds =[0m
+D (97410) vfs: 54[0m
+D (97911) vfs: socket_select returned 0 and the FDs are the following[0m
+D (97912) vfs: FDs in readfds =[0m
+D (97912) vfs: esp_vfs_select returns 0[0m
+D (97923) vfs: FDs in readfds =[0m
+D (97924) vfs: esp_vfs_select starts with nfds = 55[0m
+D (97925) vfs: FDs in readfds =[0m
+D (97925) vfs: 54[0m
+D (97936) vfs: calling socket_select with the following FDs[0m
+D (97937) vfs: FDs in readfds =[0m
+D (97937) vfs: 54[0m
+D (98448) vfs: socket_select returned 0 and the FDs are the following[0m
+D (98449) vfs: FDs in readfds =[0m
+D (98449) vfs: esp_vfs_select returns 0[0m
+D (98460) vfs: FDs in readfds =[0m
+D (98461) vfs: esp_vfs_select starts with nfds = 55[0m
+D (98462) vfs: FDs in readfds =[0m
+D (98472) vfs: 54[0m
+D (98473) vfs: calling socket_select with the following FDs[0m
+D (98474) vfs: FDs in readfds =[0m
+D (98474) vfs: 54[0m
+D (98985) vfs: socket_select returned 0 and the FDs are the following[0m
+D (98986) vfs: FDs in readfds =[0m
+D (98986) vfs: esp_vfs_select returns 0[0m
+D (98997) vfs: FDs in readfds =[0m
+D (98998) vfs: esp_vfs_select starts with nfds = 55[0m
+D (98998) vfs: FDs in readfds =[0m
+D (99009) vfs: 54[0m
+D (99010) vfs: calling socket_select with the following FDs[0m
+D (99011) vfs: FDs in readfds =[0m
+D (99011) vfs: 54[0m
+D (99522) vfs: socket_select returned 0 and the FDs are the following[0m
+D (99523) vfs: FDs in readfds =[0m
+D (99523) vfs: esp_vfs_select returns 0[0m
+D (99534) vfs: FDs in readfds =[0m
+D (99535) vfs: esp_vfs_select starts with nfds = 55[0m
+D (99536) vfs: FDs in readfds =[0m
+D (99536) vfs: 54[0m
+D (99547) vfs: calling socket_select with the following FDs[0m
+D (99548) vfs: FDs in readfds =[0m
+D (99548) vfs: 54[0m
+D (100059) vfs: socket_select returned 0 and the FDs are the following[0m
+D (100060) vfs: FDs in readfds =[0m
+D (100060) vfs: esp_vfs_select returns 0[0m
+D (100071) vfs: FDs in readfds =[0m
+D (100072) vfs: esp_vfs_select starts with nfds = 55[0m
+D (100072) vfs: FDs in readfds =[0m
+D (100083) vfs: 54[0m
+D (100084) vfs: calling socket_select with the following FDs[0m
+D (100085) vfs: FDs in readfds =[0m
+D (100085) vfs: 54[0m
+D (100596) vfs: socket_select returned 0 and the FDs are the following[0m
+D (100597) vfs: FDs in readfds =[0m
+D (100597) vfs: esp_vfs_select returns 0[0m
+D (100608) vfs: FDs in readfds =[0m
+D (100610) vfs: esp_vfs_select starts with nfds = 55[0m
+D (100610) vfs: FDs in readfds =[0m
+D (100611) vfs: 54[0m
+D (100622) vfs: calling socket_select with the following FDs[0m
+D (100623) vfs: FDs in readfds =[0m
+D (100623) vfs: 54[0m
+D (101124) vfs: socket_select returned 0 and the FDs are the following[0m
+D (101125) vfs: FDs in readfds =[0m
+D (101126) vfs: esp_vfs_select returns 0[0m
+D (101137) vfs: FDs in readfds =[0m
+D (101137) vfs: esp_vfs_select starts with nfds = 55[0m
+D (101138) vfs: FDs in readfds =[0m
+D (101149) vfs: 54[0m
+D (101149) vfs: calling socket_select with the following FDs[0m
+D (101150) vfs: FDs in readfds =[0m
+D (101151) vfs: 54[0m
+D (101661) vfs: socket_select returned 0 and the FDs are the following[0m
+D (101662) vfs: FDs in readfds =[0m
+D (101662) vfs: esp_vfs_select returns 0[0m
+D (101673) vfs: FDs in readfds =[0m
+D (101674) vfs: esp_vfs_select starts with nfds = 55[0m
+D (101674) vfs: FDs in readfds =[0m
+D (101685) vfs: 54[0m
+D (101686) vfs: calling socket_select with the following FDs[0m
+D (101687) vfs: FDs in readfds =[0m
+D (101687) vfs: 54[0m
+D (102198) vfs: socket_select returned 0 and the FDs are the following[0m
+D (102199) vfs: FDs in readfds =[0m
+D (102200) vfs: esp_vfs_select returns 0[0m
+D (102210) vfs: FDs in readfds =[0m
+D (102211) vfs: esp_vfs_select starts with nfds = 55[0m
+D (102212) vfs: FDs in readfds =[0m
+D (102222) vfs: 54[0m
+D (102223) vfs: calling socket_select with the following FDs[0m
+D (102224) vfs: FDs in readfds =[0m
+D (102224) vfs: 54[0m
+D (102735) vfs: socket_select returned 0 and the FDs are the following[0m
+D (102736) vfs: FDs in readfds =[0m
+D (102736) vfs: esp_vfs_select returns 0[0m
+D (102747) vfs: FDs in readfds =[0m
+D (102748) vfs: esp_vfs_select starts with nfds = 55[0m
+D (102749) vfs: FDs in readfds =[0m
+D (102750) vfs: 54[0m
+D (102761) vfs: calling socket_select with the following FDs[0m
+D (102761) vfs: FDs in readfds =[0m
+D (102762) vfs: 54[0m
+D (103207) vfs: socket_select returned 1 and the FDs are the following[0m
+D (103208) vfs: FDs in readfds =[0m
+D (103208) vfs: 54[0m
+D (103209) vfs: esp_vfs_select returns 1[0m
+D (103220) vfs: FDs in readfds =[0m
+D (103220) vfs: 54[0m
+D (103234) vfs: esp_vfs_select starts with nfds = 60[0m
+D (103235) vfs: FDs in readfds =[0m
+D (103246) vfs: 54[0m
+D (103246) vfs: 59[0m
+D (103247) vfs: calling socket_select with the following FDs[0m
+D (103248) vfs: FDs in readfds =[0m
+D (103259) vfs: 54[0m
+D (103259) vfs: 59[0m
+D (103259) vfs: socket_select returned 1 and the FDs are the following[0m
+D (103271) vfs: FDs in readfds =[0m
+D (103271) vfs: 59[0m
+D (103272) vfs: esp_vfs_select returns 1[0m
+D (103272) vfs: FDs in readfds =[0m
+D (103283) vfs: 59[0m
+D (103336) vfs: esp_vfs_select starts with nfds = 60[0m
+D (103336) vfs: FDs in readfds =[0m
+D (103337) vfs: 54[0m
+D (103347) vfs: 59[0m
+D (103348) vfs: calling socket_select with the following FDs[0m
+D (103349) vfs: FDs in readfds =[0m
+D (103349) vfs: 54[0m
+D (103360) vfs: 59[0m
+D (103860) vfs: socket_select returned 0 and the FDs are the following[0m
+D (103861) vfs: FDs in readfds =[0m
+D (103861) vfs: esp_vfs_select returns 0[0m
+D (103872) vfs: FDs in readfds =[0m
+D (103873) vfs: esp_vfs_select starts with nfds = 60[0m
+D (103874) vfs: FDs in readfds =[0m
+D (103884) vfs: 54[0m
+D (103885) vfs: 59[0m
+D (103886) vfs: calling socket_select with the following FDs[0m
+D (103887) vfs: FDs in readfds =[0m
+D (103898) vfs: 54[0m
+D (103898) vfs: 59[0m
+D (104399) vfs: socket_select returned 0 and the FDs are the following[0m
+D (104400) vfs: FDs in readfds =[0m
+D (104400) vfs: esp_vfs_select returns 0[0m
+D (104412) vfs: FDs in readfds =[0m
+D (104412) vfs: esp_vfs_select starts with nfds = 60[0m
+D (104413) vfs: FDs in readfds =[0m
+D (104424) vfs: 54[0m
+D (104424) vfs: 59[0m
+D (104425) vfs: calling socket_select with the following FDs[0m
+D (104425) vfs: FDs in readfds =[0m
+D (104436) vfs: 54[0m
+D (104437) vfs: 59[0m
+D (104937) vfs: socket_select returned 0 and the FDs are the following[0m
+D (104938) vfs: FDs in readfds =[0m
+D (104939) vfs: esp_vfs_select returns 0[0m
+D (104949) vfs: FDs in readfds =[0m
+D (104950) vfs: esp_vfs_select starts with nfds = 60[0m
+D (104951) vfs: FDs in readfds =[0m
+D (104961) vfs: 54[0m
+D (104961) vfs: 59[0m
+D (104962) vfs: calling socket_select with the following FDs[0m
+D (104963) vfs: FDs in readfds =[0m
+D (104974) vfs: 54[0m
+D (104974) vfs: 59[0m
+D (105475) vfs: socket_select returned 0 and the FDs are the following[0m
+D (105476) vfs: FDs in readfds =[0m
+D (105476) vfs: esp_vfs_select returns 0[0m
+D (105487) vfs: FDs in readfds =[0m
+D (105488) vfs: esp_vfs_select starts with nfds = 60[0m
+D (105489) vfs: FDs in readfds =[0m
+D (105499) vfs: 54[0m
+D (105500) vfs: 59[0m
+D (105500) vfs: calling socket_select with the following FDs[0m
+D (105503) vfs: FDs in readfds =[0m
+D (105504) vfs: 54[0m
+D (105514) vfs: 59[0m
+D (105560) vfs: socket_select returned 1 and the FDs are the following[0m
+D (105562) vfs: FDs in readfds =[0m
+D (105562) vfs: 59[0m
+D (105563) vfs: esp_vfs_select returns 1[0m
+D (105573) vfs: FDs in readfds =[0m
+D (105574) vfs: 59[0m
+D (105601) vfs: esp_vfs_select starts with nfds = 55[0m
+D (105602) vfs: FDs in readfds =[0m
+D (105603) vfs: 54[0m
+D (105614) vfs: calling socket_select with the following FDs[0m
+D (105614) vfs: FDs in readfds =[0m
+D (105615) vfs: 54[0m
+D (106115) vfs: socket_select returned 0 and the FDs are the following[0m
+D (106116) vfs: FDs in readfds =[0m
+D (106117) vfs: esp_vfs_select returns 0[0m
+D (106127) vfs: FDs in readfds =[0m
+D (106128) vfs: esp_vfs_select starts with nfds = 55[0m
+D (106129) vfs: FDs in readfds =[0m
+D (106140) vfs: 54[0m
+D (106140) vfs: calling socket_select with the following FDs[0m
+D (106141) vfs: FDs in readfds =[0m
+D (106142) vfs: 54[0m
+D (106652) vfs: socket_select returned 0 and the FDs are the following[0m
+D (106653) vfs: FDs in readfds =[0m
+D (106653) vfs: esp_vfs_select returns 0[0m
+D (106664) vfs: FDs in readfds =[0m
+D (106665) vfs: esp_vfs_select starts with nfds = 55[0m
+D (106666) vfs: FDs in readfds =[0m
+D (106677) vfs: 54[0m
+D (106678) vfs: calling socket_select with the following FDs[0m
+D (106679) vfs: FDs in readfds =[0m
+D (106690) vfs: 54[0m
+D (106690) vfs: socket_select returned 1 and the FDs are the following[0m
+D (106691) vfs: FDs in readfds =[0m
+D (106702) vfs: 54[0m
+D (106702) vfs: esp_vfs_select returns 1[0m
+D (106703) vfs: FDs in readfds =[0m
+D (106703) vfs: 54[0m
+D (106717) vfs: esp_vfs_select starts with nfds = 61[0m
+D (106728) vfs: FDs in readfds =[0m
+D (106728) vfs: 54[0m
+D (106728) vfs: 60[0m
+D (106729) vfs: calling socket_select with the following FDs[0m
+D (106740) vfs: FDs in readfds =[0m
+D (106741) vfs: 54[0m
+D (106741) vfs: 60[0m
+D (106741) vfs: socket_select returned 1 and the FDs are the following[0m
+D (106753) vfs: FDs in readfds =[0m
+D (106754) vfs: 60[0m
+D (106754) vfs: esp_vfs_select returns 1[0m
+D (106765) vfs: FDs in readfds =[0m
+D (106766) vfs: 60[0m

@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef PHY_INIT_DATA_H
+#define PHY_INIT_DATA_H /* don't use #pragma once here, we compile this file sometimes */
 #include "esp_phy_init.h"
 #include "sdkconfig.h"
 
@@ -20,6 +21,11 @@
 #define LIMIT(val, low, high) ((val < low) ? low : (val > high) ? high : val)
 
 #define PHY_INIT_MAGIC "PHYINIT"
+
+// define the lowest tx power as LOWEST_PHY_TX_POWER
+#define PHY_TX_POWER_LOWEST LIMIT(CONFIG_ESP32_PHY_MAX_TX_POWER * 4, 0, 52)
+#define PHY_TX_POWER_OFFSET 44
+#define PHY_TX_POWER_NUM    5
 
 static const char phy_init_magic_pre[] = PHY_INIT_MAGIC;
 
@@ -137,4 +143,6 @@ static const esp_phy_init_data_t phy_init_data= { {
 } };
 
 static const char phy_init_magic_post[] = PHY_INIT_MAGIC;
+
+#endif /* PHY_INIT_DATA_H */
 

@@ -10,6 +10,12 @@ config FREERTOS_UNICORE
         This is needed when e.g. another process needs complete control
         over the second core.
 
+# This invisible config value sets the value of tskNO_AFFINITY in task.h.
+# Intended to be used as a constant from other Kconfig files.
+# Value is (32-bit) INT_MAX.
+config FREERTOS_NO_AFFINITY
+	hex
+	default 0x7FFFFFFF
 
 choice FREERTOS_CORETIMER
     prompt "Xtensa timer to use as the FreeRTOS tick source"
@@ -173,24 +179,6 @@ config FREERTOS_LEGACY_HOOKS
         hooks can also still be enabled. Please enable this only if you have code that for some
         reason can't be migrated to the esp_register_freertos_xxx_hook system.
 
-if FREERTOS_LEGACY_HOOKS
-
-config FREERTOS_LEGACY_IDLE_HOOK
-    bool "Enable legacy idle hook"
-    default n
-    help
-        If enabled, FreeRTOS will call a function called vApplicationIdleHook when the idle thread
-        on a CPU is running. Please make sure your code defines such a function.
-
-config FREERTOS_LEGACY_TICK_HOOK
-    bool "Enable legacy tick hook"
-    default n
-    help
-        If enabled, FreeRTOS will call a function called vApplicationTickHook when a FreeRTOS
-        tick is executed. Please make sure your code defines such a function.
-
-endif #FREERTOS_LEGACY_HOOKS
-
 config FREERTOS_MAX_TASK_NAME_LEN
     int "Maximum task name length"
     range 1 256
@@ -305,6 +293,14 @@ config FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
         FreeRTOS. This will allow the usage of stats formatting functions such 
         as vTaskList().
 
+config FREERTOS_VTASKLIST_INCLUDE_COREID
+    bool "Enable display of xCoreID in vTaskList"
+    depends on FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
+    default n
+    help
+        If enabled, this will include an extra column when vTaskList is called
+        to display the CoreID the task is pinned to (0,1) or -1 if not pinned. 
+
 config FREERTOS_GENERATE_RUN_TIME_STATS
     bool "Enable FreeRTOS to collect run time stats"
     default n
@@ -410,5 +406,16 @@ config FREERTOS_PORTMUX_DEBUG_RECURSIVE
 endif #FREERTOS_UNICORE
 
 endif # FREERTOS_DEBUG_INTERNALS
+
+config FREERTOS_TASK_FUNCTION_WRAPPER
+    bool "Enclose all task functions in a wrapper function"
+    depends on OPTIMIZATION_LEVEL_DEBUG
+    default y
+    help
+        If enabled, all FreeRTOS task functions will be enclosed in a wrapper function.
+        If a task function mistakenly returns (i.e. does not delete), the call flow will 
+        return to the wrapper function. The wrapper function will then log an error and 
+        abort the application. This option is also required for GDB backtraces and C++ 
+        exceptions to work correctly inside top-level task functions.
 
 endmenu

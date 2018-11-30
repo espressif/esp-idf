@@ -40,7 +40,7 @@ typedef enum {
     ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED = 0,          /*!< audio connection released */
     ESP_HF_CLIENT_AUDIO_STATE_CONNECTING,                /*!< audio connection has been initiated */
     ESP_HF_CLIENT_AUDIO_STATE_CONNECTED,                 /*!< audio connection is established */
-    ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC,            /*!< mSBC audio connection is estalibshed */
+    ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC,            /*!< mSBC audio connection is established */
 } esp_hf_client_audio_state_t;
 
 /// in-band ring tone state
@@ -66,9 +66,9 @@ typedef enum {
 #define ESP_HF_CLIENT_CHLD_FEAT_REL_ACC       0x02       /* 1  Release active calls and accept other waiting or held call */
 #define ESP_HF_CLIENT_CHLD_FEAT_REL_X         0x04       /* 1x Release specified active call only */
 #define ESP_HF_CLIENT_CHLD_FEAT_HOLD_ACC      0x08       /* 2  Active calls on hold and accept other waiting or held call */
-#define ESP_HF_CLIENT_CHLD_FEAT_PRIV_X        0x10       /* 2x Request private mode with specified call(put the rest on hold */
+#define ESP_HF_CLIENT_CHLD_FEAT_PRIV_X        0x10       /* 2x Request private mode with specified call(put the rest on hold) */
 #define ESP_HF_CLIENT_CHLD_FEAT_MERGE         0x20       /* 3  Add held call to multiparty */
-#define ESP_HF_CLIENT_CHLD_FEAT_MERGE_DETACH  0x40       /* 4  Connect two calls and leave(disconnct from multiparty */
+#define ESP_HF_CLIENT_CHLD_FEAT_MERGE_DETACH  0x40       /* 4  Connect two calls and leave(disconnect from multiparty) */
 
 /// HF CLIENT callback events
 typedef enum {
@@ -140,7 +140,7 @@ typedef union {
      * @brief ESP_HF_CLIENT_CIND_SIGNAL_STRENGTH_EVT
      */
     struct hf_client_signal_strength_ind_param {
-        int value;                               /*!< singal strength value, ranges from 0 to 5 */
+        int value;                               /*!< signal strength value, ranges from 0 to 5 */
     } signal_strength;                           /*!< HF callback param of ESP_HF_CLIENT_CIND_SIGNAL_STRENGTH_EVT */
 
     /**
@@ -175,7 +175,7 @@ typedef union {
      * @brief ESP_HF_CLIENT_CIND_CALL_HELD_EVT
      */
     struct hf_client_call_held_ind_param {
-        esp_hf_call_held_status_t status;        /*!< bluetooth proprietary call hold status indocator */
+        esp_hf_call_held_status_t status;        /*!< bluetooth proprietary call hold status indicator */
     } call_held;                                 /*!< HF callback param of ESP_HF_CLIENT_CIND_CALL_HELD_EVT */
 
     /**
@@ -251,9 +251,9 @@ typedef union {
 } esp_hf_client_cb_param_t;
 
 /**
- * @brief           HFP client incoming data callback function, the callback is useful in case of 
+ * @brief           HFP client incoming data callback function, the callback is useful in case of
  *                  Voice Over HCI.
- * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the 
+ * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
  *                  buffer is allocated inside bluetooth protocol stack and will be released after
  *                  invoke of the callback is finished.
  * @param[in]       len : size(in bytes) in buf
@@ -261,13 +261,13 @@ typedef union {
 typedef void (* esp_hf_client_incoming_data_cb_t)(const uint8_t *buf, uint32_t len);
 
 /**
- * @brief           HFP client outgoing data callback function, the callback is useful in case of 
- *                  Voice Over HCI. Once audio connection is set up and the application layer has 
- *                  prepared data to send, the lower layer will call this function to read data 
+ * @brief           HFP client outgoing data callback function, the callback is useful in case of
+ *                  Voice Over HCI. Once audio connection is set up and the application layer has
+ *                  prepared data to send, the lower layer will call this function to read data
  *                  and then send. This callback is supposed to be implemented as non-blocking,
  *                  and if data is not enough, return value 0 is supposed.
- *                  
- * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the 
+ *
+ * @param[in]       buf : pointer to incoming data(payload of HCI synchronous data packet), the
  *                  buffer is allocated inside bluetooth protocol stack and will be released after
  *                  invoke of the callback is finished.
  * @param[in]       len : size(in bytes) in buf
@@ -326,7 +326,7 @@ esp_err_t esp_hf_client_deinit(void);
 
 /**
  *
- * @brief           Connect to remote bluetooth HFP audio gateway(AG) device, must after esp_a2d_hf_client_init()
+ * @brief           Connect to remote bluetooth HFP audio gateway(AG) device, must after esp_hf_client_init()
  *
  * @param[in]       remote_bda: remote bluetooth device address
  *
@@ -606,7 +606,7 @@ void esp_hf_client_outgoing_data_ready(void);
 
 /**
  * @brief           Initialize the down sampling converter. This is a utility function that can
- *                  only be used in the case that Voice Over HCI is enabled. 
+ *                  only be used in the case that Voice Over HCI is enabled.
  *
  * @param[in]       src_sps: original samples per second(source audio data, i.e. 48000, 32000,
  *                  16000, 44100, 22050, 11025)
@@ -619,7 +619,7 @@ void esp_hf_client_pcm_resample_init(uint32_t src_sps, uint32_t bits, uint32_t c
  * @brief           Down sampling utility to convert high sampling rate into 8K/16bits 1-channel mode PCM
  *                  samples. This can only be used in the case that Voice Over HCI is enabled.
  *
- * @param[in]       src: pointer to the buffer where the original smapling PCM are stored
+ * @param[in]       src: pointer to the buffer where the original sampling PCM are stored
  * @param[in]       in_bytes: length of the input PCM sample buffer in byte
  * @param[in]       dst: pointer to the buffer which is to be used to store the converted PCM samples
  *

@@ -32,6 +32,20 @@
 
 /*******************************************************************************
 **
+** Function         bta_dm_co_bt_set_io_cap
+**
+** Description      This function is used to set IO capabilities
+**
+** Parameters       bt_io_cap  - IO capabilities
+**
+** @return          - ESP_BT_STATUS_SUCCESS : success
+**                  - other  : failed
+**
+*******************************************************************************/
+extern esp_err_t bta_dm_co_bt_set_io_cap(UINT8 bt_io_cap);
+
+/*******************************************************************************
+**
 ** Function         bta_dm_co_io_req
 **
 ** Description      This callout function is executed by DM to get IO capabilities
@@ -190,4 +204,12 @@ extern void bta_dm_co_ble_set_init_key_req(UINT8 init_key);
 extern void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key);
 
 extern void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size);
+
+extern void bta_dm_co_ble_set_accept_auth_enable(UINT8 enable);
+
+extern UINT8 bta_dm_co_ble_get_accept_auth_enable(void);
+
+extern UINT8 bta_dm_co_ble_get_auth_req(void);
+
+extern void bta_dm_co_ble_oob_support(UINT8 enable);
 #endif

@@ -240,4 +240,40 @@ void ECC_PointMult_Bin_NAF(Point *q, Point *p, DWORD *n, uint32_t keyLength)
     multiprecision_mersenns_mult_mod(q->y, q->y, q->z, keyLength);
 }
 
+bool ECC_CheckPointIsInElliCur_P256(Point *p)
+{
+    /* y^2 % q */
+    DWORD y_y_q[KEY_LENGTH_DWORDS_P256] = {0x0};
+    /* x^2 % q */
+    DWORD x_x_q[KEY_LENGTH_DWORDS_P256] = {0x0};
+    /* x % q */
+    DWORD x_q[KEY_LENGTH_DWORDS_P256] = {0x0};
+    /* x^2, To prevent overflow, the length of the x square here needs to 
+       be expanded to two times the original one. */
+    DWORD x_x[2*KEY_LENGTH_DWORDS_P256] = {0x0};
+    /* y_y_q =(p->y)^2(mod q) */
+    multiprecision_mersenns_squa_mod(y_y_q, p->y, KEY_LENGTH_DWORDS_P256);
+    /* Calculate the value of p->x square, x_x = (p->x)^2 */
+    multiprecision_mult(x_x, p->x, p->x, KEY_LENGTH_DWORDS_P256);
+    /* The function of the elliptic curve is y^2 = x^3 - 3x + b (mod q) ==>
+       y^2 = (x^2 - 3)*x + b (mod q),
+       so we calculate the x^2 - 3 value here */
+    x_x[0] -= 3;
+    /* Using math relations. (a*b) % q = ((a%q)*(b%q)) % q ==> 
+      (x^2 - 3)*x = (((x^2 - 3) % q) * x % q) % q */
+    multiprecision_fast_mod_P256(x_x_q, x_x);
+    /* x_x = x_x_q * x_q */
+    multiprecision_mult(x_x, x_x_q, p->x, KEY_LENGTH_DWORDS_P256);
+    /* x_q = x_x % q */
+    multiprecision_fast_mod_P256(x_q, x_x);
+    /* Save the result in x_x_q */
+    multiprecision_add_mod(x_x_q, x_q, curve_p256.b, KEY_LENGTH_DWORDS_P256);
+    /* compare the y_y_q and x_x_q, see if they are on a given elliptic curve. */
+    if (multiprecision_compare(y_y_q, x_x_q, KEY_LENGTH_DWORDS_P256)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 

@@ -172,7 +172,6 @@
 
 #define ESP_APPTRACE_PRINT_LOCK                 0
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_apptrace";
 

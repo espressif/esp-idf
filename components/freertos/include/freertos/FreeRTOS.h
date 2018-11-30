@@ -740,6 +740,10 @@ extern "C" {
 	#define configUSE_STATS_FORMATTING_FUNCTIONS 0
 #endif
 
+#ifndef configTASKLIST_INCLUDE_COREID
+    #define configTASKLIST_INCLUDE_COREID   0
+#endif
+
 #ifndef portASSERT_IF_INTERRUPT_PRIORITY_INVALID
 	#define portASSERT_IF_INTERRUPT_PRIORITY_INVALID()
 #endif

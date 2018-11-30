@@ -19,8 +19,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
-#include "soc/sdmmc_reg.h"
-#include "soc/sdmmc_struct.h"
+#include "freertos/task.h"
+#include "soc/sdmmc_periph.h"
 #include "soc/soc_memory_layout.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
@@ -81,6 +81,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
 static void fill_dma_descriptors(size_t num_desc);
 static size_t get_free_descriptors_count();
+static bool wait_for_busy_cleared(int timeout_ms);
 
 esp_err_t sdmmc_host_transaction_handler_init()
 {
@@ -164,6 +165,11 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
         ret = handle_event(cmdinfo, &state, &unhandled_events);
         if (ret != ESP_OK) {
             break;
+        }
+    }
+    if (ret == ESP_OK && (cmdinfo->flags & SCF_WAIT_BUSY)) {
+        if (!wait_for_busy_cleared(cmdinfo->timeout_ms)) {
+            ret = ESP_ERR_TIMEOUT;
         }
     }
     s_is_app_cmd = (ret == ESP_OK && cmdinfo->opcode == MMC_APP_CMD);
@@ -272,6 +278,16 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
     return ESP_OK;
 }
 
+static bool cmd_needs_auto_stop(const sdmmc_command_t* cmd)
+{
+    /* SDMMC host needs an "auto stop" flag for the following commands: */
+    return cmd->datalen > 0 &&
+           (cmd->opcode == MMC_WRITE_BLOCK_MULTIPLE ||
+            cmd->opcode == MMC_READ_BLOCK_MULTIPLE ||
+            cmd->opcode == MMC_WRITE_DAT_UNTIL_STOP ||
+            cmd->opcode == MMC_READ_DAT_UNTIL_STOP);
+}
+
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
 {
     sdmmc_hw_cmd_t res = { 0 };
@@ -303,12 +319,11 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
             res.rw = 1;
         }
         assert(cmd->datalen % cmd->blklen == 0);
-        if ((cmd->datalen / cmd->blklen) > 1) {
-            res.send_auto_stop = 1;
-        }
+        res.send_auto_stop = cmd_needs_auto_stop(cmd) ? 1 : 0;
     }
-    ESP_LOGV(TAG, "%s: opcode=%d, rexp=%d, crc=%d", __func__,
-            res.cmd_index, res.response_expect, res.check_response_crc);
+    ESP_LOGV(TAG, "%s: opcode=%d, rexp=%d, crc=%d, auto_stop=%d", __func__,
+            res.cmd_index, res.response_expect, res.check_response_crc,
+            res.send_auto_stop);
     return res;
 }
 
@@ -453,5 +468,23 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
     return ESP_OK;
 }
 
+static bool wait_for_busy_cleared(int timeout_ms)
+{
+    if (timeout_ms == 0) {
+        return !sdmmc_host_card_busy();
+    }
 
+    /* It would have been nice to do this without polling, however the peripheral
+     * can only generate Busy Clear Interrupt for data write commands, and waiting
+     * for busy clear is mostly needed for other commands such as MMC_SWITCH.
+     */
+    int timeout_ticks = (timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS;
+    while (timeout_ticks-- > 0) {
+        if (!sdmmc_host_card_busy()) {
+            return true;
+        }
+        vTaskDelay(1);
+    }
+    return false;
+}
 

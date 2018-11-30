@@ -10,23 +10,22 @@ Install Prerequisites
 
     sudo easy_install pip
 
-- install pyserial::
+.. note::
 
-    sudo pip install pyserial
-
+    ``pip`` will be used later for installing :ref:`the required Python packages <get-started-get-packages>`.
 
 Toolchain Setup
 ===============
 
+.. include:: /_build/inc/download-links.inc
+
 ESP32 toolchain for macOS is available for download from Espressif website:
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz
+|download_link_osx|
 
-Download this file, then extract it in ``~/esp`` directory::
+Download this file, then extract it in ``~/esp`` directory:
 
-    mkdir -p ~/esp
-    cd ~/esp
-    tar -xzf ~/Downloads/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz
+.. include:: /_build/inc/unpack-code-osx.inc
 
 .. _setup-macos-toolchain-add-it-to-path:
 
@@ -34,11 +33,11 @@ The toolchain will be extracted into ``~/esp/xtensa-esp32-elf/`` directory.
 
 To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
 
-    export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin
+    export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH
 
 Alternatively, you may create an alias for the above command. This way you can get the toolchain only when you need it. To do this, add different line to your ``~/.profile`` file::
 
-    alias get_esp32="export PATH=$PATH:$HOME/esp/xtensa-esp32-elf/bin"
+    alias get_esp32="export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH"
 
 Then when you need the toolchain you can type ``get_esp32`` on the command line and the toolchain will be added to your ``PATH``.
 

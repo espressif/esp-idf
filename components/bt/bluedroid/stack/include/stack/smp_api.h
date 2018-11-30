@@ -224,6 +224,7 @@ typedef struct {
     tSMP_SEC_LEVEL sec_level;
     BOOLEAN is_pair_cancel;
     BOOLEAN smp_over_br;
+    tSMP_AUTH_REQ auth_mode;
 } tSMP_CMPL;
 
 typedef struct {
@@ -400,6 +401,21 @@ extern void SMP_SecurityGrant(BD_ADDR bd_addr, UINT8 res);
 **
 *******************************************************************************/
 extern void SMP_PasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey);
+
+/*******************************************************************************
+**
+** Function         SMP_SetStaticPasskey
+**
+** Description      This function is called to set static passkey
+**
+**
+** Parameters:      add          - set static passkey when add is TRUE
+**                                 clear static passkey when add is FALSE
+**                  passkey      - static passkey
+**
+**
+*******************************************************************************/
+extern void SMP_SetStaticPasskey (BOOLEAN add, UINT32 passkey);
 
 /*******************************************************************************
 **

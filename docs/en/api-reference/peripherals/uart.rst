@@ -4,10 +4,9 @@ UART
 Overview
 --------
 
-An Universal Asynchronous Receiver/Transmitter (UART) is a component known to handle the timing requirements for a variety of widely-adapted protocols (RS232, RS485, RS422, ...). An UART provides a widely adopted and cheap method to realize full-duplex data exchange among different devices.
+A Universal Asynchronous Receiver/Transmitter (UART) is a component known to handle the timing requirements for a variety of widely-adapted interfaces (RS232, RS485, RS422, ...). A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
 There are three UART controllers available on the ESP32 chip. They are compatible with UART-enabled devices from various manufacturers. All UART controllers integrated in the ESP32 feature an identical set of registers for ease of programming and flexibility. In this documentation, these controllers are referred to as UART0, UART1, and UART2.
-
 
 Functional Overview
 -------------------
@@ -40,6 +39,22 @@ The alternate way is to configure specific parameters individually by calling de
     * Parity control - :cpp:func:`uart_set_parity` selected out of :cpp:type:`uart_parity_t`
     * Number of stop bits - :cpp:func:`uart_set_stop_bits` selected out of :cpp:type:`uart_stop_bits_t`
     * Hardware flow control mode - :cpp:func:`uart_set_hw_flow_ctrl` selected out of `uart_hw_flowcontrol_t`
+    * Communication mode - :cpp:func:`uart_set_mode` selected out of :cpp:type:`uart_mode_t`
+
+Configuration example: ::
+
+    const int uart_num = UART_NUM_2;
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
+        .rx_flow_ctrl_thresh = 122,
+    };
+    // Configure UART parameters
+    ESP_ERROR_CHECK(uart_param_config(uart_num, &uart_config));
+
 
 All the above functions have a ``_get_`` equivalent to retrieve the current setting, e.g. :cpp:func:`uart_get_baudrate`.
 
@@ -51,8 +66,10 @@ Setting Communication Pins
 
 In next step, after configuring communication parameters, we are setting physical GPIO pin numbers the other UART will be connected to. This is done in a single step by calling function :cpp:func:`uart_set_pin` and providing it with GPIO numbers, that driver should use for the Tx, Rx, RTS and CTS signals.
 
-Instead of GPIO pin number we can enter a macro :cpp:type:`UART_PIN_NO_CHANGE` and the currently allocated pin will not be changed. The same macro should be entered if certain pin will not be used.
+Instead of GPIO pin number we can enter a macro :cpp:type:`UART_PIN_NO_CHANGE` and the currently allocated pin will not be changed. The same macro should be entered if certain pin will not be used. ::
 
+    // Set UART pins(TX: IO16 (UART2 default), RX: IO17 (UART2 default), RTS: IO18, CTS: IO19)
+    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
 
 .. _uart-api-driver-installation:
 
@@ -65,6 +82,15 @@ Once configuration of driver is complete, we can install it by calling :cpp:func
     * size of the receive buffer 
     * the event queue handle and size
     * flags to allocate an interrupt
+
+Example: ::
+
+    // Setup UART buffered IO with event queue
+    const int uart_buffer_size = (1024 * 2);
+    QueueHandle_t uart_queue;
+    // Install UART driver using an event queue here
+    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, uart_buffer_size, \
+                                            uart_buffer_size, 10, &uart_queue, 0));
 
 If all above steps have been complete, we are ready to connect the other UART device and check the communication.
 
@@ -82,17 +108,35 @@ Transmitting
 
 The basic API function to write the data to Tx FIFO buffer is :cpp:func:`uart_tx_chars`. If the buffer contains not sent characters, this function will write what fits into the empty space and exit reporting the number of bytes actually written.
 
-There is a 'companion' function :cpp:func:`uart_wait_tx_done` that waits until all the data are transmitted out and the Tx FIFO is empty.
+There is a 'companion' function :cpp:func:`uart_wait_tx_done` that waits until all the data are transmitted out and the Tx FIFO is empty. ::
 
-An easier to work with function is :cpp:func:`uart_write_bytes`. It sets up an intermediate ring buffer and exits after copying the data to this buffer. When there is an empty space in the FIFO, the data are moved from the ring buffer to the FIFO in the background by an ISR.
+    // Wait for packet to be sent
+    const int uart_num = UART_NUM_2;
+    ESP_ERROR_CHECK(uart_wait_tx_done(uart_num, 100)); // wait timeout is 100 RTOS ticks (TickType_t)
 
-There is a similar function as above that adds a serial break signal after sending the data - :cpp:func:`uart_write_bytes_with_break`. The 'serial break signal' means holding TX line low for period longer than one data frame.
+An easier to work with function is :cpp:func:`uart_write_bytes`. It sets up an intermediate ring buffer and exits after copying the data to this buffer. When there is an empty space in the FIFO, the data are moved from the ring buffer to the FIFO in the background by an ISR. The code below demonstrates using of this function. ::
+
+    // Write data to UART.
+    char* test_str = "This is a test string.\n";
+    uart_write_bytes(uart_num, (const char*)test_str, strlen(test_str));
+
+There is a similar function as above that adds a serial break signal after sending the data - :cpp:func:`uart_write_bytes_with_break`. The 'serial break signal' means holding TX line low for period longer than one data frame ::
+
+    // Write data to UART, end with a break signal.
+    uart_write_bytes_with_break(uart_num, "test break\n",strlen("test break\n"), 100);
 
 
 Receiving
 """""""""
 
-To retrieve the data received by UART and saved in Rx FIFO, use function :cpp:func:`uart_read_bytes`. You can check in advance what is the number of bytes available in Rx FIFO by calling :cpp:func:`uart_get_buffered_data_len`.
+To retrieve the data received by UART and saved in Rx FIFO, use function :cpp:func:`uart_read_bytes`. You can check in advance what is the number of bytes available in Rx FIFO by calling :cpp:func:`uart_get_buffered_data_len`. Below is the example of using this function::
+
+    // Read data from UART.
+    const int uart_num = UART_NUM_2;
+    uint8_t data[128];
+    int length = 0;
+    ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
+    length = uart_read_bytes(uart_num, data, length, 100);
 
 If the data in Rx FIFO is not required and should be discarded, call :cpp:func:`uart_flush`.
 
@@ -101,6 +145,15 @@ Software Flow Control
 """""""""""""""""""""
 
 When the hardware flow control is disabled, then use :cpp:func:`uart_set_rts` and :cpp:func:`uart_set_dtr` to manually set the levels of the RTS and DTR signals.
+
+
+Communication Mode Selection
+""""""""""""""""""""""""""""
+
+The UART controller supports set of communication modes. The selection of mode can be performed using function :cpp:func:`uart_set_mode`. Once the specific mode is selected the UART driver will handle behavior of external peripheral according to mode. As an example it can control RS485 driver chip over RTS line to allow half-duplex RS485 communication. ::
+
+    // Setup UART in rs485 half duplex mode
+    ESP_ERROR_CHECK(uart_set_mode(uart_num, UART_MODE_RS485_HALF_DUPLEX));
 
 
 .. _uart-api-using-interrupts:
@@ -118,7 +171,6 @@ The API provides a convenient way to handle specific interrupts discussed above 
 
 * **Pattern detection** - an interrupt triggered on detecting a 'pattern' of the same character being sent number of times. The functions that allow to configure, enable and disable this interrupt are :cpp:func:`uart_enable_pattern_det_intr` and cpp:func:`uart_disable_pattern_det_intr`.
 
-
 Macros
 ^^^^^^
 
@@ -133,6 +185,95 @@ Deleting Driver
 If communication is established with :cpp:func:`uart_driver_install` for some specific period of time and then not required, the driver may be removed to free allocated resources by calling :cpp:func:`uart_driver_delete`.
 
 
+Overview of RS485 specific communication options
+-------------------------------------------------
+
+.. note:: Here and below the notation UART_REGISTER.UART_OPTION_BIT will be used to describe register options of UART. See the ESP32 Technical Reference Manual for more information.
+
+- UART_RS485_CONF_REG.UART_RS485_EN = 1, enable RS485 communication mode support.
+- UART_RS485_CONF_REG.UART_RS485TX_RX_EN, transmitter's output signal loop back to the receiver's input signal when this bit is set.
+- UART_RS485_CONF_REG.UART_RS485RXBY_TX_EN, when bit is set the transmitter should send data when its receiver is busy (remove collisions automatically by hardware). 
+
+The on chip RS485 UART hardware is able to detect signal collisions during transmission of datagram and generate an interrupt UART_RS485_CLASH_INT when it is enabled. The term collision means that during transmission of datagram the received data is different with what has been transmitted out or framing errors exist. Data collisions are usually associated with the presence of other active devices on the bus or due to bus errors. The collision detection feature allows suppressing the collisions when its interrupt is activated and triggered. The UART_RS485_FRM_ERR_INT and UART_RS485_PARITY_ERR_INT interrupts can be used with collision detection feature to control frame errors and parity errors accordingly in RS485 mode. This functionality is supported in the UART driver and can be used with selected UART_MODE_RS485_A mode (see :cpp:func:`uart_set_mode` function). The collision detection option can work with circuit A and circuit C (see below) which allow collision detection. In case of using circuit number A or B, control of RTS pin connected to DE pin of bus driver should be provided manually by application. The function :cpp:func:`uart_get_collision_flag` allows to get collision detection flag from driver. 
+
+The ESP32 UART hardware is not able to control automatically the RTS pin connected to ~RE/DE input of RS485 bus driver to provide half duplex communication. This can be done by UART driver software when UART_MODE_RS485_HALF_DUPLEX mode is selected using :cpp:func:`uart_set_mode` function. The UART driver software automatically asserts the RTS pin (logic 1) once the host writes data to the transmit FIFO, and deasserts RTS pin (logic 0) once the last bit of the data has been transmitted. To use this mode the software would have to disable the hardware flow control function. This mode works with any of used circuit showed below.
+
+
+Overview of RS485 interface connection options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note:: The example schematics below are prepared for just demonstration of basic aspects of RS485 interface connection for ESP32 and may not contain all required elements. The Analog Devices ADM483 & ADM2483 are examples of common RS485 transceivers and other similar transceivers can also be used.
+
+The circuit A: Collision detection circuit 
+""""""""""""""""""""""""""""""""""""""""""
+
+::
+
+         VCC ---------------+                             
+                            |        
+                    +-------x-------+
+         RXD <------| R             |
+                    |              B|----------<> B
+         TXD ------>| D    ADM483   |
+ ESP32              |               |     RS485 bus side
+         RTS ------>| DE            |
+                    |              A|----------<> A
+               +----| /RE           |
+               |    +-------x-------+
+               |            |
+              GND          GND
+
+This circuit is preferred because it allows collision detection and is simple enough. The receiver in the line driver is constantly enabled that allows UART  to monitor the RS485 bus. Echo suppression is done by the ESP32 chip hardware when the UART_RS485_CONF_REG.UART_RS485TX_RX_EN bit is enabled.
+
+
+The circuit B: manual switching of transmitter/receiver without collision detection 
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""" 
+
+::
+
+         VCC ---------------+                             
+                            |        
+                    +-------x-------+
+         RXD <------| R             |
+                    |              B|-----------<> B
+         TXD ------>| D    ADM483   |
+ ESP32              |               |     RS485 bus side
+         RTS --+--->| DE            |
+               |    |              A|-----------<> A
+               +----| /RE           |
+                    +-------x-------+
+                            |
+                           GND
+
+This circuit does not allow collision detection. It suppresses the null bytes receive by hardware when UART_RS485_CONF_REG.UART_RS485TX_RX_EN is set. The bit UART_RS485_CONF_REG.UART_RS485RXBY_TX_EN is not applicable in this case. 
+
+
+The circuit C: auto switching of transmitter/receiver
+""""""""""""""""""""""""""""""""""""""""""""""""""""" 
+
+::
+
+    VCC1<-------------------+-----------+           +-------------------+----> VCC2           
+                 10K ____   |           |           |                   | 
+                +---|____|--+       +---x-----------x---+   10K  ____   |
+                |                   |                   |   +---|____|--+ GND2
+  RX <----------+-------------------| RXD               |   | 
+                    10K  ____       |                  A|---+---------------<> A (+)  
+                +-------|____|------| PV    ADM2483     |   |    ____  120
+                |   ____            |                   |   +---|____|---+  RS485 bus side
+         VCC1<--+--|____|--+------->| DE                |                |
+               10K         |        |                  B|---+------------+--<> B (-)
+                        ---+    +-->| /RE               |   |    ____
+          10K           |       |   |                   |   +---|____|---+
+          ____       | /-C      +---| TXD               |   10K          |
+  TX >---|____|--B___|/   NPN   |   |                   |                |
+                     |\         |   +---x-----------x---+                |
+                     | \-E      |       |           |                    |
+                        |       |       |           |                    |
+                       GND1    GND1    GND1        GND2                 GND2
+
+This galvanic isolated circuit does not require RTS pin control by software application or driver because it controls transceiver direction automatically. However it requires removing null bytes during transmission by setting UART_RS485_CONF_REG.UART_RS485RXBY_TX_EN = 1, UART_RS485_CONF_REG.UART_RS485TX_RX_EN = 0. This variant can work in any RS485 UART mode or even in UART_MODE_UART.
+
 Application Examples
 --------------------
 
@@ -144,6 +285,7 @@ Transmitting and receiveing with the same UART in two separate FreeRTOS tasks: :
 
 Using synchronous I/O multiplexing for UART file descriptors: :example:`peripherals/uart_select`.
 
+Setup of UART driver to communicate over RS485 interface in half-duplex mode: :example:`peripherals/uart_echo_rs485`. This example is similar to uart_echo but provide communication through RS485 interface chip connected to ESP32 pins.
 
 API Reference
 -------------

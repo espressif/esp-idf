@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <utime.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_err.h"
@@ -26,8 +27,10 @@
 #include <sys/reent.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/termios.h>
 #include <dirent.h>
 #include <string.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -174,8 +177,47 @@ typedef struct
         int (*access_p)(void* ctx, const char *path, int amode);
         int (*access)(const char *path, int amode);
     };
+    union {
+        int (*truncate_p)(void* ctx, const char *path, off_t length);
+        int (*truncate)(const char *path, off_t length);
+    };
+    union {
+        int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);
+        int (*utime)(const char *path, const struct utimbuf *times);
+    };
+#ifdef CONFIG_SUPPORT_TERMIOS
+    union {
+        int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);
+        int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);
+    };
+    union {
+        int (*tcgetattr_p)(void *ctx, int fd, struct termios *p);
+        int (*tcgetattr)(int fd, struct termios *p);
+    };
+    union {
+        int (*tcdrain_p)(void *ctx, int fd);
+        int (*tcdrain)(int fd);
+    };
+    union {
+        int (*tcflush_p)(void *ctx, int fd, int select);
+        int (*tcflush)(int fd, int select);
+    };
+    union {
+        int (*tcflow_p)(void *ctx, int fd, int action);
+        int (*tcflow)(int fd, int action);
+    };
+    union {
+        pid_t (*tcgetsid_p)(void *ctx, int fd);
+        pid_t (*tcgetsid)(int fd);
+    };
+    union {
+        int (*tcsendbreak_p)(void *ctx, int fd, int duration);
+        int (*tcsendbreak)(int fd, int duration);
+    };
+#endif // CONFIG_SUPPORT_TERMIOS
+
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
-    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds);
+    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
     int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
     /** called by VFS to interrupt the socket_select call when select is activated from a non-socket VFS driver; set only for the socket driver */
@@ -293,6 +335,7 @@ int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st);
 int esp_vfs_link(struct _reent *r, const char* n1, const char* n2);
 int esp_vfs_unlink(struct _reent *r, const char *path);
 int esp_vfs_rename(struct _reent *r, const char *src, const char *dst);
+int esp_vfs_utime(const char *path, const struct utimbuf *times);
 /**@}*/
 
 /**
@@ -326,8 +369,10 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
  *
  * This function is called when the VFS driver detects a read/write/error
  * condition as it was requested by the previous call to start_select.
+ *
+ * @param signal_sem semaphore handle which was passed to the driver by the start_select call
  */
-void esp_vfs_select_triggered();
+void esp_vfs_select_triggered(SemaphoreHandle_t *signal_sem);
 
 /**
  * @brief Notification from a VFS driver about a read/write/error condition (ISR version)
@@ -335,9 +380,10 @@ void esp_vfs_select_triggered();
  * This function is called when the VFS driver detects a read/write/error
  * condition as it was requested by the previous call to start_select.
  *
+ * @param signal_sem semaphore handle which was passed to the driver by the start_select call
  * @param woken is set to pdTRUE if the function wakes up a task with higher priority
  */
-void esp_vfs_select_triggered_isr(BaseType_t *woken);
+void esp_vfs_select_triggered_isr(SemaphoreHandle_t *signal_sem, BaseType_t *woken);
 
 #ifdef __cplusplus
 } // extern "C"

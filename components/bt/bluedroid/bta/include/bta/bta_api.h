@@ -181,6 +181,7 @@ typedef UINT16 tBTA_SEC;
 /* Ignore for Discoverable, Connectable only for LE modes */
 #define BTA_DM_LE_IGNORE           0xFF00
 
+#define BTA_APP_ID_1               1    /* PM example profile 1 */
 #define BTA_APP_ID_PAN_MULTI    0xFE    /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID          0xFF
 
@@ -397,6 +398,8 @@ typedef struct {
     UINT8                   flag;
     UINT8                   tx_power;
 } tBTA_BLE_ADV_DATA;
+
+typedef void (tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTA_STATUS status, uint8_t subcode, uint32_t length, uint8_t *device_info);
 
 typedef void (tBTA_SET_ADV_DATA_CMPL_CBACK) (tBTA_STATUS status);
 
@@ -631,10 +634,13 @@ typedef UINT8 tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_SP_RMT_OOB_EXT_EVT       23      /* Simple Pairing Remote OOB Extended Data request. */
 #define BTA_DM_BLE_AUTH_CMPL_EVT        24      /* BLE Auth complete */
 // btla-specific --
-#define BTA_DM_DEV_UNPAIRED_EVT         25
+#define BTA_DM_DEV_UNPAIRED_EVT         25      /* BT unpair event */
 #define BTA_DM_HW_ERROR_EVT             26      /* BT Chip H/W error */
 #define BTA_DM_LE_FEATURES_READ         27      /* Cotroller specific LE features are read */
 #define BTA_DM_ENER_INFO_READ           28      /* Energy info read */
+#define BTA_DM_BLE_DEV_UNPAIRED_EVT     29      /* BLE unpair event */
+#define BTA_DM_SP_KEY_REQ_EVT           30      /* Simple Pairing Passkey request */
+
 typedef UINT8 tBTA_DM_SEC_EVT;
 
 /* Structure associated with BTA_DM_ENABLE_EVT */
@@ -762,6 +768,7 @@ typedef struct {
     UINT8           fail_reason;        /* The HCI reason/error code for when success=FALSE */
     tBLE_ADDR_TYPE  addr_type;          /* Peer device address type */
     tBT_DEVICE_TYPE dev_type;
+    UINT8           auth_mode;
 } tBTA_DM_AUTH_CMPL;
 
 
@@ -867,6 +874,13 @@ typedef struct {
     tBTA_AUTH_REQ   rmt_io_caps;    /* IO Capabilities of remote device */
 } tBTA_DM_SP_CFM_REQ;
 
+/* Structure associated with tBTA_DM_SP_KEY_REQ */
+typedef struct {
+    BD_ADDR         bd_addr;        /* peer address */
+    DEV_CLASS       dev_class;      /* peer CoD */
+    BD_NAME         bd_name;        /* peer device name */
+} tBTA_DM_SP_KEY_REQ;
+
 enum {
     BTA_SP_KEY_STARTED,         /* passkey entry started */
     BTA_SP_KEY_ENTERED,         /* passkey digit entered */
@@ -906,23 +920,24 @@ typedef struct {
 
 /* Union of all security callback structures */
 typedef union {
-    tBTA_DM_ENABLE      enable;         /* BTA enabled */
-    tBTA_DM_PIN_REQ     pin_req;        /* PIN request. */
-    tBTA_DM_AUTH_CMPL   auth_cmpl;      /* Authentication complete indication. */
-    tBTA_DM_AUTHORIZE   authorize;      /* Authorization request. */
-    tBTA_DM_LINK_UP     link_up;       /* ACL connection down event */
-    tBTA_DM_LINK_DOWN   link_down;       /* ACL connection down event */
-    tBTA_DM_BUSY_LEVEL  busy_level;     /* System busy level */
-    tBTA_DM_SP_CFM_REQ  cfm_req;        /* user confirm request */
-    tBTA_DM_SP_KEY_NOTIF key_notif;     /* passkey notification */
-    tBTA_DM_SP_RMT_OOB  rmt_oob;        /* remote oob */
-    tBTA_DM_BOND_CANCEL_CMPL bond_cancel_cmpl; /* Bond Cancel Complete indication */
-    tBTA_DM_SP_KEY_PRESS   key_press;   /* key press notification event */
-    tBTA_DM_ROLE_CHG     role_chg;       /* role change event */
-    tBTA_DM_BLE_SEC_REQ  ble_req;        /* BLE SMP related request */
-    tBTA_DM_BLE_KEY      ble_key;        /* BLE SMP keys used when pairing */
-    tBTA_BLE_LOCAL_ID_KEYS  ble_id_keys;  /* IR event */
-    BT_OCTET16              ble_er;       /* ER event data */
+    tBTA_DM_ENABLE              enable;             /* BTA enabled */
+    tBTA_DM_PIN_REQ             pin_req;            /* PIN request. */
+    tBTA_DM_AUTH_CMPL           auth_cmpl;          /* Authentication complete indication. */
+    tBTA_DM_AUTHORIZE           authorize;          /* Authorization request. */
+    tBTA_DM_LINK_UP             link_up;            /* ACL connection down event */
+    tBTA_DM_LINK_DOWN           link_down;          /* ACL connection down event */
+    tBTA_DM_BUSY_LEVEL          busy_level;         /* System busy level */
+    tBTA_DM_SP_CFM_REQ          cfm_req;            /* user confirm request */
+    tBTA_DM_SP_KEY_REQ          key_req;            /* user passkey request */
+    tBTA_DM_SP_KEY_NOTIF        key_notif;          /* passkey notification */
+    tBTA_DM_SP_RMT_OOB          rmt_oob;            /* remote oob */
+    tBTA_DM_BOND_CANCEL_CMPL    bond_cancel_cmpl;   /* Bond Cancel Complete indication */
+    tBTA_DM_SP_KEY_PRESS        key_press;          /* key press notification event */
+    tBTA_DM_ROLE_CHG            role_chg;           /* role change event */
+    tBTA_DM_BLE_SEC_REQ         ble_req;            /* BLE SMP related request */
+    tBTA_DM_BLE_KEY             ble_key;            /* BLE SMP keys used when pairing */
+    tBTA_BLE_LOCAL_ID_KEYS      ble_id_keys;        /* IR event */
+    BT_OCTET16                  ble_er;             /* ER event data */
 } tBTA_DM_SEC;
 
 /* Security callback */
@@ -1206,6 +1221,10 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_SNIFF_A2DP_IDX      BTA_DM_PM_SNIFF
 #endif
 
+#ifndef BTA_DM_PM_SNIFF_JV_IDX
+#define BTA_DM_PM_SNIFF_JV_IDX      BTA_DM_PM_SNIFF
+#endif
+
 #ifndef BTA_DM_PM_SNIFF_HD_IDLE_IDX
 #define BTA_DM_PM_SNIFF_HD_IDLE_IDX   BTA_DM_PM_SNIFF2
 #endif
@@ -1428,7 +1447,7 @@ extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 
-extern void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_CMPL_CB *cmpl_cb);
+extern void BTA_DmBleReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb);
 
 /*******************************************************************************
 **
@@ -1561,6 +1580,18 @@ extern void BTA_DmBondCancel(BD_ADDR bd_addr);
 
 /*******************************************************************************
 **
+** Function         BTA_DMSetPinType
+**
+** Description      This function sets pin type as BTM_PIN_TYPE_FIXED or BTM_PIN_TYPE_VARIABLE
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DMSetPinType (UINT8 pin_type, UINT8 *pin_code, UINT8 pin_code_len);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmPinReply
 **
 ** Description      This function provides a PIN when one is requested by DM
@@ -1587,6 +1618,22 @@ extern void BTA_DmPinReply(BD_ADDR bd_addr, BOOLEAN accept, UINT8 pin_len,
 **
 *******************************************************************************/
 extern void BTA_DmLocalOob(void);
+
+/*******************************************************************************
+**
+** Function         BTA_DmOobReply
+**
+**                  This function is called to provide the OOB data for
+**                  SMP in response to BTM_LE_OOB_REQ_EVT
+**
+** Parameters:      bd_addr     - Address of the peer device
+**                  len         - length of simple pairing Randomizer  C
+**                  p_value     - simple pairing Randomizer  C.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmOobReply(BD_ADDR bd_addr, UINT8 len, UINT8 *p_value);
 #endif /* BTM_OOB_INCLUDED */
 
 /*******************************************************************************
@@ -1600,6 +1647,18 @@ extern void BTA_DmLocalOob(void);
 **
 *******************************************************************************/
 extern void BTA_DmConfirm(BD_ADDR bd_addr, BOOLEAN accept);
+
+/*******************************************************************************
+**
+** Function         BTA_DmPasskeyReqReply
+**
+** Description      This function is called to provide the passkey for
+**                  Simple Pairing in response to BTA_DM_SP_KEY_REQ_EVT
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmPasskeyReqReply(BOOLEAN accept, BD_ADDR bd_addr, UINT32 passkey);
 
 /*******************************************************************************
 **
@@ -1632,7 +1691,7 @@ extern void BTA_DmAddDevice(BD_ADDR bd_addr, DEV_CLASS dev_class,
 **                  BTA_FAIL if operation failed.
 **
 *******************************************************************************/
-extern tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr);
+extern tBTA_STATUS BTA_DmRemoveDevice(BD_ADDR bd_addr, tBT_TRANSPORT transport);
 
 /*******************************************************************************
 **
@@ -1788,6 +1847,22 @@ extern void BTA_DmBleSetBgConnType(tBTA_DM_BLE_CONN_TYPE bg_conn_type, tBTA_DM_B
 **
 *******************************************************************************/
 extern void BTA_DmBlePasskeyReply(BD_ADDR bd_addr, BOOLEAN accept, UINT32 passkey);
+
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetStaticPasskey
+**
+** Description      Set BLE SMP static passkey.
+**
+** Parameters:      add              - add static passkey when add is true
+**                                     clear static passkey when add is false
+**                  passkey          - static passkey value
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmBleSetStaticPasskey(bool add, uint32_t passkey);
 
 /*******************************************************************************
 **
@@ -2070,6 +2145,7 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
 extern void BTA_DmBleStopAdvertising(void);
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
+extern void BTA_DmClearRandAddress(void);
 
 #endif
 
@@ -2149,6 +2225,22 @@ extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
 
 /*******************************************************************************
 **
+** Function         BTA_DmBleSetLongAdv
+**
+** Description      This function is called to set long Advertising data
+**
+** Parameters       adv_data : long advertising data.
+**                  adv_data_len : long advertising data length.
+**                  p_adv_data_cback : set long adv data complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
+                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
+
+/*******************************************************************************
+**
 ** Function         BTA_DmBleSetScanRsp
 **
 ** Description      This function is called to override the BTA scan response.
@@ -2177,6 +2269,24 @@ extern void BTA_DmBleSetScanRsp (tBTA_BLE_AD_MASK data_mask,
 *******************************************************************************/
 extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
                                     tBTA_SET_ADV_DATA_CMPL_CBACK *p_scan_rsp_data_cback);
+
+/*******************************************************************************
+**
+** Function         BTA_DmUpdateDuplicateExceptionalList
+**
+** Description      This function is called to update duplicate scan exceptional list
+**
+** Parameters       subcode : add, remove or clean duplicate scan exceptional list.
+**                  type : device info type.
+**                  device_info:  device info
+**                  p_update_duplicate_ignore_list_cback :  update complete callback.
+**
+** Returns          None
+**
+*******************************************************************************/
+extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, 
+                                                BD_ADDR device_info, 
+                                                tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK p_update_duplicate_exceptional_list_cback);
 
 /*******************************************************************************
 **

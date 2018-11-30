@@ -5,7 +5,7 @@
   category: Function
   test point 1: basic function
   initial condition: BLE_INIT_SMP
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   execution time: 0
   module: BT Stack
   sub module: SMP
@@ -70,7 +70,7 @@
 .check_connection: &check_connection
   LIST_MERGE:
     - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
-      - ["R SSC1 C +GATTC:DiscoverService,A000"]
+      - ["R SSC1 C +GATTC:DiscoverService,A002"]
 
 .disconnect: &disconnect
   LIST_MERGE:
@@ -1619,7 +1619,7 @@ test cases:
 - ID: BTSTK_SMP_03001
   <<: *SMP_CASE
   test point 2: BLE SMP pair with pairing request test
-  summary: BLE SMP start pair with pairing request
+  summary: BLE SMP start pair with secruity request
   steps: |
     1. set sec properity None on initiator and responder
     2. set IOCAP to KeyboardDisplay on initiator and responder
@@ -1666,7 +1666,7 @@ test cases:
 - ID: BTSTK_SMP_04001
   <<: *SMP_CASE
   test point 2: BLE SMP key test
-  summary: BLE SMP set key size test
+  summary: BLE SMP set key size less than required
   allow fail: 1/2
   steps: |
     1. set key size 7
@@ -1691,7 +1691,7 @@ test cases:
 - ID: BTSTK_SMP_04002
   <<: *SMP_CASE
   test point 2: BLE SMP key test
-  summary: BLE SMP set key size test
+  summary: BLE SMP set key size greater than required
   allow fail: 1/2
   steps: |
     1. set key size 16
@@ -1777,6 +1777,8 @@ test cases:
   - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
     - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
   - - "SSC SSC2 blesmp -K -r <dut1_bt_mac> -a {%d} -k 000001"
+    - []
+  - - DELAY 10
     - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
   - *disconnect
   - - LOOP 2 6 "[1,0]" "[0,1]"
@@ -1864,7 +1866,7 @@ test cases:
     - [""]
 - ID: BTSTK_SMP_06001
   <<: *SMP_CASE
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   initial condition: BLE_DEINIT1
   test point 2: BLE SMP use API in abnormal state
   summary: BLE SMP use API when BLE not initialized, not enabled or not registered callback
@@ -2253,15 +2255,21 @@ test cases:
 - ID: BTSTK_SMP_08003
   <<: *SMP_CASE
   test point 2: BLE SMP bond item management test
-  summary: BLE SMP get bond list and number
+  summary: BLE SMP get bond list and number when pairing and after reboot
   steps: |
-   1. DUT2 set AuthReqMode and RspKey
-   2. pairing
-   3. get bong and remove bond
+   1. all slaves set AuthReqMode and RspKey
+   2. do pairing
+   3. master and slave get bond list and num
+   4. reboot
+   5. master and slave get bond list and num
+   6. slave remove bond device
   expected result: |
    1. Succeed
    2. Succeed
    3. Succeed
+   4. succeed
+   5. succeed
+   6. succeed
   test environment: SSC_T5_1
   initial condition: BLE_INIT_SMP5
   cmd set:
@@ -2286,12 +2294,18 @@ test cases:
     - ['P SSC1 C +BLESMP:GetBondList,OK,4']
   - - "SSC SSC1 blesmp -B -z getnum"
     - ['P SSC1 C +BLESMP:GetBondNum,4']
-  - - "SSC SSC1 bleconn -D -z all"
-    - ['R SSC1 C +BLECONN:']
-  - - "SSC SSC1 blesmp -B -z remove -r <dut2_bt_mac>"
-    - ['P SSC1 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut2_bt_mac>)']
-  - - "SSC SSC1 blesmp -B -z remove -r <dut3_bt_mac>"
-    - ['P SSC1 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut3_bt_mac>)']
+  - - "SSC SSC2 blesmp -B -z getnum"
+    - ['P SSC2 C +BLESMP:GetBondNum,1']
+  - - "SSC SSC[1-2] reboot"
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ["R SSC[1-2] C +BLE:OK"]
+  - - "SSC SSC1 blesmp -B -z getnum"
+    - ['P SSC1 C +BLESMP:GetBondNum,4']
+  - - "SSC SSC2 blesmp -B -z getnum"
+    - ['P SSC2 C +BLESMP:GetBondNum,1']
+  - - "SSC SSC2 blesmp -B -z remove -r <dut1_bt_mac>"
+    - ['P SSC2 RE "\+BLESMP:RemoveBond,Success,%%s"%%(<dut1_bt_mac>)']
 - ID: BTSTK_SMP_08004
   <<: *SMP_CASE
   test point 2: BLE SMP bond item management test
@@ -2304,3 +2318,336 @@ test cases:
   - ""
   - - "SSC SSC1 blesmp -B -z remove -r <dut2_bt_mac>"
     - ['P SSC1 C +BLESMP:RemoveBond,Fail']
+- ID: BTSTK_SMP_08005
+  <<: *SMP_CASE
+  test point 2: BLE SMP remove bond
+  summary: BLE SMP bond 15/16 devices and get list
+  steps: |
+   1. DUT2 set AuthReqMode and RspKey
+   2. DUT2 set static random address
+   3. DUT1 and DUT2 do pairing
+   4. loop step 2 and step3 16 times
+   5. get bond list and bond num
+   6. DUT2 set static random address
+   7. DUT1 and DUT2 do pairing
+   8. get bond list and bond num
+  expected result: |
+   1. Succeed
+   2. Succeed
+   3. Succeed
+   4. succeed
+   5. succeed
+   6. succeed
+   7. succeed
+   8. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x01"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x03"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z RspKey -v 0x03"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - LOOP 15 7 "range(0,15)" "range(0,15)" "range(0,15)"
+    - ""
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ['R SSC2 C +BLEADV:Stop,OK']
+  - - "SSC SSC2 ble -S -z randAddr -a c0:9b:0e:36:6d:7{%x} -r 1"
+    - ["R SSC2 C +BLECONN:SetRandAddr,OK"]
+  - - "SSC SSC2 bleadv -D -z start -o 1"
+    - ['R SSC2 C +BLEADV:Start,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a c0:9b:0e:36:6d:7{%x} -r 1"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC1 C +BLESMP:SecReq']
+  - - "SSC SSC1 blesmp -R -a 1 -r c0:9b:0e:36:6d:7{%x}"
+    - ['P SSC1 C +BLESMP:AuthComplete,Success,0','P SSC2 C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC1 bleconn -D -z all"
+    - ['P SSC1 C +BLE:CLOSE', 'P SSC2 C +BLE:GattsDisconnect']
+  - - "SSC SSC1 blesmp -B -z getlist -n 16"
+    - ['P SSC1 C +BLESMP:GetBondList,OK,15']
+  - - "SSC SSC2 ble -S -z randAddr -a c1:0a:d3:25:7a:cf -r 1"
+    - ["R SSC2 C +BLECONN:SetRandAddr,OK"]
+  - - "SSC SSC2 bleadv -D -z stop"
+    - ['R SSC2 C +BLEADV:Stop,OK']
+  - - "SSC SSC2 bleadv -D -z start -o 1"
+    - ['R SSC2 C +BLEADV:Start,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a c1:0a:d3:25:7a:cf -r 1"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ['P SSC1 C +BLESMP:SecReq']
+  - - "SSC SSC1 blesmp -R -a 1 -r c1:0a:d3:25:7a:cf"
+    - ['P SSC1 C +BLESMP:AuthComplete,Success,0','P SSC2 C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC1 blesmp -B -z getlist -n 16"
+    - ['P SSC1 C +BLESMP:GetBondList,OK,15']
+- ID: BTSTK_SMP_50001
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT read char performance test after just work pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do read char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "read"
+    - ""
+  - - pair_op = "just_work_pair"
+    - ""
+  - - op_char = "0xC301"
+    - ""
+- ID: BTSTK_SMP_50002
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT read char performance test after numberic comparision pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do read char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "read"
+    - ""
+  - - pair_op = "numberic_comparision_pair"
+    - ""
+  - - op_char = "0xC301"
+    - ""
+- ID: BTSTK_SMP_50003
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT write char performance test after just work pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "write"
+    - ""
+  - - op_char = "0xC304"
+    - ""
+  - - pair_op = "just_work_pair"
+    - ""
+  - - op_len = 490
+    - ""
+- ID: BTSTK_SMP_50004
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT write char performance test after numberic comparision pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do write char for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "write"
+    - ""
+  - - op_char = "0xC304"
+    - ""
+  - - pair_op = "numberic_comparision_pair"
+    - ""
+  - - op_len = 490
+    - ""
+- ID: BTSTK_SMP_50005
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT notify performance test after just work pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do notify for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "notify"
+    - ""
+  - - op_char = "0xC305"
+    - ""
+  - - pair_op = "just_work_pair"
+    - ""
+  - - op_len = 490
+    - ""
+- ID: BTSTK_SMP_50006
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT notify performance test after numberic comparision pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do notify for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "notify"
+    - ""
+  - - op_char = "0xC305"
+    - ""
+  - - pair_op = "numberic_comparision_pair"
+    - ""
+  - - op_len = 490
+    - ""
+- ID: BTSTK_SMP_50007
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT indicate performance test after just work pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do notify for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "indicate"
+    - ""
+  - - pair_op = "just_work_pair"
+    - ""
+  - - op_char = "0xC306"
+    - ""
+  - - op_len = 490
+    - ""
+- ID: BTSTK_SMP_50008
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP GATT performance test
+  summary: GATT indicate performance test after numberic comparision pair
+  Test App: SSC_BLE_PERF
+  steps: |
+    1. update connection parameter
+    2. do primary service discovery
+    3. do notify for some time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. calculate throughput
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPGATTPerformance"
+  - - test_time = 420
+    - ""
+  - - mtu = 512
+    - ""
+  - - gatt_op = "indicate"
+    - ""
+  - - pair_op = "numberic_comparision_pair"
+    - ""
+  - - op_char = "0xC306"
+    - ""
+  - - op_len = 490
+    - ""
+- ID: BTSTK_SMP_51001
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP performance test
+  summary: BLE SMP Connect and disconnect performance test
+  steps: |
+    1. DUT2 set AuthReqMode and RspKey
+    2. DUT1 disconnect with DUT2
+    3. DUT2 start advertising
+    4. DUT1 connect to DUT2
+    5. do service discovery
+    6. loop step 1-4
+    7. check connection fail ratio and average conn time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. meet pass standard
+  execution time: 6
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  cmd set:
+  - "BLEStress/BLESMPConnPerformance"
+  - - "test_time = 420"
+    - ""
+  - - "average_conn_time = 3"
+    - ""
+  - - "fail_ratio = 0.01"
+    - ""
+  - - "fail_timeout = 10"
+    - ""

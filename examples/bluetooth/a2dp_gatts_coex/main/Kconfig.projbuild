@@ -1,0 +1,43 @@
+menu "A2DP Example Configuration"
+
+choice A2DP_SINK_OUTPUT
+    prompt "A2DP Sink Output"
+    default A2DP_SINK_OUTPUT_EXTERNAL_I2S
+    help
+        Select to use Internal DAC or external I2S driver
+
+config A2DP_SINK_OUTPUT_INTERNAL_DAC
+    bool "Internal DAC"
+    help
+        Select this to use Internal DAC sink output
+
+config A2DP_SINK_OUTPUT_EXTERNAL_I2S
+    bool "External I2S Codec"
+    help
+        Select this to use External I2S sink output
+
+endchoice
+
+config I2S_LRCK_PIN
+    int "I2S LRCK (WS) GPIO"
+    default 22
+    depends on A2DP_SINK_OUTPUT_EXTERNAL_I2S
+    help
+        GPIO number to use for I2S LRCK(WS) Driver.
+
+config I2S_BCK_PIN
+    int "I2S BCK GPIO"
+    default 26
+    depends on A2DP_SINK_OUTPUT_EXTERNAL_I2S
+    help
+        GPIO number to use for I2S BCK Driver.
+
+config I2S_DATA_PIN
+    int "I2S DATA GPIO"
+    default 25
+    depends on A2DP_SINK_OUTPUT_EXTERNAL_I2S
+    help
+        GPIO number to use for I2S Data Driver.
+
+
+endmenu

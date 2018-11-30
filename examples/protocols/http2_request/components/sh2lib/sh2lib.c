@@ -58,22 +58,19 @@ static ssize_t callback_send(nghttp2_session *session, const uint8_t *data,
     int pending_data = length;
 
     /* Send data in 1000 byte chunks */
-    while (copy_offset != (length - 1)) {
+    while (copy_offset != length) {
         int chunk_len = pending_data > 1000 ? 1000 : pending_data;
         int subrv = callback_send_inner(hd, data + copy_offset, chunk_len);
         if (subrv <= 0) {
-            if (copy_offset) {
-                /* If some data was xferred, send the number of bytes
-                 * xferred */
-                rv = copy_offset;
-            } else {
-                /* If not, send the error code */
+            if (copy_offset == 0) {
+                /* If no data is transferred, send the error code */
                 rv = subrv;
             }
             break;
         }
-        copy_offset += chunk_len;
-        pending_data -= chunk_len;
+        copy_offset += subrv;
+        pending_data -= subrv;
+        rv += subrv;
     }
     return rv;
 }

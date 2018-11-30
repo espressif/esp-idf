@@ -27,11 +27,12 @@ extern "C" {
 #endif
 
 /**
- * @brief IO signals for MCPWM
- *        6 MCPWM output pins that generate PWM signals
- *        3 MCPWM fault input pins to detect faults like overcurrent, overvoltage, etc
- *        3 MCPWM sync input pins to synchronize MCPWM outputs signals
- *        3 MCPWM capture input pin to capture hall sell signal to measure time
+ * @brief IO signals for the MCPWM
+ *
+ *        - 6 MCPWM output pins that generate PWM signals
+ *        - 3 MCPWM fault input pins to detect faults like overcurrent, overvoltage, etc.
+ *        - 3 MCPWM sync input pins to synchronize MCPWM outputs signals
+ *        - 3 MCPWM capture input pins to gather feedback from controlled motors, using e.g. hall sensors
  */
 typedef enum {
     MCPWM0A = 0,        /*!<PWM0A output pin*/
@@ -229,9 +230,9 @@ typedef struct {
  * @brief MCPWM config carrier structure
  */
 typedef struct {
-    uint8_t carrier_period;                 /*!<Set carrier period = (carrier_period + 1)*800ns, carrier_period should be < 16*/
-    uint8_t carrier_duty;                   /*!<Set carrier duty cycle, carrier_duty should be less then 8(increment every 12.5%)*/
-    uint8_t pulse_width_in_os;              /*!<Set pulse width of first pulse in one shot mode = (carrier period)*(pulse_width_in_os + 1), should be less then 16*/
+    uint8_t carrier_period;                    /*!<Set carrier period = (carrier_period + 1)*800ns, carrier_period should be < 16*/
+    uint8_t carrier_duty;                      /*!<Set carrier duty cycle, carrier_duty should be less than 8 (increment every 12.5%)*/
+    uint8_t pulse_width_in_os;                 /*!<Set pulse width of first pulse in one shot mode = (carrier period)*(pulse_width_in_os + 1), should be less then 16*/
     mcpwm_carrier_os_t carrier_os_mode;        /*!<Enable or disable carrier oneshot mode*/
     mcpwm_carrier_out_ivt_t carrier_ivt_mode;  /*!<Invert output of carrier*/
 } mcpwm_carrier_config_t;
@@ -242,7 +243,7 @@ typedef struct {
  *        @note
  *        This function initializes one gpio at a time.
  *
- * @param mcpwm_num set MCPWM Channel(0-1)
+ * @param mcpwm_num set MCPWM unit(0-1)
  * @param io_signal set MCPWM signals, each MCPWM unit has 6 output(MCPWMXA, MCPWMXB) and 9 input(SYNC_X, FAULT_X, CAP_X)
  *                  'X' is timer_num(0-2)
  * @param gpio_num set this to configure gpio for MCPWM, if you want to use gpio16, gpio_num = 16
@@ -258,7 +259,7 @@ esp_err_t mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t io_signal, 
  *        @note
  *        This function can be used to initialize more then one gpio at a time.
  *
- * @param mcpwm_num set MCPWM Channel(0-1)
+ * @param mcpwm_num set MCPWM unit(0-1)
  * @param mcpwm_pin MCPWM pin structure
  *
  * @return
@@ -270,7 +271,7 @@ esp_err_t mcpwm_set_pin(mcpwm_unit_t mcpwm_num, const mcpwm_pin_config_t *mcpwm_
 /**
  * @brief Initialize MCPWM parameters
  *
- * @param mcpwm_num set MCPWM Channel(0-1)
+ * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
  * @param mcpwm_conf configure structure mcpwm_config_t
  *
@@ -545,11 +546,11 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
 esp_err_t mcpwm_deadtime_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
 
 /**
- * @brief Initialize fault submodule, currently low level triggering not supported
+ * @brief Initialize fault submodule, currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param intput_level set fault signal level, which will cause fault to occur
- * @param fault_sig set the fault Pin, which needs to be enabled
+ * @param fault_sig set the fault pin, which needs to be enabled
  *
  * @return
  *     - ESP_OK Success
@@ -560,11 +561,11 @@ esp_err_t mcpwm_fault_init(mcpwm_unit_t mcpwm_num, mcpwm_fault_input_level_t int
 /**
  * @brief Set oneshot mode on fault detection, once fault occur in oneshot mode reset is required to resume MCPWM signals
  *        @note
- *        currently low level triggering not supported
+ *        currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
- * @param fault_sig set the fault Pin, which needs to be enabled for oneshot mode
+ * @param fault_sig set the fault pin, which needs to be enabled for oneshot mode
  * @param action_on_pwmxa action to be taken on MCPWMXA when fault occurs, either no change or high or low or toggle
  * @param action_on_pwmxb action to be taken on MCPWMXB when fault occurs, either no change or high or low or toggle
  *
@@ -578,11 +579,11 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
 /**
  * @brief Set cycle-by-cycle mode on fault detection, once fault occur in cyc mode MCPWM signal resumes as soon as fault signal becomes inactive
  *        @note
- *        currently low level triggering not supported
+ *        currently low level triggering is not supported
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
- * @param fault_sig set the fault Pin, which needs to be enabled for cyc mode
+ * @param fault_sig set the fault pin, which needs to be enabled for cyc mode
  * @param action_on_pwmxa action to be taken on MCPWMXA when fault occurs, either no change or high or low or toggle
  * @param action_on_pwmxb action to be taken on MCPWMXB when fault occurs, either no change or high or low or toggle
  *
@@ -610,7 +611,7 @@ esp_err_t mcpwm_fault_deinit(mcpwm_unit_t mcpwm_num, mcpwm_fault_signal_t fault_
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param cap_edge set capture edge, BIT(0) - negative edge, BIT(1) - positive edge
- * @param cap_sig capture Pin, which needs to be enabled
+ * @param cap_sig capture pin, which needs to be enabled
  * @param num_of_pulse count time between rising/falling edge between 2 *(pulses mentioned), counter uses APB_CLK
  *
  * @return
@@ -625,7 +626,7 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
  * @brief Disable capture signal
  *
  * @param mcpwm_num set MCPWM unit(0-1)
- * @param cap_sig capture Pin, which needs to be disabled
+ * @param cap_sig capture pin, which needs to be disabled
  *
  * @return
  *     - ESP_OK Success
@@ -647,7 +648,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
 /**
  * @brief Get edge of capture signal
  *
- * @param mcpwm_num set MCPWM Channel(0-1)
+ * @param mcpwm_num set MCPWM unit(0-1)
  * @param cap_sig capture pin of whose edge is to be determined
  *
  * @return
@@ -660,8 +661,8 @@ uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_sig
  *
  * @param mcpwm_num set MCPWM unit(0-1)
  * @param timer_num set timer number(0-2) of MCPWM, each MCPWM unit has 3 timers
- * @param sync_sig set the fault Pin, which needs to be enabled
- * @param phase_val phase value in 1/1000(for 86.7%, phase_val = 867) which timer moves to on sync signal
+ * @param sync_sig set the synchronization pin, which needs to be enabled
+ * @param phase_val phase value in 1/1000 (for 86.7%, phase_val = 867) which timer moves to on sync signal
  *
  * @return
  *     - ESP_OK Success

@@ -27,22 +27,6 @@ config PARTITION_TABLE_CUSTOM_FILENAME
         Name of the custom partition CSV filename. This path is evaluated
         relative to the project root directory.
 
-config PARTITION_TABLE_CUSTOM_APP_BIN_OFFSET
-    hex "Factory app partition offset" if PARTITION_TABLE_CUSTOM
-    default 0x10000
-    help
-        If using a custom partition table, specify the offset in the flash
-        where 'make flash' should write the built app.
-
-config PARTITION_TABLE_CUSTOM_PHY_DATA_OFFSET
-    hex "PHY data partition offset" if PARTITION_TABLE_CUSTOM
-    depends on ESP32_PHY_INIT_DATA_IN_PARTITION
-    default 0xf000
-    help
-        If using a custom partition table, specify the offset in the flash
-        where 'make flash' should write the initial PHY data file.
-
-
 config PARTITION_TABLE_FILENAME
        string
        default partitions_singleapp.csv if PARTITION_TABLE_SINGLE_APP && !ESP32_ENABLE_COREDUMP_TO_FLASH
@@ -51,16 +35,18 @@ config PARTITION_TABLE_FILENAME
        default partitions_two_ota_coredump.csv if PARTITION_TABLE_TWO_OTA && ESP32_ENABLE_COREDUMP_TO_FLASH
        default PARTITION_TABLE_CUSTOM_FILENAME if PARTITION_TABLE_CUSTOM
 
-config APP_OFFSET
-       hex
-       default PARTITION_TABLE_CUSTOM_APP_BIN_OFFSET if PARTITION_TABLE_CUSTOM
-       default 0x10000 # this is the factory app offset used by the default tables
+config PARTITION_TABLE_OFFSET
+    hex "Offset of partition table"
+    default 0x8000
+    help
+        The address of partition table (by default 0x8000).
+        Allows you to move the partition table, it gives more space for the bootloader.
+        Note that the bootloader and app will both need to be compiled with the same PARTITION_TABLE_OFFSET value.
 
-config PHY_DATA_OFFSET
-       depends on ESP32_PHY_INIT_DATA_IN_PARTITION
-       hex
-       default PARTITION_TABLE_CUSTOM_PHY_DATA_OFFSET if PARTITION_TABLE_CUSTOM
-       default 0xf000 # this is the factory app offset used by the default tables
+        This number should be a multiple of 0x1000.
+
+        Note that partition offsets in the partition table CSV file may need to be changed if this value is set to a higher value. To have
+        each partition offset adapt to the configured partition table offset, leave all partition offsets blank in the CSV file.
 
 config PARTITION_TABLE_MD5
     bool "Generate an MD5 checksum for the partition table"

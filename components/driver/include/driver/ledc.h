@@ -455,7 +455,7 @@ void ledc_fade_func_uninstall();
 esp_err_t ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_fade_mode_t fade_mode);
 
 /**
- * @brief A thread-safe API to set duty for LEDC channel and update the settings immediately
+ * @brief A thread-safe API to set duty for LEDC channel and return when duty updated.
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  *

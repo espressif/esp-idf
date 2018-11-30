@@ -155,17 +155,15 @@ static inline void PORTMUX_RELEASE_MUX_FN_NAME(portMUX_TYPE *mux) {
 #endif
 
 	assert(coreID == mux->owner); // This is a mutex we didn't lock, or it's corrupt
-	assert(mux->count > 0); // Indicates memory corruption
-	assert(mux->count < 0x100); // Indicates memory corruption
 
 	mux->count--;
 	if(mux->count == 0) {
 		mux->owner = portMUX_FREE_VAL;
-	}
+	} else {
+		assert(mux->count < 0x100); // Indicates memory corruption
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG_RECURSIVE
-	else {
 		ets_printf("Recursive unlock: count=%d last locked %s line %d, curr %s line %d\n", mux->count, lastLockedFn, lastLockedLine, fnName, line);
-	}
 #endif
+	}
 #endif //!CONFIG_FREERTOS_UNICORE
 }

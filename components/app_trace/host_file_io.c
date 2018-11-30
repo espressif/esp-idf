@@ -279,6 +279,8 @@ static void esp_apptrace_fseek_args_prepare(uint8_t *buf, void *priv)
     esp_apptrace_fseek_args_t *args = priv;
 
     memcpy(buf, &args->file, sizeof(args->file));
+    memcpy(buf + sizeof(args->file), &args->offset, sizeof(args->offset));
+    memcpy(buf + sizeof(args->file) + sizeof(args->offset), &args->whence, sizeof(args->whence));
 }
 
 int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int whence)

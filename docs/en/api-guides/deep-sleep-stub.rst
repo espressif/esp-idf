@@ -55,11 +55,11 @@ The first way is simpler for very short and simple code, or for source files whe
 Loading Data Into RTC Memory
 ----------------------------
 
-Data used by stub code must be resident in RTC Slow Memory. This memory is also used by the ULP.
+Data used by stub code must be resident in RTC memory. The data can be placed in RTC Fast memory or in RTC Slow memory which is also used by the ULP.
 
 Specifying this data can be done in one of two ways:
 
-The first way is to use the ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` to specify any data (writeable or read-only, respectivley) which should be loaded into RTC slow memory::
+The first way is to use the ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` to specify any data (writeable or read-only, respectively) which should be loaded into RTC memory::
 
     RTC_DATA_ATTR int wake_count;
 
@@ -68,6 +68,10 @@ The first way is to use the ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` to specify
         static RTC_RODATA_ATTR const char fmt_str[] = "Wake count %d\n";
         ets_printf(fmt_str, wake_count++);
     }
+
+The RTC memory area where this data will be placed can be configured via menuconfig option named ``CONFIG_ESP32_RTCDATA_IN_FAST_MEM``. This option allows to keep slow memory area for ULP programs and once it is enabled the data marked with ``RTC_DATA_ATTR`` and ``RTC_RODATA_ATTR`` are placed in the RTC fast memory segment otherwise it goes to RTC slow memory (default option). This option depends on the ``CONFIG_FREERTOS_UNICORE`` because RTC fast memory can be accessed only by PRO_CPU.
+
+The similar attributes ``RTC_FAST_ATTR`` and ``RTC_SLOW_ATTR`` can be used to specify data that will be force placed into RTC_FAST and RTC_SLOW memory respectively. Any access to data marked with ``RTC_FAST_ATTR`` is allowed by PRO_CPU only and it is responsibility of user to make sure about it.
 
 Unfortunately, any string constants used in this way must be declared as arrays and marked with RTC_RODATA_ATTR, as shown in the example above.
 

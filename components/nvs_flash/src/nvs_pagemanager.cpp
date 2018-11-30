@@ -66,13 +66,26 @@ esp_err_t PageManager::load(uint32_t baseSector, uint32_t sectorCount)
 
     if (lastItemIndex != SIZE_MAX) {
         auto last = PageManager::TPageListIterator(&lastPage);
-        for (auto it = begin(); it != last; ++it) {
+        TPageListIterator it;
+
+        for (it = begin(); it != last; ++it) {
 
             if ((it->state() != Page::PageState::FREEING) &&
-                    (it->eraseItem(item.nsIndex, item.datatype, item.key) == ESP_OK)) {
+                    (it->eraseItem(item.nsIndex, item.datatype, item.key, item.chunkIndex) == ESP_OK)) {
                 break;
             }
         }
+        if ((it == last) && (item.datatype == ItemType::BLOB_IDX)) {
+            /* Rare case in which the blob was stored using old format, but power went just after writing
+             * blob index during modification. Loop again and delete the old version blob*/
+            for (it = begin(); it != last; ++it) {
+
+                if ((it->state() != Page::PageState::FREEING) &&
+                        (it->eraseItem(item.nsIndex, ItemType::BLOB, item.key, item.chunkIndex) == ESP_OK)) {
+                    break;
+                }
+            }
+        } 
     }
 
     // check if power went out while page was being freed

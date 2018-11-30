@@ -14,6 +14,9 @@
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_cntl_reg.h"   // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
+#include "rom/rtc.h"
+#include "esp_newlib.h"
+#include "test_utils.h"
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
@@ -175,13 +178,16 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #endif
 
+    rtc_cpu_freq_config_t config_xtal, config_default;
+    rtc_clk_cpu_freq_get_config(&config_default);
+    rtc_clk_cpu_freq_mhz_to_config((int) rtc_clk_xtal_freq_get(), &config_xtal);
+
     esp_sleep_enable_timer_wakeup(1000);
-    rtc_cpu_freq_t default_freq = rtc_clk_cpu_freq_get();
     for (int i = 0; i < 1000; ++i) {
         if (i % 2 == 0) {
-            rtc_clk_cpu_freq_set_fast(RTC_CPU_FREQ_XTAL);
+            rtc_clk_cpu_freq_set_config_fast(&config_xtal);
         } else {
-            rtc_clk_cpu_freq_set_fast(default_freq);
+            rtc_clk_cpu_freq_set_config_fast(&config_default);
         }
         printf("%d\n", i);
         fflush(stdout);
@@ -196,6 +202,74 @@ TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][re
     do_deep_sleep_from_app_cpu();
 }
 #endif
+
+static void do_deep_sleep()
+{
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+static void check_sleep_reset_and_sleep()
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+static void check_sleep_reset()
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+}
+
+TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=DEEPSLEEP_RESET,DEEPSLEEP_RESET,DEEPSLEEP_RESET]",
+        do_deep_sleep,
+        check_sleep_reset_and_sleep,
+        check_sleep_reset_and_sleep,
+        check_sleep_reset);
+
+static void do_abort()
+{
+    abort();
+}
+
+static void check_abort_reset_and_sleep()
+{
+    TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abort,SW_CPU_RESET,DEEPSLEEP_RESET]",
+        do_abort,
+        check_abort_reset_and_sleep,
+        check_sleep_reset);
+
+static RTC_DATA_ATTR uint32_t s_wake_stub_var;
+
+static RTC_IRAM_ATTR void wake_stub()
+{
+    esp_default_wake_deep_sleep();
+    s_wake_stub_var = (uint32_t) &wake_stub;
+}
+
+static void prepare_wake_stub()
+{
+    esp_set_deep_sleep_wake_stub(&wake_stub);
+    esp_sleep_enable_timer_wakeup(100000);
+    esp_deep_sleep_start();
+}
+
+static void check_wake_stub()
+{
+    TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
+    TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
+    /* ROM code clears wake stub entry address */
+    TEST_ASSERT_NULL(esp_get_deep_sleep_wake_stub());
+}
+
+TEST_CASE_MULTIPLE_STAGES("can set sleep wake stub", "[deepsleep][reset=DEEPSLEEP_RESET]",
+        prepare_wake_stub,
+        check_wake_stub);
 
 
 TEST_CASE("wake up using ext0 (13 high)", "[deepsleep][ignore]")
@@ -338,3 +412,37 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
 }
 
+static RTC_DATA_ATTR struct timeval start;
+static void trigger_deepsleep(void)
+{
+    printf("Trigger deep sleep. Waiting for 10 sec ...\n");
+
+    // Simulate the dispersion of the calibration coefficients at start-up.
+    // Corrupt the calibration factor.
+    esp_clk_slowclk_cal_set(esp_clk_slowclk_cal_get() / 2);
+    esp_set_time_from_rtc();
+
+    // Delay for time error accumulation.
+    vTaskDelay(10000/portTICK_RATE_MS);
+
+    // Save start time. Deep sleep.
+    gettimeofday(&start, NULL);
+    esp_sleep_enable_timer_wakeup(1000);
+    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc() 
+    // to prevent a negative time after wake up.
+    esp_deep_sleep_start();
+}
+
+static void check_time_deepsleep(void)
+{
+    struct timeval stop;
+    RESET_REASON reason = rtc_get_reset_reason(0);
+    TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    gettimeofday(&stop, NULL);
+    // Time dt_ms must in any case be positive.
+    int dt_ms = (stop.tv_sec - start.tv_sec) * 1000 + (stop.tv_usec - start.tv_usec) / 1000;
+    printf("delta time = %d \n", dt_ms);
+    TEST_ASSERT_MESSAGE(dt_ms > 0, "Time in deep sleep is negative");
+}
+
+TEST_CASE_MULTIPLE_STAGES("check a time after wakeup from deep sleep", "[deepsleep][reset=DEEPSLEEP_RESET]", trigger_deepsleep, check_time_deepsleep);

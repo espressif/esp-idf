@@ -54,11 +54,18 @@ typedef uint8_t esp_ble_key_type_t;
 #define ESP_LE_AUTH_NO_BOND                 0x00                                     /*!< 0*/                     /* relate to BTM_LE_AUTH_NO_BOND in stack/btm_api.h */
 #define ESP_LE_AUTH_BOND                    0x01                                     /*!< 1 << 0 */               /* relate to BTM_LE_AUTH_BOND in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_MITM                (1 << 2)                                 /*!< 1 << 2 */               /* relate to BTM_LE_AUTH_REQ_MITM in stack/btm_api.h */
+#define ESP_LE_AUTH_REQ_BOND_MITM           (ESP_LE_AUTH_BOND | ESP_LE_AUTH_REQ_MITM)/*!< 0101*/
 #define ESP_LE_AUTH_REQ_SC_ONLY             (1 << 3)                                 /*!< 1 << 3 */               /* relate to BTM_LE_AUTH_REQ_SC_ONLY in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_SC_BOND             (ESP_LE_AUTH_BOND | ESP_LE_AUTH_REQ_SC_ONLY)            /*!< 1001 */  /* relate to BTM_LE_AUTH_REQ_SC_BOND in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_SC_MITM             (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY)        /*!< 1100 */  /* relate to BTM_LE_AUTH_REQ_SC_MITM in stack/btm_api.h */
 #define ESP_LE_AUTH_REQ_SC_MITM_BOND        (ESP_LE_AUTH_REQ_MITM | ESP_LE_AUTH_REQ_SC_ONLY | ESP_LE_AUTH_BOND)   /*!< 1101 */  /* relate to BTM_LE_AUTH_REQ_SC_MITM_BOND in stack/btm_api.h */
 typedef uint8_t   esp_ble_auth_req_t;         /*!< combination of the above bit pattern */
+
+#define ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_DISABLE 0
+#define ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE  1
+
+#define ESP_BLE_OOB_DISABLE 0
+#define ESP_BLE_OOB_ENABLE  1
 
 /* relate to BTM_IO_CAP_xxx in stack/btm_api.h */
 #define ESP_IO_CAP_OUT                      0   /*!< DisplayOnly */         /* relate to BTM_IO_CAP_OUT in stack/btm_api.h */
@@ -151,13 +158,14 @@ typedef enum {
     ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stop scan complete, the event comes */
     ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
     ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When update connection parameters complete, the event comes */
-    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt lenght complete, the event comes */
+    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt length complete, the event comes */
     ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When  Enable/disable privacy on the local device complete, the event comes */
     ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT,               /*!< When remove the bond device complete, the event comes */
     ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
     ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
     ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT,                     /*!< When read the rssi complete, the event comes */
     ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT,              /*!< When add or remove whitelist complete, the event comes */
+    ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT,  /*!< When update duplicate exceptional list complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
 /// This is the old name, just for backwards compatibility
@@ -264,6 +272,11 @@ typedef enum {
     ESP_BLE_SM_SET_INIT_KEY,
     ESP_BLE_SM_SET_RSP_KEY,
     ESP_BLE_SM_MAX_KEY_SIZE,
+    ESP_BLE_SM_SET_STATIC_PASSKEY,
+    ESP_BLE_SM_CLEAR_STATIC_PASSKEY,
+    ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
+    ESP_BLE_SM_OOB_SUPPORT,
+    ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
 
 /// Advertising parameters
@@ -279,7 +292,7 @@ typedef struct {
     esp_ble_adv_type_t      adv_type;           /*!< Advertising type */
     esp_ble_addr_type_t     own_addr_type;      /*!< Owner bluetooth device address type */
     esp_bd_addr_t           peer_addr;          /*!< Peer device bluetooth device address */
-    esp_ble_addr_type_t     peer_addr_type;     /*!< Peer device bluetooth device address type */
+    esp_ble_addr_type_t     peer_addr_type;     /*!< Peer device bluetooth device address type, only support public address type and random address type */
     esp_ble_adv_channel_t   channel_map;        /*!< Advertising channel map */
     esp_ble_adv_filter_t    adv_filter_policy;  /*!< Advertising filter policy */
 } esp_ble_adv_params_t;
@@ -289,8 +302,21 @@ typedef struct {
     bool                    set_scan_rsp;           /*!< Set this advertising data as scan response or not*/
     bool                    include_name;           /*!< Advertising data include device name or not */
     bool                    include_txpower;        /*!< Advertising data include TX power */
-    int                     min_interval;           /*!< Advertising data show advertising min interval */
-    int                     max_interval;           /*!< Advertising data show advertising max interval */
+    int                     min_interval;           /*!< Advertising data show slave preferred connection min interval.
+                                                    The connection interval in the following manner:
+                                                    connIntervalmin = Conn_Interval_Min * 1.25 ms
+                                                    Conn_Interval_Min range: 0x0006 to 0x0C80
+                                                    Value of 0xFFFF indicates no specific minimum.
+                                                    Values not defined above are reserved for future use.*/
+
+    int                     max_interval;           /*!< Advertising data show slave preferred connection max interval.
+                                                    The connection interval in the following manner:
+                                                    connIntervalmax = Conn_Interval_Max * 1.25 ms
+                                                    Conn_Interval_Max range: 0x0006 to 0x0C80
+                                                    Conn_Interval_Max shall be equal to or greater than the Conn_Interval_Min.
+                                                    Value of 0xFFFF indicates no specific maximum.
+                                                    Values not defined above are reserved for future use.*/
+
     int                     appearance;             /*!< External appearance of device */
     uint16_t                manufacturer_len;       /*!< Manufacturer data length */
     uint8_t                 *p_manufacturer_data;   /*!< Manufacturer data point */
@@ -346,8 +372,8 @@ typedef struct {
                                                       Range: 0x0004 to 0x4000 Default: 0x0010 (10 ms)
                                                       Time = N * 0.625 msec
                                                       Time Range: 2.5 msec to 10240 msec */
-    esp_ble_scan_duplicate_t  scan_duplicate;       /*!< The Scan_Duplicates parameter controls whether the Link Layer should filter out 
-                                                        duplicate advertising reports (BLE_SCAN_DUPLICATE_ENABLE) to the Host, or if the Link Layer should generate 
+    esp_ble_scan_duplicate_t  scan_duplicate;       /*!< The Scan_Duplicates parameter controls whether the Link Layer should filter out
+                                                        duplicate advertising reports (BLE_SCAN_DUPLICATE_ENABLE) to the Host, or if the Link Layer should generate
                                                         advertising reports for each packet received */
 } esp_ble_scan_params_t;
 
@@ -455,7 +481,7 @@ typedef union
 } esp_ble_key_value_t;                    /*!< ble key value type*/
 
 /**
-* @brief  struct type of the bond key informatuon value
+* @brief  struct type of the bond key information value
 */
 typedef struct
 {
@@ -508,7 +534,8 @@ typedef struct
     uint8_t               fail_reason;           /*!< The HCI reason/error code for when success=FALSE */
     esp_ble_addr_type_t   addr_type;             /*!< Peer device address type */
     esp_bt_dev_type_t     dev_type;              /*!< Device type */
-} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complite cb type */
+    esp_ble_auth_req_t    auth_mode;             /*!< authentication mode */
+} esp_ble_auth_cmpl_t;                           /*!< The ble authentication complete cb type */
 
 /**
   * @brief union associated with ble security
@@ -520,7 +547,7 @@ typedef union
     esp_ble_key_t              ble_key;        /*!< BLE SMP keys used when pairing */
     esp_ble_local_id_keys_t    ble_id_keys;    /*!< BLE IR event */
     esp_ble_auth_cmpl_t        auth_cmpl;      /*!< Authentication complete indication. */
-} esp_ble_sec_t;                               /*!< Ble  secutity type */
+} esp_ble_sec_t;                               /*!< BLE security type */
 
 /// Sub Event of ESP_GAP_BLE_SCAN_RESULT_EVT
 typedef enum {
@@ -549,6 +576,28 @@ typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
 }esp_ble_wl_opration_t;
+
+typedef enum {
+    ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_ADD      = 0,  /*!< Add device info into duplicate scan exceptional list */
+    ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_REMOVE,        /*!< Remove device info from duplicate scan exceptional list */
+    ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_CLEAN,         /*!< Clean duplicate scan exceptional list */
+} esp_bt_duplicate_exceptional_subcode_type_t;
+
+#define BLE_BIT(n) (1UL<<(n))
+
+typedef enum {
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR       = 0,  /*!< BLE advertising address , device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID,        /*!< BLE mesh link ID, it is for BLE mesh, device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST */
+} esp_ble_duplicate_exceptional_info_type_t;
+
+typedef enum {
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST         = BLE_BIT(0), /*!< duplicate scan exceptional addr list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST = BLE_BIT(1), /*!< duplicate scan exceptional mesh link ID list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST = (BLE_BIT(0) | BLE_BIT(1)), /*!< duplicate scan exceptional all list */
+} esp_duplicate_scan_exceptional_list_type_t;
+
+typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
+
 /**
  * @brief Gap callback parameters union
  */
@@ -694,6 +743,15 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the add or remove whitelist operation success status */
         esp_ble_wl_opration_t wl_opration;          /*!< The value is ESP_BLE_WHITELIST_ADD if add address to whitelist operation success, ESP_BLE_WHITELIST_REMOVE if remove address from the whitelist operation success */
     } update_whitelist_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT
+     */
+    struct ble_update_duplicate_exceptional_list_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate update duplicate scan exceptional list operation success status */
+        uint8_t         subcode;                    /*!< Define in esp_bt_duplicate_exceptional_subcode_type_t */
+        uint16_t         length;                     /*!< The length of device_info */
+        esp_duplicate_info_t device_info;           /*!< device information, when subcode is ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_CLEAN, the value is invalid */
+    } update_duplicate_exceptional_list_cmpl;       /*!< Event parameter of ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -817,10 +875,8 @@ esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params);
  */
 esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_data_length);
 
-
-
 /**
- * @brief           This function set the random address for the application
+ * @brief           This function sets the random address for the application
  *
  * @param[in]       rand_addr: the random address which should be setting
  *
@@ -830,6 +886,16 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  */
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           This function clears the random address for the application
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_clear_rand_addr(void);
 
 
 
@@ -933,8 +999,7 @@ esp_err_t esp_ble_gap_get_local_used_addr(esp_bd_addr_t local_used_addr, uint8_t
  * @param[in]       type   - finding ADV data type
  * @param[out]      length - return the length of ADV data not including type
  *
- * @return          - ESP_OK : success
- *                  - other  : failed
+ * @return          pointer of ADV data
  *
  */
 uint8_t *esp_ble_resolve_adv_data(uint8_t *adv_data, uint8_t type, uint8_t *length);
@@ -978,6 +1043,43 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
+
+/**
+ * @brief           This function is called to add a device info into the duplicate scan exceptional list.
+ *
+ *
+ * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ * @param[in]       device_info: the device information.
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_exceptional_info_type_t type, esp_duplicate_info_t device_info);
+
+/**
+ * @brief           This function is called to remove a device info from the duplicate scan exceptional list.
+ *
+ *
+ * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ * @param[in]       device_info: the device information.
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_remove_duplicate_scan_exceptional_device(esp_ble_duplicate_exceptional_info_type_t type, esp_duplicate_info_t device_info);
+
+/**
+ * @brief           This function is called to clean the duplicate scan exceptional list.
+ *                  This API will delete all device information in the duplicate scan exceptional list.
+ *
+ *
+ * @param[in]       list_type: duplicate scan exceptional list type, the value can be one or more of esp_duplicate_scan_exceptional_list_type_t.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_clean_duplicate_scan_exceptional_list(esp_duplicate_scan_exceptional_list_type_t list_type);
 
 #if (SMP_INCLUDED == TRUE)
 /**
@@ -1023,10 +1125,10 @@ esp_err_t esp_ble_gap_security_rsp(esp_bd_addr_t bd_addr,  bool accept);
 esp_err_t esp_ble_set_encryption(esp_bd_addr_t bd_addr, esp_ble_sec_act_t sec_act);
 
 /**
-* @brief          Reply the key value to the peer device in the lagecy connection stage.
+* @brief          Reply the key value to the peer device in the legacy connection stage.
 *
 * @param[in]      bd_addr : BD address of the peer
-* @param[in]      accept : passkey entry sucessful or declined.
+* @param[in]      accept : passkey entry successful or declined.
 * @param[in]      passkey : passkey value, must be a 6 digit number,
 *                                     can be lead by 0.
 *
@@ -1038,7 +1140,7 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
 
 /**
-* @brief           Reply the comfirm value to the peer device in the lagecy connection stage.
+* @brief           Reply the confirm value to the peer device in the legacy connection stage.
 *
 * @param[in]       bd_addr : BD address of the peer device
 * @param[in]       accept : numbers to compare are the same or different.
@@ -1087,11 +1189,25 @@ int esp_ble_get_bond_device_num(void);
 */
 esp_err_t esp_ble_get_bond_device_list(int *dev_num, esp_ble_bond_dev_t *dev_list);
 
+/**
+* @brief           This function is called to provide the OOB data for
+*                  SMP in response to ESP_GAP_BLE_OOB_REQ_EVT
+*
+* @param[in]       bd_addr: BD address of the peer device.
+* @param[in]       TK: TK value, the TK value shall be a 128-bit random number
+* @param[in]       len: length of tk, should always be 128-bit
+*
+* @return          - ESP_OK : success
+*                  - other  : failed
+*
+*/
+esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len);
+
 #endif /* #if (SMP_INCLUDED == TRUE) */
 
 /**
 * @brief           This function is to disconnect the physical connection of the peer device
-*                  gattc maybe have multiple virtual GATT server connections when multiple app_id registed.
+*                  gattc may have multiple virtual GATT server connections when multiple app_id registered.
 *                  esp_ble_gattc_close (esp_gatt_if_t gattc_if, uint16_t conn_id) only close one virtual GATT server connection.
 *                  if there exist other virtual GATT server connections, it does not disconnect the physical connection.
 *                  esp_ble_gap_disconnect(esp_bd_addr_t remote_device) disconnect the physical connection directly.

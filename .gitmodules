@@ -41,3 +41,31 @@
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
 	url = https://github.com/espressif/mbedtls.git
+
+[submodule "components/asio/asio"]
+	path = components/asio/asio
+	url = https://github.com/espressif/asio.git
+
+[submodule "components/expat/expat"]
+	path = components/expat/expat
+	url = https://github.com/libexpat/libexpat.git
+
+[submodule "components/lwip/lwip"]
+	path = components/lwip/lwip
+	url = https://github.com/espressif/esp-lwip.git
+
+[submodule "components/mqtt/esp-mqtt"]
+	path = components/mqtt/esp-mqtt
+	url = https://github.com/espressif/esp-mqtt.git
+
+[submodule "components/protobuf-c/protobuf-c"]
+	path = components/protobuf-c/protobuf-c
+	url = https://github.com/protobuf-c/protobuf-c
+
+[submodule "components/unity/unity"]
+	path = components/unity/unity
+	url = https://github.com/ThrowTheSwitch/Unity
+
+[submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
+	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
+	url = https://github.com/leethomason/tinyxml2

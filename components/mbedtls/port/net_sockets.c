@@ -131,6 +131,10 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 {
     int ret;
     struct addrinfo hints, *addr_list, *cur;
+    struct sockaddr_in *serv_addr = NULL;
+#if SO_REUSE
+    int n = 1;
+#endif
 
     if ( ( ret = net_prepare() ) != 0 ) {
         return ( ret );
@@ -157,7 +161,6 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
 
         /*SO_REUSEADDR option dafault is disable in source code(lwip)*/
 #if SO_REUSE
-        int n = 1;
         if ( setsockopt( fd, SOL_SOCKET, SO_REUSEADDR,
                          (const char *) &n, sizeof( n ) ) != 0 ) {
             close( fd );
@@ -166,7 +169,6 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
         }
 #endif
         /*bind interface dafault don't process the addr is 0xffffffff for TCP Protocol*/
-        struct sockaddr_in *serv_addr = NULL;
         serv_addr = (struct sockaddr_in *)cur->ai_addr;
         serv_addr->sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming interface */
         if ( bind( fd, (struct sockaddr *)serv_addr, cur->ai_addrlen ) != 0 ) {

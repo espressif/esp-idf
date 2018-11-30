@@ -17,11 +17,14 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "esp_err.h"
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define ULP_FSM_PREPARE_SLEEP_CYCLES 2    /*!< Cycles spent by FSM preparing ULP for sleep */
+#define ULP_FSM_WAKEUP_SLEEP_CYCLES  2    /*!< Cycles spent by FSM waking up ULP from sleep */
 
 /**
  * @defgroup ulp_registers ULP coprocessor registers
@@ -860,7 +863,7 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
  * 3. TEXT_SIZE, size of .text section (2 bytes)
  * 4. DATA_SIZE, size of .data section (2 bytes)
  * 5. BSS_SIZE, size of .bss section (2 bytes)
- * 6. (TEXT_OFFSET - 16) bytes of arbitrary data (will not be loaded into RTC memory)
+ * 6. (TEXT_OFFSET - 12) bytes of arbitrary data (will not be loaded into RTC memory)
  * 7. .text section
  * 8. .data section
  *
@@ -897,6 +900,12 @@ esp_err_t ulp_run(uint32_t entry_point);
  *
  * @param period_index wakeup period setting number (0 - 4)
  * @param period_us wakeup period, us
+ * @note  The ULP FSM requires two clock cycles to wakeup before being able to run the program.
+ *        Then additional 16 cycles are reserved after wakeup waiting until the 8M clock is stable.
+ *        The FSM also requires two more clock cycles to go to sleep after the program execution is halted.
+ *        The minimum wakeup period that may be set up for the ULP
+ *        is equal to the total number of cycles spent on the above internal tasks.
+ *        For a default configuration of the ULP running at 150kHz it makes about 133us.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if period_index is out of range

@@ -143,6 +143,7 @@ const tBTA_AV_SACT bta_av_a2d_action[] = {
     bta_av_role_res,        /* BTA_AV_ROLE_RES */
     bta_av_delay_co,        /* BTA_AV_DELAY_CO */
     bta_av_open_at_inc,     /* BTA_AV_OPEN_AT_INC */
+    bta_av_open_fail_sdp,   /* BTA_AV_OPEN_FAIL_SDP */
     NULL
 };
 
@@ -815,7 +816,7 @@ void bta_av_role_res (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
             if (p_data->role_res.hci_status != HCI_SUCCESS) {
                 p_scb->role &= ~BTA_AV_ROLE_START_INT;
-                bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+                bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
                 /* start failed because of role switch. */
                 start.chnl   = p_scb->chnl;
                 start.status = BTA_AV_FAIL_ROLE;
@@ -956,7 +957,7 @@ void bta_av_do_disc_a2d (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     p_scb->sec_mask = p_data->api_open.sec_mask;
     p_scb->use_rc = p_data->api_open.use_rc;
 
-    bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+    bta_sys_app_open(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), p_scb->app_id, p_scb->peer_addr);
 
     /* allocate discovery database */
     if (p_scb->p_disc_db == NULL) {
@@ -1058,6 +1059,35 @@ void bta_av_free_sdb(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 {
     UNUSED(p_data);
     utl_freebuf((void **) &p_scb->p_disc_db);
+}
+
+/*******************************************************************************
+**
+** Function         bta_av_open_fail_sdp
+**
+** Description      report BTA_AV_OPEN_EVT with service discovery failed status
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_av_open_fail_sdp(tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
+{
+    tBTA_AV_OPEN open;
+
+    bdcpy(open.bd_addr, p_scb->peer_addr);
+    open.chnl   = p_scb->chnl;
+    open.hndl   = p_scb->hndl;
+    open.status = BTA_AV_FAIL_SDP;
+
+    if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC ) {
+        open.sep = AVDT_TSEP_SNK;
+    } else if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SNK ) {
+        open.sep = AVDT_TSEP_SRC;
+    }
+
+    (*bta_av_cb.p_cback)(BTA_AV_OPEN_EVT, (tBTA_AV *) &open);
+
+    UNUSED(p_data);
 }
 
 /*******************************************************************************
@@ -1330,7 +1360,7 @@ void bta_av_str_opened (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_MEDIUM);
     L2CA_SetChnlFlushability (p_scb->l2c_cid, TRUE);
 
-    bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+    bta_sys_conn_open(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), p_scb->app_id, p_scb->peer_addr);
     memset(&p_scb->q_info, 0, sizeof(tBTA_AV_Q_INFO));
 
     p_scb->l2c_bufs = 0;
@@ -1544,6 +1574,17 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     /* store number of stream endpoints returned */
     p_scb->num_seps = p_data->str_msg.msg.discover_cfm.num_seps;
 
+    UINT8 num_seps = (p_scb->num_seps < BTA_AV_NUM_SEPS) ? p_scb->num_seps : BTA_AV_NUM_SEPS;
+    memcpy(p_scb->sep_info, p_data->str_msg.msg.discover_cfm.p_sep_info, sizeof(tAVDT_SEP_INFO) * num_seps);
+    for (i = 0; i < p_data->str_msg.msg.discover_cfm.num_seps; i++) {
+        APPL_TRACE_DEBUG("peer sep %d, in use %d, seid %d, media type %d,  tsep %d",
+                           i,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].in_use,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].seid,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].media_type,
+                           p_data->str_msg.msg.discover_cfm.p_sep_info[i].tsep
+                           );
+    }
     for (i = 0; i < p_scb->num_seps; i++) {
         /* steam not in use, is a sink, and is audio */
         if ((p_scb->sep_info[i].in_use == FALSE) &&
@@ -1557,7 +1598,7 @@ void bta_av_disc_results (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
                     (uuid_int == UUID_SERVCLASS_AUDIO_SINK)) {
                 num_srcs++;
             }
-
+            APPL_TRACE_DEBUG("num srcs: %d, num_snks: %d\n", num_snks, num_srcs);
         }
     }
 
@@ -1933,8 +1974,7 @@ void bta_av_do_start (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
 
     if ((p_scb->started == FALSE) && ((p_scb->role & BTA_AV_ROLE_START_INT) == 0)) {
         p_scb->role |= BTA_AV_ROLE_START_INT;
-        bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
-
+        bta_sys_busy(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
         AVDT_StartReq(&p_scb->avdt_handle, 1);
     } else if (p_scb->started) {
         p_scb->role |= BTA_AV_ROLE_START_INT;
@@ -1969,7 +2009,7 @@ void bta_av_str_stopped (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     APPL_TRACE_ERROR("bta_av_str_stopped:audio_open_cnt=%d, p_data %p",
                      bta_av_cb.audio_open_cnt, p_data);
 
-    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+    bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
     if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 || bta_av_cb.audio_open_cnt == 1) {
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
     }
@@ -2239,7 +2279,7 @@ void bta_av_start_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     if (p_data && (p_data->hdr.offset != BTA_AV_RS_NONE)) {
         p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;
         if (p_data->hdr.offset == BTA_AV_RS_FAIL) {
-            bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+            bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
             start.chnl   = p_scb->chnl;
             start.status = BTA_AV_FAIL_ROLE;
             start.hndl   = p_scb->hndl;
@@ -2275,9 +2315,9 @@ void bta_av_start_ok (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     }
 
     /* tell role manager to check M/S role */
-    bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+    bta_sys_conn_open(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), p_scb->app_id, p_scb->peer_addr);
 
-    bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+    bta_sys_busy(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
 
     if (p_scb->media_type == AVDT_MEDIA_AUDIO) {
         /* in normal logic, conns should be bta_av_cb.audio_count - 1,
@@ -2364,7 +2404,7 @@ void bta_av_start_failed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     UNUSED(p_data);
 
     if (p_scb->started == FALSE && p_scb->co_started == FALSE) {
-        bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+        bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
         notify_start_failed(p_scb);
     }
 
@@ -2413,7 +2453,8 @@ void bta_av_str_closed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         event = BTA_AV_OPEN_EVT;
         p_scb->open_status = BTA_AV_SUCCESS;
 
-        bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+        bta_sys_conn_close(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), p_scb->app_id, p_scb->peer_addr);
+
         bta_av_cleanup(p_scb, p_data);
         (*bta_av_cb.p_cback)(event, &data);
     } else {
@@ -2432,7 +2473,8 @@ void bta_av_str_closed (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             data.close.disc_rsn = p_scb->disc_rsn;
             event = BTA_AV_CLOSE_EVT;
 
-            bta_sys_conn_close(BTA_ID_AV, p_scb->app_id, p_scb->peer_addr);
+            bta_sys_conn_close(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), p_scb->app_id, p_scb->peer_addr);
+
             bta_av_cleanup(p_scb, p_data);
             (*bta_av_cb.p_cback)(event, &data);
         }
@@ -2506,7 +2548,7 @@ void bta_av_suspend_cfm (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_scb->cong = FALSE;
     }
 
-    bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->peer_addr);
+    bta_sys_idle(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
     if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 || bta_av_cb.audio_open_cnt == 1) {
         policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
     }

@@ -1,0 +1,30 @@
+SOURCE_FILES := \
+	$(addprefix ../src/, \
+	diskio.c \
+	ff.c \
+	ffsystem.c \
+	ffunicode.c \
+	diskio_wl.c \
+	) 
+
+INCLUDE_DIRS := \
+	. \
+	../src \
+	$(addprefix ../../spi_flash/sim/stubs/, \
+	app_update/include \
+	driver/include \
+	esp32/include \
+	freertos/include \
+	log/include \
+	newlib/include \
+	sdmmc/include \
+	vfs/include \
+	) \
+	$(addprefix ../../../components/, \
+	soc/esp32/include \
+	esp32/include \
+	bootloader_support/include \
+	app_update/include \
+	spi_flash/include \
+	wear_levelling/include \
+	)

@@ -1,0 +1,12 @@
+#Example of bit timing configuration for 500KBPS
+
+packetdiag can_bit_timing_diag{
+    node_width = 40
+    node_height = 35
+    default_fontsize = 15
+    colwidth = 20
+
+    0: "Sync" [color = lightgrey];
+    1-14: "Tseg1 = 15" [color = lightblue];
+    15-19: "Tseg2 = 4" [color = lightyellow];
+}

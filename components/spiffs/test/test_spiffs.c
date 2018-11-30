@@ -275,6 +275,64 @@ void test_spiffs_opendir_readdir_rewinddir(const char* dir_prefix)
     TEST_ASSERT_EQUAL(0, closedir(dir));
 }
 
+void test_spiffs_readdir_many_files(const char* dir_prefix)
+{
+    const int n_files = 40;
+    const int n_folders = 4;
+    unsigned char file_count[n_files * n_folders];
+    memset(file_count, 0, sizeof(file_count)/sizeof(file_count[0]));
+    char file_name[ESP_VFS_PATH_MAX + CONFIG_SPIFFS_OBJ_NAME_LEN];
+
+    /* clean stale files before the test */
+    DIR* dir = opendir(dir_prefix);
+    if (dir) {
+        while (true) {
+            struct dirent* de = readdir(dir);
+            if (!de) {
+                break;
+            }
+            int len = snprintf(file_name, sizeof(file_name), "%s/%s", dir_prefix, de->d_name);
+            assert(len < sizeof(file_name));
+            unlink(file_name);
+        }
+    }
+
+    /* create files */
+    for (int d = 0; d < n_folders; ++d) {
+        printf("filling directory %d\n", d);
+        for (int f = 0; f < n_files; ++f) {
+            snprintf(file_name, sizeof(file_name), "%s/%d/%d.txt", dir_prefix, d, f);
+            test_spiffs_create_file_with_text(file_name, file_name);
+        }
+    }
+
+    /* list files */
+    for (int d = 0; d < n_folders; ++d) {
+        printf("listing files in directory %d\n", d);
+        snprintf(file_name, sizeof(file_name), "%s/%d", dir_prefix, d);
+        dir = opendir(file_name);
+        TEST_ASSERT_NOT_NULL(dir);
+        while (true) {
+            struct dirent* de = readdir(dir);
+            if (!de) {
+                break;
+            }
+            int file_id;
+            TEST_ASSERT_EQUAL(1, sscanf(de->d_name, "%d.txt", &file_id));
+            file_count[file_id + d * n_files]++;
+        }
+        closedir(dir);
+    }
+
+    /* check that all created files have been seen */
+    for (int d = 0; d < n_folders; ++d) {
+        printf("checking that all files have been found in directory %d\n", d);
+        for (int f = 0; f < n_files; ++f) {
+            TEST_ASSERT_EQUAL(1, file_count[f + d * n_files]);
+        }
+    }
+}
+
 
 typedef struct {
     const char* filename;
@@ -537,6 +595,13 @@ TEST_CASE("opendir, readdir, rewinddir, seekdir work as expected", "[spiffs]")
     test_teardown();
 }
 
+TEST_CASE("readdir with large number of files", "[spiffs][timeout=30]")
+{
+    test_setup();
+    test_spiffs_readdir_many_files("/spiffs/dir2");
+    test_teardown();
+}
+
 TEST_CASE("multiple tasks can use same volume", "[spiffs]")
 {
     test_setup();
@@ -581,6 +646,71 @@ TEST_CASE("mtime is updated when file is opened", "[spiffs]")
              && st.st_mtime >= t_before_open
              && st.st_mtime <= t_after_open);
     fclose(f);
+
+    test_teardown();
+}
+
+TEST_CASE("utime() works well", "[spiffs]")
+{
+    const char filename[] = "/spiffs/utime.txt";
+    struct stat achieved_stat;
+    struct tm desired_tm;
+    struct utimbuf desired_time = {
+        .actime = 0, // access time is not supported
+        .modtime = 0,
+    };
+    time_t false_now = 0;
+    memset(&desired_tm, 0, sizeof(struct tm));
+
+    test_setup();
+    {
+        // Setting up a false actual time - used when the file is created and for modification with the current time
+        desired_tm.tm_mon = 10 - 1;
+        desired_tm.tm_mday = 31;
+        desired_tm.tm_year = 2018 - 1900;
+        desired_tm.tm_hour = 10;
+        desired_tm.tm_min = 35;
+        desired_tm.tm_sec = 23;
+
+        false_now = mktime(&desired_tm);
+
+        struct timeval now = { .tv_sec = false_now };
+        settimeofday(&now, NULL);
+    }
+    test_spiffs_create_file_with_text(filename, "");
+
+    // 00:00:00. January 1st, 1900
+    desired_tm.tm_mon = 1 - 1;
+    desired_tm.tm_mday = 1;
+    desired_tm.tm_year = 0;
+    desired_tm.tm_hour = 0;
+    desired_tm.tm_min = 0;
+    desired_tm.tm_sec = 0;
+    printf("Testing mod. time: %s", asctime(&desired_tm));
+    desired_time.modtime = mktime(&desired_tm);
+    TEST_ASSERT_EQUAL(0, utime(filename, &desired_time));
+    TEST_ASSERT_EQUAL(0, stat(filename, &achieved_stat));
+    TEST_ASSERT_EQUAL_UINT32(desired_time.modtime, achieved_stat.st_mtime);
+
+    // 23:59:08. December 31st, 2145
+    desired_tm.tm_mon = 12 - 1;
+    desired_tm.tm_mday = 31;
+    desired_tm.tm_year = 2145 - 1900;
+    desired_tm.tm_hour = 23;
+    desired_tm.tm_min = 59;
+    desired_tm.tm_sec = 8;
+    printf("Testing mod. time: %s", asctime(&desired_tm));
+    desired_time.modtime = mktime(&desired_tm);
+    TEST_ASSERT_EQUAL(0, utime(filename, &desired_time));
+    TEST_ASSERT_EQUAL(0, stat(filename, &achieved_stat));
+    TEST_ASSERT_EQUAL_UINT32(desired_time.modtime, achieved_stat.st_mtime);
+
+    // Current time
+    TEST_ASSERT_EQUAL(0, utime(filename, NULL));
+    TEST_ASSERT_EQUAL(0, stat(filename, &achieved_stat));
+    printf("Mod. time changed to (false actual time): %s", ctime(&achieved_stat.st_mtime));
+    TEST_ASSERT_NOT_EQUAL(desired_time.modtime, achieved_stat.st_mtime);
+    TEST_ASSERT(false_now - achieved_stat.st_mtime <= 2); // two seconds of tolerance are given
 
     test_teardown();
 }

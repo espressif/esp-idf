@@ -29,6 +29,8 @@
 #include "soc/io_mux_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
+#include "soc/rtc_wdt.h"
+#include "soc/efuse_reg.h"
 
 #include "driver/rtc_io.h"
 
@@ -91,6 +93,10 @@ extern int _bss_start;
 extern int _bss_end;
 extern int _rtc_bss_start;
 extern int _rtc_bss_end;
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+extern int _ext_ram_bss_start;
+extern int _ext_ram_bss_end;
+#endif
 extern int _init_start;
 extern void (*__init_array_start)(void);
 extern void (*__init_array_end)(void);
@@ -118,6 +124,7 @@ void IRAM_ATTR call_start_cpu0()
     RESET_REASON rst_reas[2];
 #endif
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
     //Move exception vectors to IRAM
     asm volatile (\
@@ -136,7 +143,9 @@ void IRAM_ATTR call_start_cpu0()
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
-        esp_panic_wdt_stop();
+#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
+        rtc_wdt_disable();
+#endif
     }
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
@@ -150,6 +159,11 @@ void IRAM_ATTR call_start_cpu0()
 #if CONFIG_SPIRAM_BOOT_INIT
     esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+        ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
+        abort();
+#endif
+
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
         s_spiram_okay = false;
@@ -163,6 +177,11 @@ void IRAM_ATTR call_start_cpu0()
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
 #if !CONFIG_FREERTOS_UNICORE
+    if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+        ESP_EARLY_LOGE(TAG, "Running on single core chip, but application is built with dual core support.");
+        ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
+        abort();
+    }
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
     //Flush and enable icache for APP CPU
     Cache_Flush(1);
@@ -198,7 +217,9 @@ void IRAM_ATTR call_start_cpu0()
         }
     }
 #endif
-
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    memset(&_ext_ram_bss_start, 0, (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
+#endif
     /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
        If the heap allocator is initialized first, it will put free memory linked list items into
        memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
@@ -229,6 +250,7 @@ void IRAM_ATTR call_start_cpu1()
 
     ets_set_appcpu_boot_addr(0);
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
 #if CONFIG_CONSOLE_UART_NONE
     ets_install_putc1(NULL);
@@ -269,13 +291,6 @@ void start_cpu0_default(void)
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
             abort();
         }
-#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-        r=esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
-        if (r != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool!");
-            abort();
-        }
-#endif
 #if CONFIG_SPIRAM_USE_MALLOC
         heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
@@ -348,7 +363,6 @@ void start_cpu0_default(void)
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
-    esp_ipc_init();
 #ifndef CONFIG_FREERTOS_UNICORE
     esp_dport_access_int_init();
 #endif
@@ -370,6 +384,11 @@ void start_cpu0_default(void)
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
+    size_t core_data_sz = 0;
+    size_t core_data_addr = 0;
+    if (esp_core_dump_image_get(&core_data_addr, &core_data_sz) == ESP_OK && core_data_sz > 0) {
+        ESP_LOGI(TAG, "Found core dump %d bytes in flash @ 0x%x", core_data_sz, core_data_addr);
+    }
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
@@ -433,9 +452,6 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
-    // Now that the application is about to start, disable boot watchdogs
-    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
 #if !CONFIG_FREERTOS_UNICORE
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
     while (port_xSchedulerRunning[1] == 0) {
@@ -445,28 +461,41 @@ static void main_task(void* args)
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
 
+    // Now we have startup stack RAM available for heap, enable any DMA pool memory
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+    esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+    if (r != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
+        abort();
+    }
+#endif
+
     //Initialize task wdt if configured to do so
 #ifdef CONFIG_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true))
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true));
 #elif CONFIG_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false))
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false));
 #endif
 
     //Add IDLE 0 to task wdt
 #ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
     if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0))
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
     }
 #endif
     //Add IDLE 1 to task wdt
 #ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
     TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
     if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1))
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
     }
 #endif
 
+    // Now that the application is about to start, disable boot watchdog
+#ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+    rtc_wdt_disable();
+#endif
     app_main();
     vTaskDelete(NULL);
 }

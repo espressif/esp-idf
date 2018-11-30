@@ -750,7 +750,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
     if ( (!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.srej_sent) &&
          (!fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q))) {
         fixed_queue_t *temp_q = p_ccb->fcrb.srej_rcv_hold_q;
-        p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(SIZE_MAX);
+        p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
         while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(temp_q)) != NULL) {
             if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {

@@ -43,7 +43,7 @@
 //#include "osi/include/log.h"
 
 #if SMP_INCLUDED == TRUE
-// The temp variable to pass parameter between functions when in the connected event comeback.
+// The temp variable to pass parameter between functions when in the connected event callback.
 static BOOLEAN temp_enhanced = FALSE;
 extern BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
                                         UINT16 tlen, UINT8 *p_signature);
@@ -425,6 +425,26 @@ void BTM_BlePasskeyReply (BD_ADDR bd_addr, UINT8 res, UINT32 passkey)
 
 /*******************************************************************************
 **
+** Function         BTM_BleSetStaticPasskey
+**
+** Description      This function is called to set static passkey
+**
+**
+** Parameters:      add          - set static passkey when add is TRUE
+**                                 clear static passkey when add is FALSE
+**                  passkey      - static passkey
+**
+**
+*******************************************************************************/
+void BTM_BleSetStaticPasskey(BOOLEAN add, UINT32 passkey)
+{
+#if SMP_INCLUDED == TRUE
+    SMP_SetStaticPasskey(add, passkey);
+#endif
+}
+
+/*******************************************************************************
+**
 ** Function         BTM_BleConfirmReply
 **
 ** Description      This function is called after Security Manager submitted
@@ -609,7 +629,7 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
 
     *p_addr_type = BLE_ADDR_PUBLIC;
 
-    if (!p_dev_rec) {  
+    if (!p_dev_rec) {
         *p_dev_type = BT_DEVICE_TYPE_BREDR;
         /* Check with the BT manager if details about remote device are known */
         if (p_inq_info != NULL) {
@@ -1105,7 +1125,7 @@ BOOLEAN btm_ble_get_enc_key_type(BD_ADDR bd_addr, UINT8 *p_key_types)
 **
 ** Description      This function is called to read the local DIV
 **
-** Returns          TURE - if a valid DIV is availavle
+** Returns          TRUE - if a valid DIV is availavle
 *******************************************************************************/
 BOOLEAN btm_get_local_div (BD_ADDR bd_addr, UINT16 *p_div)
 {
@@ -1225,7 +1245,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
 
             /* Set that link key is known since this shares field with BTM_SEC_FLAG_LKEY_KNOWN flag in stack/btm_api.h*/
             p_rec->sec_flags |=  BTM_SEC_LE_LINK_KEY_KNOWN;
-            if ( p_keys->pcsrk_key.sec_level == SMP_SEC_AUTHENTICATED) {
+            if ( p_keys->lenc_key.sec_level == SMP_SEC_AUTHENTICATED) {
                 p_rec->sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
             } else {
                 p_rec->sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
@@ -1451,7 +1471,7 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
         if(link_role == BTM_ROLE_SLAVE && (p_rec->ble.key_type & BTM_LE_KEY_PENC)) {
             p_rec->ble.skip_update_conn_param = true;
         } else {
-            p_rec->ble.skip_update_conn_param = false;    
+            p_rec->ble.skip_update_conn_param = false;
         }
         if (SMP_Pair(bd_addr) == SMP_STARTED) {
             cmd = BTM_CMD_STARTED;
@@ -1600,7 +1620,7 @@ void btm_ble_link_encrypted(BD_ADDR bd_addr, UINT8 encr_enable)
     /* to notify GATT to send data if any request is pending */
     gatt_notify_enc_cmpl(p_dev_rec->ble.pseudo_addr);
 }
-#endif  ///SMP_INCLUDED == TRUE 
+#endif  ///SMP_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -1926,10 +1946,10 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
 
         /* It will cause that scanner doesn't send scan request to advertiser
         * which has sent IRK to us and we have stored the IRK in controller.
-        * It is a design problem of hardware. The temporal solution is not to 
-        * send the key to the controller and then resolve the random address in host.
-        * so we need send the real address information to controller to connect. 
-        * Once the connection is successful, resolve device address whether it is 
+        * It is a hardware limitation. The preliminary solution is not to
+        * send key to the controller, but to resolve the random address in host.
+        * so we need send the real address information to controller to connect.
+        * Once the connection is successful, resolve device address whether it is
         * slave or master*/
 
         /* if (!match && role == HCI_ROLE_SLAVE && BTM_BLE_IS_RESOLVE_BDA(bda)) { */
@@ -1948,14 +1968,6 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
             handle = HCID_GET_HANDLE (handle);
 
             btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);
-            if(role == HCI_ROLE_SLAVE) {
-                //clear p_cb->state, controller will stop adv when ble connected.
-                tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
-                if(p_cb) {
-                    p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
-                    p_cb->state = BTM_BLE_STOP_ADV; 
-                }
-            }
             l2cble_conn_comp (handle, role, bda, bda_type, conn_interval,
                               conn_latency, conn_timeout);
 

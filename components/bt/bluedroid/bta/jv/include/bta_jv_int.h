@@ -37,6 +37,8 @@
 **  Constants
 *****************************************************************************/
 
+#define SPP_VERSION             0x0102
+
 enum {
     /* these events are handled by the state machine */
     BTA_JV_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_JV),

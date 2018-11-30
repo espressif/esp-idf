@@ -691,17 +691,31 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                 p_rcb && p_cb->rcb[p_srvc_cb->rcb_idx].p_cback) {
             cb_data.req_data.status = status;
             cb_data.req_data.conn_id = p_msg->api_indicate.hdr.layer_specific;
+            cb_data.req_data.value = NULL;
+            cb_data.req_data.data_len = 0;
+            cb_data.req_data.handle = p_msg->api_indicate.attr_id;
 
-            cb_data.req_data.value = (uint8_t *)osi_malloc(p_msg->api_indicate.len);
-            if (cb_data.req_data.value != NULL){
-                memset(cb_data.req_data.value, 0, p_msg->api_indicate.len);
-                cb_data.req_data.data_len = p_msg->api_indicate.len;
-                memcpy(cb_data.req_data.value, p_msg->api_indicate.value, p_msg->api_indicate.len);
-            }else{
-                cb_data.req_data.data_len = 0;
-                APPL_TRACE_ERROR("%s, malloc failed", __func__);
+            if (p_msg->api_indicate.value && (p_msg->api_indicate.len > 0)) {
+                cb_data.req_data.value = (uint8_t *) osi_malloc(p_msg->api_indicate.len);
+                if (cb_data.req_data.value != NULL) {
+                    memset(cb_data.req_data.value, 0, p_msg->api_indicate.len);
+                    cb_data.req_data.data_len = p_msg->api_indicate.len;
+                    memcpy(cb_data.req_data.value, p_msg->api_indicate.value, p_msg->api_indicate.len);
+                } else {
+                    APPL_TRACE_ERROR("%s, malloc failed", __func__);
+                }
+            } else {
+                if (p_msg->api_indicate.value) {
+                    APPL_TRACE_ERROR("%s, incorrect length", __func__);
+                } else {
+                    APPL_TRACE_WARNING("%s, NULL value", __func__);
+                }
             }
             (*p_rcb->p_cback)(BTA_GATTS_CONF_EVT, &cb_data);
+            if (cb_data.req_data.value != NULL) {
+                osi_free(cb_data.req_data.value);
+                cb_data.req_data.value = NULL;
+            }
         }
     } else {
         APPL_TRACE_ERROR("Not an registered servce attribute ID: 0x%04x",
@@ -825,6 +839,36 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     }
 
 }
+
+/*******************************************************************************
+**
+** Function         bta_gatts_send_service_change_indication
+**
+** Description      gatts send service change indication
+**
+** Returns          none.
+**
+*******************************************************************************/
+void bta_gatts_send_service_change_indication (tBTA_GATTS_DATA *p_msg)
+{
+    tBTA_GATTS_RCB     *p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_send_service_change.server_if);
+    tBTA_GATTS_SERVICE_CHANGE    service_change;
+    tBTA_GATT_STATUS status = BTA_GATT_OK;
+    UINT16 addr[BD_ADDR_LEN] = {0};
+    if(memcmp(p_msg->api_send_service_change.remote_bda, addr, BD_ADDR_LEN) != 0) {
+        BD_ADDR bd_addr;
+        memcpy(bd_addr, p_msg->api_send_service_change.remote_bda, BD_ADDR_LEN);
+        status = GATT_SendServiceChangeIndication(bd_addr);
+    } else {
+        status = GATT_SendServiceChangeIndication(NULL);    
+    }
+    if (p_rcb && p_rcb->p_cback) {
+        service_change.status = status;
+        service_change.server_if = p_msg->api_send_service_change.server_if;
+        (*p_rcb->p_cback)(BTA_GATTS_SEND_SERVICE_CHANGE_EVT,  (tBTA_GATTS *)&service_change);
+    }   
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gatts_listen

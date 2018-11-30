@@ -1,0 +1,2 @@
+TEST_COMPONENTS=driver esp32 spi_flash
+CONFIG_SPIRAM_SUPPORT=y

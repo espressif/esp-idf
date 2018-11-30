@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "soc/uart_reg.h"
 #include "test_apb_dport_access.h"
+#include "test_utils.h"
 
 #ifndef CONFIG_FREERTOS_UNICORE
 

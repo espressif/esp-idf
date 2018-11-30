@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,48 +14,15 @@
 
 #ifndef _DRIVER_PERIPH_CTRL_H_
 #define _DRIVER_PERIPH_CTRL_H_
+
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
+#include "soc/periph_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef enum {
-    PERIPH_LEDC_MODULE = 0,
-    PERIPH_UART0_MODULE,
-    PERIPH_UART1_MODULE,
-    PERIPH_UART2_MODULE,
-    PERIPH_I2C0_MODULE,
-    PERIPH_I2C1_MODULE,
-    PERIPH_I2S0_MODULE,
-    PERIPH_I2S1_MODULE,
-    PERIPH_TIMG0_MODULE,
-    PERIPH_TIMG1_MODULE,
-    PERIPH_PWM0_MODULE,
-    PERIPH_PWM1_MODULE,
-    PERIPH_PWM2_MODULE,
-    PERIPH_PWM3_MODULE,
-    PERIPH_UHCI0_MODULE,
-    PERIPH_UHCI1_MODULE,
-    PERIPH_RMT_MODULE,
-    PERIPH_PCNT_MODULE,
-    PERIPH_SPI_MODULE,
-    PERIPH_HSPI_MODULE,
-    PERIPH_VSPI_MODULE,
-    PERIPH_SPI_DMA_MODULE,
-    PERIPH_SDMMC_MODULE,
-    PERIPH_SDIO_SLAVE_MODULE,
-    PERIPH_CAN_MODULE,
-    PERIPH_EMAC_MODULE,
-    PERIPH_RNG_MODULE,
-    PERIPH_WIFI_MODULE,
-    PERIPH_BT_MODULE,
-    PERIPH_WIFI_BT_COMMON_MODULE,
-    PERIPH_BT_BASEBAND_MODULE,
-    PERIPH_BT_LC_MODULE,
-} periph_module_t;
 
 /**
  * @brief      enable peripheral module

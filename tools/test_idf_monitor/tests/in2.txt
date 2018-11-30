@@ -1,0 +1,1332 @@
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+ets Jun  8 2016 00:22:57
+
+rst:0x10 (RTCWDT_RTC_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0018,len:4
+load:0x3fff001c,len:4648
+load:0x40078000,len:0
+ho 12 tail 0 room 4
+load:0x40078000,len:13564
+entry 0x40078d4c
+[0;31mE (31) esp_image: image at 0x30000 has invalid magic byte[0m
+[0;33mW (31) esp_image: image at 0x30000 has invalid SPI mode 255[0m
+[0;33mW (32) esp_image: image at 0x30000 has invalid SPI size 15[0m
+[0;31mE (39) boot: Factory app partition is not bootable[0m
+[0;32mI (568) cpu_start: Pro cpu up.[0m
+[0;32mI (568) cpu_start: Single core mode[0m
+[0;32mI (569) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (572) heap_init: At 3FFAFF10 len 000000F0 (0 KiB): DRAM[0m
+[0;32mI (578) heap_init: At 3FFD21D0 len 0000DE30 (55 KiB): DRAM[0m
+[0;32mI (584) heap_init: At 3FFE0440 len 00003BC0 (14 KiB): D/IRAM[0m
+[0;32mI (590) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM[0m
+[0;32mI (597) heap_init: At 40095B84 len 0000A47C (41 KiB): IRAM[0m
+[0;32mI (603) cpu_start: Pro cpu start user code[0m
+[0;32mI (286) cpu_start: Starting scheduler on PRO CPU.[0m
+D (309) light_driver: [light_init, 74]:status: 1, mode: 2[0m
+D (309) light_driver: [light_init, 76]:hue: 360, saturation: 0, value: 100[0m
+D (311) light_driver: [light_init, 78]:brightness: 30, color_temperature: 0[0m
+D (318) vfs: esp_vfs_register_fd_range is successful for range <54; 64) and VFS ID 1[0m
+I (328) wifi: wifi driver task: 3ffdbf84, prio:23, stack:4096, core=0
+I (332) wifi: wifi firmware version: 4ae09c9
+I (336) wifi: config NVS flash: enabled
+I (339) wifi: config nano formating: disabled
+[0;32mI (343) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE[0m
+[0;32mI (353) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE[0m
+I (377) wifi: Init dynamic tx buffer num: 64
+I (377) wifi: Init data frame dynamic rx buffer num: 64
+I (377) wifi: Init management frame dynamic rx buffer num: 64
+I (381) wifi: Init static rx buffer size: 1600
+I (385) wifi: Init static rx buffer num: 10
+I (388) wifi: Init dynamic rx buffer num: 64
+[0;33mW (393) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration[0m
+[0;32mI (708) phy: phy_version: 3910, c0c45a3, May 21 2018, 18:07:06, 0, 2[0m
+I (718) wifi: mode : sta (30:ae:a4:00:43:84) + softAP (30:ae:a4:00:43:85)
+D (724) mdf_event_loop: [mdf_event_loop_init, 121]:mdf_event_loop_init success[0m
+D (726) mdf_reboot_handle: [mdf_reboot_event_init, 308]:mdf_reboot_handle, ret: 0[0m
+[0;32mI (730) mdf_device_handle: [mdf_device_init_handle, 897]:******************* SYSTEM INFO *******************[0m
+[0;32mI (740) mdf_device_handle: [mdf_device_init_handle, 898]:idf version      : v3.1-dev-1188-g0c43ac8[0m
+[0;32mI (749) mdf_device_handle: [mdf_device_init_handle, 901]:device version   : light_004384-0.5.25.1-1[0m
+[0;32mI (759) mdf_device_handle: [mdf_device_init_handle, 902]:compile time     : May 26 2018 00:22:11[0m
+[0;32mI (769) mdf_device_handle: [mdf_device_init_handle, 903]:free heap        : 120948 B[0m
+[0;32mI (777) mdf_device_handle: [mdf_device_init_handle, 904]:CPU cores        : 2[0m
+[0;32mI (785) mdf_device_handle: [mdf_device_init_handle, 907]:function         : WiFi/BT/BLE[0m
+[0;32mI (793) mdf_device_handle: [mdf_device_init_handle, 908]:silicon revision : 0[0m
+[0;32mI (801) mdf_device_handle: [mdf_device_init_handle, 910]:flash            : 4 MB external[0m
+[0;32mI (810) mdf_device_handle: [mdf_device_init_handle, 911]:***************************************************[0m
+I (821) ESPNOW: espnow [version: 1.0] init
+[5n[6n[0;32mI (879) light_bulb: [light_bulb_event_loop_cb, 130]:***********************************[0m
+[0;32mI (880) light_bulb: [light_bulb_event_loop_cb, 131]:*    ENTER CONFIG NETWORK MODE    *[0m
+[0;32mI (892) light_bulb: [light_bulb_event_loop_cb, 132]:***********************************[0m
+[999C[6n[0;32mI (881) BTDM_INIT: BT controller compile version [483af97]
+[0m
+[0;32mI (905) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE[0m
+[214D[6n[0;32mmdf> [0m[6n[0;32mI (1248) mdf_blufi_network_config: [mdf_blufi_init, 526]:bt addr: 30:ae:a4:00:43:86[0m
+[0;32mI (1250) mdf_blufi_network_config: [mdf_blufi_init, 527]:blufi version: 0102[0m
+[0;32mI (1263) mdf_blufi_network_config: [mdf_blufi_event_callback, 371]:blufi init finish[0m
+[0;32mI (1265) mdf_blufi_network_config: [mdf_blufi_set_name, 279]:mdf blufi name: MESH_1_004386[0m
+[0;32mI (1944) mdf_network_config: [mdf_network_handle, 298]:generate RSA public and private keys[0m
+D (3725) mdf_reboot_handle: [mdf_reboot_num_clear, 289]:erase reboot number[0m
+D (38344) mdf_blufi_network_config: [mdf_blufi_event_callback, 382]:blufi ble connect, server_if: 3, conn_id: 0[0m
+D (39575) mdf_blufi_network_config: [mdf_blufi_dh_negotiate_data_handler, 148]:SEC_TYPE_DH_PARAM_LEN[0m
+D (40205) mdf_blufi_network_config: [mdf_blufi_dh_negotiate_data_handler, 157]:SEC_TYPE_DH_PARAM_DATA: 0x3ffee6ec, 0x3ffee6d4 g_mdf_blufi_sec->dh_param_len: 263[0m
+D (40507) mdf_blufi_network_config: [mdf_blufi_event_callback, 419]:recv ssid: esp-cjq[0m
+D (40508) mdf_blufi_network_config: [mdf_blufi_event_callback, 424]:recv password:123456789[0m
+D (40520) mdf_blufi_network_config: [mdf_blufi_event_callback, 429]:recv mesh_id: 30:ae:a4:80:53:92[0m
+D (40531) mdf_blufi_network_config: [mdf_blufi_event_callback, 434]:recv token: 048bc81f9e0f1790276301e754c0fba0f2c028f6[0m
+[0;32mI (40536) light_bulb: [light_bulb_event_loop_cb, 137]:***********************************[0m
+[0;32mI (40548) light_bulb: [light_bulb_event_loop_cb, 138]:*  START CONNECTING TO THE ROUTER *[0m
+[0;32mI (40560) light_bulb: [light_bulb_event_loop_cb, 139]:***********************************[0m
+[0;32mI (41661) mdf_blufi_network_config: [mdf_blufi_event_callback, 390]:blufi ble disconnect[0m
+I (42171) wifi: ap channel adjust o:1,1 n:11,2
+I (42172) wifi: n:11 2, o:1 0, ap:11 2, sta:11 2, prof:1
+I (43164) wifi: state: init -> auth (b0)
+I (43176) wifi: state: auth -> assoc (0)
+I (43193) wifi: state: assoc -> run (10)
+I (43244) wifi: connected with esp-cjq, channel 11
+I (43245) wifi: pm start, type: 1
+
+[0;32mI (43248) mdf_blufi_network_config: [blufi_wifi_event_handler, 316]:wifi is connect[0m
+[0;33mW (43250) mdf_network_config: [mdf_network_send_config, 252]:g_network_config_queue: 0x40161684[0m
+[0;31mE (43250) BT_APPL: Unknown connection ID: 3 fail sending notification[0m
+D (44170) mdf_network_config: [mdf_network_handle, 309]:blufi network configured success[0m
+[0;32mI (44171) light_bulb: [light_bulb_event_loop_cb, 144]:***********************************[0m
+[0;32mI (44176) mdf_blufi_network_config: [mdf_blufi_event_callback, 377]:blufi deinit finish[0m
+[0;33mW (44199) BT_APPL: bta_dm_disable BTA_DISABLE_DELAY set to 200 ms[0m
+[0;32mI (44184) light_bulb: [light_bulb_event_loop_cb, 145]:*        ORGANIZE NETWORKS        *[0m
+[0;32mI (44218) light_bulb: [light_bulb_event_loop_cb, 146]:***********************************[0m
+D (44413) mdf_device_handle: [mdf_device_init_handle, 933]:ssid: esp-cjq, password: 123456789[0m
+D (44415) mdf_device_handle: [mdf_device_init_handle, 935]:mesh channel: 11, mesh_id: 30:ae:a4:80:53:92[0m
+[0;32mI (45283) mdf_wifi_mesh: [esp_mesh_event_cb, 83]:esp_mesh_event_cb event.id: 17[0m
+[0;32mI (45284) mdf_wifi_mesh: [esp_mesh_event_cb, 138]:wifi get ip[0m
+[0;32mI (45296) event: sta ip: 192.168.1.179, mask: 255.255.255.0, gw: 192.168.1.1[0m
+I (45471) wifi: Set ps type: 0
+
+I (45473) wifi: state: run -> init (0)
+I (45474) wifi: pm stop, total sleep time: 1173030 us / 2228410 us
+
+I (45475) wifi: n:11 0, o:11 2, ap:11 2, sta:11 2, prof:11
+E (45488) mesh: [esp_mesh_push_to_nwk_queue,5360] null args
+[0;32mI (45493) mdf_wifi_mesh: [esp_mesh_event_cb, 83]:esp_mesh_event_cb event.id: 0[0m
+I (45854) mesh: [SCAN][ch:11]AP:9, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/0.ing]router found
+I (45856) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-37], mine:0, voter:0
+I (45868) mesh: 952, vote myself, router rssi:-37 > voted rc_rssi:-120
+I (45869) mesh: [SCAN:1/10]rc[128][30:ae:a4:00:43:85,-37], self[30:ae:a4:00:43:84,-37,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (46245) mesh: [SCAN][ch:11]AP:7, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (46247) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-35], mine:0, voter:0
+I (46258) mesh: [SCAN:2/10]rc[128][30:ae:a4:00:43:85,-35], self[30:ae:a4:00:43:84,-35,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (46633) mesh: [SCAN][ch:11]AP:11, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (46635) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-37], mine:0, voter:0
+I (46647) mesh: [SCAN:3/10]rc[128][30:ae:a4:00:43:85,-37], self[30:ae:a4:00:43:84,-37,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (47022) mesh: [SCAN][ch:11]AP:9, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (47024) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-38], mine:0, voter:0
+I (47036) mesh: [SCAN:4/10]rc[128][30:ae:a4:00:43:85,-38], self[30:ae:a4:00:43:84,-38,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (47411) mesh: [SCAN][ch:11]AP:10, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (47413) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-38], mine:0, voter:0
+I (47425) mesh: [SCAN:5/10]rc[128][30:ae:a4:00:43:85,-37], self[30:ae:a4:00:43:84,-38,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (47800) mesh: [SCAN][ch:11]AP:8, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (47802) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-34], mine:0, voter:0
+I (47814) mesh: [SCAN:6/10]rc[128][30:ae:a4:00:43:85,-34], self[30:ae:a4:00:43:84,-34,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (48189) mesh: [SCAN][ch:11]AP:7, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (48191) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-38], mine:0, voter:0
+I (48203) mesh: [SCAN:7/10]rc[128][30:ae:a4:00:43:85,-38], self[30:ae:a4:00:43:84,-38,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (48578) mesh: [SCAN][ch:11]AP:7, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (48580) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-37], mine:0, voter:0
+I (48592) mesh: [SCAN:8/10]rc[128][30:ae:a4:00:43:85,-37], self[30:ae:a4:00:43:84,-37,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (48967) mesh: [SCAN][ch:11]AP:8, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (48969) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-34], mine:0, voter:0
+I (48981) mesh: [SCAN:9/10]rc[128][30:ae:a4:00:43:85,-34], self[30:ae:a4:00:43:84,-34,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (49356) mesh: [SCAN][ch:11]AP:8, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (49358) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-37], mine:0, voter:0
+I (49370) mesh: 936, [0]my_vote_num:0, voter_num:0
+I (49371) mesh: [SCAN:10/13+extra+]rc[128][30:ae:a4:00:43:85,-37], self[30:ae:a4:00:43:84,-37,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (49746) mesh: [SCAN][ch:11]AP:7, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (49748) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-38], mine:0, voter:0
+I (49760) mesh: [SCAN:11/13+extra+]rc[128][30:ae:a4:00:43:85,-38], self[30:ae:a4:00:43:84,-38,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (50135) mesh: [SCAN][ch:11]AP:8, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (50137) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-37], mine:0, voter:0
+I (50149) mesh: [SCAN:12/13+extra+]rc[128][30:ae:a4:00:43:85,-37], self[30:ae:a4:00:43:84,-37,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+[0;32mI (50495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 00:00:00:00:00:00, mac:30:ae:a4:00:43:84, layer: -1, free heap: 87712, compile time: May 26 2018 00:22:11[0m
+I (50524) mesh: [SCAN][ch:11]AP:7, otherID:1, idle:0, mAP:1, root:0, top mAP:0[Layer:0/1.ing]router found
+I (50526) mesh: 916, [SCAN]init rc[30:ae:a4:00:43:85,-36], mine:0, voter:0
+I (50537) mesh: [SCAN:13/13+extra+]rc[128][30:ae:a4:00:43:85,-36], self[30:ae:a4:00:43:84,-36,reason:0,votes:1,idle][mine:1,voter:1(1.00)percent:0.90][128,1,30:ae:a4:00:43:85]
+
+I (50551) mesh: [DONE]connect to router:esp-cjq, rssi:-36, 20:a6:80:98:dc:b4[layer:1], rc[30:ae:a4:00:43:85/-36]
+[0;32mI (55495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 88452, compile time: May 26 2018 00:22:11[0m
+I (56686) wifi: n:11 2, o:11 0, ap:11 2, sta:11 2, prof:11
+I (57675) wifi: state: init -> auth (b0)
+I (57693) wifi: state: auth -> assoc (0)
+I (57739) wifi: state: assoc -> run (10)
+I (57872) wifi: connected with esp-cjq, channel 11
+I (57873) wifi: pm start, type: 0
+
+[0;32mI (57877) mdf_wifi_mesh: [esp_mesh_event_cb, 83]:esp_mesh_event_cb event.id: 7[0m
+[0;32mI (57878) mdf_wifi_mesh: [esp_mesh_event_cb, 87]:wifi connected[0m
+[0;32mI (57890) mdf_wifi_mesh: [esp_mesh_event_cb, 83]:esp_mesh_event_cb event.id: 14[0m
+[0;32mI (59288) mdf_wifi_mesh: [esp_mesh_event_cb, 83]:esp_mesh_event_cb event.id: 17[0m
+[0;32mI (59289) mdf_wifi_mesh: [esp_mesh_event_cb, 138]:wifi get ip[0m
+[0;32mI (59301) event: sta ip: 192.168.1.179, mask: 255.255.255.0, gw: 192.168.1.1[0m
+D (59303) mdf_server: [mdf_server_init_task, 93]:mdf server connect create[0m
+D (59315) mdf_socket: [mdf_socket_tcp_server_create, 53]:create tcp server, port: 80, backlog: 8, sockfd: 54[0m
+D (59317) mdf_socket: [mdf_socket_udp_broadcast_create, 148]:create udp multicast, sockfd: 55[0m
+D (59330) mdf_socket: [mdf_socket_udp_server_create, 117]:create udp server, port: 1025, sockfd: 56[0m
+D (59342) vfs: esp_vfs_select starts with nfds = 55[0m
+D (59343) vfs: FDs in readfds =[0m
+D (59343) vfs: 54[0m
+D (59355) vfs: calling socket_select with the following FDs[0m
+D (59356) vfs: FDs in readfds =[0m
+D (59356) vfs: 54[0m
+D (59392) mdf_notice: [mdf_notice_udp_client, 213]:udp broadcast sendto, size: 41, data:
+mac=30aea4004384
+flag=59094
+type=http
+[0m
+D (59857) vfs: socket_select returned 0 and the FDs are the following[0m
+D (59858) vfs: FDs in readfds =[0m
+D (59858) vfs: esp_vfs_select returns 0[0m
+D (59869) vfs: FDs in readfds =[0m
+D (59870) vfs: esp_vfs_select starts with nfds = 55[0m
+D (59871) vfs: FDs in readfds =[0m
+D (59871) vfs: 54[0m
+D (59882) vfs: calling socket_select with the following FDs[0m
+D (59883) vfs: FDs in readfds =[0m
+D (59884) vfs: 54[0m
+D (60384) vfs: socket_select returned 0 and the FDs are the following[0m
+D (60385) vfs: FDs in readfds =[0m
+D (60385) vfs: esp_vfs_select returns 0[0m
+D (60396) vfs: FDs in readfds =[0m
+D (60397) vfs: esp_vfs_select starts with nfds = 55[0m
+D (60397) vfs: FDs in readfds =[0m
+D (60408) vfs: 54[0m
+D (60409) vfs: calling socket_select with the following FDs[0m
+D (60409) vfs: FDs in readfds =[0m
+D (60410) vfs: 54[0m
+[0;32mI (60495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71792, compile time: May 26 2018 00:22:11[0m
+D (60921) vfs: socket_select returned 0 and the FDs are the following[0m
+D (60922) vfs: FDs in readfds =[0m
+D (60922) vfs: esp_vfs_select returns 0[0m
+D (60933) vfs: FDs in readfds =[0m
+D (60934) vfs: esp_vfs_select starts with nfds = 55[0m
+D (60935) vfs: FDs in readfds =[0m
+D (60935) vfs: 54[0m
+D (60946) vfs: calling socket_select with the following FDs[0m
+D (60947) vfs: FDs in readfds =[0m
+D (60947) vfs: 54[0m
+D (61458) vfs: socket_select returned 0 and the FDs are the following[0m
+D (61459) vfs: FDs in readfds =[0m
+D (61460) vfs: esp_vfs_select returns 0[0m
+D (61471) vfs: FDs in readfds =[0m
+D (61471) vfs: esp_vfs_select starts with nfds = 55[0m
+D (61472) vfs: FDs in readfds =[0m
+D (61483) vfs: 54[0m
+D (61483) vfs: calling socket_select with the following FDs[0m
+D (61484) vfs: FDs in readfds =[0m
+D (61484) vfs: 54[0m
+D (61995) vfs: socket_select returned 0 and the FDs are the following[0m
+D (61996) vfs: FDs in readfds =[0m
+D (61996) vfs: esp_vfs_select returns 0[0m
+D (62007) vfs: FDs in readfds =[0m
+D (62008) vfs: esp_vfs_select starts with nfds = 55[0m
+D (62008) vfs: FDs in readfds =[0m
+D (62019) vfs: 54[0m
+D (62021) vfs: calling socket_select with the following FDs[0m
+D (62021) vfs: FDs in readfds =[0m
+D (62022) vfs: 54[0m
+D (62523) vfs: socket_select returned 0 and the FDs are the following[0m
+D (62524) vfs: FDs in readfds =[0m
+D (62524) vfs: esp_vfs_select returns 0[0m
+D (62535) vfs: FDs in readfds =[0m
+D (62536) vfs: esp_vfs_select starts with nfds = 55[0m
+D (62536) vfs: FDs in readfds =[0m
+D (62547) vfs: 54[0m
+D (62548) vfs: calling socket_select with the following FDs[0m
+D (62548) vfs: FDs in readfds =[0m
+D (62549) vfs: 54[0m
+D (63060) vfs: socket_select returned 0 and the FDs are the following[0m
+D (63061) vfs: FDs in readfds =[0m
+D (63061) vfs: esp_vfs_select returns 0[0m
+D (63072) vfs: FDs in readfds =[0m
+D (63073) vfs: esp_vfs_select starts with nfds = 55[0m
+D (63073) vfs: FDs in readfds =[0m
+D (63084) vfs: 54[0m
+D (63085) vfs: calling socket_select with the following FDs[0m
+D (63086) vfs: FDs in readfds =[0m
+D (63086) vfs: 54[0m
+D (63597) vfs: socket_select returned 0 and the FDs are the following[0m
+D (63599) vfs: FDs in readfds =[0m
+D (63599) vfs: esp_vfs_select returns 0[0m
+D (63610) vfs: FDs in readfds =[0m
+D (63611) vfs: esp_vfs_select starts with nfds = 55[0m
+D (63611) vfs: FDs in readfds =[0m
+D (63612) vfs: 54[0m
+D (63623) vfs: calling socket_select with the following FDs[0m
+D (63623) vfs: FDs in readfds =[0m
+D (63624) vfs: 54[0m
+D (64134) vfs: socket_select returned 0 and the FDs are the following[0m
+D (64135) vfs: FDs in readfds =[0m
+D (64135) vfs: esp_vfs_select returns 0[0m
+D (64146) vfs: FDs in readfds =[0m
+D (64147) vfs: esp_vfs_select starts with nfds = 55[0m
+D (64147) vfs: FDs in readfds =[0m
+D (64158) vfs: 54[0m
+D (64159) vfs: calling socket_select with the following FDs[0m
+D (64159) vfs: FDs in readfds =[0m
+D (64160) vfs: 54[0m
+D (64671) vfs: socket_select returned 0 and the FDs are the following[0m
+D (64672) vfs: FDs in readfds =[0m
+D (64674) vfs: esp_vfs_select returns 0[0m
+D (64674) vfs: FDs in readfds =[0m
+D (64685) vfs: esp_vfs_select starts with nfds = 55[0m
+D (64686) vfs: FDs in readfds =[0m
+D (64686) vfs: 54[0m
+D (64697) vfs: calling socket_select with the following FDs[0m
+D (64699) vfs: FDs in readfds =[0m
+D (64699) vfs: 54[0m
+D (65200) vfs: socket_select returned 0 and the FDs are the following[0m
+D (65201) vfs: FDs in readfds =[0m
+D (65201) vfs: esp_vfs_select returns 0[0m
+D (65212) vfs: FDs in readfds =[0m
+D (65213) vfs: esp_vfs_select starts with nfds = 55[0m
+D (65213) vfs: FDs in readfds =[0m
+D (65224) vfs: 54[0m
+D (65225) vfs: calling socket_select with the following FDs[0m
+D (65227) vfs: FDs in readfds =[0m
+D (65227) vfs: 54[0m
+[0;32mI (65495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71792, compile time: May 26 2018 00:22:11[0m
+D (65728) vfs: socket_select returned 0 and the FDs are the following[0m
+D (65729) vfs: FDs in readfds =[0m
+D (65729) vfs: esp_vfs_select returns 0[0m
+D (65740) vfs: FDs in readfds =[0m
+D (65741) vfs: esp_vfs_select starts with nfds = 55[0m
+D (65741) vfs: FDs in readfds =[0m
+D (65752) vfs: 54[0m
+D (65753) vfs: calling socket_select with the following FDs[0m
+D (65753) vfs: FDs in readfds =[0m
+D (65754) vfs: 54[0m
+[0;32mI (65891) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 24821, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (65904) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+D (66265) vfs: socket_select returned 0 and the FDs are the following[0m
+D (66266) vfs: FDs in readfds =[0m
+D (66266) vfs: esp_vfs_select returns 0[0m
+D (66277) vfs: FDs in readfds =[0m
+D (66278) vfs: esp_vfs_select starts with nfds = 55[0m
+D (66278) vfs: FDs in readfds =[0m
+D (66289) vfs: 54[0m
+D (66290) vfs: calling socket_select with the following FDs[0m
+D (66291) vfs: FDs in readfds =[0m
+D (66291) vfs: 54[0m
+D (66802) vfs: socket_select returned 0 and the FDs are the following[0m
+D (66803) vfs: FDs in readfds =[0m
+D (66803) vfs: esp_vfs_select returns 0[0m
+D (66814) vfs: FDs in readfds =[0m
+D (66815) vfs: esp_vfs_select starts with nfds = 55[0m
+D (66816) vfs: FDs in readfds =[0m
+D (66816) vfs: 54[0m
+D (66827) vfs: calling socket_select with the following FDs[0m
+D (66828) vfs: FDs in readfds =[0m
+D (66828) vfs: 54[0m
+D (67339) vfs: socket_select returned 0 and the FDs are the following[0m
+D (67340) vfs: FDs in readfds =[0m
+D (67340) vfs: esp_vfs_select returns 0[0m
+D (67351) vfs: FDs in readfds =[0m
+D (67352) vfs: esp_vfs_select starts with nfds = 55[0m
+D (67353) vfs: FDs in readfds =[0m
+D (67353) vfs: 54[0m
+D (67364) vfs: calling socket_select with the following FDs[0m
+D (67365) vfs: FDs in readfds =[0m
+D (67365) vfs: 54[0m
+D (67877) vfs: socket_select returned 0 and the FDs are the following[0m
+D (67878) vfs: FDs in readfds =[0m
+D (67879) vfs: esp_vfs_select returns 0[0m
+D (67889) vfs: FDs in readfds =[0m
+D (67890) vfs: esp_vfs_select starts with nfds = 55[0m
+D (67891) vfs: FDs in readfds =[0m
+D (67901) vfs: 54[0m
+D (67902) vfs: calling socket_select with the following FDs[0m
+D (67903) vfs: FDs in readfds =[0m
+D (67903) vfs: 54[0m
+D (68414) vfs: socket_select returned 0 and the FDs are the following[0m
+D (68415) vfs: FDs in readfds =[0m
+D (68415) vfs: esp_vfs_select returns 0[0m
+D (68417) vfs: FDs in readfds =[0m
+D (68428) vfs: esp_vfs_select starts with nfds = 55[0m
+D (68428) vfs: FDs in readfds =[0m
+D (68429) vfs: 54[0m
+D (68440) vfs: calling socket_select with the following FDs[0m
+D (68440) vfs: FDs in readfds =[0m
+D (68441) vfs: 54[0m
+D (68941) vfs: socket_select returned 0 and the FDs are the following[0m
+D (68942) vfs: FDs in readfds =[0m
+D (68942) vfs: esp_vfs_select returns 0[0m
+D (68953) vfs: FDs in readfds =[0m
+D (68954) vfs: esp_vfs_select starts with nfds = 55[0m
+D (68954) vfs: FDs in readfds =[0m
+D (68965) vfs: 54[0m
+D (68966) vfs: calling socket_select with the following FDs[0m
+D (68966) vfs: FDs in readfds =[0m
+D (68967) vfs: 54[0m
+D (69478) vfs: socket_select returned 0 and the FDs are the following[0m
+D (69479) vfs: FDs in readfds =[0m
+D (69480) vfs: esp_vfs_select returns 0[0m
+D (69490) vfs: FDs in readfds =[0m
+D (69491) vfs: esp_vfs_select starts with nfds = 55[0m
+D (69492) vfs: FDs in readfds =[0m
+D (69492) vfs: 54[0m
+D (69503) vfs: calling socket_select with the following FDs[0m
+D (69504) vfs: FDs in readfds =[0m
+D (69504) vfs: 54[0m
+D (70015) vfs: socket_select returned 0 and the FDs are the following[0m
+D (70016) vfs: FDs in readfds =[0m
+D (70016) vfs: esp_vfs_select returns 0[0m
+D (70027) vfs: FDs in readfds =[0m
+D (70028) vfs: esp_vfs_select starts with nfds = 55[0m
+D (70028) vfs: FDs in readfds =[0m
+D (70040) vfs: 54[0m
+D (70041) vfs: calling socket_select with the following FDs[0m
+D (70042) vfs: FDs in readfds =[0m
+D (70042) vfs: 54[0m
+[0;32mI (70495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+D (70553) vfs: socket_select returned 0 and the FDs are the following[0m
+D (70554) vfs: FDs in readfds =[0m
+D (70555) vfs: esp_vfs_select returns 0[0m
+D (70566) vfs: FDs in readfds =[0m
+D (70566) vfs: esp_vfs_select starts with nfds = 55[0m
+D (70567) vfs: FDs in readfds =[0m
+D (70578) vfs: 54[0m
+D (70578) vfs: calling socket_select with the following FDs[0m
+D (70579) vfs: FDs in readfds =[0m
+D (70590) vfs: 54[0m
+D (71091) vfs: socket_select returned 0 and the FDs are the following[0m
+D (71092) vfs: FDs in readfds =[0m
+D (71092) vfs: esp_vfs_select returns 0[0m
+D (71103) vfs: FDs in readfds =[0m
+D (71104) vfs: esp_vfs_select starts with nfds = 55[0m
+D (71104) vfs: FDs in readfds =[0m
+D (71115) vfs: 54[0m
+D (71116) vfs: calling socket_select with the following FDs[0m
+D (71116) vfs: FDs in readfds =[0m
+D (71117) vfs: 54[0m
+D (71628) vfs: socket_select returned 0 and the FDs are the following[0m
+D (71629) vfs: FDs in readfds =[0m
+D (71630) vfs: esp_vfs_select returns 0[0m
+D (71640) vfs: FDs in readfds =[0m
+D (71641) vfs: esp_vfs_select starts with nfds = 55[0m
+D (71642) vfs: FDs in readfds =[0m
+D (71642) vfs: 54[0m
+D (71653) vfs: calling socket_select with the following FDs[0m
+D (71654) vfs: FDs in readfds =[0m
+D (71654) vfs: 54[0m
+D (72165) vfs: socket_select returned 0 and the FDs are the following[0m
+D (72166) vfs: FDs in readfds =[0m
+D (72166) vfs: esp_vfs_select returns 0[0m
+D (72177) vfs: FDs in readfds =[0m
+D (72178) vfs: esp_vfs_select starts with nfds = 55[0m
+D (72178) vfs: FDs in readfds =[0m
+D (72190) vfs: 54[0m
+D (72191) vfs: calling socket_select with the following FDs[0m
+D (72191) vfs: FDs in readfds =[0m
+D (72192) vfs: 54[0m
+D (72692) vfs: socket_select returned 0 and the FDs are the following[0m
+D (72693) vfs: FDs in readfds =[0m
+D (72693) vfs: esp_vfs_select returns 0[0m
+D (72704) vfs: FDs in readfds =[0m
+D (72705) vfs: esp_vfs_select starts with nfds = 55[0m
+D (72705) vfs: FDs in readfds =[0m
+D (72716) vfs: 54[0m
+D (72717) vfs: calling socket_select with the following FDs[0m
+D (72718) vfs: FDs in readfds =[0m
+D (72718) vfs: 54[0m
+D (73229) vfs: socket_select returned 0 and the FDs are the following[0m
+D (73231) vfs: FDs in readfds =[0m
+D (73231) vfs: esp_vfs_select returns 0[0m
+D (73242) vfs: FDs in readfds =[0m
+D (73243) vfs: esp_vfs_select starts with nfds = 55[0m
+D (73243) vfs: FDs in readfds =[0m
+D (73254) vfs: 54[0m
+D (73255) vfs: calling socket_select with the following FDs[0m
+D (73255) vfs: FDs in readfds =[0m
+D (73266) vfs: 54[0m
+D (73767) vfs: socket_select returned 0 and the FDs are the following[0m
+D (73768) vfs: FDs in readfds =[0m
+D (73768) vfs: esp_vfs_select returns 0[0m
+D (73779) vfs: FDs in readfds =[0m
+D (73780) vfs: esp_vfs_select starts with nfds = 55[0m
+D (73780) vfs: FDs in readfds =[0m
+D (73791) vfs: 54[0m
+D (73792) vfs: calling socket_select with the following FDs[0m
+D (73793) vfs: FDs in readfds =[0m
+D (73793) vfs: 54[0m
+D (74304) vfs: socket_select returned 0 and the FDs are the following[0m
+D (74305) vfs: FDs in readfds =[0m
+D (74305) vfs: esp_vfs_select returns 0[0m
+D (74316) vfs: FDs in readfds =[0m
+D (74317) vfs: esp_vfs_select starts with nfds = 55[0m
+D (74317) vfs: FDs in readfds =[0m
+D (74328) vfs: 54[0m
+D (74329) vfs: calling socket_select with the following FDs[0m
+D (74330) vfs: FDs in readfds =[0m
+D (74330) vfs: 54[0m
+D (74841) vfs: socket_select returned 0 and the FDs are the following[0m
+D (74842) vfs: FDs in readfds =[0m
+D (74842) vfs: esp_vfs_select returns 0[0m
+D (74853) vfs: FDs in readfds =[0m
+D (74854) vfs: esp_vfs_select starts with nfds = 55[0m
+D (74854) vfs: FDs in readfds =[0m
+D (74865) vfs: 54[0m
+D (74866) vfs: calling socket_select with the following FDs[0m
+D (74867) vfs: FDs in readfds =[0m
+D (74868) vfs: 54[0m
+D (75368) vfs: socket_select returned 0 and the FDs are the following[0m
+D (75369) vfs: FDs in readfds =[0m
+D (75369) vfs: esp_vfs_select returns 0[0m
+D (75380) vfs: FDs in readfds =[0m
+D (75381) vfs: esp_vfs_select starts with nfds = 55[0m
+D (75381) vfs: FDs in readfds =[0m
+D (75392) vfs: 54[0m
+D (75393) vfs: calling socket_select with the following FDs[0m
+D (75394) vfs: FDs in readfds =[0m
+D (75394) vfs: 54[0m
+[0;32mI (75495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+D (75905) vfs: socket_select returned 0 and the FDs are the following[0m
+D (75906) vfs: FDs in readfds =[0m
+D (75906) vfs: esp_vfs_select returns 0[0m
+D (75917) vfs: FDs in readfds =[0m
+D (75918) vfs: esp_vfs_select starts with nfds = 55[0m
+D (75918) vfs: FDs in readfds =[0m
+D (75929) vfs: 54[0m
+D (75930) vfs: calling socket_select with the following FDs[0m
+D (75931) vfs: FDs in readfds =[0m
+D (75931) vfs: 54[0m
+D (76442) vfs: socket_select returned 0 and the FDs are the following[0m
+D (76443) vfs: FDs in readfds =[0m
+D (76444) vfs: esp_vfs_select returns 0[0m
+D (76454) vfs: FDs in readfds =[0m
+D (76455) vfs: esp_vfs_select starts with nfds = 55[0m
+D (76456) vfs: FDs in readfds =[0m
+D (76456) vfs: 54[0m
+D (76467) vfs: calling socket_select with the following FDs[0m
+D (76468) vfs: FDs in readfds =[0m
+D (76468) vfs: 54[0m
+D (76979) vfs: socket_select returned 0 and the FDs are the following[0m
+D (76980) vfs: FDs in readfds =[0m
+D (76980) vfs: esp_vfs_select returns 0[0m
+D (76991) vfs: FDs in readfds =[0m
+D (76992) vfs: esp_vfs_select starts with nfds = 55[0m
+D (76992) vfs: FDs in readfds =[0m
+D (77003) vfs: 54[0m
+D (77004) vfs: calling socket_select with the following FDs[0m
+D (77004) vfs: FDs in readfds =[0m
+D (77005) vfs: 54[0m
+D (77516) vfs: socket_select returned 0 and the FDs are the following[0m
+D (77517) vfs: FDs in readfds =[0m
+D (77517) vfs: esp_vfs_select returns 0[0m
+D (77528) vfs: FDs in readfds =[0m
+D (77529) vfs: esp_vfs_select starts with nfds = 55[0m
+D (77529) vfs: FDs in readfds =[0m
+D (77540) vfs: 54[0m
+D (77541) vfs: calling socket_select with the following FDs[0m
+D (77542) vfs: FDs in readfds =[0m
+D (77542) vfs: 54[0m
+D (78053) vfs: socket_select returned 0 and the FDs are the following[0m
+D (78054) vfs: FDs in readfds =[0m
+D (78054) vfs: esp_vfs_select returns 0[0m
+D (78065) vfs: FDs in readfds =[0m
+D (78066) vfs: esp_vfs_select starts with nfds = 55[0m
+D (78066) vfs: FDs in readfds =[0m
+D (78077) vfs: 54[0m
+D (78078) vfs: calling socket_select with the following FDs[0m
+D (78078) vfs: FDs in readfds =[0m
+D (78079) vfs: 54[0m
+D (78590) vfs: socket_select returned 0 and the FDs are the following[0m
+D (78591) vfs: FDs in readfds =[0m
+D (78591) vfs: esp_vfs_select returns 0[0m
+D (78602) vfs: FDs in readfds =[0m
+D (78603) vfs: esp_vfs_select starts with nfds = 55[0m
+D (78604) vfs: FDs in readfds =[0m
+D (78604) vfs: 54[0m
+D (78615) vfs: calling socket_select with the following FDs[0m
+D (78616) vfs: FDs in readfds =[0m
+D (78616) vfs: 54[0m
+D (79127) vfs: socket_select returned 0 and the FDs are the following[0m
+D (79128) vfs: FDs in readfds =[0m
+D (79128) vfs: esp_vfs_select returns 0[0m
+D (79139) vfs: FDs in readfds =[0m
+D (79140) vfs: esp_vfs_select starts with nfds = 55[0m
+D (79140) vfs: FDs in readfds =[0m
+D (79151) vfs: 54[0m
+D (79152) vfs: calling socket_select with the following FDs[0m
+D (79152) vfs: FDs in readfds =[0m
+D (79153) vfs: 54[0m
+D (79664) vfs: socket_select returned 0 and the FDs are the following[0m
+D (79665) vfs: FDs in readfds =[0m
+D (79665) vfs: esp_vfs_select returns 0[0m
+D (79676) vfs: FDs in readfds =[0m
+D (79677) vfs: esp_vfs_select starts with nfds = 55[0m
+D (79677) vfs: FDs in readfds =[0m
+D (79688) vfs: 54[0m
+D (79689) vfs: calling socket_select with the following FDs[0m
+D (79689) vfs: FDs in readfds =[0m
+D (79690) vfs: 54[0m
+D (80201) vfs: socket_select returned 0 and the FDs are the following[0m
+D (80202) vfs: FDs in readfds =[0m
+D (80202) vfs: esp_vfs_select returns 0[0m
+D (80213) vfs: FDs in readfds =[0m
+D (80214) vfs: esp_vfs_select starts with nfds = 55[0m
+D (80214) vfs: FDs in readfds =[0m
+D (80225) vfs: 54[0m
+D (80226) vfs: calling socket_select with the following FDs[0m
+D (80226) vfs: FDs in readfds =[0m
+D (80227) vfs: 54[0m
+[0;32mI (80495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+D (80738) vfs: socket_select returned 0 and the FDs are the following[0m
+D (80739) vfs: FDs in readfds =[0m
+D (80739) vfs: esp_vfs_select returns 0[0m
+D (80750) vfs: FDs in readfds =[0m
+D (80751) vfs: esp_vfs_select starts with nfds = 55[0m
+D (80751) vfs: FDs in readfds =[0m
+D (80752) vfs: 54[0m
+D (80763) vfs: calling socket_select with the following FDs[0m
+D (80763) vfs: FDs in readfds =[0m
+D (80764) vfs: 54[0m
+D (81275) vfs: socket_select returned 0 and the FDs are the following[0m
+D (81276) vfs: FDs in readfds =[0m
+D (81276) vfs: esp_vfs_select returns 0[0m
+D (81287) vfs: FDs in readfds =[0m
+D (81288) vfs: esp_vfs_select starts with nfds = 55[0m
+D (81288) vfs: FDs in readfds =[0m
+D (81299) vfs: 54[0m
+D (81300) vfs: calling socket_select with the following FDs[0m
+D (81301) vfs: FDs in readfds =[0m
+D (81301) vfs: 54[0m
+D (81812) vfs: socket_select returned 0 and the FDs are the following[0m
+D (81813) vfs: FDs in readfds =[0m
+D (81813) vfs: esp_vfs_select returns 0[0m
+D (81824) vfs: FDs in readfds =[0m
+D (81825) vfs: esp_vfs_select starts with nfds = 55[0m
+D (81825) vfs: FDs in readfds =[0m
+D (81836) vfs: 54[0m
+D (81837) vfs: calling socket_select with the following FDs[0m
+D (81837) vfs: FDs in readfds =[0m
+D (81838) vfs: 54[0m
+D (82349) vfs: socket_select returned 0 and the FDs are the following[0m
+D (82350) vfs: FDs in readfds =[0m
+D (82350) vfs: esp_vfs_select returns 0[0m
+D (82361) vfs: FDs in readfds =[0m
+D (82362) vfs: esp_vfs_select starts with nfds = 55[0m
+D (82362) vfs: FDs in readfds =[0m
+D (82373) vfs: 54[0m
+D (82374) vfs: calling socket_select with the following FDs[0m
+D (82374) vfs: FDs in readfds =[0m
+D (82375) vfs: 54[0m
+D (82886) vfs: socket_select returned 0 and the FDs are the following[0m
+D (82887) vfs: FDs in readfds =[0m
+D (82887) vfs: esp_vfs_select returns 0[0m
+D (82898) vfs: FDs in readfds =[0m
+D (82899) vfs: esp_vfs_select starts with nfds = 55[0m
+D (82899) vfs: FDs in readfds =[0m
+D (82910) vfs: 54[0m
+D (82911) vfs: calling socket_select with the following FDs[0m
+D (82912) vfs: FDs in readfds =[0m
+D (82912) vfs: 54[0m
+D (83423) vfs: socket_select returned 0 and the FDs are the following[0m
+D (83424) vfs: FDs in readfds =[0m
+D (83424) vfs: esp_vfs_select returns 0[0m
+D (83435) vfs: FDs in readfds =[0m
+D (83436) vfs: esp_vfs_select starts with nfds = 55[0m
+D (83436) vfs: FDs in readfds =[0m
+D (83447) vfs: 54[0m
+D (83448) vfs: calling socket_select with the following FDs[0m
+D (83449) vfs: FDs in readfds =[0m
+D (83449) vfs: 54[0m
+D (83960) vfs: socket_select returned 0 and the FDs are the following[0m
+D (83961) vfs: FDs in readfds =[0m
+D (83961) vfs: esp_vfs_select returns 0[0m
+D (83972) vfs: FDs in readfds =[0m
+D (83973) vfs: esp_vfs_select starts with nfds = 55[0m
+D (83973) vfs: FDs in readfds =[0m
+D (83984) vfs: 54[0m
+D (83985) vfs: calling socket_select with the following FDs[0m
+D (83986) vfs: FDs in readfds =[0m
+D (83986) vfs: 54[0m
+D (84497) vfs: socket_select returned 0 and the FDs are the following[0m
+D (84498) vfs: FDs in readfds =[0m
+D (84498) vfs: esp_vfs_select returns 0[0m
+D (84509) vfs: FDs in readfds =[0m
+D (84510) vfs: esp_vfs_select starts with nfds = 55[0m
+D (84511) vfs: FDs in readfds =[0m
+D (84521) vfs: 54[0m
+D (84522) vfs: calling socket_select with the following FDs[0m
+D (84523) vfs: FDs in readfds =[0m
+D (84523) vfs: 54[0m
+[0;32mI (85020) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 24236, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (85033) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+D (85035) vfs: socket_select returned 0 and the FDs are the following[0m
+D (85047) vfs: FDs in readfds =[0m
+D (85048) vfs: esp_vfs_select returns 0[0m
+D (85059) vfs: FDs in readfds =[0m
+D (85059) vfs: esp_vfs_select starts with nfds = 55[0m
+D (85060) vfs: FDs in readfds =[0m
+D (85071) vfs: 54[0m
+D (85071) vfs: calling socket_select with the following FDs[0m
+D (85072) vfs: FDs in readfds =[0m
+D (85083) vfs: 54[0m
+[0;32mI (85275) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 25776, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (85288) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+[0;32mI (85495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+D (85583) vfs: socket_select returned 0 and the FDs are the following[0m
+D (85584) vfs: FDs in readfds =[0m
+D (85584) vfs: esp_vfs_select returns 0[0m
+D (85595) vfs: FDs in readfds =[0m
+D (85596) vfs: esp_vfs_select starts with nfds = 55[0m
+D (85596) vfs: FDs in readfds =[0m
+D (85607) vfs: 54[0m
+D (85608) vfs: calling socket_select with the following FDs[0m
+D (85608) vfs: FDs in readfds =[0m
+D (85609) vfs: 54[0m
+D (86120) vfs: socket_select returned 0 and the FDs are the following[0m
+D (86121) vfs: FDs in readfds =[0m
+D (86121) vfs: esp_vfs_select returns 0[0m
+D (86132) vfs: FDs in readfds =[0m
+D (86133) vfs: esp_vfs_select starts with nfds = 55[0m
+D (86133) vfs: FDs in readfds =[0m
+D (86144) vfs: 54[0m
+D (86145) vfs: calling socket_select with the following FDs[0m
+D (86145) vfs: FDs in readfds =[0m
+D (86146) vfs: 54[0m
+D (86657) vfs: socket_select returned 0 and the FDs are the following[0m
+D (86658) vfs: FDs in readfds =[0m
+D (86658) vfs: esp_vfs_select returns 0[0m
+D (86669) vfs: FDs in readfds =[0m
+D (86670) vfs: esp_vfs_select starts with nfds = 55[0m
+D (86670) vfs: FDs in readfds =[0m
+D (86681) vfs: 54[0m
+D (86682) vfs: calling socket_select with the following FDs[0m
+D (86683) vfs: FDs in readfds =[0m
+D (86683) vfs: 54[0m
+D (87194) vfs: socket_select returned 0 and the FDs are the following[0m
+D (87195) vfs: FDs in readfds =[0m
+D (87196) vfs: esp_vfs_select returns 0[0m
+D (87206) vfs: FDs in readfds =[0m
+D (87207) vfs: esp_vfs_select starts with nfds = 55[0m
+D (87208) vfs: FDs in readfds =[0m
+D (87208) vfs: 54[0m
+D (87219) vfs: calling socket_select with the following FDs[0m
+D (87220) vfs: FDs in readfds =[0m
+D (87220) vfs: 54[0m
+D (87731) vfs: socket_select returned 0 and the FDs are the following[0m
+D (87732) vfs: FDs in readfds =[0m
+D (87732) vfs: esp_vfs_select returns 0[0m
+D (87743) vfs: FDs in readfds =[0m
+D (87744) vfs: esp_vfs_select starts with nfds = 55[0m
+D (87744) vfs: FDs in readfds =[0m
+D (87755) vfs: 54[0m
+D (87756) vfs: calling socket_select with the following FDs[0m
+D (87757) vfs: FDs in readfds =[0m
+D (87757) vfs: 54[0m
+D (88268) vfs: socket_select returned 0 and the FDs are the following[0m
+D (88269) vfs: FDs in readfds =[0m
+D (88269) vfs: esp_vfs_select returns 0[0m
+D (88281) vfs: FDs in readfds =[0m
+D (88281) vfs: esp_vfs_select starts with nfds = 55[0m
+D (88282) vfs: FDs in readfds =[0m
+D (88283) vfs: 54[0m
+D (88294) vfs: calling socket_select with the following FDs[0m
+D (88294) vfs: FDs in readfds =[0m
+D (88295) vfs: 54[0m
+D (88795) vfs: socket_select returned 0 and the FDs are the following[0m
+D (88796) vfs: FDs in readfds =[0m
+D (88796) vfs: esp_vfs_select returns 0[0m
+D (88807) vfs: FDs in readfds =[0m
+D (88808) vfs: esp_vfs_select starts with nfds = 55[0m
+D (88809) vfs: FDs in readfds =[0m
+D (88819) vfs: 54[0m
+D (88820) vfs: calling socket_select with the following FDs[0m
+D (88821) vfs: FDs in readfds =[0m
+D (88821) vfs: 54[0m
+D (89332) vfs: socket_select returned 0 and the FDs are the following[0m
+D (89333) vfs: FDs in readfds =[0m
+D (89333) vfs: esp_vfs_select returns 0[0m
+D (89344) vfs: FDs in readfds =[0m
+D (89345) vfs: esp_vfs_select starts with nfds = 55[0m
+D (89346) vfs: FDs in readfds =[0m
+D (89346) vfs: 54[0m
+D (89357) vfs: calling socket_select with the following FDs[0m
+D (89358) vfs: FDs in readfds =[0m
+D (89358) vfs: 54[0m
+D (89869) vfs: socket_select returned 0 and the FDs are the following[0m
+D (89870) vfs: FDs in readfds =[0m
+D (89871) vfs: esp_vfs_select returns 0[0m
+D (89881) vfs: FDs in readfds =[0m
+D (89882) vfs: esp_vfs_select starts with nfds = 55[0m
+D (89883) vfs: FDs in readfds =[0m
+D (89893) vfs: 54[0m
+D (89894) vfs: calling socket_select with the following FDs[0m
+D (89895) vfs: FDs in readfds =[0m
+D (89895) vfs: 54[0m
+D (90406) vfs: socket_select returned 0 and the FDs are the following[0m
+D (90407) vfs: FDs in readfds =[0m
+D (90407) vfs: esp_vfs_select returns 0[0m
+D (90418) vfs: FDs in readfds =[0m
+D (90419) vfs: esp_vfs_select starts with nfds = 55[0m
+D (90419) vfs: FDs in readfds =[0m
+D (90430) vfs: 54[0m
+D (90432) vfs: calling socket_select with the following FDs[0m
+D (90432) vfs: FDs in readfds =[0m
+D (90433) vfs: 54[0m
+[0;32mI (90495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71680, compile time: May 26 2018 00:22:11[0m
+D (90933) vfs: socket_select returned 0 and the FDs are the following[0m
+D (90934) vfs: FDs in readfds =[0m
+D (90935) vfs: esp_vfs_select returns 0[0m
+D (90945) vfs: FDs in readfds =[0m
+D (90946) vfs: esp_vfs_select starts with nfds = 55[0m
+D (90947) vfs: FDs in readfds =[0m
+D (90957) vfs: 54[0m
+D (90958) vfs: calling socket_select with the following FDs[0m
+D (90959) vfs: FDs in readfds =[0m
+D (90959) vfs: 54[0m
+D (91470) vfs: socket_select returned 0 and the FDs are the following[0m
+D (91471) vfs: FDs in readfds =[0m
+D (91471) vfs: esp_vfs_select returns 0[0m
+D (91482) vfs: FDs in readfds =[0m
+D (91483) vfs: esp_vfs_select starts with nfds = 55[0m
+D (91483) vfs: FDs in readfds =[0m
+D (91494) vfs: 54[0m
+D (91495) vfs: calling socket_select with the following FDs[0m
+D (91496) vfs: FDs in readfds =[0m
+D (91496) vfs: 54[0m
+D (92007) vfs: socket_select returned 0 and the FDs are the following[0m
+D (92009) vfs: FDs in readfds =[0m
+D (92009) vfs: esp_vfs_select returns 0[0m
+D (92010) vfs: FDs in readfds =[0m
+D (92021) vfs: esp_vfs_select starts with nfds = 55[0m
+D (92022) vfs: FDs in readfds =[0m
+D (92022) vfs: 54[0m
+D (92033) vfs: calling socket_select with the following FDs[0m
+D (92034) vfs: FDs in readfds =[0m
+D (92034) vfs: 54[0m
+D (92535) vfs: socket_select returned 0 and the FDs are the following[0m
+D (92536) vfs: FDs in readfds =[0m
+D (92536) vfs: esp_vfs_select returns 0[0m
+D (92547) vfs: FDs in readfds =[0m
+D (92548) vfs: esp_vfs_select starts with nfds = 55[0m
+D (92548) vfs: FDs in readfds =[0m
+D (92559) vfs: 54[0m
+D (92560) vfs: calling socket_select with the following FDs[0m
+D (92560) vfs: FDs in readfds =[0m
+D (92561) vfs: 54[0m
+D (93072) vfs: socket_select returned 0 and the FDs are the following[0m
+D (93073) vfs: FDs in readfds =[0m
+D (93073) vfs: esp_vfs_select returns 0[0m
+D (93084) vfs: FDs in readfds =[0m
+D (93085) vfs: esp_vfs_select starts with nfds = 55[0m
+D (93085) vfs: FDs in readfds =[0m
+D (93096) vfs: 54[0m
+D (93097) vfs: calling socket_select with the following FDs[0m
+D (93098) vfs: FDs in readfds =[0m
+D (93098) vfs: 54[0m
+D (93609) vfs: socket_select returned 0 and the FDs are the following[0m
+D (93610) vfs: FDs in readfds =[0m
+D (93610) vfs: esp_vfs_select returns 0[0m
+D (93621) vfs: FDs in readfds =[0m
+D (93622) vfs: esp_vfs_select starts with nfds = 55[0m
+D (93622) vfs: FDs in readfds =[0m
+D (93633) vfs: 54[0m
+D (93634) vfs: calling socket_select with the following FDs[0m
+D (93634) vfs: FDs in readfds =[0m
+D (93635) vfs: 54[0m
+D (94146) vfs: socket_select returned 0 and the FDs are the following[0m
+D (94147) vfs: FDs in readfds =[0m
+D (94147) vfs: esp_vfs_select returns 0[0m
+D (94158) vfs: FDs in readfds =[0m
+D (94159) vfs: esp_vfs_select starts with nfds = 55[0m
+D (94160) vfs: FDs in readfds =[0m
+D (94160) vfs: 54[0m
+D (94171) vfs: calling socket_select with the following FDs[0m
+D (94172) vfs: FDs in readfds =[0m
+D (94172) vfs: 54[0m
+D (94683) vfs: socket_select returned 0 and the FDs are the following[0m
+D (94684) vfs: FDs in readfds =[0m
+D (94684) vfs: esp_vfs_select returns 0[0m
+D (94695) vfs: FDs in readfds =[0m
+D (94696) vfs: esp_vfs_select starts with nfds = 55[0m
+D (94696) vfs: FDs in readfds =[0m
+D (94707) vfs: 54[0m
+D (94708) vfs: calling socket_select with the following FDs[0m
+D (94708) vfs: FDs in readfds =[0m
+D (94709) vfs: 54[0m
+D (95220) vfs: socket_select returned 0 and the FDs are the following[0m
+D (95221) vfs: FDs in readfds =[0m
+D (95221) vfs: esp_vfs_select returns 0[0m
+D (95232) vfs: FDs in readfds =[0m
+D (95233) vfs: esp_vfs_select starts with nfds = 55[0m
+D (95234) vfs: FDs in readfds =[0m
+D (95234) vfs: 54[0m
+D (95245) vfs: calling socket_select with the following FDs[0m
+D (95246) vfs: FDs in readfds =[0m
+D (95246) vfs: 54[0m
+[0;32mI (95471) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 24258, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (95484) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+[0;32mI (95498) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71468, compile time: May 26 2018 00:22:11[0m
+[0;32mI (95555) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 23589, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (95568) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+[0;32mI (95684) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 25715, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (95697) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+D (95757) vfs: socket_select returned 0 and the FDs are the following[0m
+D (95758) vfs: FDs in readfds =[0m
+D (95758) vfs: esp_vfs_select returns 0[0m
+D (95769) vfs: FDs in readfds =[0m
+D (95770) vfs: esp_vfs_select starts with nfds = 55[0m
+D (95770) vfs: FDs in readfds =[0m
+D (95781) vfs: 54[0m
+D (95782) vfs: calling socket_select with the following FDs[0m
+D (95782) vfs: FDs in readfds =[0m
+D (95783) vfs: 54[0m
+D (96049) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96051) vfs: FDs in readfds =[0m
+D (96051) vfs: 54[0m
+D (96051) vfs: esp_vfs_select returns 1[0m
+D (96063) vfs: FDs in readfds =[0m
+D (96063) vfs: 54[0m
+D (96064) mdf_http_handle: [mdf_server_conn_insert, 110]:insert, conn_num: 0, sockfd: 57, ip: 192.168.1.177, port: 49368[0m
+D (96077) vfs: esp_vfs_select starts with nfds = 58[0m
+D (96078) vfs: FDs in readfds =[0m
+D (96088) vfs: 54[0m
+D (96088) vfs: 57[0m
+D (96089) vfs: calling socket_select with the following FDs[0m
+D (96090) vfs: FDs in readfds =[0m
+D (96101) vfs: 54[0m
+D (96102) vfs: 57[0m
+D (96102) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96103) vfs: FDs in readfds =[0m
+D (96113) vfs: 57[0m
+D (96114) vfs: esp_vfs_select returns 1[0m
+D (96114) vfs: FDs in readfds =[0m
+D (96115) vfs: 57[0m
+D (96125) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 57, conn->http_size: 0[0m
+D (96127) mdf_http_handle: [mdf_http_server_request, 347]:http request, sockfd: 57, conn->http_size: 185, data: 
+GET /mesh_info HTTP/1.1
+token: 1234567890
+Connection: close
+User-Agent: Dalvik/2.1.0 (Linux; U; Android 7.1.1; OPPO R11s Build/NMF26X)
+Host: 192.168.1.179
+Accept-Encoding: gzip
+
+[0m
+D (96163) mdf_http_server_parser: [mdf_get_device_mac, 189]:http response, size: 85, data: 
+HTTP/1.1 200 OK
+Mesh-Node-Num: 1
+Mesh-Node-Mac: 30aea4004384
+Content-Length: 0
+
+[0m
+D (96179) vfs: esp_vfs_select starts with nfds = 58[0m
+D (96180) vfs: FDs in readfds =[0m
+D (96181) vfs: 54[0m
+D (96181) vfs: 57[0m
+D (96192) vfs: calling socket_select with the following FDs[0m
+D (96194) vfs: FDs in readfds =[0m
+D (96194) vfs: 54[0m
+D (96194) vfs: 57[0m
+D (96583) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96584) vfs: FDs in readfds =[0m
+D (96585) vfs: 57[0m
+D (96585) vfs: esp_vfs_select returns 1[0m
+D (96596) vfs: FDs in readfds =[0m
+D (96596) vfs: 57[0m
+D (96597) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 57, conn->http_size: 0[0m
+D (96608) mdf_http_handle: [mdf_http_server_request, 329]:socket close, sockfd: 57, conn->http_size: 0, errno_str: Socket is not connected, ret: 0[0m
+D (96624) vfs: esp_vfs_select starts with nfds = 55[0m
+D (96626) vfs: FDs in readfds =[0m
+D (96626) vfs: 54[0m
+D (96627) vfs: calling socket_select with the following FDs[0m
+D (96638) vfs: FDs in readfds =[0m
+D (96638) vfs: 54[0m
+D (96986) vfs: socket_select returned 1 and the FDs are the following[0m
+D (96988) vfs: FDs in readfds =[0m
+D (96988) vfs: 54[0m
+D (96989) vfs: esp_vfs_select returns 1[0m
+D (96999) vfs: FDs in readfds =[0m
+D (97000) vfs: 54[0m
+D (97001) mdf_http_handle: [mdf_server_conn_insert, 110]:insert, conn_num: 0, sockfd: 58, ip: 192.168.1.177, port: 49372[0m
+D (97013) vfs: esp_vfs_select starts with nfds = 59[0m
+D (97014) vfs: FDs in readfds =[0m
+D (97025) vfs: 54[0m
+D (97025) vfs: 58[0m
+D (97026) vfs: calling socket_select with the following FDs[0m
+D (97026) vfs: FDs in readfds =[0m
+D (97037) vfs: 54[0m
+D (97038) vfs: 58[0m
+D (97038) vfs: socket_select returned 1 and the FDs are the following[0m
+D (97049) vfs: FDs in readfds =[0m
+D (97051) vfs: 58[0m
+D (97051) vfs: esp_vfs_select returns 1[0m
+D (97052) vfs: FDs in readfds =[0m
+D (97052) vfs: 58[0m
+D (97063) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 58, conn->http_size: 0[0m
+D (97065) mdf_http_handle: [mdf_http_server_request, 347]:http request, sockfd: 58, conn->http_size: 319, data: 
+POST /device_request HTTP/1.1
+Mesh-Node-Num: 1
+Mesh-Node-Mac: 30aea4004384
+Content-Type: application/json
+token: 1234567890
+Connection: close
+Content-Length: 29
+User-Agent: Dalvik/2.1.0 (Linux; U; Android 7.1.1; OPPO R11s Build/NMF26X)
+Host: 192.168.1.179
+Accept-Encoding: gzip
+
+{"request":"get_device_info"}[0m
+D (97116) light_bulb: [light_bulb_get_value, 110]:cid: 0, value: 1[0m
+D (97118) light_bulb: [light_bulb_get_value, 110]:cid: 1, value: 360[0m
+D (97119) light_bulb: [light_bulb_get_value, 110]:cid: 2, value: 0[0m
+D (97130) light_bulb: [light_bulb_get_value, 110]:cid: 3, value: 100[0m
+D (97141) light_bulb: [light_bulb_get_value, 110]:cid: 4, value: 0[0m
+D (97142) light_bulb: [light_bulb_get_value, 110]:cid: 5, value: 30[0m
+D (97155) mdf_http_handle: [mdf_http_server_response, 482]:http response, sockfd: 58, size: 458, data: 
+HTTP/1.1 200 OK
+Content-Type: application/json
+Mesh-Node-Mac: 30aea4004384
+Mesh-Parent-Mac: 20a68098dcb4
+Mesh-Layer: 1
+Content-Length: 311
+
+{"protocol_version":1,"tid":"1","name":"light_004384","version":"0.5.25.1","characteristics":[[0,"on","int",7,1,0,1,1],[1,"hue","int",7,360,0,360,1],[2,"saturation","int",7,0,0,100,1],[3,"value","int",7,100,0,100,1],[4,"color_temperature","int",7,0,0,100,1],[5,"brightness","int",7,30,0,100,1]],"status_code":0}[0m
+D (97119) mdf_http_server_parser: [mdf_device_request, 150]:mdf_wifi_mesh_root_send conn->chunk: 0, conn->chunk_num: 0[0m
+D (97207) vfs: esp_vfs_select starts with nfds = 59[0m
+D (97218) vfs: FDs in readfds =[0m
+D (97219) vfs: 54[0m
+D (97219) vfs: 58[0m
+D (97220) vfs: calling socket_select with the following FDs[0m
+D (97231) vfs: FDs in readfds =[0m
+D (97232) vfs: 54[0m
+D (97232) vfs: 58[0m
+D (97356) vfs: socket_select returned 1 and the FDs are the following[0m
+D (97358) vfs: FDs in readfds =[0m
+D (97358) vfs: 58[0m
+D (97358) vfs: esp_vfs_select returns 1[0m
+D (97369) vfs: FDs in readfds =[0m
+D (97370) vfs: 58[0m
+D (97370) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 58, conn->http_size: 0[0m
+D (97382) mdf_http_handle: [mdf_http_server_request, 329]:socket close, sockfd: 58, conn->http_size: 0, errno_str: Socket is not connected, ret: 0[0m
+D (97397) vfs: esp_vfs_select starts with nfds = 55[0m
+D (97398) vfs: FDs in readfds =[0m
+D (97398) vfs: 54[0m
+D (97399) vfs: calling socket_select with the following FDs[0m
+D (97410) vfs: FDs in readfds =[0m
+D (97410) vfs: 54[0m
+D (97911) vfs: socket_select returned 0 and the FDs are the following[0m
+D (97912) vfs: FDs in readfds =[0m
+D (97912) vfs: esp_vfs_select returns 0[0m
+D (97923) vfs: FDs in readfds =[0m
+D (97924) vfs: esp_vfs_select starts with nfds = 55[0m
+D (97925) vfs: FDs in readfds =[0m
+D (97925) vfs: 54[0m
+D (97936) vfs: calling socket_select with the following FDs[0m
+D (97937) vfs: FDs in readfds =[0m
+D (97937) vfs: 54[0m
+D (98448) vfs: socket_select returned 0 and the FDs are the following[0m
+D (98449) vfs: FDs in readfds =[0m
+D (98449) vfs: esp_vfs_select returns 0[0m
+D (98460) vfs: FDs in readfds =[0m
+D (98461) vfs: esp_vfs_select starts with nfds = 55[0m
+D (98462) vfs: FDs in readfds =[0m
+D (98472) vfs: 54[0m
+D (98473) vfs: calling socket_select with the following FDs[0m
+D (98474) vfs: FDs in readfds =[0m
+D (98474) vfs: 54[0m
+D (98985) vfs: socket_select returned 0 and the FDs are the following[0m
+D (98986) vfs: FDs in readfds =[0m
+D (98986) vfs: esp_vfs_select returns 0[0m
+D (98997) vfs: FDs in readfds =[0m
+D (98998) vfs: esp_vfs_select starts with nfds = 55[0m
+D (98998) vfs: FDs in readfds =[0m
+D (99009) vfs: 54[0m
+D (99010) vfs: calling socket_select with the following FDs[0m
+D (99011) vfs: FDs in readfds =[0m
+D (99011) vfs: 54[0m
+D (99522) vfs: socket_select returned 0 and the FDs are the following[0m
+D (99523) vfs: FDs in readfds =[0m
+D (99523) vfs: esp_vfs_select returns 0[0m
+D (99534) vfs: FDs in readfds =[0m
+D (99535) vfs: esp_vfs_select starts with nfds = 55[0m
+D (99536) vfs: FDs in readfds =[0m
+D (99536) vfs: 54[0m
+D (99547) vfs: calling socket_select with the following FDs[0m
+D (99548) vfs: FDs in readfds =[0m
+D (99548) vfs: 54[0m
+D (100059) vfs: socket_select returned 0 and the FDs are the following[0m
+D (100060) vfs: FDs in readfds =[0m
+D (100060) vfs: esp_vfs_select returns 0[0m
+D (100071) vfs: FDs in readfds =[0m
+D (100072) vfs: esp_vfs_select starts with nfds = 55[0m
+D (100072) vfs: FDs in readfds =[0m
+D (100083) vfs: 54[0m
+D (100084) vfs: calling socket_select with the following FDs[0m
+D (100085) vfs: FDs in readfds =[0m
+D (100085) vfs: 54[0m
+[0;32mI (100495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 71264, compile time: May 26 2018 00:22:11[0m
+D (100596) vfs: socket_select returned 0 and the FDs are the following[0m
+D (100597) vfs: FDs in readfds =[0m
+D (100597) vfs: esp_vfs_select returns 0[0m
+D (100608) vfs: FDs in readfds =[0m
+D (100610) vfs: esp_vfs_select starts with nfds = 55[0m
+D (100610) vfs: FDs in readfds =[0m
+D (100611) vfs: 54[0m
+D (100622) vfs: calling socket_select with the following FDs[0m
+D (100623) vfs: FDs in readfds =[0m
+D (100623) vfs: 54[0m
+D (101124) vfs: socket_select returned 0 and the FDs are the following[0m
+D (101125) vfs: FDs in readfds =[0m
+D (101126) vfs: esp_vfs_select returns 0[0m
+D (101137) vfs: FDs in readfds =[0m
+D (101137) vfs: esp_vfs_select starts with nfds = 55[0m
+D (101138) vfs: FDs in readfds =[0m
+D (101149) vfs: 54[0m
+D (101149) vfs: calling socket_select with the following FDs[0m
+D (101150) vfs: FDs in readfds =[0m
+D (101151) vfs: 54[0m
+D (101661) vfs: socket_select returned 0 and the FDs are the following[0m
+D (101662) vfs: FDs in readfds =[0m
+D (101662) vfs: esp_vfs_select returns 0[0m
+D (101673) vfs: FDs in readfds =[0m
+D (101674) vfs: esp_vfs_select starts with nfds = 55[0m
+D (101674) vfs: FDs in readfds =[0m
+D (101685) vfs: 54[0m
+D (101686) vfs: calling socket_select with the following FDs[0m
+D (101687) vfs: FDs in readfds =[0m
+D (101687) vfs: 54[0m
+[0;32mI (101790) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 28299, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (101803) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+[0;32mI (101874) mdf_notice: [mdf_notice_udp_server, 274]:udp recvfrom, sockfd: 56, port: 23938, ip: 192.168.1.177, udp_buf: Are You Espressif IOT Smart Device?[0m
+[0;32mI (101887) mdf_notice: [mdf_notice_udp_server, 288]:udp sendto, sockfd: 56, data: ESP32 Mesh 30aea4004384 http 80[0m
+D (102198) vfs: socket_select returned 0 and the FDs are the following[0m
+D (102199) vfs: FDs in readfds =[0m
+D (102200) vfs: esp_vfs_select returns 0[0m
+D (102210) vfs: FDs in readfds =[0m
+D (102211) vfs: esp_vfs_select starts with nfds = 55[0m
+D (102212) vfs: FDs in readfds =[0m
+D (102222) vfs: 54[0m
+D (102223) vfs: calling socket_select with the following FDs[0m
+D (102224) vfs: FDs in readfds =[0m
+D (102224) vfs: 54[0m
+D (102735) vfs: socket_select returned 0 and the FDs are the following[0m
+D (102736) vfs: FDs in readfds =[0m
+D (102736) vfs: esp_vfs_select returns 0[0m
+D (102747) vfs: FDs in readfds =[0m
+D (102748) vfs: esp_vfs_select starts with nfds = 55[0m
+D (102749) vfs: FDs in readfds =[0m
+D (102750) vfs: 54[0m
+D (102761) vfs: calling socket_select with the following FDs[0m
+D (102761) vfs: FDs in readfds =[0m
+D (102762) vfs: 54[0m
+D (103207) vfs: socket_select returned 1 and the FDs are the following[0m
+D (103208) vfs: FDs in readfds =[0m
+D (103208) vfs: 54[0m
+D (103209) vfs: esp_vfs_select returns 1[0m
+D (103220) vfs: FDs in readfds =[0m
+D (103220) vfs: 54[0m
+D (103221) mdf_http_handle: [mdf_server_conn_insert, 110]:insert, conn_num: 0, sockfd: 59, ip: 192.168.1.177, port: 49374[0m
+D (103234) vfs: esp_vfs_select starts with nfds = 60[0m
+D (103235) vfs: FDs in readfds =[0m
+D (103246) vfs: 54[0m
+D (103246) vfs: 59[0m
+D (103247) vfs: calling socket_select with the following FDs[0m
+D (103248) vfs: FDs in readfds =[0m
+D (103259) vfs: 54[0m
+D (103259) vfs: 59[0m
+D (103259) vfs: socket_select returned 1 and the FDs are the following[0m
+D (103271) vfs: FDs in readfds =[0m
+D (103271) vfs: 59[0m
+D (103272) vfs: esp_vfs_select returns 1[0m
+D (103272) vfs: FDs in readfds =[0m
+D (103283) vfs: 59[0m
+D (103283) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 59, conn->http_size: 0[0m
+D (103285) mdf_http_handle: [mdf_http_server_request, 347]:http request, sockfd: 59, conn->http_size: 185, data: 
+GET /mesh_info HTTP/1.1
+token: 1234567890
+Connection: close
+User-Agent: Dalvik/2.1.0 (Linux; U; Android 7.1.1; OPPO R11s Build/NMF26X)
+Host: 192.168.1.179
+Accept-Encoding: gzip
+
+[0m
+D (103321) mdf_http_server_parser: [mdf_get_device_mac, 189]:http response, size: 85, data: 
+HTTP/1.1 200 OK
+Mesh-Node-Num: 1
+Mesh-Node-Mac: 30aea4004384
+Content-Length: 0
+
+[0m
+D (103336) vfs: esp_vfs_select starts with nfds = 60[0m
+D (103336) vfs: FDs in readfds =[0m
+D (103337) vfs: 54[0m
+D (103347) vfs: 59[0m
+D (103348) vfs: calling socket_select with the following FDs[0m
+D (103349) vfs: FDs in readfds =[0m
+D (103349) vfs: 54[0m
+D (103360) vfs: 59[0m
+D (103860) vfs: socket_select returned 0 and the FDs are the following[0m
+D (103861) vfs: FDs in readfds =[0m
+D (103861) vfs: esp_vfs_select returns 0[0m
+D (103872) vfs: FDs in readfds =[0m
+D (103873) vfs: esp_vfs_select starts with nfds = 60[0m
+D (103874) vfs: FDs in readfds =[0m
+D (103884) vfs: 54[0m
+D (103885) vfs: 59[0m
+D (103886) vfs: calling socket_select with the following FDs[0m
+D (103887) vfs: FDs in readfds =[0m
+D (103898) vfs: 54[0m
+D (103898) vfs: 59[0m
+D (104399) vfs: socket_select returned 0 and the FDs are the following[0m
+D (104400) vfs: FDs in readfds =[0m
+D (104400) vfs: esp_vfs_select returns 0[0m
+D (104412) vfs: FDs in readfds =[0m
+D (104412) vfs: esp_vfs_select starts with nfds = 60[0m
+D (104413) vfs: FDs in readfds =[0m
+D (104424) vfs: 54[0m
+D (104424) vfs: 59[0m
+D (104425) vfs: calling socket_select with the following FDs[0m
+D (104425) vfs: FDs in readfds =[0m
+D (104436) vfs: 54[0m
+D (104437) vfs: 59[0m
+D (104937) vfs: socket_select returned 0 and the FDs are the following[0m
+D (104938) vfs: FDs in readfds =[0m
+D (104939) vfs: esp_vfs_select returns 0[0m
+D (104949) vfs: FDs in readfds =[0m
+D (104950) vfs: esp_vfs_select starts with nfds = 60[0m
+D (104951) vfs: FDs in readfds =[0m
+D (104961) vfs: 54[0m
+D (104961) vfs: 59[0m
+D (104962) vfs: calling socket_select with the following FDs[0m
+D (104963) vfs: FDs in readfds =[0m
+D (104974) vfs: 54[0m
+D (104974) vfs: 59[0m
+D (105475) vfs: socket_select returned 0 and the FDs are the following[0m
+D (105476) vfs: FDs in readfds =[0m
+D (105476) vfs: esp_vfs_select returns 0[0m
+D (105487) vfs: FDs in readfds =[0m
+D (105488) vfs: esp_vfs_select starts with nfds = 60[0m
+D (105489) vfs: FDs in readfds =[0m
+D (105499) vfs: 54[0m
+D (105500) vfs: 59[0m
+D (105500) vfs: calling socket_select with the following FDs[0m
+D (105503) vfs: FDs in readfds =[0m
+D (105504) vfs: 54[0m
+D (105514) vfs: 59[0m
+[0;32mI (105495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 69120, compile time: May 26 2018 00:22:11[0m
+D (105560) vfs: socket_select returned 1 and the FDs are the following[0m
+D (105562) vfs: FDs in readfds =[0m
+D (105562) vfs: 59[0m
+D (105563) vfs: esp_vfs_select returns 1[0m
+D (105573) vfs: FDs in readfds =[0m
+D (105574) vfs: 59[0m
+D (105574) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 59, conn->http_size: 0[0m
+D (105586) mdf_http_handle: [mdf_http_server_request, 329]:socket close, sockfd: 59, conn->http_size: 0, errno_str: Socket is not connected, ret: 0[0m
+D (105601) vfs: esp_vfs_select starts with nfds = 55[0m
+D (105602) vfs: FDs in readfds =[0m
+D (105603) vfs: 54[0m
+D (105614) vfs: calling socket_select with the following FDs[0m
+D (105614) vfs: FDs in readfds =[0m
+D (105615) vfs: 54[0m
+D (106115) vfs: socket_select returned 0 and the FDs are the following[0m
+D (106116) vfs: FDs in readfds =[0m
+D (106117) vfs: esp_vfs_select returns 0[0m
+D (106127) vfs: FDs in readfds =[0m
+D (106128) vfs: esp_vfs_select starts with nfds = 55[0m
+D (106129) vfs: FDs in readfds =[0m
+D (106140) vfs: 54[0m
+D (106140) vfs: calling socket_select with the following FDs[0m
+D (106141) vfs: FDs in readfds =[0m
+D (106142) vfs: 54[0m
+D (106652) vfs: socket_select returned 0 and the FDs are the following[0m
+D (106653) vfs: FDs in readfds =[0m
+D (106653) vfs: esp_vfs_select returns 0[0m
+D (106664) vfs: FDs in readfds =[0m
+D (106665) vfs: esp_vfs_select starts with nfds = 55[0m
+D (106666) vfs: FDs in readfds =[0m
+D (106677) vfs: 54[0m
+D (106678) vfs: calling socket_select with the following FDs[0m
+D (106679) vfs: FDs in readfds =[0m
+D (106690) vfs: 54[0m
+D (106690) vfs: socket_select returned 1 and the FDs are the following[0m
+D (106691) vfs: FDs in readfds =[0m
+D (106702) vfs: 54[0m
+D (106702) vfs: esp_vfs_select returns 1[0m
+D (106703) vfs: FDs in readfds =[0m
+D (106703) vfs: 54[0m
+D (106704) mdf_http_handle: [mdf_server_conn_insert, 110]:insert, conn_num: 0, sockfd: 60, ip: 192.168.1.177, port: 49380[0m
+D (106717) vfs: esp_vfs_select starts with nfds = 61[0m
+D (106728) vfs: FDs in readfds =[0m
+D (106728) vfs: 54[0m
+D (106728) vfs: 60[0m
+D (106729) vfs: calling socket_select with the following FDs[0m
+D (106740) vfs: FDs in readfds =[0m
+D (106741) vfs: 54[0m
+D (106741) vfs: 60[0m
+D (106741) vfs: socket_select returned 1 and the FDs are the following[0m
+D (106753) vfs: FDs in readfds =[0m
+D (106754) vfs: 60[0m
+D (106754) vfs: esp_vfs_select returns 1[0m
+D (106765) vfs: FDs in readfds =[0m
+D (106766) vfs: 60[0m
+D (106766) mdf_http_handle: [mdf_http_server_request, 317]:conn->sockfd: 60, conn->http_size: 0[0m
+D (106778) mdf_http_handle: [mdf_http_server_request, 347]:http request, sockfd: 60, conn->http_size: 319, data: 
+POST /device_request HTTP/1.1
+Mesh-Node-Num: 1
+Mesh-Node-Mac: 30aea4004384
+Content-Type: application/json
+token: 1234567890
+Connection: close
+Content-Length: 29
+User-Agent: Dalvik/2.1.0 (Linux; U; Android 7.1.1; OPPO R11s Build/NMF26X)
+Host: 192.168.1.179
+Accept-Encoding: gzip
+
+{"request":"get_device_info"}[0m
+[0;32mI (110495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (115495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (120495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (125495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (130495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (135495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 64408, compile time: May 26 2018 00:22:11[0m
+[0;32mI (140495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (145495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (150495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (155495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (160495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (165495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 62196, compile time: May 26 2018 00:22:11[0m
+[0;32mI (170495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (175495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (180495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (185495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (190495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (195495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60008, compile time: May 26 2018 00:22:11[0m
+[0;32mI (200495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (205495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (210495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (215495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (220495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (225495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (230495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (235495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (240495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (245495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (250495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+[0;32mI (255495) mdf_device_handle: [mdf_show_sysinfo_timercb, 73]:parent: 20:a6:80:98:dc:b4, mac:30:ae:a4:00:43:84, layer: 1, free heap: 60212, compile time: May 26 2018 00:22:11[0m
+

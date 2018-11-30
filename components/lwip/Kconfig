@@ -37,6 +37,16 @@ config LWIP_MAX_SOCKETS
         the maximum amount of sockets here. The valid value is from 1
         to 16.
 
+config USE_ONLY_LWIP_SELECT
+    bool "Support LWIP socket select() only"
+    default n
+    help
+        The virtual filesystem layer of select() redirects sockets to
+        lwip_select() and non-socket file descriptors to their respective driver
+        implementations. If this option is enabled then all calls of select()
+        will be redirected to lwip_select(), therefore, select can be used
+        for sockets only.
+
 config LWIP_SO_REUSE
     bool "Enable SO_REUSEADDR option"
     default y
@@ -94,7 +104,7 @@ config LWIP_STATS
 
 config LWIP_ETHARP_TRUST_IP_MAC
     bool "Enable LWIP ARP trust"
-    default y
+    default n
     help
         Enabling this option allows ARP table to be updated.
 
@@ -106,6 +116,34 @@ config LWIP_ETHARP_TRUST_IP_MAC
         the peer is not already in the ARP table, adding a little latency.
         The peer *is* in the ARP table if it requested our address before.
         Also notice that this slows down input processing of every IP packet!
+
+        There are two known issues in real application if this feature is enabled:
+         - The LAN peer may have bug to update the ARP table after the ARP entry is aged out.
+           If the ARP entry on the LAN peer is aged out but failed to be updated, all IP packets
+           sent from LWIP to the LAN peer will be dropped by LAN peer.
+         - The LAN peer may not be trustful, the LAN peer may send IP packets to LWIP with 
+           two different MACs, but the same IP address. If this happens, the LWIP has problem
+           to receive IP packets from LAN peer.
+
+        So the recommendation is to disable this option. 
+        Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
+
+config ESP_GRATUITOUS_ARP
+    bool "Send gratuitous ARP periodically"
+    default y
+    help 
+        Enable this option allows to send gratuitous ARP periodically.
+
+        This option solve the compatibility issues.If the ARP table of the AP is old, and the AP
+        doesn't send ARP request to update it's ARP table, this will lead to the STA sending IP packet fail.
+        Thus we send gratuitous ARP periodically to let AP update it's ARP table.
+
+config GARP_TMR_INTERVAL
+    int "GARP timer interval(seconds)"
+    default 60
+    depends on ESP_GRATUITOUS_ARP
+    help
+        Set the timer interval for gratuitous ARP. The default value is 60s
 
 config TCPIP_RECVMBOX_SIZE
     int "TCPIP task receive mail box size"
@@ -121,6 +159,14 @@ config LWIP_DHCP_DOES_ARP_CHECK
     help
         Enabling this option performs a check (via ARP request) if the offered IP address
         is not already in use by another host on the network.
+
+config LWIP_DHCP_RESTORE_LAST_IP
+    bool "DHCP: Restore last IP obtained from DHCP server"
+    default n
+    help
+        When this option is enabled, DHCP client tries to re-obtain last valid IP address obtained from DHCP server.
+        Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still available,
+        there is no need for sending discovery message to DHCP server and save some time.
 
 menu "DHCP server"
 
@@ -319,6 +365,16 @@ config TCP_QUEUE_OOSEQ
         Disable this option to save some RAM during TCP sessions, at the expense
         of increased retransmissions if segments arrive out of order.
 
+config ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
+    bool "Keep TCP connections when IP changed"
+    default n
+    help
+        This option is enabled when the following scenario happen:
+        network dropped and reconnected, IP changes is like: 192.168.0.2->0.0.0.0->192.168.0.2
+        
+        Disable this option to keep consistent with the original LWIP code behavior.
+
+
 choice TCP_OVERSIZE
     prompt "Pre-allocate transmit PBUF size"
     default TCP_OVERSIZE_MSS
@@ -378,7 +434,7 @@ endmenu # UDP
 
 config TCPIP_TASK_STACK_SIZE
     int "TCP/IP Task Stack Size"
-    default 2048
+    default 3072
     # for high log levels, tcpip_adapter API calls can end up
     # a few calls deep and logging there can trigger a stack overflow
     range 2048 65536 if LOG_DEFAULT_LEVEL < 4
@@ -386,6 +442,31 @@ config TCPIP_TASK_STACK_SIZE
     help
        Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
        Setting this stack too small will result in stack overflow crashes.
+
+choice TCPIP_TASK_AFFINITY
+    prompt "TCP/IP task affinity"
+    default TCPIP_TASK_AFFINITY_NO_AFFINITY
+    help
+        Allows setting LwIP tasks affinity, i.e. whether the task is pinned to
+        CPU0, pinned to CPU1, or allowed to run on any CPU.
+        Currently this applies to "TCP/IP" task and "Ping" task.
+
+config TCPIP_TASK_AFFINITY_NO_AFFINITY
+    bool "No affinity"
+config TCPIP_TASK_AFFINITY_CPU0
+    bool "CPU0"
+config TCPIP_TASK_AFFINITY_CPU1
+    bool "CPU1"
+    depends on !FREERTOS_UNICORE
+
+endchoice
+
+config TCPIP_TASK_AFFINITY
+    hex
+    default FREERTOS_NO_AFFINITY if TCPIP_TASK_AFFINITY_NO_AFFINITY
+    default 0x0 if TCPIP_TASK_AFFINITY_CPU0
+    default 0x1 if TCPIP_TASK_AFFINITY_CPU1
+
 
 menuconfig PPP_SUPPORT
     bool "Enable PPP support (new/experimental)"

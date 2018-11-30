@@ -26,9 +26,6 @@
 
 #define UNUSED(x)                   (void)(x)
 
-#ifndef SIZE_MAX
-#define SIZE_MAX                    254
-#endif
 /*Timer Related Defination*/
 
 //by Snake.T

@@ -79,7 +79,7 @@ static void coap_example_task(void *p)
     coap_pdu_t*       request = NULL;
     const char*       server_uri = COAP_DEFAULT_DEMO_URI;
     uint8_t     get_method = 1;
-
+    char* phostname = NULL;
     while (1) {
         /* Wait for the callback to set the CONNECTED_BIT in the
            event group.
@@ -93,7 +93,16 @@ static void coap_example_task(void *p)
             break;
         }
 
-        hp = gethostbyname((const char *)uri.host.s);
+        phostname = (char *)calloc(1, uri.host.length + 1);
+
+        if (phostname == NULL) {
+            ESP_LOGE(TAG, "calloc failed");
+            continue;
+        }
+
+        memcpy(phostname, uri.host.s, uri.host.length);
+        hp = gethostbyname(phostname);
+        free(phostname);
 
         if (hp == NULL) {
             ESP_LOGE(TAG, "DNS lookup failed");

@@ -58,6 +58,8 @@ extern elliptic_curve_t curve_p256;
 
 void ECC_PointMult_Bin_NAF(Point *q, Point *p, DWORD *n, uint32_t keyLength);
 
+bool ECC_CheckPointIsInElliCur_P256(Point *p);
+
 #define ECC_PointMult(q, p, n, keyLength)  ECC_PointMult_Bin_NAF(q, p, n, keyLength)
 
 void p_256_init_curve(UINT32 keyLength);

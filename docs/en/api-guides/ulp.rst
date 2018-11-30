@@ -15,8 +15,8 @@ Installing the toolchain
 
 ULP coprocessor code is written in assembly and compiled using the `binutils-esp32ulp toolchain`_.
 
-1. Download the toolchain using the links listed on this page:
-https://github.com/espressif/binutils-esp32ulp/wiki#downloads
+1. Download pre-built binaries of the latest toolchain release from:
+https://github.com/espressif/binutils-esp32ulp/releases.
 
 2. Extract the toolchain into a directory, and add the path to the ``bin/`` directory of the toolchain to the ``PATH`` environment variable.
 
@@ -134,7 +134,7 @@ Each ULP program is embedded into the ESP-IDF application as a binary blob. Appl
 
 Once the program is loaded into RTC memory, application can start it, passing the address of the entry point to ``ulp_run`` function::
 
-    ESP_ERROR_CHECK( ulp_run((&ulp_entry - RTC_SLOW_MEM) / sizeof(uint32_t)) );
+    ESP_ERROR_CHECK( ulp_run(&ulp_entry - RTC_SLOW_MEM) );
 
 .. doxygenfunction:: ulp_run
 

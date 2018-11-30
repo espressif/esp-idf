@@ -1,0 +1,259 @@
+/**
+ * @file
+ * Ethernet Interface Skeleton
+ *
+ */
+
+/*
+ * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+ * OF SUCH DAMAGE.
+ *
+ * This file is part of the lwIP TCP/IP stack.
+ *
+ * Author: Adam Dunkels <adam@sics.se>
+ *
+ */
+
+#include "lwip/opt.h"
+
+#include "lwip/def.h"
+#include "lwip/mem.h"
+#include "lwip/pbuf.h"
+#include "lwip/stats.h"
+#include "lwip/snmp.h"
+#include "lwip/ethip6.h"
+#include "netif/etharp.h"
+#include <stdio.h>
+#include <string.h>
+
+#include "esp_eth.h"
+#include "tcpip_adapter.h"
+
+/* Define those to better describe your network interface. */
+#define IFNAME0 'e'
+#define IFNAME1 'n'
+
+/**
+ * In this function, the hardware should be initialized.
+ * Called from ethernetif_init().
+ *
+ * @param netif the already initialized lwip network interface structure
+ *        for this ethernetif
+ */
+static void
+ethernet_low_level_init(struct netif *netif)
+{
+  /* set MAC hardware address length */
+  netif->hwaddr_len = ETHARP_HWADDR_LEN;
+
+  /* set MAC hardware address */
+
+  /* maximum transfer unit */
+  netif->mtu = 1500;
+
+  /* device capabilities */
+  /* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
+  netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_LINK_UP;
+
+#if ESP_LWIP
+#if LWIP_IGMP
+  netif->flags |= NETIF_FLAG_IGMP;
+#endif
+#endif
+
+#ifndef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+  netif->l2_buffer_free_notify = esp_eth_free_rx_buf;
+#endif
+}
+
+/**
+ * This function should do the actual transmission of the packet. The packet is
+ * contained in the pbuf that is passed to the function. This pbuf
+ * might be chained.
+ *
+ * @param netif the lwip network interface structure for this ethernetif
+ * @param p the MAC packet to send (e.g. IP packet including MAC addresses and type)
+ * @return ERR_OK if the packet could be sent
+ *         an err_t value if the packet couldn't be sent
+ *
+ * @note Returning ERR_MEM here if a DMA queue of your MAC is full can lead to
+ *       strange results. You might consider waiting for space in the DMA queue
+ *       to become availale since the stack doesn't retry to send a packet
+ *       dropped because of memory failure (except for the TCP timers).
+ */
+static err_t ESP_IRAM_ATTR
+ethernet_low_level_output(struct netif *netif, struct pbuf *p)
+{
+  struct pbuf *q = p;
+  esp_interface_t eth_if = tcpip_adapter_get_esp_if(netif);
+  esp_err_t ret;
+
+  if (eth_if != ESP_IF_ETH) {
+    LWIP_DEBUGF(NETIF_DEBUG, ("eth_if=%d netif=%p pbuf=%p len=%d\n", eth_if, netif, p, p->len));
+
+    return ERR_IF;
+  }
+
+  if (q->next == NULL) {
+    ret = esp_eth_tx(q->payload, q->len);
+  } else {
+    LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
+    q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
+    if (q != NULL) {
+      q->l2_owner = NULL;
+      pbuf_copy(q, p);
+    } else {
+      return ERR_MEM;
+    }
+    ret = esp_eth_tx(q->payload, q->len);
+    pbuf_free(q);
+  }
+  /* error occured when no memory or peripheral wrong state */
+  if (ret != ESP_OK)
+  {
+    return ERR_ABRT;
+  } else {
+    return ERR_OK;
+  }
+}
+
+/**
+ * This function should be called when a packet is ready to be read
+ * from the interface. It uses the function low_level_input() that
+ * should handle the actual reception of bytes from the network
+ * interface. Then the type of the received packet is determined and
+ * the appropriate input function is called.
+ *
+ * @param netif the lwip network interface structure for this ethernetif
+ * @param buffer the ethernet buffer
+ * @param len the len of buffer
+ *
+ * @note When CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE is enabled, a copy of buffer
+ *       will be made for high layer (LWIP) and ethernet is responsible for
+ *       freeing the buffer. Otherwise, high layer and ethernet share the
+ *       same buffer and high layer is responsible for freeing the buffer.
+ */
+void ESP_IRAM_ATTR
+ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
+{
+  struct pbuf *p;
+
+  if(buffer== NULL || !netif_is_up(netif)) {
+#ifndef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+    if (buffer) {
+      esp_eth_free_rx_buf(buffer);
+    }
+#endif
+    return;
+  }
+
+#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+  p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
+  if (p == NULL) {
+    return;
+  }
+  p->l2_owner = NULL;
+  memcpy(p->payload, buffer, len);
+
+/* full packet send to tcpip_thread to process */
+if (netif->input(p, netif) != ERR_OK) {
+  LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+  pbuf_free(p);
+}
+
+#else
+  p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+  if (p == NULL){
+    esp_eth_free_rx_buf(buffer);
+    return;
+  }
+  p->payload = buffer;
+  p->l2_owner = netif;
+  p->l2_buf = buffer;
+
+  /* full packet send to tcpip_thread to process */
+if (netif->input(p, netif) != ERR_OK) {
+  LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+  pbuf_free(p);
+}
+#endif
+}
+
+/**
+ * Should be called at the beginning of the program to set up the
+ * network interface. It calls the function low_level_init() to do the
+ * actual setup of the hardware.
+ *
+ * This function should be passed as a parameter to netif_add().
+ *
+ * @param netif the lwip network interface structure for this ethernetif
+ * @return ERR_OK if the loopif is initialized
+ *         ERR_MEM if private data couldn't be allocated
+ *         any other err_t on error
+ */
+err_t
+ethernetif_init(struct netif *netif)
+{
+  LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+#if LWIP_NETIF_HOSTNAME
+  /* Initialize interface hostname */
+
+#if ESP_LWIP
+  netif->hostname = "espressif";
+#else
+  netif->hostname = "lwip";
+#endif
+
+#endif /* LWIP_NETIF_HOSTNAME */
+
+  /*
+   * Initialize the snmp variables and counters inside the struct netif.
+   * The last argument should be replaced with your link speed, in units
+   * of bits per second.
+   */
+  if(esp_eth_get_speed() == ETH_SPEED_MODE_100M){
+    NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 100000000);
+  } else {
+    NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 10000000);
+  }
+
+  netif->name[0] = IFNAME0;
+  netif->name[1] = IFNAME1;
+  /* We directly use etharp_output() here to save a function call.
+   * You can instead declare your own function an call etharp_output()
+   * from it if you have to do some checks before sending (e.g. if link
+   * is available...) */
+  netif->output = etharp_output;
+#if LWIP_IPV6
+  netif->output_ip6 = ethip6_output;
+#endif /* LWIP_IPV6 */
+  netif->linkoutput = ethernet_low_level_output;
+
+  /* initialize the hardware */
+  ethernet_low_level_init(netif);
+
+  return ERR_OK;
+}

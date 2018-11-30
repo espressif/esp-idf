@@ -31,10 +31,13 @@
 #include "esp_log.h"
 const static char *TAG = "esp_gcov_rtio";
 
-static void (*s_gcov_exit)(void);
+#if GCC_NOT_5_2_0
+void __gcov_dump(void);
+void __gcov_reset(void);
+#else
+/* The next code for old GCC */
 
-/* TODO: remove code extracted from GCC when IDF toolchain will be updated */
-/*=============== GCC CODE START ====================*/
+static void (*s_gcov_exit)(void);
 /* Root of a program/shared-object state */
 struct gcov_root
 {
@@ -53,27 +56,36 @@ static void esp_gcov_reset_status(void)
   __gcov_root.dumped = 0;
   __gcov_root.run_counted = 0;
 }
-/*=============== GCC CODE END ====================*/
+#endif
+
 
 static int esp_dbg_stub_gcov_dump_do(void)
 {
     int ret = ESP_OK;
 
+    ESP_EARLY_LOGV(TAG, "Alloc apptrace down buf %d bytes", ESP_GCOV_DOWN_BUF_SIZE);
+    void *down_buf = malloc(ESP_GCOV_DOWN_BUF_SIZE);
+    if (down_buf == NULL) {
+        ESP_EARLY_LOGE(TAG, "Could not allocate memory for the buffer");
+        return ESP_ERR_NO_MEM;
+    }
+    ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
+    esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
+    ESP_EARLY_LOGV(TAG, "Dump data...");
+#if GCC_NOT_5_2_0
+    __gcov_dump();
+    // reset dump status to allow incremental data accumulation
+    __gcov_reset();
+#else
     ESP_EARLY_LOGV(TAG, "Check for dump handler %p", s_gcov_exit);
     if (s_gcov_exit) {
-        ESP_EARLY_LOGV(TAG, "Alloc apptrace down buf %d bytes", ESP_GCOV_DOWN_BUF_SIZE);
-        void *down_buf = malloc(ESP_GCOV_DOWN_BUF_SIZE);
-        if (down_buf == NULL) {
-            ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", ret);
-            return ESP_ERR_NO_MEM;
-        }
-        ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
-        esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
-        ESP_EARLY_LOGV(TAG, "Dump data... %p", s_gcov_exit);
         s_gcov_exit();
-        ESP_EARLY_LOGV(TAG, "Free apptrace down buf");
-        free(down_buf);
+        // reset dump status to allow incremental data accumulation
+        esp_gcov_reset_status();
     }
+#endif
+    ESP_EARLY_LOGV(TAG, "Free apptrace down buf");
+    free(down_buf);
     ESP_EARLY_LOGV(TAG, "Finish file transfer session");
     ret = esp_apptrace_fstop(ESP_APPTRACE_DEST_TRAX);
     if (ret != ESP_OK) {
@@ -91,24 +103,26 @@ static int esp_dbg_stub_gcov_dump_do(void)
  */
 static int esp_dbg_stub_gcov_entry(void)
 {
+#if GCC_NOT_5_2_0
+    return esp_dbg_stub_gcov_dump_do();
+#else
     int ret = ESP_OK;
-
     // disable IRQs on this CPU, other CPU is halted by OpenOCD
     unsigned irq_state = portENTER_CRITICAL_NESTED();
     ret = esp_dbg_stub_gcov_dump_do();
-    // reset dump status to allow incremental data accumulation
-    esp_gcov_reset_status();
     portEXIT_CRITICAL_NESTED(irq_state);
     return ret;
+#endif
 }
 
 void esp_gcov_dump()
 {
-#if CONFIG_FREERTOS_UNICORE == 0
+    // disable IRQs on this CPU, other CPU is halted by OpenOCD
+    unsigned irq_state = portENTER_CRITICAL_NESTED();
+#if !CONFIG_FREERTOS_UNICORE
     int other_core = xPortGetCoreID() ? 0 : 1;
     esp_cpu_stall(other_core);
 #endif
-
     while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {
         // to avoid complains that task watchdog got triggered for other tasks
         TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
@@ -121,24 +135,27 @@ void esp_gcov_dump()
     }
 
     esp_dbg_stub_gcov_dump_do();
-    // reset dump status to allow incremental data accumulation
-    esp_gcov_reset_status();
-#if CONFIG_FREERTOS_UNICORE == 0
+#if !CONFIG_FREERTOS_UNICORE
     esp_cpu_unstall(other_core);
 #endif
+    portEXIT_CRITICAL_NESTED(irq_state);
 }
 
-int gcov_rtio_atexit(void (*function)(void))
+int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
 {
+#if GCC_NOT_5_2_0
+    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+#else
     ESP_EARLY_LOGV(TAG, "%s %p", __FUNCTION__, function);
     s_gcov_exit = function;
+#endif
     esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_GCOV, (uint32_t)&esp_dbg_stub_gcov_entry);
     return 0;
 }
 
 void *gcov_rtio_fopen(const char *path, const char *mode)
 {
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+    ESP_EARLY_LOGV(TAG, "%s '%s' '%s'", __FUNCTION__, path, mode);
     return esp_apptrace_fopen(ESP_APPTRACE_DEST_TRAX, path, mode);
 }
 
@@ -150,8 +167,10 @@ int gcov_rtio_fclose(void *stream)
 
 size_t gcov_rtio_fread(void *ptr, size_t size, size_t nmemb, void *stream)
 {
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
-    return esp_apptrace_fread(ESP_APPTRACE_DEST_TRAX, ptr, size, nmemb, stream);
+    ESP_EARLY_LOGV(TAG, "%s read %u", __FUNCTION__, size*nmemb);
+    size_t sz = esp_apptrace_fread(ESP_APPTRACE_DEST_TRAX, ptr, size, nmemb, stream);
+    ESP_EARLY_LOGV(TAG, "%s actually read %u", __FUNCTION__, sz);
+    return sz;
 }
 
 size_t gcov_rtio_fwrite(const void *ptr, size_t size, size_t nmemb, void *stream)
@@ -162,17 +181,15 @@ size_t gcov_rtio_fwrite(const void *ptr, size_t size, size_t nmemb, void *stream
 
 int gcov_rtio_fseek(void *stream, long offset, int whence)
 {
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
     int ret = esp_apptrace_fseek(ESP_APPTRACE_DEST_TRAX, stream, offset, whence);
-    ESP_EARLY_LOGV(TAG, "%s EXIT", __FUNCTION__);
+    ESP_EARLY_LOGV(TAG, "%s(%p %ld %d) = %d", __FUNCTION__, stream, offset, whence, ret);
     return ret;
 }
 
 long gcov_rtio_ftell(void *stream)
 {
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
     long ret = esp_apptrace_ftell(ESP_APPTRACE_DEST_TRAX, stream);
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+    ESP_EARLY_LOGV(TAG, "%s(%p) = %ld", __FUNCTION__, stream, ret);
     return ret;
 }
 #endif

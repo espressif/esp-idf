@@ -1,0 +1,18 @@
+menu "Virtual file system"
+
+config SUPPRESS_SELECT_DEBUG_OUTPUT
+    bool "Suppress select() related debug outputs"
+    default y
+    help
+        Select() related functions might produce an unconveniently lot of
+        debug outputs when one sets the default log level to DEBUG or higher.
+        It is possible to suppress these debug outputs by enabling this
+        option.
+
+config SUPPORT_TERMIOS
+    bool "Add support for termios.h"
+    default y
+    help
+        Disabling this option can save memory when the support for termios.h is not required.
+
+endmenu

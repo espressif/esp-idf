@@ -45,7 +45,7 @@ import json
 
 import yaml
 
-from Utility import (CaseConfig, SearchCases, GitlabCIJob)
+from Utility import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
 
 class Group(object):
@@ -63,8 +63,8 @@ class Group(object):
         self.execution_time = 0
         self.case_list = [case]
         self.filters = dict(zip(self.SORT_KEYS, [self._get_case_attr(case, x) for x in self.SORT_KEYS]))
-        self.ci_job_match_keys = dict(zip(self.CI_JOB_MATCH_KEYS,
-                                      [self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS]))
+        # we use ci_job_match_keys to match CI job tags. It's a set of required tags.
+        self.ci_job_match_keys = set([self._get_case_attr(case, x) for x in self.CI_JOB_MATCH_KEYS])
 
     @staticmethod
     def _get_case_attr(case, attr):
@@ -125,6 +125,7 @@ class AssignTest(object):
     # by default we only run function in CI, as other tests could take long time
     DEFAULT_FILTER = {
         "category": "function",
+        "ignore": False,
     }
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
@@ -142,6 +143,7 @@ class AssignTest(object):
         for job_name in ci_config:
             if self.CI_TEST_JOB_PATTERN.search(job_name) is not None:
                 job_list.append(GitlabCIJob.Job(ci_config[job_name], job_name))
+        job_list.sort(key=lambda x: x["name"])
         return job_list
 
     def _search_cases(self, test_case_path, case_filter=None):
@@ -188,6 +190,16 @@ class AssignTest(object):
             bot_filter = dict()
         return bot_filter
 
+    def _apply_bot_test_count(self):
+        """
+        Bot could also pass test count.
+        If filtered cases need to be tested for several times, then we do duplicate them here.
+        """
+        test_count = os.getenv("BOT_TEST_COUNT")
+        if test_count:
+            test_count = int(test_count)
+            self.test_cases *= test_count
+
     def assign_cases(self):
         """
         separate test cases to groups and assign test cases to CI jobs.
@@ -198,6 +210,7 @@ class AssignTest(object):
         failed_to_assign = []
         case_filter = self._apply_bot_filter()
         self.test_cases = self._search_cases(self.test_case_path, case_filter)
+        self._apply_bot_test_count()
         test_groups = self._group_cases()
         for group in test_groups:
             for job in self.jobs:
@@ -206,7 +219,11 @@ class AssignTest(object):
                     break
             else:
                 failed_to_assign.append(group)
-        assert not failed_to_assign
+        if failed_to_assign:
+            console_log("Too many test cases vs jobs to run. Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
+            for group in failed_to_assign:
+                console_log("* Add job with: " + ",".join(group.ci_job_match_keys), "R")
+            raise RuntimeError("Failed to assign test case to CI jobs")
 
     def output_configs(self, output_path):
         """

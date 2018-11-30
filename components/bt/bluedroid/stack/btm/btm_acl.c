@@ -1522,11 +1522,10 @@ UINT8 BTM_AllocateSCN(void)
 {
     UINT8   x;
     BTM_TRACE_DEBUG ("BTM_AllocateSCN\n");
-    // stack reserves scn 1 for HFP, HSP we still do the correct way
     for (x = 1; x < BTM_MAX_SCN; x++) {
-        if (!btm_cb.btm_scn[x]) {
-            btm_cb.btm_scn[x] = TRUE;
-            return (x + 1);
+        if (!btm_cb.btm_scn[x - 1]) {
+            btm_cb.btm_scn[x - 1] = TRUE;
+            return x;
         }
     }
     return (0);    /* No free ports */
@@ -1545,10 +1544,7 @@ UINT8 BTM_AllocateSCN(void)
 #if (CLASSIC_BT_INCLUDED == TRUE)
 BOOLEAN BTM_TryAllocateSCN(UINT8 scn)
 {
-    /* Make sure we don't exceed max port range.
-     * Stack reserves scn 1 for HFP, HSP we still do the correct way.
-     */
-    if ( (scn >= BTM_MAX_SCN) || (scn == 1) ) {
+    if (scn >= BTM_MAX_SCN) {
         return FALSE;
     }
 
@@ -1905,14 +1901,10 @@ void btm_qos_setup_complete (UINT8 status, UINT16 handle, FLOW_SPEC *p_flow)
 ** Returns          BTM_CMD_STARTED if successfully initiated or error code
 **
 *******************************************************************************/
-tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
+tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb)
 {
     tACL_CONN   *p;
-    tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-#if BLE_INCLUDED == TRUE
-    tBT_DEVICE_TYPE dev_type;
-    tBLE_ADDR_TYPE  addr_type;
-#endif
+
     BTM_TRACE_API ("BTM_ReadRSSI: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
                    remote_bda[0], remote_bda[1], remote_bda[2],
                    remote_bda[3], remote_bda[4], remote_bda[5]);
@@ -1923,13 +1915,6 @@ tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
         (*p_cb)(&result);
         return (BTM_BUSY);
     }
-
-#if BLE_INCLUDED == TRUE
-    BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
-    if (dev_type == BT_DEVICE_TYPE_BLE) {
-        transport = BT_TRANSPORT_LE;
-    }
-#endif
 
     p = btm_bda_to_acl(remote_bda, transport);
     if (p != (tACL_CONN *)NULL) {

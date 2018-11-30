@@ -1,0 +1,15 @@
+menu "HTTP Server"
+
+config HTTPD_MAX_REQ_HDR_LEN
+    int "Max HTTP Request Header Length"
+    default 512
+    help
+        This sets the maximum supported size of headers section in HTTP request packet to be processed by the server
+
+config HTTPD_MAX_URI_LEN
+    int "Max HTTP URI Length"
+    default 512
+    help
+        This sets the maximum supported size of HTTP request URI to be processed by the server
+
+endmenu

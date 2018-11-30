@@ -26,4 +26,6 @@ COMPONENT_SRCDIRS += \
 	sys_view/esp32
 else
 COMPONENT_SRCDIRS += gcov
+
+COMPONENT_ADD_LDFRAGMENTS += linker.lf
 endif

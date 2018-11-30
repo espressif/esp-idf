@@ -56,8 +56,8 @@ void btm_init (void)
 #endif /* #if BTM_DYNAMIC_MEMORY */
     /* All fields are cleared; nonzero fields are reinitialized in appropriate function */
     memset(&btm_cb, 0, sizeof(tBTM_CB));
-    btm_cb.page_queue = fixed_queue_new(SIZE_MAX);
-    btm_cb.sec_pending_q = fixed_queue_new(SIZE_MAX);
+    btm_cb.page_queue = fixed_queue_new(QUEUE_SIZE_MAX);
+    btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
 #if defined(BTM_INITIAL_TRACE_LEVEL)
     btm_cb.trace_level = BTM_INITIAL_TRACE_LEVEL;
@@ -75,6 +75,8 @@ void btm_init (void)
 #endif
 
     btm_dev_init();                     /* Device Manager Structures & HCI_Reset */
+    btm_lock_init();
+    btm_sem_init();
 }
 
 
@@ -94,4 +96,6 @@ void btm_free(void)
 #if BTM_DYNAMIC_MEMORY
     FREE_AND_RESET(btm_cb_ptr);
 #endif
+    btm_lock_free();
+    btm_sem_free();
 }

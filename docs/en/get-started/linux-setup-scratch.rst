@@ -2,8 +2,9 @@
 Setup Linux Toolchain from Scratch
 **********************************
 
-The following instructions are alternative to downloading binary toolchain from Espressif website. To quickly setup the binary toolchain, instead of compiling it yourself, backup and proceed to section :doc:`linux-setup`.
-
+.. note::
+    
+    Standard process for installing the toolchain is described :doc:`here <linux-setup>`. See :ref:`Customized Setup of Toolchain <get-started-customized-setup>` section for some of the reasons why installing the toolchain from scratch may be necessary.
 
 Install Prerequisites
 =====================
@@ -12,12 +13,17 @@ To compile with ESP-IDF you need to get the following packages:
 
 - Ubuntu and Debian::
 
-    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-serial
+    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-pyparsing
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-pyparsing
 
+.. note::
+
+    Some older (pre-2014) Linux distributions may use ``pyserial`` version 2.x which is not supported by ESP-IDF.
+    In this case please install a supported version via ``pip`` as it is described in section
+    :ref:`get-started-get-packages`.
 
 Compile the Toolchain from Source
 =================================
@@ -44,12 +50,14 @@ Compile the Toolchain from Source
 
         TODO
 
-Download ``crosstool-NG`` and build it::
+Create the working directory and go into it::
 
-    cd ~/esp
-    git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
-    cd crosstool-NG
-    ./bootstrap && ./configure --enable-local && make install
+  mkdir -p ~/esp
+  cd ~/esp
+
+Download ``crosstool-NG`` and build it:
+
+.. include:: /_build/inc/scratch-build-code.inc
 
 Build the toolchain::
 

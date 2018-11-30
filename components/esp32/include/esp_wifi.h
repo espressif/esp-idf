@@ -67,6 +67,7 @@
 #include "esp_wifi_types.h"
 #include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
+#include "esp_wifi_os_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,6 +94,7 @@ extern "C" {
  */
 typedef struct {
     system_event_handler_t event_handler;          /**< WiFi event handler */
+    wifi_osi_funcs_t*      osi_funcs;              /**< WiFi OS functions */
     wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */
     int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
     int                    dynamic_rx_buf_num;     /**< WiFi dynamic RX buffer number */
@@ -107,6 +109,7 @@ typedef struct {
     int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
     int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
     int                    wifi_task_core_id;      /**< WiFi Task Core ID */
+    int                    beacon_max_len;         /**< WiFi softAP maximum length of the beacon */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -174,8 +177,15 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #define WIFI_TASK_CORE_ID 0
 #endif
 
+#ifdef CONFIG_ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
+#define WIFI_SOFTAP_BEACON_MAX_LEN CONFIG_ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
+#else
+#define WIFI_SOFTAP_BEACON_MAX_LEN 752
+#endif
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
+    .osi_funcs = &g_wifi_osi_funcs, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
     .dynamic_rx_buf_num = CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM,\
@@ -190,6 +200,7 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
     .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\
     .wifi_task_core_id = WIFI_TASK_CORE_ID,\
+    .beacon_max_len = WIFI_SOFTAP_BEACON_MAX_LEN, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 
@@ -220,7 +231,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config);
   *
   * @attention 1. This API should be called if you want to remove WiFi driver from the system
   *
-  * @return ESP_OK: succeed
+  * @return 
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   */
 esp_err_t esp_wifi_deinit(void);
 
@@ -300,7 +313,13 @@ esp_err_t esp_wifi_restore(void);
   *
   * @attention 1. This API only impact WIFI_MODE_STA or WIFI_MODE_APSTA mode
   * @attention 2. If the ESP32 is connected to an AP, call esp_wifi_disconnect to disconnect.
-  *
+  * @attention 3. The scanning triggered by esp_wifi_start_scan() will not be effective until connection between ESP32 and the AP is established.
+  *               If ESP32 is scanning and connecting at the same time, ESP32 will abort scanning and return a warning message and error
+  *               number ESP_ERR_WIFI_STATE.
+  *               If you want to do reconnection after ESP32 received disconnect event, remember to add the maximum retry time, otherwise the called	
+  *               scan will not work. This is especially true when the AP doesn't exist, and you still try reconnection after ESP32 received disconnect
+  *               event with the reason code WIFI_REASON_NO_AP_FOUND.
+  *   
   * @return 
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
@@ -363,6 +382,7 @@ esp_err_t esp_wifi_deauth_sta(uint16_t aid);
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_STARTED: WiFi was not started by esp_wifi_start
   *    - ESP_ERR_WIFI_TIMEOUT: blocking scan is timeout
+  *    - ESP_ERR_WIFI_STATE: wifi still connecting when invoke esp_wifi_scan_start
   *    - others: refer to error code in esp_err.h
   */
 esp_err_t esp_wifi_scan_start(const wifi_scan_config_t *config, bool block);
@@ -425,24 +445,24 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
 esp_err_t esp_wifi_sta_get_ap_info(wifi_ap_record_t *ap_info);
 
 /**
-  * @brief     Set current power save type
+  * @brief     Set current WiFi power save type
   *
-  * @attention Default power save type is WIFI_PS_NONE.
+  * @attention Default power save type is WIFI_PS_MIN_MODEM.
   *
   * @param     type  power save type
   *
-  * @return    ESP_ERR_NOT_SUPPORTED: not supported yet
+  * @return    ESP_OK: succeed
   */
 esp_err_t esp_wifi_set_ps(wifi_ps_type_t type);
 
 /**
-  * @brief     Get current power save type
+  * @brief     Get current WiFi power save type
   *
-  * @attention Default power save type is WIFI_PS_NONE.
+  * @attention Default power save type is WIFI_PS_MIN_MODEM.
   *
   * @param[out]  type: store current power save type
   *
-  * @return    ESP_ERR_NOT_SUPPORTED: not supported yet
+  * @return    ESP_OK: succeed
   */
 esp_err_t esp_wifi_get_ps(wifi_ps_type_t *type);
 
@@ -978,7 +998,7 @@ esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, b
   *        Each time a CSI data is received, the callback function will be called.
   *
   * @param ctx context argument, passed to esp_wifi_set_csi_rx_cb() when registering callback function. 
-  * @param data CSI data received. 
+  * @param data CSI data received. The memory that it points to will be deallocated after callback function returns. 
   *
   */
 typedef void (* wifi_csi_cb_t)(void *ctx, wifi_csi_info_t *data);

@@ -73,6 +73,12 @@ typedef UINT16 tBTA_GATTC_INT_EVT;
 
 #define BTA_GATTC_SERVICE_CHANGED_LEN    4
 
+typedef enum {
+    BTA_GATTC_SERVICE_INFO_FROM_REMOTE_DEVICE         = 0, 
+    BTA_GATTC_SERVICE_INFO_FROM_NVS_FLASH             = 1,
+    BTA_GATTC_SERVICE_INFO_FROM_UNKNOWN               = 2,
+} tBTA_SERVICE_SOURCE_t;
+
 /* max client application GATTC can support */
 #ifndef     BTA_GATTC_CL_MAX
 #if (GATT_MAX_PHY_CHANNEL > 3)
@@ -300,7 +306,7 @@ typedef struct {
     UINT16              attr_index;     /* cahce NV saving/loading attribute index */
 
     UINT16              mtu;
-    bool                update_sec_sev;
+    bool                update_incl_srvc;
 } tBTA_GATTC_SERV;
 
 #ifndef BTA_GATTC_NOTIF_REG_MAX
@@ -343,6 +349,7 @@ typedef struct {
     tBTA_GATTC_STATE    state;
     tBTA_GATT_STATUS    status;
     UINT16              reason;
+    UINT8               searched_service_source;
 } tBTA_GATTC_CLCB;
 
 /* background connection tracking information */
@@ -365,7 +372,8 @@ typedef struct {
 typedef struct {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
-    UINT16              svc_change_descr_handle; 
+    UINT16              svc_change_descr_handle;
+    BOOLEAN             write_remote_svc_change_ccc_done;
 } tBTA_GATTC_CONN;
 
 enum {

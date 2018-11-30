@@ -1,0 +1,217 @@
+test cases:
+- CI ready: 'Yes'
+  ID: MESH_EST_0106
+  SDK: ESP32_IDF
+  Test App: SSC_MESH
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -A -o 7 -t 25
+    - - P SSC[1-<node_num>] C +MESH_SET_TX_POWER:OK
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: DISABLED_1
+  level: Integration
+  module: Mesh
+  steps: |-
+    1. mesh init
+    2. mesh config
+    3. mesh start
+  sub module: Network Establish
+  summary: set node with different tx power, then establish network
+  test environment: SSC_T50_1
+  test point 1: basic function
+  test point 2: mesh config
+  version: v1 (2017-7-20)
+- CI ready: 'Yes'
+  ID: MESH_EST_0313
+  SDK: ESP32_IDF
+  Test App: SSC_MESH
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START
+  - - DELAY 30
+    - - ''
+  - - SSC SSC[1-2] mesh -Q -o 2
+    - - R SSC[1-2] T 2
+  - - MESHTREE
+    - - R PC_COM C MESHTREE:2%20nodes
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 10
+    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  initial condition: DISABLED_1
+  level: Integration
+  module: Mesh
+  steps: |-
+    1. switch to sta+softap mode
+    2. mesh init
+    3. mesh config
+    4. mesh start
+  sub module: Network Establish
+  summary: 2 nodes do mesh network establish,then reboot root
+  test environment: SSC_T50_1
+  test point 1: basic function
+  test point 2: mesh network establish
+  version: v1 (2017-7-20)
+- CI ready: 'Yes'
+  ID: MESH_EST_0317
+  SDK: ESP32_IDF
+  Test App: SSC_MESH
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INITED
+  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m 1 -y 15
+    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC[1-15] mesh -T
+    - - P SSC[1-15] C +MESH:START
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-15] mesh -Q -o 2
+    - - R SSC[1-15] T 15
+  - - MESHTREE
+    - - R PC_COM C MESHTREE:15%20nodes
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: DISABLED_1
+  level: Integration
+  module: Mesh
+  steps: |-
+    1. switch to sta+softap mode
+    2. mesh init
+    3. mesh config: set mesh layer=15
+    4. start 15 nodes
+    5. check mesh tree
+  sub module: Network Establish
+  summary: set special mesh tree which layer=15
+  test environment: SSC_T50_1
+  test point 1: basic function
+  test point 2: mesh network establish
+  version: v1 (2017-7-20)
+- CI ready: 'No'
+  ID: MESH_EST_0404
+  SDK: ESP32_IDF
+  Test App: SSC_MESH
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0) mesh -I
+    - - P MNODE(0) C +MESH:INITED
+  - - SSC MNODE(0) mesh -A -o 9 -t <auth_mode> -s <map_password>
+    - - P MNODE(0) C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
+  - - SSC MNODE(0) mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
+      <ap_channel> -m <max_connect> -y <max_layer>
+    - - P MNODE(0) C +MESH:CONFIG,OK
+  - - SSC MNODE(0) mesh -T
+    - - P MNODE(0) C +MESH:START
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: ENABLED_2
+  level: Integration
+  module: Mesh
+  steps: |-
+    1. mesh init
+    2. mesh config
+    3. mesh start
+    4. save value
+    5. all nodes reboot
+  sub module: Network Establish
+  summary: after network is establish, disable root,wait some time, start the root node again
+  test environment: SSC_T50_1
+  test point 1: basic function
+  test point 2: mesh network re-establish
+  version: v1 (2017-7-20)
+- CI ready: 'No'
+  ID: MESH_EST_0405
+  SDK: ESP32_IDF
+  Test App: SSC_MESH
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T <node_num>
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num-1>)
+  execution time: 0.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: ENABLED_2
+  level: Integration
+  module: Mesh
+  steps: |-
+    1. mesh init
+    2. mesh config
+    3. mesh start
+    4. save value
+    5. all nodes reboot
+  sub module: Network Establish
+  summary: after network is establish, disable root, check mesh network
+  test environment: SSC_T50_1
+  test point 1: basic function
+  test point 2: mesh network re-establish
+  version: v1 (2017-7-20)

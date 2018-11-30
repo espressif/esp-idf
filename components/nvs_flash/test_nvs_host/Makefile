@@ -10,6 +10,8 @@ SOURCE_FILES = \
 		nvs_pagemanager.cpp \
 		nvs_storage.cpp \
 		nvs_item_hash_list.cpp \
+		nvs_encr.cpp \
+		nvs_ops.cpp \
 	) \
 	spi_flash_emulation.cpp \
 	test_compressed_enum_table.cpp \
@@ -19,7 +21,7 @@ SOURCE_FILES = \
 	crc.cpp \
 	main.cpp
 
-CPPFLAGS += -I../include -I../src -I./ -I../../esp32/include -I ../../spi_flash/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage
+CPPFLAGS += -I../include -I../src -I./ -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -DCONFIG_NVS_ENCRYPTION
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
@@ -31,7 +33,8 @@ COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 $(OBJ_FILES): %.o: %.cpp
 
 $(TEST_PROGRAM): $(OBJ_FILES)
-	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES)
+	$(MAKE) -C ../../mbedtls/mbedtls/ lib
+	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) ../../mbedtls/mbedtls/library/libmbedcrypto.a
 
 $(OUTPUT_DIR):
 	mkdir -p $(OUTPUT_DIR)
@@ -53,6 +56,7 @@ coverage_report: coverage.info
 	@echo "Coverage report is in coverage_report/index.html"
 
 clean:
+	$(MAKE) -C ../../mbedtls/mbedtls/ clean
 	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
 	rm -f $(COVERAGE_FILES) *.gcov
 	rm -rf coverage_report/

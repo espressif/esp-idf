@@ -113,7 +113,7 @@ void btm_sco_init (void)
 #endif
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     for (int i = 0; i < BTM_MAX_SCO_LINKS; i++) {
-        btm_cb.sco_cb.sco_db[i].xmit_data_q = fixed_queue_new(SIZE_MAX);
+        btm_cb.sco_cb.sco_db[i].xmit_data_q = fixed_queue_new(QUEUE_SIZE_MAX);
     }
 #endif
     /* Initialize nonzero defaults */
@@ -319,9 +319,8 @@ void btm_sco_process_num_completed_pkts (UINT8 *p)
     STREAM_TO_UINT8 (num_handles, p);
     for (xx = 0; xx < num_handles; xx++) {
         STREAM_TO_UINT16 (handle, p);
-        handle &= 0x7ff; // walk around for bad handle bit mask from controller
         STREAM_TO_UINT16 (num_sent, p);
-        if ((sco_inx = btm_find_scb_by_handle(handle & 0x7ff)) == BTM_MAX_SCO_LINKS) {
+        if ((sco_inx = btm_find_scb_by_handle(handle)) == BTM_MAX_SCO_LINKS) {
             continue;
         }
         BTM_TRACE_DEBUG("%s, %d, %u", __FUNCTION__, handle, p_cb->xmit_window_size); //debug
@@ -432,12 +431,13 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             /* only sent the first BTM_SCO_DATA_SIZE_MAX bytes data if more than max,
                and set warning status */
             if (p_buf->len > BTM_SCO_DATA_SIZE_MAX) {
+                BTM_TRACE_WARNING ("BTM SCO hdl %x, bad len %u", p_ccb->hci_handle, p_buf->len);
                 p_buf->len = BTM_SCO_DATA_SIZE_MAX;
                 status = BTM_SCO_BAD_LENGTH;
             }
 
             UINT8_TO_STREAM (p, (UINT8)p_buf->len);
-            BTM_TRACE_DEBUG ("BTM SCO hdl %x, len %u", p_ccb->hci_handle, p_buf->len);
+
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
             if (fixed_queue_length(p_ccb->xmit_data_q) < BTM_SCO_XMIT_QUEUE_THRS) {
@@ -454,7 +454,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
         status = BTM_UNKNOWN_ADDR;
     }
 
-    if (status != BTM_SUCCESS && status != BTM_SCO_BAD_LENGTH) {
+    if (status != BTM_SUCCESS) {
         BTM_TRACE_WARNING ("stat %d", status);
         osi_free(p_buf);
     }

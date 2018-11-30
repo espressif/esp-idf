@@ -95,7 +95,7 @@ TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
     pull_out_clk(RTC_IO_DEBUG_SEL0_8M);
 }
 
-static void test_clock_switching(void (*switch_func)(rtc_cpu_freq_t))
+static void test_clock_switching(void (*switch_func)(const rtc_cpu_freq_config_t* config))
 {
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
 
@@ -103,11 +103,16 @@ static void test_clock_switching(void (*switch_func)(rtc_cpu_freq_t))
     ref_clock_init();
     uint64_t t_start = ref_clock_get();
 
-    rtc_cpu_freq_t cur_freq = rtc_clk_cpu_freq_get();
+    rtc_cpu_freq_config_t cur_config;
+    rtc_clk_cpu_freq_get_config(&cur_config);
+
+    rtc_cpu_freq_config_t xtal_config;
+    rtc_clk_cpu_freq_mhz_to_config((uint32_t) rtc_clk_xtal_freq_get(), &xtal_config);
+
     int count = 0;
     while (ref_clock_get() - t_start < test_duration_sec * 1000000) {
-        switch_func(RTC_CPU_FREQ_XTAL);
-        switch_func(cur_freq);
+        switch_func(&xtal_config);
+        switch_func(&cur_config);
         ++count;
     }
     uint64_t t_end = ref_clock_get();
@@ -126,12 +131,12 @@ TEST_CASE("Calculate 8M clock frequency", "[rtc_clk]")
 
 TEST_CASE("Test switching between PLL and XTAL", "[rtc_clk]")
 {
-    test_clock_switching(rtc_clk_cpu_freq_set);
+    test_clock_switching(rtc_clk_cpu_freq_set_config);
 }
 
 TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 {
-    test_clock_switching(rtc_clk_cpu_freq_set_fast);
+    test_clock_switching(rtc_clk_cpu_freq_set_config_fast);
 }
 
 #define COUNT_TEST      3

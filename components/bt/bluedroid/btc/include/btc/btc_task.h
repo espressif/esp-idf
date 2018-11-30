@@ -28,6 +28,11 @@ typedef struct btc_msg {
     void   *arg;    //param for btc function or function param
 } btc_msg_t;
 
+typedef struct btc_adv_packet {
+    uint8_t addr[6];
+    uint8_t addr_type;
+} btc_adv_packet_t;
+
 typedef enum {
     BTC_SIG_API_CALL = 0,   // APP TO STACK
     BTC_SIG_API_CB,         // STACK TO APP
@@ -72,5 +77,6 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 
 int btc_init(void);
 void btc_deinit(void);
+bool btc_check_queue_is_congest(void);
 
 #endif /* __BTC_TASK_H__ */

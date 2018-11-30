@@ -17,7 +17,9 @@
 #include <stdbool.h>
 #include "esp_attr.h"
 #include "esp_err.h"
+#ifndef BOOTLOADER_BUILD
 #include "esp_spi_flash.h"
+#endif
 #include "soc/efuse_reg.h"
 
 /**
@@ -83,6 +85,8 @@ static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_e
  * @note Take care not to power off the device while this function
  * is running, or the partition currently being encrypted will be lost.
  *
+ * @note RTC_WDT will reset while encryption operations will be performed (if RTC_WDT is configured).
+ *
  * @return ESP_OK if all operations succeeded, ESP_ERR_INVALID_STATE
  * if a fatal error occured during encryption of all partitions.
  */
@@ -91,6 +95,7 @@ esp_err_t esp_flash_encrypt_check_and_update(void);
 
 /** @brief Encrypt-in-place a block of flash sectors
  *
+ * @note This function resets RTC_WDT between operations with sectors.
  * @param src_addr Source offset in flash. Should be multiple of 4096 bytes.
  * @param data_length Length of data to encrypt in bytes. Will be rounded up to next multiple of 4096 bytes.
  *
@@ -98,5 +103,15 @@ esp_err_t esp_flash_encrypt_check_and_update(void);
  * if SPI flash fails, ESP_ERR_FLASH_OP_TIMEOUT if flash times out.
  */
 esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
+
+/** @brief Write protect FLASH_CRYPT_CNT
+ *
+ * Intended to be called as a part of boot process if flash encryption
+ * is enabled but secure boot is not used. This should protect against
+ * serial re-flashing of an unauthorised code in absence of secure boot.
+ *
+ * @return 
+ */
+void esp_flash_write_protect_crypt_cnt();
 
 #endif

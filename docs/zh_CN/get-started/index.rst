@@ -3,7 +3,11 @@
 ***********
 :link_to_translation:`en:[English]`
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 本文档旨在指导用户创建 ESP32 的软件环境。本文将通过一个简单的例子来说明如何使用 ESP-IDF (Espressif IoT Development Framework)，包括配置、编译、下载固件到开发板等步骤。
+
+.. include:: /_build/inc/version-note.inc
 
 概述
 ======
@@ -73,7 +77,7 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup> 
+    Linux <linux-setup>
     MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
@@ -110,12 +114,11 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 .. highlight:: bash
 
-工具链（包括用于编译和构建应用程序的程序）安装完后，你还需要 ESP32 相关的 API/库。API/库在 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_ 中。要获取这些 API/库，打开一个终端，进入某个你希望存放 ESP-IDF 的目录，然后 ``git clone`` 以下指令： ::
+工具链（包括用于编译和构建应用程序的程序）安装完后，你还需要 ESP32 相关的 API/库。API/库在 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_ 中。
 
-    cd ~/esp
-    git clone --recursive https://github.com/espressif/esp-idf.git
+.. include:: /_build/inc/git-clone.inc
 
-ESP-IDF 将会被下载到 ``~/esp/esp-idf``。
+查看 :doc:/versions 以获取不同情况下选择要使用的分支的帮助。
 
 .. note::
 
@@ -132,6 +135,22 @@ ESP-IDF 将会被下载到 ``~/esp/esp-idf``。
 
 工具链程序使用环境变量 ``IDF_PATH`` 来访问 ESP-IDF。这个变量应该设置在你的 PC 中，否则工程将不能编译。你可以在每次 PC 重启时手工设置，也可以通过在用户配置文件中定义 ``IDF_PATH`` 变量来永久性设置。要永久性设置，请参考 :doc:`add-idf_path-to-profile` 文档中 :ref:`Windows <add-idf_path-to-profile-windows>` 或 :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos>` 相关的指导进行操作。
 
+.. _get-started-get-packages:
+
+安装依赖的 Python 软件包
+====================================
+
+ESP-IDF 所依赖的 Python 软件包位于 ``$IDF_PATH/requirements.txt`` 文件中，您可以通过运行以下命令来安装它们：
+
+.. code:: bash
+
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    请调用 ESP-IDF 使用的相同版本的 Python 解释器，解释器的版本号可以通过运行命令 ``python --version`` 来获得，根据结果，您可能要使用 ``python2``, ``python2.7`` 或者类似的名字而不是 ``python``,例如::
+
+        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 
@@ -176,7 +195,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
     :figclass: align-center
 
     工程配置 - 主窗口
-    
+
 在菜单中，进入 ``Serial flasher config`` > ``Default serial port`` 配置串口（工程将会加载到该串口上）。输入回车确认选择，选择 ``< Save >`` 保存配置，然后选择 ``< Exit >`` 退出应用程序。
 
 .. note::
@@ -196,6 +215,10 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 .. note::
 
     如果你是 **Arch Linux** 用户，需要进入 ``SDK tool configuration`` 将 ``Python 2 interpreter`` 从 ``python`` 修改为 ``python2``。
+
+.. attention::
+
+    如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:CONFIG_FREERTOS_UNICORE）。
 
 
 .. _get-started-build-flash:
@@ -285,30 +308,16 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 你已完成 ESP32 的入门！
 
-现在你可以尝试其他的示例工程 :idf:`examples`，或者直接开发自己的应用程序。 
+现在你可以尝试其他的示例工程 :idf:`examples`，或者直接开发自己的应用程序。
 
 更新 ESP-IDF
 =============
 
 使用 ESP-IDF 一段时间后，你可能想要进行升级来获得新的性能或者对 bug 进行修复。最简单的更新方式是删除已有的 ``esp-idf`` 文件夹然后再克隆一个，即重复 :ref:`get-started-get-esp-idf` 里的操作。
 
-另外一种方法是只更新有改动的部分，如果你不容易登陆 GitHub，那么这种方法比较合适。执行以下命令： ::
-
-    cd ~/esp/esp-idf
-    git pull
-    git submodule update --init --recursive
-
-``git pull`` 指令是从 ESP-IDF 仓库中获取合并更新。``git submodule update --init --recursive`` 用来更新现有的子模块或拷贝新的子模块。在 GitHub 上，子模块链接到其他仓库，所以需要这个额外的指令来下载到你的电脑里。
-
-如果你想使用某一版本的 ESP-IDF，比如 `v2.1` 版本，请执行以下指令： ::
-
-    cd ~/esp
-    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
-    cd esp-idf-v2.1/
-    git checkout v2.1
-    git submodule update --init --recursive
-
 然后 :doc:`add-idf_path-to-profile`，这样工具链脚本就能够知道这一版本的 ESP-IDF 的具体位置。
+
+另外一种方法是只更新有改动的部分。:ref:`更新步骤取决于现在用的ESP-IDF版本 <updating>`。
 
 
 相关文档
@@ -323,3 +332,6 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
     eclipse-setup
     idf-monitor
     toolchain-setup-scratch
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
+.. _Releases page: https://github.com/espressif/esp-idf/releases

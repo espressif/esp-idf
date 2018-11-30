@@ -19,32 +19,10 @@
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "soc/rtc_gpio_channel.h"
-
+#include "soc/rtc_periph.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Pin function information for a single GPIO pad's RTC functions.
- *
- * This is an internal function of the driver, and is not usually useful
- * for external use.
- */
-typedef struct {
-    uint32_t reg;       /*!< Register of RTC pad, or 0 if not an RTC GPIO */
-    uint32_t mux;       /*!< Bit mask for selecting digital pad or RTC pad */
-    uint32_t func;      /*!< Shift of pad function (FUN_SEL) field */
-    uint32_t ie;        /*!< Mask of input enable */
-    uint32_t pullup;    /*!< Mask of pullup enable */
-    uint32_t pulldown;  /*!< Mask of pulldown enable */
-    uint32_t slpsel;    /*!< If slpsel bit is set, slpie will be used as pad input enabled signal in sleep mode */
-    uint32_t slpie;     /*!< Mask of input enable in sleep mode */
-    uint32_t hold;      /*!< Mask of hold enable */
-    uint32_t hold_force;/*!< Mask of hold_force bit for RTC IO in RTC_CNTL_HOLD_FORCE_REG */
-    uint32_t drv_v;     /*!< Mask of drive capability */
-    uint32_t drv_s;     /*!< Offset of drive capability */
-    int rtc_num;        /*!< RTC IO number, or -1 if not an RTC GPIO */
-} rtc_gpio_desc_t;
 
 typedef enum {
     RTC_GPIO_MODE_INPUT_ONLY , /*!< Pad input */
@@ -54,19 +32,10 @@ typedef enum {
 } rtc_gpio_mode_t;
 
 /**
- * @brief Provides access to a constant table of RTC I/O pin
- * function information.
- *
- * This is an internal function of the driver, and is not usually useful
- * for external use.
- */
-extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
-
-/**
  * @brief Determine if the specified GPIO is a valid RTC GPIO.
  *
  * @param gpio_num GPIO number
- * @return true if GPIO is valid for RTC GPIO use. talse otherwise.
+ * @return true if GPIO is valid for RTC GPIO use. false otherwise.
  */
 inline static bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
 {
@@ -254,28 +223,51 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
 void rtc_gpio_force_hold_dis_all();
 
 /**
-  * @brief Set RTC GPIO pad drive capability
-  *
-  * @param gpio_num GPIO number, only support output GPIOs
-  * @param strength Drive capability of the pad
-  *
-  * @return
-  *     - ESP_OK Success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
+ * @brief Set RTC GPIO pad drive capability
+ *
+ * @param gpio_num GPIO number, only support output GPIOs
+ * @param strength Drive capability of the pad
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength);
 
 /**
-  * @brief Get RTC GPIO pad drive capability
-  *
-  * @param gpio_num GPIO number, only support output GPIOs
-  * @param strength Pointer to accept drive capability of the pad
-  *
-  * @return
-  *     - ESP_OK Success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
+ * @brief Get RTC GPIO pad drive capability
+ *
+ * @param gpio_num GPIO number, only support output GPIOs
+ * @param strength Pointer to accept drive capability of the pad
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
 esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
+
+/**
+ * @brief Enable wakeup from sleep mode using specific GPIO
+ * @param gpio_num  GPIO number
+ * @param intr_type  Wakeup on high level (GPIO_INTR_HIGH_LEVEL) or low level
+ *                   (GPIO_INTR_LOW_LEVEL)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if gpio_num is not an RTC IO, or intr_type is not
+ *        one of GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL.
+ */
+esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
+
+/**
+ * @brief Disable wakeup from sleep mode using specific GPIO
+ * @param gpio_num  GPIO number
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if gpio_num is not an RTC IO
+ */
+esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num);
+
+
 
 #ifdef __cplusplus
 }

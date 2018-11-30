@@ -7,7 +7,7 @@ INSTRUCTIONS
 
 Before submitting a new issue, please follow the checklist and try to find the answer.
 
-- [ ] I have read the documentation [ESP-IDF Programming Guide](http://esp-idf.readthedocs.io/en/latest/) and the issue is not addressed there.
+- [ ] I have read the documentation [ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/) and the issue is not addressed there.
 - [ ] I have updated my IDF branch (master or release) to the latest version and checked that the issue is present there.
 - [ ] I have searched the issue tracker for a similar issue and not found a similar issue.
 
@@ -15,7 +15,7 @@ If the issue cannot be solved after the steps before, please follow these instru
 
 1. Fill in all the fields under **Environment** marked with [ ] by picking the correct option for you in each case and deleting the others.
 2. Describe your problem.
-3. Include [debug logs on the monitor](http://esp-idf.readthedocs.io/en/latest/get-started/idf-monitor.html#automatically-decoding-addresses) or the [coredump](http://esp-idf.readthedocs.io/en/latest/api-guides/core_dump.html).
+3. Include [debug logs on the monitor](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html#automatically-decoding-addresses) or the [coredump](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/core_dump.html).
 4. Provide more items under **Other items if possible** can help us better locate your problem.
 5. Use markup (buttons above) and the Preview tab to check what the issue will look like.
 6. Delete these instructions from the above to the below marker lines before submitting this issue.
@@ -26,11 +26,13 @@ If the issue cannot be solved after the steps before, please follow these instru
 
 - Development Kit:      [ESP32-Wrover-Kit|ESP32-DevKitC|ESP32-PICO-Kit|ESP32-LyraT|ESP32-LyraTD-MSC|none]
 - Kit version (for WroverKit/PicoKit/DevKitC): [v1|v2|v3|v4]
-- Core (if using chip or module): [ESP32-Wrover-I|ESP32-Wrover|ESP32-PICO-D4|ESP32-SOLO-I|ESP32-WROOM-32U|ESP-WROOM-32D|ESP-WROOM32|ESP32]
-- IDF version (``git rev-parse --short HEAD`` to get the commit id.): 
-    //bd6ea4393c7d2f059fc4decc70f1ec3eb3597268
-- Development Env:		[Arduino IDE|Make|Eclipse|other]
-- Operating System:		[Windows|Ubuntu|MacOS]
+- Module or chip used:  [ESP32-WROOM-32|ESP32-WROOM-32D|ESP32-WROOM-32U|ESP32-WROVER|ESP32-WROVER-I|ESP32-WROVER-B|ESP32-WROVER-IB|ESP32-SOLO-1|ESP32-PICO-D4|ESP32]
+- IDF version (run ``git describe --tags`` to find it): 
+    // v3.2-dev-1148-g96cd3b75c
+- Build System:         [Make|CMake]
+- Compiler version (run ``xtensa-esp32-elf-gcc --version`` to find it):
+    // 1.22.0-80-g6c4433a
+- Operating System:     [Windows|Linux|macOS]
 - Power Supply:         [USB|external 5V|external 3.3V|Battery]
 
 ## Problem Description

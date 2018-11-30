@@ -65,12 +65,17 @@ protected:
     uint32_t cfg_size;
     uint8_t *temp_buff = NULL;
     size_t dummy_addr;
-    uint8_t used_bits;
+    uint32_t pos_data[4];
 
     esp_err_t initSections();
     esp_err_t updateWL();
     esp_err_t recoverPos();
     size_t calcAddr(size_t addr);
+
+    esp_err_t updateVersion();
+    esp_err_t updateV1_V2();
+    void fillOkBuff(int n);
+    bool OkBuffSet(int n);
 };
 
 #endif // _WL_Flash_H_

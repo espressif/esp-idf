@@ -9,7 +9,10 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
-
+#include "soc/rtc.h"
+#include "esp_clk.h"
+#include "esp_system.h"
+#include "test_utils.h"
 
 #if portNUM_PROCESSORS == 2
 
@@ -51,3 +54,352 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 }
 
 #endif // portNUM_PROCESSORS == 2
+
+TEST_CASE("test adjtime function", "[newlib]")
+{
+    struct timeval tv_time;
+    struct timeval tv_delta;
+    struct timeval tv_outdelta;
+
+    TEST_ASSERT_EQUAL(adjtime(NULL, NULL), 0);
+
+    tv_time.tv_sec = 5000;
+    tv_time.tv_usec = 5000;
+    TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
+
+    tv_outdelta.tv_sec = 5;
+    tv_outdelta.tv_usec = 5;
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
+
+    tv_delta.tv_sec = INT_MAX / 1000000L;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), -1);
+
+    tv_delta.tv_sec = INT_MIN / 1000000L;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), -1);
+
+    tv_delta.tv_sec = 0;
+    tv_delta.tv_usec = -900000;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_usec <= 0);
+
+    tv_delta.tv_sec = 0;
+    tv_delta.tv_usec = 900000;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+
+    tv_delta.tv_sec = -4;
+    tv_delta.tv_usec = -900000;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  -4);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_usec <= 0);
+
+    // after settimeofday() adjtime() is stopped
+    tv_delta.tv_sec = 15;
+    tv_delta.tv_usec = 900000;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+
+    TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
+    TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
+
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_usec, 0);
+
+    // after gettimeofday() adjtime() is not stopped
+    tv_delta.tv_sec = 15;
+    tv_delta.tv_usec = 900000;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+
+    TEST_ASSERT_EQUAL(gettimeofday(&tv_time, NULL), 0);
+
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_EQUAL(tv_outdelta.tv_sec,  15);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_usec >= 0);
+
+    tv_delta.tv_sec = 1;
+    tv_delta.tv_usec = 0;
+    TEST_ASSERT_EQUAL(adjtime(&tv_delta, NULL), 0);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(adjtime(NULL, &tv_outdelta), 0);
+    TEST_ASSERT_TRUE(tv_outdelta.tv_sec == 0);
+    // the correction will be equal to (1_000_000us >> 6) = 15_625 us.
+    TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec >= 15600);
+    TEST_ASSERT_TRUE(1000000L - tv_outdelta.tv_usec <= 15650);
+}
+
+static volatile bool exit_flag;
+
+static void adjtimeTask2(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    struct timeval delta = {.tv_sec = 0, .tv_usec = 0};
+    struct timeval outdelta;
+
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        delta.tv_sec += 1;
+        delta.tv_usec = 900000;
+        if (delta.tv_sec >= 2146) delta.tv_sec = 1;
+        adjtime(&delta, &outdelta);
+    }
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+static void timeTask(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    struct timeval tv_time = { .tv_sec = 1520000000, .tv_usec = 900000 };
+
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        tv_time.tv_sec += 1;
+        settimeofday(&tv_time, NULL);
+        gettimeofday(&tv_time, NULL);
+    }
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test for no interlocking adjtime, gettimeofday and settimeofday functions", "[newlib]")
+{
+    TaskHandle_t th[4];
+    exit_flag = false;
+    struct timeval tv_time = { .tv_sec = 1520000000, .tv_usec = 900000 };
+    TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
+
+    const int max_tasks = 2;
+    xSemaphoreHandle exit_sema[max_tasks];
+
+    for (int i = 0; i < max_tasks; ++i) {
+        exit_sema[i] = xSemaphoreCreateBinary();
+    }
+
+#ifndef CONFIG_FREERTOS_UNICORE
+    printf("CPU0 and CPU1. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask, 3 - settimeofdayTask \n");
+    xTaskCreatePinnedToCore(adjtimeTask2, "adjtimeTask2", 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
+    xTaskCreatePinnedToCore(timeTask, "timeTask", 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
+#else
+    printf("Only one CPU. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask, 3 - settimeofdayTask\n");
+    xTaskCreate(adjtimeTask2, "adjtimeTask2", 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, &th[0]);
+    xTaskCreate(timeTask, "timeTask", 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, &th[1]);
+#endif
+
+    printf("start wait for 5 seconds\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+    // set exit flag to let thread exit
+    exit_flag = true;
+    for (int i = 0; i < max_tasks; ++i) {
+        if (!xSemaphoreTake(exit_sema[i], 2000/portTICK_PERIOD_MS)) {
+            TEST_FAIL_MESSAGE("exit_sema not released by test task");
+        }
+        vSemaphoreDelete(exit_sema[i]);
+    }
+}
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static xSemaphoreHandle gettime_start_sema;
+static xSemaphoreHandle adjtime_continue_sema;
+static void adjtimeTask(void *pvParameters)
+{
+    const uint64_t adjtime_us = 2000000000; // 2000 sec
+    struct timeval delta = {.tv_sec = adjtime_us / 1000000, .tv_usec = 900000};
+    struct timeval outdelta;
+    struct timeval tv_time;
+    int shift = 1;
+    int cycle = 0;
+
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        gettimeofday(&tv_time, NULL);
+        uint64_t start_time_us = (uint64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
+
+        ++cycle;
+        if (shift > 3000) {
+            shift = 1;
+        }
+        int i_shift = shift++;
+
+        xSemaphoreGive(gettime_start_sema);
+        while (--i_shift) {
+            __asm__ __volatile__ ("nop": : : "memory");
+        };
+        adjtime(&delta, &outdelta);
+        xSemaphoreTake(adjtime_continue_sema, portMAX_DELAY);
+
+        gettimeofday(&tv_time, NULL);
+        uint64_t end_time_us = (uint64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
+
+        if (!(start_time_us < end_time_us) || (end_time_us - start_time_us > adjtime_us)
+                || (end_time_us - start_time_us > 300) || (end_time_us - start_time_us < 30)) {
+            printf("ERROR: start_time_us %lld usec.\n", start_time_us);
+            printf("ERROR: end_time_us   %lld usec.\n", end_time_us);
+            printf("ERROR: dt            %lld usec.\n", end_time_us - start_time_us);
+            printf("ERROR: cycle         %d\n", cycle);
+            printf("ERROR: shift         %d\n", shift);
+            TEST_FAIL_MESSAGE("The time is corrupted due to the lack of locks for the adjtime function.");
+        }
+    }
+    xSemaphoreGive(adjtime_continue_sema);
+    xSemaphoreGive(gettime_start_sema);
+    vTaskDelete(NULL);
+}
+
+static void gettimeofdayTask(void *pvParameters)
+{
+    struct timeval tv_time;
+
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        xSemaphoreTake(gettime_start_sema, portMAX_DELAY);
+        gettimeofday(&tv_time, NULL);
+        xSemaphoreGive(adjtime_continue_sema);
+    }
+    xSemaphoreGive(adjtime_continue_sema);
+    xSemaphoreGive(gettime_start_sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test for thread safety adjtime and gettimeofday functions", "[newlib]")
+{
+    exit_flag = false;
+
+    struct timeval tv_time = { .tv_sec = 1520000000, .tv_usec = 0 };
+    TEST_ASSERT_EQUAL(0, settimeofday(&tv_time, NULL));
+
+    gettime_start_sema = xSemaphoreCreateBinary();
+    adjtime_continue_sema = xSemaphoreCreateBinary();
+
+    printf("CPU0 and CPU1. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask\n");
+    xTaskCreatePinnedToCore(adjtimeTask, "adjtimeTask", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(gettimeofdayTask, "gettimeofdayTask", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+
+    printf("start wait for 10 seconds\n");
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
+
+    // set exit flag to let thread exit
+    exit_flag = true;
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    if (!xSemaphoreTake(gettime_start_sema, 1000 / portTICK_PERIOD_MS)) {
+        TEST_FAIL_MESSAGE("gettime_start_semaphore not released by test task");
+    }
+    if (!xSemaphoreTake(adjtime_continue_sema, 1000 / portTICK_PERIOD_MS)) {
+        TEST_FAIL_MESSAGE("adjtime_continue_semaphore not released by test task");
+    }
+    vSemaphoreDelete(gettime_start_sema);
+    vSemaphoreDelete(adjtime_continue_sema);
+}
+#endif
+
+#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 )
+#define WITH_RTC 1
+#endif
+
+#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_FRC1 ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 )
+#define WITH_FRC 1
+#endif
+void test_posix_timers_clock (void)
+{
+#ifndef _POSIX_TIMERS
+    TEST_ASSERT_MESSAGE(false, "_POSIX_TIMERS - is not defined");
+#endif
+
+#if defined( WITH_FRC )
+    printf("WITH_FRC    ");
+#endif
+
+#if defined( WITH_RTC )
+    printf("WITH_RTC    ");
+#endif
+
+#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    printf("External (crystal) Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());
+#else
+    printf("Internal Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());
+#endif
+
+    TEST_ASSERT(clock_settime(CLOCK_REALTIME, NULL) == -1);
+    TEST_ASSERT(clock_gettime(CLOCK_REALTIME, NULL) == -1);
+    TEST_ASSERT(clock_getres(CLOCK_REALTIME,  NULL) == -1);
+
+    TEST_ASSERT(clock_settime(CLOCK_MONOTONIC, NULL) == -1);
+    TEST_ASSERT(clock_gettime(CLOCK_MONOTONIC, NULL) == -1);
+    TEST_ASSERT(clock_getres(CLOCK_MONOTONIC,  NULL) == -1);
+
+#if defined( WITH_FRC ) || defined( WITH_RTC )
+    struct timeval now = {0};
+    now.tv_sec  = 10L;
+    now.tv_usec = 100000L;
+    TEST_ASSERT(settimeofday(&now, NULL) == 0);
+    TEST_ASSERT(gettimeofday(&now, NULL) == 0);
+
+    struct timespec ts = {0};
+
+    TEST_ASSERT(clock_settime(0xFFFFFFFF, &ts) == -1);
+    TEST_ASSERT(clock_gettime(0xFFFFFFFF, &ts) == -1);
+    TEST_ASSERT(clock_getres(0xFFFFFFFF,  &ts) == 0);
+
+    TEST_ASSERT(clock_gettime(CLOCK_REALTIME, &ts) == 0);
+    TEST_ASSERT(now.tv_sec == ts.tv_sec);
+    TEST_ASSERT_INT_WITHIN(5000000L, ts.tv_nsec, now.tv_usec * 1000L);
+
+    ts.tv_sec  = 20;
+    ts.tv_nsec = 100000000L;
+    TEST_ASSERT(clock_settime(CLOCK_REALTIME, &ts) == 0);
+    TEST_ASSERT(gettimeofday(&now, NULL) == 0);
+    TEST_ASSERT(now.tv_sec == ts.tv_sec);
+    TEST_ASSERT_INT_WITHIN(5000L, now.tv_usec,  ts.tv_nsec / 1000L);
+
+    TEST_ASSERT(clock_settime(CLOCK_MONOTONIC, &ts) == -1);
+
+    uint64_t delta_monotonic_us = 0;
+#if defined( WITH_FRC )
+
+    TEST_ASSERT(clock_getres(CLOCK_REALTIME, &ts) == 0);
+    TEST_ASSERT_EQUAL_INT(1000, ts.tv_nsec);
+    TEST_ASSERT(clock_getres(CLOCK_MONOTONIC, &ts) == 0);
+    TEST_ASSERT_EQUAL_INT(1000, ts.tv_nsec);
+
+    TEST_ASSERT(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+    delta_monotonic_us = esp_timer_get_time() - (ts.tv_sec * 1000000L + ts.tv_nsec / 1000L);
+    TEST_ASSERT(delta_monotonic_us > 0 || delta_monotonic_us == 0);
+    TEST_ASSERT_INT_WITHIN(5000L, 0, delta_monotonic_us);
+
+    #elif defined( WITH_RTC )
+
+    TEST_ASSERT(clock_getres(CLOCK_REALTIME, &ts) == 0);
+    TEST_ASSERT_EQUAL_INT(1000000000L / rtc_clk_slow_freq_get_hz(), ts.tv_nsec);
+    TEST_ASSERT(clock_getres(CLOCK_MONOTONIC, &ts) == 0);
+    TEST_ASSERT_EQUAL_INT(1000000000L / rtc_clk_slow_freq_get_hz(), ts.tv_nsec);
+
+    TEST_ASSERT(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
+    delta_monotonic_us = esp_clk_rtc_time() - (ts.tv_sec * 1000000L + ts.tv_nsec / 1000L);
+    TEST_ASSERT(delta_monotonic_us > 0 || delta_monotonic_us == 0);
+    TEST_ASSERT_INT_WITHIN(5000L, 0, delta_monotonic_us);
+
+#endif // WITH_FRC
+
+#else
+    struct timespec ts = {0};
+    TEST_ASSERT(clock_settime(CLOCK_REALTIME, &ts) == -1);
+    TEST_ASSERT(clock_gettime(CLOCK_REALTIME, &ts) == -1);
+    TEST_ASSERT(clock_getres(CLOCK_REALTIME,  &ts) == -1);
+
+    TEST_ASSERT(clock_settime(CLOCK_MONOTONIC, &ts) == -1);
+    TEST_ASSERT(clock_gettime(CLOCK_MONOTONIC, &ts) == -1);
+    TEST_ASSERT(clock_getres(CLOCK_MONOTONIC,  &ts) == -1);
+#endif // defined( WITH_FRC ) || defined( WITH_RTC )
+}
+
+TEST_CASE("test posix_timers clock_... functions", "[newlib]")
+{
+    test_posix_timers_clock();
+}

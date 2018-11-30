@@ -1,0 +1,57 @@
+#Diagram of CAN controller signal lines
+
+blockdiag can_controller_signals_diagram {
+    
+    orientation = portrait;
+    span_width = 80;
+
+    #Column 1 nodes
+    can[label = "CAN Controller", fontsize = 15, shape = roundedbox];
+
+    #Column 2 nodes
+    tx[label = "TX", shape = endpoint];
+    rx[label = "RX", shape = endpoint];
+    bus_off[label = "BUS-OFF", shape = endpoint];
+    clkout[label = "CLKOUT", shape = endpoint];
+
+    #Column 3 nodes
+    hide1 [shape = none];
+    hide2 [shape = none];
+    hide3 [shape = none];
+    hide4 [shape = none];
+
+    group {
+        orientation = portrait;
+        color = none;
+
+        #Group column 1 nodes vertically
+        can;
+    }
+    group {
+        orientation = portrait;
+        color = none;
+
+        #Group column 2 nodes vertically
+        tx; rx; bus_off; clkout;
+    }
+    group {
+        orientation = portrait;
+        color = none;
+        label = "GPIO Matrix";
+        fontsize = 20;
+        shape = line;
+
+        #Group column 3 nodes vertically
+        hide1; hide2; hide3; hide4;
+    }
+
+    can -> tx [folded];
+    can -> rx [folded];
+    can -> bus_off [folded];
+    can -> clkout [folded];
+
+    tx -> hide1 [folded];
+    rx -> hide2 [folded];
+    bus_off -> hide3 [folded, label = "Optional"];
+    clkout -> hide4 [folded, label = "Optional"];
+}

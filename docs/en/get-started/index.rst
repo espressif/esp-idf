@@ -5,6 +5,7 @@ Get Started
 
 This document is intended to help users set up the software environment for development of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards. 
 
+.. include:: /_build/inc/version-note.inc
 
 Introduction
 ============
@@ -114,19 +115,18 @@ Get ESP-IDF
 
 .. highlight:: bash
 
-Besides the toolchain (that contains programs to compile and build the application), you also need ESP32 specific API / libraries. They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_. To get it, open terminal, navigate to the directory you want to put ESP-IDF, and clone it using ``git clone`` command::
+Besides the toolchain (that contains programs to compile and build the application), you also need ESP32 specific API / libraries. They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
 
-    cd ~/esp
-    git clone --recursive https://github.com/espressif/esp-idf.git
+.. include:: /_build/inc/git-clone.inc
 
-ESP-IDF will be downloaded into ``~/esp/esp-idf``.
+Consult :doc:`/versions` for information about which version of ESP-IDF to use in a given situation.
 
 .. note::
 
     Do not miss the ``--recursive`` option. If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
 
         cd ~/esp/esp-idf
-        git submodule update --init
+        git submodule update --init --recursive
 
 
 .. _get-started-setup-path:
@@ -136,6 +136,22 @@ Setup Path to ESP-IDF
 
 The toolchain programs access ESP-IDF using ``IDF_PATH`` environment variable. This variable should be set up on your PC, otherwise projects will not build. Setting may be done manually, each time PC is restarted. Another option is to set up it permanently by defining ``IDF_PATH`` in user profile. To do so, follow instructions specific to :ref:`Windows <add-idf_path-to-profile-windows>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos>` in section :doc:`add-idf_path-to-profile`.
 
+.. _get-started-get-packages:
+
+Install the Required Python Packages
+====================================
+
+Python packages required by ESP-IDF are located in the ``$IDF_PATH/requirements.txt`` file. You can install them by running::
+
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    Please invoke that version of the Python interpreter which you will be using with ESP-IDF. The version of the
+    interpreter can be checked by running command ``python --version`` and depending on the result, you might want to
+    use ``python2``, ``python2.7`` or similar instead of ``python``, e.g.::
+
+        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project:
 
@@ -202,6 +218,11 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 .. note::
 
     If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
+
+
+.. attention::
+
+    When using ESP32-DevKitC board with ESP32-SOLO-1 module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing example applications.
 
 
 .. _get-started-build-flash:
@@ -295,28 +316,41 @@ That's all what you need to get started with ESP32!
 Now you are ready to try some other :idf:`examples`, or go right to developing your own applications.
 
 
+Environment Variables
+=====================
+
+Some environment variables can be specified whilst calling ``make`` allowing users to **override arguments without needing to reconfigure them using** ``make menuconfig``.
+
++-----------------+--------------------------------------------------------------+
+| Variables       | Description & Usage                                          |
++=================+==============================================================+
+| ``ESPPORT``     | Overrides the serial port used in ``flash`` and ``monitor``. |
+|                 |                                                              |
+|                 | Examples: ``make flash ESPPORT=/dev/ttyUSB1``,               |
+|                 | ``make monitor ESPPORT=COM1``                                |
++-----------------+--------------------------------------------------------------+
+| ``ESPBAUD``     | Overrides the serial baud rate when flashing the ESP32.      |
+|                 |                                                              |
+|                 | Example: ``make flash ESPBAUD=9600``                         |
++-----------------+--------------------------------------------------------------+
+| ``MONITORBAUD`` | Overrides the serial baud rate used when monitoring.         |
+|                 |                                                              |
+|                 | Example: ``make monitor MONITORBAUD=9600``                   |
++-----------------+--------------------------------------------------------------+
+
+.. note::
+    Users can export environment variables (e.g. ``export ESPPORT=/dev/ttyUSB1``).
+    All subsequent calls of ``make`` within the same terminal session will use 
+    the exported value given that the variable is not simultaneously overridden.
+
 Updating ESP-IDF
 ================
 
 After some time of using ESP-IDF, you may want to update it to take advantage of new features or bug fixes. The simplest way to do so is by deleting existing ``esp-idf`` folder and cloning it again, exactly as when doing initial installation described in sections :ref:`get-started-get-esp-idf`.
 
-Another solution is to update only what has changed. This method is useful if you have a slow connection to GitHub. To do the update run the following commands::
+If downloading to a new path, remember to :doc:`add-idf_path-to-profile` so that the toolchain scripts know where to find the ESP-IDF in its release specific location.
 
-    cd ~/esp/esp-idf
-    git pull
-    git submodule update --init --recursive
-
-The ``git pull`` command is fetching and merging changes from ESP-IDF repository on GitHub. Then ``git submodule update --init --recursive`` is updating existing submodules or getting a fresh copy of new ones. On GitHub the submodules are represented as links to other repositories and require this additional command to get them onto your PC.
-
-If you would like to use specific release of ESP-IDF, e.g. `v2.1`, run::
-
-    cd ~/esp
-    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
-    cd esp-idf-v2.1/
-    git checkout v2.1
-    git submodule update --init --recursive
-
-After that remember to :doc:`add-idf_path-to-profile`, so the toolchain scripts know where to find the ESP-IDF in it's release specific location.
+Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
 
 
 Related Documents
@@ -331,3 +365,7 @@ Related Documents
     eclipse-setup
     idf-monitor
     toolchain-setup-scratch
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+.. _Releases page: https://github.com/espressif/esp-idf/releases
+

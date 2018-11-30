@@ -31,10 +31,12 @@
 #include "soc/timer_group_struct.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
+#include "soc/rtc_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
 #include "esp_heap_caps.h"
+#include "esp_system_internal.h"
 
 static const char* TAG = "system_api";
 
@@ -147,7 +149,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 
-esp_err_t esp_derive_mac(uint8_t* local_mac, const uint8_t* universal_mac)
+esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
     uint8_t idx;
 
@@ -201,7 +203,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
             mac[5] += 1;
         }
         else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
-            esp_derive_mac(mac, efuse_mac);
+            esp_derive_local_mac(mac, efuse_mac);
         }
         break;
     case ESP_MAC_BT:
@@ -220,7 +222,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         }
         else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
             efuse_mac[5] += 1;
-            esp_derive_mac(mac, efuse_mac);
+            esp_derive_local_mac(mac, efuse_mac);
         }
         break;
     default:
@@ -270,14 +272,15 @@ void IRAM_ATTR esp_restart_noos()
     xt_ints_off(0xFFFFFFFF);
 
     // Enable RTC watchdog for 1 second
-    REG_WRITE(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
-    REG_WRITE(RTC_CNTL_WDTCONFIG0_REG,
-            RTC_CNTL_WDT_FLASHBOOT_MOD_EN_M |
-            (RTC_WDT_STG_SEL_RESET_SYSTEM << RTC_CNTL_WDT_STG0_S) |
-            (RTC_WDT_STG_SEL_RESET_RTC << RTC_CNTL_WDT_STG1_S) |
-            (1 << RTC_CNTL_WDT_SYS_RESET_LENGTH_S) |
-            (1 << RTC_CNTL_WDT_CPU_RESET_LENGTH_S) );
-    REG_WRITE(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 1);
+    rtc_wdt_protect_off();
+    rtc_wdt_disable();
+    rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
+    rtc_wdt_set_stage(RTC_WDT_STAGE1, RTC_WDT_STAGE_ACTION_RESET_SYSTEM);
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_200ns);
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_200ns);
+    rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
+    rtc_wdt_enable();
+    rtc_wdt_protect_on();
 
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i
@@ -331,7 +334,7 @@ void IRAM_ATTR esp_restart_noos()
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    rtc_clk_cpu_freq_set_xtal();
 
     // Clear entry point for APP CPU
     DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);

@@ -159,9 +159,8 @@ int xt_clock_freq(void) __attribute__((deprecated));
  *----------------------------------------------------------*/
 
 #define configUSE_PREEMPTION			1
-#define configUSE_IDLE_HOOK				( CONFIG_FREERTOS_LEGACY_IDLE_HOOK )
-
-#define configUSE_TICK_HOOK				( CONFIG_FREERTOS_LEGACY_TICK_HOOK )
+#define configUSE_IDLE_HOOK				1
+#define configUSE_TICK_HOOK				1
 
 #define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 
@@ -209,6 +208,10 @@ int xt_clock_freq(void) __attribute__((deprecated));
 
 #ifdef CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
 #define configUSE_STATS_FORMATTING_FUNCTIONS    1   /* Used by vTaskList() */
+#endif
+
+#ifdef CONFIG_FREERTOS_VTASKLIST_INCLUDE_COREID
+#define configTASKLIST_INCLUDE_COREID   1
 #endif
 
 #ifdef CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
@@ -297,7 +300,12 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-#define configENABLE_TASK_SNAPSHOT			1
+#if CONFIG_ESP32_ENABLE_COREDUMP
+#define configENABLE_TASK_SNAPSHOT          1
+#endif
+#ifndef configENABLE_TASK_SNAPSHOT
+#define configENABLE_TASK_SNAPSHOT          1
+#endif
 
 #if CONFIG_SYSVIEW_ENABLE
 #ifndef __ASSEMBLER__

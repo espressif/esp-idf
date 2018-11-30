@@ -24,18 +24,6 @@
 #include "esp_heap_caps.h"
 #include "sdkconfig.h"
 
-typedef void *(*alloc_fn)(size_t size);
-typedef void (*free_fn)(void *ptr);
-
-typedef struct {
-    alloc_fn alloc;
-    free_fn  free;
-} allocator_t;
-
-// allocator_t abstractions for the osi_*alloc and osi_free functions
-extern const allocator_t allocator_malloc;
-extern const allocator_t allocator_calloc;
-
 char *osi_strdup(const char *str);
 
 void *osi_malloc_func(size_t size);

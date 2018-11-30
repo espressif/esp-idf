@@ -31,6 +31,7 @@ esp_err_t Partition::erase_sector(size_t sector)
     result = erase_range(sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
     return result;
 }
+
 esp_err_t Partition::erase_range(size_t start_address, size_t size)
 {
     esp_err_t result = esp_partition_erase_range(this->partition, start_address, size);
@@ -48,6 +49,7 @@ esp_err_t Partition::write(size_t dest_addr, const void *src, size_t size)
     result = esp_partition_write(this->partition, dest_addr, src, size);
     return result;
 }
+
 esp_err_t Partition::read(size_t src_addr, void *dest, size_t size)
 {
     esp_err_t result = ESP_OK;

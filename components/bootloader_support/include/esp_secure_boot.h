@@ -17,6 +17,14 @@
 #include <esp_err.h>
 #include "soc/efuse_reg.h"
 
+#include "sdkconfig.h"
+
+#ifdef CONFIG_SECURE_BOOT_ENABLED
+#if !defined(CONFIG_SECURE_SIGNED_ON_BOOT) || !defined(CONFIG_SECURE_SIGNED_ON_UPDATE) || !defined(CONFIG_SECURE_SIGNED_APPS)
+#error "internal sdkconfig error, secure boot should always enable all signature options"
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -30,6 +30,8 @@
 
 #include "argtable3.h"
 
+#pragma GCC diagnostic ignored "-Wclobbered"
+
 /*******************************************************************************
  * This file is part of the argtable3 library.
  *
@@ -3071,6 +3073,7 @@ static int trex_charnode(TRex *exp,TRexBool isclass)
 					exp->_p++;
 					return node;
 				} //else default
+				/* falls through */
 			default:
 				t = *exp->_p; exp->_p++;
 				return trex_newnode(exp,t);

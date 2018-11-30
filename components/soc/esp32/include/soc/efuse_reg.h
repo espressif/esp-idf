@@ -298,6 +298,9 @@
 #define EFUSE_RD_CODING_SCHEME_V  0x3
 #define EFUSE_RD_CODING_SCHEME_S  0
 
+#define EFUSE_CODING_SCHEME_VAL_NONE 0x0
+#define EFUSE_CODING_SCHEME_VAL_34   0x1
+
 #define EFUSE_BLK0_WDATA0_REG          (DR_REG_EFUSE_BASE + 0x01c)
 /* EFUSE_FLASH_CRYPT_CNT : R/W ;bitpos:[27:20] ;default: 8'b0 ; */
 /*description: program for flash_crypt_cnt*/

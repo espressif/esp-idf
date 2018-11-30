@@ -115,9 +115,10 @@ typedef union {
      * @brief ESP_GATTC_SEARCH_CMPL_EVT
      */
     struct gattc_search_cmpl_evt_param {
-        esp_gatt_status_t status;       /*!< Operation status */
-        uint16_t conn_id;               /*!< Connection id */
-    } search_cmpl;                      /*!< Gatt client callback param of ESP_GATTC_SEARCH_CMPL_EVT */
+        esp_gatt_status_t status;                     /*!< Operation status */
+        uint16_t conn_id;                             /*!< Connection id */
+        esp_service_source_t searched_service_source; /*!< The source of the service information */
+    } search_cmpl;                                    /*!< Gatt client callback param of ESP_GATTC_SEARCH_CMPL_EVT */
 
     /**
      * @brief ESP_GATTC_SEARCH_RES_EVT
@@ -312,7 +313,7 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, e
 
 
 /**
- * @brief           Close a virtual connection to a GATT server. gattc maybe have multiple virtual GATT server connections when multiple app_id registed,
+ * @brief           Close the virtual connection to the GATT server. gattc may have multiple virtual GATT server connections when multiple app_id registered,
  *                  this API only close one virtual GATT server connection. if there exist other virtual GATT server connections,
  *                  it does not disconnect the physical connection.
  *                  if you want to disconnect the physical connection directly, you can use esp_ble_gap_disconnect(esp_bd_addr_t remote_device).
@@ -346,7 +347,8 @@ esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 
 /**
- * @brief           This function is called to request a GATT service discovery
+ * @brief           This function is called to get service from local cache. 
+ *                  If it does not exist, request a GATT service discovery
  *                  on a GATT server. This function report service search result
  *                  by a callback event, and followed by a service search complete
  *                  event.
@@ -371,7 +373,7 @@ esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id,
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID which identify the server.
  * @param[in]       svc_uuid: the pointer to the service uuid.
- * @param[out]      result: The pointer to the service whith has been found in the gattc cache.
+ * @param[out]      result: The pointer to the service which has been found in the gattc cache.
  * @param[inout]   count: input the number of service want to find,
  *                         it will output the number of service has been found in the gattc cache with the given service uuid.
  * @param[in]       offset: Offset of the service position to get.
@@ -392,7 +394,7 @@ esp_gatt_status_t esp_ble_gattc_get_service(esp_gatt_if_t gattc_if, uint16_t con
  * @param[in]       conn_id: connection ID which identify the server.
  * @param[in]       start_handle: the attribute start handle.
  * @param[in]       end_handle: the attribute end handle
- * @param[out]      result: The pointer to the charateristic in the service.
+ * @param[out]      result: The pointer to the characteristic in the service.
  * @param[inout]   count: input the number of characteristic want to find,
  *                         it will output the number of characteristic has been found in the gattc cache with the given service.
  * @param[in]       offset: Offset of the characteristic position to get.
@@ -695,7 +697,7 @@ esp_err_t esp_ble_gattc_write_char_descr (esp_gatt_if_t gattc_if,
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
- * @param[in]       handle : charateristic handle to prepare write.
+ * @param[in]       handle : characteristic handle to prepare write.
  * @param[in]       offset : offset of the write value.
  * @param[in]       value_len: length of the value to be written.
  * @param[in]       value : the value to be written.
@@ -720,7 +722,7 @@ esp_err_t esp_ble_gattc_prepare_write(esp_gatt_if_t gattc_if,
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id : connection ID.
- * @param[in]       handle : characteristic descriptor hanlde to prepare write.
+ * @param[in]       handle : characteristic descriptor handle to prepare write.
  * @param[in]       offset : offset of the write value.
  * @param[in]       value_len: length of the value to be written.
  * @param[in]       value : the value to be written.

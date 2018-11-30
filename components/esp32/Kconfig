@@ -1,5 +1,11 @@
 menu "ESP32-specific"
 
+# Hidden option to support checking for this specific target in C code and Kconfig files
+config IDF_TARGET_ESP32
+	bool
+	default "y" if IDF_TARGET="esp32"
+	default "n"
+
 choice ESP32_DEFAULT_CPU_FREQ_MHZ
     prompt "CPU frequency"
     default ESP32_DEFAULT_CPU_FREQ_160
@@ -24,7 +30,7 @@ config SPIRAM_SUPPORT
     bool "Support for external, SPI-connected RAM"
     default "n"
     help
-        This enables support for an external SPI RAM chip, connected in parallel with the 
+        This enables support for an external SPI RAM chip, connected in parallel with the
         main SPI flash chip.
 
 menu "SPI RAM config"
@@ -41,7 +47,7 @@ config SPIRAM_BOOT_INIT
 config SPIRAM_IGNORE_NOTFOUND
     bool "Ignore PSRAM when not found"
     default "n"
-    depends on SPIRAM_BOOT_INIT
+    depends on SPIRAM_BOOT_INIT && !SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     help
         Normally, if psram initialization is enabled during compile time but not found at runtime, it
         is seen as an error making the ESP32 panic. If this is enabled, the ESP32 will keep on
@@ -67,15 +73,24 @@ endchoice
 
 choice SPIRAM_TYPE
     prompt "Type of SPI RAM chip in use"
-    default SPIRAM_TYPE_ESPPSRAM32
+    default SPIRAM_TYPE_AUTO
+
+config SPIRAM_TYPE_AUTO
+    bool "Auto-detect"
 
 config SPIRAM_TYPE_ESPPSRAM32
     bool "ESP-PSRAM32 or IS25WP032"
+
+config SPIRAM_TYPE_ESPPSRAM64
+    bool "ESP-PSRAM64 or LY68L6400"
+
 endchoice
 
 config SPIRAM_SIZE
     int
+    default -1 if SPIRAM_TYPE_AUTO
     default 4194304 if SPIRAM_TYPE_ESPPSRAM32
+    default 8388608 if SPIRAM_TYPE_ESPPSRAM64
     default 0
 
 choice SPIRAM_SPEED
@@ -89,9 +104,10 @@ choice SPIRAM_SPEED
         2. Flash SPI running at 80Mhz and RAM SPI running at 40Mhz
         3. Flash SPI running at 80Mhz and RAM SPI running at 80Mhz
 
-           Note: If the third mode(80Mhz+80Mhz) is enabled, the VSPI port will be occupied by the system.
-                 Application code should never touch VSPI hardware in this case. The option to select
-                 80MHz will only be visible if the flash SPI speed is also 80MHz. (ESPTOOLPY_FLASHFREQ_80M is true)
+           Note: If the third mode(80Mhz+80Mhz) is enabled for SPI RAM of type 32MBit, one of the HSPI/VSPI host will
+            be occupied by the system. Which SPI host to use can be selected by the config item SPIRAM_OCCUPY_SPI_HOST.
+            Application code should never touch HSPI/VSPI hardware in this case. The option to select
+            80MHz will only be visible if the flash SPI speed is also 80MHz. (ESPTOOLPY_FLASHFREQ_80M is true)
 
 config SPIRAM_SPEED_40M
     bool "40MHz clock speed"
@@ -116,10 +132,33 @@ config SPIRAM_CACHE_WORKAROUND
         Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
         when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
         fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
-        
+
         This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
         with the workaround and located in flash instead.
 
+config SPIRAM_BANKSWITCH_ENABLE
+    bool "Enable bank switching for >4MiB external RAM"
+    default y
+    depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    help
+        The ESP32 only supports 4MiB of external RAM in its address space. The hardware does support larger
+        memories, but these have to be bank-switched in and out of this address space. Enabling this allows you
+        to reserve some MMU pages for this, which allows the use of the esp_himem api to manage these banks.
+
+#Note that this is limited to 62 banks, as esp_spiram_writeback_cache needs some kind of mapping of some banks
+#below that mark to work. We cannot at this moment guarantee this to exist when himem is enabled.
+config SPIRAM_BANKSWITCH_RESERVE
+    int "Amount of 32K pages to reserve for bank switching"
+    depends on SPIRAM_BANKSWITCH_ENABLE
+    default 8
+    range 1 62
+    help
+        Select the amount of banks reserved for bank switching. Note that the amount of RAM allocatable with
+        malloc/esp_heap_alloc_caps will decrease by 32K for each page reserved here.
+
+        Note that this reservation is only actually done if your program actually uses the himem API. Without
+        any himem calls, the reservation is not done and the original amount of memory will be available
+        to malloc/esp_heap_alloc_caps.
 
 config SPIRAM_MALLOC_ALWAYSINTERNAL
     int "Maximum malloc() size, in bytes, to always put in internal memory"
@@ -131,7 +170,7 @@ config SPIRAM_MALLOC_ALWAYSINTERNAL
         than this size in internal memory, while allocations larger than this will be done from external RAM.
         If allocation from the preferred region fails, an attempt is made to allocate from the non-preferred
         region instead, so malloc() will not suddenly fail when either internal or external memory is full.
-        
+
 config WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
     bool "Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, allocate internal memory"
     depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
@@ -143,18 +182,22 @@ config SPIRAM_MALLOC_RESERVE_INTERNAL
     int "Reserve this amount of bytes for data that specifically needs to be in DMA or internal memory"
     depends on SPIRAM_USE_MALLOC
     default 32768
-    range 0 131072
+    range 0 262144
     help
         Because the external/internal RAM allocation strategy is not always perfect, it sometimes may happen
         that the internal memory is entirely filled up. This causes allocations that are specifically done in
-        internal memory, for example the stack for new tasks or memory to service DMA or have memory that's 
-        also available when SPI cache is down, to fail. This option reserves a pool specifically for requests 
+        internal memory, for example the stack for new tasks or memory to service DMA or have memory that's
+        also available when SPI cache is down, to fail. This option reserves a pool specifically for requests
         like that; the memory in this pool is not given out when a normal malloc() is called.
-        
+
         Set this to 0 to disable this feature.
-        
+
         Note that because FreeRTOS stacks are forced to internal memory, they will also use this memory pool;
         be sure to keep this in mind when adjusting this value.
+
+        Note also that the DMA reserved pool may not be one single contiguous memory region, depending on the
+        configured size and the static memory usage of the app.
+
 
 config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
     bool "Allow external memory as an argument to xTaskCreateStatic"
@@ -167,6 +210,29 @@ config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
         to it is in internal memory. If you have a task that needs a large amount of stack and does not call on
         ROM code in any way (no direct calls, but also no Bluetooth/WiFi), you can try to disable this and use
         xTaskCreateStatic to create the tasks stack in external memory.
+
+config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    bool "Allow .bss segment placed in external memory"
+    default n
+    depends on SPIRAM_SUPPORT
+    help
+        If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed
+        in PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
+        to external memory defaultly.
+
+choice SPIRAM_OCCUPY_SPI_HOST
+    prompt "SPI host to use for 32MBit PSRAM"
+    default SPIRAM_OCCUPY_VSPI_HOST
+    depends on SPIRAM_SPEED_80M
+    help
+        When both flash and PSRAM is working under 80MHz, and the PSRAM is of type 32MBit, one of the HSPI/VSPI
+        host will be used to output the clock. Select which one to use here.
+
+config SPIRAM_OCCUPY_HSPI_HOST
+    bool "HSPI host (SPI2)"
+config SPIRAM_OCCUPY_VSPI_HOST
+    bool "VSPI host (SPI3)"
+endchoice
 
 endmenu
 
@@ -206,14 +272,16 @@ config TRACEMEM_RESERVE_DRAM
     default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
     default 0x0
 
+menu "Core dump"
+
 choice ESP32_COREDUMP_TO_FLASH_OR_UART
-    prompt "Core dump destination"
+    prompt "Data destination"
     default ESP32_ENABLE_COREDUMP_TO_NONE
     help
         Select place to store core dump: flash, uart or none (to disable core dumps generation).
 
-        If core dump is configured to be stored in flash and custom partition table is used add 
-        corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions 
+        If core dump is configured to be stored in flash and custom partition table is used add
+        corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions
         in the components/partition_table directory.
 
 config ESP32_ENABLE_COREDUMP_TO_FLASH
@@ -232,38 +300,40 @@ config ESP32_ENABLE_COREDUMP
     help
         Enables/disable core dump module.
 
+config ESP32_CORE_DUMP_MAX_TASKS_NUM
+    int "Maximum number of tasks"
+    depends on ESP32_ENABLE_COREDUMP
+    default 64
+    help
+        Maximum number of tasks snapshots in core dump.
+
 config ESP32_CORE_DUMP_UART_DELAY
-    int "Core dump print to UART delay"
+    int "Delay before print to UART"
     depends on ESP32_ENABLE_COREDUMP_TO_UART
     default 0
     help
         Config delay (in ms) before printing core dump to UART.
         Delay can be interrupted by pressing Enter key.
 
-config ESP32_CORE_DUMP_LOG_LEVEL
-    int "Core dump module logging level"
-    depends on ESP32_ENABLE_COREDUMP
-    default 1
-    help
-        Config core dump module logging level (0-5).
+endmenu
 
 choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
     bool "Number of universally administered (by IEEE) MAC address"
     default FOUR_UNIVERSAL_MAC_ADDRESS
     help
         Configure the number of universally administered (by IEEE) MAC addresses.
-        During initialisation, MAC addresses for each network interface are generated or derived from a 
+        During initialisation, MAC addresses for each network interface are generated or derived from a
         single base MAC address.
-        If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap, 
-        Bluetooth and Ethernet) receive a universally administered MAC address. These are generated 
+        If the number of universal MAC addresses is four, all four interfaces (WiFi station, WiFi softap,
+        Bluetooth and Ethernet) receive a universally administered MAC address. These are generated
         sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
-        If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth) 
-        receive a universally administered MAC address. These are generated sequentially by adding 0 
-        and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet) 
-        receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC 
+        If the number of universal MAC addresses is two, only two interfaces (WiFi station and Bluetooth)
+        receive a universally administered MAC address. These are generated sequentially by adding 0
+        and 1 (respectively) to the base MAC address. The remaining two interfaces (WiFi softap and Ethernet)
+        receive local MAC addresses. These are derived from the universal WiFi station and Bluetooth MAC
         addresses, respectively.
-        When using the default (Espressif-assigned) base MAC address, either setting can be used. When using 
-        a custom universal MAC address range, the correct setting will depend on the allocation of MAC 
+        When using the default (Espressif-assigned) base MAC address, either setting can be used. When using
+        a custom universal MAC address range, the correct setting will depend on the allocation of MAC
         addresses in this range (either 2 or 4 per device.)
 
 config TWO_UNIVERSAL_MAC_ADDRESS
@@ -273,7 +343,7 @@ config FOUR_UNIVERSAL_MAC_ADDRESS
 endchoice
 
 config NUMBER_OF_UNIVERSAL_MAC_ADDRESS
-    int 
+    int
     default 2 if TWO_UNIVERSAL_MAC_ADDRESS
     default 4 if FOUR_UNIVERSAL_MAC_ADDRESS
 
@@ -321,10 +391,10 @@ config TIMER_TASK_STACK_SIZE
         to dispatch callbacks of timers created using ets_timer and esp_timer
         APIs. If you are seing stack overflow errors in timer task, increase
         this value.
-        
+
         Note that this is not the same as FreeRTOS timer task. To configure
         FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
-        in "FreeRTOS" menu. 
+        in "FreeRTOS" menu.
 
 choice NEWLIB_STDOUT_LINE_ENDING
     prompt "Line ending for UART output"
@@ -333,15 +403,15 @@ choice NEWLIB_STDOUT_LINE_ENDING
         This option allows configuring the desired line endings sent to UART
         when a newline ('\n', LF) appears on stdout.
         Three options are possible:
-        
+
         CRLF: whenever LF is encountered, prepend it with CR
-        
+
         LF: no modification is applied, stdout is sent as is
-        
+
         CR: each occurence of LF is replaced with CR
-        
+
         This option doesn't affect behavior of the UART driver (drivers/uart.h).
-        
+
 config NEWLIB_STDOUT_LINE_ENDING_CRLF
     bool "CRLF"
 config NEWLIB_STDOUT_LINE_ENDING_LF
@@ -357,15 +427,15 @@ choice NEWLIB_STDIN_LINE_ENDING
         This option allows configuring which input sequence on UART produces
         a newline ('\n', LF) on stdin.
         Three options are possible:
-        
+
         CRLF: CRLF is converted to LF
-        
+
         LF: no modification is applied, input is sent to stdin as is
-        
+
         CR: each occurence of CR is replaced with LF
-        
+
         This option doesn't affect behavior of the UART driver (drivers/uart.h).
-        
+
 config NEWLIB_STDIN_LINE_ENDING_CRLF
     bool "CRLF"
 config NEWLIB_STDIN_LINE_ENDING_LF
@@ -400,7 +470,7 @@ choice CONSOLE_UART
     default CONSOLE_UART_DEFAULT
     help
         Select whether to use UART for console output (through stdout and stderr).
-        
+
         - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
         - If "Custom" is selected, UART0 or UART1 can be chosen,
           and any pins can be selected.
@@ -514,10 +584,10 @@ config ESP32_DEBUG_OCDAWARE
 
 config ESP32_DEBUG_STUBS_ENABLE
     bool "OpenOCD debug stubs"
-    default OPTIMIZATION_LEVEL_DEBUG    
+    default OPTIMIZATION_LEVEL_DEBUG
     depends on !ESP32_TRAX
     help
-        Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging, 
+        Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
         e.g. GCOV data dump.
 
 config INT_WDT
@@ -551,7 +621,7 @@ config TASK_WDT
     help
         The Task Watchdog Timer can be used to make sure individual tasks are still
         running. Enabling this option will cause the Task Watchdog Timer to be
-        initialized automatically at startup. The Task Watchdog timer can be 
+        initialized automatically at startup. The Task Watchdog timer can be
         initialized after startup as well (see Task Watchdog Timer API Reference)
 
 config TASK_WDT_PANIC
@@ -642,6 +712,14 @@ config BROWNOUT_DET_LVL
     default 7 if BROWNOUT_DET_LVL_SEL_7
 
 
+#Reduce PHY TX power when brownout reset
+config REDUCE_PHY_TX_POWER
+    bool "Reduce PHY TX power when brownout reset"
+    depends on BROWNOUT_DET
+    default y
+    help
+        When brownout reset occurs, reduce PHY TX power to keep the code running
+
 # Note about the use of "FRC1" name: currently FRC1 timer is not used for
 # high resolution timekeeping anymore. Instead the esp_timer API, implemented
 # using FRC2 timer, is used.
@@ -657,7 +735,7 @@ choice ESP32_TIME_SYSCALL
           continue in deep sleep. Time will be reported at 1 microsecond
           resolution. This is the default, and the recommended option.
         - If only high-resolution timer is used, gettimeofday will
-          provide time at microsecond resolution. 
+          provide time at microsecond resolution.
           Time will not be preserved when going into deep sleep mode.
         - If only RTC timer is used, timekeeping will continue in
           deep sleep, but time will be measured at 6.(6) microsecond
@@ -684,17 +762,39 @@ choice ESP32_RTC_CLOCK_SOURCE
     help
         Choose which clock is used as RTC clock source.
 
+        - "Internal 150kHz oscillator" option provides lowest deep sleep current
+          consumption, and does not require extra external components. However
+          frequency stability with respect to temperature is poor, so time may
+          drift in deep/light sleep modes.
+        - "External 32kHz crystal" provides better frequency stability, at the
+          expense of slightly higher (1uA) deep sleep current consumption.
+        - "External 32kHz oscillator" allows using 32kHz clock generated by an
+          external circuit. In this case, external clock signal must be connected
+          to 32K_XP pin. Amplitude should be <1.2V in case of sine wave signal,
+          and <1V in case of square wave signal. Common mode voltage should be
+          0.1 < Vcm < 0.5Vamp, where Vamp is the signal amplitude.
+          Additionally, 1nF capacitor must be connected between 32K_XN pin and
+          ground. 32K_XN pin can not be used as a GPIO in this case.
+        - "Internal 8.5MHz oscillator divided by 256" option results in higher
+          deep sleep current (by 5uA) but has better frequency stability than
+          the internal 150kHz oscillator. It does not require external components.
+
 config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
     bool "Internal 150kHz RC oscillator"
 config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
     bool "External 32kHz crystal"
+config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_OSC
+    bool "External 32kHz oscillator at 32K_XP pin"
+config ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256
+    bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
 endchoice
 
 config ESP32_RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
     default 3000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
     default 1024 if ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
-    range 0 125000
+    range 0 27000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL || ESP32_RTC_CLOCK_SOURCE_EXTERNAL_OSC || ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256
+    range 0 32766 if ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
     help
         When the startup code initializes RTC_SLOW_CLK, it can perform
         calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
@@ -702,7 +802,7 @@ config ESP32_RTC_CLK_CAL_CYCLES
         by the calibration routine. Higher numbers increase calibration
         precision, which may be important for applications which spend a lot of
         time in deep sleep. Lower numbers reduce startup time.
-        
+
         When this option is set to 0, clock calibration will not be performed at
         startup, and approximate clock frequencies will be assumed:
 
@@ -717,15 +817,15 @@ config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
     default 5
     range 0 32768
     help
-        To reduce the startup time of an external RTC crystal, 
-        we bootstrap it with a 32kHz square wave for a fixed number of cycles. 
-        Setting 0 will disable bootstrapping (if disabled, the crystal may take 
+        To reduce the startup time of an external RTC crystal,
+        we bootstrap it with a 32kHz square wave for a fixed number of cycles.
+        Setting 0 will disable bootstrapping (if disabled, the crystal may take
         longer to start up or fail to oscillate under some conditions).
-        
-        If this value is too high, a faulty crystal may initially start and then fail. 
+
+        If this value is too high, a faulty crystal may initially start and then fail.
         If this value is too low, an otherwise good crystal may not start.
-        
-        To accurately determine if the crystal has started, 
+
+        To accurately determine if the crystal has started,
         set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
 
 config ESP32_DEEP_SLEEP_WAKEUP_DELAY
@@ -739,9 +839,9 @@ config ESP32_DEEP_SLEEP_WAKEUP_DELAY
         time to pass between power on and first read operation. By default,
         without any extra delay, this time is approximately 900us, although
         some flash chip types need more than that.
-        
+
         By default extra delay is set to 2000us. When optimizing startup time
-        for applications which require it, this value may be reduced. 
+        for applications which require it, this value may be reduced.
 
         If you are seeing "flash read err, 1000" message printed to the
         console after deep sleep reset, try increasing this value.
@@ -832,6 +932,16 @@ config ESP_ERR_TO_NAME_LOOKUP
         This option can be used to turn off the use of the look-up table in
         order to save memory but this comes at the price of sacrificing
         distinguishable (meaningful) output string representations.
+
+config ESP32_RTCDATA_IN_FAST_MEM
+    bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
+    default n
+    depends on FREERTOS_UNICORE
+    help
+        This option allows to place .rtc_data and .rtc_rodata sections into
+        RTC fast memory segment to free the slow memory region for ULP programs.
+        This option depends on the CONFIG_FREERTOS_UNICORE option because RTC fast memory
+        can be accessed only by PRO_CPU core.
 
 endmenu  # ESP32-Specific
 
@@ -967,8 +1077,8 @@ config ESP32_WIFI_CSI_ENABLED
     bool "WiFi CSI(Channel State Information)"
     default n
     help
-        Select this option to enable CSI(Channel State Information) feature. CSI takes about 
-        CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable 
+        Select this option to enable CSI(Channel State Information) feature. CSI takes about
+        CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable
         this feature in order to save memory.
 
 config ESP32_WIFI_AMPDU_TX_ENABLED
@@ -985,7 +1095,7 @@ config ESP32_WIFI_TX_BA_WIN
     default 6
     help
         Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
-        more memory. Most of time we should NOT change the default value unless special reason, e.g. 
+        more memory. Most of time we should NOT change the default value unless special reason, e.g.
         test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
         value is 9~12.
 
@@ -1001,8 +1111,8 @@ config ESP32_WIFI_RX_BA_WIN
     range 2 32
     default 6
     help
-        Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput but 
-        more memory. Most of time we should NOT change the default value unless special reason, e.g.  
+        Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput but
+        more memory. Most of time we should NOT change the default value unless special reason, e.g.
         test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the recommended
         value is 9~12.
 
@@ -1025,6 +1135,25 @@ config ESP32_WIFI_TASK_PINNED_TO_CORE_1
     bool "Core 1"
 endchoice
 
+config ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
+    int "Max length of WiFi SoftAP Beacon"
+    range 752 1256
+    default 752
+    help
+        ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However the default
+        length of a beacon frame can simultaneously hold only five root node identifier structures, meaning that a root node
+        conflict of up to five nodes can be detected at one time. In the occurence of more root nodes conflict involving more
+        than five root nodes, the conflict resolution process will detect five of the root nodes, resolve the conflict, and
+        re-detect more root nodes. This process will repeat until all root node conflicts are resolved. However this process
+        can generally take a very long time.
+
+        To counter this situation, the beacon frame length can be increased such that more root nodes can be detected simultaneously.
+        Each additional root node will require 36 bytes and should be added ontop of the default beacon frame length of
+        752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon frame length as
+        932 (752+36*5).
+
+        Setting a longer beacon length also assists with debugging as the conflicting root nodes can be identified more quickly.
+
 endmenu  # Wi-Fi
 
 menu PHY
@@ -1035,7 +1164,7 @@ config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     help
         If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
         PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
-        will be performed and stored in NVS. Normally, only partial calibration will be performed. 
+        will be performed and stored in NVS. Normally, only partial calibration will be performed.
         If this option is disabled, full calibration will be performed.
 
         If it's easy that your board calibrate bad data, choose 'n'.
@@ -1059,7 +1188,7 @@ config ESP32_PHY_INIT_DATA_IN_PARTITION
         into the application binary.
 
         If unsure, choose 'n'.
-	
+
 config ESP32_PHY_MAX_WIFI_TX_POWER
     int "Max WiFi TX power (dBm)"
     range 0 20
@@ -1085,7 +1214,7 @@ config PM_ENABLE
 		This option has run-time overhead (increased interrupt latency,
 		longer time to enter idle state), and it also reduces accuracy of
 		RTOS ticks and timers used for timekeeping.
-		Enable this option if application uses power management APIs. 
+		Enable this option if application uses power management APIs.
 
 config PM_DFS_INIT_AUTO
 	bool "Enable dynamic frequency scaling (DFS) at startup"
@@ -1122,7 +1251,7 @@ config PM_PROFILING
 		This feature can be used to analyze which locks are preventing the chip
 		from going into a lower power state, and see what time the chip spends
 		in each power saving mode. This feature does incur some run-time
-		overhead, so should typically be disabled in production builds. 
+		overhead, so should typically be disabled in production builds.
 
 config PM_TRACE
 	bool "Enable debug tracing of PM using GPIOs"
@@ -1135,6 +1264,6 @@ config PM_TRACE
 		This feature is intended to be used when analyzing/debugging behavior
 		of power management implementation, and should be kept disabled in
 		applications.
-	
+
 
 endmenu # "Power Management"

@@ -62,14 +62,161 @@ config BOOTLOADER_VDDSDIO_BOOST_1_9V
     bool "1.9V"
 endchoice
 
+config BOOTLOADER_FACTORY_RESET
+    bool "GPIO triggers factory reset"
+    default N
+    help
+        Allows to reset the device to factory settings:
+        - clear one or more data partitions;
+        - boot from "factory" partition.
+        The factory reset will occur if there is a GPIO input pulled low while device starts up.
+        See settings below.
+
+config BOOTLOADER_NUM_PIN_FACTORY_RESET
+    int "Number of the GPIO input for factory reset"
+    depends on BOOTLOADER_FACTORY_RESET
+    range 0 39
+    default 4
+    help
+        The selected GPIO will be configured as an input with internal pull-up enabled.
+        To trigger a factory reset, this GPIO must be pulled low on reset.
+        Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+
+config BOOTLOADER_OTA_DATA_ERASE
+    bool "Clear OTA data on factory reset (select factory partition)"
+    depends on BOOTLOADER_FACTORY_RESET
+    help
+        The device will boot from "factory" partition (or OTA slot 0 if no factory partition is present) after a factory reset.
+
+config BOOTLOADER_DATA_FACTORY_RESET
+     string "Comma-separated names of partitions to clear on factory reset"
+     depends on BOOTLOADER_FACTORY_RESET
+     default "nvs"
+     help
+        Allows customers to select which data partitions will be erased while factory reset.
+        
+        Specify the names of partitions as a comma-delimited with optional spaces for readability. (Like this: "nvs, phy_init, ...")
+        Make sure that the name specified in the partition table and here are the same. 
+        Partitions of type "app" cannot be specified here.
+
+config BOOTLOADER_APP_TEST
+    bool "GPIO triggers boot from test app partition"
+    default N
+    help
+        Allows to run the test app from "TEST" partition.
+        A boot from "test" partition will occur if there is a GPIO input pulled low while device starts up.
+        See settings below.
+
+config BOOTLOADER_NUM_PIN_APP_TEST
+    int "Number of the GPIO input to boot TEST partition"
+    depends on BOOTLOADER_APP_TEST
+    range 0 39
+    default 18
+    help
+        The selected GPIO will be configured as an input with internal pull-up enabled.
+        To trigger a test app, this GPIO must be pulled low on reset.
+        After the GPIO input is deactivated and the device reboots, the old application will boot. 
+        (factory or OTA[x]).
+        Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+
+config BOOTLOADER_HOLD_TIME_GPIO
+    int "Hold time of GPIO for reset/test mode (seconds)"
+    depends on BOOTLOADER_FACTORY_RESET || BOOTLOADER_APP_TEST
+    default 5
+    help
+        The GPIO must be held low continuously for this period of time after reset 
+        before a factory reset or test partition boot (as applicable) is performed.
+
+config BOOTLOADER_WDT_ENABLE
+    bool "Use RTC watchdog in start code"
+    default y
+    help
+        Tracks the execution time of startup code.
+        If the execution time is exceeded, the RTC_WDT will restart system.
+        It is also useful to prevent a lock up in start code caused by an unstable power source.
+        NOTE: Tracks the execution time starts from the bootloader code - re-set timeout, while selecting the source for slow_clk - and ends calling app_main.
+        Re-set timeout is needed due to WDT uses a SLOW_CLK clock source. After changing a frequency slow_clk a time of WDT needs to re-set for new frequency.
+        slow_clk depends on ESP32_RTC_CLOCK_SOURCE (INTERNAL_RC or EXTERNAL_CRYSTAL).
+
+config BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+    bool "Allows RTC watchdog disable in user code"
+    depends on BOOTLOADER_WDT_ENABLE
+    default n
+    help
+        If it is set, the client must itself reset or disable rtc_wdt in their code (app_main()).
+        Otherwise rtc_wdt will be disabled before calling app_main function.
+        Use function rtc_wdt_feed() for resetting counter of rtc_wdt.
+        Use function rtc_wdt_disable() for disabling rtc_wdt.
+
+config BOOTLOADER_WDT_TIME_MS
+    int "Timeout for RTC watchdog (ms)"
+    depends on BOOTLOADER_WDT_ENABLE
+    default 9000
+    range 0 120000
+    help
+        Verify that this parameter is correct and more then the execution time. 
+        Pay attention to options such as reset to factory, trigger test partition and encryption on boot
+        - these options can increase the execution time. 
+        Note: RTC_WDT will reset while encryption operations will be performed.
+
 endmenu  # Bootloader
 
 
 menu "Security features"
 
+# These three are the actual options to check in code,
+# selected by the displayed options
+config SECURE_SIGNED_ON_BOOT
+    bool
+    default y
+    depends on SECURE_BOOT_ENABLED || SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
+
+config SECURE_SIGNED_ON_UPDATE
+    bool
+    default y
+    depends on SECURE_BOOT_ENABLED || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+
+config SECURE_SIGNED_APPS
+   bool
+   default y
+   depends on SECURE_SIGNED_ON_BOOT || SECURE_SIGNED_ON_UPDATE
+
+
+config SECURE_SIGNED_APPS_NO_SECURE_BOOT
+    bool "Require signed app images"
+    default n
+    depends on !SECURE_BOOT_ENABLED
+    help
+        Require apps to be signed to verify their integrity.
+
+        This option uses the same app signature scheme as hardware secure boot, but unlike hardware secure boot it does not prevent the bootloader from being physically updated. This means that the device can be secured against remote network access, but not physical access. Compared to using hardware Secure Boot this option is much simpler to implement.
+
+config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
+    bool "Bootloader verifies app signatures"
+    default n
+    depends on SECURE_SIGNED_APPS_NO_SECURE_BOOT
+    help
+        If this option is set, the bootloader will be compiled with code to verify that an app is signed before booting it.
+
+        If hardware secure boot is enabled, this option is always enabled and cannot be disabled.
+        If hardware secure boot is not enabled, this option doesn't add significant security by itself so most users will want to leave it disabled.
+
+config SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+    bool "Verify app signature on update"
+    default y
+    depends on SECURE_SIGNED_APPS_NO_SECURE_BOOT
+    help
+         If this option is set, any OTA updated apps will have the signature verified before being considered valid.
+
+         When enabled, the signature is automatically checked whenever the esp_ota_ops.h APIs are used for OTA updates,
+         or esp_image_format.h APIs are used to verify apps.
+
+         If hardware secure boot is enabled, this option is always enabled and cannot be disabled.
+         If hardware secure boot is not enabled, this option still adds significant security against network-based attackers by preventing spoofing of OTA updates.
+
 config SECURE_BOOT_ENABLED
-    bool "Enable secure boot in bootloader (READ DOCS FIRST)"
-    default N
+    bool "Enable hardware secure boot in bootloader (READ DOCS FIRST)"
+    default n
     help
         Build a bootloader which enables secure boot on first boot.
 
@@ -77,7 +224,7 @@ config SECURE_BOOT_ENABLED
 
         When enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.
 
-        Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+        Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
 
 choice SECURE_BOOTLOADER_MODE
     bool "Secure bootloader mode"
@@ -104,12 +251,12 @@ endchoice
 
 config SECURE_BOOT_BUILD_SIGNED_BINARIES
      bool "Sign binaries during build"
-     depends on SECURE_BOOT_ENABLED
+     depends on SECURE_SIGNED_APPS
      default y
      help
-        Once secure boot is enabled, bootloader will only boot if partition table and app image are signed.
+        Once secure boot or signed app requirement is enabled, app images are required to be signed.
 
-        If enabled, these binary files are signed as part of the build process. The file named in "Secure boot private signing key" will be used to sign the image.
+        If enabled (default), these binary files are signed as part of the build process. The file named in "Secure boot private signing key" will be used to sign the image.
 
         If disabled, unsigned app/partition data will be built. They must be signed manually using espsecure.py (for example, on a remote signing server.)
 
@@ -118,7 +265,7 @@ config SECURE_BOOT_SIGNING_KEY
      depends on SECURE_BOOT_BUILD_SIGNED_BINARIES
      default secure_boot_signing_key.pem
      help
-        Path to the key file used to sign partition tables and app images for secure boot. Once secure boot is enabled, bootloader will only boot if partition table and app image are signed.
+        Path to the key file used to sign app images.
 
         Key file is an ECDSA private key (NIST256p curve) in PEM format.
 
@@ -131,17 +278,38 @@ config SECURE_BOOT_SIGNING_KEY
 
 config SECURE_BOOT_VERIFICATION_KEY
     string "Secure boot public signature verification key"
-    depends on SECURE_BOOT_ENABLED && !SECURE_BOOT_BUILD_SIGNED_BINARIES
+    depends on SECURE_SIGNED_APPS && !SECURE_BOOT_BUILD_SIGNED_BINARIES
     default signature_verification_key.bin
     help
-       Path to a public key file used to verify signed images. This key is compiled into the bootloader,
-       and may also be used to verify signatures on OTA images after download.
+       Path to a public key file used to verify signed images. This key is compiled into the bootloader and/or app,
+       to verify app images.
 
        Key file is in raw binary format, and can be extracted from a
        PEM formatted private key using the espsecure.py
        extract_public_key command.
 
-       Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+       Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
+
+choice SECURE_BOOTLOADER_KEY_ENCODING
+    bool "Hardware Key Encoding"
+    depends on SECURE_BOOTLOADER_REFLASHABLE
+    default SECURE_BOOTLOADER_NO_ENCODING
+    help
+
+    In reflashable secure bootloader mode, a hardware key is derived from the signing key (with SHA-256) and can be written to efuse
+    with espefuse.py.
+
+    Normally this is a 256-bit key, but if 3/4 Coding Scheme is used on the device then the efuse key is truncated to 192 bits.
+
+    This configuration item doesn't change any firmware code, it only changes the size of key binary which is generated at build time.
+
+config SECURE_BOOTLOADER_KEY_ENCODING_256BIT
+       bool "No encoding (256 bit key)"
+
+config SECURE_BOOTLOADER_KEY_ENCODING_192BIT
+       bool "3/4 encoding (192 bit key)"
+
+endchoice
 
 config SECURE_BOOT_INSECURE
     bool "Allow potentially insecure options"
@@ -152,7 +320,7 @@ config SECURE_BOOT_INSECURE
 
        Only enable these options if you are very sure.
 
-       Refer to https://esp-idf.readthedocs.io/en/latest/security/secure-boot.html before enabling.
+       Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
 
 config FLASH_ENCRYPTION_ENABLED
     bool "Enable flash encryption on boot (READ DOCS FIRST)"
@@ -163,7 +331,7 @@ config FLASH_ENCRYPTION_ENABLED
        Note: After first boot, the system will be permanently encrypted. Re-flashing an encrypted
        system is complicated and not always possible.
 
-       Read https://esp-idf.readthedocs.io/en/latest/security/flash-encryption.html before enabling.
+       Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html before enabling.
 
 config FLASH_ENCRYPTION_INSECURE
     bool "Allow potentially insecure options"
@@ -210,6 +378,13 @@ config SECURE_BOOT_ALLOW_JTAG
 
           Only set this option in testing environments.
 
+config SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+       bool "Allow app partition length not 64KB aligned"
+       depends on SECURE_BOOT_INSECURE
+       help
+           If not set (default), app partition size must be a multiple of 64KB. App images are padded to 64KB length, and the bootloader checks any trailing bytes after the signature (before the next 64KB boundary) have not been written. This is because flash cache maps entire 64KB pages into the address space. This prevents an attacker from appending unverified data after the app image in the flash, causing it to be mapped into the address space.
+
+           Setting this option allows the app partition length to be unaligned, and disables padding of the app image to this length. It is generally not recommended to set this option, unless you have a legacy partitioning scheme which doesn't support 64KB aligned partition lengths.
 
 config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_ENCRYPT
     bool "Leave UART bootloader encryption enabled"

@@ -22,7 +22,6 @@
  *
  ******************************************************************************/
 
-#include <arpa/inet.h>
 #include <pthread.h>
 #include <stdlib.h>
 
@@ -644,10 +643,17 @@ BOOLEAN bta_jv_check_psm(UINT16 psm)
 *******************************************************************************/
 void bta_jv_enable(tBTA_JV_MSG *p_data)
 {
+    tBTA_UTL_COD   cod;
+
     tBTA_JV_STATUS status = BTA_JV_SUCCESS;
     bta_jv_cb.p_dm_cback = p_data->enable.p_cback;
     bta_jv_cb.p_dm_cback(BTA_JV_ENABLE_EVT, (tBTA_JV *)&status, 0);
     memset(bta_jv_cb.free_psm_list, 0, sizeof(bta_jv_cb.free_psm_list));
+
+    /* Set the Class of Device */
+    cod.major = BTM_COD_MAJOR_UNCLASSIFIED;
+    cod.minor = BTM_COD_MINOR_UNCLASSIFIED;
+    utl_set_device_class(&cod, BTA_UTL_SET_COD_MAJOR_MINOR);
 }
 
 /*******************************************************************************
@@ -663,8 +669,6 @@ void bta_jv_enable(tBTA_JV_MSG *p_data)
 void bta_jv_disable (tBTA_JV_MSG *p_data)
 {
     UNUSED(p_data);
-
-    APPL_TRACE_ERROR("%s", __func__);
 }
 
 
@@ -953,6 +957,14 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name, cons
 
     const char *stage = "protocol_list";
     if (!SDP_AddProtocolList(sdp_handle, num_proto_elements, proto_list)){
+        APPL_TRACE_ERROR("create_base_record: failed to create base service "
+                   "record, stage: %s, scn: %d, name: %s, with_obex: %d",
+                   stage, channel, name, with_obex);
+        return FALSE;
+    }
+
+    stage = "profile_descriptor_list";
+    if (!SDP_AddProfileDescriptorList(sdp_handle, UUID_SERVCLASS_SERIAL_PORT, SPP_VERSION)){
         APPL_TRACE_ERROR("create_base_record: failed to create base service "
                    "record, stage: %s, scn: %d, name: %s, with_obex: %d",
                    stage, channel, name, with_obex);

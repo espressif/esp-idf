@@ -1,1 +1,1 @@
-# default config — nothing to set here
+TEST_EXCLUDE_COMPONENTS=libsodium bt app_update

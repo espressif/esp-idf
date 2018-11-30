@@ -18,7 +18,7 @@
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
-#include "apps/sntp/sntp.h"
+#include "lwip/apps/sntp.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
@@ -145,6 +145,7 @@ static void http2_task(void *args)
     }
 
     sh2lib_free(&hd);
+    vTaskDelete(NULL);
 }
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)

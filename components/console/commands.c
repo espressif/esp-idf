@@ -104,7 +104,8 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         /* Prepend a space before the hint. It separates command name and
          * the hint. arg_print_syntax below adds this space as well.
          */
-        asprintf(&item->hint, " %s", cmd->hint);
+        int unused __attribute__((unused));
+        unused = asprintf(&item->hint, " %s", cmd->hint);
     } else if (cmd->argtable) {
         /* Generate hint based on cmd->argtable */
         char *buf = NULL;

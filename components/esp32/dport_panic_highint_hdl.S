@@ -16,7 +16,6 @@
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
-#include <xtensa/simcall.h>
 #include "freertos/xtensa_context.h"
 #include "esp_panic.h"
 #include "sdkconfig.h"

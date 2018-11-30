@@ -271,7 +271,7 @@ TEST_CASE("ulp power consumption in deep sleep", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     ulp_insn_t insn = I_HALT();
-    RTC_SLOW_MEM[0] = *(uint32_t*) &insn;
+    memcpy(&RTC_SLOW_MEM[0], &insn, sizeof(insn));
 
     REG_WRITE(SENS_ULP_CP_SLEEP_CYC0_REG, 0x8000);
 

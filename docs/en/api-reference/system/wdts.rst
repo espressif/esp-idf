@@ -44,7 +44,9 @@ elect to be watched by the TWDT. Each watched task must 'reset' the TWDT
 periodically to indicate that they have been allocated CPU time. If a task does 
 not reset within the TWDT timeout period, a warning will be printed with 
 information about which tasks failed to reset the TWDT in time and which 
-tasks are currently running on the ESP32 CPUs and.
+tasks are currently running on the ESP32 CPUs. 
+And also there is a possibility to redefine the function `esp_task_wdt_isr_user_handler` 
+in the user code to receive this event.
 
 The TWDT is built around the Hardware Watchdog Timer in Timer Group 0. The TWDT
 can be initialized by calling :cpp:func:`esp_task_wdt_init` which will configure

@@ -352,8 +352,8 @@ UINT8 A2D_SetTraceLevel (UINT8 new_level)
 ******************************************************************************/
 UINT8 A2D_BitsSet(UINT8 num)
 {
-    UINT8   count;
-    BOOLEAN res;
+    UINT8 count;
+    UINT8 res;
     if (num == 0) {
         res = A2D_SET_ZERO_BIT;
     } else {

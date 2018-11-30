@@ -1,0 +1,27 @@
+menu "Example Configuration"
+
+config ESP_WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+	SSID (network name) for the example to connect to.
+
+config ESP_WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+    help
+	WiFi password (WPA or WPA2) for the example to use.
+
+config EXAMPLE_PORT
+    string "asio example port number"
+    default "2222"
+    help
+    Port number used by ASIO example
+
+config EXAMPLE_SERVER_IP
+    string "asio example server ip for this client to connect to (leave defalut=FROM_STDIN to enter the server address via serial terminal)"
+    default "FROM_STDIN"
+    help
+    Please set the host name or ip address of corespondant server running
+
+endmenu

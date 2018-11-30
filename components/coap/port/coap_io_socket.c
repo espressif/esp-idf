@@ -374,8 +374,8 @@ coap_network_read(coap_endpoint_t *ep, coap_packet_t **packet) {
 	      }
 
 	      /* local interface for IPv4 */
-	      (*packet)->src.size = sizeof((*packet)->src.addr);
-	      memcpy(&(*packet)->src.addr.sa, &soc_srcipaddr, (*packet)->src.size);
+	      (*packet)->src.size = sizeof((*packet)->src.addr.sa);
+	      memcpy(&((*packet)->src.addr.sa), &soc_srcipaddr, (*packet)->src.size);
 
 	      if (len > coap_get_max_packetlength(*packet)) {
 	         /* FIXME: we might want to send back a response */

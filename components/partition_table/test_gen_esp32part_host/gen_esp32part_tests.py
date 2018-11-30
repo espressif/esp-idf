@@ -7,6 +7,7 @@ import sys
 import subprocess
 import tempfile
 import os
+import io
 sys.path.append("..")
 from gen_esp32part import *
 
@@ -52,8 +53,18 @@ def _strip_trailing_ffs(binary_table):
         binary_table = binary_table[0:len(binary_table)-32]
     return binary_table
 
+class Py23TestCase(unittest.TestCase):
 
-class CSVParserTests(unittest.TestCase):
+    def __init__(self, *args, **kwargs):
+        super(Py23TestCase, self).__init__(*args, **kwargs)
+        try:
+            self.assertRaisesRegex
+        except AttributeError:
+            # assertRaisesRegexp is deprecated in Python3 but assertRaisesRegex doesn't exist in Python2
+            # This fix is used in order to avoid using the alias from the six library
+            self.assertRaisesRegex = self.assertRaisesRegexp
+
+class CSVParserTests(Py23TestCase):
 
     def test_simple_partition(self):
         table = PartitionTable.from_csv(SIMPLE_CSV)
@@ -70,7 +81,7 @@ class CSVParserTests(unittest.TestCase):
 # Name,Type, SubType,Offset,Size
 ihavenotype,
 """
-        with self.assertRaisesRegexp(InputError, "type"):
+        with self.assertRaisesRegex(InputError, "type"):
             PartitionTable.from_csv(csv)
 
 
@@ -161,11 +172,20 @@ second, data, 0x15,         ,  1M
 first, app, factory, 0x100000, 2M
 second, app, ota_0,  0x200000, 1M
 """
-        t = PartitionTable.from_csv(csv)
-        with self.assertRaisesRegexp(InputError, "overlap"):
+        with self.assertRaisesRegex(InputError, "overlap"):
+            t = PartitionTable.from_csv(csv)
             t.verify()
 
-class BinaryOutputTests(unittest.TestCase):
+    def test_unique_name_fail(self):
+        csv = """
+first, app, factory, 0x100000, 1M
+first, app, ota_0,  0x200000, 1M
+"""
+        with self.assertRaisesRegex(InputError, "Partition names must be unique"):
+            t = PartitionTable.from_csv(csv)
+            t.verify()
+            
+class BinaryOutputTests(Py23TestCase):
     def test_binary_entry(self):
         csv = """
 first, 0x30, 0xEE, 0x100400, 0x300000
@@ -205,7 +225,7 @@ first, app, factory,, 1M, encrypted
         self.assertTrue(tr[0].encrypted)
 
 
-class BinaryParserTests(unittest.TestCase):
+class BinaryParserTests(Py23TestCase):
     def test_parse_one_entry(self):
         # type 0x30, subtype 0xee,
         # offset 1MB, size 2MB
@@ -236,10 +256,10 @@ class BinaryParserTests(unittest.TestCase):
         t.verify()
 
         self.assertEqual(3, len(t))
-        self.assertEqual(t[0].type, PartitionDefinition.APP_TYPE)
+        self.assertEqual(t[0].type, APP_TYPE)
         self.assertEqual(t[0].name, "factory")
 
-        self.assertEqual(t[1].type, PartitionDefinition.DATA_TYPE)
+        self.assertEqual(t[1].type, DATA_TYPE)
         self.assertEqual(t[1].name, "data")
 
         self.assertEqual(t[2].type, 0x10)
@@ -254,7 +274,7 @@ class BinaryParserTests(unittest.TestCase):
                     b"\x00\x00\x20\x00" + \
                     b"0123456789abc\0\0\0" + \
                     b"\x00\x00\x00\x00"
-        with self.assertRaisesRegexp(InputError, "Invalid magic bytes"):
+        with self.assertRaisesRegex(InputError, "Invalid magic bytes"):
             PartitionTable.from_binary(bad_magic)
 
     def test_bad_length(self):
@@ -262,11 +282,11 @@ class BinaryParserTests(unittest.TestCase):
                     b"\x00\x00\x10\x00" + \
                     b"\x00\x00\x20\x00" + \
                     b"0123456789"
-        with self.assertRaisesRegexp(InputError, "32 bytes"):
+        with self.assertRaisesRegex(InputError, "32 bytes"):
             PartitionTable.from_binary(bad_length)
 
 
-class CSVOutputTests(unittest.TestCase):
+class CSVOutputTests(Py23TestCase):
 
     def _readcsv(self, source_str):
         return list(csv.reader(source_str.split("\n")))
@@ -307,7 +327,7 @@ class CSVOutputTests(unittest.TestCase):
         roundtrip = PartitionTable.from_csv(as_csv)
         self.assertEqual(roundtrip, table)
 
-class CommandLineTests(unittest.TestCase):
+class CommandLineTests(Py23TestCase):
 
     def test_basic_cmdline(self):
         try:
@@ -319,16 +339,18 @@ class CommandLineTests(unittest.TestCase):
                 f.write(LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to convert binary file to CSV
-            subprocess.check_call([sys.executable, "../gen_esp32part.py",
-                                   binpath, csvpath])
+            output = subprocess.check_output([sys.executable, "../gen_esp32part.py",
+                                   binpath, csvpath], stderr=subprocess.STDOUT)
             # reopen the CSV and check the generated binary is identical
+            self.assertNotIn(b"WARNING", output)
             with open(csvpath, 'r') as f:
                 from_csv = PartitionTable.from_csv(f.read())
             self.assertEqual(_strip_trailing_ffs(from_csv.to_binary()), LONGER_BINARY_TABLE)
 
             # run gen_esp32part.py to conver the CSV to binary again
-            subprocess.check_call([sys.executable, "../gen_esp32part.py",
-                                   csvpath, binpath])
+            output = subprocess.check_output([sys.executable, "../gen_esp32part.py",
+                                              csvpath, binpath], stderr=subprocess.STDOUT)
+            self.assertNotIn(b"WARNING", output)
             # assert that file reads back as identical
             with open(binpath, 'rb') as f:
                 binary_readback = f.read()
@@ -343,18 +365,88 @@ class CommandLineTests(unittest.TestCase):
                     pass
 
 
-class VerificationTests(unittest.TestCase):
+class VerificationTests(Py23TestCase):
 
     def test_bad_alignment(self):
         csv = """
 # Name,Type, SubType,Offset,Size
 app,app, factory, 32K, 1M
 """
-        with self.assertRaisesRegexp(ValidationError,
+        with self.assertRaisesRegex(ValidationError,
                                      r"Offset.+not aligned"):
             t = PartitionTable.from_csv(csv)
             t.verify()
 
+
+    def test_warnings(self):
+        try:
+            sys.stderr = io.StringIO()  # capture stderr
+
+            csv_1 = "app, 1, 2, 32K, 1M\n"
+            PartitionTable.from_csv(csv_1).verify()
+            self.assertIn("WARNING", sys.stderr.getvalue())
+            self.assertIn("partition type", sys.stderr.getvalue())
+
+            sys.stderr = io.StringIO()
+            csv_2 = "ota_0, app, ota_1, , 1M\n"
+            PartitionTable.from_csv(csv_2).verify()
+            self.assertIn("WARNING", sys.stderr.getvalue())
+            self.assertIn("partition subtype", sys.stderr.getvalue())
+
+        finally:
+            sys.stderr = sys.__stderr__
+
+class PartToolTests(Py23TestCase):
+
+    def _run_parttool(self, csvcontents, args):
+        csvpath = tempfile.mktemp()
+        with open(csvpath, "w") as f:
+            f.write(csvcontents)
+        try:
+            output = subprocess.check_output([sys.executable, "../parttool.py"] + args.split(" ") + [ csvpath ],
+                                           stderr=subprocess.STDOUT)
+            self.assertNotIn(b"WARNING", output)
+            m = re.search(b"0x[0-9a-fA-F]+", output)
+            return m.group(0) if m else ""
+        finally:
+            os.remove(csvpath)
+
+    def test_find_basic(self):
+        csv = """
+nvs,      data, nvs,     0x9000,  0x4000
+otadata,  data, ota,     0xd000,  0x2000
+phy_init, data, phy,     0xf000,  0x1000
+factory,  app, factory, 0x10000,  1M
+        """
+        rpt = lambda args: self._run_parttool(csv, args)
+
+        self.assertEqual(
+            rpt("--type data --subtype nvs --offset"), b"0x9000")
+        self.assertEqual(
+            rpt("--type data --subtype nvs --size"), b"0x4000")
+        self.assertEqual(
+            rpt("--partition-name otadata --offset"), b"0xd000")
+        self.assertEqual(
+            rpt("--default-boot-partition --offset"), b"0x10000")
+
+    def test_fallback(self):
+        csv = """
+nvs,      data, nvs,     0x9000,  0x4000
+otadata,  data, ota,     0xd000,  0x2000
+phy_init, data, phy,     0xf000,  0x1000
+ota_0,  app,    ota_0,   0x30000,  1M
+ota_1,  app,    ota_1,          ,  1M
+        """
+        rpt = lambda args: self._run_parttool(csv, args)
+
+        self.assertEqual(
+            rpt("--type app --subtype ota_1 --offset"), b"0x130000")
+        self.assertEqual(
+            rpt("--default-boot-partition --offset"), b"0x30000")  # ota_0
+        csv_mod = csv.replace("ota_0", "ota_2")
+        self.assertEqual(
+            self._run_parttool(csv_mod, "--default-boot-partition --offset"),
+            b"0x130000")  # now default is ota_1
 
 if __name__ =="__main__":
     unittest.main()

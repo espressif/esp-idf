@@ -80,7 +80,10 @@ esp_err_t save_run_time(void)
     uint32_t* run_time = malloc(required_size + sizeof(uint32_t));
     if (required_size > 0) {
         err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
-        if (err != ESP_OK) return err;
+        if (err != ESP_OK) {
+            free(run_time);
+            return err;
+        }
     }
 
     // Write value including previously saved blob if available
@@ -131,7 +134,10 @@ esp_err_t print_what_saved(void)
     } else {
         uint32_t* run_time = malloc(required_size);
         err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
-        if (err != ESP_OK) return err;
+        if (err != ESP_OK) {
+            free(run_time);
+            return err;
+        }
         for (int i = 0; i < required_size / sizeof(uint32_t); i++) {
             printf("%d: %d\n", i + 1, run_time[i]);
         }
@@ -147,7 +153,7 @@ esp_err_t print_what_saved(void)
 void app_main()
 {
     esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         // NVS partition was truncated and needs to be erased
         // Retry nvs_flash_init
         ESP_ERROR_CHECK(nvs_flash_erase());

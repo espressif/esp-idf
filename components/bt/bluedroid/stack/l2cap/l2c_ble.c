@@ -261,6 +261,15 @@ void l2cble_notify_le_connection (BD_ADDR bda)
     tACL_CONN *p_acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE) ;
 
     if (p_lcb != NULL && p_acl != NULL && p_lcb->link_state != LST_CONNECTED) {
+
+        if(p_acl->link_role == HCI_ROLE_SLAVE) {
+            //clear p_cb->state, controller will stop adv when ble connected.
+            tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+            if(p_cb) {
+                p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+                p_cb->state = BTM_BLE_STOP_ADV;
+            }
+        }
         /* update link status */
         btm_establish_continue(p_acl);
         /* update l2cap link status and send callback */
@@ -796,7 +805,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     memcpy(peer_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
 
 #if ( (defined BLE_PRIVACY_SPT) && (BLE_PRIVACY_SPT == TRUE))
-    own_addr_type = btm_cb.ble_ctr_cb.privacy_mode ? BLE_ADDR_RANDOM : BLE_ADDR_PUBLIC;
+    own_addr_type = btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type;
     if(dev_rec_exist) {
         // if the current address information is valid, get the real address information
         if(p_dev_rec->ble.current_addr_valid) {
@@ -804,17 +813,17 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
             memcpy(peer_addr, p_dev_rec->ble.current_addr, 6);
         } else {
             /* find security device information but not find the real address information
-             * This state may be directly open whithout scanning. In this case, you must 
+             * This state may be directly open without scanning. In this case, you must
              * use the current adv address of the device to open*/
-        } 
+        }
     } else {
         //not find security device information, We think this is a new device, connect directly
     }
 
     /* It will cause that scanner doesn't send scan request to advertiser
     * which has sent IRK to us and we have stored the IRK in controller.
-    * It is a design problem of hardware. The temporal solution is not to 
-    * send the key to the controller and then resolve the random address in host.
+    * It is a hardware limitation. The preliminary solution is not to
+    * send key to the controller, but to resolve the random address in host.
     * so we need send the real address information to controller. */
     /*
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {

@@ -11,7 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <pthread.h>
+
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef PTHREAD_STACK_MIN
+#define PTHREAD_STACK_MIN    CONFIG_PTHREAD_STACK_MIN
+#endif
 
 /** pthread configuration structure that influences pthread creation */
 typedef struct {
@@ -32,11 +41,15 @@ typedef struct {
  * then the same configuration is also inherited in the thread
  * subtree.
  *
+ * @note Passing non-NULL attributes to pthread_create() will override
+ *       the stack_size parameter set using this API
+ *
  * @param cfg The pthread config parameters
  *
  * @return
  *      - ESP_OK if configuration was successfully set
  *      - ESP_ERR_NO_MEM if out of memory
+ *      - ESP_ERR_INVALID_ARG if stack_size is less than PTHREAD_STACK_MIN
  */
 esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg);
 
@@ -55,3 +68,6 @@ esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg);
  */
 esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p);
 
+#ifdef __cplusplus
+}
+#endif

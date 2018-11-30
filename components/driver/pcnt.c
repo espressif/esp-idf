@@ -24,6 +24,7 @@
 #define PCNT_COUNT_MODE_ERR_STR "PCNT COUNTER MODE ERROR"
 #define PCNT_CTRL_MODE_ERR_STR  "PCNT CTRL MODE ERROR"
 #define PCNT_EVT_TYPE_ERR_STR   "PCNT value type error"
+#define PCNT_LIMT_VAL_ERR_STR   "PCNT limit value error"
 
 #define PCNT_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
 #define PCNT_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
@@ -221,6 +222,8 @@ esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16
 {
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(!(evt_type == PCNT_EVT_L_LIM && value > 0), PCNT_LIMT_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(!(evt_type == PCNT_EVT_H_LIM && value < 0), PCNT_LIMT_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
     if(evt_type == PCNT_EVT_L_LIM) {
         PCNT.conf_unit[unit].conf2.cnt_l_lim = value;
     } else if(evt_type == PCNT_EVT_H_LIM) {

@@ -65,7 +65,6 @@ TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
     TEST_ASSERT(m1==m2);
 }
 
-
 #if CONFIG_SPIRAM_USE_MALLOC
 
 #if (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
@@ -88,3 +87,43 @@ TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed m
 #endif
 
 #endif
+
+
+/* As you see, we are desperately trying to outsmart the compiler, so that it
+ * doesn't warn about oversized allocations in the next two unit tests.
+ * To be removed when we switch to GCC 8.2 and add
+ * -Wno-alloc-size-larger-than=PTRDIFF_MAX to CFLAGS for this file.
+ */
+void* (*g_test_malloc_ptr)(size_t) = &malloc;
+void* (*g_test_calloc_ptr)(size_t, size_t) = &calloc;
+
+void* test_malloc_wrapper(size_t size)
+{
+    return (*g_test_malloc_ptr)(size);
+}
+
+void* test_calloc_wrapper(size_t count, size_t size)
+{
+    return (*g_test_calloc_ptr)(count, size);
+}
+
+TEST_CASE("alloc overflows should all fail", "[heap]")
+{
+    /* allocates 8 bytes */
+    TEST_ASSERT_NULL(test_calloc_wrapper(SIZE_MAX / 2 + 4, 2));
+
+    /* will overflow if any poisoning is enabled
+       (should fail for sensible OOM reasons, otherwise) */
+    TEST_ASSERT_NULL(test_malloc_wrapper(SIZE_MAX - 1));
+    TEST_ASSERT_NULL(test_calloc_wrapper(SIZE_MAX - 1, 1));
+}
+
+TEST_CASE("unreasonable allocs should all fail", "[heap]")
+{
+    TEST_ASSERT_NULL(test_calloc_wrapper(16, 1024*1024));
+    TEST_ASSERT_NULL(test_malloc_wrapper(16*1024*1024));
+    TEST_ASSERT_NULL(test_malloc_wrapper(SIZE_MAX / 2));
+    TEST_ASSERT_NULL(test_malloc_wrapper(SIZE_MAX - 256));
+    TEST_ASSERT_NULL(test_malloc_wrapper(xPortGetFreeHeapSize() - 1));
+}
+

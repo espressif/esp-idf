@@ -36,6 +36,7 @@ typedef enum {
     BTC_GATTS_ACT_SET_ATTR_VALUE,
     BTC_GATTS_ACT_OPEN,
     BTC_GATTS_ACT_CLOSE,
+    BTC_GATTS_ACT_SEND_SERVICE_CHANGE,
 } btc_gatts_act_t;
 
 /* btc_ble_gatts_args_t */
@@ -140,6 +141,12 @@ typedef union {
     struct close_args {
         uint16_t conn_id;
     } close;
+
+    //BTC_GATTS_ACT_SEND_SERVICE_CHANGE,
+    struct send_service_change_args {
+        esp_gatt_if_t gatts_if;
+        esp_bd_addr_t remote_bda;
+    } send_service_change;
 
 } btc_ble_gatts_args_t;
 

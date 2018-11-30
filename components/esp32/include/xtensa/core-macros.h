@@ -335,7 +335,7 @@
 			__asm__ __volatile__("wsr.intenable %0" :: "a"(__intenable):"memory"); \
 				} while(0)
 # define XTHAL_GET_INTERRUPT()	({ int __interrupt; \
-				__asm__("rsr.interrupt %0" : "=a"(__interrupt)); \
+				__asm__ __volatile__("rsr.interrupt %0" : "=a"(__interrupt)); \
 				__interrupt; })
 # define XTHAL_SET_INTSET(v)	do { int __interrupt = (int)(v); \
 			__asm__ __volatile__("wsr.intset %0" :: "a"(__interrupt):"memory"); \
@@ -344,7 +344,7 @@
 			__asm__ __volatile__("wsr.intclear %0" :: "a"(__interrupt):"memory"); \
 				} while(0)
 # define XTHAL_GET_CCOUNT()	({ int __ccount; \
-				__asm__("rsr.ccount %0" : "=a"(__ccount)); \
+				__asm__ __volatile__("rsr.ccount %0" : "=a"(__ccount)); \
 				__ccount; })
 # define XTHAL_SET_CCOUNT(v)	do { int __ccount = (int)(v); \
 			__asm__ __volatile__("wsr.ccount %0" :: "a"(__ccount):"memory"); \

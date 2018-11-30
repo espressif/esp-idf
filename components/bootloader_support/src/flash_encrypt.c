@@ -15,7 +15,6 @@
 #include <strings.h>
 
 #include "bootloader_flash.h"
-#include "bootloader_random.h"
 #include "esp_image_format.h"
 #include "esp_flash_encrypt.h"
 #include "esp_flash_partitions.h"
@@ -24,6 +23,7 @@
 #include "esp_efuse.h"
 #include "esp_log.h"
 #include "rom/secure_boot.h"
+#include "soc/rtc_wdt.h"
 
 #include "rom/cache.h"
 #include "rom/spi_flash.h"   /* TODO: Remove this */
@@ -62,6 +62,12 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
 
 static esp_err_t initialise_flash_encryption(void)
 {
+    uint32_t coding_scheme = REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_CODING_SCHEME);
+    if (coding_scheme != EFUSE_CODING_SCHEME_VAL_NONE && coding_scheme != EFUSE_CODING_SCHEME_VAL_34) {
+        ESP_LOGE(TAG, "Unknown/unsupported CODING_SCHEME value 0x%x", coding_scheme);
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
     /* Before first flash encryption pass, need to initialise key & crypto config */
 
     /* Generate key */
@@ -79,13 +85,7 @@ static esp_err_t initialise_flash_encryption(void)
         && REG_READ(EFUSE_BLK1_RDATA6_REG) == 0
         && REG_READ(EFUSE_BLK1_RDATA7_REG) == 0) {
         ESP_LOGI(TAG, "Generating new flash encryption key...");
-        uint32_t buf[8];
-        bootloader_fill_random(buf, sizeof(buf));
-        for (int i = 0; i < 8; i++) {
-            ESP_LOGV(TAG, "EFUSE_BLK1_WDATA%d_REG = 0x%08x", i, buf[i]);
-            REG_WRITE(EFUSE_BLK1_WDATA0_REG + 4*i, buf[i]);
-        }
-        bzero(buf, sizeof(buf));
+        esp_efuse_write_random_key(EFUSE_BLK1_WDATA0_REG);
         esp_efuse_burn_new_values();
 
         ESP_LOGI(TAG, "Read & write protecting new key...");
@@ -254,7 +254,7 @@ static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partitio
         ESP_LOGE(TAG, "Failed to read partition table data");
         return err;
     }
-    if (esp_partition_table_basic_verify(partition_table, false, num_partitions) == ESP_OK) {
+    if (esp_partition_table_verify(partition_table, false, num_partitions) == ESP_OK) {
         ESP_LOGD(TAG, "partition table is plaintext. Encrypting...");
         esp_err_t err = esp_flash_encrypt_region(ESP_PARTITION_TABLE_OFFSET,
                                                  FLASH_SECTOR_SIZE);
@@ -281,11 +281,12 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
     if (partition->type == PART_TYPE_APP) {
       /* check if the partition holds a valid unencrypted app */
       esp_image_metadata_t data_ignored;
-      err = esp_image_load(ESP_IMAGE_VERIFY,
+      err = esp_image_verify(ESP_IMAGE_VERIFY,
                            &partition->pos,
                            &data_ignored);
       should_encrypt = (err == ESP_OK);
-    } else if (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA) {
+    } else if ((partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_OTA)
+                || (partition->type == PART_TYPE_DATA && partition->subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
         /* check if we have ota data partition and the partition should be encrypted unconditionally */
         should_encrypt = true;
     }
@@ -317,6 +318,7 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
     }
 
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
+        rtc_wdt_feed();
         uint32_t sec_start = i + src_addr;
         err = bootloader_flash_read(sec_start, buf, FLASH_SECTOR_SIZE, false);
         if (err != ESP_OK) {
@@ -336,4 +338,14 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
  flash_failed:
     ESP_LOGE(TAG, "flash operation failed: 0x%x", err);
     return err;
+}
+
+void esp_flash_write_protect_crypt_cnt() 
+{
+    uint32_t efuse_blk0 = REG_READ(EFUSE_BLK0_RDATA0_REG);
+    bool flash_crypt_wr_dis = efuse_blk0 & EFUSE_WR_DIS_FLASH_CRYPT_CNT;
+    if(!flash_crypt_wr_dis) { 
+        REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_FLASH_CRYPT_CNT);
+        esp_efuse_burn_new_values();
+    }
 }

@@ -76,6 +76,11 @@ typedef enum {
     HTTP_METHOD_PUT,        /*!< HTTP PUT Method */
     HTTP_METHOD_PATCH,      /*!< HTTP PATCH Method */
     HTTP_METHOD_DELETE,     /*!< HTTP DELETE Method */
+    HTTP_METHOD_HEAD,       /*!< HTTP HEAD Method */
+    HTTP_METHOD_NOTIFY,     /*!< HTTP NOTIFY Method */
+    HTTP_METHOD_SUBSCRIBE,  /*!< HTTP SUBSCRIBE Method */
+    HTTP_METHOD_UNSUBSCRIBE,/*!< HTTP UNSUBSCRIBE Method */
+    HTTP_METHOD_OPTIONS,    /*!< HTTP OPTIONS Method */
     HTTP_METHOD_MAX,
 } esp_http_client_method_t;
 
@@ -109,6 +114,7 @@ typedef struct {
     esp_http_client_transport_t transport_type;           /*!< HTTP transport type, see `esp_http_client_transport_t` */
     int                         buffer_size;              /*!< HTTP buffer size (both send and receive) */
     void                        *user_data;               /*!< HTTP user_data context */
+    bool                        is_async;                 /*!< Set asynchronous mode, only supported with HTTPS for now */
 } esp_http_client_config_t;
 
 
@@ -118,6 +124,8 @@ typedef struct {
 #define ESP_ERR_HTTP_WRITE_DATA         (ESP_ERR_HTTP_BASE + 3)     /*!< Error write HTTP data */
 #define ESP_ERR_HTTP_FETCH_HEADER       (ESP_ERR_HTTP_BASE + 4)     /*!< Error read HTTP header from server */
 #define ESP_ERR_HTTP_INVALID_TRANSPORT  (ESP_ERR_HTTP_BASE + 5)     /*!< There are no transport support for the input scheme */
+#define ESP_ERR_HTTP_CONNECTING         (ESP_ERR_HTTP_BASE + 6)     /*!< HTTP connection hasn't been established yet */
+#define ESP_ERR_HTTP_EAGAIN             (ESP_ERR_HTTP_BASE + 7)     /*!< Mapping of errno EAGAIN to esp_err_t */
 
 /**
  * @brief      Start a HTTP session
@@ -131,12 +139,15 @@ typedef struct {
  *     - `esp_http_client_handle_t`
  *     - NULL if any errors
  */
-esp_http_client_handle_t esp_http_client_init(esp_http_client_config_t *config);
+esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config);
 
 /**
  * @brief      Invoke this function after `esp_http_client_init` and all the options calls are made, and will perform the
  *             transfer as described in the options. It must be called with the same esp_http_client_handle_t as input as the esp_http_client_init call returned.
- *             esp_http_client_perform performs the entire request in a blocking manner and returns when done, or if it failed.
+ *             esp_http_client_perform performs the entire request in either blocking or non-blocking manner. By default, the API performs request in a blocking manner and returns when done,
+ *             or if it failed, and in non-blocking manner, it returns if EAGAIN/EWOULDBLOCK or EINPROGRESS is encountered, or if it failed. And in case of non-blocking request,
+ *             the user may call this API multiple times unless request & response is complete or there is a failure. To enable non-blocking esp_http_client_perform(), `is_async` member of esp_http_client_config_t
+ *             must be set while making a call to esp_http_client_init() API.
  *             You can do any amount of calls to esp_http_client_perform while using the same esp_http_client_handle_t. The underlying connection may be kept open if the server allows it.
  *             If you intend to transfer more than one file, you are even encouraged to do so.
  *             esp_http_client will then attempt to re-use the same connection for the following transfers, thus making the operations faster, less CPU intense and using less network resources.
@@ -168,7 +179,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client);
 esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *url);
 
 /**
- * @brief      Set post data, this function must be called before `esp_http_client_finalize_open` or perform
+ * @brief      Set post data, this function must be called before `esp_http_client_perform`.
  *             Note: The data parameter passed to this function is a pointer and this function will not copy the data
  *
  * @param[in]  client  The esp_http_client handle
@@ -204,6 +215,22 @@ int esp_http_client_get_post_field(esp_http_client_handle_t client, char **data)
  *  - ESP_FAIL
  */
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value);
+
+/**
+ * @brief      Get http request header.
+ *             The value parameter will be set to NULL if there is no header which is same as
+ *             the key specified, otherwise the address of header value will be assigned to value parameter.
+ *             This function must be called after `esp_http_client_init`.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[in]  key     The header key
+ * @param[out] value   The header value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
 
 /**
  * @brief      Set http request method
@@ -266,7 +293,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client);
 
 
 /**
- * @brief      Check response data is chunked, must call after `esp_http_client_finalize_open`
+ * @brief      Check response data is chunked
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -289,7 +316,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 
 
 /**
- * @brief      Get http response status code, the valid value if this function invoke after `esp_http_client_perform` or `esp_http_client_finalize_open`
+ * @brief      Get http response status code, the valid value if this function invoke after `esp_http_client_perform`
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -299,7 +326,7 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
 
 /**
  * @brief      Get http response content length (from header Content-Length)
- *             the valid value if this function invoke after `esp_http_client_perform` or `esp_http_client_finalize_open`
+ *             the valid value if this function invoke after `esp_http_client_perform`
  *
  * @param[in]  client  The esp_http_client handle
  *
@@ -334,6 +361,17 @@ esp_err_t esp_http_client_close(esp_http_client_handle_t client);
  */
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client);
 
+/**
+ * @brief      Get transport type
+ *
+ * @param[in]  client   The esp_http_client handle
+ *
+ * @return
+ *     - HTTP_TRANSPORT_UNKNOWN
+ *     - HTTP_TRANSPORT_OVER_TCP
+ *     - HTTP_TRANSPORT_OVER_SSL
+ */
+esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client);
 
 
 #ifdef __cplusplus

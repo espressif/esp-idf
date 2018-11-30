@@ -590,8 +590,16 @@ static BT_HDR *smp_build_id_addr_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, SMP_OPCODE_ID_ADDR);
-        UINT8_TO_STREAM (p, 0);
-        BDADDR_TO_STREAM (p, controller_get_interface()->get_address()->address);
+        /* Identity Address Information is used in the Transport Specific Key Distribution phase to distribute 
+        its public device address or static random address. if slave using static random address is encrypted,
+        it should distribute its static random address */
+        if(btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && memcmp(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr,6) == 0) {
+            UINT8_TO_STREAM (p, 0x01);
+            BDADDR_TO_STREAM (p, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
+        } else {
+            UINT8_TO_STREAM (p, 0);
+            BDADDR_TO_STREAM (p, controller_get_interface()->get_address()->address);
+        }
 
         p_buf->offset = L2CAP_MIN_OFFSET;
         p_buf->len = SMP_ID_ADDR_SIZE;
@@ -877,16 +885,21 @@ void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b)
 ** Returns          void
 **
 *******************************************************************************/
-void smp_cb_cleanup(tSMP_CB   *p_cb)
+void smp_cb_cleanup(tSMP_CB *p_cb)
 {
     tSMP_CALLBACK   *p_callback = p_cb->p_callback;
     UINT8           trace_level = p_cb->trace_level;
-
+    UINT32          static_passkey = p_cb->static_passkey;
+    BOOLEAN         use_static_passkey = p_cb->use_static_passkey;
     SMP_TRACE_EVENT("smp_cb_cleanup\n");
 
     memset(p_cb, 0, sizeof(tSMP_CB));
     p_cb->p_callback = p_callback;
     p_cb->trace_level = trace_level;
+    if(use_static_passkey) {
+        p_cb->use_static_passkey = use_static_passkey;
+        p_cb->static_passkey = static_passkey;
+    }
 }
 
 /*******************************************************************************
@@ -957,9 +970,10 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 
     evt_data.cmplt.reason = p_cb->status;
     evt_data.cmplt.smp_over_br = p_cb->smp_over_br;
-
+    evt_data.cmplt.auth_mode = 0;
     if (p_cb->status == SMP_SUCCESS) {
         evt_data.cmplt.sec_level = p_cb->sec_level;
+        evt_data.cmplt.auth_mode = p_cb->auth_mode;
     }
 
     evt_data.cmplt.is_pair_cancel  = FALSE;

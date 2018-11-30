@@ -1,0 +1,13 @@
+menu "mDNS"
+
+config MDNS_MAX_SERVICES
+    int "Max number of services"
+    range 1 64
+    default 10
+    help
+        Services take up a certain amount of memory, and allowing fewer
+        services to be open at the same time conserves memory. Specify
+        the maximum amount of services here. The valid value is from 1
+        to 64.
+        
+endmenu

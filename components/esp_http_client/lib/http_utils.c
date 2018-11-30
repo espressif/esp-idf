@@ -63,8 +63,14 @@ char *http_utils_assign_string(char **str, const char *new_str, int len)
 
 void http_utils_trim_whitespace(char **str)
 {
-    char *end;
-    char *start = *str;
+    char *end, *start;
+    if (str == NULL) {
+        return;
+    }
+    start = *str;
+    if (start == NULL) {
+        return;
+    }
     // Trim leading space
     while (isspace((unsigned char)*start)) start ++;
 
@@ -116,10 +122,4 @@ int http_utils_str_starts_with(const char *str, const char *start)
         }
     }
     return 0;
-}
-
-void http_utils_ms_to_timeval(int timeout_ms, struct timeval *tv)
-{
-    tv->tv_sec = timeout_ms / 1000;
-    tv->tv_usec = (timeout_ms - (tv->tv_sec * 1000)) * 1000;
 }

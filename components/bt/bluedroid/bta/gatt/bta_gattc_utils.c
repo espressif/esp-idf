@@ -229,7 +229,7 @@ tBTA_GATTC_CLCB *bta_gattc_clcb_alloc(tBTA_GATTC_IF client_if, BD_ADDR remote_bd
             p_clcb->status          = BTA_GATT_OK;
             p_clcb->transport       = transport;
             bdcpy(p_clcb->bda, remote_bda);
-
+            p_clcb->searched_service_source = BTA_GATTC_SERVICE_INFO_FROM_UNKNOWN;
             p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
             if (p_clcb->p_cmd_list == NULL) {
                 p_clcb->p_cmd_list = list_new(osi_free_func);
@@ -578,13 +578,14 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV *p_srcb, UINT16 conn_id,
             for (i = 0 ; i < BTA_GATTC_NOTIF_REG_MAX; i ++) {
                 if (p_clrcb->notif_reg[i].in_use &&
                     !bdcmp(p_clrcb->notif_reg[i].remote_bda, remote_bda))
-
+                {
                     /* It's enough to get service or characteristic handle, as
                      * clear boundaries are always around service.
                      */
                     handle = p_clrcb->notif_reg[i].handle;
                     if (handle >= start_handle && handle <= end_handle)
                         memset(&p_clrcb->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
+                }
             }
         }
     } else {

@@ -20,7 +20,6 @@
 #include "rom/ets_sys.h"
 #include "esp_app_trace.h"
 
-#define LOG_LOCAL_LEVEL ESP_LOG_ERROR
 #include "esp_log.h"
 const static char *TAG = "segger_rtt";
 
@@ -125,7 +124,7 @@ unsigned SEGGER_RTT_WriteSkipNoLock(unsigned BufferIndex, const void* pBuffer, u
   uint8_t event_id = *pbuf;
 
   if (NumBytes > SYSVIEW_EVENTS_BUF_SZ) {
-      ESP_LOGE(TAG, "Too large event %d bytes!", NumBytes);
+      ESP_LOGE(TAG, "Too large event %u bytes!", NumBytes);
       return 0;
   }
   if (xPortGetCoreID()) { // dual core specific code

@@ -17,8 +17,11 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
+#include "soc_log.h"
 
 #define MHZ (1000000)
+
+static const char* TAG = "rtc_time";
 
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
@@ -35,11 +38,12 @@
 /**
  * @brief Clock calibration function used by rtc_clk_cal and rtc_clk_cal_ratio
  * @param cal_clk which clock to calibrate
- * @param slowclk_cycles number of slow clock cycles to count
+ * @param slowclk_cycles number of slow clock cycles to count. Max value is 32766.
  * @return number of XTAL clock cycles within the given number of slow clock cycles
  */
 static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
+    assert(slowclk_cycles < 32767);
     /* Enable requested clock (150k clock is always on) */
     int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
@@ -66,6 +70,17 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
         expected_freq = 150000; /* 150k internal oscillator */
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
+    /* Check if the required number of slowclk_cycles may result in an overflow of TIMG_RTC_CALI_VALUE */
+    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
+        /* XTAL frequency is not known yet; assume worst case (40 MHz) */
+        xtal_freq = RTC_XTAL_FREQ_40M;
+    }
+    const uint32_t us_timer_max =  TIMG_RTC_CALI_VALUE / (uint32_t) xtal_freq;
+    if (us_time_estimate >= us_timer_max) {
+        SOC_LOGE(TAG, "slowclk_cycles value too large, possible overflow");
+        return 0;
+    }
     /* Start calibration */
     CLEAR_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);
     SET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START);

@@ -127,25 +127,28 @@ esp_err_t IRAM_ATTR spi_flash_mmap(size_t src_addr, size_t size, spi_flash_mmap_
     // region which should be mapped
     int phys_page = src_addr / SPI_FLASH_MMU_PAGE_SIZE;
     int page_count = (size + SPI_FLASH_MMU_PAGE_SIZE - 1) / SPI_FLASH_MMU_PAGE_SIZE;
-    //prepare a linear pages array to feed into spi_flash_mmap_pages
-    int *pages=malloc(sizeof(int)*page_count);
-    if (pages==NULL) {
+    // prepare a linear pages array to feed into spi_flash_mmap_pages
+    int *pages = heap_caps_malloc(sizeof(int)*page_count, MALLOC_CAP_INTERNAL);
+    if (pages == NULL) {
         return ESP_ERR_NO_MEM;
     }
     for (int i = 0; i < page_count; i++) {
         pages[i] = phys_page+i;
     }
-    ret=spi_flash_mmap_pages(pages, page_count, memory, out_ptr, out_handle);
+    ret = spi_flash_mmap_pages(pages, page_count, memory, out_ptr, out_handle);
     free(pages);
     return ret;
 }
 
-esp_err_t IRAM_ATTR spi_flash_mmap_pages(int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
+esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, spi_flash_mmap_memory_t memory,
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
     bool did_flush, need_flush = false;
     if (!page_count) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (!esp_ptr_internal(pages)) {
         return ESP_ERR_INVALID_ARG;
     }
     for (int i = 0; i < page_count; i++) {
@@ -283,23 +286,41 @@ void IRAM_ATTR spi_flash_munmap(spi_flash_mmap_handle_t handle)
     free(it);
 }
 
+static void IRAM_ATTR NOINLINE_ATTR spi_flash_protected_mmap_init()
+{
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    spi_flash_mmap_init();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+}
+
+static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int index)
+{
+    uint32_t value;
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    value = DPORT_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[index]);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+    return value;
+}
+
 void spi_flash_mmap_dump()
 {
-    spi_flash_mmap_init();
+    spi_flash_protected_mmap_init();
+
     mmap_entry_t* it;
     for (it = LIST_FIRST(&s_mmap_entries_head); it != NULL; it = LIST_NEXT(it, entries)) {
         printf("handle=%d page=%d count=%d\n", it->handle, it->page, it->count);
     }
     for (int i = 0; i < REGIONS_COUNT * PAGES_PER_REGION; ++i) {
         if (s_mmap_page_refcnt[i] != 0) {
-            printf("page %d: refcnt=%d paddr=%d\n",
-                    i, (int) s_mmap_page_refcnt[i], DPORT_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]));
+            uint32_t paddr = spi_flash_protected_read_mmu_entry(i);
+            printf("page %d: refcnt=%d paddr=%d\n", i, (int) s_mmap_page_refcnt[i], paddr);
         }
     }
 }
 
-uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
+uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
 {
+    spi_flash_disable_interrupts_caches_and_other_cpu();
     spi_flash_mmap_init();
     int count = 0;
     int region_begin;   // first page to check
@@ -312,7 +333,8 @@ uint32_t spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
             count++;
         }
     }
-   DPORT_INTERRUPT_RESTORE();
+    DPORT_INTERRUPT_RESTORE();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
     return count;
 }
 
@@ -381,7 +403,6 @@ static inline IRAM_ATTR bool update_written_pages(size_t start_addr, size_t leng
     return false;
 }
 
-
 uint32_t spi_flash_cache2phys(const void *cached)
 {
     intptr_t c = (intptr_t)cached;
@@ -402,7 +423,7 @@ uint32_t spi_flash_cache2phys(const void *cached)
         /* cached address was not in IROM or DROM */
         return SPI_FLASH_CACHE2PHYS_FAIL;
     }
-    uint32_t phys_page = DPORT_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[cache_page]);
+    uint32_t phys_page = spi_flash_protected_read_mmu_entry(cache_page);
     if (phys_page == INVALID_ENTRY_VAL) {
         /* page is not mapped */
         return SPI_FLASH_CACHE2PHYS_FAIL;
@@ -411,8 +432,7 @@ uint32_t spi_flash_cache2phys(const void *cached)
     return phys_offs | (c & (SPI_FLASH_MMU_PAGE_SIZE-1));
 }
 
-
-const void *spi_flash_phys2cache(uint32_t phys_offs, spi_flash_mmap_memory_t memory)
+const void *IRAM_ATTR spi_flash_phys2cache(uint32_t phys_offs, spi_flash_mmap_memory_t memory)
 {
     uint32_t phys_page = phys_offs / SPI_FLASH_MMU_PAGE_SIZE;
     int start, end, page_delta;
@@ -429,15 +449,18 @@ const void *spi_flash_phys2cache(uint32_t phys_offs, spi_flash_mmap_memory_t mem
         base = VADDR1_START_ADDR;
         page_delta = 64;
     }
+    spi_flash_disable_interrupts_caches_and_other_cpu();
     DPORT_INTERRUPT_DISABLE();
     for (int i = start; i < end; i++) {
         if (DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]) == phys_page) {
             i -= page_delta;
             intptr_t cache_page =  base + (SPI_FLASH_MMU_PAGE_SIZE * i);
             DPORT_INTERRUPT_RESTORE();
+            spi_flash_enable_interrupts_caches_and_other_cpu();
             return (const void *) (cache_page | (phys_offs & (SPI_FLASH_MMU_PAGE_SIZE-1)));
         }
     }
     DPORT_INTERRUPT_RESTORE();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
     return NULL;
 }

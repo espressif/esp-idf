@@ -36,7 +36,7 @@ extern "C" {
 #define RX_BUFF_SIZE                     0x100
 #define TX_BUFF_SIZE                     100
 
-//uart int enalbe register ctrl bits
+//uart int enable register ctrl bits
 #define UART_RCV_INTEN                   BIT0
 #define UART_TRX_INTEN                   BIT1
 #define UART_LINE_STATUS_INTEN           BIT2
@@ -267,9 +267,11 @@ void uart_tx_flush(uint8_t uart_no);
   * here for compatibility.
   */
 static inline void IRAM_ATTR uart_tx_wait_idle(uint8_t uart_no) {
-    while(REG_GET_FIELD(UART_STATUS_REG(uart_no), UART_ST_UTX_OUT)) {
-        ;
-    }
+    uint32_t status;
+    do {
+        status = READ_PERI_REG(UART_STATUS_REG(uart_no));
+        /* either tx count or state is non-zero */
+    } while ((status & (UART_ST_UTX_OUT_M | UART_TXFIFO_CNT_M)) != 0);
 }
 
 /**
@@ -299,14 +301,14 @@ char uart_rx_one_char_block(void);
   *
   * @param  uint8_t *pString : the pointer to store the string.
   *
-  * @param  uint8_t MaxStrlen : the max string length, incude '\0'.
+  * @param  uint8_t MaxStrlen : the max string length, include '\0'.
   *
   * @return OK.
   */
 STATUS UartRxString(uint8_t *pString, uint8_t MaxStrlen);
 
 /**
-  * @brief Process uart recevied information in the interrupt handler.
+  * @brief Process uart received information in the interrupt handler.
   *        Please do not call this function in SDK.
   *
   * @param  void *para : the message receive buffer.

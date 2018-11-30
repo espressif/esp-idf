@@ -136,6 +136,18 @@ static void http_rest()
         ESP_LOGE(TAG, "HTTP DELETE request failed: %s", esp_err_to_name(err));
     }
 
+    //HEAD
+    esp_http_client_set_url(client, "http://httpbin.org/get");
+    esp_http_client_set_method(client, HTTP_METHOD_HEAD);
+    err = esp_http_client_perform(client);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP HEAD Status = %d, content_length = %d",
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "HTTP HEAD request failed: %s", esp_err_to_name(err));
+    }
+
     esp_http_client_cleanup(client);
 }
 
@@ -296,7 +308,7 @@ static void http_download_chunk()
 
 static void http_perform_as_stream_reader()
 {
-    char *buffer = malloc(MAX_HTTP_RECV_BUFFER);
+    char *buffer = malloc(MAX_HTTP_RECV_BUFFER + 1);
     if (buffer == NULL) {
         ESP_LOGE(TAG, "Cannot malloc http receive buffer");
         return;
@@ -330,6 +342,38 @@ static void http_perform_as_stream_reader()
     free(buffer);
 }
 
+static void https_async()
+{
+    esp_http_client_config_t config = {
+        .url = "https://postman-echo.com/post",
+        .event_handler = _http_event_handler,
+        .is_async = true,
+        .timeout_ms = 5000,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err;
+    const char *post_data = "Using a Palantír requires a person with great strength of will and wisdom. The Palantíri were meant to "
+                            "be used by the Dúnedain to communicate throughout the Realms in Exile. During the War of the Ring, "
+                            "the Palantíri were used by many individuals. Sauron used the Ithil-stone to take advantage of the users "
+                            "of the other two stones, the Orthanc-stone and Anor-stone, but was also susceptible to deception himself.";
+    esp_http_client_set_method(client, HTTP_METHOD_POST);
+    esp_http_client_set_post_field(client, post_data, strlen(post_data));
+    while (1) {
+        err = esp_http_client_perform(client);
+        if (err != ESP_ERR_HTTP_EAGAIN) {
+            break;
+        }
+    }
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %d",
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+
 static void http_test_task(void *pvParameters)
 {
     app_wifi_wait_connected();
@@ -344,6 +388,7 @@ static void http_test_task(void *pvParameters)
     http_redirect_to_https();
     http_download_chunk();
     http_perform_as_stream_reader();
+    https_async();
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
 }
@@ -351,7 +396,7 @@ static void http_test_task(void *pvParameters)
 void app_main()
 {
     esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
       ret = nvs_flash_init();
     }

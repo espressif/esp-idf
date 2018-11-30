@@ -494,20 +494,28 @@ static char * x509_name_attr_str(enum x509_name_attr_type type)
 	switch (type) {
         case X509_NAME_ATTR_NOT_USED:
             strcpy(name_attr, "[N/A]");
+            break;
         case X509_NAME_ATTR_DC:
             strcpy(name_attr, "DC");
+            break;
         case X509_NAME_ATTR_CN:
             strcpy(name_attr, "CN");
+            break;
         case X509_NAME_ATTR_C:
             strcpy(name_attr, "C");
+            break;
         case X509_NAME_ATTR_L:
             strcpy(name_attr, "L");
+            break;
         case X509_NAME_ATTR_ST:
             strcpy(name_attr, "ST");
+            break;
         case X509_NAME_ATTR_O:
             strcpy(name_attr, "O");
+            break;
         case X509_NAME_ATTR_OU:
             strcpy(name_attr, "OU");
+            break;
         default :
             strcpy(name_attr, "?");
 	}
@@ -535,8 +543,7 @@ void x509_name_string(struct x509_name *name, char *buf, size_t len)
 	end = buf + len;
 
 	for (i = 0; i < name->num_attr; i++) {
-		//ret = os_snprintf(pos, end - pos, "%s=%s, ",
-		ret = sprintf(pos, "%s=%s, ",
+		ret = os_snprintf(pos, end - pos, "%s=%s, ",
 				  x509_name_attr_str(name->attr[i].type),
 				  name->attr[i].value);
 		if (ret < 0 || ret >= end - pos)
@@ -552,8 +559,7 @@ void x509_name_string(struct x509_name *name, char *buf, size_t len)
 	}
 
 	if (name->email) {
-		//ret = os_snprintf(pos, end - pos, "/emailAddress=%s",
-		ret = sprintf(pos, "/emailAddress=%s",
+		ret = os_snprintf(pos, end - pos, "/emailAddress=%s",
 				  name->email);
 		if (ret < 0 || ret >= end - pos)
 			goto done;

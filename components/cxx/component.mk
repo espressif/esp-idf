@@ -9,3 +9,4 @@ ifndef CONFIG_CXX_EXCEPTIONS
 COMPONENT_ADD_LDFLAGS += -u __cxx_fatal_exception
 endif
 
+COMPONENT_ADD_INCLUDEDIRS =

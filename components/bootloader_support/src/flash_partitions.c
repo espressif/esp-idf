@@ -20,7 +20,7 @@
 
 static const char *TAG = "flash_parts";
 
-esp_err_t esp_partition_table_basic_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions)
+esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions)
 {
     int md5_found = 0;
     int num_parts;

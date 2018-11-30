@@ -95,7 +95,6 @@ TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE]"
     test_teardown();
 }
 
-
 TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE]")
 {
     test_setup();
@@ -103,10 +102,24 @@ TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
+TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+{
+    test_setup();
+    test_fatfs_truncate_file("/sdcard/truncate.txt");
+    test_teardown();
+}
+
 TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE]")
 {
     test_setup();
     test_fatfs_stat("/sdcard/stat.txt", "/sdcard");
+    test_teardown();
+}
+
+TEST_CASE("(SD) utime sets modification time", "[fatfs][test_env=UT_T1_SDMODE]")
+{
+    test_setup();
+    test_fatfs_utime("/sdcard/utime.txt", "/sdcard");
     test_teardown();
 }
 
@@ -161,9 +174,7 @@ TEST_CASE("(SD) write/read speed test", "[fatfs][sd][test_env=UT_T1_SDMODE][time
 
     const size_t buf_size = 16 * 1024;
     uint32_t* buf = (uint32_t*) calloc(1, buf_size);
-    for (size_t i = 0; i < buf_size / 4; ++i) {
-        buf[i] = esp_random();
-    }
+    esp_fill_random(buf, buf_size);
     const size_t file_size = 1 * 1024 * 1024;
 
     speed_test(buf, 4 * 1024, file_size, true);
@@ -207,6 +218,11 @@ TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fat
     const char* filename_wl = "/spiflash/wl.txt";
     const char* str_sd = "this is sd\n";
     const char* str_wl = "this is spiflash\n";
+
+    /* Erase flash before the firs use */
+    const esp_partition_t *test_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, "flash_test");
+    esp_partition_erase_range(test_partition, 0, test_partition->size);
+    printf("Partition erased: addr- 0x%08x, size- 0x%08x\n", test_partition->address, test_partition->size);
 
     /* Mount FATFS in SD can WL at the same time. Create a file on each FS */
     wl_handle_t wl_handle = WL_INVALID_HANDLE;

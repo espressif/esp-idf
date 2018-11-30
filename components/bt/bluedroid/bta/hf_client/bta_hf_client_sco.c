@@ -46,7 +46,7 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
-        .retrans_effort = BTM_ESCO_RETRANS_POWER,
+        .retrans_effort = BTM_ESCO_RETRANS_OFF,
     },
     /* ESCO CVSD */
     {
@@ -429,7 +429,6 @@ static void bta_hf_client_sco_event(UINT8 event)
     if (event == BTA_HF_CLIENT_SCO_CI_DATA_E) {
         uint16_t pkt_offset = 1 + HCI_SCO_PREAMBLE_SIZE;
         uint16_t len_to_send = 0;
-        uint8_t *p;
         while (true)
         {
             p_buf = osi_malloc(sizeof(BT_HDR) + pkt_offset + BTM_SCO_DATA_SIZE_MAX);
@@ -439,13 +438,13 @@ static void bta_hf_client_sco_event(UINT8 event)
             }
 
             p_buf->offset = pkt_offset;
+            p_buf->len = BTM_SCO_DATA_SIZE_MAX;
             len_to_send = bta_hf_client_sco_co_out_data(p_buf->data + pkt_offset, BTM_SCO_DATA_SIZE_MAX);
-            if (len_to_send) {
+            if (len_to_send == BTM_SCO_DATA_SIZE_MAX) {
+                // expect to get the exact size of data from upper layer
                 if (bta_hf_client_cb.scb.sco_state == BTA_HF_CLIENT_SCO_OPEN_ST) {
-                    p = (UINT8 *)(p_buf->data + pkt_offset -1);
-                    *p = len_to_send; // set SCO packet length;
                     tBTM_STATUS write_stat = BTM_WriteScoData(p_scb->sco_idx, p_buf);
-                    if (write_stat != BTM_SUCCESS && write_stat != BTM_SCO_BAD_LENGTH) {
+                    if (write_stat != BTM_SUCCESS) {
                         break;
                     }
                 } else {

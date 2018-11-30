@@ -206,13 +206,10 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         break;
     case BTA_GATTS_MTU_EVT:
         BLUFI_TRACE_DEBUG("MTU size %d\n", p_data->req_data.p_data->mtu);
-        blufi_env.frag_size = p_data->req_data.p_data->mtu - BLUFI_MTU_RESERVED_SIZE;
+        blufi_env.frag_size = (p_data->req_data.p_data->mtu < BLUFI_MAX_DATA_LEN ? p_data->req_data.p_data->mtu : BLUFI_MAX_DATA_LEN) - BLUFI_MTU_RESERVED_SIZE;
         break;
     case BTA_GATTS_CONF_EVT:
-        BLUFI_TRACE_DEBUG("CONIRM EVT\n");
-        if (p_data && p_data->req_data.value){
-            osi_free(p_data->req_data.value);
-        }
+        BLUFI_TRACE_DEBUG("CONFIRM EVT\n");
         /* Nothing */
         break;
     case BTA_GATTS_CREATE_EVT:

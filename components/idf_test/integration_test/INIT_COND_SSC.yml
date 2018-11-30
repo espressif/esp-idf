@@ -7,6 +7,13 @@
   - - SSC SSC1 ram
     - - 'R SSC1 C +FREEHEAP:'
 
+.dut1_start_wifi: &dut1_start_wifi
+  LIST_MERGE:
+    - - SSC SSC1 op -W -a init
+      - - R SSC1 C +MODE
+    - - SSC SSC1 op -W -a start
+      - - R SSC1 C +MODE
+
 initial condition:
 - tag: APM1
   <<: *SSC_INIT_COND
@@ -14,6 +21,7 @@ initial condition:
     APSTA1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -50,6 +58,7 @@ initial condition:
     condition APSTA2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -94,6 +103,7 @@ initial condition:
     APSTA1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -130,6 +140,7 @@ initial condition:
     APSTA2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 ap -Q
@@ -171,6 +182,7 @@ initial condition:
 - <<: *SSC_INIT_COND
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 upgrade -Q -t 1
     - - R SSC1 C BIN_ID,0
   - - SSC SSC1 upgrade -Q -t 2 -b 0
@@ -214,6 +226,7 @@ initial condition:
   initial condition detail: testing ap on sta + ap mode (autogen by APM1)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 ap -Q
@@ -249,6 +262,7 @@ initial condition:
   initial condition detail: testing ap on sta + ap mode,  PC join AP (autogen by APM2)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 ap -Q
@@ -343,23 +357,27 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA0
     - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -371,23 +389,27 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA0
     - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -413,23 +435,27 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA2
     - - R SSC2 C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -441,23 +467,27 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC2 gatts -S -z load -p 0xA2
     - - R SSC2 C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -483,25 +513,29 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] gatts -S -z load -p 0xA2
     - - R SSC[1-2] C +GATTS:StartService,OK,A002
+  - - SSC SSC[1-2] gattc -F -r <dut[2,1]_bt_mac>
+    - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
   - - SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC2 C +BLE:GattcOpen,OK
-  - - SSC SSC[1-2] gattc -F -r <dut[2-1]_bt_mac>
-    - - R SSC[1-2] C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -513,25 +547,29 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] gatts -S -z load -p 0xA2
     - - R SSC[1-2] C +GATTS:StartService,OK,A002
+  - - SSC SSC[1-2] gattc -F -r <dut[2,1]_bt_mac>
+    - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
     - - R SSC1 C +BLE:GattcConnect,OK
       - P SSC2 C +BLE:GattsConnect
   - - SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC2 C +BLE:GattcOpen,OK
-  - - SSC SSC[1-2] gattc -F -r <dut[2-1]_bt_mac>
-    - - R SSC[1-2] C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -555,16 +593,22 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[2-5] bleadv -D -z start
     - - P SSC[2-5] C +BLEADV:Start,OK
   - - SSC SSC[2-5] gatts -S -z load -p 0xA2
     - - P SSC[2-5] C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
@@ -583,23 +627,27 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[2-5] bleadv -D -z start
     - - P SSC[2-5] C +BLEADV:Start,OK
   - - SSC SSC[2-5] gatts -S -z load -p 0xA2
     - - P SSC[2-5] C +GATTS:StartService,OK,A002
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
     - - R SSC1 RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
       - P SSC{%d} C +BLE:GattsConnect
-  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
-    - - R SSC1 C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -625,23 +673,27 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC1 gatts -S -z load -p 0xA2
     - - R SSC1 C +GATTS:StartService,OK,A002
   - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleadv -D -z start
     - - P SSC1 C +BLEADV:Start,OK
+  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
+    - - R SSC[2-5] C +GATTC:OK
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
       - P SSC1 C +BLE:GattsConnect
-  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
-    - - R SSC[2-5] C +GATTC:OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-5] reboot
@@ -653,14 +705,20 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC1 gatts -S -z load -p 0xA2
     - - R SSC1 C +GATTS:StartService,OK,A002
+  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
+    - - R SSC[2-5] C +GATTC:OK
   - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleadv -D -z start
@@ -668,8 +726,6 @@ initial condition:
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
     - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
       - P SSC1 C +BLE:GattsConnect
-  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
-    - - R SSC[2-5] C +GATTC:OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -695,12 +751,16 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[1-3] gatts -S -z load -p 0xA2
     - - R SSC[1-3] C +GATTS:StartService,OK,A002
   - - LOOP 2 2 "[4,5]" "[4,5]"
@@ -728,12 +788,16 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[1-3] gatts -S -z load -p 0xA2
     - - R SSC[1-3] C +GATTS:StartService,OK,A002
   - - LOOP 2 2 "[4,5]" "[4,5]"
@@ -776,13 +840,15 @@ initial condition:
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
   - - SSC SSC[1-2] blesmp -B -z clear
-    - - R SSC[1-2] C +BLESMP:ClearBond,Succes
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
@@ -816,13 +882,15 @@ initial condition:
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
   - - SSC SSC[1-2] blesmp -B -z clear
-    - - R SSC[1-2] C +BLESMP:ClearBond,Succes
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
@@ -939,6 +1007,8 @@ initial condition:
     - - 'R SSC1 C +BLE:'
   - - SSC SSC1 bleconn -D -z all
     - - 'R SSC1 C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   force restore cmd set:
   - ''
   - - SSC SSC1 reboot
@@ -956,6 +1026,8 @@ initial condition:
     - []
   - - SSC SSC1 bleconn -D -z all
     - - 'R SSC1 C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC1 gatts -S -z delete
     - - 'R SSC1 C +GATTS:'
   - - SSC SSC1 gattc -U -z all
@@ -965,7 +1037,7 @@ initial condition:
 - tag: BLE_INIT2
   <<: *SSC_INIT_COND
   initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    start adv
+    load service 0xA0 and start adv
   check cmd set:
   - ''
   - - SSC SSC[1-2] bt -Q
@@ -993,6 +1065,8 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
@@ -1001,6 +1075,55 @@ initial condition:
     - - R SSC2 C +GATTS:StartService,OK,A000
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
+  - - SSC SSC2 bleadv -L -c 0 -t 3
+    - - R SSC2 C +BLEADV:SetAdv,OK
+  - - SSC SSC2 bleadv -D -z start
+    - - R SSC2 C +BLEADV:OK
+
+  - - SSC SSC1 ram
+    - - R SSC1 A <heap_size>:(\d+)
+- tag: BLE_INIT3
+  <<: *SSC_INIT_COND
+  initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
+    load service 0xA2 and start adv
+  check cmd set:
+  - ''
+  - - SSC SSC[1-2] bt -Q
+    - - R SSC[1-2] C +BT:status,ENABLE
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] bt -D -z init
+    - - 'R SSC[1-2] C +BT:'
+  - - SSC SSC[1-2] bt -D -z enable
+    - - 'R SSC[1-2] C +BT:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - - R SSC[1-2] C !!!ready!!!
+  - - SSC SSC[1-2] bt -D -z init
+    - - 'R SSC[1-2] C +BT:'
+  - - SSC SSC[1-2] bt -D -z enable
+    - - 'R SSC[1-2] C +BT:'
+  restore post cmd set:
+  - ''
+  - - SSC SSC[1-2] ble -R
+    - - 'R SSC[1-2] C +BLE:'
+  - - SSC SSC[1-2] bleconn -D -z all
+    - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
+  - - SSC SSC[1-2] gatts -S -z delete
+    - - 'R SSC[1-2] C +GATTS:'
+  - - SSC SSC[1-2] gattc -U -z all
+    - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
@@ -1037,6 +1160,8 @@ initial condition:
     - - 'R SSC[1-5] C +BLE:'
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
+  - - SSC SSC[1-5] blesmp -B -z clear
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
@@ -1045,12 +1170,16 @@ initial condition:
     - ["P SSC[2-5] C +GATTS:StartService,OK,A000"]
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT_SMP
   <<: *SSC_INIT_COND
   initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    create GATT service 0xA000, DUT2 start adv, SMP enabled on both DUT and DUT1 load
+    create GATT service 0xA002, DUT2 start adv, SMP enabled on both DUT and DUT1 load
     default initiator param, DUT2 load default responder param
   check cmd set:
   - ''
@@ -1069,21 +1198,25 @@ initial condition:
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
   - - SSC SSC[1-2] blesmp -B -z clear
-    - - R SSC[1-2] C +BLESMP:ClearBond,Succes
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] blesmp -L -c [1,0]
     - - R SSC[1-2] C +BLESMP:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
   restore post cmd set:
@@ -1096,21 +1229,25 @@ initial condition:
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
   - - SSC SSC[1-2] blesmp -B -z clear
-    - - R SSC[1-2] C +BLESMP:ClearBond,Succes
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
   - - SSC SSC[1-2] blesmp -L -c [1,0]
     - - R SSC[1-2] C +BLESMP:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT_SMP5
@@ -1135,13 +1272,15 @@ initial condition:
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
   - - SSC SSC[1-5] blesmp -B -z clear
-    - - R SSC[1-5] C +BLESMP:ClearBond,Succes
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[2-5] gatts -S -z load -p 0xA0
     - - R SSC[2-5] C +GATTS:StartService,OK,A000
   - - SSC SSC[2-5] bleadv -L -c 0 -t 3
@@ -1150,6 +1289,10 @@ initial condition:
     - - R SSC[2-5] C +BLEADV:OK
   - - SSC SSC[1-5] blesmp -L -c [1,0]
     - - R SSC[1-5] C +BLESMP:OK
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
+  - - SSC SSC1 ram
+    - - R SSC1 A <heap_size>:(\d+)
   restore post cmd set:
   - ''
   - - SSC SSC[1-5] ble -R
@@ -1157,13 +1300,15 @@ initial condition:
   - - SSC SSC[1-5] bleconn -D -z all
     - - 'R SSC[1-5] C +BLECONN:'
   - - SSC SSC[1-5] blesmp -B -z clear
-    - - R SSC[1-5] C +BLESMP:ClearBond,Succes
+    - - R SSC[1-5] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-5] gatts -S -z delete
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
     - - R SSC[1-5] C +BLEADV:OK
+  - - SSC SSC[1-5] ble -S -z public
+    - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[2-5] gatts -S -z load -p 0xA0
     - - R SSC[2-5] C +GATTS:StartService,OK,A000
   - - SSC SSC[2-5] bleadv -L -c 0 -t 3
@@ -1175,6 +1320,8 @@ initial condition:
   # do wifi disconnect, to prevent wifi reconnect cause bad BLE performance
   - - SSC SSC[1-5] sta -D
     - []
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: NOW1
@@ -1182,6 +1329,7 @@ initial condition:
   initial condition detail: one target in AP mode and espnow is de-initialized
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC1 mac -Q -o 2
@@ -1216,6 +1364,7 @@ initial condition:
     with self role slave
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC[1-<dev_num>] op -Q
     - - R SSC[1-<dev_num>] C +CURMODE:2
   - - SSC SSC[1-<dev_num>] mac -Q -o 3
@@ -1399,6 +1548,7 @@ initial condition:
   initial condition detail: testing sta on sta + ap mode, quit AP (autogen by STAM1)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 sta -D
@@ -1435,6 +1585,7 @@ initial condition:
     by STAM2)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC1 sta -Q
@@ -1471,6 +1622,7 @@ initial condition:
     condition STAAP1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -D
@@ -1507,6 +1659,7 @@ initial condition:
     condition STAAP2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -Q
@@ -1543,6 +1696,7 @@ initial condition:
     condition STAAP1
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -D
@@ -1579,6 +1733,7 @@ initial condition:
     initial condition STAAP2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:1
   - - SSC SSC1 sta -Q
@@ -1681,6 +1836,7 @@ initial condition:
     T2_2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC2 op -Q
@@ -1743,6 +1899,7 @@ initial condition:
     with initial condition T2_2
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
   - - SSC SSC2 op -Q
@@ -1804,6 +1961,7 @@ initial condition:
   initial condition detail: target 1 as AP+STA, target 2 as AP+STA (autogen)
   check cmd set:
   - ''
+  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:3
   - - SSC SSC2 op -Q
@@ -2018,11 +2176,56 @@ initial condition:
     - - 'R SSC[1-2] C +BLE:'
   - - SSC SSC[1-2] bleconn -D -z all
     - - 'R SSC[1-2] C +BLECONN:'
+  - - SSC SSC[1-2] blesmp -B -z clear
+    - - R SSC[1-2] C +BLESMP:ClearBond,Success
   - - SSC SSC[1-2] gatts -S -z delete
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
     - - R SSC[1-2] C +BLEADV:OK
+  - - SSC SSC[1-2] ble -S -z public
+    - - R SSC[1-2] C +BLE:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
+- tag: T3_1
+  <<: *SSC_INIT_COND
+  initial condition detail: target 1 as SoftAP + STA, target 2 as SoftAP, target 3 as STA
+      with initial condition T2_2
+  check cmd set:
+  - ''
+  - *dut1_start_wifi
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:3
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:2
+  - - SSC SSC3 op -Q
+    - - R SSC3 C +CURMODE:1
+  - - SSC SSC3 sta -D
+    - - 'R SSC3 C +QAP:'
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 3
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 2
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC3 op -S -o 1
+    - - R SSC3 C +MODE:OK
+  - - SSC SSC3 sta -D
+    - - 'R SSC3 C +QAP:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC2 reboot
+    - - R SSC2 C !!!ready!!!
+  - - SSC SSC3 reboot
+    - - R SSC3 C !!!ready!!!
+  - - SSC SSC1 op -S -o 3
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 2
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC3 op -S -o 1
+    - - R SSC3 C +MODE:OK
+  - - SSC SSC3 sta -D
+    - - 'R SSC3 C +QAP:'

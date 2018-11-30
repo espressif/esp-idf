@@ -19,18 +19,23 @@
 #include "common/bt_defs.h"
 #include "common/bt_trace.h"
 #include "stack/bt_types.h"
-#include "hci/buffer_allocator.h"
 #include "osi/fixed_queue.h"
 #include "hci/hci_hal.h"
 #include "hci/hci_internals.h"
 #include "hci/hci_layer.h"
 #include "osi/thread.h"
 #include "esp_bt.h"
+#include "stack/hcimsgs.h"
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+#include "l2c_int.h"
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
+extern bool BTU_check_queue_is_congest(void);
 
 
 static const uint8_t preamble_sizes[] = {
@@ -48,7 +53,6 @@ static const uint16_t outbound_event_types[] = {
 };
 
 typedef struct {
-    const allocator_t *allocator;
     size_t buffer_size;
     fixed_queue_t *rx_q;
 } hci_hal_env_t;
@@ -76,7 +80,6 @@ static void hci_hal_env_init(
     assert(buffer_size > 0);
     assert(max_buffer_count > 0);
 
-    hci_hal_env.allocator = buffer_allocator_get_interface();
     hci_hal_env.buffer_size = buffer_size;
 
     hci_hal_env.rx_q = fixed_queue_new(max_buffer_count);
@@ -91,7 +94,8 @@ static void hci_hal_env_init(
 
 static void hci_hal_env_deinit(void)
 {
-    fixed_queue_free(hci_hal_env.rx_q, hci_hal_env.allocator->free);
+    fixed_queue_free(hci_hal_env.rx_q, osi_free_func);
+    hci_hal_env.rx_q = NULL;
 }
 
 static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
@@ -99,14 +103,15 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     assert(upper_callbacks != NULL);
     callbacks = upper_callbacks;
 
-    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, SIZE_MAX);
+    hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, QUEUE_SIZE_MAX);
 
     xHciH4Queue = xQueueCreate(HCI_H4_QUEUE_LEN, sizeof(BtTaskEvt_t));
     xTaskCreatePinnedToCore(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle, HCI_H4_TASK_PINNED_TO_CORE);
 
     //register vhci host cb
-    esp_vhci_host_register_callback(&vhci_host_cb);
-
+    if (esp_vhci_host_register_callback(&vhci_host_cb) != ESP_OK) {
+        return false;
+    }
 
     return true;
 }
@@ -165,6 +170,7 @@ static void hci_hal_h4_rx_handler(void *arg)
         if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
             if (e.sig == SIG_HCI_HAL_RECV_PACKET) {
                 fixed_queue_process(hci_hal_env.rx_q);
+
             }
         }
     }
@@ -178,11 +184,49 @@ task_post_status_t hci_hal_h4_task_post(task_post_t timeout)
     evt.par = 0;
 
     if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
-        HCI_TRACE_ERROR("xHciH4Queue failed\n");
         return TASK_POST_SUCCESS;
     }
 
     return TASK_POST_FAIL;
+}
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+static void hci_packet_complete(BT_HDR *packet){
+    uint8_t type, num_handle;
+    uint16_t handle;
+    uint16_t handles[MAX_L2CAP_LINKS + 4];
+    uint16_t num_packets[MAX_L2CAP_LINKS + 4];
+    uint8_t *stream = packet->data + packet->offset;
+    tL2C_LCB  *p_lcb = NULL;
+
+    STREAM_TO_UINT8(type, stream);
+    if (type == DATA_TYPE_ACL/* || type == DATA_TYPE_SCO*/) {
+        STREAM_TO_UINT16(handle, stream);
+        handle = handle & HCI_DATA_HANDLE_MASK;
+        p_lcb = l2cu_find_lcb_by_handle(handle);
+        if (p_lcb) {
+            p_lcb->completed_packets++;
+        }
+        if (esp_vhci_host_check_send_available()){
+            num_handle = l2cu_find_completed_packets(handles, num_packets);
+            if (num_handle > 0){
+                btsnd_hcic_host_num_xmitted_pkts (num_handle, handles, num_packets);
+            }
+        } else {
+            //Send HCI_Host_Number_of_Completed_Packets next time.
+        }
+
+    }
+}
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
+bool host_recv_adv_packet(BT_HDR *packet)
+{
+    assert(packet);
+    if(packet->data[0] == DATA_TYPE_EVENT && packet->data[1] == HCI_BLE_EVENT && packet->data[3] ==  HCI_BLE_ADV_PKT_RPT_EVT) {
+        return true;
+    }
+    return false;
 }
 
 static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
@@ -194,6 +238,11 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     if (!packet) {
         return;
     }
+
+#if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
+    hci_packet_complete(packet);
+#endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+
     STREAM_TO_UINT8(type, stream);
     packet->offset++;
     packet->len--;
@@ -202,21 +251,21 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
         STREAM_TO_UINT8(len, stream);
         HCI_TRACE_ERROR("Workround stream corrupted during LE SCAN: pkt_len=%d ble_event_len=%d\n",
                   packet->len, len);
-        hci_hal_env.allocator->free(packet);
+        osi_free(packet);
         return;
     }
     if (type < DATA_TYPE_ACL || type > DATA_TYPE_EVENT) {
         HCI_TRACE_ERROR("%s Unknown HCI message type. Dropping this byte 0x%x,"
                   " min %x, max %x\n", __func__, type,
                   DATA_TYPE_ACL, DATA_TYPE_EVENT);
-        hci_hal_env.allocator->free(packet);
+        osi_free(packet);
         return;
     }
     hdr_size = preamble_sizes[type - 1];
     if (packet->len < hdr_size) {
         HCI_TRACE_ERROR("Wrong packet length type=%d pkt_len=%d hdr_len=%d",
                   type, packet->len, hdr_size);
-        hci_hal_env.allocator->free(packet);
+        osi_free(packet);
         return;
     }
     if (type == DATA_TYPE_ACL) {
@@ -230,9 +279,16 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
     if ((length + hdr_size) != packet->len) {
         HCI_TRACE_ERROR("Wrong packet length type=%d hdr_len=%d pd_len=%d "
                   "pkt_len=%d", type, hdr_size, length, packet->len);
-        hci_hal_env.allocator->free(packet);
+        osi_free(packet);
         return;
     }
+#if SCAN_QUEUE_CONGEST_CHECK
+    if(BTU_check_queue_is_congest() && host_recv_adv_packet(packet)) {
+        HCI_TRACE_ERROR("BtuQueue is congested");
+        osi_free(packet);
+        return;
+    }
+#endif
 
     packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
     callbacks->packet_ready(packet);
@@ -260,8 +316,13 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     BT_HDR *pkt;
     size_t pkt_size;
 
+    if (hci_hal_env.rx_q == NULL) {
+        return 0;
+    }
+
     pkt_size = BT_HDR_SIZE + len;
-    pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
+    pkt = (BT_HDR *) osi_calloc(pkt_size);
+    //pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
     if (!pkt) {
         HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
         return -1;
@@ -271,7 +332,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
     fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-    hci_hal_h4_task_post(TASK_POST_BLOCKING);
+    hci_hal_h4_task_post(0);
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 

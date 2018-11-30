@@ -52,6 +52,7 @@
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
+#define BT_SSP_INCLUDED             TRUE
 
 #if CONFIG_A2DP_ENABLE
 #define BTA_AR_INCLUDED             TRUE
@@ -94,6 +95,10 @@
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
 
+#ifndef CONFIG_GATTC_CACHE_NVS_FLASH
+#define CONFIG_GATTC_CACHE_NVS_FLASH         FALSE
+#endif /* CONFIG_GATTC_CACHE_NVS_FLASH */
+
 /******************************************************************************
 **
 ** BLE features
@@ -111,13 +116,19 @@
 #define GATTC_INCLUDED              FALSE
 #endif  /* CONFIG_GATTC_ENABLE */
 
+#if (CONFIG_GATTC_ENABLE && CONFIG_GATTC_CACHE_NVS_FLASH)
+#define GATTC_CACHE_NVS              TRUE
+#else
+#define GATTC_CACHE_NVS              FALSE
+#endif  /* CONFIG_GATTC_CACHE_NVS_FLASH */
+
 #if (CONFIG_SMP_ENABLE)
 #define SMP_INCLUDED              TRUE
 #define BLE_PRIVACY_SPT           TRUE
 #else
 #define SMP_INCLUDED              FALSE
 #define BLE_PRIVACY_SPT           FALSE
-#endif  /* CONFIG_GATTC_ENABLE */
+#endif  /* CONFIG_SMP_ENABLE */
 
 #if (CONFIG_BT_ACL_CONNECTIONS)
 #define MAX_ACL_CONNECTIONS  CONFIG_BT_ACL_CONNECTIONS
@@ -297,6 +308,22 @@
 #define BTA_AV_CO_CP_SCMS_T  FALSE//FALSE
 #endif
 
+#ifndef QUEUE_CONGEST_SIZE
+#define  QUEUE_CONGEST_SIZE    40
+#endif
+
+#ifndef CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
+#define SCAN_QUEUE_CONGEST_CHECK  FALSE
+#else
+#define SCAN_QUEUE_CONGEST_CHECK  CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK
+#endif
+
+#ifndef CONFIG_GATTS_SEND_SERVICE_CHANGE_MODE
+#define GATTS_SEND_SERVICE_CHANGE_MODE GATTS_SEND_SERVICE_CHANGE_AUTO
+#else
+#define GATTS_SEND_SERVICE_CHANGE_MODE CONFIG_GATTS_SEND_SERVICE_CHANGE_MODE
+#endif
+
 /* This feature is used to eanble interleaved scan*/
 #ifndef BTA_HOST_INTERLEAVE_SEARCH
 #define BTA_HOST_INTERLEAVE_SEARCH FALSE//FALSE
@@ -334,6 +361,9 @@
 // idle state for FTS, OPS connections
 #ifndef BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS
 #define BTA_FTS_OPS_IDLE_TO_SNIFF_DELAY_MS 7000
+#endif
+#ifndef BTA_FTC_OPS_IDLE_TO_SNIFF_DELAY_MS
+#define BTA_FTC_OPS_IDLE_TO_SNIFF_DELAY_MS 5000
 #endif
 
 //------------------End added from bdroid_buildcfg.h---------------------
@@ -571,7 +601,7 @@
 #define BTM_DEFAULT_DISC_INTERVAL   0x0800
 #endif
 
-/* 
+/*
 * {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
 *
 * SERVICE_CLASS:0x5A (Bit17 -Networking,Bit19 - Capturing,Bit20 -Object Transfer,Bit22 -Telephony)
@@ -590,9 +620,18 @@
 */
 #define BTA_DM_COD_LOUDSPEAKER {0x2C, 0x04, 0x14}
 
+/*
+* {SERVICE_CLASS, MAJOR_CLASS, MINOR_CLASS}
+*
+* SERVICE_CLASS:0x00 None
+* MAJOR_CLASS:0x1f - Uncategorized: device code not specified
+* MINOR_CLASS:0x00 - None
+*/
+#define BTA_DM_COD_UNCLASSIFIED {0x00, 0x1f, 0x00}
+
 /* Default class of device */
 #ifndef BTA_DM_COD
-#define BTA_DM_COD BTA_DM_COD_LOUDSPEAKER
+#define BTA_DM_COD BTA_DM_COD_UNCLASSIFIED
 #endif
 
 /* The number of SCO links. */
@@ -743,6 +782,14 @@
 #ifndef BTM_BLE_CONFORMANCE_TESTING
 #define BTM_BLE_CONFORMANCE_TESTING           FALSE
 #endif
+
+/******************************************************************************
+**
+** CONTROLLER TO HOST FLOW CONTROL
+**
+******************************************************************************/
+
+#define C2H_FLOW_CONTROL_INCLUDED TRUE
 
 /******************************************************************************
 **
@@ -963,7 +1010,7 @@
 #endif
 
 #ifndef BTM_BLE_ADV_TX_POWER
-#define BTM_BLE_ADV_TX_POWER {-21, -15, -7, 1, 9}
+#define BTM_BLE_ADV_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
 #endif
 
 
@@ -1127,6 +1174,20 @@
 #define SMP_LINK_TOUT_MIN               2
 #endif
 #endif
+
+/******************************************************************************
+**
+** BT_SSP
+**
+******************************************************************************/
+#ifndef BT_SSP_INCLUDED
+#define BT_SSP_INCLUDED         FALSE
+#endif
+
+#if BT_SSP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == FALSE
+#error "Can't have SSP without CLASSIC BT"
+#endif
+
 /******************************************************************************
 **
 ** SDP

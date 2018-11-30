@@ -18,7 +18,6 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 
-
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
 #include "mbedtls/esp_debug.h"
@@ -31,6 +30,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ *  @brief ESP-TLS Connection State
+ */
+typedef enum esp_tls_conn_state {
+    ESP_TLS_INIT = 0,
+    ESP_TLS_CONNECTING,
+    ESP_TLS_HANDSHAKE,
+    ESP_TLS_FAIL,
+    ESP_TLS_DONE,
+} esp_tls_conn_state_t;
 
 /**
  * @brief      ESP-TLS configuration parameters 
@@ -48,12 +58,32 @@ typedef struct esp_tls_cfg {
  
     const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer */
  
-    const unsigned int cacert_pem_bytes;    /*!< Size of Certificate Authority certificate 
+    unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
                                                  pointed to by cacert_pem_buf */
+
+    const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer */
  
+    unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
+                                                 clientcert_pem_buf */
+
+    const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer */
+
+    unsigned int clientkey_pem_bytes;       /*!< Size of client key pointed to by
+                                                 clientkey_pem_buf */
+
+    const unsigned char *clientkey_password;/*!< Client key decryption password string */
+
+    unsigned int clientkey_password_len;    /*!< String length of the password pointed to by
+                                                 clientkey_password */
+
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
                                                  underneath socket will be configured in non 
                                                  blocking mode after tls session is established */
+
+    int timeout_ms;                         /*!< Network timeout in milliseconds */
+
+    bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
+                                                 this bool is set. */
 } esp_tls_cfg_t;
 
 /**
@@ -74,8 +104,15 @@ typedef struct esp_tls {
  
     mbedtls_net_context server_fd;                                              /*!< mbedTLS wrapper type for sockets */
  
-    mbedtls_x509_crt cacert;                                                    /*!< Container for an X.509 certificate */
- 
+    mbedtls_x509_crt cacert;                                                    /*!< Container for the X.509 CA certificate */
+
+    mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
+
+    mbedtls_x509_crt clientcert;                                                /*!< Container for the X.509 client certificate */
+
+    mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
+                                                                                     certificate */
+
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
  
     ssize_t (*read)(struct esp_tls  *tls, char *data, size_t datalen);          /*!< Callback function for reading data from TLS/SSL
@@ -83,12 +120,18 @@ typedef struct esp_tls {
  
     ssize_t (*write)(struct esp_tls *tls, const char *data, size_t datalen);    /*!< Callback function for writing data to TLS/SSL
                                                                                      connection. */
+
+    esp_tls_conn_state_t  conn_state;                                           /*!< ESP-TLS Connection state */
+
+    fd_set rset;                                                                /*!< read file descriptors */
+
+    fd_set wset;                                                                /*!< write file descriptors */
 } esp_tls_t;
 
 /**
- * @brief      Create a new TLS/SSL connection
+ * @brief      Create a new blocking TLS/SSL connection
  *
- * This function establishes a TLS/SSL connection with the specified host.
+ * This function establishes a TLS/SSL connection with the specified host in blocking manner.
  * 
  * @param[in]  hostname  Hostname of the host.
  * @param[in]  hostlen   Length of hostname.
@@ -102,7 +145,7 @@ typedef struct esp_tls {
 esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg);
 
 /**
- * @brief      Create a new TLS/SSL connection with a given "HTTP" url    
+ * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
  *
  * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
  * 
@@ -115,6 +158,42 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
  */
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
    
+/**
+ * @brief      Create a new non-blocking TLS/SSL connection
+ *
+ * This function initiates a non-blocking TLS/SSL connection with the specified host, but due to
+ * its non-blocking nature, it doesn't wait for the connection to get established.
+ *
+ * @param[in]  hostname  Hostname of the host.
+ * @param[in]  hostlen   Length of hostname.
+ * @param[in]  port      Port number of the host.
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. `non_block` member of
+ *                       this structure should be set to be true.
+ * @param[in]  tls       pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *             - -1      If connection establishment fails.
+ *             -  0      If connection establishment is in progress.
+ *             -  1      If connection establishment is successful.
+ */
+int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
+
+/**
+ * @brief      Create a new non-blocking TLS/SSL connection with a given "HTTP" url
+ *
+ * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
+ *
+ * @param[in]  url     url of host.
+ * @param[in]  cfg     TLS configuration as esp_tls_cfg_t.
+ * @param[in]  tls     pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *             - -1     If connection establishment fails.
+ *             -  0     If connection establishment is in progress.
+ *             -  1     If connection establishment is successful.
+ */
+int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
+
 /**
  * @brief      Write from buffer 'data' into specified tls connection.
  * 
@@ -143,13 +222,13 @@ static inline ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_
  * @param[in]  datalen  Length of data buffer. 
  *
  * @return
-*             - >0  if read operation was successful, the return value is the number
-*                   of bytes actually read from the TLS/SSL connection.
-*             -  0  if read operation was not successful. The underlying
-*                   connection was closed.
-*             - <0  if read operation was not successful, because either an
-*                   error occured or an action must be taken by the calling process.
-*/
+ *             - >0  if read operation was successful, the return value is the number
+ *                   of bytes actually read from the TLS/SSL connection.
+ *             -  0  if read operation was not successful. The underlying
+ *                   connection was closed.
+ *             - <0  if read operation was not successful, because either an
+ *                   error occured or an action must be taken by the calling process.
+ */
 static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
 {
     return tls->read(tls, (char *)data, datalen);
@@ -164,6 +243,61 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
  * @param[in]  tls  pointer to esp-tls as esp-tls handle.    
  */
 void esp_tls_conn_delete(esp_tls_t *tls);
+
+/**
+ * @brief      Return the number of application data bytes remaining to be
+ *             read from the current record
+ *
+ * This API is a wrapper over mbedtls's mbedtls_ssl_get_bytes_avail() API.
+ *
+ * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *            - -1  in case of invalid arg
+ *            - bytes available in the application data
+ *              record read buffer
+ */
+size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
+
+/**
+ * @brief      Create a global CA store with the buffer provided in cfg.
+ *
+ * This function should be called if the application wants to use the same CA store for
+ * multiple connections. The application must call this function before calling esp_tls_conn_new().
+ *
+ * @param[in]  cacert_pem_buf    Buffer which has certificates in pem format. This buffer
+ *                               is used for creating a global CA store, which can be used
+ *                               by other tls connections.
+ * @param[in]  cacert_pem_bytes  Length of the buffer.
+ *
+ * @return
+ *             - ESP_OK  if creating global CA store was successful.
+ *             - Other   if an error occured or an action must be taken by the calling process.
+ */
+esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes);
+
+/**
+ * @brief      Get the pointer to the global CA store currently being used.
+ *
+ * The application must first call esp_tls_set_global_ca_store(). Then the same
+ * CA store could be used by the application for APIs other than esp_tls.
+ *
+ * @note       Modifying the pointer might cause a failure in verifying the certificates.
+ *
+ * @return
+ *             - Pointer to the global CA store currently being used    if successful.
+ *             - NULL                                                   if there is no global CA store set.
+ */
+mbedtls_x509_crt *esp_tls_get_global_ca_store();
+
+/**
+ * @brief      Free the global CA store currently being used.
+ *
+ * The memory being used by the global CA store to store all the parsed certificates is
+ * freed up. The application can call this API if it no longer needs the global CA store.
+ */
+void esp_tls_free_global_ca_store();
+
 
 #ifdef __cplusplus
 }

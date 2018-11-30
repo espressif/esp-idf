@@ -14,16 +14,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
+from __future__ import unicode_literals
+import sys
+try:
+    from builtins import str
+    from builtins import range
+    from builtins import object
+except ImportError:
+    # This should not happen because the Python packages are checked before invoking this script. However, here is
+    # some output which should help if we missed something.
+    print('Import has failed probably because of the missing "future" package. Please install all the packages for '
+          'interpreter {} from the requirements.txt file.'.format(sys.executable))
+    # The path to requirements.txt is not provided because this script could be invoked from an IDF project (then the
+    # requirements.txt from the IDF_PATH should be used) or from the documentation project (then the requirements.txt
+    # for the documentation directory should be used).
+    sys.exit(1)
+from io import open
 import os
 import argparse
 import re
 import fnmatch
-import string
 import collections
 import textwrap
+import functools
 
 # list files here which should not be parsed
 ignore_files = [ 'components/mdns/test_afl_fuzz_host/esp32_compat.h' ]
+
+# add directories here which should not be parsed
+ignore_dirs = ( 'examples' )
 
 # macros from here have higher priorities in case of collisions
 priority_headers = [ 'components/esp32/include/esp_err.h' ]
@@ -32,18 +52,20 @@ err_dict = collections.defaultdict(list) #identified errors are stored here; map
 rev_err_dict = dict() #map of error string to error code
 unproc_list = list() #errors with unknown codes which depend on other errors
 
-class ErrItem:
+class ErrItem(object):
     """
     Contains information about the error:
     - name - error string
     - file - relative path inside the IDF project to the file which defines this error
+    - include_as - (optional) overwrites the include determined from file
     - comment - (optional) comment for the error
     - rel_str - (optional) error string which is a base for the error
     - rel_off - (optional) offset in relation to the base error
     """
-    def __init__(self, name, file, comment, rel_str = "", rel_off = 0):
+    def __init__(self, name, file, include_as = None, comment = "", rel_str = "", rel_off = 0):
         self.name = name
         self.file = file
+        self.include_as = include_as
         self.comment = comment
         self.rel_str = rel_str
         self.rel_off = rel_off
@@ -84,7 +106,7 @@ class InputError(RuntimeError):
     def __init__(self, p, e):
         super(InputError, self).__init__(p + ": " + e)
 
-def process(line, idf_path):
+def process(line, idf_path, include_as):
     """
     Process a line of text from file idf_path (relative to IDF project).
     Fills the global list unproc_list and dictionaries err_dict, rev_err_dict
@@ -96,7 +118,7 @@ def process(line, idf_path):
     words = re.split(r' +', line, 2)
     # words[1] is the error name
     # words[2] is the rest of the line (value, base + value, comment)
-    if len(words) < 2:
+    if len(words) < 3:
         raise InputError(idf_path, "Error at line %s" % line)
 
     line = ""
@@ -106,8 +128,8 @@ def process(line, idf_path):
     # identify possible comment
     m = re.search(r'/\*!<(.+?(?=\*/))', todo_str)
     if m:
-        comment = string.strip(m.group(1))
-        todo_str = string.strip(todo_str[:m.start()]) # keep just the part before the comment
+        comment = m.group(1).strip()
+        todo_str = todo_str[:m.start()].strip() # keep just the part before the comment
 
     # identify possible parentheses ()
     m = re.search(r'\((.+)\)', todo_str)
@@ -140,11 +162,11 @@ def process(line, idf_path):
         related
     except NameError:
         # The value of the error is known at this moment because it do not depends on some other BASE error code
-        err_dict[num].append(ErrItem(words[1], idf_path, comment))
+        err_dict[num].append(ErrItem(words[1], idf_path, include_as, comment))
         rev_err_dict[words[1]] = num
     else:
         # Store the information available now and compute the error code later
-        unproc_list.append(ErrItem(words[1], idf_path, comment, related, num))
+        unproc_list.append(ErrItem(words[1], idf_path, include_as, comment, related, num))
 
 def process_remaining_errors():
     """
@@ -160,7 +182,7 @@ def process_remaining_errors():
             base_num = rev_err_dict[item.rel_str]
             base = err_dict[base_num][0]
             num = base_num + item.rel_off
-            err_dict[num].append(ErrItem(item.name, item.file, item.comment))
+            err_dict[num].append(ErrItem(item.name, item.file, item.include_as, item.comment))
             rev_err_dict[item.name] = num
         else:
             print(item.rel_str + " referenced by " + item.name + " in " + item.file + " is unknown")
@@ -178,14 +200,14 @@ def path_to_include(path):
     are inside the "include" directory. Other special cases need to be handled
     here when the compiler gives an unknown header file error message.
     """
-    spl_path = string.split(path, os.sep)
+    spl_path = path.split(os.sep)
     try:
         i = spl_path.index('include')
     except ValueError:
         # no include in the path -> use just the filename
         return os.path.basename(path)
     else:
-        return str(os.sep).join(spl_path[i+1:]) # subdirectories and filename in "include"
+        return os.sep.join(spl_path[i+1:]) # subdirectories and filename in "include"
 
 def print_warning(error_list, error_code):
     """
@@ -197,23 +219,26 @@ def print_warning(error_list, error_code):
 
 def max_string_width():
     max = 0
-    for k in err_dict.keys():
+    for k in err_dict:
         for e in err_dict[k]:
             x = len(e.name)
             if x > max:
                 max = x
     return max
 
-def generate_output(fin, fout):
+def generate_c_output(fin, fout):
     """
     Writes the output to fout based on th error dictionary err_dict and
     template file fin.
     """
     # make includes unique by using a set
     includes = set()
-    for k in err_dict.keys():
+    for k in err_dict:
         for e in err_dict[k]:
-            includes.add(path_to_include(e.file))
+            if e.include_as:
+                includes.add(e.include_as)
+            else:
+                includes.add(path_to_include(e.file))
 
     # The order in a set in non-deterministic therefore it could happen that the
     # include order will be different in other machines and false difference
@@ -223,7 +248,7 @@ def generate_output(fin, fout):
     include_list.sort()
 
     max_width = max_string_width() + 17 + 1 # length of "    ERR_TBL_IT()," with spaces is 17
-    max_decdig = max(len(str(k)) for k in err_dict.keys())
+    max_decdig = max(len(str(k)) for k in err_dict)
 
     for line in fin:
         if re.match(r'@COMMENT@', line):
@@ -236,7 +261,7 @@ def generate_output(fin, fout):
             last_file = ""
             for k in sorted(err_dict.keys()):
                 if len(err_dict[k]) > 1:
-                    err_dict[k].sort()
+                    err_dict[k].sort(key=functools.cmp_to_key(ErrItem.__cmp__))
                     print_warning(err_dict[k], k)
                 for e in err_dict[k]:
                     if e.file != last_file:
@@ -264,31 +289,64 @@ def generate_output(fin, fout):
         else:
             fout.write(line)
 
+def generate_rst_output(fout):
+    for k in sorted(err_dict.keys()):
+        v = err_dict[k][0]
+        fout.write(':c:macro:`{}` '.format(v.name))
+        if k > 0:
+            fout.write('**(0x{:x})**'.format(k))
+        else:
+            fout.write('({:d})'.format(k))
+        if len(v.comment) > 0:
+            fout.write(': {}'.format(v.comment))
+        fout.write('\n\n')
+
 def main():
+    if 'IDF_PATH' in os.environ:
+        idf_path = os.environ['IDF_PATH']
+    else:
+        idf_path = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
     parser = argparse.ArgumentParser(description='ESP32 esp_err_to_name lookup generator for esp_err_t')
-    parser.add_argument('input', help='Path to the esp_err_to_name.c.in template input.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c.in', nargs='?')
-    parser.add_argument('output', help='Path to the esp_err_to_name.c output.', default=os.environ['IDF_PATH'] + '/components/esp32/esp_err_to_name.c', nargs='?')
+    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.', default=idf_path + '/components/esp32/esp_err_to_name.c.in')
+    parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=idf_path + '/components/esp32/esp_err_to_name.c')
+    parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
     args = parser.parse_args()
 
-    for root, dirnames, filenames in os.walk(os.environ['IDF_PATH']):
+    include_as_pattern = re.compile(r'\s*//\s*{}: [^"]* "([^"]+)"'.format(os.path.basename(__file__)))
+    define_pattern = re.compile(r'\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)')
+
+    for root, dirnames, filenames in os.walk(idf_path):
         for filename in fnmatch.filter(filenames, '*.[ch]'):
             full_path = os.path.join(root, filename)
-            idf_path = os.path.relpath(full_path, os.environ['IDF_PATH'])
-            if idf_path in ignore_files:
+            path_in_idf = os.path.relpath(full_path, idf_path)
+            if path_in_idf in ignore_files or path_in_idf.startswith(ignore_dirs):
                 continue
-            with open(full_path, "r+") as f:
-                for line in f:
-                    # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
-                    if re.match(r"\s*#define\s+(ESP_ERR_|ESP_OK|ESP_FAIL)", line):
-                        try:
-                            process(str.strip(line), idf_path)
-                        except InputError as e:
-                            print (e)
+            with open(full_path, encoding='utf-8') as f:
+                try:
+                    include_as = None
+                    for line in f:
+                        line = line.strip()
+                        m = include_as_pattern.search(line)
+                        if m:
+                            include_as = m.group(1)
+                        # match also ESP_OK and ESP_FAIL because some of ESP_ERRs are referencing them
+                        elif define_pattern.match(line):
+                            try:
+                                process(line, path_in_idf, include_as)
+                            except InputError as e:
+                                print(e)
+                except UnicodeDecodeError:
+                    raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
 
     process_remaining_errors()
 
-    with open(args.input, 'r') as fin, open(args.output, 'w') as fout:
-        generate_output(fin, fout)
+    if args.rst_output is not None:
+        with open(args.rst_output, 'w', encoding='utf-8') as fout:
+            generate_rst_output(fout)
+    else:
+        with open(args.c_input, 'r', encoding='utf-8') as fin, open(args.c_output, 'w', encoding='utf-8') as fout:
+            generate_c_output(fin, fout)
 
 if __name__ == "__main__":
     main()

@@ -35,6 +35,9 @@
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
+#include "esp_system_internal.h"
+
+static const char *TAG = "task_wdt";
 
 //Assertion macro where, if 'cond' is false, will exit the critical section and return 'ret'
 #define ASSERT_EXIT_CRIT_RETURN(cond, ret)  ({                              \
@@ -116,12 +119,23 @@ static void reset_hw_timer()
 }
 
 /*
+ * This function is called by task_wdt_isr function (ISR for when TWDT times out).
+ * It can be redefined in user code to handle twdt events.
+ * Note: It has the same limitations as the interrupt function.
+ *       Do not use ESP_LOGI functions inside.
+ */
+void __attribute__((weak)) esp_task_wdt_isr_user_handler(void)
+{
+
+}
+
+/*
  * ISR for when TWDT times out. Checks for which tasks have not reset. Also
  * triggers panic if configured to do so
  */
 static void task_wdt_isr(void *arg)
 {
-    portENTER_CRITICAL(&twdt_spinlock);
+    portENTER_CRITICAL_ISR(&twdt_spinlock);
     twdt_task_t *twdttask;
     const char *cpu;
     //Reset hardware timer so that 2nd stage timeout is not reached (will trigger system reset)
@@ -130,7 +144,7 @@ static void task_wdt_isr(void *arg)
     TIMERG0.wdt_wprotect=0;
     //Acknowledge interrupt
     TIMERG0.int_clr_timers.wdt=1;
-    //We are taking a spinlock while doing I/O (ets_printf) here. Normally, that is a pretty
+    //We are taking a spinlock while doing I/O (ESP_EARLY_LOGE) here. Normally, that is a pretty
     //bad thing, possibly (temporarily) hanging up the 2nd core and stopping FreeRTOS. In this case,
     //something bad already happened and reporting this is considered more important
     //than the badness caused by a spinlock here.
@@ -139,26 +153,28 @@ static void task_wdt_isr(void *arg)
     ASSERT_EXIT_CRIT_RETURN((twdt_config->list != NULL), VOID_RETURN);
 
     //Watchdog got triggered because at least one task did not reset in time.
-    ets_printf("Task watchdog got triggered. The following tasks did not reset the watchdog in time:\n");
+    ESP_EARLY_LOGE(TAG, "Task watchdog got triggered. The following tasks did not reset the watchdog in time:");
     for (twdttask=twdt_config->list; twdttask!=NULL; twdttask=twdttask->next) {
         if (!twdttask->has_reset) {
             cpu=xTaskGetAffinity(twdttask->task_handle)==0?DRAM_STR("CPU 0"):DRAM_STR("CPU 1");
             if (xTaskGetAffinity(twdttask->task_handle)==tskNO_AFFINITY) cpu=DRAM_STR("CPU 0/1");
-            ets_printf(" - %s (%s)\n", pcTaskGetTaskName(twdttask->task_handle), cpu);
+            ESP_EARLY_LOGE(TAG, " - %s (%s)", pcTaskGetTaskName(twdttask->task_handle), cpu);
         }
     }
-    ets_printf(DRAM_STR("Tasks currently running:\n"));
+    ESP_EARLY_LOGE(TAG, "%s", DRAM_STR("Tasks currently running:"));
     for (int x=0; x<portNUM_PROCESSORS; x++) {
-        ets_printf("CPU %d: %s\n", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
+        ESP_EARLY_LOGE(TAG, "CPU %d: %s", x, pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(x)));
     }
 
+    esp_task_wdt_isr_user_handler();
     if (twdt_config->panic){     //Trigger Panic if configured to do so
-        ets_printf("Aborting.\n");
-        portEXIT_CRITICAL(&twdt_spinlock);
+        ESP_EARLY_LOGE(TAG, "Aborting.");
+        portEXIT_CRITICAL_ISR(&twdt_spinlock);
+        esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
     }
 
-    portEXIT_CRITICAL(&twdt_spinlock);
+    portEXIT_CRITICAL_ISR(&twdt_spinlock);
 }
 
 /*
@@ -180,7 +196,7 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         twdt_config->panic = panic;
 
         //Register Interrupt and ISR
-        ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &twdt_config->intr_handle))
+        ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &twdt_config->intr_handle));
 
         //Configure hardware timer
         periph_module_enable(PERIPH_TIMG0_MODULE);
@@ -228,7 +244,7 @@ esp_err_t esp_task_wdt_deinit()
     TIMERG0.wdt_config0.en=0;                   //Disable timer
     TIMERG0.wdt_wprotect=0;                     //Enable write protection
 
-    ESP_ERROR_CHECK(esp_intr_free(twdt_config->intr_handle))  //Unregister interrupt
+    ESP_ERROR_CHECK(esp_intr_free(twdt_config->intr_handle));  //Unregister interrupt
     free(twdt_config);                      //Free twdt_config
     twdt_config = NULL;
     portEXIT_CRITICAL(&twdt_spinlock);
@@ -270,7 +286,7 @@ esp_err_t esp_task_wdt_add(TaskHandle_t handle)
     //If idle task, register the idle hook callback to appropriate core
     for(int i = 0; i < portNUM_PROCESSORS; i++){
         if(handle == xTaskGetIdleTaskHandleForCPU(i)){
-            ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, i))
+            ESP_ERROR_CHECK(esp_register_freertos_idle_hook_for_cpu(idle_hook_cb, i));
             break;
         }
     }

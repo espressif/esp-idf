@@ -19,7 +19,7 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "soc/sdmmc_struct.h"
+#include "soc/sdmmc_periph.h"
 
 typedef struct {
     uint32_t sdmmc_status;      ///< masked SDMMC interrupt status
@@ -37,6 +37,8 @@ void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_s
 void sdmmc_host_dma_stop();
 
 void sdmmc_host_dma_resume();
+
+bool sdmmc_host_card_busy();
 
 esp_err_t sdmmc_host_transaction_handler_init();
 

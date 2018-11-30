@@ -1,0 +1,18 @@
+{
+    "project_name":       "${IDF_PROJECT_NAME}",
+    "project_path":       "${IDF_PROJECT_PATH}",
+    "build_dir":          "${IDF_BUILD_ARTIFACTS_DIR}",
+    "config_file":        "${SDKCONFIG}",
+    "config_defaults":    "${IDF_SDKCONFIG_DEFAULTS}",
+    "app_elf":            "${IDF_PROJECT_EXECUTABLE}",
+    "app_bin":            "${IDF_PROJECT_BIN}",
+    "git_revision":       "${IDF_VER}",
+    "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
+    "monitor_baud" : "${CONFIG_MONITOR_BAUD}",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
+    },
+    "build_components" : ${build_components_json},
+    "build_component_paths" : ${build_component_paths_json}
+}

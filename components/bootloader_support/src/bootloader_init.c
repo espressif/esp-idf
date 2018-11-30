@@ -39,6 +39,7 @@
 #include "soc/timer_group_reg.h"
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
+#include "soc/rtc_wdt.h"
 
 #include "sdkconfig.h"
 #include "esp_image_format.h"
@@ -71,6 +72,7 @@ static void wdt_reset_check(void);
 esp_err_t bootloader_init()
 {
     cpu_configure_region_protection();
+    cpu_init_memctl();
 
     /* Sanity check that static RAM is after the stack */
 #ifndef NDEBUG
@@ -142,8 +144,21 @@ static esp_err_t bootloader_main()
     ESP_LOGI(TAG, "compile time " __TIME__ );
     ets_set_appcpu_boot_addr(0);
 
+#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+    ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
+    rtc_wdt_protect_off();
+    rtc_wdt_disable();
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+    rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+    rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
+    rtc_wdt_set_time(RTC_WDT_STAGE0, CONFIG_BOOTLOADER_WDT_TIME_MS);
+    rtc_wdt_enable();
+    rtc_wdt_protect_on();
+#else
     /* disable watch dog here */
-    REG_CLR_BIT( RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN );
+    rtc_wdt_disable();
+#endif
+    REG_SET_FIELD(TIMG_WDTWPROTECT_REG(0), TIMG_WDT_WKEY,  TIMG_WDT_WKEY_VALUE);
     REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
 
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
@@ -276,7 +291,7 @@ static void vddsdio_configure()
 {
 #if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
     rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
-    if (cfg.enable == 1 && cfg.tieh == 0) {    // VDDSDIO regulator is enabled @ 1.8V
+    if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {    // VDDSDIO regulator is enabled @ 1.8V
         cfg.drefh = 3;
         cfg.drefm = 3;
         cfg.drefl = 3;
@@ -521,5 +536,16 @@ static void wdt_reset_check(void)
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
     ESP_LOGE(TAG, "Assert failed in %s, %s:%d (%s)", func, file, line, expr);
+    while(1) {}
+}
+
+void abort()
+{
+#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+    ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
+#endif
+    if (esp_cpu_in_ocd_debug_mode()) {
+        __asm__ ("break 0,0");
+    }
     while(1) {}
 }

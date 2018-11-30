@@ -300,12 +300,23 @@ struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id)
 	}
 
 	for (m = methods; m; m = m->next) {
+		//do not propose insecure unencapsulated MSCHAPv2 as Phase 1 Method
+		if(m->vendor == EAP_VENDOR_IETF && m->method == EAP_TYPE_MSCHAPV2)
+			continue;
+
+		//do not propose EAP_TYPE_TLS if no client cert/key are configured
+		if(m->vendor == EAP_VENDOR_IETF && m->method == EAP_TYPE_TLS) {
+			struct eap_peer_config *config = eap_get_config(sm);
+			if (config == NULL || config->private_key == 0 || config->client_cert == 0)
+				continue;
+		}
+
 		if (type == EAP_TYPE_EXPANDED) {
 			wpabuf_put_u8(resp, EAP_TYPE_EXPANDED);
 			wpabuf_put_be24(resp, m->vendor);
 			wpabuf_put_be32(resp, m->method);
 		} else
-			wpabuf_put_u8(resp, EAP_TYPE_NONE);
+			wpabuf_put_u8(resp, m->method);
 		found++;
 	}
 	if (!found) {
@@ -407,7 +418,7 @@ int eap_peer_blob_init(struct eap_sm *sm)
 			ret = -2;
 			goto _out;
 		}
-		os_strncpy(sm->blob[0].name, CLIENT_CERT_NAME, BLOB_NAME_LEN);
+		os_strncpy(sm->blob[0].name, CLIENT_CERT_NAME, BLOB_NAME_LEN+1);
 		sm->blob[0].len = g_wpa_client_cert_len;
 		sm->blob[0].data = g_wpa_client_cert;
 	}
@@ -418,7 +429,7 @@ int eap_peer_blob_init(struct eap_sm *sm)
 			ret = -2;
 			goto _out;
 		}
-		os_strncpy(sm->blob[1].name, PRIVATE_KEY_NAME, BLOB_NAME_LEN);
+		os_strncpy(sm->blob[1].name, PRIVATE_KEY_NAME, BLOB_NAME_LEN+1);
 		sm->blob[1].len = g_wpa_private_key_len;
 		sm->blob[1].data = g_wpa_private_key;
 	}
@@ -429,7 +440,7 @@ int eap_peer_blob_init(struct eap_sm *sm)
 			ret = -2;
 			goto _out;
 		}
-		os_strncpy(sm->blob[2].name, CA_CERT_NAME, BLOB_NAME_LEN);
+		os_strncpy(sm->blob[2].name, CA_CERT_NAME, BLOB_NAME_LEN+1);
 		sm->blob[2].len = g_wpa_ca_cert_len;
 		sm->blob[2].data = g_wpa_ca_cert;
 	}

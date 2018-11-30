@@ -80,6 +80,19 @@ typedef enum {
     RMT_CARRIER_LEVEL_MAX
 } rmt_carrier_level_t;
 
+typedef enum {
+    RMT_CHANNEL_UNINIT = 0, /*!< RMT channel uninitialized */
+    RMT_CHANNEL_IDLE = 1,   /*!< RMT channel status idle */
+    RMT_CHANNEL_BUSY = 2,   /*!< RMT channel status busy */
+} rmt_channel_status_t;
+
+/**
+ * @brief Data struct of RMT channel status
+ */
+typedef struct {
+  rmt_channel_status_t status[RMT_CHANNEL_MAX]; /*!< Store the current status of each channel */
+} rmt_channel_status_result_t;
+
 /**
  * @brief Data struct of RMT TX configure parameters
  */
@@ -496,6 +509,7 @@ esp_err_t rmt_set_idle_level(rmt_channel_t channel, bool idle_out_en, rmt_idle_l
  * @param channel RMT channel (0-7)
  *
  * @param status Pointer to accept channel status.
+ *        Please refer to RMT_CHnSTATUS_REG(n=0~7) in `rmt_reg.h` for more details of each field.
  *
  * @return
  *     - ESP_ERR_INVALID_ARG Parameter error
@@ -678,6 +692,19 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
  *     - ESP_OK Success
  */
 esp_err_t rmt_driver_uninstall(rmt_channel_t channel);
+
+/**
+ * @brief Get the current status of eight channels.
+ *
+ * @note Do not call this function if it is possible that `rmt_driver_uninstall` will be called at the same time.
+ *
+ * @param[out] channel_status store the current status of each channel
+ *
+ * @return
+ *     - ESP_ERR_INVALID_ARG Parameter is NULL
+ *     - ESP_OK Success
+ */
+esp_err_t rmt_get_channel_status(rmt_channel_status_result_t *channel_status);
 
 /**
  * @brief RMT send waveform from rmt_item array.

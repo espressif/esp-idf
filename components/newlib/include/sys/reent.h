@@ -402,7 +402,7 @@ struct _reent
   char *_asctime_buf;
 
   /* signal info */
-  void (**(_sig_func))(int);
+  void (**_sig_func)(int);
 
 # ifndef _REENT_GLOBAL_ATEXIT
   /* atexit stuff */

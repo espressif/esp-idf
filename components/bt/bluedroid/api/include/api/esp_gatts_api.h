@@ -25,31 +25,32 @@ extern "C" {
 
 /// GATT Server callback function events
 typedef enum {
-    ESP_GATTS_REG_EVT                = 0,       /*!< When register application id, the event comes */
-    ESP_GATTS_READ_EVT               = 1,       /*!< When gatt client request read operation, the event comes */
-    ESP_GATTS_WRITE_EVT              = 2,       /*!< When gatt client request write operation, the event comes */
-    ESP_GATTS_EXEC_WRITE_EVT         = 3,       /*!< When gatt client request execute write, the event comes */
-    ESP_GATTS_MTU_EVT                = 4,       /*!< When set mtu complete, the event comes */
-    ESP_GATTS_CONF_EVT               = 5,       /*!< When receive confirm, the event comes */
-    ESP_GATTS_UNREG_EVT              = 6,       /*!< When unregister application id, the event comes */
-    ESP_GATTS_CREATE_EVT             = 7,       /*!< When create service complete, the event comes */
-    ESP_GATTS_ADD_INCL_SRVC_EVT      = 8,       /*!< When add included service complete, the event comes */
-    ESP_GATTS_ADD_CHAR_EVT           = 9,       /*!< When add characteristic complete, the event comes */
-    ESP_GATTS_ADD_CHAR_DESCR_EVT     = 10,      /*!< When add descriptor complete, the event comes */
-    ESP_GATTS_DELETE_EVT             = 11,      /*!< When delete service complete, the event comes */
-    ESP_GATTS_START_EVT              = 12,      /*!< When start service complete, the event comes */
-    ESP_GATTS_STOP_EVT               = 13,      /*!< When stop service complete, the event comes */
-    ESP_GATTS_CONNECT_EVT            = 14,      /*!< When gatt client connect, the event comes */
-    ESP_GATTS_DISCONNECT_EVT         = 15,      /*!< When gatt client disconnect, the event comes */
-    ESP_GATTS_OPEN_EVT               = 16,      /*!< When connect to peer, the event comes */
-    ESP_GATTS_CANCEL_OPEN_EVT        = 17,      /*!< When disconnect from peer, the event comes */
-    ESP_GATTS_CLOSE_EVT              = 18,      /*!< When gatt server close, the event comes */
-    ESP_GATTS_LISTEN_EVT             = 19,      /*!< When gatt listen to be connected the event comes */
-    ESP_GATTS_CONGEST_EVT            = 20,      /*!< When congest happen, the event comes */
+    ESP_GATTS_REG_EVT                 = 0,       /*!< When register application id, the event comes */
+    ESP_GATTS_READ_EVT                = 1,       /*!< When gatt client request read operation, the event comes */
+    ESP_GATTS_WRITE_EVT               = 2,       /*!< When gatt client request write operation, the event comes */
+    ESP_GATTS_EXEC_WRITE_EVT          = 3,       /*!< When gatt client request execute write, the event comes */
+    ESP_GATTS_MTU_EVT                 = 4,       /*!< When set mtu complete, the event comes */
+    ESP_GATTS_CONF_EVT                = 5,       /*!< When receive confirm, the event comes */
+    ESP_GATTS_UNREG_EVT               = 6,       /*!< When unregister application id, the event comes */
+    ESP_GATTS_CREATE_EVT              = 7,       /*!< When create service complete, the event comes */
+    ESP_GATTS_ADD_INCL_SRVC_EVT       = 8,       /*!< When add included service complete, the event comes */
+    ESP_GATTS_ADD_CHAR_EVT            = 9,       /*!< When add characteristic complete, the event comes */
+    ESP_GATTS_ADD_CHAR_DESCR_EVT      = 10,      /*!< When add descriptor complete, the event comes */
+    ESP_GATTS_DELETE_EVT              = 11,      /*!< When delete service complete, the event comes */
+    ESP_GATTS_START_EVT               = 12,      /*!< When start service complete, the event comes */
+    ESP_GATTS_STOP_EVT                = 13,      /*!< When stop service complete, the event comes */
+    ESP_GATTS_CONNECT_EVT             = 14,      /*!< When gatt client connect, the event comes */
+    ESP_GATTS_DISCONNECT_EVT          = 15,      /*!< When gatt client disconnect, the event comes */
+    ESP_GATTS_OPEN_EVT                = 16,      /*!< When connect to peer, the event comes */
+    ESP_GATTS_CANCEL_OPEN_EVT         = 17,      /*!< When disconnect from peer, the event comes */
+    ESP_GATTS_CLOSE_EVT               = 18,      /*!< When gatt server close, the event comes */
+    ESP_GATTS_LISTEN_EVT              = 19,      /*!< When gatt listen to be connected the event comes */
+    ESP_GATTS_CONGEST_EVT             = 20,      /*!< When congest happen, the event comes */
     /* following is extra event */
-    ESP_GATTS_RESPONSE_EVT           = 21,      /*!< When gatt send response complete, the event comes */
-    ESP_GATTS_CREAT_ATTR_TAB_EVT     = 22,
-    ESP_GATTS_SET_ATTR_VAL_EVT       = 23,
+    ESP_GATTS_RESPONSE_EVT            = 21,      /*!< When gatt send response complete, the event comes */
+    ESP_GATTS_CREAT_ATTR_TAB_EVT      = 22,      /*!< When gatt create table complete, the event comes */
+    ESP_GATTS_SET_ATTR_VAL_EVT        = 23,      /*!< When gatt set attr value complete, the event comes */
+    ESP_GATTS_SEND_SERVICE_CHANGE_EVT = 24,      /*!< When gatt send service change indication complete, the event comes */
 } esp_gatts_cb_event_t;
 
 /**
@@ -119,6 +120,7 @@ typedef union {
     struct gatts_conf_evt_param {
         esp_gatt_status_t status;       /*!< Operation status */
         uint16_t conn_id;               /*!< Connection id */
+        uint16_t handle;                /*!< attribute handle */
         uint16_t len;                   /*!< The indication or notification value length, len is valid when send notification or indication failed */
         uint8_t *value;                 /*!< The indication or notification value , value is valid when send notification or indication failed */
     } conf;                             /*!< Gatt server callback param of ESP_GATTS_CONF_EVT (confirm) */
@@ -267,6 +269,13 @@ typedef union {
         esp_gatt_status_t status;       /*!< Operation status*/
     } set_attr_val;                     /*!< Gatt server callback param of ESP_GATTS_SET_ATTR_VAL_EVT */
 
+    /**
+    * @brief ESP_GATTS_SEND_SERVICE_CHANGE_EVT
+    */
+    struct gatts_send_service_change_evt_param{
+        esp_gatt_status_t status;       /*!< Operation status*/
+    } service_change;                    /*!< Gatt server callback param of ESP_GATTS_SEND_SERVICE_CHANGE_EVT */
+
 } esp_ble_gatts_cb_param_t;
 
 /**
@@ -350,7 +359,8 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
                                             uint8_t max_nb_attr,
                                             uint8_t srvc_inst_id);
 /**
- * @brief           This function is called to add an included service. After included
+ * @brief           This function is called to add an included service. This function have to be called between 
+ *                  'esp_ble_gatts_create_service' and 'esp_ble_gatts_add_char'.  After included
  *                  service is included, a callback event BTA_GATTS_ADD_INCL_SRVC_EVT
  *                  is reported the included service ID.
  *
@@ -548,6 +558,22 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, b
  *
  */
 esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id);
+
+/**
+ * @brief           Send service change indication
+ *
+ * @param[in]       gatts_if: GATT server access interface
+ * @param[in]       remote_bda: remote device bluetooth device address.
+ *                  If remote_bda is NULL then it will send service change
+ *                  indication to all the connected devices and if not then
+ *                  to a specific device
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gatts_send_service_change_indication(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda);
 
 #ifdef __cplusplus
 }

@@ -30,6 +30,7 @@
 #include "soc/timer_group_reg.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
+#include "soc/rtc_wdt.h"
 
 #include "esp_gdbstub.h"
 #include "esp_panic.h"
@@ -39,7 +40,8 @@
 #include "esp_spi_flash.h"
 #include "esp_cache_err_int.h"
 #include "esp_app_trace.h"
-#include "esp_system.h"
+#include "esp_system_internal.h"
+#include "sdkconfig.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -119,6 +121,20 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, s
     abort();
 }
 
+/* These two weak stubs for esp_reset_reason_{get,set}_hint are used when
+ * the application does not call esp_reset_reason() function, and
+ * reset_reason.c is not linked into the output file.
+ */
+void __attribute__((weak)) esp_reset_reason_set_hint(esp_reset_reason_t hint)
+{
+}
+
+esp_reset_reason_t __attribute__((weak)) esp_reset_reason_get_hint(void)
+{
+    return ESP_RST_UNKNOWN;
+}
+
+
 static bool abort_called;
 
 static __attribute__((noreturn)) inline void invoke_abort()
@@ -145,6 +161,12 @@ void abort()
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
+    /* Calling code might have set other reset reason hint (such as Task WDT),
+     * don't overwrite that.
+     */
+    if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
+    }
     invoke_abort();
 }
 
@@ -232,6 +254,10 @@ void panicHandler(XtExcFrame *frame)
     }
 #endif //!CONFIG_FREERTOS_UNICORE
 
+    if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
+        esp_reset_reason_set_hint(ESP_RST_INT_WDT);
+    }
+
     haltOtherCore();
     esp_dport_access_int_abort();
     panicPutStr("Guru Meditation Error: Core ");
@@ -312,7 +338,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
         } else {
             panicPutStr("Unknown");
         }
-        panicPutStr(")\r\n");
+        panicPutStr(")");
         if (esp_cpu_in_ocd_debug_mode()) {
             panicPutStr(" at pc=");
             panicPutHex(frame->pc);
@@ -331,6 +357,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
             return;
         }
         panicPutStr(". Exception was unhandled.\r\n");
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
     }
     commonErrorHandler(frame);
 }
@@ -373,32 +400,6 @@ static inline void disableAllWdts()
     TIMERG1.wdt_wprotect = 0;
 }
 
-static void esp_panic_wdt_start()
-{
-    if (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN)) {
-        return;
-    }
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
-    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_SYS_RESET_LENGTH, 7);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_CPU_RESET_LENGTH, 7);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_RESET_SYSTEM);
-    // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
-    // @ 115200 UART speed it will take more than 6 sec to print them out.
-    WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, rtc_clk_slow_freq_get_hz() * 7);
-    REG_SET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
-}
-
-void esp_panic_wdt_stop()
-{
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
-    WRITE_PERI_REG(RTC_CNTL_WDTFEED_REG, 1);
-    REG_SET_FIELD(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_STG0, RTC_WDT_STG_SEL_OFF);
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN);
-    WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
-}
-
 static void esp_panic_dig_reset() __attribute__((noreturn));
 
 static void esp_panic_dig_reset()
@@ -406,7 +407,7 @@ static void esp_panic_dig_reset()
     // make sure all the panic handler output is sent from UART FIFO
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    rtc_clk_cpu_freq_set_xtal();
     // reset the digital part
     esp_cpu_unstall(PRO_CPU_NUM);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
@@ -527,7 +528,18 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
 
     int core_id = xPortGetCoreID();
     // start panic WDT to restart system if we hang in this handler
-    esp_panic_wdt_start();
+    if (!rtc_wdt_is_on()) {
+        rtc_wdt_protect_off();
+        rtc_wdt_disable();
+        rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+        rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
+        rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_SYSTEM);
+        // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
+        // @ 115200 UART speed it will take more than 6 sec to print them out.
+        rtc_wdt_set_time(RTC_WDT_STAGE0, 7000);
+        rtc_wdt_enable();
+        rtc_wdt_protect_on();
+    }
 
     //Feed the watchdogs, so they will give us time to print out debug info
     reconfigureAllWdts();
@@ -552,7 +564,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
 
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
-    esp_panic_wdt_stop();
+    rtc_wdt_disable();
     panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
 #else
@@ -573,7 +585,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
         reconfigureAllWdts();
     }
 #endif /* CONFIG_ESP32_ENABLE_COREDUMP */
-    esp_panic_wdt_stop();
+    rtc_wdt_disable();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
     if (frame->exccause != PANIC_RSN_CACHEERR) {
@@ -651,11 +663,25 @@ void esp_clear_watchpoint(int no)
     }
 }
 
-void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression)
+static void esp_error_check_failed_print(const char *msg, esp_err_t rc, const char *file, int line, const char *function, const char *expression)
 {
-    ets_printf("ESP_ERROR_CHECK failed: esp_err_t 0x%x at 0x%08x\n", rc, (intptr_t)__builtin_return_address(0) - 3);
+    ets_printf("%s failed: esp_err_t 0x%x", msg, rc);
+#ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
+    ets_printf(" (%s)", esp_err_to_name(rc));
+#endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
+    ets_printf(" at 0x%08x\n", (intptr_t)__builtin_return_address(0) - 3);
     if (spi_flash_cache_enabled()) { // strings may be in flash cache
         ets_printf("file: \"%s\" line %d\nfunc: %s\nexpression: %s\n", file, line, function, expression);
     }
+}
+
+void _esp_error_check_failed_without_abort(esp_err_t rc, const char *file, int line, const char *function, const char *expression)
+{
+    esp_error_check_failed_print("ESP_ERROR_CHECK_WITHOUT_ABORT", rc, file, line, function, expression);
+}
+
+void _esp_error_check_failed(esp_err_t rc, const char *file, int line, const char *function, const char *expression)
+{
+    esp_error_check_failed_print("ESP_ERROR_CHECK", rc, file, line, function, expression);
     invoke_abort();
 }

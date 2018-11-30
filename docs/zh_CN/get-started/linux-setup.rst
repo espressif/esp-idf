@@ -3,6 +3,8 @@ Linux 平台工具链的标准设置
 *****************************
 :link_to_translation:`en:[English]`
 
+.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+
 安装前提
 =====================
 
@@ -14,30 +16,41 @@ Linux 平台工具链的标准设置
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-serial
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-pyparsing
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-pyparsing
+
+.. note::
+
+    一些旧的（2014年之前）Linux 发行版中使用的 ``pyserial`` 版本可能是 2.x ， ESP-IDF并不支持。
+    在这种情况下，请参考 :ref:`安装依赖的 Python 软件包 <get-started-get-packages>` 章节，通过 ``pip`` 工具来安装支持的版本。
 
 工具链的设置
 ===============
+
+.. include:: /_build/inc/download-links.inc
 
 Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
 - 64-bit Linux：
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+  |download_link_linux64|
 
 - 32-bit Linux：
 
-  https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz
+  |download_link_linux32|
 
-1. 下载完成后，将它解压到 ``~/esp`` 目录： ::
+1. 下载完成后，将它解压到 ``~/esp`` 目录： :
 
-        mkdir -p ~/esp
-        cd ~/esp
-        tar -xzf ~/Downloads/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz
+    - 64-bit Linux:
+
+      .. include:: /_build/inc/unpack-code-linux64.inc
+
+    - 32-bit Linux:
+
+      .. include:: /_build/inc/unpack-code-linux32.inc
 
 .. _setup-linux-toolchain-add-it-to-path:  
 
@@ -45,17 +58,17 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
    要使用工具链，你还需要在 ``~/.profile`` 文件中更新环境变量 ``PATH``。要使 ``xtensa-esp32-elf`` 在所有的终端会话中都有效，需要将下面这一行代码添加到你的 ``~/.profile`` 文件中： ::
 
-    export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"
+    export PATH="$HOME/esp/xtensa-esp32-elf/bin:$PATH"
 
    或者你也可以给上面的命令创建一个别名。这样做的好处是，你只在需要使用它的时候才获取工具链。将下面这行代码添加到 ``~/.profile`` 文件中即可： ::
 
-    alias get_esp32='export PATH="$PATH:$HOME/esp/xtensa-esp32-elf/bin"'
+    alias get_esp32='export PATH="$HOME/esp/xtensa-esp32-elf/bin:$PATH"'
 
    然后，当你需要使用工具链时，在命令行输入 ``get_esp32``，然后工具链会自动添加到你的 ``PATH`` 中。
 
     .. note::
     
-        如果将 ``/bin/bash`` 设置为登录 shell，且同时存在 ``.bash_profile`` 和 ``.profile``，则更新 ``.bash_profile`` 。
+        如果将 ``/bin/bash`` 设置为登录 shell，且同时存在 ``.bash_profile`` 和 ``.profile``，则更新 ``.bash_profile`` 。在 CentOS 环境下, ``alias`` 需要添加到 ``.bashrc`` 文件中。
     
 3. 退出并重新登录以使 ``.profile`` 更改生效。 运行以下命令来检查 ``PATH`` 设置是否正确： ::
 

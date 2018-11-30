@@ -64,7 +64,7 @@ BOOLEAN gatts_init_service_db (tGATT_SVC_DB *p_db, tBT_UUID *p_service,  BOOLEAN
                                UINT16 s_hdl, UINT16 num_handle)
 {
     if (p_db->svc_buffer == NULL) { //in case already alloc
-        p_db->svc_buffer = fixed_queue_new(SIZE_MAX);
+        p_db->svc_buffer = fixed_queue_new(QUEUE_SIZE_MAX);
     }
 
     if (!allocate_svc_db_buf(p_db)) {
@@ -450,6 +450,26 @@ UINT16 gatts_add_included_service (tGATT_SVC_DB *p_db, UINT16 s_handle, UINT16 e
         return 0;
     }
 
+    BOOLEAN is_include_service_allowed = TRUE;
+    // service declaration
+    tGATT_ATTR16 *first_attr = (tGATT_ATTR16 *)p_db->p_attr_list;
+    if (p_db->p_attr_list != NULL) {
+        tGATT_ATTR16 *next_attr = (tGATT_ATTR16 *)first_attr->p_next;
+        /* This service already has other attributes */
+        while (next_attr != NULL) {
+            if (!(next_attr->uuid_type == GATT_ATTR_UUID_TYPE_16 && next_attr->uuid == GATT_UUID_INCLUDE_SERVICE)) {
+                is_include_service_allowed = FALSE;
+                break;
+            }
+            next_attr = (tGATT_ATTR16 *)next_attr->p_next;
+        }
+
+    }
+    if (!is_include_service_allowed) {
+        GATT_TRACE_ERROR("%s error, The include service should be added before adding the characteristics", __func__);
+        return 0;
+    }
+
     if ((p_attr = (tGATT_ATTR16 *) allocate_attr_in_db(p_db, &uuid, GATT_PERM_READ)) != NULL) {
         if (copy_extra_byte_in_db(p_db, (void **)&p_attr->p_value, sizeof(tGATT_INCL_SRVC))) {
             p_attr->p_value->incl_handle.s_handle = s_handle;
@@ -763,10 +783,12 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
 
     if (p_db == NULL) {
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db is NULL.\n");
+        *length = 0;
         return GATT_INVALID_PDU;
     }
     if (p_db->p_attr_list == NULL) {
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:p_db->p_attr_list is NULL.\n");
+        *length = 0;
         return GATT_INVALID_PDU;
     }
     if (length == NULL){
@@ -775,6 +797,7 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
     }
     if (value == NULL){
         GATT_TRACE_ERROR("gatts_get_attribute_value Fail:value is NULL.\n");
+        *length = 0;
         return GATT_INVALID_PDU;
     }
 
@@ -794,19 +817,19 @@ tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                         *value = p_cur->p_value->attr_val.attr_val;
                         return GATT_SUCCESS;
                     } else {
-                        GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
-                        return GATT_INVALID_ATTR_LEN;
+                        *length = 0;
+                        return GATT_SUCCESS;
                     }
                     break;
                 }
             } else {
-                if (p_cur->p_value->attr_val.attr_len != 0) {
+                if (p_cur->p_value && p_cur->p_value->attr_val.attr_len != 0) {
                     *length = p_cur->p_value->attr_val.attr_len;
                     *value = p_cur->p_value->attr_val.attr_val;
                     return GATT_SUCCESS;
                 } else {
-                    GATT_TRACE_ERROR("gatts_get_attribute_value failed:the value length is 0");
-                    return GATT_INVALID_ATTR_LEN;
+                    *length = 0;
+                    return GATT_SUCCESS;
                 }
 
             }

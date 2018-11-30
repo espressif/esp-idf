@@ -28,6 +28,7 @@
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
+#include "esp_spi_flash.h"
 #include "sdkconfig.h"
 
 #include "esp_ota_ops.h"
@@ -235,18 +236,10 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
       .size = it->part->size,
     };
 
-    if (esp_image_load(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
+    if (esp_image_verify(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
         ret = ESP_ERR_OTA_VALIDATE_FAILED;
         goto cleanup;
     }
-
-#ifdef CONFIG_SECURE_BOOT_ENABLED
-    ret = esp_secure_boot_verify_signature(it->part->address, data.image_len);
-    if (ret != ESP_OK) {
-        ret = ESP_ERR_OTA_VALIDATE_FAILED;
-        goto cleanup;
-    }
-#endif
 
  cleanup:
     LIST_REMOVE(it, entries);
@@ -299,7 +292,7 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
     uint16_t ota_app_count = 0;
     uint32_t i = 0;
     uint32_t seq;
-    static spi_flash_mmap_memory_t ota_data_map;
+    spi_flash_mmap_handle_t ota_data_map;
     const void *result = NULL;
 
     find_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
@@ -380,11 +373,11 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
         .offset = partition->address,
         .size = partition->size,
     };
-    if (esp_image_load(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
+    if (esp_image_verify(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
         return ESP_ERR_OTA_VALIDATE_FAILED;
     }
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef CONFIG_SECURE_SIGNED_ON_UPDATE
     esp_err_t ret = esp_secure_boot_verify_signature(partition->address, data.image_len);
     if (ret != ESP_OK) {
         return ESP_ERR_OTA_VALIDATE_FAILED;
@@ -445,7 +438,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
 {
     esp_err_t ret;
     const esp_partition_t *find_partition = NULL;
-    static spi_flash_mmap_memory_t ota_data_map;
+    spi_flash_mmap_handle_t ota_data_map;
     const void *result = NULL;
     uint16_t ota_app_count = 0;
     find_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
@@ -501,9 +494,18 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
 
 const esp_partition_t* esp_ota_get_running_partition(void)
 {
+    static const esp_partition_t *curr_partition = NULL;
+
+    /*
+     * Currently running partition is unlikely to change across reset cycle,
+     * so it can be cached here, and avoid lookup on every flash write operation.
+     */
+    if (curr_partition != NULL) {
+        return curr_partition;
+    }
+
     /* Find the flash address of this exact function. By definition that is part
        of the currently running firmware. Then find the enclosing partition. */
-
     size_t phys_offs = spi_flash_cache2phys(esp_ota_get_running_partition);
 
     assert (phys_offs != SPI_FLASH_CACHE2PHYS_FAIL); /* indicates cache2phys lookup is buggy */
@@ -517,6 +519,7 @@ const esp_partition_t* esp_ota_get_running_partition(void)
         const esp_partition_t *p = esp_partition_get(it);
         if (p->address <= phys_offs && p->address + p->size > phys_offs) {
             esp_partition_iterator_release(it);
+            curr_partition = p;
             return p;
         }
         it = esp_partition_next(it);

@@ -48,9 +48,18 @@ public:
         return mPageList.back();
     }
 
+    uint32_t getPageCount() {
+        return mPageCount;
+    }
+
     esp_err_t requestNewPage();
 
     esp_err_t fillStats(nvs_stats_t& nvsStats);
+
+    uint32_t getBaseSector()
+    {
+        return mBaseSector;
+    }
 
 protected:
     friend class Iterator;

@@ -122,6 +122,7 @@ esp_err_t touch_pad_init();
 
 /**
  * @brief Un-install touch pad driver.
+ * @note  After this function is called, other touch functions are prohibited from being called.
  * @return
  *     - ESP_OK   Success
  *     - ESP_FAIL Touch pad driver not initialized
@@ -130,8 +131,12 @@ esp_err_t touch_pad_deinit();
 
 /**
  * @brief Configure touch pad interrupt threshold.
+ *
+ * @note  If FSM mode is set to TOUCH_FSM_MODE_TIMER, this function will be blocked for one measurement cycle and wait for data to be valid.
+ *
  * @param touch_num touch pad index
  * @param threshold interrupt threshold,
+ *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG if argument wrong
@@ -144,28 +149,34 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
  *        Each touch sensor has a counter to count the number of charge/discharge cycles.
  *        When the pad is not 'touched', we can get a number of the counter.
  *        When the pad is 'touched', the value in counter will get smaller because of the larger equivalent capacitance.
- * @note This API requests hardware measurement once. If IIR filter mode is enabled,,
+ *
+ * @note This API requests hardware measurement once. If IIR filter mode is enabled,
  *       please use 'touch_pad_read_raw_data' interface instead.
+ *
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
+ *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Touch pad error
+ *     - ESP_ERR_INVALID_ARG Touch pad parameter error
+ *     - ESP_ERR_INVALID_STATE This touch pad hardware connection is error, the value of "touch_value" is 0.
  *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
 
 /**
  * @brief get filtered touch sensor counter value by IIR filter.
+ *
  * @note touch_pad_filter_start has to be called before calling touch_pad_read_filtered.
  *       This function can be called from ISR
  *
  * @param touch_num touch pad index
  * @param touch_value pointer to accept touch sensor value
+ *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Touch pad error
- *     - ESP_ERR_INVALID_STATE Touch pad not initialized
+ *     - ESP_ERR_INVALID_ARG Touch pad parameter error
+ *     - ESP_ERR_INVALID_STATE This touch pad hardware connection is error, the value of "touch_value" is 0.
  *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value);
@@ -173,6 +184,7 @@ esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value);
 /**
  * @brief get raw data (touch sensor counter value) from IIR filter process.
  *        Need not request hardware measurements.
+ *
  * @note touch_pad_filter_start has to be called before calling touch_pad_read_raw_data.
  *       This function can be called from ISR
  *
@@ -180,10 +192,10 @@ esp_err_t touch_pad_read_filtered(touch_pad_t touch_num, uint16_t *touch_value);
  * @param touch_value pointer to accept touch sensor value
  *
  * @return
- *      - ESP_OK Success
- *      - ESP_ERR_INVALID_ARG Touch pad error
- *      - ESP_ERR_INVALID_STATE Touch pad not initialized
- *      - ESP_FAIL Touch pad not initialized
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG Touch pad parameter error
+ *     - ESP_ERR_INVALID_STATE This touch pad hardware connection is error, the value of "touch_value" is 0.
+ *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read_raw_data(touch_pad_t touch_num, uint16_t *touch_value);
 
@@ -508,8 +520,6 @@ esp_err_t touch_pad_get_filter_period(uint32_t* p_period_ms);
  *      when detecting slight change of capacitance.
  *      Need to call touch_pad_filter_start before all touch filter APIs
  *
- *      If filter is not initialized, this API will initialize the filter with given period.
- *      If filter is already initialized, this API will update the filter period.
  * @note This filter uses FreeRTOS timer, which is dispatched from a task with
  *       priority 1 by default on CPU 0. So if some application task with higher priority
  *       takes a lot of CPU0 time, then the quality of data obtained from this filter will be affected.
@@ -540,6 +550,15 @@ esp_err_t touch_pad_filter_stop();
  *      - ESP_ERR_INVALID_STATE driver state error
  */
 esp_err_t touch_pad_filter_delete();
+
+/**
+ * @brief Get the touch pad which caused wakeup from sleep
+ * @param pad_num pointer to touch pad which caused wakeup
+ * @return
+ *      - ESP_OK Success
+ *      - ESP_FAIL get status err
+ */
+esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num);
 
 #ifdef __cplusplus
 }

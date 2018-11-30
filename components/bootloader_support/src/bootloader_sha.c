@@ -28,7 +28,10 @@ bootloader_sha256_handle_t bootloader_sha256_start()
         return NULL;
     }
     mbedtls_sha256_init(ctx);
-    assert(mbedtls_sha256_starts_ret(ctx, false) == 0);
+    int ret = mbedtls_sha256_starts_ret(ctx, false);
+    if (ret != 0) {
+        return NULL;
+    }
     return ctx;
 }
 
@@ -36,7 +39,8 @@ void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data,
 {
     assert(handle != NULL);
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
-    assert(mbedtls_sha256_update_ret(ctx, data, data_len) == 0);
+    int ret = mbedtls_sha256_update_ret(ctx, data, data_len);
+    assert(ret == 0);
 }
 
 void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
@@ -44,7 +48,8 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     assert(handle != NULL);
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
     if (digest != NULL) {
-        assert(mbedtls_sha256_finish_ret(ctx, digest) == 0);
+        int ret = mbedtls_sha256_finish_ret(ctx, digest);
+        assert(ret == 0);
     }
     mbedtls_sha256_free(ctx);
     free(handle);
@@ -164,3 +169,21 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 }
 
 #endif
+
+esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)
+{
+    if (out_str == NULL || in_array_hex == NULL || len == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    for (int i = 0; i < len; i++) {
+        for (int shift = 0; shift < 2; shift++) {
+            uint8_t nibble = (in_array_hex[i] >> (shift ? 0 : 4)) & 0x0F;
+            if (nibble < 10) {
+                out_str[i*2+shift] = '0' + nibble;
+            } else {
+                out_str[i*2+shift] = 'a' + nibble - 10;
+            }
+        }
+    }
+    return ESP_OK;
+}

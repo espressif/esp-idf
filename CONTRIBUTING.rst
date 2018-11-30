@@ -25,6 +25,8 @@ Before sending us a Pull Request, please consider this list of points:
 
 * Are comments and documentation written in clear English, with no spelling or grammar errors?
 
+* Example contributions are also welcome. Please check the :doc:`creating-examples` guide for these.
+
 * If the contribution contains multiple commits, are they grouped together into logical changes (one major change per pull request)? Are any commits with names like "fixed typo" `squashed into previous commits <http://eli.thegreenplace.net/2014/02/19/squashing-github-pull-requests-into-a-single-commit/>`_?
 
 * If you're unsure about any of these points, please open the Pull Request anyhow and then ask us for feedback.
@@ -51,5 +53,6 @@ Related Documents
 
     style-guide
     documenting-code
+    creating-examples
     ../api-reference/template
     contributor-agreement

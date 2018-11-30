@@ -5,6 +5,7 @@ Peripherals API
    :maxdepth: 1
 
    ADC <adc>
+   CAN <can>
    DAC <dac>
    GPIO (including RTC low power I/O) <gpio>
    I2C <i2c>

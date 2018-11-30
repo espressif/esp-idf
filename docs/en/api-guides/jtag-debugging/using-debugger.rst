@@ -48,7 +48,7 @@ Once installation is complete, configure debugging session following steps below
 
         Configuration of GDB Hardware Debugging - Debugger tab
 
-8.  The last tab to that requires changing of default configuration is "Startup". Under "Initialization Commands" uncheck "Reset and Delay (seconds)" and "Halt"". Then, in entry field below, type ``mon reset halt`` and ``x $a1=0`` (in two separate lines).
+8.  The last tab to that requires changing of default configuration is "Startup". Under "Initialization Commands" uncheck "Reset and Delay (seconds)" and "Halt"". Then, in entry field below, type ``mon reset halt`` and ``flushregs`` (in two separate lines).
 
     .. note::
         If you want to update image in the flash automatically before starting new debug session add the following lines of commands at the beginning of "Initialization Commands" textbox::
@@ -113,8 +113,8 @@ Command Line
 
         target remote :3333
         mon reset halt
+        flushregs
         thb app_main
-        x $a1=0
         c
 
     Save this file in current directory. 

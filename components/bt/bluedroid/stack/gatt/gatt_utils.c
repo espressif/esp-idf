@@ -337,7 +337,7 @@ tGATT_HDL_LIST_ELEM *gatt_alloc_hdl_buffer(void)
         if (!p_cb->hdl_list[i].in_use) {
             memset(p_elem, 0, sizeof(tGATT_HDL_LIST_ELEM));
             p_elem->in_use = TRUE;
-            p_elem->svc_db.svc_buffer = fixed_queue_new(SIZE_MAX);
+            p_elem->svc_db.svc_buffer = fixed_queue_new(QUEUE_SIZE_MAX);
             return p_elem;
         }
     }
@@ -1007,8 +1007,8 @@ tGATT_TCB *gatt_allocate_tcb_by_bdaddr(BD_ADDR bda, tBT_TRANSPORT transport)
 
         if (allocated) {
             memset(p_tcb, 0, sizeof(tGATT_TCB));
-            p_tcb->pending_enc_clcb = fixed_queue_new(SIZE_MAX);
-            p_tcb->pending_ind_q = fixed_queue_new(SIZE_MAX);
+            p_tcb->pending_enc_clcb = fixed_queue_new(QUEUE_SIZE_MAX);
+            p_tcb->pending_ind_q = fixed_queue_new(QUEUE_SIZE_MAX);
             p_tcb->in_use = TRUE;
             p_tcb->tcb_idx = i;
             p_tcb->transport = transport;
@@ -2192,9 +2192,10 @@ void gatt_end_operation(tGATT_CLCB *p_clcb, tGATT_STATUS status, void *p_data)
         (*p_disc_cmpl_cb)(conn_id, disc_type, status);
     } else if (p_cmpl_cb && op) {
         (*p_cmpl_cb)(conn_id, op, status, &cb_data);
-    } else
+    } else {
         GATT_TRACE_WARNING ("gatt_end_operation not sent out op=%d p_disc_cmpl_cb:%p p_cmpl_cb:%p",
                             operation, p_disc_cmpl_cb, p_cmpl_cb);
+    }
 }
 
 /*******************************************************************************
@@ -2258,6 +2259,7 @@ void gatt_cleanup_upon_disc(BD_ADDR bda, UINT16 reason, tBT_TRANSPORT transport)
         GATT_TRACE_DEBUG ("exit gatt_cleanup_upon_disc ");
         BTM_Recovery_Pre_State();
     }
+    gatt_delete_dev_from_srv_chg_clt_list(bda);
 }
 /*******************************************************************************
 **
