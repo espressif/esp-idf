@@ -3,6 +3,31 @@ cmake_minimum_required(VERSION 3.5)
 include(${IDF_PATH}/tools/cmake/utilities.cmake)
 project(${ULP_APP_NAME} ASM C)
 
+set(version_pattern "[a-z0-9\.-]+")
+
+# Check assembler version
+execute_process(
+    COMMAND ${CMAKE_ASM_COMPILER} --version
+    OUTPUT_VARIABLE as_output
+    ERROR_QUIET)
+
+string(REGEX MATCH "GNU assembler \\(GNU Binutils\\) (${version_pattern})" as_version ${as_output})
+set(as_version ${CMAKE_MATCH_1})
+
+message(STATUS "Building ULP app ${ULP_APP_NAME}")
+message(STATUS "ULP assembler version: ${as_version}")
+
+# Check the supported assembler version
+file(STRINGS ${IDF_PATH}/components/ulp/toolchain_ulp_version.mk version_file_contents)
+string(REGEX MATCH "SUPPORTED_ULP_ASSEMBLER_VERSION = (${version_pattern})" as_supported_version ${version_file_contents})
+set(as_supported_version ${CMAKE_MATCH_1})
+
+if(NOT as_version STREQUAL as_supported_version)
+    message(WARNING "WARNING: ULP assembler version ${as_version} is not supported. Expected to see version: \
+                    ${as_supported_version}. Please check ESP-IDF ULP setup instructions and update \
+                    the toolchain, or proceed at your own risk.")
+endif()
+
 set(ULP_MAP_GEN ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
 set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)
 
@@ -71,7 +96,7 @@ add_custom_command( OUTPUT ${ULP_APP_NAME}.ld ${ULP_APP_NAME}.h
 # ULP files being built.
 add_custom_target(build
                 DEPENDS ${ULP_APP_NAME} ${ULP_APP_NAME}.bin ${ULP_APP_NAME}.sym
-                        ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.ld 
+                        ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.ld
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.h
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
