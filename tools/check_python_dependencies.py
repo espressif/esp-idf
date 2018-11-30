@@ -19,11 +19,12 @@ import sys
 import argparse
 try:
     import pkg_resources
-except:
+except Exception:
     print('pkg_resources cannot be imported probably because the pip package is not installed and/or using a '
           'legacy Python interpreter. Please refer to the Get Started section of the ESP-IDF Programming Guide for '
-           'setting up the required packages.')
+          'setting up the required packages.')
     sys.exit(1)
+
 
 def escape_backslash(path):
     if sys.platform == "win32":
@@ -32,13 +33,14 @@ def escape_backslash(path):
     else:
         return path
 
+
 if __name__ == "__main__":
     idf_path = os.getenv("IDF_PATH")
 
     parser = argparse.ArgumentParser(description='ESP32 Python package dependency checker')
     parser.add_argument('--requirements', '-r',
-            help='Path to the requrements file',
-            default=os.path.join(idf_path, 'requirements.txt'))
+                        help='Path to the requrements file',
+                        default=os.path.join(idf_path, 'requirements.txt'))
     args = parser.parse_args()
 
     # Special case for MINGW32 Python, needs some packages
@@ -48,13 +50,13 @@ if __name__ == "__main__":
        "/mingw32/bin/python" in sys.executable:
         failed = False
         try:
-            import cryptography
+            import cryptography # noqa: intentionally not used - imported for testing its availability
         except ImportError:
             print("Please run the following command to install MSYS2's MINGW Python cryptography package:")
             print("pacman -S mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
             failed = True
         try:
-            import setuptools
+            import setuptools # noqa: intentionally not used - imported for testing its availability
         except ImportError:
             print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
             print("pacman -S mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
@@ -68,7 +70,7 @@ if __name__ == "__main__":
             line = line.strip()
             try:
                 pkg_resources.require(line)
-            except:
+            except Exception:
                 not_satisfied.append(line)
 
     if len(not_satisfied) > 0:
