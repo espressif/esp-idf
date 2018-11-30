@@ -2,15 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-# Set IDF_PATH, as nothing else will work without this.
-set(IDF_PATH "$ENV{IDF_PATH}")
-if(NOT IDF_PATH)
-    # Documentation says you should set IDF_PATH in your environment, but we
-    # can infer it relative to tools/cmake directory if it's not set.
-    get_filename_component(IDF_PATH "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
-endif()
-file(TO_CMAKE_PATH "${IDF_PATH}" IDF_PATH)
-set(ENV{IDF_PATH} ${IDF_PATH})
+include(${CMAKE_CURRENT_LIST_DIR}/idf_functions.cmake)
 
 # Set the path of idf.py.
 set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
@@ -23,8 +15,6 @@ endfunction()
 
 function(_project)
 endfunction()
-
-include(${IDF_PATH}/tools/cmake/idf_functions.cmake)
 
 macro(project name)
 
