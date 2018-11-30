@@ -88,6 +88,8 @@ Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p 
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
+.. _idf.py-size:
+
 Advanced Commands
 ^^^^^^^^^^^^^^^^^
 
