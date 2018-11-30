@@ -903,13 +903,14 @@ void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn
 **                  bd_name          - Name of the peer device.  NULL if unknown.
 **                  dev_type         - Remote device's device type.
 **                  addr_type        - LE device address type.
+**                  auth_mode        - auth mode
 **
 ** Returns          TRUE if added OK, else FALSE
 **
 *******************************************************************************/
 //extern
 BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name,
-                             tBT_DEVICE_TYPE dev_type, tBLE_ADDR_TYPE addr_type);
+                             tBT_DEVICE_TYPE dev_type, tBLE_ADDR_TYPE addr_type, UINT32 auth_mode);
 
 /*******************************************************************************
 **
