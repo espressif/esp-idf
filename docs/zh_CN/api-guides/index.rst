@@ -26,6 +26,7 @@ API 指南
    Application Level Tracing <app_trace>
    控制台终端组件 <console>
    ROM debug console <romconsole>
+   RF Calibration <RF_calibration>
    WiFi Driver <wifi>
    ESP-MESH <mesh>
    BluFi <blufi>
