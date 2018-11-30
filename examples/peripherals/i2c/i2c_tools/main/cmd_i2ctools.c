@@ -255,7 +255,7 @@ static int do_i2cset_cmd(int argc, char **argv)
     /* Check chip address: "-c" option */
     int chip_addr = i2cset_args.chip_address->ival[0];
     /* Check register address: "-r" option */
-    int data_addr = -1;
+    int data_addr = 0;
     if (i2cset_args.register_address->count) {
         data_addr = i2cset_args.register_address->ival[0];
     }
@@ -267,7 +267,7 @@ static int do_i2cset_cmd(int argc, char **argv)
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, chip_addr << 1 | WRITE_BIT, ACK_CHECK_EN);
-    if (data_addr != -1) {
+    if (i2cset_args.register_address->count) {
         i2c_master_write_byte(cmd, data_addr, ACK_CHECK_EN);
     }
     for (int i = 0; i < len; i++) {
