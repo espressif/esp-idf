@@ -3480,6 +3480,22 @@ static void _mdns_search_send_pcb(mdns_search_once_t * search, tcpip_adapter_if_
  */
 static void _mdns_search_send(mdns_search_once_t * search)
 {
+    mdns_search_once_t* queue = _mdns_server->search_once;
+    bool found = false;
+    // looking for this search in active searches
+    while (queue) {
+        if (queue == search) {
+            found = true;
+            break;
+        }
+        queue = queue->next;
+    }
+
+    if (!found) {
+        // no longer active -> skip sending this search
+        return;
+    }
+
     uint8_t i, j;
     for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
         for (j=0; j<MDNS_IP_PROTOCOL_MAX; j++) {
@@ -3822,12 +3838,13 @@ static void _mdns_scheduler_run()
  */
 static void _mdns_search_run()
 {
+    MDNS_SERVICE_LOCK();
     mdns_search_once_t * s = _mdns_server->search_once;
     uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
     if (!s) {
+        MDNS_SERVICE_UNLOCK();
         return;
     }
-    MDNS_SERVICE_LOCK();
     while (s) {
         if (s->state != SEARCH_OFF) {
             if (now > (s->started_at + s->timeout)) {
