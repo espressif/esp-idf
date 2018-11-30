@@ -32,6 +32,7 @@ ESPTOOL_PY = os.path.join(IDF_COMPONENTS_PATH, "esptool_py", "esptool", "esptool
 
 quiet = False
 
+
 def status(msg):
     """ Print status message to stderr """
     if not quiet:
@@ -92,7 +93,7 @@ def _get_partition(args):
     elif args.partition_type and args.partition_subtype:
         partition = partition_table.find_by_type(args.partition_type, args.partition_subtype)
     elif args.partition_boot_default:
-        search = [ "factory" ] + [ "ota_{}".format(d) for d in range(16) ]
+        search = ["factory"] + ["ota_{}".format(d) for d in range(16)]
         for subtype in search:
             partition = partition_table.find_by_type("app", subtype)
             if partition is not None:
@@ -154,7 +155,7 @@ def get_partition_info(args):
     partition = None
 
     if args.table:
-        partition_table =  _get_partition_table(args)
+        partition_table = _get_partition_table(args)
 
         if args.table.endswith(".csv"):
             partition_table = partition_table.to_csv()
@@ -169,7 +170,7 @@ def get_partition_info(args):
 
         if partition:
             info_dict = {
-                "offset" : '0x{:x}'.format(partition.offset),
+                "offset": '0x{:x}'.format(partition.offset),
                 "size": '0x{:x}'.format(partition.size)
             }
 
@@ -181,7 +182,7 @@ def get_partition_info(args):
             except KeyError:
                 raise RuntimeError("Request for unknown partition info {}".format(info))
 
-            status("Requested partition information [{}]:".format( ", ".join(args.info)))
+            status("Requested partition information [{}]:".format(", ".join(args.info)))
             print(" ".join(infos))
         else:
             status("Partition not found")
@@ -192,7 +193,7 @@ def generate_blank_partition_file(args):
     stdout_binary = None
 
     partition = _get_and_check_partition(args)
-    output =  b"\xFF" * partition.size
+    output = b"\xFF" * partition.size
 
     try:
         stdout_binary = sys.stdout.buffer  # Python 3
@@ -226,8 +227,8 @@ def main():
 
     partition_selection_args.add_argument("--partition-name", "-n", help="name of the partition")
     partition_selection_args.add_argument("--partition-type", "-t", help="type of the partition")
-    partition_selection_args.add_argument('--partition-boot-default', "-d", help='select the default boot partition, '+
-                             'using the same fallback logic as the IDF bootloader', action="store_true")
+    partition_selection_args.add_argument('--partition-boot-default', "-d", help='select the default boot partition \
+                                           using the same fallback logic as the IDF bootloader', action="store_true")
 
     parser.add_argument("--partition-subtype", "-s", help="subtype of the partition")
 
@@ -247,7 +248,8 @@ def main():
     print_partition_info_subparser_info_type.add_argument("--info", help="type of partition information to get", nargs="+")
     print_partition_info_subparser_info_type.add_argument("--table", help="dump the partition table to a file")
 
-    generate_blank_subparser = subparsers.add_parser("generate_blank_partition_file", help="generate a blank (all 0xFF) partition file of the specified partition that can be flashed to the device")
+    generate_blank_subparser = subparsers.add_parser("generate_blank_partition_file", help="generate a blank (all 0xFF) partition file of \
+                                                     the specified partition that can be flashed to the device")
     generate_blank_subparser.add_argument("--output", help="blank partition file filename")
 
     args = parser.parse_args()
