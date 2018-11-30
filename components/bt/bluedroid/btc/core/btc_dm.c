@@ -176,6 +176,7 @@ static void btc_dm_remove_ble_bonding_keys(void)
     bdcpy(bd_addr.address, pairing_cb.bd_addr);
 
     btc_storage_remove_remote_addr_type(&bd_addr, false);
+    btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
     btc_storage_remove_ble_dev_type(&bd_addr, false);
     btc_storage_remove_ble_bonding_keys(&bd_addr);
 }
@@ -264,6 +265,7 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
          if (btc_storage_get_remote_addr_type(&bdaddr, &addr_type) != BT_STATUS_SUCCESS) {
             btc_storage_set_remote_addr_type(&bdaddr, p_auth_cmpl->addr_type, true);
         }
+        btc_storage_set_ble_dev_auth_mode(&bdaddr, p_auth_cmpl->auth_mode, true);
         btc_dm_save_ble_bonding_keys();
     } else {
         /*Map the HCI fail reason  to  bt status  */
@@ -638,6 +640,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
             //remove the bonded key in the config and nvs flash.
             btc_storage_remove_ble_dev_type(&bd_addr, false);
             btc_storage_remove_remote_addr_type(&bd_addr, false);
+            btc_storage_remove_ble_dev_auth_mode(&bd_addr, false);
             param.remove_bond_dev_cmpl.status = btc_storage_remove_ble_bonding_keys(&bd_addr);
         }
         ble_msg.act = ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT;
