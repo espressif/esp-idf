@@ -15,31 +15,30 @@
 # limitations under the License.
 
 from __future__ import print_function
-import imp
 import re
 import os
 import sys
 import time
 
-# This environment variable is expected on the host machine
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
 
-# When running on local machine execute the following before running this script
-# > export TEST_FW_PATH='~/esp/esp-idf/tools/tiny-test-fw'
-# > make print_flash_cmd | tail -n 1 > build/download.config
-# > make app bootloader
-
-import TinyFW
-import IDF
-
-# Import esp_prov tool
-idf_path = os.environ['IDF_PATH']
-esp_prov = imp.load_source("esp_prov", idf_path + "/tools/esp_prov/esp_prov.py")
+try:
+    import esp_prov
+except ImportError:
+    esp_prov_path = os.getenv("IDF_PATH") + "/tools/esp_prov"
+    if esp_prov_path and esp_prov_path not in sys.path:
+        sys.path.insert(0, esp_prov_path)
+    import esp_prov
 
 # Have esp_prov throw exception
 esp_prov.config_throw_except = True
+
 
 @IDF.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_ble(env, extra_data):
@@ -49,8 +48,8 @@ def test_examples_provisioning_ble(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "ble_prov.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("ble_prov_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("ble_prov_bin_size", bin_size//1024)
+    IDF.log_performance("ble_prov_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("ble_prov_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
     dut1.start_app()
@@ -73,12 +72,12 @@ def test_examples_provisioning_ble(env, extra_data):
 
     print("Getting security")
     security = esp_prov.get_security(secver, pop, verbose)
-    if security == None:
+    if security is None:
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
     transport = esp_prov.get_transport(provmode, None, devname)
-    if transport == None:
+    if transport is None:
         raise RuntimeError("Failed to get transport")
 
     print("Verifying protocol version")
@@ -111,6 +110,7 @@ def test_examples_provisioning_ble(env, extra_data):
 
     if not success:
         raise RuntimeError("Provisioning failed")
+
 
 if __name__ == '__main__':
     test_examples_provisioning_ble()
