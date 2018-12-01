@@ -41,7 +41,7 @@ all_kinds = [
     ("define", "Macros"),
     ("typedef", "Type Definitions"),
     ("enum", "Enumerations")
-    ]
+]
 """list of items that will be generated for a single API file
 """
 
@@ -78,7 +78,7 @@ def get_doxyfile_input():
         # process only lines that are not comments
         if line.find("#") == -1:
             # extract header file path inside components folder
-            m = re.search(header_file_path_prefix + "(.*\.h)", line)
+            m = re.search(header_file_path_prefix + "(.*\.h)", line)  # noqa: W605 - regular expression
             header_file_path = m.group(1)
             doxyfile_INPUT += header_file_path + "\n"
         # proceed reading next line
