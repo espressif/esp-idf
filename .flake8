@@ -78,7 +78,7 @@ select =
     E275,           # missing whitespace after keyword
     E301,           # expected 1 blank line, found 0
     E302,           # expected 2 blank lines, found 0
-    E303,           # too many blank lines 
+    E303,           # too many blank lines
     E304,           # blank lines found after function decorator
     E305,           # expected 2 blank lines after end of function or class
     E306,           # expected 1 blank line before a nested definition
@@ -166,9 +166,6 @@ exclude =
         components/ulp/esp32ulp_mapgen.py,
         components/wifi_provisioning/python/wifi_config_pb2.py,
         components/wifi_provisioning/python/wifi_constants_pb2.py,
-        examples/provisioning/ble_prov/ble_prov_test.py,
-        examples/provisioning/softap_prov/softap_prov_test.py,
-        examples/provisioning/softap_prov/utils/wifi_tools.py,
         tools/ci/apply_bot_filter.py,
         tools/cmake/convert_to_cmake.py,
         tools/esp_app_trace/apptrace_proc.py,
@@ -180,7 +177,6 @@ exclude =
         tools/esp_app_trace/pylibelf/types/__init__.py,
         tools/esp_app_trace/pylibelf/util/__init__.py,
         tools/esp_app_trace/pylibelf/util/syms/__init__.py,
-        tools/esp_prov/esp_prov.py,
         tools/esp_prov/proto/__init__.py,
         tools/esp_prov/prov/__init__.py,
         tools/esp_prov/prov/custom_prov.py,
@@ -190,7 +186,6 @@ exclude =
         tools/esp_prov/security/security0.py,
         tools/esp_prov/security/security1.py,
         tools/esp_prov/transport/__init__.py,
-        tools/esp_prov/transport/ble_cli.py,
         tools/esp_prov/transport/transport.py,
         tools/esp_prov/transport/transport_ble.py,
         tools/esp_prov/transport/transport_console.py,
