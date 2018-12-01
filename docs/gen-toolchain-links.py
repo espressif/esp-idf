@@ -10,6 +10,7 @@ from __future__ import print_function
 import sys
 import os
 
+
 def main():
     if len(sys.argv) != 4:
         print("Usage: gen-toolchain-links.py <versions file> <base download URL> <output directory>")
@@ -48,10 +49,10 @@ def main():
     ./bootstrap && ./configure --enable-local && make install
 """
 
-    platform_info = [ ["linux64", "tar.gz", "z", unpack_code_linux_macos],
-                      ["linux32", "tar.gz", "z", unpack_code_linux_macos],
-                      ["osx", "tar.gz", "z", unpack_code_linux_macos],
-                      ["win32", "zip", None, None]]
+    platform_info = [["linux64", "tar.gz", "z", unpack_code_linux_macos],
+                     ["linux32", "tar.gz", "z", unpack_code_linux_macos],
+                     ["osx", "tar.gz", "z", unpack_code_linux_macos],
+                     ["win32", "zip", None, None]]
 
     with open(os.path.join(out_dir, 'download-links.inc'), "w") as links_file:
         for p in platform_info:
@@ -61,8 +62,8 @@ def main():
             unpack_code = p[3]
 
             archive_name = 'xtensa-esp32-elf-{}-{}-{}.{}'.format(
-                    platform_name, toolchain_desc, gcc_version, extension)
-            
+                platform_name, toolchain_desc, gcc_version, extension)
+
             print('.. |download_link_{}| replace:: {}{}'.format(
                 platform_name, base_url, archive_name), file=links_file)
 
@@ -72,6 +73,7 @@ def main():
 
     with open(os.path.join(out_dir, 'scratch-build-code.inc'), "w") as code_file:
         print(scratch_build_code_linux_macos, file=code_file)
+
 
 if __name__ == "__main__":
     main()
