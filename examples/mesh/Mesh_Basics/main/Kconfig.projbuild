@@ -1,0 +1,767 @@
+# Copyright © 2018 Riccardo Bertini <m_bertini@hotmail.com>
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and limitations under the License.
+
+menu "Mesh Basics Configuration"
+
+  menu "Mesh Configuration Settings"
+
+    menu "Mesh Base Configuration"
+
+      config MESH_NETWORK_ID
+       string "Mesh Network Identifier (MID)"
+       default "52:69:63:63:61:72"
+       help
+        The identifier of the mesh network the device will either join or create
+        depending on its further configuration and other run-time factors
+       
+      config MESH_WIFI_CHANNEL
+       int "Mesh Wi-Fi Channel"
+       range 1 13
+       help
+        The Wi-Fi channel used for mesh networking
+
+      menu "Mesh SoftAP Settings"
+
+        config MESH_SOFTAP_PASSWORD
+         string "Mesh SoftAP Password"
+         default "mymeshpassword"
+         help 
+          The password required from a node to connect to a parent node in the mesh network
+
+        config MESH_SOFTAP_MAXCONNECTIONS
+         int "Mesh SoftAP Maximum Children*"
+         default 10
+         range 1 10
+         help 
+          The maximum number of connected children for each node
+			
+      endmenu
+
+      menu "Mesh Router Settings"
+
+        config MESH_ROUTER_SSID
+         string "Router SSID"
+         default "myRouterSSID"
+         help 
+          The SSID of the external router's AP
+
+        config MESH_ROUTER_PASSWORD
+         string "Router Password"
+         default "myRouterPassword"
+         help 
+          The password required for connecting to the external router's AP
+
+        config MESH_ROUTER_SPECIFIC_BSSID
+         bool "Use Router Specific BSSID?"
+         default n
+         help
+          Whether the root node of the network should attempt to connect to an external router with a specific BSSID only
+
+        config MESH_ROUTER_BSSID
+         string "Router Specific BSSID"
+         default "14:CC:20:37:B3:51"
+         depends on MESH_ROUTER_SPECIFIC_BSSID
+         help
+          The specific BSSID of the external router the root node must connect to
+
+      endmenu
+
+      choice CHOICE_MESH_CRYPTO_FUNCS
+       prompt "Mesh IE Crypto Function"
+       default MESH_CRYPTO_FUNC_AES
+       help
+        The cryptographic algorithm to apply to the Mesh IE in the Wi-Fi beacon frames
+       config MESH_CRYPTO_FUNC_AES
+        bool "AES"
+       config MESH_CRYPTO_FUNC_NONE
+        bool "None"
+      endchoice
+
+    endmenu
+
+    menu "Mesh Shared Settings"
+
+      menu "Mesh Organization Mode"
+
+        choice CHOICE_MESH_NETWORK_ORGANIZATION
+         prompt "Mesh Organization Mode"
+         default MESH_ORGANIZATION_SELF_ORGANIZED
+         help
+          The mesh organization mode to use in the network
+         config MESH_ORGANIZATION_SELF_ORGANIZED
+          bool "Self-Organized"
+         config MESH_ORGANIZATION_FIXED_ROOT
+          bool "Fixed-Root"
+         config MESH_ORGANIZATION_MANUAL_NETWORKING
+          bool "Manual Networking"
+         endchoice
+
+        config MESH_IS_NODE_FIXED_ROOT
+         bool "Is this node the fixed root?"
+         default n
+         depends on MESH_ORGANIZATION_FIXED_ROOT
+         help
+          Whether this node represents te fixed-root of the mesh network or not
+
+        choice CHOICE_MESH_MANUAL_PARENT
+         prompt "Connect to:"
+         default MESH_MANUAL_PARENT_SPECIFIC
+         depends on MESH_ORGANIZATION_MANUAL_NETWORKING
+         help
+          The parent the node should preferably attempt to connect to as a child
+         config MESH_MANUAL_PARENT_SPECIFIC
+          bool "A specific parent node"
+         config MESH_MANUAL_PARENT_ROUTER
+          bool "The external router (as root)"
+         config MESH_MANUAL_PARENT_PREFERRED
+          bool "The node's preferred parent"
+        endchoice        
+
+        config MESH_MANUAL_PARENT_SPECIFIC_BSSID
+         string "Parent node's BSSID"
+         default "44:65:6E:74:6F:6E"
+         depends on MESH_MANUAL_PARENT_SPECIFIC
+         help
+          The BSSID of the parent node the node will attempt to connect to as a child
+
+        config MESH_MANUAL_PARENT_ALLOW_SPECIFIC_FALLBACK
+         bool "Fall back on the preferred parent if not found"
+         default y
+         depends on MESH_MANUAL_PARENT_SPECIFIC
+         help
+          Whether to allow the node to fall back on its preferred parent should the specific parent node not be found
+
+        config MESH_MANUAL_PARENT_ALLOW_ROUTER_FALLBACK
+         bool "Fall back on the preferred parent if a root node is found"
+         default y
+         depends on MESH_MANUAL_PARENT_ROUTER
+         help
+          Whether the node should fall back on its preferred parent should a root node already be present in the network
+
+        config MESH_MANUAL_PARENT_RSSI_THRESHOLD
+         int "Parent RSSI Threshold"
+         range -200 0
+         default -90
+         depends on MESH_ORGANIZATION_MANUAL_NETWORKING
+         help
+          The minimum RSSI with a parent required for a node to attempt to connect to it
+
+        config MESH_MANUAL_SCAN_RETRY_INTERVAL
+         int "Wi-Fi Scan Retry Interval (ms)"
+         default 500
+         range 1 100000
+         depends on MESH_ORGANIZATION_MANUAL_NETWORKING
+         help
+          The interval after which perform a new scan on the Mesh Wi-Fi channel if no suitable parent to attempt to connect to was found
+
+        config MESH_MANUAL_MAX_CONNECTIONS_FAILS
+         int "Maximum reconnection attempts before falling back to the preferred parent*"
+         default 10
+         range 1 1000
+         depends on (MESH_MANUAL_PARENT_PREFERRED||MESH_MANUAL_PARENT_ALLOW_SPECIFIC_FALLBACK||MESH_MANUAL_PARENT_ALLOW_ROUTER_FALLBACK)
+         help
+          The maximum number of failed reconnection attempts after which a node performs a Wi-Fi scan to search for a preferred parent to fall back to
+          BUG: Falling back on the node's preferred parent is currently not possible since the automatic reconnection
+               attempts to the node's last parent performed by the mesh stack prevent a new Wi-Fi scan from being carried out
+
+      endmenu
+
+      menu "Mesh Topology Settings"
+
+        config MESH_MAX_LAYER
+         int "Mesh Maximum Layer"
+         default 10
+         range 1 25
+         help 
+          The maximum layer of the mesh network
+   
+        config MESH_MAX_CAPACITY
+         int "Mesh Maximum Capacity*"
+         default 30
+         range 1 300
+         help 
+          The maximum number of nodes allowed in the mesh network
+          BUG: This setting is currently disregarded by nodes in a mesh network
+
+      endmenu
+
+      menu "Mesh Self-Organized Root Settings"
+
+        config MESH_ROOT_ELECTION_THRESHOLD
+         string "Root Election Voting Percentage Threshold"
+         default "0.9"
+         help 
+          The voting percentage threshold for a node to proclaim itself root once a root election ends
+   
+        config MESH_ROOT_ELECTION_MIN_ROUNDS
+         int "Root Election Minimum Rounds"
+         default 10
+         help 
+          The minimum number of rounds in a root node election
+
+        config MESH_ROOT_HEALING_DELAY
+         int "Root Node Healing Delay (ms)"
+         default 6000
+         help 
+          The time from the moment the nodes in the second layer of the mesh network (or in general in the first layers in case of multiple simultaneous failures) 
+          receive the last beacon frame from the root node and the moment they disconnect from it and start a new root election
+
+      endmenu
+
+      menu "Other Root Node Settings"
+
+        config MESH_ROOT_TODS_QUEUE_SIZE
+         int "Root TODS Receiving Queue Size"
+         default 32
+         range 16 300
+         help 
+          The size of the root node's receiving queue for packets destined for the external DS
+ 
+        choice CHOICE_MESH_ROOT_IPCONFIG
+         prompt "Root station IP Configuration"
+         default MESH_ROOT_IPDYNAMIC
+         help
+          Whether a dynamic or static IP configuration must be used on the root node's station interface to allow it to communicate with the external router
+         config MESH_ROOT_IPDYNAMIC
+          bool "Dynamic"
+         config MESH_ROOT_IPSTATIC
+          bool "Static"
+        endchoice
+
+        config MESH_ROOT_STATIC_IP
+         string "IP Address"
+         default "192.168.5.10"
+         depends on MESH_ROOT_IPSTATIC
+         help 
+          The static IP address to use for the root node's station interface
+
+        config MESH_ROOT_STATIC_NETMASK
+         string "NetMask"
+         default "255.255.255.0"
+         depends on MESH_ROOT_IPSTATIC
+         help 
+          The static NetMask to use for the root node's station interface
+
+        config MESH_ROOT_STATIC_GATEWAY
+         string "Gateway"
+         default "192.168.5.1"
+         depends on MESH_ROOT_IPSTATIC
+         help 
+          The static Gateway to use for the root node's station interface
+
+        config MESH_ROOT_STATIC_DNS_PRIMARY
+         string "Primary DNS Server"
+         default "8.8.8.8"
+         depends on MESH_ROOT_IPSTATIC
+         help 
+          The address of the root node's station interface primary DNS server
+
+        config MESH_ROOT_STATIC_DNS_SECONDARY
+         string "Secondary DNS Server"
+         default "8.8.4.4"
+         depends on MESH_ROOT_IPSTATIC
+         help 
+          The address of the root node's station interface secondary DNS server
+
+      endmenu      
+
+      menu "Mesh Additional SoftAP Settings"
+
+        choice CHOICE_MESH_SOFTAP_AUTHMODE
+         prompt "Mesh SoftAP Authmode"
+         default MESH_SOFTAP_AUTHMODE_WPA2_PSK
+         help
+          The authentication protocol used to connect to a parent node in the mesh network
+          NOTE: This doesn't correspond to the authentication protocol used on the nodes' 
+                SoftAP interfaces, which are left open at the Wi-Fi interface level
+         config MESH_SOFTAP_AUTHMODE_OPEN
+          bool "None"
+         config MESH_SOFTAP_AUTHMODE_WPA_PSK
+          bool "WPA-PSK"
+         config MESH_SOFTAP_AUTHMODE_WPA2_PSK
+          bool "WPA2-PSK"
+         config MESH_SOFTAP_AUTHMODE_WPA_WPA2_PSK
+          bool "WPA/WPA2-PSK"
+        endchoice
+
+        config MESH_CHILDREN_DISASSOCIATION_DELAY
+         int "Mesh Children Disassociation Delay (s)"
+         default 10
+         range 10 1000
+         help
+          The time from the moment the last data is received from a node's child to the moment the node marks it as inactive (i.e. failed), disassociating it.
+     
+      endmenu
+ 
+    endmenu    
+
+    menu "Mesh Node-specific Settings"
+
+      config MESH_NODE_INGROUP
+       bool "Add the Node to a Mesh Group"
+       default n
+       help
+        Whether to add the node to a Mesh Group (Note that while in this example a
+        node may be added into a single mesh group, in general this is not the case)
+
+      config MESH_NODE_GROUP_ID
+       string "Mesh Group ID (GID)"
+       default "52:69:63:6B:6B:95"
+       depends on MESH_NODE_INGROUP
+       help
+        The GID of the Mesh Group we want to add the node into 
+
+      menu "Custom MAC Addresses"
+      
+        config MESH_STATION_USE_CUSTOM_MAC
+         bool "Use Station Custom MAC Address"
+         default n
+         help 
+          Whether to use a custom MAC address for the node's Station interface
+
+        config MESH_STATION_CUSTOM_MAC
+         string "Station MAC Address"
+         default "20:A5:F2:23:9B:A7"
+         depends on MESH_STATION_USE_CUSTOM_MAC
+         help
+          The custom MAC address to use for the node's station interface, which will be propagated in the routing tables of its ancestors
+          (Note that in the most significant byte the first bit cannot be "1")
+
+        config MESH_SOFTAP_USE_CUSTOM_MAC
+         bool "Use SoftAP Custom MAC Address"
+         default n
+         help 
+          Whether to use a custom MAC address for the node's SoftAP interface (which will represent its BSSID)
+
+        config MESH_SOFTAP_CUSTOM_MAC
+         string "SoftAP MAC Address"
+         default "52:69:63:6B:6B:79"
+         depends on MESH_SOFTAP_USE_CUSTOM_MAC
+         help 
+          The custom MAC address to use for the node's SoftAP interface 
+          (Note that in the most significant byte the first bit cannot be "1")
+ 
+      endmenu
+
+    endmenu
+
+  endmenu
+
+  menu "Driver Components Settings"
+ 
+    menu "Internal Driver Components"
+  
+      menu "Logging Driver"
+
+        config MESH_DRIVER_LOGGING_ENABLE
+         bool "Enable Logging Driver"
+         default n
+         help
+          Whether to enable a periodic logging of the node' status
+
+        config MESH_DRIVER_LOGGING_ROUTING
+         bool "Print Node Routing Table"
+         default y
+         depends on MESH_DRIVER_LOGGING_ENABLE
+         help
+          Whether to include the node's routing table in the logging
+
+        config MESH_DRIVER_LOGGING_STATION
+         bool "Station Interface Logging"
+         default n
+         depends on MESH_DRIVER_LOGGING_ENABLE
+         help
+          Whether to include information on the node's station interface in the logging
+
+        config MESH_DRIVER_LOGGING_SOFTAP
+         bool "SoftAP Interface Logging"
+         default n
+         depends on MESH_DRIVER_LOGGING_ENABLE
+         help
+          Whether to include information on the node's SoftAP interface in the logging
+
+        config MESH_DRIVER_LOGGING_EVENTGROUP
+         bool "Print the Mesh Event Group"
+         default y
+         depends on MESH_DRIVER_LOGGING_ENABLE
+         help
+          whether to include the flags of the mesh event group in the logging
+  
+        config MESH_DRIVER_LOGGING_INTERVAL
+         int "Logging Interval (s)"
+         range 5 5000
+         default 10
+         depends on MESH_DRIVER_LOGGING_ENABLE
+         help
+          The logging interval in seconds
+
+      endmenu
+
+      menu "Sender Driver"
+
+        config MESH_DRIVER_SENDER_ENABLE
+         bool "Enable Sender Driver"
+         default n
+         help
+          Whether to enable a periodic sending of a mesh packet destined for one or more nodes inside the mesh network
+
+        choice CHOICE_MESH_DRIVER_SENDER_DEST
+         prompt "Send to:"
+         default MESH_DRIVER_SENDER_DEST_PARENT
+         depends on MESH_DRIVER_SENDER_ENABLE
+         help
+          The destination(s) of the mesh packet to send 
+         config MESH_DRIVER_SENDER_DEST_PARENT
+          bool "The node's parent (unicast)*"
+          help
+           The root node's parent (the external router) excluded
+         config MESH_DRIVER_SENDER_DEST_FIRSTCHILD
+          bool "The node's first child (unicast)"
+         config MESH_DRIVER_SENDER_DEST_ALLCHILDREN
+          bool "All the node's children (unicast)"
+         config MESH_DRIVER_SENDER_DEST_ALLDESCENDANTS
+          bool "All the node's descendants (unicast)"
+         config MESH_DRIVER_SENDER_DEST_ROOT
+          bool "The root node (unicast)"
+         config MESH_DRIVER_SENDER_DEST_SPECIFIC
+          bool "A specific node (unicast)"
+         config MESH_DRIVER_SENDER_DEST_GROUP
+          bool "A mesh group (multicast)"
+         config MESH_DRIVER_SENDER_DEST_BROADCAST
+          bool "All nodes in the mesh network (broadcast)*"
+          help
+           BUG: Currently sending a mesh packet in broadcast causes the esp_mesh_send() function to return the ESP_ERR_MESH_NO_ROUTE_FOUND error
+        endchoice
+
+        config MESH_DRIVER_SENDER_SPECIFIC_ADDR
+         string "Destination node's MAC"
+         default "58:68:FF:6B:32:A5"
+         depends on MESH_DRIVER_SENDER_DEST_SPECIFIC
+         help
+          The station MAC address of the specific node the mesh packet must be sent to
+
+        config MESH_DRIVER_SENDER_DEST_GROUP_ADDR
+         string "Destination Group ID"
+         default "52:69:63:6B:6B:95"
+         depends on MESH_DRIVER_SENDER_DEST_GROUP
+         help
+          The GID of the mesh group the packet must be sent to
+
+        config MESH_DRIVER_SENDER_MESSAGE
+         string "Message to send"
+         default "Hello!"
+         depends on MESH_DRIVER_SENDER_ENABLE
+         help
+          The contents of the mesh packet to send (must be <= MESH_MPS = 1472 bytes = maximum payload size)
+
+        choice CHOICE_MESH_DRIVER_SENDER_MODE
+         prompt "Sending Mode"
+         default MESH_DRIVER_SENDER_MODE_BLOCKING
+         depends on MESH_DRIVER_SENDER_ENABLE
+         help
+          Whether to use the blocking or non-blocking version of the esp_mesh_send() function to send the packet
+         config MESH_DRIVER_SENDER_MODE_BLOCKING
+          bool "Blocking"
+         config MESH_DRIVER_SENDER_MODE_NONBLOCKING
+          bool "Non-Blocking*"
+          help
+           BUG: Currently using this sending mode still causes the esp_mesh_send() function to block if it would block in the first place 
+                (it should also be noted that the Mesh API currently don't offer any method to set a timeout for the esp_mesh_send() function)
+        endchoice
+
+        choice CHOICE_MESH_DRIVER_SENDER_PROTOCOL
+         prompt "Packet Payload Protocol"
+         default MESH_DRIVER_SENDER_PROTOCOL_BIN
+         depends on MESH_DRIVER_SENDER_ENABLE
+         help
+          The protocol the packet payload belongs to
+         config MESH_DRIVER_SENDER_PROTOCOL_BIN
+          bool "Binary"
+         config MESH_DRIVER_SENDER_PROTOCOL_HTTP
+          bool "HTTP"
+         config MESH_DRIVER_SENDER_PROTOCOL_JSON
+          bool "JSON"
+         config MESH_DRIVER_SENDER_PROTOCOL_MQTT
+          bool "MQTT"
+        endchoice
+
+        choice CHOICE_MESH_DRIVER_SENDER_TOS
+         prompt "Packet Type of Service"
+         default MESH_DRIVER_SENDER_TOS_RELIABLE
+         depends on MESH_DRIVER_SENDER_ENABLE
+         help
+          The type of service that must be used to deliver the packet 
+         config MESH_DRIVER_SENDER_TOS_RELIABLE
+          bool "Reliable"
+         config MESH_DRIVER_SENDER_TOS_UNRELIABLE
+          bool "Unreliable*" 
+          help
+           BUG: Currently using the unreliable TOS causes the esp_mesh_send() function to fail if the packet's destination address  
+                is not found in the routing table of a node (packet that so would be forwarded upstream to the node's parent)
+        endchoice
+
+        config MESH_DRIVER_SENDER_INTERVAL
+         int "Sending Interval (s)"
+         range 1 5000
+         default 10
+         depends on MESH_DRIVER_SENDER_ENABLE
+         help
+          The packet sending interval in seconds
+
+      endmenu
+
+      menu "Receiver Driver"
+ 
+        config MESH_DRIVER_RECEIVER_ENABLE
+         bool "Enable Receiver Driver"
+         default y
+         help
+          Whether to enable the receival of mesh packets destined for the node
+
+        config MESH_DRIVER_RECEIVER_REPLY
+         bool "Reply to received packets"
+         default y
+         depends on MESH_DRIVER_RECEIVER_ENABLE
+         help
+          Whether to reply a predefined message to the sources of received packets
+
+        config MESH_DRIVER_RECEIVER_REPLY_MESSAGE
+         string "Reply Message"
+         default "Bye!"
+         depends on MESH_DRIVER_RECEIVER_REPLY
+         help
+          The contents of the reply message (must be <= MESH_MPS = 1472 bytes = maximum payload size)
+         
+        choice CHOICE_MESH_DRIVER_RECEIVER_REPLY_MODE
+         prompt "Reply Sending Mode"
+         default MESH_DRIVER_RECEIVER_REPLY_MODE_BLOCKING
+         depends on MESH_DRIVER_RECEIVER_REPLY
+         help
+          Whether to use the blocking or non-blocking version of the esp_mesh_send() function to reply to received packets
+         config MESH_DRIVER_RECEIVER_REPLY_MODE_BLOCKING
+          bool "Blocking"
+         config MESH_DRIVER_RECEIVER_REPLY_MODE_NONBLOCKING
+          bool "Non-Blocking*"
+          help
+           BUG: Currently using this sending mode still causes the esp_mesh_send() function to block if it would block in the first place 
+                (it should also be noted that the Mesh API currently don't offer any method to set a timeout for the esp_mesh_send() function)
+        endchoice
+
+        choice CHOICE_MESH_DRIVER_RECEIVER_REPLY_PROTOCOL
+         prompt "Reply Packet Payload Protocol"
+         default MESH_DRIVER_RECEIVER_REPLY_PROTOCOL_BIN
+         depends on MESH_DRIVER_RECEIVER_REPLY
+         help
+          The protocol the reply packet payload belongs to
+         config MESH_DRIVER_RECEIVER_REPLY_PROTOCOL_BIN
+          bool "Binary"
+         config MESH_DRIVER_RECEIVER_REPLY_PROTOCOL_HTTP
+          bool "HTTP"
+         config MESH_DRIVER_RECEIVER_REPLY_PROTOCOL_JSON
+          bool "JSON"
+         config MESH_DRIVER_RECEIVER_REPLY_PROTOCOL_MQTT
+          bool "MQTT"
+        endchoice
+
+        choice CHOICE_MESH_DRIVER_RECEIVER_REPLY_TOS
+         prompt "Reply Packet Type of Service"
+         default MESH_DRIVER_RECEIVER_REPLY_TOS_RELIABLE
+         depends on MESH_DRIVER_RECEIVER_REPLY
+         help
+          The type of service that must be used to deliver the reply packet
+         config MESH_DRIVER_RECEIVER_REPLY_TOS_RELIABLE
+          bool "Reliable"
+         config MESH_DRIVER_RECEIVER_REPLY_TOS_UNRELIABLE
+          bool "Unreliable*" 
+          help
+           BUG: Currently using the unreliable TOS causes the esp_mesh_send() function to fail if the packet's destination address  
+                is not found in the routing table of a node (packet that so would be forwarded upstream to the node's parent)
+        endchoice
+
+      endmenu
+ 
+    endmenu
+
+    menu "External Driver Components"
+  
+      menu "SenderDS Driver"
+
+        config MESH_DRIVER_SENDERDS_ENABLE
+         bool "Enable SenderDS Driver"
+         default n
+         help
+          Whether to enable a periodic sending of a mesh packet destined for an host outside the mesh network
+
+        config MESH_DRIVER_SENDERDS_DESTINATION_IP
+         string "Destination IP"
+         default "192.168.0.1"
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          The destination IP address the packet must be sent to
+
+        config MESH_DRIVER_SENDERDS_DESTINATION_PORT
+         int "Destination Port"
+         default "80"
+         range 1 65535
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          The destination port the packet must be sent to
+
+        config MESH_DRIVER_SENDERDS_MESSAGE
+         string "Message to send"
+         default "GET /index.php HTTP/1.1"
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          The contents of the mesh packet to send (must be <= MESH_MPS = 1472 bytes = maximum payload size)
+
+        choice CHOICE_MESH_DRIVER_SENDERDS_MODE
+         prompt "Sending Mode"
+         default MESH_DRIVER_SENDERDS_MODE_BLOCKING
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          Whether to use the blocking or non-blocking version of the esp_mesh_send() function to send the packet
+         config MESH_DRIVER_SENDERDS_MODE_BLOCKING
+          bool "Blocking"
+         config MESH_DRIVER_SENDERDS_MODE_NONBLOCKING
+          bool "Non-Blocking*"
+          help
+           BUG: Currently using this sending mode still causes the esp_mesh_send() function to block if it would block in the first place 
+                (it should also be noted that the Mesh API currently don't offer any method to set a timeout for the esp_mesh_send() function)
+        endchoice
+
+        choice CHOICE_MESH_DRIVER_SENDERDS_PROTOCOL
+         prompt "Packet Payload Protocol"
+         default MESH_DRIVER_SENDERDS_PROTOCOL_BIN
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          The protocol the packet payload belongs to
+         config MESH_DRIVER_SENDERDS_PROTOCOL_BIN
+          bool "Binary"
+         config MESH_DRIVER_SENDERDS_PROTOCOL_HTTP
+          bool "HTTP"
+         config MESH_DRIVER_SENDERDS_PROTOCOL_JSON
+          bool "JSON"
+         config MESH_DRIVER_SENDERDS_PROTOCOL_MQTT
+          bool "MQTT"
+        endchoice
+
+        choice CHOICE_MESH_DRIVER_SENDERDS_TOS
+         prompt "Packet Type of Service"
+         default MESH_DRIVER_SENDERDS_TOS_RELIABLE
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          The type of service that must be used to deliver the packet to the root node
+         config MESH_DRIVER_SENDERDS_TOS_RELIABLE
+          bool "Reliable"
+         config MESH_DRIVER_SENDERDS_TOS_UNRELIABLE
+          bool "Unreliable*" 
+          help
+           BUG: Currently using the unreliable TOS causes the esp_mesh_send() function to fail if the packet's destination address is not 
+                found in the routing table of a node (packet that so would be forwarded upstream to the node's parent), and so if sending
+                to an external host using an unreliable TOS causes the esp_mesh_send() function to fail on all nodes except on the root node               
+        endchoice
+
+        config MESH_DRIVER_SENDERDS_DROP
+         bool "Mark the data in the packet as of no critical importance*"
+         default n
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          Whether to mark the data in the packet as of no critical importance to allow it to be dropped in case
+          of congestion on a newly elected root node (i.e. set the MESH_DATA_DROP bit in the packet's flag)
+          BUG: Currently the MESH_DATA_DROP bit in a packet's flag is either not actually set in the
+               sent packet or in any case not received at the application level on the root node
+
+        config MESH_DRIVER_SENDERDS_INTERVAL
+         int "Sending Interval (s)"
+         range 1 5000
+         default 15
+         depends on MESH_DRIVER_SENDERDS_ENABLE
+         help
+          The sending interval in seconds
+     
+      endmenu
+
+    endmenu
+
+    menu "Root Driver Components"
+ 
+      menu "ReceiverDS Driver"
+
+       config MESH_DRIVER_RECEIVERDS_ENABLE
+        bool "Enable Root ReceiverDS Driver"
+        default y
+        help
+         Whether to enable the root node to receive packets destined for the external DS
+
+      endmenu
+
+      menu "Waive Driver (Self-Organized Networking only)"
+    
+        config MESH_DRIVER_WAIVE_ENABLE
+         bool "Enable Root Waive"
+         default y
+         help
+          Whether to enable the root node to waive its root status depending on specific conditions (Self-Organized Network only)
+
+        config MESH_DRIVER_WAIVE_VOTING_THRESHOLD
+         string "New Root Election Voting Percentage Threshold"
+         default "0.9"
+         depends on MESH_DRIVER_WAIVE_ENABLE
+         help 
+          The voting percentage threshold for a node to proclaim itself as root at the end of the new root election
+
+        config MESH_DRIVER_WAIVE_ELECTION_MAX_ROUNDS
+         int "New Root Election Maximum Rounds"
+         default 15
+         range 15 1000
+         depends on MESH_DRIVER_WAIVE_ENABLE
+         help 
+          The maximum number of rounds in the new root election
+
+        choice CHOICE_MESH_DRIVER_WAIVE_CONDITION
+         prompt "Waive Condition"
+         default MESH_DRIVER_WAIVE_RSSI
+         depends on MESH_DRIVER_WAIVE_ENABLE
+         help
+          The condition for the root node to waive its root status, thus triggering a new root election in the mesh network
+         config MESH_DRIVER_WAIVE_RSSI
+          bool "Low RSSI with the router"
+         config MESH_DRIVER_WAIVE_AUTOMATIC
+          bool "Automatically after a set period"
+        endchoice
+
+        config MESH_DRIVER_WAIVE_RSSI_THRESHOLD
+         int "Router RSSI Threshold"
+         range -200 0
+         default -80
+         depends on MESH_DRIVER_WAIVE_RSSI
+         help
+          The minimum router RSSI for which the root node should waive
+  
+        config MESH_DRIVER_WAIVE_RSSI_INTERVAL
+         int "RSSI Check Interval (s)"
+         range 1 5000
+         default 30
+         depends on MESH_DRIVER_WAIVE_RSSI
+         help
+          The RSSI check interval in seconds
+
+        config MESH_DRIVER_WAIVE_AUTOMATIC_INTERVAL
+         int "Automatic Waive Interval (s)"
+         range 5 5000
+         default 30
+         depends on MESH_DRIVER_WAIVE_AUTOMATIC
+         help
+          The interval in seconds after which the root node should waive
+
+      endmenu
+
+    endmenu
+
+  endmenu
+
+endmenu

@@ -1,0 +1,231 @@
+/*************************************************************************************************************
+ * Copyright © 2018 Riccardo Bertini <m_bertini@hotmail.com>                                                 *
+ * Licensed under the Apache License, Version 2.0 (the "License");                                           *
+ * you may not use this file except in compliance with the License.                                          *
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0                        *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is      *
+ * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. *
+ * See the License for the specific language governing permissions and limitations under the License.        *
+ *************************************************************************************************************/
+
+#ifndef MESHBASICS_SETUP_MENUCONFIG_H
+#define MESHBASICS_SETUP_MENUCONFIG_H
+
+/*-- Mesh IE Crypto Function --*/
+#define MESH_CRYPTO_NONE 0
+#define MESH_CRYPTO_AES  1
+
+/**============ [Mesh Base Configuration] ============**/
+#define MESH_NETWORK_ID CONFIG_MESH_NETWORK_ID
+
+#define MESH_WIFI_CHANNEL CONFIG_MESH_WIFI_CHANNEL
+
+#ifdef CONFIG_MESH_SOFTAP_PASSWORD
+ #define MESH_SOFTAP_PASSWORD CONFIG_MESH_SOFTAP_PASSWORD
+#else
+ #define MESH_SOFTAP_PASSWORD "(none)"
+#endif
+
+#define MESH_SOFTAP_MAXCONNECTIONS CONFIG_MESH_SOFTAP_MAXCONNECTIONS
+
+#define MESH_ROUTER_SSID CONFIG_MESH_ROUTER_SSID
+
+#define MESH_ROUTER_PASSWORD CONFIG_MESH_ROUTER_PASSWORD
+
+#ifdef CONFIG_MESH_ROUTER_SPECIFIC_BSSID
+ #define MESH_ROUTER_SPECIFIC_BSSID 1
+#else
+ #define MESH_ROUTER_SPECIFIC_BSSID 0
+#endif
+
+#ifdef CONFIG_MESH_ROUTER_BSSID
+ #define MESH_ROUTER_BSSID CONFIG_MESH_ROUTER_BSSID
+#else
+ #define MESH_ROUTER_BSSID "00:00:00:00:00:00"
+#endif
+
+#ifdef CONFIG_MESH_CRYPTO_FUNC_AES
+ #define MESH_CRYPTO_FUNC MESH_CRYPTO_AES
+#else
+ #define MESH_CRYPTO_FUNC MESH_CRYPTO_NONE
+#endif
+
+/**============ [Mesh Organization Mode] ============**/
+#ifdef CONFIG_MESH_ORGANIZATION_SELF_ORGANIZED
+ #define MESH_ORGANIZATION_MODE SELF_ORGANIZED
+#else
+ #ifdef CONFIG_MESH_ORGANIZATION_FIXED_ROOT
+  #define MESH_ORGANIZATION_MODE FIXED_ROOT
+ #else
+  #define MESH_ORGANIZATION_MODE MANUAL_NETWORKING
+ #endif
+#endif
+
+#ifdef CONFIG_MESH_IS_NODE_FIXED_ROOT
+ #define MESH_IS_NODE_FIXED_ROOT 1
+#else
+ #define MESH_IS_NODE_FIXED_ROOT 0
+#endif
+
+#ifdef CONFIG_MESH_MANUAL_PARENT_SPECIFIC
+ #define MESH_MANUAL_PARENT_SPECIFIC 1
+#else
+ #define MESH_MANUAL_PARENT_SPECIFIC 0
+#endif
+
+#ifdef CONFIG_MESH_MANUAL_PARENT_SPECIFIC_BSSID
+ #define MESH_MANUAL_PARENT_SPECIFIC_BSSID CONFIG_MESH_MANUAL_PARENT_SPECIFIC_BSSID
+#else
+ #define MESH_MANUAL_PARENT_SPECIFIC_BSSID "00:00:00:00:00:00"
+#endif
+
+#ifdef CONFIG_MESH_MANUAL_PARENT_ROUTER
+ #define MESH_MANUAL_PARENT_ROUTER 1
+#else
+ #define MESH_MANUAL_PARENT_ROUTER 0
+#endif
+
+#if defined(CONFIG_MESH_MANUAL_PARENT_PREFERRED) || defined(CONFIG_MESH_MANUAL_PARENT_ALLOW_SPECIFIC_FALLBACK) || defined(CONFIG_MESH_MANUAL_PARENT_ALLOW_ROUTER_FALLBACK)
+ #define MESH_MANUAL_PARENT_SEARCH_PREFERRED 1
+#else
+ #define MESH_MANUAL_PARENT_SEARCH_PREFERRED 0
+#endif
+
+#ifdef CONFIG_MESH_MANUAL_PARENT_RSSI_THRESHOLD
+ #define MESH_MANUAL_PARENT_RSSI_THRESHOLD CONFIG_MESH_MANUAL_PARENT_RSSI_THRESHOLD
+#else
+ #define MESH_MANUAL_PARENT_RSSI_THRESHOLD -120
+#endif
+
+#ifdef CONFIG_MESH_MANUAL_MAX_CONNECTIONS_FAILS
+ #define MESH_MANUAL_MAX_CONNECTIONS_FAILS CONFIG_MESH_MANUAL_MAX_CONNECTIONS_FAILS
+#else
+ #define MESH_MANUAL_MAX_CONNECTIONS_FAILS 10
+#endif
+
+#ifdef CONFIG_MESH_MANUAL_SCAN_RETRY_INTERVAL
+ #define MESH_MANUAL_SCAN_RETRY_INTERVAL CONFIG_MESH_MANUAL_SCAN_RETRY_INTERVAL
+#else
+ #define MESH_MANUAL_SCAN_RETRY_INTERVAL 0
+#endif
+
+/**============ [Mesh Topology Settings] ============**/
+#define MESH_MAX_LAYER CONFIG_MESH_MAX_LAYER
+#define MESH_MAX_CAPACITY CONFIG_MESH_MAX_CAPACITY
+
+/**======= [Mesh Self-Organized Root Settings] =======**/
+#ifdef CONFIG_MESH_ROOT_ELECTION_THRESHOLD
+ #define MESH_ROOT_ELECTION_THRESHOLD CONFIG_MESH_ROOT_ELECTION_THRESHOLD
+#else
+ #define MESH_ROOT_ELECTION_THRESHOLD "0.9"
+#endif
+
+#ifdef CONFIG_MESH_ROOT_ELECTION_MIN_ROUNDS
+ #define MESH_ROOT_ELECTION_MIN_ROUNDS CONFIG_MESH_ROOT_ELECTION_MIN_ROUNDS
+#else
+ #define MESH_ROOT_ELECTION_MIN_ROUNDS 10
+#endif
+
+#ifdef CONFIG_MESH_ROOT_HEALING_DELAY
+ #define MESH_ROOT_HEALING_DELAY CONFIG_MESH_ROOT_HEALING_DELAY
+#else
+ #define MESH_ROOT_HEALING_DELAY 2500
+#endif
+
+/**============== [Other Root Node Settings] ==============**/
+#define MESH_ROOT_TODS_QUEUE_SIZE CONFIG_MESH_ROOT_TODS_QUEUE_SIZE
+
+#ifdef CONFIG_MESH_ROOT_IPDYNAMIC
+ #define MESH_ROOT_IPDYNAMIC 1
+#else
+ #define MESH_ROOT_IPDYNAMIC 0
+#endif
+
+#ifdef CONFIG_MESH_ROOT_STATIC_IP
+ #define MESH_ROOT_STATIC_IP CONFIG_MESH_ROOT_STATIC_IP
+#else
+ #define MESH_ROOT_STATIC_IP "0.0.0.0"
+#endif
+
+#ifdef CONFIG_MESH_ROOT_STATIC_NETMASK
+ #define MESH_ROOT_STATIC_NETMASK CONFIG_MESH_ROOT_STATIC_NETMASK
+#else
+ #define MESH_ROOT_STATIC_NETMASK "0.0.0.0"
+#endif
+
+#ifdef CONFIG_MESH_ROOT_STATIC_GATEWAY
+ #define MESH_ROOT_STATIC_GATEWAY CONFIG_MESH_ROOT_STATIC_GATEWAY
+#else
+ #define MESH_ROOT_STATIC_GATEWAY "0.0.0.0"
+#endif
+
+#ifdef CONFIG_MESH_ROOT_STATIC_DNS_PRIMARY
+ #define MESH_ROOT_STATIC_DNS_PRIMARY CONFIG_MESH_ROOT_STATIC_DNS_PRIMARY
+#else
+ #define MESH_ROOT_STATIC_DNS_PRIMARY "8.8.8.8"
+#endif
+
+#ifdef CONFIG_MESH_ROOT_STATIC_DNS_SECONDARY
+ #define MESH_ROOT_STATIC_DNS_SECONDARY CONFIG_MESH_ROOT_STATIC_DNS_SECONDARY
+#else
+ #define MESH_ROOT_STATIC_DNS_SECONDARY "8.8.4.4"
+#endif
+
+/**======== [Mesh Additional SoftAP Settings] ========**/
+#ifdef CONFIG_MESH_SOFTAP_AUTHMODE_OPEN
+ #define MESH_SOFTAP_AUTHMODE WIFI_AUTH_OPEN
+#else
+ #ifdef CONFIG_MESH_SOFTAP_AUTHMODE_WPA_PSK
+  #define MESH_SOFTAP_AUTHMODE WIFI_AUTH_WPA_PSK
+ #else
+  #ifdef CONFIG_MESH_SOFTAP_AUTHMODE_WPA2_PSK
+   #define MESH_SOFTAP_AUTHMODE WIFI_AUTH_WPA2_PSK
+  #else
+   #ifdef CONFIG_MESH_SOFTAP_AUTHMODE_WPA_WPA2_PSK
+    #define MESH_SOFTAP_AUTHMODE WIFI_AUTH_WPA_WPA2_PSK
+   #endif
+  #endif
+ #endif
+#endif
+
+#define MESH_CHILDREN_DISASSOCIATION_DELAY CONFIG_MESH_CHILDREN_DISASSOCIATION_DELAY
+
+/**========== [Mesh Node-specific Settings] ==========**/
+#ifdef CONFIG_MESH_NODE_INGROUP
+ #define MESH_NODE_INGROUP 1
+#else
+ #define MESH_NODE_INGROUP 0
+#endif
+
+#ifdef CONFIG_MESH_NODE_GROUP_ID
+ #define MESH_NODE_GROUP_ID CONFIG_MESH_NODE_GROUP_ID
+#else
+ #define MESH_NODE_GROUP_ID "00:00:00:00:00:00"
+#endif
+
+#ifdef CONFIG_MESH_STATION_USE_CUSTOM_MAC
+ #define MESH_STATION_USE_CUSTOM_MAC 1
+#else
+ #define MESH_STATION_USE_CUSTOM_MAC 0
+#endif
+
+#ifdef CONFIG_MESH_STATION_CUSTOM_MAC
+ #define MESH_STATION_CUSTOM_MAC CONFIG_MESH_STATION_CUSTOM_MAC
+#else
+ #define MESH_STATION_CUSTOM_MAC "00:00:00:00:00:00"
+#endif
+
+#ifdef CONFIG_MESH_SOFTAP_USE_CUSTOM_MAC
+ #define MESH_SOFTAP_USE_CUSTOM_MAC 1
+#else
+ #define MESH_SOFTAP_USE_CUSTOM_MAC 0
+#endif
+
+#ifdef CONFIG_MESH_SOFTAP_CUSTOM_MAC
+ #define MESH_SOFTAP_CUSTOM_MAC CONFIG_MESH_SOFTAP_CUSTOM_MAC
+#else
+ #define MESH_SOFTAP_CUSTOM_MAC "00:00:00:00:00:00"
+#endif
+
+
+#endif /*-- MESHBASICS_SETUP_MENUCONFIG_H --*/
