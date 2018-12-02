@@ -129,7 +129,13 @@ JP14     |jp14|            Enable RTS/CTS flow control for serial communication
 Allocation of ESP32 Pins
 ------------------------
 
-Several pins / terminals of ESP32 module are allocated to the on board hardware. Some of them, like GPIO0 or GPIO2, have multiple functions. If certain hardware is not installed, e.g. nothing is plugged in to the Camera / JP4 header, then selected GPIOs may be used for other purposes.
+Several pins / terminals of ESP32 module are allocated to the on board hardware. If certain hardware is not installed, e.g. nothing is plugged in to the Camera / JP4 header, then selected GPIOs may be used for other purposes.
+
+Some of pins, like GPIO0 or GPIO2, have multiple functions and some of them are shared among on board and optional peripheral devices. Certain combinations of peripherals cannot work together. For example it is not possible to do JTAG debugging of an application that is using SD card, because several pins are shared by JTAG and the SD card slot.
+
+In other cases peripherals can coexist under certain conditions. This is applicable to e.g. LCD screen and SD card that share only a single pin GPIO21. This pin is used to provide D/C (Data / Control) signal for the LCD and CD (Card Detect) signal read from the SD card slot. If the card detect functionality is not essential, then it may be disabled by removing R167, so both LCD and SD may operate together.
+
+For more details what pins are shared among peripherals please refer to the table below.
 
 
 Main I/O Connector / JP1
