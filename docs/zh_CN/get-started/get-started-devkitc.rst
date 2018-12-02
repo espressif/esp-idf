@@ -2,7 +2,7 @@ ESP32-DevKitC V4 入门指南
 ======================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP32-DevKitC V4 开发板。有关 ESP32-DevKitC 其他版本的介绍，请见：:doc:`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-DevKitC V4 开发板。有关 ESP32-DevKitC 其他版本的介绍，请见：`../hw-reference/index`。
 
 准备工作
 -------------
