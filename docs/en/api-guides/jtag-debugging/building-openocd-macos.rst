@@ -22,7 +22,7 @@ Install Dependencies
 
 Install packages that are required to compile OpenOCD using Homebrew::
 
-	brew install automake libtool libusb wget gcc@4.9
+	brew install automake libtool libusb wget gcc@4.9 pkg-config
 
 Build OpenOCD
 =============
