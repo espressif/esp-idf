@@ -20,6 +20,8 @@ import functools
 import random
 import tempfile
 
+from serial.tools import list_ports
+
 import DUT
 
 
