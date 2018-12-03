@@ -8,7 +8,6 @@ import hashlib
 from copy import deepcopy
 import CreateSectionTable
 
-
 TEST_CASE_PATTERN = {
     "initial condition": "UTINIT1",
     "SDK": "ESP32_IDF",
@@ -20,13 +19,9 @@ TEST_CASE_PATTERN = {
     "version": "v1 (2016-12-06)",
     "test environment": "UT_T1_1",
     "reset": "",
-    "expected result": "1. set succeed"
-}
-
-CONFIG_FILE_PATTERN = {
-    "Config": {"execute count": 1, "execute order": "in order"},
-    "DUT": [],
-    "Filter": [{"Add": {"ID": []}}]
+    "expected result": "1. set succeed",
+    "cmd set": "test_unit_test_case",
+    "Test App": "UT",
 }
 
 
@@ -39,11 +34,12 @@ class Parser(object):
     # file path (relative to idf path)
     TAG_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "TagDefinition.yml")
     MODULE_DEF_FILE = os.path.join("tools", "unit-test-app", "tools", "ModuleDefinition.yml")
+    CONFIG_DEPENDENCY_FILE = os.path.join("tools", "unit-test-app", "tools", "ConfigDependency.yml")
     MODULE_ARTIFACT_FILE = os.path.join("components", "idf_test", "ModuleDefinition.yml")
     TEST_CASE_FILE = os.path.join("components", "idf_test", "unit_test", "TestCaseAll.yml")
-    UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "builds")
+    UT_BIN_FOLDER = os.path.join("tools", "unit-test-app", "output")
     ELF_FILE = "unit-test-app.elf"
-    APP_NAME_PREFIX = "UT_"
+    SDKCONFIG_FILE = "sdkconfig"
 
     def __init__(self, idf_path=os.getenv("IDF_PATH")):
         self.test_env_tags = {}
@@ -52,21 +48,24 @@ class Parser(object):
         self.idf_path = idf_path
         self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"))
         self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"))
+        self.config_dependency = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), "r"))
         # used to check if duplicated test case names
         self.test_case_names = set()
         self.parsing_errors = []
 
-    def parse_test_cases_from_elf(self, elf_file, app_name):
+    def parse_test_cases_for_one_config(self, config_output_folder, config_name):
         """
         parse test cases from elf and save test cases need to be executed to unit test folder
-        :param elf_file: elf file path
-        :param app_name: built unit test app name
+        :param config_output_folder: build folder of this config
+        :param config_name: built unit test config name
         """
+        elf_file = os.path.join(config_output_folder, self.ELF_FILE)
         subprocess.check_output('xtensa-esp32-elf-objdump -t {} | grep test_desc > case_address.tmp'.format(elf_file),
                                 shell=True)
         subprocess.check_output('xtensa-esp32-elf-objdump -s {} > section_table.tmp'.format(elf_file), shell=True)
 
         table = CreateSectionTable.SectionTable("section_table.tmp")
+        tags = self.parse_tags(os.path.join(config_output_folder, self.SDKCONFIG_FILE))
         test_cases = []
         with open("case_address.tmp", "r") as f:
             for line in f:
@@ -78,21 +77,21 @@ class Parser(object):
                 name_addr = table.get_unsigned_int(section, test_addr, 4)
                 desc_addr = table.get_unsigned_int(section, test_addr + 4, 4)
                 file_name_addr = table.get_unsigned_int(section, test_addr + 12, 4)
+                function_count = table.get_unsigned_int(section, test_addr+20, 4)
                 name = table.get_string("any", name_addr)
                 desc = table.get_string("any", desc_addr)
                 file_name = table.get_string("any", file_name_addr)
-
-                tc = self.parse_one_test_case(name, desc, file_name, app_name)
+                tc = self.parse_one_test_case(name, desc, file_name, config_name, tags)
 
                 # check if duplicated case names
                 # we need to use it to select case,
                 # if duplicated IDs, Unity could select incorrect case to run
                 # and we need to check all cases no matter if it's going te be executed by CI
                 # also add app_name here, we allow same case for different apps
-                if (tc["summary"] + app_name) in self.test_case_names:
+                if (tc["summary"] + config_name) in self.test_case_names:
                     self.parsing_errors.append("duplicated test case ID: " + tc["summary"])
                 else:
-                    self.test_case_names.add(tc["summary"] + app_name)
+                    self.test_case_names.add(tc["summary"] + config_name)
 
                 if tc["CI ready"] == "Yes":
                     # update test env list and the cases of same env list
@@ -100,7 +99,11 @@ class Parser(object):
                         self.test_env_tags[tc["test environment"]].append(tc["ID"])
                     else:
                         self.test_env_tags.update({tc["test environment"]: [tc["ID"]]})
-                    # only add cases need to be executed
+
+                    if function_count > 1:
+                        tc.update({"child case num": function_count})
+
+                    # only add  cases need to be executed
                     test_cases.append(tc)
 
         os.remove("section_table.tmp")
@@ -146,46 +149,51 @@ class Parser(object):
                 pass
         return p
 
-    def parse_one_test_case(self, name, description, file_name, app_name):
+    def parse_tags(self, sdkconfig_file):
+        """
+        Some test configs could requires different DUTs.
+        For example, if CONFIG_SPIRAM_SUPPORT is enabled, we need WROVER-Kit to run test.
+        This method will get tags for runners according to ConfigDependency.yml(maps tags to sdkconfig).
+
+        :param sdkconfig_file: sdkconfig file of the unit test config
+        :return: required tags for runners
+        """
+        required_tags = []
+        with open(sdkconfig_file, "r") as f:
+            configs_raw_data = f.read()
+        configs = configs_raw_data.splitlines(False)
+        for tag in self.config_dependency:
+            if self.config_dependency[tag] in configs:
+                required_tags.append(tag)
+        return required_tags
+
+    def parse_one_test_case(self, name, description, file_name, config_name, tags):
         """
         parse one test case
         :param name: test case name (summary)
         :param description: test case description (tag string)
         :param file_name: the file defines this test case
-        :param app_name: built unit test app name
+        :param config_name: built unit test app name
+        :param tags: tags to select runners
         :return: parsed test case
         """
         prop = self.parse_case_properities(description)
 
-        idf_path = os.getenv("IDF_PATH")
-
-        # use relative file path to IDF_PATH, to make sure file path is consist
-        relative_file_path = os.path.relpath(file_name, idf_path)
-
-        file_name_hash = int(hashlib.sha256(relative_file_path).hexdigest(), base=16) % 1000
-
-        if file_name_hash in self.file_name_cache:
-            self.file_name_cache[file_name_hash] += 1
-        else:
-            self.file_name_cache[file_name_hash] = 1
-
-        tc_id = "UT_%s_%s_%03d%02d" % (self.module_map[prop["module"]]['module abbr'],
-                                       self.module_map[prop["module"]]['sub module abbr'],
-                                       file_name_hash,
-                                       self.file_name_cache[file_name_hash])
-
         test_case = deepcopy(TEST_CASE_PATTERN)
-        test_case.update({"Test App": self.APP_NAME_PREFIX + app_name,
+        test_case.update({"config": config_name,
                           "module": self.module_map[prop["module"]]['module'],
                           "CI ready": "No" if prop["ignore"] == "Yes" else "Yes",
-                          "cmd set": ["IDFUnitTest/UnitTest", [name]],
-                          "ID": tc_id,
+                          "ID": name,
                           "test point 2": prop["module"],
                           "steps": name,
                           "test environment": prop["test_env"],
                           "reset": prop["reset"],
                           "sub module": self.module_map[prop["module"]]['sub module'],
-                          "summary": name})
+                          "summary": name,
+                          "multi_device": prop["multi_device"],
+                          "multi_stage": prop["multi_stage"],
+                          "timeout": int(prop["timeout"]),
+                          "tags": tags})
         return test_case
 
     def dump_test_cases(self, test_cases):
@@ -206,13 +214,13 @@ class Parser(object):
         """ parse test cases from multiple built unit test apps """
         test_cases = []
 
-        test_app_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER)
-        test_apps = os.listdir(test_app_folder)
-        for app in test_apps:
-            elf_file = os.path.join(test_app_folder, app, self.ELF_FILE)
-            if os.path.exists(elf_file):
-                test_cases.extend(self.parse_test_cases_from_elf(elf_file, app))
-
+        output_folder = os.path.join(self.idf_path, self.UT_BIN_FOLDER)
+        test_configs = os.listdir(output_folder)
+        for config in test_configs:
+            config_output_folder = os.path.join(output_folder, config)
+            if os.path.exists(config_output_folder):
+                test_cases.extend(self.parse_test_cases_for_one_config(config_output_folder, config))
+        test_cases.sort(key=lambda x: x["config"] + x["summary"])
         self.dump_test_cases(test_cases)
 
 
@@ -262,4 +270,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

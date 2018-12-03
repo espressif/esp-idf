@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
 #include "unity.h"
 #include "test_utils.h"
+#include "rom/ets_sys.h"
+#include "rom/uart.h"
 
 const esp_partition_t *get_test_data_partition()
 {
@@ -23,3 +26,31 @@ const esp_partition_t *get_test_data_partition()
     TEST_ASSERT_NOT_NULL(result); /* means partition table set wrong */
     return result;
 }
+
+// wait user to send "Enter" key
+static void wait_user_control()
+{
+    char sign[5] = {0};
+    while(strlen(sign) == 0)
+    {
+        /* Flush anything already in the RX buffer */
+        while(uart_rx_one_char((uint8_t *) sign) == OK) {
+        }
+        /* Read line */
+        UartRxString((uint8_t*) sign, sizeof(sign) - 1);
+    }
+}
+
+// signal functions, used for sync between unity DUTs for multiple devices cases
+void unity_wait_for_signal(const char* signal_name)
+{
+    printf("Waiting for signal: [%s]!\n"
+            "Please press \"Enter\" key to once any board send this signal.\n", signal_name);
+    wait_user_control();
+}
+
+void unity_send_signal(const char* signal_name)
+{
+    printf("Send signal: [%s]!\n", signal_name);
+}
+
