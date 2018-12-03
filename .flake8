@@ -156,7 +156,6 @@ exclude =
         components/espcoredump/test/test_espcoredump.py,
         components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py,
         components/partition_table/gen_esp32part.py,
-        components/partition_table/parttool.py,
         components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py,
         components/protocomm/python/constants_pb2.py,
         components/protocomm/python/sec0_pb2.py,
