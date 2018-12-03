@@ -1,7 +1,9 @@
 ESP-MESH
 ========
 
-This guide provides information regarding the ESP-MESH protocol. Please see the :doc:`MESH API Reference<../api-reference/mesh/esp_mesh>` for more information about API usage.
+This guide provides information regarding the ESP-MESH protocol. Please see the 
+:doc:`MESH API Reference<../api-reference/network/esp_mesh>` for more information
+about API usage.
 
 .. ------------------------------- Overview -----------------------------------
 

@@ -87,6 +87,8 @@ INPUT = \
     ../../components/soc/esp32/include/soc/touch_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
     ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
+    ## tcpip_adapter - API Reference
+    ../../components/tcpip_adapter/include/tcpip_adapter.h \
     ##
     ## Protocols - API Reference
     ##
