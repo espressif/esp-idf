@@ -75,7 +75,7 @@ void app_main()
     comm_info.baudrate = MB_DEV_SPEED;
     comm_info.parity = MB_PARITY_NONE;
     ESP_ERROR_CHECK(mbcontroller_setup(comm_info));
-
+    
     // The code below initializes Modbus register area descriptors
     // for Modbus Holding Registers, Input Registers, Coils and Discrete Inputs
     // Initialization should be done for each supported Modbus register area according to register map.
@@ -113,6 +113,14 @@ void app_main()
 
     // Starts of modbus controller and stack
     ESP_ERROR_CHECK(mbcontroller_start());
+    
+    // Set UART driver mode to Half Duplex
+    ESP_ERROR_CHECK(uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX));  
+
+    // Set UART pin numbers
+    ESP_ERROR_CHECK(uart_set_pin(MB_PORT_NUM, CONFIG_MB_UART_TXD, 
+                                    CONFIG_MB_UART_RXD, CONFIG_MB_UART_RTS, 
+                                    UART_PIN_NO_CHANGE));
 
     // The cycle below will be terminated when parameter holdingRegParams.dataChan0
     // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
