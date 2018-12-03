@@ -102,8 +102,7 @@ macro(project name)
 
     set(mapfile "${CMAKE_PROJECT_NAME}.map")
 
-    target_link_libraries(${IDF_PROJECT_EXECUTABLE} "-Wl,--gc-sections \
-                        -Wl,--cref -Wl,--Map=${mapfile}")
+    target_link_libraries(${IDF_PROJECT_EXECUTABLE} "-Wl,--cref -Wl,--Map=${mapfile}")
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
         ADDITIONAL_MAKE_CLEAN_FILES
