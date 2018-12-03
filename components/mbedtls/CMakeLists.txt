@@ -21,6 +21,11 @@ include_directories("${COMPONENT_PATH}/port/include")
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
 
+# Use port specific implementation of net_socket.c instead of one from mbedtls
+get_target_property(src_tls mbedtls SOURCES)
+list(REMOVE_ITEM src_tls net_sockets.c)
+set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
+
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
 # Add port files to mbedtls targets
