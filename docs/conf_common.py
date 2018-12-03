@@ -140,7 +140,8 @@ extensions = ['breathe',
               'sphinxcontrib.actdiag',
               'sphinxcontrib.nwdiag',
               'sphinxcontrib.rackdiag',
-              'sphinxcontrib.packetdiag'
+              'sphinxcontrib.packetdiag',
+              'html_redirects',
               ]
 
 # Set up font for blockdiag, nwdiag, rackdiag and packetdiag
@@ -231,6 +232,20 @@ pygments_style = 'sphinx'
 
 
 # -- Options for HTML output ----------------------------------------------
+
+# Custom added feature to allow redirecting old URLs
+#
+# list of tuples (old_url, new_url) for pages to redirect
+# (URLs should be relative to document root, only)
+html_redirect_pages = [('api-reference/ethernet/index', 'api-reference/network/index'),
+                       ('api-reference/ethernet/esp_eth', 'api-reference/network/esp_eth'),
+                       ('api-reference/mesh/index', 'api-reference/network/index'),
+                       ('api-reference/mesh/esp_mesh', 'api-reference/network/esp_mesh'),
+                       ('api-reference/wifi/index', 'api-reference/network/index'),
+                       ('api-reference/wifi/esp_now', 'api-reference/network/esp_now'),
+                       ('api-reference/wifi/esp_smartconfig', 'api-reference/network/esp_smartconfig'),
+                       ('api-reference/wifi/esp_wifi', 'api-reference/network/esp_wifi'),
+                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
