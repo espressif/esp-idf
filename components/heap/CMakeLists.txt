@@ -30,7 +30,7 @@ if(CONFIG_HEAP_TRACING)
         heap_caps_realloc_default)
 
     foreach(wrap ${WRAP_FUNCTIONS})
-        target_link_libraries(heap "-Wl,--wrap=${wrap}")
+        target_link_libraries(${COMPONENT_TARGET} "-Wl,--wrap=${wrap}")
     endforeach()
 
 endif()
