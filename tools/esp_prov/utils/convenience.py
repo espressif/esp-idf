@@ -15,15 +15,17 @@
 
 # Convenience functions for commonly used data type conversions
 
+
 def str_to_hexstr(string):
     # Form hexstr by appending ASCII codes (in hex) corresponding to
     # each character in the input string
     return ''.join('{:02x}'.format(ord(c)) for c in string)
 
+
 def hexstr_to_str(hexstr):
     # Prepend 0 (if needed) to make the hexstr length an even number
-    if len(hexstr)%2 == 1:
+    if len(hexstr) % 2 == 1:
         hexstr = '0' + hexstr
     # Interpret consecutive pairs of hex characters as 8 bit ASCII codes
     # and append characters corresponding to each code to form the string
-    return ''.join(chr(int(hexstr[2*i:2*i+2], 16)) for i in range(len(hexstr)//2))
+    return ''.join(chr(int(hexstr[2 * i: 2 * i + 2], 16)) for i in range(len(hexstr) // 2))

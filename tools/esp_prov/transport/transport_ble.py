@@ -15,9 +15,10 @@
 
 from __future__ import print_function
 
-from .transport import *
+from .transport import Transport
 
 from . import ble_cli
+
 
 class Transport_BLE(Transport):
     def __init__(self, devname, service_uuid, nu_lookup):
@@ -32,7 +33,7 @@ class Transport_BLE(Transport):
         self.cli = ble_cli.get_client()
 
         # Use client to connect to BLE device and bind to service
-        if not self.cli.connect(devname = devname, iface = 'hci0', srv_uuid = service_uuid):
+        if not self.cli.connect(devname=devname, iface='hci0', srv_uuid=service_uuid):
             raise RuntimeError("Failed to initialize transport")
 
         # Check if expected characteristics are provided by the service
@@ -44,7 +45,7 @@ class Transport_BLE(Transport):
         # Make sure device is disconnected before application gets closed
         try:
             self.disconnect()
-        except:
+        except Exception:
             pass
 
     def disconnect(self):

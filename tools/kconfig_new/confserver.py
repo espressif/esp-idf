@@ -12,12 +12,13 @@ import sys
 import confgen
 from confgen import FatalError, __version__
 
+
 def main():
     parser = argparse.ArgumentParser(description='confserver.py v%s - Config Generation Tool' % __version__, prog=os.path.basename(sys.argv[0]))
 
     parser.add_argument('--config',
-                       help='Project configuration settings',
-                       required=True)
+                        help='Project configuration settings',
+                        required=True)
 
     parser.add_argument('--kconfig',
                         help='KConfig file with config item definitions',
@@ -29,10 +30,10 @@ def main():
     args = parser.parse_args()
 
     try:
-       args.env = [ (name,value) for (name,value) in ( e.split("=",1) for e in args.env) ]
+        args.env = [(name,value) for (name,value) in (e.split("=",1) for e in args.env)]
     except ValueError:
-       print("--env arguments must each contain =. To unset an environment variable, use 'ENV='")
-       sys.exit(1)
+        print("--env arguments must each contain =. To unset an environment variable, use 'ENV='")
+        sys.exit(1)
 
     for name, value in args.env:
         os.environ[name] = value
@@ -47,7 +48,7 @@ def run_server(kconfig, sdkconfig):
 
     config_dict = confgen.get_json_values(config)
     ranges_dict = get_ranges(config)
-    json.dump({"version": 1, "values" : config_dict, "ranges" : ranges_dict}, sys.stdout)
+    json.dump({"version": 1, "values": config_dict, "ranges": ranges_dict}, sys.stdout)
     print("\n")
 
     while True:
@@ -81,7 +82,7 @@ def run_server(kconfig, sdkconfig):
 
         values_diff = diff(before, after)
         ranges_diff = diff(before_ranges, after_ranges)
-        response = {"version" : 1, "values" : values_diff, "ranges" : ranges_diff}
+        response = {"version": 1, "values": values_diff, "ranges": ranges_diff}
         if error:
             for e in error:
                 print("Error: %s" % e, file=sys.stderr)
@@ -91,10 +92,10 @@ def run_server(kconfig, sdkconfig):
 
 
 def handle_request(config, req):
-    if not "version" in req:
-        return [ "All requests must have a 'version'" ]
+    if "version" not in req:
+        return ["All requests must have a 'version'"]
     if int(req["version"]) != 1:
-        return [ "Only version 1 requests supported" ]
+        return ["Only version 1 requests supported"]
 
     error = []
 
@@ -103,7 +104,7 @@ def handle_request(config, req):
         try:
             config.load_config(req["load"])
         except Exception as e:
-            error += [ "Failed to load from %s: %s" % (req["load"], e) ]
+            error += ["Failed to load from %s: %s" % (req["load"], e)]
 
     if "set" in req:
         handle_set(config, error, req["set"])
@@ -113,16 +114,17 @@ def handle_request(config, req):
             print("Saving config to %s..." % req["save"], file=sys.stderr)
             confgen.write_config(config, req["save"])
         except Exception as e:
-            error += [ "Failed to save to %s: %s" % (req["save"], e) ]
+            error += ["Failed to save to %s: %s" % (req["save"], e)]
 
     return error
 
+
 def handle_set(config, error, to_set):
-    missing = [ k for k in to_set if not k in config.syms ]
+    missing = [k for k in to_set if k not in config.syms]
     if missing:
         error.append("The following config symbol(s) were not found: %s" % (", ".join(missing)))
     # replace name keys with the full config symbol for each key:
-    to_set = dict((config.syms[k],v) for (k,v) in to_set.items() if not k in missing)
+    to_set = dict((config.syms[k],v) for (k,v) in to_set.items() if k not in missing)
 
     # Work through the list of values to set, noting that
     # some may not be immediately applicable (maybe they depend
@@ -130,14 +132,14 @@ def handle_set(config, error, to_set):
     # knowing if any value is unsettable until then end
 
     while len(to_set):
-        set_pass = [ (k,v) for (k,v) in to_set.items() if k.visibility ]
+        set_pass = [(k,v) for (k,v) in to_set.items() if k.visibility]
         if not set_pass:
             break  # no visible keys left
         for (sym,val) in set_pass:
             if sym.type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
-                if val == True:
+                if val is True:
                     sym.set_value(2)
-                elif val == False:
+                elif val is False:
                     sym.set_value(0)
                 else:
                     error.append("Boolean symbol %s only accepts true/false values" % sym.name)
@@ -148,7 +150,6 @@ def handle_set(config, error, to_set):
 
     if len(to_set):
         error.append("The following config symbol(s) were not visible so were not updated: %s" % (", ".join(s.name for s in to_set)))
-
 
 
 def diff(before, after):
@@ -164,6 +165,7 @@ def diff(before, after):
 
 def get_ranges(config):
     ranges_dict = {}
+
     def handle_node(node):
         sym = node.item
         if not isinstance(sym, kconfiglib.Symbol):
@@ -182,4 +184,3 @@ if __name__ == '__main__':
     except FatalError as e:
         print("A fatal error occurred: %s" % e, file=sys.stderr)
         sys.exit(2)
-

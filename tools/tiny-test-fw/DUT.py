@@ -426,10 +426,10 @@ class BaseDUT(object):
 
         :param data: data which needs to be checked and maybe transformed
         """
-        if type(data) is type(u''):
+        if isinstance(data, type(u'')):
             try:
                 data = data.encode('utf-8')
-            except:
+            except Exception:
                 print(u'Cannot encode {} of type {}'.format(data, type(data)))
                 raise
         return data
@@ -529,9 +529,9 @@ class BaseDUT(object):
         :return: match groups if match succeed otherwise None
         """
         ret = None
-        if type(pattern.pattern) is type(u''):
+        if isinstance(pattern.pattern, type(u'')):
             pattern = re.compile(BaseDUT.u_to_bytearray(pattern.pattern))
-        if type(data) is type(u''):
+        if isinstance(data, type(u'')):
             data = BaseDUT.u_to_bytearray(data)
         match = pattern.search(data)
         if match:
@@ -543,7 +543,7 @@ class BaseDUT(object):
 
     EXPECT_METHOD = [
         [type(re.compile("")), "_expect_re"],
-        [type(b''), "_expect_str"], # Python 2 & 3 hook to work without 'from builtins import str' from future
+        [type(b''), "_expect_str"],  # Python 2 & 3 hook to work without 'from builtins import str' from future
         [type(u''), "_expect_str"],
     ]
 

@@ -22,22 +22,21 @@
 #
 from __future__ import print_function
 from __future__ import unicode_literals
-from builtins import dict
-import argparse, sys, subprocess, re
+import argparse
+import re
 import os.path
-import pprint
-import operator
 
 DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 
 CHIP_SIZES = {
-    "esp32" : {
-        "total_iram" : 0x20000,
-        "total_irom" : 0x330000,
-        "total_drom" : 0x800000,
+    "esp32": {
+        "total_iram": 0x20000,
+        "total_irom": 0x330000,
+        "total_drom": 0x800000,
         # total dram is determined from objdump output
     }
 }
+
 
 def scan_to_header(f, header_line):
     """ Scan forward in a file until you reach 'header_line', then return """
@@ -46,10 +45,12 @@ def scan_to_header(f, header_line):
             return
     raise RuntimeError("Didn't find line '%s' in file" % header_line)
 
+
 def load_map_data(map_file):
     memory_config = load_memory_config(map_file)
     sections  = load_sections(map_file)
     return memory_config, sections
+
 
 def load_memory_config(map_file):
     """ Memory Configuration section is the total size of each output section """
@@ -64,19 +65,21 @@ def load_memory_config(map_file):
             else:
                 return result  # we're at the end of the Memory Configuration
         section = {
-            "name" : m.group("name"),
-            "origin" : int(m.group("origin"), 16),
-            "length" : int(m.group("length"), 16),
+            "name": m.group("name"),
+            "origin": int(m.group("origin"), 16),
+            "length": int(m.group("length"), 16),
         }
         if section["name"] != "*default*":
             result[section["name"]] = section
     raise RuntimeError("End of file while scanning memory configuration?")
 
+
 def load_sections(map_file):
     """ Load section size information from the MAP file.
 
     Returns a dict of 'sections', where each key is a section name and the value
-    is a dict with details about this section, including a "sources" key which holds a list of source file line information for each symbol linked into the section.
+    is a dict with details about this section, including a "sources" key which holds a list of source file line
+    information for each symbol linked into the section.
     """
     scan_to_header(map_file, "Linker script and memory map")
     sections = {}
@@ -88,10 +91,10 @@ def load_sections(map_file):
         m = re.match(RE_SECTION_HEADER, line)
         if m is not None:  # start of a new section
             section = {
-                "name" : m.group("name"),
-                "address" : int(m.group("address"), 16),
-                "size" : int(m.group("size"), 16),
-                "sources" : [],
+                "name": m.group("name"),
+                "address": int(m.group("address"), 16),
+                "size": int(m.group("size"), 16),
+                "sources": [],
             }
             sections[section["name"]] = section
             continue
@@ -113,14 +116,14 @@ def load_sections(map_file):
                 archive = "(exe)"
 
             source = {
-                "size" : int(m.group("size"), 16),
-                "address" : int(m.group("address"), 16),
-                "archive" : os.path.basename(archive),
-                "object_file" : os.path.basename(m.group("object_file")),
-                "sym_name" : sym_name,
+                "size": int(m.group("size"), 16),
+                "address": int(m.group("address"), 16),
+                "archive": os.path.basename(archive),
+                "object_file": os.path.basename(m.group("object_file")),
+                "sym_name": sym_name,
             }
             source["file"] = "%s:%s" % (source["archive"], source["object_file"])
-            section["sources"] += [ source ]
+            section["sources"] += [source]
 
         # In some cases the section name appears on the previous line, back it up in here
         RE_SYMBOL_ONLY_LINE = r"^ (?P<sym_name>\S*)$"
@@ -129,6 +132,7 @@ def load_sections(map_file):
             sym_backup = m.group("sym_name")
 
     return sections
+
 
 def sizes_by_key(sections, key):
     """ Takes a dict of sections (from load_sections) and returns
@@ -146,6 +150,7 @@ def sizes_by_key(sections, key):
                 archive[section["name"]] = 0
             archive[section["name"]] += s["size"]
     return result
+
 
 def main():
     parser = argparse.ArgumentParser("idf_size - a tool to print IDF elf file sizes")
@@ -183,6 +188,7 @@ def main():
         print("Symbols within the archive:", args.archive_details, "(Not all symbols may be reported)")
         print_archive_symbols(sections, args.archive_details)
 
+
 def print_summary(memory_config, sections):
     def get_size(section):
         try:
@@ -196,7 +202,7 @@ def print_summary(memory_config, sections):
     used_data = get_size(".dram0.data")
     used_bss = get_size(".dram0.bss")
     used_dram = used_data + used_bss
-    used_iram = sum( get_size(s) for s in sections if s.startswith(".iram0") )
+    used_iram = sum(get_size(s) for s in sections if s.startswith(".iram0"))
     flash_code = get_size(".flash.text")
     flash_rodata = get_size(".flash.rodata")
     total_size = used_data + used_iram + flash_code + flash_rodata
@@ -214,10 +220,10 @@ def print_summary(memory_config, sections):
     print("    Flash rodata: %7d bytes" % flash_rodata)
     print("Total image size:~%7d bytes (.bin may be padded larger)" % (total_size))
 
+
 def print_detailed_sizes(sections, key, header):
     sizes = sizes_by_key(sections, key)
 
-    sub_heading = None
     headings = (header,
                 "DRAM .data",
                 "& .bss",
@@ -240,6 +246,7 @@ def print_detailed_sizes(sections, key, header):
     def return_total_size(elem):
         val = elem[1]
         return val["total"]
+
     def return_header(elem):
         return elem[0]
     s = sorted(list(result.items()), key=return_header)
@@ -255,6 +262,7 @@ def print_detailed_sizes(sections, key, header):
                                                   v["flash_rodata"],
                                                   v["total"]))
 
+
 def print_archive_symbols(sections, archive):
     interested_sections = [".dram0.data", ".dram0.bss", ".iram0.text", ".iram0.vectors", ".flash.text", ".flash.rodata"]
     result = {}
@@ -267,7 +275,7 @@ def print_archive_symbols(sections, archive):
         for s in section["sources"]:
             if archive != s["archive"]:
                 continue
-            s["sym_name"] = re.sub("(.text.|.literal.|.data.|.bss.|.rodata.)", "", s["sym_name"]);
+            s["sym_name"] = re.sub("(.text.|.literal.|.data.|.bss.|.rodata.)", "", s["sym_name"])
             result[section_name][s["sym_name"]] = result[section_name].get(s["sym_name"], 0) + s["size"]
     for t in interested_sections:
         print("\nSymbols from section:", t)
@@ -275,10 +283,10 @@ def print_archive_symbols(sections, archive):
         s = sorted(list(result[t].items()), key=lambda k_v: k_v[0])
         # do a secondary sort in order to have consistent order (for diff-ing the output)
         for key,val in sorted(s, key=lambda k_v: k_v[1], reverse=True):
-            print(("%s(%d)"% (key.replace(t + ".", ""), val)), end=' ')
+            print(("%s(%d)" % (key.replace(t + ".", ""), val)), end=' ')
             section_total += val
         print("\nSection total:",section_total)
 
+
 if __name__ == "__main__":
     main()
-

@@ -14,22 +14,20 @@
 # limitations under the License.
 #
 
-import re
 import collections
 import itertools
 import os
-import subprocess
 import fnmatch
 
-from sdkconfig import SDKConfig
-from fragments import FragmentFileModel, Sections, Scheme, Mapping, Fragment
-from pyparsing import *
+from fragments import Sections, Scheme, Mapping, Fragment
+from pyparsing import Suppress, White, ParseException, Literal, Regex, Group, ZeroOrMore, Word, OneOrMore, nums, alphanums, alphas, Optional
 from common import LdGenFailure
 
-"""
-Encapsulates a generated placement rule placed under a target
-"""
+
 class PlacementRule():
+    """
+    Encapsulates a generated placement rule placed under a target
+    """
 
     DEFAULT_SPECIFICITY = 0
     ARCHIVE_SPECIFICITY = 1
@@ -71,12 +69,12 @@ class PlacementRule():
                 (section, expansion) = section_data
                 if expansion:
                     metadata = self.__metadata(self.__container([]), self.__container([expansion]), self.__container(True))
-                    self.sections[section] =  metadata
+                    self.sections[section] = metadata
 
     def get_section_names(self):
         return self.sections.keys()
 
-    def add_exclusion(self, other, sections_infos = None):
+    def add_exclusion(self, other, sections_infos=None):
         # Utility functions for this method
         def do_section_expansion(rule, section):
             if section in rule.get_section_names():
@@ -116,7 +114,7 @@ class PlacementRule():
                 # most specific rule from the list, and if an even more specific rule is found,
                 # replace it entirely. Otherwise, keep appending.
                 exclusions = self.sections[section].excludes
-                exclusions_list = exclusions.content if exclusions.content != None else []
+                exclusions_list = exclusions.content if exclusions.content is not None else []
                 exclusions_to_remove = filter(lambda r: r.is_more_specific_rule_of(other), exclusions_list)
 
                 remaining_exclusions = [e for e in exclusions_list if e not in exclusions_to_remove]
@@ -132,8 +130,8 @@ class PlacementRule():
             return False
 
         # Compare archive, obj and target
-        for entity_index in range (1, other.specificity + 1):
-            if self[entity_index] != other[entity_index] and other[entity_index] != None:
+        for entity_index in range(1, other.specificity + 1):
+            if self[entity_index] != other[entity_index] and other[entity_index] is not None:
                 return False
 
         return True
@@ -143,15 +141,15 @@ class PlacementRule():
             return False
 
         # Compare archive, obj and target
-        for entity_index in range (1, other.specificity + 1):
-            if self[entity_index] != other[entity_index] and other[entity_index] != None:
+        for entity_index in range(1, other.specificity + 1):
+            if self[entity_index] != other[entity_index] and other[entity_index] is not None:
                 return False
 
         return True
 
     def __getitem__(self, key):
         if key == PlacementRule.ARCHIVE_SPECIFICITY:
-            return  self.archive
+            return self.archive
         elif key == PlacementRule.OBJECT_SPECIFICITY:
             return self.obj
         elif key == PlacementRule.SYMBOL_SPECIFICITY:
@@ -193,7 +191,7 @@ class PlacementRule():
         sections_string = " ".join(sections_string)
 
         archive = str(self.archive) if self.archive else ""
-        obj = (str(self.obj) +  (".*" if self.obj else "")) if self.obj else ""
+        obj = (str(self.obj) + (".*" if self.obj else "")) if self.obj else ""
 
         # Handle output string generation based on information available
         if self.specificity == PlacementRule.DEFAULT_SPECIFICITY:
@@ -247,10 +245,11 @@ class PlacementRule():
         yield self.symbol
         raise StopIteration
 
-"""
-Implements generation of placement rules based on collected sections, scheme and mapping fragment.
-"""
+
 class GenerationModel:
+    """
+    Implements generation of placement rules based on collected sections, scheme and mapping fragment.
+    """
 
     DEFAULT_SCHEME = "default"
 
@@ -273,7 +272,7 @@ class GenerationModel:
 
             rule = PlacementRule(archive, obj, symbol, section_entries, target)
 
-            if not rule in rules:
+            if rule not in rules:
                 rules.append(rule)
 
     def _build_scheme_dictionary(self):
@@ -403,7 +402,7 @@ class GenerationModel:
     def _create_extra_rules(self, rules):
         # This function generates extra rules for symbol specific rules. The reason for generating extra rules is to isolate,
         # as much as possible, rules that require expansion. Particularly, object specific extra rules are generated.
-        rules_to_process = sorted(rules, key = lambda r: r.specificity)
+        rules_to_process = sorted(rules, key=lambda r: r.specificity)
         symbol_specific_rules = list(filter(lambda r: r.specificity == PlacementRule.SYMBOL_SPECIFICITY, rules_to_process))
 
         extra_rules = dict()
@@ -433,7 +432,8 @@ class GenerationModel:
                         extra_rule = extra_rules[extra_rules_key]
 
                         if section not in extra_rule.get_section_names():
-                            new_rule = PlacementRule(extra_rule.archive, extra_rule.obj, extra_rule.symbol, list(extra_rule.get_section_names()) + [section] , extra_rule.target)
+                            new_rule = PlacementRule(extra_rule.archive, extra_rule.obj, extra_rule.symbol,
+                                                     list(extra_rule.get_section_names()) + [section], extra_rule.target)
                             extra_rules[extra_rules_key] = new_rule
                     except KeyError:
                         extra_rule = PlacementRule(symbol_specific_rule.archive, symbol_specific_rule.obj, None, [section], section_rule.target)
@@ -452,16 +452,16 @@ class GenerationModel:
 
         # Sort the rules by means of how specific they are. Sort by specificity from lowest to highest
         # * -> lib:* -> lib:obj -> lib:obj:symbol
-        sorted_rules = sorted(rules, key = lambda r: r.specificity)
+        sorted_rules = sorted(rules, key=lambda r: r.specificity)
 
         # Now that the rules have been sorted, loop through each rule, and then loop
         # through rules below it (higher indeces), adding exclusions whenever appropriate.
         for general_rule in sorted_rules:
             for specific_rule in reversed(sorted_rules):
-                if (specific_rule.specificity > general_rule.specificity and \
+                if (specific_rule.specificity > general_rule.specificity and
                     specific_rule.specificity != PlacementRule.SYMBOL_SPECIFICITY) or \
-                    (specific_rule.specificity == PlacementRule.SYMBOL_SPECIFICITY and \
-                    general_rule.specificity == PlacementRule.OBJECT_SPECIFICITY):
+                    (specific_rule.specificity == PlacementRule.SYMBOL_SPECIFICITY and
+                     general_rule.specificity == PlacementRule.OBJECT_SPECIFICITY):
                     general_rule.add_exclusion(specific_rule, sections_info)
 
     def add_fragments_from_file(self, fragment_file):
@@ -484,11 +484,12 @@ class GenerationModel:
 
             dict_to_append_to[fragment.name] = fragment
 
-"""
-Encapsulates a linker script template file. Finds marker syntax and handles replacement to generate the
-final output.
-"""
+
 class TemplateModel:
+    """
+    Encapsulates a linker script template file. Finds marker syntax and handles replacement to generate the
+    final output.
+    """
 
     Marker = collections.namedtuple("Marker", "target indent rules")
 
@@ -526,7 +527,6 @@ class TemplateModel:
             target = None
             try:
                 target = member.target
-                indent = member.indent
                 rules = member.rules
 
                 del rules[:]
@@ -535,7 +535,7 @@ class TemplateModel:
             except KeyError:
                 message = GenerationException.UNDEFINED_REFERENCE + " to target '" + target + "'."
                 raise GenerationException(message)
-            except AttributeError as a:
+            except AttributeError:
                 pass
 
     def write(self, output_file):
@@ -557,11 +557,12 @@ class TemplateModel:
             except AttributeError:
                 output_file.write(member)
 
-"""
-Exception for linker script generation failures such as undefined references/ failure to
-evaluate conditions, duplicate mappings, etc.
-"""
+
 class GenerationException(LdGenFailure):
+    """
+    Exception for linker script generation failures such as undefined references/ failure to
+    evaluate conditions, duplicate mappings, etc.
+    """
 
     UNDEFINED_REFERENCE = "Undefined reference"
 
@@ -575,11 +576,12 @@ class GenerationException(LdGenFailure):
         else:
             return self.message
 
-"""
-Encapsulates an output of objdump. Contains information about the static library sections
-and names
-"""
+
 class SectionsInfo(dict):
+    """
+    Encapsulates an output of objdump. Contains information about the static library sections
+    and names
+    """
 
     __info = collections.namedtuple("__info", "filename content")
 
@@ -607,8 +609,11 @@ class SectionsInfo(dict):
         object = Fragment.ENTITY.setResultsName("object") + Literal(":").suppress() + Literal("file format elf32-xtensa-le").suppress()
 
         # Sections table
-        header = Suppress(Literal("Sections:") + Literal("Idx") + Literal("Name") + Literal("Size") + Literal("VMA") + Literal("LMA") + Literal("File off") + Literal("Algn"))
-        entry = Word(nums).suppress() + Fragment.ENTITY + Suppress(OneOrMore(Word(alphanums, exact=8)) + Word(nums + "*") + ZeroOrMore(Word(alphas.upper()) + Optional(Literal(","))))
+        header = Suppress(Literal("Sections:") + Literal("Idx") + Literal("Name") + Literal("Size") + Literal("VMA") +
+                          Literal("LMA") + Literal("File off") + Literal("Algn"))
+        entry = Word(nums).suppress() + Fragment.ENTITY + Suppress(OneOrMore(Word(alphanums, exact=8)) +
+                                                                   Word(nums + "*") + ZeroOrMore(Word(alphas.upper()) +
+                                                                   Optional(Literal(","))))
 
         # Content is object file line + sections table
         content = Group(object + header + Group(ZeroOrMore(entry)).setResultsName("sections"))

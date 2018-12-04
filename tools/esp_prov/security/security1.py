@@ -21,7 +21,7 @@ from future.utils import tobytes
 
 import utils
 import proto
-from .security import *
+from .security import Security
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -30,12 +30,14 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 import session_pb2
 
+
 # Enum for state of protocomm_security1 FSM
 class security_state:
     REQUEST1 = 0
     RESPONSE1_REQUEST2 = 1
     RESPONSE2 = 2
     FINISHED = 3
+
 
 def xor(a, b):
     # XOR two inputs of type `bytes`
@@ -49,6 +51,7 @@ def xor(a, b):
         ret.append(([0, ord(a[i])][i < len(a)]) ^ ([0, ord(b[i])][i < len(b)]))
     # Convert bytearray to bytes
     return bytes(ret)
+
 
 class Security1(Security):
     def __init__(self, pop, verbose):

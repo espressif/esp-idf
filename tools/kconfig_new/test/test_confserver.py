@@ -1,25 +1,16 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import os
-import sys
-import threading
-import time
 import json
 import argparse
-import shutil
 import tempfile
 
 import pexpect
 
-sys.path.append("..")
-import confserver
-
-def create_server_thread(*args):
-    t = threading.Thread()
 
 def parse_testcases():
     with open("testcases.txt", "r") as f:
-        cases = [ l for l in f.readlines() if len(l.strip()) > 0 ]
+        cases = [l for l in f.readlines() if len(l.strip()) > 0]
     # Each 3 lines in the file should be formatted as:
     # * Description of the test change
     # * JSON "changes" to send to the server
@@ -29,18 +20,19 @@ def parse_testcases():
 
     for i in range(0, len(cases), 3):
         desc = cases[i]
-        send = cases[i+1]
-        expect = cases[i+2]
+        send = cases[i + 1]
+        expect = cases[i + 2]
         if not desc.startswith("* "):
-            raise RuntimeError("Unexpected description at line %d: '%s'" % (i+1, desc))
+            raise RuntimeError("Unexpected description at line %d: '%s'" % (i + 1, desc))
         if not send.startswith("> "):
-            raise RuntimeError("Unexpected send at line %d: '%s'" % (i+2, send))
+            raise RuntimeError("Unexpected send at line %d: '%s'" % (i + 2, send))
         if not expect.startswith("< "):
-            raise RuntimeError("Unexpected expect at line %d: '%s'" % (i+3, expect))
+            raise RuntimeError("Unexpected expect at line %d: '%s'" % (i + 3, expect))
         desc = desc[2:]
         send = json.loads(send[2:])
         expect = json.loads(expect[2:])
         yield (desc, send, expect)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -72,7 +64,7 @@ def main():
 
         for (desc, send, expected) in cases:
             print(desc)
-            req = { "version" : "1", "set" : send }
+            req = {"version": "1", "set": send}
             req = json.dumps(req)
             print("Sending: %s" % (req))
             p.send("%s\n" % req)
@@ -84,13 +76,13 @@ def main():
                 read_vals = readback[expect_key]
                 exp_vals = expected[expect_key]
                 if read_vals != exp_vals:
-                    expect_diff = dict((k,v) for (k,v) in exp_vals.items() if not k in read_vals or v != read_vals[k])
+                    expect_diff = dict((k,v) for (k,v) in exp_vals.items() if k not in read_vals or v != read_vals[k])
                     raise RuntimeError("Test failed! Was expecting %s: %s" % (expect_key, json.dumps(expect_diff)))
             print("OK")
 
         print("Testing load/save...")
         before = os.stat(temp_sdkconfig_path).st_mtime
-        p.send("%s\n" % json.dumps({ "version" : "1", "save" : temp_sdkconfig_path }))
+        p.send("%s\n" % json.dumps({"version": "1", "save": temp_sdkconfig_path}))
         save_result = expect_json()
         print("Save result: %s" % (json.dumps(save_result)))
         assert len(save_result["values"]) == 0
@@ -98,7 +90,7 @@ def main():
         after = os.stat(temp_sdkconfig_path).st_mtime
         assert after > before
 
-        p.send("%s\n" % json.dumps({ "version" : "1", "load" : temp_sdkconfig_path }))
+        p.send("%s\n" % json.dumps({"version": "1", "load": temp_sdkconfig_path}))
         load_result = expect_json()
         print("Load result: %s" % (json.dumps(load_result)))
         assert len(load_result["values"]) > 0  # loading same file should return all config items
@@ -111,6 +103,6 @@ def main():
         except OSError:
             pass
 
+
 if __name__ == "__main__":
     main()
-

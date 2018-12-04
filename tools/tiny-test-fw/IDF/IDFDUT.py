@@ -17,11 +17,8 @@ import os
 import os.path
 import sys
 import re
-import subprocess
 import functools
-import random
 import tempfile
-import time
 
 from serial.tools import list_ports
 
@@ -94,7 +91,7 @@ class IDFDUT(DUT.SerialDUT):
             esp = esptool.ESP32ROM(port)
             esp.connect()
             return esp.read_mac()
-        except RuntimeError as e:
+        except RuntimeError:
             return None
         finally:
             esp._port.close()
@@ -112,7 +109,7 @@ class IDFDUT(DUT.SerialDUT):
         """
         try:
             # note: opening here prevents us from having to seek back to 0 each time
-            flash_files = [ (offs, open(path, "rb")) for (offs, path) in self.app.flash_files ]
+            flash_files = [(offs, open(path, "rb")) for (offs, path) in self.app.flash_files]
 
             if erase_nvs:
                 address = self.app.partition_table["nvs"]["offset"]
@@ -120,7 +117,7 @@ class IDFDUT(DUT.SerialDUT):
                 nvs_file = tempfile.TemporaryFile()
                 nvs_file.write(b'\xff' * size)
                 nvs_file.seek(0)
-                flash_files.append( (int(address, 0), nvs_file) )
+                flash_files.append((int(address, 0), nvs_file))
 
             # fake flasher args object, this is a hack until
             # esptool Python API is improved
@@ -158,7 +155,7 @@ class IDFDUT(DUT.SerialDUT):
         :param: erase_nvs: whether erase NVS partition during flash
         :return: None
         """
-        for baud_rate in [ 921600, 115200 ]:
+        for baud_rate in [921600, 115200]:
             try:
                 self._try_flash(erase_nvs, baud_rate)
                 break
@@ -183,7 +180,7 @@ class IDFDUT(DUT.SerialDUT):
         :return: None
         """
         raise NotImplementedError()  # TODO: implement this
-        address = self.app.partition_table[partition]["offset"]
+        # address = self.app.partition_table[partition]["offset"]
         size = self.app.partition_table[partition]["size"]
         # TODO can use esp.erase_region() instead of this, I think
         with open(".erase_partition.tmp", "wb") as f:
@@ -231,7 +228,7 @@ class IDFDUT(DUT.SerialDUT):
             return [x for x in ports if not cls.INVALID_PORT_PATTERN.search(x)]
 
         # On MacOs with python3.6: type of espport is already utf8
-        if type(espport) is type(u''):
+        if isinstance(espport, type(u'')):
             port_hint = espport
         else:
             port_hint = espport.decode('utf8')

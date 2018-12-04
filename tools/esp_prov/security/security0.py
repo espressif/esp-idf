@@ -19,9 +19,9 @@
 from __future__ import print_function
 from future.utils import tobytes
 
-import utils
 import proto
-from .security import *
+from .security import Security
+
 
 class Security0(Security):
     def __init__(self, verbose):
