@@ -3,7 +3,7 @@ Secure Boot
 
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 
-Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feature, and you can use secure boot without encrypting the flash contents. However we recommend using both features together for a secure environment. See :ref:`secure-boot-and-flash-encr` for more details.
+Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feature, and you can use secure boot without encrypting the flash contents. However, for a secure environment both should be used simultaneously. See :ref:`secure-boot-and-flash-encr` for more details.
 
 .. important::
 
