@@ -45,7 +45,7 @@ def main():
         "--sections", "-s",
         type = argparse.FileType("r"),
         help = "Library sections info",
-        nargs = "+")
+        )
 
     argparser.add_argument(
         "--output", "-o",
@@ -79,8 +79,12 @@ def main():
     try:
         sections_infos = SectionsInfo()
 
-        for sections_info_file in sections_info_files:
-            sections_infos.add_sections_info(sections_info_file)
+        section_info_contents = [s.strip() for s in sections_info_files.read().split("\n")]
+        section_info_contents = [s for s in section_info_contents if s]
+
+        for sections_info_file in section_info_contents:
+            with open(sections_info_file) as sections_info_file_obj:
+                sections_infos.add_sections_info(sections_info_file_obj)
 
         generation_model = GenerationModel()
 
