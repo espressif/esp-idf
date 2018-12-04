@@ -146,7 +146,7 @@ Limited Updates
 
 Only 4 plaintext serial update cycles of this kind are possible, including the initial encrypted flash.
 
-After the fourth time encryption is disabled, :ref:`FLASH_CRYPT_CNT` has the maximum value `0xFF` and encryption is permanently disabled.
+After the fourth time encryption is enabled, :ref:`FLASH_CRYPT_CNT` has the maximum value ``0x7F`` (7 bits set) and encryption is permanently enabled. Flashing :ref:`FLASH_CRYPT_CNT` to ``0xFF`` (8 bits set) does not re-disable encryption, the eighth bit is ignored.
 
 Using :ref:`updating-encrypted-flash-ota` or :ref:`pregenerated-flash-encryption-key` allows you to exceed this limit.
 
