@@ -73,7 +73,10 @@ struct spi_slave_transaction_t {
     size_t length;                  ///< Total data length, in bits
     size_t trans_len;               ///< Transaction data length, in bits
     const void *tx_buffer;          ///< Pointer to transmit buffer, or NULL for no MOSI phase
-    void *rx_buffer;                ///< Pointer to receive buffer, or NULL for no MISO phase
+    void *rx_buffer;                /**< Pointer to receive buffer, or NULL for no MISO phase.
+                                     * When the DMA is anabled, must start at WORD boundary (``rx_buffer%4==0``),
+                                     * and has length of a multiple of 4 bytes.
+                                     */
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
 };
 

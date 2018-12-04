@@ -144,6 +144,11 @@ inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
     return (intptr_t)p >= SOC_DMA_LOW && (intptr_t)p < SOC_DMA_HIGH;
 }
 
+inline static bool IRAM_ATTR esp_ptr_word_aligned(const void *p)
+{
+    return ((intptr_t)p) % 4 == 0;
+}
+
 inline static bool IRAM_ATTR esp_ptr_executable(const void *p)
 {
     intptr_t ip = (intptr_t) p;
