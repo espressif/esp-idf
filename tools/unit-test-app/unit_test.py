@@ -26,7 +26,7 @@ import argparse
 import threading
 
 try:
-        import TinyFW
+    import TinyFW
 except ImportError:
     # if we want to run test case outside `tiny-test-fw` folder,
     # we need to insert tiny-test-fw path into sys path
@@ -374,7 +374,7 @@ class Handler(threading.Thread):
             Utility.console_log("No case detected!", color="orange")
         while not self.finish and not self.force_stop.isSet():
             try:
-                self.dut.expect_any((re.compile('\(' + str(self.child_case_index) + '\)\s"(\w+)"'),
+                self.dut.expect_any((re.compile('\(' + str(self.child_case_index) + '\)\s"(\w+)"'),  # noqa: W605 - regex
                                      get_child_case_name),
                                     (self.WAIT_SIGNAL_PATTERN, device_wait_action),  # wait signal pattern
                                     (self.SEND_SIGNAL_PATTERN, device_send_action),  # send signal pattern
@@ -742,7 +742,7 @@ if __name__ == '__main__':
     test_env = Env.Env(**env_config)
     detect_update_unit_test_info(test_env, extra_data=list_of_dicts, app_bin=args.app_bin)
 
-    for index in range(1, args.repeat+1):
+    for index in range(1, args.repeat + 1):
         if args.repeat > 1:
             Utility.console_log("Repetition {}".format(index), color="green")
         for dic in list_of_dicts:

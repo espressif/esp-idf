@@ -18,7 +18,8 @@ from future.utils import tobytes
 
 import http.client
 
-from .transport import *
+from .transport import Transport
+
 
 class Transport_Softap(Transport):
     def __init__(self, url):
@@ -36,4 +37,4 @@ class Transport_Softap(Transport):
         raise RuntimeError("Server responded with error code " + str(response.status))
 
     def send_data(self, ep_name, data):
-        return self._send_post_request('/'+ ep_name, data)
+        return self._send_post_request('/' + ep_name, data)

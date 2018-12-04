@@ -53,7 +53,7 @@ class Runner(threading.Thread):
         for case in self.test_cases:
             result = case.run()
             self.test_result.append(result)
-    
+
     def get_test_result(self):
         return self.test_result and all(self.test_result)
 

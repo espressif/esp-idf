@@ -41,11 +41,11 @@ class IDFApp(App.BaseApp):
                        "or 'idf.py build' "
                        "for resolving the issue."
                        "").format(self.IDF_DOWNLOAD_CONFIG_FILE, self.IDF_FLASH_ARGS_FILE,
-                             self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
+                                  self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
                 raise AssertionError(msg)
 
         self.flash_files, self.flash_settings = self._parse_flash_download_config()
-        self.partition_table =  self._parse_partition_table()
+        self.partition_table = self._parse_partition_table()
 
     @classmethod
     def get_sdk_path(cls):
@@ -53,7 +53,6 @@ class IDFApp(App.BaseApp):
         assert idf_path
         assert os.path.exists(idf_path)
         return idf_path
-
 
     def get_binary_path(self, app_path):
         """
@@ -81,7 +80,7 @@ class IDFApp(App.BaseApp):
             # CMake version using build metadata file
             with open(os.path.join(self.binary_path, self.IDF_FLASH_ARGS_FILE), "r") as f:
                 args = json.load(f)
-                flash_files = [ (offs,file) for (offs,file) in args["flash_files"].items() if offs != "" ]
+                flash_files = [(offs,file) for (offs,file) in args["flash_files"].items() if offs != ""]
                 flash_settings = args["flash_settings"]
         else:
             # GNU Make version uses download.config arguments file
@@ -92,13 +91,13 @@ class IDFApp(App.BaseApp):
                 for idx in range(0, len(args), 2):  # process arguments in pairs
                     if args[idx].startswith("--"):
                         # strip the -- from the command line argument
-                        flash_settings[args[idx][2:]] = args[idx+1]
+                        flash_settings[args[idx][2:]] = args[idx + 1]
                     else:
                         # offs, filename
-                        flash_files.append( (args[idx], args[idx+1]) )
+                        flash_files.append((args[idx], args[idx + 1]))
 
         # make file offsets into integers, make paths absolute
-        flash_files = [ (int(offs, 0), os.path.join(self.binary_path, path.strip())) for (offs, path) in flash_files ]
+        flash_files = [(int(offs, 0), os.path.join(self.binary_path, path.strip())) for (offs, path) in flash_files]
 
         return (flash_files, flash_settings)
 

@@ -15,7 +15,7 @@
 
 # Base class for protocomm security
 
+
 class Security:
     def __init__(self, security_session):
         self.security_session = security_session
-

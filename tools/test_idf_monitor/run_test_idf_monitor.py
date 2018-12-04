@@ -26,17 +26,18 @@ import socket
 import pty
 import filecmp
 import threading
+import errno
 
 test_list = (
-        # Add new tests here. All files should be placed in IN_DIR. Columns are:
-        # Input file            Filter string                                               File with expected output   Timeout
-        ('in1.txt',             '',                                                         'in1f1.txt',                60),
-        ('in1.txt',             '*:V',                                                      'in1f1.txt',                60),
-        ('in1.txt',             'hello_world',                                              'in1f2.txt',                60),
-        ('in1.txt',             '*:N',                                                      'in1f3.txt',                60),
-        ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               240),
-        ('in2.txt',             'vfs',                                                      'in2f2.txt',               240),
-        )
+    # Add new tests here. All files should be placed in IN_DIR. Columns are:
+    # Input file            Filter string                                               File with expected output   Timeout
+    ('in1.txt',             '',                                                         'in1f1.txt',                60),
+    ('in1.txt',             '*:V',                                                      'in1f1.txt',                60),
+    ('in1.txt',             'hello_world',                                              'in1f2.txt',                60),
+    ('in1.txt',             '*:N',                                                      'in1f3.txt',                60),
+    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               240),
+    ('in2.txt',             'vfs',                                                      'in2f2.txt',               240),
+)
 
 IN_DIR = 'tests/'       # tests are in this directory
 OUT_DIR = 'outputs/'    # test results are written to this directory (kept only for debugging purposes)
@@ -51,6 +52,7 @@ SOCKET_TIMEOUT = 30
 # the test is restarted after failure (idf_monitor has to be killed):
 RETRIES_PER_TEST = 5
 
+
 def monitor_timeout(process):
     if process.poll() is None:
         # idf_monitor is still running
@@ -63,6 +65,7 @@ def monitor_timeout(process):
                 pass
             else:
                 raise
+
 
 class TestRunner(object):
     def __enter__(self):
@@ -85,12 +88,13 @@ class TestRunner(object):
         clientsocket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         return clientsocket
 
+
 def test_iteration(runner, test, startup_timeout):
     print('\nRunning test on {} with filter "{}" and expecting {}'.format(test[0], test[1], test[2]))
     try:
         with open(OUT_DIR + test[2], "w", encoding='utf-8') as o_f, open(ERR_OUT, "w", encoding='utf-8') as e_f:
             monitor_cmd = [sys.executable,
-                    IDF_MONITOR, '--port', 'socket://{}:{}'.format(HOST, runner.port), '--print_filter', test[1], ELF_FILE]
+                           IDF_MONITOR, '--port', 'socket://{}:{}'.format(HOST, runner.port), '--print_filter', test[1], ELF_FILE]
             (master_fd, slave_fd) = pty.openpty()
             print('\t', ' '.join(monitor_cmd), sep='')
             print('\tstdout="{}" stderr="{}" stdin="{}"'.format(o_f.name, e_f.name, os.ttyname(slave_fd)))
@@ -140,6 +144,7 @@ def test_iteration(runner, test, startup_timeout):
     else:
         raise RuntimeError("The contents of the files are different. Please examine the artifacts.")
 
+
 def main():
     gstart = time.time()
     if not os.path.exists(OUT_DIR):
@@ -168,6 +173,7 @@ def main():
 
     gend = time.time()
     print('Execution took {:.2f} seconds\n'.format(gend - gstart))
+
 
 if __name__ == "__main__":
     main()

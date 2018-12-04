@@ -17,11 +17,25 @@
 
 import unittest
 import sys
-import os
 
-sys.path.append('../')
-from generation import *
-from pyparsing import *
+try:
+    from generation import PlacementRule
+except ImportError:
+    sys.path.append('../')
+    from generation import PlacementRule
+
+from generation import GenerationException
+from generation import SectionsInfo
+from generation import TemplateModel
+from generation import GenerationModel
+
+from fragments import FragmentFileModel
+from fragments import Mapping
+from fragments import Sections
+from fragments import Scheme
+
+from sdkconfig import SDKConfig
+
 
 class GenerationModelTest(unittest.TestCase):
 
@@ -269,7 +283,6 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_bss"].append(rtc_bss_E1)
 
         self._compare_rules(expected, actual)
-
 
     def test_rule_generation_nominal_4(self):
         normal = """
@@ -524,8 +537,10 @@ class GenerationModelTest(unittest.TestCase):
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["rodata"].entries, "dram0_data")
@@ -591,8 +606,10 @@ class GenerationModelTest(unittest.TestCase):
         dram0_bss_default = self._get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -648,8 +665,10 @@ class GenerationModelTest(unittest.TestCase):
         dram0_bss_default = self._get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
@@ -767,8 +786,10 @@ class GenerationModelTest(unittest.TestCase):
         dram0_bss_default = self._get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
+                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -847,8 +868,10 @@ class GenerationModelTest(unittest.TestCase):
         rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         rtc_text_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E4 = PlacementRule("libfreertos.a", "event_groups", None,
+                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E4 = PlacementRule("libfreertos.a", "event_groups", None,
+                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E5 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E5 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
@@ -918,8 +941,10 @@ class GenerationModelTest(unittest.TestCase):
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate",
+                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate",
+                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
 
         rtc_text_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
         rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
@@ -1041,7 +1066,7 @@ class GenerationModelTest(unittest.TestCase):
             croutine (noflash)
         """
 
-        conflict_scheme =  """
+        conflict_scheme = """
         [scheme:conflict]
         entries:
             rodata -> dram0_data
@@ -1052,9 +1077,9 @@ class GenerationModelTest(unittest.TestCase):
         self._add_mapping(conflict_mapping)
 
         with self.assertRaises(GenerationException):
-            actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+            self.model.generate_rules(self.sdkconfig, self.sections_info)
 
-    def test_rule_generation_condition (self):
+    def test_rule_generation_condition(self):
         generation_with_condition = """
         [mapping]
         archive: lib.a
@@ -1083,7 +1108,7 @@ class GenerationModelTest(unittest.TestCase):
             flash_rodata_default = self._get_default("flash_rodata", expected)
 
             if perf_level < 4:
-                for append_no in range (1, perf_level + 1):
+                for append_no in range(1, perf_level + 1):
                     iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
                     dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
 
@@ -1095,5 +1120,6 @@ class GenerationModelTest(unittest.TestCase):
 
             self._compare_rules(expected, actual)
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
     unittest.main()

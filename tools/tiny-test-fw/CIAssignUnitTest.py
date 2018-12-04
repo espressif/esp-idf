@@ -9,11 +9,13 @@ import argparse
 
 import yaml
 
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path:
-    sys.path.insert(0, test_fw_path)
-
-from Utility import CIAssignTest
+try:
+    from Utility import CIAssignTest
+except ImportError:
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path:
+        sys.path.insert(0, test_fw_path)
+    from Utility import CIAssignTest
 
 
 class Group(CIAssignTest.Group):

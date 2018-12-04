@@ -59,9 +59,9 @@ def _convert_to_lower_case_bytes(item):
     """
     if isinstance(item, (tuple, list)):
         output = [_convert_to_lower_case_bytes(v) for v in item]
-    elif type(item) == type(b''):
+    elif isinstance(item, type(b'')):
         output = item.lower()
-    elif type(item) == type(u''):
+    elif isinstance(item, type(u'')):
         output = item.encode().lower()
     else:
         output = item
