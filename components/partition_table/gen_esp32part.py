@@ -32,7 +32,7 @@ import binascii
 import errno
 
 MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in a 4K sector for signature
-MD5_PARTITION_BEGIN = b"\xEB\xEB" + b"\xFF" * 14 # The first 2 bytes are like magic numbers for MD5 sum
+MD5_PARTITION_BEGIN = b"\xEB\xEB" + b"\xFF" * 14  # The first 2 bytes are like magic numbers for MD5 sum
 PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 
 MIN_PARTITION_SUBTYPE_APP_OTA = 0x10
@@ -44,25 +44,25 @@ APP_TYPE = 0x00
 DATA_TYPE = 0x01
 
 TYPES = {
-    "app" : APP_TYPE,
-    "data" : DATA_TYPE,
+    "app": APP_TYPE,
+    "data": DATA_TYPE,
 }
 
 # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h
 SUBTYPES = {
-    APP_TYPE : {
-        "factory" : 0x00,
-        "test" : 0x20,
+    APP_TYPE: {
+        "factory": 0x00,
+        "test": 0x20,
     },
-    DATA_TYPE : {
-        "ota" : 0x00,
-        "phy" : 0x01,
-        "nvs" : 0x02,
-        "coredump" : 0x03,
-        "nvs_keys" : 0x04,
-        "esphttpd" : 0x80,
-        "fat" : 0x81,
-        "spiffs" : 0x82,
+    DATA_TYPE: {
+        "ota": 0x00,
+        "phy": 0x01,
+        "nvs": 0x02,
+        "coredump": 0x03,
+        "nvs_keys": 0x04,
+        "esphttpd": 0x80,
+        "fat": 0x81,
+        "spiffs": 0x82,
     },
 }
 
@@ -71,15 +71,18 @@ md5sum = True
 secure = False
 offset_part_table = 0
 
+
 def status(msg):
     """ Print status message to stderr """
     if not quiet:
         critical(msg)
 
+
 def critical(msg):
     """ Print critical message to stderr """
     sys.stderr.write(msg)
     sys.stderr.write('\n')
+
 
 class PartitionTable(list):
     def __init__(self):
@@ -102,15 +105,15 @@ class PartitionTable(list):
             if line.startswith("#") or len(line) == 0:
                 continue
             try:
-                res.append(PartitionDefinition.from_csv(line, line_no+1))
+                res.append(PartitionDefinition.from_csv(line, line_no + 1))
             except InputError as e:
-                raise InputError("Error at line %d: %s" % (line_no+1, e))
+                raise InputError("Error at line %d: %s" % (line_no + 1, e))
             except Exception:
-                critical("Unexpected error parsing CSV line %d: %s" % (line_no+1, line))
+                critical("Unexpected error parsing CSV line %d: %s" % (line_no + 1, line))
                 raise
 
         # fix up missing offsets & negative sizes
-        last_end = offset_part_table + PARTITION_TABLE_SIZE # first offset after partition table
+        last_end = offset_part_table + PARTITION_TABLE_SIZE  # first offset after partition table
         for e in res:
             if e.offset is not None and e.offset < last_end:
                 if e == res[0]:
@@ -149,14 +152,14 @@ class PartitionTable(list):
             ptype = TYPES[ptype]
         except KeyError:
             try:
-                ptypes = int(ptype, 0)
+                ptype = int(ptype, 0)
             except TypeError:
                 pass
         try:
             subtype = SUBTYPES[int(ptype)][subtype]
         except KeyError:
             try:
-                ptypes = int(ptype, 0)
+                ptype = int(ptype, 0)
             except TypeError:
                 pass
 
@@ -175,11 +178,11 @@ class PartitionTable(list):
         # verify each partition individually
         for p in self:
             p.verify()
-        
+
         # check on duplicate name
-        names = [ p.name for p in self ]
-        duplicates = set( n for n in names if names.count(n) > 1 )
-        
+        names = [p.name for p in self]
+        duplicates = set(n for n in names if names.count(n) > 1)
+
         # print sorted duplicate partitions by name
         if len(duplicates) != 0:
             print("A list of partitions that have the same name:")
@@ -187,14 +190,14 @@ class PartitionTable(list):
                 if len(duplicates.intersection([p.name])) != 0:
                     print("%s" % (p.to_csv()))
             raise InputError("Partition names must be unique")
-        
+
         # check for overlaps
         last = None
         for p in sorted(self, key=lambda x:x.offset):
             if p.offset < offset_part_table + PARTITION_TABLE_SIZE:
                 raise InputError("Partition offset 0x%x is below 0x%x" % (p.offset, offset_part_table + PARTITION_TABLE_SIZE))
             if last is not None and p.offset < last.offset + last.size:
-                raise InputError("Partition at 0x%x overlaps 0x%x-0x%x" % (p.offset, last.offset, last.offset+last.size-1))
+                raise InputError("Partition at 0x%x overlaps 0x%x-0x%x" % (p.offset, last.offset, last.offset + last.size - 1))
             last = p
 
     def flash_size(self):
@@ -209,17 +212,17 @@ class PartitionTable(list):
 
     @classmethod
     def from_binary(cls, b):
-        md5 = hashlib.md5();
+        md5 = hashlib.md5()
         result = cls()
         for o in range(0,len(b),32):
-            data = b[o:o+32]
+            data = b[o:o + 32]
             if len(data) != 32:
                 raise InputError("Partition table length must be a multiple of 32 bytes")
-            if data == b'\xFF'*32:
+            if data == b'\xFF' * 32:
                 return result  # got end marker
-            if md5sum and data[:2] == MD5_PARTITION_BEGIN[:2]: #check only the magic number part
+            if md5sum and data[:2] == MD5_PARTITION_BEGIN[:2]:  # check only the magic number part
                 if data[16:] == md5.digest():
-                    continue # the next iteration will check for the end marker
+                    continue  # the next iteration will check for the end marker
                 else:
                     raise InputError("MD5 checksums don't match! (computed: 0x%s, parsed: 0x%s)" % (md5.hexdigest(), binascii.hexlify(data[16:])))
             else:
@@ -231,29 +234,30 @@ class PartitionTable(list):
         result = b"".join(e.to_binary() for e in self)
         if md5sum:
             result += MD5_PARTITION_BEGIN + hashlib.md5(result).digest()
-        if len(result )>= MAX_PARTITION_LENGTH:
+        if len(result) >= MAX_PARTITION_LENGTH:
             raise InputError("Binary partition table length (%d) longer than max" % len(result))
         result += b"\xFF" * (MAX_PARTITION_LENGTH - len(result))  # pad the sector, for signing
         return result
 
     def to_csv(self, simple_formatting=False):
-        rows = [ "# Espressif ESP32 Partition Table",
-                 "# Name, Type, SubType, Offset, Size, Flags" ]
-        rows += [ x.to_csv(simple_formatting) for x in self ]
+        rows = ["# Espressif ESP32 Partition Table",
+                "# Name, Type, SubType, Offset, Size, Flags"]
+        rows += [x.to_csv(simple_formatting) for x in self]
         return "\n".join(rows) + "\n"
+
 
 class PartitionDefinition(object):
     MAGIC_BYTES = b"\xAA\x50"
 
     ALIGNMENT = {
-        APP_TYPE : 0x10000,
-        DATA_TYPE : 0x04,
+        APP_TYPE: 0x10000,
+        DATA_TYPE: 0x04,
     }
 
     # dictionary maps flag name (as used in CSV flags list, property name)
     # to bit set in flags words in binary format
     FLAGS = {
-        "encrypted" : 0
+        "encrypted": 0
     }
 
     # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
@@ -272,7 +276,7 @@ class PartitionDefinition(object):
     def from_csv(cls, line, line_no):
         """ Parse a line from the CSV """
         line_w_defaults = line + ",,,,"  # lazy way to support default fields
-        fields = [ f.strip() for f in line_w_defaults.split(",") ]
+        fields = [f.strip() for f in line_w_defaults.split(",")]
 
         res = PartitionDefinition()
         res.line_no = line_no
@@ -302,7 +306,7 @@ class PartitionDefinition(object):
         def maybe_hex(x):
             return "0x%x" % x if x is not None else "None"
         return "PartitionDefinition('%s', 0x%x, 0x%x, %s, %s)" % (self.name, self.type, self.subtype or 0,
-                                                              maybe_hex(self.offset), maybe_hex(self.size))
+                                                                  maybe_hex(self.offset), maybe_hex(self.size))
 
     def __str__(self):
         return "Part '%s' %d/%d @ 0x%x size 0x%x" % (self.name, self.type, self.subtype, self.offset or -1, self.size or -1)
@@ -329,7 +333,7 @@ class PartitionDefinition(object):
 
     def parse_subtype(self, strval):
         if strval == "":
-            return 0 # default
+            return 0  # default
         return parse_int(strval, SUBTYPES.get(self.type, {}))
 
     def parse_address(self, strval):
@@ -353,12 +357,14 @@ class PartitionDefinition(object):
             raise ValidationError(self, "Size field is not set")
 
         if self.name in TYPES and TYPES.get(self.name, "") != self.type:
-            critical("WARNING: Partition has name '%s' which is a partition type, but does not match this partition's type (0x%x). Mistake in partition table?" % (self.name, self.type))
+            critical("WARNING: Partition has name '%s' which is a partition type, but does not match this partition's "
+                     "type (0x%x). Mistake in partition table?" % (self.name, self.type))
         all_subtype_names = []
         for names in (t.keys() for t in SUBTYPES.values()):
             all_subtype_names += names
         if self.name in all_subtype_names and SUBTYPES.get(self.type, {}).get(self.name, "") != self.subtype:
-            critical("WARNING: Partition has name '%s' which is a partition subtype, but this partition has non-matching type 0x%x and subtype 0x%x. Mistake in partition table?" % (self.name, self.type, self.subtype))
+            critical("WARNING: Partition has name '%s' which is a partition subtype, but this partition has "
+                     "non-matching type 0x%x and subtype 0x%x. Mistake in partition table?" % (self.name, self.type, self.subtype))
 
     STRUCT_FORMAT = b"<2sBBLL16sL"
 
@@ -369,21 +375,21 @@ class PartitionDefinition(object):
         res = cls()
         (magic, res.type, res.subtype, res.offset,
          res.size, res.name, flags) = struct.unpack(cls.STRUCT_FORMAT, b)
-        if b"\x00" in res.name: # strip null byte padding from name string
+        if b"\x00" in res.name:  # strip null byte padding from name string
             res.name = res.name[:res.name.index(b"\x00")]
         res.name = res.name.decode()
         if magic != cls.MAGIC_BYTES:
             raise InputError("Invalid magic bytes (%r) for partition definition" % magic)
         for flag,bit in cls.FLAGS.items():
-            if flags & (1<<bit):
+            if flags & (1 << bit):
                 setattr(res, flag, True)
-                flags &= ~(1<<bit)
+                flags &= ~(1 << bit)
         if flags != 0:
             critical("WARNING: Partition definition had unknown flag(s) 0x%08x. Newer binary format?" % flags)
         return res
 
     def get_flags_list(self):
-        return [ flag for flag in self.FLAGS.keys() if getattr(self, flag) ]
+        return [flag for flag in self.FLAGS.keys() if getattr(self, flag)]
 
     def to_binary(self):
         flags = sum((1 << self.FLAGS[flag]) for flag in self.get_flags_list())
@@ -397,14 +403,14 @@ class PartitionDefinition(object):
     def to_csv(self, simple_formatting=False):
         def addr_format(a, include_sizes):
             if not simple_formatting and include_sizes:
-                for (val, suffix) in [ (0x100000, "M"), (0x400, "K") ]:
+                for (val, suffix) in [(0x100000, "M"), (0x400, "K")]:
                     if a % val == 0:
                         return "%d%s" % (a // val, suffix)
             return "0x%x" % a
 
         def lookup_keyword(t, keywords):
             for k,v in keywords.items():
-                if simple_formatting == False and t == v:
+                if simple_formatting is False and t == v:
                     return k
             return "%d" % t
 
@@ -412,12 +418,12 @@ class PartitionDefinition(object):
             """ colon-delimited list of flags """
             return ":".join(self.get_flags_list())
 
-        return ",".join([ self.name,
-                          lookup_keyword(self.type, TYPES),
-                          lookup_keyword(self.subtype, SUBTYPES.get(self.type, {})),
-                          addr_format(self.offset, False),
-                          addr_format(self.size, True),
-                          generate_text_flags()])
+        return ",".join([self.name,
+                         lookup_keyword(self.type, TYPES),
+                         lookup_keyword(self.subtype, SUBTYPES.get(self.type, {})),
+                         addr_format(self.offset, False),
+                         addr_format(self.size, True),
+                         generate_text_flags()])
 
 
 def parse_int(v, keywords={}):
@@ -425,7 +431,7 @@ def parse_int(v, keywords={}):
     k/m/K/M suffixes and 'keyword' value lookup.
     """
     try:
-        for letter, multiplier in [ ("k",1024), ("m",1024*1024) ]:
+        for letter, multiplier in [("k", 1024), ("m", 1024 * 1024)]:
             if v.lower().endswith(letter):
                 return parse_int(v[:-1], keywords) * multiplier
         return int(v, 0)
@@ -437,6 +443,7 @@ def parse_int(v, keywords={}):
         except KeyError:
             raise InputError("Value '%s' is not valid. Known keywords: %s" % (v, ", ".join(keywords)))
 
+
 def main():
     global quiet
     global md5sum
@@ -445,10 +452,11 @@ def main():
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
-                        nargs='?', choices=[ '1MB', '2MB', '4MB', '8MB', '16MB' ])
+                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB'])
     parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
     parser.add_argument('--no-verify', help="Don't verify partition table fields", action='store_true')
-    parser.add_argument('--verify', '-v', help="Verify partition table fields (deprecated, this behaviour is enabled by default and this flag does nothing.", action='store_true')
+    parser.add_argument('--verify', '-v', help="Verify partition table fields (deprecated, this behaviour is "
+                                               "enabled by default and this flag does nothing.", action='store_true')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
     parser.add_argument('--secure', help="Require app partitions to be suitable for secure boot", action='store_true')
@@ -481,7 +489,8 @@ def main():
         size = size_mb * 1024 * 1024  # flash memory uses honest megabytes!
         table_size = table.flash_size()
         if size < table_size:
-            raise InputError("Partitions defined in '%s' occupy %.1fMB of flash (%d bytes) which does not fit in configured flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
+            raise InputError("Partitions defined in '%s' occupy %.1fMB of flash (%d bytes) which does not fit in configured "
+                             "flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
                              (args.input.name, table_size / 1024.0 / 1024.0, table_size, size_mb))
 
     # Make sure that the output directory is created
@@ -490,7 +499,7 @@ def main():
     if not os.path.exists(output_dir):
         try:
             os.makedirs(output_dir)
-        except OSError as exc: 
+        except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
 
