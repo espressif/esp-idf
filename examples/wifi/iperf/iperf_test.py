@@ -30,21 +30,28 @@ import sys
 import time
 import subprocess
 
-# add current folder to system path for importing test_report
-sys.path.append(os.path.dirname(__file__))
-# this is a test case write with tiny-test-fw.
-# to run test cases outside tiny-test-fw,
-# we need to set environment variable `TEST_FW_PATH`,
-# then get and insert `TEST_FW_PATH` to sys path before import FW module
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    # this is a test case write with tiny-test-fw.
+    # to run test cases outside tiny-test-fw,
+    # we need to set environment variable `TEST_FW_PATH`,
+    # then get and insert `TEST_FW_PATH` to sys path before import FW module
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
 
-import IDF
 import DUT
 import Utility
 from Utility import (Attenuator, PowerControl, LineChart)
-from test_report import (ThroughputForConfigsReport, ThroughputVsRssiReport)
+
+try:
+    from test_report import (ThroughputForConfigsReport, ThroughputVsRssiReport)
+except ImportError:
+    # add current folder to system path for importing test_report
+    sys.path.append(os.path.dirname(__file__))
+    from test_report import (ThroughputForConfigsReport, ThroughputVsRssiReport)
 
 # configurations
 TEST_TIME = TEST_TIMEOUT = 60
@@ -80,7 +87,7 @@ class TestResult(object):
     BAD_POINT_PERCENTAGE_THRESHOLD = 0.3
 
     # we need at least 1/2 valid points to qualify the test result
-    THROUGHPUT_QUALIFY_COUNT = TEST_TIME//2
+    THROUGHPUT_QUALIFY_COUNT = TEST_TIME // 2
 
     def __init__(self, proto, direction, config_name):
         self.proto = proto

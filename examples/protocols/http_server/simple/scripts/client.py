@@ -16,21 +16,22 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
 import http.client
 import argparse
+import Utility
+
 
 def verbose_print(verbosity, *args):
     if (verbosity):
         Utility.console_log(''.join(str(elems) for elems in args))
 
-def test_get_handler(ip, port, verbosity = False):
+
+def test_get_handler(ip, port, verbosity=False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     uri = "/hello?query1=value1&query2=value2&query3=value3"
     # GET hello response
@@ -48,7 +49,7 @@ def test_get_handler(ip, port, verbosity = False):
             return False
         if resp.getheader("Custom-Header-2") != "Custom-Value-2":
             return False
-    except:
+    except Exception:
         return False
 
     verbose_print(verbosity, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
@@ -63,11 +64,12 @@ def test_get_handler(ip, port, verbosity = False):
     sess.close()
     return (resp_data == "Hello World!")
 
-def test_post_handler(ip, port, msg, verbosity = False):
+
+def test_post_handler(ip, port, msg, verbosity=False):
     verbose_print(verbosity, "========  POST HANDLER TEST ============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     # POST message to /echo and get back response
     sess.request("POST", url="/echo", body=msg)
@@ -82,11 +84,12 @@ def test_post_handler(ip, port, msg, verbosity = False):
     sess.close()
     return (resp_data == msg)
 
-def test_put_handler(ip, port, verbosity = False):
+
+def test_put_handler(ip, port, verbosity=False):
     verbose_print(verbosity, "========  PUT HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     # PUT message to /ctrl to disable /hello URI handler
     verbose_print(verbosity, "Disabling /hello handler")
@@ -114,11 +117,12 @@ def test_put_handler(ip, port, verbosity = False):
     sess.close()
     return ((resp_data2 == "Hello World!") and (resp_data1 == "This URI doesn't exist"))
 
-def test_custom_uri_query(ip, port, query, verbosity = False):
+
+def test_custom_uri_query(ip, port, query, verbosity=False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     uri = "/hello?" + query
     # GET hello response
@@ -136,10 +140,11 @@ def test_custom_uri_query(ip, port, query, verbosity = False):
     sess.close()
     return (resp_data == "Hello World!")
 
+
 if __name__ == '__main__':
     # Configure argument parser
     parser = argparse.ArgumentParser(description='Run HTTPd Test')
-    parser.add_argument('IP'  , metavar='IP'  ,    type=str, help='Server IP')
+    parser.add_argument('IP',   metavar='IP',      type=str, help='Server IP')
     parser.add_argument('port', metavar='port',    type=str, help='Server port')
     parser.add_argument('msg',  metavar='message', type=str, help='Message to be sent to server')
     args = vars(parser.parse_args())
@@ -149,9 +154,9 @@ if __name__ == '__main__':
     port = args['port']
     msg  = args['msg']
 
-    if not test_get_handler (ip, port, True):
+    if not test_get_handler(ip, port, True):
         Utility.console_log("Failed!")
     if not test_post_handler(ip, port, msg, True):
         Utility.console_log("Failed!")
-    if not test_put_handler (ip, port, True):
+    if not test_put_handler(ip, port, True):
         Utility.console_log("Failed!")
