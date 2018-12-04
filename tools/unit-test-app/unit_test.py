@@ -27,7 +27,9 @@ EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\
 ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-eA-E\d]{8} on core \d)")
 FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 
-STARTUP_TIMEOUT=10
+STARTUP_TIMEOUT = 10
+DUT_STARTUP_CHECK_RETRY_COUNT = 5
+TEST_HISTORY_CHECK_TIMEOUT = 1
 
 
 def format_test_case_config(test_case_data):
@@ -125,12 +127,12 @@ def reset_dut(dut):
     for _ in range(DUT_STARTUP_CHECK_RETRY_COUNT):
         dut.write("-")
         try:
-            dut.expect("0 Tests 0 Failures 0 Ignored", timeout=TEST_HISTROY_CHECK_TIMEOUT)
+            dut.expect("0 Tests 0 Failures 0 Ignored", timeout=TEST_HISTORY_CHECK_TIMEOUT)
             break
         except ExpectTimeout:
             pass
     else:
-        raise AssertationError("Reset {} ({}) failed!".format(dut.name, dut.port))
+        raise AssertionError("Reset {} ({}) failed!".format(dut.name, dut.port))
 
 
 def run_one_normal_case(dut, one_case, junit_test_case, failed_cases):
