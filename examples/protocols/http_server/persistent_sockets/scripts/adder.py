@@ -16,20 +16,22 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
 from builtins import range
 import http.client
 import argparse
+import Utility
 
-def start_session (ip, port):
+
+def start_session(ip, port):
     return http.client.HTTPConnection(ip, int(port), timeout=15)
 
-def end_session (conn):
+
+def end_session(conn):
     conn.close()
 
-def getreq (conn, path, verbose = False):
+
+def getreq(conn, path, verbose=False):
     conn.request("GET", path)
     resp = conn.getresponse()
     data = resp.read()
@@ -41,7 +43,8 @@ def getreq (conn, path, verbose = False):
         Utility.console_log("Data content : " + data)
     return data
 
-def postreq (conn, path, data, verbose = False):
+
+def postreq(conn, path, data, verbose=False):
     conn.request("POST", path, data)
     resp = conn.getresponse()
     data = resp.read()
@@ -53,7 +56,8 @@ def postreq (conn, path, data, verbose = False):
         Utility.console_log("Data content : " + data)
     return data
 
-def putreq (conn, path, body, verbose = False):
+
+def putreq(conn, path, body, verbose=False):
     conn.request("PUT", path, body)
     resp = conn.getresponse()
     data = resp.read()
@@ -65,12 +69,13 @@ def putreq (conn, path, body, verbose = False):
         Utility.console_log("Data content : " + data)
     return data
 
+
 if __name__ == '__main__':
     # Configure argument parser
     parser = argparse.ArgumentParser(description='Run HTTPd Test')
-    parser.add_argument('IP'  , metavar='IP'  ,    type=str, help='Server IP')
+    parser.add_argument('IP',   metavar='IP',      type=str, help='Server IP')
     parser.add_argument('port', metavar='port',    type=str, help='Server port')
-    parser.add_argument('N'   , metavar='integer', type=int, help='Integer to sum upto')
+    parser.add_argument('N',    metavar='integer', type=int, help='Integer to sum upto')
     args = vars(parser.parse_args())
 
     # Get arguments
@@ -80,21 +85,21 @@ if __name__ == '__main__':
 
     # Establish HTTP connection
     Utility.console_log("Connecting to => " + ip + ":" + port)
-    conn = start_session (ip, port)
+    conn = start_session(ip, port)
 
     # Reset adder context to specified value(0)
     # -- Not needed as new connection will always
     # -- have zero value of the accumulator
     Utility.console_log("Reset the accumulator to 0")
-    putreq (conn, "/adder", str(0))
+    putreq(conn, "/adder", str(0))
 
     # Sum numbers from 1 to specified value(N)
     Utility.console_log("Summing numbers from 1 to " + str(N))
-    for i in range(1, N+1):
-        postreq (conn, "/adder", str(i))
+    for i in range(1, N + 1):
+        postreq(conn, "/adder", str(i))
 
     # Fetch the result
-    Utility.console_log("Result :" + getreq (conn, "/adder"))
+    Utility.console_log("Result :" + getreq(conn, "/adder"))
 
     # Close HTTP connection
-    end_session (conn)
+    end_session(conn)

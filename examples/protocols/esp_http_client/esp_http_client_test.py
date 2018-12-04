@@ -2,16 +2,18 @@ import re
 import os
 import sys
 
-# this is a test case write with tiny-test-fw.
-# to run test cases outside tiny-test-fw,
-# we need to set environment variable `TEST_FW_PATH`,
-# then get and insert `TEST_FW_PATH` to sys path before import FW module
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    # this is a test case write with tiny-test-fw.
+    # to run test cases outside tiny-test-fw,
+    # we need to set environment variable `TEST_FW_PATH`,
+    # then get and insert `TEST_FW_PATH` to sys path before import FW module
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
 
-import TinyFW
-import IDF
+    import IDF
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI", ignore=True)
@@ -25,8 +27,8 @@ def test_examples_protocol_esp_http_client(env, extra_data):
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "esp-http-client-example.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("esp_http_client_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("esp_http_client_bin_size", bin_size//1024)
+    IDF.log_performance("esp_http_client_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("esp_http_client_bin_size", bin_size // 1024)
     # start test
     dut1.start_app()
     dut1.expect("Connected to AP, begin http example", timeout=30)

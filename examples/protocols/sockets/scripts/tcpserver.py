@@ -9,9 +9,9 @@
 import socket
 import sys
 
-# -----------  Config  ---------- 
+# -----------  Config  ----------
 IP_VERSION = 'IPv4'
-PORT = 3333;
+PORT = 3333
 # -------------------------------
 
 if IP_VERSION == 'IPv4':
@@ -30,7 +30,7 @@ except socket.error as msg:
     sys.exit(1)
 
 print('Socket created')
-    
+
 try:
     sock.bind(('', PORT))
     print('Socket binded')
@@ -45,7 +45,8 @@ except socket.error as msg:
 
 while True:
     data = conn.recv(128)
-    if not data: break
+    if not data:
+        break
     data = data.decode()
     print('Received data: ' + data)
     reply = 'OK: ' + data
