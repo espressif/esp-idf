@@ -246,6 +246,9 @@ function(idf_link_components target components)
     endforeach()
 
     if(libraries)
+        # gc-sections is necessary for linking some IDF binary libraries
+        # (and without it, IDF apps are much larger than they should be)
+        target_link_libraries(${target} "-Wl,--gc-sections")
         target_link_libraries(${target} "-Wl,--start-group")
         target_link_libraries(${target} ${libraries})
         message(STATUS "Component libraries: ${IDF_COMPONENT_LIBRARIES}")
