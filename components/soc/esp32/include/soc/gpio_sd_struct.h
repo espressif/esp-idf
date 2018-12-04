@@ -14,6 +14,8 @@
 #ifndef _SOC_GPIO_SD_STRUCT_H_
 #define _SOC_GPIO_SD_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
