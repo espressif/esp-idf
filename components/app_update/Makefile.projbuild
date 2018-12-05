@@ -9,11 +9,11 @@ PARTTOOL_PY := $(PYTHON) $(IDF_PATH)/components/partition_table/parttool.py
 BLANK_OTA_DATA_FILE = $(BUILD_DIR_BASE)/ota_data_initial.bin
 
 $(BLANK_OTA_DATA_FILE): partition_table_get_info $(PARTITION_TABLE_BIN) | check_python_dependencies
-	$(shell if [ $(OTA_DATA_OFFSET) != "" ] && [ $(OTA_DATA_SIZE) != "" ]; then \
+	$(shell if [ "$(OTA_DATA_OFFSET)" != "" ] && [ "$(OTA_DATA_SIZE)" != "" ]; then \
 				$(PARTTOOL_PY) --partition-type data --partition-subtype ota --partition-table-file $(PARTITION_TABLE_BIN) \
 								-q generate_blank_partition_file --output $(BLANK_OTA_DATA_FILE); \
 			fi; )
-	$(eval BLANK_OTA_DATA_FILE = $(shell if [ $(OTA_DATA_OFFSET) != "" ] && [ $(OTA_DATA_SIZE) != "" ]; then \
+	$(eval BLANK_OTA_DATA_FILE = $(shell if [ "$(OTA_DATA_OFFSET)" != "" ] && [ "$(OTA_DATA_SIZE)" != "" ]; then \
 			echo $(BLANK_OTA_DATA_FILE); else echo " "; fi) )
 
 blank_ota_data: $(BLANK_OTA_DATA_FILE)

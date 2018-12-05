@@ -18,6 +18,10 @@ endfunction()
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_PATH}/port/include")
 
+if(MSYS)
+    set(CMAKE_HOST_UNIX 1)
+endif()
+
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
 

@@ -13,6 +13,64 @@ macro(kconfig_set_variables)
     set(ROOT_KCONFIG ${IDF_PATH}/Kconfig)
 endmacro()
 
+if(CMAKE_HOST_WIN32)
+    # Prefer a prebuilt mconf-idf on Windows
+    if(DEFINED ENV{MSYSTEM})
+        find_program(WINPTY winpty)
+    else()
+        unset(WINPTY CACHE)  # in case previous CMake run was in a tty and this one is not
+    endif()
+    find_program(MCONF mconf-idf)
+
+    # Fall back to the old binary which was called 'mconf' not 'mconf-idf'
+    if(NOT MCONF)
+        find_program(MCONF mconf)
+        if(MCONF)
+            message(WARNING "Falling back to mconf binary '${MCONF}' not mconf-idf. "
+                "This is probably because an old version of IDF mconf is installed and this is fine. "
+                "However if there are config problems please check the Getting Started guide for your platform.")
+        endif()
+    endif()
+
+    if(NOT MCONF)
+        find_program(NATIVE_GCC gcc)
+        if(NOT NATIVE_GCC)
+            message(FATAL_ERROR
+                "Windows requires a prebuilt mconf-idf for your platform "
+                "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf-idf. "
+                "Consult the setup docs for ESP-IDF on Windows.")
+        endif()
+    elseif(WINPTY)
+        set(MCONF "${WINPTY}" "${MCONF}")
+    endif()
+endif()
+
+if(NOT MCONF)
+    # Use the existing Makefile to build mconf (out of tree) when needed
+    #
+    set(MCONF ${CMAKE_BINARY_DIR}/kconfig_bin/mconf-idf)
+
+    externalproject_add(mconf-idf
+        SOURCE_DIR ${IDF_PATH}/tools/kconfig
+        CONFIGURE_COMMAND ""
+        BINARY_DIR "kconfig_bin"
+        BUILD_COMMAND make -f ${IDF_PATH}/tools/kconfig/Makefile mconf-idf
+        BUILD_BYPRODUCTS ${MCONF}
+        INSTALL_COMMAND ""
+        EXCLUDE_FROM_ALL 1
+        )
+
+    file(GLOB mconf_srcfiles ${IDF_PATH}/tools/kconfig/*.c)
+    externalproject_add_stepdependencies(mconf-idf build
+        ${mconf_srcfiles}
+        ${IDF_PATH}/tools/kconfig/Makefile
+        ${CMAKE_CURRENT_LIST_FILE})
+    unset(mconf_srcfiles)
+
+    set(menuconfig_depends DEPENDS mconf-idf)
+
+endif()
+
 # Find all Kconfig files for all components
 function(kconfig_process_config)
     file(MAKE_DIRECTORY "${CONFIG_DIR}")
@@ -68,7 +126,7 @@ function(kconfig_process_config)
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${SDKCONFIG}"
         "IDF_TARGET=${IDF_TARGET}"
-        ${CMAKE_BINARY_DIR}/${MCONF} ${ROOT_KCONFIG}
+        ${MCONF} ${ROOT_KCONFIG}
         VERBATIM
         USES_TERMINAL)
 
@@ -112,62 +170,3 @@ function(kconfig_process_config)
         "${SDKCONFIG_HEADER}" "${SDKCONFIG_CMAKE}")
 
 endfunction()
-
-if(CMAKE_HOST_WIN32)
-    # Prefer a prebuilt mconf-idf on Windows
-    if(DEFINED ENV{MSYSTEM})
-        find_program(WINPTY winpty)
-    else()
-        unset(WINPTY CACHE)  # in case previous CMake run was in a tty and this one is not
-    endif()
-    find_program(MCONF mconf-idf)
-
-    # Fall back to the old binary which was called 'mconf' not 'mconf-idf'
-    if(NOT MCONF)
-        find_program(MCONF mconf)
-        if(MCONF)
-            message(WARNING "Falling back to mconf binary '${MCONF}' not mconf-idf. "
-                "This is probably because an old version of IDF mconf is installed and this is fine. "
-                "However if there are config problems please check the Getting Started guide for your platform.")
-        endif()
-    endif()
-
-    if(NOT MCONF)
-        find_program(NATIVE_GCC gcc)
-        if(NOT NATIVE_GCC)
-            message(FATAL_ERROR
-                "Windows requires a prebuilt mconf-idf for your platform "
-                "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf-idf. "
-                "Consult the setup docs for ESP-IDF on Windows.")
-        endif()
-    elseif(WINPTY)
-        set(MCONF "${WINPTY}" "${MCONF}")
-    endif()
-endif()
-
-if(NOT MCONF)
-    # Use the existing Makefile to build mconf (out of tree) when needed
-    #
-    set(MCONF kconfig_bin/mconf-idf)
-
-    externalproject_add(mconf-idf
-        SOURCE_DIR ${IDF_PATH}/tools/kconfig
-        CONFIGURE_COMMAND ""
-        BINARY_DIR "kconfig_bin"
-        BUILD_COMMAND make -f ${IDF_PATH}/tools/kconfig/Makefile mconf-idf
-        BUILD_BYPRODUCTS ${MCONF}
-        INSTALL_COMMAND ""
-        EXCLUDE_FROM_ALL 1
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR} # Put built files on top level build directory
-        )
-
-    file(GLOB mconf_srcfiles ${IDF_PATH}/tools/kconfig/*.c)
-    externalproject_add_stepdependencies(mconf-idf build
-        ${mconf_srcfiles}
-        ${IDF_PATH}/tools/kconfig/Makefile
-        ${CMAKE_CURRENT_LIST_FILE})
-    unset(mconf_srcfiles)
-
-    set(menuconfig_depends DEPENDS mconf-idf)
-
-endif()
