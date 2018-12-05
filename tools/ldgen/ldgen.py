@@ -79,7 +79,7 @@ def main():
     try:
         sections_infos = SectionsInfo()
 
-        section_info_contents = [s.strip() for s in sections_info_files.read().split("\n")]
+        section_info_contents = [s.strip() for s in sections_info_files.read().split("\\n")]
         section_info_contents = [s for s in section_info_contents if s]
 
         for sections_info_file in section_info_contents:
