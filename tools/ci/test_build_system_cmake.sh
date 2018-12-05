@@ -96,6 +96,19 @@ function run_tests()
     idf.py build || failure "Partial build failed"
     assert_not_rebuilt ${ALL_BUILD_FILES}
 
+    print_status "Rebuild when app version was changed"
+    clean_build_dir
+    # App version
+    echo "project-version-1.0" > ${TESTDIR}/template/version.txt
+    idf.py build || failure "Failed to build with app version"
+    print_status "Change app version"
+    take_build_snapshot
+	echo "project-version-2.0" > ${TESTDIR}/template/version.txt
+	idf.py build || failure "Failed to rebuild with changed app version"
+    assert_rebuilt ${APP_BINS}
+    assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
+    rm -f ${TESTDIR}/template/version.txt
+    
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
     OUTOFTREE_BUILD=${TESTDIR}/alt_build

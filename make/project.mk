@@ -278,6 +278,10 @@ LDFLAGS ?= -nostdlib \
 CPPFLAGS ?=
 EXTRA_CPPFLAGS ?=
 CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
+PROJECT_VER ?=
+export IDF_VER
+export PROJECT_NAME
+export PROJECT_VER
 
 # Warnings-related flags relevant both for C and C++
 COMMON_WARNING_FLAGS = -Wall -Werror=all \

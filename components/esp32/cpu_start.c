@@ -71,6 +71,7 @@
 #include "esp_pm.h"
 #include "pm_impl.h"
 #include "trax.h"
+#include "esp_ota_ops.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -175,6 +176,20 @@ void IRAM_ATTR call_start_cpu0()
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
+#if LOG_LOCAL_LEVEL >= ESP_LOG_INFO
+    const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+    ESP_EARLY_LOGI(TAG, "Application information:");
+    ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
+    ESP_EARLY_LOGI(TAG, "App version:      %s", app_desc->version);
+#ifdef CONFIG_APP_SECURE_VERSION
+    ESP_EARLY_LOGI(TAG, "Secure version:   %x", app_desc->secure_version);
+#endif
+#ifdef CONFIG_APP_COMPILE_TIME_DATE
+    ESP_EARLY_LOGI(TAG, "Compile time:     %s", app_desc->time);
+    ESP_EARLY_LOGI(TAG, "Compile date:     %s", app_desc->date);
+#endif
+    ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
+#endif
 
 #if !CONFIG_FREERTOS_UNICORE
     if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {

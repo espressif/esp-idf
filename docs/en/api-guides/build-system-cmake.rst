@@ -319,12 +319,18 @@ The following component-specific variables are available for use inside componen
 
 The following variables are set at the project level, but available for use in component CMakeLists:
 
-- ``PROJECT_NAME``: Name of the project, as set in project Makefile
+- ``PROJECT_NAME``: Name of the project, as set in project CMakeLists.txt file.
 - ``PROJECT_PATH``: Absolute path of the project directory containing the project Makefile. Same as the ``CMAKE_SOURCE_DIR`` variable.
 - ``COMPONENTS``: Names of all components that are included in this build, formatted as a semicolon-delimited CMake list.
 - ``CONFIG_*``: Each value in the project configuration has a corresponding variable available in make. All names begin with ``CONFIG_``. :doc:`More information here </api-reference/kconfig>`.
 - ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
 - ``IDF_TARGET``: Name of the target for which the project is being built.
+- ``PROJECT_VER``: Project version. 
+
+* If ``PROJECT_VER`` variable set in project CMakeLists.txt file, its value will be used.
+* Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+* Else, if the project is located inside a Git repository, the output of git describe will be used.
+* Otherwise, ``PROJECT_VER`` will be empty.
 
 If you modify any of these variables inside ``CMakeLists.txt`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 
@@ -403,6 +409,8 @@ The ESP-IDF build system adds the following C preprocessor definitions on the co
 
 - ``ESP_PLATFORM`` — Can be used to detect that build happens within ESP-IDF.
 - ``IDF_VER`` — Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
+- ``PROJECT_VER``: The project version, see `Preset Component Variables`_ for more details.
+- ``PROJECT_NAME``: Name of the project, as set in project CMakeLists.txt file.
 
 Component Requirements
 ======================
