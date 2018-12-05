@@ -16,7 +16,7 @@ function assert_branch_public()
         set -e
         source ./configure_ci_environment.sh
         [[ $IS_PUBLIC = $2 ]] || exit 1
-    ) || ( echo "Expected $1 public=$2. Failing" && exit 1 )
+    ) || { echo "Expected $1 public=$2. Failing"; exit 1; }
 }
 
 assert_branch_public master 1
