@@ -29,6 +29,7 @@
 #include "soc/gpio_periph.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
+#include "sys/param.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 
@@ -39,9 +40,14 @@ uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s)
     return crc32_le(UINT32_MAX, (uint8_t*)&s->ota_seq, 4);
 }
 
+bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s)
+{
+    return s->ota_seq == UINT32_MAX;
+}
+
 bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s)
 {
-    return s->ota_seq != UINT32_MAX && s->crc == bootloader_common_ota_select_crc(s);
+    return bootloader_common_ota_select_invalid(s) == false && s->crc == bootloader_common_ota_select_crc(s);
 }
 
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec)
@@ -191,6 +197,32 @@ esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t 
     bootloader_munmap(partition_bin);
 
     return ESP_OK;
+}
+
+int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
+{
+    int active_otadata = -1;
+
+    bool valid_otadata[2];
+    valid_otadata[0] = bootloader_common_ota_select_valid(&two_otadata[0]);
+    valid_otadata[1] = bootloader_common_ota_select_valid(&two_otadata[1]);
+    if (valid_otadata[0] && valid_otadata[1]) {
+        if (MAX(two_otadata[0].ota_seq, two_otadata[1].ota_seq) == two_otadata[0].ota_seq) {
+            active_otadata = 0;
+        } else {
+            active_otadata = 1;
+        }
+        ESP_LOGD(TAG, "Both OTA copies are valid");
+    } else {
+        for (int i = 0; i < 2; ++i) {
+            if (valid_otadata[i]) {
+                active_otadata = i;
+                ESP_LOGD(TAG, "Only otadata[%d] is valid", i);
+                break;
+            }
+        }
+    }
+    return active_otadata;
 }
 
 esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
