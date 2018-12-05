@@ -6,6 +6,10 @@ set(COMPONENT_REQUIRES spi_flash partition_table bootloader_support)
 
 register_component()
 
+# esp_app_desc structure is added as an undefined symbol because otherwise the 
+# linker will ignore this structure as it has no other files depending on it.
+target_link_libraries(${COMPONENT_TARGET} "-u esp_app_desc")
+
 set_source_files_properties(
     SOURCE "esp_app_desc.c"
     PROPERTIES COMPILE_DEFINITIONS 
