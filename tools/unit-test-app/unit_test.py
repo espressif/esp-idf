@@ -25,13 +25,22 @@ import time
 import argparse
 import threading
 
-# if we want to run test case outside `tiny-test-fw` folder,
-# we need to insert tiny-test-fw path into sys path
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+        import TinyFW
+except ImportError:
+    # if we want to run test case outside `tiny-test-fw` folder,
+    # we need to insert tiny-test-fw path into sys path
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    else:
+        # or try the copy in IDF
+        idf_path = os.getenv("IDF_PATH")
+        tiny_test_path = idf_path + "/tools/tiny-test-fw"
+        if os.path.exists(tiny_test_path):
+            sys.path.insert(0, tiny_test_path)
+    import TinyFW
 
-import TinyFW
 import IDF
 import Utility
 import Env
