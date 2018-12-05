@@ -24,20 +24,28 @@ typedef enum {
 } esp_comm_gpio_hold_t;
 
 /**
- * @brief Calculate crc for the OTA data partition.
+ * @brief Calculate crc for the OTA data select.
  *
- * @param[in] ota_data The OTA data partition.
+ * @param[in] s The OTA data select.
  * @return    Returns crc value.
  */
 uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s);
 
 /**
- * @brief Verifies the validity of the OTA data partition
+ * @brief Verifies the validity of the OTA data select
  *
- * @param[in] ota_data The OTA data partition.
+ * @param[in] s The OTA data select.
  * @return    Returns true on valid, false otherwise.
  */
 bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s);
+
+/**
+ * @brief Returns true if OTADATA is not marked as bootable partition.
+ *
+ * @param[in] s The OTA data select.
+ * @return    Returns true if OTADATA invalid, false otherwise.
+ */
+bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s);
 
 /**
  * @brief Check if the GPIO input is a long hold or a short hold.
@@ -92,6 +100,16 @@ bool bootloader_common_label_search(const char *list, char *label);
  *          - ESP_FAIL: An allocation error occurred.
  */
 esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
+
+/**
+ * @brief Returns the number of active otadata.
+ *
+ * @param[in] two_otadata Pointer on array from two otadata structures.
+ *
+ * @return The number of active otadata (0 or 1).
+ *        - -1: If it does not have active otadata.
+ */
+int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata);
 
 /**
  * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
