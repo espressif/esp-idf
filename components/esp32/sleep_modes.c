@@ -81,7 +81,9 @@ static sleep_config_t s_config = {
     .wakeup_triggers = 0
 };
 
-bool s_light_sleep_wakeup = false;
+/* Internal variable used to track if light sleep wakeup sources are to be
+   expected when determining wakeup cause. */
+static bool s_light_sleep_wakeup = false;
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe. */
