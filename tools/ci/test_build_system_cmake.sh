@@ -279,6 +279,18 @@ function run_tests()
     mv CMakeLists.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    print_status "Setting EXTRA_COMPONENT_DIRS works"
+    clean_build_dir
+    mkdir -p main/main/main # move main component contents to another directory
+    mv main/* main/main/main
+    cp CMakeLists.txt CMakeLists.bak # set EXTRA_COMPONENT_DIRS to point to the other directory
+    sed -i "s%cmake_minimum_required(VERSION \([0-9]\+\).\([0-9]\+\))%cmake_minimum_required(VERSION \1.\2)\nset(EXTRA_COMPONENT_DIRS main/main/main)%" CMakeLists.txt
+    idf.py build || failure "Build with EXTRA_COMPONENT_DIRS set failed"
+    mv CMakeLists.bak CMakeLists.txt # revert previous modifications
+    mv main/main/main/* main
+    rm -rf main/main
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
