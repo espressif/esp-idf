@@ -2,6 +2,11 @@
     "write_flash_args" : [ "--flash_mode", "${ESPFLASHMODE}",
                            "--flash_size", "${ESPFLASHSIZE}",
                            "--flash_freq", "${ESPFLASHFREQ}" ],
+    "flash_settings" : {
+        "flash_mode": "${ESPFLASHMODE}",
+        "flash_size": "${ESPFLASHSIZE}",
+        "flash_freq": "${ESPFLASHFREQ}"
+    },
     "flash_files" : {
         "${BOOTLOADER_OFFSET}" : "bootloader/bootloader.bin",
         "${PARTITION_TABLE_OFFSET}" : "partition_table/partition-table.bin",
