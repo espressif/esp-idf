@@ -14,6 +14,8 @@
 #ifndef _SOC_SPI_STRUCT_H_
 #define _SOC_SPI_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
