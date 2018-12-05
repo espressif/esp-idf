@@ -73,14 +73,17 @@ def main():
     fragment_files = [] if not args.fragments else args.fragments
     config_file = args.config
     output_path = args.output
-    sections_info_files = [] if not args.sections else args.sections
     kconfig_file = args.kconfig
+    sections = args.sections
 
     try:
         sections_infos = SectionsInfo()
 
-        section_info_contents = [s.strip() for s in sections_info_files.read().split("\n")]
-        section_info_contents = [s for s in section_info_contents if s]
+        if sections:
+            section_info_contents = [s.strip() for s in sections.read().split("\n")]
+            section_info_contents = [s for s in section_info_contents if s]
+        else:
+            section_info_contents = []
 
         for sections_info_file in section_info_contents:
             with open(sections_info_file) as sections_info_file_obj:
