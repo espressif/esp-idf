@@ -11,6 +11,7 @@
 #include "test_utils.h"
 
 #include "driver/timer.h"
+#include "sdkconfig.h"
 
 static SemaphoreHandle_t isr_semaphore;
 static volatile unsigned isr_count;
@@ -194,6 +195,7 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
     }
 }
 
+#ifndef CONFIG_FREERTOS_UNICORE
 static volatile bool sched_suspended;
 static void suspend_scheduler_5ms_task_fn(void *ignore)
 {
@@ -207,7 +209,6 @@ static void suspend_scheduler_5ms_task_fn(void *ignore)
     vTaskDelete(NULL);
 }
 
-#ifndef CONFIG_FREERTOS_UNICORE
 /* If the scheduler is disabled on one CPU (A) with a task blocked on something, and a task
    on B (where scheduler is running) wakes it, then the task on A should be woken on resume.
 */

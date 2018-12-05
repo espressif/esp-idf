@@ -17,13 +17,14 @@
 #include "rom/rtc.h"
 #include "esp_newlib.h"
 #include "test_utils.h"
+#include "sdkconfig.h"
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 
 static struct timeval tv_start, tv_stop;
 
-
+#ifndef CONFIG_FREERTOS_UNICORE
 static void deep_sleep_task(void *arg)
 {
     esp_deep_sleep_start();
@@ -40,6 +41,7 @@ static void do_deep_sleep_from_app_cpu()
         ;
     }
 }
+#endif
 
 TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
