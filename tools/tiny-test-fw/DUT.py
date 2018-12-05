@@ -286,8 +286,8 @@ class BaseDUT(object):
         self.record_data_lock = threading.RLock()
         self.receive_thread = None
         self.expect_failures = []
-        # open and start during init
-        self.open()
+        self._port_open()
+        self.start_receive()
 
     def __str__(self):
         return "DUT({}: {})".format(self.name, str(self.port))
@@ -392,27 +392,32 @@ class BaseDUT(object):
         pass
 
     # methods that features raw port methods
-    def open(self):
+    def start_receive(self):
         """
-        open port and create thread to receive data.
+        Start thread to receive data.
 
         :return: None
         """
-        self._port_open()
         self.receive_thread = _RecvThread(self._port_read, self.data_cache,
                                           self.recorded_data, self.record_data_lock)
         self.receive_thread.start()
 
-    def close(self):
+    def stop_receive(self):
         """
-        close receive thread and then close port.
-
+        stop the receiving thread for the port
         :return: None
         """
         if self.receive_thread:
             self.receive_thread.exit()
-        self._port_close()
         self.LOG_THREAD.flush_data()
+        self.receive_thread = None
+
+    def close(self):
+        """
+        permanently close the port
+        """
+        self.stop_receive()
+        self._port_close()
 
     @staticmethod
     def u_to_bytearray(data):
