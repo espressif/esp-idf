@@ -34,5 +34,9 @@ erase_ota: erase_otadata
 all: blank_ota_data
 flash: blank_ota_data
 
+TMP_DEFINES := $(BUILD_DIR_BASE)/app_update/tmp_cppflags.txt
+export TMP_DEFINES
+
 clean:
 	rm -f $(BLANK_OTA_DATA_FILE)
+	rm -f $(TMP_DEFINES)

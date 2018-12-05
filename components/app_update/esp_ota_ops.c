@@ -576,3 +576,25 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
     return default_ota;
 
 }
+
+esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc)
+{
+    if (partition == NULL || app_desc == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if(partition->type != ESP_PARTITION_TYPE_APP) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    esp_err_t err = esp_partition_read(partition, sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t), app_desc, sizeof(esp_app_desc_t));
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return ESP_OK;
+}

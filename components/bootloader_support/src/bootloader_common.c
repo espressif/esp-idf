@@ -192,3 +192,25 @@ esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t 
 
     return ESP_OK;
 }
+
+esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
+{
+    if (partition == NULL || app_desc == NULL || partition->offset == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const uint8_t *image = bootloader_mmap(partition->offset, partition->size);
+    if (image == NULL) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", partition->offset, partition->size);
+        return ESP_FAIL;
+    }
+
+    memcpy(app_desc, image + sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t), sizeof(esp_app_desc_t));
+    bootloader_munmap(image);
+
+    if (app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    return ESP_OK;
+}

@@ -86,6 +86,7 @@ function(idf_set_global_compile_options)
     list(APPEND compile_options "${CMAKE_C_FLAGS}")
     list(APPEND c_compile_options "${CMAKE_C_FLAGS}")
     list(APPEND cxx_compile_options "${CMAKE_CXX_FLAGS}")
+    add_definitions(-DPROJECT_NAME=\"${PROJECT_NAME}\")
 
     if(CONFIG_OPTIMIZATION_LEVEL_RELEASE)
         list(APPEND compile_options "-Os")
@@ -207,14 +208,40 @@ endfunction()
 # Running git_describe() here automatically triggers rebuilds
 # if the ESP-IDF git version changes
 function(idf_get_git_revision)
+    git_describe(IDF_VER_GIT "${IDF_PATH}")
     if(EXISTS "${IDF_PATH}/version.txt")
         file(STRINGS "${IDF_PATH}/version.txt" IDF_VER)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${IDF_PATH}/version.txt")
     else()
-        git_describe(IDF_VER "${IDF_PATH}")
+        set(IDF_VER ${IDF_VER_GIT})
     endif()
+    message(STATUS "IDF_VER: ${IDF_VER}")
     add_definitions(-DIDF_VER=\"${IDF_VER}\")
     git_submodule_check("${IDF_PATH}")
     set(IDF_VER ${IDF_VER} PARENT_SCOPE)
+endfunction()
+
+# app_get_revision
+#
+# Set global PROJECT_VER
+#
+# If PROJECT_VER variable set in project CMakeLists.txt file, its value will be used.
+# Else, if the _project_path/version.txt exists, its contents will be used as PROJECT_VER.
+# Else, if the project is located inside a Git repository, the output of git describe will be used.
+# Otherwise, PROJECT_VER will be empty.
+function(app_get_revision _project_path)
+    git_describe(PROJECT_VER_GIT "${_project_path}")
+    if(NOT DEFINED PROJECT_VER)
+        if(EXISTS "${_project_path}/version.txt")
+            file(STRINGS "${_project_path}/version.txt" PROJECT_VER)
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_project_path}/version.txt")
+        else()
+            set(PROJECT_VER ${PROJECT_VER_GIT})
+        endif()
+    endif()
+    message(STATUS "Project version: ${PROJECT_VER}")
+    git_submodule_check("${_project_path}")
+    set(PROJECT_VER ${PROJECT_VER} PARENT_SCOPE)
 endfunction()
 
 # idf_link_components

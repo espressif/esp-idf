@@ -252,6 +252,9 @@ SECTIONS
   {
     _rodata_start = ABSOLUTE(.);
 
+    *(.rodata_desc .rodata_desc.*)               /* Should be the first.  App version info.        DO NOT PUT ANYTHING BEFORE IT! */
+    *(.rodata_custom_desc .rodata_custom_desc.*) /* Should be the second. Custom app version info. DO NOT PUT ANYTHING BEFORE IT! */
+
     mapping[flash_rodata]
 
     *(.irom1.text) /* catch stray ICACHE_RODATA_ATTR */
