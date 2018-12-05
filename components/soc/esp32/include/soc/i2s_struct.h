@@ -14,6 +14,8 @@
 #ifndef _SOC_I2S_STRUCT_H_
 #define _SOC_I2S_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
