@@ -76,10 +76,11 @@ endmacro()
 function(idf_set_global_compile_options)
     # Temporary trick to support both gcc5 and gcc8 builds
     if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
-        set(GCC_NOT_5_2_0 0)
+        set(GCC_NOT_5_2_0 0 CACHE STRING "GCC is 5.2.0 version")
     else()
-        set(GCC_NOT_5_2_0 1)
+        set(GCC_NOT_5_2_0 1 CACHE STRING "GCC is not 5.2.0 version")
     endif()
+    list(APPEND compile_definitions "GCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
 
     list(APPEND compile_definitions "ESP_PLATFORM" "HAVE_CONFIG_H")
 
@@ -177,9 +178,6 @@ function(idf_set_global_compile_options)
     list(APPEND c_compile_options ${EXTRA_CFLAGS})
     list(APPEND cxx_compile_options ${EXTRA_CXXFLAGS})
     list(APPEND compile_options ${EXTRA_CPPFLAGS})
-
-    # Temporary trick to support both gcc5 and gcc8 builds
-    list(APPEND compile_definitions "GCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
 
     set_default(IDF_COMPILE_DEFINITIONS "${compile_definitions}")
     set_default(IDF_COMPILE_OPTIONS "${compile_options}")
