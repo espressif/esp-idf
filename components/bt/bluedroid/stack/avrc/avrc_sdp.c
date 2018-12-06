@@ -30,7 +30,7 @@
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 
 #ifndef SDP_AVRCP_1_4
-#define SDP_AVRCP_1_4      FALSE
+#define SDP_AVRCP_1_4      TRUE
 #endif
 
 #ifndef SDP_AVCTP_1_4

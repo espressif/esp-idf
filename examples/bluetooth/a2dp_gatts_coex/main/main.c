@@ -599,6 +599,27 @@ static void ble_gatts_init(void)
         ESP_LOGE(BT_BLE_COEX_TAG, "set local  MTU failed, error code = 0x%x", local_mtu_ret);
     }
 }
+
+void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
+{
+    switch (event) {
+    case ESP_BT_GAP_AUTH_CMPL_EVT:{
+        if (param->auth_cmpl.stat == ESP_BT_STATUS_SUCCESS) {
+            ESP_LOGI(BT_BLE_COEX_TAG, "authentication success: %s", param->auth_cmpl.device_name);
+            esp_log_buffer_hex(BT_BLE_COEX_TAG, param->auth_cmpl.bda, ESP_BD_ADDR_LEN);
+        } else {
+            ESP_LOGE(BT_BLE_COEX_TAG, "authentication failed, status:%d", param->auth_cmpl.stat);
+        }
+        break;
+    }
+    default: {
+        ESP_LOGI(BT_BLE_COEX_TAG, "event: %d", event);
+        break;
+    }
+    }
+    return;
+}
+
 /* handler for bluetooth stack enabled events */
 static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 {
@@ -608,14 +629,24 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
         /* set up bt device name */
         esp_bt_dev_set_device_name(BT_DEVICE_NAME);
 
-        /* initialize A2DP sink */
-        esp_a2d_register_callback(&bt_app_a2d_cb);
-        esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
-        esp_a2d_sink_init();
+        /* register GAP callback function */
+        esp_bt_gap_register_callback(bt_app_gap_cb);
 
         /* initialize AVRCP controller */
         esp_avrc_ct_init();
         esp_avrc_ct_register_callback(bt_app_rc_ct_cb);
+        /* initialize AVRCP target */
+        assert (esp_avrc_tg_init() == ESP_OK);
+        esp_avrc_tg_register_callback(bt_app_rc_tg_cb);
+
+        esp_avrc_rn_evt_cap_mask_t evt_set = {0};
+        esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_SET, &evt_set, ESP_AVRC_RN_VOLUME_CHANGE);
+        assert(esp_avrc_tg_set_rn_evt_cap(&evt_set) == ESP_OK);
+
+        /* initialize A2DP sink */
+        esp_a2d_register_callback(&bt_app_a2d_cb);
+        esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
+        esp_a2d_sink_init();
 
         /* set discoverable and connectable mode, wait to be connected */
         esp_bt_gap_set_scan_mode(ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE);
@@ -629,10 +660,8 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
 void app_main()
 {
-    esp_err_t ret;
-
-    // Initialize NVS.
-    ret = nvs_flash_init();
+    /* Initialize NVS — it is used to store PHY calibration data */
+    esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
@@ -641,14 +670,14 @@ void app_main()
 
     i2s_config_t i2s_config = {
 #ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
-        .mode = I2S_MODE_DAC_BUILT_IN,
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 #else
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
 #endif
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+        .communication_format = I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 60,
         .intr_alloc_flags = 0,                                                  //Default interrupt priority
@@ -658,6 +687,7 @@ void app_main()
 
     i2s_driver_install(0, &i2s_config, 0, NULL);
 #ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
+    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
     i2s_set_pin(0, NULL);
 #else
     i2s_pin_config_t pin_config = {
@@ -671,34 +701,46 @@ void app_main()
 #endif
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(BT_BLE_COEX_TAG, "%s initialize controller failed\n", __func__);
+
+    esp_err_t err;
+    if ((err = esp_bt_controller_init(&bt_cfg)) != ESP_OK) {
+        ESP_LOGE(BT_BLE_COEX_TAG, "%s initialize controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
-    if (ret) {
-        ESP_LOGE(BT_BLE_COEX_TAG, "%s enable controller failed\n", __func__);
+    if ((err = esp_bt_controller_enable(ESP_BT_MODE_BTDM)) != ESP_OK) {
+        ESP_LOGE(BT_BLE_COEX_TAG, "%s enable controller failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
 
-    ret = esp_bluedroid_init();
-    if (ret) {
-        ESP_LOGE(BT_BLE_COEX_TAG, "%s init bluetooth failed\n", __func__);
+    if ((err = esp_bluedroid_init()) != ESP_OK) {
+        ESP_LOGE(BT_BLE_COEX_TAG, "%s initialize bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(BT_BLE_COEX_TAG, "%s enable bluetooth failed\n", __func__);
+
+    if ((err = esp_bluedroid_enable()) != ESP_OK) {
+        ESP_LOGE(BT_BLE_COEX_TAG, "%s enable bluedroid failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
-    
+
     /* create application task */
     bt_app_task_start_up();
 
     /* Bluetooth device name, connection mode and profile set up */
     bt_app_work_dispatch(bt_av_hdl_stack_evt, BT_APP_EVT_STACK_UP, NULL, 0, NULL);
+
+    /*
+     * Set default parameters for Legacy Pairing
+     * Use fixed pin code
+     */
+    esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_FIXED;
+    esp_bt_pin_code_t pin_code;
+    pin_code[0] = '1';
+    pin_code[1] = '2';
+    pin_code[2] = '3';
+    pin_code[3] = '4';
+    esp_bt_gap_set_pin(pin_type, 4, pin_code);
+
     //gatt server init
     ble_gatts_init();
 }

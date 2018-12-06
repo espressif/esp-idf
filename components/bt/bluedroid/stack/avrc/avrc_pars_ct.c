@@ -90,9 +90,28 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
             p_result->reg_notif.event_id = eventid;
             BE_STREAM_TO_UINT8 (p_result->reg_notif.param.volume, p);
         }
-        AVRC_TRACE_DEBUG("avrc_pars_vendor_rsp PDU reg notif response:event %x, volume %x", eventid,
-                         p_result->reg_notif.param.volume);
+        // todo: parse the response for other event_ids
+        AVRC_TRACE_DEBUG("avrc_pars_vendor_rsp PDU reg notif response:event 0x%x", eventid);
+        break;
 #endif /* (AVRC_ADV_CTRL_INCLUDED == TRUE) */
+    case AVRC_PDU_GET_CAPABILITIES:        /* 0x10 */
+        BE_STREAM_TO_UINT8 (p_result->get_caps.capability_id, p);
+        BE_STREAM_TO_UINT8 (p_result->get_caps.count, p);
+        if (p_result->get_caps.capability_id == AVRC_CAP_EVENTS_SUPPORTED) {
+            if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_EVT_ID) {
+                status = AVRC_STS_INTERNAL_ERR;
+            } else {
+                BE_STREAM_TO_ARRAY(p, p_result->get_caps.param.event_id, p_result->get_caps.count);
+            }
+        } else if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID) {
+            if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_COMP_ID) {
+                status = AVRC_STS_INTERNAL_ERR;
+            } else {
+                for (int i = 0; i < p_result->get_caps.count; ++i) {
+                    BE_STREAM_TO_UINT24(p_result->get_caps.param.company_id[i], p);
+                }
+            }
+        }
         break;
     default:
         status = AVRC_STS_BAD_CMD;
@@ -112,12 +131,10 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR *p_msg, tAVRC_RESPONSE *p
 **                  Otherwise, the error code defined by AVRCP 1.4
 **
 *******************************************************************************/
-tAVRC_STS AVRC_ParsResponse (tAVRC_MSG *p_msg, tAVRC_RESPONSE *p_result, UINT8 *p_buf, UINT16 buf_len)
+tAVRC_STS AVRC_ParsResponse (tAVRC_MSG *p_msg, tAVRC_RESPONSE *p_result)
 {
     tAVRC_STS  status = AVRC_STS_INTERNAL_ERR;
     UINT16  id;
-    UNUSED(p_buf);
-    UNUSED(buf_len);
 
     if (p_msg && p_result) {
         switch (p_msg->hdr.opcode) {
