@@ -2754,10 +2754,6 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 if (search_result) {
                     mdns_txt_item_t * txt = NULL;
                     size_t txt_count = 0;
-                    _mdns_result_txt_create(data_ptr, data_len, &txt, &txt_count);
-                    if (!txt_count) {
-                        continue;
-                    }
 
                     mdns_result_t * result = NULL;
                     if (search_result->type == MDNS_TYPE_PTR) {
@@ -2777,8 +2773,11 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                             }
                         }
                         if (!result->txt) {
-                            result->txt = txt;
-                            result->txt_count = txt_count;
+                            _mdns_result_txt_create(data_ptr, data_len, &txt, &txt_count);
+                            if (txt_count) {
+                                result->txt = txt;
+                                result->txt_count = txt_count;
+                            }
                         }
                     } else {
                         _mdns_search_result_add_txt(search_result, txt, txt_count, packet->tcpip_if, packet->ip_protocol);
@@ -3290,7 +3289,7 @@ static void _mdns_search_result_add_txt(mdns_search_once_t * search, mdns_txt_it
     while (r) {
         if (r->tcpip_if == tcpip_if && r->ip_protocol == ip_protocol) {
             if (r->txt) {
-                return;
+                goto free_txt;
             }
             r->txt = txt;
             r->txt_count = txt_count;
@@ -3301,12 +3300,7 @@ static void _mdns_search_result_add_txt(mdns_search_once_t * search, mdns_txt_it
     if (!search->max_results || search->num_results < search->max_results) {
         r = (mdns_result_t *)malloc(sizeof(mdns_result_t));
         if (!r) {
-            for (i=0; i<txt_count; i++) {
-                free((char *)(txt[i].key));
-                free((char *)(txt[i].value));
-            }
-            free(txt);
-            return;
+            goto free_txt;
         }
 
         memset(r, 0 , sizeof(mdns_result_t));
@@ -3318,6 +3312,14 @@ static void _mdns_search_result_add_txt(mdns_search_once_t * search, mdns_txt_it
         search->result = r;
         search->num_results++;
     }
+    return;
+
+free_txt:
+    for (i=0; i<txt_count; i++) {
+        free((char *)(txt[i].key));
+        free((char *)(txt[i].value));
+    }
+    free(txt);
 }
 
 /**
