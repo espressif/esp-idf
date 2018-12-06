@@ -180,7 +180,7 @@ function run_tests()
     idf.py build
     take_build_snapshot
     # need to actually change config, or cmake is too smart to rebuild
-    sed -i s/^\#\ CONFIG_FREERTOS_UNICORE\ is\ not\ set/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
+    sed -i.bak s/^\#\ CONFIG_FREERTOS_UNICORE\ is\ not\ set/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
     idf.py build
     # check the sdkconfig.h file was rebuilt
     assert_rebuilt config/sdkconfig.h
@@ -189,6 +189,7 @@ function run_tests()
     assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/syscall_table.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
     assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/xtensa_vectors.S.obj
+    mv sdkconfig.bak sdkconfig
 
     print_status "Updating project CMakeLists.txt triggers full recompile"
     clean_build_dir
@@ -196,13 +197,14 @@ function run_tests()
     take_build_snapshot
     # Need to actually change the build config, or CMake won't do anything
     cp CMakeLists.txt CMakeLists.bak
-    sed -i 's/^project(/add_compile_options("-DUSELESS_MACRO_DOES_NOTHING=1")\nproject\(/' CMakeLists.txt
+    sed -i.bak 's/^project(/add_compile_options("-DUSELESS_MACRO_DOES_NOTHING=1")\nproject\(/' CMakeLists.txt
     idf.py build || failure "Build failed"
     mv CMakeLists.bak CMakeLists.txt
     # similar to previous test
     assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/syscall_table.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
     assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/xtensa_vectors.S.obj
+    mv sdkconfig.bak sdkconfig
 
     print_status "Can build with Ninja (no idf.py)"
     clean_build_dir
@@ -217,23 +219,21 @@ function run_tests()
 
     print_status "Can build with IDF_PATH set via cmake cache not environment"
     clean_build_dir
-    cp CMakeLists.txt CMakeLists.bak
-    sed -i 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
+    sed -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
     export IDF_PATH_BACKUP="$IDF_PATH"
     (unset IDF_PATH &&
          cd build &&
          cmake -G Ninja .. -DIDF_PATH=${IDF_PATH_BACKUP} &&
          ninja) || failure "Ninja build failed"
-    mv CMakeLists.bak CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "Can build with IDF_PATH unset and inferred by build system"
     clean_build_dir
-    cp CMakeLists.txt CMakeLists.bak
-    sed -i "s%\$ENV{IDF_PATH}%${IDF_PATH}%" CMakeLists.txt  # expand to a hardcoded path
+    sed -i.bak "s%\$ENV{IDF_PATH}%${IDF_PATH}%" CMakeLists.txt  # expand to a hardcoded path
     (unset IDF_PATH && cd build &&
          cmake -G Ninja .. && ninja) || failure "Ninja build failed"
-    mv CMakeLists.bak CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     # Next two tests will use this fake 'esp31b' target
@@ -241,7 +241,7 @@ function run_tests()
     mkdir -p components/$fake_target
     touch components/$fake_target/CMakeLists.txt
     cp ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake components/$fake_target/toolchain-$fake_target.cmake
-    sed -i.old '/cmake_minimum_required/ a\
+    sed -i.bak '/cmake_minimum_required/ a\
         set(COMPONENTS esptool_py)' CMakeLists.txt
 
     print_status "Can override IDF_TARGET from environment"
@@ -261,7 +261,7 @@ function run_tests()
     grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py -D"
 
     # Clean up modifications for the fake target
-    mv CMakeLists.txt.old CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf components
 
     print_status "Can find toolchain file in component directory"
