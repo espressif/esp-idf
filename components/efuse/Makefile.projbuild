@@ -1,56 +1,46 @@
 #
 # eFuse Manager ganeretes header file.
 #
-# .PHONY: efuse_table efuse_test_table show_efuse_table
+.PHONY: efuse_custom_table efuse_common_table efuse_test_table show_efuse_table
 
-GEN_TOOL := $(COMPONENT_PATH)/efuse_table_gen.py
-GEN_EFUSE_TABLE := $(PYTHON) $(GEN_TOOL) 
+GEN_EFUSE_TABLE := $(PYTHON) $(COMPONENT_PATH)/efuse_table_gen.py
 
 GEN_EFUSE_TABLE_ARG := --coding_scheme $(CONFIG_EFUSE_CODE_SCHEME)
 
-ifdef CONFIG_EFUSE_CUSTOM_TABLE_USE_BLK1
-GEN_EFUSE_TABLE_ARG += --custom_table_use_BLK1
-endif
-
-ifdef CONFIG_EFUSE_CUSTOM_TABLE_USE_BLK2
-GEN_EFUSE_TABLE_ARG += --custom_table_use_BLK2
-endif
-
-ifdef CONFIG_EFUSE_COMMON_TABLE_FIX_SIZE_BLK1_BLK2_DEP_ON_CODE_SCHEME
-GEN_EFUSE_TABLE_ARG += --common_table_fix_size_secure_key_and_encrypt_key
-endif
 
 ###################
 # Make common files esp_efuse_table.c and include/esp_efuse_table.h files.
 SOC_NAME := $(IDF_TARGET)
 EFUSE_COMMON_TABLE_CSV_PATH := $(COMPONENT_PATH)/$(SOC_NAME)/esp_efuse_table.csv
-EFUSE_COMMON_TABLE_OUT_PATH := $(COMPONENT_PATH)/$(SOC_NAME)/esp_efuse_table.c
+
+efuse_common_table:
+	@echo "COMMON_TABLE_CSV: $(EFUSE_COMMON_TABLE_CSV_PATH)"
+	$(GEN_EFUSE_TABLE) $(EFUSE_COMMON_TABLE_CSV_PATH) $(GEN_EFUSE_TABLE_ARG)
+
 
 ###################
 # Make custom files project/main/esp_efuse_custom_table.c and project/main/include/esp_efuse_custom_table.h files.
 ifdef CONFIG_EFUSE_CUSTOM_TABLE
 # Path to CSV file is relative to project path for custom CSV files.
 EFUSE_CUSTOM_TABLE_CSV_PATH := $(call dequote,$(abspath $(call dequote, $(PROJECT_PATH))/$(call dequote,$(CONFIG_EFUSE_CUSTOM_TABLE_FILENAME))))
-EFUSE_CUSTOM_TABLE_OUT_PATH_CSV := $(call dequote,$(abspath $(call dequote, $(PROJECT_PATH))/$(call dequote,$(CONFIG_EFUSE_CUSTOM_TABLE_FILENAME))))
-EFUSE_CUSTOM_TABLE_OUT_PATH := $(EFUSE_CUSTOM_TABLE_OUT_PATH_CSV:.csv=.c)
+
+efuse_custom_table:
+	@echo "COMMON_TABLE_CSV: $(EFUSE_COMMON_TABLE_CSV_PATH)"
+	@echo "CUSTOM_TABLE_CSV: $(EFUSE_CUSTOM_TABLE_CSV_PATH)"
+	$(GEN_EFUSE_TABLE) $(EFUSE_COMMON_TABLE_CSV_PATH) $(EFUSE_CUSTOM_TABLE_CSV_PATH) $(GEN_EFUSE_TABLE_ARG)
+
 else
+efuse_custom_table:
 EFUSE_CUSTOM_TABLE_CSV_PATH :=
 EFUSE_CUSTOM_TABLE_OUT_PATH :=
 endif # ifdef CONFIG_EFUSE_CUSTOM_TABLE
 
-efuse_table: $(EFUSE_COMMON_TABLE_OUT_PATH) $(EFUSE_CUSTOM_TABLE_OUT_PATH)
 
-$(EFUSE_COMMON_TABLE_OUT_PATH): $(EFUSE_COMMON_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE)
-	@echo "COMMON_TABLE_CSV: $(EFUSE_COMMON_TABLE_CSV_PATH)"
-	$(GEN_EFUSE_TABLE) $(EFUSE_COMMON_TABLE_CSV_PATH) $(GEN_EFUSE_TABLE_ARG)
-
-$(EFUSE_CUSTOM_TABLE_OUT_PATH): $(EFUSE_CUSTOM_TABLE_CSV_PATH) $(SDKCONFIG_MAKEFILE)
-	@echo "CUSTOM_TABLE_CSV: $(EFUSE_CUSTOM_TABLE_CSV_PATH)"
-	$(GEN_EFUSE_TABLE) $(EFUSE_COMMON_TABLE_CSV_PATH) $(EFUSE_CUSTOM_TABLE_CSV_PATH) $(GEN_EFUSE_TABLE_ARG)
-
+###################
 # print to console efuse table
 show_efuse_table:
 	$(GEN_EFUSE_TABLE) $(EFUSE_COMMON_TABLE_CSV_PATH) $(EFUSE_CUSTOM_TABLE_CSV_PATH) $(GEN_EFUSE_TABLE_ARG) --info
+
 
 ###################
 # Generates files for unit test. This command is run manually.

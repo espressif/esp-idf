@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest dac4d84347dab29412b8b8713b4b0065
+// md5_digest_table 7d587827a6f6134241dce7d3713b3edc
 // This file was generated automatically from the file esp_efuse_test_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_test_table.csv file then build system will generate this header file
 // To show efuse_table run the command 'make show_efuse_table'.

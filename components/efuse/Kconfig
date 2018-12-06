@@ -40,24 +40,4 @@ config EFUSE_CODE_SCHEME
     default 1 if EFUSE_CODE_SCHEME_STATE_3_4
     default 2 if EFUSE_CODE_SCHEME_STATE_REPEAT
 
-config EFUSE_CUSTOM_TABLE_USE_BLK1
-    bool "Use EFUSE_BLK1 for custom purpose"
-    default n
-    help
-        If this option is set then ENCRYPT_FLASH_KEY field from EFUSE_BLK1 [0..192/255] can not be used anymore.
-        ENCRYPT_FLASH_KEY field will contain 0 bits.
-
-config EFUSE_CUSTOM_TABLE_USE_BLK2
-    bool "Use EFUSE_BLK2 for custom purpose"
-    default n
-    help
-        If this option is set then SECURE_BOOT_KEY field from EFUSE_BLK2 [0..192/255] can not be used anymore.
-        SECURE_BOOT_KEY field will contain 0 bits.
-
-config EFUSE_COMMON_TABLE_FIX_SIZE_BLK1_BLK2_DEP_ON_CODE_SCHEME
-    bool "Limit size BLK1 and BLK2 if coding scheme is changed"
-    default y
-    help
-        efuse_table_gen.py tool will change size two fields: SECURE_BOOT_KEY and ENCRYPT_FLASH_KEY if they have not much coding scheme with a description in csv file.
-
 endmenu

@@ -8,8 +8,13 @@ import subprocess
 import tempfile
 import os
 import StringIO
-sys.path.append("..")
-from efuse import *
+
+try:
+    import efuse_table_gen
+except ImportError:
+    sys.path.append("..")
+    import efuse_table_gen
+
 
 '''
 To run the test on local PC:
@@ -26,20 +31,20 @@ class CSVParserTests(unittest.TestCase):
 name1,                   EFUSE_BLK3,                       0,                     5,              Use for test name 1
 name2,                   EFUSE_BLK3,                       5,                     4,              Use for test name 2
 """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
         self.assertEqual(t[0].efuse_block, 'EFUSE_BLK3')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   5)
-        self.assertEqual(t[0].comment,   'Use for test name 1')
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 5)
+        self.assertEqual(t[0].comment, 'Use for test name 1')
         
         self.assertEqual(t[1].field_name, 'name2')
         self.assertEqual(t[1].efuse_block, 'EFUSE_BLK3')
-        self.assertEqual(t[1].bit_start,   5)
-        self.assertEqual(t[1].bit_count,   4)
-        self.assertEqual(t[1].comment,   'Use for test name 2')
+        self.assertEqual(t[1].bit_start, 5)
+        self.assertEqual(t[1].bit_count, 4)
+        self.assertEqual(t[1].comment, 'Use for test name 2')
 
     def test_seq_bit_start1_fill(self):
         csv = """
@@ -47,16 +52,16 @@ name2,                   EFUSE_BLK3,                       5,                   
 name1,                   EFUSE_BLK3,                       ,                     5,
 name2,                   EFUSE_BLK3,                       ,                     4,
 """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   5)
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 5)
         
         self.assertEqual(t[1].field_name, 'name2')
-        self.assertEqual(t[1].bit_start,   5)
-        self.assertEqual(t[1].bit_count,   4)
+        self.assertEqual(t[1].bit_start, 5)
+        self.assertEqual(t[1].bit_count, 4)
 
     def test_seq_bit_start2_fill(self):
         csv = """
@@ -64,16 +69,16 @@ name2,                   EFUSE_BLK3,                       ,                    
 name1,                   EFUSE_BLK3,                       ,                     5,
 name2,                   EFUSE_BLK2,                       ,                     4,
 """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   5)
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 5)
         
         self.assertEqual(t[1].field_name, 'name2')
-        self.assertEqual(t[1].bit_start,   0)
-        self.assertEqual(t[1].bit_count,   4)
+        self.assertEqual(t[1].bit_start, 0)
+        self.assertEqual(t[1].bit_count, 4)
 
     def test_seq_bit_start3_fill(self):
         csv = """
@@ -83,20 +88,20 @@ name2,                   EFUSE_BLK2,                       ,                    
 
 name3,                   EFUSE_BLK2,                       5,                    4,
 """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   5)
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 5)
         
         self.assertEqual(t[1].field_name, 'name2')
-        self.assertEqual(t[1].bit_start,   0)
-        self.assertEqual(t[1].bit_count,   4)
+        self.assertEqual(t[1].bit_start, 0)
+        self.assertEqual(t[1].bit_count, 4)
     
         self.assertEqual(t[2].field_name, 'name3')
-        self.assertEqual(t[2].bit_start,   5)
-        self.assertEqual(t[2].bit_count,   4)
+        self.assertEqual(t[2].bit_start, 5)
+        self.assertEqual(t[2].bit_count, 4)
 
     def test_seq_bit_start4_fill(self):
         csv = """
@@ -106,9 +111,8 @@ name2,                   EFUSE_BLK2,                       ,                    
 ,                        EFUSE_BLK2,                       ,                     4,
 name1,                   EFUSE_BLK3,                       ,                     5,
 """
-        with self.assertRaisesRegexp(InputError, "Field names must be unique"):
-            t = FuseTable.from_csv(csv)
-
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "Field names must be unique"):
+            t = efuse_table_gen.FuseTable.from_csv(csv)
 
     def test_seq_bit_start5_fill(self):
         csv = """
@@ -118,33 +122,33 @@ name2,                   EFUSE_BLK2,                       ,                    
 ,                        EFUSE_BLK2,                       ,                     4,
 name3,                   EFUSE_BLK3,                       5,                    5,
 """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   5)
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 5)
         
         self.assertEqual(t[1].field_name, 'name2')
-        self.assertEqual(t[1].bit_start,   0)
-        self.assertEqual(t[1].bit_count,   4)
+        self.assertEqual(t[1].bit_start, 0)
+        self.assertEqual(t[1].bit_count, 4)
     
         self.assertEqual(t[2].field_name, 'name2')
-        self.assertEqual(t[2].bit_start,   4)
-        self.assertEqual(t[2].bit_count,   4)
+        self.assertEqual(t[2].bit_start, 4)
+        self.assertEqual(t[2].bit_count, 4)
         
         self.assertEqual(t[3].field_name, 'name3')
-        self.assertEqual(t[3].bit_start,   5)
-        self.assertEqual(t[3].bit_count,   5)
-        
+        self.assertEqual(t[3].bit_start, 5)
+        self.assertEqual(t[3].bit_count, 5)
+
     def test_overlapping_bit_start_fail(self):
         csv = """
 # field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
 name1,                   EFUSE_BLK3,                     1,                     5,              Use for test name 1
 name2,                   EFUSE_BLK3,                     5,                     4,              Use for test name 2
             """
-        t = FuseTable.from_csv(csv)
-        with self.assertRaisesRegexp(InputError, "overlap"):
+        t = efuse_table_gen.FuseTable.from_csv(csv)
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "overlap"):
             t.verify()
 
     def test_empty_field_name_fail(self):
@@ -153,26 +157,26 @@ name2,                   EFUSE_BLK3,                     5,                     
 ,                        EFUSE_BLK3,                       ,                     5,
 name2,                   EFUSE_BLK2,                       ,                     4,
 """
-        with self.assertRaisesRegexp(InputError, "missing field name"):
-            t = FuseTable.from_csv(csv)
-               
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "missing field name"):
+            t = efuse_table_gen.FuseTable.from_csv(csv)
+
     def test_unique_field_name_fail(self):
         csv = """
 # field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
 name1,                   EFUSE_BLK3,                     0,                     5,              Use for test name 1
 name1,                   EFUSE_BLK3,                     5,                     4,              Use for test name 2
             """
-        with self.assertRaisesRegexp(InputError, "Field names must be unique"):
-            t = FuseTable.from_csv(csv)
-        
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "Field names must be unique"):
+            t = efuse_table_gen.FuseTable.from_csv(csv)
+
     def test_bit_count_empty_fail(self):
         csv = """
 # field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
 name1,                   EFUSE_BLK3,                     0,                     ,              Use for test name 1
 name2,                   EFUSE_BLK3,                     5,                     4,              Use for test name 2
             """
-        with self.assertRaisesRegexp(InputError, "empty"):
-            t = FuseTable.from_csv(csv)
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "empty"):
+            t = efuse_table_gen.FuseTable.from_csv(csv)
 
     def test_bit_start_num_fail(self):
         csv = """
@@ -180,10 +184,10 @@ name2,                   EFUSE_BLK3,                     5,                     
 name1,                   EFUSE_BLK3,                     k,                     5,              Use for test name 1
 name2,                   EFUSE_BLK3,                     5,                     4,              Use for test name 2
             """
-        with self.assertRaisesRegexp(InputError, "Invalid field value"):
-            t = FuseTable.from_csv(csv)         
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "Invalid field value"):
+            t = efuse_table_gen.FuseTable.from_csv(csv)
 
-    def test_join_entry(self):       
+    def test_join_entry(self):
         csv = """
 # field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
 name1,                   EFUSE_BLK2,                     0,                     6,              Use for test name 1
@@ -192,33 +196,33 @@ name3,                   EFUSE_BLK3,                     20,                    
 ,                        EFUSE_BLK3,                     30,                    5,              Use for test name 3
 name4,                   EFUSE_BLK2,                     30,                    5,              Use for test name 4
             """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
         self.assertEqual(t[0].efuse_block, 'EFUSE_BLK2')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   6)
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 6)
         
         self.assertEqual(t[1].field_name, 'name2')
         self.assertEqual(t[1].efuse_block, 'EFUSE_BLK2')
-        self.assertEqual(t[1].bit_start,   6)
-        self.assertEqual(t[1].bit_count,   5)
+        self.assertEqual(t[1].bit_start, 6)
+        self.assertEqual(t[1].bit_count, 5)
         
         self.assertEqual(t[2].field_name, 'name3')
         self.assertEqual(t[2].efuse_block, 'EFUSE_BLK3')
-        self.assertEqual(t[2].bit_start,   20)
-        self.assertEqual(t[2].bit_count,   5)
+        self.assertEqual(t[2].bit_start, 20)
+        self.assertEqual(t[2].bit_count, 5)
         
         self.assertEqual(t[3].field_name, 'name3')
         self.assertEqual(t[3].efuse_block, 'EFUSE_BLK3')
-        self.assertEqual(t[3].bit_start,   30)
-        self.assertEqual(t[3].bit_count,   5)  
+        self.assertEqual(t[3].bit_start, 30)
+        self.assertEqual(t[3].bit_count, 5)
         
         self.assertEqual(t[4].field_name, 'name4')
         self.assertEqual(t[4].efuse_block, 'EFUSE_BLK2')
-        self.assertEqual(t[4].bit_start,   30)
-        self.assertEqual(t[4].bit_count,   5)  
+        self.assertEqual(t[4].bit_start, 30)
+        self.assertEqual(t[4].bit_count, 5)
 
     def test_block_fail(self):
         csv = """
@@ -226,8 +230,8 @@ name4,                   EFUSE_BLK2,                     30,                    
 name1,                   EFUSE_BLK5,                     0,                     5,              Use for test name 1
 name2,                   EFUSE_BLK3,                     5,                     4,              Use for test name 2
             """
-        with self.assertRaisesRegexp(InputError, "'efuse_block' should consist from EFUSE_BLK0..EFUSE_BLK3"):
-            t = FuseTable.from_csv(csv)    
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "'efuse_block' should consist from EFUSE_BLK0..EFUSE_BLK3"):
+            t = efuse_table_gen.FuseTable.from_csv(csv)
 
     def test_field_size_is_ok(self):
         csv = """
@@ -235,17 +239,19 @@ name2,                   EFUSE_BLK3,                     5,                     
 name1,                   EFUSE_BLK0,                     0,                     224,            Use for test name 1
 name2,                   EFUSE_BLK1,                     0,                     256,            Use for test name 2
             """
-        t = FuseTable.from_csv(csv)
+        efuse_table_gen.coding_scheme = 0 # NONE
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
 
-    def test_field_blk0_size_is_more(self):
+    def test_field_blk3_size_is_more(self):
         csv = """
 # field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
-name1,                   EFUSE_BLK0,                     1,                     224,            Use for test name 1
-name2,                   EFUSE_BLK1,                     0,                     256,            Use for test name 2
+name1,                   EFUSE_BLK3,                     190,                   1,            Use for test name 1
+name2,                   EFUSE_BLK3,                     191,                   5,            Use for test name 2
             """
-        t = FuseTable.from_csv(csv)    
-        with self.assertRaisesRegexp(InputError, "The field is outside the boundaries"):
+        efuse_table_gen.coding_scheme = 1 #3/4  coding
+        t = efuse_table_gen.FuseTable.from_csv(csv)
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "The field is outside the boundaries"):
             t.verify()
 
     def test_field_blk1_size_is_more(self):
@@ -254,13 +260,14 @@ name2,                   EFUSE_BLK1,                     0,                     
 name1,                   EFUSE_BLK0,                     0,                     224,            Use for test name 1
 name2,                   EFUSE_BLK1,                     1,                     256,            Use for test name 2
             """
-        t = FuseTable.from_csv(csv)    
-        with self.assertRaisesRegexp(InputError, "The field is outside the boundaries"):
+        t = efuse_table_gen.FuseTable.from_csv(csv)
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "The field is outside the boundaries"):
             t.verify()
-                
+
+
 class VerificationTests(unittest.TestCase):
     
-    def test_bit_start_num_fail(self):
+    def test_general(self):
         csv = """
 # field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
 name1,                   EFUSE_BLK3,                     0,                     5,              Use for test name 1
@@ -268,28 +275,60 @@ name2,                   EFUSE_BLK3,                     5,                     
 name1_1,                 EFUSE_BLK2,                     0,                     5,              Use for test name 1_1
 name2_1,                 EFUSE_BLK2,                     5,                     4,              Use for test name 2_1
             """
-        t = FuseTable.from_csv(csv)
+        t = efuse_table_gen.FuseTable.from_csv(csv)
         t.verify()
         
         self.assertEqual(t[0].field_name, 'name1')
         self.assertEqual(t[0].efuse_block, 'EFUSE_BLK3')
-        self.assertEqual(t[0].bit_start,   0)
-        self.assertEqual(t[0].bit_count,   5)
+        self.assertEqual(t[0].bit_start, 0)
+        self.assertEqual(t[0].bit_count, 5)
         
         self.assertEqual(t[1].field_name, 'name2')
         self.assertEqual(t[1].efuse_block, 'EFUSE_BLK3')
-        self.assertEqual(t[1].bit_start,   5)
-        self.assertEqual(t[1].bit_count,   4)
+        self.assertEqual(t[1].bit_start, 5)
+        self.assertEqual(t[1].bit_count, 4)
         
         self.assertEqual(t[2].field_name, 'name1_1')
         self.assertEqual(t[2].efuse_block, 'EFUSE_BLK2')
-        self.assertEqual(t[2].bit_start,   0)
-        self.assertEqual(t[2].bit_count,   5)
+        self.assertEqual(t[2].bit_start, 0)
+        self.assertEqual(t[2].bit_count, 5)
         
         self.assertEqual(t[3].field_name, 'name2_1')
         self.assertEqual(t[3].efuse_block, 'EFUSE_BLK2')
-        self.assertEqual(t[3].bit_start,   5)
-        self.assertEqual(t[3].bit_count,   4)  
-                     
-if __name__ =="__main__":
+        self.assertEqual(t[3].bit_start, 5)
+        self.assertEqual(t[3].bit_count, 4)
+
+    def test_custom_use_only_BLK3(self):
+        csv = """
+# field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
+name1,                   EFUSE_BLK3,                     0,                     5,              Use for test name 1
+name2,                   EFUSE_BLK2,                     5,                     4,              Use for test name 2
+            """
+        t = efuse_table_gen.FuseTable.from_csv(csv)
+        with self.assertRaisesRegexp(efuse_table_gen.ValidationError, "custom_table should use only EFUSE_BLK3"):
+            t.verify("custom_table")
+
+    def test_common_and_custom_table_use_the_same_bits(self):
+        csv_common = """
+# field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
+name1,                   EFUSE_BLK3,                     0,                     5,              Use for test name 1
+name2,                   EFUSE_BLK2,                     5,                     4,              Use for test name 2
+                     """
+        common_table = efuse_table_gen.FuseTable.from_csv(csv_common)
+        common_table.verify("common_table")
+        two_tables = common_table
+        
+        csv_custom = """
+# field_name,  efuse_block(EFUSE_BLK0..EFUSE_BLK3),  bit_start(0..255),    bit_count,        comment
+name3,                   EFUSE_BLK3,                     20,                    5,              Use for test name 1
+name4,                   EFUSE_BLK3,                      4,                    1,              Use for test name 2
+            """
+        custom_table = efuse_table_gen.FuseTable.from_csv(csv_custom)
+        custom_table.verify("custom_table")
+        
+        two_tables += custom_table
+        with self.assertRaisesRegexp(efuse_table_gen.InputError, "overlaps"):
+            two_tables.verify()
+
+if __name__ == "__main__":
     unittest.main()

@@ -32,7 +32,7 @@ The component has API functions for reading and writing fields. Access to the fi
 CSV files:
 
 * common (`esp_efuse_table.csv`) - contains efuse fields are used inside the IDF field. C-source generation should be done manually when changing this file (run command 'make efuse_common_table' or `idf.py efuse_common_table`). Note that changes to this file can lead to incorrect IDF operation. Changes are not desirable!
-* custom - (may be absent, selected through :envvar:`CONFIG_EFUSE_CUSTOM_TABLE`) contains efuse fields that are used by the user in their application. C-source generation will be done automatically when changing this file.
+* custom - (may be absent, selected through :envvar:`CONFIG_EFUSE_CUSTOM_TABLE`) contains efuse fields that are used by the user in their application. C-source generation should be done manually when changing this file (run command 'make efuse_custom_table' or `idf.py efuse_custom_table`).
 
 
 Description CSV file
@@ -49,7 +49,7 @@ Table header:
 Individual params in csv file the following meanings:
 
 field_name
-    Name of field. The prefix `ESP_EFUSE_` will be added to the name, and this field name will be available in the code. This name will be used to access the fields. The name must be unique for all fields. If the line has an empty name, then this line is combined with the previous field. This allows you to set an arbitrary order of bits in the field, and expand the field as well.
+    Name of field. The prefix `ESP_EFUSE_` will be added to the name, and this field name will be available in the code. This name will be used to access the fields. The name must be unique for all fields. If the line has an empty name, then this line is combined with the previous field. This allows you to set an arbitrary order of bits in the field, and expand the field as well (see ``MAC_FACTORY`` field in the common table).
 
 efuse_block
     Block number. It determines where the efuse bits will be placed for this field. Available EFUSE_BLK0..EFUSE_BLK3.
@@ -87,7 +87,8 @@ The tool is designed to generate C-source files from CSV file and validate field
 To generate a `common` files, use the following command 'make efuse_common_table' or `idf.py efuse_common_table` or:
 
 ::
-
+	
+	cd ~/esp/esp-idf/components/efuse/
 	./efuse_table_gen.py esp32/esp_efuse_table.csv
 
 After generation in the folder `esp32` create:
@@ -95,10 +96,11 @@ After generation in the folder `esp32` create:
 * `esp_efuse_table.c` file.
 * In `include` folder `esp_efuse_table.c` file.
 
-To generate custom files, you need to build the project, the build system tracks changes in the csv file and starts the regeneration of the C-source files itself. In this case, the tool will be called with the following parameters:
+To generate a `custom` files, use the following command 'make efuse_custom_table' or `idf.py efuse_custom_table` or:
 
 ::
 
+	cd ~/esp/esp-idf/components/efuse/
 	./efuse_table_gen.py esp32/esp_efuse_table.csv PROJECT_PATH/main/esp_efuse_custom_table.csv
 
 After generation in the folder PROJECT_PATH/main create:
@@ -113,6 +115,37 @@ To use the generated fields, you need to include two files:
 	#include "esp_efuse.h"
 	#include "esp_efuse_table.h" or "esp_efuse_custom_table.h"
 
+Support coding scheme
+---------------------
+
+eFuse have three coding schemes:
+
+* ``None`` (value 0).
+* ``3/4`` (value 1).
+* ``Repeat`` (value 2).
+
+The coding scheme affects only EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3 blocks. EUSE_BLK0 block always has a coding scheme ``None``. 
+Coding changes the number of bits that can be written into a block, the block length is constant 256, some of these bits are used for encoding and are not used.
+
+When using a coding scheme, the length of the payload that can be written is limited (for more detailes ``20.3.1.3 System Parameter coding_scheme``):
+
+* None 256 bits.
+* 3/4 192 bits.
+* Repeat 128 bits.
+
+You can find out the coding scheme of your chip:
+
+* run a ``espefuse.py -p COM4 summary`` command.
+* from ``esptool`` utility logs (during flashing). 
+* calling the function in the code :cpp:func:`esp_efuse_get_coding_scheme` for the EFUSE_BLK3 block.
+
+eFuse tables must always comply with the coding scheme in the chip. There is an :envvar:`EFUSE_CODE_SCHEME_SELECTOR` option to select the coding type for tables in a Kconfig. When generating source files, if your tables do not follow the coding scheme, an error message will be displayed. Adjust the length or offset fields.
+If your program was compiled with ``None`` encoding and ``3/4`` is used in the chip, then the ``ESP_ERR_CODING`` error may occur when calling the efuse API (the field is outside the block boundaries). If the field matches the new block boundaries, then the API will work without errors.
+
+Also, 3/4 coding scheme imposes restrictions on writing bits belonging to one coding unit. The whole block with a length of 256 bits is divided into 4 coding units, and in each coding unit there are 6 bytes of useful data and 2 service bytes. These 2 service bytes contain the checksum of the previous 6 data bytes.
+
+It turns out that only one field can be written into one coding unit. Repeated rewriting in one coding unit is prohibited. But if the record was made in advance or through a :cpp:func:`esp_efuse_write_block` function, then reading the fields belonging to one coding unit is possible.
+
 eFuse API
 ---------
 
@@ -124,6 +157,10 @@ Access to the fields is via a pointer to the description structure. API function
 * :cpp:func:`esp_efuse_write_field_cnt` - writes a required count of bits as "1".
 * :cpp:func:`esp_efuse_get_field_size` - returns the number of bits by the field name.
 * :cpp:func:`esp_efuse_read_reg` - returns value of efuse register.
+* :cpp:func:`esp_efuse_write_reg` - writes value to efuse register.
+* :cpp:func:`esp_efuse_get_coding_scheme` - returns efuse coding scheme for blocks.
+* :cpp:func:`esp_efuse_read_block` - reads key to efuse block starting at the offset and the required size.
+* :cpp:func:`esp_efuse_write_block` - writes key to efuse block starting at the offset and the required size.
 
 For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_chip_ver`, :cpp:func:`esp_efuse_get_pkg_ver`.
 
@@ -131,53 +168,55 @@ For frequently used fields, special functions are made, like this :cpp:func:`esp
 How add a new field
 -------------------
 
-1. Find a free bits for field. Show `efuse_table.csv` file or run the next command:
+1. Find a free bits for field. Show `esp_efuse_table.csv` file or run ``make show_efuse_table`` or ``idf.py show_efuse_table`` or the next command:
 
 ::
 
 	$ ./efuse_table_gen.py --info esp32/esp_efuse_table.csv
-	Sorted efuse table:
-	#1      WR_DIS_FLASH_CRYPT_CNT          EFUSE_BLK0              2               1
-	#2      WR_DIS_BLK1             EFUSE_BLK0              7               1
-	#3      WR_DIS_BLK2             EFUSE_BLK0              8               1
-	#4      WR_DIS_BLK3             EFUSE_BLK0              9               1
-	#5      RD_DIS_BLK1             EFUSE_BLK0              16              1
-	#6      RD_DIS_BLK2             EFUSE_BLK0              17              1
-	#7      RD_DIS_BLK3             EFUSE_BLK0              18              1
-	#8      FLASH_CRYPT_CNT                 EFUSE_BLK0              20              8
-	#9      MAC_FACTORY             EFUSE_BLK0              32              8
-	#10     MAC_FACTORY             EFUSE_BLK0              40              8
-	#11     MAC_FACTORY             EFUSE_BLK0              48              8
-	#12     MAC_FACTORY             EFUSE_BLK0              56              8
-	#13     MAC_FACTORY             EFUSE_BLK0              64              8
-	#14     MAC_FACTORY             EFUSE_BLK0              72              8
-	#15     MAC_FACTORY_CRC                 EFUSE_BLK0              80              8
-	#16     CHIP_VER_DIS_APP_CPU            EFUSE_BLK0              96              1
-	#17     CHIP_VER_DIS_BT                 EFUSE_BLK0              97              1
-	#18     CHIP_VER_PKG            EFUSE_BLK0              105             3
-	#19     CHIP_CPU_FREQ_LOW               EFUSE_BLK0              108             1
-	#20     CHIP_CPU_FREQ_RATED             EFUSE_BLK0              109             1
-	#21     CHIP_VER_REV1           EFUSE_BLK0              111             1
-	#22     ADC_VREF_AND_SDIO_DREF          EFUSE_BLK0              136             6
-	#23     XPD_SDIO_REG            EFUSE_BLK0              142             1
-	#24     SDIO_TIEH               EFUSE_BLK0              143             1
-	#25     SDIO_FORCE              EFUSE_BLK0              144             1
-	#26     ENCRYPT_CONFIG          EFUSE_BLK0              188             4
-	#27     CONSOLE_DEBUG_DISABLE           EFUSE_BLK0              194             1
-	#28     ABS_DONE_0              EFUSE_BLK0              196             1
-	#29     DISABLE_JTAG            EFUSE_BLK0              198             1
-	#30     DISABLE_DL_ENCRYPT              EFUSE_BLK0              199             1
-	#31     DISABLE_DL_DECRYPT              EFUSE_BLK0              200             1
-	#32     DISABLE_DL_CACHE                EFUSE_BLK0              201             1
-	#33     ENCRYPT_FLASH_KEY               EFUSE_BLK1              0               256
-	#34     SECURE_BOOT_KEY                 EFUSE_BLK2              0               256
-	#35     MAC_CUSTOM_CRC          EFUSE_BLK3              0               8
-	#36     MAC_CUSTOM              EFUSE_BLK3              8               48
-	#37     ADC1_TP_LOW             EFUSE_BLK3              96              7
-	#38     ADC1_TP_HIGH            EFUSE_BLK3              103             9
-	#39     ADC2_TP_LOW             EFUSE_BLK3              112             7
-	#40     ADC2_TP_HIGH            EFUSE_BLK3              119             9
-	#41     MAC_CUSTOM_VER          EFUSE_BLK3              184             8
+	eFuse coding scheme: NONE
+	#       field_name                      efuse_block     bit_start       bit_count
+	1       WR_DIS_FLASH_CRYPT_CNT          EFUSE_BLK0         2               1
+	2       WR_DIS_BLK1                     EFUSE_BLK0         7               1
+	3       WR_DIS_BLK2                     EFUSE_BLK0         8               1
+	4       WR_DIS_BLK3                     EFUSE_BLK0         9               1
+	5       RD_DIS_BLK1                     EFUSE_BLK0         16              1
+	6       RD_DIS_BLK2                     EFUSE_BLK0         17              1
+	7       RD_DIS_BLK3                     EFUSE_BLK0         18              1
+	8       FLASH_CRYPT_CNT                 EFUSE_BLK0         20              8
+	9       MAC_FACTORY                     EFUSE_BLK0         32              8
+	10      MAC_FACTORY                     EFUSE_BLK0         40              8
+	11      MAC_FACTORY                     EFUSE_BLK0         48              8
+	12      MAC_FACTORY                     EFUSE_BLK0         56              8
+	13      MAC_FACTORY                     EFUSE_BLK0         64              8
+	14      MAC_FACTORY                     EFUSE_BLK0         72              8
+	15      MAC_FACTORY_CRC                 EFUSE_BLK0         80              8
+	16      CHIP_VER_DIS_APP_CPU            EFUSE_BLK0         96              1
+	17      CHIP_VER_DIS_BT                 EFUSE_BLK0         97              1
+	18      CHIP_VER_PKG                    EFUSE_BLK0        105              3
+	19      CHIP_CPU_FREQ_LOW               EFUSE_BLK0        108              1
+	20      CHIP_CPU_FREQ_RATED             EFUSE_BLK0        109              1
+	21      CHIP_VER_REV1                   EFUSE_BLK0        111              1
+	22      ADC_VREF_AND_SDIO_DREF          EFUSE_BLK0        136              6
+	23      XPD_SDIO_REG                    EFUSE_BLK0        142              1
+	24      SDIO_TIEH                       EFUSE_BLK0        143              1
+	25      SDIO_FORCE                      EFUSE_BLK0        144              1
+	26      ENCRYPT_CONFIG                  EFUSE_BLK0        188              4
+	27      CONSOLE_DEBUG_DISABLE           EFUSE_BLK0        194              1
+	28      ABS_DONE_0                      EFUSE_BLK0        196              1
+	29      DISABLE_JTAG                    EFUSE_BLK0        198              1
+	30      DISABLE_DL_ENCRYPT              EFUSE_BLK0        199              1
+	31      DISABLE_DL_DECRYPT              EFUSE_BLK0        200              1
+	32      DISABLE_DL_CACHE                EFUSE_BLK0        201              1
+	33      ENCRYPT_FLASH_KEY               EFUSE_BLK1         0              256
+	34      SECURE_BOOT_KEY                 EFUSE_BLK2         0              256
+	35      MAC_CUSTOM_CRC                  EFUSE_BLK3         0               8
+	36      MAC_CUSTOM                      EFUSE_BLK3         8               48
+	37      ADC1_TP_LOW                     EFUSE_BLK3         96              7
+	38      ADC1_TP_HIGH                    EFUSE_BLK3        103              9
+	39      ADC2_TP_LOW                     EFUSE_BLK3        112              7
+	40      ADC2_TP_HIGH                    EFUSE_BLK3        119              9
+	41      SECURE_VERSION                  EFUSE_BLK3        128              32
+	42      MAC_CUSTOM_VER                  EFUSE_BLK3        184              8
 	
 	Used bits in efuse table:
 	EFUSE_BLK0
@@ -190,18 +229,19 @@ How add a new field
 	[0 255]
 	
 	EFUSE_BLK3
-	[0 55] [96 127] [184 191]
+	[0 55] [96 159] [184 191]
 	
-	Note: Not printed ranges are free for using.
+	Note: Not printed ranges are free for using. (bits in EFUSE_BLK0 are reserved for Espressif)
 	
-	Parsing efuse CSV input file esp32/esp_efuse_table.csv ...
+	Parsing efuse CSV input file C:/msys32/home/virtpc/esp/esp-idf/components/efuse/esp32/esp_efuse_table.csv ...
 	Verifying efuse table...
 
-The number of bits not included in square brackets is free. All fields are checked for overlapping.
+
+The number of bits not included in square brackets is free (bits in EFUSE_BLK0 are reserved for Espressif). All fields are checked for overlapping.
 
 2. Fill a line for field: field_name, efuse_block, bit_start, bit_count, comment.
 
-3. Run a command `make show_efuse_table` to check and generate header file.
+3. Run a ``show_efuse_table`` command to check efuse table. To generate source files run ``efuse_common_table`` or ``efuse_custom_table`` command.
 
 Debug efuse & Unit tests
 ------------------------
@@ -213,13 +253,13 @@ esptool have an useful tool for reading/writing ESP32 efuse bits - `espefuse.py 
 ::
 
 	espefuse.py -p COM4 summary
-
+	
 	espefuse.py v2.3.1
 	Connecting........_
 	Security fuses:
-	FLASH_CRYPT_CNT        Flash encryption mode counter                     = 0 R/W (0x4)
+	FLASH_CRYPT_CNT        Flash encryption mode counter                     = 0 R/W (0x0)
 	FLASH_CRYPT_CONFIG     Flash encryption config (key tweak bits)          = 0 R/W (0x0)
-	CONSOLE_DEBUG_DISABLE  Disable ROM BASIC interpreter fallback            = 0 R/W (0x0)
+	CONSOLE_DEBUG_DISABLE  Disable ROM BASIC interpreter fallback            = 1 R/W (0x1)
 	ABS_DONE_0             secure boot enabled for bootloader                = 0 R/W (0x0)
 	ABS_DONE_1             secure boot abstract 1 locked                     = 0 R/W (0x0)
 	JTAG_DISABLE           Disable JTAG                                      = 0 R/W (0x0)
@@ -231,12 +271,12 @@ esptool have an useful tool for reading/writing ESP32 efuse bits - `espefuse.py 
 	BLK2                   Secure boot key
 	  = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
 	BLK3                   Variable Block 3
-	  = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W
+	  = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 fa 87 02 91 00 00 00 00 00 00 00 00 00 00 00 00 R/W
 	
 	Efuse fuses:
 	WR_DIS                 Efuse write disable mask                          = 0 R/W (0x0)
 	RD_DIS                 Efuse read disablemask                            = 0 R/W (0x0)
-	CODING_SCHEME          Efuse variable block length scheme                = 0 R/W (0x0)
+	CODING_SCHEME          Efuse variable block length scheme                = 1 R/W (0x1) (3/4)
 	KEY_STATUS             Usage of efuse block 3 (reserved)                 = 0 R/W (0x0)
 	
 	Config fuses:
@@ -252,14 +292,18 @@ esptool have an useful tool for reading/writing ESP32 efuse bits - `espefuse.py 
 	
 	Identity fuses:
 	MAC                    MAC Address
-	  = 24:0a:c4:03:bb:68 (CRC 82 OK) R/W
-	CHIP_VER_REV1          Silicon Revision 1                                = 0 R/W (0x0)
-	CHIP_VERSION           Reserved for future chip versions                 = 0 R/W (0x0)
+	  = 84:0d:8e:18:8e:44 (CRC ad OK) R/W
+	CHIP_VER_REV1          Silicon Revision 1                                = 1 R/W (0x1)
+	CHIP_VERSION           Reserved for future chip versions                 = 2 R/W (0x2)
 	CHIP_PACKAGE           Chip package identifier                           = 0 R/W (0x0)
 	
 	Calibration fuses:
-	BLK3_PART_RESERVE      BLOCK3 partially served for ADC calibration data  = 0 R/W (0x0)
-	ADC_VREF               Voltage reference calibration                     = 1100 R/W (0x0)
+	BLK3_PART_RESERVE      BLOCK3 partially served for ADC calibration data  = 1 R/W (0x1)
+	ADC_VREF               Voltage reference calibration                     = 1114 R/W (0x2)
+	ADC1_TP_LOW            ADC1 150mV reading                                = 346 R/W (0x11)
+	ADC1_TP_HIGH           ADC1 850mV reading                                = 3285 R/W (0x5)
+	ADC2_TP_LOW            ADC2 150mV reading                                = 449 R/W (0x7)
+	ADC2_TP_HIGH           ADC2 850mV reading                                = 3362 R/W (0x1f5)
 	
 	Flash voltage (VDD_SDIO) determined by GPIO12 on reset (High for 1.8V, Low/NC for 3.3V).
 
