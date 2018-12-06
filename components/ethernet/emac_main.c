@@ -809,7 +809,6 @@ static void emac_start(void *param)
 
     ESP_LOGD(TAG, "emac start");
     cmd->err = EMAC_CMD_OK;
-    emac_enable_clk(true);
 
     if (emac_reset() != ESP_OK) {
         return;
@@ -870,6 +869,7 @@ esp_err_t esp_eth_enable(void)
     esp_pm_lock_acquire(s_pm_lock);
 #endif //CONFIG_PM_ENABLE
 
+    emac_enable_clk(true);
     /* init phy device */
     if (emac_config.phy_init() != ESP_OK) {
         ESP_LOGE(TAG, "Initialise PHY device Timeout");
