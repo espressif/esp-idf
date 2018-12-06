@@ -104,59 +104,68 @@ class IDFDUT(DUT.SerialDUT):
         return cls.get_mac(app, port) is not None
 
     @_uses_esptool
-    def start_app(self, esp, erase_nvs=ERASE_NVS):
+    def _try_flash(self, esp, erase_nvs, baud_rate):
+        """
+        Called by start_app() to try flashing at a particular baud rate.
+
+        Structured this way so @_uses_esptool will reconnect each time
+        """
+        try:
+            # note: opening here prevents us from having to seek back to 0 each time
+            flash_files = [ (offs, open(path, "rb")) for (offs, path) in self.app.flash_files ]
+
+            if erase_nvs:
+                address = self.app.partition_table["nvs"]["offset"]
+                size = self.app.partition_table["nvs"]["size"]
+                nvs_file = tempfile.TemporaryFile()
+                nvs_file.write(b'\xff' * size)
+                nvs_file.seek(0)
+                flash_files.append( (int(address, 0), nvs_file) )
+
+            # fake flasher args object, this is a hack until
+            # esptool Python API is improved
+            Flash_Args = namedtuple('write_flash_args',
+                                    ['flash_size',
+                                     'flash_mode',
+                                     'flash_freq',
+                                     'addr_filename',
+                                     'no_stub',
+                                     'compress',
+                                     'verify',
+                                     'encrypt'])
+
+            flash_args = Flash_Args(
+                self.app.flash_settings["flash_size"],
+                self.app.flash_settings["flash_mode"],
+                self.app.flash_settings["flash_freq"],
+                flash_files,
+                False,
+                True,
+                False,
+                False
+            )
+
+            esp.change_baud(baud_rate)
+            esptool.write_flash(esp, flash_args)
+        finally:
+            for (_,f) in flash_files:
+                f.close()
+
+    def start_app(self, erase_nvs=ERASE_NVS):
         """
         download and start app.
 
         :param: erase_nvs: whether erase NVS partition during flash
         :return: None
         """
-        flash_files = [ (offs, open(path, "rb")) for (offs, path) in self.app.flash_files ]
-
-        if erase_nvs:
-            address = self.app.partition_table["nvs"]["offset"]
-            size = self.app.partition_table["nvs"]["size"]
-            nvs_file = tempfile.TemporaryFile()
-            nvs_file.write(b'\xff' * size)
-            nvs_file.seek(0)
-            flash_files.append( (int(address, 0), nvs_file) )
-
-        # fake flasher args object, this is a hack until
-        # esptool Python API is improved
-        Flash_Args = namedtuple('write_flash_args',
-                                ['flash_size',
-                                 'flash_mode',
-                                 'flash_freq',
-                                 'addr_filename',
-                                 'no_stub',
-                                 'compress',
-                                 'verify',
-                                 'encrypt'])
-
-        flash_args = Flash_Args(
-            self.app.flash_settings["flash_size"],
-            self.app.flash_settings["flash_mode"],
-            self.app.flash_settings["flash_freq"],
-            flash_files,
-            False,
-            True,
-            False,
-            False
-        )
-
-        try:
-            for baud_rate in [ 921600, 115200 ]:
-                try:
-                    esp.change_baud(baud_rate)
-                    esptool.write_flash(esp, flash_args)
-                    break
-                except RuntimeError:
-                    continue
-            else:
-                raise IDFToolError()
-        finally:
-            for (_,f) in flash_files:
-                f.close()
+        for baud_rate in [ 921600, 115200 ]:
+            try:
+                self._try_flash(erase_nvs, baud_rate)
+                break
+            except RuntimeError:
+                continue
+        else:
+            raise IDFToolError()
 
     @_uses_esptool
     def reset(self, esp):
