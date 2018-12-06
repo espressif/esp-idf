@@ -271,11 +271,14 @@ inline static uint32_t get_ccount(void)
     return ccount;
 }
 
+// Caller is 2 stack frames deeper than we care about
+#define STACK_OFFSET  2
+
 #define TEST_STACK(N) do {                                              \
         if (STACK_DEPTH == N) {                                         \
             return;                                                     \
         }                                                               \
-        callers[N] = __builtin_return_address(N+offset);                \
+        callers[N] = __builtin_return_address(N+STACK_OFFSET);                \
         if (!esp_ptr_executable(callers[N])) {                          \
             return;                                                     \
         }                                                               \
@@ -288,7 +291,6 @@ inline static uint32_t get_ccount(void)
 */
 static IRAM_ATTR __attribute__((noinline)) void get_call_stack(void **callers)
 {
-    const int offset = 2; // Caller is 2 stack frames deeper than we care about
     bzero(callers, sizeof(void *) * STACK_DEPTH);
     TEST_STACK(0);
     TEST_STACK(1);
