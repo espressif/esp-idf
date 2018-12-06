@@ -424,6 +424,7 @@ ACTIONS = {
     "app-flash":             (flash,        ["app"], ["erase_flash"]),
     "efuse_common_table":    (build_target, [], ["reconfigure"]),
     "efuse_custom_table":    (build_target, [], ["reconfigure"]),
+    "show_efuse_table":      (build_target, [], ["reconfigure"]),
     "partition_table":       (build_target, [], ["reconfigure"]),
     "partition_table-flash": (flash,        ["partition_table"], ["erase_flash"]),
     "flash":                 (flash,        ["all"], ["erase_flash"]),

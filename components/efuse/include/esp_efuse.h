@@ -161,10 +161,12 @@ uint32_t esp_efuse_read_reg(esp_efuse_block_t blk, unsigned int num_reg);
 esp_err_t esp_efuse_write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t val);
 
 /**
- * @brief   Return efuse coding_scheme for blocks.
+ * @brief   Return efuse coding scheme for blocks.
+ *
+ * Note: The coding scheme is applicable only to 1, 2 and 3 blocks. For 0 block, the coding scheme is always ``NONE``.
  *
  * @param[in]  blk     Block number of eFuse.
- * @return Return efuse coding_scheme for blocks
+ * @return Return efuse coding scheme for blocks
  */
 esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk);
 

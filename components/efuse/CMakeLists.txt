@@ -18,43 +18,24 @@ register_component()
 
 set(GEN_EFUSE_TABLE_ARG --coding_scheme ${CONFIG_EFUSE_CODE_SCHEME})
 
-if(CONFIG_EFUSE_CUSTOM_TABLE_USE_BLK1)
-	list(APPEND GEN_EFUSE_TABLE_ARG --custom_table_use_BLK1)
-endif()
-
-if(CONFIG_EFUSE_CUSTOM_TABLE_USE_BLK2)
-	list(APPEND GEN_EFUSE_TABLE_ARG --custom_table_use_BLK2)
-endif()
-
-if(CONFIG_EFUSE_COMMON_TABLE_FIX_SIZE_BLK1_BLK2_DEP_ON_CODE_SCHEME)
-	list(APPEND GEN_EFUSE_TABLE_ARG --common_table_fix_size_secure_key_and_encrypt_key)
-endif()
-
 ###################
 # Make common files esp_efuse_table.c and include/esp_efuse_table.h files.
 set(EFUSE_COMMON_TABLE_CSV_PATH "${COMPONENT_PATH}/${SOC_NAME}/esp_efuse_table.csv")
-set(EFUSE_COMMON_TABLE_OUT_PATH "${COMPONENT_PATH}/${SOC_NAME}/esp_efuse_table.c")
+
+add_custom_target(efuse_common_table COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/efuse_table_gen.py" ${EFUSE_COMMON_TABLE_CSV_PATH} ${GEN_EFUSE_TABLE_ARG})
 
 ###################
 # Make custom files project/main/esp_efuse_custom_table.c and project/main/include/esp_efuse_custom_table.h files.
 # Path to CSV file is relative to project path for custom CSV files.
 if(${CONFIG_EFUSE_CUSTOM_TABLE})
     # Custom filename expands any path relative to the project
-    get_filename_component(EFUSE_CUSTOM_TABLE_CSV_PATH "${CONFIG_EFUSE_CUSTOM_TABLE_FILENAME}" ABSOLUTE BASE_DIR "${PROJECT_PATH}")
-    string(REPLACE ".csv" ".c" EFUSE_CUSTOM_TABLE_OUT_PATH ${EFUSE_CUSTOM_TABLE_CSV_PATH})
-
+    get_filename_component(EFUSE_CUSTOM_TABLE_CSV_PATH "${CONFIG_EFUSE_CUSTOM_TABLE_FILENAME}" ABSOLUTE BASE_DIR "${IDF_PROJECT_PATH}")
+	add_custom_target(efuse_custom_table COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/efuse_table_gen.py" ${EFUSE_COMMON_TABLE_CSV_PATH} ${EFUSE_CUSTOM_TABLE_CSV_PATH} ${GEN_EFUSE_TABLE_ARG})
+else()
+	add_custom_target(efuse_custom_table COMMAND)
 endif()#if(${CONFIG_EFUSE_CUSTOM_TABLE})
 
-set(GENERATED_SRC ${EFUSE_COMMON_TABLE_OUT_PATH} ${EFUSE_CUSTOM_TABLE_OUT_PATH})
-set_source_files_properties(GENERATED_SRC PROPERTIES SYMBOLIC true)
-add_custom_command(
-    OUTPUT GENERATED_OUTPUT
-    BYPRODUCTS ${GENERATED_SRC}
-    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/efuse_table_gen.py"
-    ${EFUSE_COMMON_TABLE_CSV_PATH} ${EFUSE_CUSTOM_TABLE_CSV_PATH} ${GEN_EFUSE_TABLE_ARG}
-    DEPENDS "${EFUSE_COMMON_TABLE_CSV_PATH}" "${EFUSE_CUSTOM_TABLE_CSV_PATH}" "${SDKCONFIG_CMAKE}"
-    VERBATIM)
-add_custom_target(GENERATED_SRC DEPENDS GENERATED_OUTPUT ${GENERATED_SRC})
+add_custom_target(show_efuse_table COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/efuse_table_gen.py" ${EFUSE_COMMON_TABLE_CSV_PATH} ${EFUSE_CUSTOM_TABLE_CSV_PATH} ${GEN_EFUSE_TABLE_ARG} "--info")
 
 ###################
 # Generates files for unit test. This command is run manually.
