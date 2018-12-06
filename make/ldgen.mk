@@ -8,7 +8,8 @@ LDGEN_FRAGMENT_FILES = $(COMPONENT_LDFRAGMENTS)
 define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen.section_infos: $(LDGEN_SECTIONS_INFO_FILES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach section_info,$(LDGEN_SECTIONS_INFO_FILES),$(section_info)\n)" > $(BUILD_DIR_BASE)/ldgen.section_infos
-	sed -i 's|^[[:blank:]]*||g' $(BUILD_DIR_BASE)/ldgen.section_infos
+	sed -E -i.bak 's|^[[:blank:]]*||g' $(BUILD_DIR_BASE)/ldgen.section_infos
+	rm $(BUILD_DIR_BASE)/ldgen.section_infos.bak
 ifeq ($(OS), Windows_NT)
 	mv $(BUILD_DIR_BASE)/ldgen.section_infos $(BUILD_DIR_BASE)/ldgen.section_infos.temp
 	cygpath -w -f $(BUILD_DIR_BASE)/ldgen.section_infos.temp > $(BUILD_DIR_BASE)/ldgen.section_infos
