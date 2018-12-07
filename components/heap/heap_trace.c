@@ -421,7 +421,7 @@ IRAM_ATTR void *__wrap_heap_caps_malloc(size_t size, uint32_t caps)
     return trace_malloc(size, caps, TRACE_MALLOC_CAPS);
 }
 
-IRAM_ATTR void __wrap_heap_caps_free(void *p) __attribute__((alias("__wrap_free")));
+void __wrap_heap_caps_free(void *p) __attribute__((alias("__wrap_free")));
 
 IRAM_ATTR void *__wrap_heap_caps_realloc(void *p, size_t size, uint32_t caps)
 {
