@@ -539,6 +539,20 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     return r == ESP_OK ? ESP_OK : ESP_ERR_NOT_SUPPORTED;
 }
 
+void gpio_deep_sleep_hold_en(void)
+{
+    portENTER_CRITICAL(&gpio_spinlock);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
+    portEXIT_CRITICAL(&gpio_spinlock);
+}
+
+void gpio_deep_sleep_hold_dis(void)
+{
+    portENTER_CRITICAL(&gpio_spinlock);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
+    portEXIT_CRITICAL(&gpio_spinlock);
+}
+
 void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
 {
     GPIO.func_in_sel_cfg[signal_idx].sig_in_sel = 0;
