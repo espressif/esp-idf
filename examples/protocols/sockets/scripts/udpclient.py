@@ -8,9 +8,9 @@
 
 from builtins import input
 import socket
-import sys  
+import sys
 
-# -----------  Config  ---------- 
+# -----------  Config  ----------
 PORT = 3333
 IP_VERSION = 'IPv4'
 IPV4 = '192.168.0.167'
@@ -18,7 +18,7 @@ IPV6 = 'FE80::32AE:A4FF:FE80:5288'
 # -------------------------------
 
 if IP_VERSION == 'IPv4':
-    host = IPV4 
+    host = IPV4
     family_addr = socket.AF_INET
 elif IP_VERSION == 'IPv6':
     host = IPV6
@@ -29,17 +29,18 @@ else:
 
 
 try:
-    sock = socket.socket(family_addr, socket.SOCK_DGRAM) 
-except socket.error as msg:
+    sock = socket.socket(family_addr, socket.SOCK_DGRAM)
+except socket.error:
     print('Failed to create socket')
     sys.exit()
- 
+
 while True:
     msg = input('Enter message to send : ')
     try:
         sock.sendto(msg.encode(), (host, PORT))
         reply, addr = sock.recvfrom(128)
-        if not reply: break
+        if not reply:
+            break
         print('Reply[' + addr[0] + ':' + str(addr[1]) + '] - ' + str(reply))
     except socket.error as msg:
         print('Error Code : ' + str(msg[0]) + ' Message: ' + msg[1])

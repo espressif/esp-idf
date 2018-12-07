@@ -9,9 +9,9 @@
 import socket
 import sys
 
-# -----------  Config  ---------- 
+# -----------  Config  ----------
 IP_VERSION = 'IPv4'
-PORT = 3333;
+PORT = 3333
 # -------------------------------
 
 if IP_VERSION == 'IPv4':
@@ -23,10 +23,10 @@ else:
     sys.exit(1)
 
 
-try :
+try:
     sock = socket.socket(family_addr, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-except socket.error as msg :
+except socket.error as msg:
     print('Failed to create socket. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
     sys.exit()
 
@@ -37,10 +37,11 @@ except socket.error as msg:
     sys.exit()
 
 while True:
-    try :
+    try:
         print('Waiting for data...')
         data, addr = sock.recvfrom(1024)
-        if not data: break
+        if not data:
+            break
         data = data.decode()
         print('Reply[' + addr[0] + ':' + str(addr[1]) + '] - ' + data)
         reply = 'OK ' + data

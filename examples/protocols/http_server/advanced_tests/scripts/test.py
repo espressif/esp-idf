@@ -94,7 +94,7 @@
 #    - Server should automatically close the socket
 
 
-############# TODO TESTS #############
+# ############ TODO TESTS #############
 
 # 3. Stress Tests
 #
@@ -131,8 +131,6 @@
 
 from __future__ import division
 from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
 from builtins import range
 from builtins import object
@@ -148,9 +146,10 @@ import Utility
 
 _verbose_ = False
 
+
 class Session(object):
-    def __init__(self, addr, port, timeout = 15):
-        self.client = socket.create_connection((addr, int(port)), timeout = timeout)
+    def __init__(self, addr, port, timeout=15):
+        self.client = socket.create_connection((addr, int(port)), timeout=timeout)
         self.target = addr
         self.status = 0
         self.encoding = ''
@@ -160,7 +159,7 @@ class Session(object):
     def send_err_check(self, request, data=None):
         rval = True
         try:
-            self.client.sendall(request.encode());
+            self.client.sendall(request.encode())
             if data:
                 self.client.sendall(data.encode())
         except socket.error as err:
@@ -173,24 +172,24 @@ class Session(object):
         request = "GET " + path + " HTTP/1.1\r\nHost: " + self.target
         if headers:
             for field, value in headers.items():
-                request += "\r\n"+field+": "+value
+                request += "\r\n" + field + ": " + value
         request += "\r\n\r\n"
         return self.send_err_check(request)
 
     def send_put(self, path, data, headers=None):
-        request = "PUT " + path +  " HTTP/1.1\r\nHost: " + self.target
+        request = "PUT " + path + " HTTP/1.1\r\nHost: " + self.target
         if headers:
             for field, value in headers.items():
-                request += "\r\n"+field+": "+value
-        request += "\r\nContent-Length: " + str(len(data)) +"\r\n\r\n"
+                request += "\r\n" + field + ": " + value
+        request += "\r\nContent-Length: " + str(len(data)) + "\r\n\r\n"
         return self.send_err_check(request, data)
 
     def send_post(self, path, data, headers=None):
-        request = "POST " + path +  " HTTP/1.1\r\nHost: " + self.target
+        request = "POST " + path + " HTTP/1.1\r\nHost: " + self.target
         if headers:
             for field, value in headers.items():
-                request += "\r\n"+field+": "+value
-        request += "\r\nContent-Length: " + str(len(data)) +"\r\n\r\n"
+                request += "\r\n" + field + ": " + value
+        request += "\r\nContent-Length: " + str(len(data)) + "\r\n\r\n"
         return self.send_err_check(request, data)
 
     def read_resp_hdrs(self):
@@ -284,6 +283,7 @@ class Session(object):
     def close(self):
         self.client.close()
 
+
 def test_val(text, expected, received):
     if expected != received:
         Utility.console_log(" Fail!")
@@ -292,6 +292,7 @@ def test_val(text, expected, received):
         Utility.console_log("        received: " + str(received))
         return False
     return True
+
 
 class adder_thread (threading.Thread):
     def __init__(self, id, dut, port):
@@ -329,6 +330,7 @@ class adder_thread (threading.Thread):
     def close(self):
         self.session.close()
 
+
 def get_hello(dut, port):
     # GET /hello should return 'Hello World!'
     Utility.console_log("[test] GET /hello returns 'Hello World!' =>", end=' ')
@@ -348,6 +350,7 @@ def get_hello(dut, port):
     conn.close()
     return True
 
+
 def put_hello(dut, port):
     # PUT /hello returns 405'
     Utility.console_log("[test] PUT /hello returns 405 =>", end=' ')
@@ -361,6 +364,7 @@ def put_hello(dut, port):
     conn.close()
     return True
 
+
 def post_hello(dut, port):
     # POST /hello returns 405'
     Utility.console_log("[test] POST /hello returns 404 =>", end=' ')
@@ -373,6 +377,7 @@ def post_hello(dut, port):
     Utility.console_log("Success")
     conn.close()
     return True
+
 
 def post_echo(dut, port):
     # POST /echo echoes data'
@@ -390,6 +395,7 @@ def post_echo(dut, port):
     conn.close()
     return True
 
+
 def put_echo(dut, port):
     # PUT /echo echoes data'
     Utility.console_log("[test] PUT /echo echoes data =>", end=' ')
@@ -406,6 +412,7 @@ def put_echo(dut, port):
     conn.close()
     return True
 
+
 def get_echo(dut, port):
     # GET /echo returns 404'
     Utility.console_log("[test] GET /echo returns 405 =>", end=' ')
@@ -418,6 +425,7 @@ def get_echo(dut, port):
     Utility.console_log("Success")
     conn.close()
     return True
+
 
 def get_hello_type(dut, port):
     # GET /hello/type_html returns text/html as Content-Type'
@@ -438,6 +446,7 @@ def get_hello_type(dut, port):
     conn.close()
     return True
 
+
 def get_hello_status(dut, port):
     # GET /hello/status_500 returns status 500'
     Utility.console_log("[test] GET /hello/status_500 returns status 500 =>", end=' ')
@@ -451,6 +460,7 @@ def get_hello_status(dut, port):
     conn.close()
     return True
 
+
 def get_false_uri(dut, port):
     # GET /false_uri returns status 404'
     Utility.console_log("[test] GET /false_uri returns status 404 =>", end=' ')
@@ -463,6 +473,7 @@ def get_false_uri(dut, port):
     Utility.console_log("Success")
     conn.close()
     return True
+
 
 def parallel_sessions_adder(dut, port, max_sessions):
     # POSTs on /adder in parallel sessions
@@ -487,6 +498,7 @@ def parallel_sessions_adder(dut, port, max_sessions):
         Utility.console_log("Success")
     return res
 
+
 def async_response_test(dut, port):
     # Test that an asynchronous work is executed in the HTTPD's context
     # This is tested by reading two responses over the same session
@@ -505,6 +517,7 @@ def async_response_test(dut, port):
     s.close()
     Utility.console_log("Success")
     return True
+
 
 def leftover_data_test(dut, port):
     # Leftover data in POST is purged (valid and invalid URIs)
@@ -540,6 +553,7 @@ def leftover_data_test(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def spillover_session(dut, port, max_sess):
     # Session max_sess_sessions + 1 is rejected
     Utility.console_log("[test] Session max_sess_sessions (" + str(max_sess) + ") + 1 is rejected =>", end=' ')
@@ -556,7 +570,7 @@ def spillover_session(dut, port, max_sess):
                 a.close()
                 break
             s.append(a)
-        except:
+        except Exception:
             if (_verbose_):
                 Utility.console_log("Connection " + str(i) + " rejected")
             a.close()
@@ -569,6 +583,7 @@ def spillover_session(dut, port, max_sess):
     # Check if number of connections is equal to max_sess
     Utility.console_log(["Fail","Success"][len(s) == max_sess])
     return (len(s) == max_sess)
+
 
 def recv_timeout_test(dut, port):
     Utility.console_log("[test] Timeout occurs if partial packet sent =>", end=' ')
@@ -583,6 +598,7 @@ def recv_timeout_test(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def packet_size_limit_test(dut, port, test_size):
     Utility.console_log("[test] send size limit test =>", end=' ')
     retry = 5
@@ -590,14 +606,14 @@ def packet_size_limit_test(dut, port, test_size):
         retry -= 1
         Utility.console_log("data size = ", test_size)
         s = http.client.HTTPConnection(dut + ":" + port, timeout=15)
-        random_data = ''.join(string.printable[random.randint(0,len(string.printable))-1] for _ in list(range(test_size)))
+        random_data = ''.join(string.printable[random.randint(0,len(string.printable)) - 1] for _ in list(range(test_size)))
         path = "/echo"
         s.request("POST", url=path, body=random_data)
         resp = s.getresponse()
         if not test_val("Error", "200", str(resp.status)):
             if test_val("Error", "500", str(resp.status)):
                 Utility.console_log("Data too large to be allocated")
-                test_size = test_size//10
+                test_size = test_size // 10
             else:
                 Utility.console_log("Unexpected error")
             s.close()
@@ -616,6 +632,7 @@ def packet_size_limit_test(dut, port, test_size):
     Utility.console_log("Failed")
     return False
 
+
 def code_500_server_error_test(dut, port):
     Utility.console_log("[test] 500 Server Error test =>", end=' ')
     s = Session(dut, port)
@@ -623,7 +640,7 @@ def code_500_server_error_test(dut, port):
     content_len = 2**31
     s.client.sendall(("POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: " + str(content_len) + "\r\n\r\nABCD").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Server Error", "500", s.status):
         s.close()
         return False
@@ -631,17 +648,18 @@ def code_500_server_error_test(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def code_501_method_not_impl(dut, port):
     Utility.console_log("[test] 501 Method Not Implemented =>", end=' ')
     s = Session(dut, port)
     path = "/hello"
     s.client.sendall(("ABC " + path + " HTTP/1.1\r\nHost: " + dut + "\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     # Presently server sends back 400 Bad Request
-    #if not test_val("Server Error", "501", s.status):
-        #s.close()
-        #return False
+    # if not test_val("Server Error", "501", s.status):
+    #     s.close()
+    #     return False
     if not test_val("Server Error", "400", s.status):
         s.close()
         return False
@@ -649,13 +667,14 @@ def code_501_method_not_impl(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def code_505_version_not_supported(dut, port):
     Utility.console_log("[test] 505 Version Not Supported =>", end=' ')
     s = Session(dut, port)
     path = "/hello"
     s.client.sendall(("GET " + path + " HTTP/2.0\r\nHost: " + dut + "\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Server Error", "505", s.status):
         s.close()
         return False
@@ -663,19 +682,21 @@ def code_505_version_not_supported(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def code_400_bad_request(dut, port):
     Utility.console_log("[test] 400 Bad Request =>", end=' ')
     s = Session(dut, port)
     path = "/hello"
     s.client.sendall(("XYZ " + path + " HTTP/1.1\r\nHost: " + dut + "\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Client Error", "400", s.status):
         s.close()
         return False
     s.close()
     Utility.console_log("Success")
     return True
+
 
 def code_404_not_found(dut, port):
     Utility.console_log("[test] 404 Not Found =>", end=' ')
@@ -683,7 +704,7 @@ def code_404_not_found(dut, port):
     path = "/dummy"
     s.client.sendall(("GET " + path + " HTTP/1.1\r\nHost: " + dut + "\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Client Error", "404", s.status):
         s.close()
         return False
@@ -691,13 +712,14 @@ def code_404_not_found(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def code_405_method_not_allowed(dut, port):
     Utility.console_log("[test] 405 Method Not Allowed =>", end=' ')
     s = Session(dut, port)
     path = "/hello"
     s.client.sendall(("POST " + path + " HTTP/1.1\r\nHost: " + dut + "\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Client Error", "405", s.status):
         s.close()
         return False
@@ -705,12 +727,13 @@ def code_405_method_not_allowed(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def code_408_req_timeout(dut, port):
     Utility.console_log("[test] 408 Request Timeout =>", end=' ')
     s = Session(dut, port)
     s.client.sendall(("POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: 10\r\n\r\nABCD").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Client Error", "408", s.status):
         s.close()
         return False
@@ -718,17 +741,18 @@ def code_408_req_timeout(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def code_411_length_required(dut, port):
     Utility.console_log("[test] 411 Length Required =>", end=' ')
     s = Session(dut, port)
     path = "/echo"
     s.client.sendall(("POST " + path + " HTTP/1.1\r\nHost: " + dut + "\r\nContent-Type: text/plain\r\nTransfer-Encoding: chunked\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     # Presently server sends back 400 Bad Request
-    #if not test_val("Client Error", "411", s.status):
-        #s.close()
-        #return False
+    # if not test_val("Client Error", "411", s.status):
+    #    s.close()
+    #    return False
     if not test_val("Client Error", "400", s.status):
         s.close()
         return False
@@ -736,20 +760,22 @@ def code_411_length_required(dut, port):
     Utility.console_log("Success")
     return True
 
+
 def send_getx_uri_len(dut, port, length):
     s = Session(dut, port)
     method = "GET "
     version = " HTTP/1.1\r\n"
-    path = "/"+"x"*(length - len(method) - len(version) - len("/"))
+    path = "/" + "x" * (length - len(method) - len(version) - len("/"))
     s.client.sendall(method.encode())
     time.sleep(1)
     s.client.sendall(path.encode())
     time.sleep(1)
     s.client.sendall((version + "Host: " + dut + "\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     s.close()
     return s.status
+
 
 def code_414_uri_too_long(dut, port, max_uri_len):
     Utility.console_log("[test] 414 URI Too Long =>", end=' ')
@@ -762,22 +788,24 @@ def code_414_uri_too_long(dut, port, max_uri_len):
     Utility.console_log("Success")
     return True
 
+
 def send_postx_hdr_len(dut, port, length):
     s = Session(dut, port)
     path = "/echo"
     host = "Host: " + dut
     custom_hdr_field = "\r\nCustom: "
-    custom_hdr_val = "x"*(length - len(host) - len(custom_hdr_field) - len("\r\n\r\n") + len("0"))
+    custom_hdr_val = "x" * (length - len(host) - len(custom_hdr_field) - len("\r\n\r\n") + len("0"))
     request = ("POST " + path + " HTTP/1.1\r\n" + host + custom_hdr_field + custom_hdr_val + "\r\n\r\n").encode()
-    s.client.sendall(request[:length//2])
+    s.client.sendall(request[:length // 2])
     time.sleep(1)
-    s.client.sendall(request[length//2:])
+    s.client.sendall(request[length // 2:])
     hdr = s.read_resp_hdrs()
     resp = s.read_resp_data()
     s.close()
     if "Custom" in hdr:
         return (hdr["Custom"] == custom_hdr_val), resp
     return False, s.status
+
 
 def code_431_hdr_too_long(dut, port, max_hdr_len):
     Utility.console_log("[test] 431 Header Too Long =>", end=' ')
@@ -790,13 +818,14 @@ def code_431_hdr_too_long(dut, port, max_hdr_len):
     Utility.console_log("Success")
     return True
 
+
 def test_upgrade_not_supported(dut, port):
     Utility.console_log("[test] Upgrade Not Supported =>", end=' ')
     s = Session(dut, port)
-    path = "/hello"
+    # path = "/hello"
     s.client.sendall(("OPTIONS * HTTP/1.1\r\nHost:" + dut + "\r\nUpgrade: TLS/1.0\r\nConnection: Upgrade\r\n\r\n").encode())
     s.read_resp_hdrs()
-    resp = s.read_resp_data()
+    s.read_resp_data()
     if not test_val("Client Error", "200", s.status):
         s.close()
         return False
@@ -804,8 +833,9 @@ def test_upgrade_not_supported(dut, port):
     Utility.console_log("Success")
     return True
 
+
 if __name__ == '__main__':
-    ########### Execution begins here...
+    # Execution begins here...
     # Configuration
     # Max number of threads/sessions
     max_sessions = 7
@@ -849,7 +879,7 @@ if __name__ == '__main__':
     test_upgrade_not_supported(dut, port)
 
     # Not supported yet (Error on chunked request)
-    ###code_411_length_required(dut, port)
+    # code_411_length_required(dut, port)
 
     Utility.console_log("### Sessions and Context Tests")
     parallel_sessions_adder(dut, port, max_sessions)
@@ -857,7 +887,7 @@ if __name__ == '__main__':
     async_response_test(dut, port)
     spillover_session(dut, port, max_sessions)
     recv_timeout_test(dut, port)
-    packet_size_limit_test(dut, port, 50*1024)
+    packet_size_limit_test(dut, port, 50 * 1024)
     get_hello(dut, port)
 
     sys.exit()
