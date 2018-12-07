@@ -240,6 +240,7 @@ build_esp_idf_tests_cmake:
     when: always
     paths:
       - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/sdkconfig
       - build_examples/*/*/*/build/*.elf
       - build_examples/*/*/*/build/*.map
       - build_examples/*/*/*/build/download.config
@@ -272,6 +273,7 @@ build_esp_idf_tests_cmake:
     when: always
     paths:
       - build_examples_cmake/*/*/*/build/*.bin
+      - build_examples_cmake/*/*/*/sdkconfig
       - build_examples_cmake/*/*/*/build/*.elf
       - build_examples_cmake/*/*/*/build/*.map
       - build_examples_cmake/*/*/*/build/download.config
