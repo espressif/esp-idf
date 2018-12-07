@@ -17,6 +17,7 @@
 #include "soc/efuse_reg.h"
 #include "assert.h"
 #include "sdkconfig.h"
+#include "esp_efuse_table.h"
 
 const static char *TAG = "efuse";
 
@@ -111,6 +112,32 @@ esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt)
     }
     EFUSE_LOCK_RELEASE();
     return err;
+}
+
+// Sets a write protection for the whole block.
+esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk)
+{
+    if (blk == EFUSE_BLK1) {
+        return esp_efuse_write_field_cnt(ESP_EFUSE_WR_DIS_BLK1, 1);
+    } else if (blk == EFUSE_BLK2) {
+        return esp_efuse_write_field_cnt(ESP_EFUSE_WR_DIS_BLK2, 1);
+    } else if (blk == EFUSE_BLK3) {
+        return esp_efuse_write_field_cnt(ESP_EFUSE_WR_DIS_BLK3, 1);
+    }
+    return ESP_ERR_NOT_SUPPORTED;
+}
+
+// read protect for blk.
+esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk)
+{
+    if (blk == EFUSE_BLK1) {
+        return esp_efuse_write_field_cnt(ESP_EFUSE_RD_DIS_BLK1, 1);
+    } else if (blk == EFUSE_BLK2) {
+        return esp_efuse_write_field_cnt(ESP_EFUSE_RD_DIS_BLK2, 1);
+    } else if (blk == EFUSE_BLK3) {
+        return esp_efuse_write_field_cnt(ESP_EFUSE_RD_DIS_BLK3, 1);
+    }
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 // get the length of the field in bits

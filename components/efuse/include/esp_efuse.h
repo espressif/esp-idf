@@ -124,6 +124,36 @@ esp_err_t esp_efuse_write_field_blob(const esp_efuse_desc_t* field[], const void
 esp_err_t esp_efuse_write_field_cnt(const esp_efuse_desc_t* field[], size_t cnt);
 
 /**
+ * @brief   Sets a write protection for the whole block.
+ *
+ * After that, it is impossible to write to this block.
+ * The write protection does not apply to block 0.
+ * @param[in]  blk          Block number of eFuse. (EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3)
+ *
+ * @return
+ *    - ESP_OK: The operation was successfully completed.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_CNT_IS_FULL: Not all requested cnt bits is set.
+ *    - ESP_ERR_NOT_SUPPORTED: The block does not support this command.
+ */
+esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk);
+
+/**
+ * @brief   Sets a read protection for the whole block.
+ *
+ * After that, it is impossible to read from this block.
+ * The read protection does not apply to block 0.
+ * @param[in]  blk          Block number of eFuse. (EFUSE_BLK1, EFUSE_BLK2 and EFUSE_BLK3)
+ *
+ * @return
+ *    - ESP_OK: The operation was successfully completed.
+ *    - ESP_ERR_INVALID_ARG: Error in the passed arguments.
+ *    - ESP_ERR_EFUSE_CNT_IS_FULL: Not all requested cnt bits is set.
+ *    - ESP_ERR_NOT_SUPPORTED: The block does not support this command.
+ */
+esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk);
+
+/**
  * @brief   Returns the number of bits used by field.
  *
  * @param[in]  field          A pointer to the structure describing the fields of efuse.
