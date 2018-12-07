@@ -196,8 +196,11 @@ can be found in the :cpp:func:`esp_event_dump` API Reference.
 Application Example
 -------------------
 
-Examples on using the ``esp_event`` library can be found on :example:`system/esp_event`. The examples cover event declaration, loop creation, handler registration
-and unregistration and event posting.
+Examples on using the ``esp_event`` library can be found in :example:`system/esp_event`. The examples cover event declaration, loop creation, handler registration and unregistration and event posting.
+
+Other examples which also adopt esp_event library:
+
+    * :example:`NMEA Parser <peripherals/uart/nmea0183_parser>`, which will decode the statements received from GPS.
 
 API Reference
 -------------
