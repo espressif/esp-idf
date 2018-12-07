@@ -98,10 +98,11 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     //We only support HSPI/VSPI, period.
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
+    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 
     spi_chan_claimed=spicommon_periph_claim(host);
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
-    
+
     if ( dma_chan != 0 ) {
         dma_chan_claimed=spicommon_dma_chan_claim(dma_chan);
         if ( !dma_chan_claimed ) {
@@ -163,7 +164,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         goto cleanup;
     }
 
-    err = esp_intr_alloc(spicommon_irqsource_for_host(host), ESP_INTR_FLAG_INTRDISABLED, spi_intr, (void *)spihost[host], &spihost[host]->intr);
+    int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
+    err = esp_intr_alloc(spicommon_irqsource_for_host(host), flags, spi_intr, (void *)spihost[host], &spihost[host]->intr);
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
@@ -280,9 +282,9 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
     BaseType_t r;
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host], "host not slave", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer), 
+    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->tx_buffer==NULL || esp_ptr_dma_capable(trans_desc->tx_buffer),
 			"txdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer), 
+    SPI_CHECK(spihost[host]->dma_chan == 0 || trans_desc->rx_buffer==NULL || esp_ptr_dma_capable(trans_desc->rx_buffer),
 			"rxdata not in DMA-capable memory", ESP_ERR_INVALID_ARG);
 
     SPI_CHECK(trans_desc->length <= spihost[host]->max_transfer_sz * 8, "data transfer > host maximum", ESP_ERR_INVALID_ARG);
@@ -370,7 +372,7 @@ static void IRAM_ATTR spi_intr(void *arg)
         if (host->dma_chan != 0) freeze_cs(host);
 
         //when data of cur_trans->length are all sent, the slv_rdata_bit
-        //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise 
+        //will be the length sent-1 (i.e. cur_trans->length-1 ), otherwise
         //the length sent.
         host->cur_trans->trans_len = host->hw->slv_rd_bit.slv_rdata_bit;
         if (host->cur_trans->trans_len == host->cur_trans->length - 1) {
