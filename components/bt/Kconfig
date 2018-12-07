@@ -181,16 +181,16 @@ choice SCAN_DUPLICATE_TYPE
     default SCAN_DUPLICATE_BY_DEVICE_ADDR
     depends on BLE_SCAN_DUPLICATE
     help
-        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use advertiser address 
-        filtering. The adv packet of the same address is only allowed to be reported once. Another way is "Scan Duplicate 
-        By Device Address And Advertising Data". This way is to use advertising data and device address filtering. All 
-        different adv packets with the same address are allowed to be reported. The last way is "Scan Duplicate By Advertising 
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use advertiser address
+        filtering. The adv packet of the same address is only allowed to be reported once. Another way is "Scan Duplicate
+        By Device Address And Advertising Data". This way is to use advertising data and device address filtering. All
+        different adv packets with the same address are allowed to be reported. The last way is "Scan Duplicate By Advertising
         Data". This way is to use advertising data filtering. All same advertising data only allow to be reported once even though
         they are from different devices.
 
 config SCAN_DUPLICATE_BY_DEVICE_ADDR
     bool "Scan Duplicate By Device Address"
-    help 
+    help
         This way is to use advertiser address filtering. The adv packet of the same address is only allowed to be reported once
 
 config SCAN_DUPLICATE_BY_ADV_DATA
@@ -202,7 +202,7 @@ config SCAN_DUPLICATE_BY_ADV_DATA
 config SCAN_DUPLICATE_BY_ADV_DATA_AND_DEVICE_ADDR
     bool "Scan Duplicate By Device Address And Advertising Data"
     help
-    This way is to use advertising data and device address filtering. All different adv packets with the same address are 
+    This way is to use advertising data and device address filtering. All different adv packets with the same address are
     allowed to be reported.
 endchoice
 
@@ -348,6 +348,13 @@ config HFP_AUDIO_DATA_PATH_HCI
     help
         This enables the Serial Port Profile
 endchoice
+
+config BT_SSP_ENABLED
+    bool "Secure Simple Pairing"
+    depends on CLASSIC_BT_ENABLED
+    default y
+    help
+        This enables the Secure Simple Pairing. If disable this option, Bluedroid will only support Legacy Pairing
 
 config GATTS_ENABLE
     bool "Include GATT server module(GATTS)"

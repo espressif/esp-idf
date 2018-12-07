@@ -52,7 +52,6 @@
 #define BTA_SDP_INCLUDED            TRUE
 #define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
-#define BT_SSP_INCLUDED             TRUE
 
 #if CONFIG_A2DP_ENABLE
 #define BTA_AR_INCLUDED             TRUE
@@ -88,6 +87,10 @@
 #define BTM_MAX_SCO_LINKS           (1)
 #endif
 #endif  /* CONFIG_HFP_HF_ENABLE */
+
+#if CONFIG_BT_SSP_ENABLED
+#define BT_SSP_INCLUDED             TRUE
+#endif /* CONFIG_BT_SSP_ENABLED */
 
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
