@@ -31,9 +31,14 @@ PROJECT_VER:= $(GET_PROJECT_VER)
 else
 PROJECT_VER:= $(PROJECT_VER)
 endif
-$(info App "$(PROJECT_NAME)" version: $(PROJECT_VER))
 
-NEW_DEFINES:= $(PROJECT_VER) $(PROJECT_NAME) $(IDF_VER)
+# cut PROJECT_VER and PROJECT_NAME to required 32 characters.
+PROJECT_VER_CUT  := $(shell echo $(PROJECT_VER)  | cut -c 1-31)
+PROJECT_NAME_CUT := $(shell echo $(PROJECT_NAME) | cut -c 1-31)
+
+$(info App "$(PROJECT_NAME_CUT)" version: $(PROJECT_VER_CUT))
+
+NEW_DEFINES:= $(PROJECT_VER_CUT) $(PROJECT_NAME_CUT) $(IDF_VER)
 ifeq ("$(wildcard ${TMP_DEFINES})","")
 OLD_DEFINES:=
 else
@@ -45,5 +50,5 @@ ifneq ("${NEW_DEFINES}", "${OLD_DEFINES}")
 $(shell echo $(NEW_DEFINES) > $(TMP_DEFINES); rm -f esp_app_desc.o;)
 endif
 
-esp_app_desc.o: CPPFLAGS += -D PROJECT_VER=\"$(PROJECT_VER)\" -D PROJECT_NAME=\"$(PROJECT_NAME)\"
+esp_app_desc.o: CPPFLAGS += -D PROJECT_VER=\"$(PROJECT_VER_CUT)\" -D PROJECT_NAME=\"$(PROJECT_NAME_CUT)\"
 endif

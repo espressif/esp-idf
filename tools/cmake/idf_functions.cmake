@@ -86,7 +86,6 @@ function(idf_set_global_compile_options)
     list(APPEND compile_options "${CMAKE_C_FLAGS}")
     list(APPEND c_compile_options "${CMAKE_C_FLAGS}")
     list(APPEND cxx_compile_options "${CMAKE_CXX_FLAGS}")
-    add_definitions(-DPROJECT_NAME=\"${PROJECT_NAME}\")
 
     if(CONFIG_OPTIMIZATION_LEVEL_RELEASE)
         list(APPEND compile_options "-Os")
