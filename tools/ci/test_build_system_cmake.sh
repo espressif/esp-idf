@@ -103,7 +103,7 @@ function run_tests()
     idf.py build || failure "Failed to build with app version"
     print_status "Change app version"
     take_build_snapshot
-	echo "project-version-2.0" > ${TESTDIR}/template/version.txt
+	echo "project-version-2.0(012345678901234567890123456789)" > ${TESTDIR}/template/version.txt
 	idf.py build || failure "Failed to rebuild with changed app version"
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
