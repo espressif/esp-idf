@@ -126,7 +126,10 @@ typedef enum{
     TCPIP_ADAPTER_OP_SET,           /**< Set option */
     TCPIP_ADAPTER_OP_GET,           /**< Get option */
     TCPIP_ADAPTER_OP_MAX
-} tcpip_adapter_option_mode_t;
+} tcpip_adapter_dhcp_option_mode_t;
+
+/* Deprecated name for tcpip_adapter_dhcp_option_mode_t, to remove after ESP-IDF V4.0 */
+typedef tcpip_adapter_dhcp_option_mode_t tcpip_adapter_option_mode_t;
 
 /** @brief Supported options for DHCP client or DHCP server */
 typedef enum{
@@ -135,7 +138,10 @@ typedef enum{
     TCPIP_ADAPTER_REQUESTED_IP_ADDRESS          = 50,   /**< Request specific IP address */
     TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME         = 51,   /**< Request IP address lease time */
     TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,   /**< Request IP address retry counter */
-} tcpip_adapter_option_id_t;
+} tcpip_adapter_dhcp_option_id_t;
+
+/* Deprecated name for tcpip_adapter_dhcp_option_id_t, to remove after ESP-IDF V4.0 */
+typedef tcpip_adapter_dhcp_option_id_t tcpip_adapter_option_id_t;
 
 /**
  * @brief  Initialize the underlying TCP/IP stack
@@ -431,7 +437,7 @@ esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adap
  *         - ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED
  *         - ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED
  */
-esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
 
 /**
  * @brief  Start DHCP server
@@ -486,7 +492,7 @@ esp_err_t tcpip_adapter_dhcpc_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adap
  * @return
  *         - ESP_ERR_NOT_SUPPORTED (not implemented)
  */
-esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
 
 /**
  * @brief Start DHCP client
