@@ -2,8 +2,7 @@ stages:
   - build
   - assign_test
   - host_test
-  - unit_test
-  - integration_test
+  - target_test
   - check
   - deploy
   - post_check
@@ -796,7 +795,7 @@ assign_test:
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/SSC/ssc_bin
 
 .example_test_template: &example_test_template
-  stage: integration_test
+  stage: target_test
   when: on_success
   only:
     refs:
@@ -852,7 +851,7 @@ assign_test:
 
 .unit_test_template: &unit_test_template
   <<: *example_test_template
-  stage: unit_test
+  stage: target_test
   dependencies:
     - assign_test
     - build_esp_idf_tests_make
@@ -875,7 +874,7 @@ assign_test:
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
 
 .test_template: &test_template
-  stage: integration_test
+  stage: target_test
   when: on_success
   only:
     refs:
