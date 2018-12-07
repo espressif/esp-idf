@@ -5,43 +5,46 @@ import re
 import os
 import sys
 import time
-import socket
-import imp
 import paho.mqtt.client as mqtt
 
-g_recv_data=""
-g_recv_topic=""
-g_broker_connected=0
+try:
+    import IDF
+except Exception:
+    # this is a test case write with tiny-test-fw.
+    # to run test cases outside tiny-test-fw,
+    # we need to set environment variable `TEST_FW_PATH`,
+    # then get and insert `TEST_FW_PATH` to sys path before import FW module
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
+
+import DUT
+
+
+g_recv_data = ""
+g_recv_topic = ""
+g_broker_connected = 0
+
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     global g_broker_connected
-    print("Connected with result code "+str(rc))
+    print("Connected with result code " + str(rc))
     g_broker_connected = 1
     client.subscribe("/topic/qos0")
+
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     global g_recv_topic
     global g_recv_data
     payload = msg.payload.decode()
-    if g_recv_data == "" and  payload == "data":
+    if g_recv_data == "" and payload == "data":
         client.publish("/topic/qos0", "data_to_esp32")
         g_recv_topic = msg.topic
         g_recv_data = payload
-    print(msg.topic+" "+payload)
-
-# this is a test case write with tiny-test-fw.
-# to run test cases outside tiny-test-fw,
-# we need to set environment variable `TEST_FW_PATH`,
-# then get and insert `TEST_FW_PATH` to sys path before import FW module
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
-
-import TinyFW
-import IDF
-import DUT
+    print(msg.topic + " " + payload)
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
@@ -49,7 +52,7 @@ def test_examples_protocol_mqtt_ws(env, extra_data):
     global g_recv_topic
     global g_recv_data
     global g_broker_connected
-    broker_url="iot.eclipse.org"
+    broker_url = "iot.eclipse.org"
     """
     steps: |
       1. join AP and connects to ws broker
@@ -61,8 +64,8 @@ def test_examples_protocol_mqtt_ws(env, extra_data):
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_websocket.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("mqtt_websocket_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("mqtt_websocket_size", bin_size//1024)
+    IDF.log_performance("mqtt_websocket_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("mqtt_websocket_size", bin_size // 1024)
     # 1. start test (and check the environment is healthy)
     dut1.start_app()
     client = None
@@ -79,7 +82,7 @@ def test_examples_protocol_mqtt_ws(env, extra_data):
         print("...done")
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    except:
+    except Exception:
         print("ENV_TEST_FAILURE: Unexpected error while connecting to broker {}: {}:".format(broker_url, sys.exc_info()[0]))
         raise
     print("Start Looping...")
@@ -90,13 +93,14 @@ def test_examples_protocol_mqtt_ws(env, extra_data):
     if g_broker_connected == 0:
         raise ValueError('ENV_TEST_FAILURE: Test script cannot connect to broker: {}'.format(broker_url))
     # 3. check the message received back from the server
-    if g_recv_topic == "/topic/qos0" and g_recv_data == "data" :
+    if g_recv_topic == "/topic/qos0" and g_recv_data == "data":
         print("PASS: Received correct message")
     else:
         print("Failure!")
         raise ValueError('Wrong data received topic: {}, data:{}'.format(g_recv_topic, g_recv_data))
     # 4. check that the esp32 client received data sent by this python client
     dut1.expect(re.compile(r"DATA=data_to_esp32"), timeout=30)
+
 
 if __name__ == '__main__':
     test_examples_protocol_mqtt_ws()

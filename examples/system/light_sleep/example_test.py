@@ -4,18 +4,20 @@ import os
 import sys
 import time
 
-test_fw_path = os.getenv('TEST_FW_PATH')
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
-
-import TinyFW
-import IDF
+try:
+    import IDF
+except ImportError:
+    test_fw_path = os.getenv('TEST_FW_PATH')
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
 
 ENTERING_SLEEP_STR = 'Entering light sleep'
 EXIT_SLEEP_REGEX = re.compile(r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms')
 WAITING_FOR_GPIO_STR = 'Waiting for GPIO0 to go high...'
 
 WAKEUP_INTERVAL_MS = 2000
+
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_examples_system_light_sleep(env, extra_data):
@@ -57,6 +59,7 @@ def test_examples_system_light_sleep(env, extra_data):
     groups = dut.expect(EXIT_SLEEP_REGEX)
     assert(groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS)
     print('Woke up from timer again')
+
 
 if __name__ == '__main__':
     test_examples_system_light_sleep()

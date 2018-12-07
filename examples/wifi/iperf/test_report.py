@@ -88,7 +88,7 @@ class ThroughputForConfigsReport(object):
             current_config = self.sdkconfigs[_config_name]
 
             if i > 0:
-                previous_config_name = self.sort_order[i-1]
+                previous_config_name = self.sort_order[i - 1]
                 previous_config = self.sdkconfigs[previous_config_name]
             else:
                 previous_config = previous_config_name = None

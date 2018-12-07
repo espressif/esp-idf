@@ -13,17 +13,19 @@
 # limitations under the License.
 
 """ example of writing test with TinyTestFW """
-import re
 import os
 import sys
 
-# if we want to run test case outside `tiny-test-fw` folder,
-# we need to insert tiny-test-fw path into sys path
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import TinyFW
+except ImportError:
+    # if we want to run test case outside `tiny-test-fw` folder,
+    # we need to insert tiny-test-fw path into sys path
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import TinyFW
 
-import TinyFW
 import IDF
 
 
@@ -50,7 +52,7 @@ def test_example_sdio_communication(env, extra_data):
     dut1 = env.get_dut("sdio_host", "examples/peripherals/sdio/host")
     dut2 = env.get_dut("sdio_slave", "examples/peripherals/sdio/slave")
     dut1.start_app()
-    #wait until the master is ready to setup the slave
+    # wait until the master is ready to setup the slave
     dut1.expect("host ready, start initializing slave...")
 
     dut2.start_app()
@@ -96,12 +98,12 @@ def test_example_sdio_communication(env, extra_data):
     dut2.expect("recv len: 6")
     dut2.expect("recv len: 12")
     dut2.expect("recv len: 128")
-    #511
+    # 511
     dut2.expect("recv len: 128")
     dut2.expect("recv len: 128")
     dut2.expect("recv len: 128")
     dut2.expect("recv len: 127")
-    #512
+    # 512
     dut2.expect("recv len: 128")
     dut2.expect("recv len: 128")
     dut2.expect("recv len: 128")
@@ -122,9 +124,9 @@ def test_example_sdio_communication(env, extra_data):
     dut1.expect("receive data, size: 128")
     dut1.expect("receive data, size: 128")
 
-    #the last valid line of one round
+    # the last valid line of one round
     dut1.expect("ce d3 d8 dd e2 e7 ec f1  f6 fb 00 05 0a 0f 14 19")
-    #the first 2 lines of the second round
+    # the first 2 lines of the second round
     dut1.expect("46 4b 50")
     dut1.expect("5a 5f 64 69 6e 73")
 

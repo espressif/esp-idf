@@ -3,12 +3,13 @@ import os
 import sys
 import subprocess
 
-test_fw_path = os.getenv('TEST_FW_PATH')
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
-
-import TinyFW
-import IDF
+try:
+    import IDF
+except ImportError:
+    test_fw_path = os.getenv('TEST_FW_PATH')
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
 
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
