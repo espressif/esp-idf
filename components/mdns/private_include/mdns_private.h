@@ -118,6 +118,9 @@
 #define MDNS_SEARCH_LOCK()      xSemaphoreTake(_mdns_server->search.lock, portMAX_DELAY)
 #define MDNS_SEARCH_UNLOCK()    xSemaphoreGive(_mdns_server->search.lock)
 
+#ifndef HOOK_MALLOC_FAILED
+#define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %d bytes)", __LINE__, esp_get_free_heap_size());
+#endif
 
 typedef enum {
     PCB_OFF, PCB_DUP, PCB_INIT,
