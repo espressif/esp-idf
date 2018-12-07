@@ -5,6 +5,7 @@
  */
 #include <string.h>
 #include "mdns_networking.h"
+#include "esp_log.h"
 
 
 extern mdns_server_t * _mdns_server;
@@ -13,6 +14,7 @@ extern mdns_server_t * _mdns_server;
  * MDNS Server Networking
  *
  */
+static const char *TAG = "MDNS_Networking";
 
 static struct udp_pcb * _pcb_main = NULL;
 
@@ -118,6 +120,7 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
 
         mdns_rx_packet_t * packet = (mdns_rx_packet_t *)malloc(sizeof(mdns_rx_packet_t));
         if (!packet) {
+            HOOK_MALLOC_FAILED;
             //missed packet - no memory
             pbuf_free(this_pb);
             continue;
