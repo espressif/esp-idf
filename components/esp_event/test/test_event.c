@@ -74,6 +74,11 @@ typedef struct {
     SemaphoreHandle_t mutex;
 } simple_arg_t;
 
+typedef struct {
+    int *arr;
+    int index;
+} ordered_data_t;
+
 static BaseType_t s_test_core_id;
 static UBaseType_t s_test_priority;
 
@@ -135,6 +140,13 @@ static void test_event_simple_handler(void* event_handler_arg, esp_event_base_t 
     xSemaphoreGive(arg->mutex);
 }
 
+static void test_event_ordered_dispatch(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    int *arg = (int*) event_handler_arg;
+    ordered_data_t *data = *((ordered_data_t**) (event_data));
+
+    data->arr[data->index++] = *arg;
+}
 
 static void test_event_performance_handler(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
@@ -193,7 +205,7 @@ static void test_handler_post_w_task(void* event_handler_arg, esp_event_base_t e
     int* count = (int*) arg->data;
 
     (*count)++;
-    
+
     if (*count <= 2) {
         if (event_base == s_test_base1 && event_id == TEST_EVENT_BASE1_EV1) {
             TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(*loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
@@ -218,7 +230,7 @@ static void test_handler_post_wo_task(void* event_handler_arg, esp_event_base_t 
     int* count = (int*) arg->data;
 
     (*count)++;
-    
+
     if (*count <= 2) {
         if (event_base == s_test_base1 && event_id == TEST_EVENT_BASE1_EV1) {
             TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(*loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
@@ -846,7 +858,7 @@ TEST_CASE("can post to loop from handler - dedicated task", "[event]")
 
     // Test that other tasks can still post while  there is still slots in the queue, while handler is executing
     count = 100;
-    
+
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_w_task, sizeof(&loop_w_task), portMAX_DELAY));
 
     for (int i = 0; i < loop_args.queue_size; i++) {
@@ -854,7 +866,7 @@ TEST_CASE("can post to loop from handler - dedicated task", "[event]")
     }
 
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));    
+                         pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
 
     xSemaphoreGive(arg.mutex);
 
@@ -977,7 +989,7 @@ TEST_CASE("can register from handler", "[event]")
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_registration_from_handler_hdlr, &count));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV1, test_unregistration_from_handler_hdlr, &count));
-    
+
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &loop, sizeof(&loop), portMAX_DELAY));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
 
@@ -1024,12 +1036,66 @@ TEST_CASE("can create and delete loop from handler", "[event]")
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_create_loop_handler, &test_loop));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV2, test_create_loop_handler, &test_loop));
-    
+
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, portMAX_DELAY));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
+
+    TEST_TEARDOWN();
+}
+
+TEST_CASE("events are dispatched in the order they are registered", "[event]")
+{
+    TEST_SETUP();
+
+    esp_event_loop_handle_t loop;
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+
+    loop_args.task_name = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create(&loop_args, &loop));
+
+    int id_arr[7];
+
+    for (int i = 0; i < 7; i++) {
+        id_arr[i] = i;
+    }
+
+    int data_arr[12] = {0};
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV1, test_event_ordered_dispatch, id_arr + 0));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, test_event_ordered_dispatch, id_arr + 1));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, ESP_EVENT_ANY_ID, test_event_ordered_dispatch, id_arr + 2));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV2, test_event_ordered_dispatch, id_arr + 3));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_event_ordered_dispatch, id_arr + 4));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, ESP_EVENT_ANY_ID, test_event_ordered_dispatch, id_arr + 5));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV2, test_event_ordered_dispatch, id_arr + 6));
+
+    esp_event_dump(stdout);
+
+    ordered_data_t data = {
+        .arr = data_arr,
+        .index = 0
+    };
+
+    ordered_data_t* dptr = &data;
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE1_EV2, &dptr, sizeof(dptr), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &dptr, sizeof(dptr), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, &dptr, sizeof(dptr), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE1_EV1, &dptr, sizeof(dptr), portMAX_DELAY));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+
+    // Expected data executing the posts above
+    int ref_arr[12] = {1, 3, 5, 1, 2, 4, 1, 2, 6, 0, 1, 5};
+
+    for (int i = 0; i < 12; i++) {
+        TEST_ASSERT_EQUAL(ref_arr[i], data_arr[i]);
+    }
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
 
@@ -1060,6 +1126,7 @@ TEST_CASE("can dump event loop profile", "[event]")
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, test_event_simple_handler, &arg));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, ESP_EVENT_ANY_ID, test_event_simple_handler, &arg));
+
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_event_simple_handler, &arg));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV2, test_event_simple_handler, &arg));
 
