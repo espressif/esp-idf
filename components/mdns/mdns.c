@@ -3996,6 +3996,7 @@ static esp_err_t _mdns_service_task_stop()
 {
     MDNS_SERVICE_LOCK();
     _mdns_stop_timer();
+    MDNS_SERVICE_UNLOCK();
     if (_mdns_service_task_handle) {
         mdns_action_t action;
         mdns_action_t * a = &action;
@@ -4008,7 +4009,6 @@ static esp_err_t _mdns_service_task_stop()
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
-    MDNS_SERVICE_UNLOCK();
     return ESP_OK;
 }
 
@@ -4100,8 +4100,8 @@ void mdns_free()
     if (!_mdns_server) {
         return;
     }
-    _mdns_service_task_stop();
     mdns_service_remove_all(_mdns_server);
+    _mdns_service_task_stop();
     for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
         for (j=0; j<MDNS_IP_PROTOCOL_MAX; j++) {
             _mdns_pcb_deinit(i, j);
