@@ -200,15 +200,15 @@ build_ssc_02:
 build_esp_idf_tests_make:
   <<: *build_esp_idf_unit_test_template
   script:
-    - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
     - cd $CI_PROJECT_DIR/tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
     - make ut-clean-all-configs
     - make ut-build-all-configs
     - python tools/UnitTestParser.py
+    # Check if the tests demand Make built binaries. If not, delete them
     - if [ "$UNIT_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
-    # If Make, delete the CMake built artifacts
     - rm -rf builds output sdkconfig
     - rm -rf components/idf_test/unit_test/TestCaseAll.yml
     - rm -rf components/idf_test/unit_test/CIConfigs/*.yml
@@ -217,16 +217,14 @@ build_esp_idf_tests_cmake:
   <<: *build_esp_idf_unit_test_template
   script:
     - export PATH="$IDF_PATH/tools:$PATH"
-    - export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
     - cd $CI_PROJECT_DIR/tools/unit-test-app
-    # Build with CMake first
     - idf.py ut-clean-all-configs
     - idf.py ut-build-all-configs
     - python tools/UnitTestParser.py
-    # Check if test demands CMake or Make built binaries. If CMake leave the built artifacts as is then exit.
+    # Check if the tests demand CMake built binaries. If not, delete them
     - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
-    # If Make, delete the CMake built artifacts
     - rm -rf builds output sdkconfig
     - rm -rf components/idf_test/unit_test/TestCaseAll.yml
     - rm -rf components/idf_test/unit_test/CIConfigs/*.yml
