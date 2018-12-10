@@ -14,6 +14,7 @@
 #include "catch.hpp"
 #include "esp_spi_flash.h"
 #include "spi_flash_emulation.h"
+#include <functional>
 
 using namespace std;
 
