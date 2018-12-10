@@ -36,8 +36,25 @@ void unity_flush()
     uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
 }
 
+/* To start a unit test from a GDB session without console input,
+ * - set a break at unity_gets ('hb unity_gets')
+ * - resume the program ('c')
+ * - modify this value to the desired command line ('set {char[64]} unity_input_from_gdb = "5"')
+ * - optionally set a break point in the test being debugged
+ * - resume the program ('c')
+ */
+char unity_input_from_gdb[64];
+
 void unity_gets(char *dst, size_t len)
 {
+    size_t unity_input_from_gdb_len = strlen(unity_input_from_gdb);
+    if (unity_input_from_gdb_len > 0 && unity_input_from_gdb_len < len - 1) {
+        memcpy(dst, unity_input_from_gdb, unity_input_from_gdb_len);
+        dst[unity_input_from_gdb_len] = '\n';
+        dst[unity_input_from_gdb_len + 1] = 0;
+        memset(unity_input_from_gdb, 0, sizeof(unity_input_from_gdb));
+        return;
+    }
     /* UartRxString length argument is uint8_t */
     if (len >= UINT8_MAX) {
         len = UINT8_MAX;
