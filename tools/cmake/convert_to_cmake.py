@@ -118,6 +118,10 @@ def convert_project(project_path):
 
     # Convert components as needed
     for p in component_paths:
+        if "MSYSTEM" in os.environ:
+            cmd = ["cygpath", "-w", p]
+            p = subprocess.check_output(cmd).strip()
+
         convert_component(project_path, p)
 
     project_name = project_vars["PROJECT_NAME"]
