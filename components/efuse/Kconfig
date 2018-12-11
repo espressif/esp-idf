@@ -14,11 +14,12 @@ config EFUSE_CUSTOM_TABLE_FILENAME
         relative to the project root directory.
 
 config EFUSE_VIRTUAL
-    bool "Emulate eFuse work"
+    bool "Simulate eFuse operations in RAM"
     default n
     help
-     If this option is set, all permanent changes (via eFuse) are disabled.
-     Log output will state changes which would be applied, but they will not be.
+        All read and writes operations are redirected to RAM instead of eFuse registers.
+        If this option is set, all permanent changes (via eFuse) are disabled.
+        Log output will state changes which would be applied, but they will not be.
 
 choice EFUSE_CODE_SCHEME_SELECTOR
     prompt "Coding scheme"

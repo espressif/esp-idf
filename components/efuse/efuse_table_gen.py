@@ -174,7 +174,7 @@ class FuseTable(list):
         rows = ''
         rows += 'Sorted efuse table:\n'
         num = 1
-        rows = "{0} \t{1:<30} \t{2} \t{3} \t{4}".format("#", "field_name", "efuse_block", "bit_start", "bit_count") + "\n"
+        rows += "{0} \t{1:<30} \t{2} \t{3} \t{4}".format("#", "field_name", "efuse_block", "bit_start", "bit_count") + "\n"
         for p in sorted(self, key=lambda x:(x.efuse_block, x.bit_start)):
             rows += "{0} \t{1:<30} \t{2} \t{3:^8} \t{4:^8}".format(num, p.field_name, p.efuse_block, p.bit_start, p.bit_count) + "\n"
             num += 1
@@ -299,7 +299,7 @@ class FuseDefinition(object):
     def parse_block(self, strval):
         if strval == "":
             raise InputError("Field 'efuse_block' can't be left empty.")
-        if strval != "EFUSE_BLK0" and strval != "EFUSE_BLK1" and strval != "EFUSE_BLK2" and strval != "EFUSE_BLK3":
+        if strval not in ["EFUSE_BLK0", "EFUSE_BLK1", "EFUSE_BLK2", "EFUSE_BLK3"]:
             raise InputError("Field 'efuse_block' should consist from EFUSE_BLK0..EFUSE_BLK3")
         return strval
 
@@ -389,13 +389,11 @@ def create_output_files(name, output_table, debug):
         output = output_table.to_header(file_name)
         with open(file_h_path, 'w') as f:
             f.write(output)
-            f.close()
 
         status("Creating efuse *.c file " + file_c_path + " ...")
         output = output_table.to_c_file(file_name, debug)
         with open(file_c_path, 'w') as f:
             f.write(output)
-            f.close()
     else:
         print("Source files do not require updating correspond to csv file.")
 
