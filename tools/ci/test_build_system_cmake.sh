@@ -230,9 +230,9 @@ function run_tests()
 
     print_status "Can build with IDF_PATH unset and inferred by build system"
     clean_build_dir
-    sed -i.bak "s%\$ENV{IDF_PATH}%${IDF_PATH}%" CMakeLists.txt  # expand to a hardcoded path
-    (unset IDF_PATH && cd build &&
-         cmake -G Ninja .. && ninja) || failure "Ninja build failed"
+    sed -i.bak "s%\$ENV{IDF_PATH}%\${ci_idf_path}%" CMakeLists.txt  # expand to a hardcoded path
+    (ci_idf_path=${IDF_PATH} && unset IDF_PATH && cd build &&
+         cmake -G Ninja -D ci_idf_path=${ci_idf_path} .. && ninja) || failure "Ninja build failed"
     mv CMakeLists.txt.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
