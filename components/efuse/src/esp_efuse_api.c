@@ -143,12 +143,13 @@ esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk)
 // get the length of the field in bits
 int esp_efuse_get_field_size(const esp_efuse_desc_t* field[])
 {
-    assert(field != NULL);
     int bits_counter = 0;
-    int i = 0;
-    while (field[i] != NULL) {
-        bits_counter += field[i]->bit_count;
-        ++i;
+    if (field != NULL) {
+        int i = 0;
+        while (field[i] != NULL) {
+            bits_counter += field[i]->bit_count;
+            ++i;
+        }
     }
     return bits_counter;
 }

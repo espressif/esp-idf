@@ -160,7 +160,7 @@ esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk);
  *
  * @return Returns the number of bits used by field.
  */
-esp_err_t esp_efuse_get_field_size(const esp_efuse_desc_t* field[]);
+int esp_efuse_get_field_size(const esp_efuse_desc_t* field[]);
 
 /**
  * @brief   Returns value of efuse register.

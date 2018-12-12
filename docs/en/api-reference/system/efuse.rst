@@ -58,7 +58,7 @@ bit_start
     Start bit number (0..255). The bit_start field can be omitted. In this case, it will be set to bit_start + bit_count from the previous record, if it has the same efuse_block. Otherwise (if efuse_block is different, or this is the first entry), an error will be generated.
 
 bit_count
-    The number of bits to use in this field (1..256). This parameter can not be omitted.
+    The number of bits to use in this field (1..-). This parameter can not be omitted. This field also may be ``MAX_BLK_LEN`` in this case, the field length will have the maximum block length, taking into account the coding scheme (applicable for ``ESP_EFUSE_SECURE_BOOT_KEY`` and ``ESP_EFUSE_ENCRYPT_FLASH_KEY`` fields). The value ``MAX_BLK_LEN`` depends on :envvar:`CONFIG_EFUSE_CODE_SCHEME`, will be replaced with "None" - 256, "3/4" - 192, "REPEAT" - 128.
 
 comment
     This param is using for comment field, it also move to C-header file. The comment field can be omitted.
@@ -145,6 +145,8 @@ If your program was compiled with ``None`` encoding and ``3/4`` is used in the c
 Also, 3/4 coding scheme imposes restrictions on writing bits belonging to one coding unit. The whole block with a length of 256 bits is divided into 4 coding units, and in each coding unit there are 6 bytes of useful data and 2 service bytes. These 2 service bytes contain the checksum of the previous 6 data bytes.
 
 It turns out that only one field can be written into one coding unit. Repeated rewriting in one coding unit is prohibited. But if the record was made in advance or through a :cpp:func:`esp_efuse_write_block` function, then reading the fields belonging to one coding unit is possible.
+
+After changing the coding scheme, run ``efuse_common_table`` and ``efuse_custom_table`` commands to check the tables of the new coding scheme.
 
 eFuse API
 ---------

@@ -12,14 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
+#include "sdkconfig.h"
 #include "esp_efuse.h"
+#include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 20db0282fe17fec59ea46716026f5fce
-// This file was generated automatically from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
-// If you want to change some fields, you need to change esp_efuse_table.csv file then build system will generate this header file
-// To show efuse_table run the command 'make show_efuse_table'.
+// md5_digest_table 840523b9e1313240e6102615e3a497a5
+// This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
+// If you want to change some fields, you need to change esp_efuse_table.csv file
+// then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
+// To show efuse_table run the command 'show_efuse_table'.
 
+#if (CONFIG_EFUSE_CODE_SCHEME == 0)
+#define MAX_BLK_LEN 256
+#elif (CONFIG_EFUSE_CODE_SCHEME == 1)
+#define MAX_BLK_LEN 192
+#elif (CONFIG_EFUSE_CODE_SCHEME == 2)
+#define MAX_BLK_LEN 128
+#endif
+
+// The last free bit in the block is counted over the entire file.
+#define LAST_FREE_BIT_BLK1 MAX_BLK_LEN
+#define LAST_FREE_BIT_BLK2 MAX_BLK_LEN
+#define LAST_FREE_BIT_BLK3 192
+
+_Static_assert(LAST_FREE_BIT_BLK1 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
+_Static_assert(LAST_FREE_BIT_BLK2 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
+_Static_assert(LAST_FREE_BIT_BLK3 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
 
 static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK0, 72, 8}, 	 // Factory MAC addr [0],
@@ -47,7 +66,7 @@ static const esp_efuse_desc_t MAC_CUSTOM_VER[] = {
 };
 
 static const esp_efuse_desc_t SECURE_BOOT_KEY[] = {
-    {EFUSE_BLK2, 0, 256}, 	 // Security boot. Key.,
+    {EFUSE_BLK2, 0, MAX_BLK_LEN}, 	 // Security boot. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128),
 };
 
 static const esp_efuse_desc_t ABS_DONE_0[] = {
@@ -55,7 +74,7 @@ static const esp_efuse_desc_t ABS_DONE_0[] = {
 };
 
 static const esp_efuse_desc_t ENCRYPT_FLASH_KEY[] = {
-    {EFUSE_BLK1, 0, 256}, 	 // Flash encrypt. Key.,
+    {EFUSE_BLK1, 0, MAX_BLK_LEN}, 	 // Flash encrypt. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128),
 };
 
 static const esp_efuse_desc_t ENCRYPT_CONFIG[] = {
@@ -209,7 +228,7 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_CUSTOM_VER[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_KEY[] = {
-    &SECURE_BOOT_KEY[0],    		// Security boot. Key.
+    &SECURE_BOOT_KEY[0],    		// Security boot. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
     NULL
 };
 
@@ -219,7 +238,7 @@ const esp_efuse_desc_t* ESP_EFUSE_ABS_DONE_0[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_ENCRYPT_FLASH_KEY[] = {
-    &ENCRYPT_FLASH_KEY[0],    		// Flash encrypt. Key.
+    &ENCRYPT_FLASH_KEY[0],    		// Flash encrypt. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
     NULL
 };
 

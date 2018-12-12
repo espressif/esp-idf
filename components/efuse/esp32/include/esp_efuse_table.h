@@ -17,10 +17,11 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 20db0282fe17fec59ea46716026f5fce
-// This file was generated automatically from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
-// If you want to change some fields, you need to change esp_efuse_table.csv file then build system will generate this header file
-// To show efuse_table run the command 'make show_efuse_table'.
+// md5_digest_table 840523b9e1313240e6102615e3a497a5
+// This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
+// If you want to change some fields, you need to change esp_efuse_table.csv file
+// then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
+// To show efuse_table run the command 'show_efuse_table'.
 
 
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
