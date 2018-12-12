@@ -126,12 +126,19 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         }
         ESP_LOGI(GATTC_TAG, "open success");
         break;
+    case ESP_GATTC_DIS_SRVC_CMPL_EVT:
+        if (param->dis_srvc_cmpl.status != ESP_GATT_OK){
+            ESP_LOGE(GATTC_TAG, "discover service failed, status %d", param->dis_srvc_cmpl.status);
+            break;
+        }
+        ESP_LOGI(GATTC_TAG, "discover service complete conn_id %d", param->dis_srvc_cmpl.conn_id);
+        esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &remote_filter_service_uuid);
+        break;
     case ESP_GATTC_CFG_MTU_EVT:
         if (param->cfg_mtu.status != ESP_GATT_OK){
             ESP_LOGE(GATTC_TAG,"config mtu failed, error status = %x", param->cfg_mtu.status);
         }
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CFG_MTU_EVT, Status %d, MTU %d, conn_id %d", param->cfg_mtu.status, param->cfg_mtu.mtu, param->cfg_mtu.conn_id);
-        esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &remote_filter_service_uuid);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
         ESP_LOGI(GATTC_TAG, "SEARCH RES: conn_id = %x is primary service %d", p_data->search_res.conn_id, p_data->search_res.is_primary);
