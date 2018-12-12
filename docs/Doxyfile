@@ -184,6 +184,7 @@ INPUT = \
     ## Application Level Tracing - API Reference
     ##
     ../../components/app_trace/include/esp_app_trace.h \
+    ../../components/app_trace/include/esp_sysview_trace.h \
     ### Power management
     ../../components/esp_common/include/esp_pm.h \
     ../../components/esp32/include/esp32/pm.h \
