@@ -198,9 +198,12 @@ void app_main()
 
 #if CONFIG_SYSVIEW_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
     // Currently OpenOCD does not support requesting module info from target. So do the following...
-    // Give SystemView tracing module some time to handle START command from host,
-    // after that data can be sent to the host using onboard API, so user module description does not need to be requested by OpenOCD itself.
-    vTaskDelay(1);
+    // Wait untill SystemView module receives START command from host,
+    // after that data can be sent to the host using onboard API,
+    // so user module description does not need to be requested by OpenOCD itself.
+    while(!SEGGER_SYSVIEW_Started()) {
+        vTaskDelay(1);
+    }
     SEGGER_SYSVIEW_RegisterModule(&s_example_sysview_module);
 #endif
 
