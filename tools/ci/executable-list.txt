@@ -34,8 +34,9 @@ tools/ci/test_build_system_cmake.sh
 tools/ci/test_configure_ci_environment.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
-tools/esp_app_trace/apptrace_proc.py
 tools/esp_app_trace/logtrace_proc.py
+tools/esp_app_trace/sysviewtrace_proc.py
+tools/esp_app_trace/test/sysview/test.sh
 tools/format.sh
 tools/gen_esp_err_to_name.py
 tools/idf.py
