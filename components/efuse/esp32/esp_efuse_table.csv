@@ -1,9 +1,10 @@
 # field_name,       |    efuse_block, | bit_start, | bit_count, |comment #
-#                   |    (EFUSE_BLK0  | (0..255)   | (1..256)   |        #
-#                   |     EFUSE_BLK1  |            |            |        #
+#                   |    (EFUSE_BLK0  | (0..255)   | (1..-)     |        #
+#                   |     EFUSE_BLK1  |            |MAX_BLK_LEN*|        #
 #                   |     EFUSE_BLK2  |            |            |        #
 #                   |     EFUSE_BLK3) |            |            |        #
 ##########################################################################
+# *) The value MAX_BLK_LEN depends on CONFIG_EFUSE_CODE_SCHEME, will be replaced with "None" - 256. "3/4" - 192. "REPEAT" - 128.
 # !!!!!!!!!!! #
 # After editing this file, run the command manually "make efuse_common_table" or "idf.py efuse_common_table" 
 # this will generate new source files, next rebuild all the sources.
@@ -27,12 +28,12 @@ MAC_CUSTOM_VER,         EFUSE_BLK3,    184,   8,    Custom MAC version
 
 # Security boot #
 #################
-SECURE_BOOT_KEY,        EFUSE_BLK2,    0,     256,   Security boot. Key.
+SECURE_BOOT_KEY,        EFUSE_BLK2,    0,     MAX_BLK_LEN,   Security boot. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
 ABS_DONE_0,             EFUSE_BLK0,    196,   1,     Secure boot is enabled for bootloader image. EFUSE_RD_ABS_DONE_0
 
 # Flash encrypt #
 #################
-ENCRYPT_FLASH_KEY,      EFUSE_BLK1,    0,     256,  Flash encrypt. Key.
+ENCRYPT_FLASH_KEY,      EFUSE_BLK1,    0,     MAX_BLK_LEN,  Flash encrypt. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
 ENCRYPT_CONFIG,         EFUSE_BLK0,    188,   4,    Flash encrypt. EFUSE_FLASH_CRYPT_CONFIG_M
 
 DISABLE_DL_ENCRYPT,     EFUSE_BLK0,    199,   1,    Flash encrypt. Disable UART bootloader encryption. EFUSE_DISABLE_DL_ENCRYPT. 

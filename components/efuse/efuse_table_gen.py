@@ -166,7 +166,7 @@ class FuseTable(list):
     def calc_md5(self):
         txt_table = ''
         for p in self:
-            txt_table += "%s %s %d %d %s" % (p.field_name, p.efuse_block, p.bit_start, p.bit_count, p.comment) + "\n"
+            txt_table += "%s %s %d %s %s" % (p.field_name, p.efuse_block, p.bit_start, str(p.get_bit_count()), p.comment) + "\n"
         self.md5_digest_table = hashlib.md5(txt_table.encode('utf-8')).hexdigest()
 
     def show_range_used_bits(self):
@@ -194,6 +194,19 @@ class FuseTable(list):
         rows += '\nNote: Not printed ranges are free for using. (bits in EFUSE_BLK0 are reserved for Espressif)\n'
         return rows
 
+    def get_str_position_last_free_bit_in_blk(self, blk):
+        last_used_bit = 0
+        for p in self:
+            if p.efuse_block == blk:
+                if p.define is not None:
+                    return p.get_bit_count()
+                else:
+                    if last_used_bit < p.bit_start + p.bit_count:
+                        last_used_bit = p.bit_start + p.bit_count
+        if last_used_bit == 0:
+            return None
+        return str(last_used_bit)
+
     def to_header(self, file_name):
         rows = [copyright]
         rows += ["#ifdef __cplusplus",
@@ -202,9 +215,10 @@ class FuseTable(list):
                  "",
                  "",
                  "// md5_digest_table " + self.md5_digest_table,
-                 "// This file was generated automatically from the file " + file_name + ".csv. DO NOT CHANGE THIS FILE MANUALLY.",
-                 "// If you want to change some fields, you need to change " + file_name + ".csv file then build system will generate this header file",
-                 "// To show efuse_table run the command 'make show_efuse_table'.",
+                 "// This file was generated from the file " + file_name + ".csv. DO NOT CHANGE THIS FILE MANUALLY.",
+                 "// If you want to change some fields, you need to change " + file_name + ".csv file",
+                 "// then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.",
+                 "// To show efuse_table run the command 'show_efuse_table'.",
                  "",
                  ""]
 
@@ -223,15 +237,54 @@ class FuseTable(list):
 
     def to_c_file(self, file_name, debug):
         rows = [copyright]
-        rows += ['#include "esp_efuse.h"',
+        rows += ['#include "sdkconfig.h"',
+                 '#include "esp_efuse.h"',
+                 '#include <assert.h>',
                  '#include "' + file_name + '.h"',
                  "",
                  "// md5_digest_table " + self.md5_digest_table,
-                 "// This file was generated automatically from the file " + file_name + ".csv. DO NOT CHANGE THIS FILE MANUALLY.",
-                 "// If you want to change some fields, you need to change " + file_name + ".csv file then build system will generate this header file",
-                 "// To show efuse_table run the command 'make show_efuse_table'.",
-                 "",
-                 ""]
+                 "// This file was generated from the file " + file_name + ".csv. DO NOT CHANGE THIS FILE MANUALLY.",
+                 "// If you want to change some fields, you need to change " + file_name + ".csv file",
+                 "// then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.",
+                 "// To show efuse_table run the command 'show_efuse_table'."]
+
+        rows += [""]
+
+        rows += ["#if (CONFIG_EFUSE_CODE_SCHEME == 0)",
+                 "#define MAX_BLK_LEN 256",
+                 "#elif (CONFIG_EFUSE_CODE_SCHEME == 1)",
+                 "#define MAX_BLK_LEN 192",
+                 "#elif (CONFIG_EFUSE_CODE_SCHEME == 2)",
+                 "#define MAX_BLK_LEN 128",
+                 "#endif"]
+
+        rows += [""]
+
+        last_free_bit_blk1 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK1")
+        last_free_bit_blk2 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK2")
+        last_free_bit_blk3 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK3")
+
+        rows += ["// The last free bit in the block is counted over the entire file."]
+        if last_free_bit_blk1 is not None:
+            rows += ["#define LAST_FREE_BIT_BLK1 " + last_free_bit_blk1]
+        if last_free_bit_blk2 is not None:
+            rows += ["#define LAST_FREE_BIT_BLK2 " + last_free_bit_blk2]
+        if last_free_bit_blk3 is not None:
+            rows += ["#define LAST_FREE_BIT_BLK3 " + last_free_bit_blk3]
+
+        rows += [""]
+
+        if last_free_bit_blk1 is not None:
+            rows += ['_Static_assert(LAST_FREE_BIT_BLK1 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
+                     'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
+        if last_free_bit_blk2 is not None:
+            rows += ['_Static_assert(LAST_FREE_BIT_BLK2 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
+                     'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
+        if last_free_bit_blk3 is not None:
+            rows += ['_Static_assert(LAST_FREE_BIT_BLK3 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
+                     'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
+
+        rows += [""]
 
         last_name = ''
         for p in self:
@@ -267,6 +320,7 @@ class FuseDefinition(object):
         self.efuse_block = ""
         self.bit_start = None
         self.bit_count = None
+        self.define = None
         self.comment = ""
 
     @classmethod
@@ -279,7 +333,7 @@ class FuseDefinition(object):
         res.field_name = fields[0]
         res.efuse_block = res.parse_block(fields[1])
         res.bit_start = res.parse_num(fields[2])
-        res.bit_count = res.parse_num(fields[3])
+        res.bit_count = res.parse_bit_count(fields[3])
         if res.bit_count is None or res.bit_count == 0:
             raise InputError("Field bit_count can't be empty")
         res.comment = fields[4]
@@ -289,6 +343,13 @@ class FuseDefinition(object):
         if strval == "":
             return None  # Field will fill in default
         return self.parse_int(strval)
+
+    def parse_bit_count(self, strval):
+        if strval == "MAX_BLK_LEN":
+            self.define = strval
+            return self.get_max_bits_of_block()
+        else:
+            return self.parse_num(strval)
 
     def parse_int(self, v):
         try:
@@ -343,13 +404,19 @@ class FuseDefinition(object):
 
         return self.field_name + get_postfix(self.group)
 
+    def get_bit_count(self, check_define=True):
+        if check_define is True and self.define is not None:
+            return self.define
+        else:
+            return self.bit_count
+
     def to_struct(self, debug):
         start = "    {"
         if debug is True:
             start = "    {" + '"' + self.field_name + '" ,'
         return ", ".join([start + self.efuse_block,
                          str(self.bit_start),
-                         str(self.bit_count) + "}, \t // " + self.comment])
+                         str(self.get_bit_count()) + "}, \t // " + self.comment])
 
 
 def process_input_file(file, type_table):
