@@ -1,0 +1,450 @@
+Parse trace from 'cpu0.svdat'...
+Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
+Parse trace from 'cpu1.svdat'...
+Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
+Process events from '['cpu0.svdat', 'cpu1.svdat']'...
+EVENT[0]: 0.000000000 - core[0].svTraceStart(10), plen 0: []
+EVENT[1]: 0.000000000 - core[1].svTraceStart(10), plen 0: []
+EVENT[2]: 0.000010950 - core[0].svInit(24), plen 14: [sys_freq: 40000000, cpu_freq: 160000000, ram_base: 1061158912, id_shift: 0]
+EVENT[3]: 0.000010950 - core[1].svInit(24), plen 14: [sys_freq: 40000000, cpu_freq: 160000000, ram_base: 1061158912, id_shift: 0]
+EVENT[4]: 0.000024800 - core[0].svSysDesc(14), plen 0: [desc: N=FreeRTOS Application,D=ESP32,C=Xtensa,O=FreeRTOS]
+EVENT[5]: 0.000024800 - core[1].svSysDesc(14), plen 0: [desc: N=FreeRTOS Application,D=ESP32,C=Xtensa,O=FreeRTOS]
+EVENT[6]: 0.000051650 - core[0].svSysDesc(14), plen 0: [desc: I#5=SysTick]
+EVENT[7]: 0.000051650 - core[1].svSysDesc(14), plen 0: [desc: I#5=SysTick]
+EVENT[8]: 0.000104150 - core[0].svSysDesc(14), plen 0: [desc: I#6=WIFI_MAC]
+EVENT[9]: 0.000104150 - core[1].svSysDesc(14), plen 0: [desc: I#6=WIFI_MAC]
+EVENT[10]: 0.000121100 - core[0].svSysDesc(14), plen 0: [desc: I#7=WIFI_NMI]
+EVENT[11]: 0.000121100 - core[1].svSysDesc(14), plen 0: [desc: I#7=WIFI_NMI]
+EVENT[12]: 0.000138125 - core[0].svSysDesc(14), plen 0: [desc: I#8=WIFI_BB]
+EVENT[13]: 0.000138125 - core[1].svSysDesc(14), plen 0: [desc: I#8=WIFI_BB]
+EVENT[14]: 0.000154825 - core[0].svSysDesc(14), plen 0: [desc: I#9=BT_MAC]
+EVENT[15]: 0.000154825 - core[1].svSysDesc(14), plen 0: [desc: I#9=BT_MAC]
+EVENT[16]: 0.000193350 - core[0].svSysDesc(14), plen 0: [desc: I#10=BT_BB]
+EVENT[17]: 0.000193350 - core[1].svSysDesc(14), plen 0: [desc: I#10=BT_BB]
+EVENT[18]: 0.000212875 - core[0].svSysDesc(14), plen 0: [desc: I#11=BT_BB_NMI]
+EVENT[19]: 0.000212875 - core[1].svSysDesc(14), plen 0: [desc: I#11=BT_BB_NMI]
+EVENT[20]: 0.000231625 - core[0].svSysDesc(14), plen 0: [desc: I#12=RWBT]
+EVENT[21]: 0.000231625 - core[1].svSysDesc(14), plen 0: [desc: I#12=RWBT]
+EVENT[22]: 0.000250250 - core[0].svSysDesc(14), plen 0: [desc: I#13=RWBLE]
+EVENT[23]: 0.000250250 - core[1].svSysDesc(14), plen 0: [desc: I#13=RWBLE]
+EVENT[24]: 0.000269450 - core[0].svSysDesc(14), plen 0: [desc: I#14=RWBT_NMI]
+EVENT[25]: 0.000269450 - core[1].svSysDesc(14), plen 0: [desc: I#14=RWBT_NMI]
+EVENT[26]: 0.000288925 - core[0].svSysDesc(14), plen 0: [desc: I#15=RWBLE_NMI]
+EVENT[27]: 0.000288925 - core[1].svSysDesc(14), plen 0: [desc: I#15=RWBLE_NMI]
+EVENT[28]: 0.000310575 - core[0].svSysDesc(14), plen 0: [desc: I#16=SLC0]
+EVENT[29]: 0.000310575 - core[1].svSysDesc(14), plen 0: [desc: I#16=SLC0]
+EVENT[30]: 0.000329150 - core[0].svSysDesc(14), plen 0: [desc: I#17=SLC1]
+EVENT[31]: 0.000329150 - core[1].svSysDesc(14), plen 0: [desc: I#17=SLC1]
+EVENT[32]: 0.000347675 - core[0].svSysDesc(14), plen 0: [desc: I#18=UHCI0]
+EVENT[33]: 0.000347675 - core[1].svSysDesc(14), plen 0: [desc: I#18=UHCI0]
+EVENT[34]: 0.000366225 - core[0].svSysDesc(14), plen 0: [desc: I#19=UHCI1]
+EVENT[35]: 0.000366225 - core[1].svSysDesc(14), plen 0: [desc: I#19=UHCI1]
+EVENT[36]: 0.000386350 - core[0].svSysDesc(14), plen 0: [desc: I#20=TG0_T0_LEVEL]
+EVENT[37]: 0.000386350 - core[1].svSysDesc(14), plen 0: [desc: I#20=TG0_T0_LEVEL]
+EVENT[38]: 0.000406575 - core[0].svSysDesc(14), plen 0: [desc: I#21=TG0_T1_LEVEL]
+EVENT[39]: 0.000406575 - core[1].svSysDesc(14), plen 0: [desc: I#21=TG0_T1_LEVEL]
+EVENT[40]: 0.000427300 - core[0].svSysDesc(14), plen 0: [desc: I#22=TG0_WDT_LEVEL]
+EVENT[41]: 0.000427300 - core[1].svSysDesc(14), plen 0: [desc: I#22=TG0_WDT_LEVEL]
+EVENT[42]: 0.000448000 - core[0].svSysDesc(14), plen 0: [desc: I#23=TG0_LACT_LEVEL]
+EVENT[43]: 0.000448000 - core[1].svSysDesc(14), plen 0: [desc: I#23=TG0_LACT_LEVEL]
+EVENT[44]: 0.000468250 - core[0].svSysDesc(14), plen 0: [desc: I#24=TG1_T0_LEVEL]
+EVENT[45]: 0.000468250 - core[1].svSysDesc(14), plen 0: [desc: I#24=TG1_T0_LEVEL]
+EVENT[46]: 0.000488500 - core[0].svSysDesc(14), plen 0: [desc: I#25=TG1_T1_LEVEL]
+EVENT[47]: 0.000488500 - core[1].svSysDesc(14), plen 0: [desc: I#25=TG1_T1_LEVEL]
+EVENT[48]: 0.000508975 - core[0].svSysDesc(14), plen 0: [desc: I#26=TG1_WDT_LEVEL]
+EVENT[49]: 0.000508975 - core[1].svSysDesc(14), plen 0: [desc: I#26=TG1_WDT_LEVEL]
+EVENT[50]: 0.000529850 - core[0].svSysDesc(14), plen 0: [desc: I#27=TG1_LACT_LEVEL]
+EVENT[51]: 0.000529850 - core[1].svSysDesc(14), plen 0: [desc: I#27=TG1_LACT_LEVEL]
+EVENT[52]: 0.000548375 - core[0].svSysDesc(14), plen 0: [desc: I#28=GPIO]
+EVENT[53]: 0.000548375 - core[1].svSysDesc(14), plen 0: [desc: I#28=GPIO]
+EVENT[54]: 0.000570825 - core[0].svSysDesc(14), plen 0: [desc: I#29=GPIO_NMI]
+EVENT[55]: 0.000570825 - core[1].svSysDesc(14), plen 0: [desc: I#29=GPIO_NMI]
+EVENT[56]: 0.000590425 - core[0].svSysDesc(14), plen 0: [desc: I#30=FROM_CPU0]
+EVENT[57]: 0.000590425 - core[1].svSysDesc(14), plen 0: [desc: I#30=FROM_CPU0]
+EVENT[58]: 0.000610000 - core[0].svSysDesc(14), plen 0: [desc: I#31=FROM_CPU1]
+EVENT[59]: 0.000610000 - core[1].svSysDesc(14), plen 0: [desc: I#31=FROM_CPU1]
+EVENT[60]: 0.000629625 - core[0].svSysDesc(14), plen 0: [desc: I#32=FROM_CPU2]
+EVENT[61]: 0.000629625 - core[1].svSysDesc(14), plen 0: [desc: I#32=FROM_CPU2]
+EVENT[62]: 0.000649425 - core[0].svSysDesc(14), plen 0: [desc: I#33=FROM_CPU3]
+EVENT[63]: 0.000649425 - core[1].svSysDesc(14), plen 0: [desc: I#33=FROM_CPU3]
+EVENT[64]: 0.000667975 - core[0].svSysDesc(14), plen 0: [desc: I#34=SPI0]
+EVENT[65]: 0.000667975 - core[1].svSysDesc(14), plen 0: [desc: I#34=SPI0]
+EVENT[66]: 0.000686500 - core[0].svSysDesc(14), plen 0: [desc: I#35=SPI1]
+EVENT[67]: 0.000686500 - core[1].svSysDesc(14), plen 0: [desc: I#35=SPI1]
+EVENT[68]: 0.000704825 - core[0].svSysDesc(14), plen 0: [desc: I#36=SPI2]
+EVENT[69]: 0.000704825 - core[1].svSysDesc(14), plen 0: [desc: I#36=SPI2]
+EVENT[70]: 0.000723100 - core[0].svSysDesc(14), plen 0: [desc: I#37=SPI3]
+EVENT[71]: 0.000723100 - core[1].svSysDesc(14), plen 0: [desc: I#37=SPI3]
+EVENT[72]: 0.000741550 - core[0].svSysDesc(14), plen 0: [desc: I#38=I2S0]
+EVENT[73]: 0.000741550 - core[1].svSysDesc(14), plen 0: [desc: I#38=I2S0]
+EVENT[74]: 0.000760000 - core[0].svSysDesc(14), plen 0: [desc: I#39=I2S1]
+EVENT[75]: 0.000760000 - core[1].svSysDesc(14), plen 0: [desc: I#39=I2S1]
+EVENT[76]: 0.000778475 - core[0].svSysDesc(14), plen 0: [desc: I#40=UART0]
+EVENT[77]: 0.000778475 - core[1].svSysDesc(14), plen 0: [desc: I#40=UART0]
+EVENT[78]: 0.000797050 - core[0].svSysDesc(14), plen 0: [desc: I#41=UART1]
+EVENT[79]: 0.000797050 - core[1].svSysDesc(14), plen 0: [desc: I#41=UART1]
+EVENT[80]: 0.000815625 - core[0].svSysDesc(14), plen 0: [desc: I#42=UART2]
+EVENT[81]: 0.000815625 - core[1].svSysDesc(14), plen 0: [desc: I#42=UART2]
+EVENT[82]: 0.000835000 - core[0].svSysDesc(14), plen 0: [desc: I#43=SDIO_HOST]
+EVENT[83]: 0.000835000 - core[1].svSysDesc(14), plen 0: [desc: I#43=SDIO_HOST]
+EVENT[84]: 0.000854075 - core[0].svSysDesc(14), plen 0: [desc: I#44=ETH_MAC]
+EVENT[85]: 0.000854075 - core[1].svSysDesc(14), plen 0: [desc: I#44=ETH_MAC]
+EVENT[86]: 0.000875600 - core[0].svSysDesc(14), plen 0: [desc: I#45=PWM0]
+EVENT[87]: 0.000875600 - core[1].svSysDesc(14), plen 0: [desc: I#45=PWM0]
+EVENT[88]: 0.000893850 - core[0].svSysDesc(14), plen 0: [desc: I#46=PWM1]
+EVENT[89]: 0.000893850 - core[1].svSysDesc(14), plen 0: [desc: I#46=PWM1]
+EVENT[90]: 0.000912375 - core[0].svSysDesc(14), plen 0: [desc: I#47=PWM2]
+EVENT[91]: 0.000912375 - core[1].svSysDesc(14), plen 0: [desc: I#47=PWM2]
+EVENT[92]: 0.000930950 - core[0].svSysDesc(14), plen 0: [desc: I#48=PWM3]
+EVENT[93]: 0.000930950 - core[1].svSysDesc(14), plen 0: [desc: I#48=PWM3]
+EVENT[94]: 0.000949375 - core[0].svSysDesc(14), plen 0: [desc: I#49=LEDC]
+EVENT[95]: 0.000949375 - core[1].svSysDesc(14), plen 0: [desc: I#49=LEDC]
+EVENT[96]: 0.000968075 - core[0].svSysDesc(14), plen 0: [desc: I#50=EFUSE]
+EVENT[97]: 0.000968075 - core[1].svSysDesc(14), plen 0: [desc: I#50=EFUSE]
+EVENT[98]: 0.000986275 - core[0].svSysDesc(14), plen 0: [desc: I#51=CAN]
+EVENT[99]: 0.000986275 - core[1].svSysDesc(14), plen 0: [desc: I#51=CAN]
+EVENT[100]: 0.001005625 - core[0].svSysDesc(14), plen 0: [desc: I#52=RTC_CORE]
+EVENT[101]: 0.001005625 - core[1].svSysDesc(14), plen 0: [desc: I#52=RTC_CORE]
+EVENT[102]: 0.001023700 - core[0].svSysDesc(14), plen 0: [desc: I#53=RMT]
+EVENT[103]: 0.001023700 - core[1].svSysDesc(14), plen 0: [desc: I#53=RMT]
+EVENT[104]: 0.001042050 - core[0].svSysDesc(14), plen 0: [desc: I#54=PCNT]
+EVENT[105]: 0.001042050 - core[1].svSysDesc(14), plen 0: [desc: I#54=PCNT]
+EVENT[106]: 0.001061500 - core[0].svSysDesc(14), plen 0: [desc: I#55=I2C_EXT0]
+EVENT[107]: 0.001061500 - core[1].svSysDesc(14), plen 0: [desc: I#55=I2C_EXT0]
+EVENT[108]: 0.001081100 - core[0].svSysDesc(14), plen 0: [desc: I#56=I2C_EXT1]
+EVENT[109]: 0.001081100 - core[1].svSysDesc(14), plen 0: [desc: I#56=I2C_EXT1]
+EVENT[110]: 0.001099425 - core[0].svSysDesc(14), plen 0: [desc: I#57=RSA]
+EVENT[111]: 0.001099425 - core[1].svSysDesc(14), plen 0: [desc: I#57=RSA]
+EVENT[112]: 0.001118625 - core[0].svSysDesc(14), plen 0: [desc: I#58=SPI1_DMA]
+EVENT[113]: 0.001118625 - core[1].svSysDesc(14), plen 0: [desc: I#58=SPI1_DMA]
+EVENT[114]: 0.001137775 - core[0].svSysDesc(14), plen 0: [desc: I#59=SPI2_DMA]
+EVENT[115]: 0.001137775 - core[1].svSysDesc(14), plen 0: [desc: I#59=SPI2_DMA]
+EVENT[116]: 0.001156950 - core[0].svSysDesc(14), plen 0: [desc: I#60=SPI3_DMA]
+EVENT[117]: 0.001156950 - core[1].svSysDesc(14), plen 0: [desc: I#60=SPI3_DMA]
+EVENT[118]: 0.001175175 - core[0].svSysDesc(14), plen 0: [desc: I#61=WDT]
+EVENT[119]: 0.001175175 - core[1].svSysDesc(14), plen 0: [desc: I#61=WDT]
+EVENT[120]: 0.001197300 - core[0].svSysDesc(14), plen 0: [desc: I#62=TIMER1]
+EVENT[121]: 0.001197300 - core[1].svSysDesc(14), plen 0: [desc: I#62=TIMER1]
+EVENT[122]: 0.001216250 - core[0].svSysDesc(14), plen 0: [desc: I#63=TIMER2]
+EVENT[123]: 0.001216250 - core[1].svSysDesc(14), plen 0: [desc: I#63=TIMER2]
+EVENT[124]: 0.001236175 - core[0].svSysDesc(14), plen 0: [desc: I#64=TG0_T0_EDGE]
+EVENT[125]: 0.001236175 - core[1].svSysDesc(14), plen 0: [desc: I#64=TG0_T0_EDGE]
+EVENT[126]: 0.001256275 - core[0].svSysDesc(14), plen 0: [desc: I#65=TG0_T1_EDGE]
+EVENT[127]: 0.001256275 - core[1].svSysDesc(14), plen 0: [desc: I#65=TG0_T1_EDGE]
+EVENT[128]: 0.001276675 - core[0].svSysDesc(14), plen 0: [desc: I#66=TG0_WDT_EDGE]
+EVENT[129]: 0.001276675 - core[1].svSysDesc(14), plen 0: [desc: I#66=TG0_WDT_EDGE]
+EVENT[130]: 0.001297375 - core[0].svSysDesc(14), plen 0: [desc: I#67=TG0_LACT_EDGE]
+EVENT[131]: 0.001297375 - core[1].svSysDesc(14), plen 0: [desc: I#67=TG0_LACT_EDGE]
+EVENT[132]: 0.001317425 - core[0].svSysDesc(14), plen 0: [desc: I#68=TG1_T0_EDGE]
+EVENT[133]: 0.001317425 - core[1].svSysDesc(14), plen 0: [desc: I#68=TG1_T0_EDGE]
+EVENT[134]: 0.001337650 - core[0].svSysDesc(14), plen 0: [desc: I#69=TG1_T1_EDGE]
+EVENT[135]: 0.001337650 - core[1].svSysDesc(14), plen 0: [desc: I#69=TG1_T1_EDGE]
+EVENT[136]: 0.001357950 - core[0].svSysDesc(14), plen 0: [desc: I#70=TG1_WDT_EDGE]
+EVENT[137]: 0.001357950 - core[1].svSysDesc(14), plen 0: [desc: I#70=TG1_WDT_EDGE]
+EVENT[138]: 0.001378625 - core[0].svSysDesc(14), plen 0: [desc: I#71=TG1_LACT_EDGE]
+EVENT[139]: 0.001378625 - core[1].svSysDesc(14), plen 0: [desc: I#71=TG1_LACT_EDGE]
+EVENT[140]: 0.001397500 - core[0].svSysDesc(14), plen 0: [desc: I#72=MMU_IA]
+EVENT[141]: 0.001397500 - core[1].svSysDesc(14), plen 0: [desc: I#72=MMU_IA]
+EVENT[142]: 0.001416425 - core[0].svSysDesc(14), plen 0: [desc: I#73=MPU_IA]
+EVENT[143]: 0.001416425 - core[1].svSysDesc(14), plen 0: [desc: I#73=MPU_IA]
+EVENT[144]: 0.001435550 - core[0].svSysDesc(14), plen 0: [desc: I#74=CACHE_IA]
+EVENT[145]: 0.001435550 - core[1].svSysDesc(14), plen 0: [desc: I#74=CACHE_IA]
+EVENT[146]: 0.001441950 - core[0].svSysTimeUs(13), plen 0: [time: 10000]
+EVENT[147]: 0.001441950 - core[1].svSysTimeUs(13), plen 0: [time: 10000]
+EVENT[148]: 0.001647400 - core[0].svTaskInfo(9), plen 0: [tid: 12253880, prio: 22, name: esp_timer]
+EVENT[149]: 0.001647400 - core[1].svTaskInfo(9), plen 0: [tid: 12253880, prio: 22, name: esp_timer]
+EVENT[150]: 0.001652000 - core[0].svStackInfo(21), plen 0: [tid: 12253880, base: 1073408692, sz: 3436, unused: 0]
+EVENT[151]: 0.001652000 - core[1].svStackInfo(21), plen 0: [tid: 12253880, base: 1073408692, sz: 3436, unused: 0]
+EVENT[152]: 0.001738550 - core[0].svTaskInfo(9), plen 0: [tid: 12254636, prio: 24, name: ipc0]
+EVENT[153]: 0.001738550 - core[1].svTaskInfo(9), plen 0: [tid: 12254636, prio: 24, name: ipc0]
+EVENT[154]: 0.001742750 - core[0].svStackInfo(21), plen 0: [tid: 12254636, base: 1073430180, sz: 1388, unused: 0]
+EVENT[155]: 0.001742750 - core[1].svStackInfo(21), plen 0: [tid: 12254636, base: 1073430180, sz: 1388, unused: 0]
+EVENT[156]: 0.001828975 - core[0].svTaskInfo(9), plen 0: [tid: 12275372, prio: 24, name: ipc1]
+EVENT[157]: 0.001828975 - core[1].svTaskInfo(9), plen 0: [tid: 12275372, prio: 24, name: ipc1]
+EVENT[158]: 0.001833225 - core[0].svStackInfo(21), plen 0: [tid: 12275372, base: 1073432232, sz: 1384, unused: 0]
+EVENT[159]: 0.001833225 - core[1].svStackInfo(21), plen 0: [tid: 12275372, base: 1073432232, sz: 1384, unused: 0]
+EVENT[160]: 0.001871225 - core[0].svTaskInfo(9), plen 0: [tid: 12291908, prio: 5, name: blink_task]
+EVENT[161]: 0.001871225 - core[1].svTaskInfo(9), plen 0: [tid: 12291908, prio: 5, name: blink_task]
+EVENT[162]: 0.001875650 - core[0].svStackInfo(21), plen 0: [tid: 12291908, base: 1073448452, sz: 524, unused: 0]
+EVENT[163]: 0.001875650 - core[1].svStackInfo(21), plen 0: [tid: 12291908, base: 1073448452, sz: 524, unused: 0]
+EVENT[164]: 0.002070800 - core[0].svTaskInfo(9), plen 0: [tid: 12282660, prio: 1, name: main]
+EVENT[165]: 0.002070800 - core[1].svTaskInfo(9), plen 0: [tid: 12282660, prio: 1, name: main]
+EVENT[166]: 0.002075200 - core[0].svStackInfo(21), plen 0: [tid: 12282660, base: 1073437472, sz: 3296, unused: 0]
+EVENT[167]: 0.002075200 - core[1].svStackInfo(21), plen 0: [tid: 12282660, base: 1073437472, sz: 3296, unused: 0]
+EVENT[168]: 0.002153375 - core[0].svTaskInfo(9), plen 0: [tid: 12284560, prio: 0, name: IDLE0]
+EVENT[169]: 0.002153375 - core[1].svTaskInfo(9), plen 0: [tid: 12284560, prio: 0, name: IDLE0]
+EVENT[170]: 0.002157850 - core[0].svStackInfo(21), plen 0: [tid: 12284560, base: 1073441932, sz: 1236, unused: 0]
+EVENT[171]: 0.002157850 - core[1].svStackInfo(21), plen 0: [tid: 12284560, base: 1073441932, sz: 1236, unused: 0]
+EVENT[172]: 0.002228950 - core[0].svTaskInfo(9), plen 0: [tid: 12286460, prio: 0, name: IDLE1]
+EVENT[173]: 0.002228950 - core[1].svTaskInfo(9), plen 0: [tid: 12286460, prio: 0, name: IDLE1]
+EVENT[174]: 0.002233250 - core[0].svStackInfo(21), plen 0: [tid: 12286460, base: 1073443832, sz: 1112, unused: 0]
+EVENT[175]: 0.002233250 - core[1].svStackInfo(21), plen 0: [tid: 12286460, base: 1073443832, sz: 1112, unused: 0]
+EVENT[176]: 0.002319675 - core[0].svTaskInfo(9), plen 0: [tid: 12289116, prio: 1, name: Tmr Svc]
+EVENT[177]: 0.002319675 - core[1].svTaskInfo(9), plen 0: [tid: 12289116, prio: 1, name: Tmr Svc]
+EVENT[178]: 0.002324100 - core[0].svStackInfo(21), plen 0: [tid: 12289116, base: 1073445976, sz: 1384, unused: 0]
+EVENT[179]: 0.002324100 - core[1].svStackInfo(21), plen 0: [tid: 12289116, base: 1073445976, sz: 1384, unused: 0]
+EVENT[180]: 0.002431200 - core[0].svTaskInfo(9), plen 0: [tid: 12294320, prio: 5, name: blink_task2]
+EVENT[181]: 0.002431200 - core[1].svTaskInfo(9), plen 0: [tid: 12294320, prio: 5, name: blink_task2]
+EVENT[182]: 0.002438750 - core[0].svStackInfo(21), plen 0: [tid: 12294320, base: 1073451180, sz: 1748, unused: 0]
+EVENT[183]: 0.002438750 - core[1].svStackInfo(21), plen 0: [tid: 12294320, base: 1073451180, sz: 1748, unused: 0]
+EVENT[184]: 0.002446150 - core[0].svNumModules(27), plen 1: [mod_cnt: 0]
+EVENT[185]: 0.002446150 - core[1].svNumModules(27), plen 1: [mod_cnt: 0]
+EVENT[186]: 0.002484225 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[187]: 0.002496125 - core[0].svTaskStopReady(7), plen 0: [tid: 12291908, cause: 4]
+EVENT[188]: 0.002508025 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[189]: 0.002516350 - core[0].svIsrEnter(2), plen 0: [irq_num: 30]
+EVENT[190]: 0.002524325 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[191]: 0.002532350 - core[0].svExitIsrToScheduler(18), plen 0: []
+EVENT[192]: 0.002541200 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[193]: 0.002548475 - core[0].svTaskStartExec(4), plen 0: [tid: 12282660]
+EVENT[194]: 0.002556375 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[195]: 0.002564450 - core[0].vTaskDelete(33), plen 4: [xTaskToDelete: 12282660]
+EVENT[196]: 0.002577700 - core[1].svIdle(17), plen 0: []
+EVENT[197]: 0.002585225 - core[0].svIsrEnter(2), plen 0: [irq_num: 30]
+EVENT[198]: 0.002592950 - core[0].svExitIsrToScheduler(18), plen 0: []
+EVENT[199]: 0.002605950 - core[0].svIdle(17), plen 0: []
+EVENT[200]: 0.008819550 - core[0].svIsrEnter(2), plen 0: [irq_num: 5]
+EVENT[201]: 0.008828075 - core[0].svTaskStartReady(6), plen 0: [tid: 12291908]
+EVENT[202]: 0.008828075 - core[1].svTaskStartReady(6), plen 0: [tid: 12291908]
+EVENT[203]: 0.008837475 - core[0].svExitIsrToScheduler(18), plen 0: []
+EVENT[204]: 0.008850450 - core[0].svTaskStartExec(4), plen 0: [tid: 12291908]
+EVENT[205]: 0.008872650 - core[0].svModuleDesc(22), plen 0: [mod_id: 0, evt_off: 512, desc: ESP32 SystemView Heap Tracing Module]
+EVENT[206]: 0.008872650 - core[1].svModuleDesc(22), plen 0: [mod_id: 0, evt_off: 512, desc: ESP32 SystemView Heap Tracing Module]
+EVENT[207]: 0.008886175 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[208]: 0.008886175 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[209]: 0.008897425 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[210]: 0.008906150 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[211]: 0.008919900 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450504, size: 64, callers: [1074601571, 1074296884]]
+[0.008919900] HEAP: Allocated 64 bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:65
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[212]: 0.008928250 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[213]: 0.008957950 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450572, size: 80, callers: [1074298654, 1074299267]]
+[0.008957950] HEAP: Allocated 80 bytes @ 0x3ffb8e4c from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+
+EVENT[214]: 0.008967250 - core[0].xQueueGenericCreate(47), plen 3: [uxQueueLength: 1, uxItemSize: 0, ucQueueType: 4]
+EVENT[215]: 0.008977300 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[216]: 0.008984625 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450656, size: 65, callers: [1074601382, 1074296884]]
+[0.008984625] HEAP: Allocated 65 bytes @ 0x3ffb8ea0 from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:30
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[217]: 0.008995725 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[218]: 0.009010075 - core[1].svIsrEnter(2), plen 0: [irq_num: 5]
+EVENT[219]: 0.009018025 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[220]: 0.009031900 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[221]: 0.009089600 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073434644, size: 80, callers: [1074298654, 1074299267]]
+[0.009089600] HEAP: Allocated 80 bytes @ 0x3ffb5014 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+
+EVENT[222]: 0.009098175 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[223]: 0.009106300 - core[0].xQueueGenericCreate(47), plen 3: [uxQueueLength: 1, uxItemSize: 0, ucQueueType: 4]
+EVENT[224]: 0.009113825 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[225]: 0.009121600 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[226]: 0.009129000 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[227]: 0.009137900 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[228]: 0.009145425 - core[1].svIdle(17), plen 0: []
+EVENT[229]: 0.009169600 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[230]: 0.009185225 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[231]: 0.009195125 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[232]: 0.009195125 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[233]: 0.009207000 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[234]: 0.009215575 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[235]: 0.009223275 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073434728, size: 96, callers: [1074601587, 1074296884]]
+[0.009223275] HEAP: Allocated 96 bytes @ 0x3ffb5068 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:68
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[236]: 0.009231050 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[237]: 0.009241875 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[238]: 0.009257225 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[239]: 0.009269200 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[240]: 0.009278275 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[241]: 0.009286275 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[242]: 0.009303450 - core[1].svIdle(17), plen 0: []
+EVENT[243]: 0.009310950 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[244]: 0.009329625 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[245]: 0.009339525 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[246]: 0.009339525 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[247]: 0.009351425 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[248]: 0.009359450 - core[0].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450504, callers: [1074601600, 1074296884]]
+[0.009359450] HEAP: Freed bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:70
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[249]: 0.009367800 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[250]: 0.009378950 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[251]: 0.009387450 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[252]: 0.009402575 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[253]: 0.009414900 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[254]: 0.009423125 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[255]: 0.009430250 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[256]: 0.009445425 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[257]: 0.009453075 - core[1].svIdle(17), plen 0: []
+EVENT[258]: 0.009469225 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[259]: 0.009479025 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[260]: 0.009479025 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[261]: 0.009490950 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[262]: 0.009499475 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[263]: 0.009507600 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450504, size: 10, callers: [1074601615, 1074296884]]
+[0.009507600] HEAP: Allocated 10 bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:72
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[264]: 0.009515300 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[265]: 0.009526100 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[266]: 0.009541550 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[267]: 0.009553850 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[268]: 0.009561100 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[269]: 0.009568400 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[270]: 0.009585075 - core[1].svIdle(17), plen 0: []
+EVENT[271]: 0.009593375 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[272]: 0.009609150 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[273]: 0.009621875 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[274]: 0.009621875 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[275]: 0.009633775 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[276]: 0.009642300 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[277]: 0.009649475 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450520, size: 23, callers: [1074601628, 1074296884]]
+[0.009649475] HEAP: Allocated 23 bytes @ 0x3ffb8e18 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:73
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[278]: 0.009657875 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[279]: 0.009666025 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[280]: 0.009681500 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[281]: 0.009693375 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[282]: 0.009702800 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[283]: 0.009710550 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[284]: 0.009726725 - core[1].svIdle(17), plen 0: []
+EVENT[285]: 0.010504825 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[286]: 0.010520650 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[287]: 0.010530550 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[288]: 0.010530550 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[289]: 0.010542400 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[290]: 0.010550025 - core[0].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450520, callers: [1074601643, 1074296884]]
+[0.010550025] HEAP: Freed bytes @ 0x3ffb8e18 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:76
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[291]: 0.010557450 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[292]: 0.010569700 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[293]: 0.010577700 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[294]: 0.010592825 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[295]: 0.010605950 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[296]: 0.010613575 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[297]: 0.010620900 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[298]: 0.010637050 - core[1].svIdle(17), plen 0: []
+EVENT[299]: 0.012240950 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[300]: 0.012256775 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[301]: 0.012266650 - core[0].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[302]: 0.012266650 - core[1].svTaskStartReady(6), plen 0: [tid: 12294320]
+EVENT[303]: 0.012281350 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[304]: 0.012289475 - core[0].svTaskStopReady(7), plen 0: [tid: 12291908, cause: 27]
+EVENT[305]: 0.012297450 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[306]: 0.012306350 - core[0].svIsrEnter(2), plen 0: [irq_num: 30]
+EVENT[307]: 0.012312875 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[308]: 0.012320700 - core[0].svExitIsrToScheduler(18), plen 0: []
+EVENT[309]: 0.012328950 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[310]: 0.012338100 - core[0].svIdle(17), plen 0: []
+EVENT[311]: 0.012640475 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[312]: 0.014931850 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[313]: 0.014963325 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[314]: 0.014984150 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073434828, size: 97, callers: [1074601399, 1074296884]]
+[0.014984150] HEAP: Allocated 97 bytes @ 0x3ffb50cc from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:33
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[315]: 0.014997400 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[316]: 0.015031050 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[317]: 0.017622800 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[318]: 0.017638675 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[319]: 0.017656375 - core[1].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450656, callers: [1074601412, 1074296884]]
+[0.017656375] HEAP: Freed bytes @ 0x3ffb8ea0 from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:35
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[320]: 0.017674025 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[321]: 0.017701700 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[322]: 0.018819550 - core[0].svIsrEnter(2), plen 0: [irq_num: 5]
+EVENT[323]: 0.018829625 - core[0].svExitIsrToScheduler(18), plen 0: []
+EVENT[324]: 0.018844750 - core[0].svIdle(17), plen 0: []
+EVENT[325]: 0.019010075 - core[1].svIsrEnter(2), plen 0: [irq_num: 5]
+EVENT[326]: 0.019017950 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[327]: 0.019033200 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
+EVENT[328]: 0.019358925 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[329]: 0.019374600 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[330]: 0.019395425 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450520, size: 11, callers: [1074601427, 1074296884]]
+[0.019395425] HEAP: Allocated 11 bytes @ 0x3ffb8e18 from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:37
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[331]: 0.019412600 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[332]: 0.019446250 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[333]: 0.022049900 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[334]: 0.022065775 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[335]: 0.022086625 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450536, size: 24, callers: [1074601440, 1074296884]]
+[0.022086625] HEAP: Allocated 24 bytes @ 0x3ffb8e28 from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:38
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[336]: 0.022103925 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[337]: 0.022137550 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[338]: 0.024740850 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[339]: 0.024756725 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[340]: 0.024770475 - core[1].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450536, callers: [1074601455, 1074296884]]
+[0.024770475] HEAP: Freed bytes @ 0x3ffb8e28 from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:41
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+EVENT[341]: 0.024791750 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[342]: 0.024819500 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
+EVENT[343]: 0.026476950 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12275732, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[344]: 0.026495700 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
+EVENT[345]: 0.026506975 - core[0].svTaskStartReady(6), plen 0: [tid: 12291908]
+EVENT[346]: 0.026506975 - core[1].svTaskStartReady(6), plen 0: [tid: 12291908]
+EVENT[347]: 0.026518525 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
+EVENT[348]: 0.026526625 - core[0].svIsrEnter(2), plen 0: [irq_num: 30]
+EVENT[349]: 0.026535575 - core[0].svExitIsrToScheduler(18), plen 0: []
+EVENT[350]: 0.026544075 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
+EVENT[351]: 0.026551650 - core[0].svTaskStartExec(4), plen 0: [tid: 12291908]
+EVENT[352]: 0.026559500 - core[1].svExitIsrToScheduler(18), plen 0: []
+EVENT[353]: 0.148816725 - core[1].svIdle(17), plen 0: []
+EVENT[354]: 0.148825750 - core[0].vTaskDelay(34), plen 1: [xTicksToDelay: 1]
+EVENT[355]: 0.148833200 - core[0].svTaskStopReady(7), plen 0: [tid: 12291908, cause: 4]
+EVENT[356]: 0.148839250 - core[0].svTraceStop(11), plen 0: []
+EVENT[357]: 0.148839250 - core[1].svTraceStop(11), plen 0: []
+Processing completed.
+Processed 358 events
+=============== LOG TRACE REPORT ===============
+Processed 0 log messages.
+=============== HEAP TRACE REPORT ===============
+Processed 14 heap events.
+[0.008957950] HEAP: Allocated 80 bytes @ 0x3ffb8e4c from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+
+[0.009089600] HEAP: Allocated 80 bytes @ 0x3ffb5014 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+
+[0.009223275] HEAP: Allocated 96 bytes @ 0x3ffb5068 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:68
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+[0.009507600] HEAP: Allocated 10 bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:72
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+[0.014984150] HEAP: Allocated 97 bytes @ 0x3ffb50cc from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:33
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+[0.019395425] HEAP: Allocated 11 bytes @ 0x3ffb8e18 from task "blink_task2" on core 1 by: 
+/home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:37
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+
+Found 374 leaked bytes in 6 blocks.

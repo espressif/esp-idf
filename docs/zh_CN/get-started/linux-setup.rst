@@ -12,15 +12,15 @@ Linux 平台工具链的标准设置
 
 - CentOS 7::
 
-    sudo yum install gcc git wget make ncurses-devel flex bison gperf python pyserial
+    sudo yum install gcc git wget make ncurses-devel flex bison gperf python pyserial python-pyelftools
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
 
 .. note::
 
@@ -52,7 +52,7 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
       .. include:: /_build/inc/unpack-code-linux32.inc
 
-.. _setup-linux-toolchain-add-it-to-path:  
+.. _setup-linux-toolchain-add-it-to-path:
 
 2. 工具链将会被解压到 ``~/esp/xtensa-esp32-elf/`` 目录。
 
@@ -67,9 +67,9 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
    然后，当你需要使用工具链时，在命令行输入 ``get_esp32``，然后工具链会自动添加到你的 ``PATH`` 中。
 
     .. note::
-    
+
         如果将 ``/bin/bash`` 设置为登录 shell，且同时存在 ``.bash_profile`` 和 ``.profile``，则更新 ``.bash_profile`` 。在 CentOS 环境下, ``alias`` 需要添加到 ``.bashrc`` 文件中。
-    
+
 3. 退出并重新登录以使 ``.profile`` 更改生效。 运行以下命令来检查 ``PATH`` 设置是否正确： ::
 
         printenv PATH
