@@ -1689,6 +1689,10 @@ void SEGGER_SYSVIEW_Stop(void) {
   RECORD_END();
 }
 
+U8 SEGGER_SYSVIEW_Started(void) {
+    return _SYSVIEW_Globals.EnableState;
+}
+
 /*********************************************************************
 *
 *       SEGGER_SYSVIEW_GetSysDesc()
@@ -2678,7 +2682,7 @@ void SEGGER_SYSVIEW_ErrorfTarget(const char* s, ...) {
 void SEGGER_SYSVIEW_Print(const char* s) {
   U8* pPayload;
   U8* pPayloadStart;
-  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 2 * SEGGER_SYSVIEW_QUANTA_U32 + SEGGER_SYSVIEW_MAX_STRING_LEN);
+  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + 2 * SEGGER_SYSVIEW_QUANTA_U32 + SEGGER_SYSVIEW_MAX_STRING_LEN + 3/*1 or 3 bytes for string length*/);
   //
   pPayload = _EncodeStr(pPayloadStart, s, SEGGER_SYSVIEW_MAX_STRING_LEN);
   ENCODE_U32(pPayload, SEGGER_SYSVIEW_LOG);

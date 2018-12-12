@@ -107,6 +107,14 @@ menu "Application Level Tracing"
             help
                 Configures maximum supported tasks in sysview debug
 
+        config SYSVIEW_BUF_WAIT_TMO
+            int "Trace buffer wait timeout"
+            depends on SYSVIEW_ENABLE
+            default 500
+            help
+                Configures timeout (in us) to wait for free space in trace buffer.
+                Set to -1 to wait forever and avoid lost events.
+
         config SYSVIEW_EVT_OVERFLOW_ENABLE
             bool "Trace Buffer Overflow Event"
             depends on SYSVIEW_ENABLE

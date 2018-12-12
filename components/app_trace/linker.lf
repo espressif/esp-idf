@@ -1,7 +1,12 @@
 [mapping]
 archive: libapp_trace.a
 entries: 
-    * (noflash)
+    app_trace (noflash)
+    app_trace_util (noflash)
+    SEGGER_SYSVIEW (noflash)
+    SEGGER_RTT_esp32 (noflash)
+    SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
+    SEGGER_SYSVIEW_FreeRTOS (noflash)
 
 [mapping]
 archive: libdriver.a
