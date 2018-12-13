@@ -31,7 +31,7 @@
  * so iBeacon sender and receiver should not run simultaneously */
 #define IBEACON_SENDER      0
 #define IBEACON_RECEIVER    1
-#define IBEACON_MODE IBEACON_SENDER
+#define IBEACON_MODE CONFIG_IBEACON_MODE
 
 /* Major and Minor part are stored in big endian mode in iBeacon packet,
  * need to use this macro to transfer while creating or processing
