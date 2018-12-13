@@ -45,7 +45,7 @@ EXCEPTION_PATTERN = re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\
 ABORT_PATTERN = re.compile(r"(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)")
 FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 END_LIST_STR = r'\r?\nEnter test for running'
-TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r]+)\r?\n(' + END_LIST_STR + r')?')
+TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r\n]+)\r?\n(' + END_LIST_STR + r')?')
 TEST_SUBMENU_PATTERN = re.compile(r'\s+\((\d+)\)\s+"[^"]+"\r?\n(?=(?=\()|(' + END_LIST_STR + r'))')
 
 SIMPLE_TEST_ID = 0

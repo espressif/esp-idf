@@ -1541,6 +1541,38 @@ UT_012_03:
     - UT_T1_1
     - 8Mpsram
 
+UT_017_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+
+UT_017_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+
+UT_017_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+
+UT_017_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+    - psram
+
+UT_017_05:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_1
+    - 8Mpsram
+
 UT_601_01:
   <<: *unit_test_template
   tags:
