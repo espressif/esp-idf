@@ -553,6 +553,91 @@ bt_status_t btc_storage_remove_ble_dev_type(bt_bdaddr_t *remote_bd_addr, bool fl
     return ret;
 }
 
+static bt_status_t _btc_storage_set_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, uint8_t auth_mode, bool flush)
+{
+    int ret;
+    bdstr_t bdstr;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr_t));
+    ret = btc_config_set_int(bdstr, BTC_BLE_STORAGE_LE_AUTH_MODE_STR, (int)auth_mode);
+    if (ret == false) {
+        return BT_STATUS_FAIL;
+    }
+
+    if (flush) {
+        _btc_storage_save();
+    }
+
+    return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_storage_set_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, uint8_t auth_mode, bool flush)
+{
+    bt_status_t ret;
+
+    btc_config_lock();
+    ret = _btc_storage_set_ble_dev_auth_mode(remote_bd_addr, auth_mode, flush);
+    btc_config_unlock();
+
+    return ret;
+}
+
+static bt_status_t _btc_storage_get_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, int* auth_mode)
+{
+    bdstr_t bdstr;
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+    int ret = btc_config_get_int(bdstr, BTC_BLE_STORAGE_LE_AUTH_MODE_STR, auth_mode);
+    return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+bt_status_t btc_storage_get_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, int* auth_mode)
+{
+    bt_status_t ret;
+
+    btc_config_lock();
+    ret = _btc_storage_get_ble_dev_auth_mode(remote_bd_addr, auth_mode);
+    btc_config_unlock();
+
+    return ret;
+}
+
+static bt_status_t _btc_storage_remove_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, bool flush)
+{
+    bool ret = true;
+    bdstr_t bdstr;
+    uint32_t auth_mode = 0;
+
+    bdaddr_to_string(remote_bd_addr, bdstr, sizeof(bdstr));
+
+    ret = btc_config_get_int(bdstr, BTC_BLE_STORAGE_LE_AUTH_MODE_STR, (int *)&auth_mode);
+    if (ret == false) {
+        //cannot find the key, just return SUCCESS, indicate already removed
+        return BT_STATUS_SUCCESS;
+    }
+
+    ret = btc_config_remove(bdstr, BTC_BLE_STORAGE_LE_AUTH_MODE_STR);
+    if (ret == false) {
+        return BT_STATUS_FAIL;
+    }
+
+    if (flush) {
+        _btc_storage_save();
+    }
+
+    return  BT_STATUS_SUCCESS;
+}
+
+bt_status_t btc_storage_remove_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, bool flush)
+{
+    bt_status_t ret;
+
+    btc_config_lock();
+    ret = _btc_storage_remove_ble_dev_auth_mode(remote_bd_addr, flush);
+    btc_config_unlock();
+
+    return ret;
+}
+
 static bt_status_t _btc_storage_set_remote_addr_type(bt_bdaddr_t *remote_bd_addr, uint8_t addr_type, bool flush)
 {
     int ret;
@@ -657,7 +742,11 @@ static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
             bdcpy(bta_bd_addr, bd_addr.address);
 
             if (!*device_added) {
-                BTA_DmAddBleDevice(bta_bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
+                int auth_mode = 0;
+                if(_btc_storage_get_ble_dev_auth_mode(&bd_addr, &auth_mode) != BT_STATUS_SUCCESS) {
+                    BTC_TRACE_WARNING("%s Failed to get auth mode from flash, please erase flash and download the firmware again", __func__);
+                }
+                BTA_DmAddBleDevice(bta_bd_addr, addr_type, auth_mode, BT_DEVICE_TYPE_BLE);
                 *device_added = true;
             }
 

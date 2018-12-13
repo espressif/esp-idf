@@ -66,13 +66,14 @@ extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
 **                  bd_name          - Name of the peer device.  NULL if unknown.
 **                  dev_type         - Remote device's device type.
 **                  addr_type        - LE device address type.
+**                  auth_mode        - auth mode             
 **
 ** Returns          TRUE if added OK, else FALSE
 **
 *******************************************************************************/
 #if (SMP_INCLUDED == TRUE)
 BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE dev_type,
-                             tBLE_ADDR_TYPE addr_type)
+                             tBLE_ADDR_TYPE addr_type, UINT32 auth_mode)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec;
     UINT8               i = 0;
@@ -125,6 +126,7 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
     }
     p_dev_rec->device_type |= dev_type;
     p_dev_rec->ble.ble_addr_type = addr_type;
+    p_dev_rec->ble.auth_mode = auth_mode;
 
     memcpy (p_dev_rec->ble.pseudo_addr, bd_addr, BD_ADDR_LEN);
     /* sync up with the Inq Data base*/

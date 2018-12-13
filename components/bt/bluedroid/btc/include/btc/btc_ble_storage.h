@@ -32,6 +32,7 @@
 #define BTC_BLE_STORAGE_LE_KEY_LENC_STR             "LE_KEY_LENC"
 #define BTC_BLE_STORAGE_LE_KEY_LID_STR              "LE_KEY_LID"
 #define BTC_BLE_STORAGE_LE_KEY_LCSRK_STR            "LE_KEY_LCSRK"
+#define BTC_BLE_STORAGE_LE_AUTH_MODE_STR            "AuthMode"
 
 #define BTC_BLE_STORAGE_LOCAL_ADAPTER_STR           "Adapter"
 #define BTC_BLE_STORAGE_LE_LOCAL_KEY_IR_STR         "LE_LOCAL_KEY_IR"
@@ -65,6 +66,12 @@ bt_status_t btc_storage_add_ble_local_key(char *key, uint8_t key_type, uint8_t k
 bt_status_t btc_storage_remove_ble_local_keys(void);
 
 bt_status_t btc_storage_get_ble_local_key(uint8_t key_type, char *key_value, int key_len);
+
+bt_status_t btc_storage_set_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, uint8_t auth_mode, bool flush);
+
+bt_status_t btc_storage_get_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, int* auth_mode);
+
+bt_status_t btc_storage_remove_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, bool flush);
 
 bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr, int *addr_type);
 
