@@ -409,14 +409,9 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		unsigned count;
 		data++;
 		i=gdbGetHexVal(&data, -1);
-		const char * ret = "OK";
-		if (i == findCurrentTaskIndex()) ret = "E00";
-		else {			
-			count = getAllTasksHandle(i, 0, 0, 0);
-			if (i >= count) ret = "E00";
-		}
+		count = getAllTasksHandle(i, 0, 0, 0);
 		gdbPacketStart();
-		gdbPacketStr(ret);
+		gdbPacketStr(i < count ? "OK" : "E00");
 		gdbPacketEnd();
 		return ST_OK;
 	} else if (cmd[0]=='q') {	//Extended query
