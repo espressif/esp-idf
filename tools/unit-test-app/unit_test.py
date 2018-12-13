@@ -300,8 +300,8 @@ def run_unit_test_cases(env, extra_data):
 
 class Handler(threading.Thread):
 
-    WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)\]!')
-    SEND_SIGNAL_PATTERN = re.compile(r'Send signal: \[(.+)\]!')
+    WAIT_SIGNAL_PATTERN = re.compile(r'Waiting for signal: \[(.+)]!')
+    SEND_SIGNAL_PATTERN = re.compile(r'Send signal: \[([^]]+)](\[([^]]+)])?!')
     FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 
     def __init__(self, dut, sent_signal_list, lock, parent_case_name, child_case_index, timeout):
@@ -348,15 +348,23 @@ class Handler(threading.Thread):
                     Utility.console_log("Timeout in device for function: %s" % self.child_case_name, color="orange")
                     break
                 with self.lock:
-                    if expected_signal in self.sent_signal_list:
-                        self.dut.write(" ")
-                        self.sent_signal_list.remove(expected_signal)
-                        break
-                time.sleep(0.01)
+                    for sent_signal in self.sent_signal_list:
+                        if expected_signal == sent_signal["name"]:
+                            self.dut.write(sent_signal["parameter"])
+                            self.sent_signal_list.remove(sent_signal)
+                            break
+                    else:
+                        time.sleep(0.01)
+                        continue
+                    break
 
         def device_send_action(data):
             with self.lock:
-                self.sent_signal_list.append(data[0].encode('utf-8'))
+                self.sent_signal_list.append({
+                    "name": data[0].encode('utf-8'),
+                    "parameter": "" if data[2] is None else data[2].encode('utf-8')
+                    # no parameter means we only write EOL to DUT
+                })
 
         def handle_device_test_finish(data):
             """ test finished without reset """
