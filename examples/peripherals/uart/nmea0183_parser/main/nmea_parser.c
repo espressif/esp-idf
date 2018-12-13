@@ -201,6 +201,7 @@ static void parse_gsv(esp_gps_t *esp_gps)
     switch (esp_gps->item_num) {
     case 1: /* total GSV numbers */
         esp_gps->sat_count = (uint8_t)strtol(esp_gps->item_str, NULL, 10);
+        break;
     case 2: /* Current GSV statement number */
         esp_gps->sat_num = (uint8_t)strtol(esp_gps->item_str, NULL, 10);
         break;
