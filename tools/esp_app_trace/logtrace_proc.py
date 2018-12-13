@@ -6,7 +6,6 @@ import argparse
 import struct
 import sys
 import elftools.elf.elffile as elffile
-import ctypes
 import espytrace.apptrace as apptrace
 
 
