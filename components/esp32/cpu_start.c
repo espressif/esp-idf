@@ -179,8 +179,12 @@ void IRAM_ATTR call_start_cpu0()
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
         ESP_EARLY_LOGI(TAG, "Application information:");
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
         ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
+#endif
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
         ESP_EARLY_LOGI(TAG, "App version:      %s", app_desc->version);
+#endif
 #ifdef CONFIG_APP_SECURE_VERSION
         ESP_EARLY_LOGI(TAG, "Secure version:   %x", app_desc->secure_version);
 #endif
