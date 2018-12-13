@@ -18,7 +18,12 @@ endfunction()
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_PATH}/port/include")
 
-if(MSYS)
+# Needed in order to workaround issue with improper conversion to native path
+# when building on MSYS2. This ensures that when building on MSYS, Unix style 
+# paths are used.
+set(msystem $ENV{MSYSTEM})
+
+if(MSYS OR msystem)
     set(CMAKE_HOST_UNIX 1)
 endif()
 
