@@ -75,13 +75,27 @@ As the secnario in the above example, slave should get GPIO level after master s
 DUT1 (master) console::
 
     Waiting for signal: [output high level]!
-    Please press "Enter" key to once any board send this signal.
+    Please press "Enter" key once any board send this signal.
 
 DUT2 (slave) console::
 
     Send signal: [output high level]!
 
-Once the signal is set from DUT2, you need to press "Enter" on DUT1, then DUT1 unblocks from ``unity_wait_for_signal`` and starts to change GPIO level.
+Once the signal is sent from DUT2, you need to press "Enter" on DUT1, then DUT1 unblocks from ``unity_wait_for_signal`` and starts to change GPIO level.
+
+Signals can also be used to pass parameters between multiple devices. For example, DUT1 want to know the MAC address of DUT2, so it can connect to DUT2.
+In this case, ``unity_wait_for_signal_param`` and ``unity_send_signal_param`` can be used:
+
+DUT1 console::
+
+    Waiting for signal: [dut2 mac address]!
+    Please input parameter value from any board send this signal and press "Enter" key.
+
+DUT2 console:: 
+
+    Send signal: [dut2 mac address][10:20:30:40:50:60]!
+
+Once the signal is sent from DUT2, you need to input ``10:20:30:40:50:60`` on DUT1 and press "Enter". Then DUT1 will get the MAC address string of DUT2 and unblocks from ``unity_wait_for_signal_param``, start to connect to DUT2.
 
 
 Add multiple stages test cases
@@ -165,13 +179,13 @@ Normal case will print the case name and description. Master slave cases will al
 
 Test cases can be run by inputting one of the following:
 
-- Test case name in quotation marks to run a single test case 
+- Test case name in quotation marks (for example, ``"esp_ota_begin() verifies arguments"``) to run a single test case.
 
-- Test case index to run a single test case
+- Test case index (for example, ``1``) to run a single test case.
 
-- Module name in square brackets to run all test cases for a specific module
+- Module name in square brackets (for example, ``[cxx]``) to run all test cases for a specific module.
 
-- An asterisk to run all test cases
+- An asterisk (``*``) to run all test cases
 
 ``[multi_device]`` and ``[multi_stage]`` tags tell the test runner whether a test case is a multiple devices or multiple stages test case.
 These tags are automatically added by ```TEST_CASE_MULTIPLE_STAGES`` and ``TEST_CASE_MULTIPLE_DEVICES`` macros.
