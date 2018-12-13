@@ -11,11 +11,13 @@ ifndef IS_BOOTLOADER_BUILD
 GET_PROJECT_VER ?=
 ifeq ("${PROJECT_VER}", "")
 ifeq ("$(wildcard ${PROJECT_PATH}/version.txt)","")
-GET_PROJECT_VER := $(shell cd ${PROJECT_PATH} && git describe --always --tags --dirty || echo "Not found git repo")
-ifeq ("${GET_PROJECT_VER}", "Not found git repo")
-$(info Project do not have git repo, it needs to get PROJECT_VER from `git describe` command.)
-GET_PROJECT_VER := ""
+
+GET_PROJECT_VER := $(shell cd ${PROJECT_PATH} && git describe --always --tags --dirty 2> /dev/null)
+ifeq ("${GET_PROJECT_VER}", "")
+GET_PROJECT_VER := "1"
+$(info Project is not inside a git repository, will not use 'git describe' to determine PROJECT_VER.)
 endif
+
 else
 # read from version.txt
 GET_PROJECT_VER := $(shell cat ${PROJECT_PATH}/version.txt)
@@ -24,7 +26,7 @@ endif
 # If ``PROJECT_VER`` variable set in project Makefile file, its value will be used.
 # Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
 # Else, if the project is located inside a Git repository, the output of git describe will be used.
-# Otherwise, ``PROJECT_VER`` will be empty.
+# Otherwise, ``PROJECT_VER`` will be "1".
 
 ifeq ("${PROJECT_VER}", "")
 PROJECT_VER:= $(GET_PROJECT_VER)
