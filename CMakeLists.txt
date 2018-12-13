@@ -75,7 +75,9 @@ idf_get_git_revision()
 idf_check_config_target()
 
 ## get PROJECT_VER
-app_get_revision("${CMAKE_SOURCE_DIR}")
+if(NOT BOOTLOADER_BUILD)
+    app_get_revision("${CMAKE_SOURCE_DIR}")
+endif()
 
 # Add some idf-wide definitions
 idf_set_global_compile_options()
