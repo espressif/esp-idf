@@ -239,6 +239,9 @@ typedef struct {
     struct tcpip_api_call_data call;
     tcpip_adapter_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
+    struct pbuf *pbt;
+    const ip_addr_t *ip;
+    uint16_t port;
     esp_err_t err;
 } mdns_api_call_t;
 
@@ -274,7 +277,7 @@ esp_err_t _mdns_pcb_init(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_prot
         .tcpip_if = tcpip_if,
         .ip_protocol = ip_protocol
     };
-    tcpip_api_call(_mdns_pcb_init_api, (struct tcpip_api_call_data*)&msg);
+    tcpip_api_call(_mdns_pcb_init_api, &msg.call);
     return msg.err;
 }
 
@@ -284,29 +287,44 @@ esp_err_t _mdns_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_pr
         .tcpip_if = tcpip_if,
         .ip_protocol = ip_protocol
     };
-    tcpip_api_call(_mdns_pcb_deinit_api, (struct tcpip_api_call_data*)&msg);
+    tcpip_api_call(_mdns_pcb_deinit_api, &msg.call);
     return msg.err;
+}
+
+static err_t _mdns_udp_pcb_write_api(struct tcpip_api_call_data *api_call_msg)
+{
+    void * nif = NULL;
+    mdns_api_call_t * msg = (mdns_api_call_t *)api_call_msg;
+    mdns_pcb_t * _pcb = &_mdns_server->interfaces[msg->tcpip_if].pcbs[msg->ip_protocol];
+    esp_err_t err = tcpip_adapter_get_netif(msg->tcpip_if, &nif);
+    if (err) {
+        msg->err = err;
+        return err;
+    }
+    err = udp_sendto_if (_pcb->pcb, msg->pbt, msg->ip, msg->port, (struct netif *)nif);
+    pbuf_free(msg->pbt);
+    msg->err = err;
+    return err;
 }
 
 size_t _mdns_udp_pcb_write(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, const ip_addr_t *ip, uint16_t port, uint8_t * data, size_t len)
 {
-    struct netif * netif = NULL;
-    void * nif = NULL;
-    esp_err_t err = tcpip_adapter_get_netif(tcpip_if, &nif);
-    netif = (struct netif *)nif;
-    if (err) {
-        return 0;
-    }
-
     struct pbuf* pbt = pbuf_alloc(PBUF_TRANSPORT, len, PBUF_RAM);
     if (pbt == NULL) {
         return 0;
     }
     memcpy((uint8_t *)pbt->payload, data, len);
 
-    err = udp_sendto_if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb, pbt, ip, port, netif);
-    pbuf_free(pbt);
-    if (err) {
+    mdns_api_call_t msg = {
+        .tcpip_if = tcpip_if,
+        .ip_protocol = ip_protocol,
+        .pbt = pbt,
+        .ip = ip,
+        .port = port
+    };
+    tcpip_api_call(_mdns_udp_pcb_write_api, &msg.call);
+
+    if (msg.err) {
         return 0;
     }
     return len;
