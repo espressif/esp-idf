@@ -135,7 +135,6 @@ config BTDM_CONTROLLER_MODEM_SLEEP
     default y
     help
         Enable/disable bluetooth controller low power mode.
-        Note that currently there is problem in the combination use of bluetooth modem sleep and Dynamic Frequency Scaling(DFS). So do not enable DFS if bluetooth modem sleep is in use.
 
 choice BTDM_MODEM_SLEEP_MODE
     prompt "Bluetooth Modem sleep mode"
@@ -161,6 +160,9 @@ choice BTDM_LOW_POWER_CLOCK
 
 config BTDM_LPCLK_SEL_MAIN_XTAL
     bool "Main crystal"
+    help
+        Main crystal can be used as low power clock for bluetooth modem sleep. If this option is selected, bluetooth
+        modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but cannot work when light sleep is enabled.
 config BTDM_LPCLK_SEL_EXT_32K_XTAL
     bool "External 32kHz crystal"
     depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL

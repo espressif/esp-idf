@@ -214,6 +214,12 @@ esp_err_t esp_modem_sleep_register(modem_sleep_module_t module);
  */
 esp_err_t esp_modem_sleep_deregister(modem_sleep_module_t module);
 
+/**
+ * @brief            Get the time stamp when PHY/RF was switched on
+ * @return           return 0 if PHY/RF is never switched on. Otherwise return time in
+ *                   microsecond since boot when phy/rf was last switched on
+*/
+int64_t esp_phy_rf_get_on_ts(void);
 #ifdef __cplusplus
 }
 #endif
