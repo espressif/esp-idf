@@ -1870,12 +1870,13 @@ extern void BTA_DmBleConfirmReply(BD_ADDR bd_addr, BOOLEAN accept);
 **
 ** Parameters:      bd_addr          - BD address of the peer
 **                  dev_type         - Remote device's device type.
+**                  auth_mode        - auth mode
 **                  addr_type        - LE device address type.
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type,
+extern void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode,
                                tBT_DEVICE_TYPE dev_type);
 
 

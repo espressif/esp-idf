@@ -797,12 +797,13 @@ void BTA_DmAddBleKey (BD_ADDR bd_addr, tBTA_LE_KEY_VALUE *p_le_key, tBTA_LE_KEY_
 **
 ** Parameters:      bd_addr          - BD address of the peer
 **                  dev_type         - Remote device's device type.
+**                  auth_mode        - auth mode
 **                  addr_type        - LE device address type.
 **
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE dev_type)
+void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, int auth_mode, tBT_DEVICE_TYPE dev_type)
 {
     tBTA_DM_API_ADD_BLE_DEVICE *p_msg;
 
@@ -812,6 +813,7 @@ void BTA_DmAddBleDevice(BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TY
         p_msg->hdr.event = BTA_DM_API_ADD_BLEDEVICE_EVT;
         bdcpy(p_msg->bd_addr, bd_addr);
         p_msg->addr_type = addr_type;
+        p_msg->auth_mode = auth_mode;
         p_msg->dev_type = dev_type;
 
         bta_sys_sendmsg(p_msg);

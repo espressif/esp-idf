@@ -625,7 +625,7 @@ void smp_proc_pair_cmd(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         if(p_cb->peer_auth_req & p_cb->loc_auth_req & SMP_AUTH_GEN_BOND) {
             auth |= SMP_AUTH_GEN_BOND;
         }
-         p_cb->auth_mode = auth;
+        p_cb->auth_mode = auth;
         if (p_cb->accept_specified_sec_auth) {
             if ((auth & p_cb->origin_loc_auth_req) != p_cb->origin_loc_auth_req ) {
                 SMP_TRACE_ERROR("%s pairing failed - master requires auth is 0x%x but peer auth is 0x%x local auth is 0x%x",
@@ -1365,7 +1365,6 @@ void smp_decide_association_model(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 void smp_process_io_response(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
     uint8_t reason = SMP_PAIR_AUTH_FAIL;
-
     SMP_TRACE_DEBUG("%s\n", __func__);
     if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
         /* pairing started by local (slave) Security Request */

@@ -4475,7 +4475,8 @@ void bta_dm_add_ble_device (tBTA_DM_MSG *p_data)
 {
     if (!BTM_SecAddBleDevice (p_data->add_ble_device.bd_addr, NULL,
                               p_data->add_ble_device.dev_type  ,
-                              p_data->add_ble_device.addr_type)) {
+                              p_data->add_ble_device.addr_type,
+                              p_data->add_ble_device.auth_mode)) {
         APPL_TRACE_ERROR ("BTA_DM: Error adding BLE Device for device %08x%04x",
                           (p_data->add_ble_device.bd_addr[0] << 24) + (p_data->add_ble_device.bd_addr[1] << 16) + \
                           (p_data->add_ble_device.bd_addr[2] << 8) + p_data->add_ble_device.bd_addr[3],

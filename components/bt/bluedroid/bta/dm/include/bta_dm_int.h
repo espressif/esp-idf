@@ -445,6 +445,7 @@ typedef struct {
     BT_HDR                  hdr;
     BD_ADDR                 bd_addr;
     tBT_DEVICE_TYPE         dev_type ;
+    UINT32                  auth_mode;
     tBLE_ADDR_TYPE          addr_type;
 
 } tBTA_DM_API_ADD_BLE_DEVICE;
