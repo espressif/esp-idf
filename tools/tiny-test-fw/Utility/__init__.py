@@ -36,3 +36,13 @@ def console_log(data, color="white", end="\n"):
         # reset color to white for later logs
         print(_COLOR_CODES["white"] + u"\r")
     sys.stdout.flush()
+
+
+def load_source(name, path):
+    try:
+        from importlib.machinery import SourceFileLoader
+        return SourceFileLoader(name, path).load_module()
+    except ImportError:
+        # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
+        import imp
+        return imp.load_source(name, path)
