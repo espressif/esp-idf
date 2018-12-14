@@ -48,7 +48,7 @@ static _lock_t s_phy_rf_init_lock;
 /* Bit mask of modules needing to call phy_rf_init */
 static uint32_t s_module_phy_rf_init = 0;
 
-/* Whether modern sleep in turned on */
+/* Whether modem sleep is turned on */
 static volatile bool s_is_phy_rf_en = false;
 
 /* Bit mask of modules needing to enter modem sleep mode */
@@ -64,6 +64,9 @@ static volatile bool s_is_modem_sleep_en = false;
 
 static _lock_t s_modem_sleep_lock;
 
+/* time stamp updated when the PHY/RF is turned on */
+static int64_t s_phy_rf_en_ts = 0;
+
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
     return portENTER_CRITICAL_NESTED();
@@ -74,16 +77,20 @@ void IRAM_ATTR phy_exit_critical(uint32_t level)
     portEXIT_CRITICAL_NESTED(level);
 }
 
-static inline void phy_update_wifi_mac_time(bool en_clock_stopped)
+int64_t esp_phy_rf_get_on_ts(void)
+{
+    return s_phy_rf_en_ts;
+}
+
+static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
 {
     static uint32_t s_common_clock_disable_time = 0;
 
     if (en_clock_stopped) {
-        s_common_clock_disable_time = esp_timer_get_time();
+        s_common_clock_disable_time = (uint32_t)now;
     } else {
         if (s_common_clock_disable_time) {
-            uint64_t now = esp_timer_get_time();
-            uint32_t diff = now - s_common_clock_disable_time;
+            uint32_t diff = (uint64_t)now - s_common_clock_disable_time;
 
             esp_wifi_internal_update_mac_time(diff);
             s_common_clock_disable_time = 0;
@@ -135,8 +142,10 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             }
         }
         if (s_is_phy_rf_en == true){
+            // Update time stamp
+            s_phy_rf_en_ts = esp_timer_get_time();
             // Update WiFi MAC time before WiFi/BT common clock is enabled
-            phy_update_wifi_mac_time( false );
+            phy_update_wifi_mac_time(false, s_phy_rf_en_ts);
             // Enable WiFi/BT common peripheral clock
             periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
             phy_set_wifi_mode_only(0);
@@ -229,7 +238,7 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
             // Disable PHY and RF.
             phy_close_rf();
             // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
-            phy_update_wifi_mac_time(true);
+            phy_update_wifi_mac_time(true, esp_timer_get_time());
             // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
             periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
         }
