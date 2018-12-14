@@ -19,7 +19,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from builtins import str
 from builtins import range
-import imp
 import re
 import os
 import sys
@@ -43,7 +42,7 @@ import Utility
 
 # Import client module
 expath = os.path.dirname(os.path.realpath(__file__))
-client = imp.load_source("client", expath + "/scripts/adder.py")
+client = Utility.load_source("client", expath + "/scripts/adder.py")
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
