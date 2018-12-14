@@ -52,8 +52,8 @@ typedef enum {
 * @brief Structure eFuse field
  */
 typedef struct {
-    esp_efuse_block_t   efuse_block;    /**< Block of eFuse */
-    uint16_t            bit_start;      /**< Start bit [0..255] */
+    esp_efuse_block_t   efuse_block: 8; /**< Block of eFuse */
+    uint8_t             bit_start;      /**< Start bit [0..255] */
     uint16_t            bit_count;      /**< Length of bit field [1..-]*/
 } esp_efuse_desc_t;
 
