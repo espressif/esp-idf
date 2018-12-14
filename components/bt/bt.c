@@ -334,28 +334,28 @@ SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_BSS_START,  SOC_MEM_BT_BSS_END,            
 SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_MISC_START, SOC_MEM_BT_MISC_END,           rom_bt_misc);
 SOC_RESERVE_MEMORY_REGION(SOC_MEM_BT_DATA_START, SOC_MEM_BT_DATA_END,           rom_bt_data);
 
-static struct osi_funcs_t *osi_funcs_p;
+static DRAM_ATTR struct osi_funcs_t *osi_funcs_p;
 
 #if CONFIG_SPIRAM_USE_MALLOC
-static btdm_queue_item_t btdm_queue_table[BTDM_MAX_QUEUE_NUM];
-SemaphoreHandle_t btdm_queue_table_mux = NULL;
+static DRAM_ATTR btdm_queue_item_t btdm_queue_table[BTDM_MAX_QUEUE_NUM];
+static DRAM_ATTR SemaphoreHandle_t btdm_queue_table_mux = NULL;
 #endif /* #if CONFIG_SPIRAM_USE_MALLOC */
 
 /* Static variable declare */
 // timestamp when PHY/RF was switched on
-static int64_t s_time_phy_rf_just_enabled = 0;
-static esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+static DRAM_ATTR int64_t s_time_phy_rf_just_enabled = 0;
+static DRAM_ATTR esp_bt_controller_status_t btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 
-static portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
+static DRAM_ATTR portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
 // measured average low power clock period in micro seconds
-static uint32_t btdm_lpcycle_us = 0;
-static uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit for btdm_lpcycle_us
+static DRAM_ATTR uint32_t btdm_lpcycle_us = 0;
+static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit for btdm_lpcycle_us
 
 #ifdef CONFIG_PM_ENABLE
-static esp_pm_lock_handle_t s_pm_lock;
-static esp_timer_handle_t s_btdm_slp_tmr;
-static QueueHandle_t s_pm_lock_sem = NULL;
+static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr;
+static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
+static DRAM_ATTR QueueHandle_t s_pm_lock_sem = NULL;
 #endif
 
 static inline void btdm_check_and_init_bb(void)
