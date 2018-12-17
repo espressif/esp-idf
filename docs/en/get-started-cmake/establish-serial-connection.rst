@@ -1,6 +1,7 @@
 Establish Serial Connection with ESP32 (CMake)
 ==============================================
 
+:link_to_translation:`zh_CN:[中文]`
 
 This section provides guidance how to establish serial connection between ESP32 and PC.
 
@@ -116,7 +117,7 @@ Then open serial port in terminal and check, if you see any log printed out by E
 
     ...
 
-If you see some legible log, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
+If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
 
 .. note::
 
@@ -124,7 +125,7 @@ If you see some legible log, it means serial connection is working and you are r
 
 .. note::
 
-   Close serial terminal after verification that communication is working. In next step we are going to use another application to upload ESP32. This application will not be able to access serial port while it is open in terminal.
+   Close serial terminal after verification that communication is working. In the next step we are going to use a different application to upload a new firmware to ESP32. This application will not be able to access serial port while it is open in terminal.
 
 If you got here from section :ref:`get-started-connect-cmake` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure-cmake`.
 
