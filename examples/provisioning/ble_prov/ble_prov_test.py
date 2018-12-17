@@ -15,28 +15,30 @@
 # limitations under the License.
 
 from __future__ import print_function
-import imp
 import re
 import os
 import sys
 import time
 
-# This environment variable is expected on the host machine
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
 
-# When running on local machine execute the following before running this script
-# > export TEST_FW_PATH='~/esp/esp-idf/tools/tiny-test-fw'
-# > make print_flash_cmd | tail -n 1 > build/download.config
-# > make app bootloader
+try:
+    import esp_prov
+except ImportError:
+    esp_prov_path = os.getenv("IDF_PATH") + "/tools/esp_prov"
+    if esp_prov_path and esp_prov_path not in sys.path:
+        sys.path.insert(0, esp_prov_path)
+    import esp_prov
 
-import TinyFW
-import IDF
+# Have esp_prov throw exception
+esp_prov.config_throw_except = True
 
-# Import esp_prov tool
-idf_path = os.environ['IDF_PATH']
-esp_prov = imp.load_source("esp_prov", idf_path + "/tools/esp_prov/esp_prov.py")
 
 @IDF.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_ble(env, extra_data):
@@ -46,18 +48,18 @@ def test_examples_provisioning_ble(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "ble_prov.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("ble_prov_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("ble_prov_bin_size", bin_size//1024)
+    IDF.log_performance("ble_prov_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("ble_prov_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
     dut1.start_app()
 
     # Parse BLE devname
-    devname = dut1.expect(re.compile(r"(?:[\s\S]*) Provisioning started with BLE devname : (PROV_\S\S\S\S\S\S)"))[0]
+    devname = dut1.expect(re.compile(r"Provisioning started with BLE devname : '(PROV_\S\S\S\S\S\S)'"), timeout=60)[0]
     print("BLE Device Alias for DUT :", devname)
 
     # Match additional headers sent in the request
-    dut1.expect("BLE Provisioning started")
+    dut1.expect("BLE Provisioning started", timeout=30)
 
     print("Starting Provisioning")
     verbose = False
@@ -70,12 +72,12 @@ def test_examples_provisioning_ble(env, extra_data):
 
     print("Getting security")
     security = esp_prov.get_security(secver, pop, verbose)
-    if security == None:
+    if security is None:
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
     transport = esp_prov.get_transport(provmode, None, devname)
-    if transport == None:
+    if transport is None:
         raise RuntimeError("Failed to get transport")
 
     print("Verifying protocol version")
@@ -108,6 +110,7 @@ def test_examples_provisioning_ble(env, extra_data):
 
     if not success:
         raise RuntimeError("Provisioning failed")
+
 
 if __name__ == '__main__':
     test_examples_provisioning_ble()
