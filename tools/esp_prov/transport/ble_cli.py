@@ -22,6 +22,7 @@ import utils
 
 fallback = True
 
+
 # Check if platform is Linux and required packages are installed
 # else fallback to console mode
 if platform.system() == 'Linux':
@@ -30,10 +31,12 @@ if platform.system() == 'Linux':
         import dbus.mainloop.glib
         import time
         fallback = False
-    except:
+    except ImportError:
         pass
 
-#--------------------------------------------------------------------
+
+# --------------------------------------------------------------------
+
 
 # BLE client (Linux Only) using Bluez and DBus
 class BLE_Bluez_Client:
@@ -52,13 +55,13 @@ class BLE_Bluez_Client:
 
         for path, interfaces in objects.items():
             adapter = interfaces.get("org.bluez.Adapter1")
-            if adapter != None:
+            if adapter is not None:
                 if path.endswith(iface):
                     self.adapter = dbus.Interface(bus.get_object("org.bluez", path), "org.bluez.Adapter1")
                     self.adapter_props = dbus.Interface(bus.get_object("org.bluez", path), "org.freedesktop.DBus.Properties")
                     break
 
-        if self.adapter == None:
+        if self.adapter is None:
             raise RuntimeError("Bluetooth adapter not found")
 
         self.adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(1))
@@ -67,7 +70,7 @@ class BLE_Bluez_Client:
         retry = 10
         while (retry > 0):
             try:
-                if self.device == None:
+                if self.device is None:
                     print("Connecting...")
                     # Wait for device to be discovered
                     time.sleep(5)
@@ -98,7 +101,7 @@ class BLE_Bluez_Client:
                 dev_path = path
                 break
 
-        if dev_path == None:
+        if dev_path is None:
             raise RuntimeError("BLE device not found")
 
         try:
@@ -120,12 +123,14 @@ class BLE_Bluez_Client:
             if path.startswith(self.device.object_path):
                 service = bus.get_object("org.bluez", path)
                 uuid = service.Get('org.bluez.GattService1', 'UUID',
-                            dbus_interface='org.freedesktop.DBus.Properties')
+                                   dbus_interface='org.freedesktop.DBus.Properties')
                 if uuid == self.srv_uuid:
                     srv_path = path
                     break
 
-        if srv_path == None:
+        if srv_path is None:
+            self.device.Disconnect(dbus_interface='org.bluez.Device1')
+            self.device = None
             raise RuntimeError("Provisioning service not found")
 
         self.characteristics = dict()
@@ -135,7 +140,7 @@ class BLE_Bluez_Client:
             if path.startswith(srv_path):
                 chrc = bus.get_object("org.bluez", path)
                 uuid = chrc.Get('org.bluez.GattCharacteristic1', 'UUID',
-                            dbus_interface='org.freedesktop.DBus.Properties')
+                                dbus_interface='org.freedesktop.DBus.Properties')
                 self.characteristics[uuid] = chrc
 
     def has_characteristic(self, uuid):
@@ -148,6 +153,7 @@ class BLE_Bluez_Client:
             self.device.Disconnect(dbus_interface='org.bluez.Device1')
             if self.adapter:
                 self.adapter.RemoveDevice(self.device)
+            self.device = None
         if self.adapter_props:
             self.adapter_props.Set("org.bluez.Adapter1", "Powered", dbus.Boolean(0))
 
@@ -159,7 +165,9 @@ class BLE_Bluez_Client:
         path.WriteValue([ord(c) for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
         return ''.join(chr(b) for b in path.ReadValue({}, dbus_interface='org.bluez.GattCharacteristic1'))
 
-#--------------------------------------------------------------------
+
+# --------------------------------------------------------------------
+
 
 # Console based BLE client for Cross Platform support
 class BLE_Console_Client:
@@ -193,7 +201,9 @@ class BLE_Console_Client:
         resp = input("\t<< ")
         return utils.hexstr_to_str(resp)
 
-#--------------------------------------------------------------------
+
+# --------------------------------------------------------------------
+
 
 # Function to get client instance depending upon platform
 def get_client():

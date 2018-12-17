@@ -15,29 +15,38 @@
 # limitations under the License.
 
 from __future__ import print_function
-import imp
 import re
 import os
 import sys
 import time
 
-# This environment variable is expected on the host machine
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
 
-# When running on local machine execute the following before running this script
-# > export TEST_FW_PATH='~/esp/esp-idf/tools/tiny-test-fw'
-# > make print_flash_cmd | tail -n 1 > build/download.config
-# > make app bootloader
+try:
+    import esp_prov
+except ImportError:
+    esp_prov_path = os.getenv("IDF_PATH") + "/tools/esp_prov"
+    if esp_prov_path and esp_prov_path not in sys.path:
+        sys.path.insert(0, esp_prov_path)
+    import esp_prov
 
-import TinyFW
-import IDF
+try:
+    import wifi_tools
+except ImportError:
+    wifi_tools_path = os.getenv("IDF_PATH") + "/examples/provisioning/softap_prov/utils"
+    if wifi_tools_path and wifi_tools_path not in sys.path:
+        sys.path.insert(0, wifi_tools_path)
+    import wifi_tools
 
-# Import esp_prov tool
-idf_path = os.environ['IDF_PATH']
-esp_prov   = imp.load_source("esp_prov",   idf_path + "/tools/esp_prov/esp_prov.py")
-wifi_tools = imp.load_source("wifi_tools", idf_path + "/examples/provisioning/softap_prov/utils/wifi_tools.py")
+# Have esp_prov throw exception
+esp_prov.config_throw_except = True
+
 
 @IDF.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_softap(env, extra_data):
@@ -47,27 +56,30 @@ def test_examples_provisioning_softap(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "softap_prov.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("softap_prov_bin_size", "{}KB".format(bin_size//1024))
-    IDF.check_performance("softap_prov_bin_size", bin_size//1024)
+    IDF.log_performance("softap_prov_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("softap_prov_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
     dut1.start_app()
 
     # Parse IP address of STA
-    dut1.expect("Starting WiFi SoftAP provisioning")
-    dut1.expect("SoftAP started")
-    [ssid, password] = dut1.expect(re.compile(r"(?:[\s\S]*)SoftAP Provisioning started with SSID '(\S+)', Password '(\S+)'"))
+    dut1.expect("Starting WiFi SoftAP provisioning", timeout=60)
+    dut1.expect("SoftAP started", timeout=30)
+    [ssid, password] = dut1.expect(re.compile(r"SoftAP Provisioning started with SSID '(\S+)', Password '(\S+)'"), timeout=30)
 
     iface = wifi_tools.get_wiface_name()
-    if iface == None:
+    if iface is None:
         raise RuntimeError("Failed to get Wi-Fi interface on host")
     print("Interface name  : " + iface)
     print("SoftAP SSID     : " + ssid)
     print("SoftAP Password : " + password)
 
-    ctrl = wifi_tools.wpa_cli(iface, reset_on_exit = True)
+    ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
     print("Connecting to DUT SoftAP...")
     ip = ctrl.connect(ssid, password)
+    got_ip = dut1.expect(re.compile(r"softAP assign IP to station,IP is: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
+    if ip != got_ip:
+        raise RuntimeError("SoftAP connected to another host! " + ip + "!=" + got_ip)
     print("Connected to DUT SoftAP")
 
     print("Starting Provisioning")
@@ -78,16 +90,16 @@ def test_examples_provisioning_softap(env, extra_data):
     provmode = "softap"
     ap_ssid = "myssid"
     ap_password = "mypassword"
-    softap_endpoint = ip.split('.')[0] + "." + ip.split('.')[1]+ "." + ip.split('.')[2] + ".1:80"
+    softap_endpoint = ip.split('.')[0] + "." + ip.split('.')[1] + "." + ip.split('.')[2] + ".1:80"
 
     print("Getting security")
     security = esp_prov.get_security(secver, pop, verbose)
-    if security == None:
+    if security is None:
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
     transport = esp_prov.get_transport(provmode, softap_endpoint, None)
-    if transport == None:
+    if transport is None:
         raise RuntimeError("Failed to get transport")
 
     print("Verifying protocol version")
@@ -120,6 +132,7 @@ def test_examples_provisioning_softap(env, extra_data):
 
     if not success:
         raise RuntimeError("Provisioning failed")
+
 
 if __name__ == '__main__':
     test_examples_provisioning_softap()

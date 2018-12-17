@@ -18,11 +18,13 @@ import dbus.mainloop.glib
 import netifaces
 import time
 
+
 def get_wiface_name():
     for iface in netifaces.interfaces():
         if iface.startswith('w'):
             return iface
     return None
+
 
 def get_wiface_IPv4(iface):
     try:
@@ -31,8 +33,9 @@ def get_wiface_IPv4(iface):
     except KeyError:
         return None
 
+
 class wpa_cli:
-    def __init__(self, iface, reset_on_exit = False):
+    def __init__(self, iface, reset_on_exit=False):
         self.iface_name = iface
         self.iface_obj = None
         self.iface_ifc = None
@@ -43,26 +46,27 @@ class wpa_cli:
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         bus = dbus.SystemBus()
 
-        service = dbus.Interface(bus.get_object("fi.w1.wpa_supplicant1", "/fi/w1/wpa_supplicant1"), "fi.w1.wpa_supplicant1")
-        paths = service.Get("fi.w1.wpa_supplicant1", "Interfaces", dbus_interface='org.freedesktop.DBus.Properties')
+        service = dbus.Interface(bus.get_object("fi.w1.wpa_supplicant1", "/fi/w1/wpa_supplicant1"),
+                                 "fi.w1.wpa_supplicant1")
         iface_path = service.GetInterface(self.iface_name)
         self.iface_obj = bus.get_object("fi.w1.wpa_supplicant1", iface_path)
         self.iface_ifc = dbus.Interface(self.iface_obj, "fi.w1.wpa_supplicant1.Interface")
-        if self.iface_ifc == None:
+        if self.iface_ifc is None:
             raise RuntimeError('supplicant : Failed to fetch interface')
 
-        self.old_network = self.iface_obj.Get("fi.w1.wpa_supplicant1.Interface", "CurrentNetwork", dbus_interface='org.freedesktop.DBus.Properties')
+        self.old_network = self.iface_obj.Get("fi.w1.wpa_supplicant1.Interface", "CurrentNetwork",
+                                              dbus_interface='org.freedesktop.DBus.Properties')
         if self.old_network == '/':
             self.old_network = None
         else:
             self.connected = True
 
     def connect(self, ssid, password):
-        if self.connected == True:
+        if self.connected is True:
             self.iface_ifc.Disconnect()
             self.connected = False
 
-        if self.new_network != None:
+        if self.new_network is not None:
             self.iface_ifc.RemoveNetwork(self.new_network)
 
         self.new_network = self.iface_ifc.AddNetwork({"ssid": ssid, "psk": password})
@@ -73,7 +77,7 @@ class wpa_cli:
         while retry > 0:
             time.sleep(5)
             ip = get_wiface_IPv4(self.iface_name)
-            if ip != None:
+            if ip is not None:
                 self.connected = True
                 return ip
             retry -= 1
@@ -82,17 +86,17 @@ class wpa_cli:
         raise RuntimeError('wpa_cli : Connection failed')
 
     def reset(self):
-        if self.iface_ifc != None:
-            if self.connected == True:
+        if self.iface_ifc is not None:
+            if self.connected is True:
                 self.iface_ifc.Disconnect()
                 self.connected = False
-            if self.new_network != None:
+            if self.new_network is not None:
                 self.iface_ifc.RemoveNetwork(self.new_network)
                 self.new_network = None
-            if self.old_network != None:
+            if self.old_network is not None:
                 self.iface_ifc.SelectNetwork(self.old_network)
                 self.old_network = None
 
     def __del__(self):
-        if self.reset_on_exit == True:
+        if self.reset_on_exit is True:
             self.reset()
