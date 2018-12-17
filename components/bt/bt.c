@@ -355,6 +355,7 @@ static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit f
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
+static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock; // pm_lock to prevent light sleep due to incompatibility currently
 static DRAM_ATTR QueueHandle_t s_pm_lock_sem = NULL;
 #endif
 
@@ -1070,6 +1071,9 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
 
 #ifdef CONFIG_PM_ENABLE
+    if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
+        goto error;
+    }
     if ((err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock)) != ESP_OK) {
         goto error;
     }
@@ -1132,6 +1136,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 error:
 #ifdef CONFIG_PM_ENABLE
+    if (s_light_sleep_pm_lock != NULL) {
+        esp_pm_lock_delete(s_light_sleep_pm_lock);
+        s_light_sleep_pm_lock = NULL;
+    }
     if (s_pm_lock != NULL) {
         esp_pm_lock_delete(s_pm_lock);
         s_pm_lock = NULL;
@@ -1159,6 +1167,8 @@ esp_err_t esp_bt_controller_deinit(void)
     periph_module_disable(PERIPH_BT_MODULE);
 
 #ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(s_light_sleep_pm_lock);
+    s_light_sleep_pm_lock = NULL;
     esp_pm_lock_delete(s_pm_lock);
     s_pm_lock = NULL;
     esp_timer_stop(s_btdm_slp_tmr);
@@ -1199,6 +1209,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     }
 
 #ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(s_light_sleep_pm_lock);
     esp_pm_lock_acquire(s_pm_lock);
 #endif
 
@@ -1236,6 +1247,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         }
         esp_phy_rf_deinit(PHY_BT_MODULE);
 #ifdef CONFIG_PM_ENABLE
+        esp_pm_lock_release(s_light_sleep_pm_lock);
         esp_pm_lock_release(s_pm_lock);
 #endif
         return ESP_ERR_INVALID_STATE;
@@ -1276,6 +1288,7 @@ esp_err_t esp_bt_controller_disable(void)
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
 #ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_light_sleep_pm_lock);
     esp_pm_lock_release(s_pm_lock);
 #endif
 
