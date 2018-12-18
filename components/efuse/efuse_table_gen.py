@@ -27,13 +27,7 @@ import hashlib
 __version__ = '1.0'
 
 quiet = False
-coding_scheme = 0
-
-CODE_SCHEME = {
-    "NONE": 0,
-    "3/4": 1,
-    "REPEAT": 2,
-}
+max_blk_len = 256
 
 copyright = '''// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
@@ -250,13 +244,7 @@ class FuseTable(list):
 
         rows += [""]
 
-        rows += ["#if (CONFIG_EFUSE_CODE_SCHEME == 0)",
-                 "#define MAX_BLK_LEN 256",
-                 "#elif (CONFIG_EFUSE_CODE_SCHEME == 1)",
-                 "#define MAX_BLK_LEN 192",
-                 "#elif (CONFIG_EFUSE_CODE_SCHEME == 2)",
-                 "#define MAX_BLK_LEN 128",
-                 "#endif"]
+        rows += ["#define MAX_BLK_LEN CONFIG_EFUSE_MAX_BLK_LEN"]
 
         rows += [""]
 
@@ -368,16 +356,10 @@ class FuseDefinition(object):
         '''common_table: EFUSE_BLK0, EFUSE_BLK1, EFUSE_BLK2, EFUSE_BLK3
            custom_table: ----------, ----------, ----------, EFUSE_BLK3(some reserved in common_table)
         '''
-        max_bits = 0
-        if coding_scheme == CODE_SCHEME["NONE"] or self.efuse_block == "EFUSE_BLK0":
-            max_bits = 256
-        elif coding_scheme == CODE_SCHEME["3/4"]:
-            max_bits = 192
-        elif coding_scheme == CODE_SCHEME["REPEAT"]:
-            max_bits = 128
+        if self.efuse_block == "EFUSE_BLK0":
+            return 256
         else:
-            raise ValidationError(self, "Unknown coding scheme")
-        return max_bits
+            return max_blk_len
 
     def verify(self, type_table):
         if self.efuse_block is None:
@@ -467,27 +449,22 @@ def create_output_files(name, output_table, debug):
 
 def main():
     global quiet
-    global coding_scheme
+    global max_blk_len
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action="store_false")
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action="store_true")
-    parser.add_argument('--coding_scheme', help='Coding scheme', type=int, default=0)
+    parser.add_argument('--max_blk_len', help='Max number of bits in BLK1, BLK2 and BLK3', type=int, default=256)
     parser.add_argument('common_input', help='Path to common CSV file to parse.', type=argparse.FileType('r'))
     parser.add_argument('custom_input', help='Path to custom CSV file to parse.', type=argparse.FileType('r'), nargs='?', default=None)
 
     args = parser.parse_args()
 
-    coding_scheme = args.coding_scheme
-    if CODE_SCHEME["NONE"] == coding_scheme:
-        print("eFuse coding scheme: NONE")
-    elif CODE_SCHEME["3/4"] == coding_scheme:
-        print("eFuse coding scheme: 3/4")
-    elif CODE_SCHEME["REPEAT"] == coding_scheme:
-        print("eFuse coding scheme: REPEAT")
-    else:
-        raise InputError("unknown CODE_SCHEME = %s" % (coding_scheme))
+    max_blk_len = args.max_blk_len
+    print("Max number of bits in BLK %d" % (max_blk_len))
+    if max_blk_len not in [256, 192, 128]:
+        raise InputError("Unsupported block length = %d" % (max_blk_len))
 
     quiet = args.quiet
     debug = args.debug

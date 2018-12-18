@@ -58,7 +58,7 @@ bit_start
     Start bit number (0..255). The bit_start field can be omitted. In this case, it will be set to bit_start + bit_count from the previous record, if it has the same efuse_block. Otherwise (if efuse_block is different, or this is the first entry), an error will be generated.
 
 bit_count
-    The number of bits to use in this field (1..-). This parameter can not be omitted. This field also may be ``MAX_BLK_LEN`` in this case, the field length will have the maximum block length, taking into account the coding scheme (applicable for ``ESP_EFUSE_SECURE_BOOT_KEY`` and ``ESP_EFUSE_ENCRYPT_FLASH_KEY`` fields). The value ``MAX_BLK_LEN`` depends on :envvar:`CONFIG_EFUSE_CODE_SCHEME`, will be replaced with "None" - 256, "3/4" - 192, "REPEAT" - 128.
+    The number of bits to use in this field (1..-). This parameter can not be omitted. This field also may be ``MAX_BLK_LEN`` in this case, the field length will have the maximum block length, taking into account the coding scheme (applicable for ``ESP_EFUSE_SECURE_BOOT_KEY`` and ``ESP_EFUSE_ENCRYPT_FLASH_KEY`` fields). The value ``MAX_BLK_LEN`` depends on :envvar:`CONFIG_EFUSE_MAX_BLK_LEN`, will be replaced with "None" - 256, "3/4" - 192, "REPEAT" - 128.
 
 comment
     This param is using for comment field, it also move to C-header file. The comment field can be omitted.

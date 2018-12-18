@@ -4,7 +4,7 @@
 #                   |     EFUSE_BLK2  |            |            |        #
 #                   |     EFUSE_BLK3) |            |            |        #
 ##########################################################################
-# *) The value MAX_BLK_LEN depends on CONFIG_EFUSE_CODE_SCHEME, will be replaced with "None" - 256. "3/4" - 192. "REPEAT" - 128.
+# *) The value MAX_BLK_LEN depends on CONFIG_EFUSE_MAX_BLK_LEN, will be replaced with "None" - 256. "3/4" - 192. "REPEAT" - 128.
 # !!!!!!!!!!! #
 # After editing this file, run the command manually "make efuse_common_table" or "idf.py efuse_common_table" 
 # this will generate new source files, next rebuild all the sources.

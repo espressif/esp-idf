@@ -16,7 +16,7 @@ set(COMPONENT_REQUIRES)
 set(COMPONENT_PRIV_REQUIRES bootloader_support)
 register_component()
 
-set(GEN_EFUSE_TABLE_ARG --coding_scheme ${CONFIG_EFUSE_CODE_SCHEME})
+set(GEN_EFUSE_TABLE_ARG --max_blk_len ${CONFIG_EFUSE_MAX_BLK_LEN})
 
 ###################
 # Make common files esp_efuse_table.c and include/esp_efuse_table.h files.
