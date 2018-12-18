@@ -3,6 +3,8 @@
 #include "esp_task_wdt.h"
 #include "esp_attr.h"
 #include "soc/rtc_cntl_reg.h"
+#include "driver/timer.h"
+#include "rom/rtc.h"
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
 
@@ -234,5 +236,67 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_BROWNOUT after brownout event",
         "[reset_reason][ignore][reset=SW_CPU_RESET]",
         do_brownout,
         check_reset_reason_brownout);
+
+
+// The following test cases are used to check if the timer_group fix works.
+// Some applications use a software reset, at the reset time, timer_group happens to generate an interrupt.
+// but software reset does not clear interrupt status, this is not safe for application when enable the interrupt of timer_group.
+// This case will check under this fix, whether the interrupt status is cleared after timer_group initialization.
+static void timer_group_test_init(void)
+{
+    static const uint32_t time_ms = 100; //Alarm value 100ms.
+    static const uint16_t timer_div = 10; //Timer prescaler
+    static const uint32_t ste_val = time_ms * (TIMER_BASE_CLK / timer_div / 1000);
+    timer_config_t config = {
+        .divider = timer_div,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_PAUSE,
+        .alarm_en = TIMER_ALARM_EN,
+        .intr_type = TIMER_INTR_LEVEL,
+        .auto_reload = true,
+    };
+    timer_init(TIMER_GROUP_0, TIMER_0, &config);
+    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
+    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, ste_val);
+    //Now the timer is ready.
+    //We only need to check the interrupt status and don't have to register a interrupt routine.
+}
+
+static void timer_group_test_first_stage(void)
+{
+    RESET_REASON rst_res = rtc_get_reset_reason(0);
+    if(rst_res != POWERON_RESET){
+        printf("Not power on reset\n");
+    }
+    TEST_ASSERT_EQUAL(POWERON_RESET, rst_res);
+    static uint8_t loop_cnt = 0;
+    timer_group_test_init();
+    //Start timer
+    timer_start(TIMER_GROUP_0, TIMER_0);
+    //Waiting for timer_group to generate an interrupt
+    while( !TIMERG0.int_raw.t0 && loop_cnt++ < 100) {
+        vTaskDelay(200);    
+    }
+    //TIMERG0.int_raw.t0 == 1 means an interruption has occurred
+    TEST_ASSERT_EQUAL(1, TIMERG0.int_raw.t0);
+    esp_restart();
+}
+
+static void timer_group_test_second_stage(void)
+{
+    RESET_REASON rst_res = rtc_get_reset_reason(0);
+    if(rst_res != SW_CPU_RESET){
+        printf("Not software reset\n");
+    }
+    TEST_ASSERT_EQUAL(SW_CPU_RESET, rst_res);
+    timer_group_test_init();
+    //After the timer_group is initialized, TIMERG0.int_raw.t0 should be cleared.
+    TEST_ASSERT_EQUAL(0, TIMERG0.int_raw.t0);
+}
+
+TEST_CASE_MULTIPLE_STAGES("timer_group software reset test",
+        "[intr_status][intr_status = 0]",
+        timer_group_test_first_stage,
+        timer_group_test_second_stage);
 
 /* Not tested here: ESP_RST_SDIO */
