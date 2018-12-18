@@ -14,15 +14,23 @@ import re
 
 TEMPLATES = {
     "en": {
-        "git-clone": {
-            "template": """
-To obtain a local copy: open terminal, navigate to the directory you want to put ESP-IDF, and clone the repository using ``git clone`` command::
+        "git-clone-bash": """
+.. code-block:: bash
 
     cd ~/esp
     git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
+        """,
 
-ESP-IDF will be downloaded into ``~/esp/esp-idf``.
+        "git-clone-windows": """
+.. code-block:: batch
 
+    mkdir %%userprofile%%\\esp
+    cd %%userprofile%%\\esp
+    git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
+            """,
+
+        "git-clone-notes": {
+            "template": """
 .. note::
 
     %(extra_note)s
@@ -32,16 +40,16 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
     %(zipfile_note)s
 """,
             "master": 'This command will clone the master branch, which has the latest development ("bleeding edge") '
-                      'version of ESP-IDF. It is fully functional and updated on weekly basis with the most recent features and bugfixes.',
-            "branch": 'The ``git clone`` option ``-b %(clone_arg)s`` tells git to clone the %(ver_type)s in the ESP-IDF repository '
-                      'corresponding to this version of the documentation.',
+            'version of ESP-IDF. It is fully functional and updated on weekly basis with the most recent features and bugfixes.',
+            "branch": 'The ``git clone`` option ``-b %(clone_arg)s`` tells git to clone the %(ver_type)s in the ESP-IDF repository ``git clone`` '
+            'corresponding to this version of the documentation.',
             "zipfile": {
                 "stable": 'As a fallback, it is also possible to download a zip file of this stable release from the `Releases page`_. '
                           'Do not download the "Source code" zip file(s) generated automatically by GitHub, they do not work with ESP-IDF.',
                 "unstable": 'GitHub\'s "Download zip file" feature does not work with ESP-IDF, a ``git clone`` is required. As a fallback, '
                             '`Stable version`_ can be installed without Git.'
             },  # zipfile
-        },  # git-clone
+        },  # git-clone-notes
         "version-note": {
             "master": """
 .. note::
@@ -59,15 +67,23 @@ ESP-IDF will be downloaded into ``~/esp/esp-idf``.
         },  # version-note
     },  # en
     "zh_CN": {
-        "git-clone": {
-            "template": """
-获取本地副本：打开终端，切换到你要存放 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库::
+        "git-clone-bash": """
+.. code-block:: bash
 
     cd ~/esp
     git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
+            """,
 
-ESP-IDF 将会被下载到 ``~/esp/esp-idf`` 目录下。
+        "git-clone-windows": """
+.. code-block:: batch
 
+    mkdir %%userprofile%%\\esp
+    cd %%userprofile%%\\esp
+    git clone %(clone_args)s--recursive https://github.com/espressif/esp-idf.git
+        """,
+
+        "git-clone-notes": {
+            "template": """
 .. note::
 
     %(extra_note)s
@@ -119,29 +135,43 @@ def main():
 
     version, ver_type, is_stable = get_version()
 
-    write_git_clone_inc(template["git-clone"], out_dir, version, ver_type, is_stable)
+    write_git_clone_inc_files(template, out_dir, version, ver_type, is_stable)
     write_version_note(template["version-note"], out_dir, version, ver_type, is_stable)
     print("Done")
 
 
-def write_git_clone_inc(template, out_dir, version, ver_type, is_stable):
-    zipfile = template["zipfile"]
+def write_git_clone_inc_files(templates, out_dir, version, ver_type, is_stable):
+    def out_file(basename):
+            p = os.path.join(out_dir, "%s.inc" % basename)
+            print("Writing %s..." % p)
+            return p
+
     if version == "master":
-        args = {
-            "clone_args": "",
-            "extra_note": template["master"],
-            "zipfile_note": zipfile["unstable"]
-        }
+        clone_args = ""
     else:
-        args = {
-            "clone_args": "-b %s " % version,
-            "extra_note": template["branch"] % {"clone_arg": version, "ver_type": ver_type},
-            "zipfile_note": zipfile["stable"] if is_stable else zipfile["unstable"]
-        }
-    out_file = os.path.join(out_dir, "git-clone.inc")
-    with open(out_file, "w", encoding='utf-8') as f:
-        f.write(template["template"] % args)
-    print("%s written" % out_file)
+        clone_args = "-b %s " % version
+
+    with open(out_file("git-clone-bash"), "w", encoding="utf-8") as f:
+        f.write(templates["git-clone-bash"] % locals())
+
+    with open(out_file("git-clone-windows"), "w", encoding="utf-8") as f:
+        f.write(templates["git-clone-windows"] % locals())
+
+    with open(out_file("git-clone-notes"), "w", encoding="utf-8") as f:
+        template = templates["git-clone-notes"]
+
+        zipfile = template["zipfile"]
+
+        if version == "master":
+            extra_note = template["master"],
+            zipfile_note = zipfile["unstable"]
+        else:
+            extra_note = template["branch"] % {"clone_arg": version, "ver_type": ver_type}
+            zipfile_note = zipfile["stable"] if is_stable else zipfile["unstable"]
+
+        f.write(template["template"] % locals())
+
+    print("Wrote git-clone-xxx.inc files")
 
 
 def write_version_note(template, out_dir, version, ver_type, is_stable):
