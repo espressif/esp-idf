@@ -117,17 +117,22 @@ Get ESP-IDF
 
 Besides the toolchain (that contains programs to compile and build the application), you also need ESP32 specific API / libraries. They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
 
-.. include:: /_build/inc/git-clone.inc
+To obtain a local copy: open terminal, navigate to the directory you want to put ESP-IDF, and clone the repository using ``git clone`` command:
+
+.. include:: /_build/inc/git-clone-bash.inc
+
+ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Consult :doc:`/versions` for information about which version of ESP-IDF to use in a given situation.
+
+.. include:: /_build/inc/git-clone-notes.inc
 
 .. note::
 
     Do not miss the ``--recursive`` option. If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
 
-        cd ~/esp/esp-idf
+        cd esp-idf
         git submodule update --init --recursive
-
 
 .. _get-started-setup-path:
 
