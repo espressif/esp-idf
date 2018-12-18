@@ -349,7 +349,7 @@ static void dumpTCBToRegFile(unsigned handle) {
 	}
 }
 
-static unsigned findCurrentTaskIndex() {
+static int findCurrentTaskIndex() {
 	static int curTaskIndex = -2;
     if (curTaskIndex == -2) {
 		unsigned curHandle = (unsigned)xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID()), handle, count = getAllTasksHandle(0, 0, 0, 0);
@@ -389,14 +389,17 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 	} else if (cmd[0]=='?') {	//Reply with stop reason
 		sendReason();
 #if configUSE_TRACE_FACILITY == 1
-	} else if (cmd[0]=='H' && reenteredHandler != -1) {
+	} else if (cmd[0]=='H' && reenteredHandler != -1) { //Continue with task
 		if (cmd[1]=='g' || cmd[1]=='c') {
-			unsigned handle, count;
 			const char * ret = "OK";
 			data++;
 			i=gdbGetHexVal(&data, -1);
-			if (i == findCurrentTaskIndex()) dumpHwToRegfile(&paniced_frame);
-			else {
+			reenteredHandler = 1; //Hg0 is the first packet received after connect
+			j = findCurrentTaskIndex();
+			if (i == j || (j == -1 && !i)) { //The first task requested must be the one that crashed and it does not have a valid TCB anyway since it's not saved yet
+				dumpHwToRegfile(&paniced_frame);
+			} else {
+				unsigned handle, count;
 				//Get the handle for that task
 				count = getAllTasksHandle(i, &handle, 0, 0);
 				//Then extract TCB and gdbRegFile from it
@@ -413,7 +416,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		count = getAllTasksHandle(i, 0, 0, 0);
 		return sendPacket(i < count ? "OK": "E00");
 	} else if (cmd[0]=='q' && reenteredHandler != -1) {	//Extended query
-		// React to qThreadExtraInfo or qfThreadInfo or qsThreadInfo or qC
+		// React to qThreadExtraInfo or qfThreadInfo or qsThreadInfo or qC, without using strcmp
 		if (len > 16 && cmd[1] == 'T' && cmd[2] == 'h' && cmd[3] == 'r' && cmd[7] == 'E' && cmd[12] == 'I' && cmd[16] == ',') {
 			data=&cmd[17];
 			i=gdbGetHexVal(&data, -1);
@@ -434,11 +437,12 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 			// Only react to qfThreadInfo and qsThreadInfo, not using strcmp here since it can be in ROM
 			// Extract the number of task from freeRTOS
 			static int taskIndex = 0;
-			unsigned tCount = getAllTasksHandle(0, 0, 0, 0);			
+			unsigned tCount = 0;
  		    if (cmd[1] == 'f') { 
 				taskIndex = 0;
-				reenteredHandler = 1;
+				reenteredHandler = 1;	//It seems it's the first request GDB is sending
 			}
+			tCount = getAllTasksHandle(0, 0, 0, 0);
 			if (taskIndex < tCount)	{
 				gdbPacketStart();
 				gdbPacketStr("m");
