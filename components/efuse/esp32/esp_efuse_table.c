@@ -23,13 +23,7 @@
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
 // To show efuse_table run the command 'show_efuse_table'.
 
-#if (CONFIG_EFUSE_CODE_SCHEME == 0)
-#define MAX_BLK_LEN 256
-#elif (CONFIG_EFUSE_CODE_SCHEME == 1)
-#define MAX_BLK_LEN 192
-#elif (CONFIG_EFUSE_CODE_SCHEME == 2)
-#define MAX_BLK_LEN 128
-#endif
+#define MAX_BLK_LEN CONFIG_EFUSE_MAX_BLK_LEN
 
 // The last free bit in the block is counted over the entire file.
 #define LAST_FREE_BIT_BLK1 MAX_BLK_LEN
