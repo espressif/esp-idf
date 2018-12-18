@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "tcpip_adapter.h"
+#include "tcpip_adapter_internal.h"
 
 #if CONFIG_TCPIP_LWIP
 
@@ -344,7 +344,7 @@ esp_err_t tcpip_adapter_set_old_ip_info_api(tcpip_adapter_api_msg_t * msg)
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
+esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)
 {
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || ip_info == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
@@ -390,7 +390,7 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
+esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)
 {
     struct netif *p_netif;
     tcpip_adapter_dhcp_status_t status;
@@ -572,7 +572,7 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t mac[6])
 }
 #endif
 
-esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len)
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len)
 {
     void *opt_info = dhcps_option_info(opt_id, opt_len);
 
@@ -859,10 +859,10 @@ static esp_err_t tcpip_adapter_dhcps_stop_api(tcpip_adapter_api_msg_t * msg)
     return tcpip_adapter_dhcps_stop(msg->tcpip_if);
 }
 
-esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len)
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len)
 {
     // TODO: when dhcp request timeout,change the retry count
-    return ESP_OK;
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 static void tcpip_adapter_dhcpc_cb(struct netif *netif)
@@ -1126,7 +1126,7 @@ esp_interface_t tcpip_adapter_get_esp_if(void *dev)
     return ESP_IF_MAX;
 }
 
-esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)
+esp_err_t tcpip_adapter_get_sta_list(const wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)
 {
     int i;
 

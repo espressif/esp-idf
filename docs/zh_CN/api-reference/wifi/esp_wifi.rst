@@ -1,1 +1,0 @@
-.. include:: ../../../en/api-reference/wifi/esp_wifi.rst
