@@ -252,6 +252,31 @@ static void dumpHwToRegfile(XtExcFrame *frame) {
 	gdbRegFile.expstate=frame->exccause; //ToDo
 }
 
+//Send the reason execution is stopped to GDB.
+static void sendReason() {
+	//exception-to-signal mapping
+	char exceptionSignal[]={4,31,11,11,2,6,8,0,6,7,0,0,7,7,7,7};
+	int i=0;
+	gdbPacketStart();
+	gdbPacketChar('T');
+	i=gdbRegFile.expstate&0x7f;
+	if (i<sizeof(exceptionSignal)) {
+		gdbPacketHex(exceptionSignal[i], 8); 
+	} else {
+		gdbPacketHex(11, 8);
+	}
+	gdbPacketEnd();
+}
+
+static int reenteredHandler = 0;
+static int sendPacket(const char * text) {
+	gdbPacketStart();
+	if (text != NULL) gdbPacketStr(text);
+	gdbPacketEnd();
+	return ST_OK;
+}
+
+#if configUSE_TRACE_FACILITY == 1
 static void dumpTaskToRegfile(XtSolFrame *frame) {
 	int i;
 	long *frameAregs=&frame->a0;
@@ -280,24 +305,6 @@ static void dumpTaskToRegfile(XtSolFrame *frame) {
 	gdbRegFile.m2=0xdeadbeef; //ToDo
 	gdbRegFile.m3=0xdeadbeef; //ToDo
 	gdbRegFile.expstate=0; //ToDo
-}
-
-
-
-//Send the reason execution is stopped to GDB.
-static void sendReason() {
-	//exception-to-signal mapping
-	char exceptionSignal[]={4,31,11,11,2,6,8,0,6,7,0,0,7,7,7,7};
-	int i=0;
-	gdbPacketStart();
-	gdbPacketChar('T');
-	i=gdbRegFile.expstate&0x7f;
-	if (i<sizeof(exceptionSignal)) {
-		gdbPacketHex(exceptionSignal[i], 8); 
-	} else {
-		gdbPacketHex(11, 8);
-	}
-	gdbPacketEnd();
 }
 
 //Fetch the task status
@@ -354,13 +361,13 @@ static unsigned findCurrentTaskIndex() {
 	}
 	return curTaskIndex;
 }
+#endif
 
 //Handle a command as received from GDB.
 static int gdbHandleCommand(unsigned char *cmd, int len) {
 	//Handle a command
 	int i, j, k;
 	unsigned char *data=cmd+1;
-	static int taskIndex = 0;
 	if (cmd[0]=='g') {		//send all registers to gdb
 		int *p=(int*)&gdbRegFile;
 		gdbPacketStart();
@@ -368,10 +375,8 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		gdbPacketEnd();
 	} else if (cmd[0]=='G') {	//receive content for all registers from gdb
 		int *p=(int*)&gdbRegFile;
-		for (i=0; i<sizeof(GdbRegFile)/4; i++) *p++=iswap(gdbGetHexVal(&data, 32));;
-		gdbPacketStart();
-		gdbPacketStr("OK");
-		gdbPacketEnd();
+		for (i=0; i<sizeof(GdbRegFile)/4; i++) *p++=iswap(gdbGetHexVal(&data, 32));
+		sendPacket("OK");
 	} else if (cmd[0]=='m') {	//read memory to gdb
 		i=gdbGetHexVal(&data, -1);
 		data++;
@@ -383,7 +388,8 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		gdbPacketEnd();
 	} else if (cmd[0]=='?') {	//Reply with stop reason
 		sendReason();
-	} else if (cmd[0]=='H') {
+#if configUSE_TRACE_FACILITY == 1
+	} else if (cmd[0]=='H' && reenteredHandler != -1) {
 		if (cmd[1]=='g' || cmd[1]=='c') {
 			unsigned handle, count;
 			const char * ret = "OK";
@@ -397,24 +403,16 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 				if (i < count) dumpTCBToRegFile(handle);
 				else ret = "E00";
 			}
-			gdbPacketStart();
-			gdbPacketStr(ret);
-			gdbPacketEnd();
-			return ST_OK;
+			return sendPacket(ret);
 		}
-		gdbPacketStart();
-		gdbPacketEnd();
-		return ST_ERR;
-	} else if (cmd[0]=='T') {	//Task alive check
+		return sendPacket(NULL);
+	} else if (cmd[0]=='T' && reenteredHandler != -1) {	//Task alive check
 		unsigned count;
 		data++;
 		i=gdbGetHexVal(&data, -1);
 		count = getAllTasksHandle(i, 0, 0, 0);
-		gdbPacketStart();
-		gdbPacketStr(i < count ? "OK" : "E00");
-		gdbPacketEnd();
-		return ST_OK;
-	} else if (cmd[0]=='q') {	//Extended query
+		return sendPacket(i < count ? "OK": "E00");
+	} else if (cmd[0]=='q' && reenteredHandler != -1) {	//Extended query
 		// React to qThreadExtraInfo or qfThreadInfo or qsThreadInfo or qC
 		if (len > 16 && cmd[1] == 'T' && cmd[2] == 'h' && cmd[3] == 'r' && cmd[7] == 'E' && cmd[12] == 'I' && cmd[16] == ',') {
 			data=&cmd[17];
@@ -430,27 +428,24 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 				gdbPacketStr("20435055"); // CPU
 				gdbPacketStr(coreId == 0 ? "30": coreId == 1 ? "31" : "78"); // 0 or 1 or x 
 				gdbPacketEnd();
-			} else {
-				gdbPacketStart();
-				gdbPacketEnd();
-			}
-			return ST_OK;			
+				return ST_OK;
+			} 
 		} else if (len >= 12 && (cmd[1] == 'f' || cmd[1] == 's') && (cmd[2] == 'T' && cmd[3] == 'h' && cmd[4] == 'r' && cmd[5] == 'e' && cmd[6] == 'a' && cmd[7] == 'd' && cmd[8] == 'I')) {
 			// Only react to qfThreadInfo and qsThreadInfo, not using strcmp here since it can be in ROM
 			// Extract the number of task from freeRTOS
+			static int taskIndex = 0;
 			unsigned tCount = getAllTasksHandle(0, 0, 0, 0);			
- 		    if (cmd[1] == 'f') taskIndex = 0;
+ 		    if (cmd[1] == 'f') { 
+				taskIndex = 0;
+				reenteredHandler = 1;
+			}
 			if (taskIndex < tCount)	{
 				gdbPacketStart();
 				gdbPacketStr("m");
 				gdbPacketHex(taskIndex, 32);
 				gdbPacketEnd();
                 taskIndex++;
-			} else {
-				gdbPacketStart();
-				gdbPacketStr("l");
-				gdbPacketEnd();
-			}
+			} else return sendPacket("l");
 		} else if (len >= 2 && cmd[1] == 'C') {
 			// Get current task id
 			gdbPacketStart();
@@ -461,18 +456,12 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 			} else gdbPacketStr("bad");
 			gdbPacketEnd();
 			return ST_OK;
-		} else {
-			//We don't recognize or support whatever GDB just sent us.
-			gdbPacketStart();
-			gdbPacketEnd();
-			return ST_ERR;
 		}
-	} else {
+		return sendPacket(0);			
+#endif
+	} else 
 		//We don't recognize or support whatever GDB just sent us.
-		gdbPacketStart();
-		gdbPacketEnd();
-		return ST_ERR;
-	}
+		return sendPacket(0);
 	return ST_OK;
 }
 
@@ -532,6 +521,12 @@ void esp_gdbstub_panic_handler(XtExcFrame *frame) {
     uint8_t * pf = (uint8_t*)&paniced_frame, *f = (uint8_t*)frame;
 	//Could not use memcpy here
     for(int i = 0; i < sizeof(*frame); i++) pf[i] = f[i];
+	if (reenteredHandler == 1) {
+		//Prevent using advanced FreeRTOS features since they seems to crash
+		reenteredHandler = -1;
+	}
+	//Let's start from something
+	dumpHwToRegfile(frame);
 
 	//Make sure txd/rxd are enabled
 	gpio_pullup_dis(1);
