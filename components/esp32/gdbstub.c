@@ -517,16 +517,17 @@ static int gdbReadCommand() {
 
 
 void esp_gdbstub_panic_handler(XtExcFrame *frame) {
-	//Need to remember the frame that panic'd since gdb will ask for all thread before ours
-    uint8_t * pf = (uint8_t*)&paniced_frame, *f = (uint8_t*)frame;
-	//Could not use memcpy here
-    for(int i = 0; i < sizeof(*frame); i++) pf[i] = f[i];
 	if (reenteredHandler == 1) {
 		//Prevent using advanced FreeRTOS features since they seems to crash
 		reenteredHandler = -1;
+	} else {
+		//Need to remember the frame that panic'd since gdb will ask for all thread before ours
+	    uint8_t * pf = (uint8_t*)&paniced_frame, *f = (uint8_t*)frame;
+		//Could not use memcpy here
+	    for(int i = 0; i < sizeof(*frame); i++) pf[i] = f[i];
 	}
 	//Let's start from something
-	dumpHwToRegfile(frame);
+	dumpHwToRegfile(&paniced_frame);
 
 	//Make sure txd/rxd are enabled
 	gpio_pullup_dis(1);
