@@ -120,7 +120,7 @@ Linux 和 MacOS
 
     mkdir -p ~/esp
     cd ~/esp
-    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
+    git clone --recursive https://github.com/espressif/esp-idf.git
 
 ESP-IDF 将会被下载到 ``~/esp/esp-idf`` 目录下。
 
@@ -132,7 +132,7 @@ Windows Command Prompt
 
     mkdir %userprofile%\esp
     cd %userprofile%\esp
-    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
+    git clone --recursive https://github.com/espressif/esp-idf.git
 
 .. highlight:: bash
 .. note::
