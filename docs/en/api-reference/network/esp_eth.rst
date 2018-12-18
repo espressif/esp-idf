@@ -1,4 +1,4 @@
-ETHERNET
+Ethernet
 ========
 
 Application Example
