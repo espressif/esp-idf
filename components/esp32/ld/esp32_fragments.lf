@@ -21,16 +21,16 @@ entries:
 
 [sections:rtc_text]
 entries:
-    .rtc.text
+    .rtc.text+
     .rtc.literal
 
 [sections:rtc_data]
 entries:
-    .rtc.data
+    .rtc.data+
 
 [sections:rtc_rodata]
 entries:
-    .rtc.rodata
+    .rtc.rodata+
 
 [sections:rtc_bss]
 entries:
