@@ -83,10 +83,13 @@ static esp_timer_handle_t s_timer_in_callback;
 static TaskHandle_t s_timer_task;
 // counting semaphore used to notify the timer task from ISR
 static SemaphoreHandle_t s_timer_semaphore;
+// mutex which protects timers from deletion during callback execution
+static SemaphoreHandle_t s_timer_delete_mutex;
 
 #if CONFIG_SPIRAM_USE_MALLOC
-// memory for s_timer_semaphore
+// memory for s_timer_semaphore and s_timer_delete_mutex
 static StaticQueue_t s_timer_semaphore_memory;
+static StaticQueue_t s_timer_delete_mutex_memory;
 #endif
 
 // lock protecting s_timers, s_inactive_timers, s_timer_in_callback
@@ -154,19 +157,21 @@ esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
 
 esp_err_t esp_timer_delete(esp_timer_handle_t timer)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
+    xSemaphoreTakeRecursive(s_timer_delete_mutex, portMAX_DELAY);
 #if WITH_PROFILING
     if (timer == s_timer_in_callback) {
         s_timer_in_callback = NULL;
     }
     timer_remove_inactive(timer);
 #endif
-    if (timer == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
     free(timer);
+    xSemaphoreGiveRecursive(s_timer_delete_mutex);
     return ESP_OK;
 }
 
@@ -261,6 +266,7 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     /* unused, provision to allow running callbacks from ISR */
     (void) dispatch_method;
 
+    xSemaphoreTakeRecursive(s_timer_delete_mutex, portMAX_DELAY);
     timer_list_lock();
     uint64_t now = esp_timer_impl_get_time();
     esp_timer_handle_t it = LIST_FIRST(&s_timers);
@@ -301,6 +307,7 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
         esp_timer_impl_set_alarm(first->alarm);
     }
     timer_list_unlock();
+    xSemaphoreGiveRecursive(s_timer_delete_mutex);
 }
 
 static void timer_task(void* arg)
@@ -332,6 +339,7 @@ static IRAM_ATTR bool is_initialized()
 
 esp_err_t esp_timer_init(void)
 {
+    esp_err_t err;
     if (is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -343,27 +351,50 @@ esp_err_t esp_timer_init(void)
     s_timer_semaphore = xSemaphoreCreateCounting(TIMER_EVENT_QUEUE_SIZE, 0);
 #endif
     if (!s_timer_semaphore) {
-        return ESP_ERR_NO_MEM;
+        err = ESP_ERR_NO_MEM;
+        goto out;
     }
+
+#if CONFIG_SPIRAM_USE_MALLOC
+    memset(&s_timer_delete_mutex_memory, 0, sizeof(StaticQueue_t));
+    s_timer_delete_mutex = xSemaphoreCreateRecursiveMutexStatic(&s_timer_delete_mutex_memory);
+#else
+    s_timer_delete_mutex = xSemaphoreCreateRecursiveMutex();
+#endif
+    if (!s_timer_delete_mutex) {
+        err = ESP_ERR_NO_MEM;
+        goto out;
+    }
+
 
     int ret = xTaskCreatePinnedToCore(&timer_task, "esp_timer",
             ESP_TASK_TIMER_STACK, NULL, ESP_TASK_TIMER_PRIO, &s_timer_task, PRO_CPU_NUM);
     if (ret != pdPASS) {
-        vSemaphoreDelete(s_timer_semaphore);
-        s_timer_semaphore = NULL;
-        return ESP_ERR_NO_MEM;
+        err = ESP_ERR_NO_MEM;
+        goto out;
     }
 
-    esp_err_t err = esp_timer_impl_init(&timer_alarm_handler);
+    err = esp_timer_impl_init(&timer_alarm_handler);
     if (err != ESP_OK) {
-        vTaskDelete(s_timer_task);
-        s_timer_task = NULL;
-        vSemaphoreDelete(s_timer_semaphore);
-        s_timer_semaphore = NULL;
-        return err;
+        goto out;
     }
 
     return ESP_OK;
+
+out:
+    if (s_timer_task) {
+        vTaskDelete(s_timer_task);
+        s_timer_task = NULL;
+    }
+    if (s_timer_semaphore) {
+        vSemaphoreDelete(s_timer_semaphore);
+        s_timer_semaphore = NULL;
+    }
+    if (s_timer_delete_mutex) {
+        vSemaphoreDelete(s_timer_delete_mutex);
+        s_timer_delete_mutex = NULL;
+    }
+    return ESP_ERR_NO_MEM;
 }
 
 esp_err_t esp_timer_deinit(void)
