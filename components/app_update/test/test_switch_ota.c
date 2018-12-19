@@ -476,3 +476,244 @@ static void test_flow5(void)
 // 4 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
 #endif
+
+static const esp_partition_t* app_update(void)
+{
+    const esp_partition_t *cur_app = get_running_firmware();
+    const esp_partition_t* update_partition = esp_ota_get_next_update_partition(NULL);
+    TEST_ASSERT_NOT_NULL(update_partition);
+    esp_ota_handle_t update_handle = 0;
+    TEST_ESP_OK(esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle));
+    copy_app_partition(update_handle, cur_app);
+    TEST_ESP_OK(esp_ota_end(update_handle));
+    TEST_ESP_OK(esp_ota_set_boot_partition(update_partition));
+    return update_partition;
+}
+
+
+static void test_rollback1(void)
+{
+    boot_count++;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    esp_ota_img_states_t ota_state = 0x5555AAAA;
+    const esp_partition_t* update_partition = NULL;
+    switch (boot_count) {
+        case 2:
+            ESP_LOGI(TAG, "Factory");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_ota_get_state_partition(cur_app, &ota_state));
+            update_partition = app_update();
+            TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
+#else
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_NEW, ota_state);
+#endif
+            reboot_as_deep_sleep();
+            break;
+        case 3:
+            ESP_LOGI(TAG, "OTA0");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
+#else
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
+#endif
+            esp_ota_mark_app_valid_cancel_rollback();
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+            reboot_as_deep_sleep();
+            break;
+        case 4:
+            ESP_LOGI(TAG, "OTA0");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+            TEST_ESP_OK(esp_ota_mark_app_invalid_rollback_and_reboot());
+            break;
+        default:
+            erase_ota_data();
+            TEST_FAIL_MESSAGE("Unexpected stage");
+            break;
+    }
+}
+
+static void test_rollback1_1(void)
+{
+    boot_count = 5;
+    esp_ota_img_states_t ota_state = 0x5555AAAA;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    ESP_LOGI(TAG, "Factory");
+    TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+
+    const esp_partition_t *invalid_partition = esp_ota_get_last_invalid_partition();
+    const esp_partition_t* next_update_partition = esp_ota_get_next_update_partition(NULL);
+    TEST_ASSERT_NOT_NULL(invalid_partition);
+    TEST_ASSERT_NOT_NULL(next_update_partition);
+    TEST_ASSERT_EQUAL_PTR(invalid_partition, next_update_partition);
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_ota_get_state_partition(cur_app, &ota_state));
+    TEST_ESP_OK(esp_ota_get_state_partition(invalid_partition, &ota_state));
+    TEST_ASSERT_EQUAL(ESP_OTA_IMG_INVALID, ota_state);
+
+    erase_ota_data();
+}
+
+// 1 Stage: After POWER_RESET erase OTA_DATA for this test                          -> reboot through deep sleep.
+// 2 Stage: run factory    -> check it -> copy factory to next app slot             -> reboot  --//--
+// 3 Stage: run OTA0       -> check it -> esp_ota_mark_app_valid_cancel_rollback()                 -> reboot  --//--
+// 4 Stage: run OTA0       -> check it -> esp_ota_mark_app_invalid_rollback_and_reboot()         -> reboot
+// 5 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
+TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA0, rollback -> factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback1, test_rollback1, test_rollback1, test_rollback1_1);
+
+static void test_rollback2(void)
+{
+    boot_count++;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    esp_ota_img_states_t ota_state = 0x5555AAAA;
+    const esp_partition_t* update_partition = NULL;
+    switch (boot_count) {
+        case 2:
+            ESP_LOGI(TAG, "Factory");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_ota_get_state_partition(cur_app, &ota_state));
+            update_partition = app_update();
+            TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
+#else
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_NEW, ota_state);
+#endif
+            reboot_as_deep_sleep();
+            break;
+        case 3:
+            ESP_LOGI(TAG, "OTA0");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
+#else
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
+#endif
+            esp_ota_mark_app_valid_cancel_rollback();
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+            update_partition = app_update();
+            TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
+#else
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_NEW, ota_state);
+#endif
+            reboot_as_deep_sleep();
+            break;
+        case 4:
+            ESP_LOGI(TAG, "OTA1");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_UNDEFINED, ota_state);
+            TEST_ESP_OK(esp_ota_mark_app_invalid_rollback_and_reboot());
+#else
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
+            reboot_as_deep_sleep();
+#endif
+            break;
+        default:
+            erase_ota_data();
+            TEST_FAIL_MESSAGE("Unexpected stage");
+            break;
+    }
+}
+
+static void test_rollback2_1(void)
+{
+    boot_count = 5;
+    esp_ota_img_states_t ota_state = 0x5555AAAA;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    ESP_LOGI(TAG, "OTA0");
+    TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+
+    const esp_partition_t *invalid_partition = esp_ota_get_last_invalid_partition();
+    TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, invalid_partition->subtype);
+    const esp_partition_t* next_update_partition = esp_ota_get_next_update_partition(NULL);
+    TEST_ASSERT_NOT_NULL(invalid_partition);
+    TEST_ASSERT_NOT_NULL(next_update_partition);
+    TEST_ASSERT_EQUAL_PTR(invalid_partition, next_update_partition);
+    TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+    TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+    TEST_ESP_OK(esp_ota_get_state_partition(invalid_partition, &ota_state));
+#ifndef CONFIG_APP_ROLLBACK_ENABLE
+    TEST_ASSERT_EQUAL(ESP_OTA_IMG_INVALID, ota_state);
+#else
+    TEST_ASSERT_EQUAL(ESP_OTA_IMG_ABORTED, ota_state);
+#endif
+    erase_ota_data();
+}
+
+// 1 Stage: After POWER_RESET erase OTA_DATA for this test                                     -> reboot through deep sleep.
+// 2 Stage: run factory        -> check it -> copy factory to next app slot                    -> reboot  --//--
+// 3 Stage: run OTA0           -> check it -> esp_ota_mark_app_valid_cancel_rollback(), copy to next app slot -> reboot  --//--
+// 4 Stage: run OTA1           -> check it -> PENDING_VERIFY/esp_ota_mark_app_invalid_rollback_and_reboot() -> reboot
+// 5 Stage: run OTA0(rollback) -> check it -> erase OTA_DATA for next tests                    -> PASS
+TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA1, rollback -> OTA0", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback2, test_rollback2, test_rollback2, test_rollback2_1);
+
+static void test_erase_last_app_flow(void)
+{
+    boot_count++;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    switch (boot_count) {
+        case 2:
+            ESP_LOGI(TAG, "Factory");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+            app_update();
+            reboot_as_deep_sleep();
+            break;
+        case 3:
+            ESP_LOGI(TAG, "OTA0");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            app_update();
+            reboot_as_deep_sleep();
+            break;
+        case 4:
+            ESP_LOGI(TAG, "OTA1");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_erase_last_boot_app_partition());
+            TEST_ESP_OK(esp_ota_mark_app_invalid_rollback_and_reboot());
+            reboot_as_deep_sleep();
+            break;
+        default:
+            erase_ota_data();
+            TEST_FAIL_MESSAGE("Unexpected stage");
+            break;
+    }
+}
+
+static void test_erase_last_app_rollback(void)
+{
+    boot_count = 5;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    ESP_LOGI(TAG, "erase_last_app");
+    TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+    TEST_ESP_ERR(ESP_FAIL, esp_ota_erase_last_boot_app_partition());
+    erase_ota_data();
+}
+
+// 1 Stage: After POWER_RESET erase OTA_DATA for this test                                     -> reboot through deep sleep.
+// 2 Stage: run factory        -> check it -> copy factory to OTA0                             -> reboot  --//--
+// 3 Stage: run OTA0           -> check it -> copy factory to OTA1                             -> reboot  --//--
+// 4 Stage: run OTA1           -> check it -> erase OTA0 and rollback                          -> reboot
+// 5 Stage: run factory        -> check it -> erase OTA_DATA for next tests                    -> PASS
+TEST_CASE_MULTIPLE_STAGES("Test erase_last_boot_app_partition. factory, OTA1, OTA0, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_rollback);

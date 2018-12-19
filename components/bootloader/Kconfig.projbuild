@@ -159,6 +159,18 @@ config BOOTLOADER_WDT_TIME_MS
         - these options can increase the execution time. 
         Note: RTC_WDT will reset while encryption operations will be performed.
 
+config APP_ROLLBACK_ENABLE
+    bool "Enable app rollback support"
+    default n
+	help
+        After updating the app, the bootloader runs a new app with the "ESP_OTA_IMG_PENDING_VERIFY" state set. 
+        This state prevents the re-run of this app. 
+        After the first boot of the new app in the user code, the function should be called to confirm 
+        the operability of the app or vice versa about its non-operability. If the app is working, 
+        then it is marked as valid. Otherwise, it is marked as not valid and rolls back to the previous working app. 
+        A reboot is performed, and the app is booted before the software update.
+        Note: If during the first boot a new app the power goes out or the WDT works, then roll back will happen.
+
 endmenu  # Bootloader
 
 

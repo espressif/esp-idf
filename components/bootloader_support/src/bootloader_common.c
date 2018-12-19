@@ -42,7 +42,7 @@ uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s)
 
 bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s)
 {
-    return s->ota_seq == UINT32_MAX;
+    return s->ota_seq == UINT32_MAX || s->ota_state == ESP_OTA_IMG_INVALID || s->ota_state == ESP_OTA_IMG_ABORTED;
 }
 
 bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s)
