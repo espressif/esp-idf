@@ -417,7 +417,6 @@ export COMPILER_VERSION_STR COMPILER_VERSION_NUM GCC_NOT_5_2_0
 CPPFLAGS += -DGCC_NOT_5_2_0=$(GCC_NOT_5_2_0)
 export CPPFLAGS
 
-PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
 # the app is the main executable built by the project
 APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
