@@ -21,6 +21,7 @@
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_image_format.h"
+#include "esp_flash_data_types.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -194,6 +195,52 @@ const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *
  *  - or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc);
+
+/**
+ * @brief This function is called to indicate that the running app is working well.
+ *
+ * @return
+ *  - ESP_OK: if successful.
+ */
+esp_err_t esp_ota_mark_app_valid_cancel_rollback();
+
+/**
+ * @brief This function is called to roll back to the previously workable app with reboot.
+ *
+ * If rollback is successful then device will reset else API will return with error code.
+ * @return
+ *  - ESP_FAIL: if not successful.
+ */
+esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot();
+
+/**
+ * @brief Returns last partition with invalid state (ESP_OTA_IMG_INVALID or ESP_OTA_IMG_ABORTED).
+ *
+ * @return partition.
+ */
+const esp_partition_t* esp_ota_get_last_invalid_partition();
+
+/**
+ * @brief Returns state for given partition.
+ *
+ * @param[in] partition  Pointer to partition.
+ * @param[out] ota_state state of partition (if this partition has a record in otadata).
+ * @return
+ *        - ESP_OK:                 Successful.
+ *        - ESP_ERR_INVALID_ARG:    partition or ota_state arguments were NULL.
+ *        - ESP_ERR_NOT_SUPPORTED:  partition is not ota.
+ *        - ESP_ERR_NOT_FOUND:      Partition table does not have otadata or state was not found for given partition.
+ */
+esp_err_t esp_ota_get_state_partition(const esp_partition_t *partition, esp_ota_img_states_t *ota_state);
+
+/**
+ * @brief Erase previous boot app partition and corresponding otadata select for this partition.
+ *
+ * When current app is marked to as valid then you can erase previous app partition.
+ * @return
+ *        - ESP_OK:   Successful, otherwise ESP_ERR.
+ */
+esp_err_t esp_ota_erase_last_boot_app_partition(void);
 
 #ifdef __cplusplus
 }

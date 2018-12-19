@@ -57,6 +57,8 @@ static const char* TAG = "boot";
 /* Reduce literal size for some generic string literals */
 #define MAP_ERR_MSG "Image contains multiple %s segments. Only the last one will be mapped."
 
+static bool ota_has_initial_contents;
+
 static void load_image(const esp_image_metadata_t* image_data);
 static void unpack_load_app(const esp_image_metadata_t *data);
 static void set_cache_and_start_app(uint32_t drom_addr,
@@ -220,6 +222,18 @@ static void log_invalid_app_partition(int index)
     }
 }
 
+static esp_err_t write_otadata(esp_ota_select_entry_t *otadata, uint32_t offset, bool write_encrypted)
+{
+    esp_err_t err = bootloader_flash_erase_sector(offset / FLASH_SECTOR_SIZE);
+    if (err == ESP_OK) {
+        err = bootloader_flash_write(offset, otadata, sizeof(esp_ota_select_entry_t), write_encrypted);
+    }
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error in write_otadata operation. err = 0x%x", err);
+    }
+    return err;
+}
+
 int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
 {
     esp_ota_select_entry_t otadata[2];
@@ -232,10 +246,20 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
     if (read_otadata(&bs->ota_info, otadata) != ESP_OK) {
         return INVALID_INDEX;
     }
+    ota_has_initial_contents = false;
 
     ESP_LOGD(TAG, "otadata[0]: sequence values 0x%08x", otadata[0].ota_seq);
     ESP_LOGD(TAG, "otadata[1]: sequence values 0x%08x", otadata[1].ota_seq);
-
+#ifdef CONFIG_APP_ROLLBACK_ENABLE
+    bool write_encrypted = esp_flash_encryption_enabled();
+    for (int i = 0; i < 2; ++i) {
+        if (otadata[i].ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            ESP_LOGD(TAG, "otadata[%d] is marking as ABORTED", i);
+            otadata[i].ota_state = ESP_OTA_IMG_ABORTED;
+            write_otadata(&otadata[i], bs->ota_info.offset + FLASH_SECTOR_SIZE * i, write_encrypted);
+        }
+    }
+#endif
     if ((bootloader_common_ota_select_invalid(&otadata[0]) &&
          bootloader_common_ota_select_invalid(&otadata[1])) ||
          bs->app_count == 0) {
@@ -246,11 +270,25 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
         } else {
             ESP_LOGI(TAG, "No factory image, trying OTA 0");
             boot_index = 0;
+            // Try to boot from ota_0.
+            if ((otadata[0].ota_seq == UINT32_MAX || otadata[0].crc != bootloader_common_ota_select_crc(&otadata[0])) &&
+                (otadata[1].ota_seq == UINT32_MAX || otadata[1].crc != bootloader_common_ota_select_crc(&otadata[1]))) {
+                // Factory is not found and both otadata are initial(0xFFFFFFFF) or incorrect crc.
+                // will set correct ota_seq.
+                ota_has_initial_contents = true;
+            }
         }
     } else {
         int active_otadata = bootloader_common_get_active_otadata(otadata);
         if (active_otadata != -1) {
-            ESP_LOGD(TAG, "Active OTADATA copy is #%d", active_otadata);
+            ESP_LOGD(TAG, "Active otadata[%d]", active_otadata);
+#ifdef CONFIG_APP_ROLLBACK_ENABLE
+            if (otadata[active_otadata].ota_state == ESP_OTA_IMG_NEW) {
+                ESP_LOGD(TAG, "otadata[%d] is selected as new and marked PENDING_VERIFY state", active_otadata);
+                otadata[active_otadata].ota_state = ESP_OTA_IMG_PENDING_VERIFY;
+                write_otadata(&otadata[active_otadata], bs->ota_info.offset + FLASH_SECTOR_SIZE * active_otadata, write_encrypted);
+            }
+#endif
             uint32_t ota_seq = otadata[active_otadata].ota_seq - 1; // Raw OTA sequence number. May be more than # of OTA slots
             boot_index = ota_seq % bs->app_count; // Actual OTA partition selection
             ESP_LOGD(TAG, "Mapping seq %d -> OTA slot %d", ota_seq, boot_index);
@@ -284,6 +322,22 @@ static bool try_load_partition(const esp_partition_pos_t *partition, esp_image_m
     return false;
 }
 
+// ota_has_initial_contents flag is set if factory does not present in partition table and
+// otadata has initial content(0xFFFFFFFF), then set actual ota_seq.
+static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
+{
+    if (index >= 0 && ota_has_initial_contents == true) {
+        esp_ota_select_entry_t otadata;
+        otadata.ota_seq = index + 1;
+        otadata.ota_state = ESP_OTA_IMG_VALID;
+        otadata.crc = bootloader_common_ota_select_crc(&otadata);
+
+        bool write_encrypted = esp_flash_encryption_enabled();
+        write_otadata(&otadata, bs->ota_info.offset + FLASH_SECTOR_SIZE * 0, write_encrypted);
+        ESP_LOGD(TAG, "Set actual ota_seq=%d in otadata[0]", otadata.ota_seq);
+    }
+}
+
 #define TRY_LOG_FORMAT "Trying partition index %d offs 0x%x size 0x%x"
 
 void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index)
@@ -309,6 +363,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
         }
         ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
         if (try_load_partition(&part, &image_data)) {
+            set_actual_ota_seq(bs, index);
             load_image(&image_data);
         }
         log_invalid_app_partition(index);
@@ -322,6 +377,7 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
         }
         ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
         if (try_load_partition(&part, &image_data)) {
+            set_actual_ota_seq(bs, index);
             load_image(&image_data);
         }
         log_invalid_app_partition(index);
