@@ -43,27 +43,6 @@ if __name__ == "__main__":
                         default=os.path.join(idf_path, 'requirements.txt'))
     args = parser.parse_args()
 
-    # Special case for MINGW32 Python, needs some packages
-    # via MSYS2 not via pip or system breaks...
-    if sys.platform == "win32" and \
-       os.environ.get("MSYSTEM", None) == "MINGW32" and \
-       "/mingw32/bin/python" in sys.executable:
-        failed = False
-        try:
-            import cryptography # noqa: intentionally not used - imported for testing its availability
-        except ImportError:
-            print("Please run the following command to install MSYS2's MINGW Python cryptography package:")
-            print("pacman -S mingw-w64-i686-python%d-cryptography" % (sys.version_info[0],))
-            failed = True
-        try:
-            import setuptools # noqa: intentionally not used - imported for testing its availability
-        except ImportError:
-            print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
-            print("pacman -S mingw-w64-i686-python%d-setuptools" % (sys.version_info[0],))
-            failed = True
-        if failed:
-            sys.exit(1)
-
     not_satisfied = []
     with open(args.requirements) as f:
         for line in f:
@@ -77,8 +56,30 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required '
-              'packages. Alternatively, you can run "{} -m pip install --user -r {}" for resolving the issue.'
+        if sys.platform == "win32" and os.environ.get("MSYSTEM", None) == "MINGW32" and "/mingw32/bin/python" in sys.executable:
+            print("The recommended way to install a packages is via \"pacman\". Please run \"pacman -Ss <package_name>\" for"
+                  " searching the package database and if found then "
+                  "\"pacman -S mingw-w64-i686-python{}-<package_name>\" for installing it.".format(sys.version_info[0],))
+            print("NOTE: You may need to run \"pacman -Syu\" if your package database is older and run twice if the "
+                  "previous run updated \"pacman\" itself.")
+            print("Please read https://github.com/msys2/msys2/wiki/Using-packages for further information about using "
+                  "\"pacman\"")
+            # Special case for MINGW32 Python, needs some packages
+            # via MSYS2 not via pip or system breaks...
+            for requirement in not_satisfied:
+                if requirement.startswith('cryptography'):
+                    print("WARNING: The cryptography package have dependencies on system packages so please make sure "
+                          "you run \"pacman -Syu\" followed by \"pacman -S mingw-w64-i686-python{}-cryptography\"."
+                          "".format(sys.version_info[0],))
+                    continue
+                elif requirement.startswith('setuptools'):
+                    print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
+                    print("pacman -S mingw-w64-i686-python{}-setuptools".format(sys.version_info[0],))
+                    continue
+        else:
+            print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required'
+                  ' packages.')
+        print('Alternatively, you can run "{} -m pip install --user -r {}" for resolving the issue.'
               ''.format(escape_backslash(sys.executable), escape_backslash(args.requirements)))
         sys.exit(1)
 
