@@ -17,8 +17,7 @@ import os
 import fnmatch
 import types
 import copy
-# TODO: add a function to use suitable import lib for python2 and python3
-import imp
+from Utility import load_source
 
 
 class Search(object):
@@ -31,8 +30,7 @@ class Search(object):
         print("Try to get cases from: " + file_name)
         test_functions = []
         try:
-            # TODO: add a function to use suitable import lib for python2 and python3
-            mod = imp.load_source(str(hash(file_name)), file_name)
+            mod = load_source(str(hash(file_name)), file_name)
             for func in [mod.__getattribute__(x) for x in dir(mod)
                          if isinstance(mod.__getattribute__(x), types.FunctionType)]:
                 try:

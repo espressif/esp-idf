@@ -17,7 +17,6 @@
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import imp
 import re
 import os
 import sys
@@ -41,7 +40,7 @@ import Utility
 
 # Import client module
 expath = os.path.dirname(os.path.realpath(__file__))
-client = imp.load_source("client", expath + "/scripts/test.py")
+client = Utility.load_source("client", expath + "/scripts/test.py")
 
 
 # Due to connectivity issues (between runner host and DUT) in the runner environment,
