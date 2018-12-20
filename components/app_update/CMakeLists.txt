@@ -10,10 +10,14 @@ register_component()
 # linker will ignore this structure as it has no other files depending on it.
 target_link_libraries(${COMPONENT_TARGET} "-u esp_app_desc")
 
+# cut PROJECT_VER and PROJECT_NAME to required 32 characters.
+string(SUBSTRING "${PROJECT_VER}" 0 31 PROJECT_VER_CUT)
+string(SUBSTRING "${PROJECT_NAME}" 0 31 PROJECT_NAME_CUT)
+
 set_source_files_properties(
     SOURCE "esp_app_desc.c"
     PROPERTIES COMPILE_DEFINITIONS 
-    PROJECT_VER=\"${PROJECT_VER}\")
+    "PROJECT_VER=\"${PROJECT_VER_CUT}\"; PROJECT_NAME=\"${PROJECT_NAME_CUT}\"")
 
 # Add custom target for generating empty otadata partition for flashing
 if(OTADATA_PARTITION_OFFSET AND OTADATA_PARTITION_SIZE)
