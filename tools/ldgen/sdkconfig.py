@@ -15,28 +15,30 @@
 #
 
 import os
-from pyparsing import *
+from pyparsing import Word, printables, Combine, Literal, hexnums, quotedString, Optional, nums, removeQuotes, oneOf, Group, infixNotation, opAssoc
 
 import sys
-parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-kconfig_new_dir = os.path.abspath(parent_dir_name + "/kconfig_new")
-sys.path.append(kconfig_new_dir)
-import kconfiglib
+try:
+    import kconfiglib
+except ImportError:
+    parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    kconfig_new_dir = os.path.abspath(parent_dir_name + "/kconfig_new")
+    sys.path.append(kconfig_new_dir)
+    import kconfiglib
 
 
-
-"""
-Encapsulates an sdkconfig file. Defines grammar of a configuration entry, and enables
-evaluation of logical expressions involving those entries.
-"""
 class SDKConfig:
+    """
+    Encapsulates an sdkconfig file. Defines grammar of a configuration entry, and enables
+    evaluation of logical expressions involving those entries.
+    """
 
     # A configuration entry is in the form CONFIG=VALUE. Definitions of components of that grammar
     IDENTIFIER = Word(printables.upper())
 
     HEX = Combine("0x" + Word(hexnums)).setParseAction(lambda t:int(t[0], 16))
     DECIMAL = Combine(Optional(Literal("+") | Literal("-")) + Word(nums)).setParseAction(lambda t:int(t[0]))
-    LITERAL =  Word(printables)
+    LITERAL = Word(printables)
     QUOTED_LITERAL = quotedString.setParseAction(removeQuotes)
 
     VALUE = HEX | DECIMAL | LITERAL | QUOTED_LITERAL
@@ -44,8 +46,8 @@ class SDKConfig:
     # Operators supported by the expression evaluation
     OPERATOR = oneOf(["=", "!=", ">", "<", "<=", ">="])
 
-    def __init__(self, kconfig_file, sdkconfig_file, env = []):
-        env = [ (name, value) for (name,value) in ( e.split("=",1) for e in env) ]
+    def __init__(self, kconfig_file, sdkconfig_file, env=[]):
+        env = [(name, value) for (name,value) in (e.split("=",1) for e in env)]
 
         for name, value in env:
             value = " ".join(value.split())
@@ -57,11 +59,11 @@ class SDKConfig:
     def evaluate_expression(self, expression):
         result = self.config.eval_string(expression)
 
-        if result == 0: # n
+        if result == 0:  # n
             return False
-        elif result == 2: # y
+        elif result == 2:  # y
             return True
-        else: # m
+        else:  # m
             raise Exception("Unsupported config expression result.")
 
     @staticmethod
@@ -77,10 +79,9 @@ class SDKConfig:
 
         condition = Group(Optional("(").suppress() + test + Optional(")").suppress())
 
-        grammar = infixNotation(
-                condition, [
-                ("!", 1, opAssoc.RIGHT),
-                ("&&", 2, opAssoc.LEFT),
-                ("||",  2, opAssoc.LEFT)])
+        grammar = infixNotation(condition, [
+                                ("!", 1, opAssoc.RIGHT),
+                                ("&&", 2, opAssoc.LEFT),
+                                ("||",  2, opAssoc.LEFT)])
 
         return grammar

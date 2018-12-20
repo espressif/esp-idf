@@ -29,7 +29,7 @@ class Parser(object):
     """ parse unit test cases from build files and create files for test bench """
 
     TAG_PATTERN = re.compile("([^=]+)(=)?(.+)?")
-    DESCRIPTION_PATTERN = re.compile("\[([^]\[]+)\]")
+    DESCRIPTION_PATTERN = re.compile("\[([^]\[]+)\]")  # noqa: W605 - regular expression
     CONFIG_PATTERN = re.compile(r"{([^}]+)}")
     TEST_GROUPS_PATTERN = re.compile(r"TEST_GROUPS=(.*)$")
 
@@ -83,7 +83,7 @@ class Parser(object):
                 name_addr = table.get_unsigned_int(section, test_addr, 4)
                 desc_addr = table.get_unsigned_int(section, test_addr + 4, 4)
                 file_name_addr = table.get_unsigned_int(section, test_addr + 12, 4)
-                function_count = table.get_unsigned_int(section, test_addr+20, 4)
+                function_count = table.get_unsigned_int(section, test_addr + 20, 4)
                 name = table.get_string("any", name_addr)
                 desc = table.get_string("any", desc_addr)
                 file_name = table.get_string("any", file_name_addr)
@@ -213,7 +213,6 @@ class Parser(object):
 
         return self.parse_tags_internal(configs, self.config_dependencies, self.CONFIG_PATTERN)
 
-
     def get_test_groups(self, config_file):
         """
         If the config file includes TEST_GROUPS variable, return its value as a list of strings.
@@ -325,7 +324,7 @@ def test_parser():
     }
     sdkconfig = ["123", "789"]
     tags = parser.parse_tags_internal(sdkconfig, config_dependency, parser.CONFIG_PATTERN)
-    assert sorted(tags) == ['a', 'd', 'f'] # sorted is required for older Python3, e.g. 3.4.8
+    assert sorted(tags) == ['a', 'd', 'f']  # sorted is required for older Python3, e.g. 3.4.8
 
 
 def main():

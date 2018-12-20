@@ -155,6 +155,3 @@ texinfo_documents = [
      author, 'TinyTestFW', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-

@@ -15,19 +15,29 @@
 #
 
 import re
-import collections
-import sys
 import os
 
 from sdkconfig import SDKConfig
-from pyparsing import *
+from pyparsing import OneOrMore
+from pyparsing import restOfLine
+from pyparsing import alphanums
+from pyparsing import Word
+from pyparsing import alphas
+from pyparsing import ParseBaseException
+from pyparsing import Suppress
+from pyparsing import Group
+from pyparsing import Literal
+from pyparsing import ZeroOrMore
+from pyparsing import Optional
+from pyparsing import originalTextFor
 from common import LdGenFailure
 
-"""
-Fragment file internal representation. Parses and stores instances of the fragment definitions
-contained within the file.
-"""
+
 class FragmentFileModel():
+    """
+    Fragment file internal representation. Parses and stores instances of the fragment definitions
+    contained within the file.
+    """
 
     def __init__(self, fragment_file):
         path = os.path.realpath(fragment_file.name)
@@ -54,19 +64,21 @@ class FragmentFileModel():
         for fragment in self.fragments:
             fragment.path = path
 
-"""
-Encapsulates a fragment as defined in the generator syntax. Sets values common to all fragment and performs processing
-such as checking the validity of the fragment name and getting the entry values.
-"""
-class Fragment:
 
-    IDENTIFIER = Word(alphas+"_", alphanums+"_")
+class Fragment:
+    """
+    Encapsulates a fragment as defined in the generator syntax. Sets values common to all fragment and performs processing
+    such as checking the validity of the fragment name and getting the entry values.
+    """
+
+    IDENTIFIER = Word(alphas + "_", alphanums + "_")
     ENTITY = Word(alphanums + ".-_$")
 
     def __init__(self, name, entries):
         self.path = None
         self.name = name
         self.entries = entries
+
 
 class Sections(Fragment):
 
@@ -113,10 +125,11 @@ class Sections(Fragment):
 
         return sections
 
-"""
-Encapsulates a scheme fragment, which defines what target input sections are placed under.
-"""
+
 class Scheme(Fragment):
+    """
+    Encapsulates a scheme fragment, which defines what target input sections are placed under.
+    """
 
     def __init__(self, name, items):
         Fragment.__init__(self, name, items)
@@ -151,10 +164,11 @@ class Scheme(Fragment):
 
         return scheme
 
-"""
-Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
-"""
+
 class Mapping(Fragment):
+    """
+    Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
+    """
 
     # Name of the default condition entry
     DEFAULT_CONDITION = "default"
@@ -192,10 +206,10 @@ class Mapping(Fragment):
         for normal_group in self.entries[0]:
             # Get the original string of the condition
             condition  = next(iter(normal_group.condition.asList())).strip()
-            mappings = self._create_mappings_set(normal_group[1])  
-            
+            mappings = self._create_mappings_set(normal_group[1])
+
             processed.append((condition, mappings))
-    
+
         default_group = self.entries[1]
 
         if len(default_group) > 1:
@@ -216,9 +230,6 @@ class Mapping(Fragment):
 
         # Match header [mapping]
         header = Suppress("[") + Suppress("mapping") + Suppress("]")
-
-        # Define possbile values for input archive and object file
-        filename = Word(alphanums + "-" + "_")
 
         # There are three possible patterns for mapping entries:
         #       obj:symbol (scheme)

@@ -44,7 +44,7 @@ class Search(object):
         except ImportError as e:
             print("ImportError: \r\n\tFile:" + file_name + "\r\n\tError:" + str(e))
         for i, test_function in enumerate(test_functions):
-            print("\t{}. ".format(i+1) + test_function.case_info["name"])
+            print("\t{}. ".format(i + 1) + test_function.case_info["name"])
         return test_functions
 
     @classmethod

@@ -16,8 +16,6 @@
 #
 
 import argparse
-import os
-import traceback
 import sys
 import tempfile
 
@@ -26,41 +24,41 @@ from sdkconfig import SDKConfig
 from generation import GenerationModel, TemplateModel, SectionsInfo
 from common import LdGenFailure
 
+
 def main():
 
-    argparser = argparse.ArgumentParser(description = "ESP-IDF linker script generator")
+    argparser = argparse.ArgumentParser(description="ESP-IDF linker script generator")
 
     argparser.add_argument(
         "--input", "-i",
-        help = "Linker template file",
-        type = argparse.FileType("r"))
+        help="Linker template file",
+        type=argparse.FileType("r"))
 
     argparser.add_argument(
         "--fragments", "-f",
-        type = argparse.FileType("r"),
-        help = "Input fragment files",
-        nargs = "+")
+        type=argparse.FileType("r"),
+        help="Input fragment files",
+        nargs="+")
 
     argparser.add_argument(
         "--sections", "-s",
-        type = argparse.FileType("r"),
-        help = "Library sections info",
-        )
+        type=argparse.FileType("r"),
+        help="Library sections info")
 
     argparser.add_argument(
         "--output", "-o",
-        help = "Output linker script",
-        type = str)
+        help="Output linker script",
+        type=str)
 
     argparser.add_argument(
         "--config", "-c",
-        help = "Project configuration",
-        type = argparse.FileType("r"))
+        help="Project configuration",
+        type=argparse.FileType("r"))
 
     argparser.add_argument(
         "--kconfig", "-k",
-        help = "IDF Kconfig file",
-        type = argparse.FileType("r"))
+        help="IDF Kconfig file",
+        type=argparse.FileType("r"))
 
     argparser.add_argument(
         "--env", "-e",
@@ -109,6 +107,7 @@ def main():
     except LdGenFailure as e:
         print("linker script generation failed for %s\nERROR: %s" % (input_file.name, e))
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
