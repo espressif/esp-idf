@@ -63,6 +63,9 @@ call_with_python('../gen-dxd.py')
 def find_component_files(parent_dir, target_filename):
     parent_dir = os.path.abspath(parent_dir)
     result = []
+
+    component_files = dict()
+
     for (dirpath, dirnames, filenames) in os.walk(parent_dir):
         try:
             # note: trimming "examples" dir as MQTT submodule
@@ -71,8 +74,14 @@ def find_component_files(parent_dir, target_filename):
         except ValueError:
             pass
         if target_filename in filenames:
-            result.append(os.path.join(dirpath, target_filename))
-    print("List of %s: %s" % (target_filename, ", ".join(result)))
+            component_files[os.path.basename(dirpath)] = os.path.join(dirpath, target_filename)
+
+    components = sorted(component_files.keys())
+
+    for component in components:
+        result.append(component_files[component])
+
+    print("List of %s: %s" % (target_filename, ", ".join(components)))
     return result
 
 
