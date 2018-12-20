@@ -77,9 +77,20 @@ function(kconfig_process_config)
     set(kconfigs)
     set(kconfigs_projbuild)
 
+    # Components are usually sorted (somewhat) topologically via their dependencies. This extends to the component
+    # paths list. Obtain an alphabetical list in order to present menus also in the same order.
+    set(components ${BUILD_COMPONENTS})
+    list(SORT components)
+
+    foreach(component ${components})
+        list(FIND BUILD_COMPONENTS ${component} idx)
+        list(GET BUILD_COMPONENT_PATHS ${idx} component_path)
+        list(APPEND component_paths ${component_path})
+    endforeach()
+
     # Find Kconfig and Kconfig.projbuild for each component as applicable
     # if any of these change, cmake should rerun
-    foreach(dir ${BUILD_COMPONENT_PATHS})
+    foreach(dir ${component_paths})
         file(GLOB kconfig "${dir}/Kconfig")
         if(kconfig)
             set(kconfigs "${kconfigs} ${kconfig}")
