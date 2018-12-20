@@ -1160,7 +1160,7 @@ void bta_dm_loc_oob(tBTA_DM_MSG *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_dm_oob_reply(tBTA_DM_MSG *p_data) 
+void bta_dm_oob_reply(tBTA_DM_MSG *p_data)
 {
     BTM_BleOobDataReply(p_data->oob_reply.bd_addr, BTM_SUCCESS, p_data->oob_reply.len, p_data->oob_reply.value);
 }
@@ -2681,9 +2681,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
     }
 }
 
-
-
-
+#if (BT_SSP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_pinname_cback
@@ -2740,6 +2738,7 @@ static UINT8 bta_dm_authorize_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NA
         bta_dm_cb.p_sec_cback(event, &sec_event);
     }
 }
+#endif /// BT_SSP_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -2757,18 +2756,6 @@ static UINT8 bta_dm_pin_cback (BD_ADDR bd_addr, DEV_CLASS dev_class, BD_NAME bd_
 
     if (!bta_dm_cb.p_sec_cback) {
         return BTM_NOT_AUTHORIZED;
-    }
-
-    /* If the device name is not known, save bdaddr and devclass and initiate a name request */
-    if (bd_name[0] == 0) {
-        bta_dm_cb.pin_evt = BTA_DM_PIN_REQ_EVT;
-        bdcpy(bta_dm_cb.pin_bd_addr, bd_addr);
-        BTA_COPY_DEVICE_CLASS(bta_dm_cb.pin_dev_class, dev_class);
-        if ((BTM_ReadRemoteDeviceName(bd_addr, bta_dm_pinname_cback, BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED) {
-            return BTM_CMD_STARTED;
-        }
-
-        APPL_TRACE_WARNING(" bta_dm_pin_cback() -> Failed to start Remote Name Request  ");
     }
 
     bdcpy(sec_event.pin_req.bd_addr, bd_addr);
@@ -4633,12 +4620,12 @@ void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
         status = BTA_SUCCESS;
 
     } else {
-        APPL_TRACE_ERROR("%s(), fail to set scan params.", __func__); 
+        APPL_TRACE_ERROR("%s(), fail to set scan params.", __func__);
     }
     if (p_data->ble_set_scan_fil_params.scan_param_setup_cback != NULL) {
         p_data->ble_set_scan_fil_params.scan_param_setup_cback(p_data->ble_set_scan_fil_params.client_if, status);
     }
-    
+
 }
 
 
@@ -4903,7 +4890,7 @@ void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
     }
     if(p_data->ble_set_adv_params_all.p_start_adv_cback) {
         (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
-    }     
+    }
 }
 
 /*******************************************************************************
