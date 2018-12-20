@@ -149,7 +149,11 @@ static void start_up(void)
     // it told us it supports. We need to do this first before we request the
     // next page, because the controller's response for page 1 may be
     // dependent on what we configure from page 0
+#if (BT_SSP_INCLUDED == TRUE)
     simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(features_classic[0].as_array);
+#else
+    simple_pairing_supported = false;
+#endif
     if (simple_pairing_supported) {
         response = AWAIT_COMMAND(packet_factory->make_write_simple_pairing_mode(HCI_SP_MODE_ENABLED));
         packet_parser->parse_generic_command_complete(response);
@@ -250,10 +254,10 @@ static void start_up(void)
     }
 #endif
 
-    if (simple_pairing_supported) {
-        response = AWAIT_COMMAND(packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK));
-        packet_parser->parse_generic_command_complete(response);
-    }
+
+    response = AWAIT_COMMAND(packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK));
+    packet_parser->parse_generic_command_complete(response);
+
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     response = AWAIT_COMMAND(packet_factory->make_write_sync_flow_control_enable(1));
