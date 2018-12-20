@@ -192,7 +192,7 @@ The following variables are set at the project level, but exported for use in th
 * If ``PROJECT_VER`` variable set in project Makefile file, its value will be used.
 * Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
 * Else, if the project is located inside a Git repository, the output of git describe will be used.
-* Otherwise, ``PROJECT_VER`` will be empty.
+* Otherwise, ``PROJECT_VER`` will be "1".
 
 If you modify any of these variables inside ``component.mk`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 

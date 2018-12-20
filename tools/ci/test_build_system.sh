@@ -247,7 +247,7 @@ function run_tests()
     assert_rebuilt ${APP_BINS}
     print_status "Change app version"
     take_build_snapshot
-	echo "project-version-2.0" > ${TESTDIR}/template/version.txt
+	echo "project-version-2.0(012345678901234567890123456789)" > ${TESTDIR}/template/version.txt
 	make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS} esp32/libesp32.a
