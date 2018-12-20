@@ -186,6 +186,16 @@ function run_tests()
     assert_not_rebuilt ${BOOTLOADER_BINS}
     mv esp32_fragments.lf ${IDF_PATH}/components/esp32/ld/
 
+    print_status "Updating linker script included in template should re-link app"
+    take_build_snapshot
+    cp ${IDF_PATH}/components/esp32/ld/esp32.spiram.rom-functions-iram.ld .
+    sleep 1  # ninja may ignore if the timestamp delta is too low
+    echo "/* (Build test comment) */" >> ${IDF_PATH}/components/esp32/ld/esp32.spiram.rom-functions-iram.ld
+    idf.py build || failure "Failed to build with modified linker script included in template"
+    assert_rebuilt ${APP_BINS}
+    assert_not_rebuilt ${BOOTLOADER_BINS}
+    mv esp32.spiram.rom-functions-iram.ld ${IDF_PATH}/components/esp32/ld/
+
     print_status "sdkconfig update triggers full recompile"
     clean_build_dir
     idf.py build

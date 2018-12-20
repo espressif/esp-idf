@@ -171,6 +171,13 @@ function run_tests()
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}
 
+    print_status "Touching linker script included in template should re-link app"
+    take_build_snapshot
+    touch ${IDF_PATH}/components/esp32/ld/esp32.spiram.rom-functions-iram.ld
+    make
+    assert_rebuilt ${APP_BINS}
+    assert_not_rebuilt ${BOOTLOADER_BINS}
+
     print_status "sdkconfig update triggers full recompile"
     make
     take_build_snapshot
