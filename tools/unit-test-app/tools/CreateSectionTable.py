@@ -23,8 +23,8 @@ class Section(object):
             return False
 
     def __getitem__(self, item):
-        """ 
-        process slice. 
+        """
+        process slice.
         convert absolute address to relative address in current section and return slice result
         """
         if isinstance(item, int):
@@ -128,11 +128,11 @@ class SectionTable(object):
         key = {"address": address, "section": section}
         for section in self.table:
             if key in section:
-                tmp = section[address:address+size]
+                tmp = section[address:address + size]
                 value = 0
                 for i in range(size):
                     if endian == "LE":
-                        value += ord(tmp[i]) << (i*8)
+                        value += ord(tmp[i]) << (i * 8)
                     elif endian == "BE":
                         value += ord(tmp[i]) << ((size - i - 1) * 8)
                     else:

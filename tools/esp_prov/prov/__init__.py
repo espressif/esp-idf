@@ -13,5 +13,5 @@
 # limitations under the License.
 #
 
-from .wifi_prov import *
-from .custom_prov import *
+from .wifi_prov import *  # noqa F403
+from .custom_prov import *  # noqa F403

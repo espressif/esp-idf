@@ -17,12 +17,17 @@
 
 import unittest
 import sys
-import os
+from pyparsing import ParseException
+from pyparsing import restOfLine
 
-sys.path.append('../')
-from fragments import *
-from pyparsing import *
-from sdkconfig import *
+try:
+    import fragments
+except ImportError:
+    sys.path.append('../')
+    import fragments
+
+from sdkconfig import SDKConfig
+
 
 class FragmentTest(unittest.TestCase):
 
@@ -31,10 +36,11 @@ class FragmentTest(unittest.TestCase):
         fragment = self.parser.parseString(text, parseAll=True)
         return fragment[0]
 
+
 class SectionsTest(FragmentTest):
 
     def setUp(self):
-        self.parser = Sections.get_fragment_grammar()
+        self.parser = fragments.Sections.get_fragment_grammar()
 
     def test_valid_entries(self):
         valid_entries = """
@@ -74,7 +80,7 @@ class SectionsTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            sections = self.parse(blank_entries)
+            self.parse(blank_entries)
 
     def test_invalid_names(self):
         with_spaces = """
@@ -93,13 +99,13 @@ class SectionsTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            sections = self.parse(with_spaces)
+            self.parse(with_spaces)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(begins_with_number)
+            self.parse(begins_with_number)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(with_special_character)
+            self.parse(with_special_character)
 
     def test_non_existent_entries(self):
         misspelled_entries_field = """
@@ -113,10 +119,10 @@ class SectionsTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            sections = self.parse(misspelled_entries_field)
+            self.parse(misspelled_entries_field)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_entries_field)
+            self.parse(missing_entries_field)
 
     def test_duplicate_entries(self):
         duplicate_entries = """
@@ -143,10 +149,11 @@ class SectionsTest(FragmentTest):
 
         self.assertEqual(set(entries), expected)
 
+
 class SchemeTest(FragmentTest):
 
     def setUp(self):
-        self.parser = Scheme.get_fragment_grammar()
+        self.parser = fragments.Scheme.get_fragment_grammar()
 
     def test_valid_entries(self):
         valid_entries = """
@@ -202,10 +209,10 @@ class SchemeTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            scheme = self.parse(wrong_character)
+            self.parse(wrong_character)
 
         with self.assertRaises(ParseException):
-            scheme = self.parse(single_word)
+            self.parse(single_word)
 
     def test_blank_entries(self):
         blank_entries = """
@@ -214,7 +221,7 @@ class SchemeTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            sections = self.parse(blank_entries)
+            self.parse(blank_entries)
 
     def test_non_existent_entries(self):
         misspelled_entries_field = """
@@ -228,15 +235,16 @@ class SchemeTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            sections = self.parse(misspelled_entries_field)
+            self.parse(misspelled_entries_field)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_entries_field)
+            self.parse(missing_entries_field)
+
 
 class MappingTest(FragmentTest):
 
     def setUp(self):
-        self.parser = Mapping.get_fragment_grammar()
+        self.parser = fragments.Mapping.get_fragment_grammar()
 
     def parse_expression(self, expression):
         parser = SDKConfig.get_expression_grammar()
@@ -264,12 +272,12 @@ class MappingTest(FragmentTest):
         entries = mapping.entries
 
         expected = [("default", {
-                ("obj", "symbol", "noflash"),
-                ("obj", None, "noflash"),
-                ("obj", "symbol_2", "noflash"),
-                ("obj_2", None, "noflash"),
-                ("*", None, "noflash")
-                } ) ]
+                    ("obj", "symbol", "noflash"),
+                    ("obj", None, "noflash"),
+                    ("obj", "symbol_2", "noflash"),
+                    ("obj_2", None, "noflash"),
+                    ("*", None, "noflash")
+                    })]
 
         self.assertEqual(entries, expected)
 
@@ -360,43 +368,43 @@ class MappingTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            sections = self.parse(with_fragment_name)
+            self.parse(with_fragment_name)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_archive)
+            self.parse(missing_archive)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(misspelled_archive)
+            self.parse(misspelled_archive)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_entries)
+            self.parse(missing_entries)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(misspelled_entries)
+            self.parse(misspelled_entries)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_symbols)
+            self.parse(missing_symbols)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_scheme_1)
+            self.parse(missing_scheme_1)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_scheme_2)
+            self.parse(missing_scheme_2)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(missing_entity)
+            self.parse(missing_entity)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(wilcard_symbol)
+            self.parse(wilcard_symbol)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(empty_object_with_symbol)
+            self.parse(empty_object_with_symbol)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(wildcard_object_with_symbol)
+            self.parse(wildcard_object_with_symbol)
 
         with self.assertRaises(ParseException):
-            sections = self.parse(empty_definition)
+            self.parse(empty_definition)
 
     def test_explicit_blank_default_w_others(self):
         expl_blnk_w_oth = """
@@ -412,13 +420,12 @@ class MappingTest(FragmentTest):
 
         entries = mapping.entries
 
-        expected = [ ( entries[0][0] , {
-                ("obj_a", None, "noflash"),
-                } ),
-                ("default", set() ) ]
+        expected = [(entries[0][0], {
+                    ("obj_a", None, "noflash"),
+                    }),
+                    ("default", set())]
 
         self.assertEqual(entries, expected)
-
 
     def test_implicit_blank_default_w_others(self):
         impl_blnk_w_oth = """
@@ -433,10 +440,10 @@ class MappingTest(FragmentTest):
 
         entries = mapping.entries
 
-        expected = [ ( entries[0][0] , {
-                ("obj_a", None, "noflash"),
-                } ),
-                ("default", set() ) ]
+        expected = [(entries[0][0], {
+                    ("obj_a", None, "noflash"),
+                    }),
+                    ("default", set())]
 
         self.assertEqual(entries, expected)
 
@@ -449,7 +456,7 @@ class MappingTest(FragmentTest):
         """
         mapping = self.parse(expl_blnk_def)
         entries = mapping.entries
-        expected = [ ("default", set() ) ]
+        expected = [("default", set())]
 
         self.assertEqual(entries, expected)
 
@@ -462,7 +469,7 @@ class MappingTest(FragmentTest):
         """
         mapping = self.parse(impl_blnk_def)
         entries = mapping.entries
-        expected = [ ("default", set() ) ]
+        expected = [("default", set())]
 
         self.assertEqual(entries, expected)
 
@@ -486,19 +493,19 @@ class MappingTest(FragmentTest):
 
         entries = mapping.entries
 
-        expected = [ ( entries[0][0] , {
-                ("obj_a1", None, "noflash"),
-                ("obj_a2", None, "noflash"),
-                } ),
-                ( entries[1][0] , {
-                ("obj_b1", None, "noflash"),
-                ("obj_b2", None, "noflash"),
-                ("obj_b3", None, "noflash"),
-                } ),
-                ( entries[2][0] , {
-                ("obj_c1", None, "noflash"),
-                } ),
-                ("default", set() ) ]
+        expected = [(entries[0][0], {
+                    ("obj_a1", None, "noflash"),
+                    ("obj_a2", None, "noflash"),
+                    }),
+                    (entries[1][0], {
+                        ("obj_b1", None, "noflash"),
+                        ("obj_b2", None, "noflash"),
+                        ("obj_b3", None, "noflash"),
+                    }),
+                    (entries[2][0], {
+                        ("obj_c1", None, "noflash"),
+                    }),
+                    ("default", set())]
 
         self.assertEqual(entries, expected)
 
@@ -522,18 +529,18 @@ class MappingTest(FragmentTest):
 
         entries = mapping.entries
 
-        expected = [ ( entries[0][0] , {
-                ("obj_a", None, "noflash")
-                } ),
-                ( entries[1][0] , set()),
-                ( entries[2][0] , {
-                ("obj_c", None, "noflash")
-                } ),
-                ( entries[3][0] , set()),
-                ( entries[4][0] , set()),
-                ( "default" , {
-                ("obj", None, "noflash")
-                } ) ]
+        expected = [(entries[0][0], {
+                    ("obj_a", None, "noflash")
+                    }),
+                    (entries[1][0], set()),
+                    (entries[2][0], {
+                        ("obj_c", None, "noflash")
+                    }),
+                    (entries[3][0], set()),
+                    (entries[4][0], set()),
+                    ("default", {
+                        ("obj", None, "noflash")
+                    })]
 
         self.assertEqual(entries, expected)
 
@@ -548,8 +555,7 @@ class MappingTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            mapping = self.parse(blank_first_condition)
-
+            self.parse(blank_first_condition)
 
     def test_nonlast_default(self):
         nonlast_default_1 = """
@@ -587,13 +593,13 @@ class MappingTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            mapping = self.parse(nonlast_default_1)
+            self.parse(nonlast_default_1)
 
         with self.assertRaises(ParseException):
-            mapping = self.parse(nonlast_default_2)
+            self.parse(nonlast_default_2)
 
         with self.assertRaises(ParseException):
-            mapping = self.parse(nonlast_default_3)
+            self.parse(nonlast_default_3)
 
     def test_duplicate_default(self):
         duplicate_default_1 = """
@@ -623,10 +629,11 @@ class MappingTest(FragmentTest):
         """
 
         with self.assertRaises(ParseException):
-            mapping = self.parse(duplicate_default_1)
+            self.parse(duplicate_default_1)
 
         with self.assertRaises(ParseException):
-            mapping = self.parse(duplicate_default_2)
+            self.parse(duplicate_default_2)
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
     unittest.main()

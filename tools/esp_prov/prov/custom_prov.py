@@ -21,9 +21,11 @@ from future.utils import tobytes
 import utils
 import proto
 
+
 def print_verbose(security_ctx, data):
     if (security_ctx.verbose):
-         print("++++ " + data + " ++++")
+        print("++++ " + data + " ++++")
+
 
 def custom_config_request(security_ctx, info, version):
     # Form protobuf request packet from custom-config data
@@ -33,6 +35,7 @@ def custom_config_request(security_ctx, info, version):
     enc_cmd = security_ctx.encrypt_data(cmd.SerializeToString()).decode('latin-1')
     print_verbose(security_ctx, "Client -> Device (CustomConfig cmd) " + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
+
 
 def custom_config_response(security_ctx, response_data):
     # Interpret protobuf response packet

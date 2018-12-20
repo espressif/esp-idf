@@ -21,9 +21,11 @@ from future.utils import tobytes
 import utils
 import proto
 
+
 def print_verbose(security_ctx, data):
     if (security_ctx.verbose):
-         print("++++ " + data + " ++++")
+        print("++++ " + data + " ++++")
+
 
 def config_get_status_request(security_ctx):
     # Form protobuf request packet for GetStatus command
@@ -34,6 +36,7 @@ def config_get_status_request(security_ctx):
     encrypted_cfg = security_ctx.encrypt_data(cfg1.SerializeToString()).decode('latin-1')
     print_verbose(security_ctx, "Client -> Device (Encrypted CmdGetStatus) " + utils.str_to_hexstr(encrypted_cfg))
     return encrypted_cfg
+
 
 def config_get_status_response(security_ctx, response_data):
     # Interpret protobuf response packet from GetStatus command
@@ -56,6 +59,7 @@ def config_get_status_response(security_ctx, response_data):
             print("++++ Failure reason: " + "Incorrect SSID ++++")
     return cmd_resp1.resp_get_status.sta_state
 
+
 def config_set_config_request(security_ctx, ssid, passphrase):
     # Form protobuf request packet for SetConfig command
     cmd = proto.wifi_config_pb2.WiFiConfigPayload()
@@ -66,6 +70,7 @@ def config_set_config_request(security_ctx, ssid, passphrase):
     print_verbose(security_ctx, "Client -> Device (SetConfig cmd) " + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
 
+
 def config_set_config_response(security_ctx, response_data):
     # Interpret protobuf response packet from SetConfig command
     decrypt = security_ctx.decrypt_data(tobytes(response_data))
@@ -74,6 +79,7 @@ def config_set_config_response(security_ctx, response_data):
     print_verbose(security_ctx, "SetConfig status " + str(cmd_resp4.resp_set_config.status))
     return cmd_resp4.resp_set_config.status
 
+
 def config_apply_config_request(security_ctx):
     # Form protobuf request packet for ApplyConfig command
     cmd = proto.wifi_config_pb2.WiFiConfigPayload()
@@ -81,6 +87,7 @@ def config_apply_config_request(security_ctx):
     enc_cmd = security_ctx.encrypt_data(cmd.SerializeToString()).decode('latin-1')
     print_verbose(security_ctx, "Client -> Device (ApplyConfig cmd) " + utils.str_to_hexstr(enc_cmd))
     return enc_cmd
+
 
 def config_apply_config_response(security_ctx, response_data):
     # Interpret protobuf response packet from ApplyConfig command

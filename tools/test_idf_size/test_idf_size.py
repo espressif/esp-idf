@@ -16,8 +16,12 @@
 
 import sys
 
-sys.path.append('..')
-import idf_size
+try:
+    import idf_size
+except ImportError:
+    sys.path.append('..')
+    import idf_size
+
 
 if __name__ == "__main__":
     try:

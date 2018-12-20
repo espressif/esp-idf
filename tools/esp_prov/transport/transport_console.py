@@ -18,11 +18,12 @@ from builtins import input
 
 import utils
 
-from .transport import *
+from .transport import Transport
+
 
 class Transport_Console(Transport):
 
-    def send_data(self, path, data, session_id = 0):
+    def send_data(self, path, data, session_id=0):
         print("Client->Device msg :", path, session_id, utils.str_to_hexstr(data))
         try:
             resp = input("Enter device->client msg : ")

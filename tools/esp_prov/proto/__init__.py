@@ -29,4 +29,5 @@ wifi_constants_pb2 = imp.load_source("wifi_constants_pb2", idf_path + "/componen
 wifi_config_pb2    = imp.load_source("wifi_config_pb2",    idf_path + "/components/wifi_provisioning/python/wifi_config_pb2.py")
 
 # custom_provisioning component related python files generated from .proto files
-custom_config_pb2  = imp.load_source("custom_config_pb2",  idf_path + "/examples/provisioning/custom_config/components/custom_provisioning/python/custom_config_pb2.py")
+custom_config_pb2  = imp.load_source("custom_config_pb2", idf_path +
+                                     "/examples/provisioning/custom_config/components/custom_provisioning/python/custom_config_pb2.py")

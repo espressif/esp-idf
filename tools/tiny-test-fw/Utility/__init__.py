@@ -29,7 +29,7 @@ def console_log(data, color="white", end="\n"):
     if color not in _COLOR_CODES:
         color = "white"
     color_codes = _COLOR_CODES[color]
-    if type(data) is type(b''):
+    if isinstance(data, type(b'')):
         data = data.decode('utf-8', 'replace')
     print(color_codes + data, end=end)
     if color not in ["white", "W"]:
