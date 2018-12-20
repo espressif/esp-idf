@@ -552,6 +552,9 @@ accept_function(void *arg, struct tcp_pcb *newpcb, err_t err)
     tcp_err(pcb, NULL);
     /* remove reference from to the pcb from this netconn */
     newconn->pcb.tcp = NULL;
+#if ESP_THREAD_SAFE
+    sys_mbox_set_owner(&newconn->recvmbox, NULL);
+#endif
     /* no need to drain since we know the recvmbox is empty. */
     sys_mbox_free(&newconn->recvmbox);
     sys_mbox_set_invalid(&newconn->recvmbox);
@@ -711,14 +714,14 @@ netconn_alloc(enum netconn_type t, netconn_callback callback)
 #endif
 
 #if ESP_THREAD_SAFE
-  conn->recvmbox_ref = conn->recvmbox;
   sys_mbox_set_owner(&conn->recvmbox, conn);
-#if LWIP_TCP
-  sys_mbox_set_invalid(&conn->acceptmbox_ref);
-#endif
 #endif
 
 #if LWIP_TCP
+#if ESP_THREAD_SAFE
+  /* Init acceptmbox to NULL because sys_mbox_set_invalid is implemented as empty macro */
+  conn->acceptmbox = NULL;
+#endif
   sys_mbox_set_invalid(&conn->acceptmbox);
 #endif
   conn->state        = NETCONN_NONE;
@@ -761,24 +764,21 @@ void
 netconn_free(struct netconn *conn)
 {
   LWIP_ASSERT("PCB must be deallocated outside this function", conn->pcb.tcp == NULL);
+
+#if !ESP_THREAD_SAFE
   LWIP_ASSERT("recvmbox must be deallocated before calling this function",
     !sys_mbox_valid(&conn->recvmbox));
 #if LWIP_TCP
   LWIP_ASSERT("acceptmbox must be deallocated before calling this function",
     !sys_mbox_valid(&conn->acceptmbox));
 #endif /* LWIP_TCP */
-
-#if ESP_THREAD_SAFE
-  if (conn->recvmbox_ref) {
-    sys_mbox_free(&conn->recvmbox_ref);
-  }
+#else /* !ESP_THREAD_SAFE */
+  sys_mbox_free(&conn->recvmbox);
 
 #if LWIP_TCP
-  if (conn->acceptmbox_ref) {
-    sys_mbox_free(&conn->acceptmbox_ref);
-  }
+  sys_mbox_free(&conn->acceptmbox);
 #endif
-#endif
+#endif /* !ESP_THREAD_SAFE */
 
 #if !LWIP_NETCONN_SEM_PER_THREAD
   sys_sem_free(&conn->op_completed);
@@ -1420,7 +1420,6 @@ lwip_netconn_do_listen(void *m)
               }
               if (msg->err == ERR_OK) {
 #if ESP_THREAD_SAFE
-                msg->conn->acceptmbox_ref = msg->conn->acceptmbox;
                 sys_mbox_set_owner(&msg->conn->acceptmbox, msg->conn);
 #endif
                 msg->conn->state = NETCONN_LISTEN;
