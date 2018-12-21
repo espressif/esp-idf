@@ -231,19 +231,11 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
     xErr = uart_param_config(ucUartNumber, &xUartConfig);
     MB_PORT_CHECK((xErr == ESP_OK),
             FALSE, "mb config failure, uart_param_config() returned (0x%x).", (uint32_t)xErr);
-    // Set UART pin numbers
-    xErr = uart_set_pin(ucUartNumber, MB_UART_TXD, MB_UART_RXD, MB_UART_RTS, UART_PIN_NO_CHANGE);
-    MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-            "mb set pin failure, uart_set_pin() returned (0x%x).", (uint32_t)xErr);
     // Install UART driver, and get the queue.
     xErr = uart_driver_install(ucUartNumber, MB_SERIAL_BUF_SIZE, MB_SERIAL_BUF_SIZE,
             MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LOWMED);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
-    // Set driver mode to Half Duplex
-    xErr = uart_set_mode(ucUartNumber, UART_MODE_RS485_HALF_DUPLEX);
-    MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-            "mb serial set mode failure, uart_set_mode() returned (0x%x).", (uint32_t)xErr);
 #ifndef MB_TIMER_PORT_ENABLED
     // Set timeout for TOUT interrupt (T3.5 modbus time)
     xErr = uart_set_rx_timeout(ucUartNumber, MB_SERIAL_TOUT);
