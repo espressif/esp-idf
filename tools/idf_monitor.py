@@ -555,12 +555,14 @@ class Monitor(object):
                 self.output_enable(True)
 
     def lookup_pc_address(self, pc_addr):
-        translation = subprocess.check_output(
-            ["%saddr2line" % self.toolchain_prefix,
-             "-pfiaC", "-e", self.elf_file, pc_addr],
-            cwd=".")
-        if not b"?? ??:0" in translation:
-            yellow_print(translation.decode())
+        cmd = ["%saddr2line" % self.toolchain_prefix,
+               "-pfiaC", "-e", self.elf_file, pc_addr]
+        try:
+            translation = subprocess.check_output(cmd, cwd=".")
+            if b"?? ??:0" not in translation:
+                yellow_print(translation.decode())
+        except OSError as e:
+            red_print("%s: %s" % (" ".join(cmd), e))
 
     def check_gdbstub_trigger(self, line):
         line = self._gdb_buffer + line
@@ -582,12 +584,15 @@ class Monitor(object):
         with self:  # disable console control
             sys.stderr.write(ANSI_NORMAL)
             try:
-                process = subprocess.Popen(["%sgdb" % self.toolchain_prefix,
-                                "-ex", "set serial baud %d" % self.serial.baudrate,
-                                "-ex", "target remote %s" % self.serial.port,
-                                "-ex", "interrupt",  # monitor has already parsed the first 'reason' command, need a second
-                                self.elf_file], cwd=".")
+                cmd = ["%sgdb" % self.toolchain_prefix,
+                       "-ex", "set serial baud %d" % self.serial.baudrate,
+                       "-ex", "target remote %s" % self.serial.port,
+                       "-ex", "interrupt",  # monitor has already parsed the first 'reason' command, need a second
+                       self.elf_file]
+                process = subprocess.Popen(cmd, cwd=".")
                 process.wait()
+            except OSError as e:
+                red_print("%s: %s" % (" ".join(cmd), e))
             except KeyboardInterrupt:
                 pass  # happens on Windows, maybe other OSes
             finally:
