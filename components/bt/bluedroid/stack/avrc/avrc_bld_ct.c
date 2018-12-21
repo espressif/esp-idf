@@ -237,6 +237,22 @@ static tAVRC_STS avrc_bld_get_element_attr_cmd (tAVRC_GET_ELEM_ATTRS_CMD *p_cmd,
     return AVRC_STS_NO_ERROR;
 }
 
+static tAVRC_STS avrc_bld_get_caps_cmd(tAVRC_GET_CAPS_CMD *p_cmd, BT_HDR *p_pkt)
+{
+    UINT8   *p_data, *p_start;
+
+    AVRC_TRACE_API("avrc_bld_get_caps");
+    /* get the existing length, if any, and also the num attributes */
+    // Set the notify value
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    /* add fixed length 1 */
+    UINT16_TO_BE_STREAM(p_data, 1);
+    /* capability id */
+    UINT8_TO_BE_STREAM(p_data, p_cmd->capability_id);
+    p_pkt->len = (p_data - p_start);
+    return AVRC_STS_NO_ERROR;
+}
 /*******************************************************************************
 **
 ** Function         AVRC_BldCommand
@@ -295,6 +311,9 @@ tAVRC_STS AVRC_BldCommand( tAVRC_COMMAND *p_cmd, BT_HDR **pp_pkt)
 
     case AVRC_PDU_REGISTER_NOTIFICATION:      /* 0x31 */
         status = avrc_bld_register_change_notfn(p_cmd->reg_notif.event_id, p_cmd->reg_notif.param, p_pkt);
+        break;
+    case AVRC_PDU_GET_CAPABILITIES:
+        status = avrc_bld_get_caps_cmd(&p_cmd->get_caps, p_pkt);
         break;
     }
 

@@ -249,6 +249,9 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
     case AVRC_PDU_SET_ABSOLUTE_VOLUME: {
         if (len != 1) {
             status = AVRC_STS_INTERNAL_ERR;
+        } else {
+            BE_STREAM_TO_UINT8 (p_result->volume.volume, p);
+            p_result->volume.volume &= 0x7F; // remove the top bit
         }
         break;
     }
