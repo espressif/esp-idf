@@ -255,3 +255,47 @@ TEST_CASE("mbedtls SHA256 clone", "[mbedtls]")
     TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&clone, sha256));
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, sha256, 32, "SHA256 cloned calculation");
 }
+
+typedef struct {
+    mbedtls_sha256_context ctx;
+    uint8_t result[32];
+    int ret;
+    bool done;
+} finalise_sha_param_t;
+
+static void tskFinaliseSha(void *v_param)
+{
+    finalise_sha_param_t *param = (finalise_sha_param_t *)v_param;
+
+    for (int i = 0; i < 5; i++) {
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&param->ctx, one_hundred_as, 100));
+    }
+
+    param->ret = mbedtls_sha256_finish_ret(&param->ctx, param->result);
+    param->done = true;
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("mbedtls SHA session passed between tasks" , "[mbedtls]")
+{
+    finalise_sha_param_t param = { 0 };
+
+    mbedtls_sha256_init(&param.ctx);
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&param.ctx, false));
+    for (int i = 0; i < 5; i++) {
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&param.ctx, one_hundred_as, 100));
+    }
+
+    // pass the SHA context off to a different task
+    //
+    // note: at the moment this doesn't crash even if a mutex semaphore is used as the
+    // engine lock, but it can crash...
+    xTaskCreate(tskFinaliseSha, "SHAFinalise", SHA_TASK_STACK_SIZE, &param, 3, NULL);
+
+    while (!param.done) {
+        vTaskDelay(1);
+    }
+
+    TEST_ASSERT_EQUAL(0, param.ret);
+    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, param.result, 32, "SHA256 result from other task");
+}
