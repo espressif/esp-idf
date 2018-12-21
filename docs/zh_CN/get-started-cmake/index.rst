@@ -10,6 +10,8 @@
 
 本文档旨在指导用户创建 ESP32 的软件环境。本文将通过一个简单的例子，说明 ESP-IDF (Espressif IoT Development Framework) 的使用方法，包括配置、编译、下载固件到开发板等步骤。
 
+.. include:: /_build/inc/version-note.inc
+
 概述
 ============
 
@@ -116,23 +118,24 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 Linux 和 MacOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+获取本地副本：打开终端，切换到你要存放 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库:
 
-    mkdir -p ~/esp
-    cd ~/esp
-    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
+.. include:: /_build/inc/git-clone-bash.inc
 
 ESP-IDF 将会被下载到 ``~/esp/esp-idf`` 目录下。
 
+有关在给定情况下使用哪个 ESP-IDF 版本的信息，请参阅 :doc:`/versions` 。
 
 Windows Command Prompt
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: batch
+.. include:: /_build/inc/git-clone-windows.inc
 
-    mkdir %userprofile%\esp
-    cd %userprofile%\esp
-    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
+ESP-IDF 将会被下载到用户的 ``esp\esp-idf`` 目录下。
+
+有关在给定情况下使用哪个 ESP-IDF 版本的信息，请参阅 :doc:`/versions` 。
+
+.. include:: /_build/inc/git-clone-notes.inc
 
 .. highlight:: bash
 .. note::
@@ -141,13 +144,6 @@ Windows Command Prompt
 
         cd esp-idf
         git submodule update --init
-
-.. note::
-
-   基于 CMake 的构建系统预览默认使用的 Git 分支是 ``feature/cmake``。如果你在克隆时没有带 ``--branch`` 选项，可通过以下命令行切换分支::
-
-         cd esp-idf
-         git checkout feature/cmake
 
 .. _get-started-setup-path-cmake:
 
@@ -161,7 +157,7 @@ ESP-IDF 的正常运行需要设置两个环境变量：
 
 你需在你的电脑中设置这两个变量，否则工程将不能编译。
 
-你可以在每次 PC 重启时手动设置，你也可以在用户配置中进行永久设置，具体请参照 :doc:`add-idf_path-to-profile` 小节中的 :ref:`Windows <add-paths-to-profile-windows-cmake>`，:ref:`Linux 和 MacOS <add-idf_path-to-profile-linux-macos-cmake>` 相关指导进行操作。 
+你可以在每次 PC 重启时手动设置，你也可以在用户配置中进行永久设置，具体请参照 :doc:`add-idf_path-to-profile` 小节中的 :ref:`Windows <add-paths-to-profile-windows-cmake>`，:ref:`Linux 和 MacOS <add-idf_path-to-profile-linux-macos-cmake>` 相关指导进行操作。
 
 .. _get-started-start-project-cmake:
 
@@ -249,6 +245,10 @@ Windows Command Prompt
 * 使用空格键或 ``Y`` 和 ``N`` 键来使能 (Yes) 和禁止 (No) 带有复选框 "``[*]``" 的配置项
 * 当光标在某个配置项上面高亮时，输入 ``?`` 可以直接查看该项的帮助信息
 * 输入 ``/`` 搜索配置项
+
+.. attention::
+
+    如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
 
 .. _get-started-build-cmake:
 
@@ -393,65 +393,13 @@ Windows Command Prompt
 
 
 更新 ESP-IDF
-=========================
+=============
 
-ESP-IDF 使用一段时间后，你可能想要进行升级来获得新的性能或者对 bug 进行修复。最简单的更新方式是删除已有的 ``esp-idf`` 文件夹然后再克隆一个，即重复 :ref:`get-started-get-esp-idf-cmake` 小节中所述的初始安装即可。
+使用 ESP-IDF 一段时间后，您可能想通过升级来获取新的功能或者修复 bug，最简单的升级方式就是删除已有的 ``esp-idf`` 文件夹然后重新克隆一个，即重复 :ref:`get-started-get-esp-idf` 里的操作。
 
-另外一种方法是只更新有改动的部分，此方法适合连接 GitHub 比较缓慢的情况。你只需运行如下指令： 
+然后 :doc:`添加 IDF 到工作路径 <add-idf_path-to-profile>`，这样工具链脚本就能够知道这一版本的 ESP-IDF 的具体位置。
 
-Linux 和 MacOS
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp/esp-idf
-    git pull
-    git submodule update --init --recursive
-
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp\esp-idf
-    git pull
-    git submodule update --init --recursive
-
-``git pull`` 命令将获取和合并 GitHub 上对 ESP-IDF 仓库所做的更改。``git submodule update --init --recursive`` 命令会更新现有子模块或拷贝更新的子模块。GitHub 上的子模块是指向其他仓库的链接，需要以下额外命令将其指向你的电脑。
-
-.. highlight:: bash
-
-你还可以查看具体发布的 ESP-IDF 版本，如 `v2.1`。
-
-Linux 和 MacOS
-~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp
-    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
-    cd esp-idf-v2.1/
-    git checkout v2.1
-    git submodule update --init --recursive
-
-
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp
-    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
-    cd esp-idf-v2.1/
-    git checkout v2.1
-    git submodule update --init --recursive
-
-注意 :doc:`add-idf_path-to-profile`，这样工具链脚本就能够知道这一版本的 ESP-IDF 的具体位置。
-
-.. note::
-
-   ESP-IDF 版本不同，其设置、必备要求或所需工具链版本也会有所不同。如果你有任何问题，请仔细对照快速入门文档查看你将使用版本的相应要求。
-
+另外一种方法是只更新有改动的部分。:ref:`更新步骤取决于现在用的ESP-IDF版本 <updating>`。
 
 相关文档
 =================
@@ -464,3 +412,6 @@ Windows Command Prompt
     eclipse-setup
     idf-monitor
     toolchain-setup-scratch
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+.. _Releases page: https://github.com/espressif/esp-idf/releases

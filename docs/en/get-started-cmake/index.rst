@@ -10,6 +10,8 @@ Get Started (CMake)
 
 This document is intended to help users set up the software environment for development of applications using hardware based on the Espressif ESP32. Through a simple example we would like to illustrate how to use ESP-IDF (Espressif IoT Development Framework), including the menu based configuration, compiling the ESP-IDF and firmware download to ESP32 boards.
 
+.. include:: /_build/inc/version-note.inc
+
 Introduction
 ============
 
@@ -116,23 +118,24 @@ Besides the toolchain (that contains programs to compile and build the applicati
 Linux and MacOS
 ~~~~~~~~~~~~~~~
 
-.. code-block:: bash
+To obtain a local copy: open terminal, navigate to the directory you want to put ESP-IDF, and clone the repository using ``git clone`` command:
 
-    mkdir -p ~/esp
-    cd ~/esp
-    git clone --recursive https://github.com/espressif/esp-idf.git
+.. include:: /_build/inc/git-clone-bash.inc
 
 ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
+Consult :doc:`/versions` for information about which version of ESP-IDF to use in a given situation.
 
 Windows Command Prompt
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: batch
+.. include:: /_build/inc/git-clone-windows.inc
 
-    mkdir %userprofile%\esp
-    cd %userprofile%\esp
-    git clone --recursive https://github.com/espressif/esp-idf.git
+ESP-IDF will be downloaded into ``esp\esp-idf`` in the user's profile directory.
+
+Consult :doc:`/versions` for information about which version of ESP-IDF to use in a given situation.
+
+.. include:: /_build/inc/git-clone-notes.inc
 
 .. highlight:: bash
 .. note::
@@ -201,7 +204,7 @@ You are almost there. To be able to proceed further, connect ESP32 board to PC, 
 Configure
 =========
 
-Naviagate to the directory of the ``hello_world`` application copy, and run the ``menuconfig`` project configuration utility:
+Navigate to the directory of the ``hello_world`` application copy, and run the ``menuconfig`` project configuration utility:
 
 Linux and MacOS
 ~~~~~~~~~~~~~~~
@@ -395,60 +398,9 @@ Updating ESP-IDF
 
 After some time of using ESP-IDF, you may want to update it to take advantage of new features or bug fixes. The simplest way to do so is by deleting existing ``esp-idf`` folder and cloning it again, exactly as when doing initial installation described in sections :ref:`get-started-get-esp-idf-cmake`.
 
-Another solution is to update only what has changed. This method is useful if you have a slow connection to GitHub. To do the update run the following commands:
+If downloading to a new path, remember to :doc:`add-idf_path-to-profile` so that the toolchain scripts know where to find the ESP-IDF in its release specific location.
 
-Linux and MacOS
-~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp/esp-idf
-    git pull
-    git submodule update --init --recursive
-
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp\esp-idf
-    git pull
-    git submodule update --init --recursive
-
-The ``git pull`` command is fetching and merging changes from ESP-IDF repository on GitHub. Then ``git submodule update --init --recursive`` is updating existing submodules or getting a fresh copy of new ones. On GitHub the submodules are represented as links to other repositories and require this additional command to get them onto your PC.
-
-.. highlight:: bash
-
-It is also possible to check out a specific release of ESP-IDF, e.g. `v2.1`.
-
-Linux and MacOS
-~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp
-    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
-    cd esp-idf-v2.1/
-    git checkout v2.1
-    git submodule update --init --recursive
-
-
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp
-    git clone https://github.com/espressif/esp-idf.git esp-idf-v2.1
-    cd esp-idf-v2.1/
-    git checkout v2.1
-    git submodule update --init --recursive
-
-After that remember to :doc:`add-idf_path-to-profile`, so the toolchain scripts know where to find the ESP-IDF in it's release specific location.
-
-.. note::
-
-   Different versions of ESP-IDF may have different setup or prerequisite requirements, or require different toolchain versions. If you experience any problems, carefully check the Getting Started documentation for the version you are switching to.
+Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
 
 
 Related Documents
@@ -462,3 +414,6 @@ Related Documents
     eclipse-setup
     idf-monitor
     toolchain-setup-scratch
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+.. _Releases page: https://github.com/espressif/esp-idf/releases
