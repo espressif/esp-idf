@@ -145,11 +145,13 @@ choice BTDM_MODEM_SLEEP_MODE
 config BTDM_MODEM_SLEEP_MODE_ORIG
     bool "ORIG Mode(sleep with low power clock)"
     help
-        ORIG mode is a deep sleep mode that can be used for dual mode controller. In this mode, bluetooth controller sleeps between BR/EDR frames and BLE events. A low power clock is used to maintain bluetooth reference clock.
+        ORIG mode is a bluetooth sleep mode that can be used for dual mode controller. In this mode, bluetooth controller
+        sleeps between BR/EDR frames and BLE events. A low power clock is used to maintain bluetooth reference clock.
 config BTDM_MODEM_SLEEP_MODE_EVED
-    bool "EVED Mode "
+    bool "EVED Mode(For internal test only)"
     help
-        This mode is for BLE only.
+        EVED mode is for BLE only and is only for internal test. Do not use it for production. this mode is not compatible
+        with DFS nor light sleep
 endchoice
 
 choice BTDM_LOW_POWER_CLOCK
@@ -163,6 +165,7 @@ config BTDM_LPCLK_SEL_MAIN_XTAL
     help
         Main crystal can be used as low power clock for bluetooth modem sleep. If this option is selected, bluetooth
         modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but cannot work when light sleep is enabled.
+        Main crystal has a relatively better performance than other bluetooth low power clock sources.
 config BTDM_LPCLK_SEL_EXT_32K_XTAL
     bool "External 32kHz crystal"
     depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
