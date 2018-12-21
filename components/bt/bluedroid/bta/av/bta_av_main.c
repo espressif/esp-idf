@@ -534,6 +534,11 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     registr.app_id = p_data->api_reg.app_id;
     registr.chnl   = (tBTA_AV_CHNL)p_data->hdr.layer_specific;
     registr.p_bta_av_cos = p_data->api_reg.bta_av_cos;
+    registr.p_bta_avrc_cos = p_data->api_reg.bta_avrc_cos;
+
+    // set the avrc call-out functions
+    bta_av_cb.p_rc_cos = p_data->api_reg.bta_avrc_cos;
+
     do {
         p_scb = bta_av_alloc_scb(registr.chnl);
         if (p_scb == NULL) {
@@ -619,7 +624,6 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
         if (registr.chnl == BTA_AV_CHNL_AUDIO) {
             /* set up the audio stream control block */
             p_scb->p_act_tbl = (const tBTA_AV_ACT *)bta_av_a2d_action;
-            // p_scb->p_cos     = &bta_av_a2d_cos;
             p_scb->p_cos     = registr.p_bta_av_cos;
             p_scb->media_type = AVDT_MEDIA_AUDIO;
             cs.cfg.psc_mask  = AVDT_PSC_TRANS;
