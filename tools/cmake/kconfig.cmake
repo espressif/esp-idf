@@ -107,8 +107,8 @@ function(kconfig_process_config)
         set(defaults_arg --defaults "${IDF_SDKCONFIG_DEFAULTS}")
     endif()
 
-    if(EXISTS "${SDKCONFIG_DEFAULTS}.${IDF_TARGET}")
-        list(APPEND defaults_arg --defaults "${SDKCONFIG_DEFAULTS}.${IDF_TARGET}")
+    if(EXISTS "${IDF_SDKCONFIG_DEFAULTS}.${IDF_TARGET}")
+        list(APPEND defaults_arg --defaults "${IDF_SDKCONFIG_DEFAULTS}.${IDF_TARGET}")
     endif()
 
     # Set these in the parent scope, so that they can be written to project_description.json

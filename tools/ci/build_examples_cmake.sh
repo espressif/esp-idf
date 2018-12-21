@@ -64,6 +64,7 @@ FAILED_EXAMPLES=""
 RESULT_ISSUES=22  # magic number result code for issues found
 LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
+SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/main/" | sort )
 
@@ -122,6 +123,16 @@ build_example () {
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
 
+        # sdkconfig files are normally not checked into git, but may be present when
+        # a developer runs this script locally
+        rm -f sdkconfig
+
+        # If sdkconfig.ci file is present, append it to sdkconfig.defaults,
+        # replacing environment variables
+        if [[ -f "$SDKCONFIG_DEFAULTS_CI" ]]; then
+            cat $SDKCONFIG_DEFAULTS_CI | $IDF_PATH/tools/ci/envsubst.py >> sdkconfig.defaults
+        fi
+
         # build non-verbose first
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         touch ${BUILDLOG}
@@ -130,7 +141,7 @@ build_example () {
             idf.py fullclean >>${BUILDLOG} 2>&1 &&
             idf.py build >>${BUILDLOG} 2>&1
         else
-            rm -rf build sdkconfig &&
+            rm -rf build &&
             ./build.sh >>${BUILDLOG} 2>&1
         fi &&
         cp build/flash_project_args build/download.config || # backwards compatible download.config filename

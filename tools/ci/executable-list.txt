@@ -21,6 +21,7 @@ tools/ci/build_examples_cmake.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/checkout_project_ref.py
+tools/ci/envsubst.py
 tools/ci/get-full-sources.sh
 tools/ci/mirror-submodule-update.sh
 tools/ci/mirror-synchronize.sh
