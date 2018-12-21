@@ -5030,42 +5030,13 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
         memcpy (p_cb->connecting_bda, p_bda, BD_ADDR_LEN);
         memcpy (p_cb->connecting_dc,  p_dev_rec->dev_class, DEV_CLASS_LEN);
 
-        /* Check if the name is known */
-        /* Even if name is not known we might not be able to get one */
-        /* this is the case when we are already getting something from the */
-        /* device, so HCI level is flow controlled */
-        /* Also cannot send remote name request while paging, i.e. connection is not completed */
-        if (p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) {
-            BTM_TRACE_EVENT ("btm_sec_pin_code_request going for callback\n");
-
-            btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
-            if (p_cb->api.p_pin_callback) {
-                (*p_cb->api.p_pin_callback) (p_bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-                                             (p_dev_rec->p_cur_service == NULL) ? FALSE
-                                             : (p_dev_rec->p_cur_service->security_flags
-                                                & BTM_SEC_IN_MIN_16_DIGIT_PIN));
-            }
-        } else {
-            BTM_TRACE_EVENT ("btm_sec_pin_code_request going for remote name\n");
-
-            /* We received PIN code request for the device with unknown name */
-            /* it is not user friendly just to ask for the PIN without name */
-            /* try to get name at first */
-            if (!btsnd_hcic_rmt_name_req (p_dev_rec->bd_addr,
-                                          HCI_PAGE_SCAN_REP_MODE_R1,
-                                          HCI_MANDATARY_PAGE_SCAN_MODE, 0)) {
-                p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
-                p_dev_rec->sec_bd_name[0] = 'f';
-                p_dev_rec->sec_bd_name[1] = '0';
-                BTM_TRACE_ERROR ("can not send rmt_name_req?? fake a name and call callback\n");
-
-                btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
-                if (p_cb->api.p_pin_callback)
-                    (*p_cb->api.p_pin_callback) (p_bda, p_dev_rec->dev_class,
-                                                 p_dev_rec->sec_bd_name, (p_dev_rec->p_cur_service == NULL) ? FALSE
-                                                 : (p_dev_rec->p_cur_service->security_flags
-                                                    & BTM_SEC_IN_MIN_16_DIGIT_PIN));
-            }
+        BTM_TRACE_EVENT ("btm_sec_pin_code_request going for callback\n");
+        btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
+        if (p_cb->api.p_pin_callback) {
+            (*p_cb->api.p_pin_callback) (p_bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
+                                         (p_dev_rec->p_cur_service == NULL) ? FALSE
+                                         : (p_dev_rec->p_cur_service->security_flags
+                                            & BTM_SEC_IN_MIN_16_DIGIT_PIN));
         }
     }
     return;
