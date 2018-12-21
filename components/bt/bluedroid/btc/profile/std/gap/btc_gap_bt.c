@@ -750,7 +750,7 @@ void btc_gap_bt_arg_deep_free(btc_msg_t *msg)
         break;
 #endif ///BT_SSP_INCLUDED == TRUE
     default:
-        BTC_TRACE_ERROR("Unhandled deep copy %d\n", msg->act);
+        BTC_TRACE_ERROR("Unhandled deep copy %d, arg: %p\n", msg->act, arg);
         break;
     }
 }
