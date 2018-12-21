@@ -61,7 +61,7 @@ static const char* TAG = "spiram";
 #endif
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-extern int _ext_ram_bss_start, _ext_ram_bss_end;
+extern uint8_t _ext_ram_bss_start, _ext_ram_bss_end;
 #endif
 static bool spiram_inited=false;
 
