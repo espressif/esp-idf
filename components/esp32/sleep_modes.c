@@ -401,6 +401,9 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup()
 {
+#ifdef CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 #ifdef CONFIG_ULP_COPROC_ENABLED
     if(s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
@@ -434,6 +437,9 @@ static void timer_wakeup_prepare()
 
 esp_err_t esp_sleep_enable_touchpad_wakeup()
 {
+#ifdef CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
     if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN)) {
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
@@ -692,6 +698,13 @@ static uint32_t get_power_down_flags()
     }
     if (s_config.pd_options[ESP_PD_DOMAIN_XTAL] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_XTAL;
+    }
+
+    if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {
+    // If enabled EXT1 only and enable the additional current by touch, should be keep RTC_PERIPH power on.
+#if ((defined CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL) && (defined CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT))
+    pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+#endif
     }
     return pd_flags;
 }
