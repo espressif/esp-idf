@@ -327,6 +327,36 @@ esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
+static inline int IRAM_ATTR num_lsb_zero_bits(const uint32_t v) {
+    // From: https://en.wikipedia.org/wiki/De_Bruijn_sequence
+    // This function returns the amount of unset (zero) bits starting from the LSB.
+    static const int MultiplyDeBruijnBitPosition[32] = {
+        0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
+        31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+    };
+    const int r = MultiplyDeBruijnBitPosition[((uint32_t)((v & -v) * 0x077CB531U)) >> 27];
+    return v ? r : 32;
+}
+
+static inline void IRAM_ATTR gpio_isr_loop(const uint32_t s, const uint32_t gpio_num_start) {
+    uint32_t status = s;
+    uint32_t gpio_num = gpio_num_start;
+    while (status) {
+        const int n = num_lsb_zero_bits(s);
+        gpio_num += n; // Offset the gpio_num by the amount of unset (zero) bits found, starting from the LSB.
+        if (gpio_isr_func[gpio_num].fn != NULL) {
+            gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
+        }
+        if (n) {
+            status >>= n; // Advance to the next status bit, skipping all unset (zero) bits.
+        }
+        else { // LSB is not zero.
+            status >>= 1; // Advance to the next status bit.
+            gpio_num++; // Advance to the next gpio_num.
+        }
+    }
+}
+
 void IRAM_ATTR gpio_intr_service(void* arg)
 {
     //GPIO intr process
@@ -335,23 +365,13 @@ void IRAM_ATTR gpio_intr_service(void* arg)
     }
 
     //read status to get interrupt status for GPIO0-31
-    uint32_t gpio_num = 0;
-    uint32_t gpio_intr_status = GPIO.status;
-    do {
-        if ((gpio_intr_status & BIT(gpio_num)) && (gpio_isr_func[gpio_num].fn != NULL)) {
-            gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
-        }
-    } while (++gpio_num < 32);
+    const uint32_t gpio_intr_status = GPIO.status;
+    gpio_isr_loop(gpio_intr_status, 0);
     GPIO.status_w1tc = gpio_intr_status;
 
     //read status1 to get interrupt status for GPIO32-39
     uint32_t gpio_intr_status_h = GPIO.status1.intr_st;
-    do {
-        if ((gpio_intr_status_h & BIT(gpio_num - 32)) && (gpio_isr_func[gpio_num].fn != NULL)) {
-            gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
-        }
-        gpio_num++;
-    } while (++gpio_num < GPIO_PIN_COUNT);
+    gpio_isr_loop(gpio_intr_status_h, 32);
     GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
 }
 
