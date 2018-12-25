@@ -343,17 +343,12 @@ static inline void IRAM_ATTR gpio_isr_loop(const uint32_t s, const uint32_t gpio
     uint32_t gpio_num = gpio_num_start;
     while (status) {
         const int n = num_lsb_zero_bits(status);
+        status >>= n + 1; // Advance to the next status bit, skipping all unset (zero) bits.
         gpio_num += n; // Offset the gpio_num by the amount of unset (zero) bits found, starting from the LSB.
         if (gpio_isr_func[gpio_num].fn != NULL) {
             gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
         }
-        if (n) {
-            status >>= n; // Advance to the next status bit, skipping all unset (zero) bits.
-        }
-        else { // LSB is not zero.
-            status >>= 1; // Advance to the next status bit.
-            gpio_num++; // Advance to the next gpio_num.
-        }
+        gpio_num++; // Advance to the next gpio_num.
     }
 }
 
