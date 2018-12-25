@@ -330,19 +330,19 @@ esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
 static inline int IRAM_ATTR num_lsb_zero_bits(const uint32_t v) {
     // From: https://en.wikipedia.org/wiki/De_Bruijn_sequence
     // This function returns the amount of unset (zero) bits starting from the LSB.
+    // Note: A value of 0 is returned when v == 0.
     static const int MultiplyDeBruijnBitPosition[32] = {
         0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
         31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
     };
-    const int r = MultiplyDeBruijnBitPosition[((uint32_t)((v & -v) * 0x077CB531U)) >> 27];
-    return v ? r : 32;
+    return MultiplyDeBruijnBitPosition[((uint32_t)((v & -v) * 0x077CB531U)) >> 27];
 }
 
 static inline void IRAM_ATTR gpio_isr_loop(const uint32_t s, const uint32_t gpio_num_start) {
     uint32_t status = s;
     uint32_t gpio_num = gpio_num_start;
     while (status) {
-        const int n = num_lsb_zero_bits(s);
+        const int n = num_lsb_zero_bits(status);
         gpio_num += n; // Offset the gpio_num by the amount of unset (zero) bits found, starting from the LSB.
         if (gpio_isr_func[gpio_num].fn != NULL) {
             gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
