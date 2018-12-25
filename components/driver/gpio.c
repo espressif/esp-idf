@@ -368,8 +368,9 @@ void IRAM_ATTR gpio_intr_service(void* arg)
 
     //read status1 to get interrupt status for GPIO32-39
     const uint32_t gpio_intr_status_h = GPIO.status1.intr_st;
-    if (gpio_intr_status_h & ((1<<(GPIO_NUM_MAX-32))-1)) {
-        gpio_isr_loop(gpio_intr_status_h, 32);
+    const uint32_t masked_status = gpio_intr_status_h & ((1<<(GPIO_NUM_MAX-32))-1);
+    if (masked_status) {
+        gpio_isr_loop(masked_status, 32);
         GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
     }
 }
