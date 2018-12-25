@@ -115,6 +115,54 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
 
 static const char* TAG = "system_event";
 
+typedef struct {
+    int err;
+    const char *reason;
+} wifi_reason_t;
+  
+static const wifi_reason_t wifi_reason[] =
+{   
+    {0,                                    "other reason"},
+    {WIFI_REASON_UNSPECIFIED,              "unspecified"},
+    {WIFI_REASON_AUTH_EXPIRE,              "auth expire"},
+    {WIFI_REASON_AUTH_LEAVE,               "auth leave"},
+    {WIFI_REASON_ASSOC_EXPIRE,             "assoc expire"},
+    {WIFI_REASON_ASSOC_TOOMANY,            "assoc too many"},
+    {WIFI_REASON_NOT_AUTHED,               "not authed"},
+    {WIFI_REASON_NOT_ASSOCED,              "not assoced"},
+    {WIFI_REASON_ASSOC_LEAVE,              "assoc leave"},
+    {WIFI_REASON_ASSOC_NOT_AUTHED,         "assoc not authed"},
+    {WIFI_REASON_BEACON_TIMEOUT,           "beacon timeout"},
+    {WIFI_REASON_NO_AP_FOUND,              "no ap found"},
+    {WIFI_REASON_AUTH_FAIL,                "auth fail"},
+    {WIFI_REASON_ASSOC_FAIL,               "assoc fail"},
+    {WIFI_REASON_HANDSHAKE_TIMEOUT,        "hanshake timeout"},
+    {WIFI_REASON_DISASSOC_PWRCAP_BAD,      "bad Power Capability, disassoc"},
+    {WIFI_REASON_DISASSOC_SUPCHAN_BAD,     "bad Supported Channels, disassoc"},
+    {WIFI_REASON_IE_INVALID,               "invalid IE"},
+    {WIFI_REASON_MIC_FAILURE,              "MIC failure"},
+    {WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT,   "4-way keying handshake timeout"},
+    {WIFI_REASON_GROUP_KEY_UPDATE_TIMEOUT, "Group key handshake"},
+    {WIFI_REASON_IE_IN_4WAY_DIFFERS,       "IE in 4-way differs"},
+    {WIFI_REASON_GROUP_CIPHER_INVALID,     "invalid group cipher"},
+    {WIFI_REASON_PAIRWISE_CIPHER_INVALID,  "invalid pairwise cipher"},
+    {WIFI_REASON_AKMP_INVALID,             "invalid AKMP"},
+    {WIFI_REASON_UNSUPP_RSN_IE_VERSION,    "unsupported RSN IE version"},
+    {WIFI_REASON_INVALID_RSN_IE_CAP,       "invalid RSN IE capability"},
+    {WIFI_REASON_802_1X_AUTH_FAILED,       "802.1x auth failed"},
+    {WIFI_REASON_CIPHER_SUITE_REJECTED,    "cipher suite rejected"}                                                                                                              
+};
+  
+static const char* wifi_disconnect_reason_to_str(int err)
+{
+    for (int i=0; i< sizeof(wifi_reason)/sizeof(wifi_reason[0]); i++){
+        if (err == wifi_reason[i].err){
+            return wifi_reason[i].reason;
+        }
+    }
+    return wifi_reason[0].reason;
+}
+
 static void esp_system_event_debug(const system_event_t* event)
 {
     if (event == NULL) {
@@ -147,8 +195,9 @@ static void esp_system_event_debug(const system_event_t* event)
         }
         case SYSTEM_EVENT_STA_DISCONNECTED: {
             const system_event_sta_disconnected_t *disconnected = &event->event_info.disconnected;
-            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", reason:%d", \
-                       disconnected->ssid, disconnected->ssid_len, MAC2STR(disconnected->bssid), disconnected->reason);
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_DISCONNECTED, ssid:%s, ssid_len:%d, bssid:" MACSTR ", reason:%d (%s)", \
+                       disconnected->ssid, disconnected->ssid_len, MAC2STR(disconnected->bssid), disconnected->reason,
+                       wifi_disconnect_reason_to_str(disconnected->reason));
             break;
         }
         case SYSTEM_EVENT_STA_AUTHMODE_CHANGE: {
