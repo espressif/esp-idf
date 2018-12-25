@@ -366,13 +366,17 @@ void IRAM_ATTR gpio_intr_service(void* arg)
 
     //read status to get interrupt status for GPIO0-31
     const uint32_t gpio_intr_status = GPIO.status;
-    gpio_isr_loop(gpio_intr_status, 0);
-    GPIO.status_w1tc = gpio_intr_status;
+    if (gpio_intr_status) {
+        gpio_isr_loop(gpio_intr_status, 0);
+        GPIO.status_w1tc = gpio_intr_status;
+    }
 
     //read status1 to get interrupt status for GPIO32-39
-    uint32_t gpio_intr_status_h = GPIO.status1.intr_st;
-    gpio_isr_loop(gpio_intr_status_h, 32);
-    GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
+    const uint32_t gpio_intr_status_h = GPIO.status1.intr_st;
+    if (gpio_intr_status_h & ((1<<(GPIO_NUM_MAX-32))-1)) {
+        gpio_isr_loop(gpio_intr_status_h, 32);
+        GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
+    }
 }
 
 esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void* args)
