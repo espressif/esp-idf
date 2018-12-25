@@ -213,6 +213,15 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         in PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
         to external memory defaultly. 
 
+config PICO_PSRAM_CS_IO
+    int "PSRAM CS IO for ESP32-PICO chip"
+    depends on SPIRAM_SUPPORT
+    range 0 33
+    default 10
+    help
+        When ESP32-PICO chip connect a external psram, the clock IO and data IO is fixed, but the CS IO can be 
+        any unused GPIO, user can config it based on hardware design.
+
 endmenu
 
 config MEMMAP_TRACEMEM
