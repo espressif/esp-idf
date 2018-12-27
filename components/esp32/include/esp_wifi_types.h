@@ -405,7 +405,7 @@ typedef struct {
 typedef struct {
     wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
     uint8_t mac[6];            /**< source MAC address of the CSI data */
-    bool last_word_invalid;    /**< last four bytes of the CSI data is invalid or not */
+    bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not */
     int8_t *buf;               /**< buffer of CSI data */
     uint16_t len;              /**< length of CSI data */
 } wifi_csi_info_t;
