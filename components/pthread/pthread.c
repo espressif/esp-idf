@@ -395,8 +395,19 @@ int pthread_detach(pthread_t thread)
     TaskHandle_t handle = pthread_find_handle(thread);
     if (!handle) {
         ret = ESRCH;
-    } else {
+    } else if (pthread->detached) {
+        // already detached
+        ret = EINVAL;
+    } else if (pthread->join_task) {
+        // already have waiting task to join
+        ret = EINVAL;
+    } else if (pthread->state == PTHREAD_TASK_STATE_RUN) {
+        // pthread still running
         pthread->detached = true;
+    } else {
+        // pthread already stopped
+        pthread_delete(pthread);
+        vTaskDelete(handle);
     }
     xSemaphoreGive(s_threads_mux);
     ESP_LOGV(TAG, "%s %p EXIT %d", __FUNCTION__, pthread, ret);
