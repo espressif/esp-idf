@@ -624,6 +624,7 @@ esp_err_t esp_mesh_stop(void);
  *             - If the packet is to an external IP network, set this parameter to the IPv4:PORT combination.
  *               This packet will be delivered to the root firstly, then the root will forward this packet to the final IP server address.
  * @param[in]  data  pointer to a sending mesh packet
+ *             - Field size should not exceed MESH_MPS. Note that the size of one mesh packet should not exceed MESH_MTU.
  *             - Field proto should be set to data protocol in use (default is MESH_PROTO_BIN for binary).
  *             - Field tos should be set to transmission tos (type of service) in use (default is MESH_TOS_P2P for point-to-point reliable).
  * @param[in]  flag  bitmap for data sent
@@ -1441,6 +1442,14 @@ esp_err_t esp_mesh_disconnect(void);
 esp_err_t esp_mesh_connect(void);
 
 /**
+ * @brief      Flush scan result
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_flush_scan_result(void);
+
+/**
  * @brief      Cause the root device to add Channel Switch Announcement Element (CSA IE) to beacon
  *             - Set the new channel
  *             - Set how many beacons with CSA IE will be sent before changing a new channel
@@ -1456,6 +1465,18 @@ esp_err_t esp_mesh_connect(void);
  *    - ESP_OK
  */
 esp_err_t esp_mesh_switch_channel(const uint8_t *new_bssid, int csa_newchan, int csa_count);
+
+/**
+ * @brief      Get the router BSSID
+ *
+ * @param[out] router_bssid  pointer to the router BSSID
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_WIFI_NOT_INIT
+ *    - ESP_ERR_WIFI_ARG
+ */
+esp_err_t esp_mesh_get_router_bssid(uint8_t *router_bssid);
 
 #ifdef __cplusplus
 }
