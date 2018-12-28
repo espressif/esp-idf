@@ -77,19 +77,29 @@ typedef struct {
     int timeout_ms;
 } sdspi_hw_cmd_t;
 
-#define SDSPI_CMD_NORESP_SIZE   6   //!< Size of the command without any response
-#define SDSPI_CMD_R1_SIZE       8   //!< Size of the command with R1 response
-#define SDSPI_CMD_R2_SIZE       9   //!< Size of the command with R1b response
-#define SDSPI_CMD_R3_SIZE       12  //!< Size of the command with R3 response
-#define SDSPI_CMD_R7_SIZE       12  //!< Size of the command with R7 response
+#define SDSPI_CMD_SIZE      6
+#define SDSPI_NCR_MIN_SIZE  1
+#define SDSPI_NCR_MAX_SIZE  8
+
+//the size here contains 6 bytes of CMD, 1 bytes of dummy and the actual response
+#define SDSPI_CMD_NORESP_SIZE   (SDSPI_CMD_SIZE+0)   //!< Size of the command without any response
+#define SDSPI_CMD_R1_SIZE       (SDSPI_CMD_SIZE+SDSPI_NCR_MIN_SIZE+1)   //!< Size of the command with R1 response
+#define SDSPI_CMD_R2_SIZE       (SDSPI_CMD_SIZE+SDSPI_NCR_MIN_SIZE+2)   //!< Size of the command with R1b response
+#define SDSPI_CMD_R3_SIZE       (SDSPI_CMD_SIZE+SDSPI_NCR_MIN_SIZE+5)  //!< Size of the command with R3 response
+#define SDSPI_CMD_R4_SIZE       (SDSPI_CMD_SIZE+SDSPI_NCR_MIN_SIZE+5)  //!< Size of the command with R4 response
+#define SDSPI_CMD_R5_SIZE       (SDSPI_CMD_SIZE+SDSPI_NCR_MIN_SIZE+2)   //!< Size of the command with R5 response
+#define SDSPI_CMD_R7_SIZE       (SDSPI_CMD_SIZE+SDSPI_NCR_MIN_SIZE+5)  //!< Size of the command with R7 response
 
 #define SDSPI_CMD_FLAG_DATA     BIT(0)  //!< Command has data transfer
 #define SDSPI_CMD_FLAG_WRITE    BIT(1)  //!< Data is written to the card
 #define SDSPI_CMD_FLAG_RSP_R1   BIT(2)  //!< Response format R1 (1 byte)
 #define SDSPI_CMD_FLAG_RSP_R2   BIT(3)  //!< Response format R2 (2 bytes)
 #define SDSPI_CMD_FLAG_RSP_R3   BIT(4)  //!< Response format R3 (5 bytes)
-#define SDSPI_CMD_FLAG_RSP_R7   BIT(5)  //!< Response format R7 (5 bytes)
-#define SDSPI_CMD_FLAG_NORSP    BIT(6)  //!< Don't expect response (used when sending CMD0 first time).
+#define SDSPI_CMD_FLAG_RSP_R4   BIT(5)  //!< Response format R4 (5 bytes)
+#define SDSPI_CMD_FLAG_RSP_R5   BIT(6)  //!< Response format R5 (2 bytes)
+#define SDSPI_CMD_FLAG_RSP_R7   BIT(7)  //!< Response format R7 (5 bytes)
+#define SDSPI_CMD_FLAG_NORSP    BIT(8)  //!< Don't expect response (used when sending CMD0 first time).
+#define SDSPI_CMD_FLAG_MULTI_BLK BIT(9) //!< For the write multiblock commands, the start token should be different
 
 #define SDSPI_MAX_DATA_LEN      512     //!< Max size of single block transfer
 

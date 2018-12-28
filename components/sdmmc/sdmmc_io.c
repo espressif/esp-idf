@@ -106,10 +106,12 @@ esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card)
 
 esp_err_t sdmmc_io_enable_hs_mode(sdmmc_card_t* card)
 {
-    card->max_freq_khz = SDMMC_FREQ_DEFAULT;
-    if (card->host.max_freq_khz <= card->max_freq_khz) {
-        /* Host is configured to use low frequency, don't attempt to switch */
+    /* If the host is configured to use low frequency, don't attempt to switch */
+    if (card->host.max_freq_khz < SDMMC_FREQ_DEFAULT) {
         card->max_freq_khz = card->host.max_freq_khz;
+        return ESP_OK;
+    } else if (card->host.max_freq_khz < SDMMC_FREQ_HIGHSPEED) {
+        card->max_freq_khz = SDMMC_FREQ_DEFAULT;
         return ESP_OK;
     }
 

@@ -45,8 +45,8 @@ extern "C" {
     .set_card_clk = &sdspi_host_set_card_clk, \
     .do_transaction = &sdspi_host_do_transaction, \
     .deinit = &sdspi_host_deinit, \
-    .io_int_enable = NULL, \
-    .io_int_wait = NULL, \
+    .io_int_enable = &sdspi_host_io_int_enable, \
+    .io_int_wait = &sdspi_host_io_int_wait, \
     .command_timeout_ms = 0, \
 }
 
@@ -60,11 +60,13 @@ typedef struct {
     gpio_num_t gpio_cs;     ///< GPIO number of CS signal
     gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
     gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
+    gpio_num_t gpio_int;    ///< GPIO number of interrupt line (input) for SDIO card.
     int dma_channel;        ///< DMA channel to be used by SPI driver (1 or 2)
 } sdspi_slot_config_t;
 
-#define SDSPI_SLOT_NO_CD    ((gpio_num_t) -1)   ///< indicates that card detect line is not used
-#define SDSPI_SLOT_NO_WP    ((gpio_num_t) -1)   ///< indicates that write protect line is not used
+#define SDSPI_SLOT_NO_CD    GPIO_NUM_NC ///< indicates that card detect line is not used
+#define SDSPI_SLOT_NO_WP    GPIO_NUM_NC ///< indicates that write protect line is not used
+#define SDSPI_SLOT_NO_INT   GPIO_NUM_NC ///< indicates that interrupt line is not used
 
 /**
  * Macro defining default configuration of SPI host
@@ -76,6 +78,7 @@ typedef struct {
     .gpio_cs   = GPIO_NUM_13, \
     .gpio_cd   = SDSPI_SLOT_NO_CD, \
     .gpio_wp   = SDSPI_SLOT_NO_WP, \
+    .gpio_int  = GPIO_NUM_NC, \
     .dma_channel = 1 \
 }
 
@@ -94,6 +97,8 @@ esp_err_t sdspi_host_init();
 * @brief Initialize SD SPI driver for the specific SPI controller
 *
 * @note This function is not thread safe
+*
+* @note The SDIO over sdspi needs an extra interrupt line. Call ``gpio_install_isr_service()`` before this function.
 *
 * @param slot         SPI controller to use (HSPI_HOST or VSPI_HOST)
 * @param slot_config  pointer to slot configuration structure
@@ -155,6 +160,27 @@ esp_err_t sdspi_host_set_card_clk(int slot, uint32_t freq_khz);
  *      - ESP_ERR_INVALID_STATE if sdspi_host_init function has not been called
  */
 esp_err_t sdspi_host_deinit();
+
+/**
+ * @brief Enable SDIO interrupt.
+ *
+ * @param slot SPI controller to use (HSPI_HOST or VSPI_HOST)
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t sdspi_host_io_int_enable(int slot);
+
+/**
+ * @brief Wait for SDIO interrupt until timeout.
+ *
+ * @param slot SPI controller to use (HSPI_HOST or VSPI_HOST)
+ * @param timeout_ticks Ticks to wait before timeout.
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t sdspi_host_io_int_wait(int slot, TickType_t timeout_ticks);
 
 #ifdef __cplusplus
 }

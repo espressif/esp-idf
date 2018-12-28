@@ -292,7 +292,7 @@ static void configure_pin(int pin)
 {
     const int sdmmc_func = 3;
     const int drive_strength = 3;
-    assert(pin!=-1);
+    assert(pin!=GPIO_NUM_NC);
     gpio_pulldown_dis(pin);
 
     uint32_t reg = GPIO_PIN_MUX_REG[pin];
@@ -541,7 +541,7 @@ esp_err_t sdmmc_host_io_int_enable(int slot)
 }
 
 esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
-{   
+{
     /* SDIO interrupts are negedge sensitive ones: the status bit is only set
      * when first interrupt triggered.
      *
@@ -560,7 +560,7 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
      */
     xSemaphoreTake(s_io_intr_event, 0);
     SDMMC.intmask.sdio |= BIT(slot);    /* Re-enable SDIO interrupt */
-    
+
     if (xSemaphoreTake(s_io_intr_event, timeout_ticks) == pdTRUE) {
         return ESP_OK;
     } else {
