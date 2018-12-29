@@ -9,3 +9,12 @@ test_env:
 reset:
   default: "POWERON_RESET"
   omitted: " "
+multi_device:
+  default: "Yes"
+  omitted: "No"
+multi_stage:
+  default: "Yes"
+  omitted: "No"
+timeout:
+  default: 30
+  omitted: 30

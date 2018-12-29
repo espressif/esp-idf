@@ -29,12 +29,26 @@ variables:
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
+# When 'fetch' strategy is used, Gitlab removes untracked files before checking out
+# new revision. However if the new revision doesn't include some of the submodules
+# which were present in the old revision, such submodule directories would not be
+# removed by the checkout. This extra step ensures that these stale submodules
+# are removed.
+.git_clean_stale_submodules:  &git_clean_stale_submodules >
+  find . -name '.git' -not -path './.git' -printf '%P\n'
+  | sed 's|/.git||' 
+  | xargs -I {} sh -c '
+  grep -q {} .gitmodules 
+  ||  (echo "Removing {}, has .git directory but not in .gitmodules file" 
+  && rm -rf {});'
+
 # before each job, we need to check if this job is filtered by bot stage/job filter
 .apply_bot_filter: &apply_bot_filter
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
 before_script:
   - source tools/ci/setup_python.sh
+  - *git_clean_stale_submodules
   # apply bot filter in before script
   - *apply_bot_filter
   # add gitlab ssh key
@@ -56,6 +70,7 @@ before_script:
 .do_nothing_before:
   before_script: &do_nothing_before
     - source tools/ci/setup_python.sh
+    - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
@@ -64,6 +79,7 @@ before_script:
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
     - source tools/ci/setup_python.sh
+    - *git_clean_stale_submodules
     # apply bot filter in before script
     - *apply_bot_filter
     - echo "Not fetching submodules"
@@ -381,37 +397,36 @@ check_submodule_sync:
     - git submodule update --init --recursive
 
 assign_test:
-  <<: *build_template
+  tags:
+    - assign_test
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   stage: assign_test
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
   # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
+  dependencies:
+    - build_ssc_00
+    - build_ssc_01
+    - build_ssc_02
+    - build_esp_idf_tests
   variables:
-    UT_BIN_PATH: "tools/unit-test-app/output"
-    OUTPUT_BIN_PATH: "test_bins/ESP32_IDF"
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
   artifacts:
     paths:
-      - $OUTPUT_BIN_PATH
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
     expire_in: 1 mos
   before_script: *add_gitlab_key_before
   script:
-    # first move test bins together: test_bins/CHIP_SDK/TestApp/bin_files
-    - mkdir -p $OUTPUT_BIN_PATH
-    # copy and rename folder name to "UT_config"
-    - for CONFIG in $(ls $UT_BIN_PATH); do cp -r "$UT_BIN_PATH/$CONFIG" "$OUTPUT_BIN_PATH/UT_$CONFIG"; done
-    - cp -r SSC/ssc_bin/* $OUTPUT_BIN_PATH
     # assign example tests
     - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $IDF_PATH/.gitlab-ci.yml $EXAMPLE_CONFIG_OUTPUT_PATH
+    # assign unit test cases
+    - python $TEST_FW_PATH/CIAssignUnitTest.py $IDF_PATH/components/idf_test/unit_test/TestCaseAll.yml $IDF_PATH/.gitlab-ci.yml $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - cd auto_test_script
     - python $CHECKOUT_REF_SCRIPT auto_test_script
-    # assign unit test cases
-    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/unit_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/test_bins
     # assgin integration test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/SSC/ssc_bin
 
@@ -491,15 +506,23 @@ assign_test:
 
 # template for unit test jobs
 .unit_test_template: &unit_test_template
-  <<: *test_template
-  allow_failure: false
+  <<: *example_test_template
   stage: unit_test
+  dependencies:
+    - assign_test
+    - build_esp_idf_tests
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
   variables:
-    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
-    LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
-    TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/unit_test"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
 
 nvs_compatible_test:
   <<: *test_template
@@ -537,252 +560,200 @@ UT_001_01:
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
 
 UT_001_02:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
 
 UT_001_03:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
 
 UT_001_04:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
 
 UT_001_05:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_SDMODE
-    - UT_default
+    - UT_T1_1
 
 UT_001_06:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_SPIMODE
-    - UT_default
+    - UT_T1_1
 
 UT_001_07:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
 
 UT_001_08:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
 
 UT_001_09:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_default
+
+UT_001_10:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_11:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_12:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_13:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_14:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_15:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_16:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_17:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_18:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_19:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_20:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_21:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
 
 UT_002_01:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_release
+    - psram
 
 UT_002_02:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_release
+    - psram
 
 UT_002_03:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_release
+    - psram
 
 UT_002_04:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_release
+    - psram
 
 UT_002_05:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_SDMODE
-    - UT_release
+    - UT_T1_1
+    - psram
 
 UT_002_06:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_SPIMODE
-    - UT_release
+    - UT_T1_1
+    - psram
 
 UT_002_07:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_1
-    - UT_release
-
-UT_002_08:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_release
-
-UT_002_09:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_release
+    - psram
 
 UT_003_01:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
+    - UT_T2_1
 
 UT_003_02:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
+    - UT_T2_1
 
 UT_003_03:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
-
-UT_003_04:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
-
-UT_003_05:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_SDMODE
-    - UT_single_core
-
-UT_003_06:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_SPIMODE
-    - UT_single_core
-
-UT_003_07:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
-
-UT_003_08:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
-
-UT_003_09:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_single_core
+    - UT_T2_1
 
 UT_004_01:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
-
-UT_004_02:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
-
-UT_004_03:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
-
-UT_004_04:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
-
-UT_004_05:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_SDMODE
-    - UT_psram
-
-UT_004_06:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_SPIMODE
-    - UT_psram
-
-UT_004_07:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
-
-UT_004_08:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
-
-UT_004_09:
-  <<: *unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-    - UT_psram
+    - UT_T2_1
+    - psram
 
 IT_001_01:
   <<: *test_template

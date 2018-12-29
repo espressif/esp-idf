@@ -36,8 +36,74 @@ void ref_clock_init();
  */
 void ref_clock_deinit();
 
+
 /**
  * @brief Get reference clock timestamp
  * @return number of microseconds since the reference clock was initialized
  */
 uint64_t ref_clock_get();
+
+
+/**
+ * @brief Reset automatic leak checking which happens in unit tests.
+ *
+ * Updates recorded "before" free memory values to the free memory values
+ * at time of calling. Resets leak checker if tracing is enabled in
+ * config.
+ *
+ * This can be called if a test case does something which allocates
+ * memory on first use, for example.
+ *
+ * @note Use with care as this can mask real memory leak problems.
+ */
+void unity_reset_leak_checks(void);
+
+
+/**
+ * @brief Call this function from a test case which requires TCP/IP or
+ * LWIP functionality.
+ *
+ * @note This should be the first function the test case calls, as it will
+ * allocate memory on first use (and also reset the test case leak checker).
+ */
+void test_case_uses_tcpip(void);
+
+
+/**
+ * @brief wait for signals.
+ *
+ * for multiple devices test cases, DUT might need to wait for other DUTs before continue testing.
+ * As all DUTs are independent, need user (or test script) interaction to make test synchronized.
+ *
+ * Here we provide signal functions for this.
+ * For example, we're testing GPIO, DUT1 has one pin connect to with DUT2.
+ * DUT2 will output high level and then DUT1 will read input.
+ * DUT1 should call `unity_wait_for_signal("output high level");` before it reads input.
+ * DUT2 should call `unity_send_signal("output high level");` after it finished setting output high level.
+ * According to the console logs:
+ *
+ * DUT1 console:
+ *
+ * ```
+ *     Waiting for signal: [output high level]!
+ *     Please press "Enter" key to once any board send this signal.
+ * ```
+ *
+ * DUT2 console:
+ *
+ * ```
+ *     Send signal: [output high level]!
+ * ```
+ *
+ * Then we press Enter key on DUT1's console, DUT1 starts to read input and then test success.
+ *
+ * @param signal_name signal name which DUT expected to wait before proceed testing
+ */
+void unity_wait_for_signal(const char* signal_name);
+
+/**
+ * @brief DUT send signal.
+ *
+ * @param signal_name signal name which DUT send once it finished preparing.
+ */
+void unity_send_signal(const char* signal_name);

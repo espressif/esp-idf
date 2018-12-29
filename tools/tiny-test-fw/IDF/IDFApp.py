@@ -144,11 +144,28 @@ class Example(IDFApp):
 
 class UT(IDFApp):
     def get_binary_path(self, app_path):
-        if app_path:
-            # specified path, join it and the idf path
-            path = os.path.join(self.idf_path, app_path)
-        else:
-            path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
+        """
+        :param app_path: app path or app config
+        :return: binary path
+        """
+        if not app_path:
+            app_path = "default"
+
+        path = os.path.join(self.idf_path, app_path)
+        if not os.path.exists(path):
+            while True:
+                # try to get by config
+                if app_path == "default":
+                    # it's default config, we first try to get form build folder of unit-test-app
+                    path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
+                    if os.path.exists(path):
+                        # found, use bin in build path
+                        break
+                # ``make ut-build-all-configs`` or ``make ut-build-CONFIG`` will copy binary to output folder
+                path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", app_path)
+                if os.path.exists(path):
+                    break
+                raise OSError("Failed to get unit-test-app binary path")
         return path
 
 

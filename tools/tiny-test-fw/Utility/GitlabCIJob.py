@@ -27,6 +27,7 @@ class Job(dict):
     def __init__(self, job, job_name):
         super(Job, self).__init__(job)
         self["name"] = job_name
+        self.tags = set(self["tags"])
 
     def match_group(self, group):
         """
@@ -37,17 +38,8 @@ class Job(dict):
         :return: True or False
         """
         match_result = False
-        for _ in range(1):
-            if "case group" in self:
-                # this job is already assigned
-                break
-            for value in group.filters.values():
-                if value not in self["tags"]:
-                    break
-            else:
-                continue
-            break
-        else:
+        if "case group" not in self and group.ci_job_match_keys == self.tags:
+            # group not assigned and all tags match
             match_result = True
         return match_result
 
@@ -70,4 +62,4 @@ class Job(dict):
         file_name = os.path.join(file_path, self["name"] + ".yml")
         if "case group" in self:
             with open(file_name, "w") as f:
-                yaml.dump(self["case group"].output(), f)
+                yaml.dump(self["case group"].output(), f, default_flow_style=False)
