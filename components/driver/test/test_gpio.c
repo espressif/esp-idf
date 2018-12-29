@@ -621,3 +621,115 @@ TEST_CASE("GPIO drive capability test", "[gpio][ignore]")
     drive_capability_set_get(GPIO_OUTPUT_IO, GPIO_DRIVE_CAP_3);
     prompt_to_continue("If this test finishes");
 }
+
+static IRAM_ATTR void gpio_isr_level_handler_disable_intr(void* arg)
+{
+    uint32_t* gpio_num = (uint32_t*) arg;
+    level_intr_times++;
+    gpio_intr_disable(*gpio_num);
+    ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(*gpio_num), level_intr_times);
+}
+
+static void gpio_install_isr_service_on_core_0(void* arg)
+{
+    printf("gpio_install_isr_service_on_core_0 is running on core: %d\n", xPortGetCoreID());
+    if (arg != 0) {
+        bool* running = (bool*)arg;
+        TEST_ESP_OK(gpio_install_isr_service(0));
+        while (*running) {
+            vTaskDelay(100 / portTICK_RATE_MS);
+        }
+        gpio_uninstall_isr_service();
+    }
+    else {
+        TEST_ASSERT_EQUAL_INT_MESSAGE(arg, 0, "gpio_install_isr_service_on_core_0 got an invalid argument.");
+    }
+    printf("gpio_install_isr_service_on_core_0 done and waiting to be deleted.\n");
+    while (1) { // FreeRTOS doesn't like an ending task, so we'll loop forever.
+        vTaskDelay(100 / portTICK_RATE_MS);
+    }
+}
+
+static void gpio_test_enable_on_core_1(void* arg)
+{
+    printf("gpio_test_enable_on_core_1 is running on core: %d\n", xPortGetCoreID());
+    if (arg != 0) {
+        bool* running = (bool*)arg;
+        gpio_num_t gpio_num = GPIO_INPUT_IO;
+
+        // Note: gpio_set_intr_type enables the interrupt if called with !GPIO_INTR_DISABLE.
+        //       and gpio_set_intr_type disables the interrupt if called with GPIO_INTR_DISABLE.
+
+        level_intr_times = 0;
+        TEST_ESP_OK(gpio_set_level(GPIO_OUTPUT_IO, 0));
+        gpio_set_intr_type(GPIO_INPUT_IO, GPIO_INTR_HIGH_LEVEL); // Enable interrupt.
+        gpio_isr_handler_add(GPIO_INPUT_IO, gpio_isr_level_handler_disable_intr, (void*)&gpio_num);
+
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        vTaskDelay(100 / portTICK_RATE_MS);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 1, "Unexpected number of high-level interrupts");
+        level_intr_times = 0;
+
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        gpio_set_intr_type(GPIO_INPUT_IO, GPIO_INTR_LOW_LEVEL); // Enable interrupt.
+        gpio_set_level(GPIO_OUTPUT_IO, 0);
+        vTaskDelay(100 / portTICK_RATE_MS);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 1, "Unexpected number of low-level interrupts");
+        level_intr_times = 0;
+
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        gpio_intr_enable(GPIO_INPUT_IO); // Enable interrupt.
+        gpio_set_level(GPIO_OUTPUT_IO, 0);
+        vTaskDelay(100 / portTICK_RATE_MS);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 1, "Unexpected number of low-level interrupts");
+        level_intr_times = 0;
+
+        gpio_set_level(GPIO_OUTPUT_IO, 1);
+        gpio_intr_enable(GPIO_INPUT_IO); // Enable interrupt.
+        gpio_set_level(GPIO_OUTPUT_IO, 0);
+        vTaskDelay(100 / portTICK_RATE_MS);
+        TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 1, "Unexpected number of low-level interrupts");
+
+        gpio_isr_handler_remove(GPIO_INPUT_IO);
+
+        *running = 0; // Tell the main process that we're done.
+    }
+    else {
+        TEST_ASSERT_EQUAL_INT_MESSAGE(arg, 0, "gpio_test_enable_on_core_1 got an invalid argument.");
+    }
+    printf("gpio_test_enable_on_core_1 done and waiting to be deleted.\n");
+    while (1) { // FreeRTOS doesn't like an ending task, so we'll loop forever.
+        vTaskDelay(100 / portTICK_RATE_MS);
+    }
+}
+
+TEST_CASE("GPIO run enable-interrupt and gpio_install_isr_service on different cores test", "[gpio][test_env=UT_T1_GPIO]")
+{
+    // Prerequisite: Make sure GPIO_OUTPUT_IO is connected to GPIO_INTPUT_IO.
+
+    // Test if enabling an interrupt works on a different core, than the
+    // core gpio_install_isr_service was run on.
+
+    gpio_config_t output_io = init_io(GPIO_OUTPUT_IO);
+    gpio_config_t input_io = init_io(GPIO_INPUT_IO);
+    input_io.intr_type = GPIO_INTR_DISABLE;
+    input_io.mode = GPIO_MODE_INPUT;
+    input_io.pull_up_en = 1;
+    TEST_ESP_OK(gpio_config(&output_io));
+    TEST_ESP_OK(gpio_config(&input_io));
+
+    bool running = true;
+    TaskHandle_t core_0_xHandle = NULL;
+    BaseType_t xReturned = xTaskCreatePinnedToCore(gpio_install_isr_service_on_core_0, "gpio_isr_on_core_0", 2048, (void*)&running, 10, &core_0_xHandle, 0);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(xReturned, pdPASS, "Could not create gpio_install_isr_service_on_core_0 task.");
+
+    TaskHandle_t core_1_xHandle = NULL;
+    xReturned = xTaskCreatePinnedToCore(gpio_test_enable_on_core_1, "gpio_enable_on_core_1", 2048, (void*)&running, 9, &core_1_xHandle, 1);
+    TEST_ASSERT_EQUAL_INT_MESSAGE(xReturned, pdPASS, "Could not create gpio_enable_on_core_1 task.");
+
+    while (running) {
+        vTaskDelay(100 / portTICK_RATE_MS);
+    }
+    vTaskDelete(core_0_xHandle);
+    vTaskDelete(core_1_xHandle);
+}
