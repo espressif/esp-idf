@@ -92,7 +92,7 @@ static void trigger_wake_up(void *arg)
     gpio_config(&io_config);
     gpio_set_level(GPIO_OUTPUT_IO, 0);
     gpio_install_isr_service(0);
-    gpio_isr_handler_add(GPIO_OUTPUT_IO, gpio_isr_level_handler, (void*) GPIO_INPUT_IO);
+    gpio_isr_handler_add(GPIO_INPUT_IO, gpio_isr_level_handler, (void*) GPIO_INPUT_IO);
     gpio_set_level(GPIO_OUTPUT_IO, 1);
     vTaskDelay(100 / portTICK_RATE_MS);
 }
@@ -400,6 +400,7 @@ TEST_CASE("GPIO get input level test", "[gpio][ignore]")
 
 TEST_CASE("GPIO io pull up/down function", "[gpio]")
 {
+    // Make sure GPIO_INPUT_IO is not connected to anything.
     gpio_config_t  io_conf = init_io(GPIO_INPUT_IO);
     gpio_config(&io_conf);
     gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT);
@@ -472,7 +473,7 @@ TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
 }
 
-TEST_CASE("GPIO repeate call service and isr has no memory leak test","[gpio][test_env=UT_T1_GPIO][timeout=90]")
+TEST_CASE("GPIO repeated calling of service and isr has no memory leak test","[gpio][test_env=UT_T1_GPIO][timeout=90]")
 {
     gpio_config_t output_io = init_io(GPIO_OUTPUT_IO);
     gpio_config_t input_io = init_io(GPIO_INPUT_IO);
@@ -498,7 +499,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test","[gpio][te
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored
-TEST_CASE("GPIO wake up enable and disenable test", "[gpio][ignore]")
+TEST_CASE("GPIO wake up enable and disable test", "[gpio][ignore]")
 {
     xTaskCreate(sleep_wake_up, "sleep_wake_up", 4096, NULL, 5, NULL);
     xTaskCreate(trigger_wake_up, "trigger_wake_up", 4096, NULL, 5, NULL);
