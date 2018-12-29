@@ -88,6 +88,11 @@ esp_err_t gpio_set_intr_type(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     GPIO_CHECK(intr_type < GPIO_INTR_MAX, "GPIO interrupt type error", ESP_ERR_INVALID_ARG);
     GPIO.pin[gpio_num].int_type = intr_type;
+    if (intr_type == GPIO_INTR_DISABLE) {
+        gpio_intr_disable(gpio_num);
+    } else {
+        gpio_intr_enable(gpio_num);
+    }
     return ESP_OK;
 }
 
@@ -300,11 +305,6 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
             }
             ESP_LOGI(GPIO_TAG, "GPIO[%d]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
-            if (pGPIOConfig->intr_type) {
-                gpio_intr_enable(io_num);
-            } else {
-                gpio_intr_disable(io_num);
-            }
             PIN_FUNC_SELECT(io_reg, PIN_FUNC_GPIO); /*function number 2 is GPIO_FUNC for each pin */
         }
         io_num++;
