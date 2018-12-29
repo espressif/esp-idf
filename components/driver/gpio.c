@@ -100,24 +100,19 @@ static void gpio_intr_status_clr(gpio_num_t gpio_num)
     }
 }
 
-static esp_err_t gpio_intr_enable_on_core (gpio_num_t gpio_num, uint32_t core_id)
+esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
 {
+    GPIO_CHECK(gpio_isr_func != NULL, "GPIO isr service is not installed, call gpio_install_isr_service() first", ESP_ERR_INVALID_STATE);
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&gpio_spinlock);
     gpio_intr_status_clr(gpio_num);
-    if (core_id == 0) {
+    if (esp_intr_get_cpu(gpio_isr_handle) == 0) {
         GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
         GPIO.pin[gpio_num].int_ena = GPIO_APP_CPU_INTR_ENA;     //enable pro cpu intr
     }
-    return ESP_OK;
-}
-
-esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
-{
-    portENTER_CRITICAL(&gpio_spinlock);
-    const esp_err_t ret = gpio_intr_enable_on_core (gpio_num, xPortGetCoreID());
     portEXIT_CRITICAL(&gpio_spinlock);
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t gpio_intr_disable(gpio_num_t gpio_num)
@@ -375,7 +370,7 @@ esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void
         gpio_isr_func[gpio_num].fn = isr_handler;
         gpio_isr_func[gpio_num].args = args;
     }
-    gpio_intr_enable_on_core (gpio_num, esp_intr_get_cpu(gpio_isr_handle));
+    gpio_intr_enable(gpio_num);
     portEXIT_CRITICAL(&gpio_spinlock);
     return ESP_OK;
 }
