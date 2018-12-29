@@ -65,7 +65,7 @@
 /* Sleep mode */
 #define BTDM_MODEM_SLEEP_MODE_NONE          (0)
 #define BTDM_MODEM_SLEEP_MODE_ORIG          (1)
-#define BTDM_MODEM_SLEEP_MODE_EVED          (2)
+#define BTDM_MODEM_SLEEP_MODE_EVED          (2)  // sleep mode for BLE controller, used only for internal test.
 
 /* Low Power Clock Selection */
 #define BTDM_LPCLK_SEL_XTAL      (0)
