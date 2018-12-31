@@ -35,10 +35,12 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
         return ESP_ERR_INVALID_ARG;
     }
 
+#if !CONFIG_OTA_ALLOW_HTTP
     if (!config->cert_pem) {
         ESP_LOGE(TAG, "Server certificate not found in esp_http_client config");
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
+#endif
 
     esp_http_client_handle_t client = esp_http_client_init(config);
     if (client == NULL) {
@@ -46,10 +48,12 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
         return ESP_FAIL;
     }
 
+#if !CONFIG_OTA_ALLOW_HTTP
     if (esp_http_client_get_transport_type(client) != HTTP_TRANSPORT_OVER_SSL) {
         ESP_LOGE(TAG, "Transport is not over HTTPS");
         return ESP_FAIL;
     }
+#endif
 
     esp_err_t err = esp_http_client_open(client, 0);
     if (err != ESP_OK) {
