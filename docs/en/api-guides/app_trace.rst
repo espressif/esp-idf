@@ -85,14 +85,14 @@ In general user should decide what type of data should be transferred in every d
 	    int number = 10;
 	    char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_TRAX, 32, 100/*tmo in us*/);
 	    if (ptr == NULL) {
-	        ESP_LOGE("Failed to get buffer!");
+	        ESP_LOGE(TAG, "Failed to get buffer!");
 	        return ESP_FAIL;
 	    }
 	    sprintf(ptr, "Here is the number %d", number);
 	    esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
 	    if (res != ESP_OK) {
 	        /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
-	        ESP_LOGE("Failed to put buffer!");
+	        ESP_LOGE(TAG, "Failed to put buffer!");
 	        return res;
 	    }
 
@@ -133,7 +133,7 @@ In general user should decide what type of data should be transferred in every d
 	    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
 	    char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_TRAX, &sz, 100/*tmo in us*/);
 	    if (ptr == NULL) {
-	        ESP_LOGE("Failed to get buffer!");
+	        ESP_LOGE(TAG, "Failed to get buffer!");
 	        return ESP_FAIL;
 	    }
 	    if (sz > 4) {
@@ -145,7 +145,7 @@ In general user should decide what type of data should be transferred in every d
 	    esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
 	    if (res != ESP_OK) {
 	        /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
-	        ESP_LOGE("Failed to put buffer!");
+	        ESP_LOGE(TAG, "Failed to put buffer!");
 	        return res;
 	    }
 
@@ -406,7 +406,7 @@ Data Visualization
 
 After trace data are collected user can use special tool to visualize the results and inspect behaviour of the program. Unfortunately SystemView does not support tracing from multiple cores. So when tracing from ESP32 working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool. 
 
-It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately there is Eclipse plugin called *Impulse* which can load several trace files and makes its possible to inspect events from both cores in one view. Also this plugin has no limitation of 1000000 events as compared to free version of SystemView.
+It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately there is Eclipse plugin called *Impulse* which can load several trace files and makes its possible to inspect events from both cores in one view. Also this plugin has no limitation of 1,000,000 events as compared to free version of SystemView.
 
 Good instruction on how to install, configure and visualize data in Impulse from one core can be found `here <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_.
 
