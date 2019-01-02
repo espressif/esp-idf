@@ -22,8 +22,6 @@ import tempfile
 
 from serial.tools import list_ports
 
-from collections import namedtuple
-
 import DUT
 
 try:
@@ -51,14 +49,20 @@ def _uses_esptool(func):
 
         settings = self.port_inst.get_settings()
 
-        rom = esptool.ESP32ROM(self.port_inst)
-        rom.connect('hard_reset')
-        esp = rom.run_stub()
+        try:
+            rom = esptool.ESP32ROM(self.port_inst)
+            rom.connect('hard_reset')
+            esp = rom.run_stub()
 
-        ret = func(self, esp, *args, **kwargs)
+            ret = func(self, esp, *args, **kwargs)
+            # do hard reset after use esptool
+            esp.hard_reset()
+        finally:
+            # always need to restore port settings
+            self.port_inst.apply_settings(settings)
 
-        self.port_inst.apply_settings(settings)
         self.start_receive()
+
         return ret
     return handler
 
@@ -94,6 +98,8 @@ class IDFDUT(DUT.SerialDUT):
         except RuntimeError:
             return None
         finally:
+            # do hard reset after use esptool
+            esp.hard_reset()
             esp._port.close()
 
     @classmethod
@@ -121,31 +127,27 @@ class IDFDUT(DUT.SerialDUT):
 
             # fake flasher args object, this is a hack until
             # esptool Python API is improved
-            Flash_Args = namedtuple('write_flash_args',
-                                    ['flash_size',
-                                     'flash_mode',
-                                     'flash_freq',
-                                     'addr_filename',
-                                     'no_stub',
-                                     'compress',
-                                     'verify',
-                                     'encrypt'])
+            class FlashArgs(object):
+                def __init__(self, attributes):
+                    for key, value in attributes.items():
+                        self.__setattr__(key, value)
 
-            flash_args = Flash_Args(
-                self.app.flash_settings["flash_size"],
-                self.app.flash_settings["flash_mode"],
-                self.app.flash_settings["flash_freq"],
-                flash_files,
-                False,
-                True,
-                False,
-                False
-            )
+            flash_args = FlashArgs({
+                'flash_size': self.app.flash_settings["flash_size"],
+                'flash_mode': self.app.flash_settings["flash_mode"],
+                'flash_freq': self.app.flash_settings["flash_freq"],
+                'addr_filename': flash_files,
+                'no_stub': False,
+                'compress': True,
+                'verify': False,
+                'encrypt': False,
+            })
 
             esp.change_baud(baud_rate)
+            esptool.detect_flash_size(esp, flash_args)
             esptool.write_flash(esp, flash_args)
         finally:
-            for (_,f) in flash_files:
+            for (_, f) in flash_files:
                 f.close()
 
     def start_app(self, erase_nvs=ERASE_NVS):
@@ -171,7 +173,9 @@ class IDFDUT(DUT.SerialDUT):
 
         :return: None
         """
-        esp.hard_reset()
+        # decorator `_use_esptool` will do reset
+        # so we don't need to do anything in this method
+        pass
 
     @_uses_esptool
     def erase_partition(self, esp, partition):
