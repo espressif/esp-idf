@@ -289,6 +289,13 @@ config BTC_TASK_STACK_SIZE
     help
         This select btc task stack size
 
+config BTU_TASK_STACK_SIZE
+    int "Bluetooth Bluedroid Host Stack task stack size"
+    depends on BLUEDROID_ENABLED
+    default 4096
+    help
+        This select btu task stack size
+
 config BLUEDROID_MEM_DEBUG
     bool "Bluedroid memory debug"
     depends on BLUEDROID_ENABLED
