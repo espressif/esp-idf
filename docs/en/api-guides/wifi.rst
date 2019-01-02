@@ -1,19 +1,11 @@
 Wi-Fi Driver
 =============
 
-Important Notes
-----------------
-
-- This document describes the implementation of only the **latest** IDF release. Backward compatibility with older versions of ESP-IDF is not guaranteed.
-- This document describes the features which have already been implemented in the **latest** IDF release. For  features that are now in developing/testing status, we also provide brief descriptions, while indicating the release versions in which these features will be eventually implemented.
-- If you find anything wrong/ambiguous/hard to understand or inconsistent with the implementation, feel free to let us know about it on our IDF GitHub page.
-
-
 ESP32 Wi-Fi Feature List
 -------------------------
 - Support Station-only mode, SoftAP-only mode, Station/SoftAP-coexistence mode
 - Support IEEE-802.11B, IEEE-802.11G, IEEE802.11N and APIs to configure the protocol mode
-- Support WPA/WPA2/WPA2-Enterprise and WPS 
+- Support WPA/WPA2/WPA2-Enterprise and WPS
 - Support AMPDU, HT40, QoS and other key features
 - Support Modem-sleep
 - Support an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
