@@ -92,8 +92,6 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             dst->send_ind.value = NULL;
             if (src->send_ind.value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
-            } else {
-                BTC_TRACE_WARNING("%s %d, NULL value", __func__, msg->act);
             }
         }
         break;
@@ -106,8 +104,6 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             } else {
                 BTC_TRACE_ERROR("%s %d no mem\n", __func__, msg->act);
             }
-        } else {
-            BTC_TRACE_WARNING("%s %d, NULL response", __func__, msg->act);
         }
         break;
     
@@ -125,8 +121,6 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             dst->add_char.char_val.attr_value = NULL;
             if (src->add_char.char_val.attr_value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
-            } else {
-                BTC_TRACE_WARNING("%s %d, NULL value", __func__, msg->act);
             }
         }
         break;
@@ -144,8 +138,6 @@ void btc_gatts_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             dst->add_descr.descr_val.attr_value = NULL;
             if (src->add_descr.descr_val.attr_value) {
                 BTC_TRACE_ERROR("%s %d, invalid length", __func__, msg->act);
-            } else {
-                BTC_TRACE_WARNING("%s %d, NULL value", __func__, msg->act);
             }
         }
         break;
