@@ -1140,7 +1140,7 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
 
 /**
-* @brief           Reply the confirm value to the peer device in the legacy connection stage.
+* @brief           Reply the confirm value to the peer device in the secure connection stage.
 *
 * @param[in]       bd_addr : BD address of the peer device
 * @param[in]       accept : numbers to compare are the same or different.
