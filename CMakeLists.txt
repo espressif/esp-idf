@@ -32,7 +32,13 @@ execute_process(COMMAND "${CMAKE_COMMAND}"
     -D "IDF_PATH=${IDF_PATH}"
     -D "DEBUG=${DEBUG}"
     -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
-    WORKING_DIRECTORY "${PROJECT_PATH}")
+    WORKING_DIRECTORY "${PROJECT_PATH}"
+    RESULT_VARIABLE expand_requirements_result)
+
+if(expand_requirements_result)
+    message(FATAL_ERROR "Failed to expand component requirements")
+endif()
+
 include("${CMAKE_BINARY_DIR}/component_depends.cmake")
 
 #

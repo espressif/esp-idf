@@ -342,12 +342,14 @@ The following variables are set at the project level, but available for use in c
 - ``CONFIG_*``: Each value in the project configuration has a corresponding variable available in make. All names begin with ``CONFIG_``. :doc:`More information here </api-reference/kconfig>`.
 - ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
 - ``IDF_TARGET``: Name of the target for which the project is being built.
-- ``PROJECT_VER``: Project version. 
+- ``PROJECT_VER``: Project version.
 
-* If ``PROJECT_VER`` variable set in project CMakeLists.txt file, its value will be used.
-* Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
-* Else, if the project is located inside a Git repository, the output of git describe will be used.
-* Otherwise, ``PROJECT_VER`` will be "1".
+  * If ``PROJECT_VER`` variable set in project CMakeLists.txt file, its value will be used.
+  * Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+  * Else, if the project is located inside a Git repository, the output of git describe will be used.
+  * Otherwise, ``PROJECT_VER`` will be "1".
+
+- ``ESP_PLATFORM``: Set to 1 whenever the ESP-IDF build system is being used.
 
 If you modify any of these variables inside ``CMakeLists.txt`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 
@@ -902,6 +904,9 @@ import it from other projects. Studying the library's CMakeLists.txt and build s
 
 It is also possible to wrap a third-party library to be used as a component in this manner. For example, the :component:`mbedtls` component is a wrapper for 
 Espressif's fork of `mbedtls <https://github.com/ARMmbed/mbedtls>`_. See its :component_file:`component CMakeLists.txt <mbedtls/CMakeLists.txt>`.
+
+The CMake variable ``ESP_PLATFORM`` is set to 1 whenever the ESP-IDF build system is being used. Tests such as ``if (ESP_PLATFORM)`` can be used in generic CMake code if special IDF-specific logic is required.
+
 
 Using ESP-IDF in Custom CMake Projects
 ======================================

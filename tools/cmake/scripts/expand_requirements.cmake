@@ -33,6 +33,8 @@ cmake_minimum_required(VERSION 3.5)
 include("${IDF_PATH}/tools/cmake/utilities.cmake")
 include("${IDF_PATH}/tools/cmake/component_utils.cmake")
 
+set(ESP_PLATFORM 1)
+
 if(NOT DEPENDENCIES_FILE)
     message(FATAL_ERROR "DEPENDENCIES_FILE must be set.")
 endif()
