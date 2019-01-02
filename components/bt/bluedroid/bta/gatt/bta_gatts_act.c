@@ -707,8 +707,6 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
             } else {
                 if (p_msg->api_indicate.value) {
                     APPL_TRACE_ERROR("%s, incorrect length", __func__);
-                } else {
-                    APPL_TRACE_WARNING("%s, NULL value", __func__);
                 }
             }
             (*p_rcb->p_cback)(BTA_GATTS_CONF_EVT, &cb_data);
