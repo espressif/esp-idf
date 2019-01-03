@@ -29,9 +29,9 @@ def test_examples_parttool(env, extra_data):
     script_path = os.path.join(os.getenv("IDF_PATH"), "examples", "storage", "parttool", "parttool_example.py")
 
     binary_path = ""
-    for config in dut.download_config:
-        if "parttool.bin" in config:
-            binary_path = config
+    for flash_file in dut.app.flash_files:
+        if "parttool.bin" in flash_file[1]:
+            binary_path = flash_file[1]
             break
 
     subprocess.check_call([sys.executable, script_path, "--binary", binary_path])
