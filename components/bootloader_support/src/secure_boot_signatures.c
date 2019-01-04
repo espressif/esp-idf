@@ -19,13 +19,13 @@
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 
-#include "uECC.h"
-
 #ifdef BOOTLOADER_BUILD
 #include "esp32/rom/sha.h"
+#include "uECC.h"
 typedef SHA_CTX sha_context;
 #else
 #include "mbedtls/sha256.h"
+#include "mbedtls/x509.h"
 #endif
 
 static const char* TAG = "secure_boot";
@@ -71,7 +71,6 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
 {
     ptrdiff_t keylen;
-    bool is_valid;
 
     keylen = signature_verification_key_end - signature_verification_key_start;
     if(keylen != SIGNATURE_VERIFICATION_KEYLEN) {
@@ -86,6 +85,8 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
 
     ESP_LOGD(TAG, "Verifying secure boot signature");
 
+#ifdef BOOTLOADER_BUILD
+    bool is_valid;
     is_valid = uECC_verify(signature_verification_key_start,
                                 image_digest,
                                 DIGEST_LEN,
@@ -93,4 +94,52 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
                                 uECC_secp256r1());
     ESP_LOGD(TAG, "Verification result %d", is_valid);
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
+#else /* BOOTLOADER_BUILD */
+    int ret;
+    mbedtls_mpi r, s;
+
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    /* Extract r and s components from RAW ECDSA signature of 64 bytes */
+    #define ECDSA_INTEGER_LEN 32
+    ret = mbedtls_mpi_read_binary(&r, &sig_block->signature[0], ECDSA_INTEGER_LEN);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed mbedtls_mpi_read_binary(1), err:%d", ret);
+        return ESP_FAIL;
+    }
+
+    ret = mbedtls_mpi_read_binary(&s, &sig_block->signature[ECDSA_INTEGER_LEN], ECDSA_INTEGER_LEN);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed mbedtls_mpi_read_binary(2), err:%d", ret);
+        mbedtls_mpi_free(&r);
+        return ESP_FAIL;
+    }
+
+    /* Initialise ECDSA context */
+    mbedtls_ecdsa_context ecdsa_context;
+    mbedtls_ecdsa_init(&ecdsa_context);
+
+    mbedtls_ecp_group_load(&ecdsa_context.grp, MBEDTLS_ECP_DP_SECP256R1);
+    size_t plen = mbedtls_mpi_size(&ecdsa_context.grp.P);
+    if (keylen != 2*plen) {
+        ESP_LOGE(TAG, "Incorrect ECDSA key length %d", keylen);
+        ret = ESP_FAIL;
+        goto cleanup;
+    }
+
+    /* Extract X and Y components from ECDSA public key */
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.Q.X, signature_verification_key_start, plen));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&ecdsa_context.Q.Y, signature_verification_key_start + plen, plen));
+    MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&ecdsa_context.Q.Z, 1));
+
+    ret = mbedtls_ecdsa_verify(&ecdsa_context.grp, image_digest, DIGEST_LEN, &ecdsa_context.Q, &r, &s);
+    ESP_LOGD(TAG, "Verification result %d", ret);
+
+cleanup:
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+    mbedtls_ecdsa_free(&ecdsa_context);
+    return ret == 0 ? ESP_OK : ESP_ERR_IMAGE_INVALID;
+#endif /* !BOOTLOADER_BUILD */
 }
