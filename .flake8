@@ -141,7 +141,7 @@ exclude =
     __pycache__,
     # submodules
         components/esptool_py/esptool,
-        components/micro-ecc/micro-ecc,
+        components/bootloader/subproject/components/micro-ecc/micro-ecc,
         components/nghttp/nghttp2,
         components/libsodium/libsodium,
         components/json/cJSON,
