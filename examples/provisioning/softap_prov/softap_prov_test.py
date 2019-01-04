@@ -64,7 +64,6 @@ def test_examples_provisioning_softap(env, extra_data):
 
     # Parse IP address of STA
     dut1.expect("Starting WiFi SoftAP provisioning", timeout=60)
-    dut1.expect("SoftAP started", timeout=30)
     [ssid, password] = dut1.expect(re.compile(r"SoftAP Provisioning started with SSID '(\S+)', Password '(\S+)'"), timeout=30)
 
     iface = wifi_tools.get_wiface_name()
