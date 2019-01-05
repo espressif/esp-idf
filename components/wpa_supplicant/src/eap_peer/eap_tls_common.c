@@ -304,10 +304,26 @@ u8 * eap_peer_tls_derive_session_id(struct eap_sm *sm,
 	u8 *out;
 
 	if (eap_type == EAP_TYPE_TLS && data->tls_v13) {
-		*len = 64;
-		return eap_peer_tls_derive_key(sm, data,
-					       "EXPORTER_EAP_TLS_Session-Id",
-					       64);
+		u8 *id, *method_id;
+
+		/* Session-Id = <EAP-Type> || Method-Id
+		 * Method-Id = TLS-Exporter("EXPORTER_EAP_TLS_Method-Id",
+		 *                          "", 64)
+		 */
+		*len = 1 + 64;
+		id = os_malloc(*len);
+		if (!id)
+			return NULL;
+		method_id = eap_peer_tls_derive_key(
+			sm, data, "EXPORTER_EAP_TLS_Method-Id", 64);
+		if (!method_id) {
+			os_free(id);
+			return NULL;
+		}
+		id[0] = eap_type;
+		os_memcpy(id + 1, method_id, 64);
+		os_free(method_id);
+		return id;
 	}
 
 	/*
