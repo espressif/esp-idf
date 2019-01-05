@@ -744,6 +744,10 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
  */
 esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, size_t val_size);
 
+/* Symbol to be used as length parameter in httpd_resp_send APIs
+ * for setting buffer length to string length */
+#define HTTPD_RESP_USE_STRLEN -1
+
 /**
  * @brief   API to send a complete HTTP response.
  *
@@ -772,7 +776,7 @@ esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, siz
  *
  * @param[in] r         The request being responded to
  * @param[in] buf       Buffer from where the content is to be fetched
- * @param[in] buf_len   Length of the buffer, -1 to use strlen()
+ * @param[in] buf_len   Length of the buffer, HTTPD_RESP_USE_STRLEN to use strlen()
  *
  * @return
  *  - ESP_OK : On successfully sending the response packet
@@ -811,7 +815,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len);
  *
  * @param[in] r         The request being responded to
  * @param[in] buf       Pointer to a buffer that stores the data
- * @param[in] buf_len   Length of the data from the buffer that should be sent out, -1 to use strlen()
+ * @param[in] buf_len   Length of the buffer, HTTPD_RESP_USE_STRLEN to use strlen()
  *
  * @return
  *  - ESP_OK : On successfully sending the response packet chunk
@@ -821,6 +825,48 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len);
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
 esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len);
+
+/**
+ * @brief   API to send a complete string as HTTP response.
+ *
+ * This API simply calls http_resp_send with buffer length
+ * set to string length assuming the buffer contains a null
+ * terminated string
+ *
+ * @param[in] r         The request being responded to
+ * @param[in] str       String to be sent as response body
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null request pointer
+ *  - ESP_ERR_HTTPD_RESP_HDR    : Essential headers are too large for internal buffer
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
+ */
+inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
+    return httpd_resp_send(r, str, (str == NULL) ? 0 : strlen(str));
+}
+
+/**
+ * @brief   API to send a string as an HTTP response chunk.
+ *
+ * This API simply calls http_resp_send_chunk with buffer length
+ * set to string length assuming the buffer contains a null
+ * terminated string
+ *
+ * @param[in] r    The request being responded to
+ * @param[in] str  String to be sent as response body (NULL to finish response packet)
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null request pointer
+ *  - ESP_ERR_HTTPD_RESP_HDR    : Essential headers are too large for internal buffer
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
+ */
+inline esp_err_t httpd_resp_sendstr_chunk(httpd_req_t *r, const char *str) {
+    return httpd_resp_send_chunk(r, str, (str == NULL) ? 0 : strlen(str));
+}
 
 /* Some commonly used status codes */
 #define HTTPD_200      "200 OK"                     /*!< HTTP Response 200 */
