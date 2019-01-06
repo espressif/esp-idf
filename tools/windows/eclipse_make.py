@@ -25,7 +25,7 @@ def check_path(path):
         return path  # something went wrong running cygpath, assume this is not a path!
     if not os.path.exists(winpath):
         return path  # not actually a valid path
-    winpath = winpath.replace("\\", "/")  # make consistent with forward-slashes used elsewhere
+    winpath = winpath.decode('ASCII').replace("\\", "/")  # make consistent with forward-slashes used elsewhere
     paths[path] = winpath
     return winpath
 
@@ -34,7 +34,7 @@ def main():
     print("Running make in '%s'" % check_path(os.getcwd()))
     make = subprocess.Popen(["make"] + sys.argv[1:] + ["BATCH_BUILD=1"], stdout=subprocess.PIPE)
     for line in iter(make.stdout.readline, ''):
-        line = re.sub(UNIX_PATH_RE, lambda m: check_path(m.group(0)), line)
+        line = re.sub(UNIX_PATH_RE, lambda m: check_path(m.group(0)), line.decode('ASCII'))
         print(line.rstrip())
     sys.exit(make.wait())
 
