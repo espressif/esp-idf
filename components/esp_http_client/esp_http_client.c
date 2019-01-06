@@ -1108,6 +1108,7 @@ success:
 
 esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
 {
+    client->post_len = write_len;
     esp_err_t err;
     if ((err = esp_http_client_connect(client)) != ESP_OK) {
         return err;
