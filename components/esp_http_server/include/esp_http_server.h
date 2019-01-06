@@ -49,6 +49,7 @@ initializer that should be kept in sync
         .global_transport_ctx_free_fn = NULL,           \
         .open_fn = NULL,                                \
         .close_fn = NULL,                               \
+        .uri_match_fn = NULL                            \
 }
 
 #define ESP_ERR_HTTPD_BASE              (0x8000)                    /*!< Starting number of HTTPD error codes */
@@ -60,6 +61,10 @@ initializer that should be kept in sync
 #define ESP_ERR_HTTPD_RESP_SEND         (ESP_ERR_HTTPD_BASE +  6)   /*!< Error occured while sending response packet */
 #define ESP_ERR_HTTPD_ALLOC_MEM         (ESP_ERR_HTTPD_BASE +  7)   /*!< Failed to dynamically allocate memory for resource */
 #define ESP_ERR_HTTPD_TASK              (ESP_ERR_HTTPD_BASE +  8)   /*!< Failed to launch server task/thread */
+
+/* Symbol to be used as length parameter in httpd_resp_send APIs
+ * for setting buffer length to string length */
+#define HTTPD_RESP_USE_STRLEN -1
 
 /* ************** Group: Initialization ************** */
 /** @name Initialization
@@ -82,7 +87,7 @@ typedef enum http_method httpd_method_t;
 
 /**
  * @brief  Prototype for freeing context data (if any)
- * @param[in] ctx : object to free
+ * @param[in] ctx   object to free
  */
 typedef void (*httpd_free_ctx_fn_t)(void *ctx);
 
@@ -92,8 +97,8 @@ typedef void (*httpd_free_ctx_fn_t)(void *ctx);
  * Called immediately after the socket was opened to set up the send/recv functions and
  * other parameters of the socket.
  *
- * @param[in] hd : server instance
- * @param[in] sockfd : session socket file descriptor
+ * @param[in] hd       server instance
+ * @param[in] sockfd   session socket file descriptor
  * @return status
  */
 typedef esp_err_t (*httpd_open_func_t)(httpd_handle_t hd, int sockfd);
@@ -104,10 +109,25 @@ typedef esp_err_t (*httpd_open_func_t)(httpd_handle_t hd, int sockfd);
  * @note   It's possible that the socket descriptor is invalid at this point, the function
  *         is called for all terminated sessions. Ensure proper handling of return codes.
  *
- * @param[in] hd : server instance
- * @param[in] sockfd : session socket file descriptor
+ * @param[in] hd   server instance
+ * @param[in] sockfd   session socket file descriptor
  */
 typedef void (*httpd_close_func_t)(httpd_handle_t hd, int sockfd);
+
+/**
+ * @brief  Function prototype for URI matching.
+ *
+ * @param[in] reference_uri   URI/template with respect to which the other URI is matched
+ * @param[in] uri_to_match    URI/template being matched to the reference URI/template
+ * @param[in] match_upto      For specifying the actual length of `uri_to_match` up to
+ *                            which the matching algorithm is to be applied (The maximum
+ *                            value is `strlen(uri_to_match)`, independent of the length
+ *                            of `reference_uri`)
+ * @return true on match
+ */
+typedef bool (*httpd_uri_match_func_t)(const char *reference_uri,
+                                       const char *uri_to_match,
+                                       size_t match_upto);
 
 /**
  * @brief   HTTP Server Configuration Structure
@@ -195,6 +215,24 @@ typedef struct httpd_config {
      * was closed by the network stack - that is, the file descriptor may not be valid anymore.
      */
     httpd_close_func_t close_fn;
+
+    /**
+     * URI matcher function.
+     *
+     * Called when searching for a matching URI:
+     *     1) whose request handler is to be executed right
+     *        after an HTTP request is successfully parsed
+     *     2) in order to prevent duplication while registering
+     *        a new URI handler using `httpd_register_uri_handler()`
+     *
+     * Available options are:
+     *     1) NULL : Internally do basic matching using `strncmp()`
+     *     2) `httpd_uri_match_wildcard()` : URI wildcard matcher
+     *
+     * Users can implement their own matching functions (See description
+     * of the `httpd_uri_match_func_t` function prototype)
+     */
+    httpd_uri_match_func_t uri_match_fn;
 } httpd_config_t;
 
 /**
@@ -227,8 +265,8 @@ typedef struct httpd_config {
  *
  * @endcode
  *
- * @param[in]  config : Configuration for new instance of the server
- * @param[out] handle : Handle to newly created instance of the server. NULL on error
+ * @param[in]  config   Configuration for new instance of the server
+ * @param[out] handle   Handle to newly created instance of the server. NULL on error
  * @return
  *  - ESP_OK    : Instance created successfully
  *  - ESP_ERR_INVALID_ARG      : Null argument(s)
@@ -451,11 +489,11 @@ esp_err_t httpd_unregister_uri(httpd_handle_t handle, const char* uri);
  *         HTTPD_SOCK_ERR_ codes, which will eventually be conveyed as
  *         return value of httpd_send() function
  *
- * @param[in] hd      : server instance
- * @param[in] sockfd  : session socket file descriptor
- * @param[in] buf     : buffer with bytes to send
- * @param[in] buf_len : data size
- * @param[in] flags   : flags for the send() function
+ * @param[in] hd        server instance
+ * @param[in] sockfd    session socket file descriptor
+ * @param[in] buf       buffer with bytes to send
+ * @param[in] buf_len   data size
+ * @param[in] flags     flags for the send() function
  * @return
  *  - Bytes : The number of bytes sent successfully
  *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
@@ -472,11 +510,11 @@ typedef int (*httpd_send_func_t)(httpd_handle_t hd, int sockfd, const char *buf,
  *         HTTPD_SOCK_ERR_ codes, which will eventually be conveyed as
  *         return value of httpd_req_recv() function
  *
- * @param[in] hd      : server instance
- * @param[in] sockfd  : session socket file descriptor
- * @param[in] buf     : buffer with bytes to send
- * @param[in] buf_len : data size
- * @param[in] flags   : flags for the send() function
+ * @param[in] hd        server instance
+ * @param[in] sockfd    session socket file descriptor
+ * @param[in] buf       buffer with bytes to send
+ * @param[in] buf_len   data size
+ * @param[in] flags     flags for the send() function
  * @return
  *  - Bytes : The number of bytes received successfully
  *  - 0     : Buffer length parameter is zero / connection closed by peer
@@ -494,8 +532,8 @@ typedef int (*httpd_recv_func_t)(httpd_handle_t hd, int sockfd, char *buf, size_
  *         HTTPD_SOCK_ERR_ codes, which will be handled accordingly in
  *         the server task.
  *
- * @param[in] hd : server instance
- * @param[in] sockfd : session socket file descriptor
+ * @param[in] hd       server instance
+ * @param[in] sockfd   session socket file descriptor
  * @return
  *  - Bytes : The number of bytes waiting to be received
  *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
@@ -744,9 +782,29 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
  */
 esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, size_t val_size);
 
-/* Symbol to be used as length parameter in httpd_resp_send APIs
- * for setting buffer length to string length */
-#define HTTPD_RESP_USE_STRLEN -1
+/**
+ * @brief Test if a URI matches the given wildcard template.
+ *
+ * Template may end with "?" to make the previous character optional (typically a slash),
+ * "*" for a wildcard match, and "?*" to make the previous character optional, and if present,
+ * allow anything to follow.
+ *
+ * Example:
+ *   - * matches everything
+ *   - /foo/? matches /foo and /foo/
+ *   - /foo/\* (sans the backslash) matches /foo/ and /foo/bar, but not /foo or /fo
+ *   - /foo/?* or /foo/\*?  (sans the backslash) matches /foo/, /foo/bar, and also /foo, but not /foox or /fo
+ *
+ * The special characters "?" and "*" anywhere else in the template will be taken literally.
+ *
+ * @param[in] template   URI template (pattern)
+ * @param[in] uri        URI to be matched
+ * @param[in] len        how many characters of the URI buffer to test
+ *                       (there may be trailing query string etc.)
+ *
+ * @return true if a match was found
+ */
+bool httpd_uri_match_wildcard(const char *template, const char *uri, size_t len);
 
 /**
  * @brief   API to send a complete HTTP response.
