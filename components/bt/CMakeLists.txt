@@ -287,6 +287,75 @@ if(CONFIG_BT_ENABLED)
     endif()
 endif()
 
+if (CONFIG_BLE_MESH)
+    list(APPEND COMPONENT_ADD_INCLUDEDIRS
+        "bluedroid/osi/include"
+        "ble_mesh/mesh_core"
+        "ble_mesh/mesh_core/include"
+        "ble_mesh/mesh_core/settings"
+        "ble_mesh/btc/include"
+        "ble_mesh/mesh_models/include"
+        "ble_mesh/api/core/include"
+        "ble_mesh/api/models/include"
+        "ble_mesh/api")
+
+    list(APPEND COMPONENT_SRCS
+        "ble_mesh/api/core/esp_ble_mesh_common_api.c"
+        "ble_mesh/api/core/esp_ble_mesh_local_data_operation_api.c"
+        "ble_mesh/api/core/esp_ble_mesh_low_power_api.c"
+        "ble_mesh/api/core/esp_ble_mesh_networking_api.c"
+        "ble_mesh/api/core/esp_ble_mesh_provisioning_api.c"
+        "ble_mesh/api/core/esp_ble_mesh_proxy_api.c"
+        "ble_mesh/api/models/esp_ble_mesh_config_model_api.c"
+        "ble_mesh/api/models/esp_ble_mesh_generic_model_api.c"
+        "ble_mesh/api/models/esp_ble_mesh_health_model_api.c"
+        "ble_mesh/api/models/esp_ble_mesh_lighting_model_api.c"
+        "ble_mesh/api/models/esp_ble_mesh_sensor_model_api.c"
+        "ble_mesh/api/models/esp_ble_mesh_time_scene_model_api.c"
+        "ble_mesh/btc/btc_ble_mesh_config_model.c"
+        "ble_mesh/btc/btc_ble_mesh_generic_model.c"
+        "ble_mesh/btc/btc_ble_mesh_health_model.c"
+        "ble_mesh/btc/btc_ble_mesh_lighting_model.c"
+        "ble_mesh/btc/btc_ble_mesh_prov.c"
+        "ble_mesh/btc/btc_ble_mesh_sensor_model.c"
+        "ble_mesh/btc/btc_ble_mesh_time_scene_model.c"
+        "ble_mesh/mesh_core/settings/settings_nvs.c"
+        "ble_mesh/mesh_core/access.c"
+        "ble_mesh/mesh_core/adv.c"
+        "ble_mesh/mesh_core/beacon.c"
+        "ble_mesh/mesh_core/cfg_cli.c"
+        "ble_mesh/mesh_core/cfg_srv.c"
+        "ble_mesh/mesh_core/crypto.c"
+        "ble_mesh/mesh_core/friend.c"
+        "ble_mesh/mesh_core/health_cli.c"
+        "ble_mesh/mesh_core/health_srv.c"
+        "ble_mesh/mesh_core/lpn.c"
+        "ble_mesh/mesh_core/mesh_aes_encrypt.c"
+        "ble_mesh/mesh_core/mesh_atomic.c"
+        "ble_mesh/mesh_core/mesh_bearer_adapt.c"
+        "ble_mesh/mesh_core/mesh_buf.c"
+        "ble_mesh/mesh_core/mesh_hci.c"
+        "ble_mesh/mesh_core/mesh_kernel.c"
+        "ble_mesh/mesh_core/mesh_main.c"
+        "ble_mesh/mesh_core/mesh_util.c"
+        "ble_mesh/mesh_core/net.c"
+        "ble_mesh/mesh_core/prov.c"
+        "ble_mesh/mesh_core/provisioner_beacon.c"
+        "ble_mesh/mesh_core/provisioner_main.c"
+        "ble_mesh/mesh_core/provisioner_prov.c"
+        "ble_mesh/mesh_core/provisioner_proxy.c"
+        "ble_mesh/mesh_core/proxy.c"
+        "ble_mesh/mesh_core/settings.c"
+        "ble_mesh/mesh_core/test.c"
+        "ble_mesh/mesh_core/transport.c"
+        "ble_mesh/mesh_models/generic_client.c"
+        "ble_mesh/mesh_models/lighting_client.c"
+        "ble_mesh/mesh_models/mesh_common.c"
+        "ble_mesh/mesh_models/model_common.c"
+        "ble_mesh/mesh_models/sensor_client.c"
+        "ble_mesh/mesh_models/time_scene_client.c")
+endif()
+
 # requirements can't depend on config
 set(COMPONENT_PRIV_REQUIRES nvs_flash soc)
 
