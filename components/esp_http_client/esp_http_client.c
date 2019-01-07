@@ -166,7 +166,7 @@ enum HttpStatus_Code
 };
 
 
-static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client);
+static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 static esp_err_t esp_http_client_connect(esp_http_client_handle_t client);
 static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client);
 
@@ -817,7 +817,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 }
                 /* falls through */
             case HTTP_STATE_CONNECTED:
-                if ((err = esp_http_client_request_send(client)) != ESP_OK) {
+                if ((err = esp_http_client_request_send(client, client->post_len)) != ESP_OK) {
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
@@ -997,11 +997,11 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
     return first_line_len;
 }
 
-static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client)
+static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len)
 {
     int first_line_len = 0;
     if (!client->first_line_prepared) {
-        if ((first_line_len = http_client_prepare_first_line(client, client->post_len)) < 0) {
+        if ((first_line_len = http_client_prepare_first_line(client, write_len)) < 0) {
             return first_line_len;
         }
         client->first_line_prepared = true;
@@ -1092,7 +1092,7 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
     if ((err = esp_http_client_connect(client)) != ESP_OK) {
         return err;
     }
-    if ((err = esp_http_client_request_send(client)) != ESP_OK) {
+    if ((err = esp_http_client_request_send(client, write_len)) != ESP_OK) {
         return err; 
     }
     return ESP_OK;
