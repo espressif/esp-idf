@@ -12,4 +12,6 @@ entries:
     rtc_wdt (noflash_text)
     spi_hal_iram (noflash_text)
     spi_slave_hal_iram (noflash_text)
+    spi_flash_hal_iram (noflash)
     lldesc (noflash_text)
+
