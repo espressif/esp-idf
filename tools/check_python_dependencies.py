@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import os
 import sys
-import argparse
+
 try:
     import pkg_resources
 except Exception:
@@ -32,6 +33,13 @@ def escape_backslash(path):
         return path.replace("\\", "\\\\")
     else:
         return path
+
+
+def is_virtualenv():
+    """Detects if current python is inside virtualenv, pyvenv (python 3.4-3.5) or venv"""
+
+    return (hasattr(sys, 'real_prefix') or
+            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
 
 
 if __name__ == "__main__":
@@ -79,8 +87,10 @@ if __name__ == "__main__":
         else:
             print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required'
                   ' packages.')
-        print('Alternatively, you can run "{} -m pip install --user -r {}" for resolving the issue.'
-              ''.format(escape_backslash(sys.executable), escape_backslash(args.requirements)))
+        print('Alternatively, you can run "{} -m pip install {}-r {}" for resolving the issue.'
+              ''.format(escape_backslash(sys.executable),
+                        '' if is_virtualenv() else '--user ',
+                        escape_backslash(args.requirements)))
         sys.exit(1)
 
     print('Python requirements from {} are satisfied.'.format(args.requirements))
