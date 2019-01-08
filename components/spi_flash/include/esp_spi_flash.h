@@ -25,7 +25,6 @@
 extern "C" {
 #endif
 
-#define ESP_ERR_FLASH_BASE       0x10010
 #define ESP_ERR_FLASH_OP_FAIL    (ESP_ERR_FLASH_BASE + 1)
 #define ESP_ERR_FLASH_OP_TIMEOUT (ESP_ERR_FLASH_BASE + 2)
 
@@ -36,7 +35,7 @@ extern "C" {
 /**
  * @brief  Initialize SPI flash access driver
  *
- *  This function must be called exactly once, before any other 
+ *  This function must be called exactly once, before any other
  *  spi_flash_* functions are called.
  *  Currently this function is called from startup code. There is
  *  no need to call it from application code.

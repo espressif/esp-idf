@@ -16,6 +16,8 @@ list(APPEND COMPONENT_SRCS "src/memory_layout_utils.c"
         "src/hal/spi_slave_hal.c"
         "src/hal/spi_slave_hal_iram.c"
         "src/soc_include_legacy_warn.c"
+        "src/hal/spi_flash_hal.c"
+        "src/hal/spi_flash_hal_iram.c"
     )
 
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
