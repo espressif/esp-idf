@@ -56,6 +56,16 @@ typedef uint32_t esp_ota_handle_t;
 const esp_app_desc_t *esp_ota_get_app_description(void);
 
 /**
+ * @brief   Fill the provided buffer with SHA256 of the ELF file, formatted as hexadecimal, null-terminated.
+ * If the buffer size is not sufficient to fit the entire SHA256 in hex plus a null terminator,
+ * the largest possible number of bytes will be written followed by a null.
+ * @param dst   Destination buffer
+ * @param size  Size of the buffer
+ * @return      Number of bytes written to dst (including null terminator)
+ */
+int esp_ota_get_app_elf_sha256(char* dst, size_t size);
+
+/**
  * @brief   Commence an OTA update writing to the specified partition.
 
  * The specified partition is erased to the specified image size.
