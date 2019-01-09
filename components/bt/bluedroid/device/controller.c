@@ -250,10 +250,10 @@ static void start_up(void)
     }
 #endif
 
-    if (simple_pairing_supported) {
-        response = AWAIT_COMMAND(packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK));
-        packet_parser->parse_generic_command_complete(response);
-    }
+
+    response = AWAIT_COMMAND(packet_factory->make_set_event_mask(&CLASSIC_EVENT_MASK));
+    packet_parser->parse_generic_command_complete(response);
+
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
     response = AWAIT_COMMAND(packet_factory->make_write_sync_flow_control_enable(1));
