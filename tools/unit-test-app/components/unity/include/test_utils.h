@@ -43,6 +43,32 @@ void ref_clock_deinit();
  */
 uint64_t ref_clock_get();
 
+
+/**
+ * @brief Reset automatic leak checking which happens in unit tests.
+ *
+ * Updates recorded "before" free memory values to the free memory values
+ * at time of calling. Resets leak checker if tracing is enabled in
+ * config.
+ *
+ * This can be called if a test case does something which allocates
+ * memory on first use, for example.
+ *
+ * @note Use with care as this can mask real memory leak problems.
+ */
+void unity_reset_leak_checks(void);
+
+
+/**
+ * @brief Call this function from a test case which requires TCP/IP or
+ * LWIP functionality.
+ *
+ * @note This should be the first function the test case calls, as it will
+ * allocate memory on first use (and also reset the test case leak checker).
+ */
+void test_case_uses_tcpip(void);
+
+
 /**
  * @brief wait for signals.
  *
