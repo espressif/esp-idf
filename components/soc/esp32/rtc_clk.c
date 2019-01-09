@@ -51,6 +51,11 @@ static const char* TAG = "rtc_clk";
 #define BBPLL_BBADC_DSMP_VAL_320M   0x84
 #define BBPLL_ENDIV5_VAL_480M       0xc3
 #define BBPLL_BBADC_DSMP_VAL_480M   0x74
+#define BBPLL_IR_CAL_DELAY_VAL      0x18
+#define BBPLL_IR_CAL_EXT_CAP_VAL    0x20
+#define BBPLL_OC_ENB_FCAL_VAL       0x9a
+#define BBPLL_OC_ENB_VCON_VAL       0x00
+#define BBPLL_BBADC_CAL_7_0_VAL     0x00
 
 #define APLL_SDM_STOP_VAL_1         0x09
 #define APLL_SDM_STOP_VAL_2_REV0    0x69
@@ -283,6 +288,13 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_cpu_freq_t cpu_freq)
     uint8_t lref;
     uint8_t dcur;
     uint8_t bw;
+
+    /* reset BBPLL configuration */
+    I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_IR_CAL_DELAY, BBPLL_IR_CAL_DELAY_VAL);
+    I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_IR_CAL_EXT_CAP, BBPLL_IR_CAL_EXT_CAP_VAL);
+    I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_ENB_FCAL, BBPLL_OC_ENB_FCAL_VAL);
+    I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_ENB_VCON, BBPLL_OC_ENB_VCON_VAL);
+    I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_BBADC_CAL_7_0, BBPLL_BBADC_CAL_7_0_VAL);
 
     if (cpu_freq != RTC_CPU_FREQ_240M) {
         /* Raise the voltage, if needed */
