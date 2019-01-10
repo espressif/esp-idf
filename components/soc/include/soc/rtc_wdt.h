@@ -119,6 +119,15 @@ void rtc_wdt_protect_off();
 void rtc_wdt_enable();
 
 /**
+ * @brief Enable the flash boot protection procedure for WDT.
+ *
+ * Do not recommend to use it in the app.
+ * This function was added to be compatibility with the old bootloaders.
+ * This mode is disabled in bootloader or using rtc_wdt_disable() function.
+ */
+void rtc_wdt_flashboot_mode_enable();
+
+/**
  * @brief Disable rtc_wdt.
  */
 void rtc_wdt_disable();
