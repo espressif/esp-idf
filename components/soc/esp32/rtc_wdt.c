@@ -38,6 +38,11 @@ void rtc_wdt_enable()
     SET_PERI_REG_MASK(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN | RTC_CNTL_WDT_PAUSE_IN_SLP);
 }
 
+void rtc_wdt_flashboot_mode_enable()
+{
+    REG_SET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+}
+
 void rtc_wdt_disable()
 {
     bool protect = rtc_wdt_get_protect_status();

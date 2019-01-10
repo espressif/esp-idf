@@ -279,8 +279,7 @@ void IRAM_ATTR esp_restart_noos()
     rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_200ns);
     rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_200ns);
     rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
-    rtc_wdt_enable();
-    rtc_wdt_protect_on();
+    rtc_wdt_flashboot_mode_enable();
 
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i
