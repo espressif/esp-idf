@@ -128,6 +128,9 @@ netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto, netconn_cal
       LWIP_ASSERT("conn has no op_completed", sys_sem_valid(&conn->op_completed));
       sys_sem_free(&conn->op_completed);
 #endif /* !LWIP_NETCONN_SEM_PER_THREAD */
+#if ESP_THREAD_SAFE
+      sys_mbox_set_owner(&conn->recvmbox, NULL);
+#endif
       sys_mbox_free(&conn->recvmbox);
       memp_free(MEMP_NETCONN, conn);
       return NULL;
