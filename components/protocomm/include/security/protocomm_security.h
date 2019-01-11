@@ -50,12 +50,12 @@ typedef struct protocomm_security {
      * Function for initialising/allocating security
      * infrastructure
      */
-    esp_err_t (*init)();
+    esp_err_t (*init)(void);
 
     /**
      * Function for deallocating security infrastructure
      */
-    esp_err_t (*cleanup)();
+    esp_err_t (*cleanup)(void);
 
     /**
      * Starts new secure transport session with specified ID

@@ -52,7 +52,7 @@ static void tp_example_touch_pad_init()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize touch pad peripheral.
     // The default fsm mode is software trigger mode.

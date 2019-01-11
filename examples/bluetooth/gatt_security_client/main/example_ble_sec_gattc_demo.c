@@ -509,7 +509,7 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
     } while (0);
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS.
     esp_err_t ret = nvs_flash_init();

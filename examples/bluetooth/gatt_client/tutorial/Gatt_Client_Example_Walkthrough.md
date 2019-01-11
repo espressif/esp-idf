@@ -37,7 +37,7 @@ These `includes` are required for the FreeRTOS and underlaying system components
 The program’s entry point is the app_main() function:
 
 ```c
-void app_main()
+void app_main(void)
 {
     // Initialize NVS.
     esp_err_t ret = nvs_flash_init();

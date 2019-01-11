@@ -82,9 +82,9 @@ static void IRAM_ATTR ipc_task(void* arg)
  * woken up to execute the callback provided to esp_ipc_call_nonblocking or
  * esp_ipc_call_blocking.
  */
-static void esp_ipc_init() __attribute__((constructor));
+static void esp_ipc_init(void) __attribute__((constructor));
 
-static void esp_ipc_init()
+static void esp_ipc_init(void)
 {
     s_ipc_mutex = xSemaphoreCreateMutex();
     s_ipc_ack = xSemaphoreCreateBinary();

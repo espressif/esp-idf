@@ -38,7 +38,7 @@ typedef esp_transport_handle_t (*payload_transfer_func)(esp_transport_handle_t);
  *
  * @return     A handle can hold all transports
  */
-esp_transport_list_handle_t esp_transport_list_init();
+esp_transport_list_handle_t esp_transport_list_init(void);
 
 /**
  * @brief      Cleanup and free all transports, include itself,
@@ -91,7 +91,7 @@ esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handl
  *
  * @return     The transport handle
  */
-esp_transport_handle_t esp_transport_init();
+esp_transport_handle_t esp_transport_init(void);
 
 /**
  * @brief      Cleanup and free memory the transport

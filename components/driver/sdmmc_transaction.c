@@ -72,7 +72,7 @@ static bool s_is_app_cmd;   // This flag is set if the next command is an APP co
 static esp_pm_lock_handle_t s_pm_lock;
 #endif
 
-static esp_err_t handle_idle_state_events();
+static esp_err_t handle_idle_state_events(void);
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd);
 static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
         sdmmc_event_t* unhandled_events);
@@ -80,10 +80,10 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
         sdmmc_req_state_t* pstate, sdmmc_event_t* unhandled_events);
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
 static void fill_dma_descriptors(size_t num_desc);
-static size_t get_free_descriptors_count();
+static size_t get_free_descriptors_count(void);
 static bool wait_for_busy_cleared(int timeout_ms);
 
-esp_err_t sdmmc_host_transaction_handler_init()
+esp_err_t sdmmc_host_transaction_handler_init(void)
 {
     assert(s_request_mutex == NULL);
     s_request_mutex = xSemaphoreCreateMutex();
@@ -102,7 +102,7 @@ esp_err_t sdmmc_host_transaction_handler_init()
     return ESP_OK;
 }
 
-void sdmmc_host_transaction_handler_deinit()
+void sdmmc_host_transaction_handler_deinit(void)
 {
     assert(s_request_mutex);
 #ifdef CONFIG_PM_ENABLE
@@ -182,7 +182,7 @@ out:
     return ret;
 }
 
-static size_t get_free_descriptors_count()
+static size_t get_free_descriptors_count(void)
 {
     const size_t next = s_cur_transfer.next_desc;
     size_t count = 0;
@@ -234,7 +234,7 @@ static void fill_dma_descriptors(size_t num_desc)
     }
 }
 
-static esp_err_t handle_idle_state_events()
+static esp_err_t handle_idle_state_events(void)
 {
     /* Handle any events which have happened in between transfers.
      * Under current assumptions (no SDIO support) only card detect events

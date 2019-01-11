@@ -93,7 +93,7 @@ static bool secure_boot_generate(uint32_t image_len){
 }
 
 /* Burn values written to the efuse write registers */
-static inline void burn_efuses()
+static inline void burn_efuses(void)
 {
 #ifdef CONFIG_SECURE_BOOT_TEST_MODE
     ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses! NOT SECURE");

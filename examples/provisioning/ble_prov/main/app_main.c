@@ -69,7 +69,7 @@ static void wifi_init_sta()
     ESP_ERROR_CHECK(esp_wifi_start() );
 }
 
-void app_main()
+void app_main(void)
 {
     /* Security version */
     int security = 0;

@@ -47,7 +47,7 @@ static void rtc_brownout_isr_handler(void *arg)
     esp_restart_noos();
 }
 
-void esp_brownout_init()
+void esp_brownout_init(void)
 {
     REG_WRITE(RTC_CNTL_BROWN_OUT_REG,
             RTC_CNTL_BROWN_OUT_ENA /* Enable BOD */

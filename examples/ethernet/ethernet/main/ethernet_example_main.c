@@ -135,7 +135,7 @@ static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-void app_main()
+void app_main(void)
 {
     tcpip_adapter_init();
 

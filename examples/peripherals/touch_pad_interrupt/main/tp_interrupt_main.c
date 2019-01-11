@@ -145,7 +145,7 @@ static void tp_example_touch_pad_init()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize touch pad peripheral, it will start a timer to run a filter
     ESP_LOGI(TAG, "Initializing touch pad");

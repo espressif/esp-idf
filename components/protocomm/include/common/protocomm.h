@@ -48,7 +48,7 @@ typedef struct protocomm protocomm_t;
  *  - protocomm_t* : On success
  *  - NULL : No memory for allocating new instance
  */
-protocomm_t *protocomm_new();
+protocomm_t *protocomm_new(void);
 
 /**
  * @brief   Delete a protocomm instance

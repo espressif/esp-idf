@@ -316,7 +316,7 @@ void job_getint(esp_slave_context_t *context)
     slave_inform_job(context, JOB_SEND_INT);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_slave_context_t context;
     esp_err_t err;

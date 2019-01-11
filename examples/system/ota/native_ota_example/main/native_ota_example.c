@@ -260,7 +260,7 @@ static void ota_example_task(void *pvParameter)
     return ;
 }
 
-void app_main()
+void app_main(void)
 {
     uint8_t sha_256[HASH_LEN] = { 0 };
     esp_partition_t partition;

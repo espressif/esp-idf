@@ -204,7 +204,7 @@ void linenoiseSetDumbMode(int set) {
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
-static int getCursorPosition() {
+static int getCursorPosition(void) {
     char buf[32];
     int cols, rows;
     unsigned int i = 0;
@@ -227,7 +227,7 @@ static int getCursorPosition() {
 
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
-static int getColumns() {
+static int getColumns(void) {
     int start, cols;
 
     /* Get the initial position so we can restore it later. */

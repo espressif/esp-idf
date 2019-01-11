@@ -1474,7 +1474,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
     return ESP_OK;
 }
 
-static inline void adc1_fsm_disable()
+static inline void adc1_fsm_disable(void)
 {
     //channel is set in the  convert function
     SENS.sar_meas_wait2.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
@@ -1487,7 +1487,7 @@ static inline void adc1_fsm_disable()
     SENS.sar_meas_wait2.sar_amp_wait3 = 1;    
 }
 
-esp_err_t adc1_i2s_mode_acquire()
+esp_err_t adc1_i2s_mode_acquire(void)
 {
     //lazy initialization
     //for i2s, block until acquire the lock
@@ -1501,7 +1501,7 @@ esp_err_t adc1_i2s_mode_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc1_adc_mode_acquire()
+esp_err_t adc1_adc_mode_acquire(void)
 {
     //lazy initialization
     //for adc1, block until acquire the lock
@@ -1518,7 +1518,7 @@ esp_err_t adc1_adc_mode_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc1_lock_release()
+esp_err_t adc1_lock_release(void)
 {
     RTC_MODULE_CHECK((uint32_t*)adc1_i2s_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
     // for now the WiFi would use ADC2 and set xpd_sar force on.
@@ -1613,7 +1613,7 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
     return ESP_OK;
 }
 
-esp_err_t adc2_wifi_acquire()
+esp_err_t adc2_wifi_acquire(void)
 {
     //lazy initialization
     //for wifi, block until acquire the lock
@@ -1622,7 +1622,7 @@ esp_err_t adc2_wifi_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc2_wifi_release()
+esp_err_t adc2_wifi_release(void)
 {
     RTC_MODULE_CHECK((uint32_t*)adc2_wifi_lock != NULL, "wifi release called before acquire", ESP_ERR_INVALID_STATE );
 
@@ -1905,7 +1905,7 @@ static inline void adc1_hall_enable(bool enable)
     RTCIO.hall_sens.xpd_hall = enable;        
 }
 
-static int hall_sensor_get_value()    //hall sensor without LNA
+static int hall_sensor_get_value(void)    //hall sensor without LNA
 {
     int Sens_Vp0;
     int Sens_Vn0;
@@ -1976,7 +1976,7 @@ static void rtc_isr(void* arg)
     REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
 }
 
-static esp_err_t rtc_isr_ensure_installed()
+static esp_err_t rtc_isr_ensure_installed(void)
 {
     esp_err_t err = ESP_OK;
     portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);

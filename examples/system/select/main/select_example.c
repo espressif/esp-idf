@@ -198,7 +198,7 @@ static void select_task(void *param)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(uart1_write_task, "uart1_write_task", 4*1024, NULL, 5, NULL);
     xTaskCreate(socket_write_task, "socket_write_task", 4*1024, NULL, 5, NULL);

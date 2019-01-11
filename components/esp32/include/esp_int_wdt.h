@@ -43,7 +43,7 @@ This uses the TIMERG1 WDT.
   *         is enabled in menuconfig.
   *
   */
-void esp_int_wdt_init();
+void esp_int_wdt_init(void);
 
 /**
   * @brief  Enable the interrupt watchdog on the current CPU. This is called
@@ -51,7 +51,7 @@ void esp_int_wdt_init();
   *         in menuconfig.
   *
   */
-void esp_int_wdt_cpu_init();
+void esp_int_wdt_cpu_init(void);
 
 
 

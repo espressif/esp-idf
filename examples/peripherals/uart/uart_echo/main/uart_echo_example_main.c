@@ -56,7 +56,7 @@ static void echo_task()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
 }

@@ -95,7 +95,7 @@ typedef struct {
  *      - ESP_ERR_INVALID_STATE if already initialized
  *      - other errors from interrupt allocator
  */
-esp_err_t esp_timer_init();
+esp_err_t esp_timer_init(void);
 
 /**
  * @brief De-initialize esp_timer library
@@ -106,7 +106,7 @@ esp_err_t esp_timer_init();
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if not yet initialized
  */
-esp_err_t esp_timer_deinit();
+esp_err_t esp_timer_deinit(void);
 
 /**
  * @brief Create an esp_timer instance
@@ -187,14 +187,14 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer);
  * @return number of microseconds since esp_timer_init was called (this normally
  *          happens early during application startup).
  */
-int64_t esp_timer_get_time();
+int64_t esp_timer_get_time(void);
 
 /**
  * @brief Get the timestamp when the next timeout is expected to occur
  * @return Timestamp of the nearest timer event, in microseconds.
  *         The timebase is the same as for the values returned by esp_timer_get_time.
  */
-int64_t esp_timer_get_next_alarm();
+int64_t esp_timer_get_next_alarm(void);
 
 /**
  * @brief Dump the list of timers to a stream

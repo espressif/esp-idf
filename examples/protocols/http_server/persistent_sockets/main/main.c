@@ -244,7 +244,7 @@ static void initialise_wifi(void *arg)
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-void app_main()
+void app_main(void)
 {
     static httpd_handle_t server = NULL;
     ESP_ERROR_CHECK(nvs_flash_init());

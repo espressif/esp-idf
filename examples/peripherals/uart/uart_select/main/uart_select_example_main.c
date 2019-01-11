@@ -87,7 +87,7 @@ static void uart_select_task()
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(uart_select_task, "uart_select_task", 4*1024, NULL, 5, NULL);
 }

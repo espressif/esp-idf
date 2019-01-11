@@ -327,12 +327,12 @@ static void emac_set_user_config_data(eth_config_t *config)
     emac_config.emac_phy_power_enable = config->phy_power_enable;
 }
 
-static void emac_enable_intr()
+static void emac_enable_intr(void)
 {
     REG_WRITE(EMAC_DMAIN_EN_REG, EMAC_INTR_ENABLE_BIT);
 }
 
-static void emac_disable_intr()
+static void emac_disable_intr(void)
 {
     REG_WRITE(EMAC_DMAIN_EN_REG, 0);
 }

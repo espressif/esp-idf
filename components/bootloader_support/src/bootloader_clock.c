@@ -19,7 +19,7 @@
 #include "soc/efuse_reg.h"
 #include "soc/rtc_cntl_reg.h"
 
-void bootloader_clock_configure()
+void bootloader_clock_configure(void)
 {
     // ROM bootloader may have put a lot of text into UART0 FIFO.
     // Wait for it to be printed.

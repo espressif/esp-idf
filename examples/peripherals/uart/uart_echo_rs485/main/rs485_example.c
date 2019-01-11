@@ -119,7 +119,7 @@ static void echo_task()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     //A uart read/write example without event queue;
     xTaskCreate(echo_task, "uart_echo_task", ECHO_TASK_STACK_SIZE, NULL, ECHO_TASK_PRIO, NULL);

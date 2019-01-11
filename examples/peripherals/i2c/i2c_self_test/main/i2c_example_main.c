@@ -281,7 +281,7 @@ static void i2c_test_task(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     print_mux = xSemaphoreCreateMutex();
     ESP_ERROR_CHECK(i2c_slave_init());

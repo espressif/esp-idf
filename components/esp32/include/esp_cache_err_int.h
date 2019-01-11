@@ -20,7 +20,7 @@
  * to interrupt input number ETS_CACHEERR_INUM (see soc/soc.h). It is called
  * from the startup code.
  */
-void esp_cache_err_int_init();
+void esp_cache_err_int_init(void);
 
 
 /**
@@ -30,4 +30,4 @@ void esp_cache_err_int_init();
  *  - APP_CPU_NUM, if APP_CPU has caused cache IA interrupt
  *  - (-1) otherwise
  */
-int esp_cache_err_get_cpuid();
+int esp_cache_err_get_cpuid(void);

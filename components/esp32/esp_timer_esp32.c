@@ -150,7 +150,7 @@ portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
 #define TIMER_IS_AFTER_OVERFLOW(a) (ALARM_OVERFLOW_VAL < (a) && (a) <= FRC_TIMER_LOAD_VALUE(1))
 
 // Check if timer overflow has happened (but was not handled by ISR yet)
-static inline bool IRAM_ATTR timer_overflow_happened()
+static inline bool IRAM_ATTR timer_overflow_happened(void)
 {
     if (s_overflow_happened) {
         return true;

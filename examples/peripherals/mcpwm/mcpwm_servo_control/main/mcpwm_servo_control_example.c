@@ -71,7 +71,7 @@ void mcpwm_example_servo_control(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Testing servo motor.......\n");
     xTaskCreate(mcpwm_example_servo_control, "mcpwm_example_servo_control", 4096, NULL, 5, NULL);

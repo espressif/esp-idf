@@ -54,7 +54,7 @@ static void initialise_wifi(void);
 static esp_err_t event_handler(void *ctx, system_event_t *event);
 
 
-void app_main()
+void app_main(void)
 {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);

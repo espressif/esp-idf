@@ -26,7 +26,7 @@ extern "C" {
  *
  * @return  the allocated esp_transport_handle_t, or NULL if the handle can not be allocated
  */
-esp_transport_handle_t esp_transport_tcp_init();
+esp_transport_handle_t esp_transport_tcp_init(void);
 
 
 #ifdef __cplusplus

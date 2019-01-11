@@ -181,7 +181,7 @@ static void example_task(void *p)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     static example_event_data_t event_data[portNUM_PROCESSORS] = {
         {

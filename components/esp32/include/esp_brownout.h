@@ -16,6 +16,6 @@
 #ifndef __ESP_BROWNOUT_H
 #define __ESP_BROWNOUT_H
 
-void esp_brownout_init();
+void esp_brownout_init(void);
 
 #endif

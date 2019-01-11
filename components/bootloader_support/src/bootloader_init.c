@@ -60,16 +60,16 @@ extern int _data_end;
 
 static const char* TAG = "boot";
 
-static esp_err_t bootloader_main();
+static esp_err_t bootloader_main(void);
 static void print_flash_info(const esp_image_header_t* pfhdr);
 static void update_flash_config(const esp_image_header_t* pfhdr);
-static void vddsdio_configure();
+static void vddsdio_configure(void);
 static void flash_gpio_configure(const esp_image_header_t* pfhdr);
 static void uart_console_configure(void);
 static void wdt_reset_check(void);
 
 
-esp_err_t bootloader_init()
+esp_err_t bootloader_init(void)
 {
     cpu_configure_region_protection();
     cpu_init_memctl();
@@ -117,7 +117,7 @@ esp_err_t bootloader_init()
     return ESP_OK;
 }
 
-static esp_err_t bootloader_main()
+static esp_err_t bootloader_main(void)
 {
     vddsdio_configure();
     /* Read and keep flash ID, for further use. */
@@ -287,7 +287,7 @@ static void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
-static void vddsdio_configure()
+static void vddsdio_configure(void)
 {
 #if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
     rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
@@ -539,7 +539,7 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
     while(1) {}
 }
 
-void abort()
+void abort(void)
 {
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);

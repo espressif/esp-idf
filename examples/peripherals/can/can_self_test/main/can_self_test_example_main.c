@@ -107,7 +107,7 @@ static void can_control_task(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     //Create tasks and synchronization primitives
     tx_sem = xSemaphoreCreateBinary();

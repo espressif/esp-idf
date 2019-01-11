@@ -88,7 +88,7 @@ void vMBPortEnterCritical(void);
 
 void vMBPortExitCritical(void);
 
-BOOL xMBPortSerialTxPoll();
+BOOL xMBPortSerialTxPoll(void);
 
 
 #ifdef __cplusplus

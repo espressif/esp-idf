@@ -67,7 +67,7 @@ static void rx_task()
     free(data);
 }
 
-void app_main()
+void app_main(void)
 {
     init();
     xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);

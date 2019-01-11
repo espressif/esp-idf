@@ -82,7 +82,7 @@ void wifi_init_softap()
              EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
 }
 
-void app_main()
+void app_main(void)
 {
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();

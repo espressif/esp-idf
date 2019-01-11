@@ -93,7 +93,7 @@ struct wpa_sm {
     void (*install_ppkey) (enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                u8 *seq, unsigned int seq_len, u8 *key, unsigned int key_len, int key_entry_valid);
     void (*wpa_deauthenticate)(u8 reason_code);
-    void (*wpa_neg_complete)();
+    void (*wpa_neg_complete)(void);
     struct wpa_gtk_data gd; //used for calllback save param
     u16 key_info; 	//used for txcallback param    
 };

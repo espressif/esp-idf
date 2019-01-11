@@ -283,7 +283,7 @@ static void mcpwm_example_config(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Testing MCPWM...\n");
     cap_queue = xQueueCreate(1, sizeof(capture)); //comment if you don't want to use capture module

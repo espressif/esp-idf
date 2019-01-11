@@ -221,11 +221,11 @@ typedef struct
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
     int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
     /** called by VFS to interrupt the socket_select call when select is activated from a non-socket VFS driver; set only for the socket driver */
-    void (*stop_socket_select)();
+    void (*stop_socket_select)(void);
     /** stop_socket_select which can be called from ISR; set only for the socket driver */
     void (*stop_socket_select_isr)(BaseType_t *woken);
     /** end_select is called to stop the I/O multiplexing and deinitialize the environment created by start_select for the given VFS */
-    void (*end_select)();
+    void (*end_select)(void);
 } esp_vfs_t;
 
 

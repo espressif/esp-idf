@@ -95,7 +95,7 @@ static uint16_t mb_parity = 0;
 static mb_register_area_descriptor_t mb_area_descriptors[MB_PARAM_COUNT] = { 0 };
 
 // The helper function to get time stamp in microseconds
-static uint64_t get_time_stamp()
+static uint64_t get_time_stamp(void)
 {
     uint64_t time_stamp = esp_timer_get_time();
     return time_stamp;

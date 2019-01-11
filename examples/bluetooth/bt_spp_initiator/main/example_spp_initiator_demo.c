@@ -235,7 +235,7 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     }
 }
 
-void app_main()
+void app_main(void)
 {
     for (int i = 0; i < SPP_DATA_LEN; ++i) {
         spp_data[i] = i;

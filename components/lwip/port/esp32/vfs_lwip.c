@@ -28,7 +28,7 @@
 
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
 
-static void lwip_stop_socket_select()
+static void lwip_stop_socket_select(void)
 {
     sys_sem_signal(sys_thread_sem_get()); //socket_select will return
 }
@@ -50,7 +50,7 @@ static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
     return lwip_ioctl_r(fd, cmd, va_arg(args, void *));
 }
 
-void esp_vfs_lwip_sockets_register()
+void esp_vfs_lwip_sockets_register(void)
 {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,

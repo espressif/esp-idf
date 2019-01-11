@@ -137,7 +137,7 @@ size_t esp_himem_reserved_area_size() {
 }
 
 
-void __attribute__((constructor)) esp_himem_init()
+void __attribute__((constructor)) esp_himem_init(void)
 {
     if (SPIRAM_BANKSWITCH_RESERVE == 0) return;
     int maxram=esp_spiram_get_size();

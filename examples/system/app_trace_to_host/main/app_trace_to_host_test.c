@@ -134,7 +134,7 @@ void test_task(void *arg)
 }
 
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(test_task, "test_task", 1024 * 3, NULL, 10, NULL);
 }

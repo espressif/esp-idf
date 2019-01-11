@@ -34,7 +34,7 @@ static char chsum;						//Running checksum of the output packet
 #define ATTR_GDBFN
 
 //Receive a char from the uart. Uses polling and feeds the watchdog.
-static int ATTR_GDBFN gdbRecvChar() {
+static int ATTR_GDBFN gdbRecvChar(void) {
 	int i;
 	while (((READ_PERI_REG(UART_STATUS_REG(0))>>UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT)==0) ;
 	i=READ_PERI_REG(UART_FIFO_REG(0));
@@ -48,7 +48,7 @@ static void ATTR_GDBFN gdbSendChar(char c) {
 }
 
 //Send the start of a packet; reset checksum calculation.
-static void ATTR_GDBFN gdbPacketStart() {
+static void ATTR_GDBFN gdbPacketStart(void) {
 	chsum=0;
 	gdbSendChar('$');
 }
@@ -83,7 +83,7 @@ static void ATTR_GDBFN gdbPacketHex(int val, int bits) {
 }
 
 //Finish sending a packet.
-static void ATTR_GDBFN gdbPacketEnd() {
+static void ATTR_GDBFN gdbPacketEnd(void) {
 	gdbSendChar('#');
 	gdbPacketHex(chsum, 8);
 }
@@ -243,7 +243,7 @@ static void dumpHwToRegfile(XtExcFrame *frame) {
 
 
 //Send the reason execution is stopped to GDB.
-static void sendReason() {
+static void sendReason(void) {
 	//exception-to-signal mapping
 	char exceptionSignal[]={4,31,11,11,2,6,8,0,6,7,0,0,7,7,7,7};
 	int i=0;
@@ -300,7 +300,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 //Returns ST_OK on success, ST_ERR when checksum fails, a 
 //character if it is received instead of the GDB packet
 //start char.
-static int gdbReadCommand() {
+static int gdbReadCommand(void) {
 	unsigned char c;
 	unsigned char chsum=0, rchsum;
 	unsigned char sentchs[2];

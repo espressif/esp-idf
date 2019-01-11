@@ -31,7 +31,7 @@ static void uart_gpio_reset(void)
 #endif
 }
 
-void app_main()
+void app_main(void)
 { 
     esp_err_t ret;
 

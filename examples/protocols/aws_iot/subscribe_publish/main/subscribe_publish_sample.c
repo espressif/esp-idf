@@ -317,7 +317,7 @@ static void initialise_wifi(void)
 }
 
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS.
     esp_err_t err = nvs_flash_init();

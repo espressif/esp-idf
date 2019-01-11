@@ -106,7 +106,7 @@ static twdt_task_t *find_task_in_twdt_list(TaskHandle_t handle, bool *all_reset)
  * Resets the hardware timer and has_reset flags of each task on the list.
  * Called within critical
  */
-static void reset_hw_timer()
+static void reset_hw_timer(void)
 {
     //All tasks have reset; time to reset the hardware timer.
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;

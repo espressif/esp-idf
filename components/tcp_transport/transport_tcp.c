@@ -153,7 +153,7 @@ static esp_err_t tcp_destroy(esp_transport_handle_t t)
     return 0;
 }
 
-esp_transport_handle_t esp_transport_tcp_init()
+esp_transport_handle_t esp_transport_tcp_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
     transport_tcp_t *tcp = calloc(1, sizeof(transport_tcp_t));

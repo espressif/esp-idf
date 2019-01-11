@@ -57,7 +57,7 @@ static void setup_reg_data()
 // See deviceparams.h file for more information about assigned Modbus parameters.
 // These parameters can be accessed from main application and also can be changed
 // by external Modbus master host.
-void app_main()
+void app_main(void)
 {
     mb_param_info_t reg_info; // keeps the Modbus registers access information
     mb_communication_info_t comm_info; // Modbus communication parameters

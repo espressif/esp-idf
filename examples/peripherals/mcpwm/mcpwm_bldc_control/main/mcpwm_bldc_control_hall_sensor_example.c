@@ -308,7 +308,7 @@ static void mcpwm_example_bldc_control(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Testing MCPWM BLDC Control...\n");
 #if CHANGE_DUTY_CONTINUOUSLY

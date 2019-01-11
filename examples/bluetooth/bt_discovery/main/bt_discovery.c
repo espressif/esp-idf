@@ -269,7 +269,7 @@ void bt_app_gap_start_up(void)
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();

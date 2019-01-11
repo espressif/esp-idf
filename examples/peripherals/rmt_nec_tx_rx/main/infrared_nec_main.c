@@ -357,7 +357,7 @@ static void rmt_example_nec_tx_task()
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(rmt_example_nec_rx_task, "rmt_nec_rx_task", 2048, NULL, 10, NULL);
     xTaskCreate(rmt_example_nec_tx_task, "rmt_nec_tx_task", 2048, NULL, 10, NULL);

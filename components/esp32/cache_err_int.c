@@ -31,7 +31,7 @@
 #include "sdkconfig.h"
 #include "esp_dport_access.h"
 
-void esp_cache_err_int_init()
+void esp_cache_err_int_init(void)
 {
     uint32_t core_id = xPortGetCoreID();
     ESP_INTR_DISABLE(ETS_CACHEERR_INUM);
@@ -71,7 +71,7 @@ void esp_cache_err_int_init()
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
 }
 
-int IRAM_ATTR esp_cache_err_get_cpuid()
+int IRAM_ATTR esp_cache_err_get_cpuid(void)
 {
     esp_dport_access_int_pause();
     const uint32_t pro_mask =

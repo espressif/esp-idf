@@ -237,7 +237,7 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
  *      - ESP_OK: Successfully uninstalled CAN driver
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped/bus-off state, or is not installed
  */
-esp_err_t can_driver_uninstall();
+esp_err_t can_driver_uninstall(void);
 
 /**
  * @brief   Start the CAN driver
@@ -252,7 +252,7 @@ esp_err_t can_driver_uninstall();
  *      - ESP_OK: CAN driver is now running
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped state, or is not installed
  */
-esp_err_t can_start();
+esp_err_t can_start(void);
 
 /**
  * @brief   Stop the CAN driver
@@ -271,7 +271,7 @@ esp_err_t can_start();
  *      - ESP_OK: CAN driver is now Stopped
  *      - ESP_ERR_INVALID_STATE: Driver is not in running state, or is not installed
  */
-esp_err_t can_stop();
+esp_err_t can_stop(void);
 
 /**
  * @brief   Transmit a CAN message
@@ -378,7 +378,7 @@ esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_aler
  *      - ESP_OK: Bus recovery started
  *      - ESP_ERR_INVALID_STATE: CAN driver is not in the bus-off state, or is not installed
  */
-esp_err_t can_initiate_recovery();
+esp_err_t can_initiate_recovery(void);
 
 /**
  * @brief   Get current status information of the CAN driver

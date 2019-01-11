@@ -50,7 +50,7 @@ static void print_char_val_type(esp_adc_cal_value_t val_type)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     //Check if Two Point or Vref are burned into eFuse
     check_efuse();

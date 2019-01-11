@@ -627,7 +627,7 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

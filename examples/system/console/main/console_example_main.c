@@ -116,7 +116,7 @@ static void initialize_console()
 #endif
 }
 
-void app_main()
+void app_main(void)
 {
     initialize_nvs();
 

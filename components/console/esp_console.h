@@ -52,7 +52,7 @@ esp_err_t esp_console_init(const esp_console_config_t* config);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if not initialized yet
  */
-esp_err_t esp_console_deinit();
+esp_err_t esp_console_deinit(void);
 
 
 /**
@@ -185,7 +185,7 @@ const char *esp_console_get_hint(const char *buf, int *color, int *bold);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE, if esp_console_init wasn't called
  */
-esp_err_t esp_console_register_help_command();
+esp_err_t esp_console_register_help_command(void);
 
 #ifdef __cplusplus
 }

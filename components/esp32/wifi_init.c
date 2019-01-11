@@ -27,7 +27,7 @@ mesh_event_cb_t g_mesh_event_cb = NULL;
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
 
-static void __attribute__((constructor)) s_set_default_wifi_log_level()
+static void __attribute__((constructor)) s_set_default_wifi_log_level(void)
 {
     /* WiFi libraries aren't compiled to know CONFIG_LOG_DEFAULT_LEVEL,
        so set it at runtime startup. Done here not in esp_wifi_init() to allow
@@ -36,7 +36,7 @@ static void __attribute__((constructor)) s_set_default_wifi_log_level()
     esp_log_level_set("wifi", CONFIG_LOG_DEFAULT_LEVEL);
 }
 
-static void esp_wifi_set_debug_log()
+static void esp_wifi_set_debug_log(void)
 {
     /* set WiFi log level and module */
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE

@@ -42,7 +42,7 @@ static inline int httpd_os_thread_create(othread_t *thread,
 }
 
 /* Only self delete is supported */
-static inline void httpd_os_thread_delete()
+static inline void httpd_os_thread_delete(void)
 {
     vTaskDelete(xTaskGetCurrentTaskHandle());
 }
@@ -52,12 +52,12 @@ static inline void httpd_os_thread_sleep(int msecs)
     vTaskDelay(msecs / portTICK_RATE_MS);
 }
 
-static inline int64_t httpd_os_get_timestamp()
+static inline int64_t httpd_os_get_timestamp(void)
 {
     return esp_timer_get_time();
 }
 
-static inline othread_t httpd_os_thread_handle()
+static inline othread_t httpd_os_thread_handle(void)
 {
     return xTaskGetCurrentTaskHandle();
 }

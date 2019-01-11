@@ -5,5 +5,10 @@
 
 PROJECT_NAME := hello-world
 
+EXTRA_CPPFLAGS := \
+	-Wall \
+	-Wextra \
+	-Werror
+
 include $(IDF_PATH)/make/project.mk
 

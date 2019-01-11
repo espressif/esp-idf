@@ -91,7 +91,7 @@ static esp_line_endings_t s_rx_mode[UART_NUM] = { [0 ... UART_NUM-1] =
 #endif
 };
 
-static void uart_end_select();
+static void uart_end_select(void);
 
 // Functions used to write bytes to UART. Default to "basic" functions.
 static tx_func_t s_uart_tx_func[UART_NUM] = {
@@ -411,7 +411,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     return ESP_OK;
 }
 
-static void uart_end_select()
+static void uart_end_select(void)
 {
     portENTER_CRITICAL(uart_get_selectlock());
     for (int i = 0; i < UART_NUM; ++i) {

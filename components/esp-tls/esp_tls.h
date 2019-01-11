@@ -288,7 +288,7 @@ esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const
  *             - Pointer to the global CA store currently being used    if successful.
  *             - NULL                                                   if there is no global CA store set.
  */
-mbedtls_x509_crt *esp_tls_get_global_ca_store();
+mbedtls_x509_crt *esp_tls_get_global_ca_store(void);
 
 /**
  * @brief      Free the global CA store currently being used.
@@ -296,7 +296,7 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store();
  * The memory being used by the global CA store to store all the parsed certificates is
  * freed up. The application can call this API if it no longer needs the global CA store.
  */
-void esp_tls_free_global_ca_store();
+void esp_tls_free_global_ca_store(void);
 
 
 #ifdef __cplusplus

@@ -210,7 +210,7 @@ void bleAdvtTask(void *pvParameters)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();

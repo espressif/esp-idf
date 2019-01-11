@@ -25,7 +25,7 @@ extern "C" {
  * @note These registers are dumped at 'debug' level, so output
  * may not be visible depending on default log levels.
  */
-void phy_tlk110_dump_registers();
+void phy_tlk110_dump_registers(void);
 
 /** @brief Default TLK110 phy_check_init function.
  */

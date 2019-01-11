@@ -32,7 +32,7 @@ static const char *TAG = "MDNS";
 static volatile TaskHandle_t _mdns_service_task_handle = NULL;
 static SemaphoreHandle_t _mdns_service_semaphore = NULL;
 
-static void _mdns_search_finish_done();
+static void _mdns_search_finish_done(void);
 static mdns_search_once_t * _mdns_search_find_from(mdns_search_once_t * search, mdns_name_t * name, uint16_t type, tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
 static void _mdns_search_result_add_ip(mdns_search_once_t * search, const char * hostname, ip_addr_t * ip, tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
 static void _mdns_search_result_add_srv(mdns_search_once_t * search, const char * hostname, uint16_t port, tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
@@ -1010,7 +1010,7 @@ static void _mdns_schedule_tx_packet(mdns_tx_packet_t * packet, uint32_t ms_afte
 /**
  * @brief  free all packets scheduled for sending
  */
-static void _mdns_clear_tx_queue_head()
+static void _mdns_clear_tx_queue_head(void)
 {
     mdns_tx_packet_t * q;
     while (_mdns_server->tx_queue_head) {
@@ -1661,7 +1661,7 @@ static void _mdns_send_final_bye(bool include_ip)
 /**
  * @brief  Stop the responder on all services without instance
  */
-static void _mdns_send_bye_all_pcbs_no_instance()
+static void _mdns_send_bye_all_pcbs_no_instance(void)
 {
     size_t srv_count = 0;
     mdns_srv_item_t * a = _mdns_server->services;
@@ -1689,7 +1689,7 @@ static void _mdns_send_bye_all_pcbs_no_instance()
 /**
  * @brief  Restart the responder on all services without instance
  */
-static void _mdns_restart_all_pcbs_no_instance()
+static void _mdns_restart_all_pcbs_no_instance(void)
 {
     size_t srv_count = 0;
     mdns_srv_item_t * a = _mdns_server->services;
@@ -1717,7 +1717,7 @@ static void _mdns_restart_all_pcbs_no_instance()
 /**
  * @brief  Restart the responder on all active PCBs
  */
-static void _mdns_restart_all_pcbs()
+static void _mdns_restart_all_pcbs(void)
 {
     _mdns_clear_tx_queue_head();
     size_t srv_count = 0;
@@ -3854,7 +3854,7 @@ static esp_err_t _mdns_send_search_action(mdns_action_type_t type, mdns_search_o
 /**
  * @brief  Called from timer task to run mDNS responder
  */
-static void _mdns_scheduler_run()
+static void _mdns_scheduler_run(void)
 {
     MDNS_SERVICE_LOCK();
     mdns_tx_packet_t * p = _mdns_server->tx_queue_head;
@@ -3885,7 +3885,7 @@ static void _mdns_scheduler_run()
 /**
  * @brief  Called from timer task to run active searches
  */
-static void _mdns_search_run()
+static void _mdns_search_run(void)
 {
     MDNS_SERVICE_LOCK();
     mdns_search_once_t * s = _mdns_server->search_once;
@@ -3944,7 +3944,7 @@ static void _mdns_timer_cb(void * arg)
     _mdns_search_run();
 }
 
-static esp_err_t _mdns_start_timer(){
+static esp_err_t _mdns_start_timer(void){
     esp_timer_create_args_t timer_conf = {
         .callback = _mdns_timer_cb,
         .arg = NULL,
@@ -3958,7 +3958,7 @@ static esp_err_t _mdns_start_timer(){
     return esp_timer_start_periodic(_mdns_server->timer_handle, MDNS_TIMER_PERIOD_US);
 }
 
-static esp_err_t _mdns_stop_timer(){
+static esp_err_t _mdns_stop_timer(void){
     esp_err_t err = ESP_OK;
     if (_mdns_server->timer_handle) {
         err = esp_timer_stop(_mdns_server->timer_handle);
@@ -3977,7 +3977,7 @@ static esp_err_t _mdns_stop_timer(){
  *      - ESP_OK on success
  *      - ESP_FAIL on error
  */
-static esp_err_t _mdns_service_task_start()
+static esp_err_t _mdns_service_task_start(void)
 {
     if (!_mdns_service_semaphore) {
         _mdns_service_semaphore = xSemaphoreCreateMutex();
@@ -4007,7 +4007,7 @@ static esp_err_t _mdns_service_task_start()
  * @return
  *      - ESP_OK
  */
-static esp_err_t _mdns_service_task_stop()
+static esp_err_t _mdns_service_task_stop(void)
 {
     MDNS_SERVICE_LOCK();
     _mdns_stop_timer();
@@ -4051,7 +4051,7 @@ esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-esp_err_t mdns_init()
+esp_err_t mdns_init(void)
 {
     esp_err_t err = ESP_OK;
 
@@ -4109,7 +4109,7 @@ free_server:
     return err;
 }
 
-void mdns_free()
+void mdns_free(void)
 {
     uint8_t i, j;
     if (!_mdns_server) {
@@ -4455,7 +4455,7 @@ esp_err_t mdns_service_remove(const char * service, const char * proto)
     return ESP_OK;
 }
 
-esp_err_t mdns_service_remove_all()
+esp_err_t mdns_service_remove_all(void)
 {
     if (!_mdns_server) {
         return ESP_ERR_INVALID_ARG;

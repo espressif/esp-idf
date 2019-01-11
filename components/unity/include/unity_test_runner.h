@@ -168,7 +168,7 @@ void unity_run_test_by_name(const char *name);
 
 void unity_run_tests_by_tag(const char *tag, bool invert);
 
-void unity_run_all_tests();
+void unity_run_all_tests(void);
 
-void unity_run_menu();
+void unity_run_menu(void);
 

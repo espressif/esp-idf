@@ -86,13 +86,13 @@ typedef struct mdns_result_s {
  *     - ESP_ERR_NO_MEM on memory error
  *     - ESP_ERR_WIFI_NOT_INIT when WiFi is not initialized by eps_wifi_init
  */
-esp_err_t mdns_init();
+esp_err_t mdns_init(void);
 
 /**
  * @brief  Stop and free mDNS server
  *
  */
-void mdns_free();
+void mdns_free(void);
 
 /**
  * @brief  Set the hostname for mDNS server
@@ -234,7 +234,7 @@ esp_err_t mdns_service_txt_item_remove(const char * service_type, const char * p
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t mdns_service_remove_all();
+esp_err_t mdns_service_remove_all(void);
 
 /**
  * @brief  Query mDNS for host or service

@@ -411,12 +411,12 @@ static void sec1_session_setup_cleanup(uint32_t session_id, SessionData *resp)
     return;
 }
 
-static esp_err_t sec1_init()
+static esp_err_t sec1_init(void)
 {
     return ESP_OK;
 }
 
-static esp_err_t sec1_cleanup()
+static esp_err_t sec1_cleanup(void)
 {
     if (cur_session) {
         ESP_LOGD(TAG, "Closing current session with id %u", cur_session->id);

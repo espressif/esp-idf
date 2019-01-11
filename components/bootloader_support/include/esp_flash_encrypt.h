@@ -112,6 +112,6 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  *
  * @return 
  */
-void esp_flash_write_protect_crypt_cnt();
+void esp_flash_write_protect_crypt_cnt(void);
 
 #endif

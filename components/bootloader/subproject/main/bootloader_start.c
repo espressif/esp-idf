@@ -34,7 +34,7 @@ static int selected_boot_partition(const bootloader_state_t *bs);
  * The hardware is mostly uninitialized, flash cache is down and the app CPU is in reset.
  * We do have a stack, so we can do the initialization in C.
  */
-void __attribute__((noreturn)) call_start_cpu0()
+void __attribute__((noreturn)) call_start_cpu0(void)
 {
     // 1. Hardware initialization
     if (bootloader_init() != ESP_OK) {

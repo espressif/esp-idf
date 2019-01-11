@@ -229,13 +229,13 @@ int adc1_get_voltage(adc1_channel_t channel) __attribute__((deprecated));
 /**
  * @brief Enable ADC power
  */
-void adc_power_on();
+void adc_power_on(void);
 
 /**
  * @brief Power off SAR ADC
  * This function will force power down for ADC
  */
-void adc_power_off();
+void adc_power_off(void);
 
 /**
  * @brief Initialize ADC pad
@@ -292,7 +292,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel);
  * Note that adc1_config_channel_atten, adc1_config_width functions need
  * to be called to configure ADC1 channels, before ADC1 is used by the ULP.
  */
-void adc1_ulp_enable();
+void adc1_ulp_enable(void);
 
 /**
  * @brief Read Hall Sensor
@@ -313,7 +313,7 @@ void adc1_ulp_enable();
  *
  * @return The hall sensor reading.
  */
-int hall_sensor_read();
+int hall_sensor_read(void);
 
 /**
  * @brief Get the gpio number of a specific ADC2 channel.

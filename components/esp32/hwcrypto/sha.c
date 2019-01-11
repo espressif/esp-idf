@@ -128,7 +128,7 @@ void esp_sha_unlock_memory_block(void)
 */
 static _lock_t state_change_lock;
 
-inline static bool sha_engines_all_idle() {
+inline static bool sha_engines_all_idle(void) {
     return !engine_states[0].in_use
         && !engine_states[1].in_use
         && !engine_states[2].in_use;

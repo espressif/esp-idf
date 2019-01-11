@@ -34,7 +34,7 @@ static void init_ulp_program();
  */
 static void start_ulp_program();
 
-void app_main()
+void app_main(void)
 {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause != ESP_SLEEP_WAKEUP_ULP) {

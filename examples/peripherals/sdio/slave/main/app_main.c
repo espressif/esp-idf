@@ -158,7 +158,7 @@ static void event_cb(uint8_t pos)
 DMA_ATTR uint8_t buffer[BUFFER_NUM][BUFFER_SIZE] = {};
 
 //Main application
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

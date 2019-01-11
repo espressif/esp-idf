@@ -289,7 +289,7 @@ static void pppos_client_task()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     tcpip_adapter_init();
     xTaskCreate(&pppos_client_task, "pppos_client_task", 2048, NULL, 5, NULL);

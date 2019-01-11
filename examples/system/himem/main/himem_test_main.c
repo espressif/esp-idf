@@ -87,7 +87,7 @@ static bool test_region(int check_size, int seed)
 }
 
 
-void app_main()
+void app_main(void)
 {
     size_t memcnt=esp_himem_get_phys_size();
     size_t memfree=esp_himem_get_free_size();

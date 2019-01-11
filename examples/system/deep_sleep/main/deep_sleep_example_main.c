@@ -77,7 +77,7 @@ static inline void ulp_data_write(size_t offset, uint16_t value)
 static void calibrate_touch_pad(touch_pad_t pad);
 #endif
 
-void app_main()
+void app_main(void)
 {
     struct timeval now;
     gettimeofday(&now, NULL);

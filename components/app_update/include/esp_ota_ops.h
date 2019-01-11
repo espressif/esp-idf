@@ -202,7 +202,7 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
  * @return
  *  - ESP_OK: if successful.
  */
-esp_err_t esp_ota_mark_app_valid_cancel_rollback();
+esp_err_t esp_ota_mark_app_valid_cancel_rollback(void);
 
 /**
  * @brief This function is called to roll back to the previously workable app with reboot.
@@ -211,14 +211,14 @@ esp_err_t esp_ota_mark_app_valid_cancel_rollback();
  * @return
  *  - ESP_FAIL: if not successful.
  */
-esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot();
+esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot(void);
 
 /**
  * @brief Returns last partition with invalid state (ESP_OTA_IMG_INVALID or ESP_OTA_IMG_ABORTED).
  *
  * @return partition.
  */
-const esp_partition_t* esp_ota_get_last_invalid_partition();
+const esp_partition_t* esp_ota_get_last_invalid_partition(void);
 
 /**
  * @brief Returns state for given partition.

@@ -26,7 +26,7 @@ extern "C" {
  * @note These registers are dumped at 'debug' level, so output
  * may not be visible depending on default log levels.
  */
-void phy_lan8720_dump_registers();
+void phy_lan8720_dump_registers(void);
 
 /** @brief Default LAN8720 phy_check_init function.
  */

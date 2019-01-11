@@ -258,7 +258,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
     return TRUE;
 }
 
-void vMBPortSerialClose()
+void vMBPortSerialClose(void)
 {
     (void)vTaskSuspend(xMbTaskHandle);
     (void)vTaskDelete(xMbTaskHandle);

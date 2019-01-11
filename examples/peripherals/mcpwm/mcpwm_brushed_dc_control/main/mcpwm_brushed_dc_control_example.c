@@ -89,7 +89,7 @@ static void mcpwm_example_brushed_motor_control(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Testing brushed motor...\n");
     xTaskCreate(mcpwm_example_brushed_motor_control, "mcpwm_examlpe_brushed_motor_control", 4096, NULL, 5, NULL);

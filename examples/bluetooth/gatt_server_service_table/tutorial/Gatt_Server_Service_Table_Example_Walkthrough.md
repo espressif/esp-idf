@@ -75,7 +75,7 @@ The enumeration elements are set up in the same order as the Heart Rate Profile 
 The entry point to this example is the ``app_main()`` function:
 
 ```c
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

@@ -26,7 +26,7 @@ typedef enum {
     ESP_PM_TRACE_TYPE_MAX
 } esp_pm_trace_event_t;
 
-void esp_pm_trace_init();
+void esp_pm_trace_init(void);
 void esp_pm_trace_enter(esp_pm_trace_event_t event, int core_id);
 void esp_pm_trace_exit(esp_pm_trace_event_t event, int core_id);
 
