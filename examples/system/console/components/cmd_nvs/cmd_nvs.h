@@ -12,10 +12,10 @@
 extern "C" {
 #endif
 
-#include "cmd_system.h"
-#include "cmd_wifi.h"
-#include "cmd_nvs.h"
+// Register NVS functions
+void register_nvs();
 
 #ifdef __cplusplus
 }
 #endif
+
