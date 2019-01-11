@@ -39,7 +39,7 @@
 
 static const char *TAG = "qio_mode";
 
-typedef unsigned (*read_status_fn_t)();
+typedef unsigned (*read_status_fn_t)(void);
 typedef void (*write_status_fn_t)(unsigned);
 
 typedef struct __attribute__((packed)) {
