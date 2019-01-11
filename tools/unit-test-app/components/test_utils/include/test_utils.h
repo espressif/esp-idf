@@ -107,9 +107,8 @@ void unity_reset_leak_checks(void);
  */
 void test_case_uses_tcpip(void);
 
-
 /**
- * @brief wait for signals.
+ * @brief wait for signals with parameters.
  *
  * for multiple devices test cases, DUT might need to wait for other DUTs before continue testing.
  * As all DUTs are independent, need user (or test script) interaction to make test synchronized.
@@ -136,13 +135,64 @@ void test_case_uses_tcpip(void);
  *
  * Then we press Enter key on DUT1's console, DUT1 starts to read input and then test success.
  *
+ * Another example, we have 2 DUTs in multiple devices test, and DUT1 need to get DUT2's mac address to perform BT connection.
+ * DUT1 should call `unity_wait_for_signal_param("dut2 mac address", mac, 19);` to wait for DUT2's mac address.
+ * DUT2 should call `unity_send_signal_param("dut2 mac address", "10:20:30:40:50:60");` to send to DUT1 its mac address.
+ * According to the console logs:
+ *
+ * DUT1 console:
+ *
+ * ```
+ *     Waiting for signal: [dut2 mac address]!
+ *     Please input parameter value from any board send this signal and press "Enter" key.
+ * ```
+ *
+ * DUT2 console:
+ *
+ * ```
+ *     Send signal: [dut2 mac address][10:20:30:40:50:60]!
+ * ```
+ *
  * @param signal_name signal name which DUT expected to wait before proceed testing
+ * @param parameter_buf buffer to receive parameter
+ * @param buf_len length of parameter_buf.
+ *                Currently we have a limitation that it will write 1 extra byte at the end of string.
+ *                We need to use a buffer with 2 bytes longer than actual string length.
  */
-void unity_wait_for_signal(const char* signal_name);
+void unity_wait_for_signal_param(const char* signal_name, char *parameter_buf, uint8_t buf_len);
 
 /**
- * @brief DUT send signal.
+ * @brief wait for signals.
+ *
+ * @param signal_name signal name which DUT expected to wait before proceed testing
+ */
+static inline void unity_wait_for_signal(const char* signal_name)
+{
+    unity_wait_for_signal_param(signal_name, NULL, 0);
+}
+
+/**
+ * @brief DUT send signal and pass parameter to other devices.
+ *
+ * @param signal_name signal name which DUT send once it finished preparing.
+ * @param parameter a string to let remote device to receive.
+ */
+void unity_send_signal_param(const char* signal_name, const char *parameter);
+
+/**
+ * @brief DUT send signal with parameter.
  *
  * @param signal_name signal name which DUT send once it finished preparing.
  */
-void unity_send_signal(const char* signal_name);
+static inline void unity_send_signal(const char* signal_name)
+{
+    unity_send_signal_param(signal_name, NULL);
+}
+
+/**
+ * @brief convert mac string to mac address
+ *
+ * @param mac_str MAC address string with format "xx:xx:xx:xx:xx:xx"
+ * @param[out] mac_addr store converted MAC address
+ */
+bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr);
