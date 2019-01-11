@@ -31,7 +31,7 @@
 #define BROWNOUT_DET_LVL 0
 #endif //CONFIG_ESP32_BROWNOUT_DET_LVL
 
-static void rtc_brownout_isr_handler(void)
+static void rtc_brownout_isr_handler(void *arg)
 {
     /* Normally RTC ISR clears the interrupt flag after the application-supplied
      * handler returns. Since restart is called here, the flag needs to be
