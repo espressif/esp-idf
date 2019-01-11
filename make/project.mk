@@ -355,7 +355,7 @@ CFLAGS := $(strip \
 	-std=gnu99 \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
-	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
+	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration -Wstrict-prototypes \
 	$(CFLAGS) \
 	$(EXTRA_CFLAGS))
 
