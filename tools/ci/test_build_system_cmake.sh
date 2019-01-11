@@ -236,6 +236,21 @@ function run_tests()
     mv CMakeLists.txt.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    print_status "Can build with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set"
+    clean_build_dir
+    sed -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
+    export IDF_PATH_BACKUP="$IDF_PATH"
+    mv main/Kconfig.projbuild main/Kconfig.projbuild_bak
+    echo "source \"\$IDF_PATH/examples/wifi/getting_started/station/main/Kconfig.projbuild\"" > main/Kconfig.projbuild
+    (unset IDF_PATH &&
+         cd build &&
+         cmake -G Ninja .. -DIDF_PATH=${IDF_PATH_BACKUP} &&
+         ninja) || failure "Ninja build failed"
+    mv CMakeLists.txt.bak CMakeLists.txt
+    mv main/Kconfig.projbuild_bak main/Kconfig.projbuild
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
+
     # Next two tests will use this fake 'esp31b' target
     export fake_target=esp31b
     mkdir -p components/$fake_target
