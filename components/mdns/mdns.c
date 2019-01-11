@@ -4228,7 +4228,7 @@ void mdns_free(void)
     if (!_mdns_server) {
         return;
     }
-    mdns_service_remove_all(_mdns_server);
+    mdns_service_remove_all();
     _mdns_service_task_stop();
     for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
         for (j=0; j<MDNS_IP_PROTOCOL_MAX; j++) {
