@@ -22,7 +22,7 @@ config MB_SERIAL_BUF_SIZE
     default 256
     help
         Modbus serial task RX and TX buffer size for UART driver initialization.
-        This buffer is used for modbus frame transfer. The Modbus protocol maximum 
+        This buffer is used for Modbus frame transfer. The Modbus protocol maximum 
         frame size is 256 bytes. Bigger size can be used for non standard implementations.
         
 config MB_SERIAL_TASK_PRIO
