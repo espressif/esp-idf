@@ -31,20 +31,6 @@ const esp_partition_t *get_test_data_partition()
     return result;
 }
 
-// wait user to send "Enter" key
-static void wait_user_control()
-{
-    char sign[5] = {0};
-    while(strlen(sign) == 0)
-    {
-        /* Flush anything already in the RX buffer */
-        while(uart_rx_one_char((uint8_t *) sign) == OK) {
-        }
-        /* Read line */
-        UartRxString((uint8_t*) sign, sizeof(sign) - 1);
-    }
-}
-
 void test_case_uses_tcpip()
 {
     // Can be called more than once, does nothing on subsequent calls
@@ -71,16 +57,60 @@ void test_case_uses_tcpip()
     unity_reset_leak_checks();
 }
 
-// signal functions, used for sync between unity DUTs for multiple devices cases
-void unity_wait_for_signal(const char* signal_name)
+// wait user to send "Enter" key or input parameter
+static void wait_user_control(char* parameter_buf, uint8_t buf_len)
 {
-    printf("Waiting for signal: [%s]!\n"
-            "Please press \"Enter\" key to once any board send this signal.\n", signal_name);
-    wait_user_control();
+    char *buffer = parameter_buf;
+    char sign[5];
+    uint8_t buffer_len = buf_len - 1;
+
+    if (parameter_buf == NULL) {
+        buffer = sign;
+        buffer_len = sizeof(sign) - 1;
+    }
+    // workaround that unity_gets (UartRxString) will not set '\0' correctly
+    bzero(buffer, buffer_len);
+
+    unity_gets(buffer, buffer_len);
 }
 
-void unity_send_signal(const char* signal_name)
+// signal functions, used for sync between unity DUTs for multiple devices cases
+void unity_wait_for_signal_param(const char* signal_name, char* parameter_buf, uint8_t buf_len)
 {
-    printf("Send signal: [%s]!\n", signal_name);
+    printf("Waiting for signal: [%s]!\n", signal_name);
+    if (parameter_buf == NULL) {
+        printf("Please press \"Enter\" key once any board send this signal.\n");
+    } else {
+        printf("Please input parameter value from any board send this signal and press \"Enter\" key.\n");
+    }
+    wait_user_control(parameter_buf, buf_len);
+}
+
+void unity_send_signal_param(const char* signal_name, const char *parameter)
+{
+    if (parameter == NULL) {
+        printf("Send signal: [%s]!\n", signal_name);
+    } else {
+        printf("Send signal: [%s][%s]!\n", signal_name, parameter);
+    }
+}
+
+bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr)
+{
+    uint8_t loop = 0;
+    uint8_t tmp = 0;
+    const char *start;
+    char *stop;
+
+    for (loop = 0; loop < 6; loop++) {
+        start = mac_str + loop * 3;
+        tmp = strtol(start, &stop, 16);
+        if (stop - start == 2 && (*stop == ':' || (*stop == 0 && loop == 5))) {
+            mac_addr[loop] = tmp;
+        } else {
+            return false;
+        }
+    }
+    return true;
 }
 

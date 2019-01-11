@@ -109,6 +109,21 @@ DUT2（slave）终端：
 一旦 DUT2 发送了该信号，您需要在 DUT2 的终端输入回车，然后 DUT1 会从
 ``unity_wait_for_signal`` 函数中解除阻塞，并开始更改 GPIO 的电平。
 
+信号也可以用来在不同 DUT 之间传递参数。例如，DUT1 希望能够拿到 DUT2 的 MAC 地址，来进行蓝牙连接。
+这时，我们可以使用 ``unity_wait_for_signal_param`` 以及 ``unity_send_signal_param``。
+
+DUT1 终端::
+
+    Waiting for signal: [dut2 mac address]!
+    Please input parameter value from any board send this signal and press "Enter" key.
+    
+
+DUT2 终端:: 
+
+    Send signal: [dut2 mac address][10:20:30:40:50:60]!
+
+一旦 DUT2 发送信号，您需要在 DUT1 输入 ``10:20:30:40:50:60`` 及回车，然后 DUT1 会从 ``unity_wait_for_signal_param`` 中获取到蓝牙地址的字符串，并解除阻塞开始蓝牙连接。
+
 
 添加多阶段测试用例
 ------------------
@@ -203,13 +218,13 @@ DUT2（slave）终端：
 
 可以输入以下任意一项来运行测试用例：
 
--  引号中的测试用例的名字，运行单个测试用例。
+-  引号中的测试用例的名字（例如 ``"esp_ota_begin() verifies arguments"``），运行单个测试用例。
 
--  测试用例的序号，运行单个测试用例。
+-  测试用例的序号（例如 ``1``），运行单个测试用例。
 
--  方括号中的模块名字，运行指定模块所有的测试用例。
+-  方括号中的模块名字（例如 ``[cxx]``），运行指定模块所有的测试用例。
 
--  星号，运行所有测试用例。
+-  星号 (``*``)，运行所有测试用例。
 
 ``[multi_device]`` 和 ``[multi_stage]``
 标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由
