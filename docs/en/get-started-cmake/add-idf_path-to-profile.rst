@@ -43,7 +43,7 @@ Linux and MacOS
 Set up ``IDF_PATH`` and add ``idf.py`` to the PATH by adding the following two lines to your ``~/.profile`` file::
 
     export IDF_PATH=~/esp/esp-idf
-    export PATH="$IDF_PATH/tools:$PATH"
+    export PATH="$PATH:$IDF_PATH/tools"
 
 .. note::
 
@@ -70,6 +70,6 @@ A path like ``${IDF_PATH}/tools/idf.py`` should be printed.
 If you do not like to have ``IDF_PATH`` or ``PATH`` modifications set, you can enter it manually in terminal window on each restart or logout::
 
     export IDF_PATH=~/esp/esp-idf
-    export PATH="$IDF_PATH/tools:$PATH"
+    export PATH="$PATH:$IDF_PATH/tools"
 
 If you got here from section :ref:`get-started-setup-path-cmake`, while installing s/w for ESP32 development, then go back to section :ref:`get-started-start-project-cmake`.
