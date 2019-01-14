@@ -12,4 +12,10 @@ config WIFI_PASSWORD
     help
         WiFi password (WPA or WPA2) for the example to use.
 
+config BROKER_URI
+    string "Broker URL"
+    default "ws://iot.eclipse.org:80/ws"
+    help
+        URL of an mqtt broker which this example connects to.
+
 endmenu

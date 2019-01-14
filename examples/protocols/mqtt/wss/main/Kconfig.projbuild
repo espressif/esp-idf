@@ -12,4 +12,20 @@ config WIFI_PASSWORD
     help
         WiFi password (WPA or WPA2) for the example to use.
 
+config BROKER_URI
+    string "Broker URL"
+    default "wss://iot.eclipse.org:443/ws"
+    help
+        URL of an mqtt broker which this example connects to.
+
+config BROKER_CERTIFICATE_OVERRIDE
+    string "Server certificate override"
+    default ""
+    help
+        Please leave empty if server certificate included from a textfile; otherwise fill in a base64 part of PEM format certificate
+
+config BROKER_CERTIFICATE_OVERRIDDEN
+    bool
+    default y if BROKER_CERTIFICATE_OVERRIDE != ""
+
 endmenu
