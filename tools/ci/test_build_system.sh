@@ -265,6 +265,17 @@ function run_tests()
     make EXTRA_COMPONENT_DIRS=$PWD/mycomponents || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
     rm -rf esp32
     rm -rf mycomponents
+
+    print_status "sdkconfig should have contents both files: sdkconfig and sdkconfig.defaults"
+    make clean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults;
+    echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig;
+    make defconfig > /dev/null;
+    grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
+    grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
