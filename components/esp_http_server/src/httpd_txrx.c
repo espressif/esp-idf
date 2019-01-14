@@ -246,7 +246,9 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
     const char *colon_separator = ": ";
     const char *cr_lf_seperator = "\r\n";
 
-    if (buf_len == -1) buf_len = strlen(buf);
+    if (buf_len == HTTPD_RESP_USE_STRLEN) {
+        buf_len = strlen(buf);
+    }
 
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
@@ -306,7 +308,9 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
 
-    if (buf_len == -1) buf_len = strlen(buf);
+    if (buf_len == HTTPD_RESP_USE_STRLEN) {
+        buf_len = strlen(buf);
+    }
 
     struct httpd_req_aux *ra = r->aux;
     const char *httpd_chunked_hdr_str = "HTTP/1.1 %s\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n";
