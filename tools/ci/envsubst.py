@@ -10,7 +10,7 @@ import sys
 def main():
     # Sanitize environment variables
     vars_to_remove = []
-    for var_name in os.environ.iterkeys():
+    for var_name in os.environ.keys():
         if var_name.startswith('CI_'):
             vars_to_remove.append(var_name)
     for var_name in vars_to_remove:
