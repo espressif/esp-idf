@@ -53,7 +53,6 @@ confgen_args = ["python",
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
                 "--config", temp_sdkconfig_path,
-                "--create-config-if-missing",
                 "--env", "COMPONENT_KCONFIGS={}".format(kconfigs),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(kconfig_projbuilds),
                 "--output", "docs", kconfig_inc_path + '.in'
