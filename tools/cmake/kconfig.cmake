@@ -109,7 +109,6 @@ function(kconfig_process_config)
         --kconfig ${ROOT_KCONFIG}
         --config ${SDKCONFIG}
         ${defaults_arg}
-        --create-config-if-missing
         --env "COMPONENT_KCONFIGS=${kconfigs}"
         --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
         --env "IDF_CMAKE=y")
@@ -141,12 +140,24 @@ function(kconfig_process_config)
     # makes sdkconfig.h and skdconfig.cmake
     #
     # This happens during the cmake run not during the build
-    execute_process(COMMAND ${confgen_basecommand}
-        --output header ${SDKCONFIG_HEADER}
-        --output cmake ${SDKCONFIG_CMAKE}
-        --output json ${SDKCONFIG_JSON}
-        --output json_menus ${KCONFIG_JSON_MENUS}
-        RESULT_VARIABLE config_result)
+    if(NOT BOOTLOADER_BUILD)
+        execute_process(
+            COMMAND ${confgen_basecommand}
+            --output header ${SDKCONFIG_HEADER}
+            --output cmake ${SDKCONFIG_CMAKE}
+            --output json ${SDKCONFIG_JSON}
+            --output json_menus ${KCONFIG_JSON_MENUS}
+            --output config ${SDKCONFIG} # only generate config at the top-level project
+            RESULT_VARIABLE config_result)
+    else()
+        execute_process(
+            COMMAND ${confgen_basecommand}
+            --output header ${SDKCONFIG_HEADER}
+            --output cmake ${SDKCONFIG_CMAKE}
+            --output json ${SDKCONFIG_JSON}
+            --output json_menus ${KCONFIG_JSON_MENUS}
+            RESULT_VARIABLE config_result)
+    endif()
     if(config_result)
         message(FATAL_ERROR "Failed to run confgen.py (${confgen_basecommand}). Error ${config_result}")
     endif()
