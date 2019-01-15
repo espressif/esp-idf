@@ -50,10 +50,6 @@ def main():
                         nargs='?',
                         default=None)
 
-    parser.add_argument('--create-config-if-missing',
-                        help='If set, a new config file will be saved if the old one is not found',
-                        action='store_true')
-
     parser.add_argument('--kconfig',
                         help='KConfig file with config item definitions',
                         required=True)
@@ -91,26 +87,22 @@ def main():
             raise RuntimeError("Defaults file not found: %s" % args.defaults)
         config.load_config(args.defaults)
 
-    if args.config is not None:
-        if os.path.exists(args.config):
-            config.load_config(args.config)
-        elif args.create_config_if_missing:
-            print("Creating config file %s..." % args.config)
-            config.write_config(args.config)
-        elif args.default is None:
-            raise RuntimeError("Config file not found: %s" % args.config)
+    # If config file previously exists, load it
+    if args.config and os.path.exists(args.config):
+        config.load_config(args.config, replace=False)
 
-        for output_type, filename in args.output:
-            temp_file = tempfile.mktemp(prefix="confgen_tmp")
+    # Output the files specified in the arguments
+    for output_type, filename in args.output:
+        temp_file = tempfile.mktemp(prefix="confgen_tmp")
+        try:
+            output_function = OUTPUT_FORMATS[output_type]
+            output_function(config, temp_file)
+            update_if_changed(temp_file, filename)
+        finally:
             try:
-                output_function = OUTPUT_FORMATS[output_type]
-                output_function(config, temp_file)
-                update_if_changed(temp_file, filename)
-            finally:
-                try:
-                    os.remove(temp_file)
-                except OSError:
-                    pass
+                os.remove(temp_file)
+            except OSError:
+                pass
 
 
 def write_config(config, filename):
@@ -263,6 +255,7 @@ def write_json_menus(config, filename):
 def update_if_changed(source, destination):
     with open(source, "r") as f:
         source_contents = f.read()
+
     if os.path.exists(destination):
         with open(destination, "r") as f:
             dest_contents = f.read()
