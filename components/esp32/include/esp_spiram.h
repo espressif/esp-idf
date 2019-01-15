@@ -22,8 +22,9 @@
 #include "esp_err.h"
 
 typedef enum {
-    ESP_SPIRAM_SIZE_32MBITS = 0,   /*!< SPI RAM size is 32 MBits */
-    ESP_SPIRAM_SIZE_64MBITS = 1,   /*!< SPI RAM size is 64 MBits */
+    ESP_SPIRAM_SIZE_16MBITS = 0,   /*!< SPI RAM size is 16 MBits */
+    ESP_SPIRAM_SIZE_32MBITS = 1,   /*!< SPI RAM size is 32 MBits */
+    ESP_SPIRAM_SIZE_64MBITS = 2,   /*!< SPI RAM size is 64 MBits */
     ESP_SPIRAM_SIZE_INVALID,       /*!< SPI RAM size is invalid */
 } esp_spiram_size_t;
 
