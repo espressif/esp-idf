@@ -1044,9 +1044,10 @@ esp_err_t esp_mesh_set_vote_percentage(float percentage);
 float esp_mesh_get_vote_percentage(void);
 
 /**
- * @brief      Set mesh softAP associate expired time
+ * @brief      Set mesh softAP associate expired time (default:10 seconds)
  *             - If mesh softAP hasn't received any data from an associated child within this time,
  *             mesh softAP will take this child inactive and disassociate it.
+ *             - If mesh softAP is encrypted, this value should be set a greater value, such as 30 seconds.
  *
  * @param[in]  seconds  the expired time
  *
@@ -1227,7 +1228,7 @@ esp_err_t esp_mesh_get_group_list(mesh_addr_t *addr, int num);
 bool esp_mesh_is_my_group(const mesh_addr_t *addr);
 
 /**
- * @brief      Set mesh network capacity
+ * @brief      Set mesh network capacity (max:1000, default:300)
  *
  * @attention  This API shall be called before mesh is started.
  *
