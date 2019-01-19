@@ -130,6 +130,9 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
     }
+    if (ret == 0) {
+        ret = -1;
+    }
     return ret;
 }
 
