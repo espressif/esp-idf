@@ -99,4 +99,9 @@ esptool_py_flash_project_args(partition_table ${PARTITION_TABLE_OFFSET}
 partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
 esptool_py_flash_project_args(app ${app_partition_offset} ${build_dir}/${PROJECT_BIN} FLASH_IN_PROJECT)
 
+if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_app_args.in "--encrypt ${app_partition_offset} ${PROJECT_BIN}")
+    esptool_py_flash_project_args(encrypted_app ${app_partition_offset} ${build_dir}/${PROJECT_BIN}
+                                FLASH_FILE_TEMPLATE ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_app_args.in)
+endif()
 
