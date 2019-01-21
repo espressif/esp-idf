@@ -461,8 +461,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Error allocate memory");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
     _success = (
@@ -473,8 +472,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
                );
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize transport");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
     esp_transport_handle_t ssl;
@@ -486,8 +484,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize SSL Transport");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
     if (config->cert_pem) {
@@ -497,8 +494,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (_set_config(client, config) != ESP_OK) {
         ESP_LOGE(TAG, "Error set configurations");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
     _success = (
                    (client->request->buffer->data  = malloc(client->buffer_size))  &&
@@ -507,20 +503,33 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Allocation failed");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
-    _success = (
-                   (esp_http_client_set_url(client, config->url) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
-               );
+    if (config->host != NULL && config->path != NULL) {
+        _success = (
+            (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+            (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+        );
 
-    if (!_success) {
-        ESP_LOGE(TAG, "Error set default configurations");
-        esp_http_client_cleanup(client);
-        return NULL;
+        if (!_success) {
+            ESP_LOGE(TAG, "Error while setting default configurations");
+            goto error;
+        }
+    } else if (config->url != NULL) {
+        _success = (
+                    (esp_http_client_set_url(client, config->url) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+                );
+
+        if (!_success) {
+            ESP_LOGE(TAG, "Error while setting default configurations");
+            goto error;
+        }
+    } else {
+        ESP_LOGE(TAG, "config should have either URL or host & path");
+        goto error;
     }
 
     client->parser_settings->on_message_begin = http_on_message_begin;
@@ -537,6 +546,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     client->state = HTTP_STATE_INIT;
     return client;
+error:
+    esp_http_client_cleanup(client);
+    return NULL;
 }
 
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
