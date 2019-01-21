@@ -67,7 +67,7 @@ The currently logged user should have read and write access the serial port over
 
     sudo usermod -a -G dialout $USER
 
-on Arch linux instead this is done by adding the user to ``uucp`` group with the following command::
+on Arch Linux this is done by adding the user to ``uucp`` group with the following command::
 
     sudo usermod -a -G uucp $USER
 
