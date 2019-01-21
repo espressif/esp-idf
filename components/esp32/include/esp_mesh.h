@@ -187,6 +187,11 @@ typedef enum {
                                              this event, and add the corresponding scan done handler in this event. */
     MESH_EVENT_NETWORK_STATE,           /**< network state, such as whether current mesh network has a root. */
     MESH_EVENT_STOP_RECONNECTION,       /**< the root stops reconnecting to the router and non-root devices stop reconnecting to their parents. */
+    MESH_EVENT_FIND_NETWORK,            /**< when the channel field in mesh configuration is set to zero, mesh stack will perform a
+                                             full channel scan to find a mesh network that can join, and return the channel value
+                                             after finding it. */
+    MESH_EVENT_ROUTER_SWITCH,           /**< if users specify BSSID of the router in mesh configuration, when the root connects to another
+                                             router with the same SSID, this event will be posted and the new router information is attached. */
     MESH_EVENT_MAX,
 } mesh_event_id_t;
 
@@ -311,6 +316,14 @@ typedef struct {
 } mesh_event_vote_started_t;
 
 /**
+ * @brief find a mesh network that this device can join
+ */
+typedef struct {
+    uint8_t channel;            /**< channel number of the new found network */
+    uint8_t router_bssid[6];    /**< router BSSID */
+} mesh_event_find_network_t;
+
+/**
  * @brief IP settings from LwIP stack
  */
 typedef system_event_sta_got_ip_t mesh_event_root_got_ip_t;
@@ -382,6 +395,11 @@ typedef struct {
 } mesh_event_network_state_t;
 
 /**
+ * @brief New router information
+ */
+typedef system_event_sta_connected_t mesh_event_router_switch_t;
+
+/**
  * @brief Mesh event information
  */
 typedef union {
@@ -405,6 +423,8 @@ typedef union {
     mesh_event_root_fixed_t root_fixed;                    /**< fixed root */
     mesh_event_scan_done_t scan_done;                      /**< scan done */
     mesh_event_network_state_t network_state;              /**< network state, such as whether current mesh network has a root. */
+    mesh_event_find_network_t find_network;                /**< network found that can join */
+    mesh_event_router_switch_t router_switch;              /**< new router information */
 } mesh_event_info_t;
 
 /**
@@ -445,10 +465,16 @@ typedef struct {
  * @brief Router configuration
  */
 typedef struct {
-    uint8_t ssid[32];        /**< SSID */
-    uint8_t ssid_len;        /**< length of SSID */
-    uint8_t bssid[6];        /**< BSSID, if router is hidden, this value is mandatory */
-    uint8_t password[64];    /**< password */
+    uint8_t ssid[32];             /**< SSID */
+    uint8_t ssid_len;             /**< length of SSID */
+    uint8_t bssid[6];             /**< BSSID, if this value is specified, users should also specify "allow_router_switch". */
+    uint8_t password[64];         /**< password */
+    bool allow_router_switch;     /**< if the BSSID is specified and this value is also set, when the router of this specified BSSID
+                                       fails to be found after "fail" (mesh_attempts_t) times, the whole network is allowed to switch
+                                       to another router with the same SSID. The new router might also be on a different channel.
+                                       The default value is false.
+                                       There is a risk that if the password is different between the new switched router and the previous
+                                       one, the mesh network could be established but the root will never connect to the new switched router. */
 } mesh_router_t;
 
 /**
@@ -464,6 +490,8 @@ typedef struct {
  */
 typedef struct {
     uint8_t channel;                            /**< channel, the mesh network on */
+    bool allow_channel_switch;                  /**< if this value is set, when "fail" (mesh_attempts_t) times is reached, device will change to
+                                                     a full channel scan for a network that could join. The default value is false. */
     mesh_event_cb_t event_cb;                   /**< mesh event callback */
     mesh_addr_t mesh_id;                        /**< mesh network identification */
     mesh_router_t router;                       /**< router configuration */
@@ -596,6 +624,7 @@ esp_err_t esp_mesh_stop(void);
  *             - If the packet is to an external IP network, set this parameter to the IPv4:PORT combination.
  *               This packet will be delivered to the root firstly, then the root will forward this packet to the final IP server address.
  * @param[in]  data  pointer to a sending mesh packet
+ *             - Field size should not exceed MESH_MPS. Note that the size of one mesh packet should not exceed MESH_MTU.
  *             - Field proto should be set to data protocol in use (default is MESH_PROTO_BIN for binary).
  *             - Field tos should be set to transmission tos (type of service) in use (default is MESH_TOS_P2P for point-to-point reliable).
  * @param[in]  flag  bitmap for data sent
@@ -1015,9 +1044,10 @@ esp_err_t esp_mesh_set_vote_percentage(float percentage);
 float esp_mesh_get_vote_percentage(void);
 
 /**
- * @brief      Set mesh softAP associate expired time
+ * @brief      Set mesh softAP associate expired time (default:10 seconds)
  *             - If mesh softAP hasn't received any data from an associated child within this time,
  *             mesh softAP will take this child inactive and disassociate it.
+ *             - If mesh softAP is encrypted, this value should be set a greater value, such as 30 seconds.
  *
  * @param[in]  seconds  the expired time
  *
@@ -1198,7 +1228,7 @@ esp_err_t esp_mesh_get_group_list(mesh_addr_t *addr, int num);
 bool esp_mesh_is_my_group(const mesh_addr_t *addr);
 
 /**
- * @brief      Set mesh network capacity
+ * @brief      Set mesh network capacity (max:1000, default:300)
  *
  * @attention  This API shall be called before mesh is started.
  *
@@ -1411,6 +1441,43 @@ esp_err_t esp_mesh_disconnect(void);
  *    - ESP_OK
  */
 esp_err_t esp_mesh_connect(void);
+
+/**
+ * @brief      Flush scan result
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_flush_scan_result(void);
+
+/**
+ * @brief      Cause the root device to add Channel Switch Announcement Element (CSA IE) to beacon
+ *             - Set the new channel
+ *             - Set how many beacons with CSA IE will be sent before changing a new channel
+ *             - Enable the channel switch function
+ *
+ * @attention  This API is only called by the root.
+ *
+ * @param[in]  new_bssid  the new router BSSID if the router changes
+ * @param[in]  csa_newchan  the new channel number to which the whole network is moving
+ * @param[in]  csa_count  channel switch period(beacon count), unit is based on beacon interval of its softAP, the default value is 15.
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_switch_channel(const uint8_t *new_bssid, int csa_newchan, int csa_count);
+
+/**
+ * @brief      Get the router BSSID
+ *
+ * @param[out] router_bssid  pointer to the router BSSID
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_ERR_WIFI_NOT_INIT
+ *    - ESP_ERR_WIFI_ARG
+ */
+esp_err_t esp_mesh_get_router_bssid(uint8_t *router_bssid);
 
 #ifdef __cplusplus
 }
