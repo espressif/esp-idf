@@ -797,14 +797,14 @@ esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, siz
  *
  * The special characters "?" and "*" anywhere else in the template will be taken literally.
  *
- * @param[in] template   URI template (pattern)
- * @param[in] uri        URI to be matched
- * @param[in] len        how many characters of the URI buffer to test
- *                       (there may be trailing query string etc.)
+ * @param[in] uri_template   URI template (pattern)
+ * @param[in] uri_to_match   URI to be matched
+ * @param[in] match_upto     how many characters of the URI buffer to test
+ *                          (there may be trailing query string etc.)
  *
  * @return true if a match was found
  */
-bool httpd_uri_match_wildcard(const char *template, const char *uri, size_t len);
+bool httpd_uri_match_wildcard(const char *uri_template, const char *uri_to_match, size_t match_upto);
 
 /**
  * @brief   API to send a complete HTTP response.
