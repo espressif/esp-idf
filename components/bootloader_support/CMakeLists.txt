@@ -5,6 +5,7 @@ set(srcs
     "src/bootloader_random.c"
     "src/bootloader_utility.c"
     "src/esp_image_format.c"
+    "src/flash_encrypt.c"
     "src/flash_partitions.c"
     "src/flash_qio_mode.c")
 

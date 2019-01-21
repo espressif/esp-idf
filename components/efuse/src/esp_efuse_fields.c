@@ -236,3 +236,4 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 #endif
     return ESP_OK;
 }
+

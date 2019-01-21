@@ -45,6 +45,10 @@ endif
 
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
 
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+ESPTOOLPY_WRITE_FLASH_ENCRYPT=$(ESPTOOLPY_SERIAL) write_flash --encrypt $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
+endif
+
 ESPTOOL_ALL_FLASH_ARGS += $(APP_OFFSET) $(APP_BIN)
 
 ifdef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
@@ -62,6 +66,19 @@ APP_BIN_UNSIGNED ?= $(APP_BIN)
 $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC) | check_python_dependencies
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+encrypted-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
+	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
+ifdef CONFIG_SECURE_BOOT_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+endif
+	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(ESPTOOL_ALL_FLASH_ARGS)
+else
+encrypted-flash:
+	@echo "The command is supported only in FLASH ENCRYPTION DEVELOPMENT MODE"
+	@exit 1
+endif
+
 flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT_ENABLED
@@ -72,6 +89,16 @@ endif
 app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing app to serial port $(ESPPORT), offset $(APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
+
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+encrypted-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
+	@echo "Flashing encrypted app binary to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
+	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(APP_OFFSET) $(APP_BIN)
+else
+encrypted-app-flash:
+	@echo "The command is supported only in FLASH ENCRYPTION DEVELOPMENT MODE"
+	@exit 1
+endif
 
 # Submodules normally added in component.mk, but can be added
 # at the project level as long as qualified path

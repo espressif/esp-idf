@@ -43,6 +43,9 @@ erase_ota: erase_otadata
 
 all: blank_ota_data
 flash: blank_ota_data
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+encrypted-flash: blank_ota_data
+endif
 
 TMP_DEFINES := $(BUILD_DIR_BASE)/app_update/tmp_cppflags.txt
 export TMP_DEFINES

@@ -347,6 +347,8 @@ def flash(action, ctx, args):
         "partition_table-flash": "flash_partition_table_args",
         "app-flash": "flash_app_args",
         "flash": "flash_project_args",
+        "encrypted-app-flash": "flash_encrypted_app_args",
+        "encrypted-flash": "flash_encrypted_project_args",
     }[
         action
     ]
@@ -1038,6 +1040,18 @@ def init_cli():
                 "callback": flash,
                 "help": "Flash the app only.",
                 "dependencies": ["app"],
+                "order_dependencies": ["erase_flash"],
+            },
+            "encrypted-app-flash": {
+                "callback": flash,
+                "help": "Flash the encrypted app only.",
+                "dependencies": ["app"],
+                "order_dependencies": ["erase_flash"],
+            },
+            "encrypted-flash": {
+                "callback": flash,
+                "help": "Flash the encrypted project.",
+                "dependencies": ["all"],
                 "order_dependencies": ["erase_flash"],
             },
         },
