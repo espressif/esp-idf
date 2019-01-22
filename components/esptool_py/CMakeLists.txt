@@ -1,26 +1,27 @@
 register_config_only_component()
 
+if(IDF_BUILD_ARTIFACTS)
 string(REPLACE ";" " " ESPTOOLPY_FLASH_PROJECT_OPTIONS "${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS}")
 set(ESPTOOLPY_FLASH_PROJECT_OPTIONS
-    "${ESPTOOLPY_FLASH_PROJECT_OPTIONS} ${BOOTLOADER_OFFSET} bootloader/bootloader.bin"
+    "${ESPTOOLPY_FLASH_PROJECT_OPTIONS}"
     )
 
 if(CONFIG_SECURE_BOOT_ENABLED)
     set(ESPTOOLPY_FLASH_PROJECT_OPTIONS "")
 endif()
 
-if(IDF_BUILD_ARTIFACTS)
-    # Generate pre-canned flasher args files suitable for passing to esptool.py
-    foreach(part project app bootloader partition_table)
-        configure_file(
-            "${CMAKE_CURRENT_LIST_DIR}/flash_${part}_args.in"
-            "${IDF_BUILD_ARTIFACTS_DIR}/flash_${part}_args"
-            )
-    endforeach()
+# Generate the flash project args and the flasher args json file using the accumulated values
+# from esptool_py_flash_project_args calls. The file is first configured using configure_file() for all variable values,
+# and then generated using file(GENERATE... for generator expressions.
+configure_file(${COMPONENT_PATH}/flash_project_args.in
+               ${CMAKE_CURRENT_BINARY_DIR}/flash_project_args.in)
 
-    configure_file(
-        "${CMAKE_CURRENT_LIST_DIR}/flasher_args.json.in"
-        "${IDF_BUILD_ARTIFACTS_DIR}/flasher_args.json"
-        )
+file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/flash_project_args
+              INPUT ${CMAKE_CURRENT_BINARY_DIR}/flash_project_args.in)
+
+configure_file(${COMPONENT_PATH}/flasher_args.json.in
+               ${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in)
+
+file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/flasher_args.json
+              INPUT ${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in)
 endif()
-
