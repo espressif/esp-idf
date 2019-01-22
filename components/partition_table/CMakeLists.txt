@@ -29,7 +29,7 @@ else()
 endif()
 
 add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}"
-    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" 
+    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
     -q --offset ${PARTITION_TABLE_OFFSET} ${md5_opt} ${flashsize_opt}
     ${partition_secure_opt} ${partition_csv} ${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}
     DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
@@ -37,12 +37,12 @@ add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned
 
 # Add signing steps
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_target(gen_unsigned_partition_bin ALL DEPENDS 
+    add_custom_target(gen_unsigned_partition_bin ALL DEPENDS
                     "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}")
 
     add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin}"
         COMMAND ${ESPSECUREPY} sign_data --keyfile "${secure_boot_signing_key}"
-        -o "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin}" 
+        -o "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin}"
         "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}"
         DEPENDS "${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${unsigned_partition_bin}"
         VERBATIM)
@@ -86,6 +86,14 @@ add_dependencies(app partition_table)
 set_property(GLOBAL APPEND_STRING PROPERTY
     ESPTOOL_WRITE_FLASH_ARGS
     "${PARTITION_TABLE_OFFSET}  ${IDF_BUILD_ARTIFACTS_DIR}/partition_table/${final_partition_bin} ")
+
+esptool_py_flash_project_args(partition_table ${PARTITION_TABLE_OFFSET}
+                              ${IDF_BUILD_ARTIFACTS_DIR}/partition_table/partition-table.bin FLASH_IN_PROJECT)
+
+if (NOT BOOTLOADER_BUILD)
+    partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
+    esptool_py_flash_project_args(app ${app_partition_offset} ${CMAKE_BINARY_DIR}/${IDF_PROJECT_BIN} FLASH_IN_PROJECT)
+endif()
 
 endif()
 

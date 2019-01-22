@@ -1,5 +1,4 @@
-if(NOT BOOTLOADER_BUILD AND IDF_BUILD_ARTIFACTS)
-
+if(NOT BOOTLOADER_BUILD)
 set(PARTITION_TABLE_OFFSET ${CONFIG_PARTITION_TABLE_OFFSET})
 
 # Set PARTITION_CSV_PATH to the configured partition CSV file
@@ -27,42 +26,24 @@ endif()
 # need to re-run CMake if the partition CSV changes, as the offsets/sizes of partitions may change
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PARTITION_CSV_PATH})
 
-# Parse the partition table to get variable partition offsets & sizes which must be known at CMake runtime
-function(get_partition_info variable get_part_info_args part_info)
+# partition_table_get_partition_info
+#
+# Get information about a partition from the partition table
+function(partition_table_get_partition_info result get_part_info_args part_info)
     separate_arguments(get_part_info_args)
     execute_process(COMMAND ${PYTHON}
-        ${COMPONENT_PATH}/parttool.py -q
+        ${IDF_PATH}/components/partition_table/parttool.py -q
         --partition-table-offset ${PARTITION_TABLE_OFFSET}
         --partition-table-file ${PARTITION_CSV_PATH}
         ${get_part_info_args} get_partition_info --info ${part_info}
-        OUTPUT_VARIABLE result
+        OUTPUT_VARIABLE info
         RESULT_VARIABLE exit_code
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT ${exit_code} EQUAL 0 AND NOT ${exit_code} EQUAL 1)
         # can't fail here as it would prevent the user from running 'menuconfig' again
         message(WARNING "parttool.py execution failed (${result}), problem with partition CSV file (see above)")
     endif()
-    set(${variable} ${result} PARENT_SCOPE)
+    set(${result} ${info} PARENT_SCOPE)
 endfunction()
-
-if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
-    get_partition_info(PHY_PARTITION_OFFSET
-                "--partition-type data --partition-subtype phy" "offset")
-    set(PHY_PARTITION_BIN_FILE "esp32/phy_init_data.bin")
 endif()
 
-get_partition_info(APP_PARTITION_OFFSET
-                "--partition-boot-default" "offset")
-
-get_partition_info(OTADATA_PARTITION_OFFSET
-                "--partition-type data --partition-subtype ota" "offset")
-
-get_partition_info(OTADATA_PARTITION_SIZE
-                "--partition-type data --partition-subtype ota" "size")
-
-get_partition_info(FACTORY_OFFSET
-                "--partition-type app --partition-subtype factory" "offset")
-
-endif()
-
-set(BOOTLOADER_OFFSET 0x1000)
