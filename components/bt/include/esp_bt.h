@@ -43,7 +43,7 @@ typedef struct {
 } esp_bt_controller_config_t;
 
 #ifdef CONFIG_BT_ENABLED
-/* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE, 
+/* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE,
 the adv packet will be discarded until the memory is restored. */
 #define SCAN_SEND_ADV_RESERVED_SIZE        1000
 /* enable controller log debug when adv lost */
@@ -285,8 +285,12 @@ bool esp_vhci_host_check_send_available(void);
 
 /** @brief esp_vhci_host_send_packet
  * host send packet to controller
+ *
+ * Should not call this function from within a critical section
+ * or when the scheduler is suspended.
+ *
  * @param data the packet point
- *,@param len the packet length
+ * @param len the packet length
  */
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
 
