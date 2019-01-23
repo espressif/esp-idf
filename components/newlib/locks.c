@@ -118,6 +118,8 @@ void IRAM_ATTR _lock_close(_lock_t *lock) {
     portEXIT_CRITICAL(&lock_init_spinlock);
 }
 
+void IRAM_ATTR _lock_close_recursive(_lock_t *lock) __attribute__((alias("_lock_close")));
+
 /* Acquire the mutex semaphore for lock. wait up to delay ticks.
    mutex_type is queueQUEUE_TYPE_RECURSIVE_MUTEX or queueQUEUE_TYPE_MUTEX
 */
