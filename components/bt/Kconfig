@@ -1185,6 +1185,15 @@ config SMP_ENABLE
    depends on BLUEDROID_ENABLED
    default CLASSIC_BT_ENABLED || BLE_SMP_ENABLE
 
+config BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY
+    bool "Report adv data and scan response individually when BLE active scan"
+    depends on BLUEDROID_ENABLED && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
+    default n
+    help
+        Originally, when doing BLE active scan, Bluedroid will not report adv to application layer
+        until receive scan response. This option is used to disable the behavior. When enable this option,
+        Bluedroid will report adv data or scan response to application layer immediately.
+
 # Memory reserved at start of DRAM for Bluetooth stack
 config BT_RESERVE_DRAM
     hex
