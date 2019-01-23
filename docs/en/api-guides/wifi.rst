@@ -1458,11 +1458,11 @@ Channel state information (CSI) refers to the channel information of a Wi-Fi con
 +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
 |             | STBC               |  non STBC   |  non STBC   |     STBC    | non STBC | non STBC | STBC |  non STBC   |     STBC    | non STBC | non STBC |  STBC  |  non STBC   |     STBC    |
 +-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-| sub-carrier | LLTF               | 0~31,-31~-1 | 0~31,-31~-1 | 0~31,-31~-1 |   0~63   |   0~63   | 0~63 |     0~63    |     0~63    |  -64~-1  |  -64~-1  | -64~-1 |    -64~-1   |    -64~-1   |
+| sub-carrier | LLTF               | 0~31,-32~-1 | 0~31,-32~-1 | 0~31,-32~-1 |   0~63   |   0~63   | 0~63 |     0~63    |     0~63    |  -64~-1  |  -64~-1  | -64~-1 |    -64~-1   |    -64~-1   |
 +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-| index       | HT-LTF             |      -      | 0~31,-31~-1 | 0~31,-31~-1 |     -    |   0~63   | 0~62 | 0~63,-64~-1 | 0~60,-60~-1 |     -    |  -64~-1  | -62~-1 | 0~63,-64~-1 | 0~60,-60~-1 |
+| index       | HT-LTF             |      -      | 0~31,-32~-1 | 0~31,-32~-1 |     -    |   0~63   | 0~62 | 0~63,-64~-1 | 0~60,-60~-1 |     -    |  -64~-1  | -62~-1 | 0~63,-64~-1 | 0~60,-60~-1 |
 +             +--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
-|             | STBC-HT-LTF        |      -      |      -      | 0~31,-31~-1 |     -    |     -    | 0~62 |       -     | 0~60,-60~-1 |     -    |     -    | -62~-1 |       -     | 0~60,-60~-1 |
+|             | STBC-HT-LTF        |      -      |      -      | 0~31,-32~-1 |     -    |     -    | 0~62 |       -     | 0~60,-60~-1 |     -    |     -    | -62~-1 |       -     | 0~60,-60~-1 |
 +-------------+--------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
 | total bytes                      |     128     |     256     |     384     |    128   |    256   | 380  |      384    |      612    |    128   |    256   |   376  |      384    |      612    |
 +----------------------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
@@ -1474,8 +1474,8 @@ All of the information in the table can be found in the structure wifi_csi_info_
     - Channel bandwidth refers to cwb field of rx_ctrl field. 
     - STBC refers to stbc field of rx_ctrl field. 
     - Total bytes refers to len field. 
-    - The CSI data corresponding to each Long Training Field type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 items may not be present, depending on the packet type (see above).
-    - If last_word_invalid field of wifi_csi_info_t is true, it means that the last four bytes of CSI data is invalid due to a hardware limitation in ESP32. 
+    - The CSI data corresponding to each Long Training Field(LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 LTFs may not be present, depending on the channel and packet information (see above). 
+    - If first_word_invalid field of wifi_csi_info_t is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in ESP32. 
     - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
 
 .. note::
