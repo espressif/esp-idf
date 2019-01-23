@@ -24,6 +24,7 @@
 #include "test/test_common_spi.h"
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
+#include "../cache_utils.h"
 
 const static char TAG[] = "test_spi";
 
@@ -938,7 +939,8 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
  ********************************************************************************/
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = xthal_get_ccount();}while(0)
-#define RECORD_TIME_END(p_time) do{__t2 = xthal_get_ccount(); *p_time = (__t2-__t1)/240;}while(0)
+#define RECORD_TIME_END(p_time) do{__t2 = xthal_get_ccount(); *p_time = (__t2-__t1);}while(0)
+#define GET_US_BY_CCOUNT(t) ((t)/240.)
 
 static void speed_setup(spi_device_handle_t* spi, bool use_dma)
 {
@@ -978,11 +980,13 @@ static IRAM_ATTR void spi_transmit_measure(spi_device_handle_t spi, spi_transact
 
 static IRAM_ATTR void spi_transmit_polling_measure(spi_device_handle_t spi, spi_transaction_t* trans, uint32_t* t_flight)
 {
+    spi_flash_disable_interrupts_caches_and_other_cpu();    //this can test the code are all in the IRAM at the same time
     RECORD_TIME_PREPARE();
     spi_device_polling_transmit(spi, trans); // prime the flash cache
     RECORD_TIME_START();
     spi_device_polling_transmit(spi, trans);
     RECORD_TIME_END(t_flight);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
 }
 
 TEST_CASE("spi_speed","[spi]")
@@ -1010,9 +1014,9 @@ TEST_CASE("spi_speed","[spi]")
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
     for (int i = 0; i < TEST_TIMES; i++) {
-        ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
+        ESP_LOGI(TAG, "%.2lf", GET_US_BY_CCOUNT(t_flight_sorted[i]));
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -1025,9 +1029,9 @@ TEST_CASE("spi_speed","[spi]")
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
     for (int i = 0; i < TEST_TIMES; i++) {
-        ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
+        ESP_LOGI(TAG, "%.2lf", GET_US_BY_CCOUNT(t_flight_sorted[i]));
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
 
     //release the bus
     spi_device_release_bus(spi);
@@ -1043,9 +1047,9 @@ TEST_CASE("spi_speed","[spi]")
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
     for (int i = 0; i < TEST_TIMES; i++) {
-        ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
+        ESP_LOGI(TAG, "%.2lf", GET_US_BY_CCOUNT(t_flight_sorted[i]));
     }
-    TEST_PERFORMANCE_LESS_THAN( SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -1057,9 +1061,9 @@ TEST_CASE("spi_speed","[spi]")
         sorted_array_insert(t_flight_sorted, &t_flight_num, t_flight);
     }
     for (int i = 0; i < TEST_TIMES; i++) {
-        ESP_LOGI(TAG, "%d", t_flight_sorted[i]);
+        ESP_LOGI(TAG, "%.2lf", GET_US_BY_CCOUNT(t_flight_sorted[i]));
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING_NO_DMA, "%d us", t_flight_sorted[(TEST_TIMES+1)/2]);
+    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_POLLING_NO_DMA, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
 
     //release the bus
     spi_device_release_bus(spi);
