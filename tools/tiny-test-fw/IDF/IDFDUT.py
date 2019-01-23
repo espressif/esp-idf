@@ -141,6 +141,7 @@ class IDFDUT(DUT.SerialDUT):
                 'compress': True,
                 'verify': False,
                 'encrypt': False,
+                'erase_all': False,
             })
 
             esp.change_baud(baud_rate)
