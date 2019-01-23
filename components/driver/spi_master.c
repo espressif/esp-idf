@@ -1,9 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -143,9 +143,11 @@ We have two bits to control the interrupt:
 #include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "stdatomic.h"
+#include "sdkconfig.h"
+
+#include "hal/spi_hal.h"
 
 typedef struct spi_device_t spi_device_t;
-typedef typeof(SPI1.clock) spi_clock_reg_t;
 
 #define NO_CS 3     //Number of CS pins per SPI host
 
@@ -171,9 +173,10 @@ typedef struct {
 } spi_trans_priv_t;
 
 typedef struct {
+    int id;
     _Atomic(spi_device_t*) device[NO_CS];
     intr_handle_t intr;
-    spi_dev_t *hw;
+    spi_hal_context_t  hal;
     spi_trans_priv_t cur_trans_buf;
     int cur_cs;     //current device doing transaction
     int prev_cs;    //last device doing transaction, used to avoid re-configure registers if the device not changed
@@ -181,8 +184,6 @@ typedef struct {
     bool polling;   //in process of a polling, avoid of queue new transactions into ISR
     bool isr_free;  //the isr is not sending transactions
     bool bus_locked;//the bus is controlled by a device
-    lldesc_t *dmadesc_tx;
-    lldesc_t *dmadesc_rx;
     uint32_t flags;
     int dma_chan;
     int max_transfer_sz;
@@ -192,19 +193,12 @@ typedef struct {
 #endif
 } spi_host_t;
 
-typedef struct {
-    spi_clock_reg_t reg;
-    int eff_clk;
-    int dummy_num;
-    int miso_delay;
-} clock_config_t;
-
 struct spi_device_t {
     int id;
     QueueHandle_t trans_queue;
     QueueHandle_t ret_queue;
     spi_device_interface_config_t cfg;
-    clock_config_t clk_cfg;
+    spi_hal_timing_conf_t timing_conf;
     spi_host_t *host;
     SemaphoreHandle_t semphr_polling;   //semaphore to notify the device it claimed the bus
     bool        waiting;                //the device is waiting for the exclusive control of the bus
@@ -271,21 +265,15 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         goto cleanup;
     }
 
+    int dma_desc_ct=0;
     spihost[host]->dma_chan=dma_chan;
     if (dma_chan == 0) {
         spihost[host]->max_transfer_sz = 64;
     } else {
         //See how many dma descriptors we need and allocate them
-        int dma_desc_ct=(bus_config->max_transfer_sz+SPI_MAX_DMA_LEN-1)/SPI_MAX_DMA_LEN;
+        dma_desc_ct=lldesc_get_required_num(bus_config->max_transfer_sz);
         if (dma_desc_ct==0) dma_desc_ct = 1; //default to 4k when max is not given
-
-        spihost[host]->max_transfer_sz = dma_desc_ct*SPI_MAX_DMA_LEN;
-        spihost[host]->dmadesc_tx=heap_caps_malloc(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
-        spihost[host]->dmadesc_rx=heap_caps_malloc(sizeof(lldesc_t)*dma_desc_ct, MALLOC_CAP_DMA);
-        if (!spihost[host]->dmadesc_tx || !spihost[host]->dmadesc_rx) {
-            ret = ESP_ERR_NO_MEM;
-            goto cleanup;
-        }
+        spihost[host]->max_transfer_sz = dma_desc_ct*LLDESC_MAX_NUM_PER_DESC;
     }
 
     int flags = bus_config->intr_flags | ESP_INTR_FLAG_INTRDISABLED;
@@ -294,7 +282,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         ret = err;
         goto cleanup;
     }
-    spihost[host]->hw=spicommon_hw_for_host(host);
+    spihost[host]->id = host;
 
     spihost[host]->cur_cs = NO_CS;
     spihost[host]->prev_cs = NO_CS;
@@ -303,45 +291,29 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     spihost[host]->isr_free = true;
     spihost[host]->bus_locked = false;
 
-    //Reset DMA
-    spihost[host]->hw->dma_conf.val|=SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
-    spihost[host]->hw->dma_out_link.start=0;
-    spihost[host]->hw->dma_in_link.start=0;
-    spihost[host]->hw->dma_conf.val&=~(SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
-    //Reset timing
-    spihost[host]->hw->ctrl2.val=0;
-
-    //master use all 64 bytes of the buffer
-    spihost[host]->hw->user.usr_miso_highpart=0;
-    spihost[host]->hw->user.usr_mosi_highpart=0;
-
-    //Disable unneeded ints
-    spihost[host]->hw->slave.rd_buf_done=0;
-    spihost[host]->hw->slave.wr_buf_done=0;
-    spihost[host]->hw->slave.rd_sta_done=0;
-    spihost[host]->hw->slave.wr_sta_done=0;
-    spihost[host]->hw->slave.rd_buf_inten=0;
-    spihost[host]->hw->slave.wr_buf_inten=0;
-    spihost[host]->hw->slave.rd_sta_inten=0;
-    spihost[host]->hw->slave.wr_sta_inten=0;
-
-    //Force a transaction done interrupt. This interrupt won't fire yet because we initialized the SPI interrupt as
-    //disabled.  This way, we can just enable the SPI interrupt and the interrupt handler will kick in, handling
-    //any transactions that are queued.
-    spihost[host]->hw->slave.trans_inten=1;
-    spihost[host]->hw->slave.trans_done=1;
-
+    spi_hal_init(&spihost[host]->hal, host);
+    spihost[host]->hal.dma_enabled = (dma_chan!=0);
+    if (dma_desc_ct) {
+        spihost[host]->hal.dmadesc_tx=heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        spihost[host]->hal.dmadesc_rx=heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        if (!spihost[host]->hal.dmadesc_tx || !spihost[host]->hal.dmadesc_rx) {
+            ret = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
+    }
+    spihost[host]->hal.dmadesc_n = dma_desc_ct;
     return ESP_OK;
 
 cleanup:
     if (spihost[host]) {
-        free(spihost[host]->dmadesc_tx);
-        free(spihost[host]->dmadesc_rx);
+        spi_hal_deinit(&spihost[host]->hal);
 #ifdef CONFIG_PM_ENABLE
         if (spihost[host]->pm_lock) {
             esp_pm_lock_delete(spihost[host]->pm_lock);
         }
 #endif
+        free(spihost[host]->hal.dmadesc_rx);
+        free(spihost[host]->hal.dmadesc_tx);
     }
     free(spihost[host]);
     spihost[host] = NULL;
@@ -366,12 +338,12 @@ esp_err_t spi_bus_free(spi_host_device_t host)
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_delete(spihost[host]->pm_lock);
 #endif
-    spihost[host]->hw->slave.trans_inten=0;
-    spihost[host]->hw->slave.trans_done=0;
+    spi_hal_deinit(&spihost[host]->hal);
+    free(spihost[host]->hal.dmadesc_rx);
+    free(spihost[host]->hal.dmadesc_tx);
+
     esp_intr_free(spihost[host]->intr);
     spicommon_periph_free(host);
-    free(spihost[host]->dmadesc_tx);
-    free(spihost[host]->dmadesc_rx);
     free(spihost[host]);
     spihost[host]=NULL;
     return ESP_OK;
@@ -379,41 +351,18 @@ esp_err_t spi_bus_free(spi_host_device_t host)
 
 void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int* dummy_o, int* cycles_remain_o)
 {
-    const int apbclk_kHz = APB_CLK_FREQ/1000;
-    //calculate how many apb clocks a period has
-    const int apbclk_n = APB_CLK_FREQ/eff_clk;
-    const int gpio_delay_ns = gpio_is_used ? 25 : 0;
+    int timing_dummy;
+    int timing_miso_delay;
 
-    //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-    int apb_period_n = (1 + input_delay_ns + gpio_delay_ns)*apbclk_kHz/1000/1000;
-    if (apb_period_n < 0) apb_period_n = 0;
-
-    int dummy_required = apb_period_n/apbclk_n;
-
-    int miso_delay = 0;
-    if (dummy_required > 0) {
-        //due to the clock delay between master and slave, there's a range in which data is random
-        //give MISO a delay if needed to make sure we sample at the time MISO is stable
-        miso_delay = (dummy_required+1)*apbclk_n-apb_period_n-1;
-    } else {
-        //if the dummy is not required, maybe we should also delay half a SPI clock if the data comes too early
-        if (apb_period_n*4 <= apbclk_n) miso_delay = -1;
-    }
-    if (dummy_o!=NULL) *dummy_o = dummy_required;
-    if (cycles_remain_o!=NULL) *cycles_remain_o = miso_delay;
-    ESP_LOGD(SPI_TAG,"eff: %d, limit: %dk(/%d), %d dummy, %d delay", eff_clk/1000, apbclk_kHz/(apb_period_n+1), apb_period_n, dummy_required, miso_delay);
+    spi_hal_cal_timing(eff_clk, gpio_is_used, input_delay_ns, &timing_dummy, &timing_miso_delay);
+    if (dummy_o) *dummy_o = timing_dummy;
+    if (cycles_remain_o) *cycles_remain_o = timing_miso_delay;
 }
 
 int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {
-    const int apbclk_kHz = APB_CLK_FREQ/1000;
-    const int gpio_delay_ns = gpio_is_used ? 25 : 0;
+    return spi_hal_get_freq_limit(gpio_is_used, input_delay_ns);
 
-    //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-    int apb_period_n = (1 + input_delay_ns + gpio_delay_ns)*apbclk_kHz/1000/1000;
-    if (apb_period_n < 0) apb_period_n = 0;
-
-    return APB_CLK_FREQ/(apb_period_n+1);
 }
 
 /*
@@ -423,13 +372,8 @@ int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_config_t *dev_config, spi_device_handle_t *handle)
 {
     int freecs;
-    int apbclk=APB_CLK_FREQ;
-    int eff_clk;
     int duty_cycle;
-    int dummy_required;
-    int miso_delay;
 
-    spi_clock_reg_t clk_reg;
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
@@ -446,18 +390,22 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
         (dev_config->flags & SPI_DEVICE_HALFDUPLEX), "In full-duplex mode, only support cs pretrans delay = 1 and without address_bits and command_bits", ESP_ERR_INVALID_ARG);
 
     duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
-    eff_clk = spi_cal_clock(apbclk, dev_config->clock_speed_hz, duty_cycle, (uint32_t*)&clk_reg);
-    int freq_limit = spi_get_freq_limit(!(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS), dev_config->input_delay_ns);
 
-    //Speed >=40MHz over GPIO matrix needs a dummy cycle, but these don't work for full-duplex connections.
-    spi_get_timing(!(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS), dev_config->input_delay_ns, eff_clk, &dummy_required, &miso_delay);
-    SPI_CHECK( dev_config->flags & SPI_DEVICE_HALFDUPLEX || dummy_required == 0 ||
-            dev_config->flags & SPI_DEVICE_NO_DUMMY,
-"When work in full-duplex mode at frequency > %.1fMHz, device cannot read correct data.\n\
-Try to use IOMUX pins to increase the frequency limit, or use the half duplex mode.\n\
-Please note the SPI master can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
-Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output data at higher speed, or read data at your own risk.",
-            ESP_ERR_INVALID_ARG, freq_limit/1000./1000 );
+    int freq;
+    spi_hal_context_t *hal = &spihost[host]->hal;
+    hal->half_duplex = dev_config->flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
+    hal->as_cs = dev_config->flags & SPI_DEVICE_CLK_AS_CS ? 1 : 0;
+    hal->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
+    hal->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
+
+    spi_hal_timing_conf_t temp_timing_conf;
+    esp_err_t ret = spi_hal_get_clock_conf(hal, dev_config->clock_speed_hz, duty_cycle,
+                                        !(spihost[host]->flags & SPICOMMON_BUSFLAG_NATIVE_PINS),
+                                        dev_config->input_delay_ns, &freq,
+                                        &temp_timing_conf);
+
+    SPI_CHECK(ret==ESP_OK, "assigned clock speed not supported", ret);
+
 
     //Allocate memory for device
     spi_device_t *dev=malloc(sizeof(spi_device_t));
@@ -466,6 +414,7 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
     atomic_store(&spihost[host]->device[freecs], dev);
     dev->id = freecs;
     dev->waiting = false;
+    dev->timing_conf = temp_timing_conf;
 
     //Allocate queues, set defaults
     dev->trans_queue = xQueueCreate(dev_config->queue_size, sizeof(spi_trans_priv_t));
@@ -480,31 +429,14 @@ Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output dat
     memcpy(&dev->cfg, dev_config, sizeof(spi_device_interface_config_t));
     dev->cfg.duty_cycle_pos = duty_cycle;
     // TODO: if we have to change the apb clock among transactions, re-calculate this each time the apb clock lock is acquired.
-    dev->clk_cfg= (clock_config_t) {
-        .eff_clk = eff_clk,
-        .dummy_num = dummy_required,
-        .reg = clk_reg,
-        .miso_delay = miso_delay,
-    };
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
         spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
     }
-    if (dev_config->flags&SPI_DEVICE_CLK_AS_CS) {
-        spihost[host]->hw->pin.master_ck_sel |= (1<<freecs);
-    } else {
-        spihost[host]->hw->pin.master_ck_sel &= (1<<freecs);
-    }
-    if (dev_config->flags&SPI_DEVICE_POSITIVE_CS) {
-        spihost[host]->hw->pin.master_cs_pol |= (1<<freecs);
-    } else {
-        spihost[host]->hw->pin.master_cs_pol &= (1<<freecs);
-    }
-    spihost[host]->hw->ctrl2.mosi_delay_mode = 0;
-    spihost[host]->hw->ctrl2.mosi_delay_num = 0;
+
     *handle=dev;
-    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %dkHz", host+1, freecs, dev->clk_cfg.eff_clk/1000);
+    ESP_LOGD(SPI_TAG, "SPI%d: New device added to CS%d, effective clock: %dkHz", host+1, freecs, freq/1000);
     return ESP_OK;
 
 nomem:
@@ -546,79 +478,20 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     return ESP_OK;
 }
 
-static int spi_freq_for_pre_n(int fapb, int pre, int n)
-{
-    return (fapb / (pre * n));
-}
-
 int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t *reg_o)
 {
-    spi_clock_reg_t reg;
-    int eff_clk;
-
-    //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
-    if (hz>((fapb/4)*3)) {
-        //Using Fapb directly will give us the best result here.
-        reg.clkcnt_l=0;
-        reg.clkcnt_h=0;
-        reg.clkcnt_n=0;
-        reg.clkdiv_pre=0;
-        reg.clk_equ_sysclk=1;
-        eff_clk=fapb;
-    } else {
-        //For best duty cycle resolution, we want n to be as close to 32 as possible, but
-        //we also need a pre/n combo that gets us as close as possible to the intended freq.
-        //To do this, we bruteforce n and calculate the best pre to go along with that.
-        //If there's a choice between pre/n combos that give the same result, use the one
-        //with the higher n.
-        int pre, n, h, l;
-        int bestn=-1;
-        int bestpre=-1;
-        int besterr=0;
-        int errval;
-        for (n=2; n<=64; n++) { //Start at 2: we need to be able to set h/l so we have at least one high and one low pulse.
-            //Effectively, this does pre=round((fapb/n)/hz).
-            pre=((fapb/n)+(hz/2))/hz;
-            if (pre<=0) pre=1;
-            if (pre>8192) pre=8192;
-            errval=abs(spi_freq_for_pre_n(fapb, pre, n)-hz);
-            if (bestn==-1 || errval<=besterr) {
-                besterr=errval;
-                bestn=n;
-                bestpre=pre;
-            }
-        }
-
-        n=bestn;
-        pre=bestpre;
-        l=n;
-        //This effectively does round((duty_cycle*n)/256)
-        h=(duty_cycle*n+127)/256;
-        if (h<=0) h=1;
-
-        reg.clk_equ_sysclk=0;
-        reg.clkcnt_n=n-1;
-        reg.clkdiv_pre=pre-1;
-        reg.clkcnt_h=h-1;
-        reg.clkcnt_l=l-1;
-        eff_clk=spi_freq_for_pre_n(fapb, pre, n);
-    }
-    if (reg_o != NULL) *reg_o = reg.val;
-    return eff_clk;
+    return spi_ll_master_cal_clock(fapb, hz, duty_cycle, reg_o);
 }
 
-/*
- * Set the spi clock according to pre-calculated register value.
- */
-static inline void SPI_MASTER_ISR_ATTR spi_set_clock(spi_dev_t *hw, spi_clock_reg_t reg)
+int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
 {
-    hw->clock.val = reg.val;
+    return spi_hal_master_cal_clock(fapb, hz, duty_cycle);
 }
 
 // Setup the device-specified configuration registers. Called every time a new
 // transaction is to be sent, but only apply new configurations when the device
 // changes.
-static void SPI_MASTER_ISR_ATTR spi_setup_device(spi_host_t *host, int dev_id )
+static void SPI_MASTER_ISR_ATTR spi_setup_device(spi_host_t *host, int dev_id)
 {
     //if the configuration is already applied, skip the following.
     if (dev_id == host->prev_cs) {
@@ -627,41 +500,24 @@ static void SPI_MASTER_ISR_ATTR spi_setup_device(spi_host_t *host, int dev_id )
 
     ESP_EARLY_LOGD(SPI_TAG, "SPI device changed from %d to %d", host->prev_cs, dev_id);
     spi_device_t *dev = atomic_load(&host->device[dev_id]);
-    //Configure clock settings
-    spi_set_clock(host->hw, dev->clk_cfg.reg);
-    //Configure bit order
-    host->hw->ctrl.rd_bit_order=(dev->cfg.flags & SPI_DEVICE_RXBIT_LSBFIRST) ? 1 : 0;
-    host->hw->ctrl.wr_bit_order=(dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST) ? 1 : 0;
 
-    //Configure polarity
-    if (dev->cfg.mode==0) {
-        host->hw->pin.ck_idle_edge=0;
-        host->hw->user.ck_out_edge=0;
-    } else if (dev->cfg.mode==1) {
-        host->hw->pin.ck_idle_edge=0;
-        host->hw->user.ck_out_edge=1;
-    } else if (dev->cfg.mode==2) {
-        host->hw->pin.ck_idle_edge=1;
-        host->hw->user.ck_out_edge=1;
-    } else if (dev->cfg.mode==3) {
-        host->hw->pin.ck_idle_edge=1;
-        host->hw->user.ck_out_edge=0;
-    }
-    //Configure misc stuff
-    host->hw->user.doutdin=(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) ? 0 : 1;
-    host->hw->user.sio=(dev->cfg.flags & SPI_DEVICE_3WIRE) ? 1 : 0;
-    //Configure CS pin and timing
-    host->hw->ctrl2.setup_time=dev->cfg.cs_ena_pretrans-1;
-    host->hw->user.cs_setup=dev->cfg.cs_ena_pretrans ? 1 : 0;
+    spi_hal_context_t *hal = &host->hal;
+    hal->mode = dev->cfg.mode;
+    hal->tx_lsbfirst = dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
+    hal->rx_lsbfirst = dev->cfg.flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
+    hal->no_compensate = dev->cfg.flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
+    hal->sio = dev->cfg.flags & SPI_DEVICE_3WIRE ? 1 : 0;
+    hal->dummy_bits = dev->cfg.dummy_bits;
+    hal->cs_setup = dev->cfg.cs_ena_pretrans;
+    hal->cs_hold =dev->cfg.cs_ena_posttrans;
     //set hold_time to 0 will not actually append delay to CS
     //set it to 1 since we do need at least one clock of hold time in most cases
-    host->hw->ctrl2.hold_time=dev->cfg.cs_ena_posttrans;
-    if (host->hw->ctrl2.hold_time == 0) host->hw->ctrl2.hold_time = 1;
-    host->hw->user.cs_hold=1;
+    if (hal->cs_hold == 0) hal->cs_hold = 1;
+    hal->cs_pin_id = dev_id;
+    hal->timing_conf = &dev->timing_conf;
 
-    host->hw->pin.cs0_dis = (dev_id == 0) ? 0 : 1;
-    host->hw->pin.cs1_dis = (dev_id == 1) ? 0 : 1;
-    host->hw->pin.cs2_dis = (dev_id == 2) ? 0 : 1;
+    spi_hal_setup_device(hal);
+
     //Record the device just configured to save time for next time
     host->prev_cs = dev_id;
 }
@@ -783,211 +639,59 @@ static inline SPI_MASTER_ISR_ATTR bool device_is_polling(spi_device_t *handle)
 
 // The function is called to send a new transaction, in ISR or in the task.
 // Setup the transaction-specified registers and linked-list used by the DMA (or FIFO if DMA is not used)
-static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_t *trans_buf)
+static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_t *trans_buf, spi_hal_context_t *hal)
 {
     spi_transaction_t *trans = NULL;
     spi_host_t *host = dev->host;
     int dev_id = dev->id;
 
-    //clear int bit
-    host->hw->slave.trans_done = 0;
-
     trans = trans_buf->trans;
     host->cur_cs = dev_id;
     //We should be done with the transmission.
-    assert(host->hw->cmd.usr == 0);
+
+    hal->tx_bitlen = trans->length;
+    hal->rx_bitlen = trans->rxlength;
+    hal->rcv_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_rcv;
+    hal->send_buffer = (uint8_t*)host->cur_trans_buf.buffer_to_send;
+    hal->half_duplex = dev->cfg.flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
+    hal->cmd = trans->cmd;
+    hal->addr = trans->addr;
+    //Set up QIO/DIO if needed
+    hal->io_mode = (trans->flags & SPI_TRANS_MODE_DIO ?
+                        (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR ? SPI_LL_IO_MODE_DIO : SPI_LL_IO_MODE_DUAL) :
+                    (trans->flags & SPI_TRANS_MODE_QIO ?
+                        (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR ? SPI_LL_IO_MODE_QIO : SPI_LL_IO_MODE_QUAD) :
+                    SPI_LL_IO_MODE_NORMAL
+                    ));
+
+    hal->tx_bitlen = trans->length;
+    hal->rx_bitlen = trans->rxlength;
+
+    if (trans->flags & SPI_TRANS_VARIABLE_CMD) {
+        hal->cmd_bits = ((spi_transaction_ext_t *)trans)->command_bits;
+    } else {
+        hal->cmd_bits = dev->cfg.command_bits;
+    }
+    if (trans->flags & SPI_TRANS_VARIABLE_ADDR) {
+        hal->addr_bits = ((spi_transaction_ext_t *)trans)->address_bits;
+    } else {
+        hal->addr_bits = dev->cfg.address_bits;
+    }
+    if (trans->flags & SPI_TRANS_VARIABLE_DUMMY) {
+        hal->dummy_bits = ((spi_transaction_ext_t *)trans)->dummy_bits;
+    } else {
+        hal->dummy_bits = dev->cfg.dummy_bits;
+    }
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
     spi_setup_device(host, dev_id);
-
-    //Reset DMA peripheral
-    host->hw->dma_conf.val |= SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST;
-    host->hw->dma_out_link.start=0;
-    host->hw->dma_in_link.start=0;
-    host->hw->dma_conf.val &= ~(SPI_OUT_RST|SPI_IN_RST|SPI_AHBM_RST|SPI_AHBM_FIFO_RST);
-    host->hw->dma_conf.out_data_burst_en=1;
-    host->hw->dma_conf.indscr_burst_en=1;
-    host->hw->dma_conf.outdscr_burst_en=1;
-    //Set up QIO/DIO if needed
-    host->hw->ctrl.val &= ~(SPI_FREAD_DUAL|SPI_FREAD_QUAD|SPI_FREAD_DIO|SPI_FREAD_QIO);
-    host->hw->user.val &= ~(SPI_FWRITE_DUAL|SPI_FWRITE_QUAD|SPI_FWRITE_DIO|SPI_FWRITE_QIO);
-    if (trans->flags & SPI_TRANS_MODE_DIO) {
-        if (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
-            host->hw->ctrl.fread_dio=1;
-            host->hw->user.fwrite_dio=1;
-        } else {
-            host->hw->ctrl.fread_dual=1;
-            host->hw->user.fwrite_dual=1;
-        }
-        host->hw->ctrl.fastrd_mode=1;
-    } else if (trans->flags & SPI_TRANS_MODE_QIO) {
-        if (trans->flags & SPI_TRANS_MODE_DIOQIO_ADDR) {
-            host->hw->ctrl.fread_qio=1;
-            host->hw->user.fwrite_qio=1;
-        } else {
-            host->hw->ctrl.fread_quad=1;
-            host->hw->user.fwrite_quad=1;
-        }
-        host->hw->ctrl.fastrd_mode=1;
-    }
-
-    //Fill DMA descriptors
-    int extra_dummy=0;
-    if (trans_buf->buffer_to_rcv) {
-        if (host->dma_chan == 0) {
-            //No need to setup anything; we'll copy the result out of the work registers directly later.
-        } else {
-            spicommon_setup_dma_desc_links(host->dmadesc_rx, ((trans->rxlength+7)/8), (uint8_t*)trans_buf->buffer_to_rcv, true);
-            host->hw->dma_in_link.addr=(int)(&host->dmadesc_rx[0]) & 0xFFFFF;
-            host->hw->dma_in_link.start=1;
-        }
-        //when no_dummy is not set and in half-duplex mode, sets the dummy bit if RX phase exist
-        if (((dev->cfg.flags&SPI_DEVICE_NO_DUMMY)==0) && (dev->cfg.flags&SPI_DEVICE_HALFDUPLEX)) {
-            extra_dummy=dev->clk_cfg.dummy_num;
-        }
-    } else {
-        //DMA temporary workaround: let RX DMA work somehow to avoid the issue in ESP32 v0/v1 silicon
-        if (host->dma_chan != 0 ) {
-            host->hw->dma_in_link.addr=0;
-            host->hw->dma_in_link.start=1;
-        }
-    }
-
-    if (trans_buf->buffer_to_send) {
-        if (host->dma_chan == 0) {
-            //Need to copy data to registers manually
-            for (int x=0; x < trans->length; x+=32) {
-                //Use memcpy to get around alignment issues for txdata
-                uint32_t word;
-                memcpy(&word, &trans_buf->buffer_to_send[x/32], 4);
-                host->hw->data_buf[(x/32)]=word;
-            }
-        } else {
-            spicommon_setup_dma_desc_links(host->dmadesc_tx, (trans->length+7)/8, (uint8_t*)trans_buf->buffer_to_send, false);
-            host->hw->dma_out_link.addr=(int)(&host->dmadesc_tx[0]) & 0xFFFFF;
-            host->hw->dma_out_link.start=1;
-        }
-    }
-
-    //SPI iface needs to be configured for a delay in some cases.
-    //configure dummy bits
-    int base_dummy_bits;
-    if (trans->flags & SPI_TRANS_VARIABLE_DUMMY) {
-        base_dummy_bits = ((spi_transaction_ext_t *)trans)->dummy_bits;
-    } else {
-        base_dummy_bits = dev->cfg.dummy_bits;
-    }
-    host->hw->user.usr_dummy=(base_dummy_bits+extra_dummy) ? 1 : 0;
-    host->hw->user1.usr_dummy_cyclelen=base_dummy_bits+extra_dummy-1;
-
-    int miso_long_delay = 0;
-    if (dev->clk_cfg.miso_delay<0) {
-        //if the data comes too late, delay half a SPI clock to improve reading
-        miso_long_delay = 1;
-        host->hw->ctrl2.miso_delay_num = 0;
-    } else {
-        //if the data is so fast that dummy_bit is used, delay some apb clocks to meet the timing
-        host->hw->ctrl2.miso_delay_num = extra_dummy ? dev->clk_cfg.miso_delay : 0;
-    }
-
-    if (miso_long_delay) {
-        switch (dev->cfg.mode) {
-        case 0:
-            host->hw->ctrl2.miso_delay_mode = 2;
-            break;
-        case 1:
-            host->hw->ctrl2.miso_delay_mode = 1;
-            break;
-        case 2:
-            host->hw->ctrl2.miso_delay_mode = 1;
-            break;
-        case 3:
-            host->hw->ctrl2.miso_delay_mode = 2;
-            break;
-        }
-    } else {
-        host->hw->ctrl2.miso_delay_mode = 0;
-    }
-
-    host->hw->mosi_dlen.usr_mosi_dbitlen=trans->length-1;
-    if ( dev->cfg.flags & SPI_DEVICE_HALFDUPLEX ) {
-        host->hw->miso_dlen.usr_miso_dbitlen=trans->rxlength-1;
-    } else {
-        //rxlength is not used in full-duplex mode
-        host->hw->miso_dlen.usr_miso_dbitlen=trans->length-1;
-    }
-
-    //Configure bit sizes, load addr and command
-    int cmdlen;
-    int addrlen;
-    if (!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && dev->cfg.cs_ena_pretrans != 0) {
-        /* The command and address phase is not compatible with cs_ena_pretrans
-         * in full duplex mode.
-         */
-        cmdlen = 0;
-        addrlen = 0;
-    } else {
-        if (trans->flags & SPI_TRANS_VARIABLE_CMD) {
-            cmdlen = ((spi_transaction_ext_t *)trans)->command_bits;
-        } else {
-            cmdlen = dev->cfg.command_bits;
-        }
-        if (trans->flags & SPI_TRANS_VARIABLE_ADDR) {
-            addrlen = ((spi_transaction_ext_t *)trans)->address_bits;
-        } else {
-            addrlen = dev->cfg.address_bits;
-        }
-    }
-
-    host->hw->user1.usr_addr_bitlen=addrlen-1;
-    host->hw->user2.usr_command_bitlen=cmdlen-1;
-    host->hw->user.usr_addr=addrlen ? 1 : 0;
-    host->hw->user.usr_command=cmdlen ? 1 : 0;
-
-    if ((dev->cfg.flags & SPI_DEVICE_TXBIT_LSBFIRST)==0) {
-        /* Output command will be sent from bit 7 to 0 of command_value, and
-         * then bit 15 to 8 of the same register field. Shift and swap to send
-         * more straightly.
-         */
-        host->hw->user2.usr_command_value = SPI_SWAP_DATA_TX(trans->cmd, cmdlen);
-
-        // shift the address to MSB of addr (and maybe slv_wr_status) register.
-        // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register.
-        if (addrlen > 32) {
-            host->hw->addr = trans->addr >> (addrlen - 32);
-            host->hw->slv_wr_status = trans->addr << (64 - addrlen);
-        } else {
-            host->hw->addr = trans->addr << (32 - addrlen);
-        }
-    } else {
-        /* The output command start from bit0 to bit 15, kept as is.
-         * The output address start from the LSB of the highest byte, i.e.
-         * addr[24] -> addr[31]
-         * ...
-         * addr[0] -> addr[7]
-         * slv_wr_status[24] -> slv_wr_status[31]
-         * ...
-         * slv_wr_status[0] -> slv_wr_status[7]
-         * So swap the byte order to let the LSB sent first.
-         */
-        host->hw->user2.usr_command_value = trans->cmd;
-        uint64_t addr = __builtin_bswap64(trans->addr);
-        host->hw->addr = addr>>32;
-        host->hw->slv_wr_status = addr;
-    }
-
-    if ((!(dev->cfg.flags & SPI_DEVICE_HALFDUPLEX) && trans_buf->buffer_to_rcv) ||
-        trans_buf->buffer_to_send) {
-        host->hw->user.usr_mosi = 1;
-    } else {
-        host->hw->user.usr_mosi = 0;
-    }
-    host->hw->user.usr_miso = (trans_buf->buffer_to_rcv) ? 1 : 0;
+    spi_hal_setup_trans(hal);
+    spi_hal_prepare_data(hal);
 
     //Call pre-transmission callback, if any
     if (dev->cfg.pre_cb) dev->cfg.pre_cb(trans);
     //Kick off transfer
-    host->hw->cmd.usr=1;
+    spi_hal_user_start(hal);
 }
 
 // The function is called when a transaction is done, in ISR or in the task.
@@ -995,16 +699,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
 static void SPI_MASTER_ISR_ATTR spi_post_trans(spi_host_t *host)
 {
     spi_transaction_t *cur_trans = host->cur_trans_buf.trans;
-    if (host->cur_trans_buf.buffer_to_rcv && host->dma_chan == 0 ) {
-        //Need to copy from SPI regs to result buffer.
-        for (int x = 0; x < cur_trans->rxlength; x += 32) {
-            //Do a memcpy to get around possible alignment issues in rx_buffer
-            uint32_t word = host->hw->data_buf[x / 32];
-            int len = cur_trans->rxlength - x;
-            if (len > 32) len = 32;
-            memcpy(&host->cur_trans_buf.buffer_to_rcv[x / 32], &word, (len + 7) / 8);
-        }
-    }
+    spi_hal_fetch_result(&host->hal);
     //Call post-transaction callback, if any
     spi_device_t* dev = atomic_load(&host->device[host->cur_cs]);
     if (dev->cfg.post_cb) dev->cfg.post_cb(cur_trans);
@@ -1020,7 +715,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
     BaseType_t do_yield = pdFALSE;
     spi_host_t *host = (spi_host_t *)arg;
 
-    assert(host->hw->slave.trans_done == 1);
+    assert(spi_hal_usr_is_done(&host->hal) == 1);
 
     /*------------ deal with the in-flight transaction -----------------*/
     if (host->cur_cs != NO_CS) {
@@ -1092,7 +787,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             //mark channel as active, so that the DMA will not be reset by the slave
             spicommon_dmaworkaround_transfer_active(host->dma_chan);
         }
-        spi_new_trans(atomic_load(&host->device[i]), cur_trans_buf);
+        spi_new_trans(atomic_load(&host->device[i]), cur_trans_buf, (&host->hal));
         //re-enable interrupt disabled above
         esp_intr_enable(host->intr);
     }
@@ -1186,7 +881,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_transaction_t *trans_de
 
         memcpy( temp, send_ptr, (trans_desc->length + 7) / 8 );
         send_ptr = temp;
-        }
+    }
     new_desc->buffer_to_send = send_ptr;
 
     return ESP_OK;
@@ -1289,7 +984,7 @@ esp_err_t SPI_MASTER_ATTR spi_device_acquire_bus(spi_device_t *device, TickType_
     esp_pm_lock_acquire(device->host->pm_lock);
 #endif
     //configure the device so that we don't need to do it again in the following transactions
-    spi_setup_device( host, device->id );
+    spi_setup_device(host, device->id);
     //the DMA is also occupied by the device, all the slave devices that using DMA should wait until bus released.
     if (host->dma_chan != 0) {
         spicommon_dmaworkaround_transfer_active(host->dma_chan);
@@ -1347,7 +1042,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
     host->polling = true;
 
     ESP_LOGV(SPI_TAG, "polling trans");
-    spi_new_trans(handle, &host->cur_trans_buf);
+    spi_new_trans(handle, &host->cur_trans_buf, (&host->hal));
 
     return ESP_OK;
 }
@@ -1361,12 +1056,13 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
     assert(host->cur_cs == atomic_load(&host->acquire_cs));
     TickType_t start = xTaskGetTickCount();
 
-    while (!host->hw->slave.trans_done) {
+    while (!spi_hal_usr_is_done(&host->hal)) {
         TickType_t end = xTaskGetTickCount();
         if (end - start > ticks_to_wait) {
             return ESP_ERR_TIMEOUT;
         }
     }
+
     ESP_LOGV(SPI_TAG, "polling trans done");
     //deal with the in-flight transaction
     spi_post_trans(host);
