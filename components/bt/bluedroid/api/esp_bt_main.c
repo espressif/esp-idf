@@ -119,7 +119,7 @@ esp_err_t esp_bluedroid_init(void)
     future_t **future_p;
 
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
-        LOG_ERROR("Conroller not initialised\n");
+        LOG_ERROR("Controller not initialised\n");
         return ESP_ERR_INVALID_STATE;
     }
 
