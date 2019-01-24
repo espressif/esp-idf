@@ -48,19 +48,22 @@ esp_err_t Page::load(uint32_t sectorNumber)
         mState = header.mState;
         // check if the whole page is really empty
         // reading the whole page takes ~40 times less than erasing it
-        uint32_t line[8];
-        for (uint32_t i = 0; i < SPI_FLASH_SEC_SIZE; i += sizeof(line)) {
-            rc = spi_flash_read(mBaseAddress + i, line, sizeof(line));
+        const int BLOCK_SIZE = 128;
+        uint32_t* block = new uint32_t[BLOCK_SIZE];
+        for (uint32_t i = 0; i < SPI_FLASH_SEC_SIZE; i += 4 * BLOCK_SIZE) {
+            rc = spi_flash_read(mBaseAddress + i, block, 4 * BLOCK_SIZE);
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
+                delete[] block;
                 return rc;
             }
-            if (std::any_of(line, line + 4, [](uint32_t val) -> bool { return val != 0xffffffff; })) {
+            if (std::any_of(block, block + BLOCK_SIZE, [](uint32_t val) -> bool { return val != 0xffffffff; })) {
                 // page isn't as empty after all, mark it as corrupted
                 mState = PageState::CORRUPT;
                 break;
             }
         }
+        delete[] block;
     } else if (header.mCrc32 != header.calculateCrc32()) {
         header.mState = PageState::CORRUPT;
     } else {
