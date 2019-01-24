@@ -100,4 +100,21 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
  */
 esp_err_t bootloader_flash_erase_sector(size_t sector);
 
+/* Cache MMU block size */
+#define MMU_BLOCK_SIZE    0x00010000
+
+/* Cache MMU address mask (MMU tables ignore bits which are zero) */
+#define MMU_FLASH_MASK    (~(MMU_BLOCK_SIZE - 1))
+
+/**
+ * @brief Calculate the number of cache pages to map
+ * @param size  size of data to map
+ * @param vaddr  virtual address where data will be mapped
+ * @return number of cache MMU pages required to do the mapping
+ */
+static inline uint32_t bootloader_cache_pages_to_map(uint32_t size, uint32_t vaddr)
+{
+    return (size + (vaddr - (vaddr & MMU_FLASH_MASK)) + MMU_BLOCK_SIZE - 1) / MMU_BLOCK_SIZE;
+}
+
 #endif
