@@ -61,6 +61,7 @@ FAILED_EXAMPLES=""
 RESULT_ISSUES=22  # magic number result code for issues found
 LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
+SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 if [ $# -eq 0 ]
 then
@@ -117,6 +118,16 @@ build_example () {
         export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
 
+        # sdkconfig files are normally not checked into git, but may be present when
+        # a developer runs this script locally
+        rm -f sdkconfig
+
+        # If sdkconfig.ci file is present, append it to sdkconfig.defaults,
+        # replacing environment variables
+        if [[ -f "$SDKCONFIG_DEFAULTS_CI" ]]; then
+            cat $SDKCONFIG_DEFAULTS_CI | $IDF_PATH/tools/ci/envsubst.py >> sdkconfig.defaults
+        fi
+
         # build non-verbose first
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
         touch ${BUILDLOG}
@@ -142,8 +153,8 @@ build_example () {
 
 EXAMPLE_NUM=0
 
-find ${IDF_PATH}/examples/ -type f -name Makefile | sort | \
-while read FN
+EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
+for FN in ${EXAMPLE_PATHS}
 do
     if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]
     then

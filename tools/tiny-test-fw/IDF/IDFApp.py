@@ -62,6 +62,34 @@ class IDFApp(App.BaseApp):
                                       "partition_table", "gen_esp32part.py")
         assert os.path.exists(esptool) and os.path.exists(partition_tool)
         return esptool, partition_tool
+    def _get_sdkconfig_paths(self):
+        """
+        returns list of possible paths where sdkconfig could be found
+
+        Note: could be overwritten by a derived class to provide other locations or order
+        """
+        return [os.path.join(self.binary_path, "sdkconfig"), os.path.join(self.binary_path, "..", "sdkconfig")]
+
+    def get_sdkconfig(self):
+        """
+        reads sdkconfig and returns a dictionary with all configuredvariables
+
+        :param sdkconfig_file: location of sdkconfig
+        :raise: AssertionError: if sdkconfig file does not exist in defined paths
+        """
+        d = {}
+        sdkconfig_file = None
+        for i in self._get_sdkconfig_paths():
+            if os.path.exists(i):
+                sdkconfig_file = i
+                break
+        assert sdkconfig_file is not None
+        with open(sdkconfig_file) as f:
+            for line in f:
+                configs = line.split('=')
+                if len(configs) == 2:
+                    d[configs[0]] = configs[1]
+        return d
 
     def get_binary_path(self, app_path):
         """
@@ -144,6 +172,12 @@ class IDFApp(App.BaseApp):
 
 
 class Example(IDFApp):
+    def _get_sdkconfig_paths(self):
+        """
+        overrides the parent method to provide exact path of sdkconfig for example tests
+        """
+        return [os.path.join(self.binary_path, "..", "sdkconfig")]
+
     def get_binary_path(self, app_path):
         # build folder of example path
         path = os.path.join(self.idf_path, app_path, "build")
