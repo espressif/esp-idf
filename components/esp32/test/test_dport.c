@@ -66,8 +66,7 @@ void run_tasks(const char *task1_description, void (* task1_func)(void *), const
 
     for (i=0; i<2; i++) {
         if((task1_func != NULL && i == 0) || (task2_func != NULL && i == 1)){
-            exit_sema[i] = xSemaphoreCreateMutex();
-            xSemaphoreTake(exit_sema[i], portMAX_DELAY);
+            exit_sema[i] = xSemaphoreCreateBinary();
         }
     }
 
