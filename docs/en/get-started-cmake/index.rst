@@ -159,6 +159,21 @@ These two variables should be set up on your PC, otherwise projects will not bui
 
 Setting may be done manually, each time PC is restarted. Another option is to set them permanently in user profile. To do this, follow instructions specific to :ref:`Windows <add-paths-to-profile-windows-cmake>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-cmake>` in section :doc:`add-idf_path-to-profile`.
 
+Install the Required Python Packages
+====================================
+
+Python packages required by ESP-IDF are located in the ``$IDF_PATH/requirements.txt`` file. You can install them by running::
+
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    Please invoke that version of the Python interpreter which you will be using with ESP-IDF. The version of the
+    interpreter can be checked by running command ``python --version`` and depending on the result, you might want to
+    use ``python2``, ``python2.7`` or similar instead of ``python``, e.g.::
+
+        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
+
 .. _get-started-start-project-cmake:
 
 Start a Project
