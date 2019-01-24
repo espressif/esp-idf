@@ -920,7 +920,7 @@ BaseType_t xRingbufferReceiveSplitFromISR(RingbufHandle_t xRingbuffer, void **pp
     configASSERT(ppvHeadItem != NULL && ppvTailItem != NULL);
 
     //Attempt to retrieve multiple items
-    void *pvTempHeadItem, *pvTempTailItem;
+    void *pvTempHeadItem = NULL, *pvTempTailItem = NULL;
     size_t xTempHeadSize, xTempTailSize;
     if (prvReceiveGenericFromISR(pxRingbuffer, &pvTempHeadItem, &pvTempTailItem, &xTempHeadSize, &xTempTailSize, 0) == pdTRUE) {
         //At least one item was received

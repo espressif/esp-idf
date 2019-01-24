@@ -503,7 +503,7 @@ rtc_cpu_freq_t rtc_clk_cpu_freq_get()
 {
     rtc_cpu_freq_config_t config;
     rtc_clk_cpu_freq_get_config(&config);
-    rtc_cpu_freq_t freq;
+    rtc_cpu_freq_t freq = RTC_CPU_FREQ_XTAL;
     rtc_clk_cpu_freq_from_mhz_internal(config.freq_mhz, &freq);
     return freq;
 }
