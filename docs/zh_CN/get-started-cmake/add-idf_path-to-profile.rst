@@ -43,7 +43,7 @@ Linux 和 MacOS 操作系统
 要设置 ``IDF_PATH``，并在 PATH 中添加 ``idf.py``，请将以下两行代码增加至你的 ``~/.profile`` 文件中::
 
     export IDF_PATH=~/esp/esp-idf
-    export PATH="$PATH:$IDF_PATH/tools"
+    export PATH="$IDF_PATH/tools:$PATH"
 
 .. note::
 
@@ -70,6 +70,6 @@ Linux 和 MacOS 操作系统
 如果你不想进行有关 ``IDF_PATH`` 或 ``PATH`` 的修改设置，你可以在每次重启或退出后在终端中手动输入::
 
     export IDF_PATH=~/esp/esp-idf
-    export PATH="$PATH:$IDF_PATH/tools"
+    export PATH="$IDF_PATH/tools:$PATH"
 
 如果你在安装 ESP32 开发的软件时，从 :ref:`get-started-setup-path-cmake` 小节跳到了这里，请返回 :ref:`get-started-start-project-cmake` 小节开始阅读。
