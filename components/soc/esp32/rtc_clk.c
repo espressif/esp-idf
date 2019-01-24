@@ -85,13 +85,16 @@
 /* Core voltage needs to be increased in two cases:
  * 1. running at 240 MHz
  * 2. running with 80MHz Flash frequency
+ * 
+ * There is a record in efuse which indicates the proper voltage for these two cases.
  */
+#define RTC_CNTL_DBIAS_HP_VOLT         (RTC_CNTL_DBIAS_1V25 - (REG_GET_FIELD(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_VOL_LEVEL_HP_INV)))
 #ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_HP_VOLT
 #else
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
 #endif
-#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_1V25
+#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_HP_VOLT
 #define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
 #define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
 
