@@ -34,7 +34,6 @@
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
-static const char c_config_hostname[] = CONFIG_MDNS_HOSTNAME;
 
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
@@ -44,6 +43,7 @@ const int IP6_CONNECTED_BIT = BIT1;
 
 static const char *TAG = "mdns-test";
 static bool auto_reconnect = true;
+static char* generate_hostname();
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -98,15 +98,7 @@ static void initialise_wifi(void)
 
 static void initialise_mdns(void)
 {
-    _Static_assert(sizeof(c_config_hostname) < CONFIG_MAIN_TASK_STACK_SIZE/2, "Configured mDNS name consumes more than half of the stack. Please select a shorter host name or extend the main stack size please.");
-    const size_t config_hostname_len = sizeof(c_config_hostname) - 1; // without term char
-    char hostname[config_hostname_len + 1 + 3*2 + 1]; // adding underscore + 3 digits + term char
-    uint8_t mac[6];
-
-    // adding 3 LSBs from mac addr to setup a board specific name
-    esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    snprintf(hostname, sizeof(hostname), "%s_%02x%02X%02X", c_config_hostname, mac[3], mac[4], mac[5]);
-
+    char* hostname = generate_hostname();
     //initialize mDNS
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
@@ -128,6 +120,7 @@ static void initialise_mdns(void)
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "path", "/foobar") );
     //change TXT item value
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "u", "admin") );
+    free(hostname);
 }
 
 static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
@@ -258,4 +251,22 @@ void app_main()
     initialise_wifi();
     initialise_button();
     xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
+}
+
+/** Generate host name based on sdkconfig, optionally adding a portion of MAC address to it.
+ *  @return host name string allocated from the heap
+ */
+static char* generate_hostname()
+{
+#ifndef CONFIG_MDNS_ADD_MAC_TO_HOSTNAME
+    return strdup(CONFIG_MDNS_HOSTNAME);
+#else
+    uint8_t mac[6];
+    char   *hostname;
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    if (-1 == asprintf(&hostname, "%s-%02X%02X%02X", CONFIG_MDNS_HOSTNAME, mac[3], mac[4], mac[5])) {
+        abort();
+    }
+    return hostname;
+#endif
 }

@@ -29,7 +29,6 @@ g_done = False
 
 
 def mdns_server(esp_host):
-    global g_run_server
     global g_done
     UDP_IP = "0.0.0.0"
     UDP_PORT = 5353
@@ -41,7 +40,6 @@ def mdns_server(esp_host):
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     dns = dpkt.dns.DNS(b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01')
-    # sock.sendto(dns.pack(),(MCAST_GRP,UDP_PORT))
     sock.settimeout(30)
     resp_dns = dpkt.dns.DNS(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     resp_dns.op = dpkt.dns.DNS_QR | dpkt.dns.DNS_AA
@@ -71,14 +69,16 @@ def mdns_server(esp_host):
             sock.sendto(dns.pack(),(MCAST_GRP,UDP_PORT))
             print("Sending esp32-mdns query")
             time.sleep(0.5)
+            sock.sendto(resp_dns.pack(),(MCAST_GRP,UDP_PORT))
         except socket.timeout:
             break
+        except dpkt.UnpackError:
+            continue
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_mdns(env, extra_data):
     global g_run_server
-    global g_done
     """
     steps: |
       1. join AP + init mdns example
@@ -97,24 +97,28 @@ def test_examples_protocol_mdns(env, extra_data):
     # 2. get the dut host name (and IP address)
     specific_host = dut1.expect(re.compile(r"mdns hostname set to: \[([^\]]+)\]"), timeout=30)
     specific_host = str(specific_host[0])
+    thread1 = Thread(target=mdns_server, args=(specific_host,))
+    thread1.start()
     try:
         dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
     except DUT.ExpectTimeout:
+        g_run_server = False
+        thread1.join()
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     # 3. check the mdns name is accessible
-    thread1 = Thread(target=mdns_server, args=(specific_host,))
-    thread1.start()
     start = time.time()
     while (time.time() - start) <= 60:
         if g_done:
-            print("Test passed")
             break
-    g_run_server = False
-    thread1.join()
+        time.sleep(0.5)
     if g_done is False:
         raise ValueError('Test has failed: did not receive mdns answer within timeout')
     # 4. check DUT output if mdns advertized host is resolved
-    dut1.expect(re.compile(r"mdns-test: Query A: tinytester.local resolved to: 127.0.0.1"), timeout=30)
+    try:
+        dut1.expect(re.compile(r"mdns-test: Query A: tinytester.local resolved to: 127.0.0.1"), timeout=30)
+    finally:
+        g_run_server = False
+        thread1.join()
 
 
 if __name__ == '__main__':
