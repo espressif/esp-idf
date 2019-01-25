@@ -3019,7 +3019,9 @@ BOOLEAN btm_ble_update_inq_result(BD_ADDR bda, tINQ_DB_ENT *p_i, UINT8 addr_type
         BTM_TRACE_DEBUG("btm_ble_update_inq_result scan_rsp=false, to_report=false,\
                               scan_type_active=%d", btm_cb.ble_ctr_cb.inq_var.scan_type);
         p_i->scan_rsp = FALSE;
+#if BTM_BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY == FALSE
         to_report = FALSE;
+#endif
     } else {
         p_i->scan_rsp = TRUE;
     }
