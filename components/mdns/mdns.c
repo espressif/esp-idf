@@ -4041,7 +4041,10 @@ static esp_err_t _mdns_service_task_start()
     if (!_mdns_service_task_handle) {
         xTaskCreatePinnedToCore(_mdns_service_task, "mdns", MDNS_SERVICE_STACK_DEPTH, NULL, 1, (TaskHandle_t * const)(&_mdns_service_task_handle), 0);
         if (!_mdns_service_task_handle) {
+            _mdns_stop_timer();
             MDNS_SERVICE_UNLOCK();
+            vSemaphoreDelete(_mdns_service_semaphore);
+            _mdns_service_semaphore = NULL;
             return ESP_FAIL;
         }
     }
