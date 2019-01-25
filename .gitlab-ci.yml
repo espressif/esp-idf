@@ -558,7 +558,8 @@ test_build_system_cmake:
 test_idf_monitor:
   <<: *host_test_template
   artifacts:
-    when: on_failure
+    # save artifacts always in order to access results which were retried without consequent failure
+    when: always
     paths:
       - tools/test_idf_monitor/outputs/*
     expire_in: 1 week
