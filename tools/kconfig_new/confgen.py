@@ -78,6 +78,7 @@ def main():
         os.environ[name] = value
 
     config = kconfiglib.Kconfig(args.kconfig)
+    config.disable_redun_warnings()
 
     if args.defaults is not None:
         # always load defaults first, so any items which are not defined in that config
