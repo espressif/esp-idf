@@ -80,6 +80,8 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_MASTER_TOUT_CNUM_DEFAULT   (8)         /* I2C master timeout cycle number of I2C clock, after which the timeout interrupt will be triggered */
 #define I2C_ACKERR_CNT_MAX             (10)
 #define I2C_FILTER_CYC_NUM_DEF         (7)         /* The number of apb cycles filtered by default*/
+#define I2C_CLR_BUS_SCL_NUM            (9)
+#define I2C_CLR_BUS_HALF_PERIOD_US     (5)
 
 typedef struct {
     uint8_t byte_num;  /*!< cmd byte number */
@@ -525,7 +527,9 @@ esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode,
 static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+    const int scl_half_period = I2C_CLR_BUS_HALF_PERIOD_US; // use standard 100kHz data rate
     int sda_in_sig = 0, scl_in_sig = 0;
+    int i = 0;
     if (i2c_num == I2C_NUM_0) {
         sda_in_sig = I2CEXT0_SDA_IN_IDX;
         scl_in_sig = I2CEXT0_SCL_IN_IDX;
@@ -536,19 +540,27 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     int scl_io = GPIO.func_in_sel_cfg[scl_in_sig].func_sel;
     int sda_io = GPIO.func_in_sel_cfg[sda_in_sig].func_sel;
     I2C_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(scl_io)), I2C_SCL_IO_ERR_STR, ESP_ERR_INVALID_ARG);
-    I2C_CHECK((GPIO_IS_VALID_GPIO(sda_io)), I2C_SDA_IO_ERR_STR, ESP_ERR_INVALID_ARG);
-    // We do not check whether the SDA line is low
-    // because after some serious interference, the bus may keep high all the time and the i2c bus is out of service.
+    I2C_CHECK((GPIO_IS_VALID_OUTPUT_GPIO(sda_io)), I2C_SDA_IO_ERR_STR, ESP_ERR_INVALID_ARG);
     gpio_set_direction(scl_io, GPIO_MODE_OUTPUT_OD);
-    gpio_set_direction(sda_io, GPIO_MODE_OUTPUT_OD);
-    gpio_set_level(scl_io, 1);
+    gpio_set_direction(sda_io, GPIO_MODE_INPUT_OUTPUT_OD);
+    // If a SLAVE device was in a read operation when the bus was interrupted, the SLAVE device is controlling SDA.
+    // The only bit during the 9 clock cycles of a READ byte the MASTER(ESP32) is guaranteed control over is during the ACK bit
+    // period. If the slave is sending a stream of ZERO bytes, it will only release SDA during the ACK bit period.
+    // So, this reset code needs to synchronize the bit stream with, Either, the ACK bit, Or a 1 bit to correctly generate
+    // a STOP condition.
+    gpio_set_level(scl_io, 0);
     gpio_set_level(sda_io, 1);
-    gpio_set_level(sda_io, 0);
-    for (int i = 0; i < 9; i++) {
-        gpio_set_level(scl_io, 0);
+    ets_delay_us(scl_half_period);
+    while(!gpio_get_level(sda_io) && (i++ < I2C_CLR_BUS_SCL_NUM)) {
         gpio_set_level(scl_io, 1);
+        ets_delay_us(scl_half_period);
+        gpio_set_level(scl_io, 0);
+        ets_delay_us(scl_half_period);
     }
-    gpio_set_level(sda_io, 1);
+    gpio_set_level(sda_io,0); // setup for STOP
+    gpio_set_level(scl_io,1);
+    ets_delay_us(scl_half_period);
+    gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
     return ESP_OK;
 }
