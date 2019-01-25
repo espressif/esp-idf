@@ -2575,7 +2575,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 parsed_packet->discovery = true;
                 mdns_srv_item_t * a = _mdns_server->services;
                 while (a) {
-                    mdns_parsed_question_t * question = (mdns_parsed_question_t *)malloc(sizeof(mdns_parsed_question_t));
+                    mdns_parsed_question_t * question = (mdns_parsed_question_t *)calloc(1, sizeof(mdns_parsed_question_t));
                     if (!question) {
                         HOOK_MALLOC_FAILED;
                         goto clear_rx_packet;
@@ -2603,7 +2603,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 parsed_packet->probe = true;
             }
 
-            mdns_parsed_question_t * question = (mdns_parsed_question_t *)malloc(sizeof(mdns_parsed_question_t));
+            mdns_parsed_question_t * question = (mdns_parsed_question_t *)calloc(1, sizeof(mdns_parsed_question_t));
             if (!question) {
                 HOOK_MALLOC_FAILED;
                 goto clear_rx_packet;
