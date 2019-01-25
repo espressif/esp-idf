@@ -34,116 +34,12 @@ OUTPUT_SUFFIX = '.new'
 IGNORE_DIRS = (
     # Kconfigs from submodules need to be ignored:
     os.path.join('components', 'mqtt', 'esp-mqtt'),
-    # Temporary (incompatibility) list:
-    os.path.join('components', 'app_update'),
-    os.path.join('components', 'aws_iot'),
-    os.path.join('components', 'bootloader'),
-    os.path.join('components', 'bt'),
-    os.path.join('components', 'driver'),
-    os.path.join('components', 'esp32'),
-    os.path.join('components', 'esp_adc_cal'),
-    os.path.join('components', 'esp_event'),
-    os.path.join('components', 'esp_http_client'),
-    os.path.join('components', 'esp_http_server'),
-    os.path.join('components', 'esptool_py'),
-    os.path.join('components', 'fatfs'),
-    os.path.join('components', 'freemodbus'),
-    os.path.join('components', 'freertos'),
-    os.path.join('components', 'heap'),
-    os.path.join('components', 'libsodium'),
-    os.path.join('components', 'log'),
-    os.path.join('components', 'lwip'),
-    os.path.join('components', 'mbedtls'),
-    os.path.join('components', 'mdns'),
-    os.path.join('components', 'mqtt'),
-    os.path.join('components', 'nvs_flash'),
-    os.path.join('components', 'openssl'),
-    os.path.join('components', 'partition_table'),
-    os.path.join('components', 'pthread'),
-    os.path.join('components', 'spi_flash'),
-    os.path.join('components', 'spiffs'),
-    os.path.join('components', 'tcpip_adapter'),
-    os.path.join('components', 'unity'),
-    os.path.join('components', 'vfs'),
-    os.path.join('components', 'wear_levelling'),
-    os.path.join('examples', 'bluetooth', 'a2dp_gatts_coex', 'main'),
-    os.path.join('examples', 'bluetooth', 'a2dp_sink', 'main'),
-    os.path.join('examples', 'bluetooth', 'ble_ibeacon', 'main'),
-    os.path.join('examples', 'bluetooth', 'ble_throughput', 'throughput_client', 'main'),
-    os.path.join('examples', 'bluetooth', 'ble_throughput', 'throughput_server', 'main'),
-    os.path.join('examples', 'bluetooth', 'gatt_server', 'main'),
-    os.path.join('examples', 'get-started', 'blink', 'main'),
-    os.path.join('examples', 'mesh', 'internal_communication', 'main'),
-    os.path.join('examples', 'mesh', 'manual_networking', 'main'),
-    os.path.join('examples', 'peripherals', 'adc2', 'main'),
-    os.path.join('examples', 'peripherals', 'i2c', 'i2c_self_test', 'main'),
-    os.path.join('examples', 'peripherals', 'i2c', 'i2c_tools', 'main'),
-    os.path.join('examples', 'peripherals', 'sdio', 'host', 'main'),
-    os.path.join('examples', 'peripherals', 'sdio', 'slave', 'main'),
-    os.path.join('examples', 'peripherals', 'spi_master', 'main'),
-    os.path.join('examples', 'peripherals', 'uart', 'nmea0183_parser', 'main'),
-    os.path.join('examples', 'protocols', 'asio', 'chat_client', 'main'),
-    os.path.join('examples', 'protocols', 'asio', 'chat_server', 'main'),
-    os.path.join('examples', 'protocols', 'asio', 'tcp_echo_server', 'main'),
-    os.path.join('examples', 'protocols', 'asio', 'udp_echo_server', 'main'),
-    os.path.join('examples', 'protocols', 'aws_iot', 'subscribe_publish', 'main'),
-    os.path.join('examples', 'protocols', 'aws_iot', 'thing_shadow', 'main'),
-    os.path.join('examples', 'protocols', 'coap_client', 'main'),
-    os.path.join('examples', 'protocols', 'coap_server', 'main'),
-    os.path.join('examples', 'protocols', 'esp_http_client', 'main'),
-    os.path.join('examples', 'protocols', 'http2_request', 'main'),
-    os.path.join('examples', 'protocols', 'http_request', 'main'),
-    os.path.join('examples', 'protocols', 'http_server', 'advanced_tests', 'main'),
-    os.path.join('examples', 'protocols', 'http_server', 'persistent_sockets', 'main'),
-    os.path.join('examples', 'protocols', 'http_server', 'simple', 'main'),
-    os.path.join('examples', 'protocols', 'https_mbedtls', 'main'),
-    os.path.join('examples', 'protocols', 'https_request', 'main'),
-    os.path.join('examples', 'protocols', 'https_server', 'main'),
-    os.path.join('examples', 'protocols', 'mdns', 'main'),
-    os.path.join('examples', 'protocols', 'modbus_slave', 'main'),
-    os.path.join('examples', 'protocols', 'mqtt', 'ssl', 'main'),
-    os.path.join('examples', 'protocols', 'mqtt', 'ssl_mutual_auth', 'main'),
-    os.path.join('examples', 'protocols', 'mqtt', 'tcp', 'main'),
-    os.path.join('examples', 'protocols', 'mqtt', 'ws', 'main'),
-    os.path.join('examples', 'protocols', 'mqtt', 'wss', 'main'),
-    os.path.join('examples', 'protocols', 'openssl_client', 'main'),
-    os.path.join('examples', 'protocols', 'openssl_server', 'main'),
-    os.path.join('examples', 'protocols', 'pppos_client', 'main'),
-    os.path.join('examples', 'protocols', 'sntp', 'main'),
-    os.path.join('examples', 'protocols', 'sockets', 'tcp_client', 'main'),
-    os.path.join('examples', 'protocols', 'sockets', 'tcp_server', 'main'),
-    os.path.join('examples', 'protocols', 'sockets', 'udp_client', 'main'),
-    os.path.join('examples', 'protocols', 'sockets', 'udp_multicast', 'main'),
-    os.path.join('examples', 'protocols', 'sockets', 'udp_server', 'main'),
-    os.path.join('examples', 'provisioning', 'ble_prov', 'main'),
-    os.path.join('examples', 'provisioning', 'console_prov', 'main'),
-    os.path.join('examples', 'provisioning', 'custom_config', 'main'),
-    os.path.join('examples', 'provisioning', 'softap_prov', 'main'),
-    os.path.join('examples', 'system', 'app_trace_to_host', 'main'),
-    os.path.join('examples', 'system', 'base_mac_address', 'main'),
-    os.path.join('examples', 'system', 'console', 'main'),
-    os.path.join('examples', 'system', 'deep_sleep', 'main'),
-    os.path.join('examples', 'system', 'gcov', 'main'),
-    os.path.join('examples', 'system', 'ota', 'native_ota_example', 'main'),
-    os.path.join('examples', 'system', 'ota', 'simple_ota_example', 'main'),
-    os.path.join('examples', 'system', 'sysview_tracing', 'main'),
-    os.path.join('examples', 'wifi', 'espnow', 'main'),
-    os.path.join('examples', 'wifi', 'getting_started', 'softAP', 'main'),
-    os.path.join('examples', 'wifi', 'getting_started', 'station', 'main'),
-    os.path.join('examples', 'wifi', 'power_save', 'main'),
-    os.path.join('examples', 'wifi', 'scan', 'main'),
-    os.path.join('examples', 'wifi', 'simple_sniffer', 'main'),
-    os.path.join('examples', 'wifi', 'wpa2_enterprise', 'main'),
-    os.path.join('examples', 'wifi', 'wps', 'main'),
-    os.path.join('tools', 'kconfig'),
-    os.path.join('tools', 'kconfig_new', 'test'),
-    os.path.join('tools', 'ldgen', 'test', 'data'),
-    os.path.join('tools', 'unit-test-app', 'components', 'test_utils'),
 )
 
 SPACES_PER_INDENT = 4
 
-CONFIG_NAME_MAX_LENGTH = 50
+# TODO decrease the value (after the names have been refactored)
+CONFIG_NAME_MAX_LENGTH = 60
 
 # TODO increase prefix length (after the names have been refactored)
 CONFIG_NAME_MIN_PREFIX_LENGTH = 0
@@ -210,6 +106,9 @@ class IndentAndNameChecker(BaseChecker):
 
         # stack common prefixes of configs
         self.prefix_stack = []
+
+        # if the line ends with '\' then we force the indent of the next line
+        self.force_next_indent = 0
 
         # menu items which increase the indentation of the next line
         self.re_increase_level = re.compile(r'''^\s*
@@ -287,6 +186,10 @@ class IndentAndNameChecker(BaseChecker):
                     # delete items ("config", "menuconfig", "help") until the appropriate parent
                     self.del_from_level_stack(i)
                     break
+            else:
+                # delete everything when configs are at top level without a parent menu, mainmenu...
+                self.del_from_level_stack(len(self.level_stack))
+
         self.level_stack.append(new_item)
         if self.debug:
             print(self.level_stack)
@@ -321,8 +224,10 @@ class IndentAndNameChecker(BaseChecker):
                 raise InputError(self.path_in_idf, line_number,
                                  '{} is {} characters long and it should be {} at most'
                                  ''.format(name, name_length, CONFIG_NAME_MAX_LENGTH),
-                                 line)  # no suggested correction for this
-            if self.prefix_stack[-1] is None:
+                                 line + '\n')  # no suggested correction for this
+            if len(self.prefix_stack) == 0:
+                self.prefix_stack.append(name)
+            elif self.prefix_stack[-1] is None:
                 self.prefix_stack[-1] = name
             else:
                 # this has nothing common with paths but the algorithm can be used for this also
@@ -366,6 +271,7 @@ class IndentAndNameChecker(BaseChecker):
     def process_line(self, line, line_number):
         stripped_line = line.strip()
         if len(stripped_line) == 0:
+            self.force_next_indent = 0
             return
         current_level = len(self.level_stack)
         m = re.search(r'\S', line)  # indent found as the first non-space character
@@ -377,7 +283,25 @@ class IndentAndNameChecker(BaseChecker):
         if current_level > 0 and self.level_stack[-1] == 'help':
             if current_indent >= current_level * SPACES_PER_INDENT:
                 # this line belongs to 'help'
+                self.force_next_indent = 0
                 return
+
+        if self.force_next_indent > 0:
+            if current_indent != self.force_next_indent:
+                raise InputError(self.path_in_idf, line_number,
+                                 'Indentation consists of {} spaces instead of {}'.format(current_indent,
+                                                                                          self.force_next_indent),
+                                 (' ' * self.force_next_indent) + line.lstrip())
+            else:
+                if not stripped_line.endswith('\\'):
+                    self.force_next_indent = 0
+                return
+
+        else:
+            if stripped_line.endswith('\\') and stripped_line.startswith(('config', 'menuconfig', 'choice')):
+                raise InputError(self.path_in_idf, line_number,
+                                 'Line-wrap with backslash is not supported here',
+                                 line)  # no suggestion for this
 
         self.check_name_and_update_prefix(stripped_line, line_number)
 
@@ -395,6 +319,12 @@ class IndentAndNameChecker(BaseChecker):
                     self.check_common_prefix(line, line_number)
 
         expected_indent = current_level * SPACES_PER_INDENT
+
+        if stripped_line.endswith('\\'):
+            self.force_next_indent = expected_indent + SPACES_PER_INDENT
+        else:
+            self.force_next_indent = 0
+
         if current_indent != expected_indent:
             raise InputError(self.path_in_idf, line_number,
                              'Indentation consists of {} spaces instead of {}'.format(current_indent, expected_indent),
