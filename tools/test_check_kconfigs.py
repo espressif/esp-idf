@@ -18,6 +18,7 @@ import unittest
 from check_kconfigs import LineRuleChecker
 from check_kconfigs import InputError
 from check_kconfigs import IndentAndNameChecker
+from check_kconfigs import CONFIG_NAME_MAX_LENGTH
 
 
 class ApplyLine(object):
@@ -113,6 +114,7 @@ class TestIndent(TestIndentAndNameChecker):
         self.expt_success('            menuconfig keyword in the help')
         self.expt_success('            endmenu keyword in the help')
         self.expt_success('            endmenu keyword in the help')
+        self.expt_success('')  # newline in help
         self.expt_success('            endmenu keyword in the help')
         self.expect_error('          menu "real menu with wrong indent"',
                           expect='    menu "real menu with wrong indent"', cleanup='    endmenu')
@@ -142,6 +144,24 @@ class TestIndent(TestIndentAndNameChecker):
         self.expt_success('    config')
         self.expt_success('endmenu')
 
+    def test_config_without_menu(self):
+        self.expt_success('menuconfig')
+        self.expt_success('    help')
+        self.expt_success('        text')
+        self.expt_success('')
+        self.expt_success('        text')
+        self.expt_success('config')
+        self.expt_success('    help')
+
+    def test_backslashes(self):
+        self.expt_success('default \\')
+        self.expect_error('help', expect=None)
+        self.expt_success('    CONFIG')
+        self.expt_success('default \\')
+        self.expt_success('    LINE1\\')
+        self.expt_success('    LINE2')
+        self.expt_success('help')
+
 
 class TestName(TestIndentAndNameChecker):
     def setUp(self):
@@ -149,15 +169,22 @@ class TestName(TestIndentAndNameChecker):
         self.checker.min_prefix_length = 0  # prefixes are ignored in this test case
 
     def test_name_length(self):
+        max_length = CONFIG_NAME_MAX_LENGTH
+        too_long = max_length + 1
         self.expt_success('menu "test"')
         self.expt_success('    config ABC')
-        self.expt_success('    config ' + ('X' * 50))
-        self.expect_error('    config ' + ('X' * 51), expect=None)
-        self.expt_success('    menuconfig ' + ('X' * 50))
-        self.expect_error('    menuconfig ' + ('X' * 51), expect=None)
-        self.expt_success('    choice ' + ('X' * 50))
-        self.expect_error('    choice ' + ('X' * 51), expect=None)
+        self.expt_success('    config ' + ('X' * max_length))
+        self.expect_error('    config ' + ('X' * too_long), expect=None)
+        self.expt_success('    menuconfig ' + ('X' * max_length))
+        self.expect_error('    menuconfig ' + ('X' * too_long), expect=None)
+        self.expt_success('    choice ' + ('X' * max_length))
+        self.expect_error('    choice ' + ('X' * too_long), expect=None)
         self.expt_success('endmenu')
+
+    def test_config_backslash(self):
+        self.expect_error('config\\', expect=None)
+        self.expect_error('menuconfig\\', expect=None)
+        self.expect_error('choice\\', expect=None)
 
 
 class TestPrefix(TestIndentAndNameChecker):
