@@ -2487,19 +2487,15 @@ handle_error :
 }
 
 /**
- * @brief  Duplicate string or return error
+ * @brief  Duplicate string or return NULL
  */
-static esp_err_t _mdns_strdup_check(char ** out, char * in)
+static char * _mdns_strdup_check(const char * in)
 {
     if (in && in[0]) {
-        *out = strdup(in);
-        if (!*out) {
-            return ESP_FAIL;
-        }
-        return ESP_OK;
+        return strdup(in);
+    } else {
+        return NULL;
     }
-    *out = NULL;
-    return ESP_OK;
 }
 
 /**
@@ -2590,7 +2586,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 parsed_packet->discovery = true;
                 mdns_srv_item_t * a = _mdns_server->services;
                 while (a) {
-                    mdns_parsed_question_t * question = (mdns_parsed_question_t *)malloc(sizeof(mdns_parsed_question_t));
+                    mdns_parsed_question_t * question = (mdns_parsed_question_t *)calloc(1, sizeof(mdns_parsed_question_t));
                     if (!question) {
                         HOOK_MALLOC_FAILED;
                         goto clear_rx_packet;
@@ -2618,7 +2614,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 parsed_packet->probe = true;
             }
 
-            mdns_parsed_question_t * question = (mdns_parsed_question_t *)malloc(sizeof(mdns_parsed_question_t));
+            mdns_parsed_question_t * question = (mdns_parsed_question_t *)calloc(1, sizeof(mdns_parsed_question_t));
             if (!question) {
                 HOOK_MALLOC_FAILED;
                 goto clear_rx_packet;
@@ -2628,10 +2624,11 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
             question->unicast = unicast;
             question->type = type;
-            if (_mdns_strdup_check(&(question->host), name->host)
-              || _mdns_strdup_check(&(question->service), name->service)
-              || _mdns_strdup_check(&(question->proto), name->proto)
-              || _mdns_strdup_check(&(question->domain), name->domain)) {
+            question->host = _mdns_strdup_check(name->host);
+            question->service = _mdns_strdup_check(name->service);
+            question->proto = _mdns_strdup_check(name->proto);
+            question->domain = _mdns_strdup_check(name->domain);
+            if (!question->host || !question->service || !question->proto || !question->domain) {
                 goto clear_rx_packet;
             }
         }
