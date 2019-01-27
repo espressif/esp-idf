@@ -1,5 +1,6 @@
 Console
 =======
+:link_to_translation:`zh_CN:[中文]`
 
 ESP-IDF provides ``console`` component, which includes building blocks needed to develop an interactive console over serial port. This component includes following facilities:
 
