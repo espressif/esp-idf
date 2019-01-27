@@ -1,5 +1,6 @@
 Build System
 ************
+:link_to_translation:`zh_CN:[中文]`
 
 This document explains the Espressif IoT Development Framework build system and the
 concept of "components"

@@ -1,6 +1,7 @@
 *********
 Resources
 *********
+:link_to_translation:`zh_CN:[中文]`
 
 * The `esp32.com forum <https://esp32.com/>`_ is a place to ask questions and find community resources.
 
