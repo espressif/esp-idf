@@ -22,9 +22,13 @@
     .task_priority  = tskIDLE_PRIORITY + 5,  \
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-
-/** Protocomm HTTP Server Configuration */
+/**
+ * @brief   Config parameters for protocomm HTTP server
+ */
 typedef struct {
 
     uint16_t port;          /*!< Port on which the http server will listen */
@@ -93,3 +97,7 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
  *  - ESP_ERR_INVALID_ARG : Null / incorrect protocomm instance pointer
  */
 esp_err_t protocomm_httpd_stop(protocomm_t *pc);
+
+#ifdef __cplusplus
+}
+#endif

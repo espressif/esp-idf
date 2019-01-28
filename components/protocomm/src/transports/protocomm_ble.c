@@ -372,7 +372,7 @@ static void protocomm_ble_cleanup(void)
         if (protoble_internal->g_nu_lookup) {
             for (unsigned i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
                 if (protoble_internal->g_nu_lookup[i].name) {
-                    free(protoble_internal->g_nu_lookup[i].name);
+                    free((void *)protoble_internal->g_nu_lookup[i].name);
                 }
             }
             free(protoble_internal->g_nu_lookup);

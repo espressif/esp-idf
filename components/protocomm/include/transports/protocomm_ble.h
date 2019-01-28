@@ -16,6 +16,10 @@
 
 #include <protocomm.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * BLE device name cannot be larger than this value
  */
@@ -30,7 +34,7 @@ typedef struct name_uuid {
     /**
      * Name of the handler, which is passed to protocomm layer
      */
-    char   *name;
+    const char *name;
 
     /**
      * UUID to be assigned to the BLE characteristic which is
@@ -90,3 +94,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
  *  - ESP_ERR_INVALID_ARG : Null / incorrect protocomm instance
  */
 esp_err_t protocomm_ble_stop(protocomm_t *pc);
+
+#ifdef __cplusplus
+}
+#endif

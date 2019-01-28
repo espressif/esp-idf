@@ -16,6 +16,10 @@
 
 #include <protocomm.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PROTOCOMM_CONSOLE_DEFAULT_CONFIG() { \
     .stack_size     = 4096,                  \
     .task_priority  = tskIDLE_PRIORITY + 3,  \
@@ -57,3 +61,7 @@ esp_err_t protocomm_console_start(protocomm_t *pc, const protocomm_console_confi
  *  - ESP_ERR_INVALID_ARG : Null / incorrect protocomm instance pointer
  */
 esp_err_t protocomm_console_stop(protocomm_t *pc);
+
+#ifdef __cplusplus
+}
+#endif
