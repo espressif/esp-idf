@@ -82,6 +82,15 @@ typedef struct {
 } wifi_prov_config_set_data_t;
 
 /**
+ * @brief   Type of context data passed to each get/set/apply handler
+ *           function set in `wifi_prov_config_handlers` structure.
+ *
+ * This is passed as an opaque pointer, thereby allowing it be defined
+ * later in application code as per requirements.
+ */
+typedef struct wifi_prov_ctx wifi_prov_ctx_t;
+
+/**
  * @brief   Internal handlers for receiving and responding to protocomm
  *          requests from master
  *
@@ -93,14 +102,16 @@ typedef struct wifi_prov_config_handlers {
      * Handler function called when connection status
      * of the slave (in WiFi station mode) is requested
      */
-    esp_err_t (*get_status_handler)(wifi_prov_config_get_data_t *resp_data);
+    esp_err_t (*get_status_handler)(wifi_prov_config_get_data_t *resp_data,
+                                    wifi_prov_ctx_t **ctx);
 
     /**
      * Handler function called when WiFi connection configuration
      * (eg. AP SSID, password, etc.) of the slave (in WiFi station mode)
      * is to be set to user provided values
      */
-    esp_err_t (*set_config_handler)(const wifi_prov_config_set_data_t *req_data);
+    esp_err_t (*set_config_handler)(const wifi_prov_config_set_data_t *req_data,
+                                    wifi_prov_ctx_t **ctx);
 
     /**
      * Handler function for applying the configuration that was set in
@@ -109,7 +120,12 @@ typedef struct wifi_prov_config_handlers {
      * updated connection status information when `get_status_handler` is
      * invoked again by the master.
      */
-    esp_err_t (*apply_config_handler)(void);
+    esp_err_t (*apply_config_handler)(wifi_prov_ctx_t **ctx);
+
+    /**
+     * Context pointer to be passed to above handler functions upon invocation
+     */
+    wifi_prov_ctx_t *ctx;
 } wifi_prov_config_handlers_t;
 
 /**
