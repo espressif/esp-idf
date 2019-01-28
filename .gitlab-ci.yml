@@ -1423,7 +1423,7 @@ UT_004_15:
     - UT_T1_1
     - psram
 
-UT_004_14:
+UT_004_16:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
