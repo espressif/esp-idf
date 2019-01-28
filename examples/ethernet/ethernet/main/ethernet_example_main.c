@@ -8,30 +8,27 @@
 */
 #include <stdio.h>
 #include <string.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "esp_system.h"
-#include "esp_err.h"
 #include "esp_event_loop.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_eth.h"
-
 #include "rom/gpio.h"
-
 #include "tcpip_adapter.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 
-#ifdef CONFIG_PHY_LAN8720
+#if CONFIG_PHY_LAN8720
 #include "eth_phy/phy_lan8720.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#endif
-#ifdef CONFIG_PHY_TLK110
+#elif CONFIG_PHY_TLK110
 #include "eth_phy/phy_tlk110.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
+#elif CONFIG_PHY_IP101
+#include "eth_phy/phy_ip101.h"
+#define DEFAULT_ETHERNET_PHY_CONFIG phy_ip101_default_ethernet_config
 #endif
 
 static const char *TAG = "eth_example";
