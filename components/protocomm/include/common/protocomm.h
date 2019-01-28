@@ -17,6 +17,10 @@
 #include <protocomm_security.h>
 #include <esp_err.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Function prototype for protocomm endpoint handler
  */
@@ -224,3 +228,7 @@ esp_err_t protocomm_set_version(protocomm_t *pc, const char *ep_name,
  *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
  */
 esp_err_t protocomm_unset_version(protocomm_t *pc, const char *ep_name);
+
+#ifdef __cplusplus
+}
+#endif

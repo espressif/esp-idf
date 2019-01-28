@@ -16,6 +16,10 @@
 
 #include <esp_err.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief   Proof Of Possession for authenticating a secure session
  */
@@ -91,3 +95,7 @@ typedef struct protocomm_security {
                          const uint8_t *inbuf, ssize_t inlen,
                          uint8_t *outbuf, ssize_t *outlen);
 } protocomm_security_t;
+
+#ifdef __cplusplus
+}
+#endif
