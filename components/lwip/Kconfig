@@ -7,13 +7,13 @@ config L2_TO_L3_COPY
         If this feature is enabled, all traffic from layer2(WIFI Driver) will be
         copied to a new buffer before sending it to layer3(LWIP stack), freeing
         the layer2 buffer.
-        Please be notified that the total layer2 receiving buffer is fixed and 
-        ESP32 currently supports 25 layer2 receiving buffer, when layer2 buffer 
-        runs out of memory, then the incoming packets will be dropped in hardware. 
+        Please be notified that the total layer2 receiving buffer is fixed and
+        ESP32 currently supports 25 layer2 receiving buffer, when layer2 buffer
+        runs out of memory, then the incoming packets will be dropped in hardware.
         The layer3 buffer is allocated from the heap, so the total layer3 receiving
-        buffer depends on the available heap size, when heap runs out of memory,  
-        no copy will be sent to layer3 and packet will be dropped in layer2. 
-        Please make sure you fully understand the impact of this feature before 
+        buffer depends on the available heap size, when heap runs out of memory,
+        no copy will be sent to layer3 and packet will be dropped in layer2.
+        Please make sure you fully understand the impact of this feature before
         enabling it.
 
 config LWIP_IRAM_OPTIMIZATION
@@ -121,17 +121,17 @@ config LWIP_ETHARP_TRUST_IP_MAC
          - The LAN peer may have bug to update the ARP table after the ARP entry is aged out.
            If the ARP entry on the LAN peer is aged out but failed to be updated, all IP packets
            sent from LWIP to the LAN peer will be dropped by LAN peer.
-         - The LAN peer may not be trustful, the LAN peer may send IP packets to LWIP with 
+         - The LAN peer may not be trustful, the LAN peer may send IP packets to LWIP with
            two different MACs, but the same IP address. If this happens, the LWIP has problem
            to receive IP packets from LAN peer.
 
-        So the recommendation is to disable this option. 
+        So the recommendation is to disable this option.
         Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
 
 config ESP_GRATUITOUS_ARP
     bool "Send gratuitous ARP periodically"
     default y
-    help 
+    help
         Enable this option allows to send gratuitous ARP periodically.
 
         This option solve the compatibility issues.If the ARP table of the AP is old, and the AP
@@ -175,8 +175,8 @@ config LWIP_DHCPS_LEASE_UNIT
     range 1 3600
     default 60
     help
-        The DHCP server is calculating lease time multiplying the sent 
-        and received times by this number of seconds per unit. 
+        The DHCP server is calculating lease time multiplying the sent
+        and received times by this number of seconds per unit.
         The default is 60, that equals one minute.
 
 config LWIP_DHCPS_MAX_STATION_NUM
@@ -342,17 +342,17 @@ config TCP_RECVMBOX_SIZE
     range 6 64
     help
         Set TCP receive mail box size. Generally bigger value means higher throughput
-        but more memory. The recommended value is: TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if 
-        TCP_WND_DEFAULT=14360, TCP_MSS=1436, then the recommended receive mail box size is 
+        but more memory. The recommended value is: TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if
+        TCP_WND_DEFAULT=14360, TCP_MSS=1436, then the recommended receive mail box size is
         (14360/1436 + 2) = 12.
 
         TCP receive mail box is a per socket mail box, when the application receives packets
-        from TCP socket, LWIP core firstly posts the packets to TCP receive mail box and the 
-        application then fetches the packets from mail box. It means LWIP can caches maximum 
+        from TCP socket, LWIP core firstly posts the packets to TCP receive mail box and the
+        application then fetches the packets from mail box. It means LWIP can caches maximum
         TCP_RECCVMBOX_SIZE packets for each TCP socket, so the maximum possible cached TCP packets
         for all TCP sockets is TCP_RECCVMBOX_SIZE multiples the maximum TCP socket number. In other
         words, the bigger TCP_RECVMBOX_SIZE means more memory.
-        On the other hand, if the receiv mail box is too small, the mail box may be full. If the 
+        On the other hand, if the receiv mail box is too small, the mail box may be full. If the
         mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
         receive mail box is big enough to avoid packet drop between LWIP core and application.
 
@@ -371,7 +371,7 @@ config ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
     help
         This option is enabled when the following scenario happen:
         network dropped and reconnected, IP changes is like: 192.168.0.2->0.0.0.0->192.168.0.2
-        
+
         Disable this option to keep consistent with the original LWIP code behavior.
 
 
@@ -420,10 +420,10 @@ config UDP_RECVMBOX_SIZE
     help
         Set UDP receive mail box size. The recommended value is 6.
 
-        UDP receive mail box is a per socket mail box, when the application receives packets 
+        UDP receive mail box is a per socket mail box, when the application receives packets
         from UDP socket, LWIP core firstly posts the packets to UDP receive mail box and the
         application then fetches the packets from mail box. It means LWIP can caches maximum
-        UDP_RECCVMBOX_SIZE packets for each UDP socket, so the maximum possible cached UDP packets 
+        UDP_RECCVMBOX_SIZE packets for each UDP socket, so the maximum possible cached UDP packets
         for all UDP sockets is UDP_RECCVMBOX_SIZE multiples the maximum UDP socket number. In other
         words, the bigger UDP_RECVMBOX_SIZE means more memory.
         On the other hand, if the receiv mail box is too small, the mail box may be full. If the
@@ -475,6 +475,13 @@ menuconfig PPP_SUPPORT
         Enable PPP stack. Now only PPP over serial is possible.
 
         PPP over serial support is experimental and unsupported.
+
+config PPP_NOTIFY_PHASE_SUPPORT
+    bool "Enable Notify Phase Callback"
+    depends on PPP_SUPPORT
+    default n
+    help
+        Enable to set a callback which is called on change of the internal PPP state machine.
 
 config PPP_PAP_SUPPORT
    bool "Enable PAP support"

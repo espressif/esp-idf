@@ -1,296 +1,240 @@
-/* PPPoS Client Example with GSM (tested with Telit GL865-DUAL-V3)
+/* PPPoS Client Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
- */
+*/
 #include <string.h>
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "tcpip_adapter.h"
+#include "mqtt_client.h"
+#include "esp_modem.h"
 #include "esp_log.h"
-#include "nvs_flash.h"
+#include "sim800.h"
+#include "bg96.h"
 
-#include "driver/uart.h"
+#define BROKER_URL "mqtt://iot.eclipse.org"
 
-#include "netif/ppp/pppos.h"
-#include "netif/ppp/pppapi.h"
-#include "lwip/err.h"
-#include "lwip/sockets.h"
-#include "lwip/sys.h"
-#include "lwip/netdb.h"
-#include "lwip/dns.h"
+static const char *TAG = "pppos_example";
+static EventGroupHandle_t event_group = NULL;
+static const int CONNECT_BIT = BIT0;
+static const int STOP_BIT = BIT1;
+static const int GOT_DATA_BIT = BIT2;
 
-/* The examples use simple GSM configuration that you can set via
-   'make menuconfig'.
+#if CONFIG_SEND_MSG
+/**
+ * @brief This example will also show how to send short message using the infrastructure provided by esp modem library.
+ * @note Not all modem support SMG.
+ *
  */
-#define BUF_SIZE (1024)
-const char *PPP_User = CONFIG_GSM_INTERNET_USER;
-const char *PPP_Pass = CONFIG_GSM_INTERNET_PASSWORD;
-const char *PPP_ApnATReq = "AT+CGDCONT=1,\"IP\",\"" \
-                           CONFIG_GSM_APN \
-                           "\"";
-
-/* Pins used for serial communication with GSM module */
-#define UART1_TX_PIN CONFIG_UART1_TX_PIN
-#define UART1_RX_PIN CONFIG_UART1_RX_PIN
-#define UART1_RTS_PIN CONFIG_UART1_RTS_PIN
-#define UART1_CTS_PIN CONFIG_UART1_CTS_PIN
-
-/* UART */
-int uart_num = UART_NUM_1;
-
-/* The PPP control block */
-ppp_pcb *ppp;
-
-/* The PPP IP interface */
-struct netif ppp_netif;
-
-static const char *TAG = "example";
-
-typedef struct {
-    const char *cmd;
-    uint16_t cmdSize;
-    const char *cmdResponseOnOk;
-    uint32_t timeoutMs;
-} GSM_Cmd;
-
-#define GSM_OK_Str "OK"
-
-GSM_Cmd GSM_MGR_InitCmds[] = {
-    {
-        .cmd = "AT\r",
-        .cmdSize = sizeof("AT\r") - 1,
-        .cmdResponseOnOk = GSM_OK_Str,
-        .timeoutMs = 3000,
-    },
-    {
-        .cmd = "ATE0\r",
-        .cmdSize = sizeof("ATE0\r") - 1,
-        .cmdResponseOnOk = GSM_OK_Str,
-        .timeoutMs = 3000,
-    },
-    {
-        .cmd = "AT+CPIN?\r",
-        .cmdSize = sizeof("AT+CPIN?\r") - 1,
-        .cmdResponseOnOk = "CPIN: READY",
-        .timeoutMs = 3000,
-    },
-    {
-        //AT+CGDCONT=1,"IP","apn"
-        .cmd = "AT+CGDCONT=1,\"IP\",\"playmetric\"\r",
-        .cmdSize = sizeof("AT+CGDCONT=1,\"IP\",\"playmetric\"\r") - 1,
-        .cmdResponseOnOk = GSM_OK_Str,
-        .timeoutMs = 3000,
-    },
-    {
-        .cmd = "ATDT*99***1#\r",
-        .cmdSize = sizeof("ATDT*99***1#\r") - 1,
-        .cmdResponseOnOk = "CONNECT",
-        .timeoutMs = 30000,
-    }
-};
-
-#define GSM_MGR_InitCmdsSize  (sizeof(GSM_MGR_InitCmds)/sizeof(GSM_Cmd))
-
-/* PPP status callback example */
-static void ppp_status_cb(ppp_pcb *pcb, int err_code, void *ctx)
+static esp_err_t example_default_handle(modem_dce_t *dce, const char *line)
 {
-    struct netif *pppif = ppp_netif(pcb);
-    LWIP_UNUSED_ARG(ctx);
-
-    switch (err_code) {
-    case PPPERR_NONE: {
-        ESP_LOGI(TAG, "status_cb: Connected\n");
-#if PPP_IPV4_SUPPORT
-        ESP_LOGI(TAG, "   our_ipaddr  = %s\n", ipaddr_ntoa(&pppif->ip_addr));
-        ESP_LOGI(TAG, "   his_ipaddr  = %s\n", ipaddr_ntoa(&pppif->gw));
-        ESP_LOGI(TAG, "   netmask     = %s\n", ipaddr_ntoa(&pppif->netmask));
-#endif /* PPP_IPV4_SUPPORT */
-#if PPP_IPV6_SUPPORT
-        ESP_LOGI(TAG, "   our6_ipaddr = %s\n", ip6addr_ntoa(netif_ip6_addr(pppif, 0)));
-#endif /* PPP_IPV6_SUPPORT */
-        break;
+    esp_err_t err = ESP_FAIL;
+    if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
+        err = esp_modem_process_command_done(dce, MODEM_STATE_SUCCESS);
+    } else if (strstr(line, MODEM_RESULT_CODE_ERROR)) {
+        err = esp_modem_process_command_done(dce, MODEM_STATE_FAIL);
     }
-    case PPPERR_PARAM: {
-        ESP_LOGE(TAG, "status_cb: Invalid parameter\n");
-        break;
-    }
-    case PPPERR_OPEN: {
-        ESP_LOGE(TAG, "status_cb: Unable to open PPP session\n");
-        break;
-    }
-    case PPPERR_DEVICE: {
-        ESP_LOGE(TAG, "status_cb: Invalid I/O device for PPP\n");
-        break;
-    }
-    case PPPERR_ALLOC: {
-        ESP_LOGE(TAG, "status_cb: Unable to allocate resources\n");
-        break;
-    }
-    case PPPERR_USER: {
-        ESP_LOGE(TAG, "status_cb: User interrupt\n");
-        break;
-    }
-    case PPPERR_CONNECT: {
-        ESP_LOGE(TAG, "status_cb: Connection lost\n");
-        break;
-    }
-    case PPPERR_AUTHFAIL: {
-        ESP_LOGE(TAG, "status_cb: Failed authentication challenge\n");
-        break;
-    }
-    case PPPERR_PROTOCOL: {
-        ESP_LOGE(TAG, "status_cb: Failed to meet protocol\n");
-        break;
-    }
-    case PPPERR_PEERDEAD: {
-        ESP_LOGE(TAG, "status_cb: Connection timeout\n");
-        break;
-    }
-    case PPPERR_IDLETIMEOUT: {
-        ESP_LOGE(TAG, "status_cb: Idle Timeout\n");
-        break;
-    }
-    case PPPERR_CONNECTTIME: {
-        ESP_LOGE(TAG, "status_cb: Max connect time reached\n");
-        break;
-    }
-    case PPPERR_LOOPBACK: {
-        ESP_LOGE(TAG, "status_cb: Loopback detected\n");
-        break;
-    }
-    default: {
-        ESP_LOGE(TAG, "status_cb: Unknown error code %d\n", err_code);
-        break;
-    }
-    }
-
-    /*
-     * This should be in the switch case, this is put outside of the switch
-     * case for example readability.
-     */
-
-    if (err_code == PPPERR_NONE) {
-        return;
-    }
-
-    /* ppp_close() was previously called, don't reconnect */
-    if (err_code == PPPERR_USER) {
-        /* ppp_free(); -- can be called here */
-        return;
-    }
-
-
-    /*
-     * Try to reconnect in 30 seconds, if you need a modem chatscript you have
-     * to do a much better signaling here ;-)
-     */
-    //ppp_connect(pcb, 30);
-    /* OR ppp_listen(pcb); */
+    return err;
 }
 
-static u32_t ppp_output_callback(ppp_pcb *pcb, u8_t *data, u32_t len, void *ctx)
+static esp_err_t example_handle_cmgs(modem_dce_t *dce, const char *line)
 {
-    ESP_LOGI(TAG, "PPP tx len %d", len);
-    return uart_write_bytes(uart_num, (const char *)data, len);
+    esp_err_t err = ESP_FAIL;
+    if (strstr(line, MODEM_RESULT_CODE_SUCCESS)) {
+        err = esp_modem_process_command_done(dce, MODEM_STATE_SUCCESS);
+    } else if (strstr(line, MODEM_RESULT_CODE_ERROR)) {
+        err = esp_modem_process_command_done(dce, MODEM_STATE_FAIL);
+    } else if (!strncmp(line, "+CMGS", strlen("+CMGS"))) {
+        err = ESP_OK;
+    }
+    return err;
 }
 
-static void pppos_client_task()
+#define MODEM_SMS_MAX_LENGTH (128)
+#define MODEM_COMMAND_TIMEOUT_SMS_MS (120000)
+#define MODEM_PROMPT_TIMEOUT_MS (10)
+
+static esp_err_t example_send_message_text(modem_dce_t *dce, const char *phone_num, const char *text)
 {
-    char *data = (char *) malloc(BUF_SIZE);
-    uart_config_t uart_config = {
-        .baud_rate = 115200,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS
-    };
-    //Configure UART1 parameters
-    uart_param_config(uart_num, &uart_config);
-
-    // Configure UART1 pins (as set in example's menuconfig)
-    ESP_LOGI(TAG, "Configuring UART1 GPIOs: TX:%d RX:%d RTS:%d CTS: %d",
-             UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART1_CTS_PIN);
-    uart_set_pin(uart_num, UART1_TX_PIN, UART1_RX_PIN, UART1_RTS_PIN, UART1_CTS_PIN);
-    uart_driver_install(uart_num, BUF_SIZE * 2, BUF_SIZE * 2, 0, NULL, 0);
-
-    while (1) {
-        //init gsm
-        int gsmCmdIter = 0;
-        while (1) {
-            ESP_LOGI(TAG, "%s", GSM_MGR_InitCmds[gsmCmdIter].cmd);
-            uart_write_bytes(uart_num, (const char *)GSM_MGR_InitCmds[gsmCmdIter].cmd,
-                             GSM_MGR_InitCmds[gsmCmdIter].cmdSize);
-
-            int timeoutCnt = 0;
-            while (1) {
-                memset(data, 0, BUF_SIZE);
-                int len = uart_read_bytes(uart_num, (uint8_t *)data, BUF_SIZE, 500 / portTICK_RATE_MS);
-                if (len > 0) {
-                    ESP_LOGI(TAG, "%s", data);
-                }
-
-                timeoutCnt += 500;
-                if (strstr(data, GSM_MGR_InitCmds[gsmCmdIter].cmdResponseOnOk) != NULL) {
-                    break;
-                }
-
-                if (timeoutCnt > GSM_MGR_InitCmds[gsmCmdIter].timeoutMs) {
-                    ESP_LOGE(TAG, "Gsm Init Error");
-                    return;
-                }
-            }
-            gsmCmdIter++;
-
-            if (gsmCmdIter >= GSM_MGR_InitCmdsSize) {
-                break;
-            }
-        }
-
-        ESP_LOGI(TAG, "Gsm init end");
-
-        ppp = pppapi_pppos_create(&ppp_netif,
-                                  ppp_output_callback, ppp_status_cb, NULL);
-
-        ESP_LOGI(TAG, "After pppapi_pppos_create");
-
-        if (ppp == NULL) {
-            ESP_LOGE(TAG, "Error init pppos");
-            return;
-        }
-
-        pppapi_set_default(ppp);
-
-        ESP_LOGI(TAG, "After pppapi_set_default");
-
-        pppapi_set_auth(ppp, PPPAUTHTYPE_PAP, PPP_User, PPP_Pass);
-
-        ESP_LOGI(TAG, "After pppapi_set_auth");
-
-        pppapi_connect(ppp, 0);
-
-        ESP_LOGI(TAG, "After pppapi_connect");
-
-        while (1) {
-            memset(data, 0, BUF_SIZE);
-            int len = uart_read_bytes(uart_num, (uint8_t *)data, BUF_SIZE, 10 / portTICK_RATE_MS);
-            if (len > 0) {
-                ESP_LOGI(TAG, "PPP rx len %d", len);
-                pppos_input_tcpip(ppp, (u8_t *)data, len);
-            }
-        }
-
+    modem_dte_t *dte = dce->dte;
+    dce->handle_line = example_default_handle;
+    /* Set text mode */
+    if (dte->send_cmd(dte, "AT+CMGF=1\r", MODEM_COMMAND_TIMEOUT_DEFAULT) != ESP_OK) {
+        ESP_LOGE(TAG, "send command failed");
+        goto err;
     }
+    if (dce->state != MODEM_STATE_SUCCESS) {
+        ESP_LOGE(TAG, "set message format failed");
+        goto err;
+    }
+    ESP_LOGD(TAG, "set message format ok");
+    /* Specify character set */
+    dce->handle_line = example_default_handle;
+    if (dte->send_cmd(dte, "AT+CSCS=\"GSM\"\r", MODEM_COMMAND_TIMEOUT_DEFAULT) != ESP_OK) {
+        ESP_LOGE(TAG, "send command failed");
+        goto err;
+    }
+    if (dce->state != MODEM_STATE_SUCCESS) {
+        ESP_LOGE(TAG, "set character set failed");
+        goto err;
+    }
+    ESP_LOGD(TAG, "set character set ok");
+    /* send message */
+    char command[MODEM_SMS_MAX_LENGTH] = {0};
+    int length = snprintf(command, MODEM_SMS_MAX_LENGTH, "AT+CMGS=\"%s\"\r", phone_num);
+    /* set phone number and wait for "> " */
+    dte->send_wait(dte, command, length, "\r\n> ", MODEM_PROMPT_TIMEOUT_MS);
+    /* end with CTRL+Z */
+    snprintf(command, MODEM_SMS_MAX_LENGTH, "%s\x1A", text);
+    dce->handle_line = example_handle_cmgs;
+    if (dte->send_cmd(dte, command, MODEM_COMMAND_TIMEOUT_SMS_MS) != ESP_OK) {
+        ESP_LOGE(TAG, "send command failed");
+        goto err;
+    }
+    if (dce->state != MODEM_STATE_SUCCESS) {
+        ESP_LOGE(TAG, "send message failed");
+        goto err;
+    }
+    ESP_LOGD(TAG, "send message ok");
+    return ESP_OK;
+err:
+    return ESP_FAIL;
+}
+#endif
+
+static void modem_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+    switch (event_id) {
+    case MODEM_EVENT_PPP_START:
+        ESP_LOGI(TAG, "Modem PPP Started");
+        break;
+    case MODEM_EVENT_PPP_CONNECT:
+        ESP_LOGI(TAG, "Modem Connect to PPP Server");
+        ppp_client_ip_info_t *ipinfo = (ppp_client_ip_info_t *)(event_data);
+        ESP_LOGI(TAG, "~~~~~~~~~~~~~~");
+        ESP_LOGI(TAG, "IP          : " IPSTR, IP2STR(&ipinfo->ip));
+        ESP_LOGI(TAG, "Netmask     : " IPSTR, IP2STR(&ipinfo->netmask));
+        ESP_LOGI(TAG, "Gateway     : " IPSTR, IP2STR(&ipinfo->gw));
+        ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&ipinfo->ns1));
+        ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&ipinfo->ns2));
+        ESP_LOGI(TAG, "~~~~~~~~~~~~~~");
+        xEventGroupSetBits(event_group, CONNECT_BIT);
+        break;
+    case MODEM_EVENT_PPP_DISCONNECT:
+        ESP_LOGI(TAG, "Modem Disconnect from PPP Server");
+        break;
+    case MODEM_EVENT_PPP_STOP:
+        ESP_LOGI(TAG, "Modem PPP Stopped");
+        xEventGroupSetBits(event_group, STOP_BIT);
+        break;
+    case MODEM_EVENT_UNKNOWN:
+        ESP_LOGW(TAG, "Unknow line received: %s", (char *)event_data);
+        break;
+    default:
+        break;
+    }
+}
+
+static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+{
+    esp_mqtt_client_handle_t client = event->client;
+    int msg_id;
+    switch (event->event_id) {
+    case MQTT_EVENT_CONNECTED:
+        ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+        msg_id = esp_mqtt_client_subscribe(client, "/topic/esp-pppos", 0);
+        ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
+        break;
+    case MQTT_EVENT_DISCONNECTED:
+        ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+        break;
+    case MQTT_EVENT_SUBSCRIBED:
+        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+        msg_id = esp_mqtt_client_publish(client, "/topic/esp-pppos", "esp32-pppos", 0, 0, 0);
+        ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+        break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_PUBLISHED:
+        ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+        break;
+    case MQTT_EVENT_DATA:
+        ESP_LOGI(TAG, "MQTT_EVENT_DATA");
+        printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        printf("DATA=%.*s\r\n", event->data_len, event->data);
+        xEventGroupSetBits(event_group, GOT_DATA_BIT);
+        break;
+    case MQTT_EVENT_ERROR:
+        ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+        break;
+    default:
+        ESP_LOGI(TAG, "MQTT other event id: %d", event->event_id);
+        break;
+    }
+    return ESP_OK;
 }
 
 void app_main()
 {
     tcpip_adapter_init();
-    xTaskCreate(&pppos_client_task, "pppos_client_task", 2048, NULL, 5, NULL);
+    event_group = xEventGroupCreate();
+    /* create dte object */
+    esp_modem_dte_config_t config = ESP_MODEM_DTE_DEFAULT_CONFIG();
+    modem_dte_t *dte = esp_modem_dte_init(&config);
+    /* Register event handler */
+    ESP_ERROR_CHECK(esp_modem_add_event_handler(dte, modem_event_handler, NULL));
+    /* create dce object */
+#if CONFIG_ESP_MODEM_DEVICE_SIM800
+    modem_dce_t *dce = sim800_init(dte);
+#elif CONFIG_ESP_MODEM_DEVICE_BG96
+    modem_dce_t *dce = bg96_init(dte);
+#else
+#error "Unsupported DCE"
+#endif
+    ESP_ERROR_CHECK(dce->set_flow_ctrl(dce, MODEM_FLOW_CONTROL_NONE));
+    ESP_ERROR_CHECK(dce->store_profile(dce));
+    /* Print Module ID, Operator, IMEI, IMSI */
+    ESP_LOGI(TAG, "Module: %s", dce->name);
+    ESP_LOGI(TAG, "Operator: %s", dce->oper);
+    ESP_LOGI(TAG, "IMEI: %s", dce->imei);
+    ESP_LOGI(TAG, "IMSI: %s", dce->imsi);
+    /* Get signal quality */
+    uint32_t rssi = 0, ber = 0;
+    ESP_ERROR_CHECK(dce->get_signal_quality(dce, &rssi, &ber));
+    ESP_LOGI(TAG, "rssi: %d, ber: %d", rssi, ber);
+    /* Get battery voltage */
+    uint32_t voltage = 0, bcs = 0, bcl = 0;
+    ESP_ERROR_CHECK(dce->get_battery_status(dce, &bcs, &bcl, &voltage));
+    ESP_LOGI(TAG, "Battery voltage: %d mV", voltage);
+    /* Setup PPP environment */
+    esp_modem_setup_ppp(dte);
+    /* Wait for IP address */
+    xEventGroupWaitBits(event_group, CONNECT_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
+    /* Config MQTT */
+    esp_mqtt_client_config_t mqtt_config = {
+        .uri = BROKER_URL,
+        .event_handle = mqtt_event_handler,
+    };
+    esp_mqtt_client_handle_t mqtt_client = esp_mqtt_client_init(&mqtt_config);
+    esp_mqtt_client_start(mqtt_client);
+    xEventGroupWaitBits(event_group, GOT_DATA_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
+    esp_mqtt_client_destroy(mqtt_client);
+    /* Exit PPP mode */
+    ESP_ERROR_CHECK(esp_modem_exit_ppp(dte));
+    xEventGroupWaitBits(event_group, STOP_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
+#if CONFIG_SEND_MSG
+    const char *message = "Welcome to ESP32!";
+    ESP_ERROR_CHECK(example_send_message_text(dce, CONFIG_SEND_MSG_PEER_PHONE_NUMBER, message));
+    ESP_LOGI(TAG, "Send send message [%s] ok", message);
+#endif
+    /* Power down module */
+    ESP_ERROR_CHECK(dce->power_down(dce));
+    ESP_LOGI(TAG, "Power down");
+    ESP_ERROR_CHECK(dce->deinit(dce));
+    ESP_ERROR_CHECK(dte->deinit(dte));
 }
