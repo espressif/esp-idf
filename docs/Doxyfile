@@ -60,6 +60,7 @@ INPUT = \
     ../../components/ethernet/include/eth_phy/phy.h \
     ../../components/ethernet/include/eth_phy/phy_tlk110.h \
     ../../components/ethernet/include/eth_phy/phy_lan8720.h \
+    ../../components/ethernet/include/eth_phy/phy_ip101.h \
     ##
     ## Peripherals - API Reference
     ##

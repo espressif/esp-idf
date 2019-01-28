@@ -19,13 +19,15 @@
 #include "iperf.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_PHY_LAN8720
+#if CONFIG_PHY_LAN8720
 #include "eth_phy/phy_lan8720.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#endif
-#ifdef CONFIG_PHY_TLK110
+#elif CONFIG_PHY_TLK110
 #include "eth_phy/phy_tlk110.h"
 #define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
+#elif CONFIG_PHY_IP101
+#include "eth_phy/phy_ip101.h"
+#define DEFAULT_ETHERNET_PHY_CONFIG phy_ip101_default_ethernet_config
 #endif
 
 static tcpip_adapter_ip_info_t ip;

@@ -15,11 +15,11 @@
 #ifndef _EMAC_DESC_H_
 #define _EMAC_DESC_H_
 
-#include "soc/soc.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "soc/soc.h"
 
 #define REG_EMAC_DESC_BASE 0
 #define EMAC_DESC_TDES0_REG (REG_EMAC_DESC_BASE + 0x0000)
