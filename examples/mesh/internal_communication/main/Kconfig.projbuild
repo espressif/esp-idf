@@ -2,8 +2,8 @@ menu "Example Configuration"
 
 config MESH_CHANNEL
     int "channel"
-    range 1 14
-    default 1
+    range 0 14
+    default 0
     help
         mesh network channel.
 
@@ -59,7 +59,7 @@ config MESH_AP_CONNECTIONS
 
 config MESH_MAX_LAYER
     int "Mesh Max Layer"
-        range 1 15
+        range 1 25
         default 6
         help
             Max layer allowed in mesh network.
