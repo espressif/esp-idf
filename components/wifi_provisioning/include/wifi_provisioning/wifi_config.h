@@ -17,6 +17,10 @@
 
 #include <lwip/inet.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief   WiFi STA status for conveying back to the provisioning master
  */
@@ -116,5 +120,9 @@ typedef struct wifi_prov_config_handlers {
  */
 esp_err_t wifi_prov_config_data_handler(uint32_t session_id, const uint8_t *inbuf, ssize_t inlen,
                                         uint8_t **outbuf, ssize_t *outlen, void *priv_data);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
