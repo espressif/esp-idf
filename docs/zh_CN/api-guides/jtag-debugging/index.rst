@@ -1,5 +1,6 @@
 JTAG 调试
 =========
+:link_to_translation:`en:[English]`
 
 本文将指导安装 ESP32 的 OpenOCD 调试环境，并介绍如何使用 GDB 来调试 ESP32 的应用程序。本文的组织结构如下：
 

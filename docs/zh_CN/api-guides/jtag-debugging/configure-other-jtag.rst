@@ -1,5 +1,6 @@
 配置其它 JTAG 接口
 ==================
+:link_to_translation:`en:[English]`
 
 关于适配 OpenOCD 和 ESP32 的 JTAG 接口选择问题，请参考 :ref:`jtag-debugging-selecting-jtag-adapter` 章节，确保 JTAG 适配器能够与 OpenOCD 和 ESP32 一同工作。然后按照以下三个步骤进行设置，使其正常工作。 
 
