@@ -1,7 +1,7 @@
 ***************************
 在 MacOS 环境下安装 OpenOCD
 ***************************
-
+:link_to_translation:`en:[English]`
 
 安装 libusb
 ===========

@@ -1,8 +1,9 @@
 ***************************************
 Building OpenOCD from Sources for MacOS
 ***************************************
+:link_to_translation:`zh_CN:[中文]`
 
-The following instructions are alternative to downloading binary OpenOCD from Espressif website. To quickly setup the binary OpenOCD, instead of compiling it yourself, backup and proceed to section :doc:`setup-openocd-macos`.
+The following instructions are alternative to downloading binary OpenOCD from `Espressif GitHub <https://github.com/espressif/openocd-esp32/releases>`_. To quickly setup the binary OpenOCD, instead of compiling it yourself, backup and proceed to section :doc:`setup-openocd-macos`.
 
 .. highlight:: bash
 
@@ -22,7 +23,7 @@ Install Dependencies
 
 Install packages that are required to compile OpenOCD using Homebrew::
 
-	brew install automake libtool libusb wget gcc@4.9 pkg-config
+    brew install automake libtool libusb wget gcc@4.9 pkg-config
 
 Build OpenOCD
 =============

@@ -1,5 +1,6 @@
 使用调试器
 ----------
+:link_to_translation:`en:[English]`
 
 本节会在 :ref:`Eclipse <jtag-debugging-using-debugger-eclipse>` 和 :ref:`命令行 <jtag-debugging-using-debugger-command-line>` 中分别介绍配置和运行调试器的方法。我们建议你首先通过 :ref:`命令行 <jtag-debugging-using-debugger-command-line>` 检查调试器是否正常工作，然后再转到使用 :ref:`Eclipse <jtag-debugging-using-debugger-eclipse>` 平台。
 

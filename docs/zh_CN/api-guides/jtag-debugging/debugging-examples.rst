@@ -1,5 +1,6 @@
 调试示例
 ========
+:link_to_translation:`en:[English]`
 
 本节将介绍如何在 :ref:`Eclipse <jtag-debugging-examples-eclipse>` 和 :ref:`命令行 <jtag-debugging-examples-command-line>` 中使用 GDB 进行调试的示例。
 

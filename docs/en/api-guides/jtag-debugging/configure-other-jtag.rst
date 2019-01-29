@@ -1,5 +1,6 @@
 Configure Other JTAG Interface
 ==============================
+:link_to_translation:`zh_CN:[中文]`
 
 Refer to section :ref:`jtag-debugging-selecting-jtag-adapter` for guidance what JTAG interface to select, so it is able to operate with OpenOCD and ESP32. Then follow three configuration steps below to get it working. 
 
