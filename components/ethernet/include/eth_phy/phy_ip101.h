@@ -1,4 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,54 +21,54 @@ extern "C" {
 #include "phy.h"
 
 /**
- * @brief Dump TLK110 PHY SMI configuration registers
+ * @brief Dump IP101 PHY SMI configuration registers
  *
  */
-void phy_tlk110_dump_registers();
+void phy_ip101_dump_registers();
 
 /**
- * @brief Default TLK110 phy_check_init function
+ * @brief Default IP101 phy_check_init function
  *
  */
-void phy_tlk110_check_phy_init(void);
+void phy_ip101_check_phy_init(void);
 
 /**
- * @brief Default TLK110 phy_get_speed_mode function
+ * @brief Default IP101 phy_get_speed_mode function
  *
  * @return eth_speed_mode_t Ethernet speed mode
  */
-eth_speed_mode_t phy_tlk110_get_speed_mode(void);
+eth_speed_mode_t phy_ip101_get_speed_mode(void);
 
 /**
- * @brief Default TLK110 phy_get_duplex_mode function
+ * @brief Default IP101 phy_get_duplex_mode function
  *
  * @return eth_duplex_mode_t Ethernet duplex mode
  */
-eth_duplex_mode_t phy_tlk110_get_duplex_mode(void);
+eth_duplex_mode_t phy_ip101_get_duplex_mode(void);
 
 /**
- * @brief Default TLK110 phy_power_enable function
+ * @brief Default IP101 phy_power_enable function
  *
  */
-void phy_tlk110_power_enable(bool);
+void phy_ip101_power_enable(bool);
 
 /**
- * @brief Default TLK110 phy_init function
+ * @brief Default IP101 phy_init function
  *
  * @return esp_err_t
  *      - ESP_OK on success
  *      - ESP_FAIL on error
  */
-esp_err_t phy_tlk110_init(void);
+esp_err_t phy_ip101_init(void);
 
 /**
- * @brief Default TLK110 PHY configuration
+ * @brief Default IP101 PHY configuration
  *
  * @note This configuration is not suitable for use as-is,
  * it will need to be modified for your particular PHY hardware setup.
  *
  */
-extern const eth_config_t phy_tlk110_default_ethernet_config;
+extern const eth_config_t phy_ip101_default_ethernet_config;
 
 #ifdef __cplusplus
 }
