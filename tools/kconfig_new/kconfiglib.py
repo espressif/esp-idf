@@ -500,6 +500,7 @@ class Kconfig(object):
     __slots__ = (
         "_choices",
         "_print_undef_assign",
+        "_print_override",
         "_print_redun_assign",
         "_print_warnings",
         "_set_re_match",
@@ -576,7 +577,7 @@ class Kconfig(object):
 
         self._print_warnings = warn
         self._print_undef_assign = False
-        self._print_redun_assign = True
+        self._print_redun_assign = self._print_override = True
 
         self.syms = {}
         self.const_syms = {}
@@ -833,7 +834,7 @@ class Kconfig(object):
                     if display_user_val == display_val:
                         self._warn_redun_assign(msg, filename, linenr)
                     else:
-                        self._warn(msg, filename, linenr)
+                        self._warn_override(msg, filename, linenr)
 
                 sym.set_value(val)
 
@@ -1073,6 +1074,23 @@ class Kconfig(object):
         See enable_redun_warnings().
         """
         self._print_redun_assign = False
+
+    def enable_override_warnings(self):
+        """
+        Enables warnings for duplicated assignments in .config files that set
+        different values (e.g. CONFIG_FOO=m followed by CONFIG_FOO=y, where
+        the last value set is used).
+
+        These warnings are enabled by default. Disabling them might be helpful
+        in certain cases when merging configurations.
+        """
+        self._print_override = True
+
+    def disable_override_warnings(self):
+        """
+        See enable_override_warnings().
+        """
+        self._print_override = False
 
     def __repr__(self):
         """
@@ -2174,6 +2192,13 @@ class Kconfig(object):
         See the class documentation.
         """
         if self._print_redun_assign:
+            _stderr_msg("warning: " + msg, filename, linenr)
+
+    def _warn_override(self, msg, filename=None, linenr=None):
+        """
+        See the class documentation.
+        """
+        if self._print_override:
             _stderr_msg("warning: " + msg, filename, linenr)
 
 class Symbol(object):
