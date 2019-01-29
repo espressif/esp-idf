@@ -286,7 +286,7 @@ static esp_event_base_instance_t* loop_find_event_base_instance(esp_event_loop_i
 // Functions that operate on post instance
 static esp_err_t post_instance_create(esp_event_base_t event_base, int32_t event_id, void* event_data, int32_t event_data_size, esp_event_post_instance_t* post)
 {
-    void** event_data_copy = NULL;
+    void* event_data_copy = NULL;
 
     // Make persistent copy of event data on heap.
     if (event_data != NULL && event_data_size != 0) {
