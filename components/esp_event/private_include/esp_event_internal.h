@@ -90,7 +90,7 @@ typedef struct esp_event_loop_instance {
 typedef struct esp_event_post_instance {
     esp_event_base_t base;                                           /**< the event base */
     int32_t id;                                                      /**< the event id */
-    void** data;                                                     /**< data associated with the event */
+    void* data;                                                      /**< data associated with the event */
 } esp_event_post_instance_t;
 
 #ifdef __cplusplus
