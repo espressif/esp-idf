@@ -1,5 +1,5 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(COMPONENT_SRCDIRS ". param_test")
+set(COMPONENT_ADD_INCLUDEDIRS "include param_test/include")
 
 set(COMPONENT_REQUIRES unity test_utils driver nvs_flash)
 
