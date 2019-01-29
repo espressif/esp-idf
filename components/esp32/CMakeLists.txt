@@ -14,7 +14,6 @@ else()
                    "cache_sram_mmu.c"
                    "clk.c"
                    "coexist.c"
-                   "core_dump.c"
                    "cpu_start.c"
                    "crosscore_int.c"
                    "dbg_stubs.c"
