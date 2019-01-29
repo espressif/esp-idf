@@ -20,40 +20,12 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "soc/spi_periph.h"
-#include "freertos/ringbuf.h"
+#include "test_utils.h"
+#include "test/test_common_spi.h"
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
-#include "test_utils.h"
 
 const static char TAG[] = "test_spi";
-
-#define SPI_BUS_TEST_DEFAULT_CONFIG() {\
-        .miso_io_num=PIN_NUM_MISO, \
-        .mosi_io_num=PIN_NUM_MOSI,\
-        .sclk_io_num=PIN_NUM_CLK,\
-        .quadwp_io_num=-1,\
-        .quadhd_io_num=-1\
-}
-
-#define SPI_DEVICE_TEST_DEFAULT_CONFIG()    {\
-    .clock_speed_hz=10*1000*1000,\
-    .mode=0,\
-    .spics_io_num=PIN_NUM_CS,\
-    .queue_size=16,\
-    .pre_cb=NULL,  \
-    .cs_ena_pretrans = 0,\
-    .cs_ena_posttrans = 0,\
-    .input_delay_ns = 62.5,\
-}
-
-#define FUNC_SPI    1
-#define FUNC_GPIO   2
-
-void gpio_output_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
-{
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], func);
-    GPIO.func_out_sel_cfg[gpio_num].func_sel=signal_idx;
-}
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
 {
@@ -145,7 +117,7 @@ static spi_device_handle_t setup_spi_bus(int clkspeed, bool dma) {
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &handle);
     TEST_ASSERT(ret==ESP_OK);
     //connect MOSI to two devices breaks the output, fix it.
-    gpio_output_sel(26, FUNC_GPIO, HSPID_OUT_IDX);
+    spitest_gpio_output_sel(26, FUNC_GPIO, HSPID_OUT_IDX);
     printf("Bus/dev inited.\n");
     return handle;
 }
@@ -203,17 +175,6 @@ static int spi_test(spi_device_handle_t handle, int num_bytes) {
     return success;
 }
 
-static void destroy_spi_bus(spi_device_handle_t handle) {
-    esp_err_t ret;
-    ret=spi_bus_remove_device(handle);
-    TEST_ASSERT(ret==ESP_OK);
-    ret=spi_bus_free(HSPI_HOST);
-    TEST_ASSERT(ret==ESP_OK);
-}
-
-
-#define TEST_LEN 111
-
 TEST_CASE("SPI Master test", "[spi]")
 {
     bool success = true;
@@ -228,7 +189,7 @@ TEST_CASE("SPI Master test", "[spi]")
     success &= spi_test(handle, 4096-1); //multiple descs, edge case 2
     success &= spi_test(handle, 4096*3); //multiple descs
 
-    destroy_spi_bus(handle);
+    master_free_device_bus(handle);
 
     printf("Testing bus at 80KHz, non-DMA\n");
     handle=setup_spi_bus(80000, false);
@@ -240,22 +201,21 @@ TEST_CASE("SPI Master test", "[spi]")
     success &= spi_test(handle, 63); //small
     success &= spi_test(handle, 64); //small, unaligned
 
-    destroy_spi_bus(handle);
-
+    master_free_device_bus(handle);
 
     printf("Testing bus at 26MHz\n");
     handle=setup_spi_bus(20000000, true);
 
     success &= spi_test(handle, 128); //DMA, aligned
     success &= spi_test(handle, 4096*3); //DMA, multiple descs
-    destroy_spi_bus(handle);
+    master_free_device_bus(handle);
 
     printf("Testing bus at 900KHz\n");
     handle=setup_spi_bus(9000000, true);
 
     success &= spi_test(handle, 128); //DMA, aligned
     success &= spi_test(handle, 4096*3); //DMA, multiple descs
-    destroy_spi_bus(handle);
+    master_free_device_bus(handle);
     TEST_ASSERT(success);
 }
 
@@ -299,7 +259,7 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi]") {
 
     ret=spi_bus_remove_device(handle2);
     TEST_ASSERT(ret==ESP_OK);
-    destroy_spi_bus(handle1);
+    master_free_device_bus(handle1);
     TEST_ASSERT(success);
 }
 
@@ -522,22 +482,6 @@ static const uint8_t data_drom[320+3] = {
 0x70, 0x22, 0x7D, 0x0A, 0x6D, 0xD3, 0x77, 0x73, 0xD0, 0xF4, 0x06, 0xB2, 0x19, 0x8C, 0xFF, 0x58, 0xE4, 0xDB, 0xE9, 0xEC, 0x89, 0x6A, 0xF4, 0x0E, 0x67, 0x12, 0xEC, 0x11, 0xD2, 0x1F, 0x8D, 0xD7,
 };
 
-#if 1 //HSPI
-#define PIN_NUM_MISO HSPI_IOMUX_PIN_NUM_MISO
-#define PIN_NUM_MOSI HSPI_IOMUX_PIN_NUM_MOSI
-#define PIN_NUM_CLK  HSPI_IOMUX_PIN_NUM_CLK
-#define PIN_NUM_CS   HSPI_IOMUX_PIN_NUM_CS
-#elif 1 //VSPI
-#define PIN_NUM_MISO VSPI_IOMUX_PIN_NUM_MISO
-#define PIN_NUM_MOSI VSPI_IOMUX_PIN_NUM_MOSI
-#define PIN_NUM_CLK  VSPI_IOMUX_PIN_NUM_CLK
-#define PIN_NUM_CS   VSPI_IOMUX_PIN_NUM_CS
-#endif
-
-#define PIN_NUM_DC   21
-#define PIN_NUM_RST  18
-#define PIN_NUM_BCKL 5
-
 TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 {
 #ifdef CONFIG_SPIRAM_SUPPORT
@@ -581,7 +525,7 @@ TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
     TEST_ASSERT(ret==ESP_OK);
     //connect MOSI to two devices breaks the output, fix it.
-    gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
+    spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
 
 #define TEST_REGION_SIZE 5
     static spi_transaction_t trans[TEST_REGION_SIZE];
@@ -663,7 +607,7 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
     TEST_ASSERT(ret==ESP_OK);
 
     //connect MOSI to two devices breaks the output, fix it.
-    gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
+    spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
 
     memset(rx_buf, 0x66, 320);
 
@@ -705,124 +649,6 @@ TEST_CASE("SPI Master DMA test: length, start, not aligned", "[spi]")
     TEST_ASSERT(spi_bus_free(HSPI_HOST) == ESP_OK);
 }
 
-static const char MASTER_TAG[] = "test_master";
-static const char SLAVE_TAG[] = "test_slave";
-DRAM_ATTR static uint8_t master_send[] = {
-    0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43,
-    0x74,
-    0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43,
-    0x74,
-    0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43,
-    0x74,
-    };
-DRAM_ATTR static uint8_t slave_send[] = {
-    0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
-    0xda,
-    0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
-    0xda,
-    0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0,
-    0xda,
-    };
-
-
-static void master_deinit(spi_device_handle_t spi)
-{
-    TEST_ESP_OK( spi_bus_remove_device(spi) );
-    TEST_ESP_OK( spi_bus_free(HSPI_HOST) );
-}
-
-#define SPI_SLAVE_TEST_DEFAULT_CONFIG() {\
-        .mode=0,\
-        .spics_io_num=PIN_NUM_CS,\
-        .queue_size=3,\
-        .flags=0,\
-}
-
-static void slave_pull_up(const spi_bus_config_t* cfg, int spics_io_num)
-{
-    gpio_set_pull_mode(cfg->mosi_io_num, GPIO_PULLUP_ENABLE);
-    gpio_set_pull_mode(cfg->sclk_io_num, GPIO_PULLUP_ENABLE);
-    gpio_set_pull_mode(spics_io_num, GPIO_PULLUP_ENABLE);
-}
-
-typedef struct {
-    uint32_t len;
-    uint8_t *start;
-} slave_txdata_t;
-
-typedef struct {
-    uint32_t len;
-    uint8_t* tx_start;
-    uint8_t data[1];
-} slave_rxdata_t;
-
-typedef struct {
-    spi_host_device_t spi;
-    RingbufHandle_t data_received;
-    QueueHandle_t data_to_send;
-} spi_slave_task_context_t;
-
-esp_err_t init_slave_context(spi_slave_task_context_t *context)
-{
-    context->data_to_send = xQueueCreate( 16, sizeof( slave_txdata_t ));
-    if ( context->data_to_send == NULL ) {
-        return ESP_ERR_NO_MEM;
-    }
-    context->data_received = xRingbufferCreate( 1024, RINGBUF_TYPE_NOSPLIT );
-    if ( context->data_received == NULL ) {
-        return ESP_ERR_NO_MEM;
-    }
-    context->spi=VSPI_HOST;
-    return ESP_OK;
-}
-
-void deinit_slave_context(spi_slave_task_context_t *context)
-{
-    TEST_ASSERT( context->data_to_send != NULL );
-    vQueueDelete( context->data_to_send );
-    context->data_to_send = NULL;
-    TEST_ASSERT( context->data_received != NULL );
-    vRingbufferDelete( context->data_received );
-    context->data_received = NULL;
-}
-
-/* The task requires a queue and a ringbuf, which should be initialized before task starts.
-   Send ``slave_txdata_t`` to the queue to make the task send data;
-   the task returns data got to the ringbuf, which should have sufficient size.
-*/
-static void task_slave(void* arg)
-{
-    spi_slave_task_context_t* context = (spi_slave_task_context_t*) arg;
-    QueueHandle_t queue = context->data_to_send;
-    RingbufHandle_t ringbuf = context->data_received;
-    uint8_t recvbuf[320+8];
-    slave_txdata_t txdata;
-
-    ESP_LOGI( SLAVE_TAG, "slave up" );
-    //never quit, but blocked by the queue, waiting to be killed, when no more send from main task.
-    while( 1 ) {
-        xQueueReceive( queue, &txdata, portMAX_DELAY );
-
-        ESP_LOGI( "test", "to send: %p", txdata.start );
-        spi_slave_transaction_t t = {};
-        t.length = txdata.len;
-        t.tx_buffer = txdata.start;
-        t.rx_buffer = recvbuf+8;
-        //loop until trans_len != 0 to skip glitches
-        memset(recvbuf, 0x66, sizeof(recvbuf));
-        do {
-            TEST_ESP_OK( spi_slave_transmit( context->spi, &t, portMAX_DELAY ) );
-        } while ( t.trans_len == 0 );
-        memcpy(recvbuf, &t.trans_len, sizeof(uint32_t));
-        *(uint8_t**)(recvbuf+4) = txdata.start;
-        ESP_LOGI( SLAVE_TAG, "received: %d", t.trans_len );
-        xRingbufferSend( ringbuf, recvbuf, 8+(t.trans_len+7)/8, portMAX_DELAY );
-    }
-}
-
-#define TEST_SPI_HOST   HSPI_HOST
-#define TEST_SLAVE_HOST VSPI_HOST
-
 static uint8_t bitswap(uint8_t in)
 {
     uint8_t out = 0;
@@ -849,15 +675,15 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &spi));
 
     //connecting pins to two peripherals breaks the output, fix it.
-    gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
-    gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
-    gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
-    gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+    spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
+    spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
+    spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
+    spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
 
     for (int i= 0; i < 8; i++) {
         //prepare slave tx data
         slave_txdata_t slave_txdata = (slave_txdata_t) {
-            .start = slave_send,
+            .start = spitest_slave_send + 4*(i%3),
             .len = 256,
         };
         xQueueSend(slave_context->data_to_send, &slave_txdata, portMAX_DELAY);
@@ -947,7 +773,7 @@ TEST_CASE("SPI master variable cmd & addr test","[spi]")
     esp_err_t err = init_slave_context( &slave_context );
     TEST_ASSERT( err == ESP_OK );
     TaskHandle_t handle_slave;
-    xTaskCreate( task_slave, "spi_slave", 4096, &slave_context, 0, &handle_slave);
+    xTaskCreate( spitest_slave_task, "spi_slave", 4096, &slave_context, 0, &handle_slave);
 
     //initial slave, mode 0, no dma
     int dma_chan = 0;
@@ -972,354 +798,6 @@ TEST_CASE("SPI master variable cmd & addr test","[spi]")
 }
 
 /********************************************************************************
- *      Test Timing By Internal Connections
- ********************************************************************************/
-typedef enum {
-    FULL_DUPLEX = 0,
-    HALF_DUPLEX_MISO = 1,
-    HALF_DUPLEX_MOSI = 2,
-} spi_dup_t;
-
-static int timing_speed_array[]={/**/
-    SPI_MASTER_FREQ_8M ,
-    SPI_MASTER_FREQ_9M ,
-    SPI_MASTER_FREQ_10M,
-    SPI_MASTER_FREQ_11M,
-    SPI_MASTER_FREQ_13M,
-    SPI_MASTER_FREQ_16M,
-    SPI_MASTER_FREQ_20M,
-    SPI_MASTER_FREQ_26M,
-    SPI_MASTER_FREQ_40M,
-    SPI_MASTER_FREQ_80M,
-};
-
-typedef struct {
-    uint8_t master_rxbuf[320];
-    spi_transaction_t master_trans[16];
-    TaskHandle_t handle_slave;
-    spi_slave_task_context_t slave_context;
-    slave_txdata_t slave_trans[16];
-} timing_context_t;
-
-void master_print_data(spi_transaction_t *t, spi_dup_t dup)
-{
-    if (t->tx_buffer) {
-        ESP_LOG_BUFFER_HEX( "master tx", t->tx_buffer, t->length/8 );
-    } else {
-        ESP_LOGI( "master tx", "no data" );
-    }
-
-    int rxlength;
-    if (dup!=HALF_DUPLEX_MISO) {
-        rxlength = t->length/8;
-    } else {
-        rxlength = t->rxlength/8;
-    }
-    if (t->rx_buffer) {
-        ESP_LOG_BUFFER_HEX( "master rx", t->rx_buffer, rxlength );
-    } else {
-        ESP_LOGI( "master rx", "no data" );
-    }
-}
-
-void slave_print_data(slave_rxdata_t *t)
-{
-    int rcv_len = (t->len+7)/8;
-    ESP_LOGI(SLAVE_TAG, "trans_len: %d", t->len);
-    ESP_LOG_BUFFER_HEX( "slave tx", t->tx_start, rcv_len);
-    ESP_LOG_BUFFER_HEX( "slave rx", t->data, rcv_len);
-}
-
-esp_err_t check_data(spi_transaction_t *t, spi_dup_t dup, slave_rxdata_t *slave_t)
-{
-    int length;
-    if (dup!=HALF_DUPLEX_MISO) {
-        length = t->length;
-    } else {
-        length = t->rxlength;
-    }
-    TEST_ASSERT(length!=0);
-
-    //currently the rcv_len can be in range of [t->length-1, t->length+3]
-    uint32_t rcv_len = slave_t->len;
-    TEST_ASSERT(rcv_len >= length-1 && rcv_len <= length+3);
-
-    //the timing speed is temporarily only for master
-    if (dup!=HALF_DUPLEX_MISO) {
-//        TEST_ASSERT_EQUAL_HEX8_ARRAY(t->tx_buffer, slave_t->data, (t->length+7)/8);
-    }
-    if (dup!=HALF_DUPLEX_MOSI) {
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_t->tx_start, t->rx_buffer, (length+7)/8);
-    }
-    return ESP_OK;
-}
-
-int test_len[] = {1, 3, 5, 7, 9, 11, 33, 64};
-
-static void timing_init_transactions(spi_dup_t dup, timing_context_t* context)
-{
-    spi_transaction_t* trans = context->master_trans;
-    uint8_t *rx_buf_ptr = context->master_rxbuf;
-    if (dup==HALF_DUPLEX_MISO) {
-        for (int i = 0; i < 8; i++ ) {
-            trans[i] = (spi_transaction_t) {
-                .flags = 0,
-                .rxlength = 8*test_len[i],
-                .rx_buffer = rx_buf_ptr,
-            };
-            rx_buf_ptr += ((context->master_trans[i].rxlength + 31)/8)&(~3);
-        }
-    } else if (dup==HALF_DUPLEX_MOSI) {
-        for (int i = 0; i < 8; i++ ) {
-            trans[i] = (spi_transaction_t) {
-                .flags = 0,
-                .length = 8*test_len[i],
-                .tx_buffer = master_send+i,
-            };
-        }
-    } else {
-        for (int i = 0; i < 8; i++ ) {
-            trans[i] = (spi_transaction_t) {
-                .flags = 0,
-                .length = 8*test_len[i],
-                .tx_buffer = master_send+i,
-                .rx_buffer = rx_buf_ptr,
-            };
-            rx_buf_ptr += ((context->master_trans[i].length + 31)/8)&(~3);
-        }
-    }
-    //prepare slave tx data
-    for (int i = 0; i < 8; i ++) {
-        context->slave_trans[i] = (slave_txdata_t) {
-            .start = slave_send + 4*(i%3),
-            .len = 512,
-        };
-    }
-}
-
-typedef struct {
-    const char cfg_name[30];
-    /*The test work till the frequency below,
-     *set the frequency to higher and remove checks in the driver to know how fast the system can run.
-     */
-    int freq_limit;
-    spi_dup_t dup;
-    bool master_iomux;
-    bool slave_iomux;
-    int slave_tv_ns;
-} test_timing_config_t;
-
-#define ESP_SPI_SLAVE_TV    (12.5*3)
-#define GPIO_DELAY          (12.5*2)
-#define SAMPLE_DELAY        12.5
-
-#define TV_INT_CONNECT_GPIO     (ESP_SPI_SLAVE_TV+GPIO_DELAY)
-#define TV_INT_CONNECT          (ESP_SPI_SLAVE_TV)
-#define TV_WITH_ESP_SLAVE_GPIO  (ESP_SPI_SLAVE_TV+SAMPLE_DELAY+GPIO_DELAY)
-#define TV_WITH_ESP_SLAVE       (ESP_SPI_SLAVE_TV+SAMPLE_DELAY)
-
-//currently ESP32 slave only supports up to 20MHz, but 40MHz on the same board
-#define ESP_SPI_SLAVE_MAX_FREQ      SPI_MASTER_FREQ_20M
-#define ESP_SPI_SLAVE_MAX_FREQ_SYNC SPI_MASTER_FREQ_40M
-
-
-static test_timing_config_t timing_master_conf_t[] = {
-    { .cfg_name = "FULL_DUP, MASTER IOMUX",
-      .freq_limit = SPI_MASTER_FREQ_13M,
-      .dup = FULL_DUPLEX,
-      .master_iomux = true,
-      .slave_iomux = false,
-      .slave_tv_ns = TV_INT_CONNECT_GPIO,
-    },
-    { .cfg_name = "FULL_DUP, SLAVE IOMUX",
-      .freq_limit = SPI_MASTER_FREQ_13M,
-      .dup = FULL_DUPLEX,
-      .master_iomux = false,
-      .slave_iomux = true,
-      .slave_tv_ns = TV_INT_CONNECT,
-    },
-    { .cfg_name = "FULL_DUP, BOTH GPIO",
-      .freq_limit = SPI_MASTER_FREQ_10M,
-      .dup = FULL_DUPLEX,
-      .master_iomux = false,
-      .slave_iomux = false,
-      .slave_tv_ns = TV_INT_CONNECT_GPIO,
-    },
-    { .cfg_name = "HALF_DUP, MASTER IOMUX",
-      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
-      .dup = HALF_DUPLEX_MISO,
-      .master_iomux = true,
-      .slave_iomux = false,
-      .slave_tv_ns = TV_INT_CONNECT_GPIO,
-    },
-    { .cfg_name = "HALF_DUP, SLAVE IOMUX",
-      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
-      .dup = HALF_DUPLEX_MISO,
-      .master_iomux = false,
-      .slave_iomux = true,
-      .slave_tv_ns = TV_INT_CONNECT,
-    },
-    { .cfg_name = "HALF_DUP, BOTH GPIO",
-      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
-      .dup = HALF_DUPLEX_MISO,
-      .master_iomux = false,
-      .slave_iomux = false,
-      .slave_tv_ns = TV_INT_CONNECT_GPIO,
-    },
-    { .cfg_name = "MOSI_DUP, MASTER IOMUX",
-      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
-      .dup = HALF_DUPLEX_MOSI,
-      .master_iomux = true,
-      .slave_iomux = false,
-      .slave_tv_ns = TV_INT_CONNECT_GPIO,
-    },
-    { .cfg_name = "MOSI_DUP, SLAVE IOMUX",
-      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
-      .dup = HALF_DUPLEX_MOSI,
-      .master_iomux = false,
-      .slave_iomux = true,
-      .slave_tv_ns = TV_INT_CONNECT,
-    },
-    { .cfg_name = "MOSI_DUP, BOTH GPIO",
-      .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
-      .dup = HALF_DUPLEX_MOSI,
-      .master_iomux = false,
-      .slave_iomux = false,
-      .slave_tv_ns = TV_INT_CONNECT_GPIO,
-    },
-};
-
-//this case currently only checks master read
-TEST_CASE("test timing_master","[spi][timeout=120]")
-{
-    timing_context_t context;
-
-    //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
-    //slave_pull_up(&slv_buscfg, slvcfg.spics_io_num);
-
-    context.slave_context = (spi_slave_task_context_t){};
-    esp_err_t err = init_slave_context( &context.slave_context );
-    TEST_ASSERT( err == ESP_OK );
-
-    xTaskCreate( task_slave, "spi_slave", 4096, &context.slave_context, 0, &context.handle_slave);
-
-    const int test_size = sizeof(timing_master_conf_t)/sizeof(test_timing_config_t);
-    for (int i = 0; i < test_size; i++) {
-        test_timing_config_t* conf = &timing_master_conf_t[i];
-
-        spi_device_handle_t spi;
-
-        timing_init_transactions(conf->dup, &context);
-
-        ESP_LOGI(MASTER_TAG, "****************** %s ***************", conf->cfg_name);
-        for (int j=0; j<sizeof(timing_speed_array)/sizeof(int); j++ ) {
-            if (timing_speed_array[j] > conf->freq_limit) break;
-            ESP_LOGI(MASTER_TAG, "======> %dk", timing_speed_array[j]/1000);
-
-            //master config
-            const int master_mode = 0;
-            spi_bus_config_t buscfg=SPI_BUS_TEST_DEFAULT_CONFIG();
-            spi_device_interface_config_t devcfg=SPI_DEVICE_TEST_DEFAULT_CONFIG();
-            devcfg.mode = master_mode;
-            if (conf->dup==HALF_DUPLEX_MISO||conf->dup==HALF_DUPLEX_MOSI) {
-                devcfg.cs_ena_pretrans = 20;
-                devcfg.flags |= SPI_DEVICE_HALFDUPLEX;
-            } else {
-                devcfg.cs_ena_pretrans = 1;
-            }
-            devcfg.cs_ena_posttrans = 20;
-            devcfg.input_delay_ns = conf->slave_tv_ns;
-            devcfg.clock_speed_hz = timing_speed_array[j];
-
-            //slave config
-            int slave_mode = 0;
-            spi_slave_interface_config_t slvcfg=SPI_SLAVE_TEST_DEFAULT_CONFIG();
-            slvcfg.mode = slave_mode;
-
-            //pin config & initialize
-            //we can't have two sets of iomux pins on the same pins
-            assert(!conf->master_iomux || !conf->slave_iomux);
-            if (conf->slave_iomux) {
-                //only in this case, use VSPI iomux pins
-                buscfg.miso_io_num = VSPI_IOMUX_PIN_NUM_MISO;
-                buscfg.mosi_io_num = VSPI_IOMUX_PIN_NUM_MOSI;
-                buscfg.sclk_io_num = VSPI_IOMUX_PIN_NUM_CLK;
-                devcfg.spics_io_num = VSPI_IOMUX_PIN_NUM_CS;
-                slvcfg.spics_io_num = VSPI_IOMUX_PIN_NUM_CS;
-            } else {
-                buscfg.miso_io_num = HSPI_IOMUX_PIN_NUM_MISO;
-                buscfg.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI;
-                buscfg.sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK;
-                devcfg.spics_io_num = HSPI_IOMUX_PIN_NUM_CS;
-                slvcfg.spics_io_num = HSPI_IOMUX_PIN_NUM_CS;
-            }
-            slave_pull_up(&buscfg, slvcfg.spics_io_num);
-
-            //this does nothing, but avoid the driver from using iomux pins if required
-            buscfg.quadhd_io_num = (!conf->master_iomux && !conf->slave_iomux? VSPI_IOMUX_PIN_NUM_MISO: -1);
-            TEST_ESP_OK(spi_bus_initialize(HSPI_HOST, &buscfg, 0));
-            TEST_ESP_OK(spi_bus_add_device(HSPI_HOST, &devcfg, &spi));
-            //slave automatically use iomux pins if pins are on VSPI_* pins
-            buscfg.quadhd_io_num = -1;
-            TEST_ESP_OK( spi_slave_initialize(VSPI_HOST, &buscfg, &slvcfg, 0) );
-
-            //initialize master and slave on the same pins break some of the output configs, fix them
-            if (conf->master_iomux) {
-                gpio_output_sel(buscfg.mosi_io_num, FUNC_SPI, HSPID_OUT_IDX);
-                gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, VSPIQ_OUT_IDX);
-                gpio_output_sel(devcfg.spics_io_num, FUNC_SPI, HSPICS0_OUT_IDX);
-                gpio_output_sel(buscfg.sclk_io_num, FUNC_SPI, HSPICLK_OUT_IDX);
-            } else if (conf->slave_iomux) {
-                gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
-                gpio_output_sel(buscfg.miso_io_num, FUNC_SPI, VSPIQ_OUT_IDX);
-                gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, HSPICS0_OUT_IDX);
-                gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, HSPICLK_OUT_IDX);
-            } else {
-                gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
-                gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, VSPIQ_OUT_IDX);
-                gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, HSPICS0_OUT_IDX);
-                gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, HSPICLK_OUT_IDX);
-            }
-
-            //clear master receive buffer
-            memset(context.master_rxbuf, 0x66, sizeof(context.master_rxbuf));
-
-            //prepare slave tx data
-            for (int k = 0; k < 8; k ++) xQueueSend( context.slave_context.data_to_send, &context.slave_trans[k], portMAX_DELAY );
-
-            for( int k= 0; k < 8; k ++ ) {
-                //wait for both master and slave end
-                ESP_LOGI( MASTER_TAG, "=> test%d", k );
-                //send master tx data
-                vTaskDelay(9);
-
-                spi_transaction_t *t = &context.master_trans[k];
-                TEST_ESP_OK (spi_device_transmit( spi, t) );
-                master_print_data(t, conf->dup);
-
-                size_t rcv_len;
-                slave_rxdata_t *rcv_data = xRingbufferReceive( context.slave_context.data_received, &rcv_len, portMAX_DELAY );
-                slave_print_data(rcv_data);
-
-                //check result
-                TEST_ESP_OK(check_data(t, conf->dup, rcv_data));
-                //clean
-                vRingbufferReturnItem(context.slave_context.data_received, rcv_data);
-            }
-            master_deinit(spi);
-            TEST_ASSERT(spi_slave_free(VSPI_HOST) == ESP_OK);
-        }
-    }
-
-    vTaskDelete( context.handle_slave );
-    context.handle_slave = 0;
-
-    deinit_slave_context(&context.slave_context);
-
-    ESP_LOGI(MASTER_TAG, "test passed.");
-}
-
-/********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
@@ -1338,12 +816,6 @@ static void speed_setup(spi_device_handle_t* spi, bool use_dma)
     TEST_ASSERT(ret==ESP_OK);
     ret=spi_bus_add_device(HSPI_HOST, &devcfg, spi);
     TEST_ASSERT(ret==ESP_OK);
-}
-
-static void speed_deinit(spi_device_handle_t spi)
-{
-    TEST_ESP_OK( spi_bus_remove_device(spi) );
-    TEST_ESP_OK( spi_bus_free(HSPI_HOST) );
 }
 
 static void sorted_array_insert(uint32_t* array, int* size, uint32_t item)
@@ -1424,7 +896,8 @@ TEST_CASE("spi_speed","[spi]")
     //release the bus
     spi_device_release_bus(spi);
 
-    speed_deinit(spi);
+    master_free_device_bus(spi);
+
     speed_setup(&spi, !use_dma);
 
     //record flight time by isr, without DMA
@@ -1454,7 +927,7 @@ TEST_CASE("spi_speed","[spi]")
 
     //release the bus
     spi_device_release_bus(spi);
-    speed_deinit(spi);
+    master_free_device_bus(spi);
 }
 
 typedef struct {
