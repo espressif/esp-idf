@@ -1,7 +1,6 @@
 [mapping]
 archive: libesp32.a
 entries: 
-    core_dump (noflash_text)
     panic (noflash)
 
 [mapping]
