@@ -142,4 +142,9 @@ else()
 
     endif()
 
+    # disable stack protection in files which are involved in initialization of that feature
+    set_source_files_properties(
+        stack_check.c cpu_start.c
+        PROPERTIES COMPILE_FLAGS
+        -fno-stack-protector)
 endif()
