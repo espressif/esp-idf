@@ -125,7 +125,7 @@ struct sock_db {
     httpd_send_func_t send_fn;              /*!< Send function for this socket */
     httpd_recv_func_t recv_fn;              /*!< Receive function for this socket */
     httpd_pending_func_t pending_fn;        /*!< Pending function for this socket */
-    int64_t timestamp;                      /*!< Timestamp indicating when the socket was last used */
+    uint64_t lru_counter;                   /*!< LRU Counter indicating when the socket was last used */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
 };
