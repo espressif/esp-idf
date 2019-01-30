@@ -1,8 +1,8 @@
 components/esp32/lib                                        @GENERAL_MIRROR_SERVER@/idf/esp32-wifi-lib.git
 components/bt/lib                                           @GENERAL_MIRROR_SERVER@/idf/esp32-bt-lib.git
+components/esptool_py/esptool                               @GENERAL_MIRROR_SERVER@/idf/esptool.git
 components/aws_iot/aws-iot-device-sdk-embedded-C            @GENERAL_MIRROR_SERVER@/idf/aws-iot-device-sdk-embedded-C.git   ALLOW_TO_SYNC_FROM_PUBLIC
 components/coap/libcoap                                     @GENERAL_MIRROR_SERVER@/idf/libcoap.git                         ALLOW_TO_SYNC_FROM_PUBLIC
-components/esptool_py/esptool                               @GENERAL_MIRROR_SERVER@/idf/esptool.git                         ALLOW_TO_SYNC_FROM_PUBLIC
 components/json/cJSON                                       @GENERAL_MIRROR_SERVER@/idf/cJSON.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 components/libsodium/libsodium                              @GENERAL_MIRROR_SERVER@/idf/libsodium.git                       ALLOW_TO_SYNC_FROM_PUBLIC
 components/mbedtls/mbedtls                                  @GENERAL_MIRROR_SERVER@/idf/mbedtls.git                         ALLOW_TO_SYNC_FROM_PUBLIC
