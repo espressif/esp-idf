@@ -19,7 +19,7 @@
 #include <esp_ota_ops.h>
 #include <esp_log.h>
 
-#define OTA_BUF_SIZE 256
+#define DEFAULT_OTA_BUF_SIZE 256
 static const char *TAG = "esp_https_ota";
 
 static void http_cleanup(esp_http_client_handle_t client)
@@ -85,16 +85,18 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
     ESP_LOGI(TAG, "Please Wait. This may take time");
 
     esp_err_t ota_write_err = ESP_OK;
-    char *upgrade_data_buf = (char *)malloc(OTA_BUF_SIZE);
+    const int alloc_size = (config->buffer_size > 0) ? config->buffer_size : DEFAULT_OTA_BUF_SIZE;
+    char *upgrade_data_buf = (char *)malloc(alloc_size);
     if (!upgrade_data_buf) {
         ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
         return ESP_ERR_NO_MEM;
     }
+
     int binary_file_len = 0;
     while (1) {
-        int data_read = esp_http_client_read(client, upgrade_data_buf, OTA_BUF_SIZE);
+        int data_read = esp_http_client_read(client, upgrade_data_buf, alloc_size);
         if (data_read == 0) {
-            ESP_LOGI(TAG, "Connection closed,all data received");
+            ESP_LOGI(TAG, "Connection closed, all data received");
             break;
         }
         if (data_read < 0) {
@@ -102,7 +104,7 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
             break;
         }
         if (data_read > 0) {
-            ota_write_err = esp_ota_write( update_handle, (const void *)upgrade_data_buf, data_read);
+            ota_write_err = esp_ota_write(update_handle, (const void *) upgrade_data_buf, data_read);
             if (ota_write_err != ESP_OK) {
                 break;
             }
