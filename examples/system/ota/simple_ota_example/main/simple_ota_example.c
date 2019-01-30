@@ -96,7 +96,7 @@ static void initialise_wifi(void)
             .password = CONFIG_WIFI_PASSWORD,
         },
     };
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
+    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s", wifi_config.sta.ssid);
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_start() );
@@ -104,14 +104,14 @@ static void initialise_wifi(void)
 
 void simple_ota_example_task(void * pvParameter)
 {
-    ESP_LOGI(TAG, "Starting OTA example...");
+    ESP_LOGI(TAG, "Starting OTA example");
 
     /* Wait for the callback to set the CONNECTED_BIT in the
        event group.
     */
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
                         false, true, portMAX_DELAY);
-    ESP_LOGI(TAG, "Connect to Wifi ! Start to Connect to Server....");
+    ESP_LOGI(TAG, "Connected to WiFi network! Attempting to connect to server...");
     
     esp_http_client_config_t config = {
         .url = CONFIG_FIRMWARE_UPGRADE_URL,
@@ -122,7 +122,7 @@ void simple_ota_example_task(void * pvParameter)
     if (ret == ESP_OK) {
         esp_restart();
     } else {
-        ESP_LOGE(TAG, "Firmware Upgrades Failed");
+        ESP_LOGE(TAG, "Firmware upgrade failed");
     }
     while (1) {
         vTaskDelay(1000 / portTICK_PERIOD_MS);
