@@ -1,5 +1,6 @@
 Linker Script Generation
 ========================
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
@@ -49,6 +50,10 @@ For CMake set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to your linker file/s b
 
     register_component()
 
+It is also possible to specify fragment files from the project CMakeLists.txt or component project_include.cmake using the function `ldgen_add_fragment_files`::
+
+    ldgen_add_fragment_files(target files ...)
+
 
 Specifying placements
 ^^^^^^^^^^^^^^^^^^^^^
@@ -64,7 +69,7 @@ For the following text, suppose we have the following:
     - a component named ``component`` that is archived as library ``libcomponent.a`` during build
     - three object files archived under the library, ``object1.o``, ``object2.o`` and ``object3.o``
     - under ``object1.o``, the function ``function1`` is defined; under ``object2.o``, the function ``function2`` is defined
-    - there exists configuration ``PERFORMANCE_MODE`` and ``PERFORMANCE_LEVEL`` in one of the IDF KConfig files, with the set value indicated by entries ``CONFIG_PERFORMANCE_MODE`` and ``CONFIG_PERFORMANCE_LEVEL`` in the project sdkconfig
+    - there exist configuration ``PERFORMANCE_MODE`` and ``PERFORMANCE_LEVEL`` in one of the IDF KConfig files, with the set value indicated by entries ``CONFIG_PERFORMANCE_MODE`` and ``CONFIG_PERFORMANCE_LEVEL`` in the project sdkconfig
 
 In the created linker fragment file, we write:
 
@@ -82,8 +87,7 @@ will still be used for ``libcomponent.a``, unless the ``entries`` key is populat
 Placing object files
 """"""""""""""""""""
 
-Suppose the entirety of ``object1.o``  is performance-critical, so it is desirable to place it in RAM. On the other hand, all of ``object2.o``
-contains things to be executed coming out of deep sleep, so it needs to be put under RTC memory. We can write:
+Suppose the entirety of ``object1.o``  is performance-critical, so it is desirable to place it in RAM. On the other hand, suppose all of ``object2.o`` contains things to be executed coming out of deep sleep, so it needs to be put under RTC memory. We can write:
 
 .. code-block:: none
 
@@ -114,7 +118,7 @@ can be achieved for placing data by writing the variable name instead of the fun
 
 .. warning::
 
-    There are :ref:`limitations<ldgen-type3-limitations>` in placing code/data using their symbol names. In order to ensure proper placements, an alternative would be to group
+    There are :ref:`limitations<ldgen-type1-limitations>` in placing code/data using their symbol names. In order to ensure proper placements, an alternative would be to group
     relevant code and data into source files, and :ref:`use object file placement<ldgen-placing-object-files>`.
 
 Placing entire component
@@ -394,7 +398,7 @@ Expanding the sections fragment with its entries definition:
             
             ...)           # and so on
 
-.. _ldgen-type3-limitations :
+.. _ldgen-type1-limitations :
 
 **On** ``Type I`` **Mapping Entries**
 
@@ -413,7 +417,7 @@ However, this is not the case for static data declared in function scope, as the
 **Condition Entries**
 
 Condition entries enable the linker script generation to be configuration-aware. Depending on whether expressions involving configuration values
-are true or not, a particular set of mapping entries can be used. The evaluation uses ``eval_string`` from ``:idf_file:`tools/kconfig_new/kconfiglib.py``` and adheres to its required syntax and limitations.
+are true or not, a particular set of mapping entries can be used. The evaluation uses ``eval_string`` from :idf_file:`tools/kconfig_new/kconfiglib.py` and adheres to its required syntax and limitations.
 
 All mapping entries defined after a condition entry until the next one or the end of the mapping fragment belongs to that condition entry. During processing 
 conditions are tested sequentially, and the mapping entries under the first condition that evaluates to ``TRUE`` are used.
@@ -540,5 +544,5 @@ put under the build directory of the same component. Modifying this linker scrip
 
 Linker Fragment File
 ^^^^^^^^^^^^^^^^^^^^
-Any component can add a fragment file to the build. In order to add a fragment file to process, use the command ``ldgen_add_fragment_file`` as mentioned :ref:`here<ldgen-add-fragment-file>`.
+Any component can add a fragment file to the build. In order to add a fragment file to process, set COMPONENT_ADD_LDFRAGMENTS or use the function ``ldgen_add_fragment_files`` (CMake only) as mentioned :ref:`here <ldgen-add-fragment-file>`.
 Modifying any fragment file presented to the build system triggers a re-link of the app binary.
