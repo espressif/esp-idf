@@ -74,10 +74,10 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
         printenv PATH
 
-    检查一下字符串的末尾是否包含类似的工具链的路径： ::
+    检查字符串的开头是否包含类似的工具链路径::
 
         $ printenv PATH
-        /home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/user-name/esp/xtensa-esp32-elf/bin
+        /home/user-name/esp/xtensa-esp32-elf/bin:/home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
      除了 ``/home/user-name``，应该有具体的安装的主路径。
 
