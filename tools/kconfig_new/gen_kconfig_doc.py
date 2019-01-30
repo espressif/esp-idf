@@ -94,6 +94,8 @@ def format_rest_text(text, indent):
     # Escape some characters which are inline formatting in ReST
     text = text.replace("*", "\\*")
     text = text.replace("_", "\\_")
+    # replace absolute links to documentation by relative ones
+    text = re.sub(r'https://docs.espressif.com/projects/esp-idf/\w+/\w+/(.+)\.html', r':doc:`../\1`', text)
     text += '\n'
     return text
 
