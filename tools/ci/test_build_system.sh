@@ -251,7 +251,18 @@ function run_tests()
 	make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS} esp32/libesp32.a
+    
+    print_status "Re-building does not change app.bin"
+    take_build_snapshot
+    make
+    assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp32/libesp32.a
     rm -f ${TESTDIR}/template/version.txt
+
+    print_status "Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit."
+    make >> log.log || failure "Failed to build"
+    version="App \"app-template\" version: "
+    version+=$(git describe --always --tags --dirty)
+    grep "${version}" log.log || failure "Project version should have a hash commit"
     
     print_status "Build fails if partitions don't fit in flash"
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
