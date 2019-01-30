@@ -27,14 +27,19 @@ static const char* TAG = "test_event";
 
 #define TEST_CONFIG_WAIT_MULTIPLIER          5
 
+// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed 
+// during teardown. 
 #define TEST_SETUP() \
+        ESP_LOGI(TAG, "initializing test"); \
+        size_t free_mem_before = heap_caps_get_free_size(MALLOC_CAP_DEFAULT); \
         test_setup(); \
         s_test_core_id = xPortGetCoreID(); \
-        s_test_priority = uxTaskPriorityGet(NULL); \
+        s_test_priority = uxTaskPriorityGet(NULL); 
 
 #define TEST_TEARDOWN() \
         test_teardown(); \
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)); \
+        TEST_ASSERT_EQUAL(free_mem_before, heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
 
 typedef struct {
     void* data;
@@ -679,6 +684,10 @@ static void loop_run_task(void* args)
 
 static void performance_test(bool dedicated_task)
 {
+    // rand() seems to do a one-time allocation. Call it here so that the memory it allocates
+    // is not counted as a leak.
+    unsigned int _rand __attribute__((unused)) = rand();
+
     TEST_SETUP();
 
     const char test_base[] = "qwertyuiopasdfghjklzxvbnmmnbvcxzqwertyuiopasdfghjklzxvbnmmnbvcxz";
@@ -775,6 +784,14 @@ static void performance_test(bool dedicated_task)
 
     int average = (int) (running_sum / (running_count));
 
+    if (!dedicated_task) {
+        ((esp_event_loop_instance_t*) loop)->task = mtask;
+    }
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
+
+    TEST_TEARDOWN();
+
 #ifdef CONFIG_EVENT_LOOP_PROFILING
     ESP_LOGI(TAG, "events dispatched/second with profiling enabled: %d", average);
     // Enabling profiling will slow down event dispatch, so the set threshold
@@ -786,14 +803,6 @@ static void performance_test(bool dedicated_task)
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH_PSRAM, "%d", average);
 #endif // CONFIG_SPIRAM_SUPPORT
 #endif // CONFIG_EVENT_LOOP_PROFILING
-
-    if (!dedicated_task) {
-        ((esp_event_loop_instance_t*) loop)->task = mtask;
-    }
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
-
-    TEST_TEARDOWN();
 }
 
 TEST_CASE("performance test - dedicated task", "[event]")
