@@ -41,11 +41,11 @@ menu "Example Configuration"
             Select this, the modem will send a short message before power off.
 
     if SEND_MSG
-    config SEND_MSG_PEER_PHONE_NUMBER
-        string "Peer Phone Number (with area code)"
-        default "+8610086"
-        help
-            Enter the peer phone number that you want to send message to.
+        config SEND_MSG_PEER_PHONE_NUMBER
+            string "Peer Phone Number (with area code)"
+            default "+8610086"
+            help
+                Enter the peer phone number that you want to send message to.
     endif
 
     menu "UART Configuration"
