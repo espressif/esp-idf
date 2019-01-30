@@ -61,6 +61,10 @@ MacOS ::
 
     sudo usermod -a -G dialout $USER
 
+在 Arch Linux 中，需要通过以下命令将用户添加到 ``uucp`` 组中::
+
+    sudo usermod -a -G uucp $USER
+
 重新登录以确保串行端口的读写权限被启用。
 
 
