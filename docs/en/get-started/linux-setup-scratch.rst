@@ -1,6 +1,7 @@
 **********************************
 Setup Linux Toolchain from Scratch
 **********************************
+:link_to_translation:`zh_CN:[中文]`
 
 .. note::
     

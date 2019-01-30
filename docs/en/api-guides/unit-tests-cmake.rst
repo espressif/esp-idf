@@ -1,5 +1,6 @@
 Unit Testing in ESP32 (CMake)
 =============================
+:link_to_translation:`zh_CN:[中文]`
 
 .. include:: ../cmake-warning.rst
 
