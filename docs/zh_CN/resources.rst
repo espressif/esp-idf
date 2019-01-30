@@ -1,6 +1,7 @@
 ****
 资源
 ****
+:link_to_translation:`en:[English]`
 
 * 您可以在 `ESP32 论坛 <https://esp32.com/>`_ 中提出您的问题，访问社区资源。
 

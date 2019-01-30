@@ -1,5 +1,6 @@
 BluFi
 ^^^^^
+:link_to_translation:`en:[English]`
 
 概览
 -----
