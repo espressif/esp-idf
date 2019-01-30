@@ -2487,15 +2487,19 @@ handle_error :
 }
 
 /**
- * @brief  Duplicate string or return NULL
+ * @brief  Duplicate string or return error
  */
-static char * _mdns_strdup_check(const char * in)
+static esp_err_t _mdns_strdup_check(char ** out, char * in)
 {
     if (in && in[0]) {
-        return strdup(in);
-    } else {
-        return NULL;
+        *out = strdup(in);
+        if (!*out) {
+            return ESP_FAIL;
+        }
+        return ESP_OK;
     }
+    *out = NULL;
+    return ESP_OK;
 }
 
 /**
@@ -2624,11 +2628,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
             question->unicast = unicast;
             question->type = type;
-            question->host = _mdns_strdup_check(name->host);
-            question->service = _mdns_strdup_check(name->service);
-            question->proto = _mdns_strdup_check(name->proto);
-            question->domain = _mdns_strdup_check(name->domain);
-            if (!question->host || !question->service || !question->proto || !question->domain) {
+            if (_mdns_strdup_check(&(question->host), name->host)
+              || _mdns_strdup_check(&(question->service), name->service)
+              || _mdns_strdup_check(&(question->proto), name->proto)
+              || _mdns_strdup_check(&(question->domain), name->domain)) {
                 goto clear_rx_packet;
             }
         }
