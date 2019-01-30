@@ -151,7 +151,7 @@ n	[A-Za-z0-9_-]
 		return T_WORD;
 	}
 	#.*	/* comment */
-	\\\n	current_file->lineno++;
+	\\\r?\n	current_file->lineno++;
 	[[:blank:]]+
 	.	warn_ignored_character(*yytext);
 	<<EOF>> {
