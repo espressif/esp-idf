@@ -2352,7 +2352,6 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                 "../nvs_partition_generator/nvs_partition_gen.py",
                 "../nvs_partition_generator/sample_multipage_blob.csv",
                 "../nvs_partition_generator/partition_encrypted.bin",
-                "12KB",
                 "--encrypt",
                 "True",
                 "--keyfile",
