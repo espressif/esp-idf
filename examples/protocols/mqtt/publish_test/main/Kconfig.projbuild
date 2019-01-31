@@ -1,0 +1,62 @@
+menu "Example Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    config BROKER_SSL_URI
+        string "Broker SSL URL"
+        default "mqtts://iot.eclipse.org:8883"
+        help
+            URL of an mqtt broker for ssl transport
+
+    config BROKER_TCP_URI
+        string "Broker TCP URL"
+        default "mqtt://iot.eclipse.org:1883"
+        help
+            URL of an mqtt broker for tcp transport
+
+    config BROKER_WS_URI
+        string "Broker WS URL"
+        default "ws://iot.eclipse.org:80/ws"
+        help
+            URL of an mqtt broker for ws transport
+
+    config BROKER_WSS_URI
+        string "Broker WSS URL"
+        default "wss://iot.eclipse.org:443/ws"
+        help
+            URL of an mqtt broker for wss transport
+
+    config PUBLISH_TOPIC
+        string "publish topic"
+        default "/topic/publish/esp2py"
+        help
+            topic to which esp32 client publishes
+
+    config SUBSCIBE_TOPIC
+        string "subscribe topic"
+        default "/topic/subscribe/py2esp"
+        help
+            topic to which esp32 client subsribes (and expects data)
+
+    config BROKER_CERTIFICATE_OVERRIDE
+        string "Broker certificate override"
+        default ""
+        help
+            Please leave empty if broker certificate included from a textfile; otherwise fill in a base64 part of PEM
+            format certificate
+
+    config BROKER_CERTIFICATE_OVERRIDDEN
+        bool
+        default y if BROKER_CERTIFICATE_OVERRIDE != ""
+
+endmenu
