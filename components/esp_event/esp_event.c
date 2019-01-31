@@ -286,7 +286,7 @@ static esp_event_base_instance_t* loop_find_event_base_instance(esp_event_loop_i
 // Functions that operate on post instance
 static esp_err_t post_instance_create(esp_event_base_t event_base, int32_t event_id, void* event_data, int32_t event_data_size, esp_event_post_instance_t* post)
 {
-    void** event_data_copy = NULL;
+    void* event_data_copy = NULL;
 
     // Make persistent copy of event data on heap.
     if (event_data != NULL && event_data_size != 0) {
@@ -528,6 +528,8 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
             exec |= true;
         }
 
+        post_instance_delete(&post);
+
         if (ticks_to_run != portMAX_DELAY) {
             end = xTaskGetTickCount();
             remaining_ticks -= end - marker;
@@ -559,10 +561,14 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
     SemaphoreHandle_t loop_mutex = loop->mutex;
+#ifdef CONFIG_EVENT_LOOP_PROFILING
+    SemaphoreHandle_t loop_profiling_mutex = loop->profiling_mutex;
+#endif
 
     xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
 
 #ifdef CONFIG_EVENT_LOOP_PROFILING
+    xSemaphoreTakeRecursive(loop->profiling_mutex, portMAX_DELAY);
     portENTER_CRITICAL(&s_event_loops_spinlock);
     SLIST_REMOVE(&s_event_loops, loop, esp_event_loop_instance, loop_entry);
     portEXIT_CRITICAL(&s_event_loops_spinlock);
@@ -588,6 +594,10 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     free(loop);
     // Free loop mutex before deleting
     xSemaphoreGiveRecursive(loop_mutex);
+#ifdef CONFIG_EVENT_LOOP_PROFILING
+    xSemaphoreGiveRecursive(loop_profiling_mutex);
+    vSemaphoreDelete(loop_profiling_mutex);
+#endif
     vSemaphoreDelete(loop_mutex);
 
     ESP_LOGD(TAG, "deleted loop %p", (void*) event_loop);
