@@ -44,12 +44,19 @@ CONFIG_NAME_MAX_LENGTH = 60
 # TODO increase prefix length (after the names have been refactored)
 CONFIG_NAME_MIN_PREFIX_LENGTH = 0
 
+# The checker will not fail if it encounters this string (it can be used for temporarily resolve conflicts)
+RE_NOERROR = re.compile(r'\s+#\s+NOERROR\s+$')
+
 # list or rules for lines
 LINE_ERROR_RULES = [
     # (regular expression for finding,      error message,                                  correction)
     (re.compile(r'\t'),                     'tabulators should be replaced by spaces',      r' ' * SPACES_PER_INDENT),
     (re.compile(r'\s+\n'),                  'trailing whitespaces should be removed',       r'\n'),
     (re.compile(r'.{120}'),                 'line should be shorter than 120 characters',   None),
+    # "\<CR><LF>" is not recognized due to a bug in tools/kconfig/zconf.l. The bug was fixed but the rebuild of
+    # mconf-idf is not enforced and an incorrect version is supplied with all previous IDF versions. Backslashes
+    # cannot be enabled unless everybody updates mconf-idf.
+    (re.compile(r'\\\n'),                   'line cannot be wrapped by backslash',          None),
 ]
 
 
@@ -81,11 +88,17 @@ class LineRuleChecker(BaseChecker):
     checks LINE_ERROR_RULES for each line
     """
     def process_line(self, line, line_number):
+        suppress_errors = RE_NOERROR.search(line) is not None
         errors = []
         for rule in LINE_ERROR_RULES:
             m = rule[0].search(line)
             if m:
-                errors.append(rule[1])
+                if suppress_errors:
+                    # just print but no failure
+                    e = InputError(self.path_in_idf, line_number, rule[1], line)
+                    print(e)
+                else:
+                    errors.append(rule[1])
                 if rule[2]:
                     line = rule[0].sub(rule[2], line)
         if len(errors) > 0:
@@ -297,11 +310,10 @@ class IndentAndNameChecker(BaseChecker):
                     self.force_next_indent = 0
                 return
 
-        else:
-            if stripped_line.endswith('\\') and stripped_line.startswith(('config', 'menuconfig', 'choice')):
-                raise InputError(self.path_in_idf, line_number,
-                                 'Line-wrap with backslash is not supported here',
-                                 line)  # no suggestion for this
+        elif stripped_line.endswith('\\') and stripped_line.startswith(('config', 'menuconfig', 'choice')):
+            raise InputError(self.path_in_idf, line_number,
+                             'Line-wrap with backslash is not supported here',
+                             line)  # no suggestion for this
 
         self.check_name_and_update_prefix(stripped_line, line_number)
 
