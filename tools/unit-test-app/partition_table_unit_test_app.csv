@@ -5,7 +5,7 @@
 nvs,        data, nvs,      0x9000,  0x4000
 otadata,    data, ota,      0xd000,  0x2000
 phy_init,   data, phy,      0xf000,  0x1000
-factory,    0,    0,        0x10000, 0x240000
+factory,    0,    0,        0x10000, 0x250000
 # these OTA partitions are used for tests, but can't fit real OTA apps in them
 # (done this way to reduce total flash usage.)
 ota_0,      0,    ota_0,    ,        64K
