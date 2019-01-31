@@ -28,11 +28,18 @@ menu "Example Configuration"
 
     config RESOLVE_TEST_SERVICES
         bool "Resolve test services"
-        default y
+        default n
         help
             Enable resolving test services on startup.
             These services are advertized and evaluated in automated tests.
             When executed locally, these will not be resolved and warnings appear in the log.
             Please set to false to disable initial querying to avoid warnings.
+
+    config MDNS_ADD_MAC_TO_HOSTNAME
+        bool "Add mac suffix to hostname"
+        default n
+        help
+            If enabled, a portion of MAC address is added to the hostname, this is used
+            for evaluation of tests in CI
 
 endmenu
