@@ -22,10 +22,11 @@
     .task_priority  = tskIDLE_PRIORITY + 5,  \
 }
 
-/**
- * @brief   Config parameters for protocomm HTTP server
- */
+
+
+/** Protocomm HTTP Server Configuration */
 typedef struct {
+
     uint16_t port;          /*!< Port on which the http server will listen */
 
     /**
@@ -34,6 +35,27 @@ typedef struct {
      */
     size_t   stack_size;
     unsigned task_priority; /*!< Priority of server task */
+} protocomm_http_server_config_t; /*!< HTTP Server Configuration, if HTTP Server has not been started already */
+
+/** Protocomm HTTPD Configuration Data */
+typedef union {
+    /** HTTP Server Handle, if ext_handle_provided is set to true */
+    void *handle;
+    /** HTTP Server Configuration, if a server is not already active */
+    protocomm_http_server_config_t config;
+} protocomm_httpd_config_data_t;
+
+/**
+ * @brief   Config parameters for protocomm HTTP server
+ */
+typedef struct {
+    /** Flag to indicate of an external HTTP Server Handle has been provided.
+     * In such as case, protocomm will use the same HTTP Server and not start
+     * a new one internally.
+     */
+    bool ext_handle_provided;
+    /** Protocomm HTTPD Configuration Data */
+    protocomm_httpd_config_data_t data;
 } protocomm_httpd_config_t;
 
 /**
