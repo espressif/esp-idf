@@ -627,6 +627,16 @@ extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partitio
     uint8_t eky_raw[NVS_KEY_SIZE], tky_raw[NVS_KEY_SIZE];
     uint32_t crc_raw, crc_read, crc_calc;
 
+    auto check_if_initialized = [](uint8_t* eky, uint8_t* tky, uint32_t crc) {
+        uint8_t cnt = 0; 
+        while(cnt < NVS_KEY_SIZE && eky[cnt] == 0xff && tky[cnt] == 0xff) cnt++;
+
+        if(cnt == NVS_KEY_SIZE && crc == 0xffffffff) {
+            return false;
+        }
+        return true;
+    };
+
     auto err = spi_flash_read(partition->address, eky_raw, NVS_KEY_SIZE);
     if(err != ESP_OK) {
         return err;
@@ -642,12 +652,7 @@ extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partitio
         return err;
     }
 
-
-    uint8_t cnt = 0;
-
-    while(cnt < NVS_KEY_SIZE && eky_raw[cnt] == 0xff && tky_raw[cnt] == 0xff) cnt++;
-
-    if(cnt == NVS_KEY_SIZE && crc_raw == 0xffffffff) {
+    if(!check_if_initialized(eky_raw, tky_raw, crc_raw)) {
         /* This is an uninitialized key partition*/
         return ESP_ERR_NVS_KEYS_NOT_INITIALIZED;
     }
@@ -673,7 +678,11 @@ extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partitio
     crc_calc = crc32_le(0xffffffff, cfg->eky, NVS_KEY_SIZE);
     crc_calc = crc32_le(crc_calc, cfg->tky, NVS_KEY_SIZE);
 
-    if(crc_calc != crc_read) { 
+    if(crc_calc != crc_read) {
+        if(!check_if_initialized(cfg->eky, cfg->tky, crc_read)) {
+            /* This is an uninitialized key partition*/
+            return ESP_ERR_NVS_KEYS_NOT_INITIALIZED;
+        }
         return ESP_ERR_NVS_CORRUPT_KEY_PART;
     }
 
