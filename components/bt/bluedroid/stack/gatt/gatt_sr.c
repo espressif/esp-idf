@@ -1595,8 +1595,10 @@ void gatts_process_value_conf(tGATT_TCB *p_tcb, UINT8 op_code)
                 if (p_rcb->in_use && p_rcb->s_hdl <= handle && p_rcb->e_hdl >= handle) {
                     trans_id = gatt_sr_enqueue_cmd(p_tcb, op_code, handle);
                     conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_rcb->gatt_if);
+                    tGATTS_DATA p_data = {0};
+                    p_data.handle = handle;
                     gatt_sr_send_req_callback(conn_id,
-                                              trans_id, GATTS_REQ_TYPE_CONF, (tGATTS_DATA *)&handle);
+                                              trans_id, GATTS_REQ_TYPE_CONF, &p_data);
                 }
             }
         }
