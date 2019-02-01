@@ -932,6 +932,9 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
             cb_data.req_data.trans_id   = trans_id;
             cb_data.req_data.p_data     = (tBTA_GATTS_REQ_DATA *)p_data;
 
+            if(req_type == BTA_GATTS_CONF_EVT) {
+               cb_data.req_data.handle =  p_data->handle; 
+            }
             (*p_rcb->p_cback)(req_type,  &cb_data);
         } else {
             APPL_TRACE_ERROR("connection request on gatt_if[%d] is not interested", gatt_if);
