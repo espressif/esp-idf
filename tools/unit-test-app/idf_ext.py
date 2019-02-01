@@ -215,7 +215,7 @@ def add_action_extensions(base_functions, base_actions):
                     pass
                 shutil.copyfile(partition_table, os.path.join(dest, "partition_table", os.path.basename(partition_table)))
 
-            shutil.copyfile(os.path.join(src, "flash_project_args"), os.path.join(dest, "flash_project_args"))
+            shutil.copyfile(os.path.join(src, "flasher_args.json"), os.path.join(dest, "flasher_args.json"))
 
             binaries = glob.glob(os.path.join(src, "*.bin"))
             binaries = [os.path.basename(s) for s in binaries]
