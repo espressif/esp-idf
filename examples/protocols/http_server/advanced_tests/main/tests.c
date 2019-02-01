@@ -55,6 +55,7 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     int    ret;
 
     if (!buf) {
+        ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", req->content_len + 1);
         httpd_resp_send_500(req);
         return ESP_FAIL;
     }
@@ -84,12 +85,15 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     if (hdr_len) {
         /* Read Custom header value */
         req_hdr = malloc(hdr_len + 1);
-        if (req_hdr) {
-            httpd_req_get_hdr_value_str(req, "Custom", req_hdr, hdr_len + 1);
-
-            /* Set as additional header for response packet */
-            httpd_resp_set_hdr(req, "Custom", req_hdr);
+        if (!req_hdr) {
+            ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", hdr_len + 1);
+            httpd_resp_send_500(req);
+            return ESP_FAIL;
         }
+        httpd_req_get_hdr_value_str(req, "Custom", req_hdr, hdr_len + 1);
+
+        /* Set as additional header for response packet */
+        httpd_resp_set_hdr(req, "Custom", req_hdr);
     }
     httpd_resp_send(req, buf, req->content_len);
     free (req_hdr);
