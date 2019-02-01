@@ -471,6 +471,122 @@ esp_err_t httpd_unregister_uri(httpd_handle_t handle, const char* uri);
  * @}
  */
 
+/* ************** Group: HTTP Error ************** */
+/** @name HTTP Error
+ * Prototype for HTTP errors and error handling functions
+ * @{
+ */
+
+/**
+ * @brief Error codes sent as HTTP response in case of errors
+ *        encountered during processing of an HTTP request
+ */
+typedef enum {
+    /* For any unexpected errors during parsing, like unexpected
+     * state transitions, or unhandled errors.
+     */
+    HTTPD_500_INTERNAL_SERVER_ERROR = 0,
+
+    /* For methods not supported by http_parser. Presently
+     * http_parser halts parsing when such methods are
+     * encountered and so the server responds with 400 Bad
+     * Request error instead.
+     */
+    HTTPD_501_METHOD_NOT_IMPLEMENTED,
+
+    /* When HTTP version is not 1.1 */
+    HTTPD_505_VERSION_NOT_SUPPORTED,
+
+    /* Returned when http_parser halts parsing due to incorrect
+     * syntax of request, unsupported method in request URI or
+     * due to chunked encoding / upgrade field present in headers
+     */
+    HTTPD_400_BAD_REQUEST,
+
+    /* When requested URI is not found */
+    HTTPD_404_NOT_FOUND,
+
+    /* When URI found, but method has no handler registered */
+    HTTPD_405_METHOD_NOT_ALLOWED,
+
+    /* Intended for recv timeout. Presently it's being sent
+     * for other recv errors as well. Client should expect the
+     * server to immediately close the connection after
+     * responding with this.
+     */
+    HTTPD_408_REQ_TIMEOUT,
+
+    /* Intended for responding to chunked encoding, which is
+     * not supported currently. Though unhandled http_parser
+     * callback for chunked request returns "400 Bad Request"
+     */
+    HTTPD_411_LENGTH_REQUIRED,
+
+    /* URI length greater than CONFIG_HTTPD_MAX_URI_LEN */
+    HTTPD_414_URI_TOO_LONG,
+
+    /* Headers section larger than CONFIG_HTTPD_MAX_REQ_HDR_LEN */
+    HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE,
+
+    /* Used internally for retrieving the total count of errors */
+    HTTPD_ERR_CODE_MAX
+} httpd_err_code_t;
+
+/**
+ * @brief  Function prototype for HTTP error handling.
+ *
+ * This function is executed upon HTTP errors generated during
+ * internal processing of an HTTP request. This is used to override
+ * the default behavior on error, which is to send HTTP error response
+ * and close the underlying socket.
+ *
+ * @note
+ *  - If implemented, the server will not automatically send out HTTP
+ *    error response codes, therefore, httpd_resp_send_err() must be
+ *    invoked inside this function if user wishes to generate HTTP
+ *    error responses.
+ *  - When invoked, the validity of `uri`, `method`, `content_len`
+ *    and `user_ctx` fields of the httpd_req_t parameter is not
+ *    guaranteed as the HTTP request may be partially received/parsed.
+ *  - The function must return ESP_OK if underlying socket needs to
+ *    be kept open. Any other value will ensure that the socket is
+ *    closed. The return value is ignored when error is of type
+ *    `HTTPD_500_INTERNAL_SERVER_ERROR` and the socket closed anyway.
+ *
+ * @param[in] req    HTTP request for which the error needs to be handled
+ * @param[in] error  Error type
+ *
+ * @return
+ *  - ESP_OK   : error handled successful
+ *  - ESP_FAIL : failure indicates that the underlying socket needs to be closed
+ */
+typedef esp_err_t (*httpd_err_handler_func_t)(httpd_req_t *req,
+                                              httpd_err_code_t error);
+
+/**
+ * @brief  Function for registering HTTP error handlers
+ *
+ * This function maps a handler function to any supported error code
+ * given by `httpd_err_code_t`. See prototype `httpd_err_handler_func_t`
+ * above for details.
+ *
+ * @param[in] handle     HTTP server handle
+ * @param[in] error      Error type
+ * @param[in] handler_fn User implemented handler function
+ *                       (Pass NULL to unset any previously set handler)
+ *
+ * @return
+ *  - ESP_OK : handler registered successfully
+ *  - ESP_ERR_INVALID_ARG : invalid error code or server handle
+ */
+esp_err_t httpd_register_err_handler(httpd_handle_t handle,
+                                     httpd_err_code_t error,
+                                     httpd_err_handler_func_t handler_fn);
+
+/** End of HTTP Error
+ * @}
+ */
+
 /* ************** Group: TX/RX ************** */
 /** @name TX / RX
  * Prototype for HTTPDs low-level send/recv functions
@@ -901,7 +1017,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
-inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
+static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
     return httpd_resp_send(r, str, (str == NULL) ? 0 : strlen(str));
 }
 
@@ -922,7 +1038,7 @@ inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
-inline esp_err_t httpd_resp_sendstr_chunk(httpd_req_t *r, const char *str) {
+static inline esp_err_t httpd_resp_sendstr_chunk(httpd_req_t *r, const char *str) {
     return httpd_resp_send_chunk(r, str, (str == NULL) ? 0 : strlen(str));
 }
 
@@ -1015,6 +1131,30 @@ esp_err_t httpd_resp_set_type(httpd_req_t *r, const char *type);
 esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *value);
 
 /**
+ * @brief   For sending out error code in response to HTTP request.
+ *
+ * @note
+ *  - This API is supposed to be called only from the context of
+ *    a URI handler where httpd_req_t* request pointer is valid.
+ *  - Once this API is called, all request headers are purged, so
+ *    request headers need be copied into separate buffers if
+ *    they are required later.
+ *  - If you wish to send additional data in the body of the
+ *    response, please use the lower-level functions directly.
+ *
+ * @param[in] req     Pointer to the HTTP request for which the response needs to be sent
+ * @param[in] error   Error type to send
+ * @param[in] msg     Error message string (pass NULL for default message)
+ *
+ * @return
+ *  - ESP_OK : On successfully sending the response packet
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
+ *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
+ */
+esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const char *msg);
+
+/**
  * @brief   Helper function for HTTP 404
  *
  * Send HTTP 404 message. If you wish to send additional data in the body of the
@@ -1035,7 +1175,9 @@ esp_err_t httpd_resp_set_hdr(httpd_req_t *r, const char *field, const char *valu
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_resp_send_404(httpd_req_t *r);
+static inline esp_err_t httpd_resp_send_404(httpd_req_t *r) {
+    return httpd_resp_send_err(r, HTTPD_404_NOT_FOUND, NULL);
+}
 
 /**
  * @brief   Helper function for HTTP 408
@@ -1058,7 +1200,9 @@ esp_err_t httpd_resp_send_404(httpd_req_t *r);
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_resp_send_408(httpd_req_t *r);
+static inline esp_err_t httpd_resp_send_408(httpd_req_t *r) {
+    return httpd_resp_send_err(r, HTTPD_408_REQ_TIMEOUT, NULL);
+}
 
 /**
  * @brief   Helper function for HTTP 500
@@ -1081,7 +1225,9 @@ esp_err_t httpd_resp_send_408(httpd_req_t *r);
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_resp_send_500(httpd_req_t *r);
+static inline esp_err_t httpd_resp_send_500(httpd_req_t *r) {
+    return httpd_resp_send_err(r, HTTPD_500_INTERNAL_SERVER_ERROR, NULL);
+}
 
 /**
  * @brief   Raw HTTP send
