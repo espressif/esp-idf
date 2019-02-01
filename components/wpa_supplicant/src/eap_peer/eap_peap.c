@@ -1,6 +1,6 @@
 /*
  * EAP peer method: EAP-PEAP (draft-josefsson-pppext-eap-tls-eap-10.txt)
- * Copyright (c) 2004-2015, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2004-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -74,7 +74,7 @@ struct eap_peap_data {
 static void eap_peap_free_key(struct eap_peap_data *data)
 {
 	if (data->key_data) {
-		bin_clear_free(data->key_data, EAP_TLS_KEY_LEN);
+		bin_clear_free(data->key_data, EAP_TLS_KEY_LEN + EAP_EMSK_LEN);
 		data->key_data = NULL;
 	}
 }
@@ -1203,12 +1203,18 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 				   "key derivation", label);
 			data->key_data =
 				eap_peer_tls_derive_key(sm, &data->ssl, label,
-							EAP_TLS_KEY_LEN);
+							EAP_TLS_KEY_LEN +
+							EAP_EMSK_LEN);
 			if (data->key_data) {
 				wpa_hexdump_key(MSG_DEBUG,
 						"EAP-PEAP: Derived key",
 						data->key_data,
 						EAP_TLS_KEY_LEN);
+				wpa_hexdump_key(MSG_DEBUG,
+						"EAP-PEAP: Derived EMSK",
+						data->key_data +
+						EAP_TLS_KEY_LEN,
+						EAP_EMSK_LEN);
 			} else {
 				wpa_printf(MSG_DEBUG, "EAP-PEAP: Failed to "
 					   "derive key");
@@ -1391,6 +1397,29 @@ eap_peap_getKey(struct eap_sm *sm, void *priv, size_t *len)
 }
 
 
+static u8 * eap_peap_get_emsk(struct eap_sm *sm, void *priv, size_t *len)
+{
+	struct eap_peap_data *data = priv;
+	u8 *key;
+
+	if (!data->key_data || !data->phase2_success)
+		return NULL;
+
+	if (data->crypto_binding_used) {
+		/* [MS-PEAP] does not define EMSK derivation */
+		return NULL;
+	}
+
+	key = os_memdup(data->key_data + EAP_TLS_KEY_LEN, EAP_EMSK_LEN);
+	if (!key)
+		return NULL;
+
+	*len = EAP_EMSK_LEN;
+
+	return key;
+}
+
+
 static u8 *
 eap_peap_get_session_id(struct eap_sm *sm, void *priv, size_t *len)
 {
@@ -1427,6 +1456,7 @@ eap_peer_peap_register(void)
 	eap->process = eap_peap_process;
 	eap->isKeyAvailable = eap_peap_isKeyAvailable;
 	eap->getKey = eap_peap_getKey;
+	eap->get_emsk = eap_peap_get_emsk;
 	eap->get_status = eap_peap_get_status;
 	eap->has_reauth_data = eap_peap_has_reauth_data;
 	eap->deinit_for_reauth = eap_peap_deinit_for_reauth;
