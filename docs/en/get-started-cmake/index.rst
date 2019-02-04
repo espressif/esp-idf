@@ -19,7 +19,6 @@ ESP32 integrates Wi-Fi (2.4 GHz band) and Bluetooth 4.2 solutions on a single ch
 
 Espressif provides the basic hardware and software resources that help application developers to build their ideas around the ESP32 series hardware. The software development framework by Espressif is intended for rapidly developing Internet-of-Things (IoT) applications, with Wi-Fi, Bluetooth, power management and several other system features.
 
-
 What You Need
 =============
 
@@ -39,18 +38,30 @@ To develop applications for ESP32 you need:
 
     Development of applications for ESP32
 
-Steps to set up Development Environment:
+.. _get-started-step-by-step-cmake:
 
-1. Setup of **Toolchain**
-2. Getting **ESP-IDF** from GitHub
+Installation Step by Step
+=========================
 
-Once the development environment is set up, we will follow these steps to create an ESP-IDF application:
+This is a detailed roadmap to walk you through the installation process.
 
-1. Configuration of a **Project** and writing the code
-2. Compilation of the **Project** and linking it to build an **Application**
-3. Flashing (uploading) the compiled **Application** to **ESP32** over a USB/serial connection
-4. Monitoring / debugging of the **Application** output via USB/serial
+Setting up Development Environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* :ref:`get-started-setup-toolchain-cmake` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`MacOS <macos-setup>`
+* :ref:`get-started-get-esp-idf-cmake`
+* :ref:`get-started-setup-path-cmake`
+* :ref:`get-started-get-packages-cmake`
+
+Creating Your First Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* :ref:`get-started-start-project-cmake`
+* :ref:`get-started-connect-cmake`
+* :ref:`get-started-configure-cmake`
+* :ref:`get-started-build-cmake`
+* :ref:`get-started-flash-cmake`
+* :ref:`get-started-build-monitor-cmake`
 
 Development Board Guides
 ========================
@@ -66,11 +77,10 @@ If you have one of ESP32 development boards listed below, click on the link for 
 
 If you have different board, move to sections below.
 
-
 .. _get-started-setup-toolchain-cmake:
 
-Setup Toolchain
-===============
+Step 1. Set up Toolchain
+========================
 
 The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow provided instructions. 
 
@@ -104,14 +114,12 @@ The quickest way to start development with ESP32 is by installing a prebuilt too
 
     We are an using ``esp`` subdirectory in your user's home directory (``~/esp`` on Linux and MacOS, ``%userprofile%\esp`` on Windows) to install everything needed for ESP-IDF. You can use any different directory, but will need to adjust the respective commands.
 
-Depending on your experience and preferences, instead of using a prebuilt toolchain, you may want to customize your environment. To set up the system your own way go to section :ref:`get-started-customized-setup-cmake`.
-
-Once you are done with setting up the toolchain then go to section :ref:`get-started-get-esp-idf-cmake`.
+Depending on your experience and preferences, instead of using a prebuilt toolchain, you may want to customize your environment. To set up the system your own way go to Section :ref:`get-started-customized-setup-cmake`.
 
 .. _get-started-get-esp-idf-cmake:
 
-Get ESP-IDF
-===========
+Step 2. Get ESP-IDF
+===================
 
 Besides the toolchain (that contains programs to compile and build the application), you also need ESP32 specific API / libraries. They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_. To get it, open terminal, navigate to the directory you want to put ESP-IDF, and clone it using ``git clone`` command.
 
@@ -147,8 +155,8 @@ Consult :doc:`/versions` for information about which version of ESP-IDF to use i
 
 .. _get-started-setup-path-cmake:
 
-Setup Environment Variables
-===========================
+Step 3. Set Environment Variables
+=================================
 
 ESP-IDF requires two environment variables to be set for normal operation:
 
@@ -157,12 +165,29 @@ ESP-IDF requires two environment variables to be set for normal operation:
 
 These two variables should be set up on your PC, otherwise projects will not build.
 
-Setting may be done manually, each time PC is restarted. Another option is to set them permanently in user profile. To do this, follow instructions specific to :ref:`Windows <add-paths-to-profile-windows-cmake>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-cmake>` in section :doc:`add-idf_path-to-profile`.
+Setting may be done manually, each time PC is restarted. Another option is to set them permanently in user profile. To do this, follow instructions specific to :ref:`Windows <add-paths-to-profile-windows-cmake>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-cmake>` in Section :doc:`add-idf_path-to-profile`.
+
+.. _get-started-get-packages-cmake:
+
+Step 4. Install the Required Python Packages
+============================================
+
+Python packages required by ESP-IDF are located in the ``$IDF_PATH/requirements.txt`` file. You can install them by running::
+
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    Please invoke that version of the Python interpreter which you will be using with ESP-IDF. The version of the
+    interpreter can be checked by running command ``python --version`` and depending on the result, you might want to
+    use ``python2``, ``python2.7`` or similar instead of ``python``, e.g.::
+
+        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
 
 .. _get-started-start-project-cmake:
 
-Start a Project
-===============
+Step 5. Start a Project
+=======================
 
 Now you are ready to prepare your application for ESP32. To start off quickly, we will use :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
 
@@ -194,15 +219,15 @@ It is also possible to build examples in-place, without copying them first.
 
 .. _get-started-connect-cmake:
 
-Connect
-=======
+Step 6. Connect the Device
+==========================
 
-You are almost there. To be able to proceed further, connect ESP32 board to PC, check under what serial port the board is visible and verify if serial communication works. If you are not sure how to do it, check instructions in section :doc:`establish-serial-connection`. Note the port number, as it will be required in the next step.
+You are almost there. To be able to proceed further, connect ESP32 board to PC, check under what serial port the board is visible and verify if serial communication works. If you are not sure how to do it, check instructions in Section :doc:`establish-serial-connection`. Note the port number, as it will be required in the next step.
 
 .. _get-started-configure-cmake:
 
-Configure
-=========
+Step 7. Configure
+=================
 
 Navigate to the directory of the ``hello_world`` application copy, and run the ``menuconfig`` project configuration utility:
 
@@ -250,11 +275,10 @@ Here are couple of tips on navigation and use of ``menuconfig``:
 
     When using ESP32-DevKitC board with ESP32-SOLO-1 module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing example applications.
 
-
 .. _get-started-build-cmake:
 
-Build The Project
-=================
+Step 8. Build the Project
+=========================
 
 .. highlight:: bash
 
@@ -288,8 +312,8 @@ If there are no errors, the build will finish by generating the firmware binary 
 
 .. _get-started-flash-cmake:
 
-Flash To A Device
-=================
+Step 9. Flash to a Device
+=========================
 
 Now you can flash the application to the ESP32 board. Run::
 
@@ -339,8 +363,8 @@ If there are no issues, at the end of flash process, the module will be reset an
 
 .. _get-started-build-monitor-cmake:
 
-Monitor
-=======
+Step 10. Monitor
+================
 
 To see if "hello_world" application is indeed running, type ``idf.py -p PORT monitor``. This command is launching :doc:`IDF Monitor <idf-monitor>` application::
 
@@ -384,24 +408,22 @@ To exit the monitor use shortcut ``Ctrl+]``.
 
        idf.py -p PORT flash monitor
 
-Check the section :doc:`IDF Monitor <idf-monitor>` for handy shortcuts and more details on using the monitor.
+Check the Section :doc:`IDF Monitor <idf-monitor>` for handy shortcuts and more details on using the monitor.
 
-Check the section :ref:`idf.py` for a full reference of ``idf.py`` commands and options.
+Check the Section :ref:`idf.py` for a full reference of ``idf.py`` commands and options.
 
 That's all what you need to get started with ESP32!
 
 Now you are ready to try some other :idf:`examples`, or go right to developing your own applications.
 
-
 Updating ESP-IDF
 ================
 
-After some time of using ESP-IDF, you may want to update it to take advantage of new features or bug fixes. The simplest way to do so is by deleting existing ``esp-idf`` folder and cloning it again, exactly as when doing initial installation described in sections :ref:`get-started-get-esp-idf-cmake`.
+You should update ESP-IDF from time to time, as newer versions fix bugs and provide new features. The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf-cmake`.
 
 If downloading to a new path, remember to :doc:`add-idf_path-to-profile` so that the toolchain scripts know where to find the ESP-IDF in its release specific location.
 
 Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
-
 
 Related Documents
 =================

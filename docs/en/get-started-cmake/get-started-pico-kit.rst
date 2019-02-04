@@ -1,7 +1,6 @@
 ESP32-PICO-KIT V4 Getting Started Guide (CMake)
 ===============================================
 
-
 This user guide shows how to get started with the ESP32-PICO-KIT V4 mini development board. For description of other versions of the ESP32-PICO-KIT check :doc:`../hw-reference/index`.
 
 
@@ -12,7 +11,7 @@ What You Need
 * 1 × USB A / Micro USB B cable
 * 1 × PC loaded with Windows, Linux or Mac OS
 
-If you like to start using this board right now, go directly to section `Start Application Development`_.
+If you want to start using this board right now, go directly to Section `Start Application Development`_.
 
 
 Overview
@@ -28,7 +27,7 @@ For easy interfacing, all the IO signals and system power on ESP32-PICO-D4 are l
 
     The 2 x 3 pads not populated with pin headers are internally connected to the flash memory embedded in the ESP32-PICO-D4 SIP module. For more details see module's datasheet in `Related Documents`_.
 
-The board dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4"), see section `Board Dimensions`_. An overview functional block diagram is shown below.
+The board dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4"), see Section `Board Dimensions`_. An overview functional block diagram is shown below.
 
 .. figure:: ../../_static/esp32-pico-kit-v4-functional-block-diagram.png
     :align: center
@@ -54,7 +53,7 @@ Micro USB Port
 5V Power On LED
     This light emitting diode lits when the USB or an external 5V power supply is applied to the board. For details see schematic in `Related Documents`_.
 I/O
-    All the pins on ESP32-PICO-D4 are broken out to the pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details please see section `Pin Descriptions`_.
+    All the pins on ESP32-PICO-D4 are broken out to the pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details please see Section `Pin Descriptions`_.
 BOOT Button
     Holding down the Boot button and pressing the EN button initiates the firmware download mode. Then user can download firmware through the serial port.
 EN Button
@@ -89,13 +88,7 @@ Start Application Development
 
 Before powering up the ESP32-PICO-KIT V4, please make sure that the board has been received in good condition with no obvious signs of damage.
 
-To start development of applications, proceed to section :doc:`index`, that will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain-cmake` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect-cmake` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-cmake` for an example application
-* :ref:`get-started-flash-cmake` to run code on the ESP32
-* :ref:`get-started-build-monitor-cmake` instantly what the application is doing
+To start development of applications, proceed to Section :doc:`index`, that will walk you through the :ref:`get-started-step-by-step-cmake`.
 
 
 Pin Descriptions

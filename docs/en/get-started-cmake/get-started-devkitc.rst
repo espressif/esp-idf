@@ -11,6 +11,8 @@ What You Need
 * 1 × USB A / micro USB B cable 
 * 1 × PC loaded with Windows, Linux or Mac OS
 
+If you want to start using this board right now, go directly to Section `Start Application Development`_.
+
 
 Overview
 --------
@@ -78,13 +80,7 @@ Start Application Development
 
 Before powering up the ESP32-DevKitC, please make sure that the board has been received in good condition with no obvious signs of damage.
 
-To start development of applications, proceed to section :doc:`index`, that will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain-cmake` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect-cmake` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-cmake` for an example application
-* :ref:`get-started-flash-cmake` to run code on the ESP32
-* :ref:`get-started-build-monitor-cmake` instantly what the application is doing
+To start development of applications, proceed to Section :doc:`index`, that will walk you through the :ref:`get-started-step-by-step-cmake`.
 
 
 Board Dimensions
