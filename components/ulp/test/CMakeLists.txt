@@ -5,8 +5,7 @@ set(COMPONENT_REQUIRES unity ulp soc esp_common)
 
 register_component()
 
-set(ULP_APP_NAME ulp_test_app)
-set(ULP_S_SOURCES "ulp/test_jumps.S")
-set(ULP_EXP_DEP_SRCS "test_ulp_as.c")
-idf_build_get_property(idf_path IDF_PATH)
-include(${idf_path}/components/ulp/component_ulp_common.cmake)
+set(ulp_app_name ulp_test_app)
+set(ulp_s_sources "ulp/test_jumps.S")
+set(ulp_exp_dep_srcs "test_ulp_as.c")
+ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
