@@ -22,8 +22,8 @@ import re
 import argparse
 from io import open
 
-# regular expression search object for matching Kconfig files
-RE_KCONFIG = re.compile(r'^Kconfig(?:\.projbuild)?$')
+# regular expression for matching Kconfig files
+RE_KCONFIG = r'^Kconfig(?:\.projbuild)?$'
 
 # ouput file with suggestions will get this suffix
 OUTPUT_SUFFIX = '.new'
@@ -44,12 +44,19 @@ CONFIG_NAME_MAX_LENGTH = 60
 # TODO increase prefix length (after the names have been refactored)
 CONFIG_NAME_MIN_PREFIX_LENGTH = 0
 
+# The checker will not fail if it encounters this string (it can be used for temporarily resolve conflicts)
+RE_NOERROR = re.compile(r'\s+#\s+NOERROR\s+$')
+
 # list or rules for lines
 LINE_ERROR_RULES = [
     # (regular expression for finding,      error message,                                  correction)
     (re.compile(r'\t'),                     'tabulators should be replaced by spaces',      r' ' * SPACES_PER_INDENT),
     (re.compile(r'\s+\n'),                  'trailing whitespaces should be removed',       r'\n'),
     (re.compile(r'.{120}'),                 'line should be shorter than 120 characters',   None),
+    # "\<CR><LF>" is not recognized due to a bug in tools/kconfig/zconf.l. The bug was fixed but the rebuild of
+    # mconf-idf is not enforced and an incorrect version is supplied with all previous IDF versions. Backslashes
+    # cannot be enabled unless everybody updates mconf-idf.
+    (re.compile(r'\\\n'),                   'line cannot be wrapped by backslash',          None),
 ]
 
 
@@ -81,11 +88,17 @@ class LineRuleChecker(BaseChecker):
     checks LINE_ERROR_RULES for each line
     """
     def process_line(self, line, line_number):
+        suppress_errors = RE_NOERROR.search(line) is not None
         errors = []
         for rule in LINE_ERROR_RULES:
             m = rule[0].search(line)
             if m:
-                errors.append(rule[1])
+                if suppress_errors:
+                    # just print but no failure
+                    e = InputError(self.path_in_idf, line_number, rule[1], line)
+                    print(e)
+                else:
+                    errors.append(rule[1])
                 if rule[2]:
                     line = rule[0].sub(rule[2], line)
         if len(errors) > 0:
@@ -297,11 +310,10 @@ class IndentAndNameChecker(BaseChecker):
                     self.force_next_indent = 0
                 return
 
-        else:
-            if stripped_line.endswith('\\') and stripped_line.startswith(('config', 'menuconfig', 'choice')):
-                raise InputError(self.path_in_idf, line_number,
-                                 'Line-wrap with backslash is not supported here',
-                                 line)  # no suggestion for this
+        elif stripped_line.endswith('\\') and stripped_line.startswith(('config', 'menuconfig', 'choice')):
+            raise InputError(self.path_in_idf, line_number,
+                             'Line-wrap with backslash is not supported here',
+                             line)  # no suggestion for this
 
         self.check_name_and_update_prefix(stripped_line, line_number)
 
@@ -358,47 +370,51 @@ def main():
     check_ignore_dirs = default_path is not None and os.path.abspath(args.directory) == os.path.abspath(default_path)
 
     for root, dirnames, filenames in os.walk(args.directory):
-        for filename in [f for f in filenames if RE_KCONFIG.search(f)]:
+        for filename in filenames:
             full_path = os.path.join(root, filename)
             path_in_idf = os.path.relpath(full_path, args.directory)
-            if check_ignore_dirs and path_in_idf.startswith(IGNORE_DIRS):
-                print('{}: Ignored'.format(path_in_idf))
-                ignore_counter += 1
-                continue
-            suggestions_full_path = full_path + OUTPUT_SUFFIX
-            with open(full_path, 'r', encoding='utf-8') as f, \
-                    open(suggestions_full_path, 'w', encoding='utf-8', newline='\n') as f_o, \
-                    LineRuleChecker(path_in_idf) as line_checker, \
-                    IndentAndNameChecker(path_in_idf, debug=args.verbose) as indent_and_name_checker:
-                try:
-                    for line_number, line in enumerate(f, start=1):
-                        try:
-                            for checker in [line_checker, indent_and_name_checker]:
-                                checker.process_line(line, line_number)
-                            # The line is correct therefore we echo it to the output file
-                            f_o.write(line)
-                        except InputError as e:
-                            print(e)
-                            failure = True
-                            f_o.write(e.suggested_line)
-                except UnicodeDecodeError:
-                    raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
+            if re.search(RE_KCONFIG, filename):
+                if check_ignore_dirs and path_in_idf.startswith(IGNORE_DIRS):
+                    print('{}: Ignored'.format(path_in_idf))
+                    ignore_counter += 1
+                    continue
+                suggestions_full_path = full_path + OUTPUT_SUFFIX
+                with open(full_path, 'r', encoding='utf-8') as f, \
+                        open(suggestions_full_path, 'w', encoding='utf-8', newline='\n') as f_o, \
+                        LineRuleChecker(path_in_idf) as line_checker, \
+                        IndentAndNameChecker(path_in_idf, debug=args.verbose) as indent_and_name_checker:
+                    try:
+                        for line_number, line in enumerate(f, start=1):
+                            try:
+                                for checker in [line_checker, indent_and_name_checker]:
+                                    checker.process_line(line, line_number)
+                                # The line is correct therefore we echo it to the output file
+                                f_o.write(line)
+                            except InputError as e:
+                                print(e)
+                                failure = True
+                                f_o.write(e.suggested_line)
+                    except UnicodeDecodeError:
+                        raise ValueError("The encoding of {} is not Unicode.".format(path_in_idf))
 
-            if failure:
-                print('{} has been saved with suggestions for resolving the issues. Please note that the suggestions '
-                      'can be wrong and you might need to re-run the checker several times for solving all issues.'
-                      ''.format(path_in_idf + OUTPUT_SUFFIX))
-                print('Please fix the errors and run {} for checking the correctness of '
-                      'Kconfigs.'.format(os.path.relpath(os.path.abspath(__file__), args.directory)))
-                sys.exit(1)
-            else:
-                success_couter += 1
-                print('{}: OK'.format(path_in_idf))
-                try:
-                    os.remove(suggestions_full_path)
-                except Exception:
-                    # not a serious error is when the file cannot be deleted
-                    print('{} cannot be deleted!'.format(suggestions_full_path))
+                if failure:
+                    print('{} has been saved with suggestions for resolving the issues. Please note that the '
+                          'suggestions can be wrong and you might need to re-run the checker several times '
+                          'for solving all issues'.format(path_in_idf + OUTPUT_SUFFIX))
+                    print('Please fix the errors and run {} for checking the correctness of '
+                          'Kconfigs.'.format(os.path.relpath(os.path.abspath(__file__), args.directory)))
+                    sys.exit(1)
+                else:
+                    success_couter += 1
+                    print('{}: OK'.format(path_in_idf))
+                    try:
+                        os.remove(suggestions_full_path)
+                    except Exception:
+                        # not a serious error is when the file cannot be deleted
+                        print('{} cannot be deleted!'.format(suggestions_full_path))
+            elif re.search(RE_KCONFIG, filename, re.IGNORECASE):
+                # On Windows Kconfig files are working with different cases!
+                raise ValueError('Incorrect filename of {}. The case should be "Kconfig"!'.format(path_in_idf))
 
     if ignore_counter > 0:
         print('{} files have been ignored.'.format(ignore_counter))

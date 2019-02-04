@@ -67,6 +67,9 @@ class TestLineRuleChecker(unittest.TestCase, ApplyLine):
         self.expt_success('x' * 119)
         self.expt_success('')
 
+    def test_backslashes(self):
+        self.expect_error('test \\', expect=None)
+
 
 class TestIndentAndNameChecker(unittest.TestCase, ApplyLine):
     def setUp(self):
@@ -153,15 +156,6 @@ class TestIndent(TestIndentAndNameChecker):
         self.expt_success('config')
         self.expt_success('    help')
 
-    def test_backslashes(self):
-        self.expt_success('default \\')
-        self.expect_error('help', expect=None)
-        self.expt_success('    CONFIG')
-        self.expt_success('default \\')
-        self.expt_success('    LINE1\\')
-        self.expt_success('    LINE2')
-        self.expt_success('help')
-
 
 class TestName(TestIndentAndNameChecker):
     def setUp(self):
@@ -180,11 +174,6 @@ class TestName(TestIndentAndNameChecker):
         self.expt_success('    choice ' + ('X' * max_length))
         self.expect_error('    choice ' + ('X' * too_long), expect=None)
         self.expt_success('endmenu')
-
-    def test_config_backslash(self):
-        self.expect_error('config\\', expect=None)
-        self.expect_error('menuconfig\\', expect=None)
-        self.expect_error('choice\\', expect=None)
 
 
 class TestPrefix(TestIndentAndNameChecker):
