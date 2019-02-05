@@ -209,9 +209,9 @@ eap_peap_deinit(struct eap_sm *sm, void *priv)
 	eap_peer_tls_ssl_deinit(sm, &data->ssl);
 	eap_peap_free_key(data);
 	os_free(data->session_id);
-	wpabuf_free(data->pending_phase2_req);
-	wpabuf_free(data->pending_resp);
-	os_free(data);
+	wpabuf_clear_free(data->pending_phase2_req);
+	wpabuf_clear_free(data->pending_resp);
+	bin_clear_free(data, sizeof(*data));
 }
 
 
@@ -406,7 +406,7 @@ eap_tlv_build_result(struct eap_sm *sm,
 	wpabuf_put_be16(msg, status); /* Status */
 
 	if (crypto_tlv_used && eap_tlv_add_cryptobinding(sm, data, msg)) {
-		wpabuf_free(msg);
+		wpabuf_clear_free(msg);
 		return NULL;
 	}
 
@@ -721,10 +721,11 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 					if (*resp == NULL) {
 						ret->methodState = METHOD_DONE;
 						ret->decision = DECISION_FAIL;
+						wpabuf_clear_free(buf);
 						return -1;
 					}
 					wpabuf_put_buf(*resp, buf);
-					wpabuf_free(buf);
+					wpabuf_clear_free(buf);
 					break;
 				}
 			}
@@ -795,7 +796,7 @@ static int eap_peap_phase2_request(struct eap_sm *sm,
 
 	if (*resp == NULL) {
 		wpa_printf(MSG_ERROR, "phase 2 response failure");
-		wpabuf_free(data->pending_phase2_req);
+		wpabuf_clear_free(data->pending_phase2_req);
 		data->pending_phase2_req = wpabuf_alloc_copy(hdr, len);
 	}
 /*
@@ -883,7 +884,7 @@ continue_req:
 		struct wpabuf *nmsg = wpabuf_alloc(sizeof(struct eap_hdr) +
 						   wpabuf_len(in_decrypted));
 		if (nmsg == NULL) {
-			wpabuf_free(in_decrypted);
+			wpabuf_clear_free(in_decrypted);
 			return 0;
 		}
 		nhdr = wpabuf_put(nmsg, sizeof(*nhdr));
@@ -893,7 +894,7 @@ continue_req:
 		nhdr->length = host_to_be16(sizeof(struct eap_hdr) +
 					    wpabuf_len(in_decrypted));
 
-		wpabuf_free(in_decrypted);
+		wpabuf_clear_free(in_decrypted);
 		in_decrypted = nmsg;
 	}
 
@@ -945,7 +946,7 @@ continue_req:
 		wpa_printf(MSG_INFO, "EAP-PEAP: Too short Phase 2 "
 			   "EAP frame (len=%lu)",
 			   (unsigned long) wpabuf_len(in_decrypted));
-		wpabuf_free(in_decrypted);
+		wpabuf_clear_free(in_decrypted);
 		return 0;
 	}
 	len = be_to_host16(hdr->length);
@@ -954,7 +955,7 @@ continue_req:
 			   "Phase 2 EAP frame (len=%lu hdr->length=%lu)",
 			   (unsigned long) wpabuf_len(in_decrypted),
 			   (unsigned long) len);
-		wpabuf_free(in_decrypted);
+		wpabuf_clear_free(in_decrypted);
 		return 0;
 	}
 	if (len < wpabuf_len(in_decrypted)) {
@@ -971,7 +972,7 @@ continue_req:
 	case EAP_CODE_REQUEST:
 		if (eap_peap_phase2_request(sm, data, ret, in_decrypted,
 					    &resp)) {
-			wpabuf_free(in_decrypted);
+			wpabuf_clear_free(in_decrypted);
 			wpa_printf(MSG_ERROR, "EAP-PEAP: Phase2 Request "
 				  "processing failed");
 			return 0;
@@ -990,7 +991,7 @@ continue_req:
 					   "completed successfully");
 				ret->methodState = METHOD_DONE;
 				ret->decision = DECISION_FAIL;
-				wpabuf_free(in_decrypted);
+				wpabuf_clear_free(in_decrypted);
 				return 0;
 			}
 			wpa_printf(MSG_DEBUG, "EAP-PEAP: Version 1 - "
@@ -1000,7 +1001,7 @@ continue_req:
 			ret->methodState = METHOD_DONE;
 			data->phase2_success = 1;
 			if (data->peap_outer_success == 2) {
-				wpabuf_free(in_decrypted);
+				wpabuf_clear_free(in_decrypted);
 				wpa_printf(MSG_DEBUG, "EAP-PEAP: Use TLS ACK "
 					   "to finish authentication");
 				return 1;
@@ -1046,7 +1047,7 @@ continue_req:
 		break;
 	}
 
-	wpabuf_free(in_decrypted);
+	wpabuf_clear_free(in_decrypted);
 
 	if (resp) {
 		int skip_change2 = 0;
@@ -1078,7 +1079,7 @@ continue_req:
 			wpa_printf(MSG_INFO, "EAP-PEAP: Failed to encrypt "
 				   "a Phase 2 frame");
 		}
-		wpabuf_free(resp);
+		wpabuf_clear_free(resp);
 	}
 
 	return 0;
@@ -1178,7 +1179,7 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 		if (sm->waiting_ext_cert_check) {
 			wpa_printf(MSG_DEBUG,
 				   "EAP-PEAP: Waiting external server certificate validation");
-			wpabuf_free(data->pending_resp);
+			wpabuf_clear_free(data->pending_resp);
 			data->pending_resp = resp;
 			return NULL;
 		}
@@ -1261,6 +1262,7 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 			 * Application data included in the handshake message.
 			 */
 			wpabuf_free(data->pending_phase2_req);
+			wpabuf_clear_free(data->pending_phase2_req);
 			data->pending_phase2_req = resp;
 			resp = NULL;
 			wpabuf_set(&msg, pos, left);
@@ -1274,7 +1276,7 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 	}
 
 	if (res == 1) {
-		wpabuf_free(resp);
+		wpabuf_clear_free(resp);
 		return eap_peer_tls_build_ack(id, EAP_TYPE_PEAP,
 					      data->peap_version);
 	}
@@ -1297,9 +1299,9 @@ static void
 eap_peap_deinit_for_reauth(struct eap_sm *sm, void *priv)
 {
 	struct eap_peap_data *data = priv;
-	wpabuf_free(data->pending_phase2_req);
+	wpabuf_clear_free(data->pending_phase2_req);
 	data->pending_phase2_req = NULL;
-	wpabuf_free(data->pending_resp);
+	wpabuf_clear_free(data->pending_resp);
 	data->pending_resp = NULL;
 	data->crypto_binding_used = 0;
 }
