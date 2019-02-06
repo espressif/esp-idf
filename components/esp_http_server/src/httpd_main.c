@@ -236,8 +236,6 @@ static void httpd_thread(void *arg)
 
 static esp_err_t httpd_server_init(struct httpd_data *hd)
 {
-    ESP_LOGD(TAG, "Hellooo im here");
-    printf("hello i am really here\n");
     int fd = socket(PF_INET6, SOCK_STREAM, 0);
     if (fd < 0) {
         ESP_LOGE(TAG, LOG_FMT("error in socket (%d)"), errno);
