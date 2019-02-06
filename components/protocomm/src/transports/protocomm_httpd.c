@@ -163,6 +163,45 @@ esp_err_t protocomm_httpd_add_endpoint(const char *ep_name,
     return ESP_OK;
 }
 
+esp_err_t protocomm_httpd_add_simple_endpoint(const char *ep_name,
+                                              protocomm_req_handler_t req_handler,
+                                              bool post)
+{
+    if (pc_httpd == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ESP_LOGV(TAG, "Adding endpoint : %s", ep_name);
+
+    /* Construct URI name by prepending '/' to ep_name */
+    char* ep_uri = calloc(1, strlen(ep_name) + 2);
+    if (!ep_uri) {
+        ESP_LOGE(TAG, "Malloc failed for ep uri");
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Create URI handler structure */
+    sprintf(ep_uri, "/%s", ep_name);
+    httpd_uri_t config_handler = {
+        .uri      = ep_uri,
+        .method   = post ? HTTP_POST : HTTP_GET,
+        .handler  = req_handler,
+        .user_ctx = NULL
+    };
+
+    /* Register URI handler */
+    esp_err_t err;
+    httpd_handle_t *server = (httpd_handle_t *) pc_httpd->priv;
+    if ((err = httpd_register_uri_handler(*server, &config_handler)) != ESP_OK) {
+        ESP_LOGE(TAG, "Uri handler register failed: %s", esp_err_to_name(err));
+        free(ep_uri);
+        return ESP_FAIL;
+    }
+
+    free(ep_uri);
+    return ESP_OK;
+}
+
 static esp_err_t protocomm_httpd_remove_endpoint(const char *ep_name)
 {
     if (pc_httpd == NULL) {
@@ -182,7 +221,7 @@ static esp_err_t protocomm_httpd_remove_endpoint(const char *ep_name)
     /* Unregister URI handler */
     esp_err_t err;
     httpd_handle_t *server = (httpd_handle_t *) pc_httpd->priv;
-    if ((err = httpd_unregister_uri_handler(*server, ep_uri, HTTP_POST)) != ESP_OK) {
+    if ((err = httpd_unregister_uri_handler(*server, ep_uri, HTTP_GET)) != ESP_OK) {
         ESP_LOGE(TAG, "Uri handler de-register failed: %s", esp_err_to_name(err));
         free(ep_uri);
         return ESP_FAIL;
@@ -230,6 +269,7 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
     }
 
     pc->add_endpoint    = protocomm_httpd_add_endpoint;
+    pc->add_simple_endpoint = protocomm_httpd_add_simple_endpoint;
     pc->remove_endpoint = protocomm_httpd_remove_endpoint;
     pc_httpd = pc;
     return ESP_OK;

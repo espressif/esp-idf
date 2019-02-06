@@ -194,6 +194,9 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
  */
 esp_err_t esp_http_client_set_post_field(esp_http_client_handle_t client, const char *data, int len);
 
+// CT added, to support chunked post
+void esp_http_client_set_post_len(esp_http_client_handle_t client, int len);
+
 /**
  * @brief      Get current post field information
  *

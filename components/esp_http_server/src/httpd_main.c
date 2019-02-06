@@ -236,6 +236,8 @@ static void httpd_thread(void *arg)
 
 static esp_err_t httpd_server_init(struct httpd_data *hd)
 {
+    ESP_LOGD(TAG, "Hellooo im here");
+    printf("hello i am really here\n");
     int fd = socket(PF_INET6, SOCK_STREAM, 0);
     if (fd < 0) {
         ESP_LOGE(TAG, LOG_FMT("error in socket (%d)"), errno);
@@ -265,9 +267,12 @@ static esp_err_t httpd_server_init(struct httpd_data *hd)
 
     int ctrl_fd = cs_create_ctrl_sock(hd->config.ctrl_port);
     if (ctrl_fd < 0) {
-        ESP_LOGE(TAG, LOG_FMT("error in creating ctrl socket (%d)"), errno);
+        ESP_LOGE(TAG, LOG_FMT("error in creating ctrl socket (%d) port: %d"), errno, hd->config.ctrl_port);
         close(fd);
         return ESP_FAIL;
+    } else {
+        printf("created nice control socket: %d\n", hd->config.ctrl_port);
+        ESP_LOGD(TAG, "created nice control socket");
     }
 
     int msg_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
