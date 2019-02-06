@@ -40,7 +40,7 @@
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
-	url = https://github.com/espressif/mbedtls.git
+	url = https://github.com/asksyllable/mbedtls.git
 
 [submodule "components/asio/asio"]
 	path = components/asio/asio
