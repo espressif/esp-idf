@@ -163,7 +163,7 @@ def write_git_clone_inc_files(templates, out_dir, version, ver_type, is_stable):
         zipfile = template["zipfile"]
 
         if version == "master":
-            extra_note = template["master"],
+            extra_note = template["master"]
             zipfile_note = zipfile["unstable"]
         else:
             extra_note = template["branch"] % {"clone_arg": version, "ver_type": ver_type}
