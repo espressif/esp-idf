@@ -1149,6 +1149,12 @@ esp_err_t esp_http_client_close(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+// CT added, to support chunked post
+void esp_http_client_set_post_len(esp_http_client_handle_t client, int len)
+{
+    client->post_len = len;
+}
+
 esp_err_t esp_http_client_set_post_field(esp_http_client_handle_t client, const char *data, int len)
 {
     esp_err_t err = ESP_OK;

@@ -89,6 +89,9 @@ void protocomm_delete(protocomm_t *pc);
 esp_err_t protocomm_add_endpoint(protocomm_t *pc, const char *ep_name,
                                  protocomm_req_handler_t h, void *priv_data);
 
+esp_err_t protocomm_add_simple_endpoint(protocomm_t *pc, const char *ep_name,
+                                 protocomm_req_handler_t h, bool post);
+
 /**
  * @brief   Remove endpoint request handler for a protocomm instance
  *

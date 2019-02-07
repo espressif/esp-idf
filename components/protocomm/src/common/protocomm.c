@@ -109,10 +109,56 @@ static esp_err_t protocomm_add_endpoint_internal(protocomm_t *pc, const char *ep
     return ESP_OK;
 }
 
+static esp_err_t protocomm_add_simple_endpoint_internal(protocomm_t *pc, const char *ep_name, protocomm_req_handler_t h, bool post)
+{
+    if ((pc == NULL) || (ep_name == NULL) || (h == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    protocomm_ep_t *ep;
+    esp_err_t ret;
+
+    ep = search_endpoint(pc, ep_name);
+    if (ep) {
+        ESP_LOGE(TAG, "Endpoint with this name already exists");
+        return ESP_FAIL;
+    }
+
+    if (pc->add_simple_endpoint) {
+        ret = pc->add_simple_endpoint(ep_name, h, post);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Error adding endpoint");
+            return ret;
+        }
+    }
+
+    ep = (protocomm_ep_t *) calloc(1, sizeof(protocomm_ep_t));
+    if (!ep) {
+        ESP_LOGE(TAG, "Error allocating endpoint resource");
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Initialize ep handler */
+    ep->ep_name = ep_name;
+    ep->req_handler = h;
+
+    /* Add endpoint to the head of the singly linked list */
+    SLIST_INSERT_HEAD(&pc->endpoints, ep, next);
+
+    return ESP_OK;
+}
+
+
 esp_err_t protocomm_add_endpoint(protocomm_t *pc, const char *ep_name,
                                  protocomm_req_handler_t h, void *priv_data)
 {
     return protocomm_add_endpoint_internal(pc, ep_name, h, priv_data, REQ_EP);
+}
+
+esp_err_t protocomm_add_simple_endpoint(protocomm_t *pc, const char *ep_name,
+                                 protocomm_req_handler_t h, bool post)
+{
+    return protocomm_add_simple_endpoint_internal(pc, ep_name, h, post);
 }
 
 esp_err_t protocomm_remove_endpoint(protocomm_t *pc, const char *ep_name)
