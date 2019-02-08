@@ -19,6 +19,7 @@
 #include <esp_log.h>
 #include <esp_system.h>
 #include <sys/random.h>
+#include <unistd.h>
 #include <unity.h>
 
 #include <mbedtls/aes.h>
@@ -36,7 +37,7 @@
 
 #include "session.pb-c.h"
 
-#ifdef DO_HEAP_TRACING
+#ifdef CONFIG_HEAP_TRACING
     #include <esp_heap_trace.h>
     #define NUM_RECORDS 100
     static heap_trace_record_t trace_record[NUM_RECORDS]; // This buffer must be in internal RAM
@@ -492,6 +493,30 @@ abort_test_sec_endpoint:
     return ESP_FAIL;
 }
 
+#define TEST_VER_STR "<some version string>"
+
+static esp_err_t test_ver_endpoint(session_t *session)
+{
+    ssize_t  ver_data_len = 0;
+    uint8_t *ver_data = NULL;
+
+    esp_err_t ret = protocomm_req_handle(test_pc, "test-ver", session->id,
+                                         NULL, 0, &ver_data, &ver_data_len);
+
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "test-ver handler failed");
+        return ESP_FAIL;
+    }
+
+    if (ver_data_len != strlen(TEST_VER_STR) || memcmp(TEST_VER_STR, ver_data, ver_data_len)) {
+        ESP_LOGE(TAG, "incorrect response data from test-ver");
+        free(ver_data);
+        return ESP_FAIL;
+    }
+    free(ver_data);
+    return ESP_OK;
+}
+
 static esp_err_t test_req_endpoint(session_t *session)
 {
     uint32_t session_id = session->id;
@@ -514,7 +539,7 @@ static esp_err_t test_req_endpoint(session_t *session)
                                          enc_test_data, sizeof(enc_test_data),
                                          &enc_verify_data, &verify_data_len);
 
-    if (ret != ESP_OK) {
+    if (ret != ESP_OK || !verify_data_len) {
         ESP_LOGE(TAG, "test-ep handler failed");
         return ESP_FAIL;
     }
@@ -600,6 +625,11 @@ static esp_err_t start_test_service(uint8_t sec_ver, const protocomm_security_po
         test_sec = &protocomm_security1;
     }
 
+    if (protocomm_set_version(test_pc, "test-ver", TEST_VER_STR) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set version");
+        return ESP_FAIL;
+    }
+
     if (protocomm_add_endpoint(test_pc, "test-ep",
                                test_req_handler,
                                (void *) &test_priv_data) != ESP_OK) {
@@ -611,8 +641,6 @@ static esp_err_t start_test_service(uint8_t sec_ver, const protocomm_security_po
 
 static void stop_test_service(void)
 {
-    protocomm_remove_endpoint(test_pc, "test-ep");
-    protocomm_unset_security(test_pc, "test-sec");
     test_sec = NULL;
     protocomm_delete(test_pc);
     test_pc = NULL;
@@ -913,8 +941,8 @@ static esp_err_t test_security1_weak_session (void)
     }
 
     // Sending request data to echo endpoint encrypted with zero
-    // public keys on both client and server side should pass
-    if (test_req_endpoint(session) != ESP_OK) {
+    // public keys on both client and server side should fail
+    if (test_req_endpoint(session) == ESP_OK) {
         ESP_LOGE(TAG, "Error testing request endpoint");
         stop_test_service();
         free(session);
@@ -935,6 +963,13 @@ static esp_err_t test_protocomm (session_t *session)
     // Start protocomm service
     if (start_test_service(session->sec_ver, session->pop) != ESP_OK) {
         ESP_LOGE(TAG, "Error starting test");
+        return ESP_FAIL;
+    }
+
+    // Check version endpoint
+    if (test_ver_endpoint(session) != ESP_OK) {
+        ESP_LOGE(TAG, "Error testing version endpoint");
+        stop_test_service();
         return ESP_FAIL;
     }
 
@@ -1024,33 +1059,43 @@ static esp_err_t test_security0 (void)
 
 TEST_CASE("leak test", "[PROTOCOMM]")
 {
-#ifdef DO_HEAP_TRACING
+#ifdef CONFIG_HEAP_TRACING
     heap_trace_init_standalone(trace_record, NUM_RECORDS);
-#endif
-
-    unsigned pre_start_mem = esp_get_free_heap_size();
-
-#ifdef DO_HEAP_TRACING
     heap_trace_start(HEAP_TRACE_LEAKS);
 #endif
 
+    /* Run basic tests for the first time to allow for internal long
+     * time allocations to happen (not related to protocomm) */
     test_security0();
     test_security1();
+    usleep(1000);
 
-#ifdef DO_HEAP_TRACING
+#ifdef CONFIG_HEAP_TRACING
     heap_trace_stop();
     heap_trace_dump();
 #endif
 
+    /* Run all tests passively. Any leaks due
+     * to protocomm should show  up now */
+    unsigned pre_start_mem = esp_get_free_heap_size();
+
+    test_security0();
+    test_security1();
+    test_security1_no_encryption();
+    test_security1_session_overflow();
+    test_security1_wrong_pop();
+    test_security1_insecure_client();
+    test_security1_weak_session();
+
+    usleep(1000);
+
     unsigned post_stop_mem = esp_get_free_heap_size();
 
     if (pre_start_mem != post_stop_mem) {
-        ESP_LOGE(TAG, "Mismatch in free heap size");
+        ESP_LOGE(TAG, "Mismatch in free heap size : %d bytes", post_stop_mem - pre_start_mem);
     }
 
-#ifdef DO_HEAP_TRACING
-    TEST_ASSERT(pre_start_mem != post_stop_mem);
-#endif
+    TEST_ASSERT(pre_start_mem == post_stop_mem);
 }
 
 TEST_CASE("security 0 basic test", "[PROTOCOMM]")
