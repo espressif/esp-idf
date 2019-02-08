@@ -36,6 +36,8 @@ static esp_err_t sec0_session_setup(uint32_t session_id,
     S0SessionResp *s0resp = (S0SessionResp *) malloc(sizeof(S0SessionResp));
     if (!out || !s0resp) {
         ESP_LOGE(TAG, "Error allocating response");
+        free(out);
+        free(s0resp);
         return ESP_ERR_NO_MEM;
     }
     sec0_payload__init(out);
@@ -79,6 +81,7 @@ static esp_err_t sec0_req_handler(const protocomm_security_pop_t *pop, uint32_t 
     }
     if (req->sec_ver != protocomm_security0.ver) {
         ESP_LOGE(TAG, "Security version mismatch. Closing connection");
+        session_data__free_unpacked(req, NULL);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -86,12 +89,12 @@ static esp_err_t sec0_req_handler(const protocomm_security_pop_t *pop, uint32_t 
     ret = sec0_session_setup(session_id, req, &resp, pop);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Session setup error %d", ret);
+        session_data__free_unpacked(req, NULL);
         return ESP_FAIL;
     }
 
-    session_data__free_unpacked(req, NULL);
-
     resp.sec_ver = req->sec_ver;
+    session_data__free_unpacked(req, NULL);
 
     *outlen = session_data__get_packed_size(&resp);
     *outbuf = (uint8_t *) malloc(*outlen);
