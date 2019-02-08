@@ -46,12 +46,12 @@ typedef struct protocomm_security_pop {
  */
 typedef struct protocomm_security {
     /**
-     * Unique version number of security implmentation
+     * Unique version number of security implementation
      */
     int ver;
 
     /**
-     * Function for initialising/allocating security
+     * Function for initializing/allocating security
      * infrastructure
      */
     esp_err_t (*init)();

@@ -26,7 +26,7 @@
 
 static const char *TAG = "protocomm_httpd";
 static protocomm_t *pc_httpd; /* The global protocomm instance for HTTPD */
-static bool pc_ext_httpd_handle_provided;
+static bool pc_ext_httpd_handle_provided = false;
 static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
 
 #define MAX_REQ_BODY_LEN 4096
@@ -42,9 +42,9 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     int cur_session_id = httpd_req_to_sockfd(req);
 
     if (cur_session_id != session_id) {
-        /* Initialise new security session */
+        /* Initialize new security session */
         if (session_id != PROTOCOMM_NO_SESSION_ID) {
-            ESP_LOGV(TAG, "Closing session with ID: %d", session_id);
+            ESP_LOGD(TAG, "Closing session with ID: %d", session_id);
             /* Presently HTTP server doesn't support callback on socket closure so
              * previous session can only be closed when new session is requested */
             if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
@@ -66,7 +66,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
             }
         }
         session_id = cur_session_id;
-        ESP_LOGV(TAG, "New session with ID: %d", cur_session_id);
+        ESP_LOGD(TAG, "New session with ID: %d", cur_session_id);
     }
 
     if (req->content_len <= 0) {
@@ -133,7 +133,7 @@ static esp_err_t protocomm_httpd_add_endpoint(const char *ep_name,
         return ESP_ERR_INVALID_STATE;
     }
 
-    ESP_LOGV(TAG, "Adding endpoint : %s", ep_name);
+    ESP_LOGD(TAG, "Adding endpoint : %s", ep_name);
 
     /* Construct URI name by prepending '/' to ep_name */
     char* ep_uri = calloc(1, strlen(ep_name) + 2);
@@ -170,7 +170,7 @@ static esp_err_t protocomm_httpd_remove_endpoint(const char *ep_name)
         return ESP_ERR_INVALID_STATE;
     }
 
-    ESP_LOGV(TAG, "Removing endpoint : %s", ep_name);
+    ESP_LOGD(TAG, "Removing endpoint : %s", ep_name);
 
     /* Construct URI name by prepending '/' to ep_name */
     char* ep_uri = calloc(1, strlen(ep_name) + 2);

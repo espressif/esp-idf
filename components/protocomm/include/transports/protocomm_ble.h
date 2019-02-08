@@ -67,10 +67,10 @@ typedef struct {
  * the initialization for characteristics/service for BLE.
  *
  * @param[in] pc        Protocomm instance pointer obtained from protocomm_new()
- * @param[in] config    Pointer to config structure for initialising BLE
+ * @param[in] config    Pointer to config structure for initializing BLE
  *
  * @return
- *  - ESP_OK : if successful
+ *  - ESP_OK : Success
  *  - ESP_FAIL : Simple BLE start error
  *  - ESP_ERR_NO_MEM : Error allocating memory for internal resources
  *  - ESP_ERR_INVALID_STATE : Error in ble config
@@ -89,7 +89,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
  * @param[in] pc    Same protocomm instance that was passed to protocomm_ble_start()
  *
  * @return
- *  - ESP_OK : For success or appropriate error code
+ *  - ESP_OK : Success
  *  - ESP_FAIL : Simple BLE stop error
  *  - ESP_ERR_INVALID_ARG : Null / incorrect protocomm instance
  */

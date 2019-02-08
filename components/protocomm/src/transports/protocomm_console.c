@@ -76,7 +76,7 @@ static void protocomm_console_task(void *arg)
     QueueHandle_t uart_queue;
     uart_event_t event;
 
-    ESP_LOGV(TAG, "Initialising UART on port %d", uart_num);
+    ESP_LOGD(TAG, "Initializing UART on port %d", uart_num);
     uart_driver_install(uart_num, 256, 0, 8, &uart_queue, 0);
     /* Initialize the console */
     esp_console_config_t console_config = {

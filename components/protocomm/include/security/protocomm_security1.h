@@ -23,7 +23,7 @@ extern "C" {
 /**
  * @brief   Protocomm security version 1 implementation
  *
- * This is a full fledged security implmentation using
+ * This is a full fledged security implementation using
  * Curve25519 key exchange and AES-256-CTR encryption
  */
 extern const protocomm_security_t protocomm_security1;
