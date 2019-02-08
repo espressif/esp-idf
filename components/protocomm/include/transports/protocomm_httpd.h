@@ -31,7 +31,7 @@ extern "C" {
  */
 typedef struct {
 
-    uint16_t port;          /*!< Port on which the http server will listen */
+    uint16_t port;          /*!< Port on which the HTTP server will listen */
 
     /**
      * Stack size of server task, adjusted depending
@@ -41,11 +41,15 @@ typedef struct {
     unsigned task_priority; /*!< Priority of server task */
 } protocomm_http_server_config_t; /*!< HTTP Server Configuration, if HTTP Server has not been started already */
 
-/** Protocomm HTTPD Configuration Data */
+/** Protocomm HTTPD Configuration Data
+ */
 typedef union {
-    /** HTTP Server Handle, if ext_handle_provided is set to true */
+    /** HTTP Server Handle, if ext_handle_provided is set to true
+     */
     void *handle;
-    /** HTTP Server Configuration, if a server is not already active */
+
+    /** HTTP Server Configuration, if a server is not already active
+     */
     protocomm_http_server_config_t config;
 } protocomm_httpd_config_data_t;
 
@@ -72,10 +76,10 @@ typedef struct {
  *          one instance can be bound to an HTTP transport layer.
  *
  * @param[in] pc        Protocomm instance pointer obtained from protocomm_new()
- * @param[in] config    Pointer to config structure for initialising HTTP server
+ * @param[in] config    Pointer to config structure for initializing HTTP server
  *
  * @return
- *  - ESP_OK : Server started succefully
+ *  - ESP_OK : Success
  *  - ESP_ERR_INVALID_ARG : Null arguments
  *  - ESP_ERR_NOT_SUPPORTED : Transport layer bound to another protocomm instance
  *  - ESP_ERR_INVALID_STATE : Transport layer already bound to this protocomm instance
@@ -93,7 +97,7 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
  * @param[in] pc    Same protocomm instance that was passed to protocomm_httpd_start()
  *
  * @return
- *  - ESP_OK : Server stopped succefully
+ *  - ESP_OK : Success
  *  - ESP_ERR_INVALID_ARG : Null / incorrect protocomm instance pointer
  */
 esp_err_t protocomm_httpd_stop(protocomm_t *pc);

@@ -285,7 +285,7 @@ esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
     if (sec->init) {
         ret = sec->init();
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Error initialising security");
+            ESP_LOGE(TAG, "Error initializing security");
             protocomm_remove_endpoint(pc, ep_name);
             return ret;
         }
