@@ -22,33 +22,33 @@
 
 static const char *TAG = "httpd_txrx";
 
-esp_err_t httpd_set_send_override(httpd_req_t *r, httpd_send_func_t send_func)
+esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func)
 {
-    if (r == NULL || send_func == NULL) {
+    struct sock_db *sess = httpd_sess_get(hd, sockfd);
+    if (!sess) {
         return ESP_ERR_INVALID_ARG;
     }
-
-    if (!httpd_valid_req(r)) {
-        return ESP_ERR_HTTPD_INVALID_REQ;
-    }
-
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->send_fn = send_func;
+    sess->send_fn = send_func;
     return ESP_OK;
 }
 
-esp_err_t httpd_set_recv_override(httpd_req_t *r, httpd_recv_func_t recv_func)
+esp_err_t httpd_sess_set_recv_override(httpd_handle_t hd, int sockfd, httpd_recv_func_t recv_func)
 {
-    if (r == NULL || recv_func == NULL) {
+    struct sock_db *sess = httpd_sess_get(hd, sockfd);
+    if (!sess) {
         return ESP_ERR_INVALID_ARG;
     }
+    sess->recv_fn = recv_func;
+    return ESP_OK;
+}
 
-    if (!httpd_valid_req(r)) {
-        return ESP_ERR_HTTPD_INVALID_REQ;
+esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func)
+{
+    struct sock_db *sess = httpd_sess_get(hd, sockfd);
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
     }
-
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->recv_fn = recv_func;
+    sess->pending_fn = pending_func;
     return ESP_OK;
 }
 
@@ -63,7 +63,7 @@ int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len)
     }
 
     struct httpd_req_aux *ra = r->aux;
-    int ret = ra->sd->send_fn(ra->sd->fd, buf, buf_len, 0);
+    int ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in send_fn"));
         return ret;
@@ -77,7 +77,7 @@ static esp_err_t httpd_send_all(httpd_req_t *r, const char *buf, size_t buf_len)
     int ret;
 
     while (buf_len > 0) {
-        ret = ra->sd->send_fn(ra->sd->fd, buf, buf_len, 0);
+        ret = ra->sd->send_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
         if (ret < 0) {
             ESP_LOGD(TAG, LOG_FMT("error in send_fn"));
             return ESP_FAIL;
@@ -125,7 +125,7 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
     }
 
     /* Receive data of remaining length */
-    int ret = ra->sd->recv_fn(ra->sd->fd, buf, buf_len, 0);
+    int ret = ra->sd->recv_fn(ra->sd->handle, ra->sd->fd, buf, buf_len, 0);
     if (ret < 0) {
         ESP_LOGD(TAG, LOG_FMT("error in recv_fn"));
         if ((ret == HTTPD_SOCK_ERR_TIMEOUT) && (pending_len != 0)) {
@@ -231,7 +231,7 @@ esp_err_t httpd_resp_set_type(httpd_req_t *r, const char *type)
     return ESP_OK;
 }
 
-esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, size_t buf_len)
+esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
 {
     if (r == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -245,6 +245,8 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, size_t buf_len)
     const char *httpd_hdr_str = "HTTP/1.1 %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n";
     const char *colon_separator = ": ";
     const char *cr_lf_seperator = "\r\n";
+
+    if (buf_len == -1) buf_len = strlen(buf);
 
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
@@ -294,7 +296,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, size_t buf_len)
     return ESP_OK;
 }
 
-esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len)
+esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len)
 {
     if (r == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -303,6 +305,8 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len)
     if (!httpd_valid_req(r)) {
         return ESP_ERR_HTTPD_INVALID_REQ;
     }
+
+    if (buf_len == -1) buf_len = strlen(buf);
 
     struct httpd_req_aux *ra = r->aux;
     const char *httpd_chunked_hdr_str = "HTTP/1.1 %s\r\nContent-Type: %s\r\nTransfer-Encoding: chunked\r\n";
@@ -359,7 +363,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len)
     }
 
     if (buf) {
-        if (httpd_send_all(r, buf, buf_len) != ESP_OK) {
+        if (httpd_send_all(r, buf, (size_t) buf_len) != ESP_OK) {
             return ESP_ERR_HTTPD_RESP_SEND;
         }
     }
@@ -520,8 +524,9 @@ static int httpd_sock_err(const char *ctx, int sockfd)
     return errval;
 }
 
-int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags)
+int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags)
 {
+    (void)hd;
     if (buf == NULL) {
         return HTTPD_SOCK_ERR_INVALID;
     }
@@ -533,8 +538,9 @@ int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags)
     return ret;
 }
 
-int httpd_default_recv(int sockfd, char *buf, size_t buf_len, int flags)
+int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags)
 {
+    (void)hd;
     if (buf == NULL) {
         return HTTPD_SOCK_ERR_INVALID;
     }

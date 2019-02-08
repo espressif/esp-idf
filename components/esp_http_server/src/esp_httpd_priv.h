@@ -118,10 +118,13 @@ typedef enum {
 struct sock_db {
     int fd;                                 /*!< The file descriptor for this socket */
     void *ctx;                              /*!< A custom context for this socket */
+    void *transport_ctx;                    /*!< A custom 'transport' context for this socket, to be used by send/recv/pending */
     httpd_handle_t handle;                  /*!< Server handle */
-    httpd_free_sess_ctx_fn_t free_ctx;      /*!< Function for freeing the context */
+    httpd_free_ctx_fn_t free_ctx;      /*!< Function for freeing the context */
+    httpd_free_ctx_fn_t free_transport_ctx; /*!< Function for freeing the 'transport' context */
     httpd_send_func_t send_fn;              /*!< Send function for this socket */
-    httpd_recv_func_t recv_fn;              /*!< Send function for this socket */
+    httpd_recv_func_t recv_fn;              /*!< Receive function for this socket */
+    httpd_pending_func_t pending_fn;        /*!< Pending function for this socket */
     int64_t timestamp;                      /*!< Timestamp indicating when the socket was last used */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
@@ -168,6 +171,23 @@ struct httpd_data {
  * Functions related to HTTP session management
  * @{
  */
+
+/**
+ * @brief Retrieve a session by its descriptor
+ *
+ * @param[in] hd     Server instance data
+ * @param[in] sockfd Socket FD
+ * @return pointer into the socket DB, or NULL if not found
+ */
+struct sock_db *httpd_sess_get(struct httpd_data *hd, int sockfd);
+
+/**
+ * @brief Delete sessions whose FDs have became invalid.
+ *        This is a recovery strategy e.g. after select() fails.
+ *
+ * @param[in] hd    Server instance data
+ */
+void httpd_sess_delete_invalid(struct httpd_data *hd);
 
 /**
  * @brief   Initializes an http session by resetting the sockets database.
@@ -219,6 +239,14 @@ esp_err_t httpd_sess_process(struct httpd_data *hd, int clifd);
  *  - -1  : No descriptor preceding the one being deleted
  */
 int httpd_sess_delete(struct httpd_data *hd, int clifd);
+
+/**
+ * @brief   Free session context
+ *
+ * @param[in] ctx     Pointer to session context
+ * @param[in] free_fn Free function to call on session context
+ */
+void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn);
 
 /**
  * @brief   Add descriptors present in the socket database to an fd_set and
@@ -331,7 +359,16 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd);
  *  - true  : if valid request
  *  - false : otherwise
  */
-bool httpd_valid_req(httpd_req_t *r);
+bool httpd_validate_req_ptr(httpd_req_t *r);
+
+/* httpd_validate_req_ptr() adds some overhead to frequently used APIs,
+ * and is useful mostly for debugging, so it's preferable to disable
+ * the check by defaut and enable it only if necessary */
+#ifdef CONFIG_HTTPD_VALIDATE_REQ
+#define httpd_valid_req(r)  httpd_validate_req_ptr(r)
+#else
+#define httpd_valid_req(r)  true
+#endif
 
 /** End of Group : URI Handling
  * @}
@@ -454,6 +491,7 @@ size_t httpd_unrecv(struct httpd_req *r, const char *buf, size_t buf_len);
  *          NEVER be called directly. The semantics of this is exactly similar to
  *          send() of the BSD socket API.
  *
+ * @param[in] hd      Server instance data
  * @param[in] sockfd  Socket descriptor for sending data
  * @param[in] buf     Pointer to the buffer from where the body of the response is taken
  * @param[in] buf_len Length of the buffer
@@ -463,13 +501,14 @@ size_t httpd_unrecv(struct httpd_req *r, const char *buf, size_t buf_len);
  *  - Length of data : if successful
  *  - -1             : if failed (appropriate errno is set)
  */
-int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags);
+int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags);
 
 /**
  * @brief   This is the low level default recv function of the HTTPD. This should
  *          NEVER be called directly. The semantics of this is exactly similar to
  *          recv() of the BSD socket API.
  *
+ * @param[in] hd      Server instance data
  * @param[in] sockfd  Socket descriptor for sending data
  * @param[out] buf    Pointer to the buffer which will be filled with the received data
  * @param[in] buf_len Length of the buffer
@@ -479,7 +518,7 @@ int httpd_default_send(int sockfd, const char *buf, size_t buf_len, int flags);
  *  - Length of data : if successful
  *  - -1             : if failed (appropriate errno is set)
  */
-int httpd_default_recv(int sockfd, char *buf, size_t buf_len, int flags);
+int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags);
 
 /** End of Group : Send and Receive
  * @}

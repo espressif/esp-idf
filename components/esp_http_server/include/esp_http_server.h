@@ -27,6 +27,10 @@
 extern "C" {
 #endif
 
+/*
+note: esp_https_server.h includes a customized copy of this
+initializer that should be kept in sync
+*/
 #define HTTPD_DEFAULT_CONFIG() {                        \
         .task_priority      = tskIDLE_PRIORITY+5,       \
         .stack_size         = 4096,                     \
@@ -39,7 +43,13 @@ extern "C" {
         .lru_purge_enable   = false,                    \
         .recv_wait_timeout  = 5,                        \
         .send_wait_timeout  = 5,                        \
-};
+        .global_user_ctx = NULL,                        \
+        .global_user_ctx_free_fn = NULL,                \
+        .global_transport_ctx = NULL,                   \
+        .global_transport_ctx_free_fn = NULL,           \
+        .open_fn = NULL,                                \
+        .close_fn = NULL,                               \
+}
 
 #define ESP_ERR_HTTPD_BASE              (0x8000)                    /*!< Starting number of HTTPD error codes */
 #define ESP_ERR_HTTPD_HANDLERS_FULL     (ESP_ERR_HTTPD_BASE +  1)   /*!< All slots for registering URI handlers have been consumed */
@@ -71,6 +81,35 @@ typedef void* httpd_handle_t;
 typedef enum http_method httpd_method_t;
 
 /**
+ * @brief  Prototype for freeing context data (if any)
+ * @param[in] ctx : object to free
+ */
+typedef void (*httpd_free_ctx_fn_t)(void *ctx);
+
+/**
+ * @brief  Function prototype for opening a session.
+ *
+ * Called immediately after the socket was opened to set up the send/recv functions and
+ * other parameters of the socket.
+ *
+ * @param[in] hd : server instance
+ * @param[in] sockfd : session socket file descriptor
+ * @return status
+ */
+typedef esp_err_t (*httpd_open_func_t)(httpd_handle_t hd, int sockfd);
+
+/**
+ * @brief  Function prototype for closing a session.
+ *
+ * @note   It's possible that the socket descriptor is invalid at this point, the function
+ *         is called for all terminated sessions. Ensure proper handling of return codes.
+ *
+ * @param[in] hd : server instance
+ * @param[in] sockfd : session socket file descriptor
+ */
+typedef void (*httpd_close_func_t)(httpd_handle_t hd, int sockfd);
+
+/**
  * @brief   HTTP Server Configuration Structure
  *
  * @note    Use HTTPD_DEFAULT_CONFIG() to initialize the configuration
@@ -99,6 +138,63 @@ typedef struct httpd_config {
     bool        lru_purge_enable;   /*!< Purge "Least Recently Used" connection */
     uint16_t    recv_wait_timeout;  /*!< Timeout for recv function (in seconds)*/
     uint16_t    send_wait_timeout;  /*!< Timeout for send function (in seconds)*/
+
+    /**
+     * Global user context.
+     *
+     * This field can be used to store arbitrary user data within the server context.
+     * The value can be retrieved using the server handle, available e.g. in the httpd_req_t struct.
+     *
+     * When shutting down, the server frees up the user context by
+     * calling free() on the global_user_ctx field. If you wish to use a custom
+     * function for freeing the global user context, please specify that here.
+     */
+    void * global_user_ctx;
+
+    /**
+     * Free function for global user context
+     */
+    httpd_free_ctx_fn_t global_user_ctx_free_fn;
+
+    /**
+     * Global transport context.
+     *
+     * Similar to global_user_ctx, but used for session encoding or encryption (e.g. to hold the SSL context).
+     * It will be freed using free(), unless global_transport_ctx_free_fn is specified.
+     */
+    void * global_transport_ctx;
+
+    /**
+     * Free function for global transport context
+     */
+    httpd_free_ctx_fn_t global_transport_ctx_free_fn;
+
+    /**
+     * Custom session opening callback.
+     *
+     * Called on a new session socket just after accept(), but before reading any data.
+     *
+     * This is an opportunity to set up e.g. SSL encryption using global_transport_ctx
+     * and the send/recv/pending session overrides.
+     *
+     * If a context needs to be maintained between these functions, store it in the session using
+     * httpd_sess_set_transport_ctx() and retrieve it later with httpd_sess_get_transport_ctx()
+     */
+    httpd_open_func_t open_fn;
+
+    /**
+     * Custom session closing callback.
+     *
+     * Called when a session is deleted, before freeing user and transport contexts and before
+     * closing the socket. This is a place for custom de-init code common to all sockets.
+     *
+     * Set the user or transport context to NULL if it was freed here, so the server does not
+     * try to free it again.
+     *
+     * This function is run for all terminated sessions, including sessions where the socket
+     * was closed by the network stack - that is, the file descriptor may not be valid anymore.
+     */
+    httpd_close_func_t close_fn;
 } httpd_config_t;
 
 /**
@@ -180,11 +276,6 @@ esp_err_t httpd_stop(httpd_handle_t handle);
  * @{
  */
 
-/**
- * @brief Function type for freeing context data (if any)
- */
-typedef void (*httpd_free_sess_ctx_fn_t)(void *sess_ctx);
-
 /* Max supported HTTP request header length */
 #define HTTPD_MAX_REQ_HDR_LEN CONFIG_HTTPD_MAX_REQ_HDR_LEN
 
@@ -232,7 +323,7 @@ typedef struct httpd_req {
      * calling free() on the sess_ctx member. If you wish to use a custom
      * function for freeing the session context, please specify that here.
      */
-    httpd_free_sess_ctx_fn_t free_ctx;
+    httpd_free_ctx_fn_t free_ctx;
 } httpd_req_t;
 
 /**
@@ -360,13 +451,18 @@ esp_err_t httpd_unregister_uri(httpd_handle_t handle, const char* uri);
  *         HTTPD_SOCK_ERR_ codes, which will eventually be conveyed as
  *         return value of httpd_send() function
  *
+ * @param[in] hd      : server instance
+ * @param[in] sockfd  : session socket file descriptor
+ * @param[in] buf     : buffer with bytes to send
+ * @param[in] buf_len : data size
+ * @param[in] flags   : flags for the send() function
  * @return
  *  - Bytes : The number of bytes sent successfully
  *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
  *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket send()
  *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket send()
  */
-typedef int (*httpd_send_func_t)(int sockfd, const char *buf, size_t buf_len, int flags);
+typedef int (*httpd_send_func_t)(httpd_handle_t hd, int sockfd, const char *buf, size_t buf_len, int flags);
 
 /**
  * @brief  Prototype for HTTPDs low-level recv function
@@ -376,6 +472,11 @@ typedef int (*httpd_send_func_t)(int sockfd, const char *buf, size_t buf_len, in
  *         HTTPD_SOCK_ERR_ codes, which will eventually be conveyed as
  *         return value of httpd_req_recv() function
  *
+ * @param[in] hd      : server instance
+ * @param[in] sockfd  : session socket file descriptor
+ * @param[in] buf     : buffer with bytes to send
+ * @param[in] buf_len : data size
+ * @param[in] flags   : flags for the send() function
  * @return
  *  - Bytes : The number of bytes received successfully
  *  - 0     : Buffer length parameter is zero / connection closed by peer
@@ -383,7 +484,25 @@ typedef int (*httpd_send_func_t)(int sockfd, const char *buf, size_t buf_len, in
  *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket recv()
  *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket recv()
  */
-typedef int (*httpd_recv_func_t)(int sockfd, char *buf, size_t buf_len, int flags);
+typedef int (*httpd_recv_func_t)(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags);
+
+/**
+ * @brief  Prototype for HTTPDs low-level "get pending bytes" function
+ *
+ * @note   User specified pending function must handle errors internally,
+ *         depending upon the set value of errno, and return specific
+ *         HTTPD_SOCK_ERR_ codes, which will be handled accordingly in
+ *         the server task.
+ *
+ * @param[in] hd : server instance
+ * @param[in] sockfd : session socket file descriptor
+ * @return
+ *  - Bytes : The number of bytes waiting to be received
+ *  - HTTPD_SOCK_ERR_INVALID  : Invalid arguments
+ *  - HTTPD_SOCK_ERR_TIMEOUT  : Timeout/interrupted while calling socket pending()
+ *  - HTTPD_SOCK_ERR_FAIL     : Unrecoverable error while calling socket pending()
+ */
+typedef int (*httpd_pending_func_t)(httpd_handle_t hd, int sockfd);
 
 /** End of TX / RX
  * @}
@@ -398,42 +517,64 @@ typedef int (*httpd_recv_func_t)(int sockfd, char *buf, size_t buf_len, int flag
  */
 
 /**
- * @brief   Override web server's receive function
+ * @brief   Override web server's receive function (by session FD)
  *
  * This function overrides the web server's receive function. This same function is
- * used to read and parse HTTP headers as well as body.
+ * used to read HTTP request packets.
  *
- * @note    This API is supposed to be called only from the context of
- *          a URI handler where httpd_req_t* request pointer is valid.
+ * @note    This API is supposed to be called either from the context of
+ *          - an http session APIs where sockfd is a valid parameter
+ *          - a URI handler where sockfd is obtained using httpd_req_to_sockfd()
  *
- * @param[in] r         The request being responded to
- * @param[in] recv_func The receive function to be set for this request
+ * @param[in] hd        HTTPD instance handle
+ * @param[in] sockfd    Session socket FD
+ * @param[in] recv_func The receive function to be set for this session
  *
  * @return
  *  - ESP_OK : On successfully registering override
  *  - ESP_ERR_INVALID_ARG : Null arguments
- *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_set_recv_override(httpd_req_t *r, httpd_recv_func_t recv_func);
+esp_err_t httpd_sess_set_recv_override(httpd_handle_t hd, int sockfd, httpd_recv_func_t recv_func);
 
 /**
- * @brief   Override web server's send function
+ * @brief   Override web server's send function (by session FD)
  *
  * This function overrides the web server's send function. This same function is
  * used to send out any response to any HTTP request.
  *
- * @note    This API is supposed to be called only from the context of
- *          a URI handler where httpd_req_t* request pointer is valid.
+ * @note    This API is supposed to be called either from the context of
+ *          - an http session APIs where sockfd is a valid parameter
+ *          - a URI handler where sockfd is obtained using httpd_req_to_sockfd()
  *
- * @param[in] r         The request being responded to
- * @param[in] send_func The send function to be set for this request
+ * @param[in] hd        HTTPD instance handle
+ * @param[in] sockfd    Session socket FD
+ * @param[in] send_func The send function to be set for this session
  *
  * @return
  *  - ESP_OK : On successfully registering override
  *  - ESP_ERR_INVALID_ARG : Null arguments
- *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_set_send_override(httpd_req_t *r, httpd_send_func_t send_func);
+esp_err_t httpd_sess_set_send_override(httpd_handle_t hd, int sockfd, httpd_send_func_t send_func);
+
+/**
+ * @brief   Override web server's pending function (by session FD)
+ *
+ * This function overrides the web server's pending function. This function is
+ * used to test for pending bytes in a socket.
+ *
+ * @note    This API is supposed to be called either from the context of
+ *          - an http session APIs where sockfd is a valid parameter
+ *          - a URI handler where sockfd is obtained using httpd_req_to_sockfd()
+ *
+ * @param[in] hd           HTTPD instance handle
+ * @param[in] sockfd       Session socket FD
+ * @param[in] pending_func The receive function to be set for this session
+ *
+ * @return
+ *  - ESP_OK : On successfully registering override
+ *  - ESP_ERR_INVALID_ARG : Null arguments
+ */
+esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_pending_func_t pending_func);
 
 /**
  * @brief   Get the Socket Descriptor from the HTTP request
@@ -443,7 +584,7 @@ esp_err_t httpd_set_send_override(httpd_req_t *r, httpd_send_func_t send_func);
  * This is useful when user wants to call functions that require
  * session socket fd, from within a URI handler, ie. :
  *      httpd_sess_get_ctx(),
- *      httpd_trigger_sess_close(),
+ *      httpd_sess_trigger_close(),
  *      httpd_sess_update_timestamp().
  *
  * @note    This API is supposed to be called only from the context of
@@ -631,7 +772,7 @@ esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, siz
  *
  * @param[in] r         The request being responded to
  * @param[in] buf       Buffer from where the content is to be fetched
- * @param[in] buf_len   Length of the buffer
+ * @param[in] buf_len   Length of the buffer, -1 to use strlen()
  *
  * @return
  *  - ESP_OK : On successfully sending the response packet
@@ -640,7 +781,7 @@ esp_err_t httpd_query_key_value(const char *qry, const char *key, char *val, siz
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request
  */
-esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, size_t buf_len);
+esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len);
 
 /**
  * @brief   API to send one HTTP chunk
@@ -670,7 +811,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, size_t buf_len);
  *
  * @param[in] r         The request being responded to
  * @param[in] buf       Pointer to a buffer that stores the data
- * @param[in] buf_len   Length of the data from the buffer that should be sent out
+ * @param[in] buf_len   Length of the data from the buffer that should be sent out, -1 to use strlen()
  *
  * @return
  *  - ESP_OK : On successfully sending the response packet chunk
@@ -679,7 +820,7 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, size_t buf_len);
  *  - ESP_ERR_HTTPD_RESP_SEND   : Error in raw send
  *  - ESP_ERR_HTTPD_INVALID_REQ : Invalid request pointer
  */
-esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, size_t buf_len);
+esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len);
 
 /* Some commonly used status codes */
 #define HTTPD_200      "200 OK"                     /*!< HTTP Response 200 */
@@ -902,6 +1043,57 @@ int httpd_send(httpd_req_t *r, const char *buf, size_t buf_len);
 void *httpd_sess_get_ctx(httpd_handle_t handle, int sockfd);
 
 /**
+ * @brief   Set session context by socket descriptor
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @param[in] sockfd    The socket descriptor for which the context should be extracted.
+ * @param[in] ctx       Context object to assign to the session
+ * @param[in] free_fn   Function that should be called to free the context
+ */
+void httpd_sess_set_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free_ctx_fn_t free_fn);
+
+/**
+ * @brief   Get session 'transport' context by socket descriptor
+ * @see     httpd_sess_get_ctx()
+ *
+ * This context is used by the send/receive functions, for example to manage SSL context.
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @param[in] sockfd    The socket descriptor for which the context should be extracted.
+ * @return
+ *  - void* : Pointer to the transport context associated with this session
+ *  - NULL  : Empty context / Invalid handle / Invalid socket fd
+ */
+void *httpd_sess_get_transport_ctx(httpd_handle_t handle, int sockfd);
+
+/**
+ * @brief   Set session 'transport' context by socket descriptor
+ * @see     httpd_sess_set_ctx()
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @param[in] sockfd    The socket descriptor for which the context should be extracted.
+ * @param[in] ctx       Transport context object to assign to the session
+ * @param[in] free_fn   Function that should be called to free the transport context
+ */
+void httpd_sess_set_transport_ctx(httpd_handle_t handle, int sockfd, void *ctx, httpd_free_ctx_fn_t free_fn);
+
+/**
+ * @brief   Get HTTPD global user context (it was set in the server config struct)
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @return global user context
+ */
+void *httpd_get_global_user_ctx(httpd_handle_t handle);
+
+/**
+ * @brief   Get HTTPD global transport context (it was set in the server config struct)
+ *
+ * @param[in] handle    Handle to server returned by httpd_start
+ * @return global transport context
+ */
+void *httpd_get_global_transport_ctx(httpd_handle_t handle);
+
+/**
  * @brief   Trigger an httpd session close externally
  *
  * @note    Calling this API is only required in special circumstances wherein
@@ -916,7 +1108,7 @@ void *httpd_sess_get_ctx(httpd_handle_t handle, int sockfd);
  *  - ESP_ERR_NOT_FOUND   : Socket fd not found
  *  - ESP_ERR_INVALID_ARG : Null arguments
  */
-esp_err_t httpd_trigger_sess_close(httpd_handle_t handle, int sockfd);
+esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
 
 /**
  * @brief   Update timestamp for a given socket
