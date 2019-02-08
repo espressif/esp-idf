@@ -121,10 +121,6 @@ static void protocomm_console_task(void *arg)
         }
     }
 
-    if (pc_console->sec && pc_console->sec->cleanup) {
-        pc_console->sec->cleanup();
-    }
-
     pc_console = NULL;
     esp_console_deinit();
 
