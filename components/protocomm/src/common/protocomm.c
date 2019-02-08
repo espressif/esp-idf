@@ -305,40 +305,22 @@ static int protocomm_version_handler(uint32_t session_id,
                                      uint8_t **outbuf, ssize_t *outlen,
                                      void *priv_data)
 {
-    const char *resp_match = "SUCCESS";
-    const char *resp_fail  = "FAIL";
-    bool match = false;
-    char *version = strndup((const char *)inbuf, inlen);
     protocomm_t *pc = (protocomm_t *) priv_data;
-    *outbuf = NULL;
-    *outlen = 0;
-
-    if ((pc->ver != NULL) && (version != NULL)) {
-        ESP_LOGV(TAG, "Protocol version of device : %s", pc->ver);
-        ESP_LOGV(TAG, "Protocol version of client : %s", version);
-        if (strcmp(pc->ver, version) == 0) {
-            match = true;
-        }
-    } else if ((pc->ver == NULL) && (version == NULL)) {
-        match = true;
+    if (!pc->ver) {
+        *outlen = 0;
+        *outbuf = NULL;
+        return ESP_OK;
     }
-    free(version);
-
-    if (!match) {
-        ESP_LOGE(TAG, "Protocol version mismatch");
-    }
-
-    const char *result_msg = match ? resp_match : resp_fail;
 
     /* Output is a non null terminated string with length specified */
-    *outlen = strlen(result_msg);
-    *outbuf = malloc(strlen(result_msg));
+    *outlen = strlen(pc->ver);
+    *outbuf = malloc(*outlen);
     if (outbuf == NULL) {
-        ESP_LOGE(TAG, "Failed to allocate memory for version check response");
+        ESP_LOGE(TAG, "Failed to allocate memory for version response");
         return ESP_ERR_NO_MEM;
     }
 
-    memcpy(*outbuf, result_msg, *outlen);
+    memcpy(*outbuf, pc->ver, *outlen);
     return ESP_OK;
 }
 
