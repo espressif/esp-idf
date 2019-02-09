@@ -13,15 +13,16 @@
 // limitations under the License.
 
 /******************************************************************************
- * Description: A stub to make the ESP32 debuggable by GDB over the serial 
+ * Description: A stub to make the ESP32 debuggable by GDB over the serial
  * port, at least enough to do a backtrace on panic. This gdbstub is read-only:
- * it allows inspecting the ESP32 state 
+ * it allows inspecting the ESP32 state
  *******************************************************************************/
 
 #include "rom/ets_sys.h"
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 #include "esp_gdbstub.h"
+#include "esp_panic.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -34,6 +35,15 @@ static unsigned char cmd[PBUFLEN];		//GDB command input buffer
 static char chsum;						//Running checksum of the output packet
 
 #define ATTR_GDBFN
+
+//If you want more than (default) 32 tasks to be dumped, you'll need to enable the coredump feature and specify
+//here your amount.
+#ifdef CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM
+	#define STUB_TASKS_NUM CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM
+#else
+	#define STUB_TASKS_NUM 32
+#endif
+
 
 //Receive a char from the uart. Uses polling and feeds the watchdog.
 static int ATTR_GDBFN gdbRecvChar() {
@@ -189,7 +199,7 @@ typedef struct {
 
 GdbRegFile gdbRegFile;
 
-/* 
+/*
 //Register format as the Xtensa HAL has it:
 STRUCT_FIELD (long, 4, XT_STK_EXIT,     exit)
 STRUCT_FIELD (long, 4, XT_STK_PC,       pc)
@@ -203,7 +213,7 @@ STRUCT_FIELD (long, 4, XT_STK_EXCVADDR, excvaddr)
 STRUCT_FIELD (long, 4, XT_STK_LBEG,   lbeg)
 STRUCT_FIELD (long, 4, XT_STK_LEND,   lend)
 STRUCT_FIELD (long, 4, XT_STK_LCOUNT, lcount)
-// Temporary space for saving stuff during window spill 
+// Temporary space for saving stuff during window spill
 STRUCT_FIELD (long, 4, XT_STK_TMP0,   tmp0)
 STRUCT_FIELD (long, 4, XT_STK_TMP1,   tmp1)
 STRUCT_FIELD (long, 4, XT_STK_TMP2,   tmp2)
@@ -213,33 +223,17 @@ STRUCT_FIELD (long, 4, XT_STK_OVLY,   ovly)
 STRUCT_END(XtExcFrame)
 */
 
-static inline bool isValidStack(long sp)
-{
-    return !(sp < 0x3ffae010UL || sp > 0x3fffffffUL);
-}
 
 //Remember the exception frame that caused panic since it's not saved in TCB
 static XtExcFrame paniced_frame;
- 
-static void dumpHwToRegfile(XtExcFrame *frame) {
-	int i;
-	long *frameAregs=&frame->a0;
-	gdbRegFile.pc=(frame->pc & 0x3fffffffU)|0x40000000U;
-	for (i=0; i<16; i++) gdbRegFile.a[i]=frameAregs[i];
-	for (i=16; i<64; i++) gdbRegFile.a[i]=0xDEADBEEF;
-	if (gdbRegFile.a[0] & 0x8000000U) gdbRegFile.a[0] = (gdbRegFile.a[0] & 0x3fffffffU) | 0x40000000U; //Replicate correction from espcoredump.py:560 
-	if (!isValidStack(gdbRegFile.a[1])) gdbRegFile.a[1] = 0xDEADBEEF;
-	gdbRegFile.lbeg=frame->lbeg;
-	gdbRegFile.lend=frame->lend;
-	gdbRegFile.lcount=frame->lcount;
-	gdbRegFile.sar=frame->sar;
-	//All windows have been spilled to the stack by the ISR routines. The following values should indicate that.
-	gdbRegFile.sar=frame->sar;
+
+static void commonRegfile() {
+	if (gdbRegFile.a[0] & 0x8000000U) gdbRegFile.a[0] = (gdbRegFile.a[0] & 0x3fffffffU) | 0x40000000U;
+	if (!esp_stack_ptr_is_sane(gdbRegFile.a[1])) gdbRegFile.a[1] = 0xDEADBEEF;
 	gdbRegFile.windowbase=0; //0
 	gdbRegFile.windowstart=0x1; //1
 	gdbRegFile.configid0=0xdeadbeef; //ToDo
 	gdbRegFile.configid1=0xdeadbeef; //ToDo
-	gdbRegFile.ps=(frame->ps & (1U<<5)) ? (frame->ps & ~(1U<<4)) : frame->ps; //Replicate correction from espcoredump.py:546
 	gdbRegFile.threadptr=0xdeadbeef; //ToDo
 	gdbRegFile.br=0xdeadbeef; //ToDo
 	gdbRegFile.scompare1=0xdeadbeef; //ToDo
@@ -249,6 +243,21 @@ static void dumpHwToRegfile(XtExcFrame *frame) {
 	gdbRegFile.m1=0xdeadbeef; //ToDo
 	gdbRegFile.m2=0xdeadbeef; //ToDo
 	gdbRegFile.m3=0xdeadbeef; //ToDo
+}
+
+static void dumpHwToRegfile(XtExcFrame *frame) {
+	int i;
+	long *frameAregs=&frame->a0;
+	gdbRegFile.pc=(frame->pc & 0x3fffffffU)|0x40000000U;
+	for (i=0; i<16; i++) gdbRegFile.a[i]=frameAregs[i];
+	for (i=16; i<64; i++) gdbRegFile.a[i]=0xDEADBEEF;
+	gdbRegFile.lbeg=frame->lbeg;
+	gdbRegFile.lend=frame->lend;
+	gdbRegFile.lcount=frame->lcount;
+	gdbRegFile.ps=(frame->ps & PS_UM) ? (frame->ps & ~PS_EXCM) : frame->ps;
+	//All windows have been spilled to the stack by the ISR routines. The following values should indicate that.
+	gdbRegFile.sar=frame->sar;
+	commonRegfile();
 	gdbRegFile.expstate=frame->exccause; //ToDo
 }
 
@@ -261,7 +270,7 @@ static void sendReason() {
 	gdbPacketChar('T');
 	i=gdbRegFile.expstate&0x7f;
 	if (i<sizeof(exceptionSignal)) {
-		gdbPacketHex(exceptionSignal[i], 8); 
+		gdbPacketHex(exceptionSignal[i], 8);
 	} else {
 		gdbPacketHex(11, 8);
 	}
@@ -276,58 +285,41 @@ static int sendPacket(const char * text) {
 	return ST_OK;
 }
 
-#if configUSE_TRACE_FACILITY == 1
 static void dumpTaskToRegfile(XtSolFrame *frame) {
 	int i;
 	long *frameAregs=&frame->a0;
 	gdbRegFile.pc=(frame->pc & 0x3fffffffU)|0x40000000U;
 	for (i=0; i<4; i++) gdbRegFile.a[i]=frameAregs[i];
 	for (i=4; i<64; i++) gdbRegFile.a[i]=0xDEADBEEF;
-	if (gdbRegFile.a[0] & 0x8000000U) gdbRegFile.a[0] = (gdbRegFile.a[0] & 0x3fffffffU) | 0x40000000U; //Replicate correction from espcoredump.py:560 
-	if (!isValidStack(gdbRegFile.a[1])) gdbRegFile.a[1] = 0xDEADBEEF;
 	gdbRegFile.lbeg=0;
 	gdbRegFile.lend=0;
 	gdbRegFile.lcount=0;
+	gdbRegFile.ps=(frame->ps & PS_UM) ? (frame->ps & ~PS_EXCM) : frame->ps;
 	//All windows have been spilled to the stack by the ISR routines. The following values should indicate that.
 	gdbRegFile.sar=0;
-	gdbRegFile.windowbase=0; //0
-	gdbRegFile.windowstart=0x1; //1
-	gdbRegFile.configid0=0xdeadbeef; //ToDo
-	gdbRegFile.configid1=0xdeadbeef; //ToDo
-	gdbRegFile.ps=(frame->ps & (1U<<5)) ? (frame->ps & ~(1U<<4)) : frame->ps; //Replicate correction from espcoredump.py:546
-	gdbRegFile.threadptr=0xdeadbeef; //ToDo
-	gdbRegFile.br=0xdeadbeef; //ToDo
-	gdbRegFile.scompare1=0xdeadbeef; //ToDo
-	gdbRegFile.acclo=0xdeadbeef; //ToDo
-	gdbRegFile.acchi=0xdeadbeef; //ToDo
-	gdbRegFile.m0=0xdeadbeef; //ToDo
-	gdbRegFile.m1=0xdeadbeef; //ToDo
-	gdbRegFile.m2=0xdeadbeef; //ToDo
-	gdbRegFile.m3=0xdeadbeef; //ToDo
+	commonRegfile();
 	gdbRegFile.expstate=0; //ToDo
 }
 
 //Fetch the task status
 static unsigned getAllTasksHandle(unsigned index, unsigned * handle, const char ** name, unsigned * coreId) {
 	static unsigned taskCount = 0;
-    static TaskStatus_t tasks[32];
+	static TaskSnapshot_t tasks[STUB_TASKS_NUM];
 
     if (!taskCount) {
-		unsigned runTime = 0;
-		taskCount = uxTaskGetNumberOfTasks();
-		taskCount = uxTaskGetSystemState(tasks, 32, &runTime);
+		unsigned tcbSize = 0;
+		taskCount = uxTaskGetSnapshotAll(tasks, STUB_TASKS_NUM, &tcbSize);
     }
 	if (index < taskCount) {
-		if (handle) *handle = (unsigned)tasks[index].xHandle;
-		if (name) *name = tasks[index].pcTaskName;
-#if configTASKLIST_INCLUDE_COREID
-		if (coreId) *coreId = tasks[index].xCoreID;
-#endif
-    }	
+		TaskHandle_t h = (TaskHandle_t)tasks[index].pxTCB;
+		if (handle) *handle = (unsigned)h;
+		if (name) *name = pcTaskGetTaskName(h);
+		if (coreId) *coreId = xTaskGetAffinity(h);
+    }
 	return taskCount;
 }
 
-typedef struct 
+typedef struct
 {
 	uint8_t * topOfStack;
 } DumpTCB;
@@ -335,7 +327,7 @@ typedef struct
 
 static void dumpTCBToRegFile(unsigned handle) {
 	// A task handle is a pointer to a TCB in FreeRTOS
-	DumpTCB * tcb = (DumpTCB*)handle;	
+	DumpTCB * tcb = (DumpTCB*)handle;
 	uint8_t * pxTopOfStack = tcb->topOfStack;
 
 	//Deduced from coredump code
@@ -361,7 +353,6 @@ static int findCurrentTaskIndex() {
 	}
 	return curTaskIndex;
 }
-#endif
 
 //Handle a command as received from GDB.
 static int gdbHandleCommand(unsigned char *cmd, int len) {
@@ -388,82 +379,82 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		gdbPacketEnd();
 	} else if (cmd[0]=='?') {	//Reply with stop reason
 		sendReason();
-#if configUSE_TRACE_FACILITY == 1
-	} else if (cmd[0]=='H' && reenteredHandler != -1) { //Continue with task
-		if (cmd[1]=='g' || cmd[1]=='c') {
-			const char * ret = "OK";
+	} else if (reenteredHandler != -1) {
+		if (cmd[0]=='H') { //Continue with task
+			if (cmd[1]=='g' || cmd[1]=='c') {
+				const char * ret = "OK";
+				data++;
+				i=gdbGetHexVal(&data, -1);
+				reenteredHandler = 1; //Hg0 is the first packet received after connect
+				j = findCurrentTaskIndex();
+				if (i == j || (j == -1 && !i)) { //The first task requested must be the one that crashed and it does not have a valid TCB anyway since it's not saved yet
+					dumpHwToRegfile(&paniced_frame);
+				} else {
+					unsigned handle, count;
+					//Get the handle for that task
+					count = getAllTasksHandle(i, &handle, 0, 0);
+					//Then extract TCB and gdbRegFile from it
+					if (i < count) dumpTCBToRegFile(handle);
+					else ret = "E00";
+				}
+				return sendPacket(ret);
+			}
+			return sendPacket(NULL);
+		} else if (cmd[0]=='T') {	//Task alive check
+			unsigned count;
 			data++;
 			i=gdbGetHexVal(&data, -1);
-			reenteredHandler = 1; //Hg0 is the first packet received after connect
-			j = findCurrentTaskIndex();
-			if (i == j || (j == -1 && !i)) { //The first task requested must be the one that crashed and it does not have a valid TCB anyway since it's not saved yet
-				dumpHwToRegfile(&paniced_frame);
-			} else {
-				unsigned handle, count;
-				//Get the handle for that task
-				count = getAllTasksHandle(i, &handle, 0, 0);
-				//Then extract TCB and gdbRegFile from it
-				if (i < count) dumpTCBToRegFile(handle);
-				else ret = "E00";
-			}
-			return sendPacket(ret);
-		}
-		return sendPacket(NULL);
-	} else if (cmd[0]=='T' && reenteredHandler != -1) {	//Task alive check
-		unsigned count;
-		data++;
-		i=gdbGetHexVal(&data, -1);
-		count = getAllTasksHandle(i, 0, 0, 0);
-		return sendPacket(i < count ? "OK": "E00");
-	} else if (cmd[0]=='q' && reenteredHandler != -1) {	//Extended query
-		// React to qThreadExtraInfo or qfThreadInfo or qsThreadInfo or qC, without using strcmp
-		if (len > 16 && cmd[1] == 'T' && cmd[2] == 'h' && cmd[3] == 'r' && cmd[7] == 'E' && cmd[12] == 'I' && cmd[16] == ',') {
-			data=&cmd[17];
-			i=gdbGetHexVal(&data, -1);
+			count = getAllTasksHandle(i, 0, 0, 0);
+			return sendPacket(i < count ? "OK": "E00");
+		} else if (cmd[0]=='q') {	//Extended query
+			// React to qThreadExtraInfo or qfThreadInfo or qsThreadInfo or qC, without using strcmp
+			if (len > 16 && cmd[1] == 'T' && cmd[2] == 'h' && cmd[3] == 'r' && cmd[7] == 'E' && cmd[12] == 'I' && cmd[16] == ',') {
+				data=&cmd[17];
+				i=gdbGetHexVal(&data, -1);
 
-			unsigned handle = 0, coreId = 3;
-			const char * name = 0;
-			// Extract the task name and CPU from freeRTOS
-			unsigned tCount = getAllTasksHandle(i, &handle, &name, &coreId);			
-			if (i < tCount)	{
+				unsigned handle = 0, coreId = 3;
+				const char * name = 0;
+				// Extract the task name and CPU from freeRTOS
+				unsigned tCount = getAllTasksHandle(i, &handle, &name, &coreId);
+				if (i < tCount)	{
+					gdbPacketStart();
+					for(k=0; name[k]; k++)	gdbPacketHex(name[k], 8);
+					gdbPacketStr("20435055"); // CPU
+					gdbPacketStr(coreId == 0 ? "30": coreId == 1 ? "31" : "78"); // 0 or 1 or x
+					gdbPacketEnd();
+					return ST_OK;
+				}
+			} else if (len >= 12 && (cmd[1] == 'f' || cmd[1] == 's') && (cmd[2] == 'T' && cmd[3] == 'h' && cmd[4] == 'r' && cmd[5] == 'e' && cmd[6] == 'a' && cmd[7] == 'd' && cmd[8] == 'I')) {
+				// Only react to qfThreadInfo and qsThreadInfo, not using strcmp here since it can be in ROM
+				// Extract the number of task from freeRTOS
+				static int taskIndex = 0;
+				unsigned tCount = 0;
+	 		    if (cmd[1] == 'f') {
+					taskIndex = 0;
+					reenteredHandler = 1;	//It seems it's the first request GDB is sending
+				}
+				tCount = getAllTasksHandle(0, 0, 0, 0);
+				if (taskIndex < tCount)	{
+					gdbPacketStart();
+					gdbPacketStr("m");
+					gdbPacketHex(taskIndex, 32);
+					gdbPacketEnd();
+	                taskIndex++;
+				} else return sendPacket("l");
+			} else if (len >= 2 && cmd[1] == 'C') {
+				// Get current task id
 				gdbPacketStart();
-				for(k=0; name[k]; k++)	gdbPacketHex(name[k], 8);
-				gdbPacketStr("20435055"); // CPU
-				gdbPacketStr(coreId == 0 ? "30": coreId == 1 ? "31" : "78"); // 0 or 1 or x 
+				k = findCurrentTaskIndex();
+				if (k != -1) {
+					gdbPacketStr("QC");
+					gdbPacketHex(k, 32);
+				} else gdbPacketStr("bad");
 				gdbPacketEnd();
 				return ST_OK;
-			} 
-		} else if (len >= 12 && (cmd[1] == 'f' || cmd[1] == 's') && (cmd[2] == 'T' && cmd[3] == 'h' && cmd[4] == 'r' && cmd[5] == 'e' && cmd[6] == 'a' && cmd[7] == 'd' && cmd[8] == 'I')) {
-			// Only react to qfThreadInfo and qsThreadInfo, not using strcmp here since it can be in ROM
-			// Extract the number of task from freeRTOS
-			static int taskIndex = 0;
-			unsigned tCount = 0;
- 		    if (cmd[1] == 'f') { 
-				taskIndex = 0;
-				reenteredHandler = 1;	//It seems it's the first request GDB is sending
 			}
-			tCount = getAllTasksHandle(0, 0, 0, 0);
-			if (taskIndex < tCount)	{
-				gdbPacketStart();
-				gdbPacketStr("m");
-				gdbPacketHex(taskIndex, 32);
-				gdbPacketEnd();
-                taskIndex++;
-			} else return sendPacket("l");
-		} else if (len >= 2 && cmd[1] == 'C') {
-			// Get current task id
-			gdbPacketStart();
-			k = findCurrentTaskIndex();
-			if (k != -1) {
-				gdbPacketStr("QC");
-				gdbPacketHex(k, 32);
-			} else gdbPacketStr("bad");
-			gdbPacketEnd();
-			return ST_OK;
+			return sendPacket(0);
 		}
-		return sendPacket(0);			
-#endif
-	} else 
+	} else
 		//We don't recognize or support whatever GDB just sent us.
 		return sendPacket(0);
 	return ST_OK;
@@ -472,7 +463,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 
 //Lower layer: grab a command packet and check the checksum
 //Calls gdbHandleCommand on the packet if the checksum is OK
-//Returns ST_OK on success, ST_ERR when checksum fails, a 
+//Returns ST_OK on success, ST_ERR when checksum fails, a
 //character if it is received instead of the GDB packet
 //start char.
 static int gdbReadCommand() {
@@ -523,6 +514,7 @@ static int gdbReadCommand() {
 void esp_gdbstub_panic_handler(XtExcFrame *frame) {
 	if (reenteredHandler == 1) {
 		//Prevent using advanced FreeRTOS features since they seems to crash
+		gdbPacketEnd(); // Ends up any pending GDB packet (this creates a garbage value)
 		reenteredHandler = -1;
 	} else {
 		//Need to remember the frame that panic'd since gdb will ask for all thread before ours
@@ -542,4 +534,3 @@ void esp_gdbstub_panic_handler(XtExcFrame *frame) {
 	while(gdbReadCommand()!=ST_CONT);
 	while(1);
 }
-
