@@ -280,6 +280,27 @@ menu "mbedTLS"
             SHA hardware acceleration is faster than software in some situations but
             slower in others. You should benchmark to find the best setting for you.
 
+    config MBEDTLS_ATCA_HARDWARE_ECDH
+        bool "Enable hardware ECDH acceleration when using ATECC608A cryptoauth chip"
+        default n
+        help
+            This option enables hardware acceleration for ECDH, only when using
+            ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+
+    config MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN
+        bool "Enable hardware ECDSA sign acceleration when using ATECC608A"
+        default n
+        help
+            This option enables hardware acceleration for ECDSA sign function, only
+            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+
+    config MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY
+        bool "Enable hardware ECDSA verify acceleration when using ATECC608A"
+        default n
+        help
+            This option enables hardware acceleration for ECDSA sign function, only
+            when using ATECC608A cryptoauth chip (integrated with ESP32-WROOM-32SE)
+
     config MBEDTLS_HAVE_TIME
         bool "Enable mbedtls time"
         depends on !ESP32_TIME_SYSCALL_USE_NONE
@@ -650,14 +671,14 @@ menu "mbedTLS"
     config MBEDTLS_ECP_DP_SECP192R1_ENABLED
         bool "Enable SECP192R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP192R1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP224R1_ENABLED
         bool "Enable SECP224R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP224R1 Elliptic Curve.
 
@@ -671,63 +692,63 @@ menu "mbedTLS"
     config MBEDTLS_ECP_DP_SECP384R1_ENABLED
         bool "Enable SECP384R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP384R1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP521R1_ENABLED
         bool "Enable SECP521R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP521R1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP192K1_ENABLED
         bool "Enable SECP192K1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP192K1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP224K1_ENABLED
         bool "Enable SECP224K1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP224K1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_SECP256K1_ENABLED
         bool "Enable SECP256K1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for SECP256K1 Elliptic Curve.
 
     config MBEDTLS_ECP_DP_BP256R1_ENABLED
         bool "Enable BP256R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             support for DP Elliptic Curve.
 
     config MBEDTLS_ECP_DP_BP384R1_ENABLED
         bool "Enable BP384R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             support for DP Elliptic Curve.
 
     config MBEDTLS_ECP_DP_BP512R1_ENABLED
         bool "Enable BP512R1 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             support for DP Elliptic Curve.
 
     config MBEDTLS_ECP_DP_CURVE25519_ENABLED
         bool "Enable CURVE25519 curve"
         depends on MBEDTLS_ECP_C
-        default y
+        default y if !(MBEDTLS_ATCA_HARDWARE_ECDH || MBEDTLS_ATCA_HARDWARE_ECDSA_SIGN || MBEDTLS_ATCA_HARDWARE_ECDSA_VERIFY)
         help
             Enable support for CURVE25519 Elliptic Curve.
 

@@ -1,0 +1,4 @@
+# Enable Cryptoauthlib hardware acceleration of mbedtls
+CONFIG_ATCA_MBEDTLS_ECDSA=y
+CONFIG_ATCA_MBEDTLS_ECDSA_SIGN=y
+CONFIG_ATCA_MBEDTLS_ECDSA_VERIFY=y
