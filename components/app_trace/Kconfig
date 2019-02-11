@@ -99,6 +99,14 @@ menu "Application Level Tracing"
 
         endchoice
 
+        config SYSVIEW_MAX_TASKS
+            int "Maximum supported tasks"
+            depends on SYSVIEW_ENABLE
+            range 1 64
+            default 16
+            help
+                Configures maximum supported tasks in sysview debug
+
         config SYSVIEW_EVT_OVERFLOW_ENABLE
             bool "Trace Buffer Overflow Event"
             depends on SYSVIEW_ENABLE
