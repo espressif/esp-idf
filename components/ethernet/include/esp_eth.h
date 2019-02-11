@@ -15,68 +15,88 @@
 #ifndef __ESP_ETH_H__
 #define __ESP_ETH_H__
 
-#include <stdbool.h>
-#include <stdint.h>
-#include "esp_err.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "esp_types.h"
+#include "esp_err.h"
+
+/**
+ * @brief Ethernet interface mode
+ *
+ */
 typedef enum {
-    ETH_MODE_RMII = 0,
-    ETH_MODE_MII,
+    ETH_MODE_RMII = 0, /*!< RMII mode */
+    ETH_MODE_MII,      /*!< MII mode */
 } eth_mode_t;
 
+/**
+ * @brief Ethernet clock mode
+ *
+ */
 typedef enum {
-    ETH_CLOCK_GPIO0_IN = 0,
-    ETH_CLOCK_GPIO16_OUT = 2,
-    ETH_CLOCK_GPIO17_OUT = 3
+    ETH_CLOCK_GPIO0_IN = 0,   /*!< RMII clock input to GPIO0 */
+    ETH_CLOCK_GPIO0_OUT = 1,  /*!< RMII clock output from GPIO0 */
+    ETH_CLOCK_GPIO16_OUT = 2, /*!< RMII clock output from GPIO16 */
+    ETH_CLOCK_GPIO17_OUT = 3  /*!< RMII clock output from GPIO17 */
 } eth_clock_mode_t;
 
+/**
+ * @brief Ethernet Speed
+ *
+ */
 typedef enum {
-    ETH_SPEED_MODE_10M = 0,
-    ETH_SPEED_MODE_100M,
+    ETH_SPEED_MODE_10M = 0, /*!< Ethernet speed: 10Mbps */
+    ETH_SPEED_MODE_100M,    /*!< Ethernet speed: 100Mbps */
 } eth_speed_mode_t;
 
+/**
+ * @brief Ethernet Duplex
+ *
+ */
 typedef enum {
-    ETH_MODE_HALFDUPLEX = 0,
-    ETH_MODE_FULLDUPLEX,
+    ETH_MODE_HALFDUPLEX = 0, /*!< Ethernet half duplex */
+    ETH_MODE_FULLDUPLEX,     /*!< Ethernet full duplex */
 } eth_duplex_mode_t;
 
+/**
+ * @brief Ethernet PHY address
+ *
+ */
 typedef enum {
-    PHY0 = 0,
-    PHY1,
-    PHY2,
-    PHY3,
-    PHY4,
-    PHY5,
-    PHY6,
-    PHY7,
-    PHY8,
-    PHY9,
-    PHY10,
-    PHY11,
-    PHY12,
-    PHY13,
-    PHY14,
-    PHY15,
-    PHY16,
-    PHY17,
-    PHY18,
-    PHY19,
-    PHY20,
-    PHY21,
-    PHY22,
-    PHY23,
-    PHY24,
-    PHY25,
-    PHY26,
-    PHY27,
-    PHY28,
-    PHY29,
-    PHY30,
-    PHY31,
+    PHY0 = 0, /*!< PHY address 0 */
+    PHY1,     /*!< PHY address 1 */
+    PHY2,     /*!< PHY address 2 */
+    PHY3,     /*!< PHY address 3 */
+    PHY4,     /*!< PHY address 4 */
+    PHY5,     /*!< PHY address 5 */
+    PHY6,     /*!< PHY address 6 */
+    PHY7,     /*!< PHY address 7 */
+    PHY8,     /*!< PHY address 8 */
+    PHY9,     /*!< PHY address 9 */
+    PHY10,    /*!< PHY address 10 */
+    PHY11,    /*!< PHY address 11 */
+    PHY12,    /*!< PHY address 12 */
+    PHY13,    /*!< PHY address 13 */
+    PHY14,    /*!< PHY address 14 */
+    PHY15,    /*!< PHY address 15 */
+    PHY16,    /*!< PHY address 16 */
+    PHY17,    /*!< PHY address 17 */
+    PHY18,    /*!< PHY address 18 */
+    PHY19,    /*!< PHY address 19 */
+    PHY20,    /*!< PHY address 20 */
+    PHY21,    /*!< PHY address 21 */
+    PHY22,    /*!< PHY address 22 */
+    PHY23,    /*!< PHY address 23 */
+    PHY24,    /*!< PHY address 24 */
+    PHY25,    /*!< PHY address 25 */
+    PHY26,    /*!< PHY address 26 */
+    PHY27,    /*!< PHY address 27 */
+    PHY28,    /*!< PHY address 28 */
+    PHY29,    /*!< PHY address 29 */
+    PHY30,    /*!< PHY address 30 */
+    PHY31     /*!< PHY address 31 */
 } eth_phy_base_t;
 
 typedef bool (*eth_phy_check_link_func)(void);
@@ -94,15 +114,15 @@ typedef void (*eth_phy_power_enable_func)(bool enable);
  *
  */
 typedef struct {
-    eth_phy_base_t phy_addr;                                            /*!< phy base addr (0~31) */
-    eth_mode_t mac_mode;                                                /*!< mac mode only support RMII now */
-    eth_clock_mode_t clock_mode;                                        /*!< external/internal clock mode selecton */
-    eth_tcpip_input_func tcpip_input;                                   /*!< tcpip input func  */
-    eth_phy_func phy_init;                                              /*!< phy init func  */
-    eth_phy_check_link_func phy_check_link;                             /*!< phy check link func  */
-    eth_phy_check_init_func phy_check_init;                             /*!< phy check init func  */
-    eth_phy_get_speed_mode_func phy_get_speed_mode;                     /*!< phy check init func  */
-    eth_phy_get_duplex_mode_func phy_get_duplex_mode;                   /*!< phy check init func  */
+    eth_phy_base_t phy_addr;                                            /*!< PHY address (0~31) */
+    eth_mode_t mac_mode;                                                /*!< MAC mode: only support RMII now */
+    eth_clock_mode_t clock_mode;                                        /*!< external/internal clock mode selection */
+    eth_tcpip_input_func tcpip_input;                                   /*!< tcpip input func */
+    eth_phy_func phy_init;                                              /*!< phy init func */
+    eth_phy_check_link_func phy_check_link;                             /*!< phy check link func */
+    eth_phy_check_init_func phy_check_init;                             /*!< phy check init func */
+    eth_phy_get_speed_mode_func phy_get_speed_mode;                     /*!< phy check init func */
+    eth_phy_get_duplex_mode_func phy_get_duplex_mode;                   /*!< phy check init func */
     eth_gpio_config_func gpio_config;                                   /*!< gpio config func  */
     bool flow_ctrl_enable;                                              /*!< flag of flow ctrl enable */
     eth_phy_get_partner_pause_enable_func phy_get_partner_pause_enable; /*!< get partner pause enable */

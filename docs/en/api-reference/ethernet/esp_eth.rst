@@ -4,7 +4,8 @@ ETHERNET
 Application Example
 -------------------
 
-Ethernet example: :example:`ethernet/ethernet`.
+-   Ethernet basic example: :example:`ethernet/ethernet`.
+-   Ethernet iperf example: :example:`ethernet/iperf`.
 
 PHY Interfaces
 --------------
@@ -16,12 +17,14 @@ Headers include a default configuration structure. These default configurations 
   * :component_file:`ethernet/include/eth_phy/phy.h` (common)
   * :component_file:`ethernet/include/eth_phy/phy_tlk110.h`
   * :component_file:`ethernet/include/eth_phy/phy_lan8720.h`
+  * :component_file:`ethernet/include/eth_phy/phy_ip101.h`
 
 PHY Configuration Constants
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. doxygenvariable:: phy_tlk110_default_ethernet_config
 .. doxygenvariable:: phy_lan8720_default_ethernet_config
+.. doxygenvariable:: phy_ip101_default_ethernet_config
 
 
 API Reference - Ethernet
@@ -44,4 +47,8 @@ API Reference - PHY LAN8720
 
 .. include:: /_build/inc/phy_lan8720.inc
 
+API Reference - PHY IP101
+-------------------------
+
+.. include:: /_build/inc/phy_ip101.inc
 
