@@ -355,11 +355,9 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         p_i2s_obj[i2s_num]->bytes_per_sample = halfwords_per_sample * 2;
 
         // Because limited of DMA buffer is 4092 bytes
-        printf("dma_buf_len: %d %d %d\n", p_i2s_obj[i2s_num]->dma_buf_len, p_i2s_obj[i2s_num]->bytes_per_sample, p_i2s_obj[i2s_num]->channel_num);
         if (p_i2s_obj[i2s_num]->dma_buf_len * p_i2s_obj[i2s_num]->bytes_per_sample * p_i2s_obj[i2s_num]->channel_num > 4092) {
             p_i2s_obj[i2s_num]->dma_buf_len = 4092 / p_i2s_obj[i2s_num]->bytes_per_sample / p_i2s_obj[i2s_num]->channel_num;
         }
-        printf("dma_buf_len: %d\n", p_i2s_obj[i2s_num]->dma_buf_len);
         // Re-create TX DMA buffer
         if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
 
