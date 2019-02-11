@@ -24,8 +24,7 @@
 #include "esp_tls.h"
 #include <errno.h>
 
-// #include "/home/cturner/Carl/biz/syllable/amigo/amigo_prototype/esp32/code/end_to_end/main/stats_amigo.h"
-#include "/Users/nick/code/syllable/amigo/amigo/amigo_prototype/esp32/code/end_to_end/main/stats_amigo.h"
+#include "stats_amigo.h"
 
 static const char *TAG = "esp-tls";
 static mbedtls_x509_crt *global_cacert = NULL;
@@ -199,7 +198,6 @@ static void verify_certificate(esp_tls_t *tls)
 {
     int flags;
     char buf[100];
-    printf("CT verify certificate\n");
     if ((flags = mbedtls_ssl_get_verify_result(&tls->ssl)) != 0) {
         ESP_LOGI(TAG, "Failed to verify peer certificate!");
         bzero(buf, sizeof(buf));
