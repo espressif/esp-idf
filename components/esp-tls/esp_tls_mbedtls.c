@@ -30,6 +30,12 @@
 #include "esp_crt_bundle.h"
 #endif
 
+/* cryptoauthlib includes */
+#include "mbedtls/atca_mbedtls_wrap.h"
+#include "cryptoauthlib.h"
+#include "cert_def_1_signer.h"
+#include "cert_def_2_device.h"
+
 
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
@@ -448,7 +454,38 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
     }
 
-    if (cfg->clientcert_buf != NULL && cfg->clientkey_buf != NULL) {
+    if (cfg->use_hsm) {
+        ESP_LOGI(TAG, "Initialize the ATECC interface...");
+        if(0 != (ret = atcab_init(&cfg_ateccx08a_i2c_default))) {
+            ESP_LOGE(TAG, "Failed\n !atcab_init returned %02x\n", ret);
+            goto exit;
+        }
+
+        /* Convert to an mbedtls key */
+        if (0 != atca_mbedtls_pk_init(&tls->clientkey, 0)) {
+            ESP_LOGE(TAG, "Failed to parse key from device\n");
+            goto exit;
+        }
+
+        mbedtls_x509_crt_init(&tls->clientcert);
+        /* Extract the device certificate and convert to mbedtls cert */
+        if (0 != atca_mbedtls_cert_add(&tls->clientcert, &g_cert_def_2_device)) {
+            ESP_LOGE(TAG, "Failed to parse cert from device\n");
+            goto exit;
+        }
+
+        /* Extract the signer certificate, convert, then attach to the chain */
+        if (0 != atca_mbedtls_cert_add(&tls->clientcert, &g_cert_def_1_signer)) {
+            ESP_LOGE(TAG, "Failed to parse cert from device\n");
+            goto exit;
+        }
+
+        if (0 != (ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->clientcert, &tls->clientkey))) {
+            ESP_LOGE(TAG, "Failed\n ! mbedtls_ssl_conf_own_cert returned %d\r\n", ret);
+            goto exit;
+
+        }
+    } else if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_pem_buf != NULL) {
         esp_tls_pki_t pki = {
             .public_cert = &tls->clientcert,
             .pk_key = &tls->clientkey,

@@ -183,6 +183,9 @@ typedef struct esp_tls_cfg {
                                                  underneath socket will be configured in non
                                                  blocking mode after tls session is established */
 
+    bool use_hsm;                           /*!< Enable this option to use Hardware Security Module or ATECC chip
+                                              ( available on WROOM32SE )*/
+
     int timeout_ms;                         /*!< Network timeout in milliseconds */
 
     bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
