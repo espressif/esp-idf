@@ -761,11 +761,10 @@
 #define ESP_AUTO_RECV                   1
 #define ESP_GRATUITOUS_ARP              CONFIG_ESP_GRATUITOUS_ARP
 
-#if CONFIG_LWIP_IRAM_OPTIMIZATION
-#define ESP_IRAM_ATTR                   IRAM_ATTR
-#else
-#define ESP_IRAM_ATTR
+#ifdef ESP_IRAM_ATTR
+#undef ESP_IRAM_ATTR
 #endif
+#define ESP_IRAM_ATTR
 
 #if ESP_PERF
 #define DBG_PERF_PATH_SET(dir, point)
