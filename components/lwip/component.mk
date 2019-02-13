@@ -34,3 +34,5 @@ ifeq ($(GCC_NOT_5_2_0), 1)
 lwip/src/netif/ppp/ppp.o: CFLAGS += -Wno-uninitialized
 lwip/src/netif/ppp/pppos.o: CFLAGS += -Wno-implicit-fallthrough
 endif
+
+COMPONENT_ADD_LDFRAGMENTS += linker.lf
