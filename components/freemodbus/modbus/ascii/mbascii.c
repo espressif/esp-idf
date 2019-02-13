@@ -110,7 +110,6 @@ eMBASCIIInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity eP
     eMBErrorCode    eStatus = MB_ENOERR;
     ( void )ucSlaveAddress;
     
-    ENTER_CRITICAL_SECTION(  );
     ucMBLFCharacter = MB_ASCII_DEFAULT_LF;
 
     if( xMBPortSerialInit( ucPort, ulBaudRate, 7, eParity ) != TRUE )
@@ -122,7 +121,6 @@ eMBASCIIInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity eP
         eStatus = MB_EPORTERR;
     }
 
-    EXIT_CRITICAL_SECTION(  );
 
     return eStatus;
 }
@@ -130,10 +128,8 @@ eMBASCIIInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity eP
 void
 eMBASCIIStart( void )
 {
-    ENTER_CRITICAL_SECTION(  );
     vMBPortSerialEnable( TRUE, FALSE );
     eRcvState = STATE_RX_IDLE;
-    EXIT_CRITICAL_SECTION(  );
 
     /* No special startup required for ASCII. */
     ( void )xMBPortEventPost( EV_READY );
@@ -142,10 +138,8 @@ eMBASCIIStart( void )
 void
 eMBASCIIStop( void )
 {
-    ENTER_CRITICAL_SECTION(  );
     vMBPortSerialEnable( FALSE, FALSE );
     vMBPortTimersDisable(  );
-    EXIT_CRITICAL_SECTION(  );
 }
 
 eMBErrorCode
