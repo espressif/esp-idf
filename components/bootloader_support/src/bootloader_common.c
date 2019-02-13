@@ -199,15 +199,15 @@ esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t 
     return ESP_OK;
 }
 
-int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
+int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, bool *valid_two_otadata, bool max)
 {
+    if (two_otadata == NULL || valid_two_otadata == NULL) {
+        return -1;
+    }
     int active_otadata = -1;
-
-    bool valid_otadata[2];
-    valid_otadata[0] = bootloader_common_ota_select_valid(&two_otadata[0]);
-    valid_otadata[1] = bootloader_common_ota_select_valid(&two_otadata[1]);
-    if (valid_otadata[0] && valid_otadata[1]) {
-        if (MAX(two_otadata[0].ota_seq, two_otadata[1].ota_seq) == two_otadata[0].ota_seq) {
+    if (valid_two_otadata[0] && valid_two_otadata[1]) {
+        int condition = (max == true) ? MAX(two_otadata[0].ota_seq, two_otadata[1].ota_seq) : MIN(two_otadata[0].ota_seq, two_otadata[1].ota_seq);
+        if (condition == two_otadata[0].ota_seq) {
             active_otadata = 0;
         } else {
             active_otadata = 1;
@@ -215,7 +215,7 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
         ESP_LOGD(TAG, "Both OTA copies are valid");
     } else {
         for (int i = 0; i < 2; ++i) {
-            if (valid_otadata[i]) {
+            if (valid_two_otadata[i]) {
                 active_otadata = i;
                 ESP_LOGD(TAG, "Only otadata[%d] is valid", i);
                 break;
@@ -223,6 +223,17 @@ int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
         }
     }
     return active_otadata;
+}
+
+int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata)
+{
+    if (two_otadata == NULL) {
+        return -1;
+    }
+    bool valid_two_otadata[2];
+    valid_two_otadata[0] = bootloader_common_ota_select_valid(&two_otadata[0]);
+    valid_two_otadata[1] = bootloader_common_ota_select_valid(&two_otadata[1]);
+    return bootloader_common_select_otadata(two_otadata, valid_two_otadata, true);
 }
 
 esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc)
