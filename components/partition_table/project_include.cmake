@@ -60,6 +60,9 @@ get_partition_info(OTADATA_PARTITION_OFFSET
 get_partition_info(OTADATA_PARTITION_SIZE
                 "--partition-type data --partition-subtype ota" "size")
 
+get_partition_info(FACTORY_OFFSET
+                "--partition-type app --partition-subtype factory" "offset")
+
 endif()
 
 set(BOOTLOADER_OFFSET 0x1000)

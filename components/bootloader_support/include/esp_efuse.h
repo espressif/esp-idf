@@ -16,6 +16,7 @@
 
 #include "soc/efuse_reg.h"
 #include "esp_err.h"
+#include "stdbool.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,6 +91,42 @@ esp_err_t esp_efuse_apply_34_encoding(const uint8_t *in_bytes, uint32_t *out_wor
  * in the block
  */
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg);
+
+/* @brief Return secure_version from efuse field.
+ * @return Secure version from efuse field
+ */
+uint32_t esp_efuse_read_secure_version();
+
+/* @brief Check secure_version from app and secure_version and from efuse field.
+ *
+ * @param secure_version Secure version from app.
+ * @return
+ *          - True: If version of app is equal or more then secure_version from efuse.
+ */
+bool esp_efuse_check_secure_version(uint32_t secure_version);
+
+/* @brief Write efuse field by secure_version value.
+ *
+ * Update the secure_version value is available if the coding scheme is None.
+ * Note: Do not use this function in your applications. This function is called as part of the other API.
+ *
+ * @param[in] secure_version Secure version from app.
+ * @return
+ *          - ESP_OK: Successful.
+ *          - ESP_FAIL: secure version of app cannot be set to efuse field.
+ *          - ESP_ERR_NOT_SUPPORTED: Anti rollback is not supported with the 3/4 and Repeat coding scheme.
+ */
+esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
+
+/* @brief Initializes variables: offset and size to simulate the work of an eFuse.
+ *
+ * Note: To simulate the work of an eFuse need to set CONFIG_EFUSE_SECURE_VERSION_EMULATE option
+ * and to add in the partition.csv file a line `efuse_em, data, efuse,   ,   0x2000,`.
+ *
+ * @param[in] offset The starting address of the partition where the eFuse data will be located.
+ * @param[in] size The size of the partition.
+ */
+void esp_efuse_init(uint32_t offset, uint32_t size);
 
 #ifdef __cplusplus
 }
