@@ -93,7 +93,7 @@ def _test_iteration_events(dut):
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_default_event_loop_example(env, extra_data):
-    dut = env.get_dut('default_event_loop', 'examples/system/event/default_event_loop')
+    dut = env.get_dut('default_event_loop', 'examples/system/esp_event/default_event_loop')
 
     _test_iteration_events(dut)
     _test_timer_events(dut)
