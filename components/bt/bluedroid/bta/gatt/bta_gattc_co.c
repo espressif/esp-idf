@@ -96,7 +96,7 @@ typedef struct {
     cache_addr_info_t cache_addr[MAX_DEVICE_IN_CACHE];
 }cache_env_t;
 
-cache_env_t *cache_env = NULL;
+static cache_env_t *cache_env = NULL;
 
 static void getFilename(char *buffer, hash_key_t hash)
 {
@@ -382,10 +382,15 @@ void bta_gattc_co_cache_addr_init(void)
     UINT8 num_addr;
     size_t length = MAX_ADDR_LIST_CACHE_BUF;
     UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
+    if (p_buf == NULL) {
+        APPL_TRACE_ERROR("%s malloc failed!", __func__);
+        return;
+    }
 
     cache_env = (cache_env_t *)osi_malloc(sizeof(cache_env_t));
-    if (cache_env == NULL || p_buf == NULL) {
+    if (cache_env == NULL) {
         APPL_TRACE_ERROR("%s malloc failed!", __func__);
+        osi_free(p_buf);
         return;
     }
 

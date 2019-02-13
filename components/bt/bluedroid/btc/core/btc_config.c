@@ -337,4 +337,3 @@ void btc_config_unlock(void)
 {
     osi_mutex_unlock(&lock);
 }
-
