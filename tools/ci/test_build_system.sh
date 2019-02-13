@@ -237,7 +237,34 @@ function run_tests()
     make defconfig || failure "Failed to reconfigure with smaller flash"
     ( make 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
     mv sdkconfig.bak sdkconfig
+    touch sdkconfig # to update mtime
 
+    print_status "Empty directory not treated as a component"
+    mkdir -p components/esp32
+    make || failure "Failed to build with empty esp32 directory in components"
+    rm -rf components
+
+    print_status "If a component directory is added to COMPONENT_DIRS, its subdirectories are not added"
+    mkdir -p main/test
+    touch main/test/component.mk
+    echo "#error This should not be built" > main/test/test.c
+    make || failure "COMPONENT_DIRS has added component subdirectory to the build"
+    rm -rf main/test
+
+    print_status "If a component directory is added to COMPONENT_DIRS, its sibling directories are not added"
+    mkdir -p mycomponents/mycomponent
+    touch mycomponents/mycomponent/component.mk
+    # first test by adding single component directory to EXTRA_COMPONENT_DIRS
+    mkdir -p mycomponents/esp32
+    touch mycomponents/esp32/component.mk
+    make EXTRA_COMPONENT_DIRS=$PWD/mycomponents/mycomponent || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
+    rm -rf mycomponents/esp32
+    # now the same thing, but add a components directory
+    mkdir -p esp32
+    touch esp32/component.mk
+    make EXTRA_COMPONENT_DIRS=$PWD/mycomponents || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
+    rm -rf esp32
+    rm -rf mycomponents
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
