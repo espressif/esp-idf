@@ -149,6 +149,27 @@ typedef struct {
 #define _SPI_80M_CLK_DIV            1
 #define _SPI_40M_CLK_DIV            2
 
+//For 4MB PSRAM, we need one more SPI host, select which one to use by kconfig
+#ifdef CONFIG_SPIRAM_OCCUPY_HSPI_HOST
+#define PSRAM_SPI_MODULE    PERIPH_HSPI_MODULE
+#define PSRAM_SPI_HOST      HSPI_HOST
+#define PSRAM_CLK_SIGNAL    HSPICLK_OUT_IDX
+#define PSRAM_SPI_NUM       PSRAM_SPI_2
+#define PSRAM_SPICLKEN      DPORT_SPI2_CLK_EN
+#elif defined CONFIG_SPIRAM_OCCUPY_VSPI_HOST
+#define PSRAM_SPI_MODULE    PERIPH_VSPI_MODULE
+#define PSRAM_SPI_HOST      VSPI_HOST
+#define PSRAM_CLK_SIGNAL    VSPICLK_OUT_IDX
+#define PSRAM_SPI_NUM       PSRAM_SPI_3
+#define PSRAM_SPICLKEN      DPORT_SPI3_CLK_EN
+#else   //set to SPI avoid HSPI and VSPI being used
+#define PSRAM_SPI_MODULE    PERIPH_SPI_MODULE
+#define PSRAM_SPI_HOST      SPI_HOST
+#define PSRAM_CLK_SIGNAL    SPICLK_OUT_IDX
+#define PSRAM_SPI_NUM       PSRAM_SPI_1
+#define PSRAM_SPICLKEN      DPORT_SPI01_CLK_EN
+#endif
+
 static const char* TAG = "psram";
 typedef enum {
     PSRAM_SPI_1  = 0x1,
