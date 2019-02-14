@@ -379,9 +379,14 @@ class Page(object):
         total_entry_count = data_entry_count + 1 # +1 for the entry header
 
         # Check if page is already full and new page is needed to be created right away
-        if encoding in ["string", "hex2bin", "binary", "base64"]:
-            if (self.entry_num + total_entry_count) >= Page.PAGE_PARAMS["max_entries"]:
-                raise PageFullError()
+        if version == Page.VERSION1:
+            if encoding in ["string", "hex2bin", "binary", "base64"]:
+                if (self.entry_num + total_entry_count) >= Page.PAGE_PARAMS["max_entries"]:
+                    raise PageFullError()
+        else:
+            if encoding == "string":
+                if (self.entry_num + total_entry_count) >= Page.PAGE_PARAMS["max_entries"]:
+                    raise PageFullError()
 
         # Entry header
         entry_struct = bytearray(b'\xff')*32
