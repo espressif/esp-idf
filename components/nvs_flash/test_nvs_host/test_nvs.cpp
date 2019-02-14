@@ -1994,14 +1994,14 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     TEST_ESP_ERR(p3.findItem(1, ItemType::BLOB, "singlepage"), ESP_ERR_NVS_NOT_FOUND);
 }
 
-static void check_nvs_part_gen_args(char const *part_name, char const *filename, bool is_encr, nvs_sec_cfg_t* xts_cfg)
+static void check_nvs_part_gen_args(char const *part_name, int size, char const *filename, bool is_encr, nvs_sec_cfg_t* xts_cfg)
 {
     nvs_handle handle;
    
     if (is_encr)
-        TEST_ESP_OK(nvs_flash_secure_init_custom(part_name, 0, 3, xts_cfg));
+        TEST_ESP_OK(nvs_flash_secure_init_custom(part_name, 0, size, xts_cfg));
     else
-        TEST_ESP_OK( nvs_flash_init_custom(part_name, 0, 3) );
+        TEST_ESP_OK( nvs_flash_init_custom(part_name, 0, size) );
     
     TEST_ESP_OK( nvs_open_from_partition(part_name, "dummyNamespace", NVS_READONLY, &handle));
     uint8_t u8v;
@@ -2085,7 +2085,7 @@ TEST_CASE("check and read data from partition generated via partition generation
     
     TEST_ESP_OK(nvs_flash_deinit());
     
-    check_nvs_part_gen_args("test", "../nvs_partition_generator/testdata/sample_singlepage_blob.bin", false, NULL);
+    check_nvs_part_gen_args("test", 3, "../nvs_partition_generator/testdata/sample_singlepage_blob.bin", false, NULL);
 }
 
 
@@ -2100,7 +2100,7 @@ TEST_CASE("check and read data from partition generated via partition generation
                 "--output",
                 "../nvs_partition_generator/partition_multipage_blob.bin", 
                 "--size",
-                "0x3000",
+                "0x4000",
                 "--version",
                 "v2",NULL));
     } else {
@@ -2112,7 +2112,7 @@ TEST_CASE("check and read data from partition generated via partition generation
 
     SpiFlashEmulator emu("../nvs_partition_generator/partition_multipage_blob.bin");
     
-    check_nvs_part_gen_args("test", "../nvs_partition_generator/testdata/sample_multipage_blob.bin",false,NULL);
+    check_nvs_part_gen_args("test", 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin",false,NULL);
 
 }
 
@@ -2266,7 +2266,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                 "--output",
                 "../nvs_partition_generator/partition_encrypted.bin",
                 "--size",
-                "0x3000",
+                "0x4000",
                 "--encrypt",
                 "True",
                 "--keyfile",
@@ -2286,7 +2286,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         cfg.tky[count] = 0x22;
     }
 
-    check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
     
 }
 
@@ -2303,7 +2303,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                     "--output",
                     "../nvs_partition_generator/partition_encrypted_using_keygen.bin",
                     "--size",
-                    "0x3000",
+                    "0x4000",
                     "--encrypt",
                     "True",
                     "--keygen",
@@ -2333,7 +2333,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         cfg.tky[count] = buffer[count+32] & 255;
     }
 
-    check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
 
 
 }
@@ -2350,7 +2350,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                 "--output",
                 "../nvs_partition_generator/partition_encrypted_using_keyfile.bin",
                 "--size",
-                "0x3000",
+                "0x4000",
                 "--encrypt",
                 "True",
                 "--keyfile",
@@ -2380,7 +2380,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         cfg.tky[count] = buffer[count+32] & 255;
     }
 
-    check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
+    check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "../nvs_partition_generator/testdata/sample_multipage_blob.bin", true, &cfg);
 
     childpid = fork();
     if (childpid == 0) {

@@ -11,4 +11,6 @@ dummyBase64Key,data,base64,MTIzYWJj
 hexFileKey,file,hex2bin,testdata/sample.hex
 base64FileKey,file,base64,testdata/sample.base64
 stringFileKey,file,string,testdata/sample.txt
+blobFileAKey,file,binary,testdata/sample_blob.bin
+blobFileBKey,file,binary,testdata/sample_blob.bin
 binFileKey,file,binary,testdata/sample_singlepage_blob.bin
