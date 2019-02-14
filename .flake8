@@ -160,6 +160,5 @@ exclude =
         components/wifi_provisioning/python/wifi_constants_pb2.py,
         examples/provisioning/custom_config/components/custom_provisioning/python/custom_config_pb2.py,
     # temporary list (should be empty)
-        components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py,
         tools/esp_app_trace/pylibelf,
         tools/mass_mfg/mfg_gen.py,
