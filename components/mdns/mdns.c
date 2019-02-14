@@ -2741,8 +2741,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
                 if (search_result) {
                     if (search_result->type == MDNS_TYPE_PTR) {
-                        result->port = port;
-                        result->hostname = strdup(name->host);
+                        if (!result->hostname) { // assign host/port for this entry only if not previously set
+                            result->port = port;
+                            result->hostname = strdup(name->host);
+                        }
                     } else {
                         _mdns_search_result_add_srv(search_result, name->host, port, packet->tcpip_if, packet->ip_protocol);
                     }
