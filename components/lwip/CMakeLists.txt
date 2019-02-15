@@ -124,6 +124,8 @@ endif()
 set(COMPONENT_REQUIRES vfs)
 set(COMPONENT_PRIV_REQUIRES ethernet tcpip_adapter nvs_flash)
 
+set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
+
 register_component()
 
 # lots of LWIP source files evaluate macros that check address of stack variables
