@@ -2831,7 +2831,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                             }
                         }
                     } else {
-                        _mdns_search_result_add_txt(search_result, txt, txt_count, packet->tcpip_if, packet->ip_protocol);
+                        _mdns_result_txt_create(data_ptr, data_len, &txt, &txt_count);
+                        if (txt_count) {
+                            _mdns_search_result_add_txt(search_result, txt, txt_count, packet->tcpip_if, packet->ip_protocol);
+                        }
                     }
                 } else if (ours) {
                     if (parsed_packet->questions && !parsed_packet->probe) {
