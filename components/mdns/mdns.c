@@ -4011,6 +4011,8 @@ static esp_err_t _mdns_service_task_stop()
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
+    vSemaphoreDelete(_mdns_service_semaphore);
+    _mdns_service_semaphore = NULL;
     return ESP_OK;
 }
 
