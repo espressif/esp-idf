@@ -58,7 +58,11 @@ static esp_err_t app_prov_start_service(void)
     }
 
     /* Config for protocomm_httpd_start() */
-    protocomm_httpd_config_t pc_config = PROTOCOMM_HTTPD_DEFAULT_CONFIG();
+    protocomm_httpd_config_t pc_config = {
+        .data = {
+            .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
+        }
+    };
 
     /* Start protocomm server on top of HTTP */
     if (protocomm_httpd_start(g_prov->pc, &pc_config) != ESP_OK) {
