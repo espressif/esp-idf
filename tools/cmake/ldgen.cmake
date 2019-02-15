@@ -47,6 +47,18 @@ endfunction()
 # Passes a linker script template to the linker script generation tool for
 # processing
 function(ldgen_process_template template output)
+    get_filename_component(template ${template} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
+    execute_process(COMMAND ${PYTHON} ${IDF_PATH}/tools/ldgen/lddeps.py ${template}
+                    OUTPUT_VARIABLE template_includes
+                    ERROR_VARIABLE template_includes_err
+                    )
+
+    if(template_includes_err)
+        message(FATAL_ERROR "Unable to parse linker script template for INCLUDEs\n" ${template_includes_err})
+    endif()
+
+    spaces2list(template_includes)
+
     file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/ldgen.section_infos
         CONTENT "$<JOIN:$<TARGET_PROPERTY:ldgen_section_infos,SECTIONS_INFO_FILES>,\n>")
 
@@ -65,7 +77,8 @@ function(ldgen_process_template template output)
         --env       "IDF_CMAKE=y"
         --env       "IDF_PATH=${IDF_PATH}"
         --env       "IDF_TARGET=${IDF_TARGET}"
-        DEPENDS     ${template} $<TARGET_PROPERTY:ldgen,FRAGMENT_FILES> ${SDKCONFIG} ldgen_section_infos
+        DEPENDS     ${template} $<TARGET_PROPERTY:ldgen,FRAGMENT_FILES> ${SDKCONFIG}
+                    ldgen_section_infos ${template_includes}
     )
 
     get_filename_component(output_name ${output} NAME)
