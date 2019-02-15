@@ -4017,8 +4017,6 @@ static esp_err_t _mdns_service_task_stop()
     MDNS_SERVICE_LOCK();
     _mdns_stop_timer();
     MDNS_SERVICE_UNLOCK();
-    vSemaphoreDelete(_mdns_service_semaphore);
-    _mdns_service_semaphore = NULL;
     if (_mdns_service_task_handle) {
         mdns_action_t action;
         mdns_action_t * a = &action;
@@ -4031,6 +4029,8 @@ static esp_err_t _mdns_service_task_stop()
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
+    vSemaphoreDelete(_mdns_service_semaphore);
+    _mdns_service_semaphore = NULL;
     return ESP_OK;
 }
 
