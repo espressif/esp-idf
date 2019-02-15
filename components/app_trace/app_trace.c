@@ -38,7 +38,7 @@
 //                                 |<------------------------------------------->|TRAX_CTRL_REGS|<---->|
 //                                                                               ----------------
 
-// In general tracing goes in the following way. User aplication requests tracing module to send some data by calling esp_apptrace_buffer_get(),
+// In general tracing goes in the following way. User application requests tracing module to send some data by calling esp_apptrace_buffer_get(),
 // module allocates necessary buffer in current input trace block. Then user fills received buffer with data and calls esp_apptrace_buffer_put().
 // When current input trace block is filled with app data it is exposed to host and the second block becomes input one and buffer filling restarts.
 // While target application fills one TRAX block host reads another one via JTAG.
@@ -62,7 +62,7 @@
 //    21..15 bits - trace memory block transfer ID. Block counter. It can overflow. Updated by target, host should not modify it. Actually can be 2 bits;
 //    22     bit  - 'host data present' flag. If set to one there is data from host, otherwise - no host data;
 //    23     bit  - 'host connected' flag. If zero then host is not connected and tracing module works in post-mortem mode, otherwise in streaming mode;
-// - Status register uses TRAX_TRIGGERPC as storage. If this register is not zero then currentlly CPU is changing TRAX registers and
+// - Status register uses TRAX_TRIGGERPC as storage. If this register is not zero then current CPU is changing TRAX registers and
 //   this register holds address of the instruction which application will execute when it finishes with those registers modifications.
 //   See 'Targets Connection' setion for details.
 
@@ -87,7 +87,7 @@
 // 4.1 Trace Memory Blocks
 // -----------------------
 
-// Communication is controlled via special register. Host periodically polls control register on each core to find out if there are any data avalable.
+// Communication is controlled via special register. Host periodically polls control register on each core to find out if there are any data available.
 // When current input memory block is filled it is exposed to host and 'block_len' and 'block_id' fields are updated in the control register.
 // Host reads new register value and according to it's value starts reading data from exposed block. Meanwhile target starts filling another trace block.
 // When host finishes reading the block it clears 'block_len' field in control register indicating to the target that it is ready to accept the next one.
@@ -102,9 +102,9 @@
 // multithreading environment it can happen that task/ISR which copies data is preempted by another high prio task/ISR. So it is possible situation
 // that task/ISR will fail to complete filling its data chunk before the whole trace block is exposed to the host. To handle such conditions tracing
 // module prepends all user data chunks with header which contains allocated buffer size and actual data length within it. OpenOCD command
-// which reads application traces reports error when it reads incompleted user data block.
-// Data which are transfered from host to target are also prepended with a header. Down channel data header is simple and consists of one two bytes field
-// containing length of host data following the heder.
+// which reads application traces reports error when it reads incomplete user data block.
+// Data which are transffered from host to target are also prepended with a header. Down channel data header is simple and consists of one two bytes field
+// containing length of host data following the header.
 
 // 4.3 Data Buffering
 // ------------------
@@ -141,19 +141,17 @@
 //   So no local task switch occurs when mutex is locked. But this does not apply to tasks on another CPU.
 //   WARNING: Priority inversion can happen when low prio task works on one CPU and medium and high prio tasks work on another.
 // WARNING: Care must be taken when selecting timeout values for trace calls from ISRs. Tracing module does not care about watchdogs when waiting
-// on internal locks and for host to complete previous block reading, so if timeout value exceedes watchdog's one it can lead to the system reboot.
+// on internal locks and for host to complete previous block reading, so if timeout value exceeds watchdog's one it can lead to the system reboot.
 
 // 6. Timeouts
 // ===========
 
-// Timeout mechanism is based on xthal_get_ccount() routine and supports timeout values in micorseconds.
+// Timeout mechanism is based on xthal_get_ccount() routine and supports timeout values in microseconds.
 // There are two situations when task/ISR can be delayed by tracing API call. Timeout mechanism takes into account both conditions:
 // - Trace data are locked by another task/ISR. When wating on trace data lock.
 // - Current TRAX memory input block is full when working in streaming mode (host is connected). When waiting for host to complete previous block reading.
 // When wating for any of above conditions xthal_get_ccount() is called periodically to calculate time elapsed from trace API routine entry. When elapsed
 // time exceeds specified timeout value operation is canceled and ESP_ERR_TIMEOUT code is returned.
-
-// ALSO SEE example usage of application tracing module in 'components/app_trace/README.rst'
 
 #include <string.h>
 #include <sys/param.h>
