@@ -326,8 +326,12 @@ bool esp_vhci_host_check_send_available(void);
 
 /** @brief esp_vhci_host_send_packet
  * host send packet to controller
+ *
+ * Should not call this function from within a critical section
+ * or when the scheduler is suspended.
+ *
  * @param data the packet point
- *,@param len the packet length
+ * @param len the packet length
  */
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
 
@@ -453,11 +457,11 @@ void esp_bt_controller_wakeup_request(void);
 
 /**
  * @brief Manually clear scan duplicate list
- * 
+ *
  * Note that scan duplicate list will be automatically cleared when the maximum amount of device in the filter is reached
  * the amount of device in the filter can be configured in menuconfig.
- * 
- * 
+ *
+ *
  * @return
  *                  - ESP_OK : success
  *                  - other  : failed
