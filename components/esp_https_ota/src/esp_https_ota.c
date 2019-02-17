@@ -85,7 +85,14 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
     ESP_LOGI(TAG, "Please Wait. This may take time");
 
     esp_err_t ota_write_err = ESP_OK;
-    const int alloc_size = (config->buffer_size > 0) ? config->buffer_size : DEFAULT_OTA_BUF_SIZE;
+    const size_t largest_block = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+    ESP_LOGD(TAG, "Largest heap block available: %u bytes", largest_block);
+    int alloc_size = (config->buffer_size > 0) ? config->buffer_size : DEFAULT_OTA_BUF_SIZE;
+    if(largest_block < alloc_size)
+    {
+        ESP_LOGW(TAG, "Largest heap block available (%u bytes) was less than requested size (%i bytes)", largest_block, alloc_size);
+        alloc_size = largest_block;
+    }
     char *upgrade_data_buf = (char *)malloc(alloc_size);
     if (!upgrade_data_buf) {
         ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
