@@ -963,7 +963,7 @@ example_test_002_01:
     - ESP32
     - Example_ShieldBox_Basic
 
-example_test_003_01:
+.example_test_003_01:
   <<: *example_test_template
   tags:
     - ESP32
