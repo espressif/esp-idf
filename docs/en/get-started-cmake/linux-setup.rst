@@ -105,7 +105,7 @@ Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf-cmake`.
+To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf-cmake`.
 
 
 Related Documents
