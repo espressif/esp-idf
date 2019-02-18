@@ -101,8 +101,8 @@ static void app_prov_stop_service(void)
     protocomm_delete(g_prov->pc);
 }
 
-/* Callback to be invoked by timer */
-static void _stop_prov_cb(void * arg)
+/* Task spawned by timer callback */
+static void stop_prov_task(void * arg)
 {
     ESP_LOGI(TAG, "Stopping provisioning");
     app_prov_stop_service();
@@ -116,6 +116,14 @@ static void _stop_prov_cb(void * arg)
     free(g_prov);
     g_prov = NULL;
     ESP_LOGI(TAG, "Provisioning stopped");
+
+    vTaskDelete(NULL);
+}
+
+/* Callback to be invoked by timer */
+static void _stop_prov_cb(void * arg)
+{
+    xTaskCreate(&stop_prov_task, "stop_prov", 2048, NULL, tskIDLE_PRIORITY, NULL);
 }
 
 /* Event handler for starting/stopping provisioning.
@@ -146,7 +154,7 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
 
     case SYSTEM_EVENT_STA_GOT_IP:
         ESP_LOGI(TAG, "STA Got IP");
-        /* Station got IP. That means configuraion is successful.
+        /* Station got IP. That means configuration is successful.
          * Schedule timer to stop provisioning app after 30 seconds. */
         g_prov->wifi_state = WIFI_PROV_STA_CONNECTED;
         if (g_prov && g_prov->timer) {
@@ -299,7 +307,7 @@ esp_err_t app_prov_start_console_provisioning(int security, const protocomm_secu
         return ESP_ERR_NO_MEM;
     }
 
-    /* Initialise app data */
+    /* Initialize app data */
     g_prov->pop = pop;
     g_prov->security = security;
 
@@ -308,7 +316,7 @@ esp_err_t app_prov_start_console_provisioning(int security, const protocomm_secu
         .callback = _stop_prov_cb,
         .arg = NULL,
         .dispatch_method = ESP_TIMER_TASK,
-        .name = "stop_softap_tm"
+        .name = "stop_console_tm"
     };
     esp_err_t err = esp_timer_create(&timer_conf, &g_prov->timer);
     if (err != ESP_OK) {
