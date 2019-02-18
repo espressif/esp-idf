@@ -166,6 +166,8 @@ How it renders:
 A check is added to the CI build script, which searches RST files for presence of hard-coded links (identified by tree/master, blob/master, or raw/master part of the URL). This check can be run manually: ``cd docs`` and then ``make gh-linkcheck``.
 
 
+.. _link-language-versions:
+
 Linking Language Versions
 -------------------------
 
@@ -234,6 +236,8 @@ OK, but I am new to Sphinx!
 
 4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
 
+
+.. _setup-for-building-documentation:
 
 Setup for building documentation locally
 ----------------------------------------
@@ -304,11 +308,15 @@ All remaining applications are `Python <https://www.python.org/>`_ packages and 
 
 	Installation steps assume that ESP-IDF is placed in ``~/esp/esp-idf`` directory, that is default location of ESP-IDF used in documentation.
 
+Change to directory with files for specific language::
+
+    cd en
+
 Now you should be ready to build documentation by invoking::
 
-	make html
+    make html
 
-This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/_buld/html`` folder. To see it, open ``index.html`` in a web browser.  
+This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/en/_build/html`` folder. To see it, open ``index.html`` in a web browser.  
 
 
 Wrap up
@@ -324,6 +332,7 @@ Related Documents
 -----------------
 
 * :doc:`../api-reference/template`
+* :doc:`add-ons-reference`
 
 
 .. _espressif/esp-idf: https://github.com/espressif/esp-idf/
