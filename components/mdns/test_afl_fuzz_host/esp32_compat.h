@@ -57,6 +57,7 @@
 
 #define portMAX_DELAY               0xFFFFFFFF
 #define portTICK_PERIOD_MS          1
+#define ESP_LOGD(a,b)
 
 #define xSemaphoreTake(s,d)
 #define xTaskDelete(a)
@@ -65,6 +66,7 @@
 #define _mdns_pcb_init(a,b)         true
 #define _mdns_pcb_deinit(a,b)         true
 #define xSemaphoreCreateMutex()     malloc(1)
+#define xSemaphoreCreateBinary()    malloc(1)
 #define vSemaphoreDelete(s)         free(s)
 #define xTaskCreatePinnedToCore(a,b,c,d,e,f,g)     *(f) = malloc(1)
 #define vTaskDelay(m)               usleep((m)*0)
