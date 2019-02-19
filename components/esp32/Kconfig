@@ -786,18 +786,6 @@ config ESP32_RTC_CLK_CAL_CYCLES
           In case more value will help improve the definition of the launch of the crystal.
           If the crystal could not start, it will be switched to internal RC.
 
-config ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
-    bool "Additional current for external 32kHz crystal"
-    depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
-    default "n"
-    help
-        Choose which additional current is used for rtc external crystal.
-
-        - "Enable current by touch" option provides touch pad9 current to
-           external 32kHz crystal, at the expense of slightly higher (4-5uA) deep
-           sleep current consumption. Note that enabled Touch or ULP wakeup
-           source at sleep, this item is invalid even selected ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT.
-
 config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
     int "Bootstrap cycles for external 32kHz crystal"
     depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
