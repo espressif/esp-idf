@@ -14,6 +14,16 @@ The [Getting Started section of the AWS IoT Developer Guide](http://docs.aws.ama
 
 To build and use this example, follow all the AWS IoT Getting Started steps from the beginning ("Sign in to the AWS Iot Console") up until "Configuring Your Device". For configuring the device, these are the steps:
 
+# Authentication (Based on X.509 certificates)
+
+### Device Authentication
+
+AWS IoT can use AWS IoT-generated certificates or certificates signed by a CA certificate for device authentication. To use a certificate that is not created by AWS IoT, you must register a CA certificate. All device certificates must be signed by the CA certificate you register. Please refer to guide at https://docs.aws.amazon.com/iot/latest/developerguide/device-certs-your-own.html for step-by-step instructions to register custom X.509 certificates.
+
+### Server Authentication
+
+Server certificates allow devices to verify that they're communicating with AWS IoT and not another server impersonating AWS IoT. By default [Amazon Root CA 1](https://www.amazontrust.com/repository/AmazonRootCA1.pem) (signed by Amazon Trust Services Endpoints CA) is embedded in applications, for more information please refer to https://docs.aws.amazon.com/iot/latest/developerguide/managing-device-certs.html#server-authentication
+
 ## Configuring Your Device
 
 ### Installing Private Key & Certificate
