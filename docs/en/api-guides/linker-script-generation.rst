@@ -470,7 +470,6 @@ the target ``iram0_text``.
         /* Marker referencing iram0_text */
         mapping[iram0_text]
 
-        INCLUDE esp32.spiram.rom-functions-iram.ld
         _iram_text_end = ABSOLUTE(.);
     } > iram0_0_seg
 
@@ -512,7 +511,6 @@ Then the corresponding excerpt from the generated linker script will be as follo
         *(.iram1 .iram1.*)
         *libfreertos.a:(.literal .text .literal.* .text.*)
 
-        INCLUDE esp32.spiram.rom-functions-iram.ld
         _iram_text_end = ABSOLUTE(.);
     } > iram0_0_seg
 

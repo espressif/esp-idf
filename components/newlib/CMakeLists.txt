@@ -13,6 +13,8 @@ set(COMPONENT_ADD_INCLUDEDIRS platform_include include)
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)
     set(LIBC c-psram-workaround)
     set(LIBM m-psram-workaround)
+
+    set(COMPONENT_ADD_LDFRAGMENTS esp32-spiram-rom-functions.lf)
 else()
 
     if(CONFIG_NEWLIB_NANO_FORMAT)
