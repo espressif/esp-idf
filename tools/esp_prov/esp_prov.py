@@ -59,7 +59,7 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
 def version_match(tp, protover):
     try:
         response = tp.send_data('proto-ver', protover)
-        if response != "SUCCESS":
+        if response != protover:
             return False
         return True
     except RuntimeError as e:

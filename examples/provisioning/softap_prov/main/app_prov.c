@@ -56,8 +56,11 @@ static esp_err_t app_prov_start_service(void)
     }
 
     /* Config for protocomm_httpd_start() */
-    protocomm_httpd_config_t pc_config = PROTOCOMM_HTTPD_DEFAULT_CONFIG();
-
+    protocomm_httpd_config_t pc_config = {
+        .data = {
+            .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
+        }
+    };
     /* Start protocomm server on top of HTTP */
     if (protocomm_httpd_start(g_prov->pc, &pc_config) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to start protocomm HTTP server");
@@ -99,8 +102,8 @@ static void app_prov_stop_service(void)
     protocomm_delete(g_prov->pc);
 }
 
-/* Callback to be invoked by timer */
-static void _stop_softap_cb(void * arg)
+/* Task spawned by timer callback */
+static void stop_prov_task(void * arg)
 {
     ESP_LOGI(TAG, "Stopping provisioning");
     app_prov_stop_service();
@@ -115,6 +118,14 @@ static void _stop_softap_cb(void * arg)
     free(g_prov);
     g_prov = NULL;
     ESP_LOGI(TAG, "Provisioning stopped");
+
+    vTaskDelete(NULL);
+}
+
+/* Callback to be invoked by timer */
+static void _stop_prov_cb(void * arg)
+{
+    xTaskCreate(&stop_prov_task, "stop_prov", 2048, NULL, tskIDLE_PRIORITY, NULL);
 }
 
 /* Event handler for starting/stopping provisioning.
@@ -145,7 +156,7 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
 
     case SYSTEM_EVENT_STA_GOT_IP:
         ESP_LOGI(TAG, "STA Got IP");
-        /* Station got IP. That means configuraion is successful.
+        /* Station got IP. That means configuration is successful.
          * Schedule timer to stop provisioning app after 30 seconds. */
         g_prov->wifi_state = WIFI_PROV_STA_CONNECTED;
         if (g_prov && g_prov->timer) {
@@ -157,7 +168,7 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
              * to reconnect and get STA connection status from the device.
              * Otherwise, the AP will be turned off before the user can
              * reconnect and thus the user app will see connection timed out,
-             * signalling a failure in provisioning. */
+             * signaling a failure in provisioning. */
             esp_timer_start_once(g_prov->timer, 30000*1000U);
         }
         break;
@@ -287,7 +298,7 @@ esp_err_t app_prov_configure_sta(wifi_config_t *wifi_cfg)
 
 static esp_err_t start_wifi_ap(const char *ssid, const char *pass)
 {
-    /* Initialise WiFi with default configuration */
+    /* Initialize WiFi with default configuration */
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_err_t err = esp_wifi_init(&cfg);
     if (err != ESP_OK) {
@@ -350,13 +361,13 @@ esp_err_t app_prov_start_softap_provisioning(const char *ssid, const char *pass,
         return ESP_ERR_NO_MEM;
     }
 
-    /* Initialise app data */
+    /* Initialize app data */
     g_prov->pop = pop;
     g_prov->security = security;
 
     /* Create timer object as a member of app data */
     esp_timer_create_args_t timer_conf = {
-        .callback = _stop_softap_cb,
+        .callback = _stop_prov_cb,
         .arg = NULL,
         .dispatch_method = ESP_TIMER_TASK,
         .name = "stop_softap_tm"

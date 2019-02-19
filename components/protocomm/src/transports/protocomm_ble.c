@@ -276,7 +276,7 @@ static void transport_simple_ble_exec_write(esp_gatts_cb_event_t event, esp_gatt
 static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     esp_err_t ret;
-    ESP_LOGV(TAG, "Inside disconnect w/ session - %d", param->disconnect.conn_id);
+    ESP_LOGD(TAG, "Inside disconnect w/ session - %d", param->disconnect.conn_id);
     if (protoble_internal->pc_ble->sec &&
         protoble_internal->pc_ble->sec->close_transport_session) {
         ret = protoble_internal->pc_ble->sec->close_transport_session(param->disconnect.conn_id);
@@ -290,7 +290,7 @@ static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt
 static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     esp_err_t ret;
-    ESP_LOGV(TAG, "Inside BLE connect w/ conn_id - %d", param->connect.conn_id);
+    ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", param->connect.conn_id);
     if (protoble_internal->pc_ble->sec &&
         protoble_internal->pc_ble->sec->new_transport_session) {
         ret = protoble_internal->pc_ble->sec->new_transport_session(param->connect.conn_id);
@@ -372,7 +372,7 @@ static void protocomm_ble_cleanup(void)
         if (protoble_internal->g_nu_lookup) {
             for (unsigned i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
                 if (protoble_internal->g_nu_lookup[i].name) {
-                    free(protoble_internal->g_nu_lookup[i].name);
+                    free((void *)protoble_internal->g_nu_lookup[i].name);
                 }
             }
             free(protoble_internal->g_nu_lookup);
@@ -488,7 +488,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     }
 
     prepare_write_env.prepare_buf = NULL;
-    ESP_LOGV(TAG, "Waiting for client to connect ......");
+    ESP_LOGD(TAG, "Waiting for client to connect ......");
     return ESP_OK;
 }
 

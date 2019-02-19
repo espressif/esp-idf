@@ -17,6 +17,10 @@
 #include <protocomm_security.h>
 #include <esp_err.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Function prototype for protocomm endpoint handler
  */
@@ -42,7 +46,7 @@ typedef struct protocomm protocomm_t;
  * @brief   Create a new protocomm instance
  *
  * This API will return a new dynamically allocated protocomm instance
- * with all elements of the protocomm_t structure initialised to NULL.
+ * with all elements of the protocomm_t structure initialized to NULL.
  *
  * @return
  *  - protocomm_t* : On success
@@ -71,7 +75,8 @@ void protocomm_delete(protocomm_t *pc);
  *  - An endpoint must be bound to a valid protocomm instance,
  *    created using `protocomm_new()`.
  *  - This function internally calls the registered `add_endpoint()`
- *    function which is a member of the protocomm_t instance structure.
+ *    function of the selected transport which is a member of the
+ *    protocomm_t instance structure.
  *
  * @param[in] pc        Pointer to the protocomm instance
  * @param[in] ep_name   Endpoint identifier(name) string
@@ -81,7 +86,7 @@ void protocomm_delete(protocomm_t *pc);
  *                      Pass NULL if not needed.
  *
  * @return
- *  - ESP_OK : Added new endpoint succesfully
+ *  - ESP_OK : Success
  *  - ESP_FAIL : Error adding endpoint / Endpoint with this name already exists
  *  - ESP_ERR_NO_MEM : Error allocating endpoint resource
  *  - ESP_ERR_INVALID_ARG : Null instance/name/handler arguments
@@ -103,7 +108,7 @@ esp_err_t protocomm_add_endpoint(protocomm_t *pc, const char *ep_name,
  * @param[in] ep_name   Endpoint identifier(name) string
  *
  * @return
- *  - ESP_OK : Added new endpoint succesfully
+ *  - ESP_OK : Success
  *  - ESP_ERR_NOT_FOUND : Endpoint with specified name doesn't exist
  *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
  */
@@ -111,12 +116,12 @@ esp_err_t protocomm_remove_endpoint(protocomm_t *pc, const char *ep_name);
 
 /**
  * @brief   Calls the registered handler of an endpoint session
- *          for processing incoming data and giving the output
+ *          for processing incoming data and generating the response
  *
  * @note
  *  - An endpoint must be bound to a valid protocomm instance,
  *    created using `protocomm_new()`.
- *  - Resulting output buffer must be deallocated by the user.
+ *  - Resulting output buffer must be deallocated by the caller.
  *
  * @param[in]  pc         Pointer to the protocomm instance
  * @param[in]  ep_name    Endpoint identifier(name) string
@@ -130,7 +135,7 @@ esp_err_t protocomm_remove_endpoint(protocomm_t *pc, const char *ep_name);
  * @param[out] outlen     Buffer length of the allocated output buffer
  *
  * @return
- *  - ESP_OK : Request handled succesfully
+ *  - ESP_OK : Request handled successfully
  *  - ESP_FAIL : Internal error in execution of registered handler
  *  - ESP_ERR_NO_MEM : Error allocating internal resource
  *  - ESP_ERR_NOT_FOUND : Endpoint with specified name doesn't exist
@@ -159,7 +164,7 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
  * @param[in] pop       Pointer to proof of possession for authenticating a client
  *
  * @return
- *  - ESP_OK : Added new security endpoint succesfully
+ *  - ESP_OK : Success
  *  - ESP_FAIL : Error adding endpoint / Endpoint with this name already exists
  *  - ESP_ERR_INVALID_STATE : Security endpoint already set
  *  - ESP_ERR_NO_MEM : Error allocating endpoint resource
@@ -179,7 +184,7 @@ esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
  * @param[in] ep_name   Endpoint identifier(name) string
  *
  * @return
- *  - ESP_OK : Added new endpoint succesfully
+ *  - ESP_OK : Success
  *  - ESP_ERR_NOT_FOUND : Endpoint with specified name doesn't exist
  *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
  */
@@ -189,7 +194,7 @@ esp_err_t protocomm_unset_security(protocomm_t *pc, const char *ep_name);
  * @brief   Set endpoint for version verification
  *
  * This API can be used for setting an application specific protocol
- * version which can be verfied by clients through the endpoint.
+ * version which can be verified by clients through the endpoint.
  *
  * @note
  *  - An endpoint must be bound to a valid protocomm instance,
@@ -200,7 +205,7 @@ esp_err_t protocomm_unset_security(protocomm_t *pc, const char *ep_name);
  * @param[in] version   Version identifier(name) string
  *
  * @return
- *  - ESP_OK : Added new security endpoint succesfully
+ *  - ESP_OK : Success
  *  - ESP_FAIL : Error adding endpoint / Endpoint with this name already exists
  *  - ESP_ERR_INVALID_STATE : Version endpoint already set
  *  - ESP_ERR_NO_MEM : Error allocating endpoint resource
@@ -219,8 +224,12 @@ esp_err_t protocomm_set_version(protocomm_t *pc, const char *ep_name,
  * @param[in] ep_name   Endpoint identifier(name) string
  *
  * @return
- *  - ESP_OK : Added new endpoint succesfully
+ *  - ESP_OK : Success
  *  - ESP_ERR_NOT_FOUND : Endpoint with specified name doesn't exist
  *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
  */
 esp_err_t protocomm_unset_version(protocomm_t *pc, const char *ep_name);
+
+#ifdef __cplusplus
+}
+#endif
