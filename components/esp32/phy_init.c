@@ -36,10 +36,11 @@
 #include "freertos/portmacro.h"
 #include "phy.h"
 #include "phy_init_data.h"
-#include "coexist_internal.h"
+#include "esp_coexist_internal.h"
 #include "driver/periph_ctrl.h"
 #include "esp_wifi_internal.h"
 
+extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
 
 static const char* TAG = "phy_init";
 
@@ -92,7 +93,9 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
         if (s_common_clock_disable_time) {
             uint32_t diff = (uint64_t)now - s_common_clock_disable_time;
 
-            esp_wifi_internal_update_mac_time(diff);
+            if (s_wifi_mac_time_update_cb) {
+                s_wifi_mac_time_update_cb(diff);
+            }
             s_common_clock_disable_time = 0;
             ESP_LOGD(TAG, "wifi mac time delta: %u", diff);
         }
@@ -159,14 +162,6 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
 #endif
             }
 
-
-extern esp_err_t wifi_osi_funcs_register(wifi_osi_funcs_t *osi_funcs);
-            status = wifi_osi_funcs_register(&g_wifi_osi_funcs);
-            if(status != ESP_OK) {
-                ESP_LOGE(TAG, "failed to register wifi os adapter, ret(%d)", status);
-                _lock_release(&s_phy_rf_init_lock);
-                return ESP_FAIL;
-            }
             coex_bt_high_prio();
         }
     }
