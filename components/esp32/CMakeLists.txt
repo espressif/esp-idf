@@ -28,6 +28,7 @@ else()
                    "dbg_stubs.c"
                    "dport_access.c"
                    "dport_panic_highint_hdl.S"
+                   "esp_adapter.c"
                    "esp_err_to_name.c"
                    "esp_timer.c"
                    "esp_timer_esp32.c"
@@ -57,7 +58,6 @@ else()
                    "system_api.c"
                    "task_wdt.c"
                    "wifi_init.c"
-                   "wifi_os_adapter.c"
                    "hwcrypto/aes.c"
                    "hwcrypto/sha.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
