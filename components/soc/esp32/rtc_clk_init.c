@@ -128,7 +128,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_WRITE(APB_CTRL_PLL_TICK_CONF_REG, APB_CLK_FREQ / MHZ - 1); /* Under PLL, APB frequency is always 80MHz */
 
     /* Re-calculate the ccount to make time calculation correct. */
-    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * cfg.cpu_freq_mhz / freq_before );
+    XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
     if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
