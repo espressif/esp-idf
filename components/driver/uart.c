@@ -333,6 +333,21 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask)
     return ESP_OK;
 }
 
+static void uart_disable_intr_mask_from_isr(uart_port_t uart_num, uint32_t disable_mask)
+{
+    UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+    CLEAR_PERI_REG_MASK(UART_INT_ENA_REG(uart_num), disable_mask);
+    UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+}
+
+static void uart_enable_intr_mask_from_isr(uart_port_t uart_num, uint32_t enable_mask)
+{
+    UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+    SET_PERI_REG_MASK(UART_INT_CLR_REG(uart_num), enable_mask);
+    SET_PERI_REG_MASK(UART_INT_ENA_REG(uart_num), enable_mask);
+    UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
+}
+
 static esp_err_t uart_pattern_link_free(uart_port_t uart_num)
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
@@ -730,7 +745,7 @@ static void uart_rx_intr_handler_default(void *param)
         uart_event.type = UART_EVENT_MAX;
         if(uart_intr_status & UART_TXFIFO_EMPTY_INT_ST_M) {
             uart_clear_intr_status(uart_num, UART_TXFIFO_EMPTY_INT_CLR_M);
-            uart_disable_intr_mask(uart_num, UART_TXFIFO_EMPTY_INT_ENA_M);
+            uart_disable_intr_mask_from_isr(uart_num, UART_TXFIFO_EMPTY_INT_ENA_M);
             if(p_uart->tx_waiting_brk) {
                 continue;
             }
@@ -832,7 +847,7 @@ static void uart_rx_intr_handler_default(void *param)
                 }
                 if (en_tx_flg) {
                     uart_clear_intr_status(uart_num, UART_TXFIFO_EMPTY_INT_CLR_M);
-                    uart_enable_intr_mask(uart_num, UART_TXFIFO_EMPTY_INT_ENA_M);
+                    uart_enable_intr_mask_from_isr(uart_num, UART_TXFIFO_EMPTY_INT_ENA_M);
                 }
             }
         }
@@ -876,7 +891,7 @@ static void uart_rx_intr_handler_default(void *param)
                 //Mainly for applications that uses flow control or small ring buffer.
                 if(pdFALSE == xRingbufferSendFromISR(p_uart->rx_ring_buf, p_uart->rx_data_buf, p_uart->rx_stash_len, &HPTaskAwoken)) {
                     p_uart->rx_buffer_full_flg = true;
-                    uart_disable_intr_mask(uart_num, UART_RXFIFO_TOUT_INT_ENA_M | UART_RXFIFO_FULL_INT_ENA_M);
+                    uart_disable_intr_mask_from_isr(uart_num, UART_RXFIFO_TOUT_INT_ENA_M | UART_RXFIFO_FULL_INT_ENA_M);
                     if (uart_event.type == UART_PATTERN_DET) {
                         if (rx_fifo_len < pat_num) {
                             //some of the characters are read out in last interrupt
@@ -912,7 +927,7 @@ static void uart_rx_intr_handler_default(void *param)
                     portYIELD_FROM_ISR();
                 }
             } else {
-                uart_disable_intr_mask(uart_num, UART_RXFIFO_FULL_INT_ENA_M | UART_RXFIFO_TOUT_INT_ENA_M);
+                uart_disable_intr_mask_from_isr(uart_num, UART_RXFIFO_FULL_INT_ENA_M | UART_RXFIFO_TOUT_INT_ENA_M);
                 uart_clear_intr_status(uart_num, UART_RXFIFO_FULL_INT_CLR_M | UART_RXFIFO_TOUT_INT_CLR_M);
                 if(uart_intr_status & UART_AT_CMD_CHAR_DET_INT_ST_M) {
                     uart_reg->int_clr.at_cmd_char_det = 1;
@@ -971,7 +986,7 @@ static void uart_rx_intr_handler_default(void *param)
                 }
             }
         } else if(uart_intr_status & UART_TX_BRK_IDLE_DONE_INT_ST_M) {
-            uart_disable_intr_mask(uart_num, UART_TX_BRK_IDLE_DONE_INT_ENA_M);
+            uart_disable_intr_mask_from_isr(uart_num, UART_TX_BRK_IDLE_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_BRK_IDLE_DONE_INT_CLR_M);
         } else if(uart_intr_status & UART_AT_CMD_CHAR_DET_INT_ST_M) {
             uart_reg->int_clr.at_cmd_char_det = 1;
@@ -988,7 +1003,7 @@ static void uart_rx_intr_handler_default(void *param)
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_event.type = UART_EVENT_MAX;
         } else if(uart_intr_status & UART_TX_DONE_INT_ST_M) {
-            uart_disable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
+            uart_disable_intr_mask_from_isr(uart_num, UART_TX_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);
             // If RS485 half duplex mode is enable then reset FIFO and 
             // reset RTS pin to start receiver driver
