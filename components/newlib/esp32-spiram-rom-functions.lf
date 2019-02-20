@@ -37,7 +37,6 @@ entries:
   lib_a-fflush (noflash)
   lib_a-refill (noflash)
   lib_a-s_fpclassify (noflash)
-  lib_a-locale (noflash)
   lib_a-asctime (noflash)
   lib_a-ctime (noflash)
   lib_a-ctime_r (noflash)
