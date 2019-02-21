@@ -24,18 +24,19 @@ except ImportError:
 
 
 if __name__ == "__main__":
+    # Should deliver a RuntimeError as the 'test' header doesn't exist
     try:
         idf_size.scan_to_header([], 'test')
-    except RuntimeError:
-        pass
+    except RuntimeError as e:
+        assert "Didn't find line" in str(e)
 
+    # Should deliver a RuntimeError as there's no content under the heading
     try:
         idf_size.load_memory_config(["Memory Configuration"])
         pass
-    except RuntimeError:
-        pass
+    except RuntimeError as e:
+        assert "End of file" in str(e)
 
-    try:
-        idf_size.print_summary({"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {})
-    except ZeroDivisionError:
-        pass
+    # This used to crash with a division by zero error but now it just prints nan% due to
+    # zero lengths
+    idf_size.print_summary({"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {})
