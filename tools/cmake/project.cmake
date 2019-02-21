@@ -384,19 +384,26 @@ macro(project project_name)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
+    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
+    if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
+        list(APPEND idf_size "--json")
+    endif()
+
     # Add size targets, depend on map file, run idf_size.py
     add_custom_target(size
         DEPENDS ${project_elf}
-        COMMAND ${python} ${idf_path}/tools/idf_size.py ${mapfile}
+        COMMAND ${idf_size} ${mapfile}
         )
     add_custom_target(size-files
         DEPENDS ${project_elf}
-        COMMAND ${python} ${idf_path}/tools/idf_size.py --files ${mapfile}
+        COMMAND ${idf_size} --files ${mapfile}
         )
     add_custom_target(size-components
         DEPENDS ${project_elf}
-        COMMAND ${python} ${idf_path}/tools/idf_size.py --archives ${mapfile}
+        COMMAND ${idf_size} --archives ${mapfile}
         )
+
+    unset(idf_size)
 
     idf_build_executable(${project_elf})
 
