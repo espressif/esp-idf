@@ -1087,13 +1087,19 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         p_i2s_obj[i2s_num]->channel_num = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ? 2 : 1;
 
 #ifdef CONFIG_PM_ENABLE
-    err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_driver",
-            &p_i2s_obj[i2s_num]->pm_lock);
+    if (i2s_config->use_apll) {
+        err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i2s_driver", &p_i2s_obj[i2s_num]->pm_lock);
+    } else {
+        err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_driver", &p_i2s_obj[i2s_num]->pm_lock);
+    }
     if (err != ESP_OK) {
+        free(p_i2s_obj[i2s_num]);
+        p_i2s_obj[i2s_num] = NULL;
+        ESP_LOGE(I2S_TAG, "I2S pm lock error");
         return err;
     }
-
 #endif //CONFIG_PM_ENABLE
+
         //To make sure hardware is enabled before any hardware register operations.
         if (i2s_num == I2S_NUM_1) {
             periph_module_enable(PERIPH_I2S1_MODULE);
@@ -1166,7 +1172,7 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     }
 #ifdef CONFIG_PM_ENABLE
     if (p_i2s_obj[i2s_num]->pm_lock) {
-            esp_pm_lock_delete(p_i2s_obj[i2s_num]->pm_lock);
+        esp_pm_lock_delete(p_i2s_obj[i2s_num]->pm_lock);
     }
 #endif
 
