@@ -29,6 +29,7 @@
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
+#include "esp_pm.h"
 
 static const char* I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
@@ -67,6 +68,7 @@ static DRAM_ATTR i2c_dev_t* const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 #define I2C_ACK_TYPE_ERR_STR           "i2c ack type error"
 #define I2C_DATA_LEN_ERR_STR           "i2c data read length error"
 #define I2C_PSRAM_BUFFER_WARN_STR      "Using buffer allocated from psram"
+#define I2C_LOCK_ERR_STR               "Power lock creation error"
 #define I2C_FIFO_FULL_THRESH_VAL       (28)
 #define I2C_FIFO_EMPTY_THRESH_VAL      (5)
 #define I2C_IO_INIT_LEVEL              (1)
@@ -134,6 +136,9 @@ typedef struct {
     StaticQueue_t evt_queue_buffer;  /*!< The buffer that will hold the queue structure*/
 #endif
     xSemaphoreHandle cmd_mux;        /*!< semaphore to lock command process */
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+#endif
     size_t tx_fifo_remain;           /*!< tx fifo remain length, for master mode */
     size_t rx_fifo_remain;           /*!< rx fifo remain length, for master mode */
 
@@ -226,6 +231,12 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         } else {
             //semaphore to sync sending process, because we only have 32 bytes for hardware fifo.
             p_i2c->cmd_mux = xSemaphoreCreateMutex();
+#ifdef CONFIG_PM_ENABLE
+            if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2c_driver", &p_i2c->pm_lock) != ESP_OK) {
+                ESP_LOGE(I2C_TAG, I2C_LOCK_ERR_STR);
+                goto err;
+            }
+#endif
 #if !CONFIG_SPIRAM_USE_MALLOC
             p_i2c->cmd_evt_queue = xQueueCreate(I2C_EVT_QUEUE_LEN, sizeof(i2c_cmd_evt_t));
 #else
@@ -297,6 +308,12 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
         if (p_i2c_obj[i2c_num]->slv_tx_mux) {
             vSemaphoreDelete(p_i2c_obj[i2c_num]->slv_tx_mux);
         }
+#ifdef CONFIG_PM_ENABLE
+        if (p_i2c_obj[i2c_num]->pm_lock) {
+            esp_pm_lock_delete(p_i2c_obj[i2c_num]->pm_lock);
+            p_i2c_obj[i2c_num]->pm_lock = NULL;
+        }
+#endif
 #if CONFIG_SPIRAM_USE_MALLOC
         if (p_i2c_obj[i2c_num]->evt_queue_storage) {
             free(p_i2c_obj[i2c_num]->evt_queue_storage);
@@ -365,6 +382,12 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
         p_i2c->tx_ring_buf = NULL;
         p_i2c->tx_buf_length = 0;
     }
+#ifdef CONFIG_PM_ENABLE
+        if (p_i2c->pm_lock) {
+            esp_pm_lock_delete(p_i2c->pm_lock);
+            p_i2c->pm_lock = NULL;
+        }
+#endif
 #if CONFIG_SPIRAM_USE_MALLOC
     if (p_i2c_obj[i2c_num]->evt_queue_storage) {
         free(p_i2c_obj[i2c_num]->evt_queue_storage);
@@ -1261,6 +1284,9 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
     portTickType ticks_start = xTaskGetTickCount();
     portBASE_TYPE res = xSemaphoreTake(p_i2c->cmd_mux, ticks_to_wait);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(p_i2c->pm_lock);
+#endif
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
@@ -1338,6 +1364,9 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
         }
     }
     p_i2c->status = I2C_STATUS_DONE;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(p_i2c->pm_lock);
+#endif
     xSemaphoreGive(p_i2c->cmd_mux);
     return ret;
 }
