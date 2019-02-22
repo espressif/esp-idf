@@ -1757,6 +1757,28 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
     TEST_ESP_OK(storage.writeItem(1, ItemType::BLOB, "key3", blob, sizeof(blob)));
 }
 
+TEST_CASE("nvs blob fragmentation test", "[nvs]")
+{
+    SpiFlashEmulator emu(4);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 4) );
+    const size_t BLOB_SIZE = 3500;
+    uint8_t *blob = (uint8_t*) malloc(BLOB_SIZE);
+    CHECK(blob != NULL);
+    memset(blob, 0xEE, BLOB_SIZE);
+    const uint32_t magic = 0xff33eaeb;
+    nvs_handle h;
+    TEST_ESP_OK( nvs_open("blob_tests", NVS_READWRITE, &h) );
+    for (int i = 0; i < 128; i++) {
+        INFO("Iteration " << i << "...\n");
+        TEST_ESP_OK( nvs_set_u32(h, "magic", magic) );
+        TEST_ESP_OK( nvs_set_blob(h, "blob", blob, BLOB_SIZE) );
+        char seq_buf[16];
+        sprintf(seq_buf, "seq%d", i);
+        TEST_ESP_OK( nvs_set_u32(h, seq_buf, i) );
+    }
+    free(blob);
+}
+
 TEST_CASE("nvs code handles errors properly when partition is near to full", "[nvs]")
 {
     const size_t blob_size = Page::CHUNK_MAX_SIZE * 0.3 ;
