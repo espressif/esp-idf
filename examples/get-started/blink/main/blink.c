@@ -17,7 +17,7 @@
 */
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 
-void blink_task(void *pvParameter)
+void app_main()
 {
     /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
        muxed to GPIO on reset already, but some default to other
@@ -30,15 +30,12 @@ void blink_task(void *pvParameter)
     gpio_set_direction(BLINK_GPIO, GPIO_MODE_OUTPUT);
     while(1) {
         /* Blink off (output low) */
+	printf("Turning off the LED\n");
         gpio_set_level(BLINK_GPIO, 0);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         /* Blink on (output high) */
+	printf("Turning on the LED\n");
         gpio_set_level(BLINK_GPIO, 1);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-}
-
-void app_main()
-{
-    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }
