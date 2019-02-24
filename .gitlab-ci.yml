@@ -383,7 +383,7 @@ check_submodule_sync:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
-    - build
+    - github_sync
   except:
     - master
     - /^release\/v/
