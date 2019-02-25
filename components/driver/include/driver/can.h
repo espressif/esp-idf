@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#include "freertos/FreeRTOS.h"
 #include "esp_types.h"
 #include "esp_intr.h"
 #include "esp_err.h"
@@ -105,7 +106,7 @@ extern "C" {
 #define CAN_EXTD_ID_MASK                0x1FFFFFFF  /**< Bit mask for 29 bit Extended Frame Format ID */
 #define CAN_STD_ID_MASK                 0x7FF       /**< Bit mask for 11 bit Standard Frame Format ID */
 #define CAN_MAX_DATA_LEN                8           /**< Maximum number of data bytes in a CAN2.0B frame */
-#define CAN_IO_UNUSED                   (-1)        /**< Marks GPIO as unused in CAN configuration */
+#define CAN_IO_UNUSED                   ((gpio_num_t) -1)   /**< Marks GPIO as unused in CAN configuration */
 /** @endcond */
 
 /* ----------------------- Enum and Struct Definitions ---------------------- */
@@ -391,6 +392,34 @@ esp_err_t can_initiate_recovery();
  *      - ESP_ERR_INVALID_STATE: CAN driver is not installed
  */
 esp_err_t can_get_status_info(can_status_info_t *status_info);
+
+/**
+ * @brief   Clear the transmit queue
+ *
+ * This function will clear the transmit queue of all messages.
+ *
+ * @note    The transmit queue is automatically cleared when can_stop() or
+ *          can_initiate_recovery() is called.
+ *
+ * @return
+ *      - ESP_OK: Transmit queue cleared
+ *      - ESP_ERR_INVALID_STATE: CAN driver is not installed or TX queue is disabled
+ */
+esp_err_t can_clear_transmit_queue();
+
+/**
+ * @brief   Clear the receive queue
+ *
+ * This function will clear the receive queue of all messages.
+ *
+ * @note    The receive queue is automatically cleared when can_start() is
+ *          called.
+ *
+ * @return
+ *      - ESP_OK: Transmit queue cleared
+ *      - ESP_ERR_INVALID_STATE: CAN driver is not installed
+ */
+esp_err_t can_clear_receive_queue();
 
 #ifdef __cplusplus
 }
