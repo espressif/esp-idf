@@ -292,6 +292,7 @@ typedef struct mdns_tx_packet_s {
     mdns_out_answer_t * answers;
     mdns_out_answer_t * servers;
     mdns_out_answer_t * additional;
+    bool queued;
 } mdns_tx_packet_t;
 
 typedef struct {

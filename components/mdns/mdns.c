@@ -3821,7 +3821,17 @@ static void _mdns_execute_action(mdns_action_t * action)
         _mdns_search_finish(action->data.search_add.search);
         break;
     case ACTION_TX_HANDLE:
-        _mdns_tx_handle_packet(action->data.tx_handle.packet);
+        {
+            mdns_tx_packet_t * p = _mdns_server->tx_queue_head;
+            // packet to be handled should be at tx head, but must be consistent with the one pushed to action queue
+            if (p && p==action->data.tx_handle.packet && p->queued) {
+                p->queued = false; // clearing, as the packet might be reused (pushed and transmitted again)
+                _mdns_server->tx_queue_head = p->next;
+                _mdns_tx_handle_packet(p);
+            } else {
+                ESP_LOGD(TAG, "Skipping transmit of an unexpected packet!");
+            }
+        }
         break;
     case ACTION_RX_HANDLE:
         mdns_parse_packet(action->data.rx_handle.packet);
@@ -3858,6 +3868,10 @@ static esp_err_t _mdns_send_search_action(mdns_action_type_t type, mdns_search_o
 
 /**
  * @brief  Called from timer task to run mDNS responder
+ *
+ * periodically checks first unqueued packet (from tx head).
+ * if it is scheduled to be transmitted, then pushes the packet to action queue to be handled.
+ *
  */
 static void _mdns_scheduler_run()
 {
@@ -3865,6 +3879,10 @@ static void _mdns_scheduler_run()
     mdns_tx_packet_t * p = _mdns_server->tx_queue_head;
     mdns_action_t * action = NULL;
 
+    // find first unqueued packet
+    while (p && p->queued) {
+        p = p->next;
+    }
     if (!p) {
         MDNS_SERVICE_UNLOCK();
         return;
@@ -3872,12 +3890,12 @@ static void _mdns_scheduler_run()
     if ((int32_t)(p->send_at - (xTaskGetTickCount() * portTICK_PERIOD_MS)) < 0) {
         action = (mdns_action_t *)malloc(sizeof(mdns_action_t));
         if (action) {
-            _mdns_server->tx_queue_head = p->next;
             action->type = ACTION_TX_HANDLE;
             action->data.tx_handle.packet = p;
+            p->queued = true;
             if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
                 free(action);
-                _mdns_server->tx_queue_head = p;
+                p->queued = false;
             }
         } else {
             HOOK_MALLOC_FAILED;
