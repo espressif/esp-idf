@@ -32,7 +32,7 @@ extern "C" {
 
 /* Size of request data block/chunk (not to be confused with chunked encoded data)
  * that is received and parsed in one turn of the parsing process. This should not
- * exceed the scratch buffer size and should atleast be 8 bytes */
+ * exceed the scratch buffer size and should at least be 8 bytes */
 #define PARSER_BLOCK_SIZE  128
 
 /* Calculate the maximum size needed for the scratch buffer */
@@ -55,64 +55,6 @@ struct thread_data {
 };
 
 /**
- * @brief Error codes sent by server in case of errors
- *        encountered during processing of an HTTP request
- */
-typedef enum {
-    /* For any unexpected errors during parsing, like unexpected
-     * state transitions, or unhandled errors.
-     */
-    HTTPD_500_SERVER_ERROR = 0,
-
-    /* For methods not supported by http_parser. Presently
-     * http_parser halts parsing when such methods are
-     * encountered and so the server responds with 400 Bad
-     * Request error instead.
-     */
-    HTTPD_501_METHOD_NOT_IMPLEMENTED,
-
-    /* When HTTP version is not 1.1 */
-    HTTPD_505_VERSION_NOT_SUPPORTED,
-
-    /* Returned when http_parser halts parsing due to incorrect
-     * syntax of request, unsupported method in request URI or
-     * due to chunked encoding option present in headers
-     */
-    HTTPD_400_BAD_REQUEST,
-
-    /* When requested URI is not found */
-    HTTPD_404_NOT_FOUND,
-
-    /* When URI found, but method has no handler registered */
-    HTTPD_405_METHOD_NOT_ALLOWED,
-
-    /* Intended for recv timeout. Presently it's being sent
-     * for other recv errors as well. Client should expect the
-     * server to immediatly close the connection after
-     * responding with this.
-     */
-    HTTPD_408_REQ_TIMEOUT,
-
-    /* Intended for responding to chunked encoding, which is
-     * not supported currently. Though unhandled http_parser
-     * callback for chunked request returns "400 Bad Request"
-     */
-    HTTPD_411_LENGTH_REQUIRED,
-
-    /* URI length greater than HTTPD_MAX_URI_LEN */
-    HTTPD_414_URI_TOO_LONG,
-
-    /* Headers section larger thn HTTPD_MAX_REQ_HDR_LEN */
-    HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE,
-
-    /* There is no particular HTTP error code for not supporting
-     * upgrade. For this respond with 200 OK. Client expects status
-     * code 101 if upgrade were supported, so 200 should be fine.
-     */
-    HTTPD_XXX_UPGRADE_NOT_SUPPORTED
-} httpd_err_resp_t;
-
-/**
  * @brief A database of all the open sockets in the system.
  */
 struct sock_db {
@@ -131,7 +73,7 @@ struct sock_db {
 };
 
 /**
- * @brief   Auxilary data structure for use during reception and processing
+ * @brief   Auxiliary data structure for use during reception and processing
  *          of requests and temporarily keeping responses
  */
 struct httpd_req_aux {
@@ -151,7 +93,7 @@ struct httpd_req_aux {
 };
 
 /**
- * @brief   Server data for each instance. This is exposed publicaly as
+ * @brief   Server data for each instance. This is exposed publicly as
  *          httpd_handle_t but internal structure/members are kept private.
  */
 struct httpd_data {
@@ -159,11 +101,14 @@ struct httpd_data {
     int listen_fd;                          /*!< Server listener FD */
     int ctrl_fd;                            /*!< Ctrl message receiver FD */
     int msg_fd;                             /*!< Ctrl message sender FD */
-    struct thread_data hd_td;               /*!< Information for the HTTPd thread */
+    struct thread_data hd_td;               /*!< Information for the HTTPD thread */
     struct sock_db *hd_sd;                  /*!< The socket database */
     httpd_uri_t **hd_calls;                 /*!< Registered URI handlers */
     struct httpd_req hd_req;                /*!< The current HTTPD request */
     struct httpd_req_aux hd_req_aux;        /*!< Additional data about the HTTPD request kept unexposed */
+
+    /* Array of registered error handler functions */
+    httpd_err_handler_func_t *err_handler_fns;
 };
 
 /******************* Group : Session Management ********************/
@@ -204,7 +149,7 @@ void httpd_sess_init(struct httpd_data *hd);
  * @param[in] newfd Descriptor of the new client to be added to the session.
  *
  * @return
- *  - ESP_OK   : on successfully queueing the work
+ *  - ESP_OK   : on successfully queuing the work
  *  - ESP_FAIL : in case of control socket error while sending
  */
 esp_err_t httpd_sess_new(struct httpd_data *hd, int newfd);
@@ -226,7 +171,7 @@ esp_err_t httpd_sess_process(struct httpd_data *hd, int clifd);
  *          and close the connection for this client.
  *
  * @note    The returned descriptor should be used by httpd_sess_iterate()
- *          to continue the iteration correctly. This ensurs that the
+ *          to continue the iteration correctly. This ensures that the
  *          iteration is not restarted abruptly which may cause reading from
  *          a socket which has been already processed and thus blocking
  *          the server loop until data appears on that socket.
@@ -249,7 +194,7 @@ int httpd_sess_delete(struct httpd_data *hd, int clifd);
 void httpd_sess_free_ctx(void *ctx, httpd_free_ctx_fn_t free_fn);
 
 /**
- * @brief   Add descriptors present in the socket database to an fd_set and
+ * @brief   Add descriptors present in the socket database to an fdset and
  *          update the value of maxfd which are needed by the select function
  *          for looking through all available sockets for incoming data.
  *
@@ -288,12 +233,12 @@ bool httpd_is_sess_available(struct httpd_data *hd);
  * @brief   Checks if session has any pending data/packets
  *          for processing
  *
- * This is needed as httpd_unrecv may unreceive next
+ * This is needed as httpd_unrecv may un-receive next
  * packet in the stream. If only partial packet was
  * received then select() would mark the fd for processing
  * as remaining part of the packet would still be in socket
  * recv queue. But if a complete packet got unreceived
- * then it would not be processed until furtur data is
+ * then it would not be processed until further data is
  * received on the socket. This is when this function
  * comes in use, as it checks the socket's pending data
  * buffer.
@@ -343,7 +288,7 @@ esp_err_t httpd_sess_close_lru(struct httpd_data *hd);
 esp_err_t httpd_uri(struct httpd_data *hd);
 
 /**
- * @brief   Deregister all URI handlers
+ * @brief   Unregister all URI handlers
  *
  * @param[in] hd  Server instance data
  */
@@ -353,7 +298,7 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd);
  * @brief   Validates the request to prevent users from calling APIs, that are to
  *          be called only inside a URI handler, outside the handler context
  *
- * @param[in] req Pointer to HTTP request that neds to be validated
+ * @param[in] req Pointer to HTTP request that needs to be validated
  *
  * @return
  *  - true  : if valid request
@@ -363,7 +308,7 @@ bool httpd_validate_req_ptr(httpd_req_t *r);
 
 /* httpd_validate_req_ptr() adds some overhead to frequently used APIs,
  * and is useful mostly for debugging, so it's preferable to disable
- * the check by defaut and enable it only if necessary */
+ * the check by default and enable it only if necessary */
 #ifdef CONFIG_HTTPD_VALIDATE_REQ
 #define httpd_valid_req(r)  httpd_validate_req_ptr(r)
 #else
@@ -409,6 +354,19 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd);
  */
 esp_err_t httpd_req_delete(struct httpd_data *hd);
 
+/**
+ * @brief   For handling HTTP errors by invoking registered
+ *          error handler function
+ *
+ * @param[in] req     Pointer to the HTTP request for which error occurred
+ * @param[in] error   Error type
+ *
+ * @return
+ *  - ESP_OK    : error handled successful
+ *  - ESP_FAIL  : failure indicates that the underlying socket needs to be closed
+ */
+esp_err_t httpd_req_handle_err(httpd_req_t *req, httpd_err_code_t error);
+
 /** End of Group : Parsing
  * @}
  */
@@ -420,21 +378,9 @@ esp_err_t httpd_req_delete(struct httpd_data *hd);
  */
 
 /**
- * @brief   For sending out error code in response to HTTP request.
- *
- * @param[in] req     Pointer to the HTTP request for which the resonse needs to be sent
- * @param[in] error   Error type to send
- *
- * @return
- *  - ESP_OK    : if successful
- *  - ESP_FAIL  : if failed
- */
-esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_resp_t error);
-
-/**
  * @brief   For sending out data in response to an HTTP request.
  *
- * @param[in] req     Pointer to the HTTP request for which the resonse needs to be sent
+ * @param[in] req     Pointer to the HTTP request for which the response needs to be sent
  * @param[in] buf     Pointer to the buffer from where the body of the response is taken
  * @param[in] buf_len Length of the buffer
  *
@@ -457,7 +403,7 @@ int httpd_send(httpd_req_t *req, const char *buf, size_t buf_len);
  * @param[in]  req    Pointer to new HTTP request which only has the socket descriptor
  * @param[out] buf    Pointer to the buffer which will be filled with the received data
  * @param[in] buf_len Length of the buffer
- * @param[in] halt_after_pending When set true, halts immediatly after receiving from
+ * @param[in] halt_after_pending When set true, halts immediately after receiving from
  *                               pending buffer
  *
  * @return
