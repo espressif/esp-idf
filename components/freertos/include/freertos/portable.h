@@ -199,7 +199,7 @@ BaseType_t xPortInIsrContext();
 /* Multi-core: get current core ID */
 static inline uint32_t IRAM_ATTR xPortGetCoreID() {
     int id;
-    asm (
+    __asm__ __volatile__ (
         "rsr.prid %0\n"
         " extui %0,%0,13,1"
         :"=r"(id));
