@@ -284,6 +284,47 @@ TEST_CASE("Page handles invalid CRC of variable length items", "[nvs][cur]")
     }
 }
 
+class HashListTestHelper : public HashList
+{
+    public:
+        size_t getBlockCount()
+        {
+            return mBlockList.size();
+        }
+};
+
+TEST_CASE("HashList is cleaned up as soon as items are erased", "[nvs]")
+{
+    HashListTestHelper hashlist;
+    // Add items
+    const size_t count = 128;
+    for (size_t i = 0; i < count; ++i) {
+        char key[16];
+        snprintf(key, sizeof(key), "i%ld", (long int)i);
+        Item item(1, ItemType::U32, 1, key);
+        hashlist.insert(item, i);
+    }
+    INFO("Added " << count << " items, " << hashlist.getBlockCount() << " blocks");
+    // Remove them in reverse order
+    for (size_t i = count; i > 0; --i) {
+        hashlist.erase(i - 1, true);
+    }
+    CHECK(hashlist.getBlockCount() == 0);
+    // Add again
+    for (size_t i = 0; i < count; ++i) {
+        char key[16];
+        snprintf(key, sizeof(key), "i%ld", (long int)i);
+        Item item(1, ItemType::U32, 1, key);
+        hashlist.insert(item, i);
+    }
+    INFO("Added " << count << " items, " << hashlist.getBlockCount() << " blocks");
+    // Remove them in the same order
+    for (size_t i = 0; i < count; ++i) {
+        hashlist.erase(i, true);
+    }
+    CHECK(hashlist.getBlockCount() == 0);
+}
+
 TEST_CASE("can init PageManager in empty flash", "[nvs]")
 {
     SpiFlashEmulator emu(4);
@@ -1714,6 +1755,28 @@ TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 
     TEST_ESP_ERR(storage.readItem(1, ItemType::BLOB, "key", blob, sizeof(blob)), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_OK(storage.writeItem(1, ItemType::BLOB, "key3", blob, sizeof(blob)));
+}
+
+TEST_CASE("nvs blob fragmentation test", "[nvs]")
+{
+    SpiFlashEmulator emu(4);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 4) );
+    const size_t BLOB_SIZE = 3500;
+    uint8_t *blob = (uint8_t*) malloc(BLOB_SIZE);
+    CHECK(blob != NULL);
+    memset(blob, 0xEE, BLOB_SIZE);
+    const uint32_t magic = 0xff33eaeb;
+    nvs_handle h;
+    TEST_ESP_OK( nvs_open("blob_tests", NVS_READWRITE, &h) );
+    for (int i = 0; i < 128; i++) {
+        INFO("Iteration " << i << "...\n");
+        TEST_ESP_OK( nvs_set_u32(h, "magic", magic) );
+        TEST_ESP_OK( nvs_set_blob(h, "blob", blob, BLOB_SIZE) );
+        char seq_buf[16];
+        sprintf(seq_buf, "seq%d", i);
+        TEST_ESP_OK( nvs_set_u32(h, seq_buf, i) );
+    }
+    free(blob);
 }
 
 TEST_CASE("nvs code handles errors properly when partition is near to full", "[nvs]")
