@@ -855,6 +855,84 @@ TEST_CASE("SPI master variable cmd & addr test","[spi]")
     ESP_LOGI(MASTER_TAG, "test passed.");
 }
 
+void test_dummy(spi_device_handle_t spi, int dummy_n, uint8_t* data_to_send, int len)
+{
+    ESP_LOGI(TAG, "testing dummy n=%d", dummy_n);
+    WORD_ALIGNED_ATTR uint8_t slave_buffer[len+(dummy_n+7)/8];
+    spi_slave_transaction_t slave_t = {
+        .tx_buffer = slave_buffer,
+        .rx_buffer = slave_buffer,
+        .length = len*8+((dummy_n+7)&(~8))+32,  //receive more bytes to avoid slave discarding data
+    };
+    TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
+
+    vTaskDelay(50);
+
+    spi_transaction_ext_t t = {
+        .base = {
+            .tx_buffer = data_to_send,
+            .length = (len+1)*8,    //send one more byte force slave receive all data
+            .flags = SPI_TRANS_VARIABLE_DUMMY,
+        },
+        .dummy_bits = dummy_n,
+    };
+    TEST_ESP_OK(spi_device_transmit(spi, (spi_transaction_t*)&t));
+
+    spi_slave_transaction_t *ret_slave;
+    TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &ret_slave, portMAX_DELAY));
+    TEST_ASSERT(ret_slave == &slave_t);
+
+    ESP_LOG_BUFFER_HEXDUMP("rcv", slave_buffer, len+4, ESP_LOG_INFO);
+    int skip_cnt = dummy_n/8;
+    int dummy_remain = dummy_n % 8;
+    uint8_t *slave_ptr = slave_buffer;
+    if (dummy_remain > 0) {
+        for (int i = 0; i < len; i++) {
+            slave_ptr[0] = (slave_ptr[skip_cnt] << dummy_remain) | (slave_ptr[skip_cnt+1] >> (8-dummy_remain));
+            slave_ptr++;
+        }
+    } else {
+        for (int i = 0; i < len; i++) {
+            slave_ptr[0] = slave_ptr[skip_cnt];
+            slave_ptr++;
+        }
+    }
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_send, slave_buffer, len);
+}
+
+TEST_CASE("SPI master variable dummy test", "[spi]")
+{
+    spi_device_handle_t spi;
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, 0));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
+
+    spi_slave_interface_config_t slave_cfg =SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slave_cfg, 0));
+
+    spitest_gpio_output_sel(bus_cfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spid_out);
+    spitest_gpio_output_sel(bus_cfg.miso_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out);
+    spitest_gpio_output_sel(dev_cfg.spics_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spics_out[0]);
+    spitest_gpio_output_sel(bus_cfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
+
+    uint8_t data_to_send[] = {0x12, 0x34, 0x56, 0x78};
+
+    test_dummy(spi, 0, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 1, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 2, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 3, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 4, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 8, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 12, data_to_send, sizeof(data_to_send));
+    test_dummy(spi, 16, data_to_send, sizeof(data_to_send));
+
+    spi_slave_free(TEST_SLAVE_HOST);
+    master_free_device_bus(spi);
+}
+
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
