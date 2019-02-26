@@ -286,7 +286,11 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     pthread->task_arg = task_arg;
     BaseType_t res = xTaskCreatePinnedToCore(&pthread_task_func,
                                              task_name,
-                                             stack_size,
+                                             // stack_size is in bytes. This transformation ensures that the units are
+                                             // transformed to the units used in FreeRTOS.
+                                             // Note: float division of ceil(m / n) ==
+                                             //       integer division of (m + n - 1) / n
+                                             (stack_size + sizeof(StackType_t) - 1) / sizeof(StackType_t),
                                              task_arg,
                                              prio,
                                              &xHandle,
