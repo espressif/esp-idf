@@ -38,7 +38,7 @@ void bootloader_clock_configure()
      */
     uint32_t chip_ver_reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
     if ((chip_ver_reg & EFUSE_RD_CHIP_VER_REV1_M) == 0 &&
-            DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == 2) {
+            DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
         cpu_freq_mhz = 240;
     }
 
