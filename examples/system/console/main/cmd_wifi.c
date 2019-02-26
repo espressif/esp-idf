@@ -20,12 +20,14 @@
 #include "esp_event_loop.h"
 #include "cmd_wifi.h"
 
+#define JOIN_TIMEOUT_MS (10000)
+
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
-    switch(event->event_id) {
+    switch (event->event_id) {
     case SYSTEM_EVENT_STA_GOT_IP:
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         break;
@@ -57,13 +59,13 @@ static void initialise_wifi(void)
     initialized = true;
 }
 
-static bool wifi_join(const char* ssid, const char* pass, int timeout_ms)
+static bool wifi_join(const char *ssid, const char *pass, int timeout_ms)
 {
     initialise_wifi();
     wifi_config_t wifi_config = { 0 };
-    strncpy((char*) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strncpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strncpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strncpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
@@ -71,7 +73,7 @@ static bool wifi_join(const char* ssid, const char* pass, int timeout_ms)
     ESP_ERROR_CHECK( esp_wifi_connect() );
 
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
-            1, 1, timeout_ms / portTICK_PERIOD_MS);
+                                   pdFALSE, pdTRUE, timeout_ms / portTICK_PERIOD_MS);
     return (bits & CONNECTED_BIT) != 0;
 }
 
@@ -83,19 +85,24 @@ static struct {
     struct arg_end *end;
 } join_args;
 
-static int connect(int argc, char** argv)
+static int connect(int argc, char **argv)
 {
-    int nerrors = arg_parse(argc, argv, (void**) &join_args);
+    int nerrors = arg_parse(argc, argv, (void **) &join_args);
     if (nerrors != 0) {
         arg_print_errors(stderr, join_args.end, argv[0]);
         return 1;
     }
     ESP_LOGI(__func__, "Connecting to '%s'",
-            join_args.ssid->sval[0]);
+             join_args.ssid->sval[0]);
+
+    /* set default value*/
+    if (join_args.timeout->count == 0) {
+        join_args.timeout->ival[0] = JOIN_TIMEOUT_MS;
+    }
 
     bool connected = wifi_join(join_args.ssid->sval[0],
-                           join_args.password->sval[0],
-                           join_args.timeout->ival[0]);
+                               join_args.password->sval[0],
+                               join_args.timeout->ival[0]);
     if (!connected) {
         ESP_LOGW(__func__, "Connection timed out");
         return 1;
@@ -107,7 +114,6 @@ static int connect(int argc, char** argv)
 void register_wifi()
 {
     join_args.timeout = arg_int0(NULL, "timeout", "<t>", "Connection timeout, ms");
-    join_args.timeout->ival[0] = 5000; // set default value
     join_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
     join_args.password = arg_str0(NULL, NULL, "<pass>", "PSK of AP");
     join_args.end = arg_end(2);
