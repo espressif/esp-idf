@@ -315,10 +315,10 @@ void app_main()
     esp_ble_gap_set_security_param(ESP_BLE_SM_AUTHEN_REQ_MODE, &auth_req, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE, &iocap, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
-    /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribut to you,
-    and the response key means which key you can distribut to the Master;
-    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you, 
-    and the init key means which key you can distribut to the slave. */
+    /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribute to you,
+    and the response key means which key you can distribute to the Master;
+    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribute to you, 
+    and the init key means which key you can distribute to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 
