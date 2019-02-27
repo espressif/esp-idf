@@ -96,7 +96,10 @@ else()
         )
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        add_compile_options(-mfix-esp32-psram-cache-issue)
+        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all components that depend on esp32.
+        #
+        # To handle some corner cases, the same flag is set in project_include.cmake
+        target_compile_options(${COMPONENT_TARGET} PUBLIC -mfix-esp32-psram-cache-issue)
     else()
         target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.spiram_incompatible_fns.ld")
     endif()
