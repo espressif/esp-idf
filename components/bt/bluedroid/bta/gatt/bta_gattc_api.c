@@ -178,6 +178,11 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE 
 *******************************************************************************/
 void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
+    //If the registration callback is NULL, return
+    if(bta_sys_is_register(BTA_ID_GATTC) == FALSE) {
+        return;
+    }
+
     tBTA_GATTC_API_CANCEL_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_CANCEL_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_CANCEL_OPEN))) != NULL) {
@@ -925,7 +930,10 @@ void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash)
         bta_gattc_cache_reset(remote_bda);
     }
 #endif
-
+    //If the registration callback is NULL, return
+    if(bta_sys_is_register(BTA_ID_GATTC) == FALSE) {
+        return;
+    }
     tBTA_GATTC_API_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {
