@@ -585,7 +585,7 @@ esp_err_t httpd_sess_set_pending_override(httpd_handle_t hd, int sockfd, httpd_p
  * session socket fd, from within a URI handler, ie. :
  *      httpd_sess_get_ctx(),
  *      httpd_sess_trigger_close(),
- *      httpd_sess_update_timestamp().
+ *      httpd_sess_update_lru_counter().
  *
  * @note    This API is supposed to be called only from the context of
  *          a URI handler where httpd_req_t* request pointer is valid.
@@ -1111,15 +1111,15 @@ void *httpd_get_global_transport_ctx(httpd_handle_t handle);
 esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
 
 /**
- * @brief   Update timestamp for a given socket
+ * @brief   Update LRU counter for a given socket
  *
- * Timestamps are internally associated with each session to monitor
+ * LRU Counters are internally associated with each session to monitor
  * how recently a session exchanged traffic. When LRU purge is enabled,
  * if a client is requesting for connection but maximum number of
  * sockets/sessions is reached, then the session having the earliest
- * timestamp is closed automatically.
+ * LRU counter is closed automatically.
  *
- * Updating the timestamp manually prevents the socket from being purged
+ * Updating the LRU counter manually prevents the socket from being purged
  * due to the Least Recently Used (LRU) logic, even though it might not
  * have received traffic for some time. This is useful when all open
  * sockets/session are frequently exchanging traffic but the user specifically
@@ -1130,15 +1130,15 @@ esp_err_t httpd_sess_trigger_close(httpd_handle_t handle, int sockfd);
  *          is enabled.
  *
  * @param[in] handle    Handle to server returned by httpd_start
- * @param[in] sockfd    The socket descriptor of the session for which timestamp
+ * @param[in] sockfd    The socket descriptor of the session for which LRU counter
  *                      is to be updated
  *
  * @return
- *  - ESP_OK : Socket found and timestamp updated
+ *  - ESP_OK : Socket found and LRU counter updated
  *  - ESP_ERR_NOT_FOUND   : Socket not found
  *  - ESP_ERR_INVALID_ARG : Null arguments
  */
-esp_err_t httpd_sess_update_timestamp(httpd_handle_t handle, int sockfd);
+esp_err_t httpd_sess_update_lru_counter(httpd_handle_t handle, int sockfd);
 
 /** End of Session
  * @}

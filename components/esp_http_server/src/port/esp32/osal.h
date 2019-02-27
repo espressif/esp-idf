@@ -52,11 +52,6 @@ static inline void httpd_os_thread_sleep(int msecs)
     vTaskDelay(msecs / portTICK_RATE_MS);
 }
 
-static inline int64_t httpd_os_get_timestamp()
-{
-    return esp_timer_get_time();
-}
-
 static inline othread_t httpd_os_thread_handle()
 {
     return xTaskGetCurrentTaskHandle();
