@@ -18,6 +18,7 @@
  * it allows inspecting the ESP32 state
  *******************************************************************************/
 
+#include <string.h>
 #include "rom/ets_sys.h"
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
@@ -26,6 +27,7 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 
 //Length of buffer used to reserve GDB commands. Has to be at least able to fit the G command, which
 //implies a minimum size of about 320 bytes.
@@ -35,15 +37,6 @@ static unsigned char cmd[PBUFLEN];		//GDB command input buffer
 static char chsum;						//Running checksum of the output packet
 
 #define ATTR_GDBFN
-
-//If you want more than (default) 32 tasks to be dumped, you'll need to enable the coredump feature and specify
-//here your amount.
-#ifdef CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM
-	#define STUB_TASKS_NUM CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM
-#else
-	#define STUB_TASKS_NUM 32
-#endif
-
 
 //Receive a char from the uart. Uses polling and feeds the watchdog.
 static int ATTR_GDBFN gdbRecvChar() {
@@ -223,10 +216,6 @@ STRUCT_FIELD (long, 4, XT_STK_OVLY,   ovly)
 STRUCT_END(XtExcFrame)
 */
 
-
-//Remember the exception frame that caused panic since it's not saved in TCB
-static XtExcFrame paniced_frame;
-
 static void commonRegfile() {
 	if (gdbRegFile.a[0] & 0x8000000U) gdbRegFile.a[0] = (gdbRegFile.a[0] & 0x3fffffffU) | 0x40000000U;
 	if (!esp_stack_ptr_is_sane(gdbRegFile.a[1])) gdbRegFile.a[1] = 0xDEADBEEF;
@@ -277,13 +266,27 @@ static void sendReason() {
 	gdbPacketEnd();
 }
 
-static int reenteredHandler = 0;
 static int sendPacket(const char * text) {
 	gdbPacketStart();
 	if (text != NULL) gdbPacketStr(text);
 	gdbPacketEnd();
 	return ST_OK;
 }
+
+#if CONFIG_GDBSTUB_SUPPORT_TASKS
+
+#define STUB_TASKS_NUM  CONFIG_GDBSTUB_MAX_TASKS
+
+//Remember the exception frame that caused panic since it's not saved in TCB
+static XtExcFrame paniced_frame;
+
+//Allows GDBStub to disable task support after a crash
+//(e.g. if GDBStub crashes while trying to get task list, e.g. due to corrupted list structures)
+static enum {
+	HANDLER_NOT_STARTED,
+	HANDLER_STARTED,
+	HANDLER_TASK_SUPPORT_DISABLED
+} handlerState;
 
 static void dumpTaskToRegfile(XtSolFrame *frame) {
 	int i;
@@ -301,21 +304,21 @@ static void dumpTaskToRegfile(XtSolFrame *frame) {
 	gdbRegFile.expstate=0; //ToDo
 }
 
-//Fetch the task status
-static unsigned getAllTasksHandle(unsigned index, unsigned * handle, const char ** name, unsigned * coreId) {
+// Fetch the task status. Returns the total number of tasks.
+static unsigned getTaskInfo(unsigned index, unsigned * handle, const char ** name, unsigned * coreId) {
 	static unsigned taskCount = 0;
 	static TaskSnapshot_t tasks[STUB_TASKS_NUM];
 
-    if (!taskCount) {
+	if (!taskCount) {
 		unsigned tcbSize = 0;
 		taskCount = uxTaskGetSnapshotAll(tasks, STUB_TASKS_NUM, &tcbSize);
-    }
+	}
 	if (index < taskCount) {
 		TaskHandle_t h = (TaskHandle_t)tasks[index].pxTCB;
 		if (handle) *handle = (unsigned)h;
 		if (name) *name = pcTaskGetTaskName(h);
 		if (coreId) *coreId = xTaskGetAffinity(h);
-    }
+	}
 	return taskCount;
 }
 
@@ -341,18 +344,28 @@ static void dumpTCBToRegFile(unsigned handle) {
 	}
 }
 
+#define CUR_TASK_INDEX_NOT_SET -2
+#define CUR_TASK_INDEX_UNKNOWN -1
+
+// Get the index of the task currently running on the current CPU, and cache the result
 static int findCurrentTaskIndex() {
-	static int curTaskIndex = -2;
-    if (curTaskIndex == -2) {
-		unsigned curHandle = (unsigned)xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID()), handle, count = getAllTasksHandle(0, 0, 0, 0);
+	static int curTaskIndex = CUR_TASK_INDEX_NOT_SET;
+	if (curTaskIndex == CUR_TASK_INDEX_NOT_SET) {
+		unsigned curHandle = (unsigned)xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
+		unsigned handle;
+		unsigned count = getTaskInfo(0, 0, 0, 0);
 		for(int k=0; k<(int)count; k++) {
-			if (getAllTasksHandle(k, &handle, 0, 0) && curHandle == handle)
-				return curTaskIndex = k;
+			if (getTaskInfo(k, &handle, 0, 0) && curHandle == handle) {
+				curTaskIndex = k;
+				return curTaskIndex;
+			}
 		}
-		curTaskIndex = -1;
+		curTaskIndex = CUR_TASK_INDEX_UNKNOWN;
 	}
 	return curTaskIndex;
 }
+
+#endif // CONFIG_GDBSTUB_SUPPORT_TASKS
 
 //Handle a command as received from GDB.
 static int gdbHandleCommand(unsigned char *cmd, int len) {
@@ -379,20 +392,26 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		gdbPacketEnd();
 	} else if (cmd[0]=='?') {	//Reply with stop reason
 		sendReason();
-	} else if (reenteredHandler != -1) {
+#if CONFIG_GDBSTUB_SUPPORT_TASKS
+	} else if (handlerState != HANDLER_TASK_SUPPORT_DISABLED) {
 		if (cmd[0]=='H') { //Continue with task
 			if (cmd[1]=='g' || cmd[1]=='c') {
 				const char * ret = "OK";
 				data++;
 				i=gdbGetHexVal(&data, -1);
-				reenteredHandler = 1; //Hg0 is the first packet received after connect
+				handlerState = HANDLER_STARTED; //Hg0 is the first packet received after connect
 				j = findCurrentTaskIndex();
-				if (i == j || (j == -1 && !i)) { //The first task requested must be the one that crashed and it does not have a valid TCB anyway since it's not saved yet
+				if (i == j || (j == CUR_TASK_INDEX_UNKNOWN && i == 0)) {
+					//GDB has asked us for the current task on this CPU.
+					//This task either was executing when we have entered the panic handler,
+					//or was already switched out and we have paniced during the context switch.
+					//Either way we are interested in the stack frame where panic has happened,
+					//so obtain the state from the exception frame rather than the TCB.
 					dumpHwToRegfile(&paniced_frame);
 				} else {
 					unsigned handle, count;
 					//Get the handle for that task
-					count = getAllTasksHandle(i, &handle, 0, 0);
+					count = getTaskInfo(i, &handle, 0, 0);
 					//Then extract TCB and gdbRegFile from it
 					if (i < count) dumpTCBToRegFile(handle);
 					else ret = "E00";
@@ -404,7 +423,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 			unsigned count;
 			data++;
 			i=gdbGetHexVal(&data, -1);
-			count = getAllTasksHandle(i, 0, 0, 0);
+			count = getTaskInfo(i, 0, 0, 0);
 			return sendPacket(i < count ? "OK": "E00");
 		} else if (cmd[0]=='q') {	//Extended query
 			// React to qThreadExtraInfo or qfThreadInfo or qsThreadInfo or qC, without using strcmp
@@ -415,7 +434,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 				unsigned handle = 0, coreId = 3;
 				const char * name = 0;
 				// Extract the task name and CPU from freeRTOS
-				unsigned tCount = getAllTasksHandle(i, &handle, &name, &coreId);
+				unsigned tCount = getTaskInfo(i, &handle, &name, &coreId);
 				if (i < tCount)	{
 					gdbPacketStart();
 					for(k=0; name[k]; k++)	gdbPacketHex(name[k], 8);
@@ -429,34 +448,36 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 				// Extract the number of task from freeRTOS
 				static int taskIndex = 0;
 				unsigned tCount = 0;
-	 		    if (cmd[1] == 'f') {
+				if (cmd[1] == 'f') {
 					taskIndex = 0;
-					reenteredHandler = 1;	//It seems it's the first request GDB is sending
+					handlerState = HANDLER_STARTED;	//It seems it's the first request GDB is sending
 				}
-				tCount = getAllTasksHandle(0, 0, 0, 0);
+				tCount = getTaskInfo(0, 0, 0, 0);
 				if (taskIndex < tCount)	{
 					gdbPacketStart();
 					gdbPacketStr("m");
 					gdbPacketHex(taskIndex, 32);
 					gdbPacketEnd();
-	                taskIndex++;
+					taskIndex++;
 				} else return sendPacket("l");
 			} else if (len >= 2 && cmd[1] == 'C') {
 				// Get current task id
 				gdbPacketStart();
 				k = findCurrentTaskIndex();
-				if (k != -1) {
+				if (k != CUR_TASK_INDEX_UNKNOWN) {
 					gdbPacketStr("QC");
 					gdbPacketHex(k, 32);
 				} else gdbPacketStr("bad");
 				gdbPacketEnd();
 				return ST_OK;
 			}
-			return sendPacket(0);
+			return sendPacket(NULL);
 		}
-	} else
+#endif // CONFIG_GDBSTUB_SUPPORT_TASKS
+	} else {
 		//We don't recognize or support whatever GDB just sent us.
-		return sendPacket(0);
+		return sendPacket(NULL);
+	}
 	return ST_OK;
 }
 
@@ -510,20 +531,20 @@ static int gdbReadCommand() {
 }
 
 
-
 void esp_gdbstub_panic_handler(XtExcFrame *frame) {
-	if (reenteredHandler == 1) {
-		//Prevent using advanced FreeRTOS features since they seems to crash
+#if CONFIG_GDBSTUB_SUPPORT_TASKS
+	if (handlerState == HANDLER_STARTED) {
+		//We have re-entered GDB Stub. Try disabling task support.
+		handlerState = HANDLER_TASK_SUPPORT_DISABLED;
 		gdbPacketEnd(); // Ends up any pending GDB packet (this creates a garbage value)
-		reenteredHandler = -1;
-	} else {
-		//Need to remember the frame that panic'd since gdb will ask for all thread before ours
-	    uint8_t * pf = (uint8_t*)&paniced_frame, *f = (uint8_t*)frame;
-		//Could not use memcpy here
-	    for(int i = 0; i < sizeof(*frame); i++) pf[i] = f[i];
+	} else if (handlerState == HANDLER_NOT_STARTED) {
+		//Need to remember the frame that panic'd since gdb will ask for all threads before ours
+		memcpy(&paniced_frame, frame, sizeof(paniced_frame));
+		dumpHwToRegfile(&paniced_frame);
 	}
-	//Let's start from something
-	dumpHwToRegfile(&paniced_frame);
+#else // CONFIG_GDBSTUB_SUPPORT_TASKS
+	dumpHwToRegfile(frame);
+#endif // CONFIG_GDBSTUB_SUPPORT_TASKS
 
 	//Make sure txd/rxd are enabled
 	gpio_pullup_dis(1);
