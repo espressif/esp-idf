@@ -71,7 +71,7 @@ extern void btdm_controller_enable_sleep(bool enable);
 
 #define BTDM_MODEM_SLEEP_MODE_NONE          (0)
 #define BTDM_MODEM_SLEEP_MODE_ORIG          (1)
-#define BTDM_MODEM_SLEEP_MODE_EVED          (2)
+#define BTDM_MODEM_SLEEP_MODE_EVED          (2)  // sleep mode for BLE controller, used only for internal test.
 extern void btdm_controller_set_sleep_mode(uint8_t mode);
 extern uint8_t btdm_controller_get_sleep_mode(void);
 extern bool btdm_power_state_active(void);
