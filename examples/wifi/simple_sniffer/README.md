@@ -4,26 +4,32 @@
 
 ## Overview
 
-This example demonstrates basic usage of wifi sniffer mode by saving packets into SD card with pcap format. Go to wikipedia for more information about [pcap](https://en.wikipedia.org/wiki/Pcap).
+This example demonstrates basic usage of WiFi sniffer mode by saving packets into SD card with pcap format. We can send pcap file to host via JTAG interface as well.
 
-This example is based on esp-idf's console component. For more information about console you should read this [guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html).
+For more information about pcap, please go to [wikipedia](https://en.wikipedia.org/wiki/Pcap).
+
+This example is based on console component. For more information about console, please refer to [console guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html).
 
 ## How to use example
 
 ### Hardware Required
 
-To run this example, you should have one ESP32 dev board integrated with a SD card slot (e.g ESP32-WROVER Kit) or just connect ESP32-DevKitC to a SD card breakout board.
+To run this example, you should have one ESP32 dev board integrated with a SD card slot (e.g [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1)) or just connect [ESP32-DevKitC](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp32-devkitc-v4) to a SD card breakout board. 
+If you want to send packets to host, make sure to connect ESP32 to some kind of [JTAG adapter](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-selecting-jtag-adapter).
 
 ### Configure the project
 
 Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
 
 - Check `Store command history in flash` if you want to save command history into flash (recommend).
-- Set the mount point in your filesystem, for example, `/sdcard` if you want to store pcap file into SD card.
-- Set the length of sniffer work queue.
-- Set the stack size of the sniffer task.
-- Set the priority of the sniffer task.
-- Set the max number of packets to store in a single pcap file. The number of packets usually will be very large, so we just truncate them into multiple files. You should set a threshold value here.
+- Select where to save the pcap file in `Select destination to store pcap file` menu item.
+  - `SD Card` means saving packets (pcap format) into the SD card you plug in.
+  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html).
+- Set the mount point in your filesystem in `SD card mount point in the filesystem` menu item. This configuration only takes effect when you choose to save packets into SD card.
+- Set max name length of pcap file in `Max name length of pcap file` menu item.
+- Set the length of sniffer work queue in `Length of sniffer work queue` menu item.
+- Set the stack size of the sniffer task in `Stack size of sniffer task` menu item.
+- Set the priority of the sniffer task `Length of sniffer work queue` menu item.
 
 ### Build and Flash
 
@@ -86,21 +92,17 @@ Size: 14832MB
 
 ```bash
 esp32> sniffer -f sniffer-example -i wlan -c 2
-I (36200) cmd_sniffer: Start WiFi Promicuous Mode
-I (36270) phy: phy_version: 4000, b6198fa, Sep  3 2018, 15:11:06, 0, 0
-I (36270) wifi: ic_enable_sniffer
-I (36290) pcap: Store packets to file: /sdcard/sniffer-example0.pcap
-I (103810) pcap: Close Pcap file OK
-I (103830) pcap: Store packets to file: /sdcard/sniffer-example1.pcap
-I (177300) pcap: Close Pcap file OK
-I (177320) pcap: Store packets to file: /sdcard/sniffer-example2.pcap
+I (8946) cmd_sniffer: open file successfully
+W (8966) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
+I (9176) phy: phy_version: 4100, 6fa5e27, Jan 25 2019, 17:02:06, 0, 2
+I (9186) wifi: ic_enable_sniffer
+I (9196) cmd_sniffer: start WiFi promiscuous ok
 esp32> sniffer --stop
-I (212250) wifi: ic_disable_sniffer
-I (212250) wifi: flush txq
-I (212250) wifi: stop sw txq
-I (212260) wifi: lmac stop hw txq
-I (212340) pcap: Close Pcap file OK
-I (212340) cmd_sniffer: Sniffer Stopped
+I (31456) wifi: ic_disable_sniffer
+I (31456) wifi: flush txq
+I (31456) wifi: stop sw txq
+I (31456) wifi: lmac stop hw txq
+I (31456) cmd_sniffer: stop WiFi promiscuous ok
 ```
 
 ### Unmount SD Card
@@ -110,15 +112,25 @@ esp32> unmount sd
 I (248800) example: Card unmounted
 ```
 
+### Steps for sending packets to host via JTAG interface
+1. Select `JTAG (App Trace)` as the destination of pcap files.
+2. Build & Flash with `idf.py build flash` or `make flash`.
+3. Connect JTAG, run OpenOCD (for more information about how-to please refer to [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html)).
+4. Telnet to localhost with 4444 port: `telnet localhost 4444`.
+5. In the telnet session, run command like `esp32 apptrace start file://sniffer-esp32.pcap 1 -1 20` (more information about this command, please refer to [apptrace command](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#openocd-application-level-tracing-commands)).
+6. Run the example, start sniffer with command `sniffer` (you don't need to specify the filename, because it has been set in step5).
+7. Stop sniffer by entering command `sniffer --stop` in the example console.
+8. Stop tracing by entering command `esp32 apptrace stop` in the telnet session.
+
+
 ### Open PCap File in Wireshark
 
-![sniffer-example0.pcap](sniffer-example0-pcap.png)
+![sniffer-example0.pcap](sniffer-esp32-pcap.png)
 
 ## Troubleshooting
 
 - Make sure you have pluged in your SD card and mount it into filesystem before doing sniffer work or you will get error message like “Create file /sdcard/sniffer0.pcap failed”.
 - To protect the SD card, we recommand you to execute command `unmount sd` before you plug out your SD card.
-
-
+- Make sure to run `esp32 apptrace` command before or immediately after a new sniffer task started when you try this example with JTAG. Otherwise the console will issue warning message `waiting for apptrace established` every 1 second. If the apptrace communication doesn't be established within 10 seconds (can be altered by macro `SNIFFER_APPTRACE_RETRY`), this sniffer command will failed with an error message `waiting for apptrace established timeout`.
 
 (For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)
