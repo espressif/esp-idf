@@ -1205,6 +1205,14 @@ menu Wi-Fi
         bool "WiFi Debug Log Submodule Scan"
         default n
 
+    config ESP32_WIFI_IRAM_OPT
+        bool "WiFi IRAM speed optimization"
+        default y
+        help
+            Select this option to place frequently called Wi-Fi library functions in IRAM.
+            When this option is disabled, more than 10Kbytes of IRAM memory will be saved
+            but Wi-Fi throughput will be reduced.
+
 endmenu  # Wi-Fi
 
 menu PHY
