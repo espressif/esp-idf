@@ -729,8 +729,11 @@ check_ut_cmake_make:
 
 check_submodule_sync:
   <<: *check_job_template
+  tags:
+    - github_sync
   variables:
     GIT_STRATEGY: clone
+  retry: 2
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive

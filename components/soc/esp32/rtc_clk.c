@@ -395,7 +395,6 @@ void rtc_clk_cpu_freq_to_xtal(int freq, int div)
     REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, freq * MHZ / REF_CLK_FREQ - 1);
     /* switch clock source */
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
-    DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); /* clear DPORT_CPUPERIOD_SEL */
     rtc_clk_apb_freq_update(freq * MHZ);
     /* lower the voltage */
     if (freq <= 2) {
@@ -411,7 +410,6 @@ static void rtc_clk_cpu_freq_to_8m()
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_8M);
-    DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); // clear DPORT_CPUPERIOD_SEL
     rtc_clk_apb_freq_update(RTC_FAST_CLK_FREQ_8M);
 }
 
@@ -452,14 +450,14 @@ static void rtc_clk_bbpll_enable()
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
     int dbias = DIG_DBIAS_80M_160M;
-    int per_conf = 0;
+    int per_conf = DPORT_CPUPERIOD_SEL_80;
     if (cpu_freq_mhz == 80) {
         /* nothing to do */
     } else if (cpu_freq_mhz == 160) {
-        per_conf = 1;
+        per_conf = DPORT_CPUPERIOD_SEL_160;
     } else if (cpu_freq_mhz == 240) {
         dbias = DIG_DBIAS_240M;
-        per_conf = 2;
+        per_conf = DPORT_CPUPERIOD_SEL_240;
     } else {
         SOC_LOGE(TAG, "invalid frequency");
         abort();
@@ -687,15 +685,15 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
         case RTC_CNTL_SOC_CLK_SEL_PLL: {
             source = RTC_CPU_FREQ_SRC_PLL;
             uint32_t cpuperiod_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
-            if (cpuperiod_sel == 0) {
+            if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_80) {
                 source_freq_mhz = RTC_PLL_FREQ_320M;
                 div = 4;
                 freq_mhz = 80;
-            } else if (cpuperiod_sel == 1) {
+            } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_160) {
                 source_freq_mhz = RTC_PLL_FREQ_320M;
                 div = 2;
                 freq_mhz = 160;
-            } else if (cpuperiod_sel == 2) {
+            } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_240) {
                 source_freq_mhz = RTC_PLL_FREQ_480M;
                 div = 2;
                 freq_mhz = 240;

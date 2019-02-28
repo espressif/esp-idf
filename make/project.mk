@@ -133,6 +133,9 @@ ifndef COMPONENT_DIRS
 EXTRA_COMPONENT_DIRS ?=
 COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 endif
+# Make sure that every directory in the list is an absolute path without trailing slash.
+# This is necessary to split COMPONENT_DIRS into SINGLE_COMPONENT_DIRS and MULTI_COMPONENT_DIRS below. 
+COMPONENT_DIRS := $(foreach cd,$(COMPONENT_DIRS),$(abspath $(cd)))
 export COMPONENT_DIRS
 
 ifdef SRCDIRS
@@ -140,33 +143,55 @@ $(warning SRCDIRS variable is deprecated. These paths can be added to EXTRA_COMP
 COMPONENT_DIRS += $(abspath $(SRCDIRS))
 endif
 
-# The project Makefile can define a list of components, but if it does not do this we just take all available components
-# in the component dirs. A component is COMPONENT_DIRS directory, or immediate subdirectory,
+# List of component directories, i.e. directories which contain a component.mk file 
+SINGLE_COMPONENT_DIRS := $(abspath $(dir $(dir $(foreach cd,$(COMPONENT_DIRS),\
+                             $(wildcard $(cd)/component.mk)))))
+
+# List of components directories, i.e. directories which may contain components 
+MULTI_COMPONENT_DIRS := $(filter-out $(SINGLE_COMPONENT_DIRS),$(COMPONENT_DIRS))
+
+# The project Makefile can define a list of components, but if it does not do this
+# we just take all available components in the component dirs.
+# A component is COMPONENT_DIRS directory, or immediate subdirectory,
 # which contains a component.mk file.
 #
 # Use the "make list-components" target to debug this step.
 ifndef COMPONENTS
 # Find all component names. The component names are the same as the
 # directories they're in, so /bla/components/mycomponent/component.mk -> mycomponent.
-COMPONENTS := $(dir $(foreach cd,$(COMPONENT_DIRS),                           \
-					$(wildcard $(cd)/*/component.mk) $(wildcard $(cd)/component.mk) \
-				))
+# We need to do this for MULTI_COMPONENT_DIRS only, since SINGLE_COMPONENT_DIRS
+# are already known to contain component.mk.
+COMPONENTS := $(dir $(foreach cd,$(MULTI_COMPONENT_DIRS),$(wildcard $(cd)/*/component.mk))) \
+              $(SINGLE_COMPONENT_DIRS)
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
-# After a full manifest of component names is determined, subtract the ones explicitly omitted by the project Makefile.
+# After a full manifest of component names is determined, subtract the ones explicitly
+# omitted by the project Makefile.
+EXCLUDE_COMPONENTS ?=
 ifdef EXCLUDE_COMPONENTS
-COMPONENTS := $(filter-out $(subst ",,$(EXCLUDE_COMPONENTS)), $(COMPONENTS)) 
+COMPONENTS := $(filter-out $(subst ",,$(EXCLUDE_COMPONENTS)), $(COMPONENTS))
 # to keep syntax highlighters happy: "))
 endif
 export COMPONENTS
 
 # Resolve all of COMPONENTS into absolute paths in COMPONENT_PATHS.
+# For each entry in COMPONENT_DIRS:
+# - either this is directory with multiple components, in which case check that
+#   a subdirectory with component name exists, and it contains a component.mk file.
+# - or, this is a directory of a single component, in which case the name of this
+#   directory has to match the component name
 #
 # If a component name exists in multiple COMPONENT_DIRS, we take the first match.
 #
 # NOTE: These paths must be generated WITHOUT a trailing / so we
 # can use $(notdir x) to get the component name.
-COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
+COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),\
+                        $(firstword $(foreach cd,$(COMPONENT_DIRS),\
+                            $(if $(findstring $(cd),$(MULTI_COMPONENT_DIRS)),\
+                                 $(abspath $(dir $(wildcard $(cd)/$(comp)/component.mk))),)\
+                            $(if $(findstring $(cd),$(SINGLE_COMPONENT_DIRS)),\
+                                 $(if $(filter $(comp),$(notdir $(cd))),$(cd),),)\
+                   )))
 export COMPONENT_PATHS
 
 TEST_COMPONENTS ?=
@@ -263,7 +288,7 @@ LDFLAGS ?= -nostdlib \
 #  before including project.mk. Default flags will be added before the ones provided in application Makefile.
 
 # CPPFLAGS used by C preprocessor
-# If any flags are defined in application Makefile, add them at the end. 
+# If any flags are defined in application Makefile, add them at the end.
 CPPFLAGS ?=
 EXTRA_CPPFLAGS ?=
 CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
@@ -575,7 +600,7 @@ list-components:
 	$(info $(TEST_COMPONENTS_LIST))
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info TEST_EXCLUDE_COMPONENTS (list of test excluded names))
-	$(info $(if $(EXCLUDE_COMPONENTS) || $(TEST_EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS) $(TEST_EXCLUDE_COMPONENTS),(none provided)))	
+	$(info $(if $(EXCLUDE_COMPONENTS) || $(TEST_EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS) $(TEST_EXCLUDE_COMPONENTS),(none provided)))
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENT_PATHS (paths to all components):)
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
