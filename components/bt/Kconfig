@@ -434,6 +434,13 @@ config BLE_SMP_ENABLE
    help
        This option can be close when the app not used the ble security connect.
 
+config SMP_SLAVE_CON_PARAMS_UPD_ENABLE
+        bool "Slave enable connection parameters update during pairing"
+        depends on BLE_SMP_ENABLE
+        default n
+        help
+            In order to reduce the pairing time, slave actively initiates connection parameters update during pairing.
+
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
     depends on BLUEDROID_ENABLED
