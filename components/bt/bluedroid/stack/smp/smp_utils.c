@@ -996,6 +996,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 
     memcpy (pairing_bda, p_cb->pairing_bda, BD_ADDR_LEN);
 
+#if (SMP_SLAVE_CON_PARAMS_UPD_ENABLE == TRUE)
     if (p_cb->role == HCI_ROLE_SLAVE) {
         if(p_rec && p_rec->ble.skip_update_conn_param) {
             //clear flag
@@ -1004,6 +1005,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
             L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
         }
     }
+#endif
     smp_reset_control_value(p_cb);
 
     if (p_callback) {
