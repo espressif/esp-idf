@@ -223,6 +223,17 @@ function run_tests()
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
 
+    print_status "Building a project with CMake and PSRAM workaround, all files compile with workaround"
+    cp sdkconfig sdkconfig.psram
+    rm -rf build
+    echo "CONFIG_SPIRAM_SUPPORT=y" >> sdkconfig.psram
+    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.psram
+    # note: we do 'reconfigure' here, as we just need to run cmake
+    idf.py reconfigure -D SDKCONFIG="`pwd`/sdkconfig.psram"
+    grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
+    (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
+    rm sdkconfig.psram
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"

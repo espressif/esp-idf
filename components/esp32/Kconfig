@@ -124,7 +124,8 @@ config SPIRAM_CACHE_WORKAROUND
     help
         Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
         when the cache line needs to be fetched from external RAM and an interrupt occurs. This enables a
-        fix in the compiler that makes sure the specific code that is vulnerable to this will not be emitted.
+        fix in the compiler (-mfix-esp32-psram-cache-issue) that makes sure the specific code that is vulnerable
+        to this will not be emitted.
         
         This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
         with the workaround and located in flash instead.

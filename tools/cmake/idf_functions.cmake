@@ -65,14 +65,16 @@ function(idf_set_global_compiler_options)
         add_compile_options(-Og)
     endif()
 
-    add_c_compile_options(-std=gnu99)
+    # Note: the visual studio generator doesn't support this syntax
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:-std=gnu99>")
 
-    add_cxx_compile_options(-std=gnu++11 -fno-rtti)
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-std=gnu++11>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>")
 
     if(CONFIG_CXX_EXCEPTIONS)
-        add_cxx_compile_options(-fexceptions)
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fexceptions>")
     else()
-        add_cxx_compile_options(-fno-exceptions)
+        add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>")
     endif()
 
     # Default compiler configuration
@@ -89,9 +91,7 @@ function(idf_set_global_compiler_options)
         -Wextra
         -Wno-unused-parameter
         -Wno-sign-compare)
-    add_c_compile_options(
-        -Wno-old-style-declaration
-        )
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:-Wno-old-style-declaration>")
 
     if(CONFIG_DISABLE_GCC8_WARNINGS)
         add_compile_options(
