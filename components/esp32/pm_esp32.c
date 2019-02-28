@@ -434,11 +434,13 @@ static void IRAM_ATTR update_ccompare()
 static void IRAM_ATTR leave_idle()
 {
     int core_id = xPortGetCoreID();
+    uint32_t state = portENTER_CRITICAL_NESTED();
     if (s_core_idle[core_id]) {
         // TODO: possible optimization: raise frequency here first
         esp_pm_lock_acquire(s_rtos_lock_handle[core_id]);
         s_core_idle[core_id] = false;
     }
+    portEXIT_CRITICAL_NESTED(state);
 }
 
 void esp_pm_impl_idle_hook()
