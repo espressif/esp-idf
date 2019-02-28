@@ -268,7 +268,7 @@ void ets_install_uart_printf(void);
         ets_printf("%s %u \n", __FILE__, __LINE__); \
         while (1) {};   \
     }                   \
-} while (0);
+} while (0)
 
 /**
   * @}
