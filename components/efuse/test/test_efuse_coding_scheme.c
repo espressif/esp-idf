@@ -1,7 +1,10 @@
 #include <stdint.h>
 #include <strings.h>
 #include "esp_efuse.h"
+#include "../src/esp_efuse_utility.h"
+#include "soc/efuse_reg.h"
 #include "unity.h"
+#include "bootloader_random.h"
 
 typedef struct {
     uint8_t unencoded[24];
@@ -71,7 +74,7 @@ static const coding_scheme_test_t coding_scheme_data[] = {
     },
 };
 
-TEST_CASE("Test 3/4 Coding Scheme Algorithm", "[bootloader_support]")
+TEST_CASE("Test 3/4 Coding Scheme Algorithm", "[efuse]")
 {
     const int num_tests = sizeof(coding_scheme_data)/sizeof(coding_scheme_test_t);
     for (int i = 0; i < num_tests; i++) {
@@ -91,4 +94,111 @@ TEST_CASE("Test 3/4 Coding Scheme Algorithm", "[bootloader_support]")
             TEST_ASSERT_EQUAL_HEX32_ARRAY(t->encoded + (offs / 6 * 2), result, 2);
         }
     }
+}
+
+TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
+{
+    int count_useful_reg = 0;
+    int useful_data_in_byte;
+    uint8_t buf[32];
+    uint32_t encoded[8];
+    bootloader_random_enable();
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
+    if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
+        printf("EFUSE_CODING_SCHEME_NONE\n");
+        count_useful_reg = 8;
+    } else if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
+        printf("EFUSE_CODING_SCHEME_3_4\n");
+        count_useful_reg = 6;
+    } else if (coding_scheme == EFUSE_CODING_SCHEME_REPEAT) {
+        printf("EFUSE_CODING_SCHEME_REPEAT\n");
+        count_useful_reg = 4;
+    }
+    useful_data_in_byte = count_useful_reg * 4;
+
+    for (int i = 0; i < 10; ++i) {
+        printf("Test case %d...\n", i);
+        memset(buf, 0, sizeof(buf));
+        memset(encoded, 0, sizeof(encoded));
+        // get test data
+        bootloader_fill_random(buf, useful_data_in_byte);
+        memset(buf, 0, i);
+
+        esp_efuse_utility_reset();
+
+        for (int j = 0; j < count_useful_reg; ++j) {
+            REG_WRITE(EFUSE_BLK2_WDATA0_REG + j * 4, *((uint32_t*)buf + j));
+        }
+
+        TEST_ESP_OK(esp_efuse_utility_apply_new_coding_scheme());
+
+        uint32_t w_data_after_coding[8] = { 0 };
+        for (int j = 0; j < 8; ++j) {
+            w_data_after_coding[j] = REG_READ(EFUSE_BLK2_WDATA0_REG + j * 4);
+        }
+
+        if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
+            memcpy((uint8_t*)encoded, buf, sizeof(buf));
+        } else if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
+            TEST_ESP_OK(esp_efuse_apply_34_encoding(buf, encoded, useful_data_in_byte));
+        } else if (coding_scheme == EFUSE_CODING_SCHEME_REPEAT) {
+            for (int j = 0; j < count_useful_reg; ++j) {
+                encoded[j]     = *((uint32_t*)buf + j);
+                encoded[j + 4] = encoded[j];
+            }
+        }
+#ifdef CONFIG_EFUSE_VIRTUAL
+        printf("Data from W reg\n");
+        esp_efuse_utility_erase_virt_blocks();
+        esp_efuse_utility_burn_efuses();
+        esp_efuse_utility_debug_dump_blocks();
+        printf("Data from encoded\n");
+        for (int j = 0; j < 8; ++j) {
+            printf("0x%08x ", encoded[j]);
+        }
+        printf("\nData from w_data_after_coding\n");
+        for (int j = 0; j < 8; ++j) {
+            printf("0x%08x ", w_data_after_coding[j]);
+        }
+
+        printf("\nData from buf\n");
+        for (int j = 0; j < 8; ++j) {
+            printf("0x%08x ", *((uint32_t*)buf + j));
+        }
+        printf("\n");
+#endif
+        TEST_ASSERT_EQUAL_HEX32_ARRAY(encoded, w_data_after_coding, 8);
+    }
+    esp_efuse_utility_reset();
+    bootloader_random_disable();
+}
+
+TEST_CASE("Test data does not match the coding scheme", "[efuse]")
+{
+    int count_useful_reg = 0;
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
+    if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
+        printf("EFUSE_CODING_SCHEME_NONE\n");
+        count_useful_reg = 8;
+    } else if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
+        printf("EFUSE_CODING_SCHEME_3_4\n");
+        count_useful_reg = 6 + 1;
+    } else if (coding_scheme == EFUSE_CODING_SCHEME_REPEAT) {
+        printf("EFUSE_CODING_SCHEME_REPEAT\n");
+        count_useful_reg = 4 + 1;
+    }
+
+    esp_efuse_utility_reset();
+
+    for (int i = 0; i < count_useful_reg; ++i) {
+        REG_WRITE(EFUSE_BLK2_WDATA0_REG + i * 4, 0xABCDEF01 + i);
+    }
+
+    if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
+        TEST_ESP_OK(esp_efuse_utility_apply_new_coding_scheme());
+    } else {
+        TEST_ESP_ERR(ESP_ERR_CODING, esp_efuse_utility_apply_new_coding_scheme());
+    }
+
+    esp_efuse_utility_reset();
 }

@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,53 +11,56 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include "esp_efuse.h"
+#include "esp_efuse_utility.h"
+#include "esp_efuse_table.h"
+#include "stdlib.h"
+#include "esp_types.h"
+#include "rom/efuse.h"
+#include "assert.h"
+#include "esp_err.h"
 #include "esp_log.h"
-#include <string.h>
+#include "soc/efuse_reg.h"
 #include "bootloader_random.h"
 
-#define EFUSE_CONF_WRITE 0x5A5A /* efuse_pgm_op_ena, force no rd/wr disable */
-#define EFUSE_CONF_READ 0x5AA5 /* efuse_read_op_ena, release force */
+const static char *TAG = "efuse";
 
-#define EFUSE_CMD_PGM 0x02
-#define EFUSE_CMD_READ 0x01
+// Contains functions that provide access to efuse fields which are often used in IDF.
 
-static const char *TAG = "efuse";
+// Returns chip version from efuse
+uint8_t esp_efuse_get_chip_ver(void)
+{
+    uint8_t chip_ver;
+    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &chip_ver, 1);
+    return chip_ver;
+}
 
+// Returns chip package from efuse
+uint32_t esp_efuse_get_pkg_ver(void)
+{
+    uint32_t pkg_ver;
+    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_PKG, &pkg_ver, 3);
+    return pkg_ver;
+}
+
+// Permanently update values written to the efuse write registers
 void esp_efuse_burn_new_values(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_WRITE);
-    REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_PGM);
-    while (REG_READ(EFUSE_CMD_REG) != 0) {
-    }
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
-    REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_READ);
-    while (REG_READ(EFUSE_CMD_REG) != 0) {
-    }
-    esp_efuse_reset();
+    esp_efuse_utility_burn_efuses();
 }
 
+// Reset efuse write registers
 void esp_efuse_reset(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
-    const uint32_t block_start[4] = { EFUSE_BLK0_WDATA0_REG, EFUSE_BLK1_WDATA0_REG,
-                                      EFUSE_BLK2_WDATA0_REG, EFUSE_BLK3_WDATA0_REG };
-    const uint32_t block_end[4] = { EFUSE_BLK0_WDATA6_REG, EFUSE_BLK1_WDATA7_REG,
-                                    EFUSE_BLK2_WDATA7_REG, EFUSE_BLK3_WDATA7_REG };
-    for (int i = 0; i < 4; i++) {
-      for (uint32_t r = block_start[i]; r <= block_end[i]; r+= 4) {
-        REG_WRITE(r, 0);
-      }
-    }
+    esp_efuse_utility_reset();
 }
 
+// Disable BASIC ROM Console via efuse
 void esp_efuse_disable_basic_rom_console(void)
 {
-    if ((REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_CONSOLE_DEBUG_DISABLE) == 0) {
+    if (esp_efuse_write_field_cnt(ESP_EFUSE_CONSOLE_DEBUG_DISABLE, 1) == ESP_OK) {
         ESP_EARLY_LOGI(TAG, "Disable BASIC ROM Console fallback via efuse...");
-        esp_efuse_reset();
-        REG_WRITE(EFUSE_BLK0_WDATA6_REG, EFUSE_RD_CONSOLE_DEBUG_DISABLE);
-        esp_efuse_burn_new_values();
     }
 }
 
@@ -113,10 +116,9 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     bzero(raw, sizeof(raw));
 }
 
-
 #ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
 
-#include "bootloader_flash.h"
+#include "../include_bootloader/bootloader_flash.h"
 #include "esp_flash_encrypt.h"
 
 static uint32_t esp_efuse_flash_offset = 0;
