@@ -1128,6 +1128,13 @@ menu Wi-Fi
             Setting a longer beacon length also assists with debugging as the conflicting root nodes can be identified
             more quickly.
 
+    config ESP32_WIFI_MGMT_SBUF_NUM
+        int "WiFi mgmt short buffer number"
+        range 6 32
+        default 32
+        help
+            Set the number of WiFi management short buffer.
+
     config ESP32_WIFI_DEBUG_LOG_ENABLE
         bool "Enable WiFi debug log"
         default n
