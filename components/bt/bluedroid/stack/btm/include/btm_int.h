@@ -488,7 +488,9 @@ typedef struct {
 #if SMP_INCLUDED == TRUE
     tBTM_LE_KEY_TYPE    key_type;       /* bit mask of valid key types in record */
     tBTM_SEC_BLE_KEYS   keys;           /* LE device security info in slave rode */
+#if (SMP_SLAVE_CON_PARAMS_UPD_ENABLE == TRUE)
     bool skip_update_conn_param;        /* skip update connection paraams or not*/
+#endif
     UINT16 auth_mode;                   /* Authentication mode */
 #endif
 #if (BLE_PRIVACY_SPT == TRUE)
