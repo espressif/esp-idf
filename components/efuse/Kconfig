@@ -1,0 +1,45 @@
+menu "eFuse Bit Manager"
+
+    config EFUSE_CUSTOM_TABLE
+        bool "Use custom eFuse table"
+        default n
+        help
+            Allows to generate a structure for eFuse from the CSV file.
+
+    config EFUSE_CUSTOM_TABLE_FILENAME
+        string "Custom eFuse CSV file"
+        depends on EFUSE_CUSTOM_TABLE
+        default main/esp_efuse_custom_table.csv
+        help
+            Name of the custom eFuse CSV filename. This path is evaluated
+            relative to the project root directory.
+
+    config EFUSE_VIRTUAL
+        bool "Simulate eFuse operations in RAM"
+        default n
+        help
+            All read and writes operations are redirected to RAM instead of eFuse registers.
+            If this option is set, all permanent changes (via eFuse) are disabled.
+            Log output will state changes which would be applied, but they will not be.
+
+    choice EFUSE_CODE_SCHEME_SELECTOR
+        prompt "Coding Scheme Compatibility"
+        default EFUSE_CODE_SCHEME_COMPAT_3_4
+        help
+            Selector eFuse code scheme.
+
+        config EFUSE_CODE_SCHEME_COMPAT_NONE
+            bool "None Only"
+        config EFUSE_CODE_SCHEME_COMPAT_3_4
+            bool "3/4 and None"
+        config EFUSE_CODE_SCHEME_COMPAT_REPEAT
+            bool "Repeat, 3/4 and None (common table does not support it)"
+    endchoice
+
+    config EFUSE_MAX_BLK_LEN
+        int
+        default 256 if EFUSE_CODE_SCHEME_COMPAT_NONE
+        default 192 if EFUSE_CODE_SCHEME_COMPAT_3_4
+        default 128 if EFUSE_CODE_SCHEME_COMPAT_REPEAT
+
+endmenu

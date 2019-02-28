@@ -7,6 +7,9 @@
 #if __has_include("esp32/ulp.h")
 #include "esp32/ulp.h"
 #endif
+#if __has_include("esp_efuse.h")
+#include "esp_efuse.h"
+#endif
 #if __has_include("esp_err.h")
 #include "esp_err.h"
 #endif
@@ -240,6 +243,23 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                             (ESP_OTA_IMG_PENDING_VERIFY), essentially
                                                                             first boot of firmware image post upgrade
                                                                             and hence firmware upgrade is not possible */
+#   endif
+    // components/efuse/include/esp_efuse.h
+#   ifdef      ESP_ERR_EFUSE
+    ERR_TBL_IT(ESP_ERR_EFUSE),                              /*  5632 0x1600 Base error code for efuse api. */
+#   endif
+#   ifdef      ESP_OK_EFUSE_CNT
+    ERR_TBL_IT(ESP_OK_EFUSE_CNT),                           /*  5633 0x1601 OK the required number of bits is set. */
+#   endif
+#   ifdef      ESP_ERR_EFUSE_CNT_IS_FULL
+    ERR_TBL_IT(ESP_ERR_EFUSE_CNT_IS_FULL),                  /*  5634 0x1602 Error field is full. */
+#   endif
+#   ifdef      ESP_ERR_EFUSE_REPEATED_PROG
+    ERR_TBL_IT(ESP_ERR_EFUSE_REPEATED_PROG),                /*  5635 0x1603 Error repeated programming of programmed
+                                                                            bits is strictly forbidden. */
+#   endif
+#   ifdef      ESP_ERR_CODING
+    ERR_TBL_IT(ESP_ERR_CODING),                             /*  5636 0x1604 Error while a encoding operation. */
 #   endif
     // components/bootloader_support/include/esp_image_format.h
 #   ifdef      ESP_ERR_IMAGE_BASE
