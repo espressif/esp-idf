@@ -400,7 +400,6 @@ static void rtc_clk_cpu_freq_to_xtal()
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
     REG_SET_FIELD(APB_CTRL_SYSCLK_CONF_REG, APB_CTRL_PRE_DIV_CNT, 0);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_XTL);
-    DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); // clear DPORT_CPUPERIOD_SEL
 
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
     s_cur_freq = RTC_CPU_FREQ_XTAL;
@@ -426,15 +425,15 @@ static void rtc_clk_cpu_freq_to_pll(rtc_cpu_freq_t cpu_freq)
 
     if (cpu_freq == RTC_CPU_FREQ_80M) {
         REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0);
+        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL_80);
         freq = 80;
     } else if (cpu_freq == RTC_CPU_FREQ_160M) {
         REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 1);
+        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL_160);
         freq = 160;
     } else if (cpu_freq == RTC_CPU_FREQ_240M) {
         REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
-        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 2);
+        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL_240);
         freq = 240;
     }
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_SOC_CLK_SEL, RTC_CNTL_SOC_CLK_SEL_PLL);
@@ -472,7 +471,6 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
      */
     rtc_clk_wait_for_slow_cycle();
 
-    DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
             RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
             RTC_CNTL_BBPLL_I2C_FORCE_PD);
@@ -502,15 +500,15 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
                 RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
         rtc_clk_bbpll_set(xtal_freq, cpu_freq);
         if (cpu_freq == RTC_CPU_FREQ_80M) {
-            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
+            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, DPORT_CPUPERIOD_SEL_80);
             ets_update_cpu_frequency(80);
             s_cur_pll = RTC_PLL_320M;
         } else if (cpu_freq == RTC_CPU_FREQ_160M) {
-            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 1);
+            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, DPORT_CPUPERIOD_SEL_160);
             ets_update_cpu_frequency(160);
             s_cur_pll = RTC_PLL_320M;
         } else if (cpu_freq == RTC_CPU_FREQ_240M) {
-            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 2);
+            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, DPORT_CPUPERIOD_SEL_240);
             ets_update_cpu_frequency(240);
             s_cur_pll = RTC_PLL_480M;
         }
@@ -538,11 +536,11 @@ rtc_cpu_freq_t rtc_clk_cpu_freq_get()
         }
         case RTC_CNTL_SOC_CLK_SEL_PLL: {
             uint32_t cpuperiod_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
-            if (cpuperiod_sel == 0) {
+            if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_80) {
                 return RTC_CPU_FREQ_80M;
-            } else if (cpuperiod_sel == 1) {
+            } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_160) {
                 return RTC_CPU_FREQ_160M;
-            } else if (cpuperiod_sel == 2) {
+            } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_240) {
                 return RTC_CPU_FREQ_240M;
             } else {
                 assert(false && "unsupported frequency");

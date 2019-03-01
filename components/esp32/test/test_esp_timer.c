@@ -24,7 +24,12 @@ static uint32_t s_old_overflow_val;
 static void setup_overflow()
 {
     s_old_overflow_val = esp_timer_impl_get_overflow_val();
-    esp_timer_impl_set_overflow_val(0x7fffff); /* overflow every ~0.1 sec */}
+    /* Overflow every 0.1 sec.
+     * Chosen so that it is 0 modulo s_timer_ticks_per_us (which is 80),
+     * to prevent roundoff error on each overflow.
+     */
+    esp_timer_impl_set_overflow_val(8000000);
+}
 
 static void teardown_overflow()
 {
@@ -404,6 +409,13 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
 
+static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff()
+{
+    uint64_t hs_time = esp_timer_get_time();
+    uint64_t ref_time = ref_clock_get();
+    return hs_time - ref_time;
+}
+
 TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 {
     typedef struct {
@@ -411,24 +423,33 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
         bool pass;
         int test_cnt;
         int error_cnt;
-        int64_t total_sq_error;
         int64_t max_error;
+        int64_t avg_diff;
+        int64_t dummy;
     } test_state_t;
 
     void timer_test_task(void* arg) {
         test_state_t* state = (test_state_t*) arg;
         state->pass = true;
-        int64_t start_time = ref_clock_get();
-        int64_t delta = esp_timer_get_time() - start_time;
 
-        int64_t now = start_time;
+        /* make sure both functions are in cache */
+        state->dummy = get_clock_diff();
+
+        /* calculate the difference between the two clocks */
+        portDISABLE_INTERRUPTS();
+        int64_t delta = get_clock_diff();
+        portENABLE_INTERRUPTS();
+        int64_t start_time = ref_clock_get();
         int error_repeat_cnt = 0;
-        while (now - start_time < 10000000) {  /* 10 seconds */
-            int64_t hs_now = esp_timer_get_time();
-            now = ref_clock_get();
-            int64_t diff = hs_now - (now + delta);
+        while (ref_clock_get() - start_time < 10000000) {  /* 10 seconds */
+            /* Get values of both clocks again, and check that they are close to 'delta'.
+             * We don't disable interrupts here, because esp_timer_get_time doesn't lock
+             * interrupts internally, so we check if it can get "broken" by a well placed
+             * interrupt.
+             */
+            int64_t diff = get_clock_diff() - delta;
             /* Allow some difference due to rtos tick interrupting task between
-             * getting 'now' and 'ref_now'.
+             * getting 'hs_now' and 'now'.
              */
             if (abs(diff) > 100) {
                 error_repeat_cnt++;
@@ -440,10 +461,11 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
                 printf("diff=%lld\n", diff);
                 state->pass = false;
             }
+            state->avg_diff += diff;
             state->max_error = MAX(state->max_error, abs(diff));
             state->test_cnt++;
-            state->total_sq_error += diff * diff;
         }
+        state->avg_diff /= state->test_cnt;
         xSemaphoreGive(state->done);
         vTaskDelete(NULL);
     }
@@ -460,10 +482,10 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         TEST_ASSERT_TRUE( xSemaphoreTake(done, portMAX_DELAY) );
-        printf("CPU%d: %s test_cnt=%d error_cnt=%d std_error=%d |max_error|=%d\n",
+        printf("CPU%d: %s test_cnt=%d error_cnt=%d avg_diff=%d |max_error|=%d\n",
                 i, states[i].pass ? "PASS" : "FAIL",
                 states[i].test_cnt, states[i].error_cnt,
-                (int) sqrt(states[i].total_sq_error / states[i].test_cnt), (int) states[i].max_error);
+                (int) states[i].avg_diff, (int) states[i].max_error);
     }
 
     vSemaphoreDelete(done);

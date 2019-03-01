@@ -593,9 +593,12 @@ check_submodule_sync:
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   dependencies: []
+  tags:
+    - github_sync
   variables:
     GIT_STRATEGY: clone
   before_script: *do_nothing_before
+  retry: 2
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
