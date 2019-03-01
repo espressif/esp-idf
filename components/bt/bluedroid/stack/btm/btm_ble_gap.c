@@ -439,7 +439,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT32 duration,
 **
 *******************************************************************************/
 tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
-                           tBTM_INQ_RESULTS_CB *p_results_cb, tBTM_CMPL_CB *p_cmpl_cb)
+                           tBTM_INQ_RESULTS_CB *p_results_cb, tBTM_CMPL_CB *p_cmpl_cb, tBTM_INQ_DIS_CB *p_discard_cb)
 {
     tBTM_BLE_INQ_CB *p_inq = &btm_cb.ble_ctr_cb.inq_var;
     tBTM_STATUS status = BTM_WRONG_MODE;
@@ -457,6 +457,7 @@ tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
 
         btm_cb.ble_ctr_cb.p_scan_results_cb = p_results_cb;
         btm_cb.ble_ctr_cb.p_scan_cmpl_cb = p_cmpl_cb;
+        btm_cb.ble_ctr_cb.p_obs_discard_cb = p_discard_cb;
         status = BTM_CMD_STARTED;
 
         /* scan is not started */
@@ -3467,6 +3468,17 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
     }
 }
 
+void btm_ble_process_adv_discard_evt(UINT8 *p)
+{
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    uint32_t num_dis = 0;
+    STREAM_TO_UINT32 (num_dis, p);
+    tBTM_INQ_DIS_CB *p_obs_discard_cb = btm_cb.ble_ctr_cb.p_obs_discard_cb;
+    if(p_obs_discard_cb) {
+        (p_obs_discard_cb)(num_dis);
+    }
+#endif
+}
 /*******************************************************************************
 **
 ** Function         btm_ble_start_scan

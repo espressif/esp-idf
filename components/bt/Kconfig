@@ -243,6 +243,39 @@ config MESH_DUPLICATE_SCAN_CACHE_SIZE
         Maximum number of adv packets which can be recorded in duplicate scan cache for BLE Mesh.
         When the maximum amount of device in the filter is reached, the cache will be refreshed.
 
+config BLE_ADV_REPORT_FLOW_CONTROL_SUPPORTED
+    bool "BLE adv report flow control supported"
+    depends on (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
+    default y
+    help
+        The function is mainly used to enable flow control for advertising reports. When it is enabled,
+        advertising reports will be discarded by the controller if the number of unprocessed advertising
+        reports exceeds the size of BLE adv report flow control.
+
+config BLE_ADV_REPORT_FLOW_CONTROL_NUM
+    int "BLE adv report flow control number"
+    depends on BLE_ADV_REPORT_FLOW_CONTROL_SUPPORTED
+    range 50 1000
+    default 100
+    help
+        The number of unprocessed advertising report that Bluedroid can save.If you set
+        `BLE_ADV_REPORT_FLOW_CONTROL_NUM` to a small value, this may cause adv packets lost.
+        If you set `BLE_ADV_REPORT_FLOW_CONTROL_NUM` to a large value, Bluedroid may cache a
+        lot of adv packets and this may cause system memory run out. For example, if you set
+        it to 50, the maximum memory consumed by host is 35 * 50 bytes. Please set
+        `BLE_ADV_REPORT_FLOW_CONTROL_NUM` according to your system free memory and handle adv
+        packets as fast as possible, otherwise it will cause adv packets lost.
+
+config BLE_ADV_REPORT_DISCARD_THRSHOLD
+    int "BLE adv lost event threshold value"
+    depends on BLE_ADV_REPORT_FLOW_CONTROL_SUPPORTED
+    range 1 1000
+    default 20
+    help
+        When adv report flow control is enabled, The ADV lost event will be generated when the number
+        of ADV packets lost in the controller reaches this threshold. It is better to set a larger value.
+        If you set `BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
+        may cause adv packets lost more.
 
 
 endmenu

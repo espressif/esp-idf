@@ -317,6 +317,7 @@ typedef struct {
     /* observer callback and timer */
     tBTM_INQ_RESULTS_CB *p_obs_results_cb;
     tBTM_CMPL_CB *p_obs_cmpl_cb;
+    tBTM_INQ_DIS_CB *p_obs_discard_cb;
     TIMER_LIST_ENT obs_timer_ent;
 
     /* scan callback and timer */
@@ -365,6 +366,7 @@ extern "C" {
 
 void btm_ble_timeout(TIMER_LIST_ENT *p_tle);
 void btm_ble_process_adv_pkt (UINT8 *p);
+void btm_ble_process_adv_discard_evt(UINT8 *p);
 void btm_ble_proc_scan_rsp_rpt (UINT8 *p);
 tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, tBTM_CMPL_CB *p_cb);
 BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda);

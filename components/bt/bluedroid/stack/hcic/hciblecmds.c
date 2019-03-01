@@ -999,5 +999,27 @@ BOOLEAN btsnd_hcic_ble_set_data_length(UINT16 conn_handle, UINT16 tx_octets, UIN
     return TRUE;
 }
 
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF (1)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len = HCIC_PREAMBLE_SIZE + 2;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_ADV_REPORT_FLOW_CONTROL);
+    UINT8_TO_STREAM (pp, 2);
+    UINT16_TO_STREAM (pp, num);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+
 #endif
 

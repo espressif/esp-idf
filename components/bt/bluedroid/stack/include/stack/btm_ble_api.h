@@ -1242,7 +1242,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT32 duration,
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_BleScan(BOOLEAN start, UINT32 duration,
-                           tBTM_INQ_RESULTS_CB *p_results_cb, tBTM_CMPL_CB *p_cmpl_cb);
+                           tBTM_INQ_RESULTS_CB *p_results_cb, tBTM_CMPL_CB *p_cmpl_cb, tBTM_INQ_DIS_CB *p_discard_cb);
 
 
 /*******************************************************************************
