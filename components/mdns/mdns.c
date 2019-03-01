@@ -1863,6 +1863,9 @@ static void _mdns_dealloc_scheduled_service_answers(mdns_out_answer_t ** destina
  */
 static void _mdns_remove_scheduled_service_packets(mdns_service_t * service)
 {
+    if (!service) {
+        return;
+    }
     mdns_tx_packet_t * p = NULL;
     mdns_tx_packet_t * q = _mdns_server->tx_queue_head;
     while (q) {
@@ -1951,7 +1954,6 @@ static void _mdns_free_service(mdns_service_t * service)
     if (!service) {
         return;
     }
-    _mdns_remove_scheduled_service_packets(service);
     free((char *)service->instance);
     free((char *)service->service);
     free((char *)service->proto);
@@ -3783,6 +3785,7 @@ static void _mdns_execute_action(mdns_action_t * action)
         if (_mdns_server->services == action->data.srv_del.service) {
             _mdns_server->services = a->next;
             _mdns_send_bye(&a, 1, false);
+            _mdns_remove_scheduled_service_packets(a->service);
             _mdns_free_service(a->service);
             free(a);
         } else {
@@ -3793,6 +3796,7 @@ static void _mdns_execute_action(mdns_action_t * action)
                 mdns_srv_item_t * b = a->next;
                 a->next = a->next->next;
                 _mdns_send_bye(&b, 1, false);
+                _mdns_remove_scheduled_service_packets(b->service);
                 _mdns_free_service(b->service);
                 free(b);
             }
@@ -3806,6 +3810,7 @@ static void _mdns_execute_action(mdns_action_t * action)
         while (a) {
             mdns_srv_item_t * s = a;
             a = a->next;
+            _mdns_remove_scheduled_service_packets(s->service);
             _mdns_free_service(s->service);
             free(s);
         }
