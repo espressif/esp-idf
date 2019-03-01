@@ -555,6 +555,10 @@ BOOLEAN btsnd_hcic_write_voice_settings(UINT16 flags);            /* Write Voice
 #define HCI_HOST_FLOW_CTRL_SCO_ON       2
 #define HCI_HOST_FLOW_CTRL_BOTH_ON      3
 
+#define  HCI_HOST_FLOW_CTRL_ADV_REPORT_OFF     0
+#define  HCI_HOST_FLOW_CTRL_ADV_REPORT_ON      1
+
+
 BOOLEAN btsnd_hcic_write_auto_flush_tout(UINT16 handle,
         UINT16 timeout);    /* Write Retransmit Timout */
 
@@ -805,6 +809,8 @@ BOOLEAN btsnd_hcic_read_authenticated_payload_tout(UINT16 handle);
 
 BOOLEAN btsnd_hcic_write_authenticated_payload_tout(UINT16 handle,
         UINT16 timeout);
+
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num);
 
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT  4
 

@@ -575,6 +575,9 @@ static void btc_search_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data
     case BTA_DM_SEARCH_CANCEL_CMPL_EVT:
         BTC_TRACE_DEBUG("BTA_DM_SEARCH_CANCEL_CMPL_EVT\n");
         break;
+    case BTA_DM_INQ_DISCARD_NUM_EVT:
+        param.scan_rst.num_dis = p_data->inq_dis.num_dis;
+        break;
     default:
         BTC_TRACE_ERROR("%s : Unknown event 0x%x\n", __FUNCTION__, event);
         return;
