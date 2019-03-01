@@ -1,3 +1,3 @@
 #pragma once
-#warning "This header file is deprecated, please include lwip/apps/sntp.h instead."
-#include "lwip/apps/sntp.h"
+#warning "This header file is deprecated, please include esp_sntp.h instead."
+#include "esp_sntp.h"
