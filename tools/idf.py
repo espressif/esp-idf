@@ -353,6 +353,17 @@ def fullclean(action, args):
             os.remove(f)
 
 
+def _safe_relpath(path, start=None):
+    """ Return a relative path, same as os.path.relpath, but only if this is possible.
+
+    It is not possible on Windows, if the start directory and the path are on different drives.
+    """
+    try:
+        return os.path.relpath(path, os.curdir if start is None else start)
+    except ValueError:
+        return os.path.abspath(path)
+
+
 def print_closing_message(args):
     # print a closing message of some kind
     #
@@ -369,7 +380,7 @@ def print_closing_message(args):
             flasher_args = json.load(f)
 
         def flasher_path(f):
-            return os.path.relpath(os.path.join(args.build_dir, f))
+            return _safe_relpath(os.path.join(args.build_dir, f))
 
         if key != "project":  # flashing a single item
             cmd = ""
@@ -386,7 +397,7 @@ def print_closing_message(args):
                 cmd += o + " " + flasher_path(f) + " "
 
         print("%s -p %s -b %s --after %s write_flash %s" % (
-            os.path.relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
+            _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
             args.port or "(PORT)",
             args.baud,
             flasher_args["extra_esptool_args"]["after"],
