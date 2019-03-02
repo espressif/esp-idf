@@ -344,8 +344,8 @@ The following variables are set at the project level, but available for use in c
 - ``IDF_TARGET``: Name of the target for which the project is being built.
 - ``PROJECT_VER``: Project version.
 
-  * If ``PROJECT_VER`` variable set in project CMakeLists.txt file, its value will be used.
-  * Else, if the ``${PROJECT_PATH}/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+  * If ``PROJECT_VER`` variable is set in project CMakeLists.txt file, its value will be used.
+  * Else, if the ``$(PROJECT_PATH}/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
   * Else, if the project is located inside a Git repository, the output of git describe will be used.
   * Otherwise, ``PROJECT_VER`` will be "1".
 
@@ -426,10 +426,8 @@ Preprocessor Definitions
 
 The ESP-IDF build system adds the following C preprocessor definitions on the command line:
 
-- ``ESP_PLATFORM`` ： Can be used to detect that build happens within ESP-IDF.
-- ``IDF_VER`` ： Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
-- ``PROJECT_VER``: The project version, see `Preset Component Variables`_ for more details.
-- ``PROJECT_NAME``: Name of the project, as set in project CMakeLists.txt file.
+- ``ESP_PLATFORM`` : Can be used to detect that build happens within ESP-IDF.
+- ``IDF_VER`` : Defined to a git version string.  E.g. ``v2.0`` for a tagged release or ``v1.0-275-g0efaa4f`` for an arbitrary commit.
 
 Component Requirements
 ======================
