@@ -115,9 +115,6 @@
 #define PCB_STATE_IS_ANNOUNCING(s) (s->state > PCB_PROBE_3 && s->state < PCB_RUNNING)
 #define PCB_STATE_IS_RUNNING(s) (s->state == PCB_RUNNING)
 
-#define MDNS_SEARCH_LOCK()      xSemaphoreTake(_mdns_server->search.lock, portMAX_DELAY)
-#define MDNS_SEARCH_UNLOCK()    xSemaphoreGive(_mdns_server->search.lock)
-
 #ifndef HOOK_MALLOC_FAILED
 #define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %d bytes)", __LINE__, esp_get_free_heap_size());
 #endif
@@ -318,7 +315,7 @@ typedef struct mdns_search_once_s {
     uint32_t started_at;
     uint32_t sent_at;
     uint32_t timeout;
-    SemaphoreHandle_t lock;
+    SemaphoreHandle_t done_semaphore;
     uint16_t type;
     uint8_t max_results;
     uint8_t num_results;
