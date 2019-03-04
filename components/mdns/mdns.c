@@ -4040,9 +4040,7 @@ static esp_err_t _mdns_service_task_start()
  */
 static esp_err_t _mdns_service_task_stop()
 {
-    MDNS_SERVICE_LOCK();
     _mdns_stop_timer();
-    MDNS_SERVICE_UNLOCK();
     if (_mdns_service_task_handle) {
         mdns_action_t action;
         mdns_action_t * a = &action;
