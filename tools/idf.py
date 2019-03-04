@@ -361,7 +361,7 @@ def erase_flash(action, ctx, args):
     _run_tool("esptool.py", esptool_args, args.build_dir)
 
 
-def monitor(action, ctx, args):
+def monitor(action, ctx, args, print_filter):
     """
     Run idf_monitor.py to watch build output
     """
@@ -385,6 +385,8 @@ def monitor(action, ctx, args):
     if args.port is not None:
         monitor_args += ["-p", args.port]
     monitor_args += ["-b", project_desc["monitor_baud"]]
+    if print_filter is not None:
+        monitor_args += ["--print_filter", print_filter]
     monitor_args += [elf_file]
 
     idf_py = [PYTHON] + get_commandline_options(ctx)  # commands to re-run idf.py
@@ -920,7 +922,7 @@ def init_cli():
             },
             "show_efuse_table": {
                 "callback": build_target,
-                "help": "Print eFuse table",
+                "help": "Print eFuse table.",
                 "order_dependencies": ["reconfigure"],
             },
             "partition_table": {
@@ -986,7 +988,7 @@ def init_cli():
         "actions": {
             "flash": {
                 "callback": flash,
-                "help": "Flash the project",
+                "help": "Flash the project.",
                 "dependencies": ["all"],
                 "order_dependencies": ["erase_flash"],
             },
@@ -997,6 +999,22 @@ def init_cli():
             "monitor": {
                 "callback": monitor,
                 "help": "Display serial output.",
+                "options": [
+                    {
+                        "names": ["--print-filter", "--print_filter"],
+                        "help": (
+                            "Filter monitor output.\n"
+                            "Restrictions on what to print can be specified as a series of <tag>:<log_level> items "
+                            "where <tag> is the tag string and <log_level> is a character from the set "
+                            "{N, E, W, I, D, V, *} referring to a level. "
+                            'For example, "tag1:W" matches and prints only the outputs written with '
+                            'ESP_LOGW("tag1", ...) or at lower verbosity level, i.e. ESP_LOGE("tag1", ...). '
+                            'Not specifying a <log_level> or using "*" defaults to Verbose level.\n'
+                            'Please see the IDF Monitor section of the ESP-IDF documentation '
+                            'for a more detailed description and further examples.'),
+                        "default": None,
+                    },
+                ],
                 "order_dependencies": [
                     "flash",
                     "partition_table-flash",
@@ -1042,7 +1060,6 @@ def init_cli():
             )
 
     # Add actions extensions
-
     try:
         all_actions.append(action_extensions(base_actions, project_dir))
     except NameError:
