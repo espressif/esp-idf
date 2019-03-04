@@ -4107,12 +4107,6 @@ esp_err_t mdns_init()
         goto free_lock;
     }
 
-    if (_mdns_service_task_start()) {
-        //service start failed!
-        err = ESP_FAIL;
-        goto free_all;
-    }
-
     uint8_t i;
     ip6_addr_t tmp_addr6;
     tcpip_adapter_ip_info_t if_ip_info;
@@ -4126,9 +4120,19 @@ esp_err_t mdns_init()
         }
     }
 
+    if (_mdns_service_task_start()) {
+        //service start failed!
+        err = ESP_FAIL;
+        goto free_all_and_disable_pcbs;
+    }
+
     return ESP_OK;
 
-free_all:
+free_all_and_disable_pcbs:
+    for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
+        _mdns_disable_pcb(i, MDNS_IP_PROTOCOL_V6);
+        _mdns_disable_pcb(i, MDNS_IP_PROTOCOL_V4);
+    }
     vQueueDelete(_mdns_server->action_queue);
 free_lock:
     vSemaphoreDelete(_mdns_server->lock);
