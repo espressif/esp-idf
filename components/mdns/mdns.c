@@ -3074,7 +3074,7 @@ static void _mdns_search_free(mdns_search_once_t * search)
     free(search->instance);
     free(search->service);
     free(search->proto);
-    vSemaphoreDelete(search->lock);
+    vSemaphoreDelete(search->done_semaphore);
     free(search);
 }
 
@@ -3090,8 +3090,8 @@ static mdns_search_once_t * _mdns_search_init(const char * name, const char * se
     }
     memset(search, 0, sizeof(mdns_search_once_t));
 
-    search->lock = xSemaphoreCreateMutex();
-    if (!search->lock) {
+    search->done_semaphore = xSemaphoreCreateBinary();
+    if (!search->done_semaphore) {
         free(search);
         return NULL;
     }
@@ -3130,8 +3130,6 @@ static mdns_search_once_t * _mdns_search_init(const char * name, const char * se
     search->started_at = xTaskGetTickCount() * portTICK_PERIOD_MS;
     search->next = NULL;
 
-    xSemaphoreTake(search->lock, 0);
-
     return search;
 }
 
@@ -3142,7 +3140,7 @@ static void _mdns_search_finish(mdns_search_once_t * search)
 {
     search->state = SEARCH_OFF;
     queueDetach(mdns_search_once_t, _mdns_server->search_once, search);
-    xSemaphoreGive(search->lock);
+    xSemaphoreGive(search->done_semaphore);
 }
 
 /**
@@ -4148,7 +4146,7 @@ void mdns_free()
         free(h->instance);
         free(h->service);
         free(h->proto);
-        vSemaphoreDelete(h->lock);
+        vSemaphoreDelete(h->done_semaphore);
         if (h->result) {
             mdns_query_results_free(h->result);
         }
@@ -4543,7 +4541,7 @@ esp_err_t mdns_query(const char * name, const char * service, const char * proto
         _mdns_search_free(search);
         return ESP_ERR_NO_MEM;
     }
-    xSemaphoreTake(search->lock, portMAX_DELAY);
+    xSemaphoreTake(search->done_semaphore, portMAX_DELAY);
 
     *results = search->result;
     _mdns_search_free(search);
