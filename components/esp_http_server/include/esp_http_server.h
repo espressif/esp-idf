@@ -324,6 +324,18 @@ typedef struct httpd_req {
      * function for freeing the session context, please specify that here.
      */
     httpd_free_ctx_fn_t free_ctx;
+
+    /**
+     * Flag indicating if Session Context changes should be ignored
+     *
+     * By default, if you change the sess_ctx in some URI handler, the http server
+     * will internally free the earlier context (if non NULL), after the URI handler
+     * returns. If you want to manage the allocation/reallocation/freeing of
+     * sess_ctx yourself, set this flag to true, so that the server will not
+     * perform any checks on it. The context will be cleared by the server
+     * (by calling free_ctx or free()) only if the socket gets closed.
+     */
+    bool ignore_sess_ctx_changes;
 } httpd_req_t;
 
 /**
