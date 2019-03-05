@@ -32,4 +32,4 @@ API 指南
    ESP-MESH <mesh>
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
-   Linker Script Generation <linker-script-generation>
+   链接脚本生成机制 <linker-script-generation>
