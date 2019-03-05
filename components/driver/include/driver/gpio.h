@@ -128,6 +128,7 @@ extern "C" {
 #define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num)      ((GPIO_IS_VALID_GPIO(gpio_num)) && (gpio_num < 34))         /*!< Check whether it can be a valid GPIO number of output mode */
 
 typedef enum {
+    GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
     GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
     GPIO_NUM_2 = 2,     /*!< GPIO2, input and output
