@@ -209,7 +209,7 @@ static inline uint32_t IRAM_ATTR xPortGetCoreID() {
         "rsr.prid %0\n"
         " extui %0,%0,13,1"
         :"=r"(id));
-    return id;
+    return (uint32_t)id;
 }
 
 /* Get tick rate per second */
