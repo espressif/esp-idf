@@ -59,7 +59,7 @@
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
 #include "esp_cache_err_int.h"
-#include "esp_coexist.h"
+#include "esp_coexist_internal.h"
 #include "esp_panic.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
@@ -410,6 +410,10 @@ void start_cpu0_default(void)
     if (esp_core_dump_image_get(&core_data_addr, &core_data_sz) == ESP_OK && core_data_sz > 0) {
         ESP_LOGI(TAG, "Found core dump %d bytes in flash @ 0x%x", core_data_sz, core_data_addr);
     }
+#endif
+
+#if CONFIG_SW_COEXIST_ENABLE
+    esp_coex_adapter_register(&g_coex_adapter_funcs);
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
