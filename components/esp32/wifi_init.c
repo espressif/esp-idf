@@ -27,6 +27,9 @@ mesh_event_cb_t g_mesh_event_cb = NULL;
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
 
+/* Callback function to update WiFi MAC time */
+wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
+
 static void __attribute__((constructor)) s_set_default_wifi_log_level()
 {
     /* WiFi libraries aren't compiled to know CONFIG_LOG_DEFAULT_LEVEL,
@@ -97,7 +100,10 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
     esp_event_set_default_wifi_handlers();
     esp_err_t result = esp_wifi_init_internal(config);
-    esp_wifi_set_debug_log();
+    if (result == ESP_OK) {
+        esp_wifi_set_debug_log();
+        s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
+    }
 
     return result;
 }
