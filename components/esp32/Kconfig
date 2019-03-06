@@ -544,6 +544,23 @@ menu "ESP32-specific"
                 of the crash.
     endchoice
 
+    config GDBSTUB_SUPPORT_TASKS
+        bool "GDBStub: enable listing FreeRTOS tasks"
+        default y
+        depends on ESP32_PANIC_GDBSTUB
+        help
+            If enabled, GDBStub can supply the list of FreeRTOS tasks to GDB.
+            Thread list can be queried from GDB using 'info threads' command.
+            Note that if GDB task lists were corrupted, this feature may not work.
+            If GDBStub fails, try disabling this feature.
+
+    config GDBSTUB_MAX_TASKS
+        int "GDBStub: maximum number of tasks supported"
+        default 32
+        depends on GDBSTUB_SUPPORT_TASKS
+        help
+            Set the number of tasks which GDB Stub will support.
+
     config ESP32_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y
