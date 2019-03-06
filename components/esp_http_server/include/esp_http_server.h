@@ -114,6 +114,7 @@ typedef bool (*httpd_uri_match_func_t)(const char *reference_uri,
 typedef struct httpd_config {
     unsigned    task_priority;      /*!< Priority of FreeRTOS task which runs the server */
     size_t      stack_size;         /*!< The maximum stack size allowed for the server task */
+    BaseType_t  coreID;             /*!< The core that the server task is pinned to */
 
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
@@ -235,6 +236,7 @@ static inline httpd_config_t HTTPD_DEFAULT_CONFIG()
     config.open_fn              = NULL;
     config.close_fn             = NULL;
     config.uri_match_fn         = NULL;
+    config.coreID               = tskNO_AFFINITY;
     return config;
 }
 
