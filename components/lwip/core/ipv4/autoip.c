@@ -384,6 +384,7 @@ autoip_stop(struct netif *netif)
       netif_set_addr(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
     }
     mem_free(netif->autoip);
+    netif->autoip = NULL;
   }
   return ERR_OK;
 }
