@@ -107,18 +107,26 @@ function run_tests()
 	idf.py build || failure "Failed to rebuild with changed app version"
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
-    
+
     print_status "Re-building does not change app.bin"
     take_build_snapshot
     idf.py build
     assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
     rm -f ${TESTDIR}/template/version.txt
-    
+
     print_status "Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit."
     idf.py build >> log.log || failure "Failed to build"
     version="Project version: "
     version+=$(git describe --always --tags --dirty)
     grep "${version}" log.log || failure "Project version should have a hash commit"
+
+    print_status "Can set COMPONENT_SRCS with spaces"
+    clean_build_dir
+    touch main/main2.c
+    sed -i 's/^set(COMPONENT_SRCS.*/set(COMPONENT_SRCS "main.c main2.c")/' main/CMakeLists.txt
+    idf.py build || failure "Set COMPONENT_SRCS with spaces build failed"
+    git checkout -- main/CMakeLists.txt
+    rm main/main2.c
 
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
