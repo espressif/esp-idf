@@ -147,6 +147,7 @@ static void tcp_client_task(void *pvParameters)
         int err = connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
         if (err != 0) {
             ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
+            break;
         }
         ESP_LOGI(TAG, "Successfully connected");
 
