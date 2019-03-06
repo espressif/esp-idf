@@ -114,12 +114,12 @@ App version
 Application version is stored in :cpp:class:`esp_app_desc_t` structure. It is located in DROM sector and has a fixed offset from the beginning of the binary file. 
 The structure is located after :cpp:class:`esp_image_header_t` and :cpp:class:`esp_image_segment_header_t` structures. The field version has string type and max length 32 chars.
 
-To set version in your project manually you need set ``PROJECT_VER`` varible in your project Makefile/CMakeLists.txt:
+To set version in your project manually you need to set ``PROJECT_VER`` variable in your project Makefile/CMakeLists.txt:
 
 * For Make build system: in application Makefile put ``PROJECT_VER = "0.1.0.1"`` before including project.mk 
 * For Cmake build system: in application CMakeLists.txt put ``set(PROJECT_VER "0.1.0.1")`` before including project.cmake. 
 
-If ``PROJECT_VER`` variable did not set in project Makefile/CMakeLists.txt then it can retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
+If ``PROJECT_VER`` variable is not set in project Makefile/CMakeLists.txt then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
 API Reference
 -------------
