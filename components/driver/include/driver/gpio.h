@@ -537,12 +537,16 @@ esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t streng
 esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* strength);
 
 /**
-  * @brief Set gpio pad hold function.
+  * @brief Enable gpio pad hold function.
   *
   * The gpio pad hold function works in both input and output modes, but must be output-capable gpios.
   * If pad hold enabled:
   *   in output mode: the output level of the pad will be force locked and can not be changed.
   *   in input mode: the input value read will not change, regardless the changes of input signal.
+  *
+  * The state of digital gpio cannot be held during Deep-sleep, and it will resume the hold function
+  * when the chip wakes up from Deep-sleep. If the digital gpio also needs to be held during Deep-sleep,
+  * `gpio_deep_sleep_hold_en` should also be called.
   *
   * Power down or call gpio_hold_dis will disable this function.
   *
@@ -555,7 +559,15 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* stren
 esp_err_t gpio_hold_en(gpio_num_t gpio_num);
 
 /**
-  * @brief Unset gpio pad hold function.
+  * @brief Disable gpio pad hold function.
+  *
+  * When the chip is woken up from Deep-sleep, the gpio will be set to the default mode, so, the gpio will output
+  * the default level if this function is called. If you dont't want the level changes, the gpio should be configured to
+  * a known state before this function is called.
+  *  e.g.
+  *     If you hold gpio18 high during Deep-sleep, after the chip is woken up and `gpio_hold_dis` is called, 
+  *     gpio18 will output low level(because gpio18 is input mode by default). If you don't want this behavior,
+  *     you should configure gpio18 as output mode and set it to hight level before calling `gpio_hold_dis`.
   *
   * @param gpio_num GPIO number, only support output-capable GPIOs
   *
@@ -563,7 +575,24 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   *     - ESP_OK Success
   *     - ESP_ERR_NOT_SUPPORTED Not support pad hold function
   */
- esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
+esp_err_t gpio_hold_dis(gpio_num_t gpio_num);
+
+/**
+  * @brief Enable all digital gpio pad hold function during Deep-sleep.
+  *
+  * When the chip is in Deep-sleep mode, all digital gpio will hold the state before sleep, and when the chip is woken up,
+  * the status of digital gpio will not be held. Note that the pad hold feature only works when the chip is in Deep-sleep mode,
+  * when not in sleep mode, the digital gpio state can be changed even you have called this function.
+  *
+  * Power down or call gpio_hold_dis will disable this function, otherwise, the digital gpio hold feature works as long as the chip enter Deep-sleep.
+  */
+void gpio_deep_sleep_hold_en(void);
+
+/**
+  * @brief Disable all digital gpio pad hold function during Deep-sleep.
+  *
+  */
+void gpio_deep_sleep_hold_dis(void);
 
 /**
   * @brief Set pad input to a peripheral signal through the IOMUX.

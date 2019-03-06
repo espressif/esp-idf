@@ -31,14 +31,14 @@ void bootloader_clock_configure()
     /* Set CPU to 80MHz. Keep other clocks unmodified. */
     int cpu_freq_mhz = 80;
 
-    /* On ESP32 rev 0, switching to 80MHz if clock was previously set to
+    /* On ESP32 rev 0, switching to 80/160 MHz if clock was previously set to
      * 240 MHz may cause the chip to lock up (see section 3.5 of the errata
-     * document). For rev. 0, switch to 240 instead if it was chosen in
-     * menuconfig.
+     * document). For rev. 0, switch to 240 instead if it has been enabled
+     * previously.
      */
     uint32_t chip_ver_reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
     if ((chip_ver_reg & EFUSE_RD_CHIP_VER_REV1_M) == 0 &&
-            CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ == 240) {
+            DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
         cpu_freq_mhz = 240;
     }
 

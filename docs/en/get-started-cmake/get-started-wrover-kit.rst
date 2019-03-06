@@ -3,8 +3,6 @@ ESP-WROVER-KIT V3 Getting Started Guide (CMake)
 
 This user guide shows how to get started with ESP-WROVER-KIT V3 development board including description of its functionality and configuration options. For description of other versions of the ESP-WROVER-KIT check :doc:`../hw-reference/index`.
 
-If you like to start using this board right now, go directly to section :ref:`get-started-esp-wrover-kit-start-development-cmake`.
-
 
 What You Need
 -------------
@@ -12,6 +10,8 @@ What You Need
 * 1 × :ref:`ESP-WROVER-KIT V3 board <get-started-esp-wrover-kit-board-front-cmake>`
 * 1 x Micro USB 2.0 Cable, Type A to Micro B
 * 1 × PC loaded with Windows, Linux or Mac OS
+
+If you want to start using this board right now, go directly to Section `Start Application Development`_.
 
 
 Overview
@@ -70,7 +70,7 @@ Boot
 USB
     USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32 module.
 Power Select
-    Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in section :ref:`get-started-esp-wrover-kit-setup-options-cmake`, jumper header JP7.
+    Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in Section :ref:`get-started-esp-wrover-kit-setup-options-cmake`, jumper header JP7.
 Power Key
     Power on/off button: toggling to the right powers the board on; toggling to the left powers the board off.
 5V Input
@@ -354,8 +354,6 @@ LCD / U5
 +---+-----------+------------+
 
 
-.. _get-started-esp-wrover-kit-start-development-cmake:
-
 Start Application Development
 -----------------------------
 
@@ -380,13 +378,7 @@ Do not install any other jumpers.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-To start development of applications for ESP-WROVER-KIT, proceed to section :doc:`index`, that will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain-cmake` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect-cmake` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-cmake` for an example application
-* :ref:`get-started-flash-cmake` to run code on the ESP32
-* :ref:`get-started-build-monitor-cmake` instantly what the application is doing
+To start development of applications, proceed to Section :doc:`index`, that will walk you through the :ref:`get-started-step-by-step-cmake`.
 
 
 Related Documents

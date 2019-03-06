@@ -72,9 +72,10 @@ static esp_err_t http_resp_dir_html(httpd_req_t *req)
     const size_t entrypath_offset = strlen(fullpath);
 
     if (!dir) {
-        /* If opening directory failed then send 404 server error */
-        httpd_resp_send_404(req);
-        return ESP_OK;
+        ESP_LOGE(TAG, "Failed to stat dir : %s", fullpath);
+        /* Respond with 404 Not Found */
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Directory does not exist");
+        return ESP_FAIL;
     }
 
     /* Send HTML file header */
@@ -172,18 +173,17 @@ static esp_err_t http_resp_file(httpd_req_t *req)
     strcat(filepath, req->uri);
     if (stat(filepath, &file_stat) == -1) {
         ESP_LOGE(TAG, "Failed to stat file : %s", filepath);
-        /* If file doesn't exist respond with 404 Not Found */
-        httpd_resp_send_404(req);
-        return ESP_OK;
+        /* Respond with 404 Not Found */
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "File does not exist");
+        return ESP_FAIL;
     }
 
     fd = fopen(filepath, "r");
     if (!fd) {
         ESP_LOGE(TAG, "Failed to read existing file : %s", filepath);
-        /* If file exists but unable to open respond with 500 Server Error */
-        httpd_resp_set_status(req, "500 Server Error");
-        httpd_resp_sendstr(req, "Failed to read existing file!");
-        return ESP_OK;
+        /* Respond with 500 Internal Server Error */
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to read existing file");
+        return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Sending file : %s (%ld bytes)...", filepath, file_stat.st_size);
@@ -202,10 +202,9 @@ static esp_err_t http_resp_file(httpd_req_t *req)
             ESP_LOGE(TAG, "File sending failed!");
             /* Abort sending file */
             httpd_resp_sendstr_chunk(req, NULL);
-            /* Send error message with status code */
-            httpd_resp_set_status(req, "500 Server Error");
-            httpd_resp_sendstr(req, "Failed to send file!");
-            return ESP_OK;
+            /* Respond with 500 Internal Server Error */
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to send file");
+            return ESP_FAIL;
         }
 
         /* Keep looping till the whole file is sent */
@@ -249,10 +248,8 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
     if (strlen(filename) == 0 || filename[strlen(filename) - 1] == '/') {
         ESP_LOGE(TAG, "Invalid file name : %s", filename);
         /* Respond with 400 Bad Request */
-        httpd_resp_set_status(req, "400 Bad Request");
-        /* Send failure reason */
-        httpd_resp_sendstr(req, "Invalid file name!");
-        return ESP_OK;
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid file name");
+        return ESP_FAIL;
     }
 
     /* Retrieve the base path of file storage to construct the full path */
@@ -262,18 +259,18 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
     strcat(filepath, filename);
     if (stat(filepath, &file_stat) == 0) {
         ESP_LOGE(TAG, "File already exists : %s", filepath);
-        /* If file exists respond with 400 Bad Request */
-        httpd_resp_set_status(req, "400 Bad Request");
-        httpd_resp_sendstr(req, "File already exists!");
-        return ESP_OK;
+        /* Respond with 400 Bad Request */
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "File already exists");
+        return ESP_FAIL;
     }
 
     /* File cannot be larger than a limit */
     if (req->content_len > MAX_FILE_SIZE) {
         ESP_LOGE(TAG, "File too large : %d bytes", req->content_len);
-        httpd_resp_set_status(req, "400 Bad Request");
-        httpd_resp_sendstr(req, "File size must be less than "
-                           MAX_FILE_SIZE_STR "!");
+        /* Respond with 400 Bad Request */
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST,
+                            "File size must be less than "
+                            MAX_FILE_SIZE_STR "!");
         /* Return failure to close underlying connection else the
          * incoming file content will keep the socket busy */
         return ESP_FAIL;
@@ -282,10 +279,9 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
     fd = fopen(filepath, "w");
     if (!fd) {
         ESP_LOGE(TAG, "Failed to create file : %s", filepath);
-        /* If file creation failed, respond with 500 Server Error */
-        httpd_resp_set_status(req, "500 Server Error");
-        httpd_resp_sendstr(req, "Failed to create file!");
-        return ESP_OK;
+        /* Respond with 500 Internal Server Error */
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to create file");
+        return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Receiving file : %s...", filename);
@@ -314,10 +310,9 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
             unlink(filepath);
 
             ESP_LOGE(TAG, "File reception failed!");
-            /* Return failure reason with status code */
-            httpd_resp_set_status(req, "500 Server Error");
-            httpd_resp_sendstr(req, "Failed to receive file!");
-            return ESP_OK;
+            /* Respond with 500 Internal Server Error */
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to receive file");
+            return ESP_FAIL;
         }
 
         /* Write buffer content to file on storage */
@@ -328,9 +323,9 @@ static esp_err_t upload_post_handler(httpd_req_t *req)
             unlink(filepath);
 
             ESP_LOGE(TAG, "File write failed!");
-            httpd_resp_set_status(req, "500 Server Error");
-            httpd_resp_sendstr(req, "Failed to write file to storage!");
-            return ESP_OK;
+            /* Respond with 500 Internal Server Error */
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to write file to storage");
+            return ESP_FAIL;
         }
 
         /* Keep track of remaining size of
@@ -363,10 +358,8 @@ static esp_err_t delete_post_handler(httpd_req_t *req)
     if (strlen(filename) == 0 || filename[strlen(filename) - 1] == '/') {
         ESP_LOGE(TAG, "Invalid file name : %s", filename);
         /* Respond with 400 Bad Request */
-        httpd_resp_set_status(req, "400 Bad Request");
-        /* Send failure reason */
-        httpd_resp_sendstr(req, "Invalid file name!");
-        return ESP_OK;
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid file name");
+        return ESP_FAIL;
     }
 
     /* Retrieve the base path of file storage to construct the full path */
@@ -376,10 +369,9 @@ static esp_err_t delete_post_handler(httpd_req_t *req)
     strcat(filepath, filename);
     if (stat(filepath, &file_stat) == -1) {
         ESP_LOGE(TAG, "File does not exist : %s", filename);
-        /* If file does not exist respond with 400 Bad Request */
-        httpd_resp_set_status(req, "400 Bad Request");
-        httpd_resp_sendstr(req, "File does not exist!");
-        return ESP_OK;
+        /* Respond with 400 Bad Request */
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "File does not exist");
+        return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Deleting file : %s", filename);

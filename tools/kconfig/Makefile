@@ -334,7 +334,7 @@ conf-idf: $(conf-objs)
 zconf.tab.c: zconf.lex.c
 
 zconf.lex.c: $(SRCDIR)/zconf.l
-	flex -L -P zconf -o zconf.lex.c $<
+	flex -L -Pzconf -ozconf.lex.c $<
 
 zconf.hash.c: $(SRCDIR)/zconf.gperf
 # strip CRs on Windows systems where gperf will otherwise barf on them

@@ -379,78 +379,128 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
     return ESP_OK;
 }
 
-esp_err_t httpd_resp_send_404(httpd_req_t *r)
+esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const char *usr_msg)
 {
-    return httpd_resp_send_err(r, HTTPD_404_NOT_FOUND);
-}
-
-esp_err_t httpd_resp_send_408(httpd_req_t *r)
-{
-    return httpd_resp_send_err(r, HTTPD_408_REQ_TIMEOUT);
-}
-
-esp_err_t httpd_resp_send_500(httpd_req_t *r)
-{
-    return httpd_resp_send_err(r, HTTPD_500_SERVER_ERROR);
-}
-
-esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_resp_t error)
-{
+    esp_err_t ret;
     const char *msg;
     const char *status;
+
     switch (error) {
-    case HTTPD_501_METHOD_NOT_IMPLEMENTED:
-        status = "501 Method Not Implemented";
-        msg    = "Request method is not supported by server";
-        break;
-    case HTTPD_505_VERSION_NOT_SUPPORTED:
-        status = "505 Version Not Supported";
-        msg    = "HTTP version not supported by server";
-        break;
-    case HTTPD_400_BAD_REQUEST:
-        status = "400 Bad Request";
-        msg    = "Server unable to understand request due to invalid syntax";
-        break;
-    case HTTPD_404_NOT_FOUND:
-        status = "404 Not Found";
-        msg    = "This URI doesn't exist";
-        break;
-    case HTTPD_405_METHOD_NOT_ALLOWED:
-        status = "405 Method Not Allowed";
-        msg    = "Request method for this URI is not handled by server";
-        break;
-    case HTTPD_408_REQ_TIMEOUT:
-        status = "408 Request Timeout";
-        msg    = "Server closed this connection";
-        break;
-    case HTTPD_414_URI_TOO_LONG:
-        status = "414 URI Too Long";
-        msg    = "URI is too long for server to interpret";
-        break;
-    case HTTPD_411_LENGTH_REQUIRED:
-        status = "411 Length Required";
-        msg    = "Chunked encoding not supported by server";
-        break;
-    case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
-        status = "431 Request Header Fields Too Large";
-        msg    = "Header fields are too long for server to interpret";
-        break;
-    case HTTPD_XXX_UPGRADE_NOT_SUPPORTED:
-        /* If the server does not support upgrade, or is unable to upgrade
-         * it responds with a standard HTTP/1.1 response */
-        status = "200 OK";
-        msg    = "Upgrade not supported by server";
-        break;
-    case HTTPD_500_SERVER_ERROR:
-    default:
-        status = "500 Server Error";
-        msg    = "Server has encountered an unexpected error";
+        case HTTPD_501_METHOD_NOT_IMPLEMENTED:
+            status = "501 Method Not Implemented";
+            msg    = "Request method is not supported by server";
+            break;
+        case HTTPD_505_VERSION_NOT_SUPPORTED:
+            status = "505 Version Not Supported";
+            msg    = "HTTP version not supported by server";
+            break;
+        case HTTPD_400_BAD_REQUEST:
+            status = "400 Bad Request";
+            msg    = "Server unable to understand request due to invalid syntax";
+            break;
+        case HTTPD_404_NOT_FOUND:
+            status = "404 Not Found";
+            msg    = "This URI does not exist";
+            break;
+        case HTTPD_405_METHOD_NOT_ALLOWED:
+            status = "405 Method Not Allowed";
+            msg    = "Request method for this URI is not handled by server";
+            break;
+        case HTTPD_408_REQ_TIMEOUT:
+            status = "408 Request Timeout";
+            msg    = "Server closed this connection";
+            break;
+        case HTTPD_414_URI_TOO_LONG:
+            status = "414 URI Too Long";
+            msg    = "URI is too long for server to interpret";
+            break;
+        case HTTPD_411_LENGTH_REQUIRED:
+            status = "411 Length Required";
+            msg    = "Chunked encoding not supported by server";
+            break;
+        case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
+            status = "431 Request Header Fields Too Large";
+            msg    = "Header fields are too long for server to interpret";
+            break;
+        case HTTPD_500_INTERNAL_SERVER_ERROR:
+        default:
+            status = "500 Internal Server Error";
+            msg    = "Server has encountered an unexpected error";
     }
+
+    /* If user has provided custom message, override default message */
+    msg = usr_msg ? usr_msg : msg;
     ESP_LOGW(TAG, LOG_FMT("%s - %s"), status, msg);
 
-    httpd_resp_set_status   (req, status);
-    httpd_resp_set_type     (req, HTTPD_TYPE_TEXT);
-    return httpd_resp_send  (req, msg, strlen(msg));
+    /* Set error code in HTTP response */
+    httpd_resp_set_status(req, status);
+    httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
+
+#ifdef CONFIG_HTTPD_ERR_RESP_NO_DELAY
+    /* Use TCP_NODELAY option to force socket to send data in buffer
+     * This ensures that the error message is sent before the socket
+     * is closed */
+    struct httpd_req_aux *ra = req->aux;
+    int nodelay = 1;
+    if (setsockopt(ra->sd->fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) < 0) {
+        /* If failed to turn on TCP_NODELAY, throw warning and continue */
+        ESP_LOGW(TAG, LOG_FMT("error calling setsockopt : %d"), errno);
+        nodelay = 0;
+    }
+#endif
+
+    /* Send HTTP error message */
+    ret = httpd_resp_send(req, msg, strlen(msg));
+
+#ifdef CONFIG_HTTPD_ERR_RESP_NO_DELAY
+    /* If TCP_NODELAY was set successfully above, time to disable it */
+    if (nodelay == 1) {
+        nodelay = 0;
+        if (setsockopt(ra->sd->fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay)) < 0) {
+            /* If failed to turn off TCP_NODELAY, throw error and
+             * return failure to signal for socket closure */
+            ESP_LOGE(TAG, LOG_FMT("error calling setsockopt : %d"), errno);
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+#endif
+
+    return ret;
+}
+
+esp_err_t httpd_register_err_handler(httpd_handle_t handle,
+                                     httpd_err_code_t error,
+                                     httpd_err_handler_func_t err_handler_fn)
+{
+    if (handle == NULL || error >= HTTPD_ERR_CODE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    struct httpd_data *hd = (struct httpd_data *) handle;
+    hd->err_handler_fns[error] = err_handler_fn;
+    return ESP_OK;
+}
+
+esp_err_t httpd_req_handle_err(httpd_req_t *req, httpd_err_code_t error)
+{
+    struct httpd_data *hd = (struct httpd_data *) req->handle;
+    esp_err_t ret;
+
+    /* Invoke custom error handler if configured */
+    if (hd->err_handler_fns[error]) {
+        ret = hd->err_handler_fns[error](req, error);
+
+        /* If error code is 500, force return failure
+         * irrespective of the handler's return value */
+        ret = (error == HTTPD_500_INTERNAL_SERVER_ERROR ? ESP_FAIL : ret);
+    } else {
+        /* If no handler is registered for this error default
+         * behavior is to send the HTTP error response and
+         * return failure for closure of underlying socket */
+        httpd_resp_send_err(req, error, NULL);
+        ret = ESP_FAIL;
+    }
+    return ret;
 }
 
 int httpd_req_recv(httpd_req_t *r, char *buf, size_t buf_len)

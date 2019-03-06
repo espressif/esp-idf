@@ -3,7 +3,7 @@ ESP-WROVER-KIT V2 Getting Started Guide (CMake)
 
 This user guide shows how to get started with ESP-WROVER-KIT V2 development board including description of its functionality and configuration options. For description of other versions of the ESP-WROVER-KIT check :doc:`../hw-reference/index`.
 
-If you like to start using this board right now, go directly to section :ref:`esp-wrover-kit-v2-start-development-cmake`.
+If you want to start using this board right now, go directly to Section :ref:`esp-wrover-kit-v2-start-development-cmake`.
 
 
 What You Need
@@ -70,7 +70,7 @@ Boot
 USB
     USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32 module.
 Power Select
-    Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in section :ref:`esp-wrover-kit-v2-setup-options-cmake`, jumper header JP7.
+    Power supply selection interface: the ESP-WROVER-KIT can be powered through the USB interface or the 5V Input interface. The user can select the power supply with a jumper. More details can be found in Section :ref:`esp-wrover-kit-v2-setup-options-cmake`, jumper header JP7.
 Power Key
     Power on/off button: toggling to the right powers the board on; toggling to the left powers the board off.
 5V Input
@@ -85,7 +85,7 @@ I/O
     All the pins on the ESP32 module are led out to the pin headers on the ESPWROVER-KIT. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
 Micro SD Card
-    Micro SD card slot for data storage: when ESP32 enters the download mode, GPIO2 cannot be held high. However, a pull-up resistor is required on GPIO2 to enable the Micro SD Card. By default, GPIO2 and the pull-up resistor R153 are disconnected. To enable the SD Card, use jumpers on JP1 as shown in section :ref:`esp-wrover-kit-v2-setup-options-cmake`.
+    Micro SD card slot for data storage: when ESP32 enters the download mode, GPIO2 cannot be held high. However, a pull-up resistor is required on GPIO2 to enable the Micro SD Card. By default, GPIO2 and the pull-up resistor R153 are disconnected. To enable the SD Card, use jumpers on JP1 as shown in Section :ref:`esp-wrover-kit-v2-setup-options-cmake`.
 LCD
     ESP-WROVER-KIT supports mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`esp-wrover-kit-v2-board-back-cmake`.
 
@@ -161,13 +161,7 @@ Do not install any other jumpers.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-To start development of applications for ESP32-DevKitC, proceed to section :doc:`index`, that will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain-cmake` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect-cmake` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-cmake` for an example application
-* :ref:`get-started-flash-cmake` to run code on the ESP32
-* :ref:`get-started-build-monitor-cmake` instantly what the application is doing
+To start development of applications, proceed to Section :doc:`index`, that will walk you through the :ref:`get-started-step-by-step-cmake`.
 
 
 Related Documents

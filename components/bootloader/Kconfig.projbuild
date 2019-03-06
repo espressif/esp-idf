@@ -173,6 +173,51 @@ menu "Bootloader config"
             If the app is working, then it is marked as valid. Otherwise, it is marked as not valid and rolls back to
             the previous working app. A reboot is performed, and the app is booted before the software update.
             Note: If during the first boot a new app the power goes out or the WDT works, then roll back will happen.
+            Rollback is possible only between the apps with the same security versions.
+
+    config APP_ANTI_ROLLBACK
+        bool "Enable app anti-rollback support"
+        depends on APP_ROLLBACK_ENABLE
+        default n
+        help
+            This option prevents rollback to previous firmware/application image with lower security version.
+
+    config APP_SECURE_VERSION
+        int "eFuse secure version of app"
+        depends on APP_ANTI_ROLLBACK
+        default 0
+        help
+            The secure version is the sequence number stored in the header of each firmware.
+            The security version is set in the bootloader, version is recorded in the eFuse field
+            as the number of set ones. The allocated number of bits in the efuse field
+            for storing the security version is limited (see APP_SECURE_VERSION_SIZE_EFUSE_FIELD option).
+
+            Bootloader: When bootloader selects an app to boot, an app is selected that has
+            a security version greater or equal that recorded in eFuse field.
+            The app is booted with a higher (or equal) secure version.
+
+            The security version is worth increasing if in previous versions there is
+            a significant vulnerability and their use is not acceptable.
+
+            Your partition table should has a scheme with ota_0 + ota_1 (without factory).
+
+    config APP_SECURE_VERSION_SIZE_EFUSE_FIELD
+        int "Size of the efuse secure version field"
+        depends on APP_ANTI_ROLLBACK
+        range 1 32
+        default 32
+        help
+            The size of the efuse secure version field. Its length is limited to 32 bits.
+            This determines how many times the security version can be increased.
+
+    config EFUSE_SECURE_VERSION_EMULATE
+        bool "Emulate operations with efuse secure version(only test)"
+        default n
+        depends on APP_ANTI_ROLLBACK
+        help
+            This option allow emulate read/write operations with efuse secure version.
+            It allow to test anti-rollback implemention without permanent write eFuse bits.
+            In partition table should be exist this partition `emul_efuse, data, 5, , 0x2000`.
 
 endmenu  # Bootloader
 
