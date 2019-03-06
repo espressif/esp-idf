@@ -97,7 +97,7 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
                 s_wifi_mac_time_update_cb(diff);
             }
             s_common_clock_disable_time = 0;
-            ESP_LOGD(TAG, "wifi mac time delta: %u", diff);
+
         }
     }
 }

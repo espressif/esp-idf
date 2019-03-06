@@ -103,7 +103,7 @@ static httpd_uri_t* httpd_find_uri_handler(struct httpd_data *hd,
         if (!hd->hd_calls[i]) {
             break;
         }
-        ESP_LOGD(TAG, LOG_FMT("[%d] = %s"), i, hd->hd_calls[i]->uri);
+        // ESP_LOGD(TAG, LOG_FMT("[%d] = %s"), i, hd->hd_calls[i]->uri);
 
         /* Check if custom URI matching function is set,
          * else use simple string compare */
@@ -172,10 +172,10 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             hd->hd_calls[i]->method   = uri_handler->method;
             hd->hd_calls[i]->handler  = uri_handler->handler;
             hd->hd_calls[i]->user_ctx = uri_handler->user_ctx;
-            ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
+            // ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
             return ESP_OK;
         }
-        ESP_LOGD(TAG, LOG_FMT("[%d] exists %s"), i, hd->hd_calls[i]->uri);
+        // ESP_LOGD(TAG, LOG_FMT("[%d] exists %s"), i, hd->hd_calls[i]->uri);
     }
     ESP_LOGW(TAG, LOG_FMT("no slots left for registering handler"));
     return ESP_ERR_HTTPD_HANDLERS_FULL;
