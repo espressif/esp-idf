@@ -27,31 +27,6 @@
 extern "C" {
 #endif
 
-/*
-note: esp_https_server.h includes a customized copy of this
-initializer that should be kept in sync
-*/
-#define HTTPD_DEFAULT_CONFIG() {                        \
-        .task_priority      = tskIDLE_PRIORITY+5,       \
-        .stack_size         = 4096,                     \
-        .server_port        = 80,                       \
-        .ctrl_port          = 32768,                    \
-        .max_open_sockets   = 7,                        \
-        .max_uri_handlers   = 8,                        \
-        .max_resp_headers   = 8,                        \
-        .backlog_conn       = 5,                        \
-        .lru_purge_enable   = false,                    \
-        .recv_wait_timeout  = 5,                        \
-        .send_wait_timeout  = 5,                        \
-        .global_user_ctx = NULL,                        \
-        .global_user_ctx_free_fn = NULL,                \
-        .global_transport_ctx = NULL,                   \
-        .global_transport_ctx_free_fn = NULL,           \
-        .open_fn = NULL,                                \
-        .close_fn = NULL,                               \
-        .uri_match_fn = NULL                            \
-}
-
 #define ESP_ERR_HTTPD_BASE              (0x8000)                    /*!< Starting number of HTTPD error codes */
 #define ESP_ERR_HTTPD_HANDLERS_FULL     (ESP_ERR_HTTPD_BASE +  1)   /*!< All slots for registering URI handlers have been consumed */
 #define ESP_ERR_HTTPD_HANDLER_EXISTS    (ESP_ERR_HTTPD_BASE +  2)   /*!< URI handler with same method and target URI already registered */
@@ -234,6 +209,34 @@ typedef struct httpd_config {
      */
     httpd_uri_match_func_t uri_match_fn;
 } httpd_config_t;
+
+/**
+ * @brief   Default HTTP Server Configuration Structure
+ *
+ */
+static inline httpd_config_t HTTPD_DEFAULT_CONFIG()
+{
+    httpd_config_t config;
+    config.task_priority        = tskIDLE_PRIORITY+5;
+    config.stack_size           = 4096;      
+    config.server_port          = 80;                  
+    config.ctrl_port            = 32768;
+    config.max_open_sockets     = 7;
+    config.max_uri_handlers     = 8;
+    config.max_resp_headers     = 8;
+    config.backlog_conn         = 5;
+    config.lru_purge_enable     = false;
+    config.recv_wait_timeout    = 5;
+    config.send_wait_timeout    = 5;
+    config.global_user_ctx      = NULL;
+    config.global_user_ctx_free_fn = NULL;
+    config.global_transport_ctx = NULL;
+    config.global_transport_ctx_free_fn = NULL;
+    config.open_fn              = NULL;
+    config.close_fn             = NULL;
+    config.uri_match_fn         = NULL;
+    return config;
+}
 
 /**
  * @brief Starts the web server
