@@ -42,6 +42,7 @@
 #include "esp_app_trace.h"
 #include "esp_system_internal.h"
 #include "sdkconfig.h"
+#include "esp_ota_ops.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -473,7 +474,7 @@ static void doBacktrace(XtExcFrame *frame)
             break;
         }
     }
-    panicPutStr("\r\n\r\n");
+    panicPutStr("\r\n");
 }
 
 /*
@@ -541,9 +542,16 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
 
     }
 
+    panicPutStr("\r\nELF file SHA256: ");
+    char sha256_buf[65];
+    esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
+    panicPutStr(sha256_buf);
+    panicPutStr("\r\n");
+
     /* With windowed ABI backtracing is easy, let's do it. */
     doBacktrace(frame);
 
+    panicPutStr("\r\n");
 }
 
 /*

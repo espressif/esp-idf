@@ -1,10 +1,16 @@
-/* pcap encoder.
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #pragma once
 
 #ifdef __cplusplus
@@ -12,6 +18,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include "esp_err.h"
 
 #define PCAP_MAGIC_BIG_ENDIAN 0xA1B2C3D4    /*!< Big-Endian */
 #define PCAP_MAGIC_LITTLE_ENDIAN 0xD4C3B2A1 /*!< Little-Endian */
@@ -20,8 +27,6 @@ extern "C" {
 #define PCAP_VERSION_MINOR 0x04 /*!< Minor Version */
 
 #define PCAP_TIME_ZONE_GMT 0x00 /*!< Time Zone */
-
-#define PCAP_FILE_NAME_MAX_LEN 32 /*!< Max Name Length of Pcap File */
 
 /**
 * @brief Link layer Type Definition, used for Pcap reader to decode payload
@@ -55,30 +60,45 @@ typedef struct {
 } pcap_config_t;
 
 /**
- * @brief Create a pcap object
+ * @brief Pcap Handle Type Definition
+ *
+ */
+typedef void *pcap_handle_t;
+
+/**
+ * @brief Initialize a pcap session
  *
  * @param config configuration of creating pcap object
- * @return esp_err_t ESP_OK on success, ESP_FAIL on IO error
+ * @param handle pcap handle
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
  */
-esp_err_t pcap_new(pcap_config_t *config);
+esp_err_t pcap_init(pcap_config_t *config, pcap_handle_t *handle);
 
 /**
- * @brief Close pcap file and recyle related resources
+ * @brief De-initialize a pcap session
  *
- * @return esp_err_t ESP_OK on success, ESP_FAIL on error
+ * @param handle pcap handle
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
  */
-esp_err_t pcap_close(void);
+esp_err_t pcap_deinit(pcap_handle_t handle);
 
 /**
- * @brief Capture one packet into file in pcap format
+ * @brief Capture one packet into pcap file
  *
- * @param payload pointer to the captured data
+ * @param handle pcap handle
+ * @param payload pointer of the captured data
  * @param length length of captured data
  * @param seconds second of capture time
  * @param microseconds microsecond of capture time
- * @return esp_err_t ESP_OK on success, ESP_FAIL on IO error
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
  */
-esp_err_t pcap_capture_packet(void *payload, uint32_t length, uint32_t seconds, uint32_t microseconds);
+esp_err_t pcap_capture_packet(pcap_handle_t handle, void *payload, uint32_t length, uint32_t seconds, uint32_t microseconds);
 
 #ifdef __cplusplus
 }

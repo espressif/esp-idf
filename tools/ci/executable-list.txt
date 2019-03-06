@@ -5,6 +5,8 @@ components/espcoredump/espcoredump.py
 components/heap/test_multi_heap_host/test_all_configs.sh
 components/idf_test/unit_test/TestCaseScript/IDFUnitTest/__init__.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
+components/efuse/efuse_table_gen.py
+components/efuse/test_efuse_host/efuse_tests.py
 components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py
 components/app_update/gen_empty_partition.py

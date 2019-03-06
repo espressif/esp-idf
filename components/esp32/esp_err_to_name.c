@@ -7,6 +7,9 @@
 #if __has_include("esp32/ulp.h")
 #include "esp32/ulp.h"
 #endif
+#if __has_include("esp_efuse.h")
+#include "esp_efuse.h"
+#endif
 #if __has_include("esp_err.h")
 #include "esp_err.h"
 #endif
@@ -224,6 +227,39 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_OTA_VALIDATE_FAILED
     ERR_TBL_IT(ESP_ERR_OTA_VALIDATE_FAILED),                /*  5379 0x1503 Error if OTA app image is invalid */
+#   endif
+#   ifdef      ESP_ERR_OTA_SMALL_SEC_VER
+    ERR_TBL_IT(ESP_ERR_OTA_SMALL_SEC_VER),                  /*  5380 0x1504 Error if the firmware has a secure version
+                                                                            less than the running firmware. */
+#   endif
+#   ifdef      ESP_ERR_OTA_ROLLBACK_FAILED
+    ERR_TBL_IT(ESP_ERR_OTA_ROLLBACK_FAILED),                /*  5381 0x1505 Error if flash does not have valid firmware
+                                                                            in passive partition and hence rollback is
+                                                                            not possible */
+#   endif
+#   ifdef      ESP_ERR_OTA_ROLLBACK_INVALID_STATE
+    ERR_TBL_IT(ESP_ERR_OTA_ROLLBACK_INVALID_STATE),         /*  5382 0x1506 Error if current active firmware is still
+                                                                            marked in pending validation state
+                                                                            (ESP_OTA_IMG_PENDING_VERIFY), essentially
+                                                                            first boot of firmware image post upgrade
+                                                                            and hence firmware upgrade is not possible */
+#   endif
+    // components/efuse/include/esp_efuse.h
+#   ifdef      ESP_ERR_EFUSE
+    ERR_TBL_IT(ESP_ERR_EFUSE),                              /*  5632 0x1600 Base error code for efuse api. */
+#   endif
+#   ifdef      ESP_OK_EFUSE_CNT
+    ERR_TBL_IT(ESP_OK_EFUSE_CNT),                           /*  5633 0x1601 OK the required number of bits is set. */
+#   endif
+#   ifdef      ESP_ERR_EFUSE_CNT_IS_FULL
+    ERR_TBL_IT(ESP_ERR_EFUSE_CNT_IS_FULL),                  /*  5634 0x1602 Error field is full. */
+#   endif
+#   ifdef      ESP_ERR_EFUSE_REPEATED_PROG
+    ERR_TBL_IT(ESP_ERR_EFUSE_REPEATED_PROG),                /*  5635 0x1603 Error repeated programming of programmed
+                                                                            bits is strictly forbidden. */
+#   endif
+#   ifdef      ESP_ERR_CODING
+    ERR_TBL_IT(ESP_ERR_CODING),                             /*  5636 0x1604 Error while a encoding operation. */
 #   endif
     // components/bootloader_support/include/esp_image_format.h
 #   ifdef      ESP_ERR_IMAGE_BASE

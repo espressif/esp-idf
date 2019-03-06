@@ -14,12 +14,12 @@ else()
                    "cache_sram_mmu.c"
                    "clk.c"
                    "coexist.c"
-                   "core_dump.c"
                    "cpu_start.c"
                    "crosscore_int.c"
                    "dbg_stubs.c"
                    "dport_access.c"
                    "dport_panic_highint_hdl.S"
+                   "esp_adapter.c"
                    "esp_err_to_name.c"
                    "esp_timer.c"
                    "esp_timer_esp32.c"
@@ -49,12 +49,11 @@ else()
                    "system_api.c"
                    "task_wdt.c"
                    "wifi_init.c"
-                   "wifi_os_adapter.c"
                    "hwcrypto/aes.c"
                    "hwcrypto/sha.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-    set(COMPONENT_REQUIRES driver tcpip_adapter esp_event)
+    set(COMPONENT_REQUIRES driver tcpip_adapter esp_event efuse)
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # tcpip_adapter is a public requirement because esp_event.h uses tcpip_adapter types
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
@@ -97,7 +96,10 @@ else()
         )
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        add_compile_options(-mfix-esp32-psram-cache-issue)
+        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all components that depend on esp32.
+        #
+        # To handle some corner cases, the same flag is set in project_include.cmake
+        target_compile_options(${COMPONENT_TARGET} PUBLIC -mfix-esp32-psram-cache-issue)
     else()
         target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.spiram_incompatible_fns.ld")
     endif()

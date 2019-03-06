@@ -15,6 +15,8 @@ When updating ESP-IDF version, it is not uncommon to find that new Kconfig optio
 
 In some cases, such as when ``sdkconfig`` file is under revision control, the fact that ``sdkconfig`` file gets changed by the build system may be inconvenient. The build system offers a way to avoid this, in the form of ``sdkconfig.defaults`` file. This file is never touched by the build system, and must be created manually. It can contain all the options which matter for the given application. The format is the same as that of the ``sdkconfig`` file. Once ``sdkconfig.defaults`` is created, ``sdkconfig`` can be deleted and added to the ignore list of the revision control system (e.g. ``.gitignore`` file for git). Project build targets will automatically create ``sdkconfig`` file, populated with the settings from ``sdkconfig.defaults`` file, and the rest of the settings will be set to their default values. Note that when ``make defconfig`` is used, settings in sdkconfig will be overriden by the ones in ``sdkconfig.defaults``. For more information, see :ref:`custom-sdkconfig-defaults`.
 
+.. _configuration-options-reference:
+
 Configuration Options Reference
 ===============================
 

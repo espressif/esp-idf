@@ -367,7 +367,7 @@ def put_hello(dut, port):
 
 def post_hello(dut, port):
     # POST /hello returns 405'
-    Utility.console_log("[test] POST /hello returns 404 =>", end=' ')
+    Utility.console_log("[test] POST /hello returns 405 =>", end=' ')
     conn = http.client.HTTPConnection(dut, int(port), timeout=15)
     conn.request("POST", "/hello", "Hello")
     resp = conn.getresponse()
@@ -541,8 +541,10 @@ def leftover_data_test(dut, port):
     if not test_val("False URI Status", str(404), str(resp.status)):
         s.close()
         return False
-    resp.read()
+    # socket would have been closed by server due to error
+    s.close()
 
+    s = http.client.HTTPConnection(dut + ":" + port, timeout=15)
     s.request("GET", url='/hello')
     resp = s.getresponse()
     if not test_val("Hello World Data", "Hello World!", resp.read().decode()):
@@ -637,7 +639,7 @@ def code_500_server_error_test(dut, port):
     Utility.console_log("[test] 500 Server Error test =>", end=' ')
     s = Session(dut, port)
     # Sending a very large content length will cause malloc to fail
-    content_len = 2**31
+    content_len = 2**30
     s.client.sendall(("POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: " + str(content_len) + "\r\n\r\nABCD").encode())
     s.read_resp_hdrs()
     s.read_resp_data()
@@ -802,7 +804,7 @@ def send_postx_hdr_len(dut, port, length):
     hdr = s.read_resp_hdrs()
     resp = s.read_resp_data()
     s.close()
-    if "Custom" in hdr:
+    if hdr and ("Custom" in hdr):
         return (hdr["Custom"] == custom_hdr_val), resp
     return False, s.status
 
@@ -826,7 +828,7 @@ def test_upgrade_not_supported(dut, port):
     s.client.sendall(("OPTIONS * HTTP/1.1\r\nHost:" + dut + "\r\nUpgrade: TLS/1.0\r\nConnection: Upgrade\r\n\r\n").encode())
     s.read_resp_hdrs()
     s.read_resp_data()
-    if not test_val("Client Error", "200", s.status):
+    if not test_val("Client Error", "400", s.status):
         s.close()
         return False
     s.close()

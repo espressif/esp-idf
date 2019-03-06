@@ -432,6 +432,16 @@ TEST_SPI_LOCAL(MODE, mode_pgroup)
 
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
+ *
+ *  Wiring:
+ * | Master | Slave |
+ * | ------ | ----- |
+ * | 12     | 19    |
+ * | 13     | 23    |
+ * | 14     | 18    |
+ * | 15     | 5     |
+ * | GND    | GND   |
+ *
  ********************************************************************************/
 static void test_master_init(void** context);
 static void test_master_deinit(void* context);

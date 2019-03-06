@@ -147,7 +147,7 @@ static void mdns_print_results(mdns_result_t * results){
         }
         a = r->addr;
         while(a){
-            if(a->addr.type == MDNS_IP_PROTOCOL_V6){
+            if(a->addr.type == IPADDR_TYPE_V6){
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));

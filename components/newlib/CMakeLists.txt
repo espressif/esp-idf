@@ -3,6 +3,7 @@ set(COMPONENT_SRCS "locks.c"
                    "random.c"
                    "reent_init.c"
                    "select.c"
+                   "poll.c"
                    "syscall_table.c"
                    "syscalls.c"
                    "termios.c"
@@ -13,6 +14,8 @@ set(COMPONENT_ADD_INCLUDEDIRS platform_include include)
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)
     set(LIBC c-psram-workaround)
     set(LIBM m-psram-workaround)
+
+    set(COMPONENT_ADD_LDFRAGMENTS esp32-spiram-rom-functions.lf)
 else()
 
     if(CONFIG_NEWLIB_NANO_FORMAT)

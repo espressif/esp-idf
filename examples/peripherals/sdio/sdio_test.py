@@ -29,7 +29,7 @@ except ImportError:
 import IDF
 
 
-@IDF.idf_example_test(env_tag="Example_SDIO")
+@IDF.idf_example_test(env_tag="Example_SDIO", ignore=True)
 def test_example_sdio_communication(env, extra_data):
     """
     Configurations

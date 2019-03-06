@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000001
+#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000002
 #define ESP_WIFI_OS_ADAPTER_MAGIC    0xDEADBEAF
 
 #define OSI_FUNCS_TIME_BLOCKING      0xffffffff
@@ -39,12 +39,9 @@ typedef struct {
     void (* _spin_lock_delete)(void *lock);
     uint32_t (*_wifi_int_disable)(void *wifi_int_mux);
     void (*_wifi_int_restore)(void *wifi_int_mux, uint32_t tmp);
-    void (*_task_yield)(void);
     void (*_task_yield_from_isr)(void);
     void *(*_semphr_create)(uint32_t max, uint32_t init);
     void (*_semphr_delete)(void *semphr);
-    int32_t (*_semphr_take_from_isr)(void *semphr, void *hptw);
-    int32_t (*_semphr_give_from_isr)(void *semphr, void *hptw);
     int32_t (*_semphr_take)(void *semphr, uint32_t block_time_tick);
     int32_t (*_semphr_give)(void *semphr);
     void *(*_mutex_create)(void);
@@ -59,7 +56,6 @@ typedef struct {
     int32_t (* _queue_send_to_back)(void *queue, void *item, uint32_t block_time_tick);
     int32_t (* _queue_send_to_front)(void *queue, void *item, uint32_t block_time_tick);
     int32_t (* _queue_recv)(void *queue, void *item, uint32_t block_time_tick);
-    int32_t (* _queue_recv_from_isr)(void *queue, void * const item, int32_t * const hptw);
     uint32_t (* _queue_msg_waiting)(void *queue);
     void *(* _event_group_create)(void);
     void (* _event_group_delete)(void *event);
@@ -73,19 +69,15 @@ typedef struct {
     int32_t (* _task_ms_to_tick)(uint32_t ms);
     void *(* _task_get_current_task)(void);
     int32_t (* _task_get_max_priority)(void);
-    int32_t (* _is_in_isr)(void);
     void *(* _malloc)(uint32_t size);
     void (* _free)(void *p);
     uint32_t (* _get_free_heap_size)(void);
     uint32_t (* _rand)(void);
     void (* _dport_access_stall_other_cpu_start_wrap)(void);
     void (* _dport_access_stall_other_cpu_end_wrap)(void);
-    int32_t (* _phy_rf_init)(const void * init_data, uint32_t mode, void * calibration_data, uint32_t module);
     int32_t (* _phy_rf_deinit)(uint32_t module);
     void (* _phy_load_cal_and_init)(uint32_t module);
     int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
-    void (* _timer_init)(void);
-    void (* _timer_deinit)(void);
     void (* _timer_arm)(void *timer, uint32_t tmout, bool repeat);
     void (* _timer_disarm)(void *timer);
     void (* _timer_done)(void *ptimer);
@@ -127,6 +119,9 @@ typedef struct {
     int32_t (* _modem_sleep_deregister)(uint32_t module);
     void (* _sc_ack_send)(void *param);
     void (* _sc_ack_send_stop)(void);
+    uint32_t (* _coex_status_get)(void);
+    int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
+    int32_t (* _coex_wifi_release)(uint32_t event);
     int32_t _magic;
 } wifi_osi_funcs_t;
 

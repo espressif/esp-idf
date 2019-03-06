@@ -301,6 +301,7 @@ static err_t _mdns_udp_pcb_write_api(struct tcpip_api_call_data *api_call_msg)
     mdns_pcb_t * _pcb = &_mdns_server->interfaces[msg->tcpip_if].pcbs[msg->ip_protocol];
     esp_err_t err = tcpip_adapter_get_netif(msg->tcpip_if, &nif);
     if (err) {
+        pbuf_free(msg->pbt);
         msg->err = err;
         return err;
     }

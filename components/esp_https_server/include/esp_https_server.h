@@ -95,6 +95,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .global_transport_ctx_free_fn = NULL,     \
         .open_fn = NULL,                          \
         .close_fn = NULL,                         \
+        .uri_match_fn = NULL                      \
     },                                            \
     .cacert_pem = NULL,                           \
     .cacert_len = 0,                              \

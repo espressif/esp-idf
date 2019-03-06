@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-
+#include "unity.h"
 
 // task crash indicators
 #define TCI_NULL_PTR    0x1
@@ -96,7 +96,7 @@ void failed_assert_task(void *pvParameter)
     fflush(stdout);
 }
 
-void app_main()
+TEST_CASE("verify coredump functionality", "[coredump][ignore]")
 {
     nvs_flash_init();
     xTaskCreate(&bad_ptr_task, "bad_ptr_task", 2048, NULL, 5, NULL);

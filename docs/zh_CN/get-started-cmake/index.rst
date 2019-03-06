@@ -52,6 +52,10 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 4. 通过 USB/串口，监视/调试**应用程序**输出 
 
 
+.. The label below is placeholder to link a new section "Installation Step by Step"
+
+.. _get-started-step-by-step-cmake:
+
 开发板指南
 ========================
 

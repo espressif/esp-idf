@@ -62,7 +62,7 @@ struct protocomm {
     int (*remove_endpoint)(const char *ep_name);
 
     /* Pointer to security layer instance to be used internally for
-     * establising secure sessions */
+     * establishing secure sessions */
     const protocomm_security_t *sec;
 
     /* Pointer to proof of possession object */

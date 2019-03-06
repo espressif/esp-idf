@@ -8,24 +8,14 @@
 */
 
 #include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/queue.h"
-
-#include "driver/gpio.h"
-#include "driver/adc.h"
-#include "esp_log.h"
 #include "esp_app_trace.h"
-
-#include "soc/rtc_io_reg.h"
+#include "esp_log.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
-#include "soc/rtc.h"
-
+#include "driver/adc.h"
 #include "driver/dac.h"
-
 
 #define ADC1_TEST_CHANNEL (ADC1_CHANNEL_6)
 #define TEST_SAMPLING_PERIOD 20
@@ -49,7 +39,6 @@
 
 static const char *TAG = "example";
 
-
 /*
  * Enable cosine waveform generator (CW)
  * on channel 1 / GPIO25 to provide sinusoidal signal
@@ -57,7 +46,7 @@ static const char *TAG = "example";
  * of speed of logging to the host
  * sequentially with data retrieval from ADC
  */
-void enable_cosine_generator(void)
+static void enable_cosine_generator(void)
 {
     // Enable tone generator common to both DAC channels 1 and 2
     SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_SW_TONE_EN);
@@ -75,30 +64,28 @@ void enable_cosine_generator(void)
     dac_output_enable(DAC_CHANNEL_1);
 }
 
-
 /*
  * Sample data an ADC1 channel 6 / GPIO34
  * over specific 'sampling_period' in milliseconds.
  * Print out sampling result using standard ESP_LOGI() function.
  * Return the number of samples collected.
  */
-int adc1_sample_and_show(int sampling_period)
+static int adc1_sample_and_show(int sampling_period)
 {
     int i = 0;
-    uint32_t sampling_start =  esp_log_timestamp();
+    uint32_t sampling_start = esp_log_timestamp();
     do {
         ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
     } while (esp_log_timestamp() - sampling_start < sampling_period);
     return i;
 }
 
-
 /*
  * Main program loop that is sampling data on ADC
  * and logging results with application tracing to the host
  * as well as for comparison printing out sampling result to UART
  */
-void test_task(void *arg)
+void app_main()
 {
     ESP_LOGI(TAG, "Enabling ADC1 on channel 6 / GPIO34.");
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -108,9 +95,8 @@ void test_task(void *arg)
     enable_cosine_generator();
 
     while (1) {
-
         /*
-         * Test of Logging with the Application Trace
+         * Logging with the Application Trace
          */
         ESP_LOGI(TAG, "Sampling ADC and sending data to the host...");
         // Route LOGx() to the host
@@ -123,7 +109,7 @@ void test_task(void *arg)
         ESP_LOGI(TAG, "Collected %d samples in %d ms.\n", samples_collected, TEST_SAMPLING_PERIOD);
 
         /*
-         * Test of Logging to UART
+         * Logging to UART
          */
         ESP_LOGI(TAG, "Sampling ADC and sending data to the UART...");
         samples_collected = adc1_sample_and_show(TEST_SAMPLING_PERIOD);
@@ -133,8 +119,3 @@ void test_task(void *arg)
     }
 }
 
-
-void app_main()
-{
-    xTaskCreate(test_task, "test_task", 1024 * 3, NULL, 10, NULL);
-}
