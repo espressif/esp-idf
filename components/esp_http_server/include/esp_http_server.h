@@ -49,7 +49,8 @@ initializer that should be kept in sync
         .global_transport_ctx_free_fn = NULL,           \
         .open_fn = NULL,                                \
         .close_fn = NULL,                               \
-        .uri_match_fn = NULL                            \
+        .uri_match_fn = NULL,                           \
+        .coreID = tskNO_AFFINITY                        \
 }
 
 #define ESP_ERR_HTTPD_BASE              (0x8000)                    /*!< Starting number of HTTPD error codes */
@@ -139,6 +140,7 @@ typedef bool (*httpd_uri_match_func_t)(const char *reference_uri,
 typedef struct httpd_config {
     unsigned    task_priority;      /*!< Priority of FreeRTOS task which runs the server */
     size_t      stack_size;         /*!< The maximum stack size allowed for the server task */
+    BaseType_t  coreID;             /*!< The core that the server task is pinned to */
 
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
