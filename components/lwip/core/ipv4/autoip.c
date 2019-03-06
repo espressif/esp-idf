@@ -383,6 +383,7 @@ autoip_stop(struct netif *netif)
     if (ip4_addr_islinklocal(netif_ip4_addr(netif))) {
       netif_set_addr(netif, IP4_ADDR_ANY, IP4_ADDR_ANY, IP4_ADDR_ANY);
     }
+    mem_free(netif->autoip);
   }
   return ERR_OK;
 }
