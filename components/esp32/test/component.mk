@@ -16,6 +16,9 @@ CFLAGS+=-DWIFI_OS_ADAPTER_MD5=$(WIFI_OS_ADAPTER_MD5_VAL)
 WIFI_CRYPTO_MD5_VAL=\"$(shell md5sum $(IDF_PATH)/components/esp32/include/esp_wifi_crypto_types.h | cut -c 1-7)\"
 CFLAGS+=-DWIFI_CRYPTO_MD5=$(WIFI_CRYPTO_MD5_VAL)
 
+# Calculate MD5 value of header file esp_coexist_adapter.h
+COEX_ADAPTER_MD5_VAL=\"$(shell md5sum $(IDF_PATH)/components/esp32/include/esp_coexist_adapter.h | cut -c 1-7)\"
+CFLAGS+=-DCOEX_ADAPTER_MD5=$(COEX_ADAPTER_MD5_VAL)
 
 test_tjpgd.o: test_tjpgd_logo.h
 

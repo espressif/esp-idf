@@ -40,6 +40,8 @@
 #include "bootloader_common.h"
 #include "sys/param.h"
 #include "esp_system.h"
+#include "esp_efuse.h"
+
 
 #define SUB_TYPE_ID(i) (i & 0x0F) 
 
@@ -144,9 +146,20 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (partition == esp_ota_get_running_partition()) {
+    const esp_partition_t* running_partition = esp_ota_get_running_partition();
+    if (partition == running_partition) {
         return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
+
+#ifdef CONFIG_APP_ROLLBACK_ENABLE
+    esp_ota_img_states_t ota_state_running_part;
+    if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
+        if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
+            ESP_LOGE(TAG, "Running app has not confirmed state (ESP_OTA_IMG_PENDING_VERIFY)");
+            return ESP_ERR_OTA_ROLLBACK_INVALID_STATE;
+        }
+    }
+#endif
 
     // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
     if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
@@ -388,6 +401,22 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
                 return ESP_ERR_NOT_FOUND;
             }
         } else {
+#ifdef CONFIG_APP_ANTI_ROLLBACK
+            esp_app_desc_t partition_app_desc;
+            esp_err_t err = esp_ota_get_partition_description(partition, &partition_app_desc);
+            if (err != ESP_OK) {
+                return err;
+            }
+
+            if (esp_efuse_check_secure_version(partition_app_desc.secure_version) == false) {
+                ESP_LOGE(TAG, "This a new partition can not be booted due to a secure version is lower than stored in efuse. Partition will be erased.");
+                esp_err_t err = esp_partition_erase_range(partition, 0, partition->size);
+                if (err != ESP_OK) {
+                    return err;
+                }
+                return ESP_ERR_OTA_SMALL_SEC_VER;
+            }
+#endif
             return esp_rewrite_ota_data(partition->subtype);
         }
     } else {
@@ -560,6 +589,69 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
     return ESP_OK;
 }
 
+#ifdef CONFIG_APP_ANTI_ROLLBACK
+static esp_err_t esp_ota_set_anti_rollback(void) {
+    const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+    return esp_efuse_update_secure_version(app_desc->secure_version);
+}
+#endif
+
+// Checks applications on the slots which can be booted in case of rollback.
+// Returns true if the slots have at least one app (except the running app).
+bool esp_ota_check_rollback_is_possible(void)
+{
+    esp_ota_select_entry_t otadata[2];
+    if (read_otadata(otadata) == NULL) {
+        return false;
+    }
+
+    int ota_app_count = get_ota_partition_count();
+    if (ota_app_count == 0) {
+        return false;
+    }
+
+    bool valid_otadata[2];
+    valid_otadata[0] = bootloader_common_ota_select_valid(&otadata[0]);
+    valid_otadata[1] = bootloader_common_ota_select_valid(&otadata[1]);
+
+    int active_ota = bootloader_common_select_otadata(otadata, valid_otadata, true);
+    if (active_ota == -1) {
+        return false;
+    }
+    int last_active_ota = (~active_ota)&1;
+
+    const esp_partition_t *partition = NULL;
+#ifndef CONFIG_APP_ANTI_ROLLBACK
+    if (valid_otadata[last_active_ota] == false) {
+        partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
+        if (partition != NULL) {
+            if(image_validate(partition, ESP_IMAGE_VERIFY_SILENT) == ESP_OK) {
+                return true;
+            }
+        }
+    }
+#endif
+
+    if (valid_otadata[last_active_ota] == true) {
+        int slot = (otadata[last_active_ota].ota_seq - 1) % ota_app_count;
+        partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_MIN + slot, NULL);
+        if (partition != NULL) {
+            if(image_validate(partition, ESP_IMAGE_VERIFY_SILENT) == ESP_OK) {
+#ifdef CONFIG_APP_ANTI_ROLLBACK
+                esp_app_desc_t app_desc;
+                if (esp_ota_get_partition_description(partition, &app_desc) == ESP_OK &&
+                    esp_efuse_check_secure_version(app_desc.secure_version) == true) {
+                    return true;
+                }
+#else
+                return true;
+#endif
+            }
+        }
+    }
+    return false;
+}
+
 // if valid == false - will done rollback with reboot. After reboot will boot previous OTA[x] or Factory partition.
 // if valid == true  - it confirm that current OTA[x] is workable. Reboot will not happen.
 static esp_err_t esp_ota_current_ota_is_workable(bool valid)
@@ -575,8 +667,18 @@ static esp_err_t esp_ota_current_ota_is_workable(bool valid)
         if (valid == true && otadata[active_otadata].ota_state != ESP_OTA_IMG_VALID) {
             otadata[active_otadata].ota_state = ESP_OTA_IMG_VALID;
             ESP_LOGD(TAG, "OTA[current] partition is marked as VALID");
-            return rewrite_ota_seq(otadata, otadata[active_otadata].ota_seq, active_otadata, otadata_partition);
+            esp_err_t err = rewrite_ota_seq(otadata, otadata[active_otadata].ota_seq, active_otadata, otadata_partition);
+#ifdef CONFIG_APP_ANTI_ROLLBACK
+            if (err == ESP_OK) {
+                return esp_ota_set_anti_rollback();
+            }
+#endif
+            return err;
         } else if (valid == false) {
+            if (esp_ota_check_rollback_is_possible() == false) {
+                ESP_LOGE(TAG, "Rollback is not possible, do not have any suitable apps in slots");
+                return ESP_ERR_OTA_ROLLBACK_FAILED;
+            }
             ESP_LOGD(TAG, "OTA[current] partition is marked as INVALID");
             otadata[active_otadata].ota_state = ESP_OTA_IMG_INVALID;
             esp_err_t err = rewrite_ota_seq(otadata, otadata[active_otadata].ota_seq, active_otadata, otadata_partition);
@@ -612,26 +714,11 @@ static bool check_invalid_otadata (const esp_ota_select_entry_t *s) {
 
 static int get_last_invalid_otadata(const esp_ota_select_entry_t *two_otadata)
 {
-    int num_invalid_otadata = -1;
 
     bool invalid_otadata[2];
     invalid_otadata[0] = check_invalid_otadata(&two_otadata[0]);
     invalid_otadata[1] = check_invalid_otadata(&two_otadata[1]);
-    if (invalid_otadata[0] == true && invalid_otadata[1] == true) {
-        if (MIN(two_otadata[0].ota_seq, two_otadata[1].ota_seq) == two_otadata[0].ota_seq) {
-            num_invalid_otadata = 0;
-        } else {
-            num_invalid_otadata = 1;
-        }
-    } else {
-        for (int i = 0; i < 2; ++i) {
-            if(invalid_otadata[i]) {
-                num_invalid_otadata = i;
-                break;
-            }
-        }
-    }
-
+    int num_invalid_otadata = bootloader_common_select_otadata(two_otadata, invalid_otadata, false);
     ESP_LOGD(TAG, "Invalid otadata[%d]", num_invalid_otadata);
     return num_invalid_otadata;
 }

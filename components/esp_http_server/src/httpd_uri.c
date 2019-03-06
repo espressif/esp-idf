@@ -93,7 +93,7 @@ bool httpd_uri_match_wildcard(const char *template, const char *uri, size_t len)
 static httpd_uri_t* httpd_find_uri_handler(struct httpd_data *hd,
                                            const char *uri, size_t uri_len,
                                            httpd_method_t method,
-                                           httpd_err_resp_t *err)
+                                           httpd_err_code_t *err)
 {
     if (err) {
         *err = HTTPD_404_NOT_FOUND;
@@ -279,7 +279,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
     struct http_parser_url *res = &hd->hd_req_aux.url_parse_res;
 
     /* For conveying URI not found/method not allowed */
-    httpd_err_resp_t err = 0;
+    httpd_err_code_t err = 0;
 
     ESP_LOGD(TAG, LOG_FMT("request for %s with type %d"), req->uri, req->method);
 
@@ -294,11 +294,11 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         switch (err) {
             case HTTPD_404_NOT_FOUND:
                 ESP_LOGW(TAG, LOG_FMT("URI '%s' not found"), req->uri);
-                return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND);
+                return httpd_req_handle_err(req, HTTPD_404_NOT_FOUND);
             case HTTPD_405_METHOD_NOT_ALLOWED:
                 ESP_LOGW(TAG, LOG_FMT("Method '%d' not allowed for URI '%s'"),
                          req->method, req->uri);
-                return httpd_resp_send_err(req, HTTPD_405_METHOD_NOT_ALLOWED);
+                return httpd_req_handle_err(req, HTTPD_405_METHOD_NOT_ALLOWED);
             default:
                 return ESP_FAIL;
         }

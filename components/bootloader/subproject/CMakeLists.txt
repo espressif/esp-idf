@@ -10,7 +10,7 @@ if(NOT IDF_PATH)
         "in by the parent build process.")
 endif()
 
-set(COMPONENTS bootloader esptool_py esp32 partition_table soc bootloader_support log spi_flash micro-ecc soc main)
+set(COMPONENTS bootloader esptool_py esp32 partition_table soc bootloader_support log spi_flash micro-ecc soc main efuse)
 set(BOOTLOADER_BUILD 1)
 add_definitions(-DBOOTLOADER_BUILD=1)
 

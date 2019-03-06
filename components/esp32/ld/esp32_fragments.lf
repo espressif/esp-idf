@@ -44,6 +44,10 @@ entries:
 entries:
     .dram1+
 
+[sections:wifi_iram]
+entries:
+    .wifi0iram+
+
 [scheme:default]
 entries:
     text -> flash_text
@@ -57,6 +61,7 @@ entries:
     rtc_data -> rtc_data
     rtc_rodata -> rtc_data
     rtc_bss -> rtc_bss
+    wifi_iram -> flash_text
 
 [scheme:rtc]
 entries:
@@ -78,3 +83,7 @@ entries:
 [scheme:noflash_text]
 entries:
     text -> iram0_text
+
+[scheme:wifi_iram]
+entries:
+    wifi_iram -> iram0_text

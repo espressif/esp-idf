@@ -6,8 +6,8 @@ API 指南
    :maxdepth: 1
 
    一般注意事项 <general-notes>
-   编译系统 <build-system>
-   编译系统 (CMake) <build-system-cmake>
+   构建系统 <build-system>
+   构建系统 (CMake) <build-system-cmake>
    错误处理 <error-handling>
    Fatal Errors <fatal-errors>
    Deep Sleep Wake Stubs <deep-sleep-stub>
@@ -32,4 +32,4 @@ API 指南
    ESP-MESH <mesh>
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
-   Linker Script Generation <linker-script-generation>
+   链接脚本生成机制 <linker-script-generation>

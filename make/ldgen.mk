@@ -36,7 +36,7 @@ define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen.section_infos: $(LDGEN_SECTIONS_INFO_FILES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach info,$(LDGEN_SECTIONS_INFO_FILES),$(info)\n)" > $(BUILD_DIR_BASE)/ldgen.section_infos
 
-$(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen.section_infos
+$(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen.section_infos 
 	@echo 'Generating $(notdir $(2))'
 	$(PYTHON) $(IDF_PATH)/tools/ldgen/ldgen.py \
 		--input         $(1) \

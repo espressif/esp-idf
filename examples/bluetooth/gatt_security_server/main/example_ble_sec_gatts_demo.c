@@ -333,11 +333,11 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         break;
     case ESP_GAP_BLE_SEC_REQ_EVT:
         /* send the positive(true) security response to the peer device to accept the security request.
-        If not accept the security request, should sent the security response with negative(false) accept value*/
+        If not accept the security request, should send the security response with negative(false) accept value*/
         esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
         break;
     case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:  ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
-        ///show the passkey number to the user to input it in the peer deivce.
+        ///show the passkey number to the user to input it in the peer device.
         ESP_LOGI(GATTS_TABLE_TAG, "The passkey Notify number:%06d", param->ble_security.key_notif.passkey);
         break;
     case ESP_GAP_BLE_KEY_EVT:
@@ -567,10 +567,10 @@ void app_main()
     esp_ble_gap_set_security_param(ESP_BLE_SM_MAX_KEY_SIZE, &key_size, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH, &auth_option, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_OOB_SUPPORT, &oob_support, sizeof(uint8_t));
-    /* If your BLE device act as a Slave, the init_key means you hope which types of key of the master should distribut to you,
-    and the response key means which key you can distribut to the Master;
-    If your BLE device act as a master, the response key means you hope which types of key of the slave should distribut to you,
-    and the init key means which key you can distribut to the slave. */
+    /* If your BLE device acts as a Slave, the init_key means you hope which types of key of the master should distribute to you,
+    and the response key means which key you can distribute to the master;
+    If your BLE device acts as a master, the response key means you hope which types of key of the slave should distribute to you,
+    and the init key means which key you can distribute to the slave. */
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_INIT_KEY, &init_key, sizeof(uint8_t));
     esp_ble_gap_set_security_param(ESP_BLE_SM_SET_RSP_KEY, &rsp_key, sizeof(uint8_t));
 

@@ -72,6 +72,7 @@ typedef struct {
 #define PART_SUBTYPE_DATA_RF  0x01
 #define PART_SUBTYPE_DATA_WIFI 0x02
 #define PART_SUBTYPE_DATA_NVS_KEYS 0x04
+#define PART_SUBTYPE_DATA_EFUSE_EM 0x05
 
 #define PART_TYPE_END 0xff
 #define PART_SUBTYPE_END 0xff
