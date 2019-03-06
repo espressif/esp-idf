@@ -32,7 +32,7 @@ Using these symbols is done by creating an assembly file (suffix .S) and definin
         rfi     5
 
 
-For a real-life example, see the components/esp32/panic_highint_hdl.S file; the panic handler iunterrupt is implemented there.
+For a real-life example, see the :component_file:`esp32/dport_panic_highint_hdl.S` file; the panic handler interrupt is implemented there.
 
 Notes
 -----
