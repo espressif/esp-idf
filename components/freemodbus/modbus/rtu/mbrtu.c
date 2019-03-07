@@ -84,6 +84,7 @@ eMBRTUInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity ePar
     ULONG           usTimerT35_50us;
 
     ( void )ucSlaveAddress;
+    ENTER_CRITICAL_SECTION(  );
 
     /* Modbus RTU uses 8 Databits. */
     if( xMBPortSerialInit( ucPort, ulBaudRate, 8, eParity ) != TRUE )
@@ -116,6 +117,7 @@ eMBRTUInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity ePar
             eStatus = MB_EPORTERR;
         }
     }
+    EXIT_CRITICAL_SECTION(  );
 
     return eStatus;
 }
@@ -123,6 +125,7 @@ eMBRTUInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity ePar
 void
 eMBRTUStart( void )
 {
+    ENTER_CRITICAL_SECTION(  );
     /* Initially the receiver is in the state STATE_RX_INIT. we start
      * the timer and if no character is received within t3.5 we change
      * to STATE_RX_IDLE. This makes sure that we delay startup of the
@@ -132,13 +135,16 @@ eMBRTUStart( void )
     vMBPortSerialEnable( TRUE, FALSE );
     vMBPortTimersEnable(  );
 
+    EXIT_CRITICAL_SECTION(  );
 }
 
 void
 eMBRTUStop( void )
 {
+    ENTER_CRITICAL_SECTION(  );
     vMBPortSerialEnable( FALSE, FALSE );
     vMBPortTimersDisable(  );
+    EXIT_CRITICAL_SECTION(  );
 }
 
 // The lines below are required to suppress GCC warnings about unused but set variable 'xFrameReceived'
