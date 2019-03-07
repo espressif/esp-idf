@@ -65,14 +65,14 @@ class IDFRecvThread(DUT.RecvThread):
     def __init__(self, read, dut):
         super(IDFRecvThread, self).__init__(read, dut)
         self.exceptions = _queue.Queue()
-        self.performances = _queue.Queue()
+        self.performance_items = _queue.Queue()
 
     def collect_performance(self, comp_data):
         matches = self.PERFORMANCE_PATTERN.findall(comp_data)
         for match in matches:
             Utility.console_log("[Performance][{}]: {}".format(match[0], match[1]),
                                 color="orange")
-            self.performances.put((match[0], match[1]))
+            self.performance_items.put((match[0], match[1]))
 
     def detect_exception(self, comp_data):
         for pattern in self.EXCEPTION_PATTERNS:
@@ -157,7 +157,7 @@ class IDFDUT(DUT.SerialDUT):
         super(IDFDUT, self).__init__(name, port, log_file, app, **kwargs)
         self.allow_dut_exception = allow_dut_exception
         self.exceptions = _queue.Queue()
-        self.performances = _queue.Queue()
+        self.performance_items = _queue.Queue()
 
     @classmethod
     def get_mac(cls, app, port):
@@ -365,7 +365,7 @@ class IDFDUT(DUT.SerialDUT):
 
     def stop_receive(self):
         if self.receive_thread:
-            for name in ["performances", "exceptions"]:
+            for name in ["performance_items", "exceptions"]:
                 source_queue = getattr(self.receive_thread, name)
                 dest_queue = getattr(self, name)
                 self._queue_copy(source_queue, dest_queue)
@@ -382,7 +382,7 @@ class IDFDUT(DUT.SerialDUT):
 
         :return: a list of performance items.
         """
-        return self._get_from_queue("performances")
+        return self._get_from_queue("performance_items")
 
     def close(self):
         super(IDFDUT, self).close()
