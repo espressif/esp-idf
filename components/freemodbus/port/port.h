@@ -60,8 +60,11 @@
 #define MB_ENTER_CRITICAL(mux)      portENTER_CRITICAL(mux)
 #define MB_EXIT_CRITICAL(mux)       portEXIT_CRITICAL(mux)
 
-#define ENTER_CRITICAL_SECTION( )   ( vMBPortEnterCritical() )
-#define EXIT_CRITICAL_SECTION( )    ( vMBPortExitCritical() )
+#define ENTER_CRITICAL_SECTION( ) { ESP_LOGD(MB_PORT_TAG,"%s: Port enter critical.", __func__); \
+                                    vMBPortEnterCritical(); }
+
+#define EXIT_CRITICAL_SECTION( )  { vMBPortExitCritical(); \
+                                    ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
 
 typedef char    BOOL;
 
