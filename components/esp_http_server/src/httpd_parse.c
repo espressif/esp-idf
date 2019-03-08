@@ -537,6 +537,7 @@ static void init_req(httpd_req_t *r, httpd_config_t *config)
     r->user_ctx = 0;
     r->sess_ctx = 0;
     r->free_ctx = 0;
+    r->ignore_sess_ctx_changes = 0;
 }
 
 static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
@@ -556,13 +557,14 @@ static void httpd_req_cleanup(httpd_req_t *r)
 {
     struct httpd_req_aux *ra = r->aux;
 
-    /* Retrieve session info from the request into the socket database */
-    if (ra->sd->ctx != r->sess_ctx) {
-        /* Free previous context */
+    /* Check if the context has changed and needs to be cleared */ 
+    if ((r->ignore_sess_ctx_changes == false) && (ra->sd->ctx != r->sess_ctx)) {
         httpd_sess_free_ctx(ra->sd->ctx, ra->sd->free_ctx);
-        ra->sd->ctx = r->sess_ctx;
     }
+    /* Retrieve session info from the request into the socket database. */
+    ra->sd->ctx = r->sess_ctx;
     ra->sd->free_ctx = r->free_ctx;
+    ra->sd->ignore_sess_ctx_changes = r->ignore_sess_ctx_changes;
 
     /* Clear out the request and request_aux structures */
     ra->sd = NULL;
@@ -590,6 +592,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     /* Copy session info to the request */
     r->sess_ctx = sd->ctx;
     r->free_ctx = sd->free_ctx;
+    r->ignore_sess_ctx_changes = sd->ignore_sess_ctx_changes;
     /* Parse request */
     esp_err_t err = httpd_parse_req(hd);
     if (err != ESP_OK) {

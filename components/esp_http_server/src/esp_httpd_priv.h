@@ -118,6 +118,7 @@ typedef enum {
 struct sock_db {
     int fd;                                 /*!< The file descriptor for this socket */
     void *ctx;                              /*!< A custom context for this socket */
+    bool ignore_sess_ctx_changes;           /*!< Flag indicating if session context changes should be ignored */
     void *transport_ctx;                    /*!< A custom 'transport' context for this socket, to be used by send/recv/pending */
     httpd_handle_t handle;                  /*!< Server handle */
     httpd_free_ctx_fn_t free_ctx;      /*!< Function for freeing the context */
