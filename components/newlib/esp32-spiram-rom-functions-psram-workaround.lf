@@ -7,6 +7,9 @@
 #
 # Note: We currently never link libg-psram-workaround.a, so no rules
 # are generated for this library
+#
+# Note: the only difference between esp32-spiram-rom-functions-c.lf
+# and esp32-spiram-rom-functions-psram-workaround.lf is the archive name.
 
 [mapping:libc_psram_workaround]
 archive: libc-psram-workaround.a
