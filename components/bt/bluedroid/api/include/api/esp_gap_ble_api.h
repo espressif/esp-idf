@@ -280,7 +280,7 @@ typedef enum {
 } esp_ble_sm_param_t;
 
 /// Advertising parameters
-typedef struct {
+typedef struct esp_ble_adv_params_s {
     uint16_t                adv_int_min;        /*!< Minimum advertising interval for
                                                   undirected and low duty cycle directed advertising.
                                                   Range: 0x0020 to 0x4000 Default: N = 0x0800 (1.28 second)
@@ -298,7 +298,7 @@ typedef struct {
 } esp_ble_adv_params_t;
 
 /// Advertising data content, according to "Supplement to the Bluetooth Core Specification"
-typedef struct {
+typedef struct esp_ble_adv_data_s {
     bool                    set_scan_rsp;           /*!< Set this advertising data as scan response or not*/
     bool                    include_name;           /*!< Advertising data include device name or not */
     bool                    include_txpower;        /*!< Advertising data include TX power */
@@ -358,7 +358,7 @@ typedef enum {
 } esp_ble_scan_duplicate_t;
 
 /// Ble scan parameters
-typedef struct {
+typedef struct esp_ble_scan_params_s {
     esp_ble_scan_type_t     scan_type;              /*!< Scan type */
     esp_ble_addr_type_t     own_addr_type;          /*!< Owner address type */
     esp_ble_scan_filter_t   scan_filter_policy;     /*!< Scan filter policy */
@@ -378,7 +378,7 @@ typedef struct {
 } esp_ble_scan_params_t;
 
 /// Connection update parameters
-typedef struct {
+typedef struct esp_ble_conn_update_params_s {
     esp_bd_addr_t bda;                              /*!< Bluetooth device address */
     uint16_t min_int;                               /*!< Min connection interval */
     uint16_t max_int;                               /*!< Max connection interval */
@@ -391,7 +391,7 @@ typedef struct {
 /**
 * @brief BLE pkt date length keys
 */
-typedef struct
+typedef struct esp_ble_pkt_data_length_params_s
 {
     uint16_t rx_len;                   /*!< pkt rx data length value */
     uint16_t tx_len;                   /*!< pkt tx data length value */
@@ -400,7 +400,7 @@ typedef struct
 /**
 * @brief BLE encryption keys
 */
-typedef struct
+typedef struct esp_ble_penc_keys_s
 {
     esp_bt_octet16_t     ltk;          /*!< The long term key*/
     esp_bt_octet8_t      rand;         /*!< The random number*/
@@ -412,7 +412,7 @@ typedef struct
 /**
 * @brief  BLE CSRK keys
 */
-typedef struct
+typedef struct esp_ble_pcsrk_keys_s
 {
     uint32_t            counter;      /*!< The counter */
     esp_bt_octet16_t    csrk;         /*!< The csrk key */
@@ -422,7 +422,7 @@ typedef struct
 /**
 * @brief  BLE pid keys
 */
-typedef struct
+typedef struct esp_ble_pid_keys_s
 {
     esp_bt_octet16_t          irk;           /*!< The irk value */
     esp_ble_addr_type_t       addr_type;     /*!< The address type */
@@ -432,7 +432,7 @@ typedef struct
 /**
 * @brief  BLE Encryption reproduction keys
 */
-typedef struct
+typedef struct esp_ble_lenc_keys_s
 {
     esp_bt_octet16_t  ltk;                  /*!< The long term key */
     uint16_t          div;                  /*!< The div value */
@@ -443,7 +443,7 @@ typedef struct
 /**
 * @brief  BLE SRK keys
 */
-typedef struct
+typedef struct esp_ble_lcsrk_keys_s
 {
     uint32_t          counter;              /*!< The counter value */
     uint16_t          div;                  /*!< The div value */
@@ -454,7 +454,7 @@ typedef struct
 /**
 * @brief  Structure associated with ESP_KEY_NOTIF_EVT
 */
-typedef struct
+typedef struct esp_ble_sec_key_notif_s
 {
     esp_bd_addr_t  bd_addr;        /*!< peer address */
     uint32_t       passkey;        /*!< the numeric value for comparison. If just_works, do not show this number to UI */
@@ -463,7 +463,7 @@ typedef struct
 /**
 * @brief  Structure of the security request
 */
-typedef struct
+typedef struct esp_ble_sec_req_s
 {
     esp_bd_addr_t  bd_addr;        /*!< peer address */
 } esp_ble_sec_req_t;               /*!< BLE security request type*/
@@ -483,7 +483,7 @@ typedef union
 /**
 * @brief  struct type of the bond key information value
 */
-typedef struct
+typedef struct esp_ble_bond_key_info_s
 {
     esp_ble_key_mask_t    key_mask;       /*!< the key mask to indicate witch key is present */
     esp_ble_penc_keys_t   penc_key;       /*!< received peer encryption key */
@@ -494,7 +494,7 @@ typedef struct
 /**
 * @brief  struct type of the bond device value
 */
-typedef struct
+typedef struct esp_ble_bond_dev_s
 {
     esp_bd_addr_t  bd_addr;               /*!< peer address */
     esp_ble_bond_key_info_t bond_key;     /*!< the bond key information */
@@ -504,7 +504,7 @@ typedef struct
 /**
 * @brief  union type of the security key value
 */
-typedef struct
+typedef struct esp_ble_key_s
 {
     esp_bd_addr_t               bd_addr;        /*!< peer address */
     esp_ble_key_type_t          key_type;       /*!< key type of the security link */
@@ -514,7 +514,7 @@ typedef struct
 /**
 * @brief  structure type of the ble local id keys value
 */
-typedef struct {
+typedef struct esp_ble_local_id_keys_s {
     esp_bt_octet16_t       ir;                  /*!< the 16 bits of the ir value */
     esp_bt_octet16_t       irk;                 /*!< the 16 bits of the ir key value */
     esp_bt_octet16_t       dhk;                 /*!< the 16 bits of the dh key value */
@@ -524,7 +524,7 @@ typedef struct {
 /**
   * @brief Structure associated with ESP_AUTH_CMPL_EVT
   */
-typedef struct
+typedef struct esp_ble_auth_cmpl_s
 {
     esp_bd_addr_t         bd_addr;               /*!< BD address peer device. */
     bool                  key_present;           /*!< Valid link key value in key element */

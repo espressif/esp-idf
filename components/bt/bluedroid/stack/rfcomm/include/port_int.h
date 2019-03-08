@@ -52,7 +52,7 @@
 /*
 ** Define Port Data Transfere control block
 */
-typedef struct {
+typedef struct tPORT_DATA_s {
     fixed_queue_t *queue;         /* Queue of buffers waiting to be sent */
     BOOLEAN  peer_fc;       /* TRUE if flow control is set based on peer's request */
     BOOLEAN  user_fc;       /* TRUE if flow control is set based on user's request  */
@@ -63,7 +63,7 @@ typedef struct {
 /*
 ** Port control structure used to pass modem info
 */
-typedef struct {
+typedef struct tPORT_CTRL_s {
 #define MODEM_SIGNAL_DTRDSR        0x01
 #define MODEM_SIGNAL_RTSCTS        0x02
 #define MODEM_SIGNAL_RI            0x04
@@ -87,7 +87,7 @@ typedef struct {
 /*
 ** RFCOMM multiplexer Control Block
 */
-typedef struct {
+typedef struct tRFC_MCB_s {
     TIMER_LIST_ENT tle;       /* Timer list entry */
     fixed_queue_t  *cmd_q;          /* Queue for command messages on this mux */
     UINT8     port_inx[RFCOMM_MAX_DLCI + 1];  /* Array for quick access to  */
@@ -206,7 +206,7 @@ typedef struct t_port_info tPORT;
 
 /* Define the PORT/RFCOMM control structure
 */
-typedef struct {
+typedef struct tPORT_CB_s {
     tPORT        port[MAX_RFC_PORTS];            /* Port info pool */
     tRFC_MCB     rfc_mcb[MAX_BD_CONNECTIONS];    /* RFCOMM bd_connections pool */
 } tPORT_CB;

@@ -62,7 +62,7 @@ struct sigevent {
 #define SI_ASYNCIO 4    /* Indicates completion of asycnhronous IO */
 #define SI_MESGQ   5    /* Indicates arrival of a message at an empty queue */
 
-typedef struct {
+typedef struct siginfo_s {
   int          si_signo;    /* Signal number */
   int          si_code;     /* Cause of the signal */
   union sigval si_value;    /* Signal value */

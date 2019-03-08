@@ -76,7 +76,7 @@ typedef enum {
 /**
  * @brief Timer configuration passed to esp_timer_create
  */
-typedef struct {
+typedef struct esp_timer_create_args_s {
     esp_timer_cb_t callback;        //!< Function to call when timer expires
     void* arg;                      //!< Argument to pass to the callback
     esp_timer_dispatch_t dispatch_method;   //!< Call the callback from task or from ISR

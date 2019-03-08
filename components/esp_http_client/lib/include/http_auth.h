@@ -19,7 +19,7 @@
 /**
  * HTTP Digest authentication data
  */
-typedef struct {
+typedef struct esp_http_auth_data_s {
     char *method;       /*!< Request method, example: GET */
     char *algorithm;    /*!< Authentication algorithm */
     char *uri;          /*!< URI of request example: /path/to/file.html */

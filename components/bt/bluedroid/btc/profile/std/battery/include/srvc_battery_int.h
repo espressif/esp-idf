@@ -30,7 +30,7 @@
 #define BATTERY_LEVEL_SIZE      1
 
 
-typedef struct {
+typedef struct tBA_INST_s {
     UINT8           app_id;
     UINT16          ba_level_hdl;
     UINT16          clt_cfg_hdl;
@@ -45,7 +45,7 @@ typedef struct {
 
 } tBA_INST;
 
-typedef struct {
+typedef struct tBATTERY_CB_s {
     tBA_INST                battery_inst[BA_MAX_INT_NUM];
     UINT8                   inst_id;
     BOOLEAN                 enabled;

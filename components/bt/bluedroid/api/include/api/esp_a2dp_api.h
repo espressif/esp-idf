@@ -32,7 +32,7 @@ extern "C" {
 typedef uint8_t esp_a2d_mct_t;
 
 /// A2DP media codec capabilities union
-typedef struct {
+typedef struct esp_a2d_connection_state_s {
     esp_a2d_mct_t type;                        /*!< A2DP media codec type */
 #define ESP_A2D_CIE_LEN_SBC          (4)
 #define ESP_A2D_CIE_LEN_M12          (4)

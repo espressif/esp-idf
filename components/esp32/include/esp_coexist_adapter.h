@@ -26,7 +26,7 @@ extern "C" {
 
 #define COEX_ADAPTER_FUNCS_TIME_BLOCKING      0xffffffff
 
-typedef struct {
+typedef struct coex_adapter_funcs_s {
     int32_t _version;
     void *(* _spin_lock_create)(void);
     void (* _spin_lock_delete)(void *lock);

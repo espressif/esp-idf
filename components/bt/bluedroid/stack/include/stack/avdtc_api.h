@@ -44,7 +44,7 @@
 #define AVDTC_ABORT_IND_EVT         (9 + AVDTC_EVT_BEGIN)   /* Abort indication */
 #define AVDTC_ABORT_CFM_EVT         (10 + AVDTC_EVT_BEGIN)  /* Abort confirm */
 
-typedef struct {
+typedef struct tAVDT_MULTI_s {
     tAVDT_EVT_HDR   hdr;                        /* Event header */
     UINT8           seid_list[AVDT_NUM_SEPS];   /* Array of SEID values */
     UINT8           num_seps;                   /* Number of values in array */

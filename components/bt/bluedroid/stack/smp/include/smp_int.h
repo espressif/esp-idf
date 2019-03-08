@@ -224,7 +224,7 @@ enum {
     SMP_KEY_TYPE_STK,
     SMP_KEY_TYPE_LTK
 };
-typedef struct {
+typedef struct tSMP_KEY_s {
     UINT8   key_type;
     UINT8  *p_data;
 } tSMP_KEY;
@@ -254,13 +254,13 @@ typedef union {
 #define SMP_ENCRYT_DATA_SIZE               16
 #define SMP_ECNCRPYT_STATUS                HCI_SUCCESS
 
-typedef struct {
+typedef struct tSMP_REQ_Q_ENTRY_s {
     BD_ADDR bd_addr;
     BT_HDR *p_copy;
 } tSMP_REQ_Q_ENTRY;
 
 /* SMP control block */
-typedef struct {
+typedef struct tSMP_CB_s {
     tSMP_CALLBACK   *p_callback;
     TIMER_LIST_ENT  rsp_timer_ent;
     UINT8           trace_level;

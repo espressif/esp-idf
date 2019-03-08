@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 
-typedef struct {
+typedef struct bt_version_s {
     uint8_t hci_version;
     uint16_t hci_revision;
     uint8_t lmp_version;

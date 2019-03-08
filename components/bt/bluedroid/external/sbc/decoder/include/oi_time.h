@@ -88,7 +88,7 @@ typedef OI_UINT16 OI_INTERVAL;
  * stack's real-time clock and absolute time and date is implementation-dependent.
  */
 
-typedef struct {
+typedef struct OI_TIME_s {
     OI_INT32 seconds;
     OI_INT16 mseconds;
 } OI_TIME;

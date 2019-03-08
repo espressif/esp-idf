@@ -20,7 +20,7 @@
 #define BTC_BLUFI_VERSION     ((BTC_BLUFI_GREAT_VER<<8)|BTC_BLUFI_SUB_VER)  //Version + Subversion
 
 /* service engine control block */
-typedef struct {
+typedef struct tBLUFI_ENV_s {
     /* Protocol reference */
     tGATT_IF                gatt_if;
     UINT8                   srvc_inst;

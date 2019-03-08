@@ -346,7 +346,7 @@ enum
   MZ_ZIP_MAX_ARCHIVE_FILE_COMMENT_SIZE = 256
 };
 
-typedef struct
+typedef struct mz_zip_archive_file_stat_s
 {
   mz_uint32 m_file_index;
   mz_uint32 m_central_dir_ofs;
@@ -594,7 +594,7 @@ enum
   TINFL_FAST_LOOKUP_BITS = 10, TINFL_FAST_LOOKUP_SIZE = 1 << TINFL_FAST_LOOKUP_BITS
 };
 
-typedef struct
+typedef struct tinfl_huff_table_s
 {
   mz_uint8 m_code_size[TINFL_MAX_HUFF_SYMBOLS_0];
   mz_int16 m_look_up[TINFL_FAST_LOOKUP_SIZE], m_tree[TINFL_MAX_HUFF_SYMBOLS_0 * 2];
@@ -716,7 +716,7 @@ typedef enum
 } tdefl_flush;
 
 // tdefl's compression state structure.
-typedef struct
+typedef struct tdefl_compressor_s
 {
   tdefl_put_buf_func_ptr m_pPut_buf_func;
   void *m_pPut_buf_user;

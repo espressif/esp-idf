@@ -72,12 +72,12 @@
 typedef void (tSDP_DISC_CMPL_CB) (UINT16 result);
 typedef void (tSDP_DISC_CMPL_CB2) (UINT16 result, void *user_data);
 
-typedef struct {
+typedef struct tSDP_DR_OPEN_s {
     BD_ADDR         peer_addr;
     UINT16          peer_mtu;
 } tSDP_DR_OPEN;
 
-typedef struct {
+typedef struct tSDP_DR_DATA_s {
     UINT8           *p_data;
     UINT16          data_len;
 } tSDP_DR_DATA;
@@ -91,7 +91,7 @@ typedef union {
 typedef void (tSDP_DISC_RES_CB) (UINT16 event, tSDP_DATA *p_data);
 
 /* Define a structure to hold the discovered service information. */
-typedef struct {
+typedef struct tSDP_DISC_ATVAL_s {
     union {
         UINT8       u8;                         /* 8-bit integer            */
         UINT16      u16;                        /* 16-bit integer           */
@@ -116,7 +116,7 @@ typedef struct t_sdp_disc_rec {
     BD_ADDR                 remote_bd_addr;     /* Remote BD address            */
 } tSDP_DISC_REC;
 
-typedef struct {
+typedef struct tSDP_DISCOVERY_DB_s {
     UINT32          mem_size;                   /* Memory size of the DB        */
     UINT32          mem_free;                   /* Memory still available       */
     tSDP_DISC_REC   *p_first_rec;               /* Addr of first record in DB   */
@@ -133,13 +133,13 @@ typedef struct {
 } tSDP_DISCOVERY_DB;
 
 /* This structure is used to add protocol lists and find protocol elements */
-typedef struct {
+typedef struct tSDP_PROTOCOL_ELEM_s {
     UINT16      protocol_uuid;
     UINT16      num_params;
     UINT16      params[SDP_MAX_PROTOCOL_PARAMS];
 } tSDP_PROTOCOL_ELEM;
 
-typedef struct {
+typedef struct tSDP_PROTO_LIST_ELEM_s {
     UINT16              num_elems;
     tSDP_PROTOCOL_ELEM  list_elem[SDP_MAX_LIST_ELEMS];
 } tSDP_PROTO_LIST_ELEM;

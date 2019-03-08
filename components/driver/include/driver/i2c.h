@@ -79,7 +79,7 @@ typedef enum {
 /**
  * @brief I2C initialization parameters
  */
-typedef struct{
+typedef struct i2c_config_s{
     i2c_mode_t mode;       /*!< I2C mode */
     gpio_num_t sda_io_num;        /*!< GPIO number for I2C sda signal */
     gpio_pullup_t sda_pullup_en;  /*!< Internal GPIO pull mode for I2C sda signal*/

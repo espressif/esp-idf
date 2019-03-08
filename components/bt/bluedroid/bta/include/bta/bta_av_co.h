@@ -62,7 +62,7 @@ enum {
 
 
 /* data type for the Audio Codec Information*/
-typedef struct {
+typedef struct tBTA_AV_AUDIO_CODEC_INFO_s {
     UINT16  bit_rate;       /* SBC encoder bit rate in kbps */
     UINT16  bit_rate_busy;  /* SBC encoder bit rate in kbps */
     UINT16  bit_rate_swampd;/* SBC encoder bit rate in kbps */

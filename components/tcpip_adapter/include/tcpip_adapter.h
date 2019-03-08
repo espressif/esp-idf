@@ -50,7 +50,7 @@ extern "C" {
 
 /** @brief IPV4 IP address information
  */
-typedef struct {
+typedef struct tcpip_adapter_ip_info_s {
     ip4_addr_t ip;      /**< Interface IPV4 address */
     ip4_addr_t netmask; /**< Interface IPV4 netmask */
     ip4_addr_t gw;      /**< Interface IPV4 gateway address */
@@ -58,7 +58,7 @@ typedef struct {
 
 /** @brief IPV6 IP address information
  */
-typedef struct {
+typedef struct tcpip_adapter_ip6_info_s {
     ip6_addr_t ip; /**< Interface IPV6 address */
 } tcpip_adapter_ip6_info_t;
 
@@ -66,7 +66,7 @@ typedef struct {
  *
  * @note See also wifi_sta_info_t (MAC layer information only)
  */
-typedef struct {
+typedef struct tcpip_adapter_sta_info_s {
     uint8_t mac[6]; /**< Station MAC address */
     ip4_addr_t ip;  /**< Station assigned IP address */
 } tcpip_adapter_sta_info_t;
@@ -75,7 +75,7 @@ typedef struct {
  *
  * Used to retrieve IP address information about connected stations.
  */
-typedef struct {
+typedef struct tcpip_adapter_sta_list_s {
     tcpip_adapter_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< Connected stations */
     int num; /**< Number of connected stations */
 } tcpip_adapter_sta_list_t;
@@ -108,7 +108,7 @@ typedef enum {
 } tcpip_adapter_dns_type_t;
 
 /** @brief DNS server info */
-typedef struct {
+typedef struct tcpip_adapter_dns_info_s {
     ip_addr_t ip; /**< IPV4 address of DNS server */
 } tcpip_adapter_dns_info_t;
 

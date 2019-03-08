@@ -27,7 +27,7 @@
 /**
  * @brief Opaque directory structure
  */
-typedef struct {
+typedef struct DIR_s {
     uint16_t dd_vfs_idx; /*!< VFS index, not to be used by applications */
     uint16_t dd_rsv;     /*!< field reserved for future extension */
     /* remaining fields are defined by VFS implementation */

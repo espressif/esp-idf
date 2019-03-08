@@ -75,7 +75,7 @@ extern void RFCOMM_LineStatusReq (tRFC_MCB *p_mcb, UINT8 dlci, UINT8 line_status
 /*
 ** Define logical struct used for sending and decoding MX frames
 */
-typedef struct {
+typedef struct MX_FRAME_s {
     UINT8   dlci;
     UINT8   type;
     UINT8   cr;
@@ -207,7 +207,7 @@ typedef struct {
 
 /* Define RFComm control block
 */
-typedef struct {
+typedef struct tRFCOMM_CB_s {
     MX_FRAME  rx_frame;
     tL2CAP_APPL_INFO  reg_info;              /* L2CAP Registration info */
     tRFC_MCB *p_rfc_lcid_mcb[MAX_L2CAP_CHANNELS];     /* MCB based on the L2CAP's lcid */
@@ -217,7 +217,7 @@ typedef struct {
 } tRFCOMM_CB;
 
 /* Main Control Block for the RFCOMM Layer (PORT and RFC) */
-typedef struct {
+typedef struct tRFC_CB_s {
     tRFCOMM_CB  rfc;
     tPORT_CB    port;
     UINT8       trace_level;

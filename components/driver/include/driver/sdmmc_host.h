@@ -55,7 +55,7 @@ extern "C" {
 /**
  * Extra configuration for SDMMC peripheral slot
  */
-typedef struct {
+typedef struct sdmmc_slot_config_s {
     gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
     gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
     uint8_t width;          ///< Bus width used by the slot (might be less than the max width supported)

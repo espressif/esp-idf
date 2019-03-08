@@ -195,7 +195,7 @@ typedef bool BOOLEAN;
 
 /* Define the header of each buffer used in the Bluetooth stack.
 */
-typedef struct {
+typedef struct BT_HDR_s {
     uint16_t          event;
     uint16_t          len;
     uint16_t          offset;
@@ -361,7 +361,7 @@ typedef UINT8 ACO[ACO_LEN];                 /* Authenticated ciphering offset */
 #define COF_LEN         12
 typedef UINT8 COF[COF_LEN];                 /* ciphering offset number */
 
-typedef struct {
+typedef struct FLOW_SPEC_s {
     UINT8               qos_flags;          /* TBD */
     UINT8               service_type;       /* see below */
     UINT32              token_rate;         /* bytes/second */
@@ -417,7 +417,7 @@ typedef UINT8 ACCESS_CODE[ACCESS_CODE_BYTE_LEN];
 
 /* Maximum UUID size - 16 bytes, and structure to hold any type of UUID. */
 #define MAX_UUID_SIZE              16
-typedef struct {
+typedef struct tBT_UUID_s {
 #define LEN_UUID_16     2
 #define LEN_UUID_32     4
 #define LEN_UUID_128    16
@@ -479,7 +479,7 @@ typedef struct {
 #define BT_CONNECTED_USING_BREDR   1
 #define BT_CONNECTED_USING_AMP     2
 
-typedef struct {
+typedef struct tBT_CONN_STATS_s {
     UINT32   is_connected;
     INT32    rssi;
     UINT32   bytes_sent;
@@ -511,7 +511,7 @@ typedef UINT8 tBT_TRANSPORT;
 
 #define BLE_ADDR_IS_STATIC(x)   ((x[0] & 0xC0) == 0xC0)
 
-typedef struct {
+typedef struct tBLE_BD_ADDR_s {
     tBLE_ADDR_TYPE      type;
     BD_ADDR             bda;
 } tBLE_BD_ADDR;

@@ -386,27 +386,27 @@ typedef union {
 } tAVDT_MSG;
 
 /* data type for AVDT_CCB_API_DISCOVER_REQ_EVT */
-typedef struct {
+typedef struct tAVDT_CCB_API_DISCOVER_s {
     tAVDT_CTRL_CBACK    *p_cback;
     tAVDT_SEP_INFO      *p_sep_info;
     UINT8               num_seps;
 } tAVDT_CCB_API_DISCOVER;
 
 /* data type for AVDT_CCB_API_GETCAP_REQ_EVT */
-typedef struct {
+typedef struct tAVDT_CCB_API_GETCAP_s {
     tAVDT_EVT_HDR       single;
     tAVDT_CTRL_CBACK    *p_cback;
     tAVDT_CFG           *p_cfg;
 } tAVDT_CCB_API_GETCAP;
 
 /* data type for AVDT_CCB_API_CONNECT_REQ_EVT */
-typedef struct {
+typedef struct tAVDT_CCB_API_CONNECT_s {
     tAVDT_CTRL_CBACK    *p_cback;
     UINT8               sec_mask;
 } tAVDT_CCB_API_CONNECT;
 
 /* data type for AVDT_CCB_API_DISCONNECT_REQ_EVT */
-typedef struct {
+typedef struct tAVDT_CCB_API_DISCONNECT_s {
     tAVDT_CTRL_CBACK    *p_cback;
 } tAVDT_CCB_API_DISCONNECT;
 
@@ -422,7 +422,7 @@ typedef union {
 } tAVDT_CCB_EVT;
 
 /* channel control block type */
-typedef struct {
+typedef struct tAVDT_CCB_s {
     BD_ADDR             peer_addr;      /* BD address of peer */
     TIMER_LIST_ENT      timer_entry;    /* CCB timer list entry */
     fixed_queue_t       *cmd_q;          /* Queue for outgoing command messages */
@@ -449,7 +449,7 @@ typedef struct {
 typedef void (*tAVDT_CCB_ACTION)(tAVDT_CCB *p_ccb, tAVDT_CCB_EVT *p_data);
 
 /* type for AVDT_SCB_API_WRITE_REQ_EVT */
-typedef struct {
+typedef struct tAVDT_SCB_APIWRITE_s {
     BT_HDR      *p_buf;
     UINT32      time_stamp;
 #if AVDT_MULTIPLEXING == TRUE
@@ -462,7 +462,7 @@ typedef struct {
 } tAVDT_SCB_APIWRITE;
 
 /* type for AVDT_SCB_TC_CLOSE_EVT */
-typedef struct {
+typedef struct tAVDT_SCB_TC_CLOSE_s {
     UINT8           old_tc_state;       /* channel state before closed */
     UINT8           tcid;               /* TCID  */
     UINT8           type;               /* channel type */
@@ -481,7 +481,7 @@ typedef union {
 } tAVDT_SCB_EVT;
 
 /* stream control block type */
-typedef struct {
+typedef struct tAVDT_SCB_s {
     tAVDT_CS        cs;             /* stream creation struct */
     tAVDT_CFG       curr_cfg;       /* current configuration */
     tAVDT_CFG       req_cfg;        /* requested configuration */
@@ -513,7 +513,7 @@ typedef struct {
 typedef void (*tAVDT_SCB_ACTION)(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 
 /* adaption layer type for transport channel table */
-typedef struct {
+typedef struct tAVDT_TC_TBL_s {
     UINT16  peer_mtu;       /* L2CAP mtu of the peer device */
     UINT16  my_mtu;         /* Our MTU for this channel */
     UINT16  my_flush_to;    /* Our flush timeout for this channel */
@@ -526,21 +526,21 @@ typedef struct {
 } tAVDT_TC_TBL;
 
 /* adaption layer type for stream routing table */
-typedef struct {
+typedef struct tAVDT_RT_TBL_s {
     UINT16  lcid;           /* L2CAP LCID of the associated transport channel */
     UINT8   scb_hdl;        /* stream control block associated with this tc */
 } tAVDT_RT_TBL;
 
 
 /* adaption layer control block */
-typedef struct {
+typedef struct tAVDT_AD_s {
     tAVDT_RT_TBL    rt_tbl[AVDT_NUM_LINKS][AVDT_NUM_RT_TBL];
     tAVDT_TC_TBL    tc_tbl[AVDT_NUM_TC_TBL];
     UINT8           lcid_tbl[MAX_L2CAP_CHANNELS];   /* map LCID to tc_tbl index */
 } tAVDT_AD;
 
 /* Control block for AVDT */
-typedef struct {
+typedef struct tAVDT_CB_s {
     tAVDT_REG           rcb;                    /* registration control block */
     tAVDT_CCB           ccb[AVDT_NUM_LINKS];    /* channel control blocks */
     tAVDT_SCB           scb[AVDT_NUM_SEPS];     /* stream control blocks */

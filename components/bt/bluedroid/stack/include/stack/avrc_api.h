@@ -121,7 +121,7 @@
 
 /* This data type is used in AVRC_FindService() to initialize the SDP database
  * to hold the result service search. */
-typedef struct {
+typedef struct tAVRC_SDP_DB_PARAMS_s {
     UINT32              db_len;  /* Length, in bytes, of the discovery database */
     tSDP_DISCOVERY_DB  *p_db;    /* Pointer to the discovery database */
     UINT16              num_attr;/* The number of attributes in p_attrs */
@@ -152,7 +152,7 @@ typedef void (tAVRC_CTRL_CBACK) (UINT8 handle, UINT8 event, UINT16 result,
 typedef void (tAVRC_MSG_CBACK) (UINT8 handle, UINT8 label, UINT8 opcode,
                                 tAVRC_MSG *p_msg);
 
-typedef struct {
+typedef struct tAVRC_CONN_CB_s {
     tAVRC_CTRL_CBACK    *p_ctrl_cback;  /* pointer to application control callback */
     tAVRC_MSG_CBACK     *p_msg_cback;   /* pointer to application message callback */
     UINT32              company_id;     /* the company ID  */

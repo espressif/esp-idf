@@ -28,7 +28,7 @@ extern "C" {
 #define ESP_BT_GAP_RSSI_LOW_THRLD   -45             /*!< Low RSSI threshold */
 
 /// Class of device
-typedef struct {
+typedef struct esp_bt_cod_s {
     uint32_t      reserved_2: 2;                    /*!< undefined */
     uint32_t      minor: 6;                         /*!< minor class */
     uint32_t      major: 5;                         /*!< major class */
@@ -67,7 +67,7 @@ typedef enum {
 #define ESP_BT_GAP_EIR_DATA_LEN               (240)
 
 /// Bluetooth Device Property Descriptor
-typedef struct {
+typedef struct esp_bt_gap_dev_prop_s {
     esp_bt_gap_dev_prop_type_t type;                /*!< device property type */
     int len;                                        /*!< device property value length */
     void *val;                                      /*!< device property value */

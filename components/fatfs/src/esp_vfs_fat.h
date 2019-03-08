@@ -87,7 +87,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path);
 /**
  * @brief Configuration arguments for esp_vfs_fat_sdmmc_mount and esp_vfs_fat_spiflash_mount functions
  */
-typedef struct {
+typedef struct esp_vfs_fat_mount_config_s {
     /**
      * If FAT partition can not be mounted, and this parameter is true,
      * create partition table and format the filesystem.

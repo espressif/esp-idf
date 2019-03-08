@@ -57,7 +57,7 @@ extern "C" {
  *  - array[4] contains bits 15-8, and
  *  - array[5] contains bits 7-0.
  */
-typedef struct  {
+typedef struct OI_UUID128_s  {
     OI_UINT8    addr[OI_BD_ADDR_BYTE_SIZE] ;   /**< Bluetooth device address represented as an array of 8-bit values */
 } OI_BD_ADDR ;
 

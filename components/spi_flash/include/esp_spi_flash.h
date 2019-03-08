@@ -349,7 +349,7 @@ typedef bool (*spi_flash_is_safe_write_address_t)(size_t addr, size_t size);
  * @note Structure and corresponding guard functions should not reside in flash.
  *       For example structure can be placed in DRAM and functions in IRAM sections.
  */
-typedef struct {
+typedef struct spi_flash_guard_funcs_s {
     spi_flash_guard_start_func_t        start;      /**< critical section start function. */
     spi_flash_guard_end_func_t          end;        /**< critical section end function. */
     spi_flash_op_lock_func_t            op_lock;    /**< flash access API lock function.*/
@@ -395,13 +395,13 @@ extern const spi_flash_guard_funcs_t g_flash_guard_no_os_ops;
 /**
  * Structure holding statistics for one type of operation
  */
-typedef struct {
+typedef struct spi_flash_counter_s {
     uint32_t count;     // number of times operation was executed
     uint32_t time;      // total time taken, in microseconds
     uint32_t bytes;     // total number of bytes
 } spi_flash_counter_t;
 
-typedef struct {
+typedef struct spi_flash_counters_s {
     spi_flash_counter_t read;
     spi_flash_counter_t write;
     spi_flash_counter_t erase;

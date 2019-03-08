@@ -26,7 +26,7 @@
 #define DIS_MAX_CHAR_NUM            9
 
 
-typedef struct {
+typedef struct tDIS_DB_ENTRY_s {
     UINT16      uuid;
     UINT16      handle;
 } tDIS_DB_ENTRY;
@@ -36,7 +36,7 @@ typedef struct {
 
 
 
-typedef struct {
+typedef struct tDIS_CB_s {
     tDIS_DB_ENTRY           dis_attr[DIS_MAX_CHAR_NUM];
     tDIS_VALUE              dis_value;
 

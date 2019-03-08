@@ -168,7 +168,7 @@ typedef UINT8 tBTC_AV_CHANNEL_MODE;
 /**
  * Structure used to configure the AV codec capabilities/config
  */
-typedef struct {
+typedef struct tBTC_AV_CODEC_INFO_s {
     tBTC_AV_CODEC_ID id;             /* Codec ID (in terms of BTC) */
     UINT8 info[AVDT_CODEC_SIZE];     /* Codec info (can be config or capabilities) */
 } tBTC_AV_CODEC_INFO;
@@ -176,7 +176,7 @@ typedef struct {
 /**
  * Structure used to configure the AV media feeding
  */
-typedef struct {
+typedef struct tBTC_AV_MEDIA_FEED_CFG_PCM_s {
     UINT16 sampling_freq;   /* 44100, 48000 etc */
     UINT16 num_channel;     /* 1 for mono or 2 stereo */
     UINT8  bit_per_sample;  /* Number of bits per sample (8, 16) */
@@ -186,7 +186,7 @@ typedef union {
     tBTC_AV_MEDIA_FEED_CFG_PCM pcm;     /* Raw PCM feeding format */
 } tBTC_AV_MEDIA_FEED_CFG;
 
-typedef struct {
+typedef struct tBTC_AV_MEDIA_FEEDINGS_s {
     tBTC_AV_CODEC_ID format;        /* Media codec identifier */
     tBTC_AV_MEDIA_FEED_CFG cfg;     /* Media codec configuration */
 } tBTC_AV_MEDIA_FEEDINGS;

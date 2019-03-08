@@ -206,7 +206,7 @@ typedef enum {
 } bt_vendor_op_result_t;
 
 /** audio (SCO) state changes triggering VS commands for configuration */
-typedef struct {
+typedef struct bt_vendor_op_audio_state_s {
     uint16_t    handle;
     uint16_t    peer_codec;
     uint16_t    state;
@@ -287,7 +287,7 @@ typedef void (*tINT_CMD_CBACK)(void *p_mem);
  */
 typedef uint8_t (*cmd_xmit_cb)(uint16_t opcode, void *p_buf, tINT_CMD_CBACK p_cback);
 
-typedef struct {
+typedef struct bt_vendor_callbacks_s {
     /** set to sizeof(bt_vendor_callbacks_t) */
     size_t         size;
 
@@ -324,7 +324,7 @@ typedef struct {
 /*
  * Bluetooth Host/Controller VENDOR Interface
  */
-typedef struct {
+typedef struct bt_vendor_interface_s {
     /** Set to sizeof(bt_vndor_interface_t) */
     size_t          size;
 

@@ -41,7 +41,7 @@ typedef enum{
 /**
  * @brief Sigma-delta configure struct
  */
-typedef struct {
+typedef struct sigmadelta_config_s {
     sigmadelta_channel_t channel;    /*!< Sigma-delta channel number */
     int8_t sigmadelta_duty;          /*!< Sigma-delta duty, duty ranges from -128 to 127. */
     uint8_t sigmadelta_prescale;     /*!< Sigma-delta prescale, prescale ranges from 0 to 255. */

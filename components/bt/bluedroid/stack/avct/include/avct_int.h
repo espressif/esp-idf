@@ -59,7 +59,7 @@ enum {
 ** data types
 *****************************************************************************/
 /* sub control block type - common data members for tAVCT_LCB and tAVCT_BCB */
-typedef struct {
+typedef struct tAVCT_SCB_s {
     UINT16              peer_mtu;       /* peer l2c mtu */
     UINT16              ch_result;      /* L2CAP connection result value */
     UINT16              ch_lcid;        /* L2CAP channel LCID */
@@ -70,7 +70,7 @@ typedef struct {
 } tAVCT_SCB;
 
 /* link control block type */
-typedef struct {
+typedef struct tAVCT_LCB_s {
     UINT16              peer_mtu;       /* peer l2c mtu */
     UINT16              ch_result;      /* L2CAP connection result value */
     UINT16              ch_lcid;        /* L2CAP channel LCID */
@@ -86,7 +86,7 @@ typedef struct {
 } tAVCT_LCB;
 
 /* browse control block type */
-typedef struct {
+typedef struct tAVCT_BCB_s {
     UINT16              peer_mtu;       /* peer l2c mtu */
     UINT16              ch_result;      /* L2CAP connection result value */
     UINT16              ch_lcid;        /* L2CAP channel LCID */
@@ -101,7 +101,7 @@ typedef struct {
 #define AVCT_ALOC_LCB       0x01
 #define AVCT_ALOC_BCB       0x02
 /* connection control block */
-typedef struct {
+typedef struct tAVCT_CCB_s {
     tAVCT_CC            cc;                 /* parameters from connection creation */
     tAVCT_LCB           *p_lcb;             /* Associated LCB */
     tAVCT_BCB           *p_bcb;             /* associated BCB */
@@ -110,7 +110,7 @@ typedef struct {
 } tAVCT_CCB;
 
 /* data type associated with UL_MSG_EVT */
-typedef struct {
+typedef struct tAVCT_UL_MSG_s {
     BT_HDR                  *p_buf;
     tAVCT_CCB               *p_ccb;
     UINT8                   label;
@@ -128,7 +128,7 @@ typedef union {
 } tAVCT_LCB_EVT;
 
 /* Control block for AVCT */
-typedef struct {
+typedef struct tAVCT_CB_s {
     tAVCT_LCB       lcb[AVCT_NUM_LINKS];    /* link control blocks */
     tAVCT_BCB       bcb[AVCT_NUM_LINKS];    /* browse control blocks */
     tAVCT_CCB       ccb[AVCT_NUM_CONN];     /* connection control blocks */

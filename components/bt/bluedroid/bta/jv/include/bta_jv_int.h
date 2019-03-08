@@ -75,13 +75,13 @@ enum {
 #endif
 
 /* data type for BTA_JV_API_ENABLE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_ENABLE_s {
     BT_HDR          hdr;
     tBTA_JV_DM_CBACK   *p_cback;
 } tBTA_JV_API_ENABLE;
 
 /* data type for BTA_JV_API_START_DISCOVERY_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_START_DISCOVERY_s {
     BT_HDR      hdr;
     BD_ADDR bd_addr;
     UINT16 num_uuid;
@@ -98,7 +98,7 @@ enum {
 };
 
 /* BTA JV PM control block */
-typedef struct {
+typedef struct tBTA_JV_PM_CB_s {
     UINT32          handle;     /* The connection handle */
     UINT8           state;      /* state: see above enum */
     tBTA_JV_PM_ID   app_id;     /* JV app specific id indicating power table to use */
@@ -117,7 +117,7 @@ enum {
 typedef UINT8  tBTA_JV_STATE;
 #define BTA_JV_ST_CL_MAX    BTA_JV_ST_CL_CLOSING
 /* JV L2CAP control block */
-typedef struct {
+typedef struct tBTA_JV_L2C_CB_s {
     tBTA_JV_L2CAP_CBACK *p_cback;   /* the callback function */
     UINT16              psm;        /* the psm used for this server connection */
     tBTA_JV_STATE       state;      /* the state of this control block */
@@ -135,7 +135,7 @@ typedef struct {
 #define BTA_JV_RFC_H_S_TO_HDL(h, s) ((h)|(s<<8))
 
 /* port control block */
-typedef struct {
+typedef struct tBTA_JV_PCB_s {
     UINT32              handle;     /* the rfcomm session handle at jv */
     UINT16              port_handle;/* port handle */
     tBTA_JV_STATE       state;      /* the state of this control block */
@@ -146,7 +146,7 @@ typedef struct {
 } tBTA_JV_PCB;
 
 /* JV RFCOMM control block */
-typedef struct {
+typedef struct tBTA_JV_RFC_CB_s {
     tBTA_JV_RFCOMM_CBACK *p_cback;  /* the callback function */
     UINT16              rfc_hdl[BTA_JV_MAX_RFC_SR_SESSION];
     tBTA_SERVICE_ID     sec_id;     /* service id */
@@ -157,7 +157,7 @@ typedef struct {
 } tBTA_JV_RFC_CB;
 
 /* data type for BTA_JV_API_L2CAP_CONNECT_EVT & BTA_JV_API_L2CAP_CONNECT_LE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_L2CAP_CONNECT_s {
     BT_HDR              hdr;
     tBTA_SEC            sec_mask;
     tBTA_JV_ROLE        role;
@@ -176,7 +176,7 @@ typedef struct {
 } tBTA_JV_API_L2CAP_CONNECT;
 
 /* data type for BTA_JV_API_L2CAP_SERVER_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_L2CAP_SERVER_s {
     BT_HDR              hdr;
     tBTA_SEC            sec_mask;
     tBTA_JV_ROLE        role;
@@ -194,14 +194,14 @@ typedef struct {
 } tBTA_JV_API_L2CAP_SERVER;
 
 /* data type for BTA_JV_API_L2CAP_CLOSE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_L2CAP_CLOSE_s {
     BT_HDR          hdr;
     UINT32          handle;
     tBTA_JV_L2C_CB  *p_cb;
 } tBTA_JV_API_L2CAP_CLOSE;
 
 /* data type for BTA_JV_API_L2CAP_READ_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_L2CAP_READ_s {
     BT_HDR              hdr;
     UINT32              handle;
     UINT32              req_id;
@@ -212,7 +212,7 @@ typedef struct {
 } tBTA_JV_API_L2CAP_READ;
 
 /* data type for BTA_JV_API_L2CAP_WRITE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_L2CAP_WRITE_s {
     BT_HDR              hdr;
     UINT32              handle;
     UINT32              req_id;
@@ -223,7 +223,7 @@ typedef struct {
 } tBTA_JV_API_L2CAP_WRITE;
 
 /* data type for BTA_JV_API_L2CAP_WRITE_FIXED_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_L2CAP_WRITE_FIXED_s {
     BT_HDR              hdr;
     UINT16              channel;
     BD_ADDR             addr;
@@ -235,7 +235,7 @@ typedef struct {
 } tBTA_JV_API_L2CAP_WRITE_FIXED;
 
 /* data type for BTA_JV_API_RFCOMM_CONNECT_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_RFCOMM_CONNECT_s {
     BT_HDR          hdr;
     tBTA_SEC        sec_mask;
     tBTA_JV_ROLE    role;
@@ -246,7 +246,7 @@ typedef struct {
 } tBTA_JV_API_RFCOMM_CONNECT;
 
 /* data type for BTA_JV_API_RFCOMM_SERVER_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_RFCOMM_SERVER_s {
     BT_HDR          hdr;
     tBTA_SEC        sec_mask;
     tBTA_JV_ROLE    role;
@@ -258,7 +258,7 @@ typedef struct {
 } tBTA_JV_API_RFCOMM_SERVER;
 
 /* data type for BTA_JV_API_RFCOMM_READ_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_RFCOMM_READ_s {
     BT_HDR          hdr;
     UINT32          handle;
     UINT32          req_id;
@@ -269,7 +269,7 @@ typedef struct {
 } tBTA_JV_API_RFCOMM_READ;
 
 /* data type for BTA_JV_API_SET_PM_PROFILE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_SET_PM_PROFILE_s {
     BT_HDR              hdr;
     UINT32              handle;
     tBTA_JV_PM_ID       app_id;
@@ -277,14 +277,14 @@ typedef struct {
 } tBTA_JV_API_SET_PM_PROFILE;
 
 /* data type for BTA_JV_API_PM_STATE_CHANGE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_PM_STATE_CHANGE_s {
     BT_HDR              hdr;
     tBTA_JV_PM_CB       *p_cb;
     tBTA_JV_CONN_STATE  state;
 } tBTA_JV_API_PM_STATE_CHANGE;
 
 /* data type for BTA_JV_API_RFCOMM_WRITE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_RFCOMM_WRITE_s {
     BT_HDR          hdr;
     UINT32          handle;
     UINT32          req_id;
@@ -295,7 +295,7 @@ typedef struct {
 } tBTA_JV_API_RFCOMM_WRITE;
 
 /* data type for BTA_JV_API_RFCOMM_CLOSE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_RFCOMM_CLOSE_s {
     BT_HDR          hdr;
     UINT32          handle;
     tBTA_JV_RFC_CB  *p_cb;
@@ -304,7 +304,7 @@ typedef struct {
 } tBTA_JV_API_RFCOMM_CLOSE;
 
 /* data type for BTA_JV_API_CREATE_RECORD_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_CREATE_RECORD_s {
     BT_HDR      hdr;
 #define ESP_SDP_SERVER_NAME_MAX (32)
     char name[ESP_SDP_SERVER_NAME_MAX + 1];
@@ -313,7 +313,7 @@ typedef struct {
 } tBTA_JV_API_CREATE_RECORD;
 
 /* data type for BTA_JV_API_ADD_ATTRIBUTE_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_ADD_ATTRIBUTE_s {
     BT_HDR      hdr;
     UINT32      handle;
     UINT16      attr_id;
@@ -322,14 +322,14 @@ typedef struct {
 } tBTA_JV_API_ADD_ATTRIBUTE;
 
 /* data type for BTA_JV_API_FREE_SCN_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_FREE_CHANNEL_s {
     BT_HDR      hdr;
     INT32       type;       /* One of BTA_JV_CONN_TYPE_ */
     UINT16      scn;
 } tBTA_JV_API_FREE_CHANNEL;
 
 /* data type for BTA_JV_API_ALLOC_CHANNEL_EVT */
-typedef struct {
+typedef struct tBTA_JV_API_ALLOC_CHANNEL_s {
     BT_HDR      hdr;
     INT32       type;       /* One of BTA_JV_CONN_TYPE_ */
     INT32       channel;    /* optionally request a specific channel */
@@ -361,7 +361,7 @@ typedef union {
 } tBTA_JV_MSG;
 
 /* JV control block */
-typedef struct {
+typedef struct tBTA_JV_CB_s {
     /* the SDP handle reported to JV user is the (index + 1) to sdp_handle[].
      * if sdp_handle[i]==0, it's not used.
      * otherwise sdp_handle[i] is the stack SDP handle. */

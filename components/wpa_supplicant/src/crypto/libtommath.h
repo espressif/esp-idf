@@ -116,7 +116,7 @@ typedef int           mp_err;
 #define MP_WARRAY               (1 << (sizeof(mp_word) * CHAR_BIT - 2 * DIGIT_BIT + 1))
 
 /* the infamous mp_int structure */
-typedef struct  {
+typedef struct mp_int_s  {
     int used, alloc, sign;
     mp_digit *dp;
 } mp_int;

@@ -374,7 +374,7 @@ __extension__ ({							\
  * kind of compiler built-in type we could use?
  */
 
-typedef struct {
+typedef struct atomic_flag_s {
 	atomic_bool	__flag;
 } atomic_flag;
 

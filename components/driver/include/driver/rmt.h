@@ -89,14 +89,14 @@ typedef enum {
 /**
  * @brief Data struct of RMT channel status
  */
-typedef struct {
+typedef struct rmt_channel_status_result_s {
   rmt_channel_status_t status[RMT_CHANNEL_MAX]; /*!< Store the current status of each channel */
 } rmt_channel_status_result_t;
 
 /**
  * @brief Data struct of RMT TX configure parameters
  */
-typedef struct {
+typedef struct rmt_tx_config_s {
     bool loop_en;                         /*!< Enable sending RMT items in a loop */
     uint32_t carrier_freq_hz;             /*!< RMT carrier frequency */
     uint8_t carrier_duty_percent;         /*!< RMT carrier duty (%) */
@@ -109,7 +109,7 @@ typedef struct {
 /**
  * @brief Data struct of RMT RX configure parameters
  */
-typedef struct {
+typedef struct rmt_rx_config_s {
     bool filter_en;                    /*!< RMT receiver filter enable */
     uint8_t filter_ticks_thresh;       /*!< RMT filter tick number */
     uint16_t idle_threshold;           /*!< RMT RX idle threshold */
@@ -118,7 +118,7 @@ typedef struct {
 /**
  * @brief Data struct of RMT configure parameters
  */
-typedef struct {
+typedef struct rmt_config_s {
     rmt_mode_t rmt_mode;               /*!< RMT mode: transmitter or receiver */
     rmt_channel_t channel;             /*!< RMT channel */
     uint8_t clk_div;                   /*!< RMT channel counter divider */
@@ -137,7 +137,7 @@ typedef void (*rmt_tx_end_fn_t)(rmt_channel_t channel, void *arg);
 /**
  * @brief Structure encapsulating a RMT TX end callback
  */
-typedef struct {
+typedef struct rmt_tx_end_callback_s {
     rmt_tx_end_fn_t function; /*!< Function which is called on RMT TX end */
     void *arg;                /*!< Optional argument passed to function */
 } rmt_tx_end_callback_t;

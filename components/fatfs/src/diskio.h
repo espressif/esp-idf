@@ -49,7 +49,7 @@ DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
  *
  * See FatFs documentation for details about these functions
  */
-typedef struct {
+typedef struct ff_diskio_impl_s {
     DSTATUS (*init) (BYTE pdrv);    /*!< disk initialization function */
     DSTATUS (*status) (BYTE pdrv);  /*!< disk status check function */
     DRESULT (*read) (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);  /*!< sector read function */

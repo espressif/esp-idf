@@ -28,18 +28,18 @@
 
 
 /// Generic Security key structure
-typedef struct {
+typedef struct smp_sec_key_s {
     /// Key value MSB -> LSB
     UINT8 key[SEC_KEY_LEN];
 } smp_sec_key;
 
 ///Random number structure
-typedef struct {
+typedef struct rand_nb_s {
     ///8-byte array for random number
     UINT8     nb[RAND_NB_LEN];
 } rand_nb;
 
-typedef struct {
+typedef struct tAPP_SEC_ENV_s {
     // LTK
     smp_sec_key ltk;
     // Random Number

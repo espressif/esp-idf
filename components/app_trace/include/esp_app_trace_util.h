@@ -25,7 +25,7 @@
  *  After initialization via esp_apptrace_tmo_init() user needs to call esp_apptrace_tmo_check()
  *  periodically to check timeout for expiration.
  */
-typedef struct {
+typedef struct esp_apptrace_tmo_s {
     uint32_t   start;   ///< time interval start (in CPU ticks)
     uint32_t   tmo;     ///< timeout value (in us)
     uint32_t   elapsed; ///< elapsed time (in us)
@@ -59,7 +59,7 @@ static inline uint32_t esp_apptrace_tmo_remaining_us(esp_apptrace_tmo_t *tmo)
 }
 
 /** Tracing module synchronization lock */
-typedef struct {
+typedef struct esp_apptrace_lock_s {
     portMUX_TYPE mux;
     unsigned int_state;
 } esp_apptrace_lock_t;
@@ -99,7 +99,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock);
  * @note For purposes of application tracing module if there is no enough space for user data and write pointer can be wrapped 
  *       current ring buffer size can be temporarily shrinked in order to provide buffer with requested size.
  */
-typedef struct {
+typedef struct esp_apptrace_rb_s {
     uint8_t *data;      ///< pointer to data storage
     volatile uint32_t size;      ///< size of data storage
     volatile uint32_t cur_size;  ///< current size of data storage

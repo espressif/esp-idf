@@ -41,7 +41,7 @@ extern "C" {
 /* Definitions of volume management */
 
 #if FF_MULTI_PARTITION		/* Multiple partition configuration */
-typedef struct {
+typedef struct PARTITION_s {
 	BYTE pd;	/* Physical drive number */
 	BYTE pt;	/* Partition: 0:Auto detect, 1-4:Forced partition) */
 } PARTITION;
@@ -87,7 +87,7 @@ typedef DWORD FSIZE_t;
 
 /* Filesystem object structure (FATFS) */
 
-typedef struct {
+typedef struct FATFS_s {
 	BYTE	fs_type;		/* Filesystem type (0:N/A) */
 	BYTE	pdrv;			/* Physical drive number */
 	BYTE	n_fats;			/* Number of FATs (1 or 2) */
@@ -134,7 +134,7 @@ typedef struct {
 
 /* Object ID and allocation information (FFOBJID) */
 
-typedef struct {
+typedef struct FFOBJID_s {
 	FATFS*	fs;				/* Pointer to the hosting volume of this object */
 	WORD	id;				/* Hosting volume mount ID */
 	BYTE	attr;			/* Object attribute */
@@ -157,7 +157,7 @@ typedef struct {
 
 /* File object structure (FIL) */
 
-typedef struct {
+typedef struct FIL_s {
 	FFOBJID	obj;			/* Object identifier (must be the 1st member to detect invalid object pointer) */
 	BYTE	flag;			/* File status flags */
 	BYTE	err;			/* Abort flag (error code) */
@@ -180,7 +180,7 @@ typedef struct {
 
 /* Directory object structure (FF_DIR) */
 
-typedef struct {
+typedef struct FF_DIR_s {
 	FFOBJID	obj;			/* Object identifier */
 	DWORD	dptr;			/* Current read/write offset */
 	DWORD	clust;			/* Current cluster */
@@ -199,7 +199,7 @@ typedef struct {
 
 /* File information structure (FILINFO) */
 
-typedef struct {
+typedef struct FILINFO_s {
 	FSIZE_t	fsize;			/* File size */
 	WORD	fdate;			/* Modified date */
 	WORD	ftime;			/* Modified time */

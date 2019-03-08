@@ -76,13 +76,13 @@ enum {
 *****************************************************************************/
 
 /* data type for BTA_HF_CLIENT_API_ENABLE_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_API_ENABLE_s {
     BT_HDR                     hdr;
     tBTA_HF_CLIENT_CBACK      *p_cback;
 } tBTA_HF_CLIENT_API_ENABLE;
 
 /* data type for BTA_HF_CLIENT_API_REGISTER_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_API_REGISTER_s {
     BT_HDR                     hdr;
     tBTA_HF_CLIENT_CBACK      *p_cback;
     tBTA_SEC                   sec_mask;
@@ -91,26 +91,26 @@ typedef struct {
 } tBTA_HF_CLIENT_API_REGISTER;
 
 /* data type for BTA_HF_CLIENT_API_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_API_OPEN_s {
     BT_HDR              hdr;
     BD_ADDR             bd_addr;
     tBTA_SEC            sec_mask;
 } tBTA_HF_CLIENT_API_OPEN;
 
 /* data type for BTA_HF_CLIENT_DISC_RESULT_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_DISC_RESULT_s {
     BT_HDR          hdr;
     UINT16          status;
 } tBTA_HF_CLIENT_DISC_RESULT;
 
 /* data type for RFCOMM events */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_RFC_s {
     BT_HDR          hdr;
     UINT16          port_handle;
 } tBTA_HF_CLIENT_RFC;
 
 /* generic purpose data type for other events */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_DATA_VAL_s {
     BT_HDR          hdr;
     BOOLEAN         bool_val;
     UINT8           uint8_val;
@@ -132,7 +132,7 @@ typedef union {
 } tBTA_HF_CLIENT_DATA;
 
 /* type for each service control block */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_SCB_s {
     UINT16              serv_handle;    /* RFCOMM server handle */
     BD_ADDR             peer_addr;      /* peer bd address */
     tSDP_DISCOVERY_DB   *p_disc_db;     /* pointer to discovery database */
@@ -172,7 +172,7 @@ enum {
 };
 
 /* type for AG control block */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_CB_s {
     tBTA_HF_CLIENT_SCB         scb;             /* service control block */
     UINT32                     sdp_handle;
     UINT8                      scn;

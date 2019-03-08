@@ -10,7 +10,7 @@
 #ifndef __ESP_EDDYSTONE_API_H__
 #define __ESP_EDDYSTONE_API_H__
 
-typedef struct {
+typedef struct esp_eddystone_result_s {
     struct {
         uint8_t   flags;          /*<! AD flags data */
         uint16_t  srv_uuid;       /*<! complete list of 16-bit service uuid*/

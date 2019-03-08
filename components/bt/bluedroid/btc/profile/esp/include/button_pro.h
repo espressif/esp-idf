@@ -62,13 +62,13 @@ enum {
     KEY_IDX_NB,
 };
 
-typedef struct {
+typedef struct but_write_data_s {
     BD_ADDR     remote_bda;
     BOOLEAN     need_rsp;
     uint16_t    clt_cfg;
 } but_write_data_t;
 
-typedef struct {
+typedef struct but_clcb_s {
     BOOLEAN         in_use;
     BOOLEAN         congest;
     uint16_t        conn_id;
@@ -80,7 +80,7 @@ typedef struct {
 } but_clcb_t;
 
 
-typedef struct {
+typedef struct but_inst_s {
     uint8_t           app_id;
     uint16_t          but_wirt_hdl;
     uint16_t          but_ntf_hdl;
@@ -92,7 +92,7 @@ typedef struct {
 
 
 /* service engine control block */
-typedef struct {
+typedef struct button_env_cb_s {
     but_clcb_t              clcb;           /* connection link*/
     esp_gatt_if_t           gatt_if;
     BOOLEAN                 enabled;

@@ -28,7 +28,7 @@
 
 /** Context used by the ``esp_slave`` component.
  */
-typedef struct {
+typedef struct esp_slave_context_s {
     sdmmc_card_t*   card;               ///< Initialized sdmmc_cmd card
     uint16_t        buffer_size;
                         ///< All data that do not fully fill a buffer is still counted as one buffer. E.g. 10 bytes data costs 2 buffers if the size is 8 bytes per buffer.

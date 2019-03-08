@@ -53,7 +53,7 @@ extern "C" {
 /**
  * Extra configuration for SPI host
  */
-typedef struct {
+typedef struct sdspi_slot_config_s {
     gpio_num_t gpio_miso;   ///< GPIO number of MISO signal
     gpio_num_t gpio_mosi;   ///< GPIO number of MOSI signal
     gpio_num_t gpio_sck;    ///< GPIO number of SCK signal

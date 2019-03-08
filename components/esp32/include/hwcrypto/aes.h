@@ -46,7 +46,7 @@ extern "C" {
  *                 - to simplify key expansion in the 256-bit case by
  *                 generating an extra round key
  */
-typedef struct {
+typedef struct esp_aes_context_s {
     uint8_t key_bytes;
     uint8_t key[32];
 } esp_aes_context;
@@ -55,7 +55,7 @@ typedef struct {
 /**
  * \brief The AES XTS context-type definition.
  */
-typedef struct
+typedef struct esp_aes_xts_context_s
 {
     esp_aes_context crypt; /*!< The AES context to use for AES block
                                         encryption or decryption. */

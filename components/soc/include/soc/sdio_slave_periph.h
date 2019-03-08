@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 /** pin and signal information of each slot */
-typedef struct {
+typedef struct sdio_slave_slot_info_s {
     uint32_t clk_gpio;
     uint32_t cmd_gpio;
     uint32_t d0_gpio;

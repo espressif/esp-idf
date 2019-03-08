@@ -172,7 +172,7 @@ typedef struct _ip_addr {
   uint8_t type;
 } ip_addr_t;
 
-typedef struct {
+typedef struct tcpip_adapter_ip_info_s {
     ip4_addr_t ip;
     ip4_addr_t netmask;
     ip4_addr_t gw;
@@ -186,10 +186,10 @@ typedef enum {
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
-typedef struct {
+typedef struct tcpip_adapter_ip6_info_s {
     ip6_addr_t ip;
 } tcpip_adapter_ip6_info_t;
-typedef struct {
+typedef struct system_event_got_ip6_s {
     tcpip_adapter_if_t if_index;
     tcpip_adapter_ip6_info_t ip6_info;
 } system_event_got_ip6_t;
@@ -197,7 +197,7 @@ typedef union {
     system_event_got_ip6_t                     got_ip6;            /**< ESP32 station　or ap or ethernet ipv6 addr state change to preferred */
 } system_event_info_t;
 
-typedef struct {
+typedef struct system_event_s {
     system_event_id_t     event_id;      /**< event ID */
     system_event_info_t   event_info;    /**< event information */
 } system_event_t;

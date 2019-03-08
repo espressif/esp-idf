@@ -31,7 +31,7 @@
 *****************************************************************************/
 
 /* Open Complete Event */
-typedef struct {
+typedef struct tBTA_GATTC_CI_EVT_s {
     BT_HDR            hdr;
     tBTA_GATT_STATUS  status;
 } tBTA_GATTC_CI_EVT;
@@ -39,7 +39,7 @@ typedef struct {
 #define BTA_GATTC_NV_LOAD_MAX   100
 
 /* Read Ready Event */
-typedef struct {
+typedef struct tBTA_GATTC_CI_LOAD_s {
     BT_HDR              hdr;
     tBTA_GATT_STATUS    status;
     UINT16              num_attr;

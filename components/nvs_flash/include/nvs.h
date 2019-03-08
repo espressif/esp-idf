@@ -384,7 +384,7 @@ void nvs_close(nvs_handle handle);
 /**
  * @note Info about storage space NVS.
  */
-typedef struct {
+typedef struct nvs_stats_s {
     size_t used_entries;      /**< Amount of used entries. */
     size_t free_entries;      /**< Amount of free entries. */
     size_t total_entries;     /**< Amount all available entries. */

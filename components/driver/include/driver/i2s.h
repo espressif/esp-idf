@@ -129,7 +129,7 @@ typedef enum {
  * @brief I2S configuration parameters for i2s_param_config function
  *
  */
-typedef struct {
+typedef struct i2s_config_s {
     i2s_mode_t              mode;                   /*!< I2S work mode*/
     int                     sample_rate;            /*!< I2S sample rate*/
     i2s_bits_per_sample_t   bits_per_sample;        /*!< I2S bits per sample*/
@@ -171,7 +171,7 @@ typedef enum {
  * @brief Event structure used in I2S event queue
  *
  */
-typedef struct {
+typedef struct i2s_event_s {
     i2s_event_type_t    type;   /*!< I2S event type */
     size_t              size;   /*!< I2S data size for I2S_DATA event*/
 } i2s_event_t;
@@ -182,7 +182,7 @@ typedef struct {
  * @brief I2S pin number for i2s_set_pin
  *
  */
-typedef struct {
+typedef struct i2s_pin_config_s {
     int bck_io_num;     /*!< BCK in out pin*/
     int ws_io_num;      /*!< WS in out pin*/
     int data_out_num;   /*!< DATA out pin*/

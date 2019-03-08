@@ -31,7 +31,7 @@
 /*******************************************************************************
  **  Data types
  *******************************************************************************/
-typedef struct {
+typedef struct tBTC_MEDIA_SINK_CFG_UPDATE_s {
     BT_HDR hdr;
     UINT8 codec_info[AVDT_CODEC_SIZE];
 } tBTC_MEDIA_SINK_CFG_UPDATE;

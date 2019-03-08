@@ -25,7 +25,7 @@ extern "C" {
 /**
  * @brief Configuration structure for esp_vfs_spiffs_register
  */
-typedef struct {
+typedef struct esp_vfs_spiffs_conf_s {
         const char* base_path;          /*!< File path prefix associated with the filesystem. */
         const char* partition_label;    /*!< Optional, label of SPIFFS partition to use. If set to NULL, first partition with subtype=spiffs will be used. */
         size_t max_files;               /*!< Maximum files that could be open at the same time. */

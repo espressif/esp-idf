@@ -53,20 +53,20 @@ enum {
 
 
 /* data type for BTA_SDP_API_ENABLE_EVT */
-typedef struct {
+typedef struct tBTA_SDP_API_ENABLE_s {
     BT_HDR             hdr;
     tBTA_SDP_DM_CBACK  *p_cback;
 } tBTA_SDP_API_ENABLE;
 
 /* data type for BTA_SDP_API_SEARCH_EVT */
-typedef struct {
+typedef struct tBTA_SDP_API_SEARCH_s {
     BT_HDR          hdr;
     BD_ADDR         bd_addr;
     tSDP_UUID       uuid;
 } tBTA_SDP_API_SEARCH;
 
 /* data type for BTA_SDP_API_SEARCH_EVT */
-typedef struct {
+typedef struct tBTA_SDP_API_RECORD_USER_s {
     BT_HDR          hdr;
     void           *user_data;
 } tBTA_SDP_API_RECORD_USER;
@@ -81,7 +81,7 @@ typedef union {
 } tBTA_SDP_MSG;
 
 /* SDP control block */
-typedef struct {
+typedef struct tBTA_SDP_CB_s {
     UINT8              sdp_active;  /* see BTA_SDP_SDP_ACT_* */
     BD_ADDR            remote_addr;
     tBTA_SDP_DM_CBACK  *p_dm_cback;

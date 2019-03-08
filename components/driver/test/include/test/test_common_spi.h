@@ -93,18 +93,18 @@ typedef enum {
 } spi_dup_t;
 
 /*-------- slave task related stuff -----------*/
-typedef struct {
+typedef struct slave_rxdata_s {
     uint32_t len;
     uint8_t* tx_start;
     uint8_t data[1];
 } slave_rxdata_t;
 
-typedef struct {
+typedef struct slave_txdata_s {
     uint32_t len;
     const uint8_t *start;
 } slave_txdata_t;
 
-typedef struct {
+typedef struct spi_slave_task_context_s {
     spi_host_device_t spi;
     RingbufHandle_t data_received;
     QueueHandle_t data_to_send;
@@ -119,7 +119,7 @@ extern const char MASTER_TAG[];
 extern const char SLAVE_TAG[];
 
 //parameter set definition
-typedef struct {
+typedef struct spitest_param_set_s {
     const char pset_name[PSET_NAME_LEN];
     /*The test work till the frequency below,
      *set the frequency to higher and remove checks in the driver to know how fast the system can run.
@@ -142,7 +142,7 @@ typedef struct {
 } spitest_param_set_t;
 
 //context definition for the parameterized test
-typedef struct {
+typedef struct spitest_context_s {
     uint8_t master_rxbuf[480];
     spi_transaction_t master_trans[MAX_TEST_SIZE];
     TaskHandle_t handle_slave;

@@ -48,12 +48,12 @@ typedef UINT16  tDIS_ATTR_MASK;
 
 typedef tDIS_ATTR_MASK tDIS_ATTR_BIT ;
 
-typedef struct {
+typedef struct tDIS_STRING_s {
     UINT16      len;
     UINT8       *p_data;
 } tDIS_STRING;
 
-typedef struct {
+typedef struct tDIS_PNP_ID_s {
     UINT16       vendor_id;
     UINT16       product_id;
     UINT16       product_version;
@@ -69,7 +69,7 @@ typedef union {
 
 #define DIS_MAX_STRING_DATA     7
 
-typedef struct {
+typedef struct tDIS_VALUE_s {
     UINT16                  attr_mask;
     UINT64                  system_id;
     tDIS_PNP_ID             pnp_id;
@@ -82,7 +82,7 @@ typedef void (tDIS_READ_CBACK)(BD_ADDR addr, tDIS_VALUE *p_dis_value);
 /*****************************************************************************
 **  Data structure used by Battery Service
 *****************************************************************************/
-typedef struct {
+typedef struct tBA_WRITE_DATA_s {
     BD_ADDR remote_bda;
     BOOLEAN need_rsp;
     UINT16  clt_cfg;
@@ -101,7 +101,7 @@ typedef void (tBA_CBACK)(UINT8 app_id, UINT8 event, tBA_WRITE_DATA *p_data);
 #define BA_LEVEL_RPT_REF        0x04
 typedef UINT8   tBA_LEVEL_DESCR;
 
-typedef struct {
+typedef struct tBA_REG_INFO_s {
     BOOLEAN         is_pri;
     tBA_LEVEL_DESCR     ba_level_descr;
     tGATT_TRANSPORT transport;

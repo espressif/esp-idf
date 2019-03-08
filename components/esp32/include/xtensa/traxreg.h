@@ -157,7 +157,7 @@
 
 #if 0
 /*  Describes a field within a register:  */
-typedef struct {
+typedef struct trax_regfield_s {
     const char*	name;
 // unsigned	width;
 // unsigned	shift;
@@ -169,7 +169,7 @@ typedef struct {
 #endif
 
 /*  Describes a TRAX register:  */
-typedef struct {
+typedef struct trax_regdef_s {
     const char*	name;
     unsigned	id;
     char	width;

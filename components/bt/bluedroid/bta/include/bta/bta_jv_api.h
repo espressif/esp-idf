@@ -160,26 +160,26 @@ typedef UINT8 tBTA_JV_CONN_STATE;
 typedef UINT16 tBTA_JV_EVT;
 
 /* data associated with BTA_JV_SET_DISCOVER_EVT */
-typedef struct {
+typedef struct tBTA_JV_SET_DISCOVER_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     tBTA_JV_DISC    disc_mode;  /* The current discoverable mode */
 } tBTA_JV_SET_DISCOVER;
 
 /* data associated with BTA_JV_DISCOVERY_COMP_EVT_ */
-typedef struct {
+typedef struct tBTA_JV_DISCOVERY_COMP_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT8 scn_num;              /* num of channel */
     UINT8 scn[BTA_JV_MAX_SCN];  /* channel # */
 } tBTA_JV_DISCOVERY_COMP;
 
 /* data associated with BTA_JV_CREATE_RECORD_EVT */
-typedef struct {
+typedef struct tBTA_JV_CREATE_RECORD_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The SDP handle */
 } tBTA_JV_CREATE_RECORD;
 
 /* data associated with BTA_JV_L2CAP_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_OPEN_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BD_ADDR         rem_bda;    /* The peer address */
@@ -187,7 +187,7 @@ typedef struct {
 } tBTA_JV_L2CAP_OPEN;
 
 /* data associated with BTA_JV_L2CAP_OPEN_EVT for LE sockets */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_LE_OPEN_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BD_ADDR         rem_bda;    /* The peer address */
@@ -199,35 +199,35 @@ typedef struct {
 
 
 /* data associated with BTA_JV_L2CAP_CLOSE_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_CLOSE_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BOOLEAN         async;      /* FALSE, if local initiates disconnect */
 } tBTA_JV_L2CAP_CLOSE;
 
 /* data associated with BTA_JV_L2CAP_START_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_START_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT8           sec_id;     /* security ID used by this server */
 } tBTA_JV_L2CAP_START;
 
 /* data associated with BTA_JV_L2CAP_CL_INIT_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_CL_INIT_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT8           sec_id;     /* security ID used by this client */
 } tBTA_JV_L2CAP_CL_INIT;
 
 /* data associated with BTA_JV_L2CAP_CONG_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_CONG_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BOOLEAN         cong;       /* TRUE, congested. FALSE, uncongested */
 } tBTA_JV_L2CAP_CONG;
 
 /* data associated with BTA_JV_L2CAP_READ_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_READ_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT32          req_id;     /* The req_id in the associated BTA_JvL2capRead() */
@@ -237,7 +237,7 @@ typedef struct {
 } tBTA_JV_L2CAP_READ;
 
 /* data associated with BTA_JV_L2CAP_RECEIVE_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_RECEIVE_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT32          req_id;     /* The req_id in the associated BTA_JvL2capReceive() */
@@ -247,7 +247,7 @@ typedef struct {
 } tBTA_JV_L2CAP_RECEIVE;
 
 /* data associated with BTA_JV_L2CAP_WRITE_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_WRITE_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT32          req_id;     /* The req_id in the associated BTA_JvL2capWrite() */
@@ -257,7 +257,7 @@ typedef struct {
 
 
 /* data associated with BTA_JV_L2CAP_WRITE_FIXED_EVT */
-typedef struct {
+typedef struct tBTA_JV_L2CAP_WRITE_FIXED_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT16          channel;    /* The connection channel */
     BD_ADDR         addr;       /* The peer address */
@@ -267,13 +267,13 @@ typedef struct {
 } tBTA_JV_L2CAP_WRITE_FIXED;
 
 /* data associated with BTA_JV_RFCOMM_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_OPEN_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BD_ADDR         rem_bda;    /* The peer address */
 } tBTA_JV_RFCOMM_OPEN;
 /* data associated with BTA_JV_RFCOMM_SRV_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_SRV_OPEN_s {
     tBTA_JV_STATUS  status;             /* Whether the operation succeeded or failed. */
     UINT32          handle;             /* The connection handle */
     UINT32          new_listen_handle;  /* The new listen handle */
@@ -282,7 +282,7 @@ typedef struct {
 
 
 /* data associated with BTA_JV_RFCOMM_CLOSE_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_CLOSE_s {
     tBTA_JV_STATUS  status;      /* Whether the operation succeeded or failed. */
     UINT32          port_status; /* PORT status */
     UINT32          handle;      /* The connection handle */
@@ -290,7 +290,7 @@ typedef struct {
 } tBTA_JV_RFCOMM_CLOSE;
 
 /* data associated with BTA_JV_RFCOMM_START_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_START_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT8           sec_id;     /* security ID used by this server */
@@ -298,34 +298,34 @@ typedef struct {
 } tBTA_JV_RFCOMM_START;
 
 /* data associated with BTA_JV_RFCOMM_CL_INIT_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_CL_INIT_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT8           sec_id;     /* security ID used by this client */
     BOOLEAN         use_co;     /* TRUE to use co_rfc_data */
 } tBTA_JV_RFCOMM_CL_INIT;
 /*data associated with BTA_JV_L2CAP_DATA_IND_EVT & BTA_JV_RFCOMM_DATA_IND_EVT */
-typedef struct {
+typedef struct tBTA_JV_DATA_IND_s {
     UINT32          handle;     /* The connection handle */
     BT_HDR         *p_buf;      /* The incoming data */
 } tBTA_JV_DATA_IND;
 
 /*data associated with BTA_JV_L2CAP_DATA_IND_EVT if used for LE */
-typedef struct {
+typedef struct tBTA_JV_LE_DATA_IND_s {
     UINT32          handle;     /* The connection handle */
     BT_HDR         *p_buf;      /* The incoming data */
 } tBTA_JV_LE_DATA_IND;
 
 
 /* data associated with BTA_JV_RFCOMM_CONG_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_CONG_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BOOLEAN         cong;       /* TRUE, congested. FALSE, uncongested */
 } tBTA_JV_RFCOMM_CONG;
 
 /* data associated with BTA_JV_RFCOMM_READ_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_READ_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT32          req_id;     /* The req_id in the associated BTA_JvRfcommRead() */
@@ -335,7 +335,7 @@ typedef struct {
 } tBTA_JV_RFCOMM_READ;
 
 /* data associated with BTA_JV_RFCOMM_WRITE_EVT */
-typedef struct {
+typedef struct tBTA_JV_RFCOMM_WRITE_s {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     UINT32          req_id;     /* The req_id in the associated BTA_JvRfcommWrite() */
@@ -344,14 +344,14 @@ typedef struct {
 } tBTA_JV_RFCOMM_WRITE;
 
 /* data associated with BTA_JV_API_SET_PM_PROFILE_EVT */
-typedef struct {
+typedef struct tBTA_JV_SET_PM_PROFILE_s {
     tBTA_JV_STATUS  status;     /* Status of the operation */
     UINT32          handle;     /* Connection handle */
     tBTA_JV_PM_ID   app_id;      /* JV app ID */
 } tBTA_JV_SET_PM_PROFILE;
 
 /* data associated with BTA_JV_API_NOTIFY_PM_STATE_CHANGE_EVT */
-typedef struct {
+typedef struct tBTA_JV_NOTIFY_PM_STATE_CHANGE_s {
     UINT32          handle;     /* Connection handle */
     tBTA_JV_CONN_STATE  state;  /* JV connection stata */
 } tBTA_JV_NOTIFY_PM_STATE_CHANGE;
@@ -397,7 +397,7 @@ typedef void *(tBTA_JV_RFCOMM_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
 typedef void (tBTA_JV_L2CAP_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_Data);
 
 /* JV configuration structure */
-typedef struct {
+typedef struct tBTA_JV_CFG_s {
     UINT16  sdp_raw_size;           /* The size of p_sdp_raw_data */
     UINT16  sdp_db_size;            /* The size of p_sdp_db */
     UINT8   *p_sdp_raw_data;        /* The data buffer to keep raw data */

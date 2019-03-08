@@ -104,7 +104,7 @@ typedef enum {
 /**
  * @brief Configuration parameters of LEDC channel for ledc_channel_config function
  */
-typedef struct {
+typedef struct ledc_channel_config_s {
     int gpio_num;                   /*!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16 */
     ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
     ledc_channel_t channel;         /*!< LEDC channel (0 - 7) */
@@ -117,7 +117,7 @@ typedef struct {
 /**
  * @brief Configuration parameters of LEDC Timer timer for ledc_timer_config function
  */
-typedef struct {
+typedef struct ledc_timer_config_s {
     ledc_mode_t speed_mode;                /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
     union {
         ledc_timer_bit_t duty_resolution;  /*!< LEDC channel duty resolution */

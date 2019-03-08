@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct mcpwm_dev_s {
     union {
         struct {
             uint32_t prescale: 8;                  /*Period of PWM_clk = 6.25ns * (PWM_CLK_PRESCALE + 1)*/

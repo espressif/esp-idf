@@ -210,7 +210,7 @@ typedef UINT8 tSMP_KEYS;
 typedef UINT8 tSMP_SC_KEY_TYPE;
 
 /* data type for BTM_SP_IO_REQ_EVT */
-typedef struct {
+typedef struct tSMP_IO_REQ_s {
     tSMP_IO_CAP     io_cap;         /* local IO capabilities */
     tSMP_OOB_FLAG   oob_data;       /* OOB data present (locally) for the peer device */
     tSMP_AUTH_REQ   auth_req;       /* Authentication required (for local device) */
@@ -219,7 +219,7 @@ typedef struct {
     tSMP_KEYS       resp_keys;      /* responder keys */
 } tSMP_IO_REQ;
 
-typedef struct {
+typedef struct tSMP_CMPL_s {
     tSMP_STATUS reason;
     tSMP_SEC_LEVEL sec_level;
     BOOLEAN is_pair_cancel;
@@ -227,13 +227,13 @@ typedef struct {
     tSMP_AUTH_REQ auth_mode;
 } tSMP_CMPL;
 
-typedef struct {
+typedef struct tSMP_PUBLIC_KEY_s {
     BT_OCTET32  x;
     BT_OCTET32  y;
 } tSMP_PUBLIC_KEY;
 
 /* the data associated with the info sent to the peer via OOB interface */
-typedef struct {
+typedef struct tSMP_LOC_OOB_DATA_s {
     BOOLEAN         present;
     BT_OCTET16      randomizer;
     BT_OCTET16      commitment;
@@ -247,14 +247,14 @@ typedef struct {
 } tSMP_LOC_OOB_DATA;
 
 /* the data associated with the info received from the peer via OOB interface */
-typedef struct {
+typedef struct tSMP_PEER_OOB_DATA_s {
     BOOLEAN         present;
     BT_OCTET16      randomizer;
     BT_OCTET16      commitment;
     tBLE_BD_ADDR    addr_rcvd_from;
 } tSMP_PEER_OOB_DATA;
 
-typedef struct {
+typedef struct tSMP_SC_OOB_DATA_s {
     tSMP_LOC_OOB_DATA   loc_oob_data;
     tSMP_PEER_OOB_DATA  peer_oob_data;
 } tSMP_SC_OOB_DATA;
@@ -270,7 +270,7 @@ typedef union {
 
 
 /* AES Encryption output */
-typedef struct {
+typedef struct tSMP_ENC_s {
     UINT8   status;
     UINT8   param_len;
     UINT16  opcode;

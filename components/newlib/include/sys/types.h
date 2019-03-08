@@ -338,7 +338,7 @@ typedef struct pthread_attr_s {
 #define PTHREAD_STACK_MIN       200
 
 #else /* !defined(__XMK__) */
-typedef struct {
+typedef struct pthread_attr_s {
   int is_initialized;
   void *stackaddr;
   int stacksize;
@@ -434,14 +434,14 @@ typedef struct {
 #if defined(__XMK__)
 typedef unsigned int pthread_mutex_t;    /* identify a mutex */
 
-typedef struct {
+typedef struct pthread_mutexattr_s {
   int type;
 } pthread_mutexattr_t;
 
 #else /* !defined(__XMK__) */
 typedef __uint32_t pthread_mutex_t;      /* identify a mutex */
 
-typedef struct {
+typedef struct pthread_mutexattr_s {
   int   is_initialized;
 #if defined(_POSIX_THREAD_PROCESS_SHARED)
   int   process_shared;  /* allow mutex to be shared amongst processes */
@@ -461,7 +461,7 @@ typedef struct {
 
 typedef __uint32_t pthread_cond_t;       /* identify a condition variable */
 
-typedef struct {
+typedef struct pthread_condattr_s {
   int   is_initialized;
 #if defined(_POSIX_THREAD_PROCESS_SHARED)
   int   process_shared;       /* allow this to be shared amongst processes */
@@ -472,7 +472,7 @@ typedef struct {
 
 typedef __uint32_t pthread_key_t;        /* thread-specific data keys */
 
-typedef struct {
+typedef struct pthread_once_s {
   int   is_initialized;  /* is this structure initialized? */
   int   init_executed;   /* has the initialization routine been run? */
 } pthread_once_t;       /* dynamic package initialization */
@@ -486,7 +486,7 @@ typedef struct {
 
 #if defined(_POSIX_BARRIERS)
 typedef __uint32_t pthread_barrier_t;        /* POSIX Barrier Object */
-typedef struct {
+typedef struct pthread_barrierattr_s {
   int   is_initialized;  /* is this structure initialized? */
 #if defined(_POSIX_THREAD_PROCESS_SHARED)
   int   process_shared;       /* allow this to be shared amongst processes */
@@ -505,7 +505,7 @@ typedef __uint32_t pthread_spinlock_t;        /* POSIX Spin Lock Object */
 
 #if defined(_POSIX_READER_WRITER_LOCKS)
 typedef __uint32_t pthread_rwlock_t;         /* POSIX RWLock Object */
-typedef struct {
+typedef struct pthread_rwlockattr_s {
   int   is_initialized;       /* is this structure initialized? */
 #if defined(_POSIX_THREAD_PROCESS_SHARED)
   int   process_shared;       /* allow this to be shared amongst processes */

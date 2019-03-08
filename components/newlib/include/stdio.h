@@ -590,7 +590,7 @@ typedef int cookie_seek_function_t(void *__cookie, _off64_t *__off,
 typedef int cookie_seek_function_t(void *__cookie, off_t *__off, int __whence);
 # endif /* !__LARGE64_FILES */
 typedef int cookie_close_function_t(void *__cookie);
-typedef struct
+typedef struct cookie_io_functions_s
 {
   /* These four struct member names are dictated by Linux; hopefully,
      they don't conflict with any macros.  */

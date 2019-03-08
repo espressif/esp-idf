@@ -155,7 +155,7 @@ typedef enum {
 } mdns_action_type_t;
 
 
-typedef struct {
+typedef struct mdns_header_s {
     uint16_t id;
     union {
         struct {
@@ -178,7 +178,7 @@ typedef struct {
     uint16_t additional;//ARCOUNT
 } mdns_header_t;
 
-typedef struct {
+typedef struct mdns_name_s {
     char host[MDNS_NAME_BUF_LEN];
     char service[MDNS_NAME_BUF_LEN];
     char proto[MDNS_NAME_BUF_LEN];
@@ -212,7 +212,7 @@ typedef struct mdns_parsed_record_s {
     uint8_t *data;
 } mdns_parsed_record_t;
 
-typedef struct {
+typedef struct mdns_parsed_packet_s {
     tcpip_adapter_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
     //struct udp_pcb *pcb;
@@ -227,7 +227,7 @@ typedef struct {
     mdns_parsed_record_t * records;
 } mdns_parsed_packet_t;
 
-typedef struct {
+typedef struct mdns_rx_packet_s {
     tcpip_adapter_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
     struct pbuf *pb;
@@ -243,7 +243,7 @@ typedef struct mdns_txt_linked_item_s {
     struct mdns_txt_linked_item_s * next;   /*!< next result, or NULL for the last result in the list */
 } mdns_txt_linked_item_t;
 
-typedef struct {
+typedef struct mdns_service_s {
     const char * instance;
     const char * service;
     const char * proto;
@@ -294,7 +294,7 @@ typedef struct mdns_tx_packet_s {
     mdns_out_answer_t * additional;
 } mdns_tx_packet_t;
 
-typedef struct {
+typedef struct mdns_pcb_s {
     mdns_pcb_state_t state;
     struct udp_pcb * pcb;
     mdns_srv_item_t ** probe_services;
@@ -342,7 +342,7 @@ typedef struct mdns_server_s {
     esp_timer_handle_t timer_handle;
 } mdns_server_t;
 
-typedef struct {
+typedef struct mdns_action_s {
     mdns_action_type_t type;
     union {
         char * hostname;

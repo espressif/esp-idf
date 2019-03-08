@@ -147,13 +147,13 @@ typedef void (tBTA_SYS_EIR_CBACK)(UINT16 uuid16, BOOLEAN adding);
 #endif
 
 /* registration structure */
-typedef struct {
+typedef struct tBTA_SYS_REG_s {
     tBTA_SYS_EVT_HDLR   *evt_hdlr;
     tBTA_SYS_DISABLE    *disable;
 } tBTA_SYS_REG;
 
 /* data type to send events to BTA SYS HW manager */
-typedef struct {
+typedef struct tBTA_SYS_HW_MSG_s {
     BT_HDR                hdr;
     tBTA_SYS_HW_MODULE   hw_module;
 } tBTA_SYS_HW_MSG;

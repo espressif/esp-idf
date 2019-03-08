@@ -38,7 +38,7 @@ typedef enum {
 /**
  * \brief          SHA-256 context structure
  */
-typedef struct
+typedef struct mbedtls_sha256_context_s
 {
     uint32_t total[2];          /*!< number of bytes processed  */
     uint32_t state[8];          /*!< intermediate digest state  */

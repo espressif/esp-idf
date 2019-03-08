@@ -186,7 +186,7 @@ extern "C" {
 **********************************************************************
 */
 
-typedef struct {
+typedef struct SEGGER_SYSVIEW_TASKINFO_s {
   U32          TaskID;
   const char*  sName;
   U32          Prio;
@@ -213,7 +213,7 @@ typedef void (SEGGER_SYSVIEW_SEND_SYS_DESC_FUNC)(void);
 **********************************************************************
 */
 
-typedef struct {
+typedef struct SEGGER_SYSVIEW_OS_API_s {
   U64  (*pfGetTime)      (void);
   void (*pfSendTaskList) (void);
 } SEGGER_SYSVIEW_OS_API;

@@ -12,7 +12,7 @@
 // This file defines structure of modbus parameters which reflect correspond modbus address space
 // for each modbus register type (coils, discreet inputs, holding registers, input registers)
 #pragma pack(push, 1)
-typedef struct
+typedef struct discrete_reg_params_s
 {
     // Parameter: discrete_input0
     uint8_t discrete_input0:1;
@@ -35,7 +35,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
+typedef struct coil_reg_params_s
 {
     // Parameter: Coil 0 : Coil0
     uint8_t coil0:1;
@@ -59,7 +59,7 @@ typedef struct
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-typedef struct
+typedef struct input_reg_params_s
 {
     // Parameter: Data channel 0 : data_chan0 : NV Address: 0
     float data_chan0;
@@ -74,7 +74,7 @@ typedef struct
 
 //See register map for more information.
 #pragma pack(push, 1)
-typedef struct
+typedef struct holding_reg_params_s
 {
     // Parameter: Data channel 0 : DataChan0
     float data_chan0;

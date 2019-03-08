@@ -32,17 +32,17 @@
 
 // HACK(zachoverflow): temporary dark magic
 #define BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK 0x1700 // didn't look used in bt_types...here goes nothing
-typedef struct {
+typedef struct post_to_task_hack_s {
     void (*callback)(BT_HDR *);
 } post_to_task_hack_t;
 
-typedef struct {
+typedef struct command_complete_hack_s {
     void (*callback)(BT_HDR *);
     BT_HDR *response;
     void *context;
 } command_complete_hack_t;
 
-typedef struct {
+typedef struct command_status_hack_s {
     void (*callback)(BT_HDR *);
     uint8_t status;
     BT_HDR *command;
@@ -167,7 +167,7 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 /* This is the inquiry response information held by BTU, and available
 ** to applications.
 */
-typedef struct {
+typedef struct tBTU_INQ_INFO_s {
     BD_ADDR     remote_bd_addr;
     UINT8       page_scan_rep_mode;
     UINT8       page_scan_per_mode;
@@ -187,13 +187,13 @@ typedef struct {
 #endif
 
 /* structure to hold registered timers */
-typedef struct {
+typedef struct tBTU_TIMER_REG_s {
     TIMER_LIST_ENT          *p_tle;      /* timer entry */
     tBTU_TIMER_CALLBACK     timer_cb;    /* callback triggered when timer expires */
 } tBTU_TIMER_REG;
 
 /* structure to hold registered event callbacks */
-typedef struct {
+typedef struct tBTU_EVENT_REG_s {
     UINT16                  event_range;  /* start of event range */
     tBTU_EVENT_CALLBACK     event_cb;     /* callback triggered when event is in range */
 } tBTU_EVENT_REG;
@@ -206,7 +206,7 @@ typedef struct {
 
 /* Define structure holding BTU variables
 */
-typedef struct {
+typedef struct tBTU_CB_s {
     tBTU_TIMER_REG   timer_reg[BTU_MAX_REG_TIMER];
     tBTU_EVENT_REG   event_reg[BTU_MAX_REG_EVENT];
 

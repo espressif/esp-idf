@@ -31,7 +31,7 @@ extern "C" {
 
 
 /// Configuration for creating event loops
-typedef struct {
+typedef struct esp_event_loop_args_s {
     int32_t queue_size;                         /**< size of the event loop queue */
     const char* task_name;                      /**< name of the event loop task; if NULL,
                                                         a dedicated task is not created for event loop*/

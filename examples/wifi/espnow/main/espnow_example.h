@@ -28,12 +28,12 @@ typedef enum {
     EXAMPLE_ESPNOW_RECV_CB,
 } example_espnow_event_id_t;
 
-typedef struct {
+typedef struct example_espnow_event_send_cb_s {
     uint8_t mac_addr[ESP_NOW_ETH_ALEN];
     esp_now_send_status_t status;
 } example_espnow_event_send_cb_t;
 
-typedef struct {
+typedef struct example_espnow_event_recv_cb_s {
     uint8_t mac_addr[ESP_NOW_ETH_ALEN];
     uint8_t *data;
     int data_len;
@@ -45,7 +45,7 @@ typedef union {
 } example_espnow_event_info_t;
 
 /* When ESPNOW sending or receiving callback function is called, post event to ESPNOW task. */
-typedef struct {
+typedef struct example_espnow_event_s {
     example_espnow_event_id_t id;
     example_espnow_event_info_t info;
 } example_espnow_event_t;
@@ -57,7 +57,7 @@ enum {
 };
 
 /* User defined field of ESPNOW data in this example. */
-typedef struct {
+typedef struct example_espnow_send_param_s {
     uint8_t type;                         //Broadcast or unicast ESPNOW data.
     uint8_t state;                        //Indicate that if has received broadcast ESPNOW data or not.
     uint16_t seq_num;                     //Sequence number of ESPNOW data.

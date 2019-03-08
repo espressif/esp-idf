@@ -256,7 +256,7 @@ typedef enum {
 /**
  * @brief IP address and port
  */
-typedef struct {
+typedef struct mesh_addr_s {
     ip4_addr_t ip4;    /**< IP address */
     uint16_t port;     /**< port */
 } __attribute__((packed)) mip_t;
@@ -272,14 +272,14 @@ typedef union {
 /**
  * @brief Channel switch information
  */
-typedef struct {
+typedef struct mesh_event_channel_switch_s {
     uint8_t channel;    /**< new channel */
 } mesh_event_channel_switch_t;
 
 /**
  * @brief Parent connected information
  */
-typedef struct {
+typedef struct mesh_event_connected_s {
     system_event_sta_connected_t connected; /**< parent information, same as Wi-Fi event SYSTEM_EVENT_STA_CONNECTED does */
     uint8_t self_layer;                     /**< layer */
 } mesh_event_connected_t;
@@ -287,14 +287,14 @@ typedef struct {
 /**
  * @brief No parent found information
  */
-typedef struct {
+typedef struct mesh_event_no_parent_found_s {
     int scan_times;    /**< scan times being through */
 } mesh_event_no_parent_found_t;
 
 /**
  * @brief Layer change information
  */
-typedef struct {
+typedef struct mesh_event_layer_change_s {
     uint8_t new_layer; /**< new layer */
 } mesh_event_layer_change_t;
 
@@ -309,7 +309,7 @@ typedef enum {
 /**
  * @brief vote started information
  */
-typedef struct {
+typedef struct mesh_event_vote_started_s {
     int reason;             /**< vote reason, vote could be initiated by children or by the root itself */
     int attempts;           /**< max vote attempts before stopped */
     mesh_addr_t rc_addr;    /**< root address specified by users via API esp_mesh_waive_root() */
@@ -318,7 +318,7 @@ typedef struct {
 /**
  * @brief find a mesh network that this device can join
  */
-typedef struct {
+typedef struct mesh_event_find_network_s {
     uint8_t channel;            /**< channel number of the new found network */
     uint8_t router_bssid[6];    /**< router BSSID */
 } mesh_event_find_network_t;
@@ -351,7 +351,7 @@ typedef system_event_ap_stadisconnected_t mesh_event_child_disconnected_t;
 /**
  * @brief Root switch request information
  */
-typedef struct {
+typedef struct mesh_event_root_switch_req_s {
     int reason;             /**< root switch reason, generally root switch is initialized by users via API esp_mesh_waive_root() */
     mesh_addr_t rc_addr;    /**< the address of root switch requester */
 } mesh_event_root_switch_req_t;
@@ -359,7 +359,7 @@ typedef struct {
 /**
  * @brief Other powerful root address
  */
-typedef struct {
+typedef struct mesh_event_root_conflict_s {
     int8_t rssi;           /**< rssi with router */
     uint16_t capacity;     /**< the number of devices in current network */
     uint8_t addr[6];       /**< other powerful root address */
@@ -368,7 +368,7 @@ typedef struct {
 /**
  * @brief Routing table change
  */
-typedef struct {
+typedef struct mesh_event_routing_table_change_s {
     uint16_t rt_size_new;      /**< the new value */
     uint16_t rt_size_change;   /**< the changed value */
 } mesh_event_routing_table_change_t;
@@ -376,21 +376,21 @@ typedef struct {
 /**
  * @brief Root fixed
  */
-typedef struct {
+typedef struct mesh_event_root_fixed_s {
     bool is_fixed;     /**< status */
 } mesh_event_root_fixed_t;
 
 /**
  * @brief Scan done　event information
  */
-typedef struct {
+typedef struct mesh_event_scan_done_s {
     uint8_t  number;     /**< the number of APs scanned */
 } mesh_event_scan_done_t;
 
 /**
  * @brief Network state information
  */
-typedef struct {
+typedef struct mesh_event_network_state_s {
     bool is_rootless;     /**< whether current mesh network has a root */
 } mesh_event_network_state_t;
 
@@ -430,7 +430,7 @@ typedef union {
 /**
  * @brief Mesh event
  */
-typedef struct {
+typedef struct mesh_event_s {
     mesh_event_id_t id;        /**< mesh event id */
     mesh_event_info_t info;    /**< mesh event info */
 } mesh_event_t;
@@ -445,7 +445,7 @@ typedef void (*mesh_event_cb_t)(mesh_event_t event);
 /**
  * @brief Mesh option
  */
-typedef struct {
+typedef struct mesh_data_s {
     uint8_t type;    /**< option type */
     uint16_t len;    /**< option length */
     uint8_t *val;    /**< option value */
@@ -464,7 +464,7 @@ typedef struct {
 /**
  * @brief Router configuration
  */
-typedef struct {
+typedef struct mesh_router_s {
     uint8_t ssid[32];             /**< SSID */
     uint8_t ssid_len;             /**< length of SSID */
     uint8_t bssid[6];             /**< BSSID, if this value is specified, users should also specify "allow_router_switch". */
@@ -480,7 +480,7 @@ typedef struct {
 /**
  * @brief Mesh softAP configuration
  */
-typedef struct {
+typedef struct mesh_ap_cfg_s {
     uint8_t password[64];      /**< mesh softAP password */
     uint8_t max_connection;    /**< max number of stations allowed to connect in, max 10 */
 } mesh_ap_cfg_t;
@@ -488,7 +488,7 @@ typedef struct {
 /**
  * @brief Mesh initialization configuration
  */
-typedef struct {
+typedef struct mesh_cfg_s {
     uint8_t channel;                            /**< channel, the mesh network on */
     bool allow_channel_switch;                  /**< if this value is set, when "fail" (mesh_attempts_t) times is reached, device will change to
                                                      a full channel scan for a network that could join. The default value is false. */
@@ -510,7 +510,7 @@ typedef union {
 /**
  * @brief Vote
  */
-typedef struct {
+typedef struct mesh_vote_s {
     float percentage;           /**< vote percentage threshold for approval of being a root */
     bool is_rc_specified;       /**< if true, rc_addr shall be specified (Unimplemented).
                                      if false, attempts value shall be specified to make network start root election. */
@@ -520,7 +520,7 @@ typedef struct {
 /**
  * @brief The number of packets pending in the queue waiting to be sent by the mesh stack
  */
-typedef struct {
+typedef struct mesh_tx_pending_s {
     int to_parent;        /**< to parent queue */
     int to_parent_p2p;    /**< to parent (P2P) queue */
     int to_child;         /**< to child queue */
@@ -532,7 +532,7 @@ typedef struct {
 /**
  * @brief The number of packets available in the queue waiting to be received by applications
  */
-typedef struct {
+typedef struct mesh_rx_pending_s {
     int toDS;      /**< to external DS */
     int toSelf;    /**< to self */
 } mesh_rx_pending_t;

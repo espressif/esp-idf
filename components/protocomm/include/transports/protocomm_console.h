@@ -28,7 +28,7 @@ extern "C" {
 /**
  * @brief   Config parameters for protocomm console
  */
-typedef struct {
+typedef struct protocomm_console_config_s {
     size_t   stack_size;        /*!< Stack size of console task */
     unsigned task_priority;     /*!< Priority of console task */
 } protocomm_console_config_t;

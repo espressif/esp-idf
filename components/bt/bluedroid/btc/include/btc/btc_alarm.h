@@ -20,7 +20,7 @@
 #include "osi/alarm.h"
 
 /* btc_alarm_args_t */
-typedef struct {
+typedef struct btc_alarm_args_s {
     osi_alarm_callback_t cb;
     void *cb_data;
 } btc_alarm_args_t;

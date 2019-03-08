@@ -28,13 +28,13 @@
 
 typedef unsigned long  DWORD;
 
-typedef struct {
+typedef struct Point_s {
     DWORD x[KEY_LENGTH_DWORDS_P256];
     DWORD y[KEY_LENGTH_DWORDS_P256];
     DWORD z[KEY_LENGTH_DWORDS_P256];
 } Point;
 
-typedef struct {
+typedef struct elliptic_curve_s {
     // curve's coefficients
     DWORD a[KEY_LENGTH_DWORDS_P256];
     DWORD b[KEY_LENGTH_DWORDS_P256];

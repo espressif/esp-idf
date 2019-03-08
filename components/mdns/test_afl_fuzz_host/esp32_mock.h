@@ -8,7 +8,7 @@ typedef enum
     ESP_TIMER_TASK,     //!< Callback is called from timer task
 } esp_timer_dispatch_t;
 
-typedef struct 
+typedef struct esp_timer_create_args_s 
 {
     esp_timer_cb_t callback;        //!< Function to call when timer expires
     void* arg;                      //!< Argument to pass to the callback

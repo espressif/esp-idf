@@ -698,7 +698,7 @@ typedef int (*esp_wps_is_selected_pbc_registrar_t)(const void *msg, unsigned cha
   *        The structure can be set as software crypto or the crypto optimized by ESP32
   *        hardware.
   */
-typedef struct {
+typedef struct wpa_crypto_funcs_s {
     uint32_t size;
     uint32_t version;
     esp_aes_wrap_t aes_wrap;                         /**< station connect function used when send EAPOL frame */
@@ -727,7 +727,7 @@ typedef struct {
   *        structure can be set as software crypto or the crypto optimized by ESP32
   *        hardware.
   */
-typedef struct{
+typedef struct wps_crypto_funcs_s{
     uint32_t size;
     uint32_t version;
     esp_aes_128_encrypt_t aes_128_encrypt;          /**< function used to process message when do WPS */
@@ -755,7 +755,7 @@ typedef struct{
   *        The structure can be set as software crypto or the crypto optimized by ESP32
   *        hardware.
   */
-typedef struct {
+typedef struct wpa2_crypto_funcs_s {
     uint32_t size;
     uint32_t version;
     esp_crypto_hash_init_t crypto_hash_init;                  /**< function used to initialize a crypto_hash structure when use TLSV1 */
@@ -788,7 +788,7 @@ typedef struct {
   *        structure can be set as software crypto or the crypto optimized by ESP32
   *        hardware.
   */
-typedef struct{
+typedef struct mesh_crypto_funcs_s{
     esp_aes_128_encrypt_t aes_128_encrypt;          /**< function used in mesh vendor IE encryption */
     esp_aes_128_decrypt_t aes_128_decrypt;          /**< function used in mesh vendor IE decryption */
 } mesh_crypto_funcs_t;

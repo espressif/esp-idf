@@ -56,7 +56,7 @@ do {                                                 \
 
 
 /*Bluetooth Address*/
-typedef struct {
+typedef struct bt_uuid_s {
     uint8_t address[6];
 } __attribute__ ((__packed__)) bt_bdaddr_t;
 

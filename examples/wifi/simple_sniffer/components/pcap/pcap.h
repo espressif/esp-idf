@@ -54,7 +54,7 @@ typedef enum {
 * @brief Pcap configuration Type Definition
 *
 */
-typedef struct {
+typedef struct pcap_config_s {
     FILE *fp;                   /* Pointer to a standard file handle */
     pcap_link_type_t link_type; /* Pcap Link Type */
 } pcap_config_t;

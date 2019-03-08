@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /** pthread configuration structure that influences pthread creation */
-typedef struct {
+typedef struct esp_pthread_cfg_s {
     size_t stack_size;  ///< The stack size of the pthread
     size_t prio;        ///< The thread's priority
     bool inherit_cfg;   ///< Inherit this configuration further

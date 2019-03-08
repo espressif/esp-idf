@@ -27,7 +27,7 @@ typedef struct linenoiseCompletions linenoiseCompletions;
 /**
  * @brief Parameters for console initialization
  */
-typedef struct {
+typedef struct esp_console_config_s {
     size_t max_cmdline_length;  //!< length of command line buffer, in bytes
     size_t max_cmdline_args;    //!< maximum number of command line arguments to parse
     int hint_color;     //!< ASCII color code of hint text
@@ -66,7 +66,7 @@ typedef int (*esp_console_cmd_func_t)(int argc, char** argv);
 /**
  * @brief Console command description
  */
-typedef struct {
+typedef struct esp_console_cmd_s {
     /**
      * Command name. Must not be NULL, must not contain spaces.
      * The pointer must be valid until the call to esp_console_deinit.

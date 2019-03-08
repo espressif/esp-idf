@@ -135,7 +135,7 @@ typedef enum {
  *
  * @note    Macro initializers are available for this structure
  */
-typedef struct {
+typedef struct can_general_config_s {
     can_mode_t mode;                /**< Mode of CAN controller */
     gpio_num_t tx_io;               /**< Transmit GPIO number */
     gpio_num_t rx_io;               /**< Receive GPIO number */
@@ -152,7 +152,7 @@ typedef struct {
  *
  * @note    Macro initializers are available for this structure
  */
-typedef struct {
+typedef struct can_timing_config_s {
     uint8_t brp;                    /**< Baudrate prescaler (APB clock divider, even number from 2 to 128) */
     uint8_t tseg_1;                 /**< Timing segment 1 (Number of time quanta, between 1 to 16) */
     uint8_t tseg_2;                 /**< Timing segment 2 (Number of time quanta, 1 to 8) */
@@ -165,7 +165,7 @@ typedef struct {
  *
  * @note    Macro initializers are available for this structure
  */
-typedef struct {
+typedef struct can_filter_config_s {
     uint32_t acceptance_code;       /**< 32-bit acceptance code */
     uint32_t acceptance_mask;       /**< 32-bit acceptance mask */
     bool single_filter;             /**< Use Single Filter Mode (see documentation) */
@@ -174,7 +174,7 @@ typedef struct {
 /**
  * @brief   Structure to store status information of CAN driver
  */
-typedef struct {
+typedef struct can_status_info_s {
     can_state_t state;              /**< Current state of CAN controller (Stopped/Running/Bus-Off/Recovery) */
     uint32_t msgs_to_tx;            /**< Number of messages queued for transmission or awaiting transmission completion */
     uint32_t msgs_to_rx;            /**< Number of messages in RX queue waiting to be read */
@@ -192,7 +192,7 @@ typedef struct {
  * @note    The flags member is used to control the message type, and transmission
  *          type (see documentation for message flags)
  */
-typedef struct {
+typedef struct can_message_s {
     uint32_t flags;                 /**< Bit field of message flags indicates frame/transmission type (see documentation) */
     uint32_t identifier;            /**< 11 or 29 bit identifier */
     uint8_t data_length_code;       /**< Data length code */

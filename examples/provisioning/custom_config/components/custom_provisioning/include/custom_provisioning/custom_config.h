@@ -18,7 +18,7 @@
 /**
  * @brief   Custom config data received by device
  */
-typedef struct {
+typedef struct custom_config_s {
     char info[128];
     int  version;
 } custom_config_t;

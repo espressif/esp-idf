@@ -22,7 +22,7 @@
 #include "stack/bt_types.h"
 #include "device/event_mask.h"
 
-typedef struct {
+typedef struct hci_packet_factory_s {
     BT_HDR *(*make_reset)(void);
     BT_HDR *(*make_read_buffer_size)(void);
     BT_HDR *(*make_set_c2h_flow_control)(uint8_t enable);

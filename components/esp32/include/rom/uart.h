@@ -127,7 +127,7 @@ typedef enum {
     WRITE_OVER
 } RcvMsgBuffState;
 
-typedef struct {
+typedef struct RcvMsgBuff_s {
     uint8_t *pRcvMsgBuff;
     uint8_t *pWritePos;
     uint8_t *pReadPos;
@@ -135,7 +135,7 @@ typedef struct {
     RcvMsgBuffState BuffState;
 } RcvMsgBuff;
 
-typedef struct {
+typedef struct TrxMsgBuff_s {
     uint32_t  TrxBuffSize;
     uint8_t  *pTrxBuff;
 } TrxMsgBuff;
@@ -148,7 +148,7 @@ typedef enum {
     RCV_ESC_CHAR,
 } RcvMsgState;
 
-typedef struct {
+typedef struct UartDevice_s {
     UartBautRate     baut_rate;
     UartBitsNum4Char data_bits;
     UartExistParity  exist_parity;

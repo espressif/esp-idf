@@ -134,7 +134,7 @@ typedef enum {
     ESP_ROM_SPIFLASH_RESULT_TIMEOUT
 } esp_rom_spiflash_result_t;
 
-typedef struct {
+typedef struct esp_rom_spiflash_chip_s {
     uint32_t device_id;
     uint32_t chip_size;    // chip size in bytes
     uint32_t block_size;
@@ -143,7 +143,7 @@ typedef struct {
     uint32_t status_mask;
 } esp_rom_spiflash_chip_t;
 
-typedef struct {
+typedef struct esp_rom_spiflash_common_cmd_s {
     uint8_t  data_length;
     uint8_t  read_cmd0;
     uint8_t  read_cmd1;

@@ -131,7 +131,7 @@ typedef UINT8 tL2CAP_CHNL_DATA_RATE;
 **  Type Definitions
 *****************************************************************************/
 
-typedef struct {
+typedef struct tL2CAP_FCR_OPTS_s {
 #define L2CAP_FCR_BASIC_MODE    0x00
 #define L2CAP_FCR_ERTM_MODE     0x03
 #define L2CAP_FCR_STREAM_MODE   0x04
@@ -149,7 +149,7 @@ typedef struct {
 ** parameters are optional, for each parameter there is a boolean to
 ** use to signify its presence or absence.
 */
-typedef struct {
+typedef struct tL2CAP_CFG_INFO_s {
     UINT16      result;                 /* Only used in confirm messages */
     BOOLEAN     mtu_present;
     UINT16      mtu;
@@ -169,7 +169,7 @@ typedef struct {
 /* Define a structure to hold the configuration parameter for LE L2CAP connection
 ** oriented channels.
 */
-typedef struct
+typedef struct tL2CAP_LE_CFG_INFO_s
 {
     UINT16  mtu;
     UINT16  mps;
@@ -298,7 +298,7 @@ typedef void (tL2CA_TX_COMPLETE_CB) (UINT16, UINT16);
 ** MUST be provided, with the exception of the "connect pending"
 ** callback and "congestion status" callback.
 */
-typedef struct {
+typedef struct tL2CAP_APPL_INFO_s {
     tL2CA_CONNECT_IND_CB        *pL2CA_ConnectInd_Cb;
     tL2CA_CONNECT_CFM_CB        *pL2CA_ConnectCfm_Cb;
     tL2CA_CONNECT_PND_CB        *pL2CA_ConnectPnd_Cb;
@@ -316,7 +316,7 @@ typedef struct {
 /* Define the structure that applications use to create or accept
 ** connections with enhanced retransmission mode.
 */
-typedef struct {
+typedef struct tL2CAP_ERTM_INFO_s {
     UINT8       preferred_mode;
     UINT8       allowed_modes;
     UINT16      user_rx_buf_size;
@@ -919,7 +919,7 @@ typedef void (tL2CA_UCD_CONGESTION_STATUS_CB) (BD_ADDR, BOOLEAN);
 
 /* UCD registration info (the callback addresses and PSM)
 */
-typedef struct {
+typedef struct tL2CAP_UCD_CB_INFO_s {
     tL2CA_UCD_DISCOVER_CB           *pL2CA_UCD_Discover_Cb;
     tL2CA_UCD_DATA_CB               *pL2CA_UCD_Data_Cb;
     tL2CA_UCD_CONGESTION_STATUS_CB  *pL2CA_UCD_Congestion_Status_Cb;
@@ -1045,7 +1045,7 @@ typedef void (tL2CA_FIXED_CONGESTION_STATUS_CB) (BD_ADDR, BOOLEAN);
 
 /* Fixed channel registration info (the callback addresses and channel config)
 */
-typedef struct {
+typedef struct tL2CAP_FIXED_CHNL_REG_s {
     tL2CA_FIXED_CHNL_CB    *pL2CA_FixedConn_Cb;
     tL2CA_FIXED_DATA_CB    *pL2CA_FixedData_Cb;
     tL2CA_FIXED_CONGESTION_STATUS_CB *pL2CA_FixedCong_Cb;

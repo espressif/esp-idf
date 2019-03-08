@@ -727,14 +727,14 @@ typedef UINT8 tBTTRC_PARAM_TYPE;
 typedef UINT8 tBTTRC_LAYER_ID;
 typedef UINT8 tBTTRC_TYPE;
 
-typedef struct {
+typedef struct tBTTRC_LEVEL_s {
     tBTTRC_LAYER_ID layer_id;
     tBTTRC_TYPE     type;      /* TODO: use tBTTRC_TYPE instead of "classical level 0-5" */
 } tBTTRC_LEVEL;
 
 typedef UINT8 (tBTTRC_SET_TRACE_LEVEL)( UINT8 );
 
-typedef struct {
+typedef struct tBTTRC_FUNC_MAP_s {
     const tBTTRC_LAYER_ID         layer_id_start;
     const tBTTRC_LAYER_ID         layer_id_end;
     tBTTRC_SET_TRACE_LEVEL        *p_f;

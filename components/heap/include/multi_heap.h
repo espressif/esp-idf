@@ -147,7 +147,7 @@ size_t multi_heap_free_size(multi_heap_handle_t heap);
 size_t multi_heap_minimum_free_size(multi_heap_handle_t heap);
 
 /** @brief Structure to access heap metadata via multi_heap_get_info */
-typedef struct {
+typedef struct multi_heap_info_s {
     size_t total_free_bytes;      ///<  Total free bytes in the heap. Equivalent to multi_free_heap_size().
     size_t total_allocated_bytes; ///<  Total bytes allocated to data in the heap.
     size_t largest_free_block;    ///<  Size of largest free block in the heap. This is the largest malloc-able size.

@@ -225,7 +225,7 @@ typedef uint8_t consumer_cmd_t;
 
 
 // HID report mapping table
-typedef struct
+typedef struct hid_report_map_s
 {
   uint16_t    handle;           // Handle of report characteristic
   uint16_t    cccdHandle;       // Handle of CCCD for report characteristic
@@ -235,7 +235,7 @@ typedef struct
 } hid_report_map_t;
 
 // HID dev configuration structure
-typedef struct
+typedef struct hid_dev_cfg_s
 {
   uint32_t    idleTimeout;      // Idle timeout in milliseconds
   uint8_t     hidFlags;         // HID feature flags

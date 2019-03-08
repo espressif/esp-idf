@@ -109,7 +109,7 @@ typedef void (tAVCT_MSG_CBACK)(UINT8 handle, UINT8 label, UINT8 cr,
                                BT_HDR *p_pkt);
 
 /* Structure used by AVCT_CreateConn. */
-typedef struct {
+typedef struct tAVCT_CC_s {
     tAVCT_CTRL_CBACK    *p_ctrl_cback;      /* Control callback */
     tAVCT_MSG_CBACK     *p_msg_cback;       /* Message callback */
     UINT16              pid;                /* Profile ID */

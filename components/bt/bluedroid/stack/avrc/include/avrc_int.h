@@ -99,21 +99,21 @@
 
 #if (AVRC_METADATA_INCLUDED == TRUE)
 /* type for Metadata fragmentation control block */
-typedef struct {
+typedef struct tAVRC_FRAG_CB_s {
     BT_HDR              *p_fmsg;        /* the fragmented message */
     UINT8               frag_pdu;       /* the PDU ID for fragmentation */
     BOOLEAN             frag_enabled;   /* fragmentation flag */
 } tAVRC_FRAG_CB;
 
 /* type for Metadata re-assembly control block */
-typedef struct {
+typedef struct tAVRC_RASM_CB_s {
     BT_HDR              *p_rmsg;        /* the received message */
     UINT16              rasm_offset;    /* re-assembly flag, the offset of the start fragment */
     UINT8               rasm_pdu;       /* the PDU ID for re-assembly */
 } tAVRC_RASM_CB;
 #endif
 
-typedef struct {
+typedef struct tAVRC_CB_s {
     tAVRC_CONN_CB       ccb[AVCT_NUM_CONN];
 #if (AVRC_METADATA_INCLUDED == TRUE)
     tAVRC_FRAG_CB       fcb[AVCT_NUM_CONN];

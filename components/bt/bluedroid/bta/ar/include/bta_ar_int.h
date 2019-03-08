@@ -37,7 +37,7 @@
 #define BTA_AR_AVK_MASK     0x02
 
 /* data associated with BTA_AR */
-typedef struct {
+typedef struct tBTA_AR_CB_s {
     tAVDT_CTRL_CBACK *p_av_conn_cback;       /* av connection callback function */
     tAVDT_CTRL_CBACK *p_avk_conn_cback;      /* avk connection callback function */
     UINT8           avdt_registered;

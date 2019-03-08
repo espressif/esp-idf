@@ -68,7 +68,7 @@ typedef long _ssize_t;
 
 #ifndef __mbstate_t_defined
 /* Conversion state information.  */
-typedef struct
+typedef struct _mbstate_s
 {
   int __count;
   union

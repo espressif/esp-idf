@@ -114,14 +114,14 @@ typedef enum {
     BTM_BLE_STOP_ADV,
 }tBTM_BLE_GAP_STATE;
 
-typedef struct {
+typedef struct tBTM_BLE_LOCAL_ADV_DATA_s {
     UINT16              data_mask;
     UINT8               *p_flags;
     UINT8               ad_data[BTM_BLE_AD_DATA_LEN];
     UINT8               *p_pad;
 } tBTM_BLE_LOCAL_ADV_DATA;
 
-typedef struct {
+typedef struct tINQ_LE_BDADDR_s {
     UINT32          inq_count;          /* Used for determining if a response has already been      */
     /* received for the current inquiry operation. (We do not   */
     /* want to flood the caller with multiple responses from    */
@@ -137,7 +137,7 @@ typedef struct {
 
 #define BTM_BLE_PRIVATE_ADDR_INT    900  /* 15 minutes minimum for random address refreshing */
 
-typedef struct {
+typedef struct tBTM_BLE_INQ_CB_s {
     UINT16 discoverable_mode;
     UINT16 connectable_mode;
     BOOLEAN scan_params_set;
@@ -184,7 +184,7 @@ typedef void (tBTM_BLE_ADDR_CBACK) (BD_ADDR_PTR static_random, void *p);
 #define BTM_BLE_GAP_ADDR_BIT_RESOLVABLE  (1<<1)
 
 /* random address management control block */
-typedef struct {
+typedef struct tBTM_LE_RANDOM_CB_s {
     tBLE_ADDR_TYPE              own_addr_type;         /* local device LE address type */
     UINT8                       exist_addr_bit;
     BD_ADDR                     static_rand_addr;
@@ -202,7 +202,7 @@ typedef struct {
 
 #define BTM_BLE_MAX_BG_CONN_DEV_NUM    10
 
-typedef struct {
+typedef struct tBTM_LE_CONN_PRAMS_s {
     UINT16              min_conn_int;
     UINT16              max_conn_int;
     UINT16              slave_latency;
@@ -211,7 +211,7 @@ typedef struct {
 } tBTM_LE_CONN_PRAMS;
 
 
-typedef struct {
+typedef struct tBTM_LE_BG_CONN_DEV_s {
     BD_ADDR     bd_addr;
     UINT8       attr;
     BOOLEAN     is_connected;
@@ -239,7 +239,7 @@ typedef UINT8 tBTM_BLE_RL_STATE;
 #define BLE_CONN_CANCEL  3
 typedef UINT8 tBTM_BLE_CONN_ST;
 
-typedef struct {
+typedef struct tBTM_BLE_CONN_REQ_s {
     void    *p_param;
 } tBTM_BLE_CONN_REQ;
 
@@ -282,14 +282,14 @@ typedef UINT16 tBTM_BLE_STATE_MASK;
 #define BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR   0
 #define BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID   1
 
-typedef struct {
+typedef struct tBTM_BLE_RESOLVE_Q_s {
     BD_ADDR         *resolve_q_random_pseudo;
     UINT8           *resolve_q_action;
     UINT8           q_next;
     UINT8           q_pending;
 } tBTM_BLE_RESOLVE_Q;
 
-typedef struct {
+typedef struct tBTM_BLE_WL_OP_s {
     BOOLEAN     in_use;
     BOOLEAN     to_add;
     BD_ADDR     bd_addr;
@@ -308,7 +308,7 @@ typedef void (tBTM_DATA_LENGTH_CHANGE_CBACK) (UINT16 max_tx_length, UINT16 max_r
 
 /* Define BLE Device Management control structure
 */
-typedef struct {
+typedef struct tBTM_BLE_CB_s {
     UINT16 scan_activity;         /* LE scan activity mask */
 
     /*****************************************************

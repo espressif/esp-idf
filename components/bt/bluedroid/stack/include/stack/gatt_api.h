@@ -246,7 +246,7 @@ typedef UINT8 tGATT_FORMAT;
 
 /* Characteristic Presentation Format Descriptor value
 */
-typedef struct {
+typedef struct tGATT_CHAR_PRES_s {
     UINT16              unit;       /* as UUIUD defined by SIG */
     UINT16              descr;       /* as UUID as defined by SIG */
     tGATT_FORMAT        format;
@@ -256,14 +256,14 @@ typedef struct {
 
 /* Characteristic Report reference Descriptor format
 */
-typedef struct {
+typedef struct tGATT_CHAR_RPT_REF_s {
     UINT8              rpt_id;       /* report ID */
     UINT8              rpt_type;       /* report type */
 } tGATT_CHAR_RPT_REF;
 
 
 #define GATT_VALID_RANGE_MAX_SIZE       16
-typedef struct {
+typedef struct tGATT_VALID_RANGE_s {
     UINT8                   format;
     UINT16                  len;
     UINT8                   lower_range[GATT_VALID_RANGE_MAX_SIZE]; /* in little endian format */
@@ -273,7 +273,7 @@ typedef struct {
 /* Characteristic Aggregate Format attribute value
 */
 #define GATT_AGGR_HANDLE_NUM_MAX        10
-typedef struct {
+typedef struct tGATT_CHAR_AGGRE_s {
     UINT8                   num_handle;
     UINT16                  handle_list[GATT_AGGR_HANDLE_NUM_MAX];
 } tGATT_CHAR_AGGRE;
@@ -314,7 +314,7 @@ typedef UINT8 tGATT_AUTH_REQ;
 
 /* Attribute Value structure
 */
-typedef struct {
+typedef struct tGATT_VALUE_s {
     UINT16          conn_id;
     UINT16          handle;     /* attribute handle */
     UINT16          offset;     /* attribute value offset, if no offfset is needed for the command, ignore it */
@@ -323,13 +323,13 @@ typedef struct {
     UINT8           value[GATT_MAX_ATTR_LEN];  /* the actual attribute value */
 } tGATT_VALUE;
 
-typedef struct{
+typedef struct tGATT_ATTR_VAL_s{
     UINT16  attr_max_len;
     UINT16  attr_len;
     UINT8   *attr_val;
 }tGATT_ATTR_VAL;
 
-typedef struct{
+typedef struct tGATTS_ATTR_CONTROL_s{
     uint8_t auto_rsp;
 }tGATTS_ATTR_CONTROL;
 
@@ -358,7 +358,7 @@ typedef UINT8 tGATT_TRANSPORT;
 typedef UINT8   tGATT_EXEC_FLAG;
 
 /* read request always based on UUID */
-typedef struct {
+typedef struct tGATT_READ_REQ_s {
     UINT16        handle;
     UINT16        offset;
     BOOLEAN       is_long;
@@ -366,7 +366,7 @@ typedef struct {
 } tGATT_READ_REQ;
 
 /* write request data */
-typedef struct {
+typedef struct tGATT_WRITE_REQ_s {
     UINT16          handle;     /* attribute handle */
     UINT16          offset;     /* attribute value offset, if no offfset is needed for the command, ignore it */
     UINT16          len;        /* length of attribute value */
@@ -415,7 +415,7 @@ typedef UINT8   tGATT_DISC_TYPE;
 
 /* Discover parameters of different discovery types
 */
-typedef struct {
+typedef struct tGATT_DISC_PARAM_s {
     tBT_UUID    service;
     UINT16      s_handle;
     UINT16      e_handle;
@@ -435,7 +435,7 @@ typedef UINT8 tGATT_READ_TYPE;
 
 /* Read By Type Request (GATT_READ_BY_TYPE) Data
 */
-typedef struct {
+typedef struct tGATT_READ_BY_TYPE_s {
     tGATT_AUTH_REQ      auth_req;
     UINT16              s_handle;
     UINT16              e_handle;
@@ -445,20 +445,20 @@ typedef struct {
 /*   GATT_READ_MULTIPLE request data
 */
 #define GATT_MAX_READ_MULTI_HANDLES      10           /* Max attributes to read in one request */
-typedef struct {
+typedef struct tGATT_READ_MULTI_s {
     tGATT_AUTH_REQ          auth_req;
     UINT16                  num_handles;                            /* number of handles to read */
     UINT16                  handles[GATT_MAX_READ_MULTI_HANDLES];   /* handles list to be read */
 } tGATT_READ_MULTI;
 
 /*   Read By Handle Request (GATT_READ_BY_HANDLE) data */
-typedef struct {
+typedef struct tGATT_READ_BY_HANDLE_s {
     tGATT_AUTH_REQ         auth_req;
     UINT16                 handle;
 } tGATT_READ_BY_HANDLE;
 
 /*   READ_BT_HANDLE_Request data */
-typedef struct {
+typedef struct tGATT_READ_PARTIAL_s {
     tGATT_AUTH_REQ         auth_req;
     UINT16                 handle;
     UINT16                 offset;
@@ -504,7 +504,7 @@ typedef UINT8 tGATTC_OPTYPE;
 
 /* characteristic declaration
 */
-typedef struct {
+typedef struct tGATT_CHAR_DCLR_VAL_s {
     tGATT_CHAR_PROP       char_prop;   /* characterisitc properties */
     UINT16                val_handle;  /* characteristic value attribute handle */
     tBT_UUID              char_uuid;   /* characteristic UUID type */
@@ -512,7 +512,7 @@ typedef struct {
 
 /* primary service group data
 */
-typedef struct {
+typedef struct tGATT_GROUP_VALUE_s {
     UINT16          e_handle;       /* ending handle of the group */
     tBT_UUID        service_type;   /* group type */
 } tGATT_GROUP_VALUE;
@@ -520,7 +520,7 @@ typedef struct {
 
 /* included service attribute value
 */
-typedef struct {
+typedef struct tGATT_INCL_SRVC_s {
     tBT_UUID    service_type;       /* included service UUID */
     UINT16      s_handle;           /* starting handle */
     UINT16      e_handle;           /* ending handle */
@@ -542,7 +542,7 @@ typedef union {
 
 /* discover result record
 */
-typedef struct {
+typedef struct tGATT_DISC_RES_s {
     tBT_UUID            type;
     UINT16              handle;
     tGATT_DISC_VALUE    value;
@@ -585,7 +585,7 @@ typedef void (tGATT_ENC_CMPL_CB)(tGATT_IF gatt_if, BD_ADDR bda);
 ** GATT. This structure includes callback functions. All functions
 ** MUST be provided.
 */
-typedef struct {
+typedef struct tGATT_CBACK_s {
     tGATT_CONN_CBACK                *p_conn_cb;
     tGATT_CMPL_CBACK                *p_cmpl_cb;
     tGATT_DISC_RES_CB               *p_disc_res_cb;
@@ -599,7 +599,7 @@ typedef struct {
 */
 
 
-typedef struct {
+typedef struct tGATTS_HNDL_RANGE_s {
     tBT_UUID app_uuid128;
     tBT_UUID svc_uuid;
     UINT16   svc_inst;
@@ -617,7 +617,7 @@ typedef struct {
 #define GATTS_SRV_CHG_CMD_READ_CLENT       5
 typedef UINT8 tGATTS_SRV_CHG_CMD;
 
-typedef struct {
+typedef struct tGATTS_SRV_CHG_s {
     BD_ADDR         bda;
     BOOLEAN         srv_changed;
 } tGATTS_SRV_CHG;
@@ -635,7 +635,7 @@ typedef union {
 
 
 
-typedef struct {
+typedef struct tGATTS_PENDING_NEW_SRV_START_s {
     tGATTS_HNDL_RANGE   *p_new_srv_start;
 } tGATTS_PENDING_NEW_SRV_START;
 
@@ -645,7 +645,7 @@ typedef void  (tGATTS_NV_SAVE_CBACK)(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl
 typedef BOOLEAN  (tGATTS_NV_SRV_CHG_CBACK)(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
         tGATTS_SRV_CHG_RSP *p_rsp);
 
-typedef struct {
+typedef struct tGATT_APPL_INFO_s {
     tGATTS_NV_SAVE_CBACK       *p_nv_save_callback;
     tGATTS_NV_SRV_CHG_CBACK    *p_srv_chg_callback;
 } tGATT_APPL_INFO;

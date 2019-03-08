@@ -393,7 +393,7 @@
 
 #if defined (USE_XDM_REGNAME) || defined (USE_DAP_REGNAME)
 /*  Describes XDM register:  */
-typedef struct {
+typedef struct regdef_s {
     int    reg;
     char*  name;
 } regdef_t;

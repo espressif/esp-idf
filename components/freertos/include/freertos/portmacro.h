@@ -127,7 +127,7 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 #include "esp_attr.h"
 
 /* "mux" data structure (spinlock) */
-typedef struct {
+typedef struct portMUX_TYPE_s {
 	/* owner field values:
 	 * 0                - Uninitialized (invalid)
 	 * portMUX_FREE_VAL - Mux is free, can be locked by either CPU
@@ -339,7 +339,7 @@ static inline uint32_t xPortGetCoreID();
 // We currently use a hack: redefine field xMPU_SETTINGS in TCB block as a structure that can hold:
 // MPU wrappers, coprocessor area pointer, trace code structure, and more if needed.
 // The field is normally used for memory protection. FreeRTOS should create another general purpose field.
-typedef struct {
+typedef struct xMPU_SETTINGS_s {
 	#if XCHAL_CP_NUM > 0
 	volatile StackType_t* coproc_area; // Pointer to coprocessor save area; MUST BE FIRST
 	#endif

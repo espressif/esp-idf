@@ -29,14 +29,14 @@ extern "C" {
 /**
  * @brief Structure holding PHY init parameters
  */
-typedef struct {
+typedef struct esp_phy_init_data_s {
 	uint8_t params[128];                    /*!< opaque PHY initialization parameters */
 } esp_phy_init_data_t;
 
 /**
  * @brief Opaque PHY calibration data
  */
-typedef struct {
+typedef struct esp_phy_calibration_data_s {
     uint8_t version[4];                     /*!< PHY version */
     uint8_t mac[6];                         /*!< The MAC address of the station */
     uint8_t opaque[1894];                   /*!< calibration data */

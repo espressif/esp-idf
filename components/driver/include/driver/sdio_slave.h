@@ -62,7 +62,7 @@ typedef enum {
 } sdio_slave_sending_mode_t;
 
 /// Configuration of SDIO slave
-typedef struct {
+typedef struct sdio_slave_config_s {
     sdio_slave_timing_t timing;             ///< timing of sdio_slave. see `sdio_slave_timing_t`.
     sdio_slave_sending_mode_t sending_mode; ///< mode of sdio_slave. `SDIO_SLAVE_MODE_STREAM` if the data needs to be sent as much as possible; `SDIO_SLAVE_MODE_PACKET` if the data should be sent in packets.
     int                 send_queue_size;    ///< max buffers that can be queued before sending.

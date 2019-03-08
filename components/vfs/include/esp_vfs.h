@@ -87,7 +87,7 @@ typedef int esp_vfs_id_t;
  * If the FS driver doesn't provide some of the functions, set corresponding
  * members to NULL.
  */
-typedef struct
+typedef struct esp_vfs_s
 {
     int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR or ESP_VFS_FLAG_DEFAULT */
     union {

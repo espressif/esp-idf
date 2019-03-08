@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct sdmmc_slot_info_s {
     uint8_t clk_gpio;
     uint8_t cmd_gpio;
     uint8_t d0_gpio;

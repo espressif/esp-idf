@@ -34,7 +34,7 @@
 /*******************************************************
  *                Structures
  *******************************************************/
-typedef struct {
+typedef struct mesh_light_ctl_s {
     uint8_t cmd;
     bool on;
     uint8_t token_id;

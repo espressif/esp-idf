@@ -52,7 +52,7 @@ typedef UINT8 tBTA_SDP_STATUS;
 typedef UINT16 tBTA_SDP_EVT;
 
 /* data associated with BTA_SDP_DISCOVERY_COMP_EVT */
-typedef struct {
+typedef struct tBTA_SDP_SEARCH_COMP_s {
     tBTA_SDP_STATUS      status;
     BD_ADDR              remote_addr;
     tBT_UUID             uuid;
@@ -69,7 +69,7 @@ typedef union {
 typedef void (tBTA_SDP_DM_CBACK)(tBTA_SDP_EVT event, tBTA_SDP *p_data, void *user_data);
 
 /* MCE configuration structure */
-typedef struct {
+typedef struct tBTA_SDP_CFG_s {
     UINT16  sdp_db_size;            /* The size of p_sdp_db */
 #if (SDP_INCLUDED == TRUE)
     tSDP_DISCOVERY_DB   *p_sdp_db;  /* The data buffer to keep SDP database */

@@ -92,7 +92,7 @@ extern "C" {
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
  */
-typedef struct {
+typedef struct wifi_init_config_s {
     system_event_handler_t event_handler;          /**< WiFi event handler */
     wifi_osi_funcs_t*      osi_funcs;              /**< WiFi OS functions */
     wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */

@@ -96,7 +96,7 @@ typedef enum {
 /**
  * @brief HTTP configuration
  */
-typedef struct {
+typedef struct esp_http_client_config_s {
     const char                  *url;                /*!< HTTP URL, the information on the URL is most important, it overrides the other fields below, if any */
     const char                  *host;               /*!< Domain or IP as string */
     int                         port;                /*!< Port to connect, default depend on esp_http_client_transport_t (80 or 443) */

@@ -56,7 +56,7 @@ typedef enum {
  * @brief MCPWM pin number for
  *
  */
-typedef struct {
+typedef struct mcpwm_pin_config_s {
     int mcpwm0a_out_num;       /*!<MCPWM0A out pin*/
     int mcpwm0b_out_num;       /*!<MCPWM0A out pin*/
     int mcpwm1a_out_num;       /*!<MCPWM0A out pin*/
@@ -218,7 +218,7 @@ typedef enum {
 /**
  * @brief MCPWM config structure
  */
-typedef struct {
+typedef struct mcpwm_config_s {
     uint32_t frequency;              /*!<Set frequency of MCPWM in Hz*/
     float cmpr_a;                    /*!<Set % duty cycle for operator a(MCPWMXA), i.e for 62.3% duty cycle, duty_a = 62.3*/
     float cmpr_b;                    /*!<Set % duty cycle for operator b(MCPWMXB), i.e for 48% duty cycle, duty_b = 48.0*/
@@ -229,7 +229,7 @@ typedef struct {
 /**
  * @brief MCPWM config carrier structure
  */
-typedef struct {
+typedef struct mcpwm_carrier_config_s {
     uint8_t carrier_period;                    /*!<Set carrier period = (carrier_period + 1)*800ns, carrier_period should be < 16*/
     uint8_t carrier_duty;                      /*!<Set carrier duty cycle, carrier_duty should be less than 8 (increment every 12.5%)*/
     uint8_t pulse_width_in_os;                 /*!<Set pulse width of first pulse in one shot mode = (carrier period)*(pulse_width_in_os + 1), should be less then 16*/

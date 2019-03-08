@@ -33,7 +33,7 @@
  *******************************************************************************/
 
 /* tBTC_MEDIA_INIT_AUDIO msg structure */
-typedef struct {
+typedef struct tBTC_MEDIA_INIT_AUDIO_s {
     BT_HDR hdr;
     UINT16 SamplingFreq; /* 16k, 32k, 44.1k or 48k*/
     UINT8 ChannelMode; /* mono, dual, stereo or joint stereo*/
@@ -44,7 +44,7 @@ typedef struct {
 } tBTC_MEDIA_INIT_AUDIO;
 
 /* tBTC_MEDIA_UPDATE_AUDIO msg structure */
-typedef struct {
+typedef struct tBTC_MEDIA_UPDATE_AUDIO_s {
     BT_HDR hdr;
     UINT16 MinMtuSize; /* Minimum peer mtu size */
     UINT8 MaxBitPool; /* Maximum peer bitpool */
@@ -52,7 +52,7 @@ typedef struct {
 } tBTC_MEDIA_UPDATE_AUDIO;
 
 /* tBTC_MEDIA_INIT_AUDIO_FEEDING msg structure */
-typedef struct {
+typedef struct tBTC_MEDIA_INIT_AUDIO_FEEDING_s {
     BT_HDR hdr;
     tBTC_AV_FEEDING_MODE feeding_mode;
     tBTC_AV_MEDIA_FEEDINGS feeding;

@@ -32,7 +32,7 @@ extern "C"
 /*
  Stores a bunch of per-spi-peripheral data.
 */
-typedef struct {
+typedef struct spi_signal_conn_s {
     const uint8_t spiclk_out;       //GPIO mux output signals
     const uint8_t spiclk_in;
     const uint8_t spid_out;

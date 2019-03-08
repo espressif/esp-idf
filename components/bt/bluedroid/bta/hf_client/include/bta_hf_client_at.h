@@ -27,7 +27,7 @@
 #define BTA_HF_CLIENT_AT_MAX_LEN        512
 
 /* AT command table element */
-typedef struct {
+typedef struct tBTA_AG_AT_CMD_s {
     const char  *p_cmd;         /* AT command string */
     UINT8       arg_type;       /* allowable argument type syntax */
     UINT8       fmt;            /* whether arg is int or string */
@@ -90,7 +90,7 @@ typedef struct queued_at_cmd tBTA_HF_CLIENT_AT_QCMD;
 #define BTA_HF_CLIENT_AT_INDICATOR_COUNT 20
 
 /* AT command parsing control block */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_AT_CB_s {
     char                    buf[BTA_HF_CLIENT_AT_PARSER_MAX_LEN + 1]; /* extra byte to always have \0 at the end */
     unsigned int            offset;
     tBTA_HF_CLIENT_AT_CMD   current_cmd;

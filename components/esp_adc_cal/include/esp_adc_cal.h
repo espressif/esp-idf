@@ -37,7 +37,7 @@ typedef enum {
  *
  * @note Call esp_adc_cal_characterize() to initialize the structure
  */
-typedef struct {
+typedef struct esp_adc_cal_characteristics_s {
     adc_unit_t adc_num;                     /**< ADC number*/
     adc_atten_t atten;                      /**< ADC attenuation*/
     adc_bits_width_t bit_width;             /**< ADC bit width */

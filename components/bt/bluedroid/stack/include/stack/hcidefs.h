@@ -1379,7 +1379,7 @@
 
 
 /* Define the extended flow specification fields used by AMP */
-typedef struct {
+typedef struct tHCI_EXT_FLOW_SPEC_s {
     UINT8       id;
     UINT8       stype;
     UINT16      max_sdu_size;

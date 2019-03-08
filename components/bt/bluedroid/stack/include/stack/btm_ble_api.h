@@ -267,7 +267,7 @@ typedef UINT8 BLE_SIGNATURE[BTM_BLE_AUTH_SIGN_LEN];         /* Device address */
 
 
 /* Structure returned with Rand/Encrypt complete callback */
-typedef struct {
+typedef struct tBTM_RAND_ENC_s {
     UINT8   status;
     UINT8   param_len;
     UINT16  opcode;
@@ -381,7 +381,7 @@ typedef UINT8   tBTM_BLE_AD_TYPE;
 typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
-typedef struct {
+typedef struct tBTM_BLE_VSC_CB_s {
     UINT8 adv_inst_max;         /* max adv instance supported in controller */
     UINT8 rpa_offloading;
     UINT16 tot_scan_results_strg;
@@ -397,56 +397,56 @@ typedef struct {
 } tBTM_BLE_VSC_CB;
 
 /* slave preferred connection interval range */
-typedef struct {
+typedef struct tBTM_BLE_INT_RANGE_s {
     UINT16  low;
     UINT16  hi;
 
 } tBTM_BLE_INT_RANGE;
 
 /* Service tag supported in the device */
-typedef struct {
+typedef struct tBTM_BLE_SERVICE_s {
     UINT8       num_service;
     BOOLEAN     list_cmpl;
     UINT16      *p_uuid;
 } tBTM_BLE_SERVICE;
 
 /* 32 bits Service supported in the device */
-typedef struct {
+typedef struct tBTM_BLE_32SERVICE_s {
     UINT8       num_service;
     BOOLEAN     list_cmpl;
     UINT32      *p_uuid;
 } tBTM_BLE_32SERVICE;
 
 /* 128 bits Service supported in the device */
-typedef struct {
+typedef struct tBTM_BLE_128SERVICE_s {
     BOOLEAN     list_cmpl;
     UINT8       uuid128[MAX_UUID_SIZE];
 } tBTM_BLE_128SERVICE;
 
-typedef struct {
+typedef struct tBTM_BLE_MANU_s {
     UINT8       len;
     UINT8      *p_val;
 } tBTM_BLE_MANU;
 
 
-typedef struct {
+typedef struct tBTM_BLE_SERVICE_DATA_s {
     tBT_UUID    service_uuid;
     UINT8       len;
     UINT8      *p_val;
 } tBTM_BLE_SERVICE_DATA;
 
-typedef struct {
+typedef struct tBTM_BLE_PROP_ELEM_s {
     UINT8       adv_type;
     UINT8       len;
     UINT8       *p_val;     /* number of len byte */
 } tBTM_BLE_PROP_ELEM;
 
-typedef struct {
+typedef struct tBTM_BLE_PROPRIETARY_s {
     UINT8                   num_elem;
     tBTM_BLE_PROP_ELEM      *p_elem;
 } tBTM_BLE_PROPRIETARY;
 
-typedef struct {
+typedef struct tBTM_BLE_ADV_DATA_s {
     tBTM_BLE_INT_RANGE      int_range;      /* slave prefered conn interval range */
     tBTM_BLE_MANU           *p_manu;           /* manufactuer data */
     tBTM_BLE_SERVICE        *p_services;       /* services */
@@ -477,7 +477,7 @@ typedef UINT8 tBTM_BLE_MULTI_ADV_EVT;
 
 #define BTM_BLE_MULTI_ADV_DEFAULT_STD 0
 
-typedef struct {
+typedef struct tBTM_BLE_ADV_PARAMS_s {
     UINT16          adv_int_min;
     UINT16          adv_int_max;
     UINT8           adv_type;
@@ -486,7 +486,7 @@ typedef struct {
     tBTM_BLE_ADV_TX_POWER tx_power;
 } tBTM_BLE_ADV_PARAMS;
 
-typedef struct {
+typedef struct tBTM_BLE_MULTI_ADV_OPQ_s {
     UINT8   *p_sub_code; /* dynamic array to store sub code */
     UINT8   *p_inst_id;  /* dynamic array to store instance id */
     UINT8   pending_idx;
@@ -496,7 +496,7 @@ typedef struct {
 typedef void (tBTM_BLE_MULTI_ADV_CBACK)(tBTM_BLE_MULTI_ADV_EVT evt, UINT8 inst_id,
                                         void *p_ref, tBTM_STATUS status);
 
-typedef struct {
+typedef struct tBTM_BLE_MULTI_ADV_INST_s {
     UINT8                       inst_id;
     BOOLEAN                     in_use;
     UINT8                       adv_evt;
@@ -507,13 +507,13 @@ typedef struct {
     UINT8                       index;
 } tBTM_BLE_MULTI_ADV_INST;
 
-typedef struct {
+typedef struct tBTM_BLE_MULTI_ADV_INST_IDX_Q_s {
     UINT8 inst_index_queue[BTM_BLE_MULTI_ADV_MAX];
     int front;
     int rear;
 } tBTM_BLE_MULTI_ADV_INST_IDX_Q;
 
-typedef struct {
+typedef struct tBTM_BLE_MULTI_ADV_CB_s {
     tBTM_BLE_MULTI_ADV_INST *p_adv_inst; /* dynamic array to store adv instance */
     tBTM_BLE_MULTI_ADV_OPQ  op_q;
 } tBTM_BLE_MULTI_ADV_CB;
@@ -548,7 +548,7 @@ enum {
 };
 typedef UINT8 tBTM_BLE_DISCARD_RULE;
 
-typedef struct {
+typedef struct tBTM_BLE_BATCH_SCAN_OPQ_s {
     UINT8   sub_code[BTM_BLE_BATCH_SCAN_MAX];
     tBTM_BLE_BATCH_SCAN_STATE cur_state[BTM_BLE_BATCH_SCAN_MAX];
     tBTM_BLE_REF_VALUE        ref_value[BTM_BLE_BATCH_SCAN_MAX];
@@ -556,7 +556,7 @@ typedef struct {
     UINT8   next_idx;
 } tBTM_BLE_BATCH_SCAN_OPQ;
 
-typedef struct {
+typedef struct tBTM_BLE_BATCH_SCAN_REP_Q_s {
     UINT8   rep_mode[BTM_BLE_BATCH_REP_MAIN_Q_SIZE];
     tBTM_BLE_REF_VALUE  ref_value[BTM_BLE_BATCH_REP_MAIN_Q_SIZE];
     UINT8   num_records[BTM_BLE_BATCH_REP_MAIN_Q_SIZE];
@@ -566,7 +566,7 @@ typedef struct {
     UINT8   next_idx;
 } tBTM_BLE_BATCH_SCAN_REP_Q;
 
-typedef struct {
+typedef struct tBTM_BLE_BATCH_SCAN_CB_s {
     tBTM_BLE_BATCH_SCAN_STATE      cur_state;
     tBTM_BLE_BATCH_SCAN_MODE scan_mode;
     UINT32                  scan_interval;
@@ -649,7 +649,7 @@ typedef UINT16 tBTM_BLE_PF_TIMEOUT;
 typedef UINT8  tBTM_BLE_PF_TIMEOUT_CNT;
 typedef UINT16 tBTM_BLE_PF_ADV_TRACK_ENTRIES;
 
-typedef struct {
+typedef struct tBTM_BLE_PF_FILT_PARAMS_s {
     tBTM_BLE_PF_FEAT_SEL feat_seln;
     tBTM_BLE_PF_LIST_LOGIC_TYPE logic_type;
     tBTM_BLE_PF_FILT_LOGIC_TYPE filt_logic_type;
@@ -699,19 +699,19 @@ typedef union {
     UINT8               uuid128_mask[LEN_UUID_128];
 } tBTM_BLE_PF_COND_MASK;
 
-typedef struct {
+typedef struct tBTM_BLE_PF_UUID_COND_s {
     tBLE_BD_ADDR            *p_target_addr;     /* target address, if NULL, generic UUID filter */
     tBT_UUID                uuid;           /* UUID condition */
     tBTM_BLE_PF_LOGIC_TYPE  cond_logic;    /* AND/OR */
     tBTM_BLE_PF_COND_MASK   *p_uuid_mask;           /* UUID mask */
 } tBTM_BLE_PF_UUID_COND;
 
-typedef struct {
+typedef struct tBTM_BLE_PF_LOCAL_NAME_COND_s {
     UINT8                   data_len;       /* <= 20 bytes */
     UINT8                   *p_data;
 } tBTM_BLE_PF_LOCAL_NAME_COND;
 
-typedef struct {
+typedef struct tBTM_BLE_PF_MANU_COND_s {
     UINT16                  company_id;     /* company ID */
     UINT8                   data_len;       /* <= 20 bytes */
     UINT8                   *p_pattern;
@@ -721,7 +721,7 @@ typedef struct {
                                                 set to all 0xff, match exact data */
 } tBTM_BLE_PF_MANU_COND;
 
-typedef struct {
+typedef struct tBTM_BLE_PF_SRVC_PATTERN_COND_s {
     UINT16                  uuid;     /* service ID */
     UINT8                   data_len;       /* <= 20 bytes */
     UINT8                   *p_pattern;
@@ -739,7 +739,7 @@ typedef union {
     tBTM_BLE_PF_SRVC_PATTERN_COND           srvc_data;      /* service data pattern */
 } tBTM_BLE_PF_COND_PARAM;
 
-typedef struct {
+typedef struct tBTM_BLE_ADV_FILTER_ADV_OPQ_s {
     UINT8   action_ocf[BTM_BLE_PF_TYPE_MAX];
     tBTM_BLE_REF_VALUE  ref_value[BTM_BLE_PF_TYPE_MAX];
     tBTM_BLE_PF_PARAM_CBACK  *p_filt_param_cback[BTM_BLE_PF_TYPE_MAX];
@@ -755,13 +755,13 @@ typedef struct {
 #define BTM_CS_IRK_LIST_MAX 0x20
 #endif
 
-typedef struct {
+typedef struct tBTM_BLE_PF_COUNT_s {
     BOOLEAN    in_use;
     BD_ADDR    bd_addr;
     UINT8      pf_counter[BTM_BLE_PF_TYPE_MAX]; /* number of filter indexed by tBTM_BLE_PF_COND_TYPE */
 } tBTM_BLE_PF_COUNT;
 
-typedef struct {
+typedef struct tBTM_BLE_ADV_FILTER_CB_s {
     BOOLEAN             enable;
     UINT8               op_type;
     tBTM_BLE_PF_COUNT   *p_addr_filter_count; /* per BDA filter array */
@@ -789,7 +789,7 @@ typedef UINT16 BTM_BLE_ADV_INFO_TIMESTAMP;
 /* These are the fields returned in each device adv packet.  It
 ** is returned in the results callback if registered.
 */
-typedef struct {
+typedef struct tBTM_BLE_INQ_DATA_s {
     UINT8               conn_mode;
     tBTM_BLE_AD_MASK    ad_mask;        /* mask of the valid adv data field */
     UINT8               flag;
@@ -815,7 +815,7 @@ typedef void (tBTM_BLE_TRACK_ADV_CBACK)(tBTM_BLE_TRACK_ADV_DATA *p_track_adv_dat
 
 typedef UINT8 tBTM_BLE_TRACK_ADV_EVT;
 
-typedef struct {
+typedef struct tBTM_BLE_ADV_TRACK_CB_s {
     tBTM_BLE_REF_VALUE             ref_value;
     tBTM_BLE_TRACK_ADV_CBACK *p_track_cback;
 } tBTM_BLE_ADV_TRACK_CB;
@@ -848,7 +848,7 @@ typedef void (tBTM_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time, tBTM_BLE_
         tBTM_BLE_ENERGY_USED  energy_used,
         tBTM_STATUS status);
 
-typedef struct {
+typedef struct tBTM_BLE_ENERGY_INFO_CB_s {
     tBTM_BLE_ENERGY_INFO_CBACK *p_ener_cback;
 } tBTM_BLE_ENERGY_INFO_CB;
 

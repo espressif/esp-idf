@@ -127,7 +127,7 @@ the adv packet will be discarded until the memory is restored. */
  *        Config mask indicate which functions enabled, this means
  *        some options or parameters of some functions enabled by config mask.
  */
-typedef struct {
+typedef struct esp_bt_controller_config_s {
     /*
      * Following parameters can be configured runtime, when call esp_bt_controller_init()
      */

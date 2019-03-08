@@ -148,32 +148,32 @@ typedef UINT8 tBTA_HF_CLIENT_AT_CMD_TYPE;
 
 /* data associated with most non-AT events */
 /* placeholder, if not needed should be removed*/
-typedef struct {
+typedef struct tBTA_HF_CLIENT_HDR_s {
 } tBTA_HF_CLIENT_HDR;
 
 /* data associated with BTA_HF_CLIENT_REGISTER_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_REGISTER_s {
     tBTA_HF_CLIENT_HDR      hdr;
     UINT16                  handle;
     tBTA_HF_CLIENT_STATUS   status;
 } tBTA_HF_CLIENT_REGISTER;
 
 /* data associated with BTA_HF_CLIENT_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_OPEN_s {
     tBTA_HF_CLIENT_HDR      hdr;
     BD_ADDR                 bd_addr;
     tBTA_HF_CLIENT_STATUS   status;
 } tBTA_HF_CLIENT_OPEN;
 
 /* data associated with BTA_HF_CLIENT_CONN_EVT */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_CONN_s {
     tBTA_HF_CLIENT_HDR         hdr;
     tBTA_HF_CLIENT_PEER_FEAT   peer_feat;
     tBTA_HF_CLIENT_CHLD_FEAT   chld_feat;
 } tBTA_HF_CLIENT_CONN;
 
 /* data associated with BTA_HF_CLIENT_IND_EVT event */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_IND_s {
     tBTA_HF_CLIENT_HDR         hdr;
     tBTA_HF_CLIENT_IND_TYPE    type;
     UINT16                     value;
@@ -181,24 +181,24 @@ typedef struct {
 
 /* data associated with BTA_HF_CLIENT_OPERATOR_NAME_EVT */
 #define BTA_HF_CLIENT_OPERATOR_NAME_LEN 16
-typedef struct {
+typedef struct tBTA_HF_CLIENT_OPERATOR_NAME_s {
     char                       name[BTA_HF_CLIENT_OPERATOR_NAME_LEN + 1];
 } tBTA_HF_CLIENT_OPERATOR_NAME;
 
 /* data associated with BTA_HF_CLIENT_CLIP_EVT  and BTA_HF_CLIENT_CCWA_EVT*/
 #define BTA_HF_CLIENT_NUMBER_LEN 32
-typedef struct {
+typedef struct tBTA_HF_CLIENT_NUMBER_s {
     char                       number[BTA_HF_CLIENT_NUMBER_LEN + 1];
 } tBTA_HF_CLIENT_NUMBER;
 
 /* data associated with BTA_HF_CLIENT_AT_RESULT_EVT event */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_AT_RESULT_s {
     tBTA_HF_CLIENT_AT_RESULT_TYPE    type;
     UINT16                           cme;
 } tBTA_HF_CLIENT_AT_RESULT;
 
 /* data associated with BTA_HF_CLIENT_CLCC_EVT event */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_CLCC_s {
     UINT32                     idx;
     BOOLEAN                    inc;
     UINT8                      status;
@@ -208,13 +208,13 @@ typedef struct {
 } tBTA_HF_CLIENT_CLCC;
 
 /* data associated with BTA_HF_CLIENT_CNUM_EVT event */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_CNUM_s {
     UINT16                     service;
     char                       number[BTA_HF_CLIENT_NUMBER_LEN + 1];
 } tBTA_HF_CLIENT_CNUM;
 
 /* data associated with other events */
-typedef struct {
+typedef struct tBTA_HF_CLIENT_VAL_s {
     UINT16                     value;
 } tBTA_HF_CLIENT_VAL;
 

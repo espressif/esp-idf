@@ -87,7 +87,7 @@ Revision: $Rev: 5626 $
 // Description for a circular buffer (also called "ring buffer")
 // which is used as up-buffer (T->H)
 //
-typedef struct {
+typedef struct SEGGER_RTT_BUFFER_UP_s {
   const     char*    sName;         // Optional name. Standard names so far are: "Terminal", "SysView", "J-Scope_t4i4"
             char*    pBuffer;       // Pointer to start of buffer
             unsigned SizeOfBuffer;  // Buffer size in bytes. Note that one byte is lost, as this implementation does not fill up the buffer in order to avoid the problem of being unable to distinguish between full and empty.
@@ -100,7 +100,7 @@ typedef struct {
 // Description for a circular buffer (also called "ring buffer")
 // which is used as down-buffer (H->T)
 //
-typedef struct {
+typedef struct SEGGER_RTT_BUFFER_DOWN_s {
   const     char*    sName;         // Optional name. Standard names so far are: "Terminal", "SysView", "J-Scope_t4i4"
             char*    pBuffer;       // Pointer to start of buffer
             unsigned SizeOfBuffer;  // Buffer size in bytes. Note that one byte is lost, as this implementation does not fill up the buffer in order to avoid the problem of being unable to distinguish between full and empty.
@@ -114,7 +114,7 @@ typedef struct {
 // as well as the configuration for each buffer
 //
 //
-typedef struct {
+typedef struct SEGGER_RTT_CB_s {
   char                    acID[16];                                 // Initialized to "SEGGER RTT"
   int                     MaxNumUpBuffers;                          // Initialized to SEGGER_RTT_MAX_NUM_UP_BUFFERS (type. 2)
   int                     MaxNumDownBuffers;                        // Initialized to SEGGER_RTT_MAX_NUM_DOWN_BUFFERS (type. 2)

@@ -43,7 +43,7 @@ typedef enum {
  * @brief   mDNS basic text item structure
  *          Used in mdns_service_add()
  */
-typedef struct {
+typedef struct mdns_txt_item_s {
     char * key;                             /*!< item key name */
     char * value;                           /*!< item value string */
 } mdns_txt_item_t;

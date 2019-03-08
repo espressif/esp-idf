@@ -117,13 +117,13 @@ extern "C" {     /* Make sure we have C-declarations in C++ programs */
 **********************************************************************
 */
 
-typedef struct {
+typedef struct SEGGER_BUFFER_DESC_s {
   char *pBuffer;
   int   BufferSize;
   int   Cnt;
 } SEGGER_BUFFER_DESC;
 
-typedef struct {
+typedef struct SEGGER_CACHE_CONFIG_s {
   int  CacheLineSize;                                // 0: No Cache. Most Systems such as ARM9 use a 32 bytes cache line size.
   void (*pfDMB)       (void);                        // Optional DMB function for Data Memory Barrier to make sure all memory operations are completed.
   void (*pfClean)     (void *p, unsigned NumBytes);  // Optional clean function for cached memory.

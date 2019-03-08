@@ -45,7 +45,7 @@ typedef enum {
 } wifi_country_policy_t;
 
 /** @brief Structure describing WiFi country-based regional restrictions. */
-typedef struct {
+typedef struct wifi_country_s {
     char                  cc[3];   /**< country code string */
     uint8_t               schan;   /**< start channel */
     uint8_t               nchan;   /**< total channel number */
@@ -107,7 +107,7 @@ typedef enum {
 } wifi_scan_type_t;
 
 /** @brief Range of active scan times per channel */
-typedef struct {
+typedef struct wifi_active_scan_time_s {
     uint32_t min;  /**< minimum active scan time per channel, units: millisecond */
     uint32_t max;  /**< maximum active scan time per channel, units: millisecond, values above 1500ms may
                                           cause station to disconnect from AP and are not recommended.  */
@@ -121,7 +121,7 @@ typedef union {
 } wifi_scan_time_t;
 
 /** @brief Parameters for an SSID scan. */
-typedef struct {
+typedef struct wifi_scan_config_s {
     uint8_t *ssid;               /**< SSID of AP */
     uint8_t *bssid;              /**< MAC address of AP */
     uint8_t channel;             /**< channel, scan the specific channel */
@@ -151,7 +151,7 @@ typedef enum {
 } wifi_ant_t;
 
 /** @brief Description of a WiFi AP */
-typedef struct {
+typedef struct wifi_ap_record_s {
     uint8_t bssid[6];                     /**< MAC address of AP */
     uint8_t ssid[33];                     /**< SSID of AP */
     uint8_t primary;                      /**< channel of AP */
@@ -181,7 +181,7 @@ typedef enum {
 }wifi_sort_method_t;
 
 /** @brief Structure describing parameters for a WiFi fast scan */
-typedef struct {
+typedef struct wifi_fast_scan_threshold_s {
     int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
     wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
 }wifi_fast_scan_threshold_t;
@@ -207,7 +207,7 @@ typedef enum {
 } wifi_bandwidth_t;
 
 /** @brief Soft-AP configuration settings for the ESP32 */
-typedef struct {
+typedef struct wifi_ap_config_s {
     uint8_t ssid[32];           /**< SSID of ESP32 soft-AP */
     uint8_t password[64];       /**< Password of ESP32 soft-AP */
     uint8_t ssid_len;           /**< Length of SSID. If softap_config.ssid_len==0, check the SSID until there is a termination character; otherwise, set the SSID length according to softap_config.ssid_len. */
@@ -219,7 +219,7 @@ typedef struct {
 } wifi_ap_config_t;
 
 /** @brief STA configuration settings for the ESP32 */
-typedef struct {
+typedef struct wifi_sta_config_s {
     uint8_t ssid[32];      /**< SSID of target AP*/
     uint8_t password[64];  /**< password of target AP*/
     wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
@@ -243,7 +243,7 @@ typedef union {
 } wifi_config_t;
 
 /** @brief Description of STA associated with AP */
-typedef struct {
+typedef struct wifi_sta_info_s {
     uint8_t mac[6];  /**< mac address */
     int8_t  rssi;    /**< current average rssi of sta connected */
     uint32_t phy_11b:1;      /**< bit: 0 flag to identify if 11b mode is enabled or not */
@@ -256,7 +256,7 @@ typedef struct {
 #define ESP_WIFI_MAX_CONN_NUM  (10)       /**< max number of stations which can connect to ESP32 soft-AP */
 
 /** @brief List of stations associated with the ESP32 Soft-AP */
-typedef struct {
+typedef struct wifi_sta_list_s {
     wifi_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< station list */
     int       num; /**< number of stations in the list (other entries are invalid) */
 } wifi_sta_list_t;
@@ -296,7 +296,7 @@ typedef enum {
  *
  * The first bytes of the Information Element will match this header. Payload follows.
  */
-typedef struct {
+typedef struct vendor_ie_data_s {
     uint8_t element_id;      /**< Should be set to WIFI_VENDOR_IE_ELEMENT_ID (0xDD) */
     uint8_t length;          /**< Length of all bytes in the element data following this field. Minimum 4. */
     uint8_t vendor_oui[3];   /**< Vendor identifier (OUI). */
@@ -305,7 +305,7 @@ typedef struct {
 } vendor_ie_data_t;
 
 /** @brief Received packet radio metadata header, this is the common header at the beginning of all promiscuous mode RX callback buffers */
-typedef struct {
+typedef struct wifi_pkt_rx_ctrl_s {
     signed rssi:8;                /**< Received Signal Strength Indicator(RSSI) of packet. unit: dBm */
     unsigned rate:5;              /**< PHY rate encoding of the packet. Only valid for non HT(11bg) packet */
     unsigned :1;                  /**< reserve */
@@ -337,7 +337,7 @@ typedef struct {
 
 /** @brief Payload passed to 'buf' parameter of promiscuous mode RX callback.
  */
-typedef struct {
+typedef struct wifi_promiscuous_pkt_s {
     wifi_pkt_rx_ctrl_t rx_ctrl; /**< metadata header */
     uint8_t payload[0];       /**< Data or management payload. Length of payload is described by rx_ctrl.sig_len. Type of content determined by packet type argument of callback. */
 } wifi_promiscuous_pkt_t;
@@ -376,7 +376,7 @@ typedef enum {
 #define WIFI_PROMIS_CTRL_FILTER_MASK_CFENDACK    (1<<31)       /**< filter the control packets with subtype of CF-END+CF-ACK */
 
 /** @brief Mask for filtering different packet types in promiscuous mode. */
-typedef struct {
+typedef struct wifi_promiscuous_filter_s {
     uint32_t filter_mask; /**< OR of one or more filter values WIFI_PROMIS_FILTER_* */
 } wifi_promiscuous_filter_t;
 
@@ -388,7 +388,7 @@ typedef struct {
   * @brief Channel state information(CSI) configuration type
   *
   */
-typedef struct {
+typedef struct wifi_csi_config_s {
     bool lltf_en;           /**< enable to receive legacy long training field(lltf) data. Default enabled */
     bool htltf_en;          /**< enable to receive HT long training field(htltf) data. Default enabled */
     bool stbc_htltf2_en;    /**< enable to receive space time block code HT long training field(stbc-htltf2) data. Default enabled */
@@ -402,7 +402,7 @@ typedef struct {
   * @brief CSI data type
   *
   */
-typedef struct {
+typedef struct wifi_csi_info_s {
     wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
     uint8_t mac[6];            /**< source MAC address of the CSI data */
     bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not */
@@ -414,7 +414,7 @@ typedef struct {
   * @brief WiFi GPIO configuration for antenna selection
   *
   */
-typedef struct {
+typedef struct wifi_ant_gpio_s {
     uint8_t gpio_select: 1,           /**< Whether this GPIO is connected to external antenna switch */
             gpio_num: 7;              /**< The GPIO number that connects to external antenna switch */
 } wifi_ant_gpio_t;
@@ -423,7 +423,7 @@ typedef struct {
   * @brief WiFi GPIOs configuration for antenna selection
   *
   */
-typedef struct {
+typedef struct wifi_ant_gpio_config_s {
     wifi_ant_gpio_t  gpio_cfg[4];  /**< The configurations of GPIOs that connect to external antenna switch */
 } wifi_ant_gpio_config_t;
 
@@ -442,7 +442,7 @@ typedef enum {
   * @brief WiFi antenna configuration
   *
   */
-typedef struct {
+typedef struct wifi_ant_config_s {
     wifi_ant_mode_t rx_ant_mode;          /**< WiFi antenna mode for receiving */
     wifi_ant_t      rx_ant_default;       /**< Default antenna mode for receiving, it's ignored if rx_ant_mode is not WIFI_ANT_MODE_AUTO */
     wifi_ant_mode_t tx_ant_mode;          /**< WiFi antenna mode for transmission, it can be set to WIFI_ANT_MODE_AUTO only if rx_ant_mode is set to WIFI_ANT_MODE_AUTO */

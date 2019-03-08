@@ -29,7 +29,7 @@ extern "C" {
 /**
  * @brief SPIFFS definition structure
  */
-typedef struct {
+typedef struct esp_spiffs_s {
     spiffs *fs;                             /*!< Handle to the underlying SPIFFS */
     SemaphoreHandle_t lock;                 /*!< FS lock */
     const esp_partition_t* partition;       /*!< The partition on which SPIFFS is located */

@@ -29,7 +29,7 @@ typedef void (simple_ble_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t p_gatts
  * to create an instance of BLE easily. It requires function
  * pointers, advertising parameters and gatt description table
  */
-typedef struct {
+typedef struct simple_ble_cfg_s {
     /** Name to be displayed to devices scanning for ESP32 */
     const char *device_name;
     /** Advertising data content, according to "Supplement to the Bluetooth Core Specification" */

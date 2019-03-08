@@ -81,7 +81,7 @@ typedef enum {
 /**
  * @brief Pulse Counter configuration for a single channel
  */
-typedef struct {
+typedef struct pcnt_config_s {
     int pulse_gpio_num;             /*!< Pulse input GPIO number, if you want to use GPIO16, enter pulse_gpio_num = 16, a negative value will be ignored */
     int ctrl_gpio_num;              /*!< Control signal input GPIO number, a negative value will be ignored */
     pcnt_ctrl_mode_t lctrl_mode;    /*!< PCNT low control mode */

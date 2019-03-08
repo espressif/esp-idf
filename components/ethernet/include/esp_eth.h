@@ -113,7 +113,7 @@ typedef void (*eth_phy_power_enable_func)(bool enable);
  * @brief ethernet configuration
  *
  */
-typedef struct {
+typedef struct eth_config_s {
     eth_phy_base_t phy_addr;                                            /*!< PHY address (0~31) */
     eth_mode_t mac_mode;                                                /*!< MAC mode: only support RMII now */
     eth_clock_mode_t clock_mode;                                        /*!< external/internal clock mode selection */

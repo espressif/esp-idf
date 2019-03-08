@@ -36,7 +36,7 @@ typedef struct dhcps_msg {
 }dhcps_msg;
 
 /*   Defined in esp_misc.h */
-typedef struct {
+typedef struct dhcps_lease_s {
 	bool enable;
 	ip4_addr_t start_ip;
 	ip4_addr_t end_ip;
@@ -63,7 +63,7 @@ struct dhcps_pool{
 typedef u32_t dhcps_time_t;
 typedef u8_t dhcps_offer_t;
 
-typedef struct {
+typedef struct dhcps_options_s {
         dhcps_offer_t dhcps_offer;
         dhcps_offer_t dhcps_dns;
         dhcps_time_t  dhcps_time;

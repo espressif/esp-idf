@@ -38,24 +38,24 @@ typedef enum {
     BTC_AVRC_CTRL_API_SET_PLAYER_SETTING_EVT
 } btc_avrc_act_t;
 
-typedef struct {
+typedef struct pt_cmd_s {
     uint8_t tl; /* transaction label */
     uint8_t key_code;
     uint8_t key_state;
 } pt_cmd_t;
 
-typedef struct {
+typedef struct md_cmd_s {
     uint8_t tl;
     uint8_t attr_mask;
 } md_cmd_t;
 
-typedef struct {
+typedef struct rn_cmd_s {
     uint8_t tl;
     uint8_t event_id;
     uint32_t event_parameter;
 } rn_cmd_t;
 
-typedef struct {
+typedef struct ps_cmd_s {
     uint8_t tl;
     uint8_t attr_id;
     uint8_t value_id;

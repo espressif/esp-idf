@@ -91,31 +91,31 @@
 // btla-specific --
 
 /* Internal UUID sequence representation */
-typedef struct {
+typedef struct tUID_ENT_s {
     UINT16     len;
     UINT8      value[MAX_UUID_SIZE];
 } tUID_ENT;
 
-typedef struct {
+typedef struct tSDP_UUID_SEQ_s {
     UINT16      num_uids;
     tUID_ENT    uuid_entry[MAX_UUIDS_PER_SEQ];
 } tSDP_UUID_SEQ;
 
 
 /* Internal attribute sequence definitions */
-typedef struct {
+typedef struct tATT_ENT_s {
     UINT16      start;
     UINT16      end;
 } tATT_ENT;
 
-typedef struct {
+typedef struct tSDP_ATTR_SEQ_s {
     UINT16      num_attr;
     tATT_ENT    attr_entry[MAX_ATTR_PER_SEQ];
 } tSDP_ATTR_SEQ;
 
 
 /* Define the attribute element of the SDP database record */
-typedef struct {
+typedef struct tSDP_ATTRIBUTE_s {
     UINT32  len;           /* Number of bytes in the entry */
     UINT8   *value_ptr;    /* Points to attr_pad */
     UINT16  id;
@@ -123,7 +123,7 @@ typedef struct {
 } tSDP_ATTRIBUTE;
 
 /* An SDP record consists of a handle, and 1 or more attributes */
-typedef struct {
+typedef struct tSDP_RECORD_s {
     UINT32              record_handle;
     UINT32              free_pad_ptr;
     UINT16              num_attributes;
@@ -133,7 +133,7 @@ typedef struct {
 
 
 /* Define the SDP database */
-typedef struct {
+typedef struct tSDP_DB_s {
     UINT32         di_primary_handle;       /* Device ID Primary record or NULL if nonexistent */
     UINT16         num_records;
     tSDP_RECORD    record[SDP_MAX_RECORDS];
@@ -146,7 +146,7 @@ enum {
 
 #if SDP_SERVER_ENABLED == TRUE
 /* Continuation information for the SDP server response */
-typedef struct {
+typedef struct tSDP_CONT_INFO_s {
     UINT16            next_attr_index; /* attr index for next continuation response */
     UINT16            next_attr_start_id;  /* attr id to start with for the attr index in next cont. response */
     tSDP_RECORD       *prev_sdp_rec; /* last sdp record that was completely sent in the response */
@@ -156,7 +156,7 @@ typedef struct {
 #endif  /* SDP_SERVER_ENABLED == TRUE */
 
 /* Define the SDP Connection Control Block */
-typedef struct {
+typedef struct tCONN_CB_s {
 #define SDP_STATE_IDLE              0
 #define SDP_STATE_CONN_SETUP        1
 #define SDP_STATE_CFG_SETUP         2
@@ -208,7 +208,7 @@ typedef struct {
 
 
 /*  The main SDP control block */
-typedef struct {
+typedef struct tSDP_CB_s {
     tL2CAP_CFG_INFO   l2cap_my_cfg;             /* My L2CAP config     */
     tCONN_CB          ccb[SDP_MAX_CONNECTIONS];
 #if SDP_SERVER_ENABLED == TRUE

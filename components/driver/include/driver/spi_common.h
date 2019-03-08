@@ -79,7 +79,7 @@ typedef enum {
  *
  * @note Be advised that the slave driver does not use the quadwp/quadhd lines and fields in spi_bus_config_t refering to these lines will be ignored and can thus safely be left uninitialized.
  */
-typedef struct {
+typedef struct spi_bus_config_s {
     int mosi_io_num;                ///< GPIO pin for Master Out Slave In (=spi_d) signal, or -1 if not used.
     int miso_io_num;                ///< GPIO pin for Master In Slave Out (=spi_q) signal, or -1 if not used.
     int sclk_io_num;                ///< GPIO pin for Spi CLocK signal, or -1 if not used.

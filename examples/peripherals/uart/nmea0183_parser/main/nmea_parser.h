@@ -56,7 +56,7 @@ typedef enum {
  * @brief GPS satellite information
  *
  */
-typedef struct {
+typedef struct gps_satellite_s {
     uint8_t num;       /*!< Satellite number */
     uint8_t elevation; /*!< Satellite elevation */
     uint16_t azimuth;  /*!< Satellite azimuth */
@@ -67,7 +67,7 @@ typedef struct {
  * @brief GPS time
  *
  */
-typedef struct {
+typedef struct gps_time_s {
     uint8_t hour;      /*!< Hour */
     uint8_t minute;    /*!< Minute */
     uint8_t second;    /*!< Second */
@@ -78,7 +78,7 @@ typedef struct {
  * @brief GPS date
  *
  */
-typedef struct {
+typedef struct gps_date_s {
     uint8_t day;   /*!< Day (start from 1) */
     uint8_t month; /*!< Month (start from 1) */
     uint16_t year; /*!< Year (start from 2000) */
@@ -102,7 +102,7 @@ typedef enum {
  * @brief GPS object
  *
  */
-typedef struct {
+typedef struct gps_s {
     float latitude;                                                /*!< Latitude (degrees) */
     float longitude;                                               /*!< Longitude (degrees) */
     float altitude;                                                /*!< Altitude (meters) */
@@ -127,7 +127,7 @@ typedef struct {
  * @brief Configuration of NMEA Parser
  *
  */
-typedef struct {
+typedef struct nmea_parser_config_s {
     struct {
         uart_port_t uart_port;        /*!< UART port number */
         uint32_t rx_pin;              /*!< UART Rx Pin number */

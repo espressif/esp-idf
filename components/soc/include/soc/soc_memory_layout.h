@@ -56,7 +56,7 @@
 
 /* Type descriptor holds a description for a particular type of memory on a particular SoC.
  */
-typedef struct {
+typedef struct soc_memory_type_desc_s {
     const char *name;  ///< Name of this memory type
     uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS]; ///< Capabilities for this memory type (as a prioritised set)
     bool aliased_iram;   ///< If true, this is data memory that is is also mapped in IRAM
@@ -69,7 +69,7 @@ extern const size_t soc_memory_type_count;
 
 /* Region descriptor holds a description for a particular region of memory on a particular SoC.
  */
-typedef struct
+typedef struct soc_memory_region_s
 {
     intptr_t start;  ///< Start address of the region
     size_t size;            ///< Size of the region in bytes
@@ -83,7 +83,7 @@ extern const size_t soc_memory_region_count;
 /* Region descriptor holds a description for a particular region of
    memory reserved on this SoC for a particular use (ie not available
    for stack/heap usage.) */
-typedef struct
+typedef struct soc_reserved_region_s
 {
     intptr_t start;
     intptr_t end;

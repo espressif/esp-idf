@@ -71,7 +71,7 @@ PR_BEGIN_EXTERN_C
 
 typedef         eMBException( *pxMBFunctionHandler ) ( UCHAR * pucFrame, USHORT * pusLength );
 
-typedef struct
+typedef struct xMBFunctionHandler_s
 {
     UCHAR           ucFunctionCode;
     pxMBFunctionHandler pxHandler;

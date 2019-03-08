@@ -42,7 +42,7 @@
 *****************************************************************************/
 
 /** for utl_set_device_class() **/
-typedef struct {
+typedef struct tBTA_UTL_COD_s {
     UINT8       minor;
     UINT8       major;
     UINT16      service;

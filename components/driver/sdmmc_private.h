@@ -21,7 +21,7 @@
 #include "freertos/queue.h"
 #include "soc/sdmmc_periph.h"
 
-typedef struct {
+typedef struct sdmmc_event_s {
     uint32_t sdmmc_status;      ///< masked SDMMC interrupt status
     uint32_t dma_status;        ///< masked DMA interrupt status
 } sdmmc_event_t;

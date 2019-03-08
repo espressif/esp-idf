@@ -148,13 +148,13 @@ typedef UINT8 tBTA_HH_STATUS;
 typedef UINT16 tBTA_HH_ATTR_MASK;
 
 /* supported type of device and corresponding application ID */
-typedef struct {
+typedef struct tBTA_HH_SPT_TOD_s {
     tBTA_HH_DEVT        tod;        /* type of device               */
     UINT8               app_id;     /* corresponding application ID */
 } tBTA_HH_SPT_TOD;
 
 /* configuration struct */
-typedef struct {
+typedef struct tBTA_HH_CFG_s {
     UINT8                max_devt_spt; /* max number of types of devices spt */
     tBTA_HH_SPT_TOD     *p_devt_list;  /* supported types of device list     */
     UINT16               sdp_db_size;
@@ -189,7 +189,7 @@ typedef tHID_DEV_DSCP_INFO tBTA_HH_DEV_DESCR;
 
 
 /* report descriptor information */
-typedef struct {
+typedef struct tBTA_HH_DEV_DSCP_INFO_s {
     UINT16              vendor_id;      /* vendor ID */
     UINT16              product_id;     /* product ID */
     UINT16              version;        /* version */
@@ -206,7 +206,7 @@ typedef struct {
 } tBTA_HH_DEV_DSCP_INFO;
 
 /* callback event data for BTA_HH_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_HH_CONN_s {
     BD_ADDR         bda;                /* HID device bd address    */
     tBTA_HH_STATUS  status;             /* operation status         */
     UINT8           handle;             /* device handle            */
@@ -220,7 +220,7 @@ typedef struct {
 typedef tBTA_HH_CONN tBTA_HH_DEV_INFO;
 
 /* callback event data */
-typedef struct {
+typedef struct tBTA_HH_CBDATA_s {
     tBTA_HH_STATUS              status;     /* operation status         */
     UINT8                       handle;     /* device handle            */
 } tBTA_HH_CBDATA;
@@ -234,7 +234,7 @@ enum {
 };
 
 /* parsed boot mode keyboard report */
-typedef struct {
+typedef struct tBTA_HH_KEYBD_RPT_s {
     UINT8               this_char[6];       /* virtual key code     */
     BOOLEAN             mod_key[BTA_HH_MOD_MAX_KEY];
     /* ctrl, shift, Alt, GUI */
@@ -247,14 +247,14 @@ typedef struct {
 } tBTA_HH_KEYBD_RPT;
 
 /* parsed boot mode mouse report */
-typedef struct {
+typedef struct tBTA_HH_MICE_RPT_s {
     UINT8               mouse_button;       /* mouse button is clicked   */
     INT8                delta_x;            /* displacement x            */
     INT8                delta_y;            /* displacement y            */
 } tBTA_HH_MICE_RPT;
 
 /* parsed Boot report */
-typedef struct {
+typedef struct tBTA_HH_BOOT_RPT_s {
     tBTA_HH_BOOT_RPT_ID dev_type;           /* type of device report */
     union {
         tBTA_HH_KEYBD_RPT   keybd_rpt;      /* keyboard report      */
@@ -263,7 +263,7 @@ typedef struct {
 } tBTA_HH_BOOT_RPT;
 
 /* handshake data */
-typedef struct {
+typedef struct tBTA_HH_HSDATA_s {
     tBTA_HH_STATUS  status;                 /* handshake status */
     UINT8           handle;                 /* device handle    */
     union {

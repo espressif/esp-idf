@@ -64,20 +64,20 @@ typedef UINT16 tBTA_GATTS_INT_EVT;
 #define BTA_GATTS_MAX_SRVC_NUM   GATT_MAX_SR_PROFILES
 
 /* internal strucutre for GATTC register API  */
-typedef struct {
+typedef struct tBTA_GATTS_API_REG_s {
     BT_HDR                  hdr;
     tBT_UUID                app_uuid;
     tBTA_GATTS_CBACK        *p_cback;
 } tBTA_GATTS_API_REG;
 
-typedef struct {
+typedef struct tBTA_GATTS_INT_START_IF_s {
     BT_HDR                  hdr;
     tBTA_GATTS_IF           server_if;
 } tBTA_GATTS_INT_START_IF;
 
 typedef tBTA_GATTS_INT_START_IF tBTA_GATTS_API_DEREG;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_CREATE_SRVC_s {
     BT_HDR                  hdr;
     tBTA_GATTS_IF           server_if;
     tBT_UUID                service_uuid;
@@ -87,7 +87,7 @@ typedef struct {
 
 } tBTA_GATTS_API_CREATE_SRVC;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_ADD_CHAR_s {
     BT_HDR                  hdr;
     tBT_UUID                char_uuid;
     tBTA_GATT_PERM          perm;
@@ -96,12 +96,12 @@ typedef struct {
     tBTA_GATT_ATTR_VAL      attr_val;
 } tBTA_GATTS_API_ADD_CHAR;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_ADD_INCL_SRVC_s {
     BT_HDR                  hdr;
     UINT16                  included_service_id;
 } tBTA_GATTS_API_ADD_INCL_SRVC;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_ADD_DESCR_s {
     BT_HDR                  hdr;
     tBT_UUID                descr_uuid;
     tBTA_GATT_PERM          perm;
@@ -109,7 +109,7 @@ typedef struct {
     tBTA_GATT_ATTR_VAL      attr_val;
 } tBTA_GATTS_API_ADD_DESCR;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_INDICATION_s {
     BT_HDR  hdr;
     UINT16  attr_id;
     UINT16  len;
@@ -117,26 +117,26 @@ typedef struct {
     UINT8   value[BTA_GATT_MAX_ATTR_LEN];
 } tBTA_GATTS_API_INDICATION;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_RSP_s {
     BT_HDR              hdr;
     UINT32              trans_id;
     tBTA_GATT_STATUS    status;
     tBTA_GATTS_RSP      *p_rsp;
 } tBTA_GATTS_API_RSP;
 
-typedef struct{
+typedef struct tBTA_GATTS_API_SET_ATTR_VAL_s{
     BT_HDR              hdr;
     UINT16 length;
     UINT8 *value;
 }tBTA_GATTS_API_SET_ATTR_VAL;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_START_s {
     BT_HDR                  hdr;
     tBTA_GATT_TRANSPORT     transport;
 } tBTA_GATTS_API_START;
 
 
-typedef struct {
+typedef struct tBTA_GATTS_API_OPEN_s {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTS_IF           server_if;
@@ -147,14 +147,14 @@ typedef struct {
 
 typedef tBTA_GATTS_API_OPEN tBTA_GATTS_API_CANCEL_OPEN;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_LISTEN_s {
     BT_HDR                  hdr;
     BD_ADDR_PTR             remote_bda;
     tBTA_GATTS_IF           server_if;
     BOOLEAN                 start;
 } tBTA_GATTS_API_LISTEN;
 
-typedef struct {
+typedef struct tBTA_GATTS_API_SEND_SERVICE_CHANGE_s {
     BT_HDR                  hdr;
     tBTA_GATTS_IF           server_if;
     BD_ADDR                 remote_bda;
@@ -182,7 +182,7 @@ typedef union {
 } tBTA_GATTS_DATA;
 
 /* application registration control block */
-typedef struct {
+typedef struct tBTA_GATTS_RCB_s {
     BOOLEAN             in_use;
     tBT_UUID            app_uuid;
     tBTA_GATTS_CBACK    *p_cback;
@@ -190,7 +190,7 @@ typedef struct {
 } tBTA_GATTS_RCB;
 
 /* service registration control block */
-typedef struct {
+typedef struct tBTA_GATTS_SRVC_CB_s {
     tBT_UUID    service_uuid;   /* service UUID */
     UINT16      service_id;     /* service handle */
     UINT8       inst_num;       /* instance ID */
@@ -202,7 +202,7 @@ typedef struct {
 
 
 /* GATT server control block */
-typedef struct {
+typedef struct tBTA_GATTS_CB_s {
     BOOLEAN             enabled;
     tBTA_GATTS_RCB      rcb[BTA_GATTS_MAX_APP_NUM];
     tBTA_GATTS_SRVC_CB  srvc_cb[BTA_GATTS_MAX_SRVC_NUM];

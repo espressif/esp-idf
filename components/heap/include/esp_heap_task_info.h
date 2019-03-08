@@ -24,14 +24,14 @@ extern "C" {
 #define NUM_HEAP_TASK_CAPS 4
 
 /** @brief Structure to collect per-task heap allocation totals partitioned by selected caps */
-typedef struct {
+typedef struct heap_task_totals_s {
     TaskHandle_t task;                ///< Task to which these totals belong
     size_t size[NUM_HEAP_TASK_CAPS];  ///< Total allocations partitioned by selected caps
     size_t count[NUM_HEAP_TASK_CAPS]; ///< Number of blocks partitioned by selected caps
 } heap_task_totals_t;
 
 /** @brief Structure providing details about a block allocated by a task */
-typedef struct {
+typedef struct heap_task_block_s {
     TaskHandle_t task;                ///< Task that allocated the block
     void *address;                    ///< User address of allocated block
     uint32_t size;                    ///< Size of the allocated block
@@ -64,7 +64,7 @@ typedef struct {
  * array pointer can be NULL if block details are not desired, or max_blocks
  * can be set to zero.
  */
-typedef struct {
+typedef struct heap_task_info_params_s {
     int32_t caps[NUM_HEAP_TASK_CAPS]; ///< Array of caps for partitioning task totals
     int32_t mask[NUM_HEAP_TASK_CAPS]; ///< Array of masks under which caps must match
     TaskHandle_t *tasks;              ///< Array of tasks whose block info is returned

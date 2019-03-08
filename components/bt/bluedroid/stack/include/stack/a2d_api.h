@@ -98,7 +98,7 @@ typedef UINT8 tA2D_STATUS;
 
 /* This data type is used in A2D_FindService() to initialize the SDP database
  * to hold the result service search. */
-typedef struct {
+typedef struct tA2D_SDP_DB_PARAMS_s {
     UINT32              db_len;  /* Length, in bytes, of the discovery database */
     UINT16              num_attr;/* The number of attributes in p_attrs */
     tSDP_DISCOVERY_DB  *p_db;    /* Pointer to the discovery database */
@@ -109,7 +109,7 @@ typedef struct {
 } tA2D_SDP_DB_PARAMS;
 
 /* This data type is used in tA2D_FIND_CBACK to report the result of the SDP discovery process. */
-typedef struct {
+typedef struct tA2D_Service_s {
     UINT16  service_len;    /* Length, in bytes, of the service name */
     UINT16  provider_len;   /* Length, in bytes, of the provider name */
     char   *p_service_name; /* Pointer the service name.  This character string may not be null terminated.

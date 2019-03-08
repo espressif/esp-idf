@@ -107,13 +107,13 @@ typedef enum {
 #define BTA_GATTC_INVALID_HANDLE         0
 
 /* internal strucutre for GATTC register API  */
-typedef struct {
+typedef struct tBTA_GATTC_API_REG_s {
     BT_HDR                  hdr;
     tBT_UUID                app_uuid;
     tBTA_GATTC_CBACK        *p_cback;
 } tBTA_GATTC_API_REG;
 
-typedef struct {
+typedef struct tBTA_GATTC_INT_START_IF_s {
     BT_HDR                  hdr;
     tBTA_GATTC_IF           client_if;
 } tBTA_GATTC_INT_START_IF;
@@ -121,7 +121,7 @@ typedef struct {
 typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_API_DEREG;
 typedef tBTA_GATTC_INT_START_IF tBTA_GATTC_INT_DEREG;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_OPEN_s {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_ADDR_TYPE          remote_addr_type;
@@ -132,14 +132,14 @@ typedef struct {
 
 typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_READ_s {
     BT_HDR                  hdr;
     tBTA_GATT_AUTH_REQ      auth_req;
     UINT16                  handle;
     tBTA_GATTC_EVT          cmpl_evt;
 } tBTA_GATTC_API_READ;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_WRITE_s {
     BT_HDR                  hdr;
     tBTA_GATT_AUTH_REQ      auth_req;
     UINT16                  handle;
@@ -150,31 +150,31 @@ typedef struct {
     UINT8                   *p_value;
 } tBTA_GATTC_API_WRITE;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_EXEC_s {
     BT_HDR                  hdr;
     BOOLEAN                 is_execute;
 } tBTA_GATTC_API_EXEC;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_CONFIRM_s {
     BT_HDR                  hdr;
     UINT16                  handle;
 } tBTA_GATTC_API_CONFIRM;
 
 typedef tGATT_CL_COMPLETE tBTA_GATTC_CMPL;
 
-typedef struct {
+typedef struct tBTA_GATTC_OP_CMPL_s {
     BT_HDR                  hdr;
     UINT8                   op_code;
     tGATT_STATUS            status;
     tBTA_GATTC_CMPL         *p_cmpl;
 } tBTA_GATTC_OP_CMPL;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_SEARCH_s {
     BT_HDR              hdr;
     tBT_UUID            *p_srvc_uuid;
 } tBTA_GATTC_API_SEARCH;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_READ_MULTI_s {
     BT_HDR                  hdr;
     tBTA_GATT_AUTH_REQ      auth_req;
     UINT8                   num_attr;
@@ -182,7 +182,7 @@ typedef struct {
     tBTA_GATTC_EVT          cmpl_evt;
 }tBTA_GATTC_API_READ_MULTI;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_LISTEN_s {
     BT_HDR                  hdr;
     BD_ADDR_PTR             remote_bda;
     tBTA_GATTC_IF           client_if;
@@ -190,11 +190,11 @@ typedef struct {
 } tBTA_GATTC_API_LISTEN;
 
 
-typedef struct {
+typedef struct tBTA_GATTC_API_CFG_MTU_s {
     BT_HDR              hdr;
 } tBTA_GATTC_API_CFG_MTU;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_CACHE_ASSOC_s {
     BT_HDR             hdr;
     tBTA_GATTC_IF      client_if;
     BD_ADDR            src_addr;
@@ -202,12 +202,12 @@ typedef struct {
     BOOLEAN            is_assoc;
 } tBTA_GATTC_API_CACHE_ASSOC;
 
-typedef struct {
+typedef struct tBTA_GATTC_API_GET_ADDR_s {
     BT_HDR             hdr;
     tBTA_GATTC_IF      client_if;
 } tBTA_GATTC_API_GET_ADDR;
 
-typedef struct {
+typedef struct tBTA_GATTC_INT_CONN_s {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_IF           client_if;
@@ -217,7 +217,7 @@ typedef struct {
     BOOLEAN                 already_connect;
 } tBTA_GATTC_INT_CONN;
 
-typedef struct {
+typedef struct tBTA_GATTC_ENC_CMPL_s {
     BT_HDR                  hdr;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_IF           client_if;
@@ -251,7 +251,7 @@ typedef union {
 
 
 /* GATT server cache on the client */
-typedef struct {
+typedef struct tBTA_GATTC_ATTR_REC_s {
     tBT_UUID            uuid;
     UINT16              s_handle;
     UINT16              e_handle;
@@ -277,7 +277,7 @@ enum {
 };
 typedef UINT8 tBTA_GATTC_STATE;
 
-typedef struct {
+typedef struct tBTA_GATTC_SERV_s {
     BOOLEAN             in_use;
     BD_ADDR             server_bda;
     BOOLEAN             connected;
@@ -313,13 +313,13 @@ typedef struct {
 #define BTA_GATTC_NOTIF_REG_MAX     7//15
 #endif
 
-typedef struct {
+typedef struct tBTA_GATTC_NOTIF_REG_s {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
     UINT16              handle;
 }tBTA_GATTC_NOTIF_REG;
 
-typedef struct {
+typedef struct tBTA_GATTC_RCB_s {
     tBTA_GATTC_CBACK        *p_cback;
     BOOLEAN                 in_use;
     tBTA_GATTC_IF           client_if;      /* client interface with BTE stack for this application */
@@ -330,7 +330,7 @@ typedef struct {
 } tBTA_GATTC_RCB;
 
 /* client channel is a mapping between a BTA client(cl_id) and a remote BD address */
-typedef struct {
+typedef struct tBTA_GATTC_CLCB_s {
     UINT16              bta_conn_id;    /* client channel ID, unique for clcb */
     BD_ADDR             bda;
     tBTA_TRANSPORT      transport;      /* channel transport */
@@ -361,7 +361,7 @@ typedef UINT16 tBTA_GATTC_CIF_MASK;
 typedef UINT32 tBTA_GATTC_CIF_MASK;
 #endif
 
-typedef struct {
+typedef struct tBTA_GATTC_BG_TCK_s {
     BOOLEAN                 in_use;
     BD_ADDR                 remote_bda;
     tBTA_GATTC_CIF_MASK     cif_mask;
@@ -369,7 +369,7 @@ typedef struct {
 
 } tBTA_GATTC_BG_TCK;
 
-typedef struct {
+typedef struct tBTA_GATTC_CONN_s {
     BOOLEAN             in_use;
     BD_ADDR             remote_bda;
     UINT16              svc_change_descr_handle;
@@ -383,7 +383,7 @@ enum {
     BTA_GATTC_STATE_DISABLING
 };
 
-typedef struct {
+typedef struct tBTA_GATTC_CB_s {
     UINT8               state;
     tBTA_GATTC_CONN     conn_track[BTA_GATTC_CONN_MAX];
     tBTA_GATTC_BG_TCK   bg_track[BTA_GATTC_KNOWN_SR_MAX];

@@ -25,7 +25,7 @@ extern "C" {
 typedef uint32_t emac_sig_t;
 typedef uint32_t emac_par_t;
 
-typedef struct {
+typedef struct emac_event_s {
     emac_sig_t sig;
     emac_par_t par;
 } emac_event_t;

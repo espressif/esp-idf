@@ -56,7 +56,7 @@ typedef enum {
 #define ESP_IMAGE_HEADER_MAGIC 0xE9
 
 /* Main header of binary image */
-typedef struct {
+typedef struct esp_image_segment_header_s {
     uint8_t magic;
     uint8_t segment_count;
     /* flash read mode (esp_image_spi_mode_t as uint8_t) */
@@ -94,7 +94,7 @@ typedef struct {
 /**
  * @brief Description about application.
  */
-typedef struct {
+typedef struct esp_app_desc_s {
     uint32_t magic_word;        /*!< Magic word ESP_APP_DESC_MAGIC_WORD */
     uint32_t secure_version;    /*!< Secure version */
     uint32_t reserv1[2];        /*!< --- */
@@ -111,7 +111,7 @@ _Static_assert(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 byte
 #define ESP_IMAGE_MAX_SEGMENTS 16
 
 /* Structure to hold on-flash image metadata */
-typedef struct {
+typedef struct esp_image_metadata_s {
   uint32_t start_addr;   /* Start address of image */
   esp_image_header_t image; /* Header for entire image */
   esp_image_segment_header_t segments[ESP_IMAGE_MAX_SEGMENTS]; /* Per-segment header data */
@@ -232,7 +232,7 @@ esp_err_t esp_image_verify_bootloader(uint32_t *length);
 esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data);
 
 
-typedef struct {
+typedef struct esp_image_flash_mapping_s {
     uint32_t drom_addr;
     uint32_t drom_load_addr;
     uint32_t drom_size;

@@ -29,7 +29,7 @@ typedef union {
     tBTA_DM_SEC sec;
 } btc_dm_sec_args_t;
 
-typedef struct
+typedef struct btc_dm_ble_cb_s
 {
     bool                   is_penc_key_rcvd;
     tBTM_LE_PENC_KEYS         penc_key;       /* received peer encryption key */
@@ -44,21 +44,21 @@ typedef struct
     bool                   is_lidk_key_rcvd;   /* local identity key received */
 } btc_dm_ble_cb_t;
 
-typedef struct
+typedef struct btc_dm_pairing_cb_s
 {
     bt_bdaddr_t            static_bdaddr;
     BD_ADDR                bd_addr;
     btc_dm_ble_cb_t        ble;
 } btc_dm_pairing_cb_t;
 
-typedef struct
+typedef struct btc_dm_local_key_id_s
 {
     uint8_t                ir[BT_OCTET16_LEN];
     uint8_t                irk[BT_OCTET16_LEN];
     uint8_t                dhk[BT_OCTET16_LEN];
 } btc_dm_local_key_id_t;
 
-typedef struct
+typedef struct btc_dm_local_key_cb_s
 {
     bool                 is_er_rcvd;
     uint8_t              er[BT_OCTET16_LEN];

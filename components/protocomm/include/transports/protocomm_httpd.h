@@ -29,7 +29,7 @@ extern "C" {
 /**
  * @brief   Config parameters for protocomm HTTP server
  */
-typedef struct {
+typedef struct protocomm_http_server_config_s {
 
     uint16_t port;          /*!< Port on which the HTTP server will listen */
 
@@ -56,7 +56,7 @@ typedef union {
 /**
  * @brief   Config parameters for protocomm HTTP server
  */
-typedef struct {
+typedef struct protocomm_httpd_config_s {
     /** Flag to indicate of an external HTTP Server Handle has been provided.
      * In such as case, protocomm will use the same HTTP Server and not start
      * a new one internally.

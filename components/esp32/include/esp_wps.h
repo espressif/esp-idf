@@ -61,14 +61,14 @@ extern const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs;
 #define WPS_MAX_MODEL_NAME_LEN   33
 #define WPS_MAX_DEVICE_NAME_LEN  33
 
-typedef struct {
+typedef struct wps_factory_information_s {
     char manufacturer[WPS_MAX_MANUFACTURER_LEN]; /*!< Manufacturer, null-terminated string. The default manufcturer is used if the string is empty */
     char model_number[WPS_MAX_MODEL_NUMBER_LEN]; /*!< Model number, null-terminated string. The default model number is used if the string is empty */
     char model_name[WPS_MAX_MODEL_NAME_LEN];     /*!< Model name, null-terminated string. The default model name is used if the string is empty */
     char device_name[WPS_MAX_DEVICE_NAME_LEN];   /*!< Device name, null-terminated string. The default device name is used if the string is empty */
 } wps_factory_information_t;
 
-typedef struct {
+typedef struct esp_wps_config_s {
     wps_type_t wps_type;
     const wps_crypto_funcs_t *crypto_funcs;
     wps_factory_information_t factory_info;

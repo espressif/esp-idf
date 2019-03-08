@@ -101,7 +101,7 @@ enum {
 typedef UINT8 tBTA_HH_STATE;
 
 /* data structure used to send a command/data to HID device */
-typedef struct {
+typedef struct tBTA_HH_CMD_DATA_s {
     BT_HDR           hdr;
     UINT8            t_type;
     UINT8            param;
@@ -114,14 +114,14 @@ typedef struct {
 } tBTA_HH_CMD_DATA;
 
 /* data type for BTA_HH_API_ENABLE_EVT */
-typedef struct {
+typedef struct tBTA_HH_API_ENABLE_s {
     BT_HDR              hdr;
     UINT8               sec_mask;
     UINT8               service_name[BTA_SERVICE_NAME_LEN + 1];
     tBTA_HH_CBACK   *p_cback;
 } tBTA_HH_API_ENABLE;
 
-typedef struct {
+typedef struct tBTA_HH_API_CONN_s {
     BT_HDR          hdr;
     BD_ADDR         bd_addr;
     UINT8           sec_mask;
@@ -129,14 +129,14 @@ typedef struct {
 } tBTA_HH_API_CONN;
 
 /* internal event data from BTE HID callback */
-typedef struct {
+typedef struct tBTA_HH_CBACK_DATA_s {
     BT_HDR          hdr;
     BD_ADDR         addr;
     UINT32          data;
     BT_HDR          *p_data;
 } tBTA_HH_CBACK_DATA;
 
-typedef struct {
+typedef struct tBTA_HH_MAINT_DEV_s {
     BT_HDR              hdr;
     BD_ADDR             bda;
     UINT16              attr_mask;
@@ -147,14 +147,14 @@ typedef struct {
 } tBTA_HH_MAINT_DEV;
 
 #if BTA_HH_LE_INCLUDED == TRUE
-typedef struct {
+typedef struct tBTA_HH_LE_CLOSE_s {
     BT_HDR              hdr;
     UINT16              conn_id;
     tBTA_GATT_REASON    reason;         /* disconnect reason code, not useful when connect event is reported */
 
 } tBTA_HH_LE_CLOSE;
 
-typedef struct {
+typedef struct tBTA_HH_SCPP_UPDATE_s {
     BT_HDR              hdr;
     UINT16              scan_int;
     UINT16              scan_win;
@@ -178,7 +178,7 @@ typedef union {
 } tBTA_HH_DATA;
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
-typedef struct {
+typedef struct tBTA_HH_LE_RPT_s {
     UINT8                   index;
     BOOLEAN                 in_use;
     UINT8                   inst_id;    /* share service instance ID and report instance ID, as
@@ -195,7 +195,7 @@ typedef struct {
 #define BTA_HH_LE_RPT_MAX       20
 #endif
 
-typedef struct {
+typedef struct tBTA_HH_LE_HID_SRVC_s {
     BOOLEAN                 in_use;
     tBTA_HH_LE_RPT          report[BTA_HH_LE_RPT_MAX];
 
@@ -226,7 +226,7 @@ typedef struct {
 #endif
 
 /* device control block */
-typedef struct {
+typedef struct tBTA_HH_DEV_CB_s {
     tBTA_HH_DEV_DSCP_INFO  dscp_info;      /* report descriptor and DI information */
     BD_ADDR             addr;           /* BD-Addr of the HID device */
     UINT16              attr_mask;      /* attribute mask */
@@ -273,7 +273,7 @@ typedef struct {
 } tBTA_HH_DEV_CB;
 
 /* key board parsing control block */
-typedef struct {
+typedef struct tBTA_HH_KB_CB_s {
     BOOLEAN             mod_key[4]; /* ctrl, shift(upper), Alt, GUI */
     BOOLEAN             num_lock;
     BOOLEAN             caps_lock;
@@ -283,7 +283,7 @@ typedef struct {
 /******************************************************************************
 ** Main Control Block
 *******************************************************************************/
-typedef struct {
+typedef struct tBTA_HH_CB_s {
     tBTA_HH_KB_CB           kb_cb;                  /* key board control block,
                                                        suppose BTA will connect
                                                        to only one keyboard at

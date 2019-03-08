@@ -65,13 +65,13 @@ typedef enum {
     WPS_FAIL_REASON_RECV_M2D,                       /**< ESP32 WPS receive M2D frame */
     WPS_FAIL_REASON_MAX
 }system_event_sta_wps_fail_reason_t;
-typedef struct {
+typedef struct system_event_sta_scan_done_s {
     uint32_t status;          /**< status of scanning APs */
     uint8_t  number;
     uint8_t  scan_id;
 } system_event_sta_scan_done_t;
 
-typedef struct {
+typedef struct system_event_sta_connected_s {
     uint8_t ssid[32];         /**< SSID of connected AP */
     uint8_t ssid_len;         /**< SSID length of connected AP */
     uint8_t bssid[6];         /**< BSSID of connected AP*/
@@ -79,43 +79,43 @@ typedef struct {
     wifi_auth_mode_t authmode;
 } system_event_sta_connected_t;
 
-typedef struct {
+typedef struct system_event_sta_disconnected_s {
     uint8_t ssid[32];         /**< SSID of disconnected AP */
     uint8_t ssid_len;         /**< SSID length of disconnected AP */
     uint8_t bssid[6];         /**< BSSID of disconnected AP */
     uint8_t reason;           /**< reason of disconnection */
 } system_event_sta_disconnected_t;
 
-typedef struct {
+typedef struct system_event_sta_authmode_change_s {
     wifi_auth_mode_t old_mode;         /**< the old auth mode of AP */
     wifi_auth_mode_t new_mode;         /**< the new auth mode of AP */
 } system_event_sta_authmode_change_t;
 
-typedef struct {
+typedef struct system_event_sta_got_ip_s {
     tcpip_adapter_ip_info_t ip_info;
     bool ip_changed;
 } system_event_sta_got_ip_t;
 
-typedef struct {
+typedef struct system_event_sta_wps_er_pin_s {
     uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
 } system_event_sta_wps_er_pin_t;
 
-typedef struct {
+typedef struct system_event_got_ip6_s {
     tcpip_adapter_if_t if_index;
     tcpip_adapter_ip6_info_t ip6_info;
 } system_event_got_ip6_t;
 
-typedef struct {
+typedef struct system_event_ap_staconnected_s {
     uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
     uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
 } system_event_ap_staconnected_t;
 
-typedef struct {
+typedef struct system_event_ap_stadisconnected_s {
     uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
     uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
 } system_event_ap_stadisconnected_t;
 
-typedef struct {
+typedef struct system_event_ap_probe_req_rx_s {
     int rssi;                 /**< Received probe request signal strength */
     uint8_t mac[6];           /**< MAC address of the station which send probe request */
 } system_event_ap_probe_req_rx_t;
@@ -134,7 +134,7 @@ typedef union {
     system_event_got_ip6_t                     got_ip6;            /**< ESP32 station　or ap or ethernet ipv6 addr state change to preferred */
 } system_event_info_t;
 
-typedef struct {
+typedef struct system_event_s {
     system_event_id_t     event_id;      /**< event ID */
     system_event_info_t   event_info;    /**< event information */
 } system_event_t;

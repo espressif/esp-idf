@@ -53,13 +53,13 @@ enum {
     WX_IDX_NB,
 };
 
-typedef struct {
+typedef struct tAirSync_WRITE_DATA_s {
     BD_ADDR remote_bda;
     BOOLEAN need_rsp;
     UINT16  clt_cfg;
 } tAirSync_WRITE_DATA;
 
-typedef struct {
+typedef struct tAirSync_CLCB_s {
     BOOLEAN      in_use;
     BOOLEAN      congest;
     UINT16       conn_id;
@@ -71,7 +71,7 @@ typedef struct {
 } tAirSync_CLCB;
 
 
-typedef struct {
+typedef struct tAirSync_INST_s {
     UINT8            app_id;
     UINT16       airsync_wirt_hdl;
     UINT16       airsync_ntf_hdl;
@@ -84,7 +84,7 @@ typedef struct {
 
 
 /* service engine control block */
-typedef struct {
+typedef struct tAIRSYNC_CB_ENV_s {
     tAirSync_CLCB            clcb;           /* connection link*/
     tGATT_IF                 gatt_if;
     BOOLEAN              enabled;

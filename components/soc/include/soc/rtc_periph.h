@@ -30,7 +30,7 @@ extern "C"
  * This is an internal function of the driver, and is not usually useful
  * for external use.
  */
-typedef struct {
+typedef struct rtc_gpio_desc_s {
     uint32_t reg;       /*!< Register of RTC pad, or 0 if not an RTC GPIO */
     uint32_t mux;       /*!< Bit mask for selecting digital pad or RTC pad */
     uint32_t func;      /*!< Shift of pad function (FUN_SEL) field */

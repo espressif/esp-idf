@@ -167,7 +167,7 @@ typedef enum {
 
 typedef uint8_t tL2C_BLE_FIXED_CHNLS_MASK;
 
-typedef struct {
+typedef struct tL2C_FCRB_s {
     UINT8       next_tx_seq;                /* Next sequence number to be Tx'ed         */
     UINT8       last_rx_ack;                /* Last sequence number ack'ed by the peer  */
     UINT8       next_seq_expected;          /* Next peer sequence number expected       */
@@ -233,13 +233,13 @@ typedef struct {
 #define L2C_UCD_STATE_W4_RECEPTION  0x02
 #define L2C_UCD_STATE_W4_MTU        0x04
 
-typedef struct {
+typedef struct tL2C_UCD_REG_s {
     UINT8               state;
     tL2CAP_UCD_CB_INFO  cb_info;
 } tL2C_UCD_REG;
 #endif
 
-typedef struct {
+typedef struct tL2C_RCB_s {
     BOOLEAN                 in_use;
     UINT16                  psm;
     UINT16                  real_psm;               /* This may be a dummy RCB for an o/b connection but */
@@ -254,7 +254,7 @@ typedef struct {
 typedef void (tL2CAP_SEC_CBACK) (BD_ADDR bd_addr, tBT_TRANSPORT trasnport,
                                 void *p_ref_data, tBTM_STATUS result);
 
-typedef struct
+typedef struct tL2CAP_SEC_DATA_s
 {
     UINT16                  psm;
     tBT_TRANSPORT           transport;
@@ -341,7 +341,7 @@ typedef struct t_l2c_ccb {
 /***********************************************************************
 ** Define a queue of linked CCBs.
 */
-typedef struct {
+typedef struct tL2C_CCB_Q_s {
     tL2C_CCB        *p_first_ccb;               /* The first channel in this queue */
     tL2C_CCB        *p_last_ccb;                /* The last  channel in this queue */
 } tL2C_CCB_Q;
@@ -358,7 +358,7 @@ typedef struct {
 /* can be sent to headset even if higher priority channel (for example, AV media channel) */
 /* is congested.                                                                          */
 
-typedef struct {
+typedef struct tL2C_RR_SERV_s {
     tL2C_CCB        *p_serve_ccb;               /* current serving ccb within priority group */
     tL2C_CCB        *p_first_ccb;               /* first ccb of priority group */
     UINT8           num_ccb;                    /* number of channels in priority group */
@@ -463,7 +463,7 @@ typedef struct t_l2c_linkcb {
 
 /* Define the L2CAP control structure
 */
-typedef struct {
+typedef struct tL2C_CB_s {
     UINT8           l2cap_trace_level;
     UINT16          controller_xmit_window;         /* Total ACL window for all links   */
 
@@ -533,7 +533,7 @@ typedef struct {
 ** This structure is used to pass between functions, and not all the
 ** fields will always be filled in.
 */
-typedef struct {
+typedef struct tL2C_CONN_INFO_s {
     BD_ADDR         bd_addr;                        /* Remote BD address        */
     UINT8           status;                         /* Connection status        */
     UINT16          psm;                            /* PSM of the connection    */

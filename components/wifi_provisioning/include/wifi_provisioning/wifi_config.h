@@ -41,7 +41,7 @@ typedef enum {
 /**
  * @brief   WiFi STA connected status information
  */
-typedef struct {
+typedef struct wifi_prov_sta_conn_info_s {
     /**
      * IP Address received by station
      */
@@ -56,7 +56,7 @@ typedef struct {
 /**
  * @brief   WiFi status data to be sent in response to `get_status` request from master
  */
-typedef struct {
+typedef struct wifi_prov_config_get_data_s {
     wifi_prov_sta_state_t wifi_state;    /*!< WiFi state of the station */
     union {
         /**
@@ -74,7 +74,7 @@ typedef struct {
 /**
  * @brief   WiFi config data received by slave during `set_config` request from master
  */
-typedef struct {
+typedef struct wifi_prov_config_set_data_s {
     char    ssid[33];       /*!< SSID of the AP to which the slave is to be connected */
     char    password[65];   /*!< Password of the AP */
     char    bssid[6];       /*!< BSSID of the AP */

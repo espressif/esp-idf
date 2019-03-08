@@ -24,7 +24,7 @@
 
 typedef void (* bluedroid_init_done_cb_t)(void);
 
-typedef struct {
+typedef struct btgatt_track_adv_info_s {
     uint8_t client_if;
     uint8_t filt_index;
     uint8_t advertiser_state;

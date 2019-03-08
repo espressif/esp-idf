@@ -54,7 +54,7 @@ typedef enum {
 
 
 /* Rectangular structure */
-typedef struct {
+typedef struct JRECT_s {
 	WORD left, right, top, bottom;
 } JRECT;
 

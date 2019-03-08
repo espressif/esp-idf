@@ -26,7 +26,7 @@
 /**
  * Decoded values from SD card Card Specific Data register
  */
-typedef struct {
+typedef struct sdmmc_csd_s {
     int csd_ver;                /*!< CSD structure format */
     int mmc_ver;                /*!< MMC version (for CID format) */
     int capacity;               /*!< total number of sectors */
@@ -39,7 +39,7 @@ typedef struct {
 /**
  * Decoded values from SD card Card IDentification register
  */
-typedef struct {
+typedef struct sdmmc_cid_s {
     int mfg_id;     /*!< manufacturer identification number */
     int oem_id;     /*!< OEM/product identification number */
     char name[8];   /*!< product name (MMC v1 has the longest) */
@@ -51,7 +51,7 @@ typedef struct {
 /**
  * Decoded values from SD Configuration Register
  */
-typedef struct {
+typedef struct sdmmc_scr_s {
     int sd_spec;    /*!< SD Physical layer specification version, reported by card */
     int bus_width;  /*!< bus widths supported by card: BIT(0) — 1-bit bus, BIT(2) — 4-bit bus */
 } sdmmc_scr_t;
@@ -59,7 +59,7 @@ typedef struct {
 /**
  * Decoded values of Extended Card Specific Data
  */
-typedef struct {
+typedef struct sdmmc_ext_csd_s {
     uint8_t power_class;    /*!< Power class used by the card */
 } sdmmc_ext_csd_t;
 
@@ -71,14 +71,14 @@ typedef uint32_t sdmmc_response_t[4];
 /**
  * SD SWITCH_FUNC response buffer
  */
-typedef struct {
+typedef struct sdmmc_switch_func_rsp_s {
     uint32_t data[512 / 8 / sizeof(uint32_t)];  /*!< response data */
 } sdmmc_switch_func_rsp_t;
 
 /**
  * SD/MMC command information
  */
-typedef struct {
+typedef struct sdmmc_command_s {
         uint32_t opcode;            /*!< SD or MMC command index */
         uint32_t arg;               /*!< SD/MMC command argument */
         sdmmc_response_t response;  /*!< response buffer */
@@ -123,7 +123,7 @@ typedef struct {
  * This structure defines properties of SD/MMC host and functions
  * of SD/MMC host which can be used by upper layers.
  */
-typedef struct {
+typedef struct sdmmc_host_s {
     uint32_t flags;             /*!< flags defining host properties */
 #define SDMMC_HOST_FLAG_1BIT    BIT(0)      /*!< host supports 1-line SD and MMC protocol */
 #define SDMMC_HOST_FLAG_4BIT    BIT(1)      /*!< host supports 4-line SD and MMC protocol */
@@ -153,7 +153,7 @@ typedef struct {
 /**
  * SD/MMC card information structure
  */
-typedef struct {
+typedef struct sdmmc_card_s {
     sdmmc_host_t host;          /*!< Host with which the card is associated */
     uint32_t ocr;               /*!< OCR (Operation Conditions Register) value */
     sdmmc_cid_t cid;            /*!< decoded CID (Card IDentification) register value */

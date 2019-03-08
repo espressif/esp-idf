@@ -21,7 +21,7 @@
 
 #include "device/interop.h"
 
-typedef struct {
+typedef struct interop_entry_s {
     bt_bdaddr_t addr;
     uint8_t len;
     interop_feature_t feature;

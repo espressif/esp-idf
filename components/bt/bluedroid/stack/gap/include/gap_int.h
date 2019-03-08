@@ -26,7 +26,7 @@
 #include "stack/gatt_api.h"
 #define GAP_MAX_BLOCKS 2        /* Concurrent GAP commands pending at a time*/
 /* Define the Generic Access Profile control structure */
-typedef struct {
+typedef struct tGAP_INFO_s {
     void          *p_data;      /* Pointer to any data returned in callback */
     tGAP_CALLBACK *gap_cback;   /* Pointer to users callback function */
     tGAP_CALLBACK *gap_inq_rslt_cback; /* Used for inquiry results */
@@ -36,7 +36,7 @@ typedef struct {
 } tGAP_INFO;
 
 /* Define the control block for the FindAddrByName operation (Only 1 active at a time) */
-typedef struct {
+typedef struct tGAP_FINDADDR_CB_s {
     tGAP_CALLBACK           *p_cback;
     tBTM_INQ_INFO           *p_cur_inq; /* Pointer to the current inquiry database entry */
     tGAP_FINDADDR_RESULTS    results;
@@ -45,7 +45,7 @@ typedef struct {
 
 /* Define the GAP Connection Control Block.
 */
-typedef struct {
+typedef struct tGAP_CCB_s {
 #define GAP_CCB_STATE_IDLE              0
 #define GAP_CCB_STATE_LISTENING         1
 #define GAP_CCB_STATE_CONN_SETUP        2
@@ -82,7 +82,7 @@ typedef struct {
     tL2CAP_ERTM_INFO  ertm_info;            /* Pools and modes for ertm */
 } tGAP_CCB;
 
-typedef struct {
+typedef struct tGAP_CONN_s {
 #if ((defined AMP_INCLUDED) && (AMP_INCLUDED == TRUE))
     tAMP_APPL_INFO    reg_info;
 #else
@@ -95,7 +95,7 @@ typedef struct {
 #if BLE_INCLUDED == TRUE
 #define GAP_MAX_CHAR_NUM          4
 
-typedef struct {
+typedef struct tGAP_ATTR_s {
     UINT16                  handle;
     UINT16                  uuid;
     tGAP_BLE_ATTR_VALUE     attr_value;
@@ -107,12 +107,12 @@ typedef struct {
 
 #define GAP_MAX_CL GATT_CL_MAX_LCB
 
-typedef struct {
+typedef struct tGAP_BLE_REQ_s {
     UINT16 uuid;
     tGAP_BLE_CMPL_CBACK *p_cback;
 } tGAP_BLE_REQ;
 
-typedef struct {
+typedef struct tGAP_CLCB_s {
     BD_ADDR                 bda;
     tGAP_BLE_CMPL_CBACK     *p_cback;
     UINT16                  conn_id;
@@ -123,7 +123,7 @@ typedef struct {
 
 } tGAP_CLCB;
 
-typedef struct {
+typedef struct tGAP_CB_s {
     tGAP_INFO        blk[GAP_MAX_BLOCKS];
     tBTM_CMPL_CB    *btm_cback[GAP_MAX_BLOCKS];
     UINT8            trace_level;

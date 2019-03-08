@@ -30,7 +30,7 @@ extern "C"
 
 #define MAX_OTA_SLOTS 16
 
-typedef struct {
+typedef struct bootloader_state_s {
     esp_partition_pos_t ota_info;
     esp_partition_pos_t factory;
     esp_partition_pos_t test;

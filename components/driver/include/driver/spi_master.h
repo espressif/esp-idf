@@ -62,7 +62,7 @@ typedef void(*transaction_cb_t)(spi_transaction_t *trans);
 /**
  * @brief This is a configuration for a SPI slave device that is connected to one of the SPI buses.
  */
-typedef struct {
+typedef struct spi_device_interface_config_s {
     uint8_t command_bits;           ///< Default amount of bits in command phase (0-16), used when ``SPI_TRANS_VARIABLE_CMD`` is not used, otherwise ignored.
     uint8_t address_bits;           ///< Default amount of bits in address phase (0-64), used when ``SPI_TRANS_VARIABLE_ADDR`` is not used, otherwise ignored.
     uint8_t dummy_bits;             ///< Amount of dummy bits to insert between address and data phase

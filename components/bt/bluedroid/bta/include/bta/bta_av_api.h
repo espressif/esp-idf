@@ -280,7 +280,7 @@ typedef void *(*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
 typedef void (*tBTA_AV_CO_DELAY) (tBTA_AV_HNDL hndl, UINT16 delay);
 
 /* the call-out functions for one stream */
-typedef struct {
+typedef struct tBTA_AV_CO_FUNCTS_s {
     tBTA_AV_CO_INIT     init;
     tBTA_AV_CO_DISC_RES disc_res;
     tBTA_AV_CO_GETCFG   getcfg;
@@ -296,12 +296,12 @@ typedef struct {
 typedef UINT8 tBTA_AV_EVT;
 
 /* Event associated with BTA_AV_ENABLE_EVT */
-typedef struct {
+typedef struct tBTA_AV_ENABLE_s {
     tBTA_AV_FEAT    features;
 } tBTA_AV_ENABLE;
 
 /* Event associated with BTA_AV_REGISTER_EVT */
-typedef struct {
+typedef struct tBTA_AV_REGISTER_s {
     tBTA_AV_CHNL    chnl;       /* audio/video */
     tBTA_AV_HNDL    hndl;       /* Handle associated with the stream. */
     UINT8           app_id;     /* ID associated with call to BTA_AvRegister() */
@@ -314,7 +314,7 @@ typedef struct {
 #define BTA_AV_EDR_3MBPS        0x02
 typedef UINT8 tBTA_AV_EDR;
 
-typedef struct {
+typedef struct tBTA_AV_OPEN_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     BD_ADDR         bd_addr;
@@ -325,14 +325,14 @@ typedef struct {
 } tBTA_AV_OPEN;
 
 /* data associated with BTA_AV_CLOSE_EVT */
-typedef struct {
+typedef struct tBTA_AV_CLOSE_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     UINT8           disc_rsn;    /* disconnection reason */
 } tBTA_AV_CLOSE;
 
 /* data associated with BTA_AV_START_EVT */
-typedef struct {
+typedef struct tBTA_AV_START_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     tBTA_AV_STATUS  status;
@@ -341,7 +341,7 @@ typedef struct {
 } tBTA_AV_START;
 
 /* data associated with BTA_AV_SUSPEND_EVT */
-typedef struct {
+typedef struct tBTA_AV_SUSPEND_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     BOOLEAN         initiator; /* TRUE, if local device initiates the SUSPEND */
@@ -349,14 +349,14 @@ typedef struct {
 } tBTA_AV_SUSPEND;
 
 /* data associated with BTA_AV_RECONFIG_EVT */
-typedef struct {
+typedef struct tBTA_AV_RECONFIG_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     tBTA_AV_STATUS  status;
 } tBTA_AV_RECONFIG;
 
 /* data associated with BTA_AV_PROTECT_REQ_EVT */
-typedef struct {
+typedef struct tBTA_AV_PROTECT_REQ_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     UINT8           *p_data;
@@ -364,7 +364,7 @@ typedef struct {
 } tBTA_AV_PROTECT_REQ;
 
 /* data associated with BTA_AV_PROTECT_RSP_EVT */
-typedef struct {
+typedef struct tBTA_AV_PROTECT_RSP_s {
     tBTA_AV_CHNL    chnl;
     tBTA_AV_HNDL    hndl;
     UINT8           *p_data;
@@ -373,7 +373,7 @@ typedef struct {
 } tBTA_AV_PROTECT_RSP;
 
 /* data associated with BTA_AV_RC_OPEN_EVT */
-typedef struct {
+typedef struct tBTA_AV_RC_OPEN_s {
     UINT8           rc_handle;
     BOOLEAN         sdp_disc_done;
     tBTA_AV_FEAT    peer_features;
@@ -382,19 +382,19 @@ typedef struct {
 } tBTA_AV_RC_OPEN;
 
 /* data associated with BTA_AV_RC_CLOSE_EVT */
-typedef struct {
+typedef struct tBTA_AV_RC_CLOSE_s {
     UINT8           rc_handle;
     BD_ADDR         peer_addr;
 } tBTA_AV_RC_CLOSE;
 
 /* data associated with BTA_AV_RC_FEAT_EVT */
-typedef struct {
+typedef struct tBTA_AV_RC_FEAT_s {
     UINT8           rc_handle;
     tBTA_AV_FEAT    peer_features;
 } tBTA_AV_RC_FEAT;
 
 /* data associated with BTA_AV_REMOTE_CMD_EVT */
-typedef struct {
+typedef struct tBTA_AV_REMOTE_CMD_s {
     UINT8           rc_handle;
     tBTA_AV_RC      rc_id;
     tBTA_AV_STATE   key_state;
@@ -405,7 +405,7 @@ typedef struct {
 } tBTA_AV_REMOTE_CMD;
 
 /* data associated with BTA_AV_REMOTE_RSP_EVT */
-typedef struct {
+typedef struct tBTA_AV_REMOTE_RSP_s {
     UINT8           rc_handle;
     tBTA_AV_RC      rc_id;
     tBTA_AV_STATE   key_state;
@@ -416,7 +416,7 @@ typedef struct {
 } tBTA_AV_REMOTE_RSP;
 
 /* data associated with BTA_AV_VENDOR_CMD_EVT, BTA_AV_VENDOR_RSP_EVT */
-typedef struct {
+typedef struct tBTA_AV_VENDOR_s {
     UINT8           rc_handle;
     UINT16          len;            /* Max vendor dependent message is 512 */
     UINT8           label;
@@ -426,7 +426,7 @@ typedef struct {
 } tBTA_AV_VENDOR;
 
 /* data associated with BTA_AV_META_MSG_EVT */
-typedef struct {
+typedef struct tBTA_AV_META_MSG_s {
     UINT8           rc_handle;
     UINT16          len;
     UINT8           label;
@@ -437,12 +437,12 @@ typedef struct {
 } tBTA_AV_META_MSG;
 
 /* data associated with BTA_AV_PENDING_EVT */
-typedef struct {
+typedef struct tBTA_AV_PEND_s {
     BD_ADDR         bd_addr;
 } tBTA_AV_PEND;
 
 /* data associated with BTA_AV_REJECT_EVT */
-typedef struct {
+typedef struct tBTA_AV_REJECT_s {
     BD_ADDR         bd_addr;
     tBTA_AV_HNDL    hndl;       /* Handle associated with the stream that rejected the connection. */
 } tBTA_AV_REJECT;
@@ -505,7 +505,7 @@ typedef void (*tBTA_AV_ACT)(void *p_cb, void *p_data);
 typedef void (tBTA_AV_REG) (tAVDT_CS *p_cs, char *p_service_name, void *p_data);
 
 /* AV configuration structure */
-typedef struct {
+typedef struct tBTA_AV_CFG_s {
     UINT32  company_id;         /* AVRCP Company ID */
     UINT16  avrc_mtu;           /* AVRCP MTU at L2CAP for control channel */
     UINT16  avrc_br_mtu;        /* AVRCP MTU at L2CAP for browsing channel */

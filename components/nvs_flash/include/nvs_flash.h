@@ -27,7 +27,7 @@ extern "C" {
 /**
  * @brief Key for encryption and decryption
  */
-typedef struct {
+typedef struct nvs_sec_cfg_s {
     uint8_t eky[NVS_KEY_SIZE]; /*!<  XTS encryption and decryption key*/
     uint8_t tky[NVS_KEY_SIZE]; /*!<  XTS tweak key */
 } nvs_sec_cfg_t;

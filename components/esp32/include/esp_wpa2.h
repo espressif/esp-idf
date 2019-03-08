@@ -26,7 +26,7 @@ extern "C" {
 
 extern const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs;
 
-typedef struct {
+typedef struct esp_wpa2_config_s {
     const wpa2_crypto_funcs_t *crypto_funcs;
 }esp_wpa2_config_t;
 

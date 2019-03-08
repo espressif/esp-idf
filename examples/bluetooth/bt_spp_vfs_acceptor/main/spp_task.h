@@ -29,7 +29,7 @@
 typedef void (* spp_task_cb_t) (uint16_t event, void *param);
 
 /* message to be sent */
-typedef struct {
+typedef struct spp_task_msg_s {
     uint16_t             sig;      /*!< signal to spp_task_task */
     uint16_t             event;    /*!< message event id */
     spp_task_cb_t        cb;       /*!< context switch callback */

@@ -106,7 +106,7 @@ typedef UINT8 tGATT_SEC_FLAG;
 #define GATTS_SEND_SERVICE_CHANGE_MANUAL 1
 
 /*  GATT client FIND_TYPE_VALUE_Request data */
-typedef struct {
+typedef struct tGATT_FIND_TYPE_VALUE_s {
     tBT_UUID        uuid;           /* type of attribute to be found */
     UINT16          s_handle;       /* starting handle */
     UINT16          e_handle;       /* ending handle */
@@ -130,14 +130,14 @@ typedef union {
 } tGATT_CL_MSG;
 
 /* error response strucutre */
-typedef struct {
+typedef struct tGATT_ERROR_s {
     UINT16  handle;
     UINT8   cmd_code;
     UINT8   reason;
 } tGATT_ERROR;
 
 /* Execute write response structure */
-typedef struct {
+typedef struct tGATT_SR_MSG_s {
     UINT8   op_code;
 }__attribute__((packed)) tGATT_EXEC_WRITE_RSP;
 
@@ -159,7 +159,7 @@ typedef union {
 
 /* Characteristic declaration attribute value
 */
-typedef struct {
+typedef struct tGATT_CHAR_DECL_s {
     tGATT_CHAR_PROP             property;
     UINT16                      char_val_handle;
 } tGATT_CHAR_DECL;
@@ -182,7 +182,7 @@ typedef UINT8   tGATT_ATTR_UUID_TYPE;
 
 /* 16 bits UUID Attribute in server database
 */
-typedef struct {
+typedef struct tGATT_ATTR16_s {
     void                    *p_next;  /* pointer to the next attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
     tGATT_ATTR_VALUE        *p_value;
     tGATT_ATTR_UUID_TYPE    uuid_type;
@@ -195,7 +195,7 @@ typedef struct {
 
 /* 32 bits UUID Attribute in server database
 */
-typedef struct {
+typedef struct tGATT_ATTR32_s {
     void                    *p_next;  /* pointer to the next attribute, either tGATT_ATTR16, tGATT_ATTR32 or tGATT_ATTR128 */
     tGATT_ATTR_VALUE        *p_value;
     tGATT_ATTR_UUID_TYPE    uuid_type;
@@ -209,7 +209,7 @@ typedef struct {
 
 /* 128 bits UUID Attribute in server database
 */
-typedef struct {
+typedef struct tGATT_ATTR128_s {
     void                    *p_next;  /* pointer to the next attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
     tGATT_ATTR_VALUE        *p_value;
     tGATT_ATTR_UUID_TYPE    uuid_type;
@@ -222,7 +222,7 @@ typedef struct {
 
 /* Service Database definition
 */
-typedef struct {
+typedef struct tGATT_SVC_DB_s {
     void            *p_attr_list;       /* pointer to the first attribute, either tGATT_ATTR16 or tGATT_ATTR128 */
     UINT8           *p_free_mem;        /* Pointer to free memory       */
     fixed_queue_t   *svc_buffer;         /* buffer queue used for service database */
@@ -235,7 +235,7 @@ typedef struct {
 /* A GATT registration record consists of a handle, and 1 or more attributes  */
 /* A service registration information record consists of beginning and ending */
 /* attribute handle, service UUID and a set of GATT server callback.          */
-typedef struct {
+typedef struct tGATT_SR_REG_s {
     tGATT_SVC_DB    *p_db;              /* pointer to the service database */
     tBT_UUID        app_uuid;           /* applicatino UUID */
     UINT32          sdp_handle;         /* primamry service SDP handle */
@@ -255,7 +255,7 @@ typedef struct {
 /* A service registration information record consists of beginning and ending */
 /* attribute handle, service UUID and a set of GATT server callback.          */
 
-typedef struct {
+typedef struct tGATT_REG_s {
     tBT_UUID     app_uuid128;
     tGATT_CBACK  app_cb;
     tGATT_IF     gatt_if; /* one based */
@@ -267,7 +267,7 @@ typedef struct {
 
 
 /* command queue for each connection */
-typedef struct {
+typedef struct tGATT_CMD_Q_s {
     BT_HDR      *p_cmd;
     UINT16      clcb_idx;
     UINT8       op_code;
@@ -284,7 +284,7 @@ typedef UINT32 tGATT_APP_MASK;
 #endif
 
 /* command details for each connection */
-typedef struct {
+typedef struct tGATT_SR_CMD_s {
     BT_HDR          *p_rsp_msg;
     UINT32           trans_id;
     tGATT_READ_MULTI multi_req;
@@ -321,7 +321,7 @@ typedef struct hdl_list_elem {
     BOOLEAN             in_use;
 } tGATT_HDL_LIST_ELEM;
 
-typedef struct {
+typedef struct tGATT_HDL_LIST_INFO_s {
     tGATT_HDL_LIST_ELEM  *p_first;
     tGATT_HDL_LIST_ELEM  *p_last;
     UINT16               count;
@@ -338,7 +338,7 @@ typedef struct srv_list_elem {
 } tGATT_SRV_LIST_ELEM;
 
 
-typedef struct {
+typedef struct tGATT_SRV_LIST_INFO_s {
     tGATT_SRV_LIST_ELEM  *p_last_primary;
     tGATT_SRV_LIST_ELEM  *p_first;
     tGATT_SRV_LIST_ELEM  *p_last;
@@ -346,7 +346,7 @@ typedef struct {
 } tGATT_SRV_LIST_INFO;
 
 /* prepare write queue data */
-typedef struct{
+typedef struct tGATT_PREPARE_WRITE_RECORD_s{
     //len: length of value
     tGATT_ATTR16  *p_attr;
     UINT16 len;
@@ -371,7 +371,7 @@ typedef struct{
     UINT8 error_code_app;
 }tGATT_PREPARE_WRITE_RECORD;
 
-typedef struct {
+typedef struct tGATT_TCB_s {
     fixed_queue_t    *pending_enc_clcb;   /* pending encryption channel q */
     tGATT_SEC_ACTION sec_act;
     BD_ADDR         peer_bda;
@@ -411,12 +411,12 @@ typedef struct {
 
 
 /* logic channel */
-typedef struct {
+typedef struct tGATT_READ_INC_UUID128_s {
     UINT16                  next_disc_start_hdl;   /* starting handle for the next inc srvv discovery */
     tGATT_DISC_RES          result;
     BOOLEAN                 wait_for_read_rsp;
 } tGATT_READ_INC_UUID128;
-typedef struct {
+typedef struct tGATT_CLCB_s {
     tGATT_TCB               *p_tcb;         /* associated TCB of this CLCB */
     tGATT_REG               *p_reg;        /* owner of this CLCB */
     UINT8                   sccb_idx;
@@ -440,7 +440,7 @@ typedef struct {
 
 } tGATT_CLCB;
 
-typedef struct {
+typedef struct tGATT_PENDING_ENC_CLCB_s {
     tGATT_CLCB  *p_clcb;
 } tGATT_PENDING_ENC_CLCB;
 
@@ -448,12 +448,12 @@ typedef struct {
 #define GATT_SIGN_WRITE             1
 #define GATT_VERIFY_SIGN_DATA       2
 
-typedef struct {
+typedef struct tGATT_SIGN_WRITE_OP_s {
     BT_HDR      hdr;
     tGATT_CLCB  *p_clcb;
 } tGATT_SIGN_WRITE_OP;
 
-typedef struct {
+typedef struct tGATT_VERIFY_SIGN_OP_s {
     BT_HDR      hdr;
     tGATT_TCB   *p_tcb;
     BT_HDR      *p_data;
@@ -461,18 +461,18 @@ typedef struct {
 } tGATT_VERIFY_SIGN_OP;
 
 
-typedef struct {
+typedef struct tGATT_SCCB_s {
     UINT16                  clcb_idx;
     BOOLEAN                 in_use;
 } tGATT_SCCB;
 
-typedef struct {
+typedef struct tGATT_SVC_CHG_s {
     UINT16      handle;
     UINT16      uuid;
     UINT32      service_change;
 } tGATT_SVC_CHG;
 
-typedef struct {
+typedef struct tGATT_BG_CONN_DEV_s {
     tGATT_IF        gatt_if[GATT_MAX_APPS];
     tGATT_IF        listen_gif[GATT_MAX_APPS];
     BD_ADDR         remote_bda;
@@ -485,7 +485,7 @@ typedef struct {
 #define GATT_SVC_CHANGED_DESCRIPTOR        4   /* service change CCC discoery */
 #define GATT_SVC_CHANGED_CONFIGURE_CCCD    5   /* config CCC */
 
-typedef struct {
+typedef struct tGATT_PROFILE_CLCB_s {
     UINT16  conn_id;
     BOOLEAN in_use;
     BOOLEAN connected;
@@ -499,7 +499,7 @@ typedef struct {
     UINT16      e_handle;
 } tGATT_PROFILE_CLCB;
 
-typedef struct {
+typedef struct tGATT_CB_s {
     tGATT_TCB           tcb[GATT_MAX_PHY_CHANNEL];
     fixed_queue_t       *sign_op_queue;
 
@@ -541,7 +541,7 @@ typedef struct {
 
 } tGATT_CB;
 
-typedef struct{
+typedef struct tGATT_DEFAULT_s{
     UINT16 local_mtu;
 } tGATT_DEFAULT;
 

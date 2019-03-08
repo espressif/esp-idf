@@ -67,7 +67,7 @@ enum jsmnerr {
  * @param		start	start position in JSON data string
  * @param		end		end position in JSON data string
  */
-typedef struct {
+typedef struct jsmntok_s {
 	jsmntype_t type;
 	int start;
 	int end;
@@ -81,7 +81,7 @@ typedef struct {
  * JSON parser. Contains an array of token blocks available. Also stores
  * the string being parsed now and current position in that string
  */
-typedef struct {
+typedef struct jsmn_parser_s {
 	unsigned int pos; /* offset in the JSON string */
 	unsigned int toknext; /* next token to allocate */
 	int toksuper; /* superior token node, e.g parent object or array */

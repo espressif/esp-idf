@@ -79,7 +79,7 @@ typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
 #define ESP_BLE_IS_VALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) || ((x) == ESP_BLE_CONN_PARAM_UNDEF))
 
 /// UUID type
-typedef struct {
+typedef struct esp_bt_dev_type_s {
 #define ESP_UUID_LEN_16     2
 #define ESP_UUID_LEN_32     4
 #define ESP_UUID_LEN_128    16

@@ -36,7 +36,7 @@ typedef enum {
 
 /* OTA selection structure (two copies in the OTA data partition.)
    Size of 32 bytes is friendly to flash encryption */
-typedef struct {
+typedef struct esp_ota_select_entry_s {
     uint32_t ota_seq;
     uint8_t  seq_label[20];
     uint32_t ota_state;
@@ -44,7 +44,7 @@ typedef struct {
 } esp_ota_select_entry_t;
 
 
-typedef struct {
+typedef struct esp_partition_pos_s {
     uint32_t offset;
     uint32_t size;
 } esp_partition_pos_t;
@@ -52,7 +52,7 @@ typedef struct {
 /* Structure which describes the layout of partition table entry.
  * See docs/partition_tables.rst for more information about individual fields.
  */
-typedef struct {
+typedef struct esp_partition_info_s {
 	uint16_t magic;
 	uint8_t  type;
     uint8_t  subtype;

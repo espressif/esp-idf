@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct uart_dev_s {
     union {
         struct {
             uint8_t rw_byte;                 /*This register stores one byte data  read by rx fifo.*/

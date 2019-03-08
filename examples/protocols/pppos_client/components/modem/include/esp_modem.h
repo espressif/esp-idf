@@ -44,7 +44,7 @@ typedef enum {
  * @brief ESP Modem DTE Configuration
  *
  */
-typedef struct {
+typedef struct esp_modem_dte_config_s {
     uart_port_t port_num;           /*!< UART port number */
     uart_word_length_t data_bits;   /*!< Data bits of UART */
     uart_stop_bits_t stop_bits;     /*!< Stop bits of UART */
@@ -104,7 +104,7 @@ esp_err_t esp_modem_remove_event_handler(modem_dte_t *dte, esp_event_handler_t h
  * @brief PPPoS Client IP Information
  *
  */
-typedef struct {
+typedef struct ppp_client_ip_info_s {
     ip4_addr_t ip;      /*!< IP Address */
     ip4_addr_t netmask; /*!< Net Mask */
     ip4_addr_t gw;      /*!< Gateway */

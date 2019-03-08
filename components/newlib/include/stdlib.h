@@ -28,13 +28,13 @@
 
 _BEGIN_STD_C
 
-typedef struct 
+typedef struct div_s 
 {
   int quot; /* quotient */
   int rem; /* remainder */
 } div_t;
 
-typedef struct 
+typedef struct ldiv_s 
 {
   long quot; /* quotient */
   long rem; /* remainder */
@@ -43,7 +43,7 @@ typedef struct
 #if !defined(__STRICT_ANSI__) || \
   (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || \
   (defined(__cplusplus) && __cplusplus >= 201103L)
-typedef struct
+typedef struct lldiv_s
 {
   long long int quot; /* quotient */
   long long int rem; /* remainder */

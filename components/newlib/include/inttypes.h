@@ -296,7 +296,7 @@
 #define SCNxPTR		__SCNPTR(x)
 
 
-typedef struct {
+typedef struct imaxdiv_s {
   intmax_t	quot;
   intmax_t	rem;
 } imaxdiv_t;

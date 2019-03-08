@@ -19,7 +19,7 @@
  * Usage example:
  *
  * 1. Define your own parameter set type:
- *      typedef struct {
+ *      typedef struct param_group_s {
  *          const char pset_name[PSET_NAME_LEN];
  *          //The test work till the frequency below,
  *          //set the frequency to higher and remove checks in the driver to know how fast the system can run.
@@ -106,7 +106,7 @@ typedef struct {
 } param_group_t;
 
 /// Test functions for the frameowrk
-typedef struct {
+typedef struct ptest_func_s {
     void (*pre_test)(void** contxt);    ///< Initialization function called before tests begin. Initial your context here
     void (*post_test)(void* context);   ///< Deinit function called after all tests are done.
     void (*def_param)(void* inout_pset);    ///< Function to fill each pset structure before executed, left NULL if not used.

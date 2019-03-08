@@ -242,7 +242,7 @@ enum {
  */
 
 /// HIDD Features structure
-typedef struct {
+typedef struct hidd_feature_s {
     /// Service Features
     uint8_t svc_features;
     /// Number of Report Char. instances to add in the database
@@ -252,7 +252,7 @@ typedef struct {
 } hidd_feature_t;
 
 
-typedef struct {
+typedef struct hidd_clcb_s {
     bool                        in_use;
     bool                        congest;
     uint16_t                  conn_id;
@@ -264,7 +264,7 @@ typedef struct {
 } hidd_clcb_t;
 
 // HID report mapping table
-typedef struct {
+typedef struct hidRptMap_s {
     uint16_t    handle;           // Handle of report characteristic
     uint16_t    cccdHandle;       // Handle of CCCD for report characteristic
     uint8_t     id;               // Report ID
@@ -273,7 +273,7 @@ typedef struct {
 } hidRptMap_t;
 
 
-typedef struct {
+typedef struct hidd_inst_s {
     /// hidd profile id
     uint8_t app_id;
     /// Notified handle
@@ -291,7 +291,7 @@ typedef struct {
 } hidd_inst_t;
 
 /// Report Reference structure
-typedef struct
+typedef struct hids_report_ref_s
 {
     ///Report ID
     uint8_t report_id;
@@ -300,7 +300,7 @@ typedef struct
 }hids_report_ref_t;
 
 /// HID Information structure
-typedef struct
+typedef struct hids_hid_info_s
 {
     /// bcdHID
     uint16_t bcdHID;
@@ -312,7 +312,7 @@ typedef struct
 
 
 /* service engine control block */
-typedef struct {
+typedef struct hidd_le_env_s {
     hidd_clcb_t                  hidd_clcb[HID_MAX_APPS];          /* connection link*/
     esp_gatt_if_t                gatt_if;
     bool                         enabled;

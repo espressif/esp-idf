@@ -316,7 +316,7 @@ typedef enum {
 /**
  * @brief The structure represents information about the chip
  */
-typedef struct {
+typedef struct esp_chip_info_s {
     esp_chip_model_t model;  //!< chip model, one of esp_chip_model_t
     uint32_t features;       //!< bit mask of CHIP_FEATURE_x feature flags
     uint8_t cores;           //!< number of CPU cores

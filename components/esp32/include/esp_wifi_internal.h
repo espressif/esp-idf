@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct wifi_static_queue_s {
     QueueHandle_t handle; /**< FreeRTOS queue handler */
     void *storage;        /**< storage for FreeRTOS queue */
 } wifi_static_queue_t;

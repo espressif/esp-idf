@@ -93,7 +93,7 @@ typedef enum {
 /**
  * @brief Data structure with timer's configuration settings
  */
-typedef struct {
+typedef struct timer_config_s {
     bool alarm_en;      /*!< Timer alarm enable */
     bool counter_en;    /*!< Counter enable */
     timer_intr_mode_t intr_type; /*!< Interrupt mode */

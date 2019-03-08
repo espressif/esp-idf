@@ -66,7 +66,7 @@ typedef enum {
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
 
-typedef struct {
+typedef struct btc_func_s {
     void (* btc_call)(btc_msg_t *msg);
     void (* btc_cb)(btc_msg_t *msg);
 } btc_func_t;

@@ -81,7 +81,7 @@ typedef enum
 /**
  * @brief Parameter access event information type
  */
-typedef struct {
+typedef struct mb_param_info_s {
     uint32_t time_stamp;                    /*!< Timestamp of Modbus Event (uS)*/
     uint16_t mb_offset;                     /*!< Modbus register offset */
     mb_event_group_t type;                  /*!< Modbus event type */
@@ -92,7 +92,7 @@ typedef struct {
 /**
  * @brief Parameter storage area descriptor
  */
-typedef struct {
+typedef struct mb_register_area_descriptor_s {
     uint16_t start_offset;                  /*!< Modbus start address for area descriptor */
     mb_param_type_t type;                   /*!< Type of storage area descriptor */
     void* address;                          /*!< Instance address for storage area descriptor */
@@ -102,7 +102,7 @@ typedef struct {
 /**
  * @brief Device communication parameters
  */
-typedef struct {
+typedef struct mb_communication_info_s {
     mb_mode_type_t mode;                    /*!< Modbus communication mode */
     uint8_t slave_addr;                     /*!< Modbus Slave Address */
     uart_port_t port;                       /*!< Modbus communication port (UART) number */

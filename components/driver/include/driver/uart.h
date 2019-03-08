@@ -111,7 +111,7 @@ typedef enum {
 /**
  * @brief UART configuration parameters for uart_param_config function
  */
-typedef struct {
+typedef struct uart_config_s {
     int baud_rate;                      /*!< UART baud rate*/
     uart_word_length_t data_bits;       /*!< UART byte size*/
     uart_parity_t parity;               /*!< UART parity mode*/
@@ -124,7 +124,7 @@ typedef struct {
 /**
  * @brief UART interrupt configuration parameters for uart_intr_config function
  */
-typedef struct {
+typedef struct uart_intr_config_s {
     uint32_t intr_enable_mask;          /*!< UART interrupt enable mask, choose from UART_XXXX_INT_ENA_M under UART_INT_ENA_REG(i), connect with bit-or operator*/
     uint8_t  rx_timeout_thresh;         /*!< UART timeout interrupt threshold (unit: time of sending one byte)*/
     uint8_t  txfifo_empty_intr_thresh;  /*!< UART TX empty interrupt threshold.*/
@@ -149,7 +149,7 @@ typedef enum {
 /**
  * @brief Event structure used in UART event queue
  */
-typedef struct {
+typedef struct uart_event_s {
     uart_event_type_t type; /*!< UART event type */
     size_t size;            /*!< UART data size for UART_DATA event*/
 } uart_event_t;

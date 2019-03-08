@@ -35,7 +35,7 @@ typedef UINT8   tBTA_HFP_SCO_CODEC_TYPE;
 #define BTA_HFP_SCO_SAMP_RATE_16K    16000
 
 /* SCO codec information */
-typedef struct {
+typedef struct tBTA_HFP_CODEC_INFO_s {
     tBTA_HFP_SCO_CODEC_TYPE   codec_type;
 } tBTA_HFP_CODEC_INFO;
 

@@ -28,7 +28,7 @@
 //#include "features.h"
 #include "device/version.h"
 
-typedef struct {
+typedef struct hci_packet_parser_s {
     void (*parse_generic_command_complete)(BT_HDR *response);
 
     void (*parse_read_buffer_size_response)(

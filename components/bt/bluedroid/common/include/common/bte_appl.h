@@ -24,7 +24,7 @@
 
 #pragma once
 
-typedef struct {
+typedef struct tBTE_APPL_CFG_s {
 #if ((BLE_INCLUDED == TRUE) && (SMP_INCLUDED == TRUE))
     UINT8   ble_auth_req;
     UINT8   ble_io_cap;
@@ -40,7 +40,7 @@ typedef struct {
 extern tBTE_APPL_CFG bte_appl_cfg;
 
 
-typedef struct {
+typedef struct tBTE_BT_APPL_CFG_s {
 #if ((CLASSIC_BT_INCLUDED == TRUE) && (BT_SSP_INCLUDED == TRUE))
     UINT8   bt_auth_req;
     UINT8   bt_io_cap;

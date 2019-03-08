@@ -32,7 +32,7 @@ extern "C" {
 /*******************************************************
  *                Structures
  *******************************************************/
-typedef struct {
+typedef struct mesh_attempts_s {
     int scan;          /**< minimum scan times before being a root, default:10 */
     int vote;          /**< max vote times in self-healing, default:1000 */
     int fail;          /**< parent selection fail times, if the scan times reach this value,
@@ -40,7 +40,7 @@ typedef struct {
     int monitor_ie;    /**< acceptable times of parent networking IE change before update its own networking IE. default:3 */
 } mesh_attempts_t;
 
-typedef struct {
+typedef struct mesh_switch_parent_s {
     int duration_ms;   /* parent weak RSSI monitor duration, if the RSSI continues to be weak during this duration_ms,
                           device will search for a new parent. */
     int cnx_rssi;      /* RSSI threshold for keeping a good connection with parent.
@@ -50,7 +50,7 @@ typedef struct {
     int backoff_rssi;  /* RSSI threshold for connecting to the root */
 } mesh_switch_parent_t;
 
-typedef struct {
+typedef struct mesh_rssi_threshold_s {
     int high;
     int medium;
     int low;

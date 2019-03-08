@@ -234,7 +234,7 @@ typedef enum {
 /**
  * @brief Gatt id, include uuid and instance id
  */
-typedef struct {
+typedef struct esp_gatt_auth_req_s {
     esp_bt_uuid_t   uuid;                   /*!< UUID */
     uint8_t         inst_id;                /*!< Instance id */
 } __attribute__((packed)) esp_gatt_id_t;
@@ -298,7 +298,7 @@ typedef enum {
 /**
  * @brief Attribute description (used to create database)
  */
- typedef struct
+ typedef struct esp_attr_control_s
  {   
      uint16_t uuid_length;              /*!< UUID length */
      uint8_t  *uuid_p;                  /*!< UUID value */
@@ -327,7 +327,7 @@ typedef struct
 /**
  * @brief attribute type added to the gatt server database
  */
-typedef struct
+typedef struct esp_gatts_attr_db_s
 {
     esp_attr_control_t      attr_control;                   /*!< The attribute control type */
     esp_attr_desc_t         att_desc;                       /*!< The attribute type */
@@ -337,7 +337,7 @@ typedef struct
 /**
   * @brief set the attribute value type
   */
-typedef struct
+typedef struct esp_attr_value_s
 {
     uint16_t attr_max_len;                                  /*!<  attribute max value length */
     uint16_t attr_len;                                      /*!<  attribute current value length */
@@ -348,7 +348,7 @@ typedef struct
 /**
   * @brief Gatt  include service entry element
   */
-typedef struct 
+typedef struct esp_gatts_incl_svc_desc_s 
 {
     uint16_t start_hdl;                                     /*!< Gatt  start handle value of included service */
     uint16_t end_hdl;                                       /*!< Gatt  end handle value of included service */
@@ -358,14 +358,14 @@ typedef struct
 /**
   * @brief Gatt  include 128 bit service entry element
   */
-typedef struct 
+typedef struct esp_gatts_incl128_svc_desc_s 
 {
     uint16_t start_hdl;                                     /*!< Gatt  start handle value of included 128 bit service */
     uint16_t end_hdl;                                       /*!< Gatt  end handle value of included 128 bit service */
 } esp_gatts_incl128_svc_desc_t;                             /*!< Gatt  include 128 bit service entry element */
 
 /// Gatt attribute value 
-typedef struct {
+typedef struct esp_gatt_value_s {
     uint8_t           value[ESP_GATT_MAX_ATTR_LEN];         /*!< Gatt attribute value */
     uint16_t          handle;                               /*!< Gatt attribute handle */
     uint16_t          offset;                               /*!< Gatt attribute value offset */
@@ -406,7 +406,7 @@ typedef enum {
 /**
   * @brief read multiple attribute
   */
-typedef struct {
+typedef struct esp_gattc_multi_s {
     uint8_t  num_attr;                                      /*!< The number of the attribute */
     uint16_t handles[ESP_GATT_MAX_READ_MULTI_HANDLES];      /*!< The handles list */
 } esp_gattc_multi_t;                                        /*!< The gattc multiple read element */
@@ -414,7 +414,7 @@ typedef struct {
 /**
   * @brief data base attribute element
   */
-typedef struct {
+typedef struct esp_gattc_db_elem_s {
     esp_gatt_db_attr_type_t     type;                       /*!< The attribute type */
     uint16_t                    attribute_handle;           /*!< The attribute handle, it's valid for all of the type */
     uint16_t                    start_handle;               /*!< The service start handle, it's valid only when the type = ESP_GATT_DB_PRIMARY_SERVICE or ESP_GATT_DB_SECONDARY_SERVICE */
@@ -426,7 +426,7 @@ typedef struct {
 /**
   * @brief service element
   */
-typedef struct { 
+typedef struct esp_gattc_service_elem_s { 
     bool                        is_primary;                 /*!< The service flag, true if the service is primary service, else is secondly service */
     uint16_t                    start_handle;               /*!< The start handle of the service */
     uint16_t                    end_handle;                 /*!< The end handle of the service */
@@ -436,7 +436,7 @@ typedef struct {
 /**
   * @brief characteristic element
   */
-typedef struct {
+typedef struct esp_gattc_char_elem_s {
     uint16_t                    char_handle;                /*!< The characteristic handle */
     esp_gatt_char_prop_t        properties;                 /*!< The characteristic properties */
     esp_bt_uuid_t               uuid;                       /*!< The characteristic uuid */
@@ -445,7 +445,7 @@ typedef struct {
 /**
   * @brief descriptor element
   */
-typedef struct {
+typedef struct esp_gattc_descr_elem_s {
     uint16_t                   handle;                      /*!< The characteristic descriptor handle */
     esp_bt_uuid_t              uuid;                        /*!< The characteristic descriptor uuid */
 } esp_gattc_descr_elem_t;                                   /*!< The gattc descriptor type element */
@@ -453,7 +453,7 @@ typedef struct {
 /**
   * @brief include service element
   */
-typedef struct {
+typedef struct esp_gattc_incl_svc_elem_s {
     uint16_t                   handle;                      /*!< The include service current attribute handle */
     uint16_t                   incl_srvc_s_handle;          /*!< The start handle of the service which has been included */
     uint16_t                   incl_srvc_e_handle;          /*!< The end handle of the service which has been included */

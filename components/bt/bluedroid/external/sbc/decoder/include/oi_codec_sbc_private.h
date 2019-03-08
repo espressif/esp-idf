@@ -93,7 +93,7 @@ static const OI_UINT8 band_values[] =     { 4, 8 };
 #define TEST_MODE_SENTINEL_LENGTH 4
 
 /** Used internally. */
-typedef struct {
+typedef struct OI_BITSTREAM_s {
     union {
         const OI_UINT8 *r;
         OI_UINT8 *w;

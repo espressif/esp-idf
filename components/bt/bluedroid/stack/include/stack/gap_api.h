@@ -100,13 +100,13 @@ typedef void (tGAP_CALLBACK) (UINT16 event, void *p_data);
 
 
 /* Definition of the GAP_FindAddrByName results structure */
-typedef struct {
+typedef struct tGAP_FINDADDR_RESULTS_s {
     UINT16       status;
     BD_ADDR      bd_addr;
     tBTM_BD_NAME devname;
 } tGAP_FINDADDR_RESULTS;
 
-typedef struct {
+typedef struct tGAP_BLE_PREF_PARAM_s {
     UINT16      int_min;
     UINT16      int_max;
     UINT16      latency;

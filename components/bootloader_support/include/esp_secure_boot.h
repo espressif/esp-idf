@@ -94,7 +94,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length);
  */
 
 /** @brief Secure boot verification block, on-flash data format. */
-typedef struct {
+typedef struct esp_secure_boot_sig_block_s {
     uint32_t version;
     uint8_t signature[64];
 } esp_secure_boot_sig_block_t;
@@ -104,7 +104,7 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
 #define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0
 
 /** @brief Secure boot IV+digest header */
-typedef struct {
+typedef struct esp_secure_boot_iv_digest_s {
     uint8_t iv[128];
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;

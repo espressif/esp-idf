@@ -33,7 +33,7 @@ typedef enum {
 
 typedef void (*packet_ready_cb)(BT_HDR *packet);
 
-typedef struct {
+typedef struct hci_hal_callbacks_s {
     // Called when the HAL detects inbound data.
     // Data |type| may be ACL, SCO, or EVENT.
     // Executes in the context of the thread supplied to |init|.
