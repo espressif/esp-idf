@@ -11,9 +11,9 @@ void spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size
     _spi_flash_init(chip_size, block_size, sector_size, page_size, partition_bin);
 }
 
-void spi_flash_mark_modified_region(size_t start_addr, size_t length)
+bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
 {
-    return;
+    return true;
 }
 
 esp_rom_spiflash_result_t esp_rom_spiflash_unlock()
