@@ -25,3 +25,9 @@ set(COMPONENT_PRIV_INCLUDEDIRS "include/driver")
 set(COMPONENT_REQUIRES esp_ringbuf)
 
 register_component()
+
+
+if(GCC_NOT_5_2_0)
+    # uses C11 atomic feature
+    set_source_files_properties(spi_master.c PROPERTIES COMPILE_FLAGS -std=gnu11)
+endif()
