@@ -262,7 +262,7 @@ typedef struct {
 } wifi_sta_list_t;
 
 typedef enum {
-    WIFI_STORAGE_FLASH,  /**< all configuration will strore in both memory and flash */
+    WIFI_STORAGE_FLASH,  /**< all configuration will store in both memory and flash */
     WIFI_STORAGE_RAM,    /**< all configuration will only store in the memory */
 } wifi_storage_t;
 
@@ -394,7 +394,7 @@ typedef struct {
     bool stbc_htltf2_en;    /**< enable to receive space time block code HT long training field(stbc-htltf2) data. Default enabled */
     bool ltf_merge_en;      /**< enable to generate htlft data by averaging lltf and ht_ltf data when receiving HT packet. Otherwise, use ht_ltf data directly. Default enabled */
     bool channel_filter_en; /**< enable to turn on channel filter to smooth adjacent sub-carrier. Disable it to keep independence of adjacent sub-carrier. Default enabled */
-    bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */ 
+    bool manu_scale;        /**< manually scale the CSI data by left shifting or automatically scale the CSI data. If set true, please set the shift bits. false: automatically. true: manually. Default false */
     uint8_t shift;          /**< manually left shift bits of the scale of the CSI data. The range of the left shift bits is 0~15 */
 } wifi_csi_config_t;
 
