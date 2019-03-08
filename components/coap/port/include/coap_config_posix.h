@@ -25,6 +25,7 @@
 #define HAVE_SYS_SOCKET_H
 #define HAVE_MALLOC
 #define HAVE_ARPA_INET_H
+#define HAVE_TIME_H
 
 #define IP_PKTINFO   IP_MULTICAST_IF
 #define IPV6_PKTINFO IPV6_V6ONLY
@@ -32,10 +33,7 @@
 #define PACKAGE_NAME "libcoap-posix"
 #define PACKAGE_VERSION "?"
 
-#define CUSTOM_COAP_NETWORK_ENDPOINT
-#define CUSTOM_COAP_NETWORK_SEND
-#define CUSTOM_COAP_NETWORK_READ
+#define COAP_BAD_RECVMSG
 
-#endif
-
+#endif /* WITH_POSIX */
 #endif /* COAP_CONFIG_POSIX_H_ */
