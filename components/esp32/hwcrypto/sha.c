@@ -309,26 +309,42 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 
     SHA_CTX ctx;
     ets_sha_init(&ctx);
-    esp_sha_lock_memory_block();
+
     while(ilen > 0) {
         size_t chunk_len = (ilen > block_len) ? block_len : ilen;
+
+        // Wait for idle before entering critical section
+        // (to reduce time spent in it), then check after
         esp_sha_wait_idle();
+        esp_sha_lock_memory_block();
+        esp_sha_wait_idle();
+
         DPORT_STALL_OTHER_CPU_START();
         {
             // This SHA ROM function reads DPORT regs
             ets_sha_update(&ctx, sha_type, input, chunk_len * 8);
         }
         DPORT_STALL_OTHER_CPU_END();
+
         input += chunk_len;
         ilen -= chunk_len;
+
+        if (ilen == 0) {
+            /* Finish the last block before releasing the memory
+               block lock, as ets_sha_update() may have written data to
+               the memory block already (partial last block) and hardware
+               hasn't yet processed it.
+            */
+            DPORT_STALL_OTHER_CPU_START();
+            {
+                // This SHA ROM function also reads DPORT regs
+                ets_sha_finish(&ctx, sha_type, output);
+            }
+            DPORT_STALL_OTHER_CPU_END();
+        }
+
+        esp_sha_unlock_memory_block();
     }
-    esp_sha_wait_idle();
-    DPORT_STALL_OTHER_CPU_START();
-    {
-        ets_sha_finish(&ctx, sha_type, output);
-    }
-    DPORT_STALL_OTHER_CPU_END();
-    esp_sha_unlock_memory_block();
 
     esp_sha_unlock_engine(sha_type);
 }
