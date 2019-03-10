@@ -63,6 +63,8 @@
 #define SOC_IROM_HIGH   0x40400000
 #define SOC_DROM_LOW    0x3F400000
 #define SOC_DROM_HIGH   0x3F800000
+#define SOC_DRAM_LOW    0x3FAE0000
+#define SOC_DRAM_HIGH   0x40000000
 #define SOC_RTC_IRAM_LOW  0x400C0000
 #define SOC_RTC_IRAM_HIGH 0x400C2000
 #define SOC_RTC_DATA_LOW  0x50000000
@@ -70,6 +72,12 @@
 #define SOC_EXTRAM_DATA_LOW 0x3F800000
 #define SOC_EXTRAM_DATA_HIGH 0x3FC00000
 
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
+
+#define SOC_CACHE_PRO_LOW   0x40070000
+#define SOC_CACHE_PRO_HIGH  0x40078000
+#define SOC_CACHE_APP_LOW   0x40078000
+#define SOC_CACHE_APP_HIGH  0x40080000
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
 #define DR_REG_AES_BASE                         0x3ff01000
