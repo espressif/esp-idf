@@ -1452,19 +1452,12 @@ static void _mdns_pcb_send_bye(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t i
 }
 
 /**
- * @brief  Send probe for particular services on particular PCB
+ * @brief  Send probe for additional services on particular PCB
  */
-static void _mdns_init_pcb_probe(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, mdns_srv_item_t ** services, size_t len, bool probe_ip)
+static void _mdns_init_pcb_probe_new_service(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, mdns_srv_item_t ** services, size_t len, bool probe_ip)
 {
     mdns_pcb_t * pcb = &_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol];
     size_t services_final_len = len;
-
-    _mdns_clear_pcb_tx_queue_head(tcpip_if, ip_protocol);
-
-    if (_str_null_or_empty(_mdns_server->hostname)) {
-        pcb->state = PCB_RUNNING;
-        return;
-    }
 
     if (PCB_STATE_IS_PROBING(pcb)) {
         services_final_len += pcb->probe_services_len;
@@ -1508,6 +1501,50 @@ static void _mdns_init_pcb_probe(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t
     pcb->probe_running = true;
     _mdns_schedule_tx_packet(packet, ((pcb->failed_probes > 5)?1000:120) + (esp_random() & 0x7F));
     pcb->state = PCB_PROBE_1;
+}
+
+/**
+ * @brief  Send probe for particular services on particular PCB
+ *
+ * Tests possible duplication on probing service structure and probes only for new entries.
+ * - If pcb probing then add only non-probing services and restarts probing
+ * - If pcb not probing, run probing for all specified services
+ */
+static void _mdns_init_pcb_probe(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, mdns_srv_item_t ** services, size_t len, bool probe_ip)
+{
+    mdns_pcb_t * pcb = &_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol];
+
+    _mdns_clear_pcb_tx_queue_head(tcpip_if, ip_protocol);
+
+    if (_str_null_or_empty(_mdns_server->hostname)) {
+        pcb->state = PCB_RUNNING;
+        return;
+    }
+
+    if (PCB_STATE_IS_PROBING(pcb)) {
+        // Looking for already probing services to resolve duplications
+        mdns_srv_item_t * new_probe_services[len];
+        int new_probe_service_len = 0;
+        bool found;
+        for (int j=0; j < len; ++j) {
+            found = false;
+            for (int i=0; i < pcb->probe_services_len; ++i) {
+                if (pcb->probe_services[i] == services[j]) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                new_probe_services[new_probe_service_len++] = services[j];
+            }
+        }
+        // init probing for newly added services
+        _mdns_init_pcb_probe_new_service(tcpip_if, ip_protocol,
+                                         new_probe_service_len?new_probe_services:NULL, new_probe_service_len, probe_ip);
+    } else {
+        // not probing, so init for all services
+        _mdns_init_pcb_probe_new_service(tcpip_if, ip_protocol, services, len, probe_ip);
+    }
 }
 
 /**
