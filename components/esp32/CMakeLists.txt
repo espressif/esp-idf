@@ -59,7 +59,7 @@ else()
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(COMPONENT_PRIV_REQUIRES
         app_trace app_update bootloader_support ethernet log mbedtls nvs_flash
-        pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module)
+        pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module espcoredump)
 
     set(COMPONENT_ADD_LDFRAGMENTS linker.lf ld/esp32_fragments.lf)
 
