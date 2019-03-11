@@ -265,7 +265,7 @@ static int uart_close(int fd)
     return 0;
 }
 
-static int uart_fcntl(int fd, int cmd, va_list args)
+static int uart_fcntl(int fd, int cmd, int arg)
 {
     assert(fd >=0 && fd < 3);
     int result = 0;
@@ -274,7 +274,6 @@ static int uart_fcntl(int fd, int cmd, va_list args)
             result |= O_NONBLOCK;
         }
     } else if (cmd == F_SETFL) {
-        int arg = va_arg(args, int);
         s_non_blocking[fd] = (arg & O_NONBLOCK) != 0;
     } else {
         // unsupported operation
