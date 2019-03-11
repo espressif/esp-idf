@@ -3,6 +3,10 @@
 #include <string.h>
 #include "esp_types.h"
 #include "esp_clk.h"
+#include "esp_log.h"
+#include "esp_timer.h"
+#include "esp_heap_caps.h"
+#include "idf_performance.h"
 
 #include "unity.h"
 #include "test_utils.h"
@@ -15,7 +19,54 @@
 are tested as part of mbedTLS tests. Only esp_sha() is different.
 */
 
-TEST_CASE("Test esp_sha() function", "[hw_crypto]")
+#define TAG "sha_test"
+
+TEST_CASE("Test esp_sha()", "[hw_crypto]")
+{
+    const size_t BUFFER_SZ = 32 * 1024 + 6; // NB: not an exact multiple of SHA block size
+
+    int64_t begin, end;
+    uint32_t us_sha1, us_sha512;
+    uint8_t sha1_result[20] = { 0 };
+    uint8_t sha512_result[64] = { 0 };
+    void *buffer = heap_caps_malloc(BUFFER_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(buffer);
+    memset(buffer, 0xEE, BUFFER_SZ);
+
+    const uint8_t sha1_expected[20] = { 0xc7, 0xbb, 0xd3, 0x74, 0xf2, 0xf6, 0x20, 0x86,
+                                        0x61, 0xf4, 0x50, 0xd5, 0xf5, 0x18, 0x44, 0xcc,
+                                        0x7a, 0xb7, 0xa5, 0x4a };
+    const uint8_t sha512_expected[64] = { 0xc7, 0x7f, 0xda, 0x8c, 0xb3, 0x58, 0x14, 0x8a,
+                                          0x52, 0x3b, 0x46, 0x04, 0xc0, 0x85, 0xc5, 0xf0,
+                                          0x46, 0x64, 0x14, 0xd5, 0x96, 0x7a, 0xa2, 0x80,
+                                          0x20, 0x9c, 0x04, 0x27, 0x7d, 0x3b, 0xf9, 0x1f,
+                                          0xb2, 0xa3, 0x45, 0x3c, 0xa1, 0x6a, 0x8d, 0xdd,
+                                          0x35, 0x5e, 0x35, 0x57, 0x76, 0x22, 0x74, 0xd8,
+                                          0x1e, 0x07, 0xc6, 0xa2, 0x9e, 0x3b, 0x65, 0x75,
+                                          0x80, 0x7d, 0xe6, 0x6e, 0x47, 0x61, 0x2c, 0x94 };
+
+    begin = esp_timer_get_time();
+    esp_sha(SHA1, buffer, BUFFER_SZ, sha1_result);
+    end = esp_timer_get_time();
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sha1_expected, sha1_result, sizeof(sha1_expected));
+    us_sha1 = end - begin;
+    ESP_LOGI(TAG, "esp_sha() 32KB SHA1 in %u us", us_sha1);
+
+    begin = esp_timer_get_time();
+    esp_sha(SHA2_512, buffer, BUFFER_SZ, sha512_result);
+    end = esp_timer_get_time();
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(sha512_expected, sha512_result, sizeof(sha512_expected));
+
+    us_sha512 = end - begin;
+    ESP_LOGI(TAG, "esp_sha() 32KB SHA512 in %u us", us_sha512);
+
+    free(buffer);
+
+    TEST_PERFORMANCE_LESS_THAN(ESP32_TIME_SHA1_32KB, "%dus", us_sha1);
+    TEST_PERFORMANCE_LESS_THAN(ESP32_TIME_SHA512_32KB, "%dus", us_sha512);
+}
+
+TEST_CASE("Test esp_sha() function with long input", "[hw_crypto]")
 {
     const void* ptr;
     spi_flash_mmap_handle_t handle;
