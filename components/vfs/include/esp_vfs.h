@@ -163,8 +163,8 @@ typedef struct
         int (*rmdir)(const char* name);
     };
     union {
-        int (*fcntl_p)(void* ctx, int fd, int cmd, va_list args);
-        int (*fcntl)(int fd, int cmd, va_list args);
+        int (*fcntl_p)(void* ctx, int fd, int cmd, int arg);
+        int (*fcntl)(int fd, int cmd, int arg);
     };
     union {
         int (*ioctl_p)(void* ctx, int fd, int cmd, va_list args);

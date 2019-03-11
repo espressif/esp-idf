@@ -657,21 +657,27 @@ int rmdir(const char* name)
     return ret;
 }
 
-int fcntl(int fd, int cmd, ...)
+int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
     int ret;
+    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, arg);
+    return ret;
+}
+
+int __attribute__((weak)) fcntl(int fd, int cmd, ...)
+{
     va_list args;
     va_start(args, cmd);
-    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, args);
+    int arg = va_arg(args, int);
     va_end(args);
-    return ret;
+    struct _reent* r = __getreent();
+    return _fcntl_r(r, fd, cmd, arg);
 }
 
 int ioctl(int fd, int cmd, ...)
