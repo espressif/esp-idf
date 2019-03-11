@@ -120,6 +120,10 @@ typedef struct {
     uint8_t mac[6];           /**< MAC address of the station which send probe request */
 } system_event_ap_probe_req_rx_t;
 
+typedef struct {
+    ip4_addr_t ip; 
+} system_event_ap_staipassigned_t;
+
 typedef union {
     system_event_sta_connected_t               connected;          /**< ESP32 station connected to AP */
     system_event_sta_disconnected_t            disconnected;       /**< ESP32 station disconnected to AP */
@@ -131,6 +135,7 @@ typedef union {
     system_event_ap_staconnected_t             sta_connected;      /**< a station connected to ESP32 soft-AP */
     system_event_ap_stadisconnected_t          sta_disconnected;   /**< a station disconnected to ESP32 soft-AP */
     system_event_ap_probe_req_rx_t             ap_probereqrecved;  /**< ESP32 soft-AP receive probe request packet */
+    system_event_ap_staipassigned_t            ap_staipassigned;   /**< ESP32 soft-AP assign an IP to the station*/
     system_event_got_ip6_t                     got_ip6;            /**< ESP32 station　or ap or ethernet ipv6 addr state change to preferred */
 } system_event_info_t;
 
