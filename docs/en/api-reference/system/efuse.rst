@@ -248,9 +248,15 @@ The number of bits not included in square brackets is free (bits in EFUSE_BLK0 a
 Debug eFuse & Unit tests
 ------------------------
 
-eFuse manager have option :envvar:`CONFIG_EFUSE_VIRTUAL` in Kconfig which will make an operation write is virtual. It can help to debug app and unit tests.
+Virtual eFuses
+^^^^^^^^^^^^^^
 
-esptool have an useful tool for reading/writing ESP32 eFuse bits - `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_.
+The Kconfig option :envvar:`CONFIG_EFUSE_VIRTUAL` will virtualize eFuse values inside the eFuse Manager, so writes are emulated and no eFuse values are permanently changed. This can be useful for debugging app and unit tests.
+
+espefuse.py
+^^^^^^^^^^^
+
+esptool includes a useful tool for reading/writing ESP32 eFuse bits - `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_.
 
 ::
 

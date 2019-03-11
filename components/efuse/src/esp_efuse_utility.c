@@ -32,6 +32,10 @@ static const char *TAG = "efuse";
 // Array for emulate efuse registers.
 #ifdef CONFIG_EFUSE_VIRTUAL
 static uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
+
+/* Call the update function to seed virtual efuses during initialization */
+__attribute__((constructor)) void esp_efuse_utility_update_virt_blocks();
+
 #endif
 
 /**
@@ -181,7 +185,7 @@ void esp_efuse_utility_reset(void)
 void esp_efuse_utility_burn_efuses(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGE(TAG, "Not really burning any efuses!");
+    ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
     for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
         esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
         if (scheme == EFUSE_CODING_SCHEME_3_4) {
@@ -229,7 +233,7 @@ void esp_efuse_utility_erase_virt_blocks()
 void esp_efuse_utility_update_virt_blocks()
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGI(TAG, "Emulate efuse is enabled");
+    ESP_LOGI(TAG, "Loading virtual efuse blocks from real efuses");
     for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
         int subblock = 0;
         for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4) {
