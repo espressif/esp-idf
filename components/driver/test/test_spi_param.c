@@ -465,9 +465,9 @@ static const ptest_func_t slave_test_func = {
     .def_param = spitest_def_param,
 };
 
-#define TEST_SPI_MASTER_SLAVE(name, param_group) \
+#define TEST_SPI_MASTER_SLAVE(name, param_group, extra_tag) \
     PARAM_GROUP_DECLARE(name, param_group) \
-    TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", &master_test_func, &slave_test_func)
+    TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]"#extra_tag, &master_test_func, &slave_test_func)
 
 /************ Master Code ***********************************************/
 static void test_master_init(void** arg)
@@ -789,7 +789,7 @@ static spitest_param_set_t timing_conf[] = {
         .slave_tv_ns = TV_WITH_ESP_SLAVE_GPIO,
     },
 };
-TEST_SPI_MASTER_SLAVE(TIMING, timing_conf)
+TEST_SPI_MASTER_SLAVE(TIMING, timing_conf, "")
 
 /************ Mode Test ***********************************************/
 #define FREQ_LIMIT_MODE SPI_MASTER_FREQ_16M
@@ -976,4 +976,4 @@ spitest_param_set_t mode_conf[] = {
       .slave_dma_chan = 1,
     },
 };
-TEST_SPI_MASTER_SLAVE(MODE, mode_conf)
+TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "[ignore]")
