@@ -16,7 +16,7 @@ API 指南
    FreeRTOS SMP Changes <freertos-smp>
    Thread Local Storage <thread-local-storage>
    High Level Interrupts <hlinterrupts>
-   JTAG Debugging <jtag-debugging/index>
+   JTAG 调试 <jtag-debugging/index>
    Bootloader <bootloader>
    分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
