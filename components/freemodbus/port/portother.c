@@ -32,16 +32,16 @@
 #include <stdlib.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <freertos/semphr.h>
 
 /* ----------------------- Modbus includes ----------------------------------*/
 #include "mb.h"
 #include "mbport.h"
+#include "sys/lock.h"
 
 /* ----------------------- Modbus includes ----------------------------------*/
 
 /* ----------------------- Variables ----------------------------------------*/
-static portMUX_TYPE mb_mutex = portMUX_INITIALIZER_UNLOCKED;
+static _lock_t s_port_lock;
 
 /* ----------------------- Start implementation -----------------------------*/
 
@@ -52,16 +52,16 @@ bMBPortIsWithinException( void )
     return bIsWithinException;
 }
 
-void
+inline void
 vMBPortEnterCritical( void )
 {
-    portENTER_CRITICAL(&mb_mutex);
+    _lock_acquire(&s_port_lock);
 }
 
-void
+inline void
 vMBPortExitCritical( void )
 {
-    portEXIT_CRITICAL(&mb_mutex);
+    _lock_release(&s_port_lock);
 }
 
 void
