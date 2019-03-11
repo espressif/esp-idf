@@ -1,7 +1,7 @@
 ************************
 Set up OpenOCD for Linux
 ************************
-
+:link_to_translation:`zh_CN:[中文]`
 
 Set up OpenOCD
 ==============

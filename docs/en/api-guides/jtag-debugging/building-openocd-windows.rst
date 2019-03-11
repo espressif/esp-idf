@@ -1,8 +1,9 @@
 *****************************************
 Building OpenOCD from Sources for Windows
 *****************************************
+:link_to_translation:`zh_CN:[中文]`
 
-The following instructions are alternative to downloading binary OpenOCD from Espressif website. To quickly setup the binary OpenOCD, instead of compiling it yourself, backup and proceed to section :doc:`setup-openocd-windows`.
+The following instructions are alternative to downloading binary OpenOCD from `Espressif GitHub <https://github.com/espressif/openocd-esp32/releases>`_. To quickly setup the binary OpenOCD, instead of compiling it yourself, backup and proceed to section :doc:`setup-openocd-windows`.
 
 
 .. highlight:: bash
@@ -29,16 +30,16 @@ Install packages that are required to compile OpenOCD:
 
 ::
 
-	pacman -S libtool
-	pacman -S autoconf
-	pacman -S automake
-	pacman -S texinfo
-	pacman -S mingw-w64-i686-libusb-compat-git
-	pacman -S pkg-config
+    pacman -S libtool
+    pacman -S autoconf
+    pacman -S automake
+    pacman -S texinfo
+    pacman -S mingw-w64-i686-libusb-compat-git
+    pacman -S pkg-config
 
 .. note::
 
-	Installation of ``pkg-config`` is breaking operation of esp-idf toolchain. After building of OpenOCD it should be uninstalled. It be covered at the end of this instruction. To build OpenOCD again, you will need to run ``pacman -S pkg-config`` once more. This issue does not concern other packages installed in this step (before ``pkg-config``).
+    Installation of ``pkg-config`` is breaking operation of esp-idf toolchain. After building of OpenOCD it should be uninstalled. It be covered at the end of this instruction. To build OpenOCD again, you will need to run ``pacman -S pkg-config`` once more. This issue does not concern other packages installed in this step (before ``pkg-config``).
 
 
 Build OpenOCD
@@ -65,7 +66,7 @@ Once ``make`` process is successfully completed, the executable of OpenOCD will 
 
 Remove ``pkg-config``, as discussed during installation of dependencies::
 
-	pacman -Rs pkg-config
+    pacman -Rs pkg-config
 
 
 Next Steps
