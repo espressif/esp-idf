@@ -997,9 +997,13 @@ int tls_connection_set_session_ticket_cb(void *tls_ctx,
 }
 
 static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
-		       const char *label, int server_random_first,
+		       const char *label, const u8 *context,
+		       size_t context_len, int server_random_first,
 		       u8 *out, size_t out_len)
 {
+	if (context)
+		return -1;
+
 	int ret;
 	u8 seed[2 * TLS_RANDOM_LEN];
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
@@ -1038,7 +1042,8 @@ int tls_connection_export_key(void *tls_ctx, struct tls_connection *conn,
 			      const char *label, const u8 *context,
 			      size_t context_len, u8 *out, size_t out_len)
 {
-	return tls_connection_prf(tls_ctx, conn, label, 0, out, out_len);
+	return tls_connection_prf(tls_ctx, conn, label,context, context_len,
+			0, out, out_len);
 }
 
 int tls_connection_get_eap_fast_key(void *tls_ctx, struct tls_connection *conn,

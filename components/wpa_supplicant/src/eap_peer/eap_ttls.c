@@ -220,6 +220,7 @@ static int eap_ttls_v0_derive_key(struct eap_sm *sm,
 	eap_ttls_free_key(data);
 	data->key_data = eap_peer_tls_derive_key(sm, &data->ssl,
 						 "ttls keying material",
+						 NULL, 0,
 						 EAP_TLS_KEY_LEN);
 	if (!data->key_data) {
 		wpa_printf(MSG_ERROR, "EAP-TTLS: Failed to derive key");
@@ -251,7 +252,8 @@ static int eap_ttls_v0_derive_key(struct eap_sm *sm,
 static u8 * eap_ttls_implicit_challenge(struct eap_sm *sm,
 			    struct eap_ttls_data *data, size_t len)
 {
-	return eap_peer_tls_derive_key(sm, &data->ssl, "ttls challenge", len);
+	return eap_peer_tls_derive_key(sm, &data->ssl, "ttls challenge",
+				       NULL, 0, len);
 }
 #endif /* CONFIG_FIPS */
 

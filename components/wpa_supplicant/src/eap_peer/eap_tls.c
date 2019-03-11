@@ -146,6 +146,7 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 
 	eap_tls_free_key(data);
 	data->key_data = eap_peer_tls_derive_key(sm, &data->ssl, label,
+						 NULL, 0,
 						 EAP_TLS_KEY_LEN +
 						 EAP_EMSK_LEN);
 	if (data->key_data) {

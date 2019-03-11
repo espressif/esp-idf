@@ -256,6 +256,8 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
  * @data: Data for TLS processing
  * @label: Label string for deriving the keys, e.g., "client EAP encryption"
+ * @context: Optional extra upper-layer context (max len 2^16)
+ * @context_len: The length of the context value
  * @len: Length of the key material to generate (usually 64 for MSK)
  * Returns: Pointer to allocated key on success or %NULL on failure
  *
@@ -264,9 +266,12 @@ void eap_peer_tls_ssl_deinit(struct eap_sm *sm, struct eap_ssl_data *data)
  * different label to bind the key usage into the generated material.
  *
  * The caller is responsible for freeing the returned buffer.
+ *
+ * Note: To provide the RFC 5705 context, the context variable must be non-NULL.
  */
 u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
-			     const char *label, size_t len)
+			     const char *label, const u8 *context,
+			     size_t context_len, size_t len)
 {
 	u8 *out;
 
@@ -274,8 +279,8 @@ u8 * eap_peer_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 	if (out == NULL)
 		return NULL;
 
-	if (tls_connection_export_key(data->ssl_ctx, data->conn, label, 0, 0, out,
-				len)) {
+	if (tls_connection_export_key(data->ssl_ctx, data->conn, label,
+				      context, context_len, out, len)) {
 		os_free(out);
 		return NULL;
 	}
@@ -315,7 +320,7 @@ u8 * eap_peer_tls_derive_session_id(struct eap_sm *sm,
 		if (!id)
 			return NULL;
 		method_id = eap_peer_tls_derive_key(
-			sm, data, "EXPORTER_EAP_TLS_Method-Id", 64);
+			sm, data, "EXPORTER_EAP_TLS_Method-Id", NULL, 0, 64);
 		if (!method_id) {
 			os_free(id);
 			return NULL;

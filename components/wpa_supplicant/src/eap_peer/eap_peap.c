@@ -1204,6 +1204,7 @@ static struct wpabuf * eap_peap_process(struct eap_sm *sm, void *priv,
 				   "key derivation", label);
 			data->key_data =
 				eap_peer_tls_derive_key(sm, &data->ssl, label,
+							NULL, 0,
 							EAP_TLS_KEY_LEN +
 							EAP_EMSK_LEN);
 			if (data->key_data) {
