@@ -305,29 +305,38 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
 {
     size_t block_len = block_length(sha_type);
 
+    // Max number of blocks to pass per each call to esp_sha_lock_memory_block()
+    // (keep low enough to avoid starving interrupt handlers, especially if reading
+    // data into SHA via flash cache, but high enough that spinlock overhead is low)
+    const size_t BLOCKS_PER_CHUNK = 100;
+    const size_t MAX_CHUNK_LEN = BLOCKS_PER_CHUNK * block_len;
+
     esp_sha_lock_engine(sha_type);
 
     SHA_CTX ctx;
     ets_sha_init(&ctx);
 
-    while(ilen > 0) {
-        size_t chunk_len = (ilen > block_len) ? block_len : ilen;
+    while (ilen > 0) {
+        size_t chunk_len = (ilen > MAX_CHUNK_LEN) ? MAX_CHUNK_LEN : ilen;
 
         // Wait for idle before entering critical section
-        // (to reduce time spent in it), then check after
+        // (to reduce time spent in it), then check again after
         esp_sha_wait_idle();
         esp_sha_lock_memory_block();
         esp_sha_wait_idle();
 
         DPORT_STALL_OTHER_CPU_START();
-        {
+        while (chunk_len > 0) {
             // This SHA ROM function reads DPORT regs
-            ets_sha_update(&ctx, sha_type, input, chunk_len * 8);
+            // (can accept max one SHA block each call)
+            size_t update_len = (chunk_len > block_len) ? block_len : chunk_len;
+            ets_sha_update(&ctx, sha_type, input, update_len * 8);
+
+            input += update_len;
+            chunk_len -= update_len;
+            ilen -= update_len;
         }
         DPORT_STALL_OTHER_CPU_END();
-
-        input += chunk_len;
-        ilen -= chunk_len;
 
         if (ilen == 0) {
             /* Finish the last block before releasing the memory
