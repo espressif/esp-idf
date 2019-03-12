@@ -53,7 +53,7 @@ function(ldgen_process_template template output)
     # Create command to invoke the linker script generator tool.
     add_custom_command(
         OUTPUT ${output}
-        COMMAND ${IDF_PATH}/tools/ldgen/ldgen.py
+        COMMAND ${PYTHON} ${IDF_PATH}/tools/ldgen/ldgen.py
         --config    ${SDKCONFIG}
         --fragments "$<JOIN:$<TARGET_PROPERTY:ldgen,FRAGMENT_FILES>,\t>"
         --input     ${template}
