@@ -7,6 +7,10 @@ ldflags()
 	if [ $(uname -s) == "Darwin" ]; then 
 		#OSX seems to need ncurses too
 		echo -n "-lncurses "
+	elif [ $(uname -s) == "FreeBSD" ]; then
+		# On FreeBSD, the linker needs to know to search port libs for
+		# libintl
+		echo -n "-L/usr/local/lib -lintl "
 	fi
 	pkg-config --libs ncursesw 2>/dev/null && exit
 	pkg-config --libs ncurses 2>/dev/null && exit
@@ -44,6 +48,10 @@ ccflags()
 	if [ $(uname -s) == "Darwin" ]; then
 		#OSX doesn't have libintl
 		echo -n "-DKBUILD_NO_NLS -Wno-format-security "
+	elif [ $(uname -s) == "FreeBSD" ]; then
+		# FreeBSD gettext port has libintl.h, but the compiler needs
+		# to know to search port includes
+		echo -n "-I/usr/local/include "
 	fi
 }
 
