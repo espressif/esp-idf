@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo '/*'
 echo 'ESP32 ROM address table'

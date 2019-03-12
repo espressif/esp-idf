@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Setup script to configure an MSYS2 environment for ESP-IDF.
 #

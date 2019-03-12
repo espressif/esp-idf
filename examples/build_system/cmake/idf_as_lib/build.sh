@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build this example, which does not use that standard IDF app template. See README.md for
 # more information about the build and how to run this example on the target once built.

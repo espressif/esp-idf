@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Check for Documentation warnings:
 # doxygen-warning-log.txt should be an empty file

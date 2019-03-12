@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Redirects git submodules to the specified local mirrors and updates these recursively.
 #

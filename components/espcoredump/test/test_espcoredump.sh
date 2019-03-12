@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
 if [ "$(xtensa-esp32-elf-gcc -dumpversion)" = "5.2.0" ]; then
     EXPECTED_OUTPUT="expected_output"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Setup script to build Windows tool installer with Inno Setup
 #

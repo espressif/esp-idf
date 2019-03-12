@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Short script that is run as part of the CI environment
 # in .gitlab-ci.yml
