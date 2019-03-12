@@ -5,9 +5,9 @@ endif()
 # Set some global esptool.py variables
 #
 # Many of these are read when generating flash_app_args & flash_project_args
-set(ESPTOOLPY "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
-set(ESPSECUREPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
-set(ESPEFUSEPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
+set(ESPTOOLPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
+set(ESPSECUREPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
+set(ESPEFUSEPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
 set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
 set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
