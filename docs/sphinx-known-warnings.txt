@@ -2,7 +2,7 @@
 #
 # Build will fail if sphinx-warning-log.txt contains any lines
 # which are not in this file. Lines are pre-sanitized by
-# check_doc_warnings.sh to remove formatting, paths, line numbers.
+# check_doc_warnings.sh to remove formatting, paths and line numbers.
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
@@ -10,9 +10,74 @@
 #
 # Sphinx known issue https://github.com/sphinx-doc/sphinx/issues/2683
 #
-_build/inc/esp_a2dp_api.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
+# Note: warnings below will be gone after upgrade
+#       to the following package==version
+#
+#       sphinx==1.8.4
+#       breathe==4.11.1
+#
+esp_a2dp_api.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
   union esp_a2d_mcc_t::@1  esp_a2d_mcc_t::cie
   ---------------------^
-_build/inc/esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
+esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested name. [error at 21]
   union esp_bt_uuid_t::@0  esp_bt_uuid_t::uuid
   ---------------------^
+
+#
+# Breathe known issue: https://github.com/michaeljones/breathe/issues/405
+# Sphinx known issue: https://github.com/sphinx-doc/sphinx/pull/5901
+#
+# Note: warnings below have been identified after upgrade
+#       to the following package==version
+#
+#       sphinx==1.8.4
+#       breathe==4.11.1
+#
+ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
+ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
+README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+#
+# Issue present only when building on msys2 / mingw32 START >>>
+#
+esp_spp_api.inc:line: WARNING: Error in type declaration.
+If typedef-like declaration:
+  Type must be either just a name or a typedef-like declaration.
+  If just a name:
+    Error in declarator or parameters and qualifiers
+    Invalid definition: Expected identifier in nested name, got keyword: void [error at 4]
+      void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+      ----^
+  If typedef-like declaration:
+    Error in declarator
+    If pointer to member declarator:
+      Invalid definition: Expected identifier in nested name. [error at 4]
+        void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+        ----^
+    If declId, parameters, and qualifiers:
+      Invalid definition: Expected identifier in nested name. [error at 4]
+        void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+        ----^
+    If parenthesis in noptr-declarator:
+      Error in declarator or parameters and qualifiers
+      If pointer to member declarator:
+        Invalid definition: Expected identifier in nested name. [error at 5]
+          void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+          -----^
+      If declarator-id:
+        Invalid definition: Expected identifier in nested name. [error at 5]
+          void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+          -----^
+If type alias or template alias:
+  Invalid definition: Expected identifier in nested name, got keyword: void [error at 4]
+    void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
+    ----^
+#
+# Issue present only when building on msys2 / mingw32 END <<<
+#
+spi_master.inc:line: WARNING: Duplicate declaration, struct spi_transaction_t spi_transaction_t
+spi_slave.inc:line: WARNING: Duplicate declaration, struct spi_slave_transaction_t spi_slave_transaction_t
+wear-levelling.rst:line: WARNING: Duplicate declaration, bool esp_vfs_fat_mount_config_t::format_if_mount_failed
+wear-levelling.rst:line: WARNING: Duplicate declaration, int esp_vfs_fat_mount_config_t::max_files
+wear-levelling.rst:line: WARNING: Duplicate declaration, size_t esp_vfs_fat_mount_config_t::allocation_unit_size
+wear-levelling.rst:line: WARNING: Duplicate declaration, esp_vfs_fat_mount_config_t
