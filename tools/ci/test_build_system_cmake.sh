@@ -223,6 +223,21 @@ function run_tests()
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
     mv sdkconfig.bak sdkconfig
 
+    print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
+    OLDPATH="$PATH"
+    PYTHON="$(which python)"
+    rm -rf build
+    cat > ./python << EOF
+    #!/bin/sh
+    echo "The build system has executed '/usr/bin/env python' or similar"
+    exit 1
+EOF
+    chmod +x ./python
+    export PATH="$(pwd):$PATH"
+    ${PYTHON} $IDF_PATH/tools/idf.py build || failure "build failed"
+    export PATH="$OLDPATH"
+    rm ./python
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
