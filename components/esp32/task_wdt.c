@@ -64,6 +64,7 @@ struct twdt_config_t {
     twdt_task_t *list;      //Linked list of subscribed tasks
     uint32_t timeout;       //Timeout period of TWDT
     bool panic;             //Flag to trigger panic when TWDT times out
+    bool feed_wdt;          //Flag to actually feed TWDT inside ISR
     intr_handle_t intr_handle;
 };
 
@@ -138,10 +139,12 @@ static void task_wdt_isr(void *arg)
     portENTER_CRITICAL_ISR(&twdt_spinlock);
     twdt_task_t *twdttask;
     const char *cpu;
-    //Reset hardware timer so that 2nd stage timeout is not reached (will trigger system reset)
-    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_feed=1;
-    TIMERG0.wdt_wprotect=0;
+    if (twdt_config->feed_wdt) {
+        //Reset hardware timer so that 2nd stage timeout is not reached (will trigger system reset)
+        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+        TIMERG0.wdt_feed=1;
+        TIMERG0.wdt_wprotect=0;
+    }
     //Acknowledge interrupt
     TIMERG0.int_clr_timers.wdt=1;
     //We are taking a spinlock while doing I/O (ESP_EARLY_LOGE) here. Normally, that is a pretty
@@ -194,6 +197,11 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
         twdt_config->list = NULL;
         twdt_config->timeout = timeout;
         twdt_config->panic = panic;
+#if CONFIG_TASK_WDT_DONT_FEED
+        twdt_config->feed_wdt = false;
+#else
+        twdt_config->feed_wdt = true;
+#endif
 
         //Register Interrupt and ISR
         ESP_ERROR_CHECK(esp_intr_alloc(ETS_TG0_WDT_LEVEL_INTR_SOURCE, 0, task_wdt_isr, NULL, &twdt_config->intr_handle));
