@@ -210,9 +210,9 @@ def write_json_menus(config, filename):
                 greatest_range = None
                 if len(sym.ranges) > 0:
                     # Note: Evaluating the condition using kconfiglib's expr_value
-                    # should have one result different from value 0 ("n").
+                    # should have one condition which is true
                     for min_range, max_range, cond_expr in sym.ranges:
-                        if kconfiglib.expr_value(cond_expr) != "n":
+                        if kconfiglib.expr_value(cond_expr):
                             greatest_range = [min_range, max_range]
                 new_json["range"] = greatest_range
 
@@ -221,9 +221,9 @@ def write_json_menus(config, filename):
             greatest_range = None
             if len(sym.ranges) > 0:
                 # Note: Evaluating the condition using kconfiglib's expr_value
-                # should have one result different from value 0 ("n").
+                # should have one condition which is true
                 for min_range, max_range, cond_expr in sym.ranges:
-                    if kconfiglib.expr_value(cond_expr) != "n":
+                    if kconfiglib.expr_value(cond_expr):
                         greatest_range = [int(min_range.str_value), int(max_range.str_value)]
 
             new_json = {
