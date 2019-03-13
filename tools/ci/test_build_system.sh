@@ -223,7 +223,7 @@ function run_tests()
     print_status "Can build without git installed on system"
     clean_build_dir
     # Make provision for getting IDF version
-    echo "custom-version-x.y" > ${IDF_PATH}/version.txt
+    echo "IDF_VER_0123456789_0123456789_0123456789" > ${IDF_PATH}/version.txt
     echo "project-version-w.z" > ${TESTDIR}/template/version.txt
     # Hide .gitmodules so that submodule check is avoided
     [ -f ${IDF_PATH}/.gitmodules ] && mv ${IDF_PATH}/.gitmodules ${IDF_PATH}/.gitmodules_backup
