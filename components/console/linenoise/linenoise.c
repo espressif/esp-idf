@@ -106,6 +106,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -878,6 +879,9 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         case CTRL_W: /* ctrl+w, delete previous word */
             linenoiseEditDeletePrevWord(&l);
             break;
+        }
+        if (__fbufsize(stdout) > 0) {
+            fflush(stdout);
         }
     }
     return l.len;
