@@ -99,6 +99,7 @@ function run_tests()
     print_status "Rebuild when app version was changed"
     clean_build_dir
     # App version
+    echo "IDF_VER_0123456789_0123456789_0123456789" > ${IDF_PATH}/version.txt
     echo "project-version-1.0" > ${TESTDIR}/template/version.txt
     idf.py build || failure "Failed to build with app version"
     print_status "Change app version"
@@ -112,6 +113,7 @@ function run_tests()
     take_build_snapshot
     idf.py build
     assert_not_rebuilt ${APP_BINS} ${BOOTLOADER_BINS} esp-idf/esp32/libesp32.a
+    rm -f ${IDF_PATH}/version.txt
     rm -f ${TESTDIR}/template/version.txt
 
     print_status "Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit."
