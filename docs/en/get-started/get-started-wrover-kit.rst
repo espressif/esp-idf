@@ -314,7 +314,7 @@ LCD / U5
 Start Application Development
 -----------------------------
 
-Before powering up the ESP-WROVER-KIT, please make sure that the board has been received in good condition with no obvious signs of damage.
+Before powering up your ESP-WROVER-KIT, please make sure that the board is in good condition with no obvious signs of damage.
 
 
 Initial Setup
@@ -335,12 +335,7 @@ Turn the **Power Switch** on. The **5V Power On LED** should turn on.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-To start development of applications for ESP-WROVER-KIT, proceed to the :doc:`index` section which will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-flash` an example application to the ESP32
-* :ref:`get-started-build-monitor` instantly what the application is doing
+Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents
