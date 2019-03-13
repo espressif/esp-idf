@@ -419,4 +419,11 @@ menu "FreeRTOS"
             abort the application. This option is also required for GDB backtraces and C++
             exceptions to work correctly inside top-level task functions.
 
+    config FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
+        bool "Check that mutex semaphore is given by owner task"
+        default y
+        help
+            If enabled, assert that when a mutex semaphore is given, the task giving the
+            semaphore is the task which is currently holding the mutex.
+
 endmenu

@@ -314,5 +314,11 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #endif /* def __ASSEMBLER__ */
 #endif
 
+#if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
+#define configCHECK_MUTEX_GIVEN_BY_OWNER    1
+#else
+#define configCHECK_MUTEX_GIVEN_BY_OWNER    0
+#endif
+
 #endif /* FREERTOS_CONFIG_H */
 
