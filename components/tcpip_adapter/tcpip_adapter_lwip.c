@@ -91,7 +91,9 @@ static void tcpip_adapter_dhcps_cb(u8_t client_ip[4])
     ESP_LOGI(TAG,"softAP assign IP to station,IP is: %d.%d.%d.%d",
                 client_ip[0],client_ip[1],client_ip[2],client_ip[3]);
     system_event_t evt;
+    memset(&evt, 0, sizeof(system_event_t));
     evt.event_id = SYSTEM_EVENT_AP_STAIPASSIGNED;
+    memcpy((char *)&evt.event_info.ap_staipassigned.ip.addr, (char *)client_ip, sizeof(evt.event_info.ap_staipassigned.ip.addr));
     esp_event_send(&evt);
 }
 
@@ -429,6 +431,7 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_ada
         if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
             if (!(ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw))) {
                 system_event_t evt;
+                memset(&evt, 0, sizeof(system_event_t));
                 if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
                     evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
                 } else if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
@@ -461,6 +464,7 @@ static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
     tcpip_adapter_ip6_info_t *ip6_info;
 
     system_event_t evt;
+    memset(&evt, 0, sizeof(system_event_t));
     //notify event
 
     evt.event_id = SYSTEM_EVENT_GOT_IP6;
@@ -896,6 +900,7 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
                 !ip4_addr_cmp(ip_2_ip4(&netif->netmask), (&ip_info->netmask)) ||
                 !ip4_addr_cmp(ip_2_ip4(&netif->gw), (&ip_info->gw)) ) {
             system_event_t evt;
+            memset(&evt, 0, sizeof(system_event_t));
 
             ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
             ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
@@ -971,6 +976,7 @@ static void tcpip_adapter_ip_lost_timer(void *arg)
 
         if ( (!netif) || (netif && ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY4))){
             system_event_t evt;
+            memset(&evt, 0, sizeof(system_event_t));
 
             ESP_LOGD(TAG, "if%d ip lost tmr: raise ip lost event", tcpip_if);
             memset(&esp_ip_old[tcpip_if], 0, sizeof(tcpip_adapter_ip_info_t));
