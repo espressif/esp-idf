@@ -106,9 +106,8 @@ ESP32-DevKitC 上电前，请首先确认电路板完好无损。
 
 * :ref:`设置 Toolchain <get-started-setup-toolchain>`，以便用 C 语言开发应用
 * :ref:`连接 <get-started-connect>` 模组至 PC，并确认访问状态
-* :ref:`构建并向 ESP32 烧录示例 <get-started-build-flash>`
-* :ref:`即刻监测 <get-started-build-monitor>` 应用程序的动作
-
+* :ref:`构建并向 ESP32 烧录 example <get-started-build-and-flash>`
+* :ref:`即刻监测 <get-started-monitor>` 应用程序的动作
 
 开发板尺寸
 ----------------

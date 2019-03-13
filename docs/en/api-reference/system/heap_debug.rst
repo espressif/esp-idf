@@ -189,7 +189,7 @@ The output from the heap trace will look something like this::
   40 bytes 'leaked' in trace (2 allocations)
   total allocations 2 total frees 0
 
-(Above example output is using :doc:`IDF Monitor </get-started/idf-monitor>` to automatically decode PC addresses to their source files & line number.)
+(Above example output is using :doc:`IDF Monitor </api-guides/tools/idf-monitor>` to automatically decode PC addresses to their source files & line number.)
 
 The first line indicates how many allocation entries are in the buffer, compared to its total size.
 

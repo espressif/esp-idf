@@ -64,6 +64,8 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 如果你使用其它开发板，请查看下面的内容。
 
+.. _get-started-step-by-step:
+
 .. _get-started-setup-toolchain:
 
 设置工具链
@@ -220,7 +222,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
     如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
 
 
-.. _get-started-build-flash:
+.. _get-started-build-and-flash:
 
 编译和烧写
 ===============
@@ -265,7 +267,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 如果你想使用 Eclipse IDE 而不是运行 ``make``，请参考 :doc:`Eclipse guide <eclipse-setup>`。
 
-.. _get-started-build-monitor:
+.. _get-started-monitor:
 
 监视器
 =======
@@ -301,9 +303,9 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
         e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
         ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
 
-    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
+    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-and-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
 
-要一次性执行 ``make flash`` 和 ``make monitor``，输入 ``make flash monitor``。参考文档 :doc:`IDF Monitor <idf-monitor>` 里的快捷键和更多内容。
+要一次性执行 ``make flash`` 和 ``make monitor``，输入 ``make flash monitor``。参考文档 :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` 里的快捷键和更多内容。
 
 你已完成 ESP32 的入门！
 
@@ -329,7 +331,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
     establish-serial-connection
     make-project
     eclipse-setup
-    idf-monitor
+    ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/

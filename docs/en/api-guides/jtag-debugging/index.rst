@@ -197,7 +197,7 @@ You should now see similar output (this log is for ESP-WROVER-KIT)::
 Upload application for debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Build and upload your application to ESP32 as usual, see :ref:`get-started-build-flash`.
+Build and upload your application to ESP32 as usual, see :ref:`get-started-build-and-flash`.
 
 Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
 

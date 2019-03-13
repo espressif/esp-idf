@@ -253,7 +253,9 @@ html_redirect_pages = [('api-reference/ethernet/index', 'api-reference/network/i
                        ('api-reference/wifi/esp_now', 'api-reference/network/esp_now'),
                        ('api-reference/wifi/esp_smartconfig', 'api-reference/network/esp_smartconfig'),
                        ('api-reference/wifi/esp_wifi', 'api-reference/network/esp_wifi'),
-                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),]
+                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),
+                       ('get-started/idf-monitor', 'api-guides/tools/idf-monitor'),
+                       ('get-started-cmake/idf-monitor', 'api-guides/tools/idf-monitor'),]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

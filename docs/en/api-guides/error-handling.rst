@@ -58,7 +58,7 @@ Error message will typically look like this::
 
     Backtrace: 0x40086e7c:0x3ffb4ff0 0x40087328:0x3ffb5010 0x400d1fdf:0x3ffb5030 0x400d0816:0x3ffb5050
 
-.. note:: If :doc:`IDF monitor <../get-started/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
+.. note:: If :doc:`IDF monitor <tools/idf-monitor>` is used, addresses in the backtrace will be converted to file names and line numbers.
 
 - The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occured is printed as well.
 
