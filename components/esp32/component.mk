@@ -9,14 +9,14 @@ LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 espnow phy mesh
 endif
 
 ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY  
-   # This linker script must come before esp32.common.ld
+   # This linker script must come before esp32.project.ld
    LINKER_SCRIPTS += esp32.extram.bss.ld
 endif
 
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
-LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.common.ld esp32.rom.ld esp32.peripherals.ld
+LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.project.ld esp32.rom.ld esp32.peripherals.ld
 
 #Force pure functions from libgcc.a to be linked from ROM
 LINKER_SCRIPTS += esp32.rom.libgcc.ld
@@ -55,8 +55,8 @@ COMPONENT_SUBMODULES += lib
 # final linking of project ELF depends on all binary libraries, and
 # all linker scripts (except esp32_out.ld, as this is code generated here.)
 COMPONENT_ADD_LINKER_DEPS := $(ALL_LIB_FILES) \
-                            $(addprefix ld/, $(filter-out $(COMPONENT_BUILD_DIR)/esp32.common.ld, $(LINKER_SCRIPTS))) \
-                            $(COMPONENT_BUILD_DIR)/esp32.common.ld
+                            $(addprefix ld/, $(filter-out $(COMPONENT_BUILD_DIR)/esp32.project.ld, $(LINKER_SCRIPTS))) \
+                            $(COMPONENT_BUILD_DIR)/esp32.project.ld
 
 # Preprocess esp32.ld linker script into esp32_out.ld
 #
@@ -67,7 +67,7 @@ $(COMPONENT_LIBRARY): esp32_out.ld
 esp32_out.ld: $(COMPONENT_PATH)/ld/esp32.ld ../include/sdkconfig.h
 	$(CC) -I ../include -C -P -x c -E $< -o $@
 
-COMPONENT_EXTRA_CLEAN := esp32_out.ld $(COMPONENT_BUILD_DIR)/esp32.common.ld
+COMPONENT_EXTRA_CLEAN := esp32_out.ld $(COMPONENT_BUILD_DIR)/esp32.project.ld
 
 # disable stack protection in files which are involved in initialization of that feature
 stack_check.o: CFLAGS := $(filter-out -fstack-protector%, $(CFLAGS))
