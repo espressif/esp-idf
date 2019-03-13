@@ -67,7 +67,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 -  最后一行打印回溯结果。对于所有不可恢复错误，这里在应急处理程序中打印的内容都是一样的。更多有关回溯结果的详细信息，请参阅 :doc:`不可恢复错误 <fatal-errors>` 。
 
-.. note:: 如果使用 :doc:`IDF monitor <../get-started/idf-monitor>`, 则最后一行回溯结果中的地址将会被替换为相应的文件名和行号。
+.. note:: 如果使用 :doc:`IDF monitor <tools/idf-monitor>`, 则最后一行回溯结果中的地址将会被替换为相应的文件名和行号。
 
 
 错误处理模式

@@ -357,7 +357,7 @@ LCD / U5
 Start Application Development
 -----------------------------
 
-Before powering up the ESP-WROVER-KIT, please make sure that the board has been received in good condition with no obvious signs of damage.
+Before powering up your ESP-WROVER-KIT V3, please make sure that the board is in good condition with no obvious signs of damage.
 
 
 Initial Setup
@@ -378,7 +378,7 @@ Do not install any other jumpers.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-To start development of applications, proceed to Section :doc:`index`, that will walk you through the :ref:`get-started-step-by-step-cmake`.
+Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents
