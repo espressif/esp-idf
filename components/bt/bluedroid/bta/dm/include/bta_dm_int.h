@@ -192,6 +192,7 @@ typedef struct {
     BT_HDR    hdr;
     BOOLEAN   add_remove;
     BD_ADDR   remote_addr;
+    tBLE_ADDR_TYPE addr_type;
     tBTA_ADD_WHITELIST_CBACK *add_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
 

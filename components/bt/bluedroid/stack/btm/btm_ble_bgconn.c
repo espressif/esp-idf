@@ -154,8 +154,9 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy)
 **
 ** Description      This function load the device into controller white list
 *******************************************************************************/
-BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr)
+BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE wl_addr_type)
 {
+    /*
     tBTM_SEC_DEV_REC    *p_dev_rec = btm_find_dev (bd_addr);
     tBLE_ADDR_TYPE  addr_type = BLE_ADDR_PUBLIC;
     BOOLEAN             started = FALSE;
@@ -184,7 +185,7 @@ BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr)
             }
             p_dev_rec->ble.in_controller_list &= ~BTM_WHITE_LIST_BIT;
         }
-    }    /* if not a known device, shall we add it? */
+    }    // if not a known device, shall we add it? 
     else {
         BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
 
@@ -196,6 +197,23 @@ BOOLEAN btm_add_dev_to_controller (BOOLEAN to_add, BD_ADDR bd_addr)
     }
 
     return started;
+    */
+
+    /* Controller do not support resolvable address now, only support public address and static random address */
+    BOOLEAN  started = FALSE;
+    if(wl_addr_type > BLE_ADDR_RANDOM) {
+        BTM_TRACE_ERROR("wl_addr_type is error\n");
+        return started;
+    }
+
+    if (to_add) {
+        started = btsnd_hcic_ble_add_white_list (wl_addr_type, bd_addr);
+    }else{
+        started = btsnd_hcic_ble_remove_from_white_list (wl_addr_type, bd_addr);
+    }
+
+    return started;
+
 
 }
 /*******************************************************************************
@@ -212,7 +230,7 @@ BOOLEAN btm_execute_wl_dev_operation(void)
 
     for (i = 0; i < BTM_BLE_MAX_BG_CONN_DEV_NUM && rt; i ++, p_dev_op ++) {
         if (p_dev_op->in_use) {
-            rt = btm_add_dev_to_controller(p_dev_op->to_add, p_dev_op->bd_addr);
+            rt = btm_add_dev_to_controller(p_dev_op->to_add, p_dev_op->bd_addr, p_dev_op->addr_type);
             memset(p_dev_op, 0, sizeof(tBTM_BLE_WL_OP));
         } else {
             break;
@@ -226,13 +244,13 @@ BOOLEAN btm_execute_wl_dev_operation(void)
 **
 ** Description      enqueue the pending whitelist device operation(loading or removing).
 *******************************************************************************/
-void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr)
+void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type)
 {
     tBTM_BLE_WL_OP *p_dev_op = btm_cb.ble_ctr_cb.wl_op_q;
     UINT8   i = 0;
 
     for (i = 0; i < BTM_BLE_MAX_BG_CONN_DEV_NUM; i ++, p_dev_op ++) {
-        if (p_dev_op->in_use && !memcmp(p_dev_op->bd_addr, bd_addr, BD_ADDR_LEN)) {
+        if (p_dev_op->in_use && p_dev_op->addr_type == addr_type && !memcmp(p_dev_op->bd_addr, bd_addr, BD_ADDR_LEN)) {
             p_dev_op->to_add = to_add;
             return;
         } else if (!p_dev_op->in_use) {
@@ -242,6 +260,7 @@ void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr)
     if (i != BTM_BLE_MAX_BG_CONN_DEV_NUM) {
         p_dev_op->in_use = TRUE;
         p_dev_op->to_add = to_add;
+        p_dev_op->addr_type = addr_type;
         memcpy(p_dev_op->bd_addr, bd_addr, BD_ADDR_LEN);
     } else {
         BTM_TRACE_ERROR("max pending WL operation reached, discard");
@@ -257,8 +276,40 @@ void btm_enq_wl_dev_operation(BOOLEAN to_add, BD_ADDR bd_addr)
 **                  the white list.
 **
 *******************************************************************************/
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_WHITELIST_CBACK *add_wl_cb)
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_ADD_WHITELIST_CBACK *add_wl_cb)
 {
+    if(addr_type > BLE_ADDR_RANDOM) {
+        BTM_TRACE_ERROR("%s address type is error, unable to add device", __func__);
+        if (add_wl_cb){
+            add_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
+        }
+        return FALSE;
+    }
+    if(addr_type == BLE_ADDR_RANDOM) {
+        /*
+        A static address is a 48-bit randomly generated address and shall meet the following requirements:
+        • The two most significant bits of the address shall be equal to 1
+        • All bits of the random part of the address shall not be equal to 1
+        • All bits of the random part of the address shall not be equal to 0
+        */
+        BD_ADDR invalid_rand_addr_a, invalid_rand_addr_b;
+        memset(invalid_rand_addr_a, 0xff, sizeof(BD_ADDR));
+        memset(invalid_rand_addr_b, 0x00, sizeof(BD_ADDR));
+        invalid_rand_addr_b[0] = invalid_rand_addr_b[0] | BT_STATIC_RAND_ADDR_MASK;
+        if((bd_addr[0] & BT_STATIC_RAND_ADDR_MASK) == BT_STATIC_RAND_ADDR_MASK
+            && memcmp(invalid_rand_addr_a, bd_addr, BD_ADDR_LEN) != 0
+            && memcmp(invalid_rand_addr_b, bd_addr, BD_ADDR_LEN) != 0){
+            // do nothing
+        } else {
+            BTC_TRACE_ERROR(" controller not support resolvable address");
+            if (add_wl_cb){
+                add_wl_cb(HCI_ERR_ILLEGAL_PARAMETER_FMT,to_add);
+            }
+            return FALSE;
+        }
+
+    }
+
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
     if (to_add && p_cb->white_list_avail_size == 0) {
@@ -296,7 +347,7 @@ BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_W
     /* stop the auto connect */
     btm_suspend_wl_activity(p_cb->wl_state);
     /* save the bd_addr to the btm_cb env */
-    btm_enq_wl_dev_operation(to_add, bd_addr);
+    btm_enq_wl_dev_operation(to_add, bd_addr, addr_type);
     /* save the ba_addr to the controller white list */
     btm_wl_update_to_controller();
     return TRUE;

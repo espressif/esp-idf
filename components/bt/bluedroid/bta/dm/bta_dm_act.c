@@ -595,7 +595,7 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
-    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.add_wl_cb);
+    BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.addr_type, p_data->white_list.add_wl_cb);
 }
 
 void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
