@@ -84,10 +84,14 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         before_ranges = get_ranges(config)
         before_visible = get_visible(config)
 
-        if "load" in req:  # if we're loading a different sdkconfig, response should have all items in it
-            before = {}
-            before_ranges = {}
-            before_visible = {}
+        if "load" in req:  # load a new sdkconfig
+
+            if req.get("version", default_version) == 1:
+                # for V1 protocol, send all items when loading new sdkconfig.
+                # (V2+ will only send changes, same as when setting an item)
+                before = {}
+                before_ranges = {}
+                before_visible = {}
 
             # if no new filename is supplied, use existing sdkconfig path, otherwise update the path
             if req["load"] is None:

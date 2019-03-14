@@ -64,11 +64,6 @@ def main():
 
         test_load_save(p, temp_sdkconfig_path)
 
-        p.send("%s\n" % json.dumps({"version": 2, "load": temp_sdkconfig_path}))
-        load_result = expect_json(p)
-        print("Load result: %s" % (json.dumps(load_result)))
-        assert len(load_result["values"]) > 0  # loading same file should return all config items
-        assert len(load_result["ranges"]) > 0
         print("Done. All passed.")
 
     finally:
@@ -132,6 +127,13 @@ def test_load_save(p, temp_sdkconfig_path):
     assert len(save_result["ranges"]) == 0
     after = os.stat(temp_sdkconfig_path).st_mtime
     assert after > before  # something got written to disk
+
+    # Do a V2 load
+    load_result = send_request(p, {"version": 2, "load": temp_sdkconfig_path})
+    print("V2 Load result: %s" % (json.dumps(load_result)))
+    assert "error" not in load_result
+    assert len(load_result["values"]) == 0  # in V2, loading same file should return no config items
+    assert len(load_result["ranges"]) == 0
 
     # Do a V1 load
     load_result = send_request(p, {"version": 1, "load": temp_sdkconfig_path})
