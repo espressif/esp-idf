@@ -36,7 +36,7 @@
 #include "rom/crc.h"
 #include "soc/dport_reg.h"
 #include "esp_log.h"
-#include "esp_flash_data_types.h"
+#include "esp_flash_partitions.h"
 #include "bootloader_common.h"
 #include "sys/param.h"
 #include "esp_system.h"

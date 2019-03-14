@@ -21,7 +21,7 @@
 #include "esp_err.h"
 #include "esp_partition.h"
 #include "esp_image_format.h"
-#include "esp_flash_data_types.h"
+#include "esp_flash_partitions.h"
 
 #ifdef __cplusplus
 extern "C"
