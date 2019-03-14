@@ -5,11 +5,12 @@
 #
 from __future__ import print_function
 import argparse
+import confgen
 import json
 import kconfiglib
 import os
 import sys
-import confgen
+import tempfile
 from confgen import FatalError, __version__
 
 # Min/Max supported protocol versions
@@ -58,6 +59,13 @@ def main():
 
 def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
     config = kconfiglib.Kconfig(kconfig)
+    deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
+    with tempfile.NamedTemporaryFile(mode='w+b') as f_o:
+        with open(sdkconfig, mode='rb') as f_i:
+            f_o.write(f_i.read())
+        f_o.flush()
+        f_o.seek(0)
+        deprecated_options.replace(sdkconfig_in=f_o.name, sdkconfig_out=sdkconfig)
     config.load_config(sdkconfig)
 
     print("Server running, waiting for requests on stdin...", file=sys.stderr)
@@ -111,7 +119,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             else:
                 sdkconfig = req["save"]
 
-        error = handle_request(config, req)
+        error = handle_request(deprecated_options, config, req)
 
         after = confgen.get_json_values(config)
         after_ranges = get_ranges(config)
@@ -136,7 +144,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         print("\n")
 
 
-def handle_request(config, req):
+def handle_request(deprecated_options, config, req):
     if "version" not in req:
         return ["All requests must have a 'version'"]
 
@@ -161,7 +169,7 @@ def handle_request(config, req):
     if "save" in req:
         try:
             print("Saving config to %s..." % req["save"], file=sys.stderr)
-            confgen.write_config(config, req["save"])
+            confgen.write_config(deprecated_options, config, req["save"])
         except Exception as e:
             error += ["Failed to save to %s: %s" % (req["save"], e)]
 

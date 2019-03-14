@@ -471,13 +471,13 @@ export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
-CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
-CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
-LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
-AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
-OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
-OBJDUMP := $(call dequote,$(CONFIG_TOOLPREFIX))objdump
-SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
+CC := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcc
+CXX := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))c++
+LD := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))ld
+AR := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))ar
+OBJCOPY := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))objcopy
+OBJDUMP := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))objdump
+SIZE := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))size
 export CC CXX LD AR OBJCOPY OBJDUMP SIZE
 
 COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
@@ -665,7 +665,7 @@ print_flash_cmd: partition_table_get_info blank_ota_data
 # The output normally looks as follows
 #     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-80-g6c4433a) 5.2.0
 # The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable
-ifdef CONFIG_TOOLPREFIX
+ifdef CONFIG_SDK_TOOLPREFIX
 ifndef MAKE_RESTARTS
 
 TOOLCHAIN_HEADER := $(shell $(CC) --version | head -1)
@@ -704,7 +704,7 @@ $(info WARNING: Failed to find Xtensa toolchain, may need to alter PATH or set o
 endif # TOOLCHAIN_COMMIT_DESC
 
 endif #MAKE_RESTARTS
-endif #CONFIG_TOOLPREFIX
+endif #CONFIG_SDK_TOOLPREFIX
 
 #####################################################################
 endif #CONFIG_IDF_TARGET
