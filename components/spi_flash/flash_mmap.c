@@ -47,19 +47,6 @@
 #define VADDR1_FIRST_USABLE_ADDR 0x400D0000
 #define PRO_IRAM0_FIRST_USABLE_PAGE ((VADDR1_FIRST_USABLE_ADDR - VADDR1_START_ADDR) / SPI_FLASH_MMU_PAGE_SIZE + 64)
 
-/* Ensure pages in a region haven't been marked as written via
-   spi_flash_mark_modified_region(). If the page has
-   been written, flush the entire flash cache before returning.
-
-   This ensures stale cache entries are never read after fresh calls
-   to spi_flash_mmap(), while keeping the number of cache flushes to a
-   minimum.
-
-   Returns true if cache was flushed.
-*/
-
-static bool spi_flash_ensure_unmodified_region(size_t start_addr, size_t length);
-
 typedef struct mmap_entry_{
     uint32_t handle;
     int page;
@@ -144,7 +131,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
-    bool did_flush, need_flush = false;
+    bool need_flush = false;
     if (!page_count) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -163,12 +150,6 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
 
     spi_flash_disable_interrupts_caches_and_other_cpu();
 
-    did_flush = 0;
-    for (int i = 0; i < page_count; i++) {
-        if (spi_flash_ensure_unmodified_region(pages[i]*SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMU_PAGE_SIZE)) {
-            did_flush = 1;
-        }
-    }
     spi_flash_mmap_init();
     // figure out the memory region where we should look for pages
     int region_begin;   // first page to check
@@ -243,7 +224,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
        Working on a long term fix that doesn't require invalidating
        entire cache.
     */
-    if (!did_flush && need_flush) {
+    if (need_flush) {
 #if CONFIG_SPIRAM_SUPPORT
         esp_spiram_writeback_cache();
 #endif
@@ -338,71 +319,6 @@ uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     return count;
 }
 
-/* 256-bit (up to 16MB of 64KB pages) bitset of all flash pages
-   that have been written to since last cache flush.
-
-   Before mmaping a page, need to flush caches if that page has been
-   written to.
-
-   Note: It's possible to do some additional performance tweaks to
-   this algorithm, as we actually only need to flush caches if a page
-   was first mmapped, then written to, then is about to be mmaped a
-   second time. This is a fair bit more complex though, so unless
-   there's an access pattern that this would significantly boost then
-   it's probably not worth it.
-*/
-static uint32_t written_pages[256/32];
-
-static bool update_written_pages(size_t start_addr, size_t length, bool mark);
-
-void IRAM_ATTR spi_flash_mark_modified_region(size_t start_addr, size_t length)
-{
-    update_written_pages(start_addr, length, true);
-}
-
-static IRAM_ATTR bool spi_flash_ensure_unmodified_region(size_t start_addr, size_t length)
-{
-    return update_written_pages(start_addr, length, false);
-}
-
-/* generic implementation for the previous two functions */
-static inline IRAM_ATTR bool update_written_pages(size_t start_addr, size_t length, bool mark)
-{
-    /* align start_addr & length to full MMU pages */
-    uint32_t page_start_addr = start_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
-    length += (start_addr - page_start_addr);
-    length = (length + SPI_FLASH_MMU_PAGE_SIZE - 1) & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
-    for (uint32_t addr = page_start_addr; addr < page_start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
-        int page = addr / SPI_FLASH_MMU_PAGE_SIZE;
-        if (page >= 256) {
-            return false; /* invalid address */
-        }
-
-        int idx = page / 32;
-        uint32_t bit = 1 << (page % 32);
-
-        if (mark) {
-            written_pages[idx] |= bit;
-        } else if (written_pages[idx] & bit) {
-            /* it is tempting to write a version of this that only
-               flushes each CPU's cache as needed. However this is
-               tricky because mmaped memory can be used on un-pinned
-               cores, or the pointer passed between CPUs.
-            */
-#if CONFIG_SPIRAM_SUPPORT
-            esp_spiram_writeback_cache();
-#endif
-            Cache_Flush(0);
-#ifndef CONFIG_FREERTOS_UNICORE
-            Cache_Flush(1);
-#endif
-            bzero(written_pages, sizeof(written_pages));
-            return true;
-        }
-    }
-    return false;
-}
-
 uint32_t spi_flash_cache2phys(const void *cached)
 {
     intptr_t c = (intptr_t)cached;
@@ -463,4 +379,56 @@ const void *IRAM_ATTR spi_flash_phys2cache(uint32_t phys_offs, spi_flash_mmap_me
     DPORT_INTERRUPT_RESTORE();
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return NULL;
+}
+
+static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page)
+{
+    int start[2], end[2];
+
+    /* SPI_FLASH_MMAP_DATA */
+    start[0] = 0;
+    end[0] = 64;
+
+    /* SPI_FLASH_MMAP_INST */
+    start[1] = PRO_IRAM0_FIRST_USABLE_PAGE;
+    end[1] = 256;
+
+    DPORT_INTERRUPT_DISABLE();
+    for (int j = 0; j < 2; j++) {
+        for (int i = start[j]; i < end[j]; i++) {
+            if (DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]) == phys_page) {
+                DPORT_INTERRUPT_RESTORE();
+                return true;
+            }
+        }
+    }
+    DPORT_INTERRUPT_RESTORE();
+    return false;
+}
+
+/* Validates if given flash address has corresponding cache mapping, if yes, flushes cache memories */
+IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
+{
+    /* align start_addr & length to full MMU pages */
+    uint32_t page_start_addr = start_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    length += (start_addr - page_start_addr);
+    length = (length + SPI_FLASH_MMU_PAGE_SIZE - 1) & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    for (uint32_t addr = page_start_addr; addr < page_start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
+        uint32_t page = addr / SPI_FLASH_MMU_PAGE_SIZE;
+        if (page >= 256) {
+            return false; /* invalid address */
+        }
+
+        if (is_page_mapped_in_cache(page)) {
+#if CONFIG_SPIRAM_SUPPORT
+            esp_spiram_writeback_cache();
+#endif
+            Cache_Flush(0);
+#ifndef CONFIG_FREERTOS_UNICORE
+            Cache_Flush(1);
+#endif
+            return true;
+        }
+    }
+    return false;
 }
