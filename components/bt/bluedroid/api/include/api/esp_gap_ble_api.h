@@ -932,12 +932,13 @@ esp_err_t esp_ble_gap_config_local_icon (uint16_t icon);
 *
 * @param[in]        add_remove: the value is true if added the ble device to the white list, and false remove to the white list.
 * @param[in]        remote_bda: the remote device address add/remove from the white list.
+* @param[in]        wl_addr_type: whitelist address type
 * @return
 *                     - ESP_OK : success
 *                     - other  : failed
 *
 */
-esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda);
+esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda, esp_ble_wl_addr_type_t wl_addr_type);
 
 /**
 * @brief            Get the whitelist size in the controller

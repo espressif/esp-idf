@@ -112,6 +112,12 @@ typedef enum {
     BLE_ADDR_TYPE_RPA_RANDOM    = 0x03,
 } esp_ble_addr_type_t;
 
+/// white list address type
+typedef enum {
+    BLE_WL_ADDR_TYPE_PUBLIC        = 0x00,
+    BLE_WL_ADDR_TYPE_RANDOM        = 0x01,
+} esp_ble_wl_addr_type_t;
+
 /// Used to exchange the encryption key in the init key & response key
 #define ESP_BLE_ENC_KEY_MASK    (1 << 0)            /* relate to BTM_BLE_ENC_KEY_MASK in stack/btm_api.h */
 /// Used to exchange the IRK key in the init key & response key
