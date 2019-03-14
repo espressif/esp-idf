@@ -6,7 +6,7 @@
  * See README for more details.
  */
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "wpa/includes.h"
 
 #include "wpa/common.h"

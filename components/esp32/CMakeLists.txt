@@ -86,28 +86,7 @@ else()
         set_property(TARGET ${IDF_PROJECT_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS ${esp32_project_script})
     endif()
 
-    target_linker_script(${COMPONENT_TARGET}
-        "ld/esp32.rom.ld"
-        "ld/esp32.peripherals.ld"
-        "ld/esp32.rom.libgcc.ld"
-        )
-
-    if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all components that depend on esp32.
-        #
-        # To handle some corner cases, the same flag is set in project_include.cmake
-        target_compile_options(${COMPONENT_TARGET} PUBLIC -mfix-esp32-psram-cache-issue)
-    else()
-        target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.spiram_incompatible_fns.ld")
-    endif()
-
-    if(CONFIG_NEWLIB_NANO_FORMAT)
-        target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.nanofmt.ld")
-    endif()
-
-    if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
-        target_linker_script(${COMPONENT_TARGET} "ld/esp32.rom.spiflash.ld")
-    endif()
+    target_linker_script(${COMPONENT_TARGET} "ld/esp32.peripherals.ld")
 
     target_link_libraries(${COMPONENT_TARGET} "${CMAKE_CURRENT_SOURCE_DIR}/libhal.a")
     target_link_libraries(${COMPONENT_TARGET} gcc)

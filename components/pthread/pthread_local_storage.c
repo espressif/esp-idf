@@ -19,7 +19,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sys/lock.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #include "pthread_internal.h"
 

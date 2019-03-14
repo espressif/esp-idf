@@ -31,7 +31,7 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 
 typedef struct partition_list_item_ {

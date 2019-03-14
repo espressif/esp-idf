@@ -22,7 +22,7 @@
 #include "uECC.h"
 
 #ifdef BOOTLOADER_BUILD
-#include "rom/sha.h"
+#include "esp32/rom/sha.h"
 typedef SHA_CTX sha_context;
 #else
 #include "mbedtls/sha256.h"

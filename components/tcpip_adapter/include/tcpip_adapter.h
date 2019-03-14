@@ -16,7 +16,7 @@
 #define _TCPIP_ADAPTER_H_
 
 #include <stdint.h>
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "esp_wifi_types.h"
 #include "sdkconfig.h"
 

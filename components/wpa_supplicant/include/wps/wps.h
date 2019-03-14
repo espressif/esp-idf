@@ -9,7 +9,7 @@
 #ifndef WPS_H
 #define WPS_H
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "wps_defs.h"
 #include "esp_wifi_types.h"
 

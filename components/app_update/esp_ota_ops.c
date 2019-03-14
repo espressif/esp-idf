@@ -32,8 +32,8 @@
 #include "sdkconfig.h"
 
 #include "esp_ota_ops.h"
-#include "rom/queue.h"
-#include "rom/crc.h"
+#include "sys/queue.h"
+#include "esp32/rom/crc.h"
 #include "soc/dport_reg.h"
 #include "esp_log.h"
 #include "esp_flash_partitions.h"

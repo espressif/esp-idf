@@ -81,8 +81,8 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #else
 /* Bootloader version, uses ROM functions only */
 #include <soc/dport_reg.h>
-#include <rom/spi_flash.h>
-#include <rom/cache.h>
+#include <esp32/rom/spi_flash.h>
+#include <esp32/rom/cache.h>
 
 static const char *TAG = "bootloader_flash";
 

@@ -21,7 +21,7 @@
 #include "soc/rtc_io_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/gpio_sig_map.h"
-#include "rom/gpio.h"
+#include "esp32/rom/gpio.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/gpio_periph.h"

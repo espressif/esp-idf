@@ -18,7 +18,7 @@
 #include <freertos/FreeRTOS.h>
 #include <soc/soc_memory_layout.h>
 #include "multi_heap.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #ifdef __cplusplus
 extern "C" {

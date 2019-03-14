@@ -15,7 +15,7 @@
 #ifndef WPA_H
 #define WPA_H
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "common.h"
 #include "wpa/defs.h"
 #include "wpa/wpa_common.h"

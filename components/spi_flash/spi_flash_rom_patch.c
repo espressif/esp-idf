@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "rom/ets_sys.h"
-#include "rom/gpio.h"
-#include "rom/spi_flash.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/gpio.h"
+#include "esp32/rom/spi_flash.h"
 #include "sdkconfig.h"
 
 #define SPI_IDX   1

@@ -18,7 +18,7 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "soc/io_mux_reg.h"
-#include "rom/gpio.h"
+#include "esp32/rom/gpio.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"

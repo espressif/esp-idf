@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"

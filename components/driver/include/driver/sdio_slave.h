@@ -18,7 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "esp_err.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #include "soc/sdio_slave_periph.h"
 

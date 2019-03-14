@@ -21,7 +21,7 @@
 #include "esp_eth.h"
 #include "unity.h"
 
-#include "rom/gpio.h"
+#include "esp32/rom/gpio.h"
 
 #include "tcpip_adapter.h"
 #include "driver/gpio.h"

@@ -18,10 +18,10 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 
-#include "rom/ets_sys.h"
-#include "rom/uart.h"
-#include "rom/rtc.h"
-#include "rom/cache.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/uart.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/cache.h"
 
 #include "soc/cpu.h"
 #include "soc/rtc.h"

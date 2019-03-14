@@ -17,7 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #include "unity.h"
 #include "test_utils.h"

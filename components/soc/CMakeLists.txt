@@ -13,6 +13,6 @@ list(APPEND COMPONENT_SRCS "src/memory_layout_utils.c")
 
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 
-set(COMPONENT_REQUIRES)
+set(COMPONENT_REQUIRES esp_rom)
 
 register_component()

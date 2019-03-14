@@ -15,7 +15,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_eth.h"
-#include "rom/gpio.h"
+#include "esp32/rom/gpio.h"
 #include "tcpip_adapter.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"

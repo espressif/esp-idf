@@ -34,7 +34,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "freertos/xtensa_api.h"
 #include "freertos/portable.h"
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #if XCHAL_HAVE_EXCEPTIONS
 

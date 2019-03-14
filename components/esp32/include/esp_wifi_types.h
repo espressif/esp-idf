@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "esp_err.h"
 #include "esp_interface.h"
 
