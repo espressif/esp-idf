@@ -15,8 +15,8 @@
 #include <string.h>
 #include "unity.h"
 #include "test_utils.h"
-#include "rom/ets_sys.h"
-#include "rom/uart.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "tcpip_adapter.h"

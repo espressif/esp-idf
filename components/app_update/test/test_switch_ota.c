@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include "string.h"
 
-#include "rom/spi_flash.h"
-#include "rom/rtc.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/spi_flash.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

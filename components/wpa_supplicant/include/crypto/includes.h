@@ -58,7 +58,7 @@
 
 #else
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #endif /* !__ets__ */
 

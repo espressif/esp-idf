@@ -2,7 +2,7 @@
 #include "esp_partition.h"
 
 #include "esp_err.h"
-#include "rom/spi_flash.h"
+#include "esp32/rom/spi_flash.h"
 
 extern void _spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
 

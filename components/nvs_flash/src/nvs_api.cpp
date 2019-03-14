@@ -23,7 +23,7 @@
 #endif
 
 #ifdef ESP_PLATFORM
-#include <rom/crc.h>
+#include <esp32/rom/crc.h>
 
 // Uncomment this line to force output from this module
 // #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG

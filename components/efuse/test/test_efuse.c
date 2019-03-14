@@ -10,7 +10,7 @@
 #include "esp_efuse_table.h"
 #include "../src/esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
-#include "rom/efuse.h"
+#include "esp32/rom/efuse.h"
 #include "bootloader_random.h"
 #include "sdkconfig.h"
 

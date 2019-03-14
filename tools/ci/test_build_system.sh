@@ -153,7 +153,7 @@ function run_tests()
     print_status "Touching rom ld file should re-link app and bootloader"
     make
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/ld/esp32.rom.ld
+    touch ${IDF_PATH}/components/esp_rom/esp32/ld/esp32.rom.ld
     make
     assert_rebuilt ${APP_BINS} ${BOOTLOADER_BINS}
 
@@ -251,7 +251,7 @@ function run_tests()
 	make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS} esp32/libesp32.a
-    
+
     print_status "Re-building does not change app.bin"
     take_build_snapshot
     make
@@ -263,7 +263,7 @@ function run_tests()
     version="App \"app-template\" version: "
     version+=$(git describe --always --tags --dirty)
     grep "${version}" log.log || failure "Project version should have a hash commit"
-    
+
     print_status "Build fails if partitions don't fit in flash"
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash

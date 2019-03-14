@@ -4,7 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 #include "esp_system.h"
 #include "esp_sleep.h"
 #include "unity.h"

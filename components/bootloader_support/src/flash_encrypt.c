@@ -21,11 +21,11 @@
 #include "esp_secure_boot.h"
 #include "esp_efuse.h"
 #include "esp_log.h"
-#include "rom/secure_boot.h"
+#include "esp32/rom/secure_boot.h"
 #include "soc/rtc_wdt.h"
 
-#include "rom/cache.h"
-#include "rom/spi_flash.h"   /* TODO: Remove this */
+#include "esp32/rom/cache.h"
+#include "esp32/rom/spi_flash.h"   /* TODO: Remove this */
 
 static const char *TAG = "flash_encrypt";
 

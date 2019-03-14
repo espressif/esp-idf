@@ -169,12 +169,12 @@ function run_tests()
     idf.py build
     take_build_snapshot
     sleep 1  # ninja may ignore if the timestamp delta is too low
-    cp ${IDF_PATH}/components/esp32/ld/esp32.rom.ld .
-    echo "/* (Build test comment) */" >> ${IDF_PATH}/components/esp32/ld/esp32.rom.ld
-    tail ${IDF_PATH}/components/esp32/ld/esp32.rom.ld
+    cp ${IDF_PATH}/components/esp_rom/esp32/ld/esp32.rom.ld .
+    echo "/* (Build test comment) */" >> ${IDF_PATH}/components/esp_rom/esp32/ld/esp32.rom.ld
+    tail ${IDF_PATH}/components/esp_rom/esp32/ld/esp32.rom.ld
     idf.py build || failure "Failed to rebuild with modified linker script"
     assert_rebuilt ${APP_BINS} ${BOOTLOADER_BINS}
-    mv esp32.rom.ld ${IDF_PATH}/components/esp32/ld/
+    mv esp32.rom.ld ${IDF_PATH}/components/esp_rom/esp32/ld/
 
     print_status "Updating app-only ld file should only re-link app"
     take_build_snapshot

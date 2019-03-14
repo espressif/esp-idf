@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "sdkconfig.h"
-#include <rom/ets_sys.h>
+#include <esp32/rom/ets_sys.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -28,7 +28,7 @@
 #include "mbedtls/aes.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/md5.h"
-#include "rom/crc.h"
+#include "esp32/rom/crc.h"
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"

@@ -14,8 +14,9 @@ COMPONENTS := esptool_py bootloader_support log spi_flash micro-ecc soc main efu
 CFLAGS =
 CXXFLAGS =
 
-#We cannot include the esp32 component directly but we need its includes.
+#We cannot include the esp32 and esp_rom component directly but we need their includes.
 CFLAGS += -I $(IDF_PATH)/components/esp32/include
+CFLAGS += -I $(IDF_PATH)/components/esp_rom/include
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.
 #

@@ -17,7 +17,7 @@
 #include "SEGGER_RTT.h"
 #include "SEGGER_SYSVIEW.h"
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_app_trace.h"
 
 #include "esp_log.h"

@@ -36,7 +36,7 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #define TIMER_EVENT_QUEUE_SIZE      16
 

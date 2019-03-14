@@ -16,7 +16,7 @@
 #include "nvs_flash.h"
 #include "esp_heap_caps.h"
 #include "esp32/spiram.h"
-#include "rom/cache.h"
+#include "esp32/rom/cache.h"
 #include "sdkconfig.h"
 #include "esp32/himem.h"
 

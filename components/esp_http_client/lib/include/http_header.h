@@ -15,7 +15,7 @@
 #ifndef _HTTP_HEADER_H_
 #define _HTTP_HEADER_H_
 
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus

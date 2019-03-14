@@ -27,7 +27,7 @@
 #include "freertos/semphr.h"
 #include "freertos/list.h"
 
-#include <rom/queue.h>
+#include <sys/queue.h>
 #include <sys/time.h>
 
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL

@@ -24,7 +24,7 @@
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #define MHZ (1000000)
 

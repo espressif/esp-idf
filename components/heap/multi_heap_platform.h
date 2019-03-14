@@ -16,7 +16,7 @@
 #ifdef ESP_PLATFORM
 
 #include <freertos/FreeRTOS.h>
-#include <rom/ets_sys.h>
+#include <esp32/rom/ets_sys.h>
 #include <assert.h>
 
 /* Because malloc/free can happen inside an ISR context,

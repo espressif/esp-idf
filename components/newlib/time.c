@@ -22,7 +22,7 @@
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/lock.h>
-#include <rom/rtc.h>
+#include <esp32/rom/rtc.h>
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp32/clk.h"
@@ -31,7 +31,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/frc_timer_reg.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"

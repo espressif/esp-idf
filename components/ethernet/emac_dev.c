@@ -15,8 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "rom/ets_sys.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/gpio.h"
 
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
