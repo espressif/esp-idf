@@ -122,6 +122,7 @@ static void btu_hcif_ssr_evt (UINT8 *p, UINT16 evt_len);
 #if BLE_INCLUDED == TRUE
 static void btu_ble_ll_conn_complete_evt (UINT8 *p, UINT16 evt_len);
 static void btu_ble_process_adv_pkt (UINT8 *p);
+static void btu_ble_process_adv_dis(UINT8 *p);
 static void btu_ble_read_remote_feat_evt (UINT8 *p);
 static void btu_ble_ll_conn_param_upd_evt (UINT8 *p, UINT16 evt_len);
 static void btu_ble_ll_get_conn_param_format_err_from_contoller (UINT8 status, UINT16 handle);
@@ -330,6 +331,9 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         switch (ble_sub_code) {
         case HCI_BLE_ADV_PKT_RPT_EVT: /* result of inquiry */
             btu_ble_process_adv_pkt(p);
+            break;
+        case HCI_BLE_ADV_DISCARD_REPORT_EVT:
+            btu_ble_process_adv_dis(p);
             break;
         case HCI_BLE_CONN_COMPLETE_EVT:
             btu_ble_ll_conn_complete_evt(p, hci_evt_len);
@@ -1762,6 +1766,11 @@ static void btu_ble_process_adv_pkt (UINT8 *p)
     HCI_TRACE_DEBUG("btu_ble_process_adv_pkt\n");
 
     btm_ble_process_adv_pkt(p);
+}
+
+static void btu_ble_process_adv_dis(UINT8 *p)
+{
+    btm_ble_process_adv_discard_evt(p);
 }
 
 static void btu_ble_ll_conn_complete_evt ( UINT8 *p, UINT16 evt_len)

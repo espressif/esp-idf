@@ -57,6 +57,7 @@ PROVIDE ( _bss_start_btdm = 0x3ffb8000);
 PROVIDE ( _bss_end_btdm = 0x3ffbff70);
 PROVIDE ( _daylight = 0x3ffae0a4 );
 PROVIDE ( dbg_default_handler = 0x3ff97218 );
+PROVIDE ( dbg_default_state = 0x3ff97220 );
 PROVIDE ( dbg_state = 0x3ffb8d5d );
 PROVIDE ( DebugE256PublicKey_x = 0x3ff97428 );
 PROVIDE ( DebugE256PublicKey_y = 0x3ff97408 );

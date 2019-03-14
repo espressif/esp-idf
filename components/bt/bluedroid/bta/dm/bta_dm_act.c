@@ -127,6 +127,7 @@ static void bta_dm_remove_sec_dev_entry(BD_ADDR remote_bd_addr);
 #endif  ///SMP_INCLUDED == TRUE
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS *p_inq, UINT8 *p_eir);
 static void bta_dm_observe_cmpl_cb(void *p_result);
+static void bta_dm_observe_discard_cb (uint32_t num_dis);
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle);
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128);
 static void bta_dm_disable_timer_cback(TIMER_LIST_ENT *p_tle);
@@ -4258,6 +4259,28 @@ static void bta_dm_observe_cmpl_cb (void *p_result)
     }
 }
 
+/*******************************************************************************
+**
+** Function         bta_dm_observe_discard_cb
+**
+** Description      Callback for BLE Observe lost
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_dm_observe_discard_cb (uint32_t num_dis)
+{
+    tBTA_DM_SEARCH  data;
+
+    APPL_TRACE_DEBUG("bta_dm_observe_discard_cb");
+
+    data.inq_dis.num_dis = num_dis;
+    if (bta_dm_search_cb.p_scan_cback) {
+        bta_dm_search_cb.p_scan_cback(BTA_DM_INQ_DISCARD_NUM_EVT, &data);
+    }
+}
+
 #if (SMP_INCLUDED == TRUE)
 /*******************************************************************************
 **
@@ -4789,7 +4812,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
         bta_dm_search_cb.p_scan_cback = p_data->ble_scan.p_cback;
 
         if ((status = BTM_BleScan(TRUE, p_data->ble_scan.duration,
-                                     bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb)) != BTM_CMD_STARTED) {
+                                     bta_dm_observe_results_cb, bta_dm_observe_cmpl_cb, bta_dm_observe_discard_cb)) != BTM_CMD_STARTED) {
             APPL_TRACE_WARNING(" %s start scan failed. status=0x%x\n", __FUNCTION__, status);
         }
 
@@ -4799,7 +4822,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
         }
     } else {
         bta_dm_search_cb.p_scan_cback = NULL;
-        status = BTM_BleScan(FALSE, 0, NULL, NULL);
+        status = BTM_BleScan(FALSE, 0, NULL, NULL, NULL);
 
         if (status != BTM_CMD_STARTED){
             APPL_TRACE_WARNING(" %s stop scan failed, status=0x%x\n", __FUNCTION__, status);
