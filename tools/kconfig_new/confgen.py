@@ -22,12 +22,13 @@
 # limitations under the License.
 from __future__ import print_function
 import argparse
-import sys
+import fnmatch
+import json
 import os
 import os.path
-import tempfile
-import json
 import re
+import sys
+import tempfile
 
 import gen_kconfig_doc
 import kconfiglib
@@ -36,6 +37,108 @@ __version__ = "0.1"
 
 if "IDF_CMAKE" not in os.environ:
     os.environ["IDF_CMAKE"] = ""
+
+
+class DeprecatedOptions(object):
+    _REN_FILE = 'sdkconfig.rename'
+    _DEP_OP_BEGIN = '# Deprecated options for backward compatibility'
+    _DEP_OP_END = '# End of deprecated options'
+    _RE_DEP_OP_BEGIN = re.compile(_DEP_OP_BEGIN)
+    _RE_DEP_OP_END = re.compile(_DEP_OP_END)
+
+    def __init__(self, config_prefix, path_rename_files):
+        self.config_prefix = config_prefix
+        # r_dic maps deprecated options to new options; rev_r_dic maps in the opposite direction
+        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files)
+
+        # note the '=' at the end of regex for not getting partial match of configs
+        self._RE_CONFIG = re.compile(r'{}(\w+)='.format(self.config_prefix))
+
+    def _parse_replacements(self, repl_dir):
+        rep_dic = {}
+        rev_rep_dic = {}
+
+        for root, dirnames, filenames in os.walk(repl_dir):
+            for filename in fnmatch.filter(filenames, self._REN_FILE):
+                rep_path = os.path.join(root, filename)
+
+                with open(rep_path) as f_rep:
+                    for line_number, line in enumerate(f_rep, start=1):
+                        sp_line = line.split()
+                        if len(sp_line) == 0 or sp_line[0].startswith('#'):
+                            # empty line or comment
+                            continue
+                        if len(sp_line) != 2 or not all(x.startswith(self.config_prefix) for x in sp_line):
+                            raise RuntimeError('Syntax error in {} (line {})'.format(rep_path, line_number))
+                        if sp_line[0] in rep_dic:
+                            raise RuntimeError('Error in {} (line {}): Replacement {} exist for {} and new '
+                                               'replacement {} is defined'.format(rep_path, line_number,
+                                                                                  rep_dic[sp_line[0]], sp_line[0],
+                                                                                  sp_line[1]))
+                        (dep_opt, new_opt) = (x.lstrip(self.config_prefix) for x in sp_line)
+                        rep_dic[dep_opt] = new_opt
+                        rev_rep_dic[new_opt] = dep_opt
+        return rep_dic, rev_rep_dic
+
+    def get_deprecated_option(self, new_option):
+        return self.rev_r_dic.get(new_option, None)
+
+    def get_new_option(self, deprecated_option):
+        return self.r_dic.get(deprecated_option, None)
+
+    def replace(self, sdkconfig_in, sdkconfig_out):
+        replace_enabled = True
+        with open(sdkconfig_in, 'r') as f_in, open(sdkconfig_out, 'w') as f_out:
+            for line_num, line in enumerate(f_in, start=1):
+                if self._RE_DEP_OP_BEGIN.search(line):
+                    replace_enabled = False
+                elif self._RE_DEP_OP_END.search(line):
+                    replace_enabled = True
+                elif replace_enabled:
+                    m = self._RE_CONFIG.search(line)
+                    if m and m.group(1) in self.r_dic:
+                        depr_opt = self.config_prefix + m.group(1)
+                        new_opt = self.config_prefix + self.r_dic[m.group(1)]
+                        line = line.replace(depr_opt, new_opt)
+                        print('{}:{} {} was replaced with {}'.format(sdkconfig_in, line_num, depr_opt, new_opt))
+                f_out.write(line)
+
+    def append_doc(self, config, path_output):
+        if len(self.r_dic) > 0:
+            with open(path_output, 'a') as f_o:
+                header = 'Deprecated options and their replacements'
+                f_o.write('{}\n{}\n\n'.format(header, '-' * len(header)))
+                for key in sorted(self.r_dic):
+                    f_o.write('- {}{}: :ref:`{}{}`\n'.format(config.config_prefix, key,
+                                                             config.config_prefix, self.r_dic[key]))
+
+    def append_config(self, config, path_output):
+        tmp_list = []
+
+        def append_config_node_process(node):
+            item = node.item
+            if isinstance(item, kconfiglib.Symbol) and item.env_var is None:
+                if item.name in self.rev_r_dic:
+                    c_string = item.config_string
+                    if c_string:
+                        tmp_list.append(c_string.replace(self.config_prefix + item.name,
+                                                         self.config_prefix + self.rev_r_dic[item.name]))
+
+        config.walk_menu(append_config_node_process)
+
+        if len(tmp_list) > 0:
+            with open(path_output, 'a') as f_o:
+                f_o.write('\n{}\n'.format(self._DEP_OP_BEGIN))
+                f_o.writelines(tmp_list)
+                f_o.write('{}\n'.format(self._DEP_OP_END))
+
+    def append_header(self, config, path_output):
+        if len(self.r_dic) > 0:
+            with open(path_output, 'a') as f_o:
+                f_o.write('\n/* List of deprecated options */\n')
+                for dep_opt in sorted(self.r_dic):
+                    new_opt = self.r_dic[dep_opt]
+                    f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
 def main():
@@ -94,16 +197,30 @@ def main():
                 raise RuntimeError("Defaults file not found: %s" % name)
             config.load_config(name, replace=False)
 
+    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
+
     # If config file previously exists, load it
     if args.config and os.path.exists(args.config):
-        config.load_config(args.config, replace=False)
+        # ... but replace deprecated options before that
+        with tempfile.NamedTemporaryFile(prefix="confgen_tmp", delete=False) as f:
+            temp_file = f.name
+        try:
+            deprecated_options.replace(sdkconfig_in=args.config, sdkconfig_out=temp_file)
+            config.load_config(temp_file, replace=False)
+            update_if_changed(temp_file, args.config)
+        finally:
+            try:
+                os.remove(temp_file)
+            except OSError:
+                pass
 
     # Output the files specified in the arguments
     for output_type, filename in args.output:
-        temp_file = tempfile.mktemp(prefix="confgen_tmp")
+        with tempfile.NamedTemporaryFile(prefix="confgen_tmp", delete=False) as f:
+            temp_file = f.name
         try:
             output_function = OUTPUT_FORMATS[output_type]
-            output_function(config, temp_file)
+            output_function(deprecated_options, config, temp_file)
             update_if_changed(temp_file, filename)
         finally:
             try:
@@ -112,16 +229,56 @@ def main():
                 pass
 
 
-def write_config(config, filename):
+def write_config(deprecated_options, config, filename):
     CONFIG_HEADING = """#
 # Automatically generated file. DO NOT EDIT.
 # Espressif IoT Development Framework (ESP-IDF) Project Configuration
 #
 """
     config.write_config(filename, header=CONFIG_HEADING)
+    deprecated_options.append_config(config, filename)
 
 
-def write_header(config, filename):
+def write_makefile(deprecated_options, config, filename):
+    CONFIG_HEADING = """#
+# Automatically generated file. DO NOT EDIT.
+# Espressif IoT Development Framework (ESP-IDF) Project Makefile Configuration
+#
+"""
+    with open(filename, "w") as f:
+        tmp_dep_lines = []
+        f.write(CONFIG_HEADING)
+
+        def get_makefile_config_string(name, value, orig_type):
+            if orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
+                return "{}{}={}\n".format(config.config_prefix, name, '' if value == 'n' else value)
+            elif orig_type in (kconfiglib.INT, kconfiglib.HEX):
+                return "{}{}={}\n".format(config.config_prefix, name, value)
+            elif orig_type == kconfiglib.STRING:
+                return '{}{}="{}"\n'.format(config.config_prefix, name, kconfiglib.escape(value))
+            else:
+                raise RuntimeError('{}{}: unknown type {}'.format(config.config_prefix, name, orig_type))
+
+        def write_makefile_node(node):
+            item = node.item
+            if isinstance(item, kconfiglib.Symbol) and item.env_var is None:
+                # item.config_string cannot be used because it ignores hidden config items
+                val = item.str_value
+                f.write(get_makefile_config_string(item.name, val, item.orig_type))
+
+                dep_opt = deprecated_options.get_deprecated_option(item.name)
+                if dep_opt:
+                    # the same string but with the deprecated name
+                    tmp_dep_lines.append(get_makefile_config_string(dep_opt, val, item.orig_type))
+
+        config.walk_menu(write_makefile_node, True)
+
+        if len(tmp_dep_lines) > 0:
+            f.write('\n# List of deprecated options\n')
+            f.writelines(tmp_dep_lines)
+
+
+def write_header(deprecated_options, config, filename):
     CONFIG_HEADING = """/*
  * Automatically generated file. DO NOT EDIT.
  * Espressif IoT Development Framework (ESP-IDF) Configuration Header
@@ -129,10 +286,12 @@ def write_header(config, filename):
 #pragma once
 """
     config.write_autoconf(filename, header=CONFIG_HEADING)
+    deprecated_options.append_header(config, filename)
 
 
-def write_cmake(config, filename):
+def write_cmake(deprecated_options, config, filename):
     with open(filename, "w") as f:
+        tmp_dep_list = []
         write = f.write
         prefix = config.config_prefix
 
@@ -155,7 +314,14 @@ def write_cmake(config, filename):
                     val = ""  # write unset values as empty variables
                 write("set({}{} \"{}\")\n".format(
                     prefix, sym.name, val))
+                dep_opt = deprecated_options.get_deprecated_option(sym.name)
+                if dep_opt:
+                    tmp_dep_list.append("set({}{} \"{}\")\n".format(prefix, dep_opt, val))
         config.walk_menu(write_node)
+
+        if len(tmp_dep_list) > 0:
+            write('\n# List of deprecated options for backward compatibility\n')
+            f.writelines(tmp_dep_list)
 
 
 def get_json_values(config):
@@ -179,7 +345,7 @@ def get_json_values(config):
     return config_dict
 
 
-def write_json(config, filename):
+def write_json(deprecated_options, config, filename):
     config_dict = get_json_values(config)
     with open(filename, "w") as f:
         json.dump(config_dict, f, indent=4, sort_keys=True)
@@ -209,7 +375,7 @@ def get_menu_node_id(node):
     return result
 
 
-def write_json_menus(config, filename):
+def write_json_menus(deprecated_options, config, filename):
     existing_ids = set()
     result = []  # root level items
     node_lookup = {}  # lookup from MenuNode to an item in result
@@ -298,6 +464,11 @@ def write_json_menus(config, filename):
         f.write(json.dumps(result, sort_keys=True, indent=4))
 
 
+def write_docs(deprecated_options, config, filename):
+    gen_kconfig_doc.write_docs(config, filename)
+    deprecated_options.append_doc(config, filename)
+
+
 def update_if_changed(source, destination):
     with open(source, "r") as f:
         source_contents = f.read()
@@ -313,9 +484,10 @@ def update_if_changed(source, destination):
 
 
 OUTPUT_FORMATS = {"config": write_config,
+                  "makefile": write_makefile,  # only used with make in order to generate auto.conf
                   "header": write_header,
                   "cmake": write_cmake,
-                  "docs": gen_kconfig_doc.write_docs,
+                  "docs": write_docs,
                   "json": write_json,
                   "json_menus": write_json_menus,
                   }

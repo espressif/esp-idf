@@ -25,14 +25,14 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
 
     menu "SDK tool configuration"
-        config TOOLPREFIX
+        config SDK_TOOLPREFIX
             string "Compiler toolchain path/prefix"
             default "xtensa-esp32-elf-"
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.
 
-        config PYTHON
+        config SDK_PYTHON
             string "Python 2 interpreter"
             depends on !IDF_CMAKE
             default "python"
@@ -43,7 +43,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 (Note: This option is used with the GNU Make build system only, not idf.py
                 or CMake-based builds.)
 
-        config MAKE_WARN_UNDEFINED_VARIABLES
+        config SDK_MAKE_WARN_UNDEFINED_VARIABLES
             bool "'make' warns on undefined variables"
             default "y"
             help

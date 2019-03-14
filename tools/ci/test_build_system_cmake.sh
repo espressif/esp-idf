@@ -366,6 +366,35 @@ EOF
     export PATH="$OLDPATH"
     rm ./python
 
+    print_status "Handling deprecated Kconfig options"
+    idf.py clean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "" > ${IDF_PATH}/sdkconfig.rename;
+    idf.py build > /dev/null;
+    echo "CONFIG_TEST_OLD_OPTION=y" >> sdkconfig;
+    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename;
+    echo -e "\n\
+menu \"test\"\n\
+    config TEST_NEW_OPTION\n\
+        bool \"test\"\n\
+        default \"n\"\n\
+        help\n\
+            TEST_NEW_OPTION description\n\
+endmenu\n" >> ${IDF_PATH}/Kconfig;
+    idf.py build > /dev/null;
+    grep "CONFIG_TEST_OLD_OPTION=y" sdkconfig || failure "CONFIG_TEST_OLD_OPTION should be in sdkconfig for backward compatibility"
+    grep "CONFIG_TEST_NEW_OPTION=y" sdkconfig || failure "CONFIG_TEST_NEW_OPTION should be now in sdkconfig"
+    grep "#define CONFIG_TEST_NEW_OPTION 1" build/config/sdkconfig.h || failure "sdkconfig.h should contain the new macro"
+    grep "#define CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" build/config/sdkconfig.h || failure "sdkconfig.h should contain the compatibility macro"
+    grep "set(CONFIG_TEST_OLD_OPTION \"y\")" build/config/sdkconfig.cmake || failure "CONFIG_TEST_OLD_OPTION should be in auto.conf for backward compatibility"
+    grep "set(CONFIG_TEST_NEW_OPTION \"y\")" build/config/sdkconfig.cmake || failure "CONFIG_TEST_NEW_OPTION should be now in auto.conf"
+    rm -f sdkconfig sdkconfig.defaults
+    pushd ${IDF_PATH}
+    git checkout -- sdkconfig.rename Kconfig
+    popd
+    idf.py build
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
