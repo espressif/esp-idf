@@ -558,6 +558,7 @@ typedef enum {
     ESP_GAP_SEARCH_DISC_CMPL_EVT           = 4,      /*!< Discovery complete. */
     ESP_GAP_SEARCH_DI_DISC_CMPL_EVT        = 5,      /*!< Discovery complete. */
     ESP_GAP_SEARCH_SEARCH_CANCEL_CMPL_EVT  = 6,      /*!< Search cancelled */
+    ESP_GAP_SEARCH_INQ_DISCARD_NUM_EVT     = 7,      /*!< The number of pkt discarded by flow control */
 } esp_gap_search_evt_t;
 
 /**
@@ -635,6 +636,7 @@ typedef union {
         int num_resps;                              /*!< Scan result number */
         uint8_t adv_data_len;                       /*!< Adv data length */
         uint8_t scan_rsp_len;                       /*!< Scan response length */
+        uint32_t num_dis;                          /*!< The number of discard packets */
     } scan_rst;                                     /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
     /**
      * @brief ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT
@@ -1140,7 +1142,7 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
 
 /**
-* @brief           Reply the confirm value to the peer device in the legacy connection stage.
+* @brief           Reply the confirm value to the peer device in the secure connection stage.
 *
 * @param[in]       bd_addr : BD address of the peer device
 * @param[in]       accept : numbers to compare are the same or different.

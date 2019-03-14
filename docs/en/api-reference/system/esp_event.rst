@@ -13,11 +13,11 @@ code execution to another context.
 Using ``esp_event`` APIs
 ------------------------
 
-There are two objects of concern for users of this library: events and event loops. 
+There are two objects of concern for users of this library: events and event loops.
 
-Events are occurences of note. For example, for WiFi, a successful connection to the access point may be an event. 
-Events are referenced using a two part identifier which are discussed more :ref:`here <esp-event-declaring-defining-events>`. 
-Event loops are the vehicle by which events get posted by event sources and handled by event handler functions. 
+Events are occurences of note. For example, for WiFi, a successful connection to the access point may be an event.
+Events are referenced using a two part identifier which are discussed more :ref:`here <esp-event-declaring-defining-events>`.
+Event loops are the vehicle by which events get posted by event sources and handled by event handler functions.
 These two appear prominently in the event loop library APIs.
 
 Using this library roughly entails the following flow:
@@ -41,7 +41,7 @@ In code, the flow above may look like as follows:
 
     void app_main()
     {
-        // 2. A configuration structure of type esp_event_loop_args_t is needed to specify the properties of the loop to be 
+        // 2. A configuration structure of type esp_event_loop_args_t is needed to specify the properties of the loop to be
         // created. A handle of type esp_event_loop_handle_t is obtained, which is needed by the other APIs to reference the loop
         // to perform their operations on.
         esp_event_loop_args_t loop_args = {
@@ -56,8 +56,8 @@ In code, the flow above may look like as follows:
 
         esp_event_loop_create(&loop_args, &loop_handle)
 
-        // 3. Register event handler defined in (1). MY_EVENT_BASE and MY_EVENT_ID specifies a hypothetical 
-        // event that handler run_on_event should execute on when it gets posted to the loop. 
+        // 3. Register event handler defined in (1). MY_EVENT_BASE and MY_EVENT_ID specifies a hypothetical
+        // event that handler run_on_event should execute on when it gets posted to the loop.
         esp_event_handler_register_with(loop_handle, MY_EVENT_BASE, MY_EVENT_ID, run_on_event, ...);
 
         ...
@@ -127,29 +127,29 @@ Default Event Loop
 ------------------
 
 The default event loop is a special type of loop used for system events (WiFi events, for example). The handle for this
-loop is hidden from the user. The creation, deletion, handler registration/unregistration and posting of events is done 
-through a variant of the APIs for user event loops. The table below enumerates those variants, and the user event 
+loop is hidden from the user. The creation, deletion, handler registration/unregistration and posting of events is done
+through a variant of the APIs for user event loops. The table below enumerates those variants, and the user event
 loops equivalent.
 
-+---------------------------------------------------+---------------------------------------------------+ 
-| User Event Loops                                  | Default Event Loops                               | 
-+===================================================+===================================================+ 
-| :cpp:func:`esp_event_loop_create`                 | :cpp:func:`esp_event_loop_create_default`         |  
-+---------------------------------------------------+---------------------------------------------------+ 
-| :cpp:func:`esp_event_loop_delete`                 | :cpp:func:`esp_event_loop_delete_default`         | 
-+---------------------------------------------------+---------------------------------------------------+ 
-| :cpp:func:`esp_event_handler_register_with`       | :cpp:func:`esp_event_handler_register`            | 
-+---------------------------------------------------+---------------------------------------------------+ 
-| :cpp:func:`esp_event_handler_unregister_with`     | :cpp:func:`esp_event_handler_unregister`          | 
-+---------------------------------------------------+---------------------------------------------------+ 
-| :cpp:func:`esp_event_post_to`                     | :cpp:func:`esp_event_post`                        |    
-+---------------------------------------------------+---------------------------------------------------+ 
++---------------------------------------------------+---------------------------------------------------+
+| User Event Loops                                  | Default Event Loops                               |
++===================================================+===================================================+
+| :cpp:func:`esp_event_loop_create`                 | :cpp:func:`esp_event_loop_create_default`         |
++---------------------------------------------------+---------------------------------------------------+
+| :cpp:func:`esp_event_loop_delete`                 | :cpp:func:`esp_event_loop_delete_default`         |
++---------------------------------------------------+---------------------------------------------------+
+| :cpp:func:`esp_event_handler_register_with`       | :cpp:func:`esp_event_handler_register`            |
++---------------------------------------------------+---------------------------------------------------+
+| :cpp:func:`esp_event_handler_unregister_with`     | :cpp:func:`esp_event_handler_unregister`          |
++---------------------------------------------------+---------------------------------------------------+
+| :cpp:func:`esp_event_post_to`                     | :cpp:func:`esp_event_post`                        |
++---------------------------------------------------+---------------------------------------------------+
 
 If you compare the signatures for both, they are mostly similar except the for the lack of loop handle
-specification for the default event loop APIs. 
+specification for the default event loop APIs.
 
 Other than the API difference and the special designation to which system events are posted to, there is no difference
-to how default event loops and user event loops behave. It is even possible for users to post their own events 
+to how default event loops and user event loops behave. It is even possible for users to post their own events
 to the default event loop, should the user opt to not create their own loops to save memory.
 
 .. _esp-event-handler-registration:
@@ -186,6 +186,17 @@ If the hypothetical event ``MY_EVENT_BASE``, ``MY_OTHER_EVENT_ID`` is posted, on
 
 If the hypothetical event ``MY_OTHER_EVENT_BASE``, ``MY_OTHER_EVENT_ID`` is posted, only ``run_on_event_3`` would execute.
 
+Handler Registration and Handler Dispatch Order
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The general rule is that for handlers that match a certain posted event during dispatch, those which are registered first also gets executed first. The user can then control which handlers get executed first by
+registering them before other handlers, provided that all registrations are performed using a single task.
+If the user plans to take advantage of this behavior, caution must be exercised if there are multiple tasks registering handlers. While the 'first registered, first executed'
+behavior still holds true, the task which gets executed first will also get their handlers registered first. Handlers registered one after the other by a single task
+will still be dispatched in the order relative to each other, but if that task gets pre-empted in between registration by another task which also registers handlers; then during dispatch those
+handlers will also get executed in between.
+
+
 Event loop profiling
 --------------------
 
@@ -196,8 +207,11 @@ can be found in the :cpp:func:`esp_event_dump` API Reference.
 Application Example
 -------------------
 
-Examples on using the ``esp_event`` library can be found on :example:`system/esp_event`. The examples cover event declaration, loop creation, handler registration
-and unregistration and event posting.
+Examples on using the ``esp_event`` library can be found in :example:`system/esp_event`. The examples cover event declaration, loop creation, handler registration and unregistration and event posting.
+
+Other examples which also adopt esp_event library:
+
+    * :example:`NMEA Parser <peripherals/uart/nmea0183_parser>`, which will decode the statements received from GPS.
 
 API Reference
 -------------

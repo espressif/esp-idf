@@ -1,6 +1,7 @@
 ************************
 ESP32 Hardware Reference
 ************************
+:link_to_translation:`zh_CN:[中文]`
 
 .. toctree::
    :maxdepth: 2
@@ -12,4 +13,4 @@ ESP32 Hardware Reference
     Modules and Boards <modules-and-boards>
     Previous Versions of Modules and Boards <modules-and-boards-previous>
     Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>
-    Regulatory Certificates <http://espressif.com/en/certificates?field_product_value%5B%5D=ESP32&field_product_value%5B%5D=ESP-WROOM-32&field_product_value%5B%5D=ESP32-WROVER>
+    Regulatory Certificates <https://www.espressif.com/en/certificates>

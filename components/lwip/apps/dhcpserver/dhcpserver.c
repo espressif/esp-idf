@@ -475,7 +475,9 @@ static void send_offer(struct dhcps_msg *m, u16_t len)
     u8_t *data;
     u16_t cnt = 0;
     u16_t i;
+#if DHCPS_DEBUG
     err_t SendOffer_err_t;
+#endif
     create_msg(m);
 
     end = add_msg_type(&m->options[4], DHCPOFFER);
@@ -523,8 +525,12 @@ static void send_offer(struct dhcps_msg *m, u16_t len)
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
     ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
+#if DHCPS_DEBUG
     SendOffer_err_t = udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
     DHCPS_LOG("dhcps: send_offer>>udp_sendto result %x\n", SendOffer_err_t);
+#else
+    udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
+#endif
 
     if (p->ref != 0) {
 #if DHCPS_DEBUG

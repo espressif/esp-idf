@@ -8,9 +8,9 @@ import subprocess
 import re
 import os.path
 import glob
-import sys
 
 debug = False
+
 
 def get_make_variables(path, makefile="Makefile", expected_failure=False, variables={}):
     """
@@ -20,9 +20,9 @@ def get_make_variables(path, makefile="Makefile", expected_failure=False, variab
 
     Overrides IDF_PATH= to avoid recursively evaluating the entire project Makefile structure.
     """
-    variable_setters = [ ("%s=%s" % (k,v)) for (k,v) in variables.items() ]
+    variable_setters = [("%s=%s" % (k,v)) for (k,v) in variables.items()]
 
-    cmdline = ["make", "-rpn", "-C", path, "-f", makefile ] + variable_setters
+    cmdline = ["make", "-rpn", "-C", path, "-f", makefile] + variable_setters
     if debug:
         print("Running %s..." % (" ".join(cmdline)))
 
@@ -54,15 +54,16 @@ def get_make_variables(path, makefile="Makefile", expected_failure=False, variab
 
     return result
 
+
 def get_component_variables(project_path, component_path):
     make_vars = get_make_variables(component_path,
                                    os.path.join(os.environ["IDF_PATH"],
                                                 "make",
                                                 "component_wrapper.mk"),
                                    expected_failure=True,
-                                   variables = {
-                                       "COMPONENT_MAKEFILE" : os.path.join(component_path, "component.mk"),
-                                       "COMPONENT_NAME" : os.path.basename(component_path),
+                                   variables={
+                                       "COMPONENT_MAKEFILE": os.path.join(component_path, "component.mk"),
+                                       "COMPONENT_NAME": os.path.basename(component_path),
                                        "PROJECT_PATH": project_path,
                                    })
 
@@ -70,7 +71,7 @@ def get_component_variables(project_path, component_path):
         # Convert to sources
         def find_src(obj):
             obj = os.path.splitext(obj)[0]
-            for ext in [ "c", "cpp", "S" ]:
+            for ext in ["c", "cpp", "S"]:
                 if os.path.exists(os.path.join(component_path, obj) + "." + ext):
                     return obj + "." + ext
             print("WARNING: Can't find source file for component %s COMPONENT_OBJS %s" % (component_path, obj))
@@ -86,7 +87,7 @@ def get_component_variables(project_path, component_path):
         component_srcs = list()
         for component_srcdir in make_vars.get("COMPONENT_SRCDIRS", ".").split(" "):
             component_srcdir_path = os.path.abspath(os.path.join(component_path, component_srcdir))
-            
+
             srcs = list()
             srcs += glob.glob(os.path.join(component_srcdir_path, "*.[cS]"))
             srcs += glob.glob(os.path.join(component_srcdir_path, "*.cpp"))
@@ -95,7 +96,6 @@ def get_component_variables(project_path, component_path):
         make_vars["COMPONENT_ADD_INCLUDEDIRS"] = make_vars.get("COMPONENT_ADD_INCLUDEDIRS", "include")
         component_srcs += srcs
         make_vars["COMPONENT_SRCS"] = " ".join(component_srcs)
-
 
     return make_vars
 
@@ -111,13 +111,17 @@ def convert_project(project_path):
         raise RuntimeError("This project already has a CMakeLists.txt file")
 
     project_vars = get_make_variables(project_path, expected_failure=True)
-    if not "PROJECT_NAME" in project_vars:
+    if "PROJECT_NAME" not in project_vars:
         raise RuntimeError("PROJECT_NAME does not appear to be defined in IDF project Makefile at %s" % project_path)
 
     component_paths = project_vars["COMPONENT_PATHS"].split(" ")
 
     # Convert components as needed
     for p in component_paths:
+        if "MSYSTEM" in os.environ:
+            cmd = ["cygpath", "-w", p]
+            p = subprocess.check_output(cmd).strip()
+
         convert_component(project_path, p)
 
     project_name = project_vars["PROJECT_NAME"]
@@ -138,6 +142,7 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
         f.write("project(%s)\n" % project_name)
 
     print("Converted project %s" % project_cmakelists)
+
 
 def convert_component(project_path, component_path):
     if debug:

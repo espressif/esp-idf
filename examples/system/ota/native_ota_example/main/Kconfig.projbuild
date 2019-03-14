@@ -1,25 +1,36 @@
 menu "Example Configuration"
 
-config WIFI_SSID
-    string "WiFi SSID"
-	default "myssid"
-	help
-		SSID (network name) for the example to connect to.
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
 
-config WIFI_PASSWORD
-    string "WiFi Password"
-	default "mypassword"
-	help
-		WiFi password (WPA or WPA2) for the example to use.
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
 
-		Can be left blank if the network has no security set.
+            Can be left blank if the network has no security set.
 
-config FIRMWARE_UPG_URL
-    string "HTTP Server URL"
-    default "https://192.168.0.3:8070/hello-world.bin"
-	help
-		HTTP Server IP to download the image file from.
+    config FIRMWARE_UPG_URL
+        string "HTTP Server URL"
+        default "https://192.168.0.3:8070/hello-world.bin"
+        help
+            HTTP Server IP to download the image file from.
 
-		See example README.md for details.
+            See example README.md for details.
+
+    config GPIO_DIAGNOSTIC
+        int "Number of the GPIO input for diagnostic"
+        range 0 39
+        default 4
+        help
+            Used to demonstrate how a rollback works.
+            The selected GPIO will be configured as an input with internal pull-up enabled.
+            To trigger a rollback, this GPIO must be pulled low while the message
+            `Diagnostics (5 sec)...` which will be on first boot.
+            If GPIO is not pulled low then the operable of the app will be confirmed.
 
 endmenu

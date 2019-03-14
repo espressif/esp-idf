@@ -21,7 +21,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
-import os
 import re
 import kconfiglib
 
@@ -33,7 +32,8 @@ HEADING_SYMBOLS = '#*=-^"+'
 
 # Keep the heading level in sync with api-reference/kconfig.rst
 INITIAL_HEADING_LEVEL = 3
-MAX_HEADING_LEVEL = len(HEADING_SYMBOLS)-1
+MAX_HEADING_LEVEL = len(HEADING_SYMBOLS) - 1
+
 
 def write_docs(config, filename):
     """ Note: writing .rst documentation ignores the current value
@@ -42,11 +42,13 @@ def write_docs(config, filename):
     with open(filename, "w") as f:
         config.walk_menu(lambda node: write_menu_item(f, node))
 
+
 def node_is_menu(node):
     try:
         return node.item == kconfiglib.MENU or node.is_menuconfig
     except AttributeError:
         return False  # not all MenuNodes have is_menuconfig for some reason
+
 
 def get_breadcrumbs(node):
     # this is a bit wasteful as it recalculates each time, but still...
@@ -54,9 +56,10 @@ def get_breadcrumbs(node):
     node = node.parent
     while node.parent:
         if node.prompt:
-            result = [ ":ref:`%s`" % get_link_anchor(node) ] + result
+            result = [":ref:`%s`" % get_link_anchor(node)] + result
         node = node.parent
     return " > ".join(result)
+
 
 def get_link_anchor(node):
     try:
@@ -68,10 +71,11 @@ def get_link_anchor(node):
     result = []
     while node.parent:
         if node.prompt:
-            result = [ re.sub(r"[^a-zA-z0-9]+", "-", node.prompt[0]) ] + result
+            result = [re.sub(r"[^a-zA-z0-9]+", "-", node.prompt[0])] + result
         node = node.parent
     result = "-".join(result).lower()
     return result
+
 
 def get_heading_level(node):
     result = INITIAL_HEADING_LEVEL
@@ -83,14 +87,18 @@ def get_heading_level(node):
         node = node.parent
     return result
 
+
 def format_rest_text(text, indent):
     # Format an indented text block for use with ReST
     text = indent + text.replace('\n', '\n' + indent)
     # Escape some characters which are inline formatting in ReST
     text = text.replace("*", "\\*")
     text = text.replace("_", "\\_")
+    # replace absolute links to documentation by relative ones
+    text = re.sub(r'https://docs.espressif.com/projects/esp-idf/\w+/\w+/(.+)\.html', r':doc:`../\1`', text)
     text += '\n'
     return text
+
 
 def node_should_write(node):
     if not node.prompt:
@@ -100,6 +108,7 @@ def node_should_write(node):
         return False  # Skip choice nodes, they are handled as part of the parent (see below)
 
     return True
+
 
 def write_menu_item(f, node):
     if not node_should_write(node):
@@ -112,7 +121,7 @@ def write_menu_item(f, node):
 
     is_menu = node_is_menu(node)
 
-    ## Heading
+    # Heading
     if name:
         title = 'CONFIG_%s' % name
     else:
@@ -167,6 +176,6 @@ def write_menu_item(f, node):
             child = child.next
         f.write('\n')
 
+
 if __name__ == '__main__':
     print("Run this via 'confgen.py --output doc FILENAME'")
-

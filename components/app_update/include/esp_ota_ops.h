@@ -20,6 +20,8 @@
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_partition.h"
+#include "esp_image_format.h"
+#include "esp_flash_data_types.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -32,6 +34,10 @@ extern "C"
 #define ESP_ERR_OTA_PARTITION_CONFLICT           (ESP_ERR_OTA_BASE + 0x01)  /*!< Error if request was to write or erase the current running partition */
 #define ESP_ERR_OTA_SELECT_INFO_INVALID          (ESP_ERR_OTA_BASE + 0x02)  /*!< Error if OTA data partition contains invalid content */
 #define ESP_ERR_OTA_VALIDATE_FAILED              (ESP_ERR_OTA_BASE + 0x03)  /*!< Error if OTA app image is invalid */
+#define ESP_ERR_OTA_SMALL_SEC_VER                (ESP_ERR_OTA_BASE + 0x04)  /*!< Error if the firmware has a secure version less than the running firmware. */
+#define ESP_ERR_OTA_ROLLBACK_FAILED              (ESP_ERR_OTA_BASE + 0x05)  /*!< Error if flash does not have valid firmware in passive partition and hence rollback is not possible */
+#define ESP_ERR_OTA_ROLLBACK_INVALID_STATE       (ESP_ERR_OTA_BASE + 0x06)  /*!< Error if current active firmware is still marked in pending validation state (ESP_OTA_IMG_PENDING_VERIFY), essentially first boot of firmware image post upgrade and hence firmware upgrade is not possible */
+
 
 /**
  * @brief Opaque handle for an application OTA update
@@ -40,6 +46,24 @@ extern "C"
  * calls to esp_ota_write() and esp_ota_end().
  */
 typedef uint32_t esp_ota_handle_t;
+
+/**
+ * @brief   Return esp_app_desc structure. This structure includes app version.
+ * 
+ * Return description for running app.
+ * @return Pointer to esp_app_desc structure.
+ */
+const esp_app_desc_t *esp_ota_get_app_description(void);
+
+/**
+ * @brief   Fill the provided buffer with SHA256 of the ELF file, formatted as hexadecimal, null-terminated.
+ * If the buffer size is not sufficient to fit the entire SHA256 in hex plus a null terminator,
+ * the largest possible number of bytes will be written followed by a null.
+ * @param dst   Destination buffer
+ * @param size  Size of the buffer
+ * @return      Number of bytes written to dst (including null terminator)
+ */
+int esp_ota_get_app_elf_sha256(char* dst, size_t size);
 
 /**
  * @brief   Commence an OTA update writing to the specified partition.
@@ -51,6 +75,10 @@ typedef uint32_t esp_ota_handle_t;
  *
  * On success, this function allocates memory that remains in use
  * until esp_ota_end() is called with the returned handle.
+ *
+ * Note: If the rollback option is enabled and the running application has the ESP_OTA_IMG_PENDING_VERIFY state then
+ * it will lead to the ESP_ERR_OTA_ROLLBACK_INVALID_STATE error. Confirm the running app before to run download a new app,
+ * use esp_ota_mark_app_valid_cancel_rollback() function for it (this should be done as early as possible when you first download a new application).
  *
  * @param partition Pointer to info for partition which will receive the OTA update. Required.
  * @param image_size Size of new OTA app image. Partition will be erased in order to receive this size of image. If 0 or OTA_SIZE_UNKNOWN, the entire partition is erased.
@@ -65,6 +93,7 @@ typedef uint32_t esp_ota_handle_t;
  *    - ESP_ERR_OTA_SELECT_INFO_INVALID: The OTA data partition contains invalid data.
  *    - ESP_ERR_INVALID_SIZE: Partition doesn't fit in configured flash size.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_OTA_ROLLBACK_INVALID_STATE: If the running app has not confirmed state. Before performing an update, the application must be valid.
  */
 esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp_ota_handle_t* out_handle);
 
@@ -169,6 +198,83 @@ const esp_partition_t* esp_ota_get_running_partition(void);
  *
  */
 const esp_partition_t* esp_ota_get_next_update_partition(const esp_partition_t *start_from);
+
+/**
+ * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
+ * 
+ * Returns a description for the requested app partition.
+ * @param[in] partition     Pointer to app partition. (only app partition)
+ * @param[out] app_desc     Structure of info about app.
+ * @return
+ *  - ESP_OK                Successful.
+ *  - ESP_ERR_NOT_FOUND     app_desc structure is not found. Magic word is incorrect.
+ *  - ESP_ERR_NOT_SUPPORTED Partition is not application.
+ *  - ESP_ERR_INVALID_ARG   Arguments is NULL or if partition's offset exceeds partition size.
+ *  - ESP_ERR_INVALID_SIZE  Read would go out of bounds of the partition.
+ *  - or one of error codes from lower-level flash driver.
+ */
+esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, esp_app_desc_t *app_desc);
+
+/**
+ * @brief This function is called to indicate that the running app is working well.
+ *
+ * @return
+ *  - ESP_OK: if successful.
+ */
+esp_err_t esp_ota_mark_app_valid_cancel_rollback();
+
+/**
+ * @brief This function is called to roll back to the previously workable app with reboot.
+ *
+ * If rollback is successful then device will reset else API will return with error code.
+ * Checks applications on a flash drive that can be booted in case of rollback.
+ * If the flash does not have at least one app (except the running app) then rollback is not possible.
+ * @return
+ *  - ESP_FAIL: if not successful.
+ *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible due to flash does not have any apps.
+ */
+esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot();
+
+/**
+ * @brief Returns last partition with invalid state (ESP_OTA_IMG_INVALID or ESP_OTA_IMG_ABORTED).
+ *
+ * @return partition.
+ */
+const esp_partition_t* esp_ota_get_last_invalid_partition();
+
+/**
+ * @brief Returns state for given partition.
+ *
+ * @param[in] partition  Pointer to partition.
+ * @param[out] ota_state state of partition (if this partition has a record in otadata).
+ * @return
+ *        - ESP_OK:                 Successful.
+ *        - ESP_ERR_INVALID_ARG:    partition or ota_state arguments were NULL.
+ *        - ESP_ERR_NOT_SUPPORTED:  partition is not ota.
+ *        - ESP_ERR_NOT_FOUND:      Partition table does not have otadata or state was not found for given partition.
+ */
+esp_err_t esp_ota_get_state_partition(const esp_partition_t *partition, esp_ota_img_states_t *ota_state);
+
+/**
+ * @brief Erase previous boot app partition and corresponding otadata select for this partition.
+ *
+ * When current app is marked to as valid then you can erase previous app partition.
+ * @return
+ *        - ESP_OK:   Successful, otherwise ESP_ERR.
+ */
+esp_err_t esp_ota_erase_last_boot_app_partition(void);
+
+/**
+ * @brief Checks applications on the slots which can be booted in case of rollback.
+ *
+ * These applications should be valid (marked in otadata as not UNDEFINED, INVALID or ABORTED and crc is good) and be able booted,
+ * and secure_version of app >= secure_version of efuse (if anti-rollback is enabled).
+ *
+ * @return
+ *        - True: Returns true if the slots have at least one app (except the running app).
+ *        - False: The rollback is not possible.
+ */
+bool esp_ota_check_rollback_is_possible(void);
 
 #ifdef __cplusplus
 }

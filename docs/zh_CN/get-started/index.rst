@@ -3,8 +3,6 @@
 ***********
 :link_to_translation:`en:[English]`
 
-.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
-
 本文档旨在指导用户创建 ESP32 的软件环境。本文将通过一个简单的例子来说明如何使用 ESP-IDF (Espressif IoT Development Framework)，包括配置、编译、下载固件到开发板等步骤。
 
 .. include:: /_build/inc/version-note.inc
@@ -66,6 +64,8 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 如果你使用其它开发板，请查看下面的内容。
 
+.. _get-started-step-by-step:
+
 .. _get-started-setup-toolchain:
 
 设置工具链
@@ -116,17 +116,22 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 工具链（包括用于编译和构建应用程序的程序）安装完后，你还需要 ESP32 相关的 API/库。API/库在 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_ 中。
 
-.. include:: /_build/inc/git-clone.inc
+获取本地副本：打开终端，切换到你要存放 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库:
 
-查看 :doc:/versions 以获取不同情况下选择要使用的分支的帮助。
+.. include:: /_build/inc/git-clone-bash.inc
+
+ESP-IDF 将会被下载到 ``~/esp/esp-idf`` 目录下。
+
+有关在给定情况下使用哪个 ESP-IDF 版本的信息，请参阅 :doc:`/versions` 。
 
 .. note::
 
     注意这里有个 ``--recursive`` 选项。如果你克隆 ESP-IDF 时没有带这个选项，你还需要运行额外的命令来获取子模块： ::
 
-        cd ~/esp/esp-idf
+        cd esp-idf
         git submodule update --init
 
+.. include:: /_build/inc/git-clone-notes.inc
 
 .. _get-started-setup-path:
 
@@ -212,16 +217,12 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 * 当光标在某个配置项上面高亮时，输入 ``?`` 可以直接查看该项的帮助信息
 * 输入 ``/`` 搜索配置项
 
-.. note::
-
-    如果你是 **Arch Linux** 用户，需要进入 ``SDK tool configuration`` 将 ``Python 2 interpreter`` 从 ``python`` 修改为 ``python2``。
-
 .. attention::
 
-    如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:CONFIG_FREERTOS_UNICORE）。
+    如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
 
 
-.. _get-started-build-flash:
+.. _get-started-build-and-flash:
 
 编译和烧写
 ===============
@@ -266,7 +267,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
 如果你想使用 Eclipse IDE 而不是运行 ``make``，请参考 :doc:`Eclipse guide <eclipse-setup>`。
 
-.. _get-started-build-monitor:
+.. _get-started-monitor:
 
 监视器
 =======
@@ -302,9 +303,9 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
         e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
         ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
 
-    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
+    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-and-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
 
-要一次性执行 ``make flash`` 和 ``make monitor``，输入 ``make flash monitor``。参考文档 :doc:`IDF Monitor <idf-monitor>` 里的快捷键和更多内容。
+要一次性执行 ``make flash`` 和 ``make monitor``，输入 ``make flash monitor``。参考文档 :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` 里的快捷键和更多内容。
 
 你已完成 ESP32 的入门！
 
@@ -330,7 +331,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
     establish-serial-connection
     make-project
     eclipse-setup
-    idf-monitor
+    ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/

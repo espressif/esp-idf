@@ -219,6 +219,11 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
         periph_module_enable(PERIPH_TIMG1_MODULE);
     }
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
+    //Some applications use a software reset, at the reset time, timer_group happens to generate an interrupt.
+    //but software reset does not clear interrupt status. This is not safe for application when enable the interrupt of timer_group.
+    //we need to disable the interrupt and clear the interrupt status here.
+    TG[group_num]->int_ena.val &= (~BIT(timer_num));
+    TG[group_num]->int_clr_timers.val = BIT(timer_num);
     TG[group_num]->hw_timer[timer_num].config.autoreload = config->auto_reload;
     TG[group_num]->hw_timer[timer_num].config.divider = (uint16_t) config->divider;
     TG[group_num]->hw_timer[timer_num].config.enable = config->counter_en;

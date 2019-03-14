@@ -97,8 +97,8 @@ It allows to run the newly loaded app from a factory partition.
 make flash
 ```
 
-After first update, if you want to return back to factory app (or the first OTA partition, if factory partition is not present) then use the command `make erase_ota`. 
-It erases ota_data partition to initial.
+After first update, if you want to return back to factory app (or the first OTA partition, if factory partition is not present) then use the command `make erase_otadata`. 
+It erases the ota_data partition to initial state. **Take note that this assumes that the partition table of this project is the one that is on the device**.
 
 ### Step 5: Run the OTA Example
 
@@ -108,6 +108,25 @@ When the example starts up, it will print "Starting OTA example..." then:
 2. Connect to the HTTP server and download the new image.
 3. Write the image to flash, and configure the next boot from this image.
 4. Reboot
+
+## Support the rollback
+
+This feature allows you to roll back to the previous firmware if the app is not operable. Option :ref:`CONFIG_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the``Over The Air Updates (OTA)`` article). 
+For ``native_ota_example``, added a bit of code to demonstrate how a rollback works. To use it, you need enable the :ref:`CONFIG_APP_ROLLBACK_ENABLE` option in Kconfig and under the "Example Configuration" submenu to set "Number of the GPIO input for diagnostic" to manage the rollback process.
+
+To trigger a rollback, this GPIO must be pulled low while the message `Diagnostics (5 sec)...` which will be on first boot.
+If GPIO is not pulled low then the operable of the app will be confirmed.
+
+## Support the version of application
+
+For ``native_ota_example``, code has been added to demonstrate how to check the version of the application and prevent infinite firmware updates. Only the application with the new version can be downloaded. Version checking is performed after the very first firmware image package has been received, which contains data about the firmware version. The application version can be taken from three places:
+
+1. If ``PROJECT_VER`` variable set in project Cmake/Makefile file, its value will be used.
+2. Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+3. Else, if the project is located inside a Git repository, the output of ``git describe`` will be used.
+4. Otherwise, ``PROJECT_VER`` will be "1".
+
+In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the version of app. Change the version in the file to compile the new firmware.
 
 ## Troubleshooting
 

@@ -310,77 +310,90 @@ TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 
 TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
 {
-
-
     if (!esp_flash_encryption_enabled()) {
         TEST_IGNORE_MESSAGE("flash encryption disabled, skipping nvs_api tests with encryption enabled");
     }
     const esp_partition_t* key_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
+    
+    assert(key_part && "partition table must have an NVS Key partition");
 
     const esp_partition_t* nvs_partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
     assert(nvs_partition && "partition table must have an NVS partition");
 
-    ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+    ESP_ERROR_CHECK( esp_partition_erase_range(key_part, 0, key_part->size) );
 
-    nvs_sec_cfg_t cfg;
-    esp_err_t err = nvs_flash_read_security_cfg(key_part, &cfg);
+    bool done = false;
 
-    if(err == ESP_ERR_NVS_KEYS_NOT_INITIALIZED) {
-        TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
-    } else {
-        ESP_ERROR_CHECK(err);
-    }
-    TEST_ESP_OK(nvs_flash_secure_init(&cfg));
-    
-    nvs_handle handle_1;
+    do {
+        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
 
-    TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
+        nvs_sec_cfg_t cfg;
+        esp_err_t err = nvs_flash_read_security_cfg(key_part, &cfg);
+
+        if(err == ESP_ERR_NVS_KEYS_NOT_INITIALIZED) {
+            uint8_t value[4096] = {[0 ... 4095] = 0xff};
+            TEST_ESP_OK(esp_partition_write(key_part, 0, value, sizeof(value)));
+
+            TEST_ESP_ERR(nvs_flash_read_security_cfg(key_part, &cfg), ESP_ERR_NVS_KEYS_NOT_INITIALIZED);
+
+            TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
+        } else {
+            /* Second time key_partition exists already*/
+            ESP_ERROR_CHECK(err);
+            done = true;
+        }
+        TEST_ESP_OK(nvs_flash_secure_init(&cfg));
+
+        nvs_handle handle_1;
+
+        TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
 
 
-    TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
+        TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
 
-    TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x12345678));
-    TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x23456789));
+        TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x12345678));
+        TEST_ESP_OK(nvs_set_i32(handle_1, "foo", 0x23456789));
 
-    nvs_handle handle_2;
-    TEST_ESP_OK(nvs_open("namespace2", NVS_READWRITE, &handle_2));
-    TEST_ESP_OK(nvs_set_i32(handle_2, "foo", 0x3456789a));
-    const char* str = "value 0123456789abcdef0123456789abcdef";
-    TEST_ESP_OK(nvs_set_str(handle_2, "key", str));
+        nvs_handle handle_2;
+        TEST_ESP_OK(nvs_open("namespace2", NVS_READWRITE, &handle_2));
+        TEST_ESP_OK(nvs_set_i32(handle_2, "foo", 0x3456789a));
+        const char* str = "value 0123456789abcdef0123456789abcdef";
+        TEST_ESP_OK(nvs_set_str(handle_2, "key", str));
 
-    int32_t v1;
-    TEST_ESP_OK(nvs_get_i32(handle_1, "foo", &v1));
-    TEST_ASSERT_TRUE(0x23456789 == v1);
+        int32_t v1;
+        TEST_ESP_OK(nvs_get_i32(handle_1, "foo", &v1));
+        TEST_ASSERT_TRUE(0x23456789 == v1);
 
-    int32_t v2;
-    TEST_ESP_OK(nvs_get_i32(handle_2, "foo", &v2));
-    TEST_ASSERT_TRUE(0x3456789a == v2);
+        int32_t v2;
+        TEST_ESP_OK(nvs_get_i32(handle_2, "foo", &v2));
+        TEST_ASSERT_TRUE(0x3456789a == v2);
 
-    char buf[strlen(str) + 1];
-    size_t buf_len = sizeof(buf);
+        char buf[strlen(str) + 1];
+        size_t buf_len = sizeof(buf);
 
-    size_t buf_len_needed;
-    TEST_ESP_OK(nvs_get_str(handle_2, "key", NULL, &buf_len_needed));
-    TEST_ASSERT_TRUE(buf_len_needed == buf_len);
+        size_t buf_len_needed;
+        TEST_ESP_OK(nvs_get_str(handle_2, "key", NULL, &buf_len_needed));
+        TEST_ASSERT_TRUE(buf_len_needed == buf_len);
 
-    size_t buf_len_short = buf_len - 1;
-    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_LENGTH, nvs_get_str(handle_2, "key", buf, &buf_len_short));
-    TEST_ASSERT_TRUE(buf_len_short == buf_len);
+        size_t buf_len_short = buf_len - 1;
+        TEST_ESP_ERR(ESP_ERR_NVS_INVALID_LENGTH, nvs_get_str(handle_2, "key", buf, &buf_len_short));
+        TEST_ASSERT_TRUE(buf_len_short == buf_len);
 
-    size_t buf_len_long = buf_len + 1;
-    TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len_long));
-    TEST_ASSERT_TRUE(buf_len_long == buf_len);
+        size_t buf_len_long = buf_len + 1;
+        TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len_long));
+        TEST_ASSERT_TRUE(buf_len_long == buf_len);
 
-    TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len));
+        TEST_ESP_OK(nvs_get_str(handle_2, "key", buf, &buf_len));
 
-    TEST_ASSERT_TRUE(0 == strcmp(buf, str));
+        TEST_ASSERT_TRUE(0 == strcmp(buf, str));
 
-    nvs_close(handle_1);
-    nvs_close(handle_2);
+        nvs_close(handle_1);
+        nvs_close(handle_2);
 
-    TEST_ESP_OK(nvs_flash_deinit());
+        TEST_ESP_OK(nvs_flash_deinit());
+    } while(!done);
 }
 
 TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled", "[nvs_part_gen]")

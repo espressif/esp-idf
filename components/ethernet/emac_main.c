@@ -809,7 +809,6 @@ static void emac_start(void *param)
 
     ESP_LOGD(TAG, "emac start");
     cmd->err = EMAC_CMD_OK;
-    emac_enable_clk(true);
 
     if (emac_reset() != ESP_OK) {
         return;
@@ -870,6 +869,7 @@ esp_err_t esp_eth_enable(void)
     esp_pm_lock_acquire(s_pm_lock);
 #endif //CONFIG_PM_ENABLE
 
+    emac_enable_clk(true);
     /* init phy device */
     if (emac_config.phy_init() != ESP_OK) {
         ESP_LOGE(TAG, "Initialise PHY device Timeout");
@@ -1121,7 +1121,11 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
         REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_H_DIV_NUM, 0);
         REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_DIV_NUM, 0);
 
-        if (emac_config.clock_mode == ETH_CLOCK_GPIO16_OUT) {
+        if (emac_config.clock_mode == ETH_CLOCK_GPIO0_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+            REG_WRITE(PIN_CTRL, 6);
+            ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO0");
+        } else if (emac_config.clock_mode == ETH_CLOCK_GPIO16_OUT) {
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_EMAC_CLK_OUT);
             ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO16");
         } else if (emac_config.clock_mode == ETH_CLOCK_GPIO17_OUT) {

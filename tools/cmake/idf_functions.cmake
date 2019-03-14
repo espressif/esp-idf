@@ -2,13 +2,20 @@
 # Load cmake modules
 #
 
-if(NOT IDF_PATH)
-    set(IDF_PATH $ENV{IDF_PATH})
-endif()
-
 get_property(__idf_environment_set GLOBAL PROPERTY __IDF_ENVIRONMENT_SET)
 
 if(NOT __idf_environment_set)
+
+    # Set IDF_PATH, as nothing else will work without this.
+    set(IDF_PATH "$ENV{IDF_PATH}")
+    if(NOT IDF_PATH)
+        # Documentation says you should set IDF_PATH in your environment, but we
+        # can infer it relative to tools/cmake directory if it's not set.
+        get_filename_component(IDF_PATH "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+    endif()
+    file(TO_CMAKE_PATH "${IDF_PATH}" IDF_PATH)
+    set(ENV{IDF_PATH} ${IDF_PATH})
+
     set(CMAKE_MODULE_PATH
         "${IDF_PATH}/tools/cmake"
         "${IDF_PATH}/tools/cmake/third_party"
@@ -55,6 +62,8 @@ macro(idf_set_variables)
 
     set(IDF_PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 
+    set(ESP_PLATFORM 1 CACHE BOOL INTERNAL)
+
     spaces2list(IDF_COMPONENT_DIRS)
     spaces2list(IDF_COMPONENTS)
     spaces2list(IDF_COMPONENT_REQUIRES_COMMON)
@@ -69,10 +78,11 @@ endmacro()
 function(idf_set_global_compile_options)
     # Temporary trick to support both gcc5 and gcc8 builds
     if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
-        set(GCC_NOT_5_2_0 0)
+        set(GCC_NOT_5_2_0 0 CACHE STRING "GCC is 5.2.0 version")
     else()
-        set(GCC_NOT_5_2_0 1)
+        set(GCC_NOT_5_2_0 1 CACHE STRING "GCC is not 5.2.0 version")
     endif()
+    list(APPEND compile_definitions "GCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
 
     list(APPEND compile_definitions "ESP_PLATFORM" "HAVE_CONFIG_H")
 
@@ -156,8 +166,19 @@ function(idf_set_global_compile_options)
     # go into the final binary so have no impact on size)
     list(APPEND compile_options "-ggdb")
 
-    # Temporary trick to support both gcc5 and gcc8 builds
-    list(APPEND compile_definitions "GCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
+    # Use EXTRA_CFLAGS, EXTRA_CXXFLAGS and EXTRA_CPPFLAGS to add more priority options to the compiler
+    # EXTRA_CPPFLAGS is used for both C and C++
+    # Unlike environments' CFLAGS/CXXFLAGS/CPPFLAGS which work for both host and target build,
+    # these works only for target build
+    set(EXTRA_CFLAGS "$ENV{EXTRA_CFLAGS}")
+    set(EXTRA_CXXFLAGS "$ENV{EXTRA_CXXFLAGS}")
+    set(EXTRA_CPPFLAGS "$ENV{EXTRA_CPPFLAGS}")
+    spaces2list(EXTRA_CFLAGS)
+    spaces2list(EXTRA_CXXFLAGS)
+    spaces2list(EXTRA_CPPFLAGS)
+    list(APPEND c_compile_options ${EXTRA_CFLAGS})
+    list(APPEND cxx_compile_options ${EXTRA_CXXFLAGS})
+    list(APPEND compile_options ${EXTRA_CPPFLAGS})
 
     set_default(IDF_COMPILE_DEFINITIONS "${compile_definitions}")
     set_default(IDF_COMPILE_OPTIONS "${compile_options}")
@@ -200,14 +221,45 @@ endfunction()
 # Running git_describe() here automatically triggers rebuilds
 # if the ESP-IDF git version changes
 function(idf_get_git_revision)
+    git_describe(IDF_VER_GIT "${IDF_PATH}")
     if(EXISTS "${IDF_PATH}/version.txt")
         file(STRINGS "${IDF_PATH}/version.txt" IDF_VER)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${IDF_PATH}/version.txt")
     else()
-        git_describe(IDF_VER "${IDF_PATH}")
+        set(IDF_VER ${IDF_VER_GIT})
     endif()
+    message(STATUS "IDF_VER: ${IDF_VER}")
     add_definitions(-DIDF_VER=\"${IDF_VER}\")
     git_submodule_check("${IDF_PATH}")
     set(IDF_VER ${IDF_VER} PARENT_SCOPE)
+endfunction()
+
+# app_get_revision
+#
+# Set global PROJECT_VER
+#
+# If PROJECT_VER variable set in project CMakeLists.txt file, its value will be used.
+# Else, if the _project_path/version.txt exists, its contents will be used as PROJECT_VER.
+# Else, if the project is located inside a Git repository, the output of git describe will be used.
+# Otherwise, PROJECT_VER will be "1".
+function(app_get_revision _project_path)
+    if(NOT DEFINED PROJECT_VER)
+        if(EXISTS "${_project_path}/version.txt")
+            file(STRINGS "${_project_path}/version.txt" PROJECT_VER)
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${_project_path}/version.txt")
+        else()
+            git_describe(PROJECT_VER_GIT "${_project_path}")
+            if(PROJECT_VER_GIT)
+                set(PROJECT_VER ${PROJECT_VER_GIT})
+            else()
+                message(STATUS "Project is not inside a git repository, \
+                        will not use 'git describe' to determine PROJECT_VER.")
+                set(PROJECT_VER "1")
+            endif()
+        endif()
+    endif()
+    message(STATUS "Project version: ${PROJECT_VER}")
+    set(PROJECT_VER ${PROJECT_VER} PARENT_SCOPE)
 endfunction()
 
 # idf_link_components
@@ -239,6 +291,9 @@ function(idf_link_components target components)
     endforeach()
 
     if(libraries)
+        # gc-sections is necessary for linking some IDF binary libraries
+        # (and without it, IDF apps are much larger than they should be)
+        target_link_libraries(${target} "-Wl,--gc-sections")
         target_link_libraries(${target} "-Wl,--start-group")
         target_link_libraries(${target} ${libraries})
         message(STATUS "Component libraries: ${IDF_COMPONENT_LIBRARIES}")

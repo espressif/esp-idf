@@ -5,9 +5,9 @@ endif()
 # Set some global esptool.py variables
 #
 # Many of these are read when generating flash_app_args & flash_project_args
-set(ESPTOOLPY "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
-set(ESPSECUREPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
-set(ESPEFUSEPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
+set(ESPTOOLPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
+set(ESPSECUREPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
+set(ESPEFUSEPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
 set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
 set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
@@ -52,6 +52,8 @@ if(CONFIG_SECURE_BOOT_ENABLED AND
         ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
 endif()
 
+set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
     # as elf2image can't have 'detect' as an option...
@@ -75,7 +77,7 @@ endif()
 # Add 'app.bin' target - generates with elf2image
 #
 add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS}
+    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
         -o "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}" "${IDF_PROJECT_EXECUTABLE}"
     DEPENDS ${IDF_PROJECT_EXECUTABLE}
     VERBATIM

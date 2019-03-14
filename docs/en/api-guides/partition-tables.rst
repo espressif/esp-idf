@@ -1,5 +1,6 @@
 Partition Tables
 ================
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
@@ -103,7 +104,7 @@ The 8-bit subtype field is specific to a given partition type. esp-idf currently
   - nvs (2) is for the :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>`.
 
     - NVS is used to store per-device PHY calibration data (different to initialisation data).
-    - NVS is used to store WiFi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/wifi/esp_wifi>` initialisation function is used.
+    - NVS is used to store WiFi data if the :doc:`esp_wifi_set_storage(WIFI_STORAGE_FLASH) <../api-reference/network/esp_wifi>` initialisation function is used.
     - The NVS API can also be used for other application data.
     - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
     - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.

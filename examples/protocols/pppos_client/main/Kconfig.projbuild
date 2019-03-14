@@ -1,49 +1,123 @@
 menu "Example Configuration"
 
-config GSM_INTERNET_USER
-    string "GSM Internet User"
-	default ""
-	help
-		Network provider internet user.
+    choice ESP_MODEM_DEVICE
+        prompt "Choose supported modem device (DCE)"
+        default ESP_MODEM_DEVICE_BG96
+        help
+            Select modem device connected to the ESP DTE.
+        config ESP_MODEM_DEVICE_SIM800
+            bool "SIM800"
+            help
+                SIMCom SIM800L is a GSM/GPRS module.
+                It supports Quad-band 850/900/1800/1900MHz.
+        config ESP_MODEM_DEVICE_BG96
+            bool "BG96"
+            help
+                Quectel BG96 is a series of LTE Cat M1/Cat NB1/EGPRS module.
+    endchoice
 
-config GSM_INTERNET_PASSWORD
-    string "GSM Internet password"
-	default ""
-	help
-		Network provider internet password
+    config ESP_MODEM_APN
+        string "Set Access Point Name (APN)"
+        default "CMNET"
+        help
+            Logical name which is used to select the GGSN or the external packet data network.
 
-config GSM_APN
-    string "GSM Internet APN"
-    default "playmetric"
-    help
-       APN from network provider for internet access
+    config ESP_MODEM_PPP_AUTH_USERNAME
+        string "Set username for authentication"
+        default "espressif"
+        help
+            Set username for PPP Authentication.
 
-config UART1_TX_PIN
-    int "PPP serial TX GPIO"
-    default 17
-    range 0 31
-    help
-       Pin to configure for UART1 TX
+    config ESP_MODEM_PPP_AUTH_PASSWORD
+        string "Set password for authentication"
+        default "esp32"
+        help
+            Set password for PPP Authentication.
 
-config UART1_RX_PIN
-    int "PPP serial RX GPIO"
-    default 16
-    range 0 31
-    help
-       Pin to configure for UART1 RX
+    config SEND_MSG
+        bool "Short message (SMS)"
+        default n
+        help
+            Select this, the modem will send a short message before power off.
 
-config UART1_RTS_PIN
-    int "PPP serial RTS GPIO"
-    default 18
-    range 0 31
-    help
-       Pin to configure for UART1 RTS
+    if SEND_MSG
+        config SEND_MSG_PEER_PHONE_NUMBER
+            string "Peer Phone Number (with area code)"
+            default "+8610086"
+            help
+                Enter the peer phone number that you want to send message to.
+    endif
 
-config UART1_CTS_PIN
-    int "PPP serial CTS GPIO"
-    default 23
-    range 0 31
-    help
-       Pin to configure for UART1 CTS
+    menu "UART Configuration"
+        config MODEM_TX_PIN
+            int "TXD Pin Number"
+            default 25
+            range 0 31
+            help
+                Pin number of UART TX.
+
+        config MODEM_RX_PIN
+            int "RXD Pin Number"
+            default 26
+            range 0 31
+            help
+                Pin number of UART RX.
+
+        config MODEM_RTS_PIN
+            int "RTS Pin Number"
+            default 27
+            range 0 31
+            help
+                Pin number of UART RTS.
+
+        config MODEM_CTS_PIN
+            int "CTS Pin Number"
+            default 23
+            range 0 31
+            help
+                Pin number of UART CTS.
+
+        config UART_EVENT_TASK_STACK_SIZE
+            int "UART Event Task Stack Size"
+            range 2000 6000
+            default 2048
+            help
+                Stack size of UART event task.
+
+        config UART_EVENT_TASK_PRIORITY
+            int "UART Event Task Priority"
+            range 3 22
+            default 5
+            help
+                Priority of UART event task.
+
+        config UART_EVENT_QUEUE_SIZE
+            int "UART Event Queue Size"
+            range 10 40
+            default 30
+            help
+                Length of UART event queue.
+
+        config UART_PATTERN_QUEUE_SIZE
+            int "UART Pattern Queue Size"
+            range 10 40
+            default 20
+            help
+                Length of UART pattern queue.
+
+        config UART_TX_BUFFER_SIZE
+            int "UART TX Buffer Size"
+            range 256 2048
+            default 512
+            help
+                Buffer size of UART TX buffer.
+
+        config UART_RX_BUFFER_SIZE
+            int "UART RX Buffer Size"
+            range 256 2048
+            default 1024
+            help
+                Buffer size of UART RX buffer.
+    endmenu
 
 endmenu

@@ -42,6 +42,7 @@
 #include "esp_app_trace.h"
 #include "esp_system_internal.h"
 #include "sdkconfig.h"
+#include "esp_ota_ops.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -188,6 +189,7 @@ static const char *edesc[] = {
 
 static void commonErrorHandler(XtExcFrame *frame);
 static inline void disableAllWdts();
+static void illegal_instruction_helper(XtExcFrame *frame);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
@@ -357,11 +359,37 @@ void xt_unhandled_exception(XtExcFrame *frame)
             return;
         }
         panicPutStr(". Exception was unhandled.\r\n");
+        if (exccause == 0 /* IllegalInstruction */) {
+            illegal_instruction_helper(frame);
+        }
         esp_reset_reason_set_hint(ESP_RST_PANIC);
     }
     commonErrorHandler(frame);
 }
 
+static void illegal_instruction_helper(XtExcFrame *frame)
+{
+    /* Print out memory around the instruction word */
+    uint32_t epc = frame->pc;
+    epc = (epc & ~0x3) - 4;
+
+    /* check that the address was sane */
+    if (epc < SOC_IROM_MASK_LOW || epc >= SOC_IROM_HIGH) {
+        return;
+    }
+    volatile uint32_t* pepc = (uint32_t*)epc;
+
+    panicPutStr("Memory dump at 0x");
+    panicPutHex(epc);
+    panicPutStr(": ");
+    
+    panicPutHex(*pepc);
+    panicPutStr(" ");
+    panicPutHex(*(pepc + 1));
+    panicPutStr(" ");
+    panicPutHex(*(pepc + 2));
+    panicPutStr("\r\n");
+}
 
 /*
   If watchdogs are enabled, the panic handler runs the risk of getting aborted pre-emptively because
@@ -446,7 +474,7 @@ static void doBacktrace(XtExcFrame *frame)
             break;
         }
     }
-    panicPutStr("\r\n\r\n");
+    panicPutStr("\r\n");
 }
 
 /*
@@ -514,9 +542,16 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
 
     }
 
+    panicPutStr("\r\nELF file SHA256: ");
+    char sha256_buf[65];
+    esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
+    panicPutStr(sha256_buf);
+    panicPutStr("\r\n");
+
     /* With windowed ABI backtracing is easy, let's do it. */
     doBacktrace(frame);
 
+    panicPutStr("\r\n");
 }
 
 /*

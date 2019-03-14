@@ -338,6 +338,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 			the real queue and semaphore structures. */
 			volatile size_t xSize = sizeof( StaticQueue_t );
 			configASSERT( xSize == sizeof( Queue_t ) );
+			( void ) xSize; /* Keeps lint quiet when configASSERT() is not defined. */
 		}
 		#endif /* configASSERT_DEFINED */
 
@@ -723,6 +724,12 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		configASSERT( !( ( xTaskGetSchedulerState() == taskSCHEDULER_SUSPENDED ) && ( xTicksToWait != 0 ) ) );
 	}
 	#endif
+	#if ( configUSE_MUTEXES == 1 && configCHECK_MUTEX_GIVEN_BY_OWNER == 1)
+	{
+		configASSERT(pxQueue->uxQueueType != queueQUEUE_IS_MUTEX || pxQueue->pxMutexHolder == NULL || xTaskGetCurrentTaskHandle() == pxQueue->pxMutexHolder);
+	}
+	#endif
+
 
 
 	/* This function relaxes the coding standard somewhat to allow return

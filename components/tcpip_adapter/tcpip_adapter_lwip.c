@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "tcpip_adapter.h"
+#include "tcpip_adapter_internal.h"
 
 #if CONFIG_TCPIP_LWIP
 
@@ -91,7 +91,9 @@ static void tcpip_adapter_dhcps_cb(u8_t client_ip[4])
     ESP_LOGI(TAG,"softAP assign IP to station,IP is: %d.%d.%d.%d",
                 client_ip[0],client_ip[1],client_ip[2],client_ip[3]);
     system_event_t evt;
+    memset(&evt, 0, sizeof(system_event_t));
     evt.event_id = SYSTEM_EVENT_AP_STAIPASSIGNED;
+    memcpy((char *)&evt.event_info.ap_staipassigned.ip.addr, (char *)client_ip, sizeof(evt.event_info.ap_staipassigned.ip.addr));
     esp_event_send(&evt);
 }
 
@@ -344,7 +346,7 @@ esp_err_t tcpip_adapter_set_old_ip_info_api(tcpip_adapter_api_msg_t * msg)
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
+esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)
 {
     if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || ip_info == NULL) {
         return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
@@ -390,7 +392,7 @@ esp_err_t tcpip_adapter_get_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
     return ESP_OK;
 }
 
-esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
+esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)
 {
     struct netif *p_netif;
     tcpip_adapter_dhcp_status_t status;
@@ -429,6 +431,7 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_i
         if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
             if (!(ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw))) {
                 system_event_t evt;
+                memset(&evt, 0, sizeof(system_event_t));
                 if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
                     evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
                 } else if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
@@ -461,6 +464,7 @@ static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
     tcpip_adapter_ip6_info_t *ip6_info;
 
     system_event_t evt;
+    memset(&evt, 0, sizeof(system_event_t));
     //notify event
 
     evt.event_id = SYSTEM_EVENT_GOT_IP6;
@@ -572,7 +576,7 @@ esp_err_t tcpip_adapter_set_mac(tcpip_adapter_if_t tcpip_if, uint8_t mac[6])
 }
 #endif
 
-esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len)
+esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len)
 {
     void *opt_info = dhcps_option_info(opt_id, opt_len);
 
@@ -859,10 +863,10 @@ static esp_err_t tcpip_adapter_dhcps_stop_api(tcpip_adapter_api_msg_t * msg)
     return tcpip_adapter_dhcps_stop(msg->tcpip_if);
 }
 
-esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_option_mode_t opt_op, tcpip_adapter_option_id_t opt_id, void *opt_val, uint32_t opt_len)
+esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len)
 {
     // TODO: when dhcp request timeout,change the retry count
-    return ESP_OK;
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 static void tcpip_adapter_dhcpc_cb(struct netif *netif)
@@ -896,6 +900,7 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
                 !ip4_addr_cmp(ip_2_ip4(&netif->netmask), (&ip_info->netmask)) ||
                 !ip4_addr_cmp(ip_2_ip4(&netif->gw), (&ip_info->gw)) ) {
             system_event_t evt;
+            memset(&evt, 0, sizeof(system_event_t));
 
             ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
             ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
@@ -971,6 +976,7 @@ static void tcpip_adapter_ip_lost_timer(void *arg)
 
         if ( (!netif) || (netif && ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY4))){
             system_event_t evt;
+            memset(&evt, 0, sizeof(system_event_t));
 
             ESP_LOGD(TAG, "if%d ip lost tmr: raise ip lost event", tcpip_if);
             memset(&esp_ip_old[tcpip_if], 0, sizeof(tcpip_adapter_ip_info_t));
@@ -1126,7 +1132,7 @@ esp_interface_t tcpip_adapter_get_esp_if(void *dev)
     return ESP_IF_MAX;
 }
 
-esp_err_t tcpip_adapter_get_sta_list(wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)
+esp_err_t tcpip_adapter_get_sta_list(const wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)
 {
     int i;
 

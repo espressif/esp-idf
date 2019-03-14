@@ -1,0 +1,45 @@
+menu "Core dump"
+
+    choice ESP32_COREDUMP_TO_FLASH_OR_UART
+        prompt "Data destination"
+        default ESP32_ENABLE_COREDUMP_TO_NONE
+        help
+            Select place to store core dump: flash, uart or none (to disable core dumps generation).
+
+            If core dump is configured to be stored in flash and custom partition table is used add
+            corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions
+            in the components/partition_table directory.
+
+        config ESP32_ENABLE_COREDUMP_TO_FLASH
+            bool "Flash"
+            select ESP32_ENABLE_COREDUMP
+        config ESP32_ENABLE_COREDUMP_TO_UART
+            bool "UART"
+            select ESP32_ENABLE_COREDUMP
+        config ESP32_ENABLE_COREDUMP_TO_NONE
+            bool "None"
+    endchoice
+
+    config ESP32_ENABLE_COREDUMP
+        bool
+        default F
+        help
+            Enables/disable core dump module.
+
+    config ESP32_CORE_DUMP_MAX_TASKS_NUM
+        int "Maximum number of tasks"
+        depends on ESP32_ENABLE_COREDUMP
+        default 64
+        help
+            Maximum number of tasks snapshots in core dump.
+
+    config ESP32_CORE_DUMP_UART_DELAY
+        int "Delay before print to UART"
+        depends on ESP32_ENABLE_COREDUMP_TO_UART
+        default 0
+        help
+            Config delay (in ms) before printing core dump to UART.
+            Delay can be interrupted by pressing Enter key.
+
+endmenu
+

@@ -16,21 +16,45 @@
 
 from __future__ import print_function
 from __future__ import unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 from builtins import str
 import http.client
 import argparse
+
+try:
+    import Utility
+except ImportError:
+    import sys
+    import os
+
+    # This environment variable is expected on the host machine
+    # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+
+    import Utility
+
 
 def verbose_print(verbosity, *args):
     if (verbosity):
         Utility.console_log(''.join(str(elems) for elems in args))
 
-def test_get_handler(ip, port, verbosity = False):
+
+def test_val(text, expected, received):
+    if expected != received:
+        Utility.console_log(" Fail!")
+        Utility.console_log("  [reason] " + text + ":")
+        Utility.console_log("        expected: " + str(expected))
+        Utility.console_log("        received: " + str(received))
+        return False
+    return True
+
+
+def test_get_handler(ip, port, verbosity=False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     uri = "/hello?query1=value1&query2=value2&query3=value3"
     # GET hello response
@@ -43,12 +67,15 @@ def test_get_handler(ip, port, verbosity = False):
     resp = sess.getresponse()
     resp_hdrs = resp.getheaders()
     resp_data = resp.read().decode()
-    try:
-        if resp.getheader("Custom-Header-1") != "Custom-Value-1":
-            return False
-        if resp.getheader("Custom-Header-2") != "Custom-Value-2":
-            return False
-    except:
+    # Close HTTP connection
+    sess.close()
+
+    if not (
+        test_val("Status code mismatch", 200, resp.status) and
+        test_val("Response mismatch", "Custom-Value-1", resp.getheader("Custom-Header-1")) and
+        test_val("Response mismatch", "Custom-Value-2", resp.getheader("Custom-Header-2")) and
+        test_val("Response mismatch", "Hello World!", resp_data)
+    ):
         return False
 
     verbose_print(verbosity, "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
@@ -58,16 +85,14 @@ def test_get_handler(ip, port, verbosity = False):
         verbose_print(verbosity, "\t", k, ": ", v)
     verbose_print(verbosity, "Response Data : " + resp_data)
     verbose_print(verbosity, "========================================\n")
+    return True
 
-    # Close HTTP connection
-    sess.close()
-    return (resp_data == "Hello World!")
 
-def test_post_handler(ip, port, msg, verbosity = False):
+def test_post_handler(ip, port, msg, verbosity=False):
     verbose_print(verbosity, "========  POST HANDLER TEST ============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     # POST message to /echo and get back response
     sess.request("POST", url="/echo", body=msg)
@@ -80,45 +105,141 @@ def test_post_handler(ip, port, msg, verbosity = False):
 
     # Close HTTP connection
     sess.close()
-    return (resp_data == msg)
+    return test_val("Response mismatch", msg, resp_data)
 
-def test_put_handler(ip, port, verbosity = False):
+
+def test_put_handler(ip, port, verbosity=False):
     verbose_print(verbosity, "========  PUT HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
-    # PUT message to /ctrl to disable /hello URI handler
-    verbose_print(verbosity, "Disabling /hello handler")
+    # PUT message to /ctrl to disable /hello and /echo URI handlers
+    # and set 404 error handler to custom http_404_error_handler()
+    verbose_print(verbosity, "Disabling /hello and /echo handlers")
     sess.request("PUT", url="/ctrl", body="0")
     resp = sess.getresponse()
     resp.read()
 
-    sess.request("GET", url="/hello")
-    resp = sess.getresponse()
-    resp_data1 = resp.read().decode()
-    verbose_print(verbosity, "Response on GET /hello : " + resp_data1)
+    try:
+        # Send HTTP request to /hello URI
+        sess.request("GET", url="/hello")
+        resp = sess.getresponse()
+        resp_data = resp.read().decode()
 
-    # PUT message to /ctrl to enable /hello URI handler
-    verbose_print(verbosity, "Enabling /hello handler")
-    sess.request("PUT", url="/ctrl", body="1")
-    resp = sess.getresponse()
-    resp.read()
+        # 404 Error must be returned from server as URI /hello is no longer available.
+        # But the custom error handler http_404_error_handler() will not close the
+        # session if the requested URI is /hello
+        if not test_val("Status code mismatch", 404, resp.status):
+            raise AssertionError
 
-    sess.request("GET", url="/hello")
-    resp = sess.getresponse()
-    resp_data2 = resp.read().decode()
-    verbose_print(verbosity, "Response on GET /hello : " + resp_data2)
+        # Compare error response string with expectation
+        verbose_print(verbosity, "Response on GET /hello : " + resp_data)
+        if not test_val("Response mismatch", "/hello URI is not available", resp_data):
+            raise AssertionError
 
-    # Close HTTP connection
-    sess.close()
-    return ((resp_data2 == "Hello World!") and (resp_data1 == "This URI doesn't exist"))
+        # Using same session for sending an HTTP request to /echo, as it is expected
+        # that the custom error handler http_404_error_handler() would not have closed
+        # the session
+        sess.request("POST", url="/echo", body="Some content")
+        resp = sess.getresponse()
+        resp_data = resp.read().decode()
 
-def test_custom_uri_query(ip, port, query, verbosity = False):
+        # 404 Error must be returned from server as URI /hello is no longer available.
+        # The custom error handler http_404_error_handler() will close the session
+        # this time as the requested URI is /echo
+        if not test_val("Status code mismatch", 404, resp.status):
+            raise AssertionError
+
+        # Compare error response string with expectation
+        verbose_print(verbosity, "Response on POST /echo : " + resp_data)
+        if not test_val("Response mismatch", "/echo URI is not available", resp_data):
+            raise AssertionError
+
+        try:
+            # Using same session should fail as by now the session would have closed
+            sess.request("POST", url="/hello", body="Some content")
+            resp = sess.getresponse()
+            resp.read().decode()
+
+            # If control reaches this point then the socket was not closed.
+            # This is not expected
+            verbose_print(verbosity, "Socket not closed by server")
+            raise AssertionError
+
+        except http.client.HTTPException:
+            # Catch socket error as we tried to communicate with an already closed socket
+            pass
+
+    except http.client.HTTPException:
+        verbose_print(verbosity, "Socket closed by server")
+        return False
+
+    except AssertionError:
+        return False
+
+    finally:
+        # Close HTTP connection
+        sess.close()
+
+        verbose_print(verbosity, "Enabling /hello handler")
+        # Create new connection
+        sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
+        # PUT message to /ctrl to enable /hello URI handler
+        # and restore 404 error handler to default
+        sess.request("PUT", url="/ctrl", body="1")
+        resp = sess.getresponse()
+        resp.read()
+        # Close HTTP connection
+        sess.close()
+
+    # Create new connection
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
+
+    try:
+        # Sending HTTP request to /hello should work now
+        sess.request("GET", url="/hello")
+        resp = sess.getresponse()
+        resp_data = resp.read().decode()
+
+        if not test_val("Status code mismatch", 200, resp.status):
+            raise AssertionError
+
+        verbose_print(verbosity, "Response on GET /hello : " + resp_data)
+        if not test_val("Response mismatch", "Hello World!", resp_data):
+            raise AssertionError
+
+        # 404 Error handler should have been restored to default
+        sess.request("GET", url="/invalid")
+        resp = sess.getresponse()
+        resp_data = resp.read().decode()
+
+        if not test_val("Status code mismatch", 404, resp.status):
+            raise AssertionError
+
+        verbose_print(verbosity, "Response on GET /invalid : " + resp_data)
+        if not test_val("Response mismatch", "This URI does not exist", resp_data):
+            raise AssertionError
+
+    except http.client.HTTPException:
+        verbose_print(verbosity, "Socket closed by server")
+        return False
+
+    except AssertionError:
+        return False
+
+    finally:
+        # Close HTTP connection
+        sess.close()
+
+    return True
+
+
+def test_custom_uri_query(ip, port, query, verbosity=False):
     verbose_print(verbosity, "========  GET HANDLER TEST =============")
     # Establish HTTP connection
     verbose_print(verbosity, "Connecting to => " + ip + ":" + port)
-    sess = http.client.HTTPConnection(ip + ":" + port, timeout = 15)
+    sess = http.client.HTTPConnection(ip + ":" + port, timeout=15)
 
     uri = "/hello?" + query
     # GET hello response
@@ -134,12 +255,13 @@ def test_custom_uri_query(ip, port, query, verbosity = False):
 
     # Close HTTP connection
     sess.close()
-    return (resp_data == "Hello World!")
+    return "Hello World!" == resp_data
+
 
 if __name__ == '__main__':
     # Configure argument parser
     parser = argparse.ArgumentParser(description='Run HTTPd Test')
-    parser.add_argument('IP'  , metavar='IP'  ,    type=str, help='Server IP')
+    parser.add_argument('IP',   metavar='IP',      type=str, help='Server IP')
     parser.add_argument('port', metavar='port',    type=str, help='Server port')
     parser.add_argument('msg',  metavar='message', type=str, help='Message to be sent to server')
     args = vars(parser.parse_args())
@@ -149,9 +271,9 @@ if __name__ == '__main__':
     port = args['port']
     msg  = args['msg']
 
-    if not test_get_handler (ip, port, True):
-        Utility.console_log("Failed!")
-    if not test_post_handler(ip, port, msg, True):
-        Utility.console_log("Failed!")
-    if not test_put_handler (ip, port, True):
+    if not (
+        test_get_handler(ip, port, True) and
+        test_put_handler(ip, port, True) and
+        test_post_handler(ip, port, msg, True)
+    ):
         Utility.console_log("Failed!")

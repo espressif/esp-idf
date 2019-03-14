@@ -18,8 +18,60 @@ endfunction()
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_PATH}/port/include")
 
+# Workaround issue with creating symbolic links due to issues with native
+# path conversion (TO_NATIVE_PATH). The following summarizes what CMake invocations
+# this workaround is for:
+#
+# 1. CMake from command line + Ninja = No errors
+# 2. CMake from command line + MinGW Makefiles = Forward slash for paths, mklink mistakes path for a switch
+# 3. CMake from MSYS + Ninja = No errors
+# 4. CMake from MSYS + Unix Makefiles/MSYS Makefiles = Forward slash for paths, mklink mistakes path for a switch
+#
+# There are references to the issue in case (2) and (4) in https://github.com/ARMmbed/mbedtls/issues/1496,
+# https://cmake.org/pipermail/cmake/2006-July/010193.html, and https://cmake.org/Bug/view.php?id=5939.
+#
+# This workaround is meant to circumvent logic inside link_to_source() function in mbedtls/mbedtls/CMakeLists.txt.
+if(CMAKE_HOST_WIN32)
+    set(msystem $ENV{MSYSTEM})
+    if(MSYS OR msystem)
+        # Solves case (4). When in MSYS environment, instead opt to use the Unix equivalent of mklink.
+        set(CMAKE_HOST_UNIX 1)
+    else()
+        # Solves case (2). When invoked from command line, create the symbolic links ahead of link_to_source() invocations
+        # using a 'hybrid' path format resilient intermediary - in this case a Python wrapper for mklink. This is more unweildy
+        # than necessary, since string(REPLACE "/" "\\" ... does not actually work.
+        set(target_links "mbedtls/include/mbedtls"
+                        "mbedtls/scripts")
+        foreach(target_link ${target_links})
+            file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR}/${target_link} link)
+            file(TO_NATIVE_PATH ${COMPONENT_PATH}/${target_link} target)
+
+            if(NOT EXISTS ${link})
+                if (IS_DIRECTORY ${target})
+                    set(command ${PYTHON} ${COMPONENT_PATH}/mklink.py /j ${link} ${target})
+                else()
+                    set(command ${PYTHON} ${COMPONENT_PATH}/mklink.py /h ${link} ${target})
+                endif()
+
+                execute_process(COMMAND ${command}
+                    RESULT_VARIABLE result
+                    ERROR_VARIABLE output)
+
+                if (NOT ${result} EQUAL 0)
+                    message(FATAL_ERROR "Could not create symbolic link for: ${target} --> ${output}")
+                endif()
+            endif()
+        endforeach()
+    endif()
+endif()
+
 # Import mbedtls library targets
 add_subdirectory(mbedtls)
+
+# Use port specific implementation of net_socket.c instead of one from mbedtls
+get_target_property(src_tls mbedtls SOURCES)
+list(REMOVE_ITEM src_tls net_sockets.c)
+set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 

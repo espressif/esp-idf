@@ -20,7 +20,11 @@
 #define SAMPLE_RATE     (36000)
 #define I2S_NUM         (0)
 #define WAVE_FREQ_HZ    (100)
-#define PI 3.14159265
+#define PI              (3.14159265)
+#define I2S_BCK_IO      (GPIO_NUM_26)
+#define I2S_WS_IO       (GPIO_NUM_25)
+#define I2S_DO_IO       (GPIO_NUM_22)
+#define I2S_DI_IO       (-1)
 
 #define SAMPLE_PER_CYCLE (SAMPLE_RATE/WAVE_FREQ_HZ)
 
@@ -92,10 +96,10 @@ void app_main()
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                //Interrupt level 1
     };
     i2s_pin_config_t pin_config = {
-        .bck_io_num = 26,
-        .ws_io_num = 25,
-        .data_out_num = 22,
-        .data_in_num = -1                                                       //Not used
+        .bck_io_num = I2S_BCK_IO,
+        .ws_io_num = I2S_WS_IO,
+        .data_out_num = I2S_DO_IO,
+        .data_in_num = I2S_DI_IO                                               //Not used
     };
     i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
     i2s_set_pin(I2S_NUM, &pin_config);

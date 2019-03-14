@@ -6,6 +6,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include "string.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -21,6 +22,7 @@
 
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
@@ -99,7 +101,7 @@ static void __attribute__((noreturn)) task_fatal_error()
     }
 }
 
-void print_sha256 (const uint8_t *image_hash, const char *label)
+static void print_sha256 (const uint8_t *image_hash, const char *label)
 {
     char hash_print[HASH_LEN * 2 + 1];
     hash_print[HASH_LEN * 2] = 0;
@@ -107,6 +109,16 @@ void print_sha256 (const uint8_t *image_hash, const char *label)
         sprintf(&hash_print[i * 2], "%02x", image_hash[i]);
     }
     ESP_LOGI(TAG, "%s: %s", label, hash_print);
+}
+
+static void infinite_loop(void)
+{
+    int i = 0;
+    ESP_LOGI(TAG, "When a new firmware is available on the server, press the reset button to download it");
+    while(1) {
+        ESP_LOGI(TAG, "Waiting for a new firmware ... %d", ++i);
+        vTaskDelay(2000 / portTICK_PERIOD_MS);
+    }
 }
 
 static void ota_example_task(void *pvParameter)
@@ -158,16 +170,9 @@ static void ota_example_task(void *pvParameter)
              update_partition->subtype, update_partition->address);
     assert(update_partition != NULL);
 
-    err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
-        http_cleanup(client);
-        task_fatal_error();
-    }
-    ESP_LOGI(TAG, "esp_ota_begin succeeded");
-
     int binary_file_length = 0;
     /*deal with all receive packet*/
+    bool image_header_was_checked = false;
     while (1) {
         int data_read = esp_http_client_read(client, ota_write_data, BUFFSIZE);
         if (data_read < 0) {
@@ -175,6 +180,56 @@ static void ota_example_task(void *pvParameter)
             http_cleanup(client);
             task_fatal_error();
         } else if (data_read > 0) {
+            if (image_header_was_checked == false) {
+                esp_app_desc_t new_app_info;
+                if (data_read > sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t)) {
+                    // check current version with downloading
+                    memcpy(&new_app_info, &ota_write_data[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
+                    ESP_LOGI(TAG, "New firmware version: %s", new_app_info.version);
+
+                    esp_app_desc_t running_app_info;
+                    if (esp_ota_get_partition_description(running, &running_app_info) == ESP_OK) {
+                        ESP_LOGI(TAG, "Running firmware version: %s", running_app_info.version);
+                    }
+
+                    const esp_partition_t* last_invalid_app = esp_ota_get_last_invalid_partition();
+                    esp_app_desc_t invalid_app_info;
+                    if (esp_ota_get_partition_description(last_invalid_app, &invalid_app_info) == ESP_OK) {
+                        ESP_LOGI(TAG, "Last invalid firmware version: %s", invalid_app_info.version);
+                    }
+
+                    // check current version with last invalid partition
+                    if (last_invalid_app != NULL) {
+                        if (memcmp(invalid_app_info.version, new_app_info.version, sizeof(new_app_info.version)) == 0) {
+                            ESP_LOGW(TAG, "New version is the same as invalid version.");
+                            ESP_LOGW(TAG, "Previously, there was an attempt to launch the firmware with %s version, but it failed.", invalid_app_info.version);
+                            ESP_LOGW(TAG, "The firmware has been rolled back to the previous version.");
+                            http_cleanup(client);
+                            infinite_loop();
+                        }
+                    }
+
+                    if (memcmp(new_app_info.version, running_app_info.version, sizeof(new_app_info.version)) == 0) {
+                        ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
+                        http_cleanup(client);
+                        infinite_loop();
+                    }
+
+                    image_header_was_checked = true;
+
+                    err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
+                    if (err != ESP_OK) {
+                        ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
+                        http_cleanup(client);
+                        task_fatal_error();
+                    }
+                    ESP_LOGI(TAG, "esp_ota_begin succeeded");
+                } else {
+                    ESP_LOGE(TAG, "received package is not fit len");
+                    http_cleanup(client);
+                    task_fatal_error();
+                }
+            }
             err = esp_ota_write( update_handle, (const void *)ota_write_data, data_read);
             if (err != ESP_OK) {
                 http_cleanup(client);
@@ -195,16 +250,6 @@ static void ota_example_task(void *pvParameter)
         task_fatal_error();
     }
 
-    if (esp_partition_check_identity(esp_ota_get_running_partition(), update_partition) == true) {
-        ESP_LOGI(TAG, "The current running firmware is same as the firmware just downloaded");
-        int i = 0;
-        ESP_LOGI(TAG, "When a new firmware is available on the server, press the reset button to download it");
-        while(1) {
-            ESP_LOGI(TAG, "Waiting for a new firmware ... %d", ++i);
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
-        }
-    }
-
     err = esp_ota_set_boot_partition(update_partition);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_set_boot_partition failed (%s)!", esp_err_to_name(err));
@@ -214,6 +259,25 @@ static void ota_example_task(void *pvParameter)
     ESP_LOGI(TAG, "Prepare to restart system!");
     esp_restart();
     return ;
+}
+
+static bool diagnostic(void)
+{
+    gpio_config_t io_conf;
+    io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode         = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (1ULL << CONFIG_GPIO_DIAGNOSTIC);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en   = GPIO_PULLUP_ENABLE;
+    gpio_config(&io_conf);
+
+    ESP_LOGI(TAG, "Diagnostics (5 sec)...");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+    bool diagnostic_is_ok = gpio_get_level(CONFIG_GPIO_DIAGNOSTIC);
+
+    gpio_reset_pin(CONFIG_GPIO_DIAGNOSTIC);
+    return diagnostic_is_ok;
 }
 
 void app_main()
@@ -238,6 +302,22 @@ void app_main()
     // get sha256 digest for running partition
     esp_partition_get_sha256(esp_ota_get_running_partition(), sha_256);
     print_sha256(sha_256, "SHA-256 for current firmware: ");
+
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state;
+    if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
+        if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
+            // run diagnostic function ...
+            bool diagnostic_is_ok = diagnostic();
+            if (diagnostic_is_ok) {
+                ESP_LOGI(TAG, "Diagnostics completed successfully! Continuing execution ...");
+                esp_ota_mark_app_valid_cancel_rollback();
+            } else {
+                ESP_LOGE(TAG, "Diagnostics failed! Start rollback to the previous version ...");
+                esp_ota_mark_app_invalid_rollback_and_reboot();
+            }
+        }
+    }
 
     // Initialize NVS.
     esp_err_t err = nvs_flash_init();

@@ -129,7 +129,13 @@ JP14     |jp14|            Enable RTS/CTS flow control for serial communication
 Allocation of ESP32 Pins
 ------------------------
 
-Several pins / terminals of ESP32 module are allocated to the on board hardware. Some of them, like GPIO0 or GPIO2, have multiple functions. If certain hardware is not installed, e.g. nothing is plugged in to the Camera / JP4 header, then selected GPIOs may be used for other purposes.
+Several pins / terminals of ESP32 module are allocated to the on board hardware. If certain hardware is not installed, e.g. nothing is plugged in to the Camera / JP4 header, then selected GPIOs may be used for other purposes.
+
+Some of pins, like GPIO0 or GPIO2, have multiple functions and some of them are shared among on board and optional peripheral devices. Certain combinations of peripherals cannot work together. For example it is not possible to do JTAG debugging of an application that is using SD card, because several pins are shared by JTAG and the SD card slot.
+
+In other cases peripherals can coexist under certain conditions. This is applicable to e.g. LCD screen and SD card that share only a single pin GPIO21. This pin is used to provide D/C (Data / Control) signal for the LCD and CD (Card Detect) signal read from the SD card slot. If the card detect functionality is not essential, then it may be disabled by removing R167, so both LCD and SD may operate together.
+
+For more details what pins are shared among peripherals please refer to the table below.
 
 
 Main I/O Connector / JP1
@@ -308,7 +314,7 @@ LCD / U5
 Start Application Development
 -----------------------------
 
-Before powering up the ESP-WROVER-KIT, please make sure that the board has been received in good condition with no obvious signs of damage.
+Before powering up your ESP-WROVER-KIT, please make sure that the board is in good condition with no obvious signs of damage.
 
 
 Initial Setup
@@ -329,12 +335,7 @@ Turn the **Power Switch** on. The **5V Power On LED** should turn on.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-To start development of applications for ESP-WROVER-KIT, proceed to the :doc:`index` section which will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-flash` an example application to the ESP32
-* :ref:`get-started-build-monitor` instantly what the application is doing
+Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents

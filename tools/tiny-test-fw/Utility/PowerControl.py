@@ -90,6 +90,6 @@ class Control(object):
 
     @classmethod
     def control_rest(cls, apc_ip, outlet, action):
-        outlet_list = list(range(1, 9)) # has to be a list if we want to remove from it under Python 3
+        outlet_list = list(range(1, 9))  # has to be a list if we want to remove from it under Python 3
         outlet_list.remove(outlet)
         cls.control(apc_ip, dict.fromkeys(outlet_list, action))

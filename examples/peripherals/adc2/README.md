@@ -1,29 +1,65 @@
-# Example: ADC2
+# ADC2 Example
 
-This test code shows how to configure ADC2 and read the voltage connected to GPIO pin.
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
- 
-### ADC2 functions:
+In this example, we use ADC2 to measure the output of DAC.
 
-ADC1_CHANNEL_7: GPIO27, voltage range [0V..3.1V], the data range [0..4095],
-saturates at about 1.1V.
+## How to use example
 
-DAC_CHANNEL_1: GPIO25, output range [0V..3.3V]
+### Hardware Required
 
- 
-### Test:
+* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A USB cable for power supply and programming
 
-Please choose the channel (GPIO) to output DAC signals and the channel to input 
-signals to ADC by menuconfig:
-    
-    make menuconfig
+We use ADC1_CHANNEL_7 (GPIO27) and DAC_CHANNEL_1 (GPIO25) by default, you need to short the two GPIOs (if you have changed the ADC2 and DAC channel, please refer to Chapter 4.11 of the `ESP32 Technical Reference Manual` to get the pin number).
 
-Then connect two pins by a wire directly. 
+### Configure the project
 
-E.g. Choose GPIO27 for ADC and GPIO 25 for DAC in menuconfig (default option).
-Then connect them up.
+```
+make menuconfig
+```
 
-Connection of ADC and DAC to the same pin is also allowed. In this case, you don't
-have to connect by a wire externally. E.g. choose GPIO 26 for both ADC and DAC in
-menuconfig.
+* Set serial port under Serial Flasher Options.
+* Set ADC2 and DAC channel in "Example Configuration"
 
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+make -j4 flash monitor
+```
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+## Example Output
+
+Running this example, you will see the following log output on the serial monitor:
+
+```
+ADC channel 7 @ GPIO 27, DAC channel 1 @ GPIO 25.
+adc2_init...
+start conversion.
+1: 150
+2: 203
+3: 250
+4: 300
+5: 351
+6: 400
+7: 441
+8: 491
+9: 547
+10: 595
+...
+```
+
+## Troubleshooting
+
+* program upload failure
+
+    * Hardware connection is not correct: run `make monitor`, and reboot your board to see if there are any output logs.
+    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

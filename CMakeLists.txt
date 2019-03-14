@@ -32,7 +32,13 @@ execute_process(COMMAND "${CMAKE_COMMAND}"
     -D "IDF_PATH=${IDF_PATH}"
     -D "DEBUG=${DEBUG}"
     -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
-    WORKING_DIRECTORY "${PROJECT_PATH}")
+    WORKING_DIRECTORY "${PROJECT_PATH}"
+    RESULT_VARIABLE expand_requirements_result)
+
+if(expand_requirements_result)
+    message(FATAL_ERROR "Failed to expand component requirements")
+endif()
+
 include("${CMAKE_BINARY_DIR}/component_depends.cmake")
 
 #
@@ -74,8 +80,10 @@ idf_get_git_revision()
 # Check that the targets set in cache, sdkconfig, and in environment all match
 idf_check_config_target()
 
-## if project uses git, retrieve revision
-git_describe(PROJECT_VER "${CMAKE_CURRENT_SOURCE_DIR}")
+## get PROJECT_VER
+if(NOT BOOTLOADER_BUILD)
+    app_get_revision("${CMAKE_SOURCE_DIR}")
+endif()
 
 # Add some idf-wide definitions
 idf_set_global_compile_options()

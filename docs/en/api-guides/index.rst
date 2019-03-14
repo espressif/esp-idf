@@ -1,5 +1,6 @@
 API Guides
 **********
+:link_to_translation:`zh_CN:[中文]`
 
 .. toctree::
    :maxdepth: 1
@@ -26,6 +27,7 @@ API Guides
    Application Level Tracing <app_trace>
    Console Component <console>
    ROM debug console <romconsole>
+   RF Calibration <RF_calibration>
    WiFi Driver <wifi>
    ESP-MESH <mesh>
    BluFi <blufi>

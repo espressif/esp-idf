@@ -16,10 +16,18 @@
 
 #include <protocomm_security.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief   Protocomm security version 1 implementation
  *
- * This is a full fledged security implmentation using
+ * This is a full fledged security implementation using
  * Curve25519 key exchange and AES-256-CTR encryption
  */
 extern const protocomm_security_t protocomm_security1;
+
+#ifdef __cplusplus
+}
+#endif

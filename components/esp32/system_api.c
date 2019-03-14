@@ -37,6 +37,8 @@
 #include "freertos/xtensa_api.h"
 #include "esp_heap_caps.h"
 #include "esp_system_internal.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 
 static const char* TAG = "system_api";
 
@@ -77,31 +79,17 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
-    uint32_t mac_low;
-    uint32_t mac_high;
-    uint8_t efuse_crc;
-    uint8_t calc_crc;
-
-    uint8_t version = REG_READ(EFUSE_BLK3_RDATA5_REG) >> 24;
-
+    uint8_t version;
+    esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_VER, &version, 8);
     if (version != 1) {
         ESP_LOGE(TAG, "Base MAC address from BLK3 of EFUSE version error, version = %d", version);
         return ESP_ERR_INVALID_VERSION;
     }
 
-    mac_low = REG_READ(EFUSE_BLK3_RDATA1_REG);
-    mac_high = REG_READ(EFUSE_BLK3_RDATA0_REG);
-
-    mac[0] = mac_high >> 8;
-    mac[1] = mac_high >> 16;
-    mac[2] = mac_high >> 24;
-    mac[3] = mac_low;
-    mac[4] = mac_low >> 8;
-    mac[5] = mac_low >> 16;
-
-    efuse_crc = mac_high;
-
-    calc_crc = esp_crc8(mac, 6);
+    uint8_t efuse_crc;
+    esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM, mac, 48);
+    esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_CRC, &efuse_crc, 8);
+    uint8_t calc_crc = esp_crc8(mac, 6);
 
     if (efuse_crc != calc_crc) {
         ESP_LOGE(TAG, "Base MAC address from BLK3 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
@@ -112,29 +100,17 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 {
-    uint32_t mac_low;
-    uint32_t mac_high;
     uint8_t efuse_crc;
-    uint8_t calc_crc;
-
-    mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
-    mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);
-
-    mac[0] = mac_high >> 8;
-    mac[1] = mac_high;
-    mac[2] = mac_low >> 24;
-    mac[3] = mac_low >> 16;
-    mac[4] = mac_low >> 8;
-    mac[5] = mac_low;
-
-    efuse_crc = mac_high >> 16;
-
-    calc_crc = esp_crc8(mac, 6);
+    esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, mac, 48);
+    esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &efuse_crc, 8);
+    uint8_t calc_crc = esp_crc8(mac, 6);
 
     if (efuse_crc != calc_crc) {
          // Small range of MAC addresses are accepted even if CRC is invalid.
          // These addresses are reserved for Espressif internal use.
+        uint32_t mac_high = ((uint32_t)mac[0] << 8) | mac[1];
         if ((mac_high & 0xFFFF) == 0x18fe) {
+            uint32_t mac_low = ((uint32_t)mac[2] << 24) | ((uint32_t)mac[3] << 16) | ((uint32_t)mac[4] << 8) | mac[5];
             if ((mac_low >= 0x346a85c7) && (mac_low <= 0x346a85f8)) {
                 return ESP_OK;
             }
@@ -279,8 +255,7 @@ void IRAM_ATTR esp_restart_noos()
     rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_200ns);
     rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_200ns);
     rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
-    rtc_wdt_enable();
-    rtc_wdt_protect_on();
+    rtc_wdt_flashboot_mode_enable();
 
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i

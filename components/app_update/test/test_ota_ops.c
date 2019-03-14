@@ -8,7 +8,7 @@
 #include <unity.h>
 #include <test_utils.h>
 #include <esp_ota_ops.h>
-
+#include "bootloader_common.h"
 
 /* These OTA tests currently don't assume an OTA partition exists
    on the device, so they're a bit limited
@@ -84,3 +84,26 @@ TEST_CASE("esp_ota_get_next_update_partition logic", "[ota]")
     TEST_ASSERT_EQUAL_PTR(ota_0, p);
 }
 
+TEST_CASE("esp_ota_get_partition_description ", "[ota]")
+{
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    TEST_ASSERT_NOT_NULL(running);
+    esp_app_desc_t app_desc1, app_desc2;
+    TEST_ESP_OK(esp_ota_get_partition_description(running, &app_desc1));
+    const esp_partition_pos_t running_pos = {
+            .offset = running->address,
+            .size = running->size
+    };
+    TEST_ESP_OK(bootloader_common_get_partition_description(&running_pos, &app_desc2));
+
+    TEST_ASSERT_EQUAL_MEMORY_MESSAGE((uint8_t *)&app_desc1, (uint8_t *)&app_desc2, sizeof(app_desc1), "must be the same");
+
+    const esp_partition_t *not_app = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
+    TEST_ASSERT_NOT_NULL(not_app);
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_ota_get_partition_description(not_app, &app_desc1));
+    const esp_partition_pos_t not_app_pos = {
+            .offset = not_app->address,
+            .size = not_app->size
+    };
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, bootloader_common_get_partition_description(&not_app_pos, &app_desc1));
+}

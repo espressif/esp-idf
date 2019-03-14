@@ -22,17 +22,41 @@ bool esp_event_is_handler_registered(esp_event_loop_handle_t event_loop, esp_eve
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     bool result = false;
-    xSemaphoreTake(loop->mutex, portMAX_DELAY);
 
-    esp_event_base_instance_t* base_it;
-    SLIST_FOREACH(base_it, &(loop->event_bases), event_base_entry) {
-        esp_event_id_instance_t* event_it;
-        SLIST_FOREACH(event_it, &(base_it->event_ids), event_id_entry) {
-            esp_event_handler_instance_t* handler_it;
-            SLIST_FOREACH(handler_it, &(event_it->handlers), handler_entry) {
-                if (base_it->base == event_base && event_it->id == event_id && handler_it->handler == event_handler) {
-                    result = true;
-                    goto out;
+    esp_event_loop_node_t* loop_node;
+    esp_event_base_node_t* base_node;
+    esp_event_id_node_t* id_node;
+    esp_event_handler_instance_t* handler;
+
+    SLIST_FOREACH(loop_node, &(loop->loop_nodes), next) {
+        SLIST_FOREACH(handler, &(loop_node->handlers), next) {
+            if(event_base == ESP_EVENT_ANY_BASE && event_id == ESP_EVENT_ANY_ID && handler->handler == event_handler)
+            {
+                result = true;
+                goto out;
+            }
+        }
+
+        SLIST_FOREACH(base_node, &(loop_node->base_nodes), next) {
+            if (base_node->base == event_base) {
+                SLIST_FOREACH(handler, &(base_node->handlers), next) {
+                    if(event_id == ESP_EVENT_ANY_ID && handler->handler == event_handler)
+                    {
+                        result = true;
+                        goto out;
+                    }
+                }
+
+                SLIST_FOREACH(id_node, &(base_node->id_nodes), next) {
+                    if(id_node->id == event_id) {
+                        SLIST_FOREACH(handler, &(id_node->handlers), next) {
+                            if(handler->handler == event_handler)
+                            {
+                                result = true;
+                                goto out;
+                            }
+                        }       
+                    }
                 }
             }
         }

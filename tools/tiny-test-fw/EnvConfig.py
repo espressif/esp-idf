@@ -67,7 +67,7 @@ class Config(object):
         try:
             value = self.configs[variable_name]
         except KeyError:
-            #TODO: to support auto get variable here
+            # TODO: to support auto get variable here
             value = None
         if value is None:
             raise ValueError("Failed to get variable")

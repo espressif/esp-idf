@@ -59,7 +59,7 @@
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
 #include "esp_cache_err_int.h"
-#include "esp_coexist.h"
+#include "esp_coexist_internal.h"
 #include "esp_panic.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
@@ -71,6 +71,7 @@
 #include "esp_pm.h"
 #include "pm_impl.h"
 #include "trax.h"
+#include "esp_ota_ops.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -175,6 +176,26 @@ void IRAM_ATTR call_start_cpu0()
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
+    if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
+        const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+        ESP_EARLY_LOGI(TAG, "Application information:");
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
+        ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
+#endif
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
+        ESP_EARLY_LOGI(TAG, "App version:      %s", app_desc->version);
+#endif
+#ifdef CONFIG_APP_SECURE_VERSION
+        ESP_EARLY_LOGI(TAG, "Secure version:   %d", app_desc->secure_version);
+#endif
+#ifdef CONFIG_APP_COMPILE_TIME_DATE
+        ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
+#endif
+        char buf[17];
+        esp_ota_get_app_elf_sha256(buf, sizeof(buf));
+        ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
+        ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
+    }
 
 #if !CONFIG_FREERTOS_UNICORE
     if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
@@ -391,6 +412,10 @@ void start_cpu0_default(void)
     }
 #endif
 
+#if CONFIG_SW_COEXIST_ENABLE
+    esp_coex_adapter_register(&g_coex_adapter_funcs);
+#endif
+
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
                                                 ESP_TASK_MAIN_STACK, NULL,
                                                 ESP_TASK_MAIN_PRIO, NULL, 0);
@@ -495,6 +520,12 @@ static void main_task(void* args)
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
     rtc_wdt_disable();
+#endif
+#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
+    if (efuse_partition) {
+        esp_efuse_init(efuse_partition->address, efuse_partition->size);
+    }
 #endif
     app_main();
     vTaskDelete(NULL);

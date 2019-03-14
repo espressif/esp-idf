@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 #
-# parttool returns info about the required partition.
-#
-# This utility is used by the make system to get information 
-# about the start addresses: partition table, factory area, phy area.
+# parttool is used to perform partition level operations - reading,
+# writing, erasing and getting info about the partition.
 #
 # Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 #
@@ -21,113 +19,269 @@
 from __future__ import print_function, division
 import argparse
 import os
-import re
-import struct
 import sys
-import hashlib
-import binascii
+import subprocess
+import tempfile
 import gen_esp32part as gen
 
 __version__ = '1.0'
 
+IDF_COMPONENTS_PATH = os.path.expandvars(os.path.join("$IDF_PATH", "components"))
+
+ESPTOOL_PY = os.path.join(IDF_COMPONENTS_PATH, "esptool_py", "esptool", "esptool.py")
+
 quiet = False
+
 
 def status(msg):
     """ Print status message to stderr """
     if not quiet:
-        critical(msg)
+        print(msg)
 
-def critical(msg):
-    """ Print critical message to stderr """
-    if not quiet:
-        sys.stderr.write(msg)
-        sys.stderr.write('\n')
-               
-def main():
-    global quiet
-    parser = argparse.ArgumentParser(description='Returns info about the required partition.')
 
-    parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
+def _invoke_esptool(esptool_args, args):
+    m_esptool_args = [sys.executable, ESPTOOL_PY]
 
-    parser.add_argument('--partition-table-offset', help='The offset of the partition table in flash. Only consulted if partition table is in CSV format.', type=str, default='0x8000')
+    if args.port != "":
+        m_esptool_args.extend(["--port", args.port])
 
-    search_type = parser.add_mutually_exclusive_group()
-    search_type.add_argument('--partition-name', '-p', help='The name of the required partition', type=str, default=None)
-    search_type.add_argument('--type', '-t', help='The type of the required partition', type=str, default=None)
-    search_type.add_argument('--default-boot-partition', help='Select the default boot partition, '+
-                             'using the same fallback logic as the IDF bootloader', action="store_true")
+    m_esptool_args.extend(esptool_args)
 
-    parser.add_argument('--subtype', '-s', help='The subtype of the required partition', type=str, default=None)
+    if quiet:
+        with open(os.devnull, "w") as fnull:
+            subprocess.check_call(m_esptool_args, stdout=fnull, stderr=fnull)
+    else:
+        subprocess.check_call(m_esptool_args)
 
-    parser.add_argument('--offset', '-o', help='Return offset of required partition', action="store_true")
-    parser.add_argument('--size', help='Return size of required partition', action="store_true")
 
-    parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.',
-                        type=argparse.FileType('rb'), default=sys.stdin)
-
-    args = parser.parse_args()
-
-    if args.type is not None and args.subtype is None:
-        status("If --type is specified, --subtype is required")
-        return 2
-    if args.type is None and args.subtype is not None:
-        status("--subtype is only used with --type")
-        return 2
-
-    quiet = args.quiet
+def _get_partition_table(args):
+    partition_table = None
 
     gen.offset_part_table = int(args.partition_table_offset, 0)
 
-    input = args.input.read()
-    input_is_binary = input[0:2] == gen.PartitionDefinition.MAGIC_BYTES
-    if input_is_binary:
-        status("Parsing binary partition input...")
-        table = gen.PartitionTable.from_binary(input)
+    if args.partition_table_file:
+        status("Reading partition table from partition table file...")
+
+        try:
+            with open(args.partition_table_file, "rb") as partition_table_file:
+                partition_table = gen.PartitionTable.from_binary(partition_table_file.read())
+                status("Partition table read from binary file {}".format(partition_table_file.name))
+        except (gen.InputError, TypeError):
+            with open(args.partition_table_file, "r") as partition_table_file:
+                partition_table_file.seek(0)
+                partition_table = gen.PartitionTable.from_csv(partition_table_file.read())
+                status("Partition table read from CSV file {}".format(partition_table_file.name))
     else:
-        input = input.decode()
-        status("Parsing CSV input...")
-        table = gen.PartitionTable.from_csv(input)
+        port_info = (" on port " + args.port if args.port else "")
+        status("Reading partition table from device{}...".format(port_info))
 
-    found_partition = None
+        f_name = None
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f_name = f.name
 
-    if args.default_boot_partition:
-        search = [ "factory" ] + [ "ota_%d" % d for d in range(16) ]
+        try:
+            invoke_args = ["read_flash", str(gen.offset_part_table), str(gen.MAX_PARTITION_LENGTH), f_name]
+            _invoke_esptool(invoke_args, args)
+            with open(f_name, "rb") as f:
+                partition_table = gen.PartitionTable.from_binary(f.read())
+                status("Partition table read from device" + port_info)
+        finally:
+            os.unlink(f_name)
+
+    return partition_table
+
+
+def _get_partition(args):
+    partition_table = _get_partition_table(args)
+
+    partition = None
+
+    if args.partition_name:
+        partition = partition_table.find_by_name(args.partition_name)
+    elif args.partition_type and args.partition_subtype:
+        partition = partition_table.find_by_type(args.partition_type, args.partition_subtype)
+    elif args.partition_boot_default:
+        search = ["factory"] + ["ota_{}".format(d) for d in range(16)]
         for subtype in search:
-            found_partition = table.find_by_type("app", subtype)
-            if found_partition is not None:
+            partition = partition_table.find_by_type("app", subtype)
+            if partition is not None:
                 break
-    elif args.partition_name is not None:
-        found_partition = table.find_by_name(args.partition_name)
-    elif args.type is not None:
-        found_partition = table.find_by_type(args.type, args.subtype)
     else:
-        raise RuntimeError("invalid partition selection choice")
+        raise RuntimeError("Invalid partition selection arguments. Specify --partition-name OR \
+                            --partition-type and --partition-subtype OR --partition--boot-default.")
 
-    if found_partition is None:
-        return 1  # nothing found
+    if partition:
+        status("Found partition {}".format(str(partition)))
 
-    if args.offset:
-        print('0x%x' % (found_partition.offset))
-    if args.size:
-        print('0x%x' % (found_partition.size))
-
-    return 0
-
-class InputError(RuntimeError):
-    def __init__(self, e):
-        super(InputError, self).__init__(e)
+    return partition
 
 
-class ValidationError(InputError):
-    def __init__(self, partition, message):
-        super(ValidationError, self).__init__(
-            "Partition %s invalid: %s" % (partition.name, message))
+def _get_and_check_partition(args):
+    partition = None
+
+    partition = _get_partition(args)
+
+    if not partition:
+        raise RuntimeError("Unable to find specified partition.")
+
+    return partition
+
+
+def write_partition(args):
+    erase_partition(args)
+
+    partition = _get_and_check_partition(args)
+
+    status("Checking input file size...")
+
+    with open(args.input, "rb") as input_file:
+        content_len = len(input_file.read())
+
+        if content_len != partition.size:
+            status("File size (0x{:x}) does not match partition size (0x{:x})".format(content_len, partition.size))
+        else:
+            status("File size matches partition size (0x{:x})".format(partition.size))
+
+    _invoke_esptool(["write_flash", str(partition.offset),  args.input], args)
+
+    status("Written contents of file '{}' to device at offset 0x{:x}".format(args.input, partition.offset))
+
+
+def read_partition(args):
+    partition = _get_and_check_partition(args)
+    _invoke_esptool(["read_flash", str(partition.offset), str(partition.size), args.output], args)
+    status("Read partition contents from device at offset 0x{:x} to file '{}'".format(partition.offset, args.output))
+
+
+def erase_partition(args):
+    partition = _get_and_check_partition(args)
+    _invoke_esptool(["erase_region", str(partition.offset),  str(partition.size)], args)
+    status("Erased partition at offset 0x{:x} on device".format(partition.offset))
+
+
+def get_partition_info(args):
+    partition = None
+
+    if args.table:
+        partition_table = _get_partition_table(args)
+
+        if args.table.endswith(".csv"):
+            partition_table = partition_table.to_csv()
+        else:
+            partition_table = partition_table.to_binary()
+
+        with open(args.table, "wb") as table_file:
+            table_file.write(partition_table)
+            status("Partition table written to " + table_file.name)
+    else:
+        partition = _get_partition(args)
+
+        if partition:
+            info_dict = {
+                "offset": '0x{:x}'.format(partition.offset),
+                "size": '0x{:x}'.format(partition.size)
+            }
+
+            infos = []
+
+            try:
+                for info in args.info:
+                    infos += [info_dict[info]]
+            except KeyError:
+                raise RuntimeError("Request for unknown partition info {}".format(info))
+
+            status("Requested partition information [{}]:".format(", ".join(args.info)))
+            print(" ".join(infos))
+        else:
+            status("Partition not found")
+
+
+def generate_blank_partition_file(args):
+    output = None
+    stdout_binary = None
+
+    partition = _get_and_check_partition(args)
+    output = b"\xFF" * partition.size
+
+    try:
+        stdout_binary = sys.stdout.buffer  # Python 3
+    except AttributeError:
+        stdout_binary = sys.stdout
+
+    with stdout_binary if args.output == "" else open(args.output, 'wb') as f:
+        f.write(output)
+        status("Blank partition file '{}' generated".format(args.output))
+
+
+def main():
+    global quiet
+
+    parser = argparse.ArgumentParser("ESP-IDF Partitions Tool")
+
+    parser.add_argument("--quiet", "-q", help="suppress stderr messages", action="store_true")
+
+    # There are two possible sources for the partition table: a device attached to the host
+    # or a partition table CSV/binary file. These sources are mutually exclusive.
+    partition_table_info_source_args = parser.add_mutually_exclusive_group()
+
+    partition_table_info_source_args.add_argument("--port", "-p", help="port where the device to read the partition table from is attached", default="")
+    partition_table_info_source_args.add_argument("--partition-table-file", "-f", help="file (CSV/binary) to read the partition table from")
+
+    parser.add_argument("--partition-table-offset", "-o", help="offset to read the partition table from",  default="0x8000")
+
+    # Specify what partition to perform the operation on. This can either be specified using the
+    # partition name or the first partition that matches the specified type/subtype
+    partition_selection_args = parser.add_mutually_exclusive_group()
+
+    partition_selection_args.add_argument("--partition-name", "-n", help="name of the partition")
+    partition_selection_args.add_argument("--partition-type", "-t", help="type of the partition")
+    partition_selection_args.add_argument('--partition-boot-default', "-d", help='select the default boot partition \
+                                           using the same fallback logic as the IDF bootloader', action="store_true")
+
+    parser.add_argument("--partition-subtype", "-s", help="subtype of the partition")
+
+    subparsers = parser.add_subparsers(dest="operation", help="run parttool -h for additional help")
+
+    # Specify the supported operations
+    read_part_subparser = subparsers.add_parser("read_partition", help="read partition from device and dump contents into a file")
+    read_part_subparser.add_argument("--output", help="file to dump the read partition contents to")
+
+    write_part_subparser = subparsers.add_parser("write_partition", help="write contents of a binary file to partition on device")
+    write_part_subparser.add_argument("--input", help="file whose contents are to be written to the partition offset")
+
+    subparsers.add_parser("erase_partition", help="erase the contents of a partition on the device")
+
+    print_partition_info_subparser = subparsers.add_parser("get_partition_info", help="get partition information")
+    print_partition_info_subparser_info_type = print_partition_info_subparser.add_mutually_exclusive_group()
+    print_partition_info_subparser_info_type.add_argument("--info", help="type of partition information to get", nargs="+")
+    print_partition_info_subparser_info_type.add_argument("--table", help="dump the partition table to a file")
+
+    generate_blank_subparser = subparsers.add_parser("generate_blank_partition_file", help="generate a blank (all 0xFF) partition file of \
+                                                     the specified partition that can be flashed to the device")
+    generate_blank_subparser.add_argument("--output", help="blank partition file filename")
+
+    args = parser.parse_args()
+
+    quiet = args.quiet
+
+    # No operation specified, display help and exit
+    if args.operation is None:
+        if not quiet:
+            parser.print_help()
+        sys.exit(1)
+
+    # Else execute the operation
+    operation_func = globals()[args.operation]
+
+    if quiet:
+        # If exceptions occur, suppress and exit quietly
+        try:
+            operation_func(args)
+        except Exception:
+            sys.exit(2)
+    else:
+        operation_func(args)
 
 
 if __name__ == '__main__':
-    try:
-        r = main()
-        sys.exit(r)
-    except InputError as e:
-        print(e, file=sys.stderr)
-        sys.exit(2)
+    main()

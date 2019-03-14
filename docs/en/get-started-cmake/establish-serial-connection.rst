@@ -1,6 +1,7 @@
 Establish Serial Connection with ESP32 (CMake)
 ==============================================
 
+:link_to_translation:`zh_CN:[中文]`
 
 This section provides guidance how to establish serial connection between ESP32 and PC.
 
@@ -12,11 +13,29 @@ Connect the ESP32 board to the PC using the USB cable. If device driver does not
 
 Below are the links to drivers for ESP32 boards produced by Espressif:
 
-* ESP32-PICO-KIT and ESP32-DevKitC - `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
-* ESP32-WROVER-KIT and ESP32 Demo Board - `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/VCP.htm>`_
+.. csv-table::
+    :header: Development Board, USB Driver, Remarks
+    :widths: 40, 20, 40
 
-Above drivers are primarily for reference. They should already be bundled with the operating system and installed automatically once one of listed boards is connected to the PC.
+    :ref:`ESP32-DevKitC <esp-modules-and-boards-esp32-devkitc>`,  `CP210x`_
+    `ESP32-LyraT <https://www.espressif.com/en/products/hardware/esp32-lyrat>`_, `CP210x`_
+    `ESP32-LyraTD-MSC <https://www.espressif.com/en/products/hardware/esp32-lyratd-msc>`_, `CP210x`_
+    :ref:`ESP32-PICO-KIT <esp-modules-and-boards-esp32-pico-kit>`, `CP210x`_
+    :ref:`ESP-WROVER-KIT <esp-modules-and-boards-esp-wrover-kit>`, `FTDI`_
+    :ref:`ESP32 Demo Board <esp-modules-and-boards-esp32-demo-board>`, `FTDI`_
+    `ESP-Prog`_, `FTDI`_, Programmer board (w/o ESP32)
+    `ESP32-MeshKit-Sense <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP32-MeshKit-Sense_guide_en.md#esp32-meshkit-sense-hardware-design-guidelines>`_, n/a, Use with `ESP-Prog`_
+    `ESP32-Sense Kit <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_en.md#guide-for-esp32-sense-development-kit>`_, n/a, Use with `ESP-Prog`_
+
+.. _CP210x: https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers
+.. _FTDI: http://www.ftdichip.com/Drivers/VCP.htm 
+.. _ESP-Prog: https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_en.md#introduction-to-the-esp-prog-board
+
+* CP210x: `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_ 
+* FTDI: `FTDI Virtual COM Port Drivers <http://www.ftdichip.com/Drivers/VCP.htm>`_
+
+The drivers above are primarily for reference. Under normal circumstances, the drivers should be bundled with and operating system and automatically installed upon connecting one of the listed boards to the PC.
 
 
 Check port on Windows
@@ -54,8 +73,10 @@ MacOS ::
 
     ls /dev/cu.*
 
+.. note::
 
-.. note: MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
+    MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
+
 
 .. _linux-dialout-group-cmake:
 
@@ -65,6 +86,10 @@ Adding user to ``dialout`` on Linux
 The currently logged user should have read and write access the serial port over USB. On most Linux distributions, this is done by adding the user to ``dialout`` group with the following command::
 
     sudo usermod -a -G dialout $USER
+
+on Arch Linux this is done by adding the user to ``uucp`` group with the following command::
+
+    sudo usermod -a -G uucp $USER
 
 Make sure you re-login to enable read and write permissions for the serial port. 
 
@@ -116,7 +141,7 @@ Then open serial port in terminal and check, if you see any log printed out by E
 
     ...
 
-If you see some legible log, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
+If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
 
 .. note::
 
@@ -124,8 +149,8 @@ If you see some legible log, it means serial connection is working and you are r
 
 .. note::
 
-   Close serial terminal after verification that communication is working. In next step we are going to use another application to upload ESP32. This application will not be able to access serial port while it is open in terminal.
+   Close serial terminal after verification that communication is working. In the next step we are going to use a different application to upload a new firmware to ESP32. This application will not be able to access serial port while it is open in terminal.
 
-If you got here from section :ref:`get-started-connect-cmake` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure-cmake`.
+If you got here from :ref:`get-started-connect-cmake` when installing s/w for ESP32 development, then you can continue with :ref:`get-started-configure-cmake`.
 
 .. _esptool documentation: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader

@@ -2,9 +2,11 @@
 #include "unity.h"
 #include "esp_log.h"
 #include "driver/spi_common.h"
+#include "sdkconfig.h"
 
 static const char TAG[] = "test_psram";
 
+#ifdef CONFIG_SPIRAM_SUPPORT
 static void test_psram_content()
 {
     const int test_size = 2048;
@@ -32,6 +34,7 @@ static void test_psram_content()
 
     free(test_area);
 }
+#endif
 
 // NOTE: this unit test rely on the config that PSRAM of 8MB is used only when CONFIG_SPIRAM_BNKSWITCH_ENABLE is set
 TEST_CASE("can use spi when not being used by psram", "[psram_4m]")

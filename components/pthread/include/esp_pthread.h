@@ -14,6 +14,9 @@
 
 #pragma once
 
+#include "esp_err.h"
+#include <freertos/FreeRTOSConfig.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,10 +27,21 @@ extern "C" {
 
 /** pthread configuration structure that influences pthread creation */
 typedef struct {
-    size_t stack_size;    ///< the stack size of the pthread
-    size_t prio;          ///< the thread's priority
-    bool inherit_cfg;     ///< inherit this configuration further
+    size_t stack_size;  ///< The stack size of the pthread
+    size_t prio;        ///< The thread's priority
+    bool inherit_cfg;   ///< Inherit this configuration further
+    const char* thread_name;  ///< The thread name.
+    int pin_to_core;    ///< The core id to pin the thread to. Has the same value range as xCoreId argument of xTaskCreatePinnedToCore.
 } esp_pthread_cfg_t;
+
+/**
+ * @brief Creates a default pthread configuration based
+ * on the values set via menuconfig.
+ * 
+ * @return
+ *      A default configuration structure.
+ */
+esp_pthread_cfg_t esp_pthread_get_default_config();
 
 /**
  * @brief Configure parameters for creating pthread

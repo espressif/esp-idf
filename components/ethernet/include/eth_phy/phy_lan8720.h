@@ -20,45 +20,53 @@ extern "C" {
 
 #include "phy.h"
 
-
-/** @brief Dump all LAN8720 PHY SMI configuration registers
+/**
+ * @brief Dump LAN8720 PHY SMI configuration registers
  *
- * @note These registers are dumped at 'debug' level, so output
- * may not be visible depending on default log levels.
  */
 void phy_lan8720_dump_registers();
 
-/** @brief Default LAN8720 phy_check_init function.
+/**
+ * @brief Default LAN8720 phy_check_init function
+ *
  */
 void phy_lan8720_check_phy_init(void);
 
-/** @brief Default LAN8720 phy_get_speed_mode function.
+/**
+ * @brief Default LAN8720 phy_get_speed_mode function
+ *
+ * @return eth_speed_mode_t Ethernet speed mode
  */
 eth_speed_mode_t phy_lan8720_get_speed_mode(void);
 
-/** @brief Default LAN8720 phy_get_duplex_mode function.
+/**
+ * @brief Default LAN8720 phy_get_duplex_mode function
+ *
+ * @return eth_duplex_mode_t Ethernet duplex mode
  */
 eth_duplex_mode_t phy_lan8720_get_duplex_mode(void);
 
-/** @brief Default LAN8720 phy_power_enable function.
+/**
+ * @brief Default LAN8720 phy_power_enable function
  *
- * @note This function may need to be replaced with a custom function
- * if the PHY has a GPIO to enable power or start a clock.
- *
- * Consult the ethernet example to see how this is done.
  */
 void phy_lan8720_power_enable(bool);
 
-/** @brief Default LAN8720 phy_init function.
+/**
+ * @brief Default LAN8720 phy_init function
+ *
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - ESP_FAIL on error
  */
 esp_err_t phy_lan8720_init(void);
 
-/** @brief Default LAN8720 PHY configuration
+/**
+ * @brief Default LAN8720 PHY configuration
  *
- * This configuration is not suitable for use as-is, it will need
- * to be modified for your particular PHY hardware setup.
+ * @note This configuration is not suitable for use as-is,
+ * it will need to be modified for your particular PHY hardware setup.
  *
- * Consult the Ethernet example to see how this is done.
  */
 extern const eth_config_t phy_lan8720_default_ethernet_config;
 

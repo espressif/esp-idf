@@ -26,7 +26,7 @@
 
 /* ----------------------- Defines ------------------------------------------*/
 #define MB_INST_MIN_SIZE                    (2) // The minimal size of Modbus registers area in bytes
-#define MB_INST_MAX_SIZE                    (2048) // The maximum size of Modbus area in bytes
+#define MB_INST_MAX_SIZE                    (65535 * 2) // The maximum size of Modbus area in bytes
 
 #define MB_CONTROLLER_STACK_SIZE            (CONFIG_MB_CONTROLLER_STACK_SIZE) // Stack size for Modbus controller
 #define MB_CONTROLLER_PRIORITY              (CONFIG_MB_SERIAL_TASK_PRIO - 1) // priority of MB controller task

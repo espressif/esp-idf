@@ -61,6 +61,7 @@ FAILED_EXAMPLES=""
 RESULT_ISSUES=22  # magic number result code for issues found
 LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
+SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
 
@@ -129,8 +130,18 @@ build_example () {
     local EXAMPLE_DIR_REL=${EXAMPLE_DIR#"${COPY_ROOT_PARENT}"}
     pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
         # be stricter in the CI build than the default IDF settings
-        export EXTRA_CFLAGS="-Werror -Werror=deprecated-declarations"
+        export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+
+        # sdkconfig files are normally not checked into git, but may be present when
+        # a developer runs this script locally
+        rm -f sdkconfig
+
+        # If sdkconfig.ci file is present, append it to sdkconfig.defaults,
+        # replacing environment variables
+        if [[ -f "$SDKCONFIG_DEFAULTS_CI" ]]; then
+            cat $SDKCONFIG_DEFAULTS_CI | $IDF_PATH/tools/ci/envsubst.py >> sdkconfig.defaults
+        fi
 
         # build non-verbose first
         local BUILDLOG=${LOG_PATH}/ex_${ID}_log.txt
@@ -152,7 +163,7 @@ build_example () {
         cat ${BUILDLOG}
     popd
 
-    grep -i "error\|warning" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
+    grep -i "error\|warning\|command not found" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
 }
 
 EXAMPLE_NUM=0

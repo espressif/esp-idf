@@ -260,10 +260,25 @@ void esp_tls_conn_delete(esp_tls_t *tls);
 size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
 
 /**
- * @brief      Create a global CA store with the buffer provided in cfg.
+ * @brief      Create a global CA store, initially empty.
  *
- * This function should be called if the application wants to use the same CA store for
- * multiple connections. The application must call this function before calling esp_tls_conn_new().
+ * This function should be called if the application wants to use the same CA store for multiple connections.
+ * This function initialises the global CA store which can be then set by calling esp_tls_set_global_ca_store().
+ * To be effective, this function must be called before any call to esp_tls_set_global_ca_store().
+ *
+ * @return
+ *             - ESP_OK             if creating global CA store was successful.
+ *             - ESP_ERR_NO_MEM     if an error occured when allocating the mbedTLS resources.
+ */
+esp_err_t esp_tls_init_global_ca_store();
+
+/**
+ * @brief      Set the global CA store with the buffer provided in pem format.
+ *
+ * This function should be called if the application wants to set the global CA store for
+ * multiple connections i.e. to add the certificates in the provided buffer to the certificate chain.
+ * This function implicitly calls esp_tls_init_global_ca_store() if it has not already been called.
+ * The application must call this function before calling esp_tls_conn_new().
  *
  * @param[in]  cacert_pem_buf    Buffer which has certificates in pem format. This buffer
  *                               is used for creating a global CA store, which can be used
@@ -271,7 +286,7 @@ size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
  * @param[in]  cacert_pem_bytes  Length of the buffer.
  *
  * @return
- *             - ESP_OK  if creating global CA store was successful.
+ *             - ESP_OK  if adding certificates was successful.
  *             - Other   if an error occured or an action must be taken by the calling process.
  */
 esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes);

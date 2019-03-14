@@ -43,12 +43,11 @@ Template Config File::
       - name: xxx
 """
 
-# TODO: add a function to use suitable import lib for python2 and python3
-import imp
-
 import yaml
 
 import TestCase
+
+from Utility import load_source
 
 
 def _convert_to_lower_case_bytes(item):
@@ -59,9 +58,9 @@ def _convert_to_lower_case_bytes(item):
     """
     if isinstance(item, (tuple, list)):
         output = [_convert_to_lower_case_bytes(v) for v in item]
-    elif type(item) == type(b''):
+    elif isinstance(item, type(b'')):
         output = item.lower()
-    elif type(item) == type(u''):
+    elif isinstance(item, type(u'')):
         output = item.encode().lower()
     else:
         output = item
@@ -169,8 +168,7 @@ class Parser(object):
         output = dict()
         for key in overwrite:
             _path = overwrite[key]["path"]
-            # TODO: add a function to use suitable import lib for python2 and python3
-            _module = imp.load_source(str(hash(_path)), overwrite[key]["path"])
+            _module = load_source(str(hash(_path)), overwrite[key]["path"])
             output[key] = _module.__getattribute__(overwrite[key]["class"])
         return output
 

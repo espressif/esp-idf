@@ -61,7 +61,7 @@ static const char* TAG = "spiram";
 #endif
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-extern int _ext_ram_bss_start, _ext_ram_bss_end;
+extern uint8_t _ext_ram_bss_start, _ext_ram_bss_end;
 #endif
 static bool spiram_inited=false;
 
@@ -131,6 +131,8 @@ esp_spiram_size_t esp_spiram_get_chip_size()
     }
     psram_size_t psram_size = psram_get_size();
     switch (psram_size) {
+        case PSRAM_SIZE_16MBITS:
+            return ESP_SPIRAM_SIZE_16MBITS;
         case PSRAM_SIZE_32MBITS:
             return ESP_SPIRAM_SIZE_32MBITS;
         case PSRAM_SIZE_64MBITS:
@@ -214,6 +216,7 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
 size_t esp_spiram_get_size()
 {
     psram_size_t size=esp_spiram_get_chip_size();
+    if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
     if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;
     if (size==PSRAM_SIZE_64MBITS) return 8*1024*1024;
     return CONFIG_SPIRAM_SIZE;

@@ -16,6 +16,7 @@
 import subprocess
 
 import os
+import json
 import App
 
 
@@ -26,7 +27,7 @@ class IDFApp(App.BaseApp):
     """
 
     IDF_DOWNLOAD_CONFIG_FILE = "download.config"
-    IDF_FLASH_ARGS_FILE = "flash_project_args"
+    IDF_FLASH_ARGS_FILE = "flasher_args.json"
 
     def __init__(self, app_path):
         super(IDFApp, self).__init__(app_path)
@@ -40,10 +41,11 @@ class IDFApp(App.BaseApp):
                        "or 'idf.py build' "
                        "for resolving the issue."
                        "").format(self.IDF_DOWNLOAD_CONFIG_FILE, self.IDF_FLASH_ARGS_FILE,
-                             self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
+                                  self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE)
                 raise AssertionError(msg)
 
-        self.esptool, self.partition_tool = self.get_tools()
+        self.flash_files, self.flash_settings = self._parse_flash_download_config()
+        self.partition_table = self._parse_partition_table()
 
     @classmethod
     def get_sdk_path(cls):
@@ -52,16 +54,34 @@ class IDFApp(App.BaseApp):
         assert os.path.exists(idf_path)
         return idf_path
 
-    @classmethod
-    def get_tools(cls):
-        idf_path = cls.get_sdk_path()
-        # get esptool and partition tool for esp-idf
-        esptool = os.path.join(idf_path, "components",
-                               "esptool_py", "esptool", "esptool.py")
-        partition_tool = os.path.join(idf_path, "components",
-                                      "partition_table", "gen_esp32part.py")
-        assert os.path.exists(esptool) and os.path.exists(partition_tool)
-        return esptool, partition_tool
+    def _get_sdkconfig_paths(self):
+        """
+        returns list of possible paths where sdkconfig could be found
+
+        Note: could be overwritten by a derived class to provide other locations or order
+        """
+        return [os.path.join(self.binary_path, "sdkconfig"), os.path.join(self.binary_path, "..", "sdkconfig")]
+
+    def get_sdkconfig(self):
+        """
+        reads sdkconfig and returns a dictionary with all configuredvariables
+
+        :param sdkconfig_file: location of sdkconfig
+        :raise: AssertionError: if sdkconfig file does not exist in defined paths
+        """
+        d = {}
+        sdkconfig_file = None
+        for i in self._get_sdkconfig_paths():
+            if os.path.exists(i):
+                sdkconfig_file = i
+                break
+        assert sdkconfig_file is not None
+        with open(sdkconfig_file) as f:
+            for line in f:
+                configs = line.split('=')
+                if len(configs) == 2:
+                    d[configs[0]] = configs[1]
+        return d
 
     def get_binary_path(self, app_path):
         """
@@ -74,47 +94,64 @@ class IDFApp(App.BaseApp):
         """
         pass
 
-    def process_arg(self, arg):
+    def _parse_flash_download_config(self):
         """
-        process args in download.config. convert to abs path for .bin args. strip spaces and CRLFs.
-        """
-        if ".bin" in arg:
-            ret = os.path.join(self.binary_path, arg)
-        else:
-            ret = arg
-        return ret.strip("\r\n ")
+        Parse flash download config from build metadata files
 
-    def process_app_info(self):
-        """
-        get app download config and partition info from a specific app path
+        Sets self.flash_files, self.flash_settings
 
-        :return: download config, partition info
+        (Called from constructor)
+
+        Returns (flash_files, flash_settings)
         """
 
         if self.IDF_FLASH_ARGS_FILE in os.listdir(self.binary_path):
+            # CMake version using build metadata file
             with open(os.path.join(self.binary_path, self.IDF_FLASH_ARGS_FILE), "r") as f:
-                configs = []
-                for line in f:
-                    line = line.strip()
-                    if len(line) > 0:
-                        configs += line.split()
+                args = json.load(f)
+                flash_files = [(offs,file) for (offs,file) in args["flash_files"].items() if offs != ""]
+                flash_settings = args["flash_settings"]
         else:
+            # GNU Make version uses download.config arguments file
             with open(os.path.join(self.binary_path, self.IDF_DOWNLOAD_CONFIG_FILE), "r") as f:
-                configs = f.read().split(" ")
+                args = f.readlines()[-1].split(" ")
+                flash_files = []
+                flash_settings = {}
+                for idx in range(0, len(args), 2):  # process arguments in pairs
+                    if args[idx].startswith("--"):
+                        # strip the -- from the command line argument
+                        flash_settings[args[idx][2:]] = args[idx + 1]
+                    else:
+                        # offs, filename
+                        flash_files.append((args[idx], args[idx + 1]))
 
-        download_configs = ["--chip", "auto", "--before", "default_reset",
-                            "--after", "hard_reset", "write_flash", "-z"]
-        download_configs += [self.process_arg(x) for x in configs]
+        # make file offsets into integers, make paths absolute
+        flash_files = [(int(offs, 0), os.path.join(self.binary_path, path.strip())) for (offs, path) in flash_files]
 
-        # handle partition table
-        for partition_file in download_configs:
-            if "partition" in partition_file:
-                partition_file = os.path.join(self.binary_path, partition_file)
+        return (flash_files, flash_settings)
+
+    def _parse_partition_table(self):
+        """
+        Parse partition table contents based on app binaries
+
+        Returns partition_table data
+
+        (Called from constructor)
+        """
+        partition_tool = os.path.join(self.idf_path,
+                                      "components",
+                                      "partition_table",
+                                      "gen_esp32part.py")
+        assert os.path.exists(partition_tool)
+
+        for (_, path) in self.flash_files:
+            if "partition" in path:
+                partition_file = os.path.join(self.binary_path, path)
                 break
         else:
             raise ValueError("No partition table found for IDF binary path: {}".format(self.binary_path))
 
-        process = subprocess.Popen(["python", self.partition_tool, partition_file],
+        process = subprocess.Popen(["python", partition_tool, partition_file],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         raw_data = process.stdout.read()
         if isinstance(raw_data, bytes):
@@ -140,10 +177,17 @@ class IDFApp(App.BaseApp):
                     "size": _size,
                     "flags": _flags
                 }
-        return download_configs, partition_table
+
+        return partition_table
 
 
 class Example(IDFApp):
+    def _get_sdkconfig_paths(self):
+        """
+        overrides the parent method to provide exact path of sdkconfig for example tests
+        """
+        return [os.path.join(self.binary_path, "..", "sdkconfig")]
+
     def get_binary_path(self, app_path):
         # build folder of example path
         path = os.path.join(self.idf_path, app_path, "build")

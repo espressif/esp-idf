@@ -51,24 +51,6 @@
 
 static DRAM_ATTR i2c_dev_t *const I2C[I2C_NUM_MAX] = { &I2C0, &I2C1 };
 
-static esp_err_t i2c_master_read_slave(i2c_port_t i2c_num, uint8_t *data_rd, size_t size)
-{
-    if (size == 0) {
-        return ESP_OK;
-    }
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | READ_BIT, ACK_CHECK_EN);
-    if (size > 1) {
-        i2c_master_read(cmd, data_rd, size - 1, ACK_VAL);
-    }
-    i2c_master_read_byte(cmd, data_rd + size - 1, NACK_VAL);
-    i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-    return ret;
-}
-
 static esp_err_t i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, size_t size)
 {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();

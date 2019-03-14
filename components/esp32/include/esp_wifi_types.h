@@ -208,9 +208,9 @@ typedef enum {
 
 /** @brief Soft-AP configuration settings for the ESP32 */
 typedef struct {
-    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP */
-    uint8_t password[64];       /**< Password of ESP32 soft-AP */
-    uint8_t ssid_len;           /**< Length of SSID. If softap_config.ssid_len==0, check the SSID until there is a termination character; otherwise, set the SSID length according to softap_config.ssid_len. */
+    uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
+    uint8_t password[64];       /**< Password of ESP32 soft-AP. Null terminated string. */
+    uint8_t ssid_len;           /**< Optional length of SSID field. */
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
@@ -220,8 +220,8 @@ typedef struct {
 
 /** @brief STA configuration settings for the ESP32 */
 typedef struct {
-    uint8_t ssid[32];      /**< SSID of target AP*/
-    uint8_t password[64];  /**< password of target AP*/
+    uint8_t ssid[32];      /**< SSID of target AP. Null terminated string. */
+    uint8_t password[64];  /**< Password of target AP. Null terminated string.*/
     wifi_scan_method_t scan_method;    /**< do all channel scan or fast scan */
     bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
     uint8_t bssid[6];     /**< MAC address of target AP*/
@@ -405,7 +405,7 @@ typedef struct {
 typedef struct {
     wifi_pkt_rx_ctrl_t rx_ctrl;/**< received packet radio metadata header of the CSI data */
     uint8_t mac[6];            /**< source MAC address of the CSI data */
-    bool last_word_invalid;    /**< last four bytes of the CSI data is invalid or not */
+    bool first_word_invalid;   /**< first four bytes of the CSI data is invalid or not */
     int8_t *buf;               /**< buffer of CSI data */
     uint16_t len;              /**< length of CSI data */
 } wifi_csi_info_t;

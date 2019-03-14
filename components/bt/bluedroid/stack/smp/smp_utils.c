@@ -964,7 +964,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     tSMP_EVT_DATA   evt_data = {0};
     tSMP_CALLBACK   *p_callback = p_cb->p_callback;
     BD_ADDR         pairing_bda;
-    tBTM_SEC_DEV_REC    *p_rec;
+    tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
 
     SMP_TRACE_DEBUG ("smp_proc_pairing_cmpl \n");
 
@@ -973,7 +973,14 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     evt_data.cmplt.auth_mode = 0;
     if (p_cb->status == SMP_SUCCESS) {
         evt_data.cmplt.sec_level = p_cb->sec_level;
-        evt_data.cmplt.auth_mode = p_cb->auth_mode;
+        if (p_cb->auth_mode) { // the first encryption
+            evt_data.cmplt.auth_mode = p_cb->auth_mode;
+            if (p_rec) {
+                p_rec->ble.auth_mode = p_cb->auth_mode;
+            }
+        } else if (p_rec) {
+            evt_data.cmplt.auth_mode =  p_rec->ble.auth_mode;
+        }
     }
 
     evt_data.cmplt.is_pair_cancel  = FALSE;
@@ -989,8 +996,8 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 
     memcpy (pairing_bda, p_cb->pairing_bda, BD_ADDR_LEN);
 
+#if (SMP_SLAVE_CON_PARAMS_UPD_ENABLE == TRUE)
     if (p_cb->role == HCI_ROLE_SLAVE) {
-        p_rec = btm_find_dev (p_cb->pairing_bda);
         if(p_rec && p_rec->ble.skip_update_conn_param) {
             //clear flag
             p_rec->ble.skip_update_conn_param = false;
@@ -998,6 +1005,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
             L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
         }
     }
+#endif
     smp_reset_control_value(p_cb);
 
     if (p_callback) {

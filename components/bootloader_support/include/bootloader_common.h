@@ -14,6 +14,7 @@
 
 #pragma once
 #include "esp_flash_data_types.h"
+#include "esp_image_format.h"
 
 /// Type of hold a GPIO in low state
 typedef enum {
@@ -23,20 +24,28 @@ typedef enum {
 } esp_comm_gpio_hold_t;
 
 /**
- * @brief Calculate crc for the OTA data partition.
+ * @brief Calculate crc for the OTA data select.
  *
- * @param[in] ota_data The OTA data partition.
+ * @param[in] s The OTA data select.
  * @return    Returns crc value.
  */
 uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s);
 
 /**
- * @brief Verifies the validity of the OTA data partition
+ * @brief Verifies the validity of the OTA data select
  *
- * @param[in] ota_data The OTA data partition.
+ * @param[in] s The OTA data select.
  * @return    Returns true on valid, false otherwise.
  */
 bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s);
+
+/**
+ * @brief Returns true if OTADATA is not marked as bootable partition.
+ *
+ * @param[in] s The OTA data select.
+ * @return    Returns true if OTADATA invalid, false otherwise.
+ */
+bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s);
 
 /**
  * @brief Check if the GPIO input is a long hold or a short hold.
@@ -91,3 +100,39 @@ bool bootloader_common_label_search(const char *list, char *label);
  *          - ESP_FAIL: An allocation error occurred.
  */
 esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
+
+/**
+ * @brief Returns the number of active otadata.
+ *
+ * @param[in] two_otadata Pointer on array from two otadata structures.
+ *
+ * @return The number of active otadata (0 or 1).
+ *        - -1: If it does not have active otadata.
+ */
+int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata);
+
+/**
+ * @brief Returns the number of active otadata.
+ *
+ * @param[in] two_otadata       Pointer on array from two otadata structures.
+ * @param[in] valid_two_otadata Pointer on array from two bools. True means select.
+ * @param[in] max               True - will select the maximum ota_seq number, otherwise the minimum.
+ *
+ * @return The number of active otadata (0 or 1).
+ *        - -1: If it does not have active otadata.
+ */
+int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, bool *valid_two_otadata, bool max);
+
+/**
+ * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
+ * 
+ * Returns a description for the requested app partition.
+ * @param[in] partition      App partition description.
+ * @param[out] app_desc      Structure of info about app.
+ * @return
+ *  - ESP_OK:                Successful.
+ *  - ESP_ERR_INVALID_ARG:   The arguments passed are not valid.
+ *  - ESP_ERR_NOT_FOUND:     app_desc structure is not found. Magic word is incorrect.
+ *  - ESP_FAIL:              mapping is fail.
+ */
+esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);

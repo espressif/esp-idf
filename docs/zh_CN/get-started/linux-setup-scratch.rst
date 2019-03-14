@@ -1,6 +1,7 @@
 **********************************
 从零开始设置 Linux 环境下的工具链
 **********************************
+:link_to_translation:`en:[English]`
 
 .. note::
     
@@ -14,11 +15,11 @@
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-pyparsing
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-pyparsing
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing
 
 .. note::
 

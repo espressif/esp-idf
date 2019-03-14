@@ -14,6 +14,8 @@
 #ifndef _SOC_MCPWM_STRUCT_H__
 #define _SOC_MCPWM_STRUCT_H__
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,5 +1,6 @@
 Build System
 ************
+:link_to_translation:`zh_CN:[中文]`
 
 This document explains the Espressif IoT Development Framework build system and the
 concept of "components"
@@ -187,6 +188,12 @@ The following variables are set at the project level, but exported for use in th
 - ``CC``, ``LD``, ``AR``, ``OBJCOPY``: Full paths to each tool from the gcc xtensa cross-toolchain.
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain.
 - ``IDF_VER``: ESP-IDF version, retrieved from either ``$(IDF_PATH)/version.txt`` file (if present) else using git command ``git describe``. Recommended format here is single liner that specifies major IDF release version, e.g. ``v2.0`` for a tagged release or ``v2.0-275-g0efaa4f`` for an arbitrary commit. Application can make use of this by calling :cpp:func:`esp_get_idf_version`.
+- ``PROJECT_VER``: Project version. 
+
+  * If ``PROJECT_VER`` variable is set in project Makefile file, its value will be used.
+  * Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+  * Else, if the project is located inside a Git repository, the output of git describe will be used.
+  * Otherwise, ``PROJECT_VER`` will be "1".
 
 If you modify any of these variables inside ``component.mk`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
 
@@ -605,6 +612,7 @@ $(COMPONENT_LIBRARY) for the project make process to link into the app binary.
 (Actually, even this is not strictly necessary - if the COMPONENT_ADD_LDFLAGS variable
 is overridden then the component can instruct the linker to link other binaries instead.)
 
+.. note:: When using an external build process with PSRAM, remember to add ``-mfix-esp32-psram-cache-issue`` to the C compiler arguments. See :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` for details of this flag.
 
 .. _esp-idf-template: https://github.com/espressif/esp-idf-template
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html

@@ -2,15 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.5)
 
-# Set IDF_PATH, as nothing else will work without this.
-set(IDF_PATH "$ENV{IDF_PATH}")
-if(NOT IDF_PATH)
-    # Documentation says you should set IDF_PATH in your environment, but we
-    # can infer it relative to tools/cmake directory if it's not set.
-    get_filename_component(IDF_PATH "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
-endif()
-file(TO_CMAKE_PATH "${IDF_PATH}" IDF_PATH)
-set(ENV{IDF_PATH} ${IDF_PATH})
+include(${CMAKE_CURRENT_LIST_DIR}/idf_functions.cmake)
 
 # Set the path of idf.py.
 set(IDFTOOL ${PYTHON} "${IDF_PATH}/tools/idf.py")
@@ -24,29 +16,33 @@ endfunction()
 function(_project)
 endfunction()
 
-include(${IDF_PATH}/tools/cmake/idf_functions.cmake)
-
 macro(project name)
 
-    # Bridge existing documented variable names with library namespaced variables in order for old projects to work.
+    # Bridge existing documented variable names with library namespaced
+    # variables in order for old projects to work.
+
     if(COMPONENT_DIRS)
         spaces2list(COMPONENT_DIRS)
 
         foreach(component_dir ${COMPONENT_DIRS})
-            get_filename_component(full_path ${component_dir} ABSOLUTE)
-            get_filename_component(idf_path "${IDF_PATH}/components" ABSOLUTE)
-
-            if(NOT full_path STREQUAL idf_path)
-                set(IDF_EXTRA_COMPONENT_DIRS "${IDF_EXTRA_COMPONENT_DIRS} ${component_dir}")
-            endif()
+            get_filename_component(component_dir ${component_dir} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
+            list(APPEND IDF_COMPONENT_DIRS "${component_dir}")
         endforeach()
-    else()
-        if(MAIN_SRCS)
-            set(IDF_EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} ${CMAKE_SOURCE_DIR}/components")
-        else()
-            set(IDF_EXTRA_COMPONENT_DIRS "${EXTRA_COMPONENT_DIRS} \
-                                        ${CMAKE_SOURCE_DIR}/components ${CMAKE_SOURCE_DIR}/main")
-        endif()
+    endif()
+
+    if(EXTRA_COMPONENT_DIRS)
+        spaces2list(EXTRA_COMPONENT_DIRS)
+
+        foreach(component_dir ${EXTRA_COMPONENT_DIRS})
+            get_filename_component(component_dir ${component_dir} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
+            list(APPEND IDF_EXTRA_COMPONENT_DIRS "${component_dir}")
+        endforeach()
+    endif()
+
+    list(APPEND IDF_EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/components")
+
+    if(NOT MAIN_SRCS)
+        list(APPEND IDF_EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/main")
     endif()
 
     if(COMPONENTS)
@@ -112,8 +108,7 @@ macro(project name)
 
     set(mapfile "${CMAKE_PROJECT_NAME}.map")
 
-    target_link_libraries(${IDF_PROJECT_EXECUTABLE} "-Wl,--gc-sections \
-                        -Wl,--cref -Wl,--Map=${mapfile}")
+    target_link_libraries(${IDF_PROJECT_EXECUTABLE} "-Wl,--cref -Wl,--Map=${mapfile}")
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
         ADDITIONAL_MAKE_CLEAN_FILES

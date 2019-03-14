@@ -166,6 +166,8 @@ void esp_sha_unlock_engine(esp_sha_type sha_type);
  * while it is in use by the SHA engine. Caller should use esp_sha_wait_idle()
  * to ensure the SHA engine is not reading from the memory block in hardware.
  *
+ * @note This function enters a critical section. Do not block while holding this lock.
+ *
  * @note You do not need to lock the memory block before calling esp_sha_block() or esp_sha_read_digest_state(), these functions handle memory block locking internally.
  *
  * Call esp_sha_unlock_memory_block() when done.
@@ -176,6 +178,8 @@ void esp_sha_lock_memory_block(void);
  * @brief Release exclusive access to the SHA register memory block at SHA_TEXT_BASE
  *
  * Caller should have already locked a SHA engine before calling this function.
+ *
+ * This function releases the critical section entered by esp_sha_lock_memory_block().
  *
  * Call following esp_sha_lock_memory_block().
  */

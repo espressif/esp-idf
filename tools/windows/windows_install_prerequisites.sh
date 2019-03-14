@@ -37,8 +37,8 @@ pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bis
        mingw-w64-i686-python2-pip mingw-w64-i686-python2-cryptography unzip winpty
 
 # if IDF_PATH is set, install requirements now as well
-if [ -n $IDF_PATH ]; then
-	python -m pip install -r $IDF_PATH/requirements.txt
+if [ -n "$IDF_PATH" ]; then
+	python -m pip install -r "$IDF_PATH/requirements.txt"
 fi
 
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/

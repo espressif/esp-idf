@@ -30,3 +30,7 @@ else
     export IS_PUBLIC=
 fi
 unset REF
+
+# Compiler flags to thoroughly check the IDF code in some CI jobs
+# (Depends on default options '-Wno-error=XXX' used in the IDF build system)
+export PEDANTIC_CFLAGS="-Werror -Werror=deprecated-declarations -Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function"

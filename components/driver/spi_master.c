@@ -380,11 +380,14 @@ esp_err_t spi_bus_free(spi_host_device_t host)
 void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int* dummy_o, int* cycles_remain_o)
 {
     const int apbclk_kHz = APB_CLK_FREQ/1000;
+    //calculate how many apb clocks a period has
     const int apbclk_n = APB_CLK_FREQ/eff_clk;
     const int gpio_delay_ns = gpio_is_used ? 25 : 0;
 
-    //calculate how many apb clocks a period has, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
+    //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int apb_period_n = (1 + input_delay_ns + gpio_delay_ns)*apbclk_kHz/1000/1000;
+    if (apb_period_n < 0) apb_period_n = 0;
+
     int dummy_required = apb_period_n/apbclk_n;
 
     int miso_delay = 0;
@@ -406,8 +409,10 @@ int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns)
     const int apbclk_kHz = APB_CLK_FREQ/1000;
     const int gpio_delay_ns = gpio_is_used ? 25 : 0;
 
-    //calculate how many apb clocks a period has, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
+    //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int apb_period_n = (1 + input_delay_ns + gpio_delay_ns)*apbclk_kHz/1000/1000;
+    if (apb_period_n < 0) apb_period_n = 0;
+
     return APB_CLK_FREQ/(apb_period_n+1);
 }
 
@@ -866,8 +871,14 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
 
     //SPI iface needs to be configured for a delay in some cases.
     //configure dummy bits
-    host->hw->user.usr_dummy=(dev->cfg.dummy_bits+extra_dummy) ? 1 : 0;
-    host->hw->user1.usr_dummy_cyclelen=dev->cfg.dummy_bits+extra_dummy-1;
+    int base_dummy_bits;
+    if (trans->flags & SPI_TRANS_VARIABLE_DUMMY) {
+        base_dummy_bits = ((spi_transaction_ext_t *)trans)->dummy_bits;
+    } else {
+        base_dummy_bits = dev->cfg.dummy_bits;
+    }
+    host->hw->user.usr_dummy=(base_dummy_bits+extra_dummy) ? 1 : 0;
+    host->hw->user1.usr_dummy_cyclelen=base_dummy_bits+extra_dummy-1;
 
     int miso_long_delay = 0;
     if (dev->clk_cfg.miso_delay<0) {
@@ -1103,6 +1114,14 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK( !(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || host->dma_chan == 0 || !(trans_desc->flags & SPI_TRANS_USE_RXDATA || trans_desc->rx_buffer != NULL)
         || !(trans_desc->flags & SPI_TRANS_USE_TXDATA || trans_desc->tx_buffer!=NULL), "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
+    //MOSI phase is skipped only when both tx_buffer and SPI_TRANS_USE_TXDATA are not set.
+    SPI_CHECK(trans_desc->length != 0 || (trans_desc->tx_buffer == NULL && !(trans_desc->flags & SPI_TRANS_USE_TXDATA)),
+        "trans tx_buffer should be NULL and SPI_TRANS_USE_TXDATA should be cleared to skip MOSI phase.", ESP_ERR_INVALID_ARG);
+    //MISO phase is skipped only when both rx_buffer and SPI_TRANS_USE_RXDATA are not set.
+    //If set rxlength=0 in full_duplex mode, it will be automatically set to length
+    SPI_CHECK(!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || trans_desc->rxlength != 0 ||
+        (trans_desc->rx_buffer == NULL && ((trans_desc->flags & SPI_TRANS_USE_RXDATA)==0)),
+        "trans rx_buffer should be NULL and SPI_TRANS_USE_RXDATA should be cleared to skip MISO phase.", ESP_ERR_INVALID_ARG);
     //In Full duplex mode, default rxlength to be the same as length, if not filled in.
     // set rxlength to length is ok, even when rx buffer=NULL
     if (trans_desc->rxlength==0 && !(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX)) {
