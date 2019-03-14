@@ -226,5 +226,5 @@ void app_main(void)
     ESP_ERROR_CHECK( nvs_flash_init() );
     wifi_conn_init();
 
-    xTaskCreate(coap_example_thread, "coap", 10240, NULL, 5, NULL);
+    xTaskCreate(coap_example_thread, "coap", 1024 * 5, NULL, 5, NULL);
 }
