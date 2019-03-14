@@ -162,8 +162,17 @@ class BLE_Bluez_Client:
             path = self.characteristics[characteristic_uuid]
         except KeyError:
             raise RuntimeError("Invalid characteristic : " + characteristic_uuid)
-        path.WriteValue([ord(c) for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
-        return ''.join(chr(b) for b in path.ReadValue({}, dbus_interface='org.bluez.GattCharacteristic1'))
+
+        try:
+            path.WriteValue([ord(c) for c in data], {}, dbus_interface='org.bluez.GattCharacteristic1')
+        except dbus.exceptions.DBusException as e:
+            raise RuntimeError("Failed to write value to characteristic " + characteristic_uuid + ": " + str(e))
+
+        try:
+            readval = path.ReadValue({}, dbus_interface='org.bluez.GattCharacteristic1')
+        except dbus.exceptions.DBusException as e:
+            raise RuntimeError("Failed to read value from characteristic " + characteristic_uuid + ": " + str(e))
+        return ''.join(chr(b) for b in readval)
 
 
 # --------------------------------------------------------------------
