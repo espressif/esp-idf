@@ -21,7 +21,6 @@
 #include "rom/crc.h"
 #include "rom/ets_sys.h"
 #include "rom/gpio.h"
-#include "esp_flash_data_types.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
