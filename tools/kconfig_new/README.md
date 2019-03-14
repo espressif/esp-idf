@@ -97,3 +97,4 @@ These error messages are intended to be human readable, not machine parseable.
 ### Protocol Version Changes
 
 * V2: Added the `visible` key to the response. Invisible items are no longer represented as having value null.
+* V2: `load` now sends changes compared to values before the load, not the whole list of config items.
