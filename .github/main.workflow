@@ -3,8 +3,13 @@ workflow "Sync issues to JIRA" {
   resolves = ["Sync to JIRA"]
 }
 
-workflow "Sync issue comments to JIRA" {
+workflow "Sync issue and PR comments to JIRA" {
   on = "issue_comment"
+  resolves = ["Sync to JIRA"]
+}
+
+workflow "Sync PRs to JIRA" {
+  on = "pull_request"
   resolves = ["Sync to JIRA"]
 }
 
