@@ -539,7 +539,7 @@ lives under ``$(IDF_PATH)/tools/ldgen``.
 
 Linker Script Template
 ^^^^^^^^^^^^^^^^^^^^^^
-Currently, the linker script template used is :component:`esp32/ld/esp32.common.ld.in`, and is used only for the app build. The generated output script is 
+Currently, the linker script template used is :component:`esp32/ld/esp32.project.ld.in`, and is used only for the app build. The generated output script is 
 put under the build directory of the same component. Modifying this linker script template triggers a re-link of the app binary. 
 
 Linker Fragment File
