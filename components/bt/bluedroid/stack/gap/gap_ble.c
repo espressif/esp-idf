@@ -437,6 +437,9 @@ void gap_attr_db_init(void)
     memset (&app_uuid.uu.uuid128, 0x81, LEN_UUID_128);
 
     status = GATTS_StartService(gap_cb.gatt_if, service_handle, GAP_TRANSPORT_SUPPORTED );
+#if (CONFIG_BT_STACK_NO_LOG)
+    (void) status;
+#endif
 
     GAP_TRACE_EVENT ("GAP App gatt_if: %d  s_hdl = %d start_status=%d",
                      gap_cb.gatt_if, service_handle, status);
