@@ -689,6 +689,21 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
 void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback)
 {
+    tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
+    switch(opcode) {
+        case HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST: {
+            uint8_t subcode, status; uint32_t length;
+            STREAM_TO_UINT8(status, p);
+            STREAM_TO_UINT8(subcode, p);
+            STREAM_TO_UINT32(length, p);
+            if(ble_cb && ble_cb->update_exceptional_list_cmp_cb) {
+                (*ble_cb->update_exceptional_list_cmp_cb)(status, subcode, length, p);
+            }
+            break;
+        }
+        default:
+        break;
+    }
     tBTM_VSC_CMPL   vcs_cplt_params;
 
     /* If there was a callback address for vcs complete, call it */

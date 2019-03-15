@@ -155,6 +155,7 @@ enum {
     BTA_DM_API_UPDATE_WHITE_LIST_EVT,
     BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
     BTA_DM_API_BLE_READ_RSSI_EVT,
+    BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT,
     BTA_DM_MAX_EVT
 };
 
@@ -192,6 +193,14 @@ typedef struct {
     BD_ADDR   remote_addr;
     tBTA_ADD_WHITELIST_CBACK *add_wl_cb;
 }tBTA_DM_API_UPDATE_WHITE_LIST;
+
+typedef struct {
+    BT_HDR    hdr;
+    UINT8     subcode;
+    UINT32    type;
+    BD_ADDR   device_info;
+    tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK *exceptional_list_cb;
+}tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST;
 
 typedef struct {
     BT_HDR       hdr;
@@ -848,6 +857,7 @@ typedef union {
     tBTA_DM_API_TRACK_ADVERTISER        ble_track_advert;
     tBTA_DM_API_ENERGY_INFO             ble_energy_info;
     tBTA_DM_API_BLE_DISCONNECT          ble_disconnect;
+    tBTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST ble_duplicate_exceptional_list;
 #endif
 
     tBTA_DM_API_REMOVE_ACL              remove_acl;
@@ -1243,7 +1253,7 @@ extern void bta_dm_ble_set_scan_rsp (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data);
-
+extern void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data);
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
 extern void bta_dm_cfg_filter_cond (tBTA_DM_MSG *p_data);
 extern void bta_dm_scan_filter_param_setup (tBTA_DM_MSG *p_data);
