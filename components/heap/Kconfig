@@ -47,3 +47,12 @@ config HEAP_TASK_TRACKING
         allocated.
 
 endmenu
+
+menu "Heap size"
+config HEAP_SIZE
+   hex "Heap size in bytes"
+   default 0x32000
+   help
+       Number of bytes reserved for the heap.
+
+endmenu

@@ -175,8 +175,6 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-    /* The heap starts right after end of this section */
-    _heap_start = ABSOLUTE(.);
   } > dram0_0_seg
 
   .flash.rodata :

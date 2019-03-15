@@ -21,6 +21,12 @@
 #define CONFIG_BT_RESERVE_DRAM 0
 #endif
 
+#if CONFIG_HEAP_SIZE > (0x50000 - (0x2c200 - CONFIG_BT_RESERVE_DRAM))
+#define DRAM0_0_SEG_LEN (0x50000 - CONFIG_HEAP_SIZE - CONFIG_BT_RESERVE_DRAM)
+#else
+#define DRAM0_0_SEG_LEN  (0x2c200 - CONFIG_BT_RESERVE_DRAM)
+#endif
+
 MEMORY
 {
   /* All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
@@ -51,7 +57,7 @@ MEMORY
      additional static memory temporarily cannot be used.
   */
   dram0_0_seg (RW) :                 org = 0x3FFB0000 + CONFIG_BT_RESERVE_DRAM,
-                                     len = 0x2c200 - CONFIG_BT_RESERVE_DRAM
+                                     len = DRAM0_0_SEG_LEN,
 
   /* Flash mapped constant data */
   drom0_0_seg (R) :                  org = 0x3F400018, len = 0x400000-0x18
@@ -71,4 +77,5 @@ MEMORY
 }
 
 /* Heap ends at top of dram0_0_seg */
+_heap_start = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM - CONFIG_HEAP_SIZE;
 _heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;
