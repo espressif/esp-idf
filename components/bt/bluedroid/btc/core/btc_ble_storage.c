@@ -750,7 +750,9 @@ static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bd
                 *device_added = true;
             }
 
+#if (!CONFIG_BT_STACK_NO_LOG)
             char bd_str[20] = {0};
+#endif
             BTC_TRACE_DEBUG("%s() Adding key type %d for %s", __func__,
                 key_type, bdaddr_to_string(&bd_addr, bd_str, sizeof(bd_str)));
             BTA_DmAddBleKey(bta_bd_addr, (tBTA_LE_KEY_VALUE *)buffer, key_type);

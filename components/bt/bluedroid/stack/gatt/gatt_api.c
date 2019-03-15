@@ -1169,6 +1169,10 @@ void GATT_SetIdleTimeout (BD_ADDR bd_addr, UINT16 idle_tout, tBT_TRANSPORT trans
         }
     }
 
+#if (CONFIG_BT_STACK_NO_LOG)
+    (void) status;
+#endif
+
     GATT_TRACE_API ("GATT_SetIdleTimeout idle_tout=%d status=%d(1-OK 0-not performed)",
                     idle_tout, status);
 }
