@@ -635,6 +635,105 @@ def packet_size_limit_test(dut, port, test_size):
     return False
 
 
+def arbitrary_termination_test(dut, port):
+    Utility.console_log("[test] Arbitrary termination test =>", end=' ')
+    cases = [
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nCustom: SomeValue\r\n\r\n",
+            "code": "200",
+            "header": "SomeValue"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\nHost: " + dut + "\r\nCustom: SomeValue\r\n\r\n",
+            "code": "200",
+            "header": "SomeValue"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\nCustom: SomeValue\r\n\r\n",
+            "code": "200",
+            "header": "SomeValue"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nCustom: SomeValue\n\r\n",
+            "code": "200",
+            "header": "SomeValue"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nCustom: SomeValue\r\n\n",
+            "code": "200",
+            "header": "SomeValue"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\nHost: " + dut + "\nCustom: SomeValue\n\n",
+            "code": "200",
+            "header": "SomeValue"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: 5\n\r\nABCDE",
+            "code": "200",
+            "body": "ABCDE"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: 5\r\n\nABCDE",
+            "code": "200",
+            "body": "ABCDE"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: 5\n\nABCDE",
+            "code": "200",
+            "body": "ABCDE"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nContent-Length: 5\n\n\rABCD",
+            "code": "200",
+            "body": "\rABCD"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\r\nCustom: SomeValue\r\r\n\r\r\n",
+            "code": "400"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\r\nHost: " + dut + "\r\n\r\n",
+            "code": "400"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\n\rHost: " + dut + "\r\n\r\n",
+            "code": "400"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\rCustom: SomeValue\r\n",
+            "code": "400"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nCustom: Some\rValue\r\n",
+            "code": "400"
+        },
+        {
+            "request": "POST /echo HTTP/1.1\r\nHost: " + dut + "\r\nCustom- SomeValue\r\n\r\n",
+            "code": "400"
+        }
+    ]
+    for case in cases:
+        s = Session(dut, port)
+        s.client.sendall((case['request']).encode())
+        resp_hdrs = s.read_resp_hdrs()
+        resp_body = s.read_resp_data()
+        s.close()
+        if not test_val("Response Code", case["code"], s.status):
+            return False
+        if "header" in case.keys():
+            resp_hdr_val = None
+            if "Custom" in resp_hdrs.keys():
+                resp_hdr_val = resp_hdrs["Custom"]
+            if not test_val("Response Header", case["header"], resp_hdr_val):
+                return False
+        if "body" in case.keys():
+            if not test_val("Response Body", case["body"], resp_body):
+                return False
+    Utility.console_log("Success")
+    return True
+
+
 def code_500_server_error_test(dut, port):
     Utility.console_log("[test] 500 Server Error test =>", end=' ')
     s = Session(dut, port)
@@ -890,6 +989,7 @@ if __name__ == '__main__':
     spillover_session(dut, port, max_sessions)
     recv_timeout_test(dut, port)
     packet_size_limit_test(dut, port, 50 * 1024)
+    arbitrary_termination_test(dut, port)
     get_hello(dut, port)
 
     sys.exit()
