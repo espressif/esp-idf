@@ -21,8 +21,8 @@
 #include "esp_err.h"
 #include "esp_pm.h"
 #include "esp_log.h"
-#include "esp_crosscore_int.h"
 #include "esp32/clk.h"
+#include "esp_private/crosscore_int.h"
 
 #include "soc/rtc.h"
 
