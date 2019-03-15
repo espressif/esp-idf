@@ -20,7 +20,8 @@ import os
 import fnmatch
 
 from fragments import Sections, Scheme, Mapping, Fragment
-from pyparsing import Suppress, White, ParseException, Literal, Regex, Group, ZeroOrMore, Word, OneOrMore, nums, alphanums, alphas, Optional
+from pyparsing import Suppress, White, ParseException, Literal, Group, ZeroOrMore
+from pyparsing import Word, OneOrMore, nums, alphanums, alphas, Optional, LineEnd, printables
 from common import LdGenFailure
 
 
@@ -591,7 +592,10 @@ class SectionsInfo(dict):
     def add_sections_info(self, sections_info_file):
         first_line = sections_info_file.readline()
 
-        archive_path = Literal("In archive").suppress() + Regex(r"[^:]+").setResultsName("archive_path") + Literal(":").suppress()
+        archive_path = (Literal("In archive").suppress() +
+                        # trim the last character from archive_path, :
+                        Word(printables + " ").setResultsName("archive_path").setParseAction(lambda t: t[0][:-1]) +
+                        LineEnd())
         parser = archive_path
 
         results = None
