@@ -64,6 +64,8 @@ def main():
 
         test_load_save(p, temp_sdkconfig_path)
 
+        test_invalid_json(p)
+
         print("Done. All passed.")
 
     finally:
@@ -141,6 +143,22 @@ def test_load_save(p, temp_sdkconfig_path):
     assert "error" not in load_result
     assert len(load_result["values"]) > 0  # in V1, loading same file should return all config items
     assert len(load_result["ranges"]) > 0
+
+
+def test_invalid_json(p):
+    print("Testing invalid JSON formatting...")
+
+    bad_escaping = r'{ "version" : 2, "load" : "c:\some\path\not\escaped\as\json" }'
+    p.send("%s\n" % bad_escaping)
+    readback = expect_json(p)
+    print(readback)
+    assert "json" in readback["error"][0].lower()
+
+    not_really_json = 'Hello world!!'
+    p.send("%s\n" % not_really_json)
+    readback = expect_json(p)
+    print(readback)
+    assert "json" in readback["error"][0].lower()
 
 
 if __name__ == "__main__":

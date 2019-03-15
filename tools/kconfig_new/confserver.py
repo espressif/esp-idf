@@ -79,7 +79,13 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         line = sys.stdin.readline()
         if not line:
             break
-        req = json.loads(line)
+        try:
+            req = json.loads(line)
+        except ValueError as e:  # json module throws JSONDecodeError (sublcass of ValueError) on Py3 but ValueError on Py2
+            response = {"version": default_version, "error": ["JSON formatting error: %s" % e]}
+            json.dump(response, sys.stdout)
+            print("\n")
+            continue
         before = confgen.get_json_values(config)
         before_ranges = get_ranges(config)
         before_visible = get_visible(config)
