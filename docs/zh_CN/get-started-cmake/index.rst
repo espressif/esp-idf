@@ -1,89 +1,113 @@
-********************************
-快速入门 (CMake)
-********************************
+﻿*******************
+快速入门（CMake）
+*******************
 
-:link_to_translation:`en:[英文]`
+:link_to_translation:`en:[English]`
 
 .. include:: ../cmake-warning.rst
 
 .. include:: ../cmake-pending-features.rst
 
-本文档旨在指导用户创建 ESP32 的软件环境。本文将通过一个简单的例子，说明 ESP-IDF (Espressif IoT Development Framework) 的使用方法，包括配置、编译、下载固件到开发板等步骤。
+本文档旨在指导用户搭建 ESP32 硬件开发的软件环境，
+
+通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 ESP32 开发板等步骤。
 
 .. include:: /_build/inc/version-note.inc
 
 概述
-============
+====
 
-ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了高性能的 CPU 内核、超低功耗协处理器和丰富的外设。ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用和不同功耗需求。
+ESP32 SoC 芯片支持以下功能：
 
-乐鑫为用户提供完整的软、硬件资源，支持 ESP32 设备的开发。我们的软件开发环境 ESP-IDF 能够帮助用户快速开发物联网 (IoT) 应用，满足用户对于 Wi-Fi、蓝牙、低功耗等性能的需求。
+* 2.4 GHz Wi-Fi
+* 蓝牙 4.2 标准
+* 高性能双核
+* 超低功耗协处理器
+* 多种外设
 
+ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
+
+乐鑫为用户提供完整的软、硬件资源，进行 ESP32 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
 
 准备工作
-====================
+========
 
-开发 ESP32 应用程序需要准备：
+硬件：
 
-* **电脑**：安装 Windows、Linux 或者 Mac 操作系统
-* **工具链**：用于编译 ESP32 代码
-* **编译工具**：用于编译 ESP32 完整**应用程序**的 CMake 和 Ninja
-* **ESP-IDF**：包含 ESP32 API 和用于操作 **工具链** 的脚本
-* **文本编辑器**：编写 C 语言程序，例如 `Eclipse <https://www.eclipse.org/>`_
-* **ESP32 开发板** 和将其连接到 **电脑** 的 **USB 线**
+* 一款 **ESP32** 开发板
+* **USB 数据线** （USB A/Micro USB B）
+* PC（Windows、Linux 或 Mac OS）
+
+软件：
+
+* 设置 **工具链**，用于编译 ESP32 代码；
+* **编译工具** —— CMake 和 Ninja 编译工具，用于编译 ESP32  **应用程序**；
+* 获取 **ESP-IDF** 软件开发框架。该框架已经基本包含 ESP32 使用的 API（软件库和源代码）和运行 **工具链** 的脚本；
+* 安装 C 语言编程（**工程**）的 **文本编辑器**，例如 `Eclipse <https://www.eclipse.org/>`_。
+
 
 .. figure:: ../../_static/what-you-need-cmake.png
     :align: center
-    :alt: Development of applications for ESP32
+    :alt: ESP32 应用程序开发
     :figclass: align-center
 
-    开发应用程序
-
-开发环境的准备工作包括以下两部分：
-
-1. 设置 **工具链**
-2. 从 GitHub 上获取 **ESP-IDF** 
-
-开发环境设置完成后，遵循以下步骤创建 ESP-IDF 应用程序：
-
-1. 配置**工程** 并编写代码
-2. 编译**工程** 并链接成一个**应用程序**
-3. 通过 USB/串口连接，烧录（上传）预编译的**应用程序**到 **ESP32**
-4. 通过 USB/串口，监视/调试**应用程序**输出 
+    ESP32 应用程序开发
 
 
-.. The label below is placeholder to link a new section "Installation Step by Step"
+开发板简介
+==========
 
-.. _get-started-step-by-step-cmake:
-
-开发板指南
-========================
-
-如果你有下列任一 ESP32 开发板，请点击对应的链接进行硬件设置：
+请点击下方连接，了解有关具体开发板的详细信息。
 
 .. toctree::
     :maxdepth: 1
 
-    ESP32 DevKitC <get-started-devkitc>
+    ESP32-DevKitC <get-started-devkitc>
     ESP-WROVER-KIT <get-started-wrover-kit>
     ESP32-PICO-KIT <get-started-pico-kit>
 
-如果你使用其它开发板，请查看下面的内容。
+
+.. _get-started-step-by-step-cmake:
+
+详细安装步骤
+==============
+
+请根据下方详细步骤，完成安装过程。
+
+设置开发环境
+~~~~~~~~~~~~~~~~
+
+* :ref:`get-started-setup-toolchain-cmake`
+* :ref:`get-started-get-esp-idf-cmake`
+* :ref:`get-started-setup-path-cmake`
+* :ref:`get-started-get-packages-cmake`
+
+创建您的第一个工程
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* :ref:`get-started-start-project-cmake`
+* :ref:`get-started-connect-cmake`
+* :ref:`get-started-configure-cmake`
+* :ref:`get-started-build-cmake`
+* :ref:`get-started-flash-cmake`
+* :ref:`get-started-build-monitor-cmake`
 
 
 .. _get-started-setup-toolchain-cmake:
 
-设置工具链
-======================
+第一步：设置工具链
+====================
 
-用 ESP32 进行开发最快的方法是安装预编译的工具链。请根据你的操作系，点击对应的链接，并按照链接中的指导进行安装。
+工具链指一套用于编译代码和应用程序的程序。
+
+为了加快开发进度，您可以直接使用乐鑫提供的预制工具链。请根据您的操作系统，点击下方对应的链接，并按照链接中的指导进行安装。
 
 .. toctree::
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup> 
-    MacOS <macos-setup> 
+    Linux <linux-setup>
+    MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
@@ -106,166 +130,202 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 
 .. note::
 
-    我们使用用户名主目录下的 ``esp`` 子目录（Linux 和 MacOS 为 ``~/esp``，Windows 为 ``%userprofile%\esp``）来进行一切有关 ESP-IDF 的安装操作。你也可以使用其他目录，但是需要注意调整相应的指令。
+    在本文档中，Linux 和 MacOS 操作系统中 ESP-IDF 的默认安装路径为 ``~/esp``；Windows 操作系统的默认路径为 ``%userprofile%\esp``。您也可以将 ESP-IDF 安装在任何其他路径下，但请注意在使用命令行时进行相应替换。注意，ESP-IDF 不支持带有空格的路径。
 
-你可以安装预编译的工具链或者自定义你的环境，这完全取决于个人经验和偏好。如果你要自定义环境，请参考 :ref:`get-started-customized-setup-cmake`。
+此外， 您也可以根据自身经验和实际需求，对环境进行个性化设置，而非使用预制工具链。此时，请前往 :ref:`工具链的个性化设置<get-started-customized-setup-cmake>` 章节获取更多信息。
 
-工具链设置完成后，继续阅读 :ref:`get-started-get-esp-idf-cmake` 一节。
 
 .. _get-started-get-esp-idf-cmake:
 
-获取 ESP-IDF
-==================
+第二步：获取 ESP-IDF
+===========================
 
-工具链（包括用于编译和构建应用程序的程序）安装完成后，你还需要 ESP32 相关的 API/库。你可在乐鑫提供的 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_ 中获取 API/库本地副本。打开终端，切换到你要存放 ESP-IDF 的目录，然后使用 ``git clone`` 命令克隆远程仓库。
+除了工具链，您还需要供 ESP32 使用的 API（软件库和源代码），具体请见 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_。
 
-Linux 和 MacOS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+请将 ESP-IDF 下载到您的本地。
 
-获取本地副本：打开终端，切换到你要存放 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库:
+获取本地副本：打开终端，切换到你要存放 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库。
+
+Linux 和 MacOS 操作系统
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+打开终端，后运行以下命令：
 
 .. include:: /_build/inc/git-clone-bash.inc
 
-ESP-IDF 将会被下载到 ``~/esp/esp-idf`` 目录下。
+ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
-有关在给定情况下使用哪个 ESP-IDF 版本的信息，请参阅 :doc:`/versions` 。
+请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Windows 操作系统
+~~~~~~~~~~~~~~~~~~
+
+.. note::
+
+    较早版本 ESP-IDF 使用了 **MSYS2 bash 终端** 命令行。目前，基于 CMake 的编译系统可使用常见的 **Windows 命令窗口**，即本指南中使用的终端。
+
+请注意，如果您使用基于 bash 的终端或 PowerShell 终端，一些命令语法将与下面描述有所不同。
+
+打开命令提示符，后运行以下命令：
 
 .. include:: /_build/inc/git-clone-windows.inc
 
-ESP-IDF 将会被下载到用户的 ``esp\esp-idf`` 目录下。
+ESP-IDF 将下载至 ``%userprofile%\esp\esp-idf``。
 
-有关在给定情况下使用哪个 ESP-IDF 版本的信息，请参阅 :doc:`/versions` 。
+请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
 .. include:: /_build/inc/git-clone-notes.inc
 
-.. highlight:: bash
 .. note::
 
-    注意这里有个 ``--recursive`` 选项。如果你克隆 ESP-IDF 时没有带这个选项，你还需要运行额外的命令来获取子模块::
+    在克隆远程仓库时，不要忘记加上 ``--recursive`` 选项。否则，请接着运行以下命令，获取所有子模块： :: 
 
         cd esp-idf
         git submodule update --init
 
 .. _get-started-setup-path-cmake:
 
-设置环境变量
+第三步：设置环境变量
 ===========================
 
-ESP-IDF 的正常运行需要设置两个环境变量：
+请在您的 PC 上设置以下环境变量，否则无法编译工程。
 
 - ``IDF_PATH`` 应设置为 ESP-IDF 根目录的路径。
-- ``PATH`` 应包括同一 ``IDF_PATH`` 目录下的 ``tools`` 目录路径。 
+- ``PATH`` 应包括同一 ``IDF_PATH`` 目录下的 ``tools`` 目录路径。
 
-你需在你的电脑中设置这两个变量，否则工程将不能编译。
+您可以在每次重启会话时手动设置，也可以在用户配置中进行永久设置，具体请前往 :doc:`add-idf_path-to-profile` 章节，查看 :ref:`Windows <add-paths-to-profile-windows-cmake>` 、:ref:`Linux 及 MacOS <add-idf_path-to-profile-linux-macos-cmake>` 操作系统的具体设置方式。
 
-你可以在每次 PC 重启时手动设置，你也可以在用户配置中进行永久设置，具体请参照 :doc:`add-idf_path-to-profile` 小节中的 :ref:`Windows <add-paths-to-profile-windows-cmake>`，:ref:`Linux 和 MacOS <add-idf_path-to-profile-linux-macos-cmake>` 相关指导进行操作。
+
+.. _get-started-get-packages-cmake:
+
+第四步：安装 Python 软件包
+=================================
+
+ESP-IDF 所需的 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您可以运行以下命令进行安装： ::
+
+    python -m pip install --user -r $IDF_PATH/requirements.txt
+
+.. note::
+
+    请注意查询您所使用的 Python 解释器的版本（运行命令 ``python --version``），并根据查询结果将上方命令中的 ``python`` 替换为 ``python2``, ``python2.7``，例如：
+
+    ``python2.7 -m pip install --user -r $IDF_PATH/requirements.txt``
 
 .. _get-started-start-project-cmake:
 
-创建一个工程
-======================
+第五步：开始创建工程
+=======================
 
-现在可以开始创建 ESP32 应用程序了。为了快速开始，我们这里以 IDF 的 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程为例进行说明。
+现在，您可以开始准备开发 ESP32 应用程序了。您可以从 ESP-IDF 中 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程开始。
 
-将 :example:`get-started/hello_world` 拷贝到 ``~/esp`` 目录：
+将 :example:`get-started/hello_world` 复制至您本地的 ``~/esp`` 目录下：
 
-Linux 和 MacOS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Linux 和 MacOS 操作系统
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
     cd ~/esp
     cp -r $IDF_PATH/examples/get-started/hello_world .
 
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Windows 操作系统
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: batch
 
     cd %userprofile%\esp
     xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
 
-ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照上面的方法进行创建。
-
-你也可以在原有位置创建示例，无需事先拷贝这些示例。
+ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照上面的方法进行创建。您可以按照上述方法复制并运行其中的任何示例，也可以直接编译示例，无需进行复制。
 
 .. important::
 
-    esp-idf 构建系统不支持在路径中存在空格。
+    ESP-IDF 编译系统不支持带有空格的路径。
 
 .. _get-started-connect-cmake:
 
-连接
-=======
+第六步：连接设备
+======================
 
-还有几个步骤就完成了。在继续后续操作前，先将 ESP32 开发板连接到 PC，然后检查串口号，看看它能否正常通信。如果你不知道如何操作，请查看 :doc:`establish-serial-connection` 中的相关指导。请注意一下端口号，我们在下一步中会用到。
+现在，请将您的 ESP32 开发板连接到 PC，并查看开发板使用的串口。
+
+通常，串口在不同操作系统下显示的名称有所不同：
+
+- **Windows 操作系统：** ``COM1`` 等
+- **Linux 操作系统：** 以 ``/dev/tty`` 开始
+- **MacOS 操作系统：** 以 ``/dev/cu.`` 开始
+
+有关如何查看串口名称的详细信息，请见 :doc:`establish-serial-connection`。
+
+.. note::
+
+    请记住串口名，您会在下面的步骤中用到。
+
 
 .. _get-started-configure-cmake:
 
-配置
-=========
+第七步：配置
+=================
 
-进入 ``hello_world`` 应用程序副本目录，运行 ``menuconfig`` 工程配置工具：
+请进入 :ref:`get-started-start-project-cmake` 中提到的 ``hello_world`` 目录，并运行工程配置工具 ``menuconfig``。
 
-Linux 和 MacOS
-~~~~~~~~~~~~~~~~~~~~~
+Linux 和 MacOS 操作系统
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
     cd ~/esp/hello_world
     idf.py menuconfig
 
-Windows Command Prompt
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+如果您的默认 Python 版本为 3.0 以上，可能需要运行  ``python2 idf.py`` 。
+
+Windows 操作系统
+~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: batch
 
     cd %userprofile%\esp\hello_world
     idf.py menuconfig
 
-.. note:: 如果你收到未发现 ``idf.py`` 的报错信息，查看是否如上 :ref:`get-started-setup-path-cmake` 所述将 ``tools`` 目录添加到你的路径中。如果 ``tools`` 目录中没有 ``idf.py``，查看 :ref:`get-started-get-esp-idf-cmake` 中 CMake 预览所处的分支是否正确。 
+Python 2.7 安装程序将尝试配置 Windows，将 ``.py`` 文件与 Python 2 关联起来。如果其他程序（比如 Visual Studio Python 工具）曾关联了其他版本 Python，则 ``idf.py`` 可能无法正常运行（文件将在 Visual Studio 中打开）。这种情况下，您可以选择每次都运行一遍 ``C:\Python27\python idf.py``，或更改 Windows 的 ``.py`` 关联文件设置。
 
-.. note:: 对于 Windows 用户而言，Python 2.7 安装器会尝试配置 Windows，关联扩展名为 ``.py`` 的 Python 2 文件。如果单独安装的程序（如 Visual Studio Python 工具）关联到其他 Python 版本，``idf.py`` 可能无法运行（而仅是在 Visual Studio 中打开此文件）。你可以每次运行 ``C:\Python27\python idf.py`` 或更改 Windows 中有关``.py`` 文件的关联设置。
+.. note::
 
-.. note:: 对于 Linux 用户而言，如果默认为 Python 3.x 版本，你需要运行 ``python2 idf.py``。
+    如果出现 ``idf.py not found（无法找到 idf.py）`` 错误，请确保 ``PATH`` 环境变量设置无误，具体请参考 :ref:`get-started-setup-path-cmake`。如果 ``tools`` 目录下没有 ``idf.py`` 文件，请确保 CMake 预览的分支正确无误，具体请参考 :ref:`get-started-get-esp-idf-cmake`。
 
 如果之前的步骤都正确，则会显示下面的菜单：
 
 .. figure:: ../../_static/project-configuration.png
     :align: center
-    :alt: Project configuration - Home window
+    :alt: 工程配置 — 主窗口
     :figclass: align-center
 
-    工程配置 - 主窗口
+    工程配置 — 主窗口
 
-下面是一些使用 ``menuconfig`` 的小技巧：
+``menuconfig`` 工具的常见操作见下。
 
-* 使用 up & down 组合键在菜单中上下移动
-* 使用 Enter 键进入一个子菜单，Escape 键进入上一层菜单或退出整个菜单
-* 输入 ``?`` 查看帮助信息，Enter 键退出帮助屏幕
-* 使用空格键或 ``Y`` 和 ``N`` 键来使能 (Yes) 和禁止 (No) 带有复选框 "``[*]``" 的配置项
-* 当光标在某个配置项上面高亮时，输入 ``?`` 可以直接查看该项的帮助信息
-* 输入 ``/`` 搜索配置项
+* ``上下箭头``：移动
+* ``回车``：进入子菜单
+* ``ESC 键``：返回上级菜单或退出
+* ``英文问号``：调出帮助菜单（退出帮助菜单，请按回车键）。
+* ``空格``、``Y 键``或``N 键``：使能/禁用 ``[*]`` 配置选项
+* ``英文问号``：调出有关高亮选项的帮助菜单
+* ``/ 键``：寻找配置项目
 
 .. attention::
 
-    如果 ESP32-DevKitC 板载的是 ESP32-SOLO-1 模组，请务必在烧写示例程序之前在 menuconfig 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
+    如果您使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
 
 .. _get-started-build-cmake:
 
-创建一个工程
-==========================
+第八步：编译工程
+==================
 
-.. highlight:: bash
-
-现在可以编译工程了，执行指令::
+请使用以下命令，编译烧录工程：::
 
     idf.py build
 
-这条命令会编译应用程序和所有的 ESP-IDF 组件，生成 bootloader、区分表和应用程序 bin 文件。
+运行以上命令可以编译应用程序和所有 ESP-IDF 组件，接着生成 bootloader、分区表和应用程序二进制文件。
 
 .. code-block:: none
 
@@ -287,22 +347,27 @@ Windows Command Prompt
    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
    or run 'idf.py -p PORT flash'
 
-如果没有任何报错，将会生成 bin 文件，至此编译完成。
+如果一切正常，编译完成后将生成 .bin 文件。
+
 
 .. _get-started-flash-cmake:
 
-烧录到设备
-==========================
+第九步：烧录到设备
+====================
 
-现在可以将应用程序烧录到 ESP32 板子上，执行指令::
+请使用以下命令，将刚刚生成的二进制文件烧录至您的 ESP32 开发板： ::
 
-    idf.py -p PORT flash
+    idf.py -p PORT [-b BAUD] flash
 
-将端口改为 ESP32 板子的串口名称。Windows 平台的端口名称类似 ``COM1``，而 MacOS 则以 ``/dev/cu.`` 开头，Linux 则是 ``/dev/tty``。详情请参照 :doc:`establish-serial-connection`。
+请将 PORT 替换为 ESP32 开发板的串口名称，具体可见 :ref:`get-started-connect-cmake`。
 
-该步骤旨在将此前编译的 bin 文件烧录到 ESP32 板子上。
+您还可以将 BAUD 替换为您希望的烧录波特率。默认波特率为  ``460800``。
 
-.. note:: 无需在 ``idf.py flash`` 之前运行 ``idf.py build``，烧录这一步会按照烧录前编写的要求（如有）自动编写工程。
+更多有关 idf.py 参数的详情，请见 :ref:`idf.py`。
+
+.. note::
+
+    勾选 ``flash`` 选项将自动编译并烧录工程，因此无需再运行 ``idf.py build``。
 
 .. code-block:: none
 
@@ -331,21 +396,25 @@ Windows Command Prompt
     Compressed 136672 bytes to 67544...
     Wrote 136672 bytes (67544 compressed) at 0x00010000 in 1.9 seconds (effective 567.5 kbit/s)...
     Hash of data verified.
-    
+
     Leaving...
     Hard resetting via RTS pin...
 
-如果没有任何问题，在烧录的最后阶段，板子将会复位，应用程序 "hello_world" 开始运行。
+如果一切顺利，烧录完成后，开发板将会复位，应用程序 "hello_world" 开始运行。
 
-.. （目前暂不支持）如果你想使用 Eclipse IDE 而不是运行 ``idf.py``，请参考 :doc:`Eclipse guide <eclipse-setup>`。
+.. note::
+
+    （目前不支持）如果您希望使用 Eclipse IDE，而非 ``idf.py``，请参考 :doc:`Eclipse 指南 <eclipse-setup>`。
 
 
 .. _get-started-build-monitor-cmake:
 
-监视器
-================
+第十步：监视器
+==================
 
-如果要查看 "hello_world" 程序是否真的在运行，输入命令 ``idf.py -p PORT monitor``。这个命令会启动 :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` 程序::
+您可以使用 ``make monitor`` 命令，监视 “hello_world” 的运行情况。注意，不要忘记将 PORT 替换为您的串口名称。
+
+运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动： ::
 
     $ idf.py -p /dev/ttyUSB0 monitor
     Running idf_monitor in directory [...]/esp/hello_world/build
@@ -358,7 +427,7 @@ Windows Command Prompt
     ets Jun  8 2016 00:22:57
     ...
 
-在启动消息和诊断消息后，你就能看到 "Hello world!" 程序所打印的消息：
+此时，您就可以在启动日志和诊断日志之后，看到打印的 “Hello world!” 了。
 
 .. code-block:: none
 
@@ -370,43 +439,48 @@ Windows Command Prompt
     Restarting in 8 seconds...
     Restarting in 7 seconds...
 
-要退出监视器，请使用快捷键 ``Ctrl+]``。
+您可使用快捷键 ``Ctrl+]``，退出 IDF 监视器。
+
+如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（见下），很有可能是因为您的开发板选用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
+
+.. code-block:: none
+
+    e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
+    ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
+
+此时，请您：
+
+1. 退出监视器。
+2. 打开 :ref:`menuconfig <get-started-configure-cmake>`，
+3. 进入 ``Component config`` --> ``ESP32-specific`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 设置为 26 MHz。
+4. 然后，请重新 :ref:`编译和烧录 <get-started-flash-cmake>` 应用程序。
 
 .. note::
 
-    如果串口打印的不是上面显示的消息而是类似下面的乱码::
+    您也可以运行以下命令，一次性执行构建、烧录和监视过程：
 
-        e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
-        ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
+        ``idf.py -p PORT flash monitor``
 
-    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而大多数开发板用的是 40 MHz 晶振，并且 ESP-IDF 默认的也是这一数值。请退出监视器，回到 :ref:`menuconfig <get-started-configure-cmake>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编写和烧录 <get-started-flash-cmake>` 程序。请在 ``idf.py menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
+此外，
 
-.. note::
+- 请前往 :doc:`IDF 监视器 <../api-guides/tools/idf-monitor>`，了解更多使用 IDF 监视器的快捷键和其他详情。
+- 请前往 :ref:`idf.py`，查看更多 ``idf.py`` 命令和选项。
 
-   你可以将编写、烧录和监视整合到一步当中，如下所示::
+**恭喜，您已完成 ESP32 的入门学习！**
 
-       idf.py -p PORT flash monitor
-
-有关监视器使用的快捷键和其他详情，请参阅 :doc:`IDF Monitor <../api-guides/tools/idf-monitor>`。
-
-有关 ``idf.py`` 的全部命令和选项，请参阅 :ref:`idf.py`。
-
-你已完成 ESP32 的入门！
-
-现在你可以尝试其他的示例工程 :idf:`examples`，或者直接开发自己的应用程序。
-
+现在，您可以尝试一些其他 :idf:`examples`，或者直接开发自己的应用程序。
 
 更新 ESP-IDF
-=============
+=================
 
-使用 ESP-IDF 一段时间后，您可能想通过升级来获取新的功能或者修复 bug，最简单的升级方式就是删除已有的 ``esp-idf`` 文件夹然后重新克隆一个，即重复 :ref:`get-started-get-esp-idf` 里的操作。
+乐鑫会不时推出更新版本的 ESP-IDF，修复 bug 或提出新的特性。因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf-cmake` 中的指示，重新完成克隆。 
 
-然后 :doc:`添加 IDF 到工作路径 <add-idf_path-to-profile>`，这样工具链脚本就能够知道这一版本的 ESP-IDF 的具体位置。
+如果您希望将 ESP-IDF 克隆到新的路径下，请务必 :doc:`重新设置 IDF_PATH <add-idf_path-to-profile>`。否则，工具链将无法找到 ESP-IDF。
 
-另外一种方法是只更新有改动的部分。:ref:`更新步骤取决于现在用的ESP-IDF版本 <updating>`。
+此外，您可以仅更新变更部分。具体方式，请前往 :ref:`更新 <updating>` 章节查看。
 
 相关文档
-=================
+===========
 
 .. toctree::
     :maxdepth: 1
@@ -417,5 +491,5 @@ Windows Command Prompt
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
 
-.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

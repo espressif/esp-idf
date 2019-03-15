@@ -1,4 +1,4 @@
-﻿***********
+***********
 Get Started
 ***********
 
@@ -269,7 +269,7 @@ If the previous steps have been done correctly, the following menu appears:
 
     Project configuration - Home window
 
-In the menu, navigate to ``Serial flasher config`` > ``Default serial port`` to configure the serial port, where project will be loaded to. Confirm selection by pressing enter, save configuration by selecting ``< Save >`` and then exit menuconfig by selecting ``< Exit >``.
+In the menu, navigate to ``Serial flasher config`` > ``Default serial port`` to configure the serial port, where project will be loaded to. Confirm selection by pressing enter, save configuration by selecting ``< Save >`` and then exit ``menuconfig`` by selecting ``< Exit >``.
 
 To navigate and use ``menuconfig``, press the following keys:
 
@@ -299,6 +299,8 @@ Build and flash the project by running::
     make flash
 
 This command will compile the application and all ESP-IDF components, then it will generate the bootloader, partition table, and application binaries. After that, these binaries will be flashed onto your ESP32 board.
+
+If there are no issues by the end of the flash process, you will see messages (below) describing progress of the loading process. Then the board will be reset and the "hello_world" application will start up.
 
 .. highlight:: none
 
@@ -330,7 +332,6 @@ This command will compile the application and all ESP-IDF components, then it wi
     Leaving...
     Hard resetting...
 
-If there are no issues by the end of the flash process, you will see messages describing progress of the loading process. Then the module will be reset and the “hello_world” application will start up.
 
 If you'd like to use the Eclipse IDE instead of running ``make``, check out the :doc:`Eclipse guide <eclipse-setup>`.
 
@@ -368,7 +369,7 @@ After startup and diagnostic logs scroll up, you should see "Hello world!" print
 
 To exit IDF monitor use the shortcut ``Ctrl+]``.
 
-If IDF monitor fails shortly after the upload, of if instead of the messages above you see a random garbage similar to what is given below, your board is likely using a 26MHz crystal. Most development board designs use 40MHz, so ESP-IDF uses this frequency as a default value.
+If IDF monitor fails shortly after the upload, or if instead of the messages above you see a random garbage similar to what is given below, your board is likely using a 26MHz crystal. Most development board designs use 40MHz, so ESP-IDF uses this frequency as a default value.
 
 .. code-block:: none
 
