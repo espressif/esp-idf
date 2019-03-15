@@ -219,6 +219,66 @@ endif
 TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
 TEST_COMPONENT_NAMES := $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
 
+# Set default values that were not previously defined
+CC ?= gcc
+LD ?= ld
+AR ?= ar
+OBJCOPY ?= objcopy
+OBJDUMP ?= objdump
+SIZE ?= size
+
+# Set host compiler and binutils
+HOSTCC := $(CC)
+HOSTLD := $(LD)
+HOSTAR := $(AR)
+HOSTOBJCOPY := $(OBJCOPY)
+HOSTSIZE := $(SIZE)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
+
+# Set variables common to both project & component (includes config)
+include $(IDF_PATH)/make/common.mk
+
+# Notify users when some of the required python packages are not installed
+.PHONY: check_python_dependencies
+check_python_dependencies:
+ifndef IS_BOOTLOADER_BUILD
+	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
+endif
+
+# include the config generation targets (dependency: COMPONENT_PATHS)
+#
+# (bootloader build doesn't need this, config is exported from top-level)
+ifndef IS_BOOTLOADER_BUILD
+include $(IDF_PATH)/make/project_config.mk
+endif
+
+#####################################################################
+# If SDKCONFIG_MAKEFILE hasn't been generated yet (detected if no
+# CONFIG_IDF_TARGET), stop the Makefile pass now to allow config to
+# be created. make will build SDKCONFIG_MAKEFILE and restart,
+# reevaluating everything from the top.
+#
+# This is important so config is present when the
+# component_project_vars.mk files are generated.
+#
+# (After both files exist, if SDKCONFIG_MAKEFILE is updated then the
+# normal dependency relationship will trigger a regeneration of
+# component_project_vars.mk)
+#
+#####################################################################
+ifndef CONFIG_IDF_TARGET
+ifdef IS_BOOTLOADER_BUILD  # we expect config to always have been expanded by top level project
+$(error "Internal error: config has not been passed correctly to bootloader subproject")
+endif
+ifdef MAKE_RESTARTS
+$(warning "Config was not evaluated after the first pass of 'make'")
+endif
+else  # CONFIG_IDF_TARGET
+#####################################################################
+# Config is valid, can include rest of the Project Makefile
+#####################################################################
+
+
 # Initialise project-wide variables which can be added to by
 # each component.
 #
@@ -249,9 +309,6 @@ COMPONENT_PROJECT_VARS := $(addprefix $(BUILD_DIR_BASE)/,$(COMPONENT_PROJECT_VAR
 COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 
 export COMPONENT_INCLUDES
-
-# Set variables common to both project & component
-include $(IDF_PATH)/make/common.mk
 
 all:
 ifdef CONFIG_SECURE_BOOT_ENABLED
@@ -408,22 +465,6 @@ ARFLAGS := cru
 
 export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
-# Set default values that were not previously defined
-CC ?= gcc
-LD ?= ld
-AR ?= ar
-OBJCOPY ?= objcopy
-OBJDUMP ?= objdump
-SIZE ?= size
-
-# Set host compiler and binutils
-HOSTCC := $(CC)
-HOSTLD := $(LD)
-HOSTAR := $(AR)
-HOSTOBJCOPY := $(OBJCOPY)
-HOSTSIZE := $(SIZE)
-export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
-
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
 CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
@@ -448,13 +489,6 @@ export CPPFLAGS
 APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
 APP_MAP:=$(APP_ELF:.elf=.map)
 APP_BIN:=$(APP_ELF:.elf=.bin)
-
-# once we know component paths, we can include the config generation targets
-#
-# (bootloader build doesn't need this, config is exported from top-level)
-ifndef IS_BOOTLOADER_BUILD
-include $(IDF_PATH)/make/project_config.mk
-endif
 
 # include linker script generation utils makefile
 include $(IDF_PATH)/make/ldgen.mk
@@ -491,14 +525,6 @@ ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)"
 else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
-endif
-
-.PHONY: check_python_dependencies
-
-# Notify users when some of the required python packages are not installed
-check_python_dependencies:
-ifndef IS_BOOTLOADER_BUILD
-	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
 endif
 
 all_binaries: $(APP_BIN)
@@ -675,3 +701,7 @@ endif # TOOLCHAIN_COMMIT_DESC
 
 endif #MAKE_RESTARTS
 endif #CONFIG_TOOLPREFIX
+
+#####################################################################
+endif #CONFIG_IDF_TARGET
+
