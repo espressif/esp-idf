@@ -62,7 +62,7 @@ class Env(object):
         self.lock = threading.RLock()
 
     @_synced
-    def get_dut(self, dut_name, app_path, dut_class=None, app_class=None):
+    def get_dut(self, dut_name, app_path, dut_class=None, app_class=None, **dut_init_args):
         """
         get_dut(dut_name, app_path, dut_class=None, app_class=None)
 
@@ -70,6 +70,7 @@ class Env(object):
         :param app_path: application path, app instance will use this path to process application info
         :param dut_class: dut class, if not specified will use default dut class of env
         :param app_class: app class, if not specified will use default app of env
+        :keyword dut_init_args: extra kwargs used when creating DUT instance
         :return: dut instance
         """
         if dut_name in self.allocated_duts:
@@ -97,6 +98,7 @@ class Env(object):
                     dut_config = self.get_variable(dut_name + "_port_config")
                 except ValueError:
                     dut_config = dict()
+                dut_config.update(dut_init_args)
                 dut = self.default_dut_cls(dut_name, port,
                                            os.path.join(self.log_path, dut_name + ".log"),
                                            app_inst,
@@ -168,11 +170,16 @@ class Env(object):
         close all DUTs of the Env.
 
         :param dut_debug: if dut_debug is True, then print all dut expect failures before close it
-        :return: None
+        :return: exceptions during close DUT
         """
+        dut_close_errors = []
         for dut_name in self.allocated_duts:
             dut = self.allocated_duts[dut_name]["dut"]
             if dut_debug:
                 dut.print_debug_info()
-            dut.close()
+            try:
+                dut.close()
+            except Exception as e:
+                dut_close_errors.append(e)
         self.allocated_duts = dict()
+        return dut_close_errors
