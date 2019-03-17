@@ -2726,8 +2726,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
                 if (search_result) {
                     if (search_result->type == MDNS_TYPE_PTR) {
-                        result->port = port;
-                        result->hostname = strdup(name->host);
+                        if (!result->hostname) { // assign host/port for this entry only if not previously set
+                            result->port = port;
+                            result->hostname = strdup(name->host);
+                        }
                     } else {
                         _mdns_search_result_add_srv(search_result, name->host, port, packet->tcpip_if, packet->ip_protocol);
                     }
@@ -2814,7 +2816,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                             }
                         }
                     } else {
-                        _mdns_search_result_add_txt(search_result, txt, txt_count, packet->tcpip_if, packet->ip_protocol);
+                        _mdns_result_txt_create(data_ptr, data_len, &txt, &txt_count);
+                        if (txt_count) {
+                            _mdns_search_result_add_txt(search_result, txt, txt_count, packet->tcpip_if, packet->ip_protocol);
+                        }
                     }
                 } else if (ours) {
                     if (parsed_packet->questions && !parsed_packet->probe) {
@@ -4009,6 +4014,8 @@ static esp_err_t _mdns_service_task_stop()
             vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     }
+    vSemaphoreDelete(_mdns_service_semaphore);
+    _mdns_service_semaphore = NULL;
     return ESP_OK;
 }
 
