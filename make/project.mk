@@ -329,7 +329,7 @@ endif
 ifeq ("$(wildcard ${IDF_PATH}/version.txt)","")
 IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 else
-IDF_VER_T := `cat ${IDF_PATH}/version.txt`
+IDF_VER_T := $(shell cat ${IDF_PATH}/version.txt)
 endif
 IDF_VER := $(shell echo "$(IDF_VER_T)"  | cut -c 1-31)
 
