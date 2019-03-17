@@ -48,29 +48,35 @@ static inline void btc_gap_bt_cb_to_app(esp_bt_gap_cb_event_t event, esp_bt_gap_
     }
 }
 
-static void btc_bt_set_scan_mode(esp_bt_scan_mode_t mode)
+static void btc_bt_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discovery_mode_t d_mode)
 {
     tBTA_DM_DISC disc_mode;
     tBTA_DM_CONN conn_mode;
 
-    switch (mode) {
-    case ESP_BT_SCAN_MODE_NONE:
-        disc_mode = BTA_DM_NON_DISC;
+    switch (c_mode) {
+    case ESP_BT_NON_CONNECTABLE:
         conn_mode = BTA_DM_NON_CONN;
         break;
-
-    case ESP_BT_SCAN_MODE_CONNECTABLE:
-        disc_mode = BTA_DM_NON_DISC;
+    case ESP_BT_CONNECTABLE:
         conn_mode = BTA_DM_CONN;
         break;
-
-    case ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-        disc_mode = BTA_DM_GENERAL_DISC;
-        conn_mode = BTA_DM_CONN;
-        break;
-
     default:
-        BTC_TRACE_WARNING("invalid scan mode (0x%x)", mode);
+        BTC_TRACE_WARNING("invalid connection mode (0x%x)", c_mode);
+        return;
+    }
+
+    switch (d_mode) {
+    case ESP_BT_NON_DISCOVERABLE:
+        disc_mode = BTA_DM_NON_DISC;
+        break;
+    case ESP_BT_LIMITED_DISCOVERABLE:
+        disc_mode = BTA_DM_LIMITED_DISC;
+        break;
+    case ESP_BT_GENERAL_DISCOVERABLE:
+        disc_mode = BTA_DM_GENERAL_DISC;
+        break;
+    default:
+        BTC_TRACE_WARNING("invalid discovery mode (0x%x)", d_mode);
         return;
     }
 
@@ -761,7 +767,7 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
     BTC_TRACE_DEBUG("%s act %d\n", __func__, msg->act);
     switch (msg->act) {
     case BTC_GAP_BT_ACT_SET_SCAN_MODE: {
-        btc_bt_set_scan_mode(arg->set_scan_mode.mode);
+        btc_bt_set_scan_mode(arg->set_scan_mode.c_mode, arg->set_scan_mode.d_mode);
         break;
     }
     case BTC_GAP_BT_ACT_START_DISCOVERY: {
