@@ -25,7 +25,7 @@
 #include "rom/sha.h"
 typedef SHA_CTX sha_context;
 #else
-#include "hwcrypto/sha.h"
+#include "mbedtls/sha256.h"
 #endif
 
 static const char* TAG = "secure_boot";
@@ -57,8 +57,8 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     bootloader_sha256_data(handle, data, length);
     bootloader_sha256_finish(handle, digest);
 #else
-    /* Use thread-safe esp-idf SHA function */
-    esp_sha(SHA2_256, data, length, digest);
+    /* Use thread-safe mbedTLS version */
+    mbedtls_sha256_ret(data, length, digest, 0);
 #endif
 
     // Map the signature block and verify the signature
