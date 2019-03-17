@@ -6,7 +6,7 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# Copyright 2017 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,9 +20,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import dict
 import argparse, sys, subprocess, re
 import os.path
 import pprint
+import operator
 
 DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 
@@ -46,12 +50,6 @@ def load_map_data(map_file):
     memory_config = load_memory_config(map_file)
     sections  = load_sections(map_file)
     return memory_config, sections
-
-def output_section_for_address(memory_config, address):
-    for m in memory_config.values():
-        if m["origin"] <= address and m["origin"] + m["length"] > address:
-            return m["name"]
-    return None
 
 def load_memory_config(map_file):
     """ Memory Configuration section is the total size of each output section """
@@ -81,9 +79,9 @@ def load_sections(map_file):
     is a dict with details about this section, including a "sources" key which holds a list of source file line information for each symbol linked into the section.
     """
     scan_to_header(map_file, "Linker script and memory map")
-    scan_to_header(map_file, "END GROUP")
     sections = {}
     section = None
+    sym_backup = None
     for line in map_file:
         # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
         RE_SECTION_HEADER = r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$"
@@ -100,17 +98,35 @@ def load_sections(map_file):
 
         # source file line, ie
         # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
-        RE_SOURCE_LINE = r".*? +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.o)\)"
-        m = re.match(RE_SOURCE_LINE, line)
-        if section is not None and m is not None:  # input source file details
+        RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.ob?j?)\)"
+
+        m = re.match(RE_SOURCE_LINE, line, re.M)
+        if not m:
+            # cmake build system links some object files directly, not part of any archive
+            RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<object_file>.+\.ob?j?)"
+            m = re.match(RE_SOURCE_LINE, line)
+        if section is not None and m is not None:  # input source file details=ma,e
+            sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
+            try:
+                archive = m.group("archive")
+            except IndexError:
+                archive = "(exe)"
+
             source = {
                 "size" : int(m.group("size"), 16),
                 "address" : int(m.group("address"), 16),
-                "archive" : os.path.basename(m.group("archive")),
-                "object_file" : m.group("object_file"),
+                "archive" : os.path.basename(archive),
+                "object_file" : os.path.basename(m.group("object_file")),
+                "sym_name" : sym_name,
             }
             source["file"] = "%s:%s" % (source["archive"], source["object_file"])
             section["sources"] += [ source ]
+
+        # In some cases the section name appears on the previous line, back it up in here
+        RE_SYMBOL_ONLY_LINE = r"^ (?P<sym_name>\S*)$"
+        m = re.match(RE_SYMBOL_ONLY_LINE, line)
+        if section is not None and m is not None:
+            sym_backup = m.group("sym_name")
 
     return sections
 
@@ -174,7 +190,7 @@ def print_summary(memory_config, sections):
     used_data = get_size(".dram0.data")
     used_bss = get_size(".dram0.bss")
     used_dram = used_data + used_bss
-    used_iram = sum( get_size(s) for s in sections.keys() if s.startswith(".iram0") )
+    used_iram = sum( get_size(s) for s in sections if s.startswith(".iram0") )
     flash_code = get_size(".flash.text")
     flash_rodata = get_size(".flash.rodata")
     total_size = used_data + used_iram + flash_code + flash_rodata
@@ -204,27 +220,35 @@ def print_detailed_sizes(sections, key, header):
                 "& rodata",
                 "Total")
     print("%24s %10s %6s %6s %10s %8s %7s" % headings)
-    for k in sorted(sizes.keys()):
+    result = {}
+    for k in sizes:
         v = sizes[k]
+        result[k] = {}
+        result[k]["data"] = v.get(".dram0.data", 0)
+        result[k]["bss"] = v.get(".dram0.bss", 0)
+        result[k]["iram"] = sum(t for (s,t) in v.items() if s.startswith(".iram0"))
+        result[k]["flash_text"] = v.get(".flash.text", 0)
+        result[k]["flash_rodata"] = v.get(".flash.rodata", 0)
+        result[k]["total"] = sum(result[k].values())
+
+    def return_total_size(elem):
+        val = elem[1]
+        return val["total"]
+    def return_header(elem):
+        return elem[0]
+    s = sorted(list(result.items()), key=return_header)
+    # do a secondary sort in order to have consistent order (for diff-ing the output)
+    for k,v in sorted(s, key=return_total_size, reverse=True):
         if ":" in k:  # print subheadings for key of format archive:file
             sh,k = k.split(":")
-            if sh != sub_heading:
-                print(sh)
-                sub_heading = sh
-
-        data = v.get(".dram0.data", 0)
-        bss = v.get(".dram0.bss", 0)
-        iram = sum(t for (s,t) in v.items() if s.startswith(".iram0"))
-        flash_text = v.get(".flash.text", 0)
-        flash_rodata = v.get(".flash.rodata", 0)
-        total = data + bss + iram + flash_text + flash_rodata
         print("%24s %10d %6d %6d %10d %8d %7d" % (k[:24],
-                                                   data,
-                                                   bss,
-                                                   iram,
-                                                   flash_text,
-                                                   flash_rodata,
-                                                   total))
+                                                  v["data"],
+                                                  v["bss"],
+                                                  v["iram"],
+                                                  v["flash_text"],
+                                                  v["flash_rodata"],
+                                                  v["total"]))
+
 
 if __name__ == "__main__":
     main()
