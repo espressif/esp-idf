@@ -47,10 +47,15 @@ typedef enum {
 
 /// Discoverability and Connectability mode
 typedef enum {
-    ESP_BT_SCAN_MODE_NONE = 0,                      /*!< Neither discoverable nor connectable */
-    ESP_BT_SCAN_MODE_CONNECTABLE,                   /*!< Connectable but not discoverable */
-    ESP_BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE       /*!< both discoverable and connectable */
-} esp_bt_scan_mode_t;
+    ESP_BT_NON_CONNECTABLE,             /*!< Non-connectable */
+    ESP_BT_CONNECTABLE,                 /*!< Connectable */
+} esp_bt_connection_mode_t;
+
+typedef enum {
+    ESP_BT_NON_DISCOVERABLE,            /*!< Non-discoverable */
+    ESP_BT_LIMITED_DISCOVERABLE,        /*!< Limited Discoverable */
+    ESP_BT_GENERAL_DISCOVERABLE,        /*!< General Discoverable */
+} esp_bt_discovery_mode_t;
 
 /// Bluetooth Device Property type
 typedef enum {
@@ -350,7 +355,8 @@ esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback);
  * @brief           Set discoverability and connectability mode for legacy bluetooth. This function should
  *                  be called after esp_bluedroid_enable() completes successfully
  *
- * @param[in]       mode : one of the enums of bt_scan_mode_t
+ * @param[in]       c_mode : one of the enums of esp_bt_connection_mode_t
+ * @param[in]       d_mode : one of the enums of esp_bt_discovery_mode_t
  *
  * @return
  *                  - ESP_OK : Succeed
@@ -358,7 +364,7 @@ esp_err_t esp_bt_gap_register_callback(esp_bt_gap_cb_t callback);
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
  *                  - ESP_FAIL: others
  */
-esp_err_t esp_bt_gap_set_scan_mode(esp_bt_scan_mode_t mode);
+esp_err_t esp_bt_gap_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discovery_mode_t d_mode);
 
 /**
  * @brief           Start device discovery. This function should be called after esp_bluedroid_enable() completes successfully.
