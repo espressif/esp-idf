@@ -50,16 +50,16 @@ a15            0x0	0
 
 ======================== THREADS INFO =========================
   Id   Target Id         Frame 
-  10   process 9         0x40088bb4 in xQueueGenericReceive (xQueue=0x3ffaff74, pvBuffer=0x0, xTicksToWait=4294967295, xJustPeeking=0) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/queue.c:1591
-  9    process 8         0x40081cec in esp_crosscore_int_send_yield (core_id=1) at C:/msys32/home/alex/esp/esp-idf4/components/esp32/crosscore_int.c:112
-  8    process 7         0x40088bb4 in xQueueGenericReceive (xQueue=0x3ffaeaac, pvBuffer=0x0, xTicksToWait=4294967295, xJustPeeking=0) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/queue.c:1591
-  7    process 6         0x400893f2 in prvProcessTimerOrBlockTask (xNextExpireTime=<optimized out>, xListWasEmpty=<optimized out>) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/timers.c:588
-  6    process 5         0x40087782 in vTaskDelay (xTicksToDelay=<optimized out>) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/tasks.c:1484
-  5    process 4         0x40087782 in vTaskDelay (xTicksToDelay=<optimized out>) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/tasks.c:1484
-  4    process 3         0x400e6b22 in esp_pm_impl_waiti () at C:/msys32/home/alex/esp/esp-idf4/components/esp32/pm_esp32.c:487
-  3    process 2         0x400e6b22 in esp_pm_impl_waiti () at C:/msys32/home/alex/esp/esp-idf4/components/esp32/pm_esp32.c:487
-  2    process 1         0x400092e6 in ?? ()
 * 1    <main task>       0x400e2281 in recur_func () at C:/msys32/home/alex/esp/esp-idf4/components/espcoredump/test/test_core_dump.c:70
+  2    process 1         0x400092e6 in ?? ()
+  3    process 2         0x400e6b22 in esp_pm_impl_waiti () at C:/msys32/home/alex/esp/esp-idf4/components/esp32/pm_esp32.c:487
+  4    process 3         0x400e6b22 in esp_pm_impl_waiti () at C:/msys32/home/alex/esp/esp-idf4/components/esp32/pm_esp32.c:487
+  5    process 4         0x40087782 in vTaskDelay (xTicksToDelay=<optimized out>) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/tasks.c:1484
+  6    process 5         0x40087782 in vTaskDelay (xTicksToDelay=<optimized out>) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/tasks.c:1484
+  7    process 6         0x400893f2 in prvProcessTimerOrBlockTask (xNextExpireTime=<optimized out>, xListWasEmpty=<optimized out>) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/timers.c:588
+  8    process 7         0x40088bb4 in xQueueGenericReceive (xQueue=0x3ffaeaac, pvBuffer=0x0, xTicksToWait=4294967295, xJustPeeking=0) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/queue.c:1591
+  9    process 8         0x40081cec in esp_crosscore_int_send_yield (core_id=1) at C:/msys32/home/alex/esp/esp-idf4/components/esp32/crosscore_int.c:112
+  10   process 9         0x40088bb4 in xQueueGenericReceive (xQueue=0x3ffaff74, pvBuffer=0x0, xTicksToWait=4294967295, xJustPeeking=0) at C:/msys32/home/alex/esp/esp-idf4/components/freertos/queue.c:1591
 
 ======================= ALL MEMORY REGIONS ========================
 Name   Address   Size   Attrs

@@ -23,7 +23,7 @@ volatile unsigned long crash_flags = TCI_UNALIGN_PTR;
 void bad_ptr_func()
 {
     unsigned long *ptr = (unsigned long *)0;
-    volatile int cnt;
+    volatile int cnt = 0;
     int i = 0;
 
     for (i = 0; i < 1000; i++) {
@@ -51,7 +51,7 @@ void recur_func()
 {
     static int rec_cnt;
     unsigned short *ptr = (unsigned short *)0x5;
-    volatile int cnt;
+    volatile int cnt = 0;
     int i = 0;
 
     if (rec_cnt++ > 2) {
