@@ -19,7 +19,7 @@
 #include "esp_sleep.h"
 #include "esp_timer_impl.h"
 #include "esp_log.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_newlib.h"
 #include "esp_spi_flash.h"
 #include "rom/cache.h"
