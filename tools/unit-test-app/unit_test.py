@@ -265,7 +265,7 @@ def run_unit_test_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=ut_config)
+        dut = env.get_dut("unit-test-app", app_path=ut_config, allow_dut_exception=True)
         if len(case_config[ut_config]) > 0:
             replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
         dut.start_app()
@@ -390,7 +390,7 @@ def get_dut(duts, env, name, ut_config, app_bin=None):
     if name in duts:
         dut = duts[name]
     else:
-        dut = env.get_dut(name, app_path=ut_config)
+        dut = env.get_dut(name, app_path=ut_config, allow_dut_exception=True)
         duts[name] = dut
         replace_app_bin(dut, "unit-test-app", app_bin)
         dut.start_app()  # download bin to board
@@ -595,7 +595,7 @@ def run_multiple_stage_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=ut_config)
+        dut = env.get_dut("unit-test-app", app_path=ut_config, allow_dut_exception=True)
         if len(case_config[ut_config]) > 0:
             replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
         dut.start_app()
