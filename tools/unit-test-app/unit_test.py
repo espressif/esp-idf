@@ -237,7 +237,7 @@ def run_unit_test_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=ut_config)
+        dut = env.get_dut("unit-test-app", app_path=ut_config, allow_dut_exception=True)
         dut.start_app()
         Utility.console_log("Download finished, start running test cases", "O")
 
@@ -359,7 +359,7 @@ def get_dut(duts, env, name, ut_config):
     if name in duts:
         dut = duts[name]
     else:
-        dut = env.get_dut(name, app_path=ut_config)
+        dut = env.get_dut(name, app_path=ut_config, allow_dut_exception=True)
         duts[name] = dut
         dut.start_app()
     return dut
@@ -561,7 +561,7 @@ def run_multiple_stage_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=ut_config)
+        dut = env.get_dut("unit-test-app", app_path=ut_config, allow_dut_exception=True)
         dut.start_app()
 
         for one_case in case_config[ut_config]:
