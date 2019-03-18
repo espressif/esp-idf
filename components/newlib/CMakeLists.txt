@@ -25,6 +25,10 @@ if(GCC_NOT_5_2_0)
         set(COMPONENT_ADD_LDFRAGMENTS esp32-spiram-rom-functions-c.lf)
     endif()
 
+    # Forces the linker to include locks.o from this component, which
+    # replaces weak locking functions defined in libc.a:locks.o
+    set(EXTRA_LINK_FLAGS "-u newlib_include_locks_impl")
+
 else()
     # Remove this section when GCC 5.2.0 is no longer supported
     # 'include' and 'lib' directories should also be removed.
@@ -58,3 +62,7 @@ endif()
 target_link_libraries(${COMPONENT_TARGET} ${LIBC} ${LIBM})
 
 set_source_files_properties(syscalls.c PROPERTIES COMPILE_FLAGS -fno-builtin)
+
+if(EXTRA_LINK_FLAGS)
+    target_link_libraries(${COMPONENT_TARGET} "${EXTRA_LINK_FLAGS}")
+endif()

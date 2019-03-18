@@ -14,6 +14,10 @@ ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
 COMPONENT_ADD_LDFRAGMENTS := esp32-spiram-rom-functions-c.lf
 endif
 
+# Forces the linker to include locks.o from this component, which
+# replaces weak locking functions defined in libc.a:locks.o
+COMPONENT_ADD_LDFLAGS += -u newlib_include_locks_impl
+
 else # GCC_NOT_5_2_0
 # Remove this section when GCC 5.2.0 is no longer supported
 
