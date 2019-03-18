@@ -206,14 +206,15 @@ class RecvThread(threading.Thread):
     CHECK_FUNCTIONS = []
     """ DUT subclass can define a few check functions to process received data. """
 
-    def __init__(self, read, data_cache, recorded_data, record_data_lock):
+    def __init__(self, read, dut):
         super(RecvThread, self).__init__()
         self.exit_event = threading.Event()
         self.setDaemon(True)
         self.read = read
-        self.data_cache = data_cache
-        self.recorded_data = recorded_data
-        self.record_data_lock = record_data_lock
+        self.dut = dut
+        self.data_cache = dut.data_cache
+        self.recorded_data = dut.recorded_data
+        self.record_data_lock = dut.record_data_lock
         self._line_cache = str()
 
     def _line_completion(self, data):
@@ -408,8 +409,7 @@ class BaseDUT(object):
         :return: None
         """
         self._port_open()
-        self.receive_thread = self.RECV_THREAD_CLS(self._port_read, self.data_cache,
-                                                   self.recorded_data, self.record_data_lock)
+        self.receive_thread = self.RECV_THREAD_CLS(self._port_read, self)
         self.receive_thread.start()
 
     def close(self):

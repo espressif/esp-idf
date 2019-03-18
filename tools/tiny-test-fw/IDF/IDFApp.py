@@ -32,6 +32,7 @@ class IDFApp(App.BaseApp):
         super(IDFApp, self).__init__(app_path)
         self.idf_path = self.get_sdk_path()
         self.binary_path = self.get_binary_path(app_path)
+        self.elf_file = self._get_elf_file_path(self.binary_path)
         assert os.path.exists(self.binary_path)
         if self.IDF_DOWNLOAD_CONFIG_FILE not in os.listdir(self.binary_path):
             if self.IDF_FLASH_ARGS_FILE not in os.listdir(self.binary_path):
@@ -101,6 +102,15 @@ class IDFApp(App.BaseApp):
         :return: abs app binary path
         """
         pass
+
+    @staticmethod
+    def _get_elf_file_path(binary_path):
+        ret = ""
+        file_names = os.listdir(binary_path)
+        for fn in file_names:
+            if os.path.splitext(fn)[1] == ".elf":
+                ret = os.path.join(binary_path, fn)
+        return ret
 
     def process_arg(self, arg):
         """
