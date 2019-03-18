@@ -25,8 +25,6 @@ else()
                    "esp_timer_esp32.c"
                    "esp_himem.c"
                    "ets_timer_legacy.c"
-                   "event_default_handlers.c"
-                   "event_loop.c"
                    "fast_crypto_ops.c"
                    "freertos_hooks.c"
                    "gdbstub.c"
@@ -53,12 +51,11 @@ else()
                    "hwcrypto/sha.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-    set(COMPONENT_REQUIRES driver tcpip_adapter esp_event efuse)
+    set(COMPONENT_REQUIRES driver esp_event efuse)
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
-    # tcpip_adapter is a public requirement because esp_event.h uses tcpip_adapter types
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(COMPONENT_PRIV_REQUIRES
-        app_trace app_update bootloader_support ethernet log mbedtls nvs_flash
+        app_trace app_update bootloader_support log mbedtls nvs_flash
         pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module espcoredump)
 
     set(COMPONENT_ADD_LDFRAGMENTS linker.lf ld/esp32_fragments.lf)
