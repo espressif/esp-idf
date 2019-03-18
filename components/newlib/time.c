@@ -25,7 +25,7 @@
 #include <rom/rtc.h>
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_timer.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"

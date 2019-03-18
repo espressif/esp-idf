@@ -6,7 +6,7 @@
 #include "freertos/portable.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "soc/cpu.h"
 
 TEST_CASE("wl_unmount doesn't leak memory", "[wear_levelling]")

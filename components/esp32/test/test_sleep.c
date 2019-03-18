@@ -2,7 +2,7 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "esp_sleep.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "driver/rtc_io.h"
 #include "soc/gpio_reg.h"
 #include "soc/rtc.h"

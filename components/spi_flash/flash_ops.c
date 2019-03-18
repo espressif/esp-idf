@@ -30,7 +30,7 @@
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_flash_partitions.h"
 #include "esp_ota_ops.h"
 #include "cache_utils.h"

@@ -17,7 +17,7 @@
 
 #include <stdint.h>
 #include "esp_attr.h"
-#include "esp_dport_access.h"
+#include "esp32/dport_access.h"
 #include "soc.h"
 #include "uart_reg.h"
 #include "xtensa/xtruntime.h"

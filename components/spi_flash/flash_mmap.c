@@ -31,7 +31,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
 #include "cache_utils.h"
-#include "esp_spiram.h"
+#include "esp32/spiram.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds

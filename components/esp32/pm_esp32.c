@@ -22,7 +22,7 @@
 #include "esp_pm.h"
 #include "esp_log.h"
 #include "esp_crosscore_int.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 #include "soc/rtc.h"
 
