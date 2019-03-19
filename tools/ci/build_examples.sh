@@ -116,7 +116,7 @@ build_example () {
     pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-        export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+        export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
         # sdkconfig files are normally not checked into git, but may be present when
         # a developer runs this script locally
