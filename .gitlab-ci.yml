@@ -1479,7 +1479,7 @@ IT_011_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T50_1
+    - SSC_T12_MESH1
 
 IT_012_01:
   <<: *test_template
