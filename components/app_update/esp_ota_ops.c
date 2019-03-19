@@ -108,13 +108,6 @@ static esp_err_t image_validate(const esp_partition_t *partition, esp_image_load
         return ESP_ERR_OTA_VALIDATE_FAILED;
     }
 
-#ifdef CONFIG_SECURE_SIGNED_ON_UPDATE
-    esp_err_t ret = esp_secure_boot_verify_signature(partition->address, data.image_len);
-    if (ret != ESP_OK) {
-        return ESP_ERR_OTA_VALIDATE_FAILED;
-    }
-#endif
-
     return ESP_OK;
 }
 
