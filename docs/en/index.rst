@@ -26,6 +26,8 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 .. |API Guides| image:: ../_static/api-guides.gif
 .. _API Guides: api-guides/index.html
 
+.. _Libraries and Frameworks: libraries-and-frameworks/index.html
+
 .. |Contribute| image:: ../_static/contribute.gif
 .. _Contribute: contribute/index.html
 
@@ -41,6 +43,7 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>
+   Libraries and Frameworks <libraries-and-frameworks/index>
    Contribute <contribute/index>
    Versions <versions>
    Resources <resources>
