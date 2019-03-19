@@ -1,7 +1,19 @@
 menu "Test config"
 
     config PERFORMANCE_LEVEL
-        int "Performance level"
+        int
         range 0 3
+        prompt "Performance level"
 
+    config A
+        bool
+        default "y"
+
+    config B
+        bool
+        default "n"
+
+    config C
+        bool
+        default "y"
 endmenu
