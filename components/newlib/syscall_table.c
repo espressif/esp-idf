@@ -32,7 +32,7 @@ static struct _reent s_reent;
 extern int _printf_float(struct _reent *rptr,
                void *pdata,
                FILE * fp,
-               int (*pfunc) (struct _reent *, FILE *, _CONST char *, size_t len),
+               int (*pfunc) (struct _reent *, FILE *, const char *, size_t len),
                va_list * ap);
 
 
