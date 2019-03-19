@@ -1,4 +1,4 @@
-[mapping]
+[mapping:soc]
 archive: libsoc.a
 entries: 
     cpu_util (noflash_text)
