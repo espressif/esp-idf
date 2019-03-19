@@ -1,4 +1,4 @@
-[mapping]
+[mapping:espcoredump]
 archive: libespcoredump.a
 entries: 
     core_dump_uart (noflash_text)

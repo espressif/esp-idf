@@ -1,22 +1,21 @@
-[mapping]
+[mapping:phy]
 archive: libphy.a
 entries:
     * (noflash_data)
 
-[mapping]
+[mapping:rtc]
 archive: librtc.a
 entries:
     * (noflash_text)
 
-[mapping]
+[mapping:pp]
 archive: libpp.a
 entries:
-    : ESP32_WIFI_IRAM_OPT = y
-    * (wifi_iram)
+    if ESP32_WIFI_IRAM_OPT = y:
+        * (wifi_iram)
 
-[mapping]
+[mapping:net80211]
 archive: libnet80211.a
 entries:
-    : ESP32_WIFI_IRAM_OPT = y
-    * (wifi_iram)
-
+    if ESP32_WIFI_IRAM_OPT = y:
+        * (wifi_iram)
