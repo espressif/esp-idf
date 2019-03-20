@@ -327,37 +327,37 @@ esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-void IRAM_ATTR gpio_intr_service(void* arg)
+static inline void IRAM_ATTR gpio_isr_loop(uint32_t status, const uint32_t gpio_num_start) {
+    while (status) {
+        int nbit = __builtin_ffs(status) - 1;
+        status &= ~(1 << nbit);
+        int gpio_num = gpio_num_start + nbit;
+        if (gpio_isr_func[gpio_num].fn != NULL) {
+            gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
+        }
+    }
+}
+
+static void IRAM_ATTR gpio_intr_service(void* arg)
 {
     //GPIO intr process
-    uint32_t gpio_num = 0;
-    //read status to get interrupt status for GPIO0-31
-    uint32_t gpio_intr_status;
-    gpio_intr_status = GPIO.status;
-    //read status1 to get interrupt status for GPIO32-39
-    uint32_t gpio_intr_status_h;
-    gpio_intr_status_h = GPIO.status1.intr_st;
-
     if (gpio_isr_func == NULL) {
         return;
     }
-    do {
-        if (gpio_num < 32) {
-            if (gpio_intr_status & BIT(gpio_num)) { //gpio0-gpio31
-                if (gpio_isr_func[gpio_num].fn != NULL) {
-                    gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
-                }
-                GPIO.status_w1tc = BIT(gpio_num);
-            }
-        } else {
-            if (gpio_intr_status_h & BIT(gpio_num - 32)) {
-                if (gpio_isr_func[gpio_num].fn != NULL) {
-                    gpio_isr_func[gpio_num].fn(gpio_isr_func[gpio_num].args);
-                }
-                GPIO.status1_w1tc.intr_st = BIT(gpio_num - 32);
-            }
-        }
-    } while (++gpio_num < GPIO_PIN_COUNT);
+
+    //read status to get interrupt status for GPIO0-31
+    const uint32_t gpio_intr_status = GPIO.status;
+    if (gpio_intr_status) {
+        gpio_isr_loop(gpio_intr_status, 0);
+        GPIO.status_w1tc = gpio_intr_status;
+    }
+
+    //read status1 to get interrupt status for GPIO32-39
+    const uint32_t gpio_intr_status_h = GPIO.status1.intr_st;
+    if (gpio_intr_status_h) {
+        gpio_isr_loop(gpio_intr_status_h, 32);
+        GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
+    }
 }
 
 esp_err_t gpio_isr_handler_add(gpio_num_t gpio_num, gpio_isr_t isr_handler, void* args)
