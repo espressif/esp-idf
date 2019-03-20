@@ -591,6 +591,21 @@ esp_err_t esp_ble_gattc_cache_refresh(esp_bd_addr_t remote_bda)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gattc_cache_clean(esp_bd_addr_t remote_bda)
+{
+    btc_msg_t msg;
+    btc_ble_gattc_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GATTC;
+    msg.act = BTC_GATTC_ACT_CACHE_CLEAN;
+    memcpy(arg.cache_clean.remote_bda, remote_bda, sizeof(esp_bd_addr_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_addr, esp_bd_addr_t assoc_addr, bool is_assoc)
 {
     btc_msg_t msg;
