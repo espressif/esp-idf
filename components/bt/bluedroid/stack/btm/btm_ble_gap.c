@@ -756,6 +756,7 @@ extern void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK  *p_vsc_c
 
 void BTM_VendorHciEchoCmdCallback(tBTM_VSC_CMPL *p1)
 {
+#if (!CONFIG_BT_STACK_NO_LOG)
     if (!p1) {
         return;
     }
@@ -763,6 +764,7 @@ void BTM_VendorHciEchoCmdCallback(tBTM_VSC_CMPL *p1)
     uint8_t status, echo;
     STREAM_TO_UINT8  (status, p);
     STREAM_TO_UINT8  (echo, p);
+#endif
     BTM_TRACE_DEBUG("%s status 0x%x echo 0x%x", __func__, status, echo);
 }
 

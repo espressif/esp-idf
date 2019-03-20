@@ -261,14 +261,18 @@ tBTA_GATT_STATUS bta_gattc_co_cache_open(BD_ADDR server_bda, BOOLEAN to_save, UI
 *******************************************************************************/
 tBTA_GATT_STATUS bta_gattc_co_cache_load(tBTA_GATTC_NV_ATTR *attr, UINT8 index)
 {
+#if (!CONFIG_BT_STACK_NO_LOG)
     UINT16              num_attr = 0;
+#endif
     tBTA_GATT_STATUS    status = BTA_GATT_ERROR;
     size_t length = 0;
     // Read the size of memory space required for blob
     nvs_get_blob(cache_env.cache_addr[index].cache_fp, cache_key, NULL, &length);
     // Read previously saved blob if available
     esp_err_t err_code = nvs_get_blob(cache_env.cache_addr[index].cache_fp, cache_key, attr, &length);
+#if (!CONFIG_BT_STACK_NO_LOG)
     num_attr = length / sizeof(tBTA_GATTC_NV_ATTR);
+#endif
     status = (err_code == ESP_OK && length != 0) ? BTA_GATT_OK : BTA_GATT_ERROR;
     APPL_TRACE_DEBUG("%s() - read=%d, status=%d, err_code = %d",
                      __func__, num_attr, status, err_code);
@@ -323,6 +327,9 @@ void bta_gattc_co_cache_save (BD_ADDR server_bda, UINT16 num_attr,
         status = BTA_GATT_ERROR;
     }
 
+#if CONFIG_BT_STACK_NO_LOG
+    (void) status;
+#endif
     APPL_TRACE_DEBUG("%s() wrote hash_key = %x%x%x%x, num_attr = %d, status = %d.", __func__, hash_key[0], hash_key[1], hash_key[2], hash_key[3], num_attr, status);
 }
 

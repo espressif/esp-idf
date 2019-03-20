@@ -123,7 +123,10 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
     UINT8       pkt_type;
     tL2C_LCB    *p_lcb;
     tL2C_CCB    *p_ccb = NULL;
-    UINT16      l2cap_len, rcv_cid, psm;
+    UINT16      l2cap_len, rcv_cid;
+#if (!CONFIG_BT_STACK_NO_LOG)
+    UINT16      psm;
+#endif
     UINT16      credit;
 
     /* Extract the handle */
@@ -228,7 +231,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
         //counter_add("l2cap.ch2.rx.bytes", l2cap_len);
         //counter_add("l2cap.ch2.rx.pkts", 1);
         /* process_connectionless_data (p_lcb); */
+#if !CONFIG_BT_STACK_NO_LOG
         STREAM_TO_UINT16 (psm, p);
+#endif
         L2CAP_TRACE_DEBUG( "GOT CONNECTIONLESS DATA PSM:%d", psm ) ;
 
 #if (L2CAP_UCD_INCLUDED == TRUE)

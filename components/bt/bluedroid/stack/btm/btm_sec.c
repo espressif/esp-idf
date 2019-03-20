@@ -949,7 +949,9 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
 {
     tBTM_SEC_DEV_REC *p_dev_rec;
     tBTM_STATUS      status;
+#if (!CONFIG_BT_STACK_NO_LOG)
     UINT8            *p_features;
+#endif
     UINT8            ii;
     tACL_CONN        *p = btm_bda_to_acl(bd_addr, transport);
     BTM_TRACE_API ("btm_sec_bond_by_transport BDA: %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -1042,7 +1044,9 @@ tBTM_STATUS btm_sec_bond_by_transport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
     }
 
     for (ii = 0; ii <= HCI_EXT_FEATURES_PAGE_MAX; ii++) {
+#if (!CONFIG_BT_STACK_NO_LOG)
         p_features = p_dev_rec->features[ii];
+#endif
         BTM_TRACE_EVENT("  remote_features page[%1d] = %02x-%02x-%02x-%02x\n",
                         ii, p_features[0], p_features[1], p_features[2], p_features[3]);
         BTM_TRACE_EVENT("                              %02x-%02x-%02x-%02x\n",
