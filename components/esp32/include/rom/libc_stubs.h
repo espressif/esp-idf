@@ -75,7 +75,7 @@ struct syscall_stub_table
     int (*_lock_try_acquire_recursive)(_lock_t *lock);
     void (*_lock_release)(_lock_t *lock);
     void (*_lock_release_recursive)(_lock_t *lock);
-    int (*_printf_float)(struct _reent *data, void *pdata, FILE * fp, int (*pfunc) (struct _reent *, FILE *, _CONST char *, size_t len), va_list * ap);
+    int (*_printf_float)(struct _reent *data, void *pdata, FILE * fp, int (*pfunc) (struct _reent *, FILE *, const char *, size_t len), va_list * ap);
     int (*_scanf_float) (struct _reent *rptr, void *pdata, FILE *fp, va_list *ap);
 };
 

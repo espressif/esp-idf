@@ -30,6 +30,7 @@
 #define _ENDIAN_H_
 
 #include <stdint.h>
+#include <sys/types.h>
 #include "byteswap.h"
 
 #ifndef BIG_ENDIAN
