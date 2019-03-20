@@ -32,6 +32,7 @@ variables:
   V: "0"
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
+  CUSTOM_TOOLCHAIN_PATH: "/opt/xtensa-custom"
 
 # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
@@ -53,6 +54,25 @@ variables:
 .apply_bot_filter: &apply_bot_filter
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
+.setup_custom_toolchain: &setup_custom_toolchain |
+  if [ "$IDF_XTENSA_TOOLCHAIN_URL" ] ; then
+  echo "Use a custom toolchain: ${IDF_XTENSA_TOOLCHAIN_URL:-Unknown}"
+  rm -rf "$CUSTOM_TOOLCHAIN_PATH" &&
+  mkdir -p -v "$CUSTOM_TOOLCHAIN_PATH" &&
+  pushd "$CUSTOM_TOOLCHAIN_PATH" &&
+  curl -sSL -o xtensa-custom.xxx "$IDF_XTENSA_TOOLCHAIN_URL" &&
+  ls -l xtensa-custom.xxx &&
+  tar xf xtensa-custom.xxx --strip-components 1 &&
+  ls -l . &&
+  popd
+  PATH=$CUSTOM_TOOLCHAIN_PATH/bin:$PATH
+  export PATH
+  fi
+
+.cleanup_custom_toolchain: &cleanup_custom_toolchain |
+  echo "Cleaning up $CUSTOM_TOOLCHAIN_PATH"
+  rm -rf "$CUSTOM_TOOLCHAIN_PATH"
+
 before_script:
   - source tools/ci/setup_python.sh
   - *git_clean_stale_submodules
@@ -71,6 +91,8 @@ before_script:
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source tools/ci/configure_ci_environment.sh
 
+  - *setup_custom_toolchain
+
   # fetch the submodules (& if necessary re-fetch repo) from gitlab
   - time ./tools/ci/get-full-sources.sh
 
@@ -79,6 +101,7 @@ before_script:
   before_script: &do_nothing_before_no_filter
     - source tools/ci/setup_python.sh
     - *git_clean_stale_submodules
+    - *setup_custom_toolchain
 
 # used for everything else where we want to do no prep, except for bot filter
 .do_nothing_before:
@@ -89,6 +112,7 @@ before_script:
     - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
+    - *setup_custom_toolchain
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
@@ -98,6 +122,7 @@ before_script:
     - *apply_bot_filter
     - echo "Not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
+    - *setup_custom_toolchain
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -105,6 +130,9 @@ before_script:
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+after_script:
+  - *cleanup_custom_toolchain
 
 build_template_app:
   stage: build
