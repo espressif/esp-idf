@@ -62,7 +62,7 @@ static bool s_non_blocking[UART_NUM];
 /* Lock ensuring that uart_select is used from only one task at the time */
 static _lock_t s_one_select_lock;
 
-static SemaphoreHandle_t *_signal_sem = NULL;
+static esp_vfs_select_sem_t _select_sem = {.sem = NULL};
 static fd_set *_readfds = NULL;
 static fd_set *_writefds = NULL;
 static fd_set *_errorfds = NULL;
@@ -319,25 +319,25 @@ static void select_notif_callback(uart_port_t uart_num, uart_select_notif_t uart
         case UART_SELECT_READ_NOTIF:
             if (FD_ISSET(uart_num, _readfds_orig)) {
                 FD_SET(uart_num, _readfds);
-                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+                esp_vfs_select_triggered_isr(_select_sem, task_woken);
             }
             break;
         case UART_SELECT_WRITE_NOTIF:
             if (FD_ISSET(uart_num, _writefds_orig)) {
                 FD_SET(uart_num, _writefds);
-                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+                esp_vfs_select_triggered_isr(_select_sem, task_woken);
             }
             break;
         case UART_SELECT_ERROR_NOTIF:
             if (FD_ISSET(uart_num, _errorfds_orig)) {
                 FD_SET(uart_num, _errorfds);
-                esp_vfs_select_triggered_isr(_signal_sem, task_woken);
+                esp_vfs_select_triggered_isr(_select_sem, task_woken);
             }
             break;
     }
 }
 
-static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, SemaphoreHandle_t *signal_sem)
+static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t select_sem)
 {
     if (_lock_try_acquire(&s_one_select_lock)) {
         return ESP_ERR_INVALID_STATE;
@@ -347,7 +347,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
 
     portENTER_CRITICAL(uart_get_selectlock());
 
-    if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig || _signal_sem) {
+    if (_readfds || _writefds || _errorfds || _readfds_orig || _writefds_orig || _errorfds_orig || _select_sem.sem) {
         portEXIT_CRITICAL(uart_get_selectlock());
         uart_end_select();
         return ESP_ERR_INVALID_STATE;
@@ -378,7 +378,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
         }
     }
 
-    _signal_sem = signal_sem;
+    _select_sem = select_sem;
 
     _readfds = readfds;
     _writefds = writefds;
@@ -398,7 +398,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
             if (uart_get_buffered_data_len(i, &buffered_size) == ESP_OK && buffered_size > 0) {
                 // signalize immediately when data is buffered
                 FD_SET(i, _readfds);
-                esp_vfs_select_triggered(_signal_sem);
+                esp_vfs_select_triggered(_select_sem);
             }
         }
     }
@@ -417,7 +417,7 @@ static void uart_end_select()
         uart_set_select_notif_callback(i, NULL);
     }
 
-    _signal_sem = NULL;
+    _select_sem.sem = NULL;
 
     _readfds = NULL;
     _writefds = NULL;
