@@ -982,6 +982,11 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             if (p_clcb->status != BTA_GATT_OK) {
                 APPL_TRACE_ERROR("discovery on server failed");
                 bta_gattc_reset_discover_st(p_clcb->p_srcb, p_clcb->status);
+                //discover service complete, trigger callback
+                tBTA_GATTC cb_data;
+                cb_data.dis_cmpl.status  = p_clcb->status;
+                cb_data.dis_cmpl.conn_id = p_clcb->bta_conn_id;
+                ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_DIS_SRVC_CMPL_EVT,  &cb_data);
             } else {
                 p_clcb->disc_active = TRUE;
             }
@@ -1727,7 +1732,10 @@ void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
                 }
             }
             if (found) {
-                bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
+                // If the device is discovering services, return
+                if(p_clcb->state == BTA_GATTC_CONN_ST) {
+                    bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
+                }
                 return;
             }
         }
@@ -1817,6 +1825,28 @@ void bta_gattc_process_api_cache_get_addr_list(tBTA_GATTC_CB *p_cb, tBTA_GATTC_D
     }
 
 }
+
+/*******************************************************************************
+**
+** Function         bta_gattc_process_api_cache_clean
+**
+** Description      process cache clean API to delete cache
+**
+** Returns          None.
+**
+*******************************************************************************/
+void bta_gattc_process_api_cache_clean(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
+{
+    tBTA_GATTC_SERV *p_srvc_cb = bta_gattc_find_srvr_cache(p_msg->api_conn.remote_bda);
+    UNUSED(p_cb);
+
+    if (p_srvc_cb != NULL && p_srvc_cb->p_srvc_cache != NULL) {
+        //mark it and delete the cache */
+        list_free(p_srvc_cb->p_srvc_cache);
+        p_srvc_cb->p_srvc_cache = NULL;
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         bta_gattc_process_srvc_chg_ind

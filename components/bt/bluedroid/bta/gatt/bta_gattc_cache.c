@@ -617,6 +617,11 @@ static void bta_gattc_explore_srvc(UINT16 conn_id, tBTA_GATTC_SERV *p_srvc_cb)
     if (p_clcb->transport == BTA_TRANSPORT_LE) {
         L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, TRUE);
     }
+    //discover service complete, trigger callback
+    tBTA_GATTC cb_data;
+    cb_data.dis_cmpl.status  = p_clcb->status;
+    cb_data.dis_cmpl.conn_id = conn_id;
+    ( *p_clcb->p_rcb->p_cback)(BTA_GATTC_DIS_SRVC_CMPL_EVT,  &cb_data);
 #endif
 #if(GATTC_CACHE_NVS == TRUE)
     /* save cache to NV */

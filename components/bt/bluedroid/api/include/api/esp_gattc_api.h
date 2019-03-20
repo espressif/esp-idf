@@ -67,6 +67,7 @@ typedef enum {
     ESP_GATTC_QUEUE_FULL_EVT          = 43,       /*!< When the gattc command queue full, the event comes */
     ESP_GATTC_SET_ASSOC_EVT           = 44,       /*!< When the ble gattc set the associated address complete, the event comes */
     ESP_GATTC_GET_ADDR_LIST_EVT       = 45,       /*!< When the ble get gattc address list in cache finish, the event comes */
+    ESP_GATTC_DIS_SRVC_CMPL_EVT       = 46,       /*!< When the ble discover service complete, the event comes */
 } esp_gattc_cb_event_t;
 
 
@@ -243,6 +244,14 @@ typedef union {
         bool     is_full;              /*!< The gattc command queue is full or not */
     } queue_full;                      /*!< Gatt client callback param of ESP_GATTC_QUEUE_FULL_EVT */
 
+    /**
+     * @brief ESP_GATTC_DIS_SRVC_CMPL_EVT
+     */
+    struct gattc_dis_srvc_cmpl_evt_param {
+        esp_gatt_status_t status;      /*!< Operation status */
+        uint16_t conn_id;              /*!< Connection id */
+    } dis_srvc_cmpl;                   /*!< Gatt client callback param of ESP_GATTC_DIS_SRVC_CMPL_EVT */
+
 } esp_ble_gattc_cb_param_t;             /*!< GATT client callback parameter union type */
 
 /**
@@ -348,10 +357,8 @@ esp_err_t esp_ble_gattc_send_mtu_req (esp_gatt_if_t gattc_if, uint16_t conn_id);
 
 /**
  * @brief           This function is called to get service from local cache. 
- *                  If it does not exist, request a GATT service discovery
- *                  on a GATT server. This function report service search result
- *                  by a callback event, and followed by a service search complete
- *                  event.
+ *                  This function report service search result by a callback 
+ *                  event, and followed by a service search complete event.
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID.
@@ -792,7 +799,8 @@ esp_err_t esp_ble_gattc_unregister_for_notify (esp_gatt_if_t gattc_if,
 
 
 /**
-* @brief           Refresh the server cache store in the gattc stack of the remote device
+* @brief           Refresh the server cache store in the gattc stack of the remote device. If
+*                  the device is connected, this API will restart the discovery of service information of the remote device
 *
 * @param[in]       remote_bda: remote device BD address.
 *
@@ -836,7 +844,17 @@ esp_err_t esp_ble_gattc_cache_assoc(esp_gatt_if_t gattc_if, esp_bd_addr_t src_ad
 */
 esp_err_t esp_ble_gattc_cache_get_addr_list(esp_gatt_if_t gattc_if);
 
-
+/**
+* @brief           Clean the service cache of this device in the gattc stack, 
+*
+* @param[in]       remote_bda: remote device BD address.
+*
+* @return
+*                  - ESP_OK: success
+*                  - other: failed
+*
+*/
+esp_err_t esp_ble_gattc_cache_clean(esp_bd_addr_t remote_bda);
 
 #ifdef __cplusplus
 }
