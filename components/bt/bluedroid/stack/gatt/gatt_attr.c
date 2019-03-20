@@ -308,6 +308,10 @@ void gatt_profile_db_init (void)
     */
     status = GATTS_StartService (gatt_cb.gatt_if, service_handle, GATTP_TRANSPORT_SUPPORTED );
 
+#if (CONFIG_BT_STACK_NO_LOG)
+    (void) status;
+#endif
+
     GATT_TRACE_DEBUG ("gatt_profile_db_init:  gatt_if=%d   start status%d\n",
                       gatt_cb.gatt_if,  status);
 }
