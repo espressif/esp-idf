@@ -48,7 +48,7 @@ typedef struct esp_tls_cfg {
  
     const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer */
  
-    const unsigned int cacert_pem_bytes;    /*!< Size of Certificate Authority certificate 
+    unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate 
                                                  pointed to by cacert_pem_buf */
  
     bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
