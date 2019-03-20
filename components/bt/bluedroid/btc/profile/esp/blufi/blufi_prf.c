@@ -170,6 +170,14 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                           status, &rsp);
 
+            if(status != GATT_SUCCESS) {
+                if (blufi_env.prepare_buf) {
+                    osi_free(blufi_env.prepare_buf);
+                    blufi_env.prepare_buf = NULL;
+                }
+                BLUFI_TRACE_ERROR("write data error , error code 0x%x\n", status);
+                return;
+            }
             memcpy(blufi_env.prepare_buf + p_data->req_data.p_data->write_req.offset,
                    p_data->req_data.p_data->write_req.value,
                    p_data->req_data.p_data->write_req.len);
@@ -194,7 +202,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                     GATT_SUCCESS, NULL);
 
-        if (p_data->req_data.p_data->exec_write == GATT_PREP_WRITE_EXEC) {
+        if (blufi_env.prepare_buf && p_data->req_data.p_data->exec_write == GATT_PREP_WRITE_EXEC) {
             btc_blufi_recv_handler(blufi_env.prepare_buf, blufi_env.prepare_len);
         }
 
