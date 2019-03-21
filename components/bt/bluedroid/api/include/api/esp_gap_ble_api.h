@@ -584,12 +584,18 @@ typedef enum {
 typedef enum {
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR       = 0,  /*!< BLE advertising address , device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST */
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID,        /*!< BLE mesh link ID, it is for BLE mesh, device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_BEACON_TYPE,    /*!< BLE mesh beacon AD type, the format is | Len | 0x2B | Beacon Type | Beacon Data | */     
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROV_SRV_ADV,   /*!< BLE mesh provisioning service uuid, the format is | 0x02 | 0x01 | flags | 0x03 | 0x03 | 0x1827 | .... |` */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROXY_SRV_ADV,  /*!< BLE mesh adv with proxy service uuid, the format is | 0x02 | 0x01 | flags | 0x03 | 0x03 | 0x1828 | .... |` */
 } esp_ble_duplicate_exceptional_info_type_t;
 
 typedef enum {
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST         = BLE_BIT(0), /*!< duplicate scan exceptional addr list */
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST = BLE_BIT(1), /*!< duplicate scan exceptional mesh link ID list */
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST = (BLE_BIT(0) | BLE_BIT(1)), /*!< duplicate scan exceptional all list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST                  = BLE_BIT(0),             /*!< duplicate scan exceptional addr list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST          = BLE_BIT(1),             /*!< duplicate scan exceptional mesh link ID list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_BEACON_TYPE_LIST      = BLE_BIT(2),             /*!< duplicate scan exceptional mesh beacon type list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_PROV_SRV_ADV_LIST     = BLE_BIT(3),             /*!< duplicate scan exceptional mesh adv with provisioning service uuid */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_PROXY_SRV_ADV_LIST    = BLE_BIT(4),             /*!< duplicate scan exceptional mesh adv with provisioning service uuid */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST                   = 0xFFFF,                 /*!< duplicate scan exceptional all list */
 } esp_duplicate_scan_exceptional_list_type_t;
 
 typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
@@ -1046,6 +1052,7 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
  *
  *
  * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ *                  when type is MESH_BEACON_TYPE, MESH_PROV_SRV_ADV or MESH_PROXY_SRV_ADV , device_info is invalid.
  * @param[in]       device_info: the device information.
  * @return
  *                  - ESP_OK : success
@@ -1058,6 +1065,7 @@ esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_ex
  *
  *
  * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ *                  when type is MESH_BEACON_TYPE, MESH_PROV_SRV_ADV or MESH_PROXY_SRV_ADV , device_info is invalid.
  * @param[in]       device_info: the device information.
  * @return
  *                  - ESP_OK : success
