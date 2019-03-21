@@ -15,7 +15,7 @@
 #pragma once
 
 /**
- * @file esp_timer_impl.h
+ * @file esp_private/esp_timer_impl.h
  *
  * @brief Interface between common and platform-specific parts of esp_timer.
  *

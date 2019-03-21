@@ -40,7 +40,7 @@
 #include "esp_spi_flash.h"
 #include "esp32/cache_err_int.h"
 #include "esp_app_trace.h"
-#include "esp_system_internal.h"
+#include "esp_private/system_internal.h"
 #include "sdkconfig.h"
 #include "esp_ota_ops.h"
 #if CONFIG_SYSVIEW_ENABLE

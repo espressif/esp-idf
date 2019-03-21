@@ -19,7 +19,7 @@
 #include "esp_system.h"
 #include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
-#include "pm_impl.h"
+#include "esp_private/pm_impl.h"
 #include "esp_timer.h"
 #include "sdkconfig.h"
 
