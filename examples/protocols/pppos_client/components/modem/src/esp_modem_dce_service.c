@@ -101,7 +101,7 @@ err:
 esp_err_t esp_modem_dce_define_pdp_context(modem_dce_t *dce, uint32_t cid, const char *type, const char *apn)
 {
     modem_dte_t *dte = dce->dte;
-    char command[32];
+    char command[64];
     int len = snprintf(command, sizeof(command), "AT+CGDCONT=%d,\"%s\",\"%s\"\r", cid, type, apn);
     DCE_CHECK(len < sizeof(command), "command too long: %s", err, command);
     dce->handle_line = esp_modem_dce_handle_response_default;
