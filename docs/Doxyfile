@@ -137,6 +137,7 @@ INPUT = \
     ## Virtual Filesystem
     ../../components/vfs/include/esp_vfs.h \
     ../../components/vfs/include/esp_vfs_dev.h \
+    ../../components/vfs/include/esp_vfs_semihost.h \
     ## FAT Filesystem
     ## NOTE: for two lines below header_file.inc is not used
     ../../components/fatfs/src/esp_vfs_fat.h \
