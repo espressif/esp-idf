@@ -32,7 +32,7 @@
 #include "freertos/xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_timer.h"
-#include "esp_timer_impl.h"
+#include "esp_private/esp_timer_impl.h"
 
 /* We abuse 'timer_arg' field of ETSTimer structure to hold a pointer to esp_timer */
 #define ESP_TIMER(p_ets_timer) ((esp_timer_handle_t) (p_ets_timer)->timer_arg)

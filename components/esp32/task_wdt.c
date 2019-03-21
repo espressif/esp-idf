@@ -35,7 +35,7 @@
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
-#include "esp_system_internal.h"
+#include "esp_private/system_internal.h"
 
 static const char *TAG = "task_wdt";
 

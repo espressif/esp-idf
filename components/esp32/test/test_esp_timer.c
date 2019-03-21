@@ -10,7 +10,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
-#include "../esp_timer_impl.h"
+#include "esp_private/esp_timer_impl.h"
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
