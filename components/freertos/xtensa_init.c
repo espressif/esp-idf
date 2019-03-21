@@ -34,7 +34,7 @@ that are implemented in C.
 #endif
 
 #include    "xtensa_rtos.h"
-#include    "esp_clk.h"
+#include    "esp32/clk.h"
 
 #ifdef XT_RTOS_TIMER_INT
 

@@ -39,7 +39,7 @@
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
 #include "esp_pm.h"
-#include "esp_spiram.h"
+#include "esp32/spiram.h"
 
 #include "driver/periph_ctrl.h"
 

@@ -19,7 +19,7 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_clk_internal.h"
 #include "rom/ets_sys.h"
 #include "rom/uart.h"

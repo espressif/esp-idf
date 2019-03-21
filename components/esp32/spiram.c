@@ -24,7 +24,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
-#include "esp_spiram.h"
+#include "esp32/spiram.h"
 #include "spiram_psram.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -34,7 +34,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "rom/cache.h"
-#include "esp_himem.h"
+#include "esp32/himem.h"
 
 #if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
