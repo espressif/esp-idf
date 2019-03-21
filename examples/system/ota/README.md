@@ -55,6 +55,10 @@ openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365
 
 ```
 
+* openssl configuration may require you to enter a passphrase for the key.
+* When prompted for the `Common Name (CN)`, enter the name of the server that the ESP32 will connect to. For this local example, it is probably the IP address. The HTTPS client will make sure that the `CN` matches the address given in the HTTPS URL (see Step 3).
+
+
 Copy the certificate to `server_certs` directory inside OTA example directory:
 
 ```
@@ -68,7 +72,7 @@ Start the HTTPS server:
 openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070
 ```
 
-NB: You've probably noticed there is nothing special about the "hello world" example when used for OTA updates. This is because any .bin app file which is built by esp-idf can be used as an app image for OTA. The only difference is whether it is written to a factory partition or an OTA partition.
+NB: You've probably noticed there is nothing special about the "hello world" example when used for OTA updates. This is because any .bin app file which is built by esp-idf can be used as an app image for OTA. The only difference is that when flashed via serial the binary is flashed to the "factory" app partition, and an OTA update flashes to an OTA app partition.
 
 If you have any firewall software running that will block incoming access to port 8070, configure it to allow access while running the example.
 
@@ -85,6 +89,8 @@ https://<host-ip-address>:<host-port>/<firmware-image-filename>
 for e.g,
 https://192.168.0.3:8070/hello-world.bin
 ```
+
+Note: The server part of this URL (e.g. `192.168.0.3`) must match the CN used when generating the certificate and key in Step 2.
 
 Save your changes, and type `make` to build the example.
 
