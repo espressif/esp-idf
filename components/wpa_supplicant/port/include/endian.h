@@ -86,6 +86,7 @@ typedef	__uint64_t	uint64_t;
 #if 1 //BYTE_ORDER == _LITTLE_ENDIAN
 #define __bswap16     __bswap_16
 #define __bswap32     __bswap_32
+#define __bswap64     __bswap_64
 #define	htobe16(x)	bswap16((x))
 #define	htobe32(x)	bswap32((x))
 #define	htobe64(x)	bswap64((x))
