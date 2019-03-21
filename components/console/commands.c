@@ -20,7 +20,7 @@
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #define ANSI_COLOR_DEFAULT      39      /** Default foreground color */
 

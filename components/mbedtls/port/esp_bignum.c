@@ -27,7 +27,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/param.h>
-#include "rom/bigint.h"
+#include "esp32/rom/bigint.h"
 #include "soc/hwcrypto_reg.h"
 #include "esp_system.h"
 #include "esp_log.h"

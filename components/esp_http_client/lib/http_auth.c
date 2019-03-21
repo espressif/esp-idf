@@ -19,7 +19,7 @@
 
 #include "tcpip_adapter.h"
 #include "lwip/sockets.h"
-#include "rom/md5_hash.h"
+#include "esp32/rom/md5_hash.h"
 #include "mbedtls/base64.h"
 
 #include "esp_system.h"

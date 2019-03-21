@@ -4,7 +4,7 @@
 #include "esp_attr.h"
 #include "soc/rtc_cntl_reg.h"
 #include "driver/timer.h"
-#include "rom/rtc.h"
+#include "esp32/rom/rtc.h"
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
 

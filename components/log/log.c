@@ -56,7 +56,7 @@
 
 #include "esp_log.h"
 
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "soc/soc_memory_layout.h"
 
 //print number of bytes per line for esp_log_buffer_char and esp_log_buffer_hex

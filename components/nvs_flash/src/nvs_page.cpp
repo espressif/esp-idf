@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "nvs_page.hpp"
 #if defined(ESP_PLATFORM)
-#include <rom/crc.h>
+#include <esp32/rom/crc.h>
 #else
 #include "crc.h"
 #endif

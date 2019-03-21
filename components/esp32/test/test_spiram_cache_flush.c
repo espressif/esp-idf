@@ -4,8 +4,7 @@ This code tests the interaction between PSRAM and SPI flash routines.
 
 #include <esp_types.h>
 #include <stdio.h>
-#include "rom/ets_sys.h"
-
+#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -18,7 +17,7 @@ This code tests the interaction between PSRAM and SPI flash routines.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
@@ -162,7 +161,7 @@ IRAM_ATTR TEST_CASE("Spiram memcmp weirdness at 80MHz", "[spiram]") {
     assert(mem1);
     assert(mem2);
     for (int i=0; i<0x10000; i++) mem1[i]=i^0xAAAAAAAA;
-    
+
     for (int cycle=1; cycle<100; cycle++) {
         memcpy(mem2, mem1, 0x10000);
         if (memcmp(mem1, mem2, 0x10000)!=0) {

@@ -79,7 +79,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
 all the API functions to use the MPU wrappers.  That should only be done when

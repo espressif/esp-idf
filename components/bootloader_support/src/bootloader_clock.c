@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "rom/uart.h"
-#include "rom/rtc.h"
+#include "esp32/rom/uart.h"
+#include "esp32/rom/rtc.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"

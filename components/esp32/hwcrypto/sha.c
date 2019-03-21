@@ -34,7 +34,7 @@
 #include "freertos/semphr.h"
 
 #include "hwcrypto/sha.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
 #include "driver/periph_ctrl.h"

@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
 #include "esp_event.h"

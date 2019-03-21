@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <rom/queue.h>
+#include <sys/queue.h>
 #include <protocomm_security.h>
 #include <esp_err.h>
 

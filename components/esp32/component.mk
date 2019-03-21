@@ -8,7 +8,7 @@ ifndef CONFIG_NO_BLOBS
 LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 espnow phy mesh
 endif
 
-ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY  
+ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
    # This linker script must come before esp32.project.ld
    LINKER_SCRIPTS += esp32.extram.bss.ld
 endif
@@ -16,24 +16,7 @@ endif
 #Linker scripts used to link the final application.
 #Warning: These linker scripts are only used when the normal app is compiled; the bootloader
 #specifies its own scripts.
-LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.project.ld esp32.rom.ld esp32.peripherals.ld
-
-#Force pure functions from libgcc.a to be linked from ROM
-LINKER_SCRIPTS += esp32.rom.libgcc.ld
-
-#SPI-RAM incompatible functions can be used in when the SPI RAM 
-#workaround is not enabled.
-ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
-LINKER_SCRIPTS += esp32.rom.spiram_incompatible_fns.ld
-endif
-
-ifdef CONFIG_NEWLIB_NANO_FORMAT
-LINKER_SCRIPTS += esp32.rom.nanofmt.ld
-endif
-
-ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-LINKER_SCRIPTS += esp32.rom.spiflash.ld
-endif
+LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.project.ld esp32.peripherals.ld
 
 #ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
 #linker will ignore panic_highint_hdl.S as it has no other files depending on any

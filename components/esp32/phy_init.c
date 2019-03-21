@@ -19,8 +19,8 @@
 
 #include <sys/lock.h>
 
-#include "rom/ets_sys.h"
-#include "rom/rtc.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/rtc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 

@@ -16,10 +16,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "rom/ets_sys.h"
-#include "rom/rtc.h"
-#include "rom/uart.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/uart.h"
+#include "esp32/rom/gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"

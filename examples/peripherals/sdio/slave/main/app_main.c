@@ -8,8 +8,8 @@
    */
 #include "driver/sdio_slave.h"
 #include "esp_log.h"
-#include "rom/lldesc.h"
-#include "rom/queue.h"
+#include "esp32/rom/lldesc.h"
+#include "sys/queue.h"
 #include "soc/soc.h"
 #include "soc/sdio_slave_periph.h"
 #include "freertos/task.h"

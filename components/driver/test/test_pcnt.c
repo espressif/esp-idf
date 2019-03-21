@@ -22,7 +22,7 @@
 #include "esp_log.h"
 #include "soc/gpio_sig_map.h"
 #include "unity.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #define PULSE_IO 18
 #define PCNT_INPUT_IO 4

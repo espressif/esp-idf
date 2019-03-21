@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <string.h>
-#include "rom/crc.h"
+#include "esp32/rom/crc.h"
 #include "esp_partition.h"
 #include "esp_core_dump_priv.h"
 
