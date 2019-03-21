@@ -51,13 +51,18 @@ I (1692) wifi: pm start, type: 1
 
 I (2622) event: sta ip: 192.168.3.84, mask: 255.255.255.0, gw: 192.168.3.1
 I (2622) CoAP_server: Connected to AP
-E (7622) CoAP_server: select timeout
-E (12622) CoAP_server: select timeout
-E (17622) CoAP_server: select timeout
 ...
 ```
 
-if a CoAP client query `/Espressif` resource, CoAP server would return `"Hello World!"`  
+if a CoAP client query `/Espressif` resource, CoAP server would return `"no data"`  
+until a CoAP client does a PUT with some data.
+
+## libcoap Documentation
+This can be found at https://libcoap.net/doc/reference/4.2.0/
 
 ## Troubleshooting
-* Please make sure CoAP client fetchs data under path: `/Espressif`
+* Please make sure CoAP client fetchs or puts data under path: `/Espressif` or
+fetches `/.well-known/core`
+
+* libcoap logging can be increased by changing `#define COAP_LOGGING_LEVEL 0`
+to `#define COAP_LOGGING_LEVEL 9`
