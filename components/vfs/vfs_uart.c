@@ -26,7 +26,7 @@
 #include "driver/uart.h"
 #include "sdkconfig.h"
 #include "driver/uart_select.h"
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 
 // TODO: make the number of UARTs chip dependent
 #define UART_NUM 3

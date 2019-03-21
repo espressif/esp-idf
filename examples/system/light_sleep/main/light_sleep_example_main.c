@@ -16,7 +16,7 @@
 #include "freertos/task.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 #include "driver/rtc_io.h"
 
 /* Most development boards have "boot" button attached to GPIO0.

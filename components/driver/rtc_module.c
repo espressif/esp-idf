@@ -15,7 +15,7 @@
 #include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_log.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
@@ -44,7 +44,7 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 
 #define ADC_FSM_RSTB_WAIT_DEFAULT     (8)

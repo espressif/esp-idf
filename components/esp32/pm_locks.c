@@ -17,7 +17,7 @@
 #include <sys/lock.h>
 #include "esp_pm.h"
 #include "esp_system.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "pm_impl.h"
 #include "esp_timer.h"

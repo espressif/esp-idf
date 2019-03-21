@@ -31,7 +31,7 @@
 #define SOC_LOGV(tag, fmt, ...) ESP_EARLY_LOGV(tag, fmt, ##__VA_ARGS__)
 
 #else
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #define SOC_LOGE(tag, fmt, ...) ets_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
 #define SOC_LOGW(tag, fmt, ...) ets_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)
 #define SOC_LOGI(tag, fmt, ...) ets_printf("%s(info): " fmt, tag, ##__VA_ARGS__)

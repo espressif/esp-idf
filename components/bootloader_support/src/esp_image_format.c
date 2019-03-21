@@ -14,7 +14,7 @@
 #include <string.h>
 #include <sys/param.h>
 
-#include <rom/rtc.h>
+#include <esp32/rom/rtc.h>
 #include <soc/cpu.h>
 #include <esp_image_format.h>
 #include <esp_secure_boot.h>

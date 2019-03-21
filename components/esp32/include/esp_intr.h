@@ -15,7 +15,7 @@
 #ifndef __ESP_INTR_H__
 #define __ESP_INTR_H__
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "freertos/xtensa_api.h"
 
 #ifdef __cplusplus

@@ -14,7 +14,7 @@
 #ifndef _ESP_SHA_H_
 #define _ESP_SHA_H_
 
-#include "rom/sha.h"
+#include "esp32/rom/sha.h"
 #include "esp_types.h"
 
 /** @brief Low-level support functions for the hardware SHA engine
@@ -43,7 +43,7 @@
 extern "C" {
 #endif
 
-/* Defined in rom/sha.h */
+/* Defined in esp32/rom/sha.h */
 typedef enum SHA_TYPE esp_sha_type;
 
 /** @brief Calculate SHA1 or SHA2 sum of some data, using hardware SHA engine

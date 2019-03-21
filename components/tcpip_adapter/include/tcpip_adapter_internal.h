@@ -15,7 +15,7 @@
 #pragma once
 
 #include "tcpip_adapter.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 struct tcpip_adapter_api_msg_s;
 

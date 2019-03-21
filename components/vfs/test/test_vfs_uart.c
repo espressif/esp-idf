@@ -19,7 +19,7 @@
 #include <sys/termios.h>
 #include <sys/errno.h>
 #include "unity.h"
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 #include "soc/uart_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

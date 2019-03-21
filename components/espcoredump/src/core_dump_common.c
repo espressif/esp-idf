@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <string.h>
 #include <stdbool.h>
-#include "rom/crc.h"
+#include "esp32/rom/crc.h"
 #include "esp_panic.h"
 #include "esp_partition.h"
 #include "esp_core_dump_priv.h"

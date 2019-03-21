@@ -25,7 +25,7 @@
 #include "soc/sens_reg.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
-#include "rom/lldesc.h"
+#include "esp32/rom/lldesc.h"
 
 #include "driver/gpio.h"
 #include "driver/i2s.h"

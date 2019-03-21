@@ -14,7 +14,7 @@
 
 #include "esp_system.h"
 #include "esp_system_internal.h"
-#include "rom/rtc.h"
+#include "esp32/rom/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 
 static void esp_reset_reason_clear_hint();

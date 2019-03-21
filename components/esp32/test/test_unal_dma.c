@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rom/ets_sys.h"
-#include "rom/lldesc.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/lldesc.h"
+#include "esp32/rom/gpio.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

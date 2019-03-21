@@ -15,8 +15,8 @@
 
 #include <xtensa/config/core.h>
 
-#include "rom/rtc.h"
-#include "rom/uart.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/uart.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

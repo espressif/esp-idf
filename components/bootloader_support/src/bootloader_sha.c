@@ -57,11 +57,11 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
 #else // Bootloader version
 
-#include "rom/sha.h"
+#include "esp32/rom/sha.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
 
-#include "rom/ets_sys.h" // TO REMOVE
+#include "esp32/rom/ets_sys.h" // TO REMOVE
 
 static uint32_t words_hashed;
 

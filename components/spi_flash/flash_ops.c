@@ -21,8 +21,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include <rom/spi_flash.h>
-#include <rom/cache.h>
+#include <esp32/rom/spi_flash.h>
+#include <esp32/rom/cache.h>
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
 #include "sdkconfig.h"
