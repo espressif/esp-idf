@@ -16,7 +16,6 @@
 #include "esp_log.h"
 #include "rom/spi_flash.h"
 #include "rom/md5_hash.h"
-#include "esp_flash_data_types.h"
 
 static const char *TAG = "flash_parts";
 
