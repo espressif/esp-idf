@@ -18,7 +18,6 @@
 #include "esp_image_format.h"
 #include "esp_flash_encrypt.h"
 #include "esp_flash_partitions.h"
-#include "esp_flash_data_types.h"
 #include "esp_secure_boot.h"
 #include "esp_efuse.h"
 #include "esp_log.h"
@@ -340,11 +339,11 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
     return err;
 }
 
-void esp_flash_write_protect_crypt_cnt() 
+void esp_flash_write_protect_crypt_cnt()
 {
     uint32_t efuse_blk0 = REG_READ(EFUSE_BLK0_RDATA0_REG);
     bool flash_crypt_wr_dis = efuse_blk0 & EFUSE_WR_DIS_FLASH_CRYPT_CNT;
-    if(!flash_crypt_wr_dis) { 
+    if(!flash_crypt_wr_dis) {
         REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_FLASH_CRYPT_CNT);
         esp_efuse_burn_new_values();
     }

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "esp_flash_data_types.h"
+#include "esp_flash_partitions.h"
 #include "esp_image_format.h"
 
 /// Type of hold a GPIO in low state
