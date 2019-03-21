@@ -35,6 +35,7 @@ from builtins import bytes
 import subprocess
 import argparse
 import codecs
+import datetime
 import re
 import os
 try:
@@ -50,6 +51,7 @@ import threading
 import ctypes
 import types
 from distutils.version import StrictVersion
+from io import open
 
 key_description = miniterm.key_description
 
@@ -62,6 +64,7 @@ CTRL_R = '\x12'
 CTRL_T = '\x14'
 CTRL_Y = '\x19'
 CTRL_P = '\x10'
+CTRL_L = '\x0c'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
 # ANSI terminal codes (if changed, regular expressions in LineMatcher need to be udpated)
@@ -355,6 +358,7 @@ class Monitor(object):
         self._force_line_print = False
         self._output_enabled = True
         self._serial_check_exit = socket_mode
+        self._log_file = None
 
     def invoke_processing_last_line(self):
         self.event_queue.put((TAG_SERIAL_FLUSH, b''), False)
@@ -388,6 +392,7 @@ class Monitor(object):
             try:
                 self.console_reader.stop()
                 self.serial_reader.stop()
+                self.stop_logging()
                 # Cancelling _invoke_processing_last_line_timer is not
                 # important here because receiving empty data doesn't matter.
                 self._invoke_processing_last_line_timer = None
@@ -426,8 +431,8 @@ class Monitor(object):
             if line != b"":
                 if self._serial_check_exit and line == self.exit_key.encode('latin-1'):
                     raise SerialStopException()
-                if self._output_enabled and (self._force_line_print or self._line_matcher.match(line.decode(errors="ignore"))):
-                    self.console.write_bytes(line + b'\n')
+                if self._force_line_print or self._line_matcher.match(line.decode(errors="ignore")):
+                    self._print(line + b'\n')
                     self.handle_possible_pc_address_in_line(line)
                 self.check_gdbstub_trigger(line)
                 self._force_line_print = False
@@ -438,9 +443,8 @@ class Monitor(object):
         if self._last_line_part != b"":
             if self._force_line_print or (finalize_line and self._line_matcher.match(self._last_line_part.decode(errors="ignore"))):
                 self._force_line_print = True
-                if self._output_enabled:
-                    self.console.write_bytes(self._last_line_part)
-                    self.handle_possible_pc_address_in_line(self._last_line_part)
+                self._print(self._last_line_part)
+                self.handle_possible_pc_address_in_line(self._last_line_part)
                 self.check_gdbstub_trigger(self._last_line_part)
                 # It is possible that the incomplete line cuts in half the PC
                 # address. A small buffer is kept and will be used the next time
@@ -477,6 +481,8 @@ class Monitor(object):
             self.run_make("app-flash")
         elif c == CTRL_Y:  # Toggle output display
             self.output_toggle()
+        elif c == CTRL_L:  # Toggle saving output into file
+            self.toggle_logging()
         elif c == CTRL_P:
             yellow_print("Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart")
             # to fast trigger pause without press menu key
@@ -504,6 +510,7 @@ class Monitor(object):
 ---    {makecmd:7} Build & flash project
 ---    {appmake:7} Build & flash app only
 ---    {output:7} Toggle output display
+---    {log:7} Toggle saving output into file
 ---    {pause:7} Reset target into bootloader to pause app via RTS line
 """.format(version=__version__,
            exit=key_description(self.exit_key),
@@ -512,6 +519,7 @@ class Monitor(object):
            makecmd=key_description(CTRL_F),
            appmake=key_description(CTRL_A),
            output=key_description(CTRL_Y),
+           log=key_description(CTRL_L),
            pause=key_description(CTRL_P))
 
     def __enter__(self):
@@ -570,7 +578,7 @@ class Monitor(object):
         try:
             translation = subprocess.check_output(cmd, cwd=".")
             if b"?? ??:0" not in translation:
-                yellow_print(translation.decode())
+                self._print(translation.decode(), console_printer=yellow_print)
         except OSError as e:
             red_print("%s: %s" % (" ".join(cmd), e))
 
@@ -623,6 +631,48 @@ class Monitor(object):
     def output_toggle(self):
         self._output_enabled = not self._output_enabled
         yellow_print("\nToggle output display: {}, Type Ctrl-T Ctrl-Y to show/disable output again.".format(self._output_enabled))
+
+    def toggle_logging(self):
+        if self._log_file:
+            self.stop_logging()
+        else:
+            self.start_logging()
+
+    def start_logging(self):
+        if not self._log_file:
+            try:
+                name = "log.{}.{}.txt".format(os.path.splitext(os.path.basename(self.elf_file))[0],
+                                              datetime.datetime.now().strftime('%Y%m%d%H%M%S'))
+                self._log_file = open(name, "wb+")
+                yellow_print("\nLogging is enabled into file {}".format(name))
+            except Exception as e:
+                red_print("\nLog file {} cannot be created: {}".format(name, e))
+
+    def stop_logging(self):
+        if self._log_file:
+            try:
+                name = self._log_file.name
+                self._log_file.close()
+                yellow_print("\nLogging is disabled and file {} has been closed".format(name))
+            except Exception as e:
+                red_print("\nLog file cannot be closed: {}".format(e))
+            finally:
+                self._log_file = None
+
+    def _print(self, string, console_printer=None):
+        if console_printer is None:
+            console_printer = self.console.write_bytes
+        if self._output_enabled:
+            console_printer(string)
+        if self._log_file:
+            try:
+                if isinstance(string, type(u'')):
+                    string = string.encode()
+                self._log_file.write(string)
+            except Exception as e:
+                red_print("\nCannot write to file: {}".format(e))
+                # don't fill-up the screen with the previous errors (probably consequent prints would fail also)
+                self.stop_logging()
 
 
 def main():
