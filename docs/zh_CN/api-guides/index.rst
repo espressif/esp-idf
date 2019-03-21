@@ -24,7 +24,7 @@ API 指南
    ULP Coprocessor (CMake) <ulp-cmake>
    单元测试 <unit-tests>
    单元测试 (CMake) <unit-tests-cmake>
-   Application Level Tracing <app_trace>
+   应用层跟踪 <app_trace>
    控制台终端组件 <console>
    ROM debug console <romconsole>
    RF Calibration <RF_calibration>

@@ -1,17 +1,17 @@
 Application Level Tracing library
 =================================
-
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
 
-IDF provides useful feature for program behaviour analysis: application level tracing. It is implemented in the corresponding library and can be enabled in menuconfig. This feature allows to transfer arbitrary data between host and ESP32 via JTAG interface with small overhead on program execution.
+IDF provides useful feature for program behavior analysis: application level tracing. It is implemented in the corresponding library and can be enabled in menuconfig. This feature allows to transfer arbitrary data between host and ESP32 via JTAG interface with small overhead on program execution.
 
 Developers can use this library to send application specific state of execution to the host and receive commands or other type of info in the opposite direction at runtime. The main use cases of this library are:
 
 1. Collecting application specific data, see :ref:`app_trace-application-specific-tracing`
 2. Lightweight logging to the host, see :ref:`app_trace-logging-to-host`
-3. System behaviour analysis, see :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`
+3. System behavior analysis, see :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`
 
 Tracing components when working over JTAG interface are shown in the figure below.
 
@@ -28,9 +28,9 @@ Modes of Operation
 
 The library supports two modes of operation:
 
-**Post-mortem mode**. This is the default mode. The mode does not need interaction from the host side. In this mode tracing module does not check whether host has read all the data from *HW UP BUFFER* buffer and overwrites old data with the new ones. This mode is useful when only the latest trace data are interesting to the user, e.g. for analyzing program's behaviour just before the crash. Host can read the data later on upon user request, e.g. via special OpenOCD command in case of working via JTAG interface.
+**Post-mortem mode**. This is the default mode. The mode does not need interaction with the host side. In this mode tracing module does not check whether host has read all the data from *HW UP BUFFER* buffer and overwrites old data with the new ones. This mode is useful when only the latest trace data are interesting to the user, e.g. for analyzing program's behavior just before the crash. Host can read the data later on upon user request, e.g. via special OpenOCD command in case of working via JTAG interface.
 
-**Streaming mode.** Tracing module enters this mode when host connects to ESP32. In this mode before writing new data to *HW UP BUFFER* tracing module checks that there is enough space in it and if necessary waits for the host to read data and free enough memory. Maximum waiting time is controled via timeout values passed by users to corresponding API routines. So when application tries to write data to trace buffer using finite value of the maximum waiting time it is possible situation that this data will be dropped. Especially this is true for tracing from time critical code (ISRs, OS scheduler code etc.) when infinite timeouts can lead to system malfunction. In order to avoid loss of such critical data developers can enable additional data buffering via menuconfig option :ref:`CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX`. This macro specifies the size of data which can be buffered in above conditions. The option can also help to overcome situation when data transfer to the host is temporarily slowed down, e.g due to USB bus congestions etc. But it will not help when average bitrate of trace data stream exceeds HW interface capabilities.
+**Streaming mode.** Tracing module enters this mode when host connects to ESP32. In this mode before writing new data to *HW UP BUFFER* tracing module checks that there is enough space in it and if necessary waits for the host to read data and free enough memory. Maximum waiting time is controlled via timeout values passed by users to corresponding API routines. So when application tries to write data to trace buffer using finite value of the maximum waiting time it is possible situation that this data will be dropped. Especially this is true for tracing from time critical code (ISRs, OS scheduler code etc.) when infinite timeouts can lead to system malfunction. In order to avoid loss of such critical data developers can enable additional data buffering via menuconfig option :ref:`CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX`. This macro specifies the size of data which can be buffered in above conditions. The option can also help to overcome situation when data transfer to the host is temporarily slowed down, e.g due to USB bus congestions etc. But it will not help when average bitrate of trace data stream exceeds HW interface capabilities.
 
 
 Configuration Options and Dependencies
@@ -38,7 +38,7 @@ Configuration Options and Dependencies
 
 Using of this feature depends on two components:
 
-1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions how to set it up, please, see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
+1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
 2. **Target side:** Application tracing functionality can be enabled in menuconfig. *Component config > Application Level Tracing* menu allows selecting destination for the trace data (HW interface for transport). Choosing any of the destinations automatically enables ``CONFIG_ESP32_APPTRACE_ENABLE`` option.
 
 .. note::
@@ -47,8 +47,8 @@ Using of this feature depends on two components:
 
 There are two additional menuconfig options not mentioned above:
 
-1.	*Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH`). This option is necessary due to the nature of working over JTAG. In that mode trace data are exposed to the host in 16KB blocks. In post-mortem mode when one block is filled it is exposed to the host and the previous one becomes unavailable. In other words trace data are overwritten in 16KB granularity. On panic the latest data from the current input block are exposed to host and host can read them for post-analysis. It can happen that system panic occurs when there are very small amount of data which are not exposed to the host yet. In this case the previous 16KB of collected data will be lost and host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of panic. For example user can decide that it needs not less then 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic they will not be flushed and will not overwrite previous 16KB. The option is only meaningful in post-mortem mode and when working over JTAG.
-2.	*Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and controls the maximum time tracing module will wait for the host to read the last data in case of panic.
+1.  *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH`). This option is necessary due to the nature of working over JTAG. In that mode trace data are exposed to the host in 16 KB blocks. In post-mortem mode when one block is filled it is exposed to the host and the previous one becomes unavailable. In other words trace data are overwritten in 16 KB granularity. On panic the latest data from the current input block are exposed to host and host can read them for post-analysis. System panic may occur when very small amount of data are not exposed to the host yet. In this case the previous 16 KB of collected data will be lost and host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of panic. For example user can decide that it needs not less then 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic they will not be flushed and will not overwrite previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
+2.  *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and controls the maximum time tracing module will wait for the host to read the last data in case of panic.
 
 
 How to use this library
@@ -63,97 +63,97 @@ Application Specific Tracing
 
 In general user should decide what type of data should be transferred in every direction and how these data must be interpreted (processed). The following steps must be performed to transfer data between target and host:
 
-1.	On target side user should implement algorithms for writing trace data to the host. Piece of code below shows an example how to do this.
+1.  On target side user should implement algorithms for writing trace data to the host. Piece of code below shows an example how to do this.
 
-	.. code-block:: c
+    .. code-block:: c
 
-	    #include "esp_app_trace.h"
-	    ...
-	    char buf[] = "Hello World!";
-	    esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
-	    if (res != ESP_OK) {
-	        ESP_LOGE(TAG, "Failed to write data to host!");
-	        return res;
-	    }
+        #include "esp_app_trace.h"
+        ...
+        char buf[] = "Hello World!";
+        esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, buf, strlen(buf), ESP_APPTRACE_TMO_INFINITE);
+        if (res != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to write data to host!");
+            return res;
+        }
 
-	``esp_apptrace_write()`` function uses memcpy to copy user data to the internal buffer. In some cases it can be more optimal to use ``esp_apptrace_buffer_get()`` and ``esp_apptrace_buffer_put()`` functions. They allow developers to allocate buffer and fill it themselves. The following piece of code shows how to do this.
+    ``esp_apptrace_write()`` function uses memcpy to copy user data to the internal buffer. In some cases it can be more optimal to use ``esp_apptrace_buffer_get()`` and ``esp_apptrace_buffer_put()`` functions. They allow developers to allocate buffer and fill it themselves. The following piece of code shows how to do this.
 
-	.. code-block:: c
+    .. code-block:: c
 
-	    #include "esp_app_trace.h"
-	    ...
-	    int number = 10;
-	    char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_TRAX, 32, 100/*tmo in us*/);
-	    if (ptr == NULL) {
-	        ESP_LOGE("Failed to get buffer!");
-	        return ESP_FAIL;
-	    }
-	    sprintf(ptr, "Here is the number %d", number);
-	    esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
-	    if (res != ESP_OK) {
-	        /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
-	        ESP_LOGE("Failed to put buffer!");
-	        return res;
-	    }
+        #include "esp_app_trace.h"
+        ...
+        int number = 10;
+        char *ptr = (char *)esp_apptrace_buffer_get(ESP_APPTRACE_DEST_TRAX, 32, 100/*tmo in us*/);
+        if (ptr == NULL) {
+            ESP_LOGE(TAG, "Failed to get buffer!");
+            return ESP_FAIL;
+        }
+        sprintf(ptr, "Here is the number %d", number);
+        esp_err_t res = esp_apptrace_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
+        if (res != ESP_OK) {
+            /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
+            ESP_LOGE(TAG, "Failed to put buffer!");
+            return res;
+        }
 
-	Also according to his needs user may want to receive data from the host. Piece of code below shows an example how to do this.
+    Also according to his needs user may want to receive data from the host. Piece of code below shows an example how to do this.
 
-	.. code-block:: c
+    .. code-block:: c
 
-	    #include "esp_app_trace.h"
-	    ...
-	    char buf[32];
-	    char down_buf[32];
-	    size_t sz = sizeof(buf);
+        #include "esp_app_trace.h"
+        ...
+        char buf[32];
+        char down_buf[32];
+        size_t sz = sizeof(buf);
 
-	    /* config down buffer */
-	    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
-	    /* check for incoming data and read them if any */
-	    esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_TRAX, buf, &sz, 0/*do not wait*/);
-	    if (res != ESP_OK) {
-	        ESP_LOGE(TAG, "Failed to read data from host!");
-	        return res;
-	    }
-	    if (sz > 0) {
-	        /* we have data, process them */
-	        ...
-	    }
+        /* config down buffer */
+        esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+        /* check for incoming data and read them if any */
+        esp_err_t res = esp_apptrace_read(ESP_APPTRACE_DEST_TRAX, buf, &sz, 0/*do not wait*/);
+        if (res != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read data from host!");
+            return res;
+        }
+        if (sz > 0) {
+            /* we have data, process them */
+            ...
+        }
 
-	``esp_apptrace_read()`` function uses memcpy to copy host data to user buffer. In some cases it can be more optimal to use ``esp_apptrace_down_buffer_get()`` and ``esp_apptrace_down_buffer_put()`` functions. They allow developers to occupy chunk of read buffer and process it in-place. The following piece of code shows how to do this.
+    ``esp_apptrace_read()`` function uses memcpy to copy host data to user buffer. In some cases it can be more optimal to use ``esp_apptrace_down_buffer_get()`` and ``esp_apptrace_down_buffer_put()`` functions. They allow developers to occupy chunk of read buffer and process it in-place. The following piece of code shows how to do this.
 
-	.. code-block:: c
+    .. code-block:: c
 
-	    #include "esp_app_trace.h"
-	    ...
-	    char down_buf[32];
-	    uint32_t *number;
-	    size_t sz = 32;
+        #include "esp_app_trace.h"
+        ...
+        char down_buf[32];
+        uint32_t *number;
+        size_t sz = 32;
 
-	    /* config down buffer */
-	    esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
-	    char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_TRAX, &sz, 100/*tmo in us*/);
-	    if (ptr == NULL) {
-	        ESP_LOGE("Failed to get buffer!");
-	        return ESP_FAIL;
-	    }
-	    if (sz > 4) {
-	        number = (uint32_t *)ptr;
-	        printf("Here is the number %d", *number);
-	    } else {
-	        printf("No data");
-	    }
-	    esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
-	    if (res != ESP_OK) {
-	        /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
-	        ESP_LOGE("Failed to put buffer!");
-	        return res;
-	    }
+        /* config down buffer */
+        esp_apptrace_down_buffer_config(down_buf, sizeof(down_buf));
+        char *ptr = (char *)esp_apptrace_down_buffer_get(ESP_APPTRACE_DEST_TRAX, &sz, 100/*tmo in us*/);
+        if (ptr == NULL) {
+            ESP_LOGE(TAG, "Failed to get buffer!");
+            return ESP_FAIL;
+        }
+        if (sz > 4) {
+            number = (uint32_t *)ptr;
+            printf("Here is the number %d", *number);
+        } else {
+            printf("No data");
+        }
+        esp_err_t res = esp_apptrace_down_buffer_put(ESP_APPTRACE_DEST_TRAX, ptr, 100/*tmo in us*/);
+        if (res != ESP_OK) {
+            /* in case of error host tracing tool (e.g. OpenOCD) will report incomplete user buffer */
+            ESP_LOGE(TAG, "Failed to put buffer!");
+            return res;
+        }
 
-2.	The next step is to build the program image and download it to the target as described in :doc:`Build and Flash <../get-started/make-project>`.
-3.	Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
-4.	Connect to OpenOCD telnet server. It can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD you can use ``localhost`` as ``<oocd_host>`` in the command above.
-5.	Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to specified file or socket (currently only files are supported as trace data destination). For description of the corresponding commands see `OpenOCD Application Level Tracing Commands`_.
-6.	The final step is to process received data. Since format of data is defined by user the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``apptrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
+2.  The next step is to build the program image and download it to the target as described in :doc:`Build and Flash <../get-started/make-project>`.
+3.  Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
+4.  Connect to OpenOCD telnet server. It can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD you can use ``localhost`` as ``<oocd_host>`` in the command above.
+5.  Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to specified file or socket (currently only files are supported as trace data destination). For description of the corresponding commands see `OpenOCD Application Level Tracing Commands`_.
+6.  The final step is to process received data. Since format of data is defined by user the processing stage is out of the scope of this document. Good starting points for data processor are python scripts in ``$IDF_PATH/tools/esp_app_trace``: ``apptrace_proc.py`` (used for feature tests) and ``logtrace_proc.py`` (see more details in section `Logging to Host`_).
 
 
 OpenOCD Application Level Tracing Commands
@@ -175,13 +175,13 @@ Command usage:
 Sub-commands:
 
 ``start``
-	Start tracing (continuous streaming).
+    Start tracing (continuous streaming).
 ``stop``
-	Stop tracing.
+    Stop tracing.
 ``status``
-	Get tracing status.
+    Get tracing status.
 ``dump``
-	Dump all data from  (post-mortem dump).
+    Dump all data from  (post-mortem dump).
 
 
 Start command syntax:
@@ -191,7 +191,7 @@ Start command syntax:
 ``outfile``
     Path to file to save data from both CPUs. This argument should have the following format: ``file://path/to/file``.
 ``poll_period``
-    Data polling period (in ms) for available trace data. If greater then 0 then command runs in non-blocking mode. By default 1 ms.  
+    Data polling period (in ms) for available trace data. If greater than 0 then command runs in non-blocking mode. By default 1 ms.  
 ``trace_size``
     Maximum size of data to collect (in bytes). Tracing is stopped after specified amount of data is received. By default -1 (trace size stop trigger is disabled).
 ``stop_tmo``
@@ -209,41 +209,41 @@ Command usage examples:
 
 .. highlight:: none
 
-1.	Collect 2048 bytes of tracing data to a file "trace.log". The file will be saved in "openocd-esp32" directory.
+1.  Collect 2048 bytes of tracing data to a file "trace.log". The file will be saved in "openocd-esp32" directory.
 
-	::
+    ::
 
-		esp32 apptrace start file://trace.log 1 2048 5 0 0
+        esp32 apptrace start file://trace.log 1 2048 5 0 0
 
-	The tracing data will be retrieved and saved in non-blocking mode. This process will stop automatically after 2048 bytes are collected, or if no data are available for more than 5 seconds. 
+    The tracing data will be retrieved and saved in non-blocking mode. This process will stop automatically after 2048 bytes are collected, or if no data are available for more than 5 seconds. 
 
-	.. note::
+    .. note::
 
-		Tracing data is buffered before it is made available to OpenOCD. If you see "Data timeout!" message, then the target is likely sending not enough data to empty the buffer to OpenOCD before expiration of timeout. Either increase the timeout or use a function ``esp_apptrace_flush()`` to flush the data on specific intervals.
+        Tracing data is buffered before it is made available to OpenOCD. If you see "Data timeout!" message, then the target is likely sending not enough data to empty the buffer to OpenOCD before expiration of timeout. Either increase the timeout or use a function ``esp_apptrace_flush()`` to flush the data on specific intervals.
 
-2.	Retrieve tracing data indefinitely in non-blocking mode.
+2.  Retrieve tracing data indefinitely in non-blocking mode.
 
-	::
+    ::
 
-		esp32 apptrace start file://trace.log 1 -1 -1 0 0
+        esp32 apptrace start file://trace.log 1 -1 -1 0 0
 
-	There is no limitation on the size of collected data and there is no any data timeout set. This process may be stopped by issuing ``esp32 apptrace stop`` command on OpenOCD telnet prompt, or by pressing Ctrl+C in OpenOCD window.
+    There is no limitation on the size of collected data and there is no any data timeout set. This process may be stopped by issuing ``esp32 apptrace stop`` command on OpenOCD telnet prompt, or by pressing Ctrl+C in OpenOCD window.
 
-3.	Retrieve tracing data and save them indefinitely.
+3.  Retrieve tracing data and save them indefinitely.
 
-	::
+    ::
 
-		esp32 apptrace start file://trace.log 0 -1 -1 0 0
+        esp32 apptrace start file://trace.log 0 -1 -1 0 0
 
-	OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing press Ctrl+C in OpenOCD window.
+    OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing press Ctrl+C in OpenOCD window.
 
-4.	Wait for target to be halted. Then resume target's operation and start data retrieval. Stop after collecting 2048 bytes of data:
+4.  Wait for target to be halted. Then resume target's operation and start data retrieval. Stop after collecting 2048 bytes of data:
 
-	::
+    ::
 
-		esp32 apptrace start file://trace.log 0 2048 -1 1 0
+        esp32 apptrace start file://trace.log 0 2048 -1 1 0
 
-	To configure tracing immediately after reset use the openocd ``reset halt`` command.
+    To configure tracing immediately after reset use the openocd ``reset halt`` command.
 
 
 .. _app_trace-logging-to-host:
@@ -251,7 +251,7 @@ Command usage examples:
 Logging to Host
 ^^^^^^^^^^^^^^^
 
-IDF implements useful feature: logging to host via application level tracing library. This is a kind of semihosting when all ESP_LOGx calls sends strings to be printed to the host instead of UART. This can be useful because "printing to host" eliminates some steps performed when logging to UART. The most part of work is done on the host.
+IDF implements useful feature: logging to host via application level tracing library. This is a kind of semihosting when all `ESP_LOGx` calls send strings to be printed to the host instead of UART. This can be useful because "printing to host" eliminates some steps performed when logging to UART. The most part of work is done on the host.
 
 By default IDF's logging library uses vprintf-like function to write formatted output to dedicated UART. In general it involves the following steps:
 
@@ -259,7 +259,7 @@ By default IDF's logging library uses vprintf-like function to write formatted o
 2. According to its type every argument is converted to string representation.
 3. Format string combined with converted arguments is sent to UART.
 
-Though implementation of vprintf-like function can be optimised to a certain level, all steps above have to be performed in any case and every step takes some time (especially item 3). So it is frequent situation when addition of extra logging to the program to diagnose some problem changes its behaviour and problem disappears or in the worst cases program can not work normally at all and ends up with an error or even hangs.
+Though implementation of vprintf-like function can be optimized to a certain level, all steps above have to be performed in any case and every step takes some time (especially item 3). So it frequently occurs that with additional log added to the program to identify the problem, the program behavior is changed and the problem cannot be reproduced or in the worst cases the program cannot work normally at all and ends up with an error or even hangs.
 
 Possible ways to overcome this problem are to use higher UART bitrates (or another faster interface) and/or move string formatting procedure to the host.
 
@@ -310,14 +310,14 @@ Optional arguments:
 
 .. _app_trace-system-behaviour-analysis-with-segger-systemview:
 
-System Behaviour Analysis with SEGGER SystemView
+System Behavior Analysis with SEGGER SystemView
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Another useful IDF feature built on top of application tracing library is the system level tracing which produces traces compatible with SEGGER SystemView tool (see `SystemView <https://www.segger.com/products/development-tools/systemview/>`_). SEGGER SystemView is a real-time recording and visualization tool that allows to analyze runtime behavior of an application.
 
 .. note::
 
-    Currently IDF-based application is able to generate SystemView compatible traces in form of files to be opened in SystemView application. The tracing process can not yet be controlled using that tool.
+    Currently IDF-based application is able to generate SystemView compatible traces in form of files to be opened in SystemView application. The tracing process cannot yet be controlled using that tool.
 
 
 How To Use It
@@ -325,7 +325,7 @@ How To Use It
 
 Support for this feature is enabled by *Component config > Application Level Tracing > FreeRTOS SystemView Tracing* (:ref:`CONFIG_SYSVIEW_ENABLE`) menuconfig option. There are several other options enabled under the same menu:
 
-1. *ESP32 timer to use as SystemView timestamp source* (:ref:`CONFIG_SYSVIEW_TS_SOURCE`) selects the source of timestamps for SystemView events. In single core mode timestamps are generated using ESP32 internal cycle counter running at maximum 240 Mhz (~4 ns granularity). In dual-core mode external timer working at 40Mhz is used, so timestamp granularity is 25 ns.
+1. *ESP32 timer to use as SystemView timestamp source* (:ref:`CONFIG_SYSVIEW_TS_SOURCE`) selects the source of timestamps for SystemView events. In single core mode timestamps are generated using ESP32 internal cycle counter running at maximum 240 Mhz (~4 ns granularity). In dual-core mode external timer working at 40 Mhz is used, so timestamp granularity is 25 ns.
 2. Individually enabled or disabled collection of SystemView events (``CONFIG_SYSVIEW_EVT_XXX``):
 
     - Trace Buffer Overflow Event
@@ -384,29 +384,29 @@ Command usage examples:
 
 .. highlight:: none
 
-1.	Collect SystemView tracing data to files "pro-cpu.SVDat" and "pro-cpu.SVDat". The files will be saved in "openocd-esp32" directory.
+1.  Collect SystemView tracing data to files "pro-cpu.SVDat" and "pro-cpu.SVDat". The files will be saved in "openocd-esp32" directory.
 
-	::
+    ::
 
-		esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
+        esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat
 
-	The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp32 apptrace stop`` command on OpenOCD telnet prompt, Optionally pressing Ctrl+C in OpenOCD window.
+    The tracing data will be retrieved and saved in non-blocking mode. To stop data this process enter ``esp32 apptrace stop`` command on OpenOCD telnet prompt, optionally pressing Ctrl+C in OpenOCD window.
 
-2.	Retrieve tracing data and save them indefinitely.
+2.  Retrieve tracing data and save them indefinitely.
 
-	::
+    ::
 
-		esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
+        esp32 sysview start file://pro-cpu.SVDat file://app-cpu.SVDat 0 -1 -1
 
-	OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing, press Ctrl+C in OpenOCD window.
+    OpenOCD telnet command line prompt will not be available until tracing is stopped. To stop tracing, press Ctrl+C in OpenOCD window.
 
 
 Data Visualization
 """"""""""""""""""
 
-After trace data are collected user can use special tool to visualize the results and inspect behaviour of the program. Unfortunately SystemView does not support tracing from multiple cores. So when tracing from ESP32 working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool. 
+After trace data are collected user can use special tool to visualize the results and inspect behavior of the program. Unfortunately SystemView does not support tracing from multiple cores. So when tracing from ESP32 working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool. 
 
-It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately there is Eclipse plugin called *Impulse* which can load several trace files and makes its possible to inspect events from both cores in one view. Also this plugin has no limitation of 1000000 events as compared to free version of SystemView.
+It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately there is Eclipse plugin called *Impulse* which can load several trace files and makes it possible to inspect events from both cores in one view. Also this plugin has no limitation of 1,000,000 events as compared to free version of SystemView.
 
 Good instruction on how to install, configure and visualize data in Impulse from one core can be found `here <https://mcuoneclipse.com/2016/07/31/impulse-segger-systemview-in-eclipse/>`_.
 
@@ -433,4 +433,4 @@ After installing Impulse and ensuring that it can successfully load trace files 
 
 .. note::
 
-    If you have problems with visualization (no data are shown or strange behaviour of zoom action is observed) you can try to delete current signal hierarchy and double click on necessary file or port. Eclipse will ask you to create new signal hierarchy.
+    If you have problems with visualization (no data are shown or strange behavior of zoom action is observed) you can try to delete current signal hierarchy and double click on the necessary file or port. Eclipse will ask you to create new signal hierarchy.
