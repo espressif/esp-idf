@@ -67,7 +67,7 @@ Revision: $Rev: 3734 $
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 

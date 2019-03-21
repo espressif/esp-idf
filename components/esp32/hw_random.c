@@ -18,7 +18,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include "esp_attr.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "soc/wdev_reg.h"
 #include "freertos/FreeRTOSConfig.h"
 #include "xtensa/core-macros.h"

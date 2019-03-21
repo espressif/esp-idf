@@ -7,7 +7,7 @@
 #include "esp_system.h"
 #include "rom/cache.h"
 #include "sdkconfig.h"
-#include "esp_himem.h"
+#include "esp32/himem.h"
 
 #if CONFIG_SPIRAM_BANKSWITCH_ENABLE
 

@@ -38,7 +38,7 @@
 #include "esp_err.h"
 #include "esp_core_dump.h"
 #include "esp_spi_flash.h"
-#include "esp_cache_err_int.h"
+#include "esp32/cache_err_int.h"
 #include "esp_app_trace.h"
 #include "esp_system_internal.h"
 #include "sdkconfig.h"

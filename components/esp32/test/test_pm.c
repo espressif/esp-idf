@@ -5,7 +5,7 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "esp_pm.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

@@ -15,7 +15,7 @@
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 #include "driver/gpio.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_core_dump_priv.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
