@@ -158,7 +158,7 @@ You can also provide the format version number (in any of the two modes):
 You can run the utility in this format by setting the version parameter to v2, as shown below.
 A sample CSV file is provided with the utility::
 
-    python nvs_partition_gen.py --input sample_multipage_blob.csv --output partition_multipage_blob.bin --size 0x3000 --version v2
+    python nvs_partition_gen.py --input sample_multipage_blob.csv --output partition_multipage_blob.bin --size 0x4000 --version v2
 
 
 **Multipage Blob Support Disabled (v1):**
