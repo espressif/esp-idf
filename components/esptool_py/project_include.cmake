@@ -52,7 +52,9 @@ if(CONFIG_SECURE_BOOT_ENABLED AND
         ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
 endif()
 
-set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+if(NOT BOOTLOADER_BUILD)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
