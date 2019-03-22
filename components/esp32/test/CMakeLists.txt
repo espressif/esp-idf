@@ -1,7 +1,7 @@
 set(COMPONENT_SRCDIRS ".")
 set(COMPONENT_ADD_INCLUDEDIRS ". ${CMAKE_CURRENT_BINARY_DIR}")
 
-set(COMPONENT_REQUIRES unity test_utils nvs_flash ulp)
+set(COMPONENT_REQUIRES unity test_utils nvs_flash ulp esp_common)
 
 register_component()
 
@@ -21,7 +21,7 @@ execute_process(COMMAND md5sum ${IDF_PATH}/components/esp32/include/esp_wifi_cry
                 COMMAND cut -c 1-7
                 OUTPUT_VARIABLE WIFI_CRYPTO_MD5
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
-                
+
 # Calculate MD5 value of header file esp_coexist_adapter.h
 execute_process(COMMAND md5sum ${IDF_PATH}/components/esp32/include/esp_coexist_adapter.h
                 COMMAND cut -c 1-7

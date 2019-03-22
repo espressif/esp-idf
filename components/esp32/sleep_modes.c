@@ -17,7 +17,7 @@
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "esp_sleep.h"
-#include "esp_timer_impl.h"
+#include "esp_private/esp_timer_impl.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
 #include "esp_newlib.h"

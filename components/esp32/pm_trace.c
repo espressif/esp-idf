@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-#include "pm_trace.h"
+#include "esp_private/pm_trace.h"
 #include "driver/gpio.h"
 #include "soc/gpio_reg.h"
 

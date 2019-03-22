@@ -22,7 +22,7 @@
 
 #include "sdkconfig.h"
 #include "esp_pm.h"
-#include "pm_impl.h"
+#include "esp_private/pm_impl.h"
 
 //We use just a static array here because it's not expected many components will need
 //an idle or tick hook.

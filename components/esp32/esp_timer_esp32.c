@@ -20,7 +20,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
-#include "esp_timer_impl.h"
+#include "esp_private/esp_timer_impl.h"
 #include "soc/frc_timer_reg.h"
 #include "soc/rtc.h"
 #include "freertos/FreeRTOS.h"
@@ -78,7 +78,7 @@
 /* ALARM_OVERFLOW_VAL is used as timer alarm value when there are not timers
  * enabled which need to fire within the next timer overflow period. This alarm
  * is used to perform timekeeping (i.e. to track timer overflows).
- * Due to the 0xffffffff cannot recognize the real overflow or the scenario that 
+ * Due to the 0xffffffff cannot recognize the real overflow or the scenario that
  * ISR happens follow set_alarm, so change the ALARM_OVERFLOW_VAL to resolve this problem.
  * Set it to 0xefffffffUL. The remain 0x10000000UL(about 3 second) is enough to handle ISR.
  */
@@ -129,9 +129,9 @@ static bool s_mask_overflow;
 
 //The timer_overflow_happened read alarm register to tell if overflow happened.
 //However, there is a monent that overflow happens, and before ISR function called
-//alarm register is set to another value, then you call timer_overflow_happened, 
+//alarm register is set to another value, then you call timer_overflow_happened,
 //it will return false.
-//So we store the overflow value when new alarm is to be set. 
+//So we store the overflow value when new alarm is to be set.
 static bool s_overflow_happened;
 
 #ifdef CONFIG_PM_DFS_USE_RTC_TIMER_REF
@@ -157,7 +157,7 @@ static inline bool IRAM_ATTR timer_overflow_happened()
     }
 
     return ((REG_READ(FRC_TIMER_CTRL_REG(1)) & FRC_TIMER_INT_STATUS) != 0 &&
-              ((REG_READ(FRC_TIMER_ALARM_REG(1)) == ALARM_OVERFLOW_VAL && TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))) && !s_mask_overflow) || 
+              ((REG_READ(FRC_TIMER_ALARM_REG(1)) == ALARM_OVERFLOW_VAL && TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))) && !s_mask_overflow) ||
                (!TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_ALARM_REG(1))) && TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))))));
 }
 

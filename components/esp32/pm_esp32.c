@@ -31,9 +31,9 @@
 #include "freertos/xtensa_timer.h"
 #include "xtensa/core-macros.h"
 
-#include "pm_impl.h"
-#include "pm_trace.h"
-#include "esp_timer_impl.h"
+#include "esp_private/pm_impl.h"
+#include "esp_private/pm_trace.h"
+#include "esp_private/esp_timer_impl.h"
 #include "esp32/pm.h"
 
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work

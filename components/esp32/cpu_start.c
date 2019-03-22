@@ -69,7 +69,7 @@
 #include "esp_clk_internal.h"
 #include "esp_timer.h"
 #include "esp_pm.h"
-#include "pm_impl.h"
+#include "esp_private/pm_impl.h"
 #include "trax.h"
 #include "esp_ota_ops.h"
 
