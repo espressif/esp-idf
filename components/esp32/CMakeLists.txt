@@ -16,15 +16,11 @@ else()
                    "coexist.c"
                    "cpu_start.c"
                    "crosscore_int.c"
-                   "dbg_stubs.c"
                    "dport_access.c"
                    "dport_panic_highint_hdl.S"
                    "esp_adapter.c"
-                   "esp_err_to_name.c"
-                   "esp_timer.c"
                    "esp_timer_esp32.c"
                    "esp_himem.c"
-                   "ets_timer_legacy.c"
                    "fast_crypto_ops.c"
                    "freertos_hooks.c"
                    "gdbstub.c"
@@ -36,14 +32,12 @@ else()
                    "panic.c"
                    "phy_init.c"
                    "pm_esp32.c"
-                   "pm_locks.c"
                    "pm_trace.c"
                    "reset_reason.c"
                    "restore.c"
                    "sleep_modes.c"
                    "spiram.c"
                    "spiram_psram.c"
-                   "stack_check.c"
                    "system_api.c"
                    "task_wdt.c"
                    "wifi_init.c"
@@ -56,7 +50,7 @@ else()
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(COMPONENT_PRIV_REQUIRES
         app_trace app_update bootloader_support log mbedtls nvs_flash
-        pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module espcoredump)
+        pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module espcoredump esp_common)
 
     set(COMPONENT_ADD_LDFRAGMENTS linker.lf ld/esp32_fragments.lf)
 
@@ -134,7 +128,7 @@ else()
 
     # disable stack protection in files which are involved in initialization of that feature
     set_source_files_properties(
-        stack_check.c cpu_start.c
+        cpu_start.c
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
 endif()

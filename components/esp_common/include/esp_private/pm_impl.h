@@ -15,7 +15,7 @@
 #pragma once
 
 /**
- * @file pm_impl.h
+ * @file esp_private/pm_impl.h
  *
  * This header file defines interface between PM lock functions (pm_locks.c)
  * and the chip-specific power management (DFS/light sleep) implementation.

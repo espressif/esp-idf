@@ -36,7 +36,7 @@
 #include "freertos/task.h"
 #include "freertos/xtensa_api.h"
 #include "esp_heap_caps.h"
-#include "esp_system_internal.h"
+#include "esp_private/system_internal.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
