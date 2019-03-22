@@ -3,7 +3,7 @@
 */
 #include "unity.h"
 #include "esp_log.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 
 TEST_CASE("wifi lib git commit id","[wifi]")
 {    

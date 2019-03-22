@@ -3,7 +3,7 @@
 */
 #include "unity.h"
 #include "esp_log.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 #include "esp_coexist_internal.h"
 
 static const char* TAG = "test_header_files_md5";
