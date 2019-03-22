@@ -104,21 +104,24 @@ else()
     add_dependencies(${COMPONENT_TARGET} esp32_linker_script)
 
     if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION AND IDF_BUILD_ARTIFACTS)
-        set(PHY_INIT_DATA_BIN ${IDF_BUILD_ARTIFACTS_DIR}/${PHY_PARTITION_BIN_FILE})
+        partition_table_get_partition_info(phy_partition_offset "--partition-type data --partition-subtype phy" "offset")
+        set(phy_init_data_bin "${IDF_BUILD_ARTIFACTS_DIR}/phy_init_data.bin")
 
         # To get the phy_init_data.bin file, compile phy_init_data.h as a C file and then objcopy
         # the object file to a raw binary
         add_custom_command(
-            OUTPUT ${PHY_INIT_DATA_BIN}
+            OUTPUT ${phy_init_data_bin}
             DEPENDS ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
             COMMAND ${CMAKE_C_COMPILER} -x c -c
             -I ${CMAKE_CURRENT_LIST_DIR} -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${IDF_BUILD_ARTIFACTS_DIR}
             -o phy_init_data.obj
             ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
-            COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${PHY_INIT_DATA_BIN}
+            COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${phy_init_data_bin}
             )
-        add_custom_target(phy_init_data ALL DEPENDS ${PHY_INIT_DATA_BIN})
+        add_custom_target(phy_init_data ALL DEPENDS ${phy_init_data_bin})
         add_dependencies(flash phy_init_data)
+
+        esptool_py_flash_project_args(phy ${phy_partition_offset} ${phy_init_data_bin} FLASH_IN_PROJECT)
     endif()
 
     # Enable dynamic esp_timer overflow value if building unit tests
