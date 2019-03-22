@@ -37,12 +37,9 @@ Overall, the minimal ``test`` subdirectory CMakeLists.txt file may look like as 
 
 .. code:: cmake
 
-    set(COMPONENT_SRCDIRS ".")
-    set(COMPONENT_ADD_INCLUDEDIRS ".")
-    set(COMPONENT_REQUIRES unity)
-
-    register_component()
-
+    idf_component_register(SRC_DIRS "."
+                           INCLUDE_DIRS "."
+                           REQUIRES unity)
 
 See http://www.throwtheswitch.org/unity for more information about writing tests in Unity.
 
