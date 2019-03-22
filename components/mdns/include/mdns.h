@@ -81,10 +81,9 @@ typedef struct mdns_result_s {
  *
  * @return
  *     - ESP_OK on success
- *     - ESP_ERR_INVALID_ARG when bad tcpip_if is given
- *     - ESP_ERR_INVALID_STATE when the network returned error
+ *     - ESP_ERR_INVALID_STATE when failed to register event handler
  *     - ESP_ERR_NO_MEM on memory error
- *     - ESP_ERR_WIFI_NOT_INIT when WiFi is not initialized by eps_wifi_init
+ *     - ESP_FAIL when failed to start mdns task
  */
 esp_err_t mdns_init();
 
@@ -127,13 +126,14 @@ esp_err_t mdns_instance_name_set(const char * instance_name);
  * @param  service_type     service type (_http, _ftp, etc)
  * @param  proto            service protocol (_tcp, _udp)
  * @param  port             service port
- * @param  num_items        number of items in TXT data
  * @param  txt              string array of TXT data (eg. {{"var","val"},{"other","2"}})
+ * @param  num_items        number of items in TXT data
  *
  * @return
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM memory error
+ *     - ESP_FAIL failed to add serivce
  */
 esp_err_t mdns_service_add(const char * instance_name, const char * service_type, const char * proto, uint16_t port, mdns_txt_item_t txt[], size_t num_items);
 
@@ -147,7 +147,7 @@ esp_err_t mdns_service_add(const char * instance_name, const char * service_type
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NOT_FOUND Service not found
- *     - ESP_FAIL unknown error
+ *     - ESP_ERR_NO_MEM memory error
  */
 esp_err_t mdns_service_remove(const char * service_type, const char * proto);
 
@@ -177,6 +177,7 @@ esp_err_t mdns_service_instance_name_set(const char * service_type, const char *
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NOT_FOUND Service not found
+ *     - ESP_ERR_NO_MEM memory error
  */
 esp_err_t mdns_service_port_set(const char * service_type, const char * proto, uint16_t port);
 
@@ -185,8 +186,8 @@ esp_err_t mdns_service_port_set(const char * service_type, const char * proto, u
  *
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
- * @param  num_items    number of items in TXT data
  * @param  txt          array of TXT data (eg. {{"var","val"},{"other","2"}})
+ * @param  num_items    number of items in TXT data
  *
  * @return
  *     - ESP_OK success
