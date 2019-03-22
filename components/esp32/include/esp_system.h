@@ -19,6 +19,7 @@
 #include <stdbool.h>
 #include "esp_err.h"
 #include "esp_sleep.h"
+#include "esp_idf_version.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -291,14 +292,6 @@ esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
  */
 const char* system_get_sdk_version(void)  __attribute__ ((deprecated));
 /** @endcond */
-
-/**
- * Get IDF version
- *
- * @return constant string from IDF_VER
- */
-const char* esp_get_idf_version(void);
-
 
 /**
  * @brief Chip models
