@@ -28,6 +28,7 @@ if(NOT __idf_environment_set)
     include(GetGitRevisionDescription)
     include(crosstool_version_check)
     include(ldgen)
+    include(version)
 
     set_default(PYTHON "python")
 

@@ -38,6 +38,9 @@ ifdef CONFIG_MAKE_WARN_UNDEFINED_VARIABLES
 MAKEFLAGS += --warn-undefined-variables
 endif
 
+# Get version variables
+include $(IDF_PATH)/make/version.mk
+
 # General make utilities
 
 # convenience variable for printing an 80 asterisk wide separator line

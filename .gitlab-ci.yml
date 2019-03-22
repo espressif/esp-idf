@@ -696,6 +696,18 @@ check_permissions:
   script:
     - tools/ci/check-executable.sh
 
+check_version:
+  <<: *check_job_template
+  # Don't run this for feature/bugfix branches, so that it is possible to modify
+  # esp_idf_version.h in a branch before tagging the next version.
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  script:
+    - export IDF_PATH=$PWD
+    - tools/ci/check_idf_version.sh
+
 check_examples_cmake_make:
   <<: *check_job_template
   except:
