@@ -1,0 +1,22 @@
+[mapping]
+archive: libphy.a
+entries:
+    * (noflash_data)
+
+[mapping]
+archive: librtc.a
+entries:
+    * (noflash_text)
+
+[mapping]
+archive: libpp.a
+entries:
+    : ESP32_WIFI_IRAM_OPT = y
+    * (wifi_iram)
+
+[mapping]
+archive: libnet80211.a
+entries:
+    : ESP32_WIFI_IRAM_OPT = y
+    * (wifi_iram)
+

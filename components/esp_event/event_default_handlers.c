@@ -18,7 +18,7 @@
 
 #include "esp_err.h"
 #include "esp_wifi.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 #include "esp_event.h"
 #include "esp_event_loop.h"
 #include "esp_task.h"

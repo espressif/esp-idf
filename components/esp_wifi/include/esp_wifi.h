@@ -67,7 +67,7 @@
 #include "esp_wifi_types.h"
 #include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
-#include "esp_wifi_os_adapter.h"
+#include "esp_private/wifi_os_adapter.h"
 
 #ifdef __cplusplus
 extern "C" {

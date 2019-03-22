@@ -1,7 +1,3 @@
-[submodule "components/esp32/lib"]
-	path = components/esp32/lib
-	url = https://github.com/espressif/esp32-wifi-lib.git
-
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
 	url = https://github.com/espressif/esptool.git
@@ -69,3 +65,7 @@
 [submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
 	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
 	url = https://github.com/leethomason/tinyxml2
+
+[submodule "components/esp_wifi/lib_esp32"]
+	path = components/esp_wifi/lib_esp32
+	url = https://github.com/espressif/esp32-wifi-lib.git

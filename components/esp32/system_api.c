@@ -17,7 +17,7 @@
 #include "esp_system.h"
 #include "esp_attr.h"
 #include "esp_wifi.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp32/rom/efuse.h"

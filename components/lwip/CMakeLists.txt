@@ -121,7 +121,7 @@ if(CONFIG_PPP_SUPPORT)
                    "lwip/src/netif/ppp/polarssl/sha1.c")
 endif()
 
-set(COMPONENT_REQUIRES vfs)
+set(COMPONENT_REQUIRES vfs esp_wifi)
 set(COMPONENT_PRIV_REQUIRES ethernet tcpip_adapter nvs_flash)
 
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
