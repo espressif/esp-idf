@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct pcnt_dev_s {
     struct{
         union {
             struct {
