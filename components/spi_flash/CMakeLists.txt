@@ -9,7 +9,8 @@ else()
                    "flash_ops.c"
                    "partition.c"
                    "spi_flash_rom_patch.c")
-    set(COMPONENT_PRIV_REQUIRES bootloader_support app_update soc)
+    set(COMPONENT_REQUIRES app_update)
+    set(COMPONENT_PRIV_REQUIRES bootloader_support soc)
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS include)
