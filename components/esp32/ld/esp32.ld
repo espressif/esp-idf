@@ -21,6 +21,18 @@
 #define CONFIG_BT_RESERVE_DRAM 0
 #endif
 
+#if defined(CONFIG_USE_FIXED_STATIC_RAM_SIZE)
+
+#if (CONFIG_FIXED_STATIC_RAM_SIZE > 0x2c200)
+#error "Fixed static ram out of boundary."
+#else
+#define DRAM0_0_SEG_LEN CONFIG_FIXED_STATIC_RAM_SIZE
+#endif
+
+#else
+#define DRAM0_0_SEG_LEN 0x2c200
+#endif
+
 MEMORY
 {
   /* All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
@@ -51,7 +63,7 @@ MEMORY
      additional static memory temporarily cannot be used.
   */
   dram0_0_seg (RW) :                 org = 0x3FFB0000 + CONFIG_BT_RESERVE_DRAM,
-                                     len = 0x2c200 - CONFIG_BT_RESERVE_DRAM
+                                     len = DRAM0_0_SEG_LEN - CONFIG_BT_RESERVE_DRAM
 
   /* Flash mapped constant data */
   drom0_0_seg (R) :                  org = 0x3F400018, len = 0x400000-0x18
@@ -76,6 +88,13 @@ MEMORY
   extern_ram_seg(RWX)  :             org = 0x3F800000,
                                      len = 0x400000
 }
+
+#if defined(CONFIG_USE_FIXED_STATIC_RAM_SIZE)
+/* heap start at defined address */
+_heap_start = 0x3FFB0000 + DRAM0_0_SEG_LEN;
+#else
+_heap_start = _bss_end;
+#endif
 
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;

@@ -110,7 +110,7 @@ SECTIONS
     *(.jcr)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
-  } >dram0_0_seg
+  } > dram0_0_seg
 
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
@@ -134,8 +134,7 @@ SECTIONS
 
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-    _heap_start = ABSOLUTE(.);
-  } >dram0_0_seg
+  } > dram0_0_seg
 
   .flash.rodata :
   {
