@@ -96,9 +96,9 @@ void esp_crosscore_int_init() {
 static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) {
     assert(core_id<portNUM_PROCESSORS);
     //Mark the reason we interrupt the other CPU
-    portENTER_CRITICAL(&reason_spinlock);
+    portENTER_CRITICAL_ISR(&reason_spinlock);
     reason[core_id] |= reason_mask;
-    portEXIT_CRITICAL(&reason_spinlock);
+    portEXIT_CRITICAL_ISR(&reason_spinlock);
     //Poke the other CPU.
     if (core_id==0) {
         DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
