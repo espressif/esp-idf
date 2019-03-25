@@ -17,7 +17,7 @@ if(CONFIG_SYSVIEW_ENABLE)
 endif()
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES xtensa-debug-module)
+set(COMPONENT_PRIV_REQUIRES)
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 
 register_component()
