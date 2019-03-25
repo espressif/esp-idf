@@ -27,13 +27,13 @@
 
 #include <string.h>
 #include <stdio.h>
-#include <byteswap.h>
+#include <machine/endian.h>
 #include <assert.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "hwcrypto/sha.h"
+#include "esp32/sha.h"
 #include "esp32/rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
@@ -135,6 +135,7 @@ static SemaphoreHandle_t sha_get_engine_state(esp_sha_type sha_type)
     unsigned idx = sha_engine_index(sha_type);
     volatile SemaphoreHandle_t *engine = &engine_states[idx];
     SemaphoreHandle_t result = *engine;
+    uint32_t set_engine = 0;
 
     if (result == NULL) {
         // Create a new semaphore for 'in use' flag
@@ -143,7 +144,7 @@ static SemaphoreHandle_t sha_get_engine_state(esp_sha_type sha_type)
         xSemaphoreGive(new_engine); // start available
 
         // try to atomically set the previously NULL *engine to new_engine
-        uint32_t set_engine = (uint32_t)new_engine;
+        set_engine = (uint32_t)new_engine;
         uxPortCompareSet((volatile uint32_t *)engine, 0, &set_engine);
 
         if (set_engine != 0) { // we lost a race setting *engine
@@ -229,6 +230,8 @@ void esp_sha_wait_idle(void)
 
 void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 {
+    uint32_t *digest_state_words = NULL;
+    uint32_t *reg_addr_buf = NULL;
 #ifndef NDEBUG
     {
         SemaphoreHandle_t *engine_state = sha_get_engine_state(sha_type);
@@ -246,8 +249,8 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 
     DPORT_REG_WRITE(SHA_LOAD_REG(sha_type), 1);
     while(DPORT_REG_READ(SHA_BUSY_REG(sha_type)) == 1) { }
-    uint32_t *digest_state_words = (uint32_t *)digest_state;
-    uint32_t *reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
+    digest_state_words = (uint32_t *)digest_state;
+    reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
     if(sha_type == SHA2_384 || sha_type == SHA2_512) {
         /* for these ciphers using 64-bit states, swap each pair of words */
         DPORT_INTERRUPT_DISABLE(); // Disable interrupt only on current CPU.
@@ -264,6 +267,8 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 
 void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
 {
+    uint32_t *reg_addr_buf = NULL;
+    uint32_t *data_words = NULL;
 #ifndef NDEBUG
     {
         SemaphoreHandle_t *engine_state = sha_get_engine_state(sha_type);
@@ -280,10 +285,10 @@ void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_
     esp_sha_wait_idle();
 
     /* Fill the data block */
-    uint32_t *reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
-    uint32_t *data_words = (uint32_t *)data_block;
+    reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
+    data_words = (uint32_t *)data_block;
     for (int i = 0; i < block_length(sha_type) / 4; i++) {
-        reg_addr_buf[i] = __bswap_32(data_words[i]);
+        reg_addr_buf[i] = __builtin_bswap32(data_words[i]);
     }
     asm volatile ("memw");
 
@@ -311,9 +316,10 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
     const size_t BLOCKS_PER_CHUNK = 100;
     const size_t MAX_CHUNK_LEN = BLOCKS_PER_CHUNK * block_len;
 
+    SHA_CTX ctx;
+
     esp_sha_lock_engine(sha_type);
 
-    SHA_CTX ctx;
     ets_sha_init(&ctx);
 
     while (ilen > 0) {

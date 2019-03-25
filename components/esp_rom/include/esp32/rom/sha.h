@@ -3,7 +3,7 @@
 
   It is not recommended to use these functions directly.  If using
   them from esp-idf then use the esp_sha_lock_engine() and
-  esp_sha_lock_memory_block() functions in hwcrypto/sha.h to ensure
+  esp_sha_lock_memory_block() functions in esp32/sha.h to ensure
   exclusive access.
  */
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
