@@ -213,14 +213,25 @@ void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line );
 #ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 /* Calling port*_CRITICAL from ISR context would cause an assert failure.
  * If the parent function is called from both ISR and Non-ISR context then call port*_CRITICAL_SAFE
- **/
-#define portENTER_CRITICAL(mux)        do {                                             \
-                                       configASSERT(!xPortInIsrContext());              \
-                                       vTaskEnterCritical(mux, __FUNCTION__, __LINE__); \
+ */
+#define portENTER_CRITICAL(mux)        do {                                                                                             \
+                                            if(!xPortInIsrContext()) {                                                                  \
+                                                vTaskEnterCritical(mux, __FUNCTION__, __LINE__);                                        \
+                                            } else {                                                                                    \
+                                                ets_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n", __FILE__, __LINE__, \
+                                                           __FUNCTION__);                                                               \
+                                                abort();                                                                                \
+                                            }                                                                                           \
                                        } while(0)
-#define portEXIT_CRITICAL(mux)         do {                                             \
-                                       configASSERT(!xPortInIsrContext());              \
-                                       vTaskExitCritical(mux, __FUNCTION__, __LINE__);  \
+
+#define portEXIT_CRITICAL(mux)        do {                                                                                              \
+                                            if(!xPortInIsrContext()) {                                                                  \
+                                                vTaskExitCritical(mux, __FUNCTION__, __LINE__);                                         \
+                                            } else {                                                                                    \
+                                                ets_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n", __FILE__, __LINE__, \
+                                                           __FUNCTION__);                                                               \
+                                                abort();                                                                                \
+                                            }                                                                                           \
                                        } while(0)
 #else
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux, __FUNCTION__, __LINE__)
@@ -247,14 +258,25 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux);
 #ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
 /* Calling port*_CRITICAL from ISR context would cause an assert failure.
  * If the parent function is called from both ISR and Non-ISR context then call port*_CRITICAL_SAFE
- **/
-#define portENTER_CRITICAL(mux)        do {                                            \
-                                       configASSERT(!xPortInIsrContext());             \
-                                       vTaskEnterCritical(mux);                        \
+ */
+#define portENTER_CRITICAL(mux)        do {                                                                                             \
+                                            if(!xPortInIsrContext()) {                                                                  \
+                                                vTaskEnterCritical(mux);                                                                \
+                                            } else {                                                                                    \
+                                                ets_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n", __FILE__, __LINE__, \
+                                                           __FUNCTION__);                                                               \
+                                                abort();                                                                                \
+                                            }                                                                                           \
                                        } while(0)
-#define portEXIT_CRITICAL(mux)         do {                                            \
-                                       configASSERT(!xPortInIsrContext());             \
-                                       vTaskExitCritical(mux);                         \
+
+#define portEXIT_CRITICAL(mux)        do {                                                                                              \
+                                            if(!xPortInIsrContext()) {                                                                  \
+                                                vTaskExitCritical(mux);                                                                 \
+                                            } else {                                                                                    \
+                                                ets_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n", __FILE__, __LINE__, \
+                                                           __FUNCTION__);                                                               \
+                                                abort();                                                                                \
+                                            }                                                                                           \
                                        } while(0)
 #else
 #define portENTER_CRITICAL(mux)        vTaskEnterCritical(mux)
