@@ -502,9 +502,9 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
 
 static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, const rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset)
 {
-    portENTER_CRITICAL(&rmt_spinlock);
+    portENTER_CRITICAL_SAFE(&rmt_spinlock);
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
-    portEXIT_CRITICAL(&rmt_spinlock);
+    portEXIT_CRITICAL_SAFE(&rmt_spinlock);
     int i;
     for(i = 0; i < item_num; i++) {
         RMTMEM.chan[channel].data32[i + mem_offset].val = item[i].val;
