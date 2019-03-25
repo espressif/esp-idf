@@ -191,7 +191,10 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
     if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
         return poll_read;
     }
-    if ((rlen = esp_transport_read(ws->parent, buffer, len, timeout_ms)) <= 0) {
+
+    // Receive and process header first (based on header size)
+    int header = 2;
+    if ((rlen = esp_transport_read(ws->parent, buffer, header, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
@@ -203,11 +206,20 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
     ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", opcode, mask, payload_len);
     if (payload_len == 126) {
         // headerLen += 2;
+        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read data");
+            return rlen;
+        }
         payload_len = data_ptr[0] << 8 | data_ptr[1];
         payload_len_buff = len - 4;
         data_ptr += 2;
     } else if (payload_len == 127) {
         // headerLen += 8;
+        header = 8;
+        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read data");
+            return rlen;
+        }
 
         if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0) {
             // really too big!
@@ -217,6 +229,11 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
         }
         data_ptr += 8;
         payload_len_buff = len - 10;
+    }
+    // Then receive and process payload
+    if ((rlen = esp_transport_read(ws->parent, data_ptr, payload_len, timeout_ms)) <= 0) {
+        ESP_LOGE(TAG, "Error read data");
+        return rlen;
     }
     if (payload_len > payload_len_buff) {
         ESP_LOGD(TAG, "Actual data received (%d) are longer than mqtt buffer (%d)", payload_len, payload_len_buff);
