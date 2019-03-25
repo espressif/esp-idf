@@ -48,9 +48,6 @@ tools/test_idf_monitor/outputs
 
 TEST_LOGS
 
-# AWS IoT Examples require device-specific certs/keys
-examples/protocols/aws_iot/*/main/certs/*.pem.*
-
 # gcov coverage reports
 *.gcda
 *.gcno
