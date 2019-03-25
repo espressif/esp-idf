@@ -46,7 +46,7 @@ variables:
   find . -name '.git' -not -path './.git' -printf '%P\n'
   | sed 's|/.git||'
   | xargs -I {} sh -c '
-  grep -q {} .gitmodules
+  grep -q "path = {}" .gitmodules
   ||  (echo "Removing {}, has .git directory but not in .gitmodules file"
   && rm -rf {});'
 
