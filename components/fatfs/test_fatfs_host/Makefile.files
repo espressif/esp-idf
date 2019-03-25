@@ -22,6 +22,8 @@ INCLUDE_DIRS := \
 	) \
 	$(addprefix ../../../components/, \
 	esp_rom/include \
+	xtensa/include \
+	xtensa/esp32/include \
 	soc/esp32/include \
 	esp32/include \
 	esp_common/include \
