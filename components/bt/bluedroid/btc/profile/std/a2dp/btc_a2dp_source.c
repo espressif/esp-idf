@@ -1375,8 +1375,7 @@ static void btc_media_aa_prep_sbc_2_send(UINT8 nb_frame)
             if (btc_media_aa_read_feeding()) {
                 /* SBC encode and descramble frame */
                 SBC_Encoder(&(btc_sbc_encoder));
-                A2D_SbcChkFrInit(btc_sbc_encoder.pu8Packet);
-                A2D_SbcDescramble(btc_sbc_encoder.pu8Packet, btc_sbc_encoder.u16PacketLength);
+
                 /* Update SBC frame length */
                 p_buf->len += btc_sbc_encoder.u16PacketLength;
                 nb_frame--;
