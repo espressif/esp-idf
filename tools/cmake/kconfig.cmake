@@ -132,7 +132,8 @@ function(kconfig_process_config)
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS=${kconfigs}"
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
-        ${IDF_PATH}/tools/kconfig_new/confserver.py --kconfig ${IDF_PATH}/Kconfig --config ${SDKCONFIG}
+        ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
+        --kconfig ${IDF_PATH}/Kconfig --config ${SDKCONFIG}
         VERBATIM
         USES_TERMINAL)
 
