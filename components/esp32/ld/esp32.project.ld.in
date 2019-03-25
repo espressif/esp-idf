@@ -239,8 +239,6 @@ SECTIONS
 
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-    /* The heap starts right after end of this section */
-    _heap_start = ABSOLUTE(.);
   } > dram0_0_seg
 
   ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
