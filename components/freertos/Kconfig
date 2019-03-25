@@ -430,7 +430,8 @@ menu "FreeRTOS"
         bool "Tests compliance with Vanilla FreeRTOS port*_CRITICAL calls"
         default n
         help
-            If enabled, context of port*_CRITICAL calls (ISR or Non-ISR) would be checked to be in compliance with Vanilla FreeRTOS.
+            If enabled, context of port*_CRITICAL calls (ISR or Non-ISR)
+            would be checked to be in compliance with Vanilla FreeRTOS.
             e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
 endmenu
