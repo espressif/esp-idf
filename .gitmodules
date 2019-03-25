@@ -14,10 +14,6 @@
 	path = components/coap/libcoap
 	url = https://github.com/obgm/libcoap.git
 
-[submodule "components/aws_iot/aws-iot-device-sdk-embedded-C"]
-	path = components/aws_iot/aws-iot-device-sdk-embedded-C
-	url = https://github.com/espressif/aws-iot-device-sdk-embedded-C.git
-
 [submodule "components/nghttp/nghttp2"]
 	path = components/nghttp/nghttp2
 	url = https://github.com/nghttp2/nghttp2.git
