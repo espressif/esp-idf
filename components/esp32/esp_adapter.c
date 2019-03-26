@@ -29,7 +29,7 @@
 #include "esp_types.h"
 #include "esp_system.h"
 #include "esp_task.h"
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"

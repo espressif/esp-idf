@@ -23,7 +23,7 @@
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 #include "esp_private/gdbstub.h"
-#include "esp_panic.h"
+#include "esp_debug_helpers.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

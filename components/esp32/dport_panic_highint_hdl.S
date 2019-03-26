@@ -17,7 +17,7 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include "freertos/xtensa_context.h"
-#include "esp_panic.h"
+#include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
@@ -137,8 +137,8 @@ xt_highint4:
     /* This section is for dport access register protection */
     /* Allocate exception frame and save minimal context. */
     /* Because the interrupt cause code has protection that only
-       allows one cpu to enter in the dport section of the L4 
-       interrupt at one time, there's no need to have two 
+       allows one cpu to enter in the dport section of the L4
+       interrupt at one time, there's no need to have two
        _l4_intr_stack for each cpu */
 
     /* This int is edge-triggered and needs clearing. */
@@ -192,7 +192,7 @@ xt_highint4:
 #endif // CONFIG_FREERTOS_UNICORE
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined
-   (weakly!) in the default int handler. Define a symbol here so we can use it to have the 
+   (weakly!) in the default int handler. Define a symbol here so we can use it to have the
    linker inspect this anyway. */
 
     .global ld_include_panic_highint_hdl

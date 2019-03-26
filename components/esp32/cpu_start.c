@@ -60,7 +60,7 @@
 #include "esp_phy_init.h"
 #include "esp32/cache_err_int.h"
 #include "esp_coexist_internal.h"
-#include "esp_panic.h"
+#include "esp_debug_helpers.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
