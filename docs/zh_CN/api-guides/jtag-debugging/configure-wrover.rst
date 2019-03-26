@@ -8,7 +8,7 @@
 配置硬件
 ^^^^^^^^
 
-1.  根据 :doc:`../../get-started/get-started-wrover-kit` 文档中 :ref:`get-started-esp-wrover-kit-setup-options` 章节所描述的信息，设置 JP8 便可以启用 JTAG 功能。 
+1.  根据 :doc:`../../get-started/get-started-wrover-kit` 文档中 :ref:`get-started-esp-wrover-kit-v4.1-setup-options` 章节所描述的信息，设置 JP8 便可以启用 JTAG 功能。 
 
 2.  检查 ESP32 上用于 JTAG 通信的引脚是否被接到了其它硬件上，这可能会影响 JTAG 的工作。
 

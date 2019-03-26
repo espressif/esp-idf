@@ -2,13 +2,13 @@ Configure WROVER JTAG Interface
 ===============================
 :link_to_translation:`zh_CN:[中文]`
 
-All versions of ESP-WROVER-KIT boards have JTAG functionality build in. Putting it to work requires setting  jumpers to enable JTAG functionality, setting SPI flash voltage and configuring USB drivers. Please refer to step by step instructions below.
+All versions of ESP-WROVER-KIT boards have built-in JTAG functionality. Putting it to work requires setting jumpers to enable JTAG functionality, setting SPI flash voltage and configuring USB drivers. Please refer to step by step instructions below.
 
 
 Configure Hardware
 ^^^^^^^^^^^^^^^^^^
 
-1.  Enable on-board JTAG functionality by setting JP8 according to :doc:`../../get-started/get-started-wrover-kit`, section :ref:`get-started-esp-wrover-kit-setup-options`. 
+1.  Enable on-board JTAG functionality by setting JP8 according to :doc:`../../get-started/get-started-wrover-kit`, Section :ref:`get-started-esp-wrover-kit-v4.1-setup-options`. 
 
 2.  Verify if ESP32 pins used for JTAG communication are not connected to some other h/w that may disturb JTAG operation:
 
