@@ -30,7 +30,7 @@
 #include "esp_types.h"
 #include "esp_system.h"
 #include "esp_task.h"
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "esp_phy_init.h"
 #include "esp_bt.h"

@@ -17,7 +17,7 @@
 #include "soc/io_mux_reg.h"
 #include "esp_heap_caps.h"
 
-#include "esp_panic.h"
+#include "esp_debug_helpers.h"
 #include "sdkconfig.h"
 
 

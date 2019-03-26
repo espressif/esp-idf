@@ -2,3 +2,8 @@
 archive: libxtensa.a
 entries:
     eri (noflash_text)
+
+[mapping]
+archive: libhal.a
+entries:
+    * (noflash_text)
