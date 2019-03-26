@@ -261,9 +261,10 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, BD_NAME bdn,
 #if BLE_INCLUDED == TRUE
             p->transport = transport;
 #if BLE_PRIVACY_SPT == TRUE
-            if (transport == BT_TRANSPORT_LE)
+            if (transport == BT_TRANSPORT_LE) {
                 btm_ble_refresh_local_resolvable_private_addr(bda,
                         btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
+            }
 #else
             p->conn_addr_type = BLE_ADDR_PUBLIC;
             memcpy(p->conn_addr, &controller_get_interface()->get_address()->address, BD_ADDR_LEN);
@@ -2495,15 +2496,17 @@ void btm_acl_chk_peer_pkt_type_support (tACL_CONN *p, UINT16 *p_pkt_type)
     }
 
     /* 2 and 3 MPS support? */
-    if (!HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0]))
+    if (!HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
         /* Not supported. Add 'not_supported' mask for all 2MPS packet types */
         *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
                         BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
+    }
 
-    if (!HCI_EDR_ACL_3MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0]))
+    if (!HCI_EDR_ACL_3MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])) {
         /* Not supported. Add 'not_supported' mask for all 3MPS packet types */
         *p_pkt_type |= (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
                         BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+    }
 
     /* EDR 3 and 5 slot support? */
     if (HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_features[HCI_EXT_FEATURES_PAGE_0])

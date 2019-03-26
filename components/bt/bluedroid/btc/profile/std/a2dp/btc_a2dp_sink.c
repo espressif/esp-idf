@@ -615,6 +615,7 @@ static void btc_a2dp_sink_handle_decoder_reset(tBTC_MEDIA_SINK_CFG_UPDATE *p_msg
 
     int frames_to_process = ((freq_multiple) / (num_blocks * num_subbands)) + 1;
     APPL_TRACE_EVENT(" Frames to be processed in 20 ms %d\n", frames_to_process);
+    UNUSED(frames_to_process);
 }
 
 /*******************************************************************************
