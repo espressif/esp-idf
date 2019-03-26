@@ -207,8 +207,9 @@ BOOLEAN BTM_SecDeleteDevice (BD_ADDR bd_addr, tBT_TRANSPORT transport)
 extern void BTM_SecClearSecurityFlags (BD_ADDR bd_addr)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = btm_find_dev(bd_addr);
-    if (p_dev_rec == NULL)
+    if (p_dev_rec == NULL) {
         return;
+    }
 
     p_dev_rec->sec_flags = 0;
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;

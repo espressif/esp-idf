@@ -403,7 +403,7 @@ void bta_gatts_add_char(tBTA_GATTS_SRVC_CB *p_srvc_cb, tBTA_GATTS_DATA *p_msg)
     UINT16          attr_id = 0;
     tBTA_GATTS      cb_data;
 
-    tGATT_ATTR_VAL *p_attr_val = NULL; 
+    tGATT_ATTR_VAL *p_attr_val = NULL;
     tGATTS_ATTR_CONTROL *p_control = NULL;
 
     if(p_msg->api_add_char.attr_val.attr_max_len != 0){
@@ -665,17 +665,18 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
                                     &gatt_if, remote_bda, &transport)) {
             p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
-            if (p_msg->api_indicate.need_confirm)
+            if (p_msg->api_indicate.need_confirm) {
 
                 status = GATTS_HandleValueIndication (p_msg->api_indicate.hdr.layer_specific,
                                                       p_msg->api_indicate.attr_id,
                                                       p_msg->api_indicate.len,
                                                       p_msg->api_indicate.value);
-            else
+            } else {
                 status = GATTS_HandleValueNotification (p_msg->api_indicate.hdr.layer_specific,
                                                         p_msg->api_indicate.attr_id,
                                                         p_msg->api_indicate.len,
                                                         p_msg->api_indicate.value);
+            }
 
             /* if over BR_EDR, inform PM for mode change */
             if (transport == BTA_TRANSPORT_BR_EDR) {
@@ -829,6 +830,7 @@ void bta_gatts_close (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
     }
 
 }
+
 /*******************************************************************************
 **
 ** Function         bta_gatts_listen

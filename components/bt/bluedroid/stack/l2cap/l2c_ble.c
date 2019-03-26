@@ -1260,8 +1260,9 @@ UINT32 CalConnectParamTimeout(tL2C_LCB *p_lcb)
 *******************************************************************************/
 void l2cble_credit_based_conn_req (tL2C_CCB *p_ccb)
 {
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
 
     if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
     {
@@ -1285,8 +1286,9 @@ void l2cble_credit_based_conn_req (tL2C_CCB *p_ccb)
 *******************************************************************************/
 void l2cble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result)
 {
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
 
     if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
     {
@@ -1310,8 +1312,9 @@ void l2cble_credit_based_conn_res (tL2C_CCB *p_ccb, UINT16 result)
 *******************************************************************************/
 void l2cble_send_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credit_value)
 {
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
 
     if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
     {
@@ -1337,8 +1340,9 @@ void l2cble_send_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credit_value)
 void l2cble_send_peer_disc_req(tL2C_CCB *p_ccb)
 {
     L2CAP_TRACE_DEBUG ("%s",__func__);
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
 
     if (p_ccb->p_lcb && p_ccb->p_lcb->transport != BT_TRANSPORT_LE)
     {
@@ -1396,8 +1400,9 @@ void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, 
             if (sec_act == BTM_SEC_ENCRYPT_MITM)
             {
                 BTM_GetSecurityFlagsByTransport(p_bda, &sec_flag, transport);
-                if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+                if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
                     (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
+                }
                 else
                 {
                     L2CAP_TRACE_DEBUG ("%s MITM Protection Not present", __func__);
@@ -1425,11 +1430,12 @@ void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, 
     {
         p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
 
-        if (status != BTM_SUCCESS)
+        if (status != BTM_SUCCESS) {
             (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
-        else
+        } else {
             l2ble_sec_access_req(p_bda, p_buf->psm, p_buf->is_originator,
                     p_buf->p_callback, p_buf->p_ref_data);
+        }
 
        osi_free(p_buf);
     }
