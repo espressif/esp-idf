@@ -521,9 +521,10 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC *p_dev_rec)
                                         btm_ble_resolving_list_vsc_op_cmpl);
     }
 
-    if (st == BTM_CMD_STARTED)
+    if (st == BTM_CMD_STARTED) {
         btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
                                            BTM_BLE_META_READ_IRK_ENTRY);
+    }
 
     return st;
 }
@@ -799,9 +800,10 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                     }
                 }
 
-                if (rt)
+                if (rt) {
                     btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
                                                        BTM_BLE_META_ADD_IRK_ENTRY);
+                }
 
                 /* if resolving list has been turned on, re-enable it */
                 if (rl_mask) {

@@ -1185,8 +1185,9 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
     while (max_len)
     {
         p_buf = (BT_HDR *)fixed_queue_try_peek_first(p_port->rx.queue);
-        if (p_buf == NULL)
+        if (p_buf == NULL){
             break;
+        }
 
         if (p_buf->len > max_len) {
             memcpy (p_data, (UINT8 *)(p_buf + 1) + p_buf->offset, max_len);

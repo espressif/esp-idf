@@ -132,9 +132,10 @@ void sbc_enc_bit_alloc_ste(SBC_ENC_PARAMS *pstrCodecParams)
         for (s32Sb = 0; s32Sb < s32NumOfSubBands; s32Sb++) {
             if (*ps16GenBufPtr < s32BitSlice + 2) {
                 *ps16GenArrPtr = 0;
-            } else
+            } else {
                 *ps16GenArrPtr = ((*(ps16GenBufPtr) - s32BitSlice) < 16) ?
                                  (SINT16)(*(ps16GenBufPtr) - s32BitSlice) : 16;
+            }
             ps16GenBufPtr++;
             ps16GenArrPtr++;
         }
