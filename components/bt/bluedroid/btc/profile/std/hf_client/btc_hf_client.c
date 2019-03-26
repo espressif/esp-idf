@@ -195,8 +195,9 @@ bt_status_t btc_hf_client_init(void)
 *******************************************************************************/
 static bt_status_t connect_int( bt_bdaddr_t *bd_addr, uint16_t uuid )
 {
-    if (is_connected(bd_addr))
+    if (is_connected(bd_addr)) {
         return BT_STATUS_BUSY;
+    }
 
     btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_CONNECTING;
     bdcpy(btc_hf_client_cb.connected_bda.address, bd_addr->address);
@@ -803,11 +804,13 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CONNECTION_STATE_EVT, &param);
             } while (0);
 
-            if (btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED)
+            if (btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED) {
                 bdsetany(btc_hf_client_cb.connected_bda.address);
+            }
 
-            if (p_data->open.status != BTA_HF_CLIENT_SUCCESS)
+            if (p_data->open.status != BTA_HF_CLIENT_SUCCESS) {
                 btc_queue_advance();
+            }
 
             break;
 

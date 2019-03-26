@@ -292,7 +292,7 @@ UINT16 GATTS_AddIncludeService (UINT16 service_handle, UINT16 include_svc_handle
 **
 *******************************************************************************/
 UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *p_char_uuid,
-                                tGATT_PERM perm, tGATT_CHAR_PROP property, 
+                                tGATT_PERM perm, tGATT_CHAR_PROP property,
                                 tGATT_ATTR_VAL *attr_val, tGATTS_ATTR_CONTROL *control)
 {
     tGATT_HDL_LIST_ELEM  *p_decl;
@@ -311,7 +311,7 @@ UINT16 GATTS_AddCharacteristic (UINT16 service_handle, tBT_UUID *p_char_uuid,
     return gatts_add_characteristic(&p_decl->svc_db,
                                     perm,
                                     property,
-                                    p_char_uuid, 
+                                    p_char_uuid,
                                     attr_val, control);
 }
 /*******************************************************************************
@@ -734,7 +734,7 @@ tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *v
         return GATT_INVALID_ATTR_LEN;
     }
     if ((p_decl = gatt_find_hdl_buffer_by_attr_handle(attr_handle)) == NULL) {
-        GATT_TRACE_DEBUG("Service not created\n"); 
+        GATT_TRACE_DEBUG("Service not created\n");
         return GATT_INVALID_HANDLE;
     }
 
@@ -1161,9 +1161,10 @@ void GATT_SetIdleTimeout (BD_ADDR bd_addr, UINT16 idle_tout, tBT_TRANSPORT trans
         if (p_tcb->att_lcid == L2CAP_ATT_CID) {
             status = L2CA_SetFixedChannelTout (bd_addr, L2CAP_ATT_CID, idle_tout);
 
-            if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP)
+            if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP) {
                 L2CA_SetIdleTimeoutByBdAddr(p_tcb->peer_bda,
                                             GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE);
+            }
         } else {
             status = L2CA_SetIdleTimeout (p_tcb->att_lcid, idle_tout, FALSE);
         }
@@ -1507,7 +1508,7 @@ tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
             srv_chg_ind_pending = gatt_is_srv_chg_ind_pending(p_tcb);
 
             if (!srv_chg_ind_pending) {
-                status = gatt_send_srv_chg_ind(addr);    
+                status = gatt_send_srv_chg_ind(addr);
             } else {
                 status = GATT_BUSY;
                 GATT_TRACE_DEBUG("discard srv chg - already has one in the queue");

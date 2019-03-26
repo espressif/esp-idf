@@ -747,9 +747,10 @@ void bta_jv_get_channel_id(tBTA_JV_MSG *p_data)
             bta_jv_cb.scn[channel - 1] = TRUE;
             scn = (UINT8) channel;
         }
-        if (bta_jv_cb.p_dm_cback)
+        if (bta_jv_cb.p_dm_cback) {
             bta_jv_cb.p_dm_cback(BTA_JV_GET_SCN_EVT, (tBTA_JV *)&scn,
                                  p_data->alloc_channel.user_data);
+        }
         return;
     }
     case BTA_JV_CONN_TYPE_L2CAP:

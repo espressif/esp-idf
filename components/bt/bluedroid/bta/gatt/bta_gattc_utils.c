@@ -416,8 +416,9 @@ tBTA_GATTC_SERV *bta_gattc_srcb_alloc(BD_ADDR bda)
 
     if (p_tcb != NULL)
     {
-        if (p_tcb->p_srvc_cache != NULL)
+        if (p_tcb->p_srvc_cache != NULL) {
             list_free(p_tcb->p_srvc_cache);
+        }
         osi_free(p_tcb->p_srvc_list);
         p_tcb->p_srvc_list = NULL;
         //osi_free_and_reset((void **)&p_tcb->p_srvc_list);
@@ -583,8 +584,9 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV *p_srcb, UINT16 conn_id,
                      * clear boundaries are always around service.
                      */
                     handle = p_clrcb->notif_reg[i].handle;
-                    if (handle >= start_handle && handle <= end_handle)
+                    if (handle >= start_handle && handle <= end_handle) {
                         memset(&p_clrcb->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
+                    }
                 }
             }
         }
@@ -936,8 +938,9 @@ void bta_to_btif_uuid(bt_uuid_t *p_dest, tBT_UUID *p_src)
 
     if (p_src->len == LEN_UUID_16 || p_src->len == LEN_UUID_32)
     {
-        for(i=0; i != 16; ++i)
+        for(i=0; i != 16; ++i) {
             p_dest->uu[i] = base_uuid[i];
+        }
     }
 
     switch (p_src->len)

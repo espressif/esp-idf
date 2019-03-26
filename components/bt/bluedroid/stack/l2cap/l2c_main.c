@@ -237,7 +237,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             /* nothing to do */
         } else
 #endif
+        {
             osi_free (p_msg);
+        }
     }
 #if (BLE_INCLUDED == TRUE)
     else if (rcv_cid == L2CAP_BLE_SIGNALLING_CID) {
@@ -263,9 +265,10 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
 #if (CLASSIC_BT_INCLUDED == TRUE)
                 l2c_fcr_proc_pdu (p_ccb, p_msg);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-            } else
+            } else {
                 (*l2cb.fixed_reg[rcv_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb)
                 (rcv_cid, p_lcb->remote_bd_addr, p_msg);
+            }
         } else {
             osi_free (p_msg);
         }

@@ -636,13 +636,15 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
 
     /* set modes for Discoverability and connectability if not ignore */
     if (p_data->set_visibility.disc_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-        if ((p_data->set_visibility.disc_mode & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
+        if ((p_data->set_visibility.disc_mode & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE) {
             p_data->set_visibility.disc_mode =
                 ((p_data->set_visibility.disc_mode & ~BTA_DM_LE_IGNORE) | le_disc_mode);
+        }
 
-        if ((p_data->set_visibility.disc_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE)
+        if ((p_data->set_visibility.disc_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE) {
             p_data->set_visibility.disc_mode =
                 ((p_data->set_visibility.disc_mode & ~BTA_DM_IGNORE) | disc_mode);
+        }
 
         BTM_SetDiscoverability(p_data->set_visibility.disc_mode,
                                bta_dm_cb.inquiry_scan_window,
@@ -650,13 +652,15 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
     }
 
     if (p_data->set_visibility.conn_mode != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-        if ((p_data->set_visibility.conn_mode & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
+        if ((p_data->set_visibility.conn_mode & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE) {
             p_data->set_visibility.conn_mode =
                 ((p_data->set_visibility.conn_mode & ~BTA_DM_LE_IGNORE) | le_conn_mode);
+        }
 
-        if ((p_data->set_visibility.conn_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE)
+        if ((p_data->set_visibility.conn_mode & BTA_DM_IGNORE) == BTA_DM_IGNORE) {
             p_data->set_visibility.conn_mode =
                 ((p_data->set_visibility.conn_mode & ~BTA_DM_IGNORE) | conn_mode);
+        }
 
         BTM_SetConnectability(p_data->set_visibility.conn_mode,
                               bta_dm_cb.page_scan_window,
@@ -1886,10 +1890,12 @@ void bta_dm_disc_result (tBTA_DM_MSG *p_data)
 
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
     /* if any BR/EDR service discovery has been done, report the event */
-    if ((bta_dm_search_cb.services & ((BTA_ALL_SERVICE_MASK | BTA_USER_SERVICE_MASK ) & ~BTA_BLE_SERVICE_MASK)))
-#endif
+    if ((bta_dm_search_cb.services & ((BTA_ALL_SERVICE_MASK | BTA_USER_SERVICE_MASK ) & ~BTA_BLE_SERVICE_MASK))) {
         bta_dm_search_cb.p_search_cback(BTA_DM_DISC_RES_EVT, &p_data->disc_result.result);
-
+    }
+#else
+    bta_dm_search_cb.p_search_cback(BTA_DM_DISC_RES_EVT, &p_data->disc_result.result);
+#endif
     tBTA_DM_MSG *p_msg = (tBTA_DM_MSG *) osi_malloc(sizeof(tBTA_DM_MSG));
 
     /* send a message to change state */
@@ -2155,9 +2161,10 @@ static void bta_dm_find_services ( BD_ADDR bd_addr)
                         }
 
                         /* last one? clear the BLE service bit if all discovery has been done */
-                        if (bta_dm_search_cb.uuid_to_search == 0)
+                        if (bta_dm_search_cb.uuid_to_search == 0) {
                             bta_dm_search_cb.services_to_search &=
                                 (tBTA_SERVICE_MASK)(~(BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index)));
+                        }
 
                     } else
 #endif
@@ -3640,11 +3647,11 @@ static char *bta_dm_get_remname(void)
     char *p_temp;
 
     /* If the name isn't already stored, try retrieving from BTM */
-    if (*p_name == '\0')
+    if (*p_name == '\0') {
         if ((p_temp = BTM_SecReadDevName(bta_dm_search_cb.peer_bdaddr)) != NULL) {
             p_name = p_temp;
         }
-
+    }
     return p_name;
 }
 #endif  ///SDP_INCLUDED == TRUE || SMP_INCLUDED == TRUE
@@ -5181,9 +5188,10 @@ void bta_dm_ble_setup_storage (tBTA_DM_MSG *p_data)
                                              p_data->ble_set_storage.ref_value);
     }
 
-    if (BTM_CMD_STARTED != btm_status)
+    if (BTM_CMD_STARTED != btm_status) {
         bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_CFG_STRG_EVT, p_data->ble_set_storage.ref_value,
                               btm_status);
+    }
 }
 
 /*******************************************************************************
@@ -5211,9 +5219,10 @@ void bta_dm_ble_enable_batch_scan (tBTA_DM_MSG *p_data)
                                             p_data->ble_enable_scan.ref_value);
     }
 
-    if (BTM_CMD_STARTED != btm_status)
+    if (BTM_CMD_STARTED != btm_status) {
         bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_ENABLE_EVT, p_data->ble_enable_scan.ref_value,
                               btm_status);
+    }
 }
 
 /*******************************************************************************
@@ -5237,9 +5246,10 @@ void bta_dm_ble_disable_batch_scan (tBTA_DM_MSG *p_data)
         btm_status = BTM_BleDisableBatchScan(p_data->ble_disable_scan.ref_value);
     }
 
-    if (BTM_CMD_STARTED != btm_status)
+    if (BTM_CMD_STARTED != btm_status) {
         bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_DISABLE_EVT, p_data->ble_enable_scan.ref_value,
                               btm_status);
+    }
 }
 
 /*******************************************************************************
@@ -5263,9 +5273,10 @@ void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data)
                                             p_data->ble_read_reports.ref_value);
     }
 
-    if (BTM_CMD_STARTED != btm_status)
+    if (BTM_CMD_STARTED != btm_status) {
         bta_ble_scan_setup_cb(BTM_BLE_BATCH_SCAN_READ_REPTS_EVT, p_data->ble_enable_scan.ref_value,
                               btm_status);
+    }
 }
 
 /*******************************************************************************
@@ -5395,10 +5406,11 @@ void bta_dm_cfg_filter_cond (tBTA_DM_MSG *p_data)
         }
     }
 
-    if (p_data->ble_cfg_filter_cond.p_filt_cfg_cback)
+    if (p_data->ble_cfg_filter_cond.p_filt_cfg_cback) {
         p_data->ble_cfg_filter_cond.p_filt_cfg_cback(BTA_DM_BLE_PF_CONFIG_EVT,
                 p_data->ble_cfg_filter_cond.cond_type, 0, status,
                 p_data->ble_cfg_filter_cond.ref_value);
+    }
     return;
 }
 
@@ -5429,9 +5441,10 @@ void bta_dm_enable_scan_filter(tBTA_DM_MSG *p_data)
         return;
     }
 
-    if (p_data->ble_enable_scan_filt.p_filt_status_cback)
+    if (p_data->ble_enable_scan_filt.p_filt_status_cback) {
         p_data->ble_enable_scan_filt.p_filt_status_cback (BTA_DM_BLE_PF_ENABLE_EVT,
                 p_data->ble_enable_scan_filt.ref_value, status);
+    }
 
 }
 
@@ -5465,9 +5478,10 @@ void bta_dm_scan_filter_param_setup (tBTA_DM_MSG *p_data)
         }
     }
 
-    if (p_data->ble_scan_filt_param_setup.p_filt_param_cback)
+    if (p_data->ble_scan_filt_param_setup.p_filt_param_cback) {
         p_data->ble_scan_filt_param_setup.p_filt_param_cback (BTA_DM_BLE_PF_ENABLE_EVT, 0,
                 p_data->ble_scan_filt_param_setup.ref_value, status);
+    }
 
     return;
 }

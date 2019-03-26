@@ -629,15 +629,19 @@ void avdt_scb_hdl_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
         avdt_scb_hdl_pkt_frag(p_scb, p_data);
     } else
 #endif
+    {
 #if AVDT_REPORTING == TRUE
         if (p_data->p_pkt->layer_specific == AVDT_CHAN_REPORT) {
             p = (UINT8 *)(p_data->p_pkt + 1) + p_data->p_pkt->offset;
             avdt_scb_hdl_report(p_scb, p, p_data->p_pkt->len);
-        osi_free(p_data->p_pkt);
-        p_data->p_pkt = NULL;
+            osi_free(p_data->p_pkt);
+            p_data->p_pkt = NULL;
         } else
 #endif
+        {
             avdt_scb_hdl_pkt_no_frag(p_scb, p_data);
+        }
+    }
 }
 
 /*******************************************************************************
@@ -1305,7 +1309,9 @@ void avdt_scb_hdl_write_req(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 #if AVDT_MULTIPLEXING == TRUE
     if (fixed_queue_is_empty(p_scb->frag_q))
 #endif
+    {
         avdt_scb_hdl_write_req_no_frag(p_scb, p_data);
+    }
 #if AVDT_MULTIPLEXING == TRUE
     else {
         avdt_scb_hdl_write_req_frag(p_scb, p_data);

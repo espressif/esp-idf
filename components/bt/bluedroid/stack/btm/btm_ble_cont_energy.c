@@ -62,9 +62,10 @@ void btm_ble_cont_energy_cmpl_cback (tBTM_VSC_CMPL *p_params)
     BTM_TRACE_DEBUG("energy_info status=%d,tx_t=%u, rx_t=%u, ener_used=%u, idle_t=%u",
                     status, total_tx_time, total_rx_time, total_energy_used, total_idle_time);
 
-    if (NULL != ble_energy_info_cb.p_ener_cback)
+    if (NULL != ble_energy_info_cb.p_ener_cback) {
         ble_energy_info_cb.p_ener_cback(total_tx_time, total_rx_time, total_idle_time,
                                         total_energy_used, status);
+    }
 
     return;
 }
