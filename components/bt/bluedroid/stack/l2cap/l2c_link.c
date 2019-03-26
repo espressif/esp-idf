@@ -191,11 +191,11 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
         l2cu_send_peer_info_req (p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
 
         /* Tell BTM Acl management about the link */
-        if ((p_dev_info = btm_find_dev (p_bda)) != NULL)
+        if ((p_dev_info = btm_find_dev (p_bda)) != NULL) {
             btm_acl_created (ci.bd_addr, p_dev_info->dev_class,
                              p_dev_info->sec_bd_name, handle,
                              p_lcb->link_role, BT_TRANSPORT_BR_EDR);
-        else {
+        } else {
             btm_acl_created (ci.bd_addr, NULL, NULL, handle, p_lcb->link_role, BT_TRANSPORT_BR_EDR);
         }
 
@@ -399,8 +399,10 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
 #if (BLE_INCLUDED == TRUE)
         if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
 #endif
+        {
             /* Tell SCO management to drop any SCOs on this ACL */
             btm_sco_acl_removed (p_lcb->remote_bd_addr);
+        }
 #endif
 
         /* If waiting for disconnect and reconnect is pending start the reconnect now
@@ -657,7 +659,7 @@ void l2c_info_timeout (tL2C_LCB *p_lcb)
                 }
             }
         }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE        
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     }
 }
 
@@ -998,7 +1000,9 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
                 l2cb.ble_check_round_robin = TRUE;
             } else
 #endif
+            {
                 l2cb.check_round_robin = TRUE;
+            }
         }
     }
 

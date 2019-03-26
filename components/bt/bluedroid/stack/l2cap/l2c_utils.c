@@ -151,8 +151,10 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 #if (BLE_INCLUDED == TRUE)
     if (p_lcb->transport == BT_TRANSPORT_BR_EDR)
 #endif
+    {
         /* Release all SCO links */
         btm_remove_sco_links(p_lcb->remote_bd_addr);
+    }
 #endif
 
     if (p_lcb->sent_not_acked > 0) {
@@ -189,12 +191,13 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     }
 
     /* Tell BTM Acl management the link was removed */
-    if ((p_lcb->link_state == LST_CONNECTED) || (p_lcb->link_state == LST_DISCONNECTING))
+    if ((p_lcb->link_state == LST_CONNECTED) || (p_lcb->link_state == LST_DISCONNECTING)) {
 #if (BLE_INCLUDED == TRUE)
         btm_acl_removed (p_lcb->remote_bd_addr, p_lcb->transport);
 #else
         btm_acl_removed (p_lcb->remote_bd_addr, BT_TRANSPORT_BR_EDR);
 #endif
+    }
 
     /* Release any held buffers */
     if (p_lcb->link_xmit_data_q) {
@@ -246,8 +249,9 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         while (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
         {
             tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
-            if (p_buf->p_callback)
+            if (p_buf->p_callback) {
                 p_buf->p_callback(p_lcb->remote_bd_addr, p_lcb->transport, p_buf->p_ref_data, BTM_DEV_RESET);
+            }
             osi_free(p_buf);
         }
         fixed_queue_free(p_lcb->le_sec_pending_q, NULL);
@@ -1880,8 +1884,9 @@ tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm)
 
     for (xx = 0; xx < BLE_MAX_L2CAP_CLIENTS; xx++, p_rcb++)
     {
-        if ((p_rcb->in_use) && (p_rcb->psm == psm))
+        if ((p_rcb->in_use) && (p_rcb->psm == psm)) {
             return (p_rcb);
+        }
     }
 
     /* If here, no match found */
@@ -2862,7 +2867,7 @@ void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb)
 #endif
             }
         } else if ( (peer_channel_mask & (1 << (xx + L2CAP_FIRST_FIXED_CHNL)))
-                    && (l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb != NULL) )
+                    && (l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb != NULL) ) {
 #if BLE_INCLUDED == TRUE
             (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(xx + L2CAP_FIRST_FIXED_CHNL,
                     p_lcb->remote_bd_addr, FALSE, p_lcb->disc_reason, p_lcb->transport);
@@ -2870,6 +2875,7 @@ void l2cu_process_fixed_disc_cback (tL2C_LCB *p_lcb)
             (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(xx + L2CAP_FIRST_FIXED_CHNL,
                     p_lcb->remote_bd_addr, FALSE, p_lcb->disc_reason, BT_TRANSPORT_BR_EDR);
 #endif
+        }
     }
 #endif
 }
@@ -2960,8 +2966,9 @@ void l2cu_send_peer_ble_credit_based_conn_req (tL2C_CCB *p_ccb)
     UINT16 mps;
     UINT16 initial_credit;
 
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
     p_lcb = p_ccb->p_lcb;
 
     /* Create an identifier for this packet */
@@ -3082,8 +3089,9 @@ void l2cu_send_peer_ble_flow_control_credit(tL2C_CCB *p_ccb, UINT16 credit_value
     UINT8   *p;
     tL2C_LCB *p_lcb = NULL;
 
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
     p_lcb = p_ccb->p_lcb;
 
     /* Create an identifier for this packet */
@@ -3125,8 +3133,9 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB *p_ccb)
     tL2C_LCB *p_lcb = NULL;
     L2CAP_TRACE_DEBUG ("%s",__func__);
 
-    if (!p_ccb)
+    if (!p_ccb) {
         return;
+    }
     p_lcb = p_ccb->p_lcb;
 
     /* Create an identifier for this packet */

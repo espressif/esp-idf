@@ -101,8 +101,10 @@ void bta_hh_api_enable(tBTA_HH_DATA *p_data)
         bta_hh_le_enable();
     } else
 #endif
+    {
         /* signal BTA call back event */
         (* bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, (tBTA_HH *)&status);
+    }
 }
 /*******************************************************************************
 **
@@ -901,7 +903,9 @@ void bta_hh_get_dscp_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
         bta_hh_le_get_dscp_act(p_cb);
     } else
 #endif
+    {
         (*bta_hh_cb.p_cback)(BTA_HH_GET_DSCP_EVT, (tBTA_HH *)&p_cb->dscp_info);
+    }
 }
 
 /*******************************************************************************
@@ -934,11 +938,10 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
                 dev_info.status   = BTA_HH_OK;
             } else
 #endif
-
+            {
                 if (HID_HostAddDev(p_dev_info->bda, p_dev_info->attr_mask, &dev_handle)\
                         == HID_SUCCESS) {
                     dev_info.handle   = dev_handle;
-                    dev_info.status   = BTA_HH_OK;
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
                     /* update DI information */
@@ -966,6 +969,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
                     /* update cb_index[] map */
                     bta_hh_cb.cb_index[dev_handle] = p_cb->index;
                 }
+            }
         } else { /* device already been added */
             dev_info.handle = p_cb->hid_handle;
             dev_info.status = BTA_HH_OK;

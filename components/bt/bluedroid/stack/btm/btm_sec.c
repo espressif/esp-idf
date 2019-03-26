@@ -887,7 +887,9 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
 #ifdef APPL_AUTH_WRITE_EXCEPTION
         if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))
 #endif
+        {
             btsnd_hcic_write_auth_enable (TRUE);
+        }
 
         btm_cb.acl_disc_reason = 0xff ;
 
@@ -907,9 +909,10 @@ void BTM_PINCodeReply (BD_ADDR bd_addr, UINT8 res, UINT8 pin_len, UINT8 *p_pin, 
             btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
             p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_AUTHED;
 
-            if (btm_cb.api.p_auth_complete_callback)
+            if (btm_cb.api.p_auth_complete_callback) {
                 (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
                                                         p_dev_rec->sec_bd_name, HCI_ERR_AUTH_FAILURE);
+            }
         }
         return;
     }
@@ -1400,7 +1403,9 @@ tBTM_STATUS BTM_SetEncryption (BD_ADDR bd_addr, tBT_TRANSPORT transport, tBTM_SE
         }
     } else
 #endif
+    {
         rc = btm_sec_execute_procedure (p_dev_rec);
+    }
 
     if (rc != BTM_CMD_STARTED && rc != BTM_BUSY) {
         if (p_callback) {
@@ -2167,9 +2172,10 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
                             "rmt_support_for_sc : %d -> fail pairing\n", __FUNCTION__,
                             local_supports_sc,
                             p_dev_rec->remote_supports_secure_connections);
-            if (p_callback)
+            if (p_callback) {
                 (*p_callback) (bd_addr, transport, (void *)p_ref_data,
                                BTM_MODE4_LEVEL4_NOT_SUPPORTED);
+            }
 
             return (BTM_MODE4_LEVEL4_NOT_SUPPORTED);
         }
@@ -2529,9 +2535,10 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
                             "remote_support_for_sc %d: fail pairing\n", __FUNCTION__,
                             local_supports_sc, p_dev_rec->remote_supports_secure_connections);
 
-            if (p_callback)
+            if (p_callback) {
                 (*p_callback) (bd_addr, transport, (void *)p_ref_data,
                                BTM_MODE4_LEVEL4_NOT_SUPPORTED);
+            }
 
             return (BTM_MODE4_LEVEL4_NOT_SUPPORTED);
         }
@@ -3017,9 +3024,10 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
 
         /* Notify all clients waiting for name to be resolved */
         for (i = 0; i < BTM_SEC_MAX_RMT_NAME_CALLBACKS; i++) {
-            if (btm_cb.p_rmt_name_callback[i] && p_bd_addr)
+            if (btm_cb.p_rmt_name_callback[i] && p_bd_addr) {
                 (*btm_cb.p_rmt_name_callback[i])(p_bd_addr, p_dev_rec->dev_class,
                                                  p_dev_rec->sec_bd_name);
+            }
         }
     } else {
         dev_class[0] = 0;
@@ -3104,9 +3112,10 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
 
                     btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
 
-                    if (btm_cb.api.p_auth_complete_callback)
+                    if (btm_cb.api.p_auth_complete_callback) {
                         (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
                                                                 p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
+                    }
                 }
             }
             return;
@@ -3132,10 +3141,11 @@ void btm_sec_rmt_name_request_complete (UINT8 *p_bd_addr, UINT8 *p_bd_name, UINT
         /* that some authentication has been completed                          */
         /* This is required when different entities receive link notification and auth complete */
         if (!(p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)) {
-            if (btm_cb.api.p_auth_complete_callback)
+            if (btm_cb.api.p_auth_complete_callback) {
                 (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                         p_dev_rec->dev_class,
                                                         p_dev_rec->sec_bd_name, HCI_SUCCESS);
+            }
 
         }
     }
@@ -3911,10 +3921,11 @@ void btm_sec_auth_complete (UINT16 handle, UINT8 status)
     /* User probably Disabled the keyboard while it was asleap.  Let her try */
     if (btm_cb.api.p_auth_complete_callback) {
         /* report the suthentication status */
-        if (old_state != BTM_PAIR_STATE_IDLE)
+        if (old_state != BTM_PAIR_STATE_IDLE) {
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                     p_dev_rec->dev_class,
                                                     p_dev_rec->sec_bd_name, status);
+        }
     }
 
     p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
@@ -4185,9 +4196,10 @@ static void btm_sec_connect_after_reject_timeout (TIMER_LIST_ENT *p_tle)
 
         btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
 
-        if (btm_cb.api.p_auth_complete_callback)
+        if (btm_cb.api.p_auth_complete_callback) {
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,  p_dev_rec->dev_class,
                                                     p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
+        }
     }
 }
 #endif  ///SMP_INCLUDED == TRUE
@@ -4412,10 +4424,11 @@ void btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode)
             res = FALSE;
         }
 
-        if (btm_cb.api.p_auth_complete_callback)
+        if (btm_cb.api.p_auth_complete_callback) {
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                     p_dev_rec->dev_class,
                                                     p_dev_rec->sec_bd_name, HCI_SUCCESS);
+        }
 
         btm_sec_change_pairing_state (BTM_PAIR_STATE_IDLE);
 
@@ -4721,9 +4734,10 @@ void btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_t
     if (!(p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)
             /* for derived key, always send authentication callback for BR channel */
             || ltk_derived_lk) {
-        if (btm_cb.api.p_auth_complete_callback)
+        if (btm_cb.api.p_auth_complete_callback) {
             (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class,
                                                     p_dev_rec->sec_bd_name, HCI_SUCCESS);
+        }
     }
 
     /* We will save link key only if the user authorized it - BTE report link key in all cases */
@@ -4833,10 +4847,11 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
                 (*btm_cb.api.p_auth_complete_callback) (p_cb->pairing_bda,
                                                         NULL,
                                                         name, HCI_ERR_CONNECTION_TOUT);
-            } else
+            } else {
                 (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                         p_dev_rec->dev_class,
                                                         p_dev_rec->sec_bd_name, HCI_ERR_CONNECTION_TOUT);
+            }
         }
         break;
 
@@ -4892,10 +4907,11 @@ static void btm_sec_pairing_timeout (TIMER_LIST_ENT *p_tle)
                 (*btm_cb.api.p_auth_complete_callback) (p_cb->pairing_bda,
                                                         NULL,
                                                         name, HCI_ERR_CONNECTION_TOUT);
-            } else
+            } else {
                 (*btm_cb.api.p_auth_complete_callback) (p_dev_rec->bd_addr,
                                                         p_dev_rec->dev_class,
                                                         p_dev_rec->sec_bd_name, HCI_ERR_CONNECTION_TOUT);
+            }
         }
         break;
 
@@ -5524,10 +5540,11 @@ static void btm_sec_collision_timeout (TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 static void btm_send_link_key_notif (tBTM_SEC_DEV_REC *p_dev_rec)
 {
-    if (btm_cb.api.p_link_key_callback)
+    if (btm_cb.api.p_link_key_callback) {
         (*btm_cb.api.p_link_key_callback) (p_dev_rec->bd_addr, p_dev_rec->dev_class,
                                            p_dev_rec->sec_bd_name, p_dev_rec->link_key,
                                            p_dev_rec->link_key_type);
+    }
 }
 #endif  ///SMP_INCLUDED == TRUE
 
@@ -5707,7 +5724,9 @@ void btm_sec_dev_rec_cback_event (tBTM_SEC_DEV_REC *p_dev_rec, UINT8 res, BOOLEA
             (*p_callback) (p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE, p_dev_rec->p_ref_data, res);
         } else
 #endif
+        {
             (*p_callback) (p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, p_dev_rec->p_ref_data, res);
+        }
     }
 #if (SMP_INCLUDED == TRUE)
     btm_sec_check_pending_reqs();
@@ -5765,7 +5784,9 @@ static BOOLEAN btm_sec_check_prefetch_pin (tBTM_SEC_DEV_REC  *p_dev_rec)
 #ifdef APPL_AUTH_WRITE_EXCEPTION
             if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))
 #endif
+            {
                 btsnd_hcic_write_auth_enable (TRUE);
+            }
         }
     } else {
         btm_sec_change_pairing_state (BTM_PAIR_STATE_WAIT_LOCAL_PIN);
@@ -5917,8 +5938,9 @@ static BOOLEAN btm_sec_is_serv_level0(UINT16 psm)
 static void btm_sec_check_pending_enc_req (tBTM_SEC_DEV_REC  *p_dev_rec, tBT_TRANSPORT transport,
         UINT8 encr_enable)
 {
-    if (fixed_queue_is_empty(btm_cb.sec_pending_q))
+    if (fixed_queue_is_empty(btm_cb.sec_pending_q)) {
         return;
+    }
 
     UINT8 res = encr_enable ? BTM_SUCCESS : BTM_ERR_PROCESSING;
     list_t *list = fixed_queue_get_list(btm_cb.sec_pending_q);
