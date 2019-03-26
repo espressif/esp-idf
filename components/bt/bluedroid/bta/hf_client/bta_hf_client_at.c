@@ -1159,6 +1159,7 @@ static char *bta_hf_client_skip_unknown(char *buffer)
     buffer = tmp + 2;
 
     APPL_TRACE_DEBUG("%s %.*s", __FUNCTION__, buffer - start - 2, start);
+    UNUSED(start);
 
     return buffer;
 }

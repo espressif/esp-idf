@@ -5777,6 +5777,8 @@ void bta_dm_proc_open_evt(tBTA_GATTC_OPEN *p_data)
                      ((p2[0]) << 24) + ((p2[1]) << 16) + ((p2[2]) << 8) + (p2[3]),
                      ((p2[4]) << 8) + p2[5]);
 
+    UNUSED(p1);
+    UNUSED(p2);
     APPL_TRACE_DEBUG("BTA_GATTC_OPEN_EVT conn_id = %d client_if=%d status = %d" ,
                      p_data->conn_id,
                      p_data->client_if,

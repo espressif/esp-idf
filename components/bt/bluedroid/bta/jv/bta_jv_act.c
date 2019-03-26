@@ -26,6 +26,7 @@
 #include <stdlib.h>
 
 #include "osi/allocator.h"
+#include "osi/osi.h"
 #include "stack/bt_types.h"
 #include "bta/utl.h"
 #include "bta/bta_sys.h"
@@ -137,7 +138,7 @@ UINT8 bta_jv_alloc_sec_id(void)
     return ret;
 
 }
-static int get_sec_id_used(void)
+UNUSED_ATTR static int get_sec_id_used(void)
 {
     int i;
     int used = 0;
@@ -146,12 +147,13 @@ static int get_sec_id_used(void)
             used++;
         }
     }
-    if (used == BTA_JV_NUM_SERVICE_ID)
+    if (used == BTA_JV_NUM_SERVICE_ID) {
         APPL_TRACE_ERROR("get_sec_id_used, sec id exceeds the limit:%d",
                          BTA_JV_NUM_SERVICE_ID);
+    }
     return used;
 }
-static int get_rfc_cb_used(void)
+UNUSED_ATTR static int get_rfc_cb_used(void)
 {
     int i;
     int used = 0;
@@ -160,9 +162,10 @@ static int get_rfc_cb_used(void)
             used++;
         }
     }
-    if (used == BTA_JV_MAX_RFC_CONN)
+    if (used == BTA_JV_MAX_RFC_CONN) {
         APPL_TRACE_ERROR("get_sec_id_used, rfc ctrl block exceeds the limit:%d",
                          BTA_JV_MAX_RFC_CONN);
+    }
     return used;
 }
 
@@ -474,19 +477,21 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(UINT32 jv_handle)
                         < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
                     tBTA_JV_PCB *p_pcb = bta_jv_rfc_port_to_pcb(bta_jv_cb.rfc_cb[hi].rfc_hdl[si]);
                     if (p_pcb) {
-                        if (NULL == p_pcb->p_pm_cb)
+                        if (NULL == p_pcb->p_pm_cb) {
                             APPL_TRACE_WARNING("%s(jv_handle:"
                                                " 0x%x):port_handle: 0x%x, p_pm_cb: %d: no link to "
                                                "pm_cb?", __func__, jv_handle, p_pcb->port_handle, i);
+                        }
                         p_cb = &p_pcb->p_pm_cb;
                     }
                 }
             } else {
                 if (jv_handle < BTA_JV_MAX_L2C_CONN) {
                     tBTA_JV_L2C_CB *p_l2c_cb = &bta_jv_cb.l2c_cb[jv_handle];
-                    if (NULL == p_l2c_cb->p_pm_cb)
+                    if (NULL == p_l2c_cb->p_pm_cb) {
                         APPL_TRACE_WARNING("%s(jv_handle: "
                                            "0x%x): p_pm_cb: %d: no link to pm_cb?", __func__, jv_handle, i);
+                    }
                     p_cb = &p_l2c_cb->p_pm_cb;
                 }
             }
@@ -998,6 +1003,9 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name, cons
     APPL_TRACE_DEBUG("create_base_record: successfully created base service "
                    "record, handle: 0x%08x, scn: %d, name: %s, with_obex: %d",
                    sdp_handle, channel, name, with_obex);
+
+    UNUSED(stage);
+
     return TRUE;
 }
 
@@ -1031,6 +1039,8 @@ static int add_spp_sdp(const char *name, const int channel) {
 
     APPL_TRACE_DEBUG("add_spp_sdp: service registered successfully, "
                    "service_name: %s, handle 0x%08x)", name, handle);
+    UNUSED(stage);
+
     return handle;
 }
 
@@ -1523,6 +1533,7 @@ static int bta_jv_port_data_co_cback(UINT16 port_handle, UINT8 *buf, UINT16 len,
     tBTA_JV_PCB     *p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
     int ret = 0;
     APPL_TRACE_DEBUG("%s, p_cb:%p, p_pcb:%p, len:%d, type:%d", __func__, p_cb, p_pcb, len, type);
+    UNUSED(p_cb);
     if (p_pcb != NULL) {
         switch (type) {
         case DATA_CO_CALLBACK_TYPE_INCOMING:

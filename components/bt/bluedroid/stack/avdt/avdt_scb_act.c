@@ -345,8 +345,10 @@ UINT8 *avdt_scb_hdl_report(tAVDT_SCB *p_scb, UINT8 *p, UINT16 len)
         p += 2;
         BE_STREAM_TO_UINT32(ssrc, p);
 
+        UNUSED(ssrc);
         UNUSED(o_p);
         UNUSED(o_v);
+        UNUSED(o_cc);
 
         switch (pt) {
         case AVDT_RTCP_PT_SR:   /* the packet type - SR (Sender Report) */
