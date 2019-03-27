@@ -18,7 +18,7 @@
 
 #include "eri.h"
 #include "xtensa-debug-module.h"
-#include "esp_dbg_stubs.h"
+#include "esp_private/dbg_stubs.h"
 #include "esp_attr.h"
 
 #if CONFIG_ESP32_DEBUG_STUBS_ENABLE

@@ -105,7 +105,7 @@
 
 #include "esp_panic.h"
 #include "esp_heap_caps.h"
-#include "esp_crosscore_int.h"
+#include "esp_private/crosscore_int.h"
 
 #include "esp_intr_alloc.h"
 #include "esp_log.h"

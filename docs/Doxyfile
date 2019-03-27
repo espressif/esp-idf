@@ -158,8 +158,8 @@ INPUT = \
     ../../components/esp32/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
-    ../../components/esp32/include/esp_int_wdt.h \
-    ../../components/esp32/include/esp_task_wdt.h \
+    ../../components/esp_common/include/esp_int_wdt.h \
+    ../../components/esp_common/include/esp_task_wdt.h \
     ## Hooks
     ../../components/esp32/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
@@ -174,7 +174,7 @@ INPUT = \
     ../../components/log/include/esp_log.h \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
-    ../../components/esp32/include/esp_system.h \
+    ../../components/esp_common/include/esp_system.h \
     ##
     ## ULP Coprocessor - API Guides
     ##
@@ -185,10 +185,10 @@ INPUT = \
     ##
     ../../components/app_trace/include/esp_app_trace.h \
     ### Power management
-    ../../components/esp32/include/esp_pm.h \
+    ../../components/esp_common/include/esp_pm.h \
     ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
-    ../../components/esp32/include/esp_timer.h \
+    ../../components/esp_common/include/esp_timer.h \
     ### esp_event, Event Loop Library
     ../../components/esp_event/include/esp_event.h \
     ../../components/esp_event/include/esp_event_base.h \
@@ -207,9 +207,9 @@ INPUT = \
     ### Ringbuffer
     ../../components/esp_ringbuf/include/freertos/ringbuf.h \
     ### Helper functions for error codes
-    ../../components/esp32/include/esp_err.h \
+    ../../components/esp_common/include/esp_err.h \
     ### System APIs
-    ../../components/esp32/include/esp_system.h \
+    ../../components/esp_common/include/esp_system.h \
     ### Modbus controller component header file
     ../../components/freemodbus/modbus_controller/mbcontroller.h
 

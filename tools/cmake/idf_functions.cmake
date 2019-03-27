@@ -58,7 +58,7 @@ macro(idf_set_variables)
 
     set_default(IDF_COMPONENT_DIRS "${IDF_EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
     set_default(IDF_COMPONENTS "")
-    set_default(IDF_COMPONENT_REQUIRES_COMMON "cxx ${IDF_TARGET} newlib freertos heap log soc")
+    set_default(IDF_COMPONENT_REQUIRES_COMMON "cxx ${IDF_TARGET} newlib freertos heap log soc esp_rom esp_common")
 
     set(IDF_PROJECT_PATH "${CMAKE_SOURCE_DIR}")
 

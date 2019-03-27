@@ -78,7 +78,7 @@ extern "C" {
 #include <xtensa/config/core.h>
 #include <xtensa/config/system.h>	/* required for XSHAL_CLIB */
 #include <xtensa/xtruntime.h>
-#include "esp_crosscore_int.h"
+#include "esp_private/crosscore_int.h"
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */
 
 
