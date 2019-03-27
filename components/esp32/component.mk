@@ -2,7 +2,7 @@
 # Component Makefile
 #
 
-COMPONENT_SRCDIRS := . hwcrypto
+COMPONENT_SRCDIRS := .
 LIBS ?=
 ifndef CONFIG_NO_BLOBS
 LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 espnow phy mesh

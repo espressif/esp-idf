@@ -18,8 +18,8 @@
 #include "soc/rtc.h"
 #include "esp_log.h"
 #include "mbedtls/sha256.h"
-#include "hwcrypto/sha.h"
-#include "hwcrypto/aes.h"
+#include "esp32/sha.h"
+#include "esp32/aes.h"
 #include "mbedtls/rsa.h"
 
 static const char *TAG = "test";

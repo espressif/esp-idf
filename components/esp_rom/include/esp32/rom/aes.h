@@ -2,7 +2,7 @@
   ROM functions for hardware AES support.
 
   It is not recommended to use these functions directly,
-  use the wrapper functions in hwcrypto/aes.h instead.
+  use the wrapper functions in esp32/aes.h instead.
 
  */
 // Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
