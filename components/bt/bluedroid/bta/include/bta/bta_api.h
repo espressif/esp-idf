@@ -1450,7 +1450,7 @@ extern void BTA_DisableTestMode(void);
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(const char *p_name);
 
-extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
+extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 

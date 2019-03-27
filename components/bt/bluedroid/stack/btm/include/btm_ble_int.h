@@ -293,6 +293,7 @@ typedef struct {
     BOOLEAN     in_use;
     BOOLEAN     to_add;
     BD_ADDR     bd_addr;
+    tBLE_ADDR_TYPE addr_type;
     UINT8       attr;
 } tBTM_BLE_WL_OP;
 
@@ -427,7 +428,7 @@ void btm_ble_update_sec_key_size(BD_ADDR bd_addr, UINT8 enc_key_size);
 UINT8 btm_ble_read_sec_key_size(BD_ADDR bd_addr);
 
 /* white list function */
-BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBTM_ADD_WHITELIST_CBACK *add_wl_cb);
+BOOLEAN btm_update_dev_to_white_list(BOOLEAN to_add, BD_ADDR bd_addr, tBLE_ADDR_TYPE addr_type, tBTM_ADD_WHITELIST_CBACK *add_wl_cb);
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
 void btm_ble_clear_white_list (void);

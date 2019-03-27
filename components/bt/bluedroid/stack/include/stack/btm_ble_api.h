@@ -1802,7 +1802,7 @@ void BTM_BleTurnOnPrivacyOnRemote(BD_ADDR bd_addr,
 **
 *******************************************************************************/
 //extern
-BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR emote_bda, tBTM_ADD_WHITELIST_CBACK *add_wl_cb);
+BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR emote_bda, tBLE_ADDR_TYPE addr_type, tBTM_ADD_WHITELIST_CBACK *add_wl_cb);
 
 /*******************************************************************************
 **
