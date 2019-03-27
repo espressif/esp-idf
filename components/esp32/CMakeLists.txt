@@ -40,9 +40,7 @@ else()
                    "spiram_psram.c"
                    "system_api.c"
                    "task_wdt.c"
-                   "wifi_init.c"
-                   "hwcrypto/aes.c"
-                   "hwcrypto/sha.c")
+                   "wifi_init.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
     set(COMPONENT_REQUIRES driver esp_event efuse)

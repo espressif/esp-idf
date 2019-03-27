@@ -83,7 +83,9 @@ target_sources(mbedtls PRIVATE "${COMPONENT_PATH}/port/esp_bignum.c"
                                 "${COMPONENT_PATH}/port/esp_sha256.c"
                                 "${COMPONENT_PATH}/port/esp_sha512.c"
                                 "${COMPONENT_PATH}/port/mbedtls_debug.c"
-                                "${COMPONENT_PATH}/port/net_sockets.c")
+                                "${COMPONENT_PATH}/port/net_sockets.c"
+                                "${COMPONENT_PATH}/port/esp32/aes.c"
+                                "${COMPONENT_PATH}/port/esp32/sha.c")
 
 foreach(target ${mbedtls_targets})
     # Propagate compile options to mbedtls library targets

@@ -17,7 +17,7 @@
    that can be used from bootloader or app code.
 
    This header is available to source code in the bootloader & bootloader_support components only.
-   Use mbedTLS APIs or include hwcrypto/sha.h to calculate SHA256 in IDF apps.
+   Use mbedTLS APIs or include esp32/sha.h to calculate SHA256 in IDF apps.
 */
 
 #include <stdint.h>
