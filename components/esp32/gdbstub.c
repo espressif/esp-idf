@@ -22,7 +22,7 @@
 #include "esp32/rom/ets_sys.h"
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
-#include "esp_gdbstub.h"
+#include "esp_private/gdbstub.h"
 #include "esp_panic.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"

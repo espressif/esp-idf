@@ -23,6 +23,7 @@ INCLUDE_DIRS := \
 	) \
 	$(addprefix ../../../components/, \
 	esp_rom/include \
+	esp_common/include \
 	soc/esp32/include \
 	esp32/include \
 	bootloader_support/include \

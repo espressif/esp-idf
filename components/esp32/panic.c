@@ -32,7 +32,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_wdt.h"
 
-#include "esp_gdbstub.h"
+#include "esp_private/gdbstub.h"
 #include "esp_panic.h"
 #include "esp_attr.h"
 #include "esp_err.h"

@@ -21,7 +21,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "esp_app_trace.h"
-#include "esp_dbg_stubs.h"
+#include "esp_private/dbg_stubs.h"
 
 #if CONFIG_ESP32_GCOV_ENABLE
 

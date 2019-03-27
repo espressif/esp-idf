@@ -24,6 +24,7 @@ INCLUDE_DIRS := \
 	esp_rom/include \
 	soc/esp32/include \
 	esp32/include \
+	esp_common/include \
 	bootloader_support/include \
 	app_update/include \
 	spi_flash/include \
