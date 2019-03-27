@@ -246,10 +246,11 @@ You can setup environment to build documentation locally on your PC by installin
 
 1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
-3. Docment theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
-4. Breathe - https://github.com/michaeljones/breathe#breathe
-5. Blockdiag - http://blockdiag.com/en/index.html
-6. Recommonmark - https://github.com/rtfd/recommonmark
+3. Breathe - https://github.com/michaeljones/breathe#breathe
+4. Document theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
+5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
+6. Blockdiag - http://blockdiag.com/en/index.html
+7. Recommonmark - https://github.com/rtfd/recommonmark
 
 The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
 
