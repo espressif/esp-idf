@@ -528,6 +528,10 @@ esp_err_t Storage::eraseItem(uint8_t nsIndex, ItemType datatype, const char* key
         return err;
     }
 
+    if (item.datatype == ItemType::BLOB_DATA || item.datatype == ItemType::BLOB_IDX) {
+        return eraseMultiPageBlob(nsIndex, key);
+    }
+
     return findPage->eraseItem(nsIndex, datatype, key);
 }
 
