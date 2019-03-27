@@ -287,7 +287,7 @@ esp_err_t esp_ble_gap_config_local_icon (uint16_t icon)
     return ret;
 }
 
-esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda)
+esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda, esp_ble_wl_addr_type_t wl_addr_type)
 {
     btc_msg_t msg;
     btc_ble_gap_args_t arg;
@@ -302,6 +302,7 @@ esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = BTC_GAP_BLE_ACT_UPDATE_WHITE_LIST;
     arg.update_white_list.add_remove = add_remove;
+    arg.update_white_list.wl_addr_type = wl_addr_type;
     memcpy(arg.update_white_list.remote_bda, remote_bda, sizeof(esp_bd_addr_t));
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)

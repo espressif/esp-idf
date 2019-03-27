@@ -2447,7 +2447,8 @@ BOOLEAN gatt_add_bg_dev_list(tGATT_REG *p_reg,  BD_ADDR bd_addr, BOOLEAN is_init
                     p_dev->listen_gif[i] = gatt_if;
 
                     if (i == 0) {
-                        ret = BTM_BleUpdateAdvWhitelist(TRUE, bd_addr, NULL);
+                        // To check, we do not support background connection, code will not be called here
+                        ret = BTM_BleUpdateAdvWhitelist(TRUE, bd_addr, 0, NULL);
                     } else {
                         ret = TRUE;
                     }
@@ -2587,7 +2588,8 @@ BOOLEAN gatt_remove_bg_dev_from_list(tGATT_REG *p_reg, BD_ADDR bd_addr, BOOLEAN 
                 }
 
                 if (p_dev->listen_gif[0] == 0) {
-                    ret = BTM_BleUpdateAdvWhitelist(FALSE, p_dev->remote_bda, NULL);
+                    // To check, we do not support background connection, code will not be called here
+                    ret = BTM_BleUpdateAdvWhitelist(FALSE, p_dev->remote_bda, 0, NULL);
                 } else {
                     ret = TRUE;
                 }
@@ -2648,7 +2650,8 @@ void gatt_deregister_bgdev_list(tGATT_IF gatt_if)
                     }
 
                     if (p_dev_list->listen_gif[0] == 0) {
-                        BTM_BleUpdateAdvWhitelist(FALSE, p_dev_list->remote_bda, NULL);
+                        // To check, we do not support background connection, code will not be called here
+                        BTM_BleUpdateAdvWhitelist(FALSE, p_dev_list->remote_bda, 0, NULL);
                     }
                 }
             }
