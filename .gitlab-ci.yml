@@ -278,6 +278,7 @@ build_esp_idf_tests_cmake:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -310,6 +311,7 @@ build_esp_idf_tests_cmake:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -504,11 +506,9 @@ test_ldgen_on_host:
       - ${FUZZER_TEST_DIR}/fuzz_output.log
     expire_in: 1 week
   only:
-    refs:
-      # can only be triggered
-      - triggers
     variables:
       - $BOT_LABEL_FUZZER_TEST
+      - $BOT_LABEL_WEEKEND_TEST
   script:
     - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
     - cd ${FUZZER_TEST_DIR}
@@ -521,27 +521,23 @@ test_ldgen_on_host:
 test_mdns_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
 
 test_lwip_dns_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dns
 
 test_lwip_dhcp_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_client
 
 test_lwip_dhcps_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_server
 
@@ -950,6 +946,22 @@ assign_test:
     CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/unit_test/CIConfigs/$CI_JOB_NAME.yml"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+
+test_weekend_mqtt:
+  <<: *example_test_template
+  stage: target_test
+  tags:
+    - ESP32
+    - Example_WIFI
+  only:
+    variables:
+      - $BOT_LABEL_WEEKEND_TEST
+  variables:
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/config.yml"
 
 .test_template: &test_template
   stage: target_test

@@ -81,7 +81,7 @@ class IDFApp(App.BaseApp):
             for line in f:
                 configs = line.split('=')
                 if len(configs) == 2:
-                    d[configs[0]] = configs[1]
+                    d[configs[0]] = configs[1].rstrip()
         return d
 
     def get_binary_path(self, app_path):
