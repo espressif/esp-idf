@@ -1728,6 +1728,22 @@ TEST_CASE("Modification from  multi-page to single page", "[nvs]")
     nvs_close(handle);
 }
 
+TEST_CASE("Multi-page blob erased using nvs_erase_key should not be found when probed for just length", "[nvs]")
+{
+    const size_t blob_size = Page::CHUNK_MAX_SIZE *3;
+    uint8_t blob[blob_size] = {0};
+    size_t read_size = blob_size;
+    SpiFlashEmulator emu(5);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 5));
+    nvs_handle handle;
+    TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle));
+    TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
+    TEST_ESP_OK(nvs_erase_key(handle, "abc"));
+    TEST_ESP_ERR(nvs_get_blob(handle, "abc", NULL, &read_size), ESP_ERR_NVS_NOT_FOUND); 
+    TEST_ESP_OK(nvs_commit(handle));
+    nvs_close(handle);
+}
+
 
 TEST_CASE("Check that orphaned blobs are erased during init", "[nvs]")
 {
