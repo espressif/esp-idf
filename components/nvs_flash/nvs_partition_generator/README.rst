@@ -56,8 +56,8 @@ When a new namespace entry is encountered in the CSV file, each follow-up entrie
 Multipage Blob Support
 ----------------------
 
-By default, binary blobs are allowed to span over multiple pages and written in the format mentioned in section :ref:`structure_of_entry`. 
-If older format is intended to be used, the utility provides an option to disable this feature.
+By default, binary blobs are not allowed to span over multiple pages as written in the format mentioned in section :ref:`structure_of_entry`. 
+If this format is intended to be used, the utility provides an option to enable this feature.
 
 Encryption Support
 -------------------
@@ -122,8 +122,6 @@ A sample CSV file is provided with the utility::
 | input                  | Path to CSV file to parse. Will use stdin if omitted                                         |
 +------------------------+----------------------------------------------------------------------------------------------+
 | output                 | Path to output converted binary file. Will use stdout if omitted                             |
-+------------------------+----------------------------------------------------------------------------------------------+
-| size                   | Size of NVS Partition in KB. Eg. 12KB                                                        |
 +------------------------+----------------------------------------------------------------------------------------------+
 | --version {v1,v2}      |  Set version. Default: v2                                                                    |
 +-------------------------------+---------------------------------------------------------------------------------------+
