@@ -230,14 +230,16 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
         data_ptr += 8;
         payload_len_buff = len - 10;
     }
+
+    if (payload_len > payload_len_buff) {
+        ESP_LOGD(TAG, "Actual data to receive (%d) are longer than ws buffer (%d)", payload_len, payload_len_buff);
+        payload_len = payload_len_buff;
+    }
+
     // Then receive and process payload
     if ((rlen = esp_transport_read(ws->parent, data_ptr, payload_len, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
-    }
-    if (payload_len > payload_len_buff) {
-        ESP_LOGD(TAG, "Actual data received (%d) are longer than mqtt buffer (%d)", payload_len, payload_len_buff);
-        payload_len = payload_len_buff;
     }
 
     if (mask) {
