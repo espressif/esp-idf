@@ -23,11 +23,10 @@
 
 #if defined(CONFIG_USE_FIXED_STATIC_RAM_SIZE)
 
-#if (CONFIG_FIXED_STATIC_RAM_SIZE > 0x2c200)
-#error "Fixed static ram out of boundary."
-#else
+ASSERT((CONFIG_FIXED_STATIC_RAM_SIZE <= 0x2c200),
+          "Fixed static ram data does not fit.")
+
 #define DRAM0_0_SEG_LEN CONFIG_FIXED_STATIC_RAM_SIZE
-#endif
 
 #else
 #define DRAM0_0_SEG_LEN 0x2c200
@@ -90,10 +89,10 @@ MEMORY
 }
 
 #if defined(CONFIG_USE_FIXED_STATIC_RAM_SIZE)
-/* heap start at defined address */
-_heap_start = 0x3FFB0000 + DRAM0_0_SEG_LEN;
+/* static data ends at defined address */
+_static_data_end = 0x3FFB0000 + DRAM0_0_SEG_LEN;
 #else
-_heap_start = _bss_end;
+_static_data_end = _bss_end;
 #endif
 
 /* Heap ends at top of dram0_0_seg */
