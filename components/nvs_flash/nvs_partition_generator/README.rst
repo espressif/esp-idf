@@ -12,7 +12,7 @@ Prerequisites
 To use this utility in encryption mode, the following packages need to be installed:
     - cryptography package
 
-This dependency is already captured by including these packages in `requirement.txt` in top level IDF directory.
+These dependencies is already captured by including these packages in `requirement.txt` in top level IDF directory.
 
 CSV file format
 ---------------
@@ -28,7 +28,7 @@ Type
 Encoding
     Supported values are: ``u8``, ``i8``, ``u16``, ``u32``, ``i32``, ``string``, ``hex2bin``, ``base64`` and ``binary``. This specifies how actual data values are encoded in the resultant binary file. Difference between ``string`` and ``binary`` encoding is that ``string`` data is terminated with a NULL character, whereas ``binary`` data is not.
 
-    .. note:: For ``file`` type, only ``hex2bin``, ``base64``, ``string`` and ``binary`` is supported as of now.
+.. note:: For ``file`` type, only ``hex2bin``, ``base64``, ``string`` and ``binary`` is supported as of now.
 
 Value
 	Data value.
@@ -44,7 +44,7 @@ Below is an example dump of such CSV file::
     key1,data,u8,1
     key2,file,string,/path/to/file
 
-.. note:: Make sure there are no spaces before and after ',' in CSV file.
+.. note:: Make sure there are no spaces before and after ',' or at the end of each line in CSV file.
 
 NVS Entry and Namespace association
 -----------------------------------
@@ -71,7 +71,7 @@ Running the utility
     python nvs_partition_gen.py [-h] [--input INPUT] [--output OUTPUT]
                             [--size SIZE] [--version {v1,v2}]
                             [--keygen {true,false}] [--encrypt {true,false}]
-                            [--keyfile KEYFILE]
+                            [--keyfile KEYFILE] [--outdir OUTDIR]
 
 
 +------------------------+----------------------------------------------------------------------------------------------+
@@ -85,15 +85,14 @@ Running the utility
 +------------------------+----------------------------------------------------------------------------------------------+
 | --version {v1,v2}      | Set version. Default: v2                                                                     |
 +------------------------+----------------------------------------------------------------------------------------------+
-| --keygen {true,false}  | Generate keys for encryption. Creates an `encryption_keys.bin` file (in current directory).  |
-|                        | Default: false                                                                               |
+| --keygen {true,false}  | Generate keys for encryption.                                                                |
 +------------------------+----------------------------------------------------------------------------------------------+
 | --encrypt {true,false} | Set encryption mode. Default: false                                                          |
 +------------------------+----------------------------------------------------------------------------------------------+
 | --keyfile KEYFILE      | File having key for encryption (Applicable only if encryption mode is true)                  |
 +------------------------+----------------------------------------------------------------------------------------------+
-
-
+| --outdir OUTDIR        | The output directory to store the files created (Default: current directory)                 |
++------------------------+----------------------------------------------------------------------------------------------+
 
 You can run this utility in two modes:
     -   Default mode - Binary generated in this mode is an unencrypted binary file.
@@ -108,7 +107,7 @@ You can run this utility in two modes:
     python nvs_partition_gen.py [-h] --input INPUT --output OUTPUT
                             --size SIZE [--version {v1,v2}]
                             [--keygen {true,false}] [--encrypt {true,false}]
-                            [--keyfile KEYFILE]
+                            [--keyfile KEYFILE] [--outdir OUTDIR]
 
 You can run the utility using below command::
 
@@ -123,28 +122,34 @@ You can run the utility using below command::
 
     python nvs_partition_gen.py [-h] --input INPUT --output OUTPUT
                             --size SIZE --encrypt {true,false}
-                            --keygen {true,false} | --keyfile KEYFILE
-                            [--version {v1,v2}]
+                            --keygen {true,false} --keyfile KEYFILE
+                            [--version {v1,v2}] [--outdir OUTDIR]
 
 
 You can run the utility using below commands:
-
-    -   By taking encryption keys as an input file. A sample encryption keys binary file is provided with the utility::
-
-            python nvs_partition_gen.py --input sample.csv --output sample_encrypted.bin --size 0x3000 --encrypt true --keyfile testdata/sample_encryption_keys.bin
 
     -   By enabling generation of encryption keys::
 
             python nvs_partition_gen.py --input sample.csv --output sample_encrypted.bin --size 0x3000 --encrypt true --keygen true
 
+    -   By taking encryption keys as an input file. A sample encryption keys binary file is provided with the utility::
+
+            python nvs_partition_gen.py --input sample.csv --output sample_encrypted.bin --size 0x3000 --encrypt true --keyfile testdata/sample_encryption_keys.bin
+
+    -   By enabling generation of encryption keys and storing the keys in custom filename::
+
+            python nvs_partition_gen.py --input sample.csv --output sample_encrypted.bin --size 0x3000 --encrypt true --keygen true --keyfile encryption_keys_generated.bin
+
+.. note:: If `--keygen` is given with `--keyfile` argument, generated keys will be stored in `--keyfile` file. If `--keygen` argument is absent, `--keyfile` is taken as input file having key for encryption.
 
 
-*To generate* **only** *encryption keys with this utility* ( Creates an `encryption_keys.bin` file in current directory ): ::
+*To generate* **only** *encryption keys with this utility*::
 
     python nvs_partition_gen.py --keygen true
 
-.. note:: This `encryption_keys.bin` file is compatible with NVS key-partition structure. Refer to :ref:`nvs_key_partition` for more details.
+This creates an `encryption_keys_<timestamp>.bin` file.
 
+.. note:: This newly created file having encryption keys in `keys/` directory is compatible with NVS key-partition structure. Refer to :ref:`nvs_key_partition` for more details.
 
 
 You can also provide the format version number (in any of the two modes):
@@ -179,3 +184,4 @@ Caveats
 -  Utility doesn't check for duplicate keys and will write data pertaining to both keys. User needs to make sure keys are distinct.
 -  Once a new page is created, no data will be written in the space left in previous page. Fields in the CSV file need to be ordered in such a way so as to optimize memory.
 -  64-bit datatype is not yet supported.
+
