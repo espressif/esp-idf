@@ -28,13 +28,15 @@ blank_ota_data: $(BLANK_OTA_DATA_FILE)
 # expand to empty values.
 ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
 
+ESPTOOL_ARGS := --esptool-args port=$(CONFIG_ESPTOOLPY_PORT) baud=$(CONFIG_ESPTOOLPY_BAUD) before=$(CONFIG_ESPTOOLPY_BEFORE) after=$(CONFIG_ESPTOOLPY_AFTER)
+
 erase_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \
+	$(OTATOOL_PY) $(ESPTOOL_ARGS) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \
 	--partition-table-offset $(PARTITION_TABLE_OFFSET) \
 	erase_otadata
 
 read_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \ 
+	$(OTATOOL_PY) $(ESPTOOL_ARGS) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \ 
 	--partition-table-offset $(partition_table_offset) \ 
 	read_otadata
 
