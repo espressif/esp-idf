@@ -10,3 +10,5 @@ COMPONENT_SRCDIRS := libcoap/src libcoap port
 
 COMPONENT_SUBMODULES += libcoap
 
+# Silence format truncation warning, until it is fixed upstream
+libcoap/src/coap_debug.o: CFLAGS += -Wno-format-truncation

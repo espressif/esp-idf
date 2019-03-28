@@ -29,3 +29,5 @@ register_component()
 # TODO: find a way to move this to a port header
 target_compile_definitions(${COMPONENT_TARGET} PUBLIC WITH_POSIX)
 
+# Silence format truncation warning, until it is fixed upstream
+set_source_files_properties(libcoap/src/coap_debug.c PROPERTIES COMPILE_FLAGS -Wno-format-truncation)
