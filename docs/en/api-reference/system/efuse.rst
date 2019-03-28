@@ -184,7 +184,7 @@ How add a new field
 	5       RD_DIS_BLK1                     EFUSE_BLK0         16              1
 	6       RD_DIS_BLK2                     EFUSE_BLK0         17              1
 	7       RD_DIS_BLK3                     EFUSE_BLK0         18              1
-	8       FLASH_CRYPT_CNT                 EFUSE_BLK0         20              8
+	8       FLASH_CRYPT_CNT                 EFUSE_BLK0         20              7
 	9       MAC_FACTORY                     EFUSE_BLK0         32              8
 	10      MAC_FACTORY                     EFUSE_BLK0         40              8
 	11      MAC_FACTORY                     EFUSE_BLK0         48              8
