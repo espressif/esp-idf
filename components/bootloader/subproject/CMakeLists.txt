@@ -14,7 +14,7 @@ set(COMPONENTS bootloader esptool_py esp32 partition_table soc bootloader_suppor
 set(BOOTLOADER_BUILD 1)
 add_definitions(-DBOOTLOADER_BUILD=1)
 
-set(COMPONENT_REQUIRES_COMMON log esp32 soc esp_rom esp_common)
+set(COMPONENT_REQUIRES_COMMON log esp32 soc esp_rom esp_common xtensa)
 
 include("${IDF_PATH}/tools/cmake/project.cmake")
 project(bootloader)

@@ -18,6 +18,7 @@ CXXFLAGS =
 CFLAGS += -I $(IDF_PATH)/components/esp32/include
 CFLAGS += -I $(IDF_PATH)/components/esp_rom/include
 CFLAGS += -I $(IDF_PATH)/components/esp_common/include
+CFLAGS += -I $(IDF_PATH)/components/xtensa/include -I $(IDF_PATH)/components/xtensa/esp32/include
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.
 #
