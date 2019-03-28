@@ -71,7 +71,8 @@ endif()
 
 # If anti-rollback option is set then factory partition should not be in Partition Table.
 # In this case, should be used the partition table with two ota app without the factory.
-if(CONFIG_APP_ANTI_ROLLBACK AND FACTORY_OFFSET)
+partition_table_get_partition_info(factory_offset "--partition-type app --partition-subtype factory" "offset")
+if(CONFIG_APP_ANTI_ROLLBACK AND factory_offset)
     fail_at_build_time(check_table_contents
         "ERROR: Anti-rollback option is enabled. Partition table should consist of two ota app without factory partition.")
 add_dependencies(bootloader check_table_contents)
