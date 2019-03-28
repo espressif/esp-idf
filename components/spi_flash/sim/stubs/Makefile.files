@@ -20,6 +20,8 @@ INCLUDE_DIRS := \
 	$(addprefix ../../../../components/, \
 	esp_common/include \
 	soc/esp32/include \
+	xtensa/include \
+	xtensa/esp32/include \
 	esp32/include \
 	bootloader_support/include \
 	app_update/include \

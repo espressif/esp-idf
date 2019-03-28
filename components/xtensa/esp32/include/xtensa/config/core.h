@@ -1,4 +1,4 @@
-/* 
+/*
  * xtensa/config/core.h -- HAL definitions dependent on CORE configuration
  *
  *  This header file is sometimes referred to as the "compile-time HAL" or CHAL.
@@ -41,8 +41,8 @@
 #include <xtensa/hal.h>
 #include <xtensa/xtensa-versions.h>
 #else
-#include "../hal.h"
-#include "../xtensa-versions.h"
+#include "xtensa/hal.h"
+#include "xtensa/xtensa-versions.h"
 #endif
 
 /*  CONFIGURATION SPECIFIC DEFINITIONS:  */

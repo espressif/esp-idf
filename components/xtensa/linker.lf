@@ -1,0 +1,4 @@
+[mapping]
+archive: libxtensa.a
+entries:
+    eri (noflash_text)
