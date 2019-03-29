@@ -65,6 +65,7 @@ TEST_CASE("test time functions", "[newlib]")
 {
     time_t now = 1464248488;
     setenv("TZ", "UTC-8", 1);
+    tzset();
     struct tm *tm_utc = gmtime(&now);
     TEST_ASSERT_EQUAL( 28, tm_utc->tm_sec);
     TEST_ASSERT_EQUAL( 41, tm_utc->tm_min);
