@@ -156,7 +156,12 @@ static esp_err_t httpd_server(struct httpd_data *hd)
 {
     fd_set read_set;
     FD_ZERO(&read_set);
-    FD_SET(hd->listen_fd, &read_set);
+    if (hd->config.lru_purge_enable || httpd_is_sess_available(hd)) {
+        /* Only listen for new connections if server has capacity to
+         * handle more (or when LRU purge is enabled, in which case
+         * older connections will be closed) */
+        FD_SET(hd->listen_fd, &read_set);
+    }
     FD_SET(hd->ctrl_fd, &read_set);
 
     int tmp_max_fd;
@@ -332,6 +337,23 @@ static void httpd_delete(struct httpd_data *hd)
 esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
 {
     if (handle == NULL || config == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    /* Sanity check about whether LWIP is configured for providing the
+     * maximum number of open sockets sufficient for the server. Though,
+     * this check doesn't guarantee that many sockets will actually be
+     * available at runtime as other processes may use up some sockets.
+     * Note that server also uses 3 sockets for its internal use :
+     *     1) listening for new TCP connections
+     *     2) for sending control messages over UDP
+     *     3) for receiving control messages over UDP
+     * So the total number of required sockets is max_open_sockets + 3
+     */
+    if (CONFIG_LWIP_MAX_SOCKETS < config->max_open_sockets + 3) {
+        ESP_LOGE(TAG, "Configuration option max_open_sockets is too large (max allowed %d)\n\t"
+                      "Either decrease this or configure LWIP_MAX_SOCKETS to a larger value",
+                      CONFIG_LWIP_MAX_SOCKETS - 3);
         return ESP_ERR_INVALID_ARG;
     }
 
