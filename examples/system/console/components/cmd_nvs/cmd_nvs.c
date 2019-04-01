@@ -86,7 +86,7 @@ static nvs_type_t str_to_type(const char *type)
     return NVS_TYPE_ANY;
 }
 
-static esp_err_t store_blob(nvs_handle nvs, const char *key, const char *str_values)
+static esp_err_t store_blob(nvs_handle_t nvs, const char *key, const char *str_values)
 {
     uint8_t value;
     size_t str_len = strlen(str_values);
@@ -144,7 +144,7 @@ static void print_blob(const char *blob, size_t len)
 static esp_err_t set_value_in_nvs(const char *key, const char *str_type, const char *str_value)
 {
     esp_err_t err;
-    nvs_handle nvs;
+    nvs_handle_t nvs;
     bool range_error = false;
 
     nvs_type_t type = str_to_type(str_type);
@@ -230,7 +230,7 @@ static esp_err_t set_value_in_nvs(const char *key, const char *str_type, const c
 
 static esp_err_t get_value_from_nvs(const char *key, const char *str_type)
 {
-    nvs_handle nvs;
+    nvs_handle_t nvs;
     esp_err_t err;
 
     nvs_type_t type = str_to_type(str_type);
@@ -314,7 +314,7 @@ static esp_err_t get_value_from_nvs(const char *key, const char *str_type)
 
 static esp_err_t erase(const char *key)
 {
-    nvs_handle nvs;
+    nvs_handle_t nvs;
 
     esp_err_t err = nvs_open(current_namespace, NVS_READWRITE, &nvs);
     if (err == ESP_OK) {
@@ -333,7 +333,7 @@ static esp_err_t erase(const char *key)
 
 static esp_err_t erase_all(const char *name)
 {
-    nvs_handle nvs;
+    nvs_handle_t nvs;
 
     esp_err_t err = nvs_open(current_namespace, NVS_READWRITE, &nvs);
     if (err == ESP_OK) {

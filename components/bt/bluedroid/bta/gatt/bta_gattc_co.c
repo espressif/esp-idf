@@ -77,11 +77,11 @@ static void cacheReset(BD_ADDR bda)
 
 static const char *cache_key = "gattc_cache_key";
 static const char *cache_addr = "cache_addr_tab";
-nvs_handle nvs_fp;
+nvs_handle_t nvs_fp;
 
 typedef struct {
     //save the service data in the list according to the address
-    nvs_handle cache_fp;
+    nvs_handle_t cache_fp;
     BOOLEAN is_open;
     BD_ADDR addr;
     hash_key_t hash_key;
@@ -90,7 +90,7 @@ typedef struct {
 
 typedef struct {
     //save the address list in the cache
-    nvs_handle addr_fp;
+    nvs_handle_t addr_fp;
     BOOLEAN is_open;
     UINT8 num_addr;
     cache_addr_info_t cache_addr[MAX_DEVICE_IN_CACHE];
@@ -377,7 +377,7 @@ void bta_gattc_co_cache_reset(BD_ADDR server_bda)
 
 void bta_gattc_co_cache_addr_init(void)
 {
-    nvs_handle fp;
+    nvs_handle_t fp;
     esp_err_t err_code;
     UINT8 num_addr;
     UINT8 *p_buf = osi_malloc(MAX_ADDR_LIST_CACHE_BUF);
@@ -520,7 +520,7 @@ void bta_gattc_co_cache_addr_save(BD_ADDR bd_addr, hash_key_t hash_key)
         memcpy(cache_env.cache_addr[num - 1].hash_key, hash_key, sizeof(hash_key_t));
     }
 
-    nvs_handle *fp = &cache_env.addr_fp;
+    nvs_handle_t *fp = &cache_env.addr_fp;
     UINT16 length = num*(sizeof(BD_ADDR) + sizeof(hash_key_t));
 
     for (UINT8 i = 0; i < num; i++) {
