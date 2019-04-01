@@ -97,7 +97,7 @@ static void update_pulse_count()
     const char* count_key = "count";
 
     ESP_ERROR_CHECK( nvs_flash_init() );
-    nvs_handle handle;
+    nvs_handle_t handle;
     ESP_ERROR_CHECK( nvs_open(namespace, NVS_READWRITE, &handle));
     uint32_t pulse_count = 0;
     esp_err_t err = nvs_get_u32(handle, count_key, &pulse_count);
