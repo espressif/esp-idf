@@ -7,16 +7,19 @@ else  # CONFIG_NEWLIB_NANO_FORMAT
 LIBC := c
 endif  # CONFIG_NEWLIB_NANO_FORMAT
 
-COMPONENT_ADD_LDFLAGS := -l$(LIBC) -lm -lnewlib
+# Order of linking matters: libnewlib.a should go before libc.a
+COMPONENT_ADD_LDFLAGS := -lnewlib -l$(LIBC) -lm
 COMPONENT_ADD_INCLUDEDIRS := platform_include
 
 ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
 COMPONENT_ADD_LDFRAGMENTS := esp32-spiram-rom-functions-c.lf
 endif
 
-# Forces the linker to include locks.o from this component, which
-# replaces weak locking functions defined in libc.a:locks.o
+# Forces the linker to include locks, heap, and syscalls from this component,
+# instead of the implementations provided by newlib.
 COMPONENT_ADD_LDFLAGS += -u newlib_include_locks_impl
+COMPONENT_ADD_LDFLAGS += -u newlib_include_heap_impl
+COMPONENT_ADD_LDFLAGS += -u newlib_include_syscalls_impl
 
 else # GCC_NOT_5_2_0
 # Remove this section when GCC 5.2.0 is no longer supported
@@ -44,4 +47,6 @@ COMPONENT_ADD_LINKER_DEPS := $(LIBC_PATH) $(LIBM_PATH)
 COMPONENT_ADD_INCLUDEDIRS := platform_include include
 endif  # GCC_NOT_5_2_0
 
-syscalls.o: CFLAGS += -fno-builtin
+COMPONENT_ADD_LDFRAGMENTS += newlib.lf
+
+heap.o: CFLAGS += -fno-builtin
