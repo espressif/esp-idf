@@ -13,6 +13,7 @@ components/app_update/gen_empty_partition.py
 components/app_update/otatool.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/ulp/esp32ulp_mapgen.py
+components/spiffs/spiffsgen.py
 docs/check_doc_warnings.sh
 docs/check_lang_folder_sync.sh
 docs/gen-kconfig-doc.py
