@@ -1,14 +1,15 @@
-set(COMPONENT_SRCS "locks.c"
+set(COMPONENT_SRCS "heap.c"
+                   "locks.c"
+                   "poll.c"
                    "pthread.c"
                    "random.c"
                    "reent_init.c"
                    "select.c"
-                   "poll.c"
                    "syscall_table.c"
                    "syscalls.c"
                    "termios.c"
-                   "utime.c"
-                   "time.c")
+                   "time.c"
+                   "utime.c")
 set(COMPONENT_ADD_INCLUDEDIRS platform_include)
 
 
@@ -25,9 +26,11 @@ if(GCC_NOT_5_2_0)
         set(COMPONENT_ADD_LDFRAGMENTS esp32-spiram-rom-functions-c.lf)
     endif()
 
-    # Forces the linker to include locks.o from this component, which
-    # replaces weak locking functions defined in libc.a:locks.o
+    # Forces the linker to include locks, heap, and syscalls from this component,
+    # instead of the implementations provided by newlib.
     set(EXTRA_LINK_FLAGS "-u newlib_include_locks_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_heap_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_syscalls_impl")
 
 else()
     # Remove this section when GCC 5.2.0 is no longer supported
@@ -54,6 +57,8 @@ else()
 endif()
 set(COMPONENT_REQUIRES vfs)  # for sys/ioctl.h
 
+list(APPEND COMPONENT_ADD_LDFRAGMENTS newlib.lf)
+
 register_component()
 
 if (LIB_PATH)
@@ -61,7 +66,7 @@ if (LIB_PATH)
 endif()
 target_link_libraries(${COMPONENT_TARGET} ${LIBC} ${LIBM})
 
-set_source_files_properties(syscalls.c PROPERTIES COMPILE_FLAGS -fno-builtin)
+set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 
 if(EXTRA_LINK_FLAGS)
     target_link_libraries(${COMPONENT_TARGET} "${EXTRA_LINK_FLAGS}")

@@ -14,53 +14,12 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/reent.h>
-#include <stdlib.h>
-#include "esp_attr.h"
-#include "freertos/FreeRTOS.h"
-#include "esp_heap_caps.h"
 
-
-/*
- These contain the business logic for the malloc() and realloc() implementation. Because of heap tracing
- wrapping reasons, we do not want these to be a public api, however, so they're not defined publicly.
-*/
-extern void *heap_caps_malloc_default( size_t size );
-extern void *heap_caps_realloc_default( void *ptr, size_t size );
-
-
-void* IRAM_ATTR _malloc_r(struct _reent *r, size_t size)
-{
-    return heap_caps_malloc_default( size );
-}
-
-void IRAM_ATTR _free_r(struct _reent *r, void* ptr)
-{
-    heap_caps_free( ptr );
-}
-
-void* IRAM_ATTR _realloc_r(struct _reent *r, void* ptr, size_t size)
-{
-    return heap_caps_realloc_default( ptr, size );
-}
-
-void* IRAM_ATTR _calloc_r(struct _reent *r, size_t nmemb, size_t size)
-{
-    void *result;
-    size_t size_bytes;
-    if (__builtin_mul_overflow(nmemb, size, &size_bytes)) {
-        return NULL;
-    }
-
-    result = malloc(size_bytes);
-    if (result != NULL) {
-        bzero(result, size_bytes);
-    }
-    return result;
-}
 
 int _system_r(struct _reent *r, const char *str)
 {
@@ -95,3 +54,9 @@ void _exit(int __status)
     abort();
 }
 
+/* No-op function, used to force linking this file,
+   instead of the syscalls implementation from libgloss.
+ */
+void newlib_include_syscalls_impl()
+{
+}

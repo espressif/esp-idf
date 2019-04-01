@@ -28,7 +28,7 @@ PROVIDE ( _write_r = 0x4000bd70 );
 
    I.e.:
 
-   free (in ROM) -> _free_r (in ROM) -> syscall table entry _free_r -> _free_r (in IDF)
+   times (in ROM) -> _times_r (in ROM) -> syscall table entry _times_r -> _times_r (in IDF)
 
    Hence the following entries are provided only for reference
    and commented out.
@@ -36,6 +36,8 @@ PROVIDE ( _write_r = 0x4000bd70 );
 
 /*   <--- the following lines are commented out
 
+PROVIDE ( calloc = 0x4000bee4 );
+PROVIDE ( free = 0x4000beb8 );
 PROVIDE ( _free_r = 0x4000bbcc );
 PROVIDE ( _getpid_r = 0x4000bcfc );
 PROVIDE ( __getreent = 0x4000be8c );
@@ -51,8 +53,10 @@ PROVIDE ( _lock_release = 0x4000be64 );
 PROVIDE ( _lock_release_recursive = 0x4000be78 );
 PROVIDE ( _lock_try_acquire = 0x4000be3c );
 PROVIDE ( _lock_try_acquire_recursive = 0x4000be50 );
+PROVIDE ( malloc = 0x4000bea0 );
 PROVIDE ( _malloc_r = 0x4000bbb4 );
 PROVIDE ( _raise_r = 0x4000bc70 );
+PROVIDE ( realloc = 0x4000becc );
 PROVIDE ( _realloc_r = 0x4000bbe0 );
 PROVIDE ( _sbrk_r = 0x4000bce4 );
 PROVIDE ( _system_r = 0x4000bc10 );
@@ -67,13 +71,9 @@ PROVIDE ( _times_r = 0x4000bc40 );
    as the first argument.
  */
 
-calloc = 0x4000bee4;
 close = 0x40001778;
-free = 0x4000beb8;
-malloc = 0x4000bea0;
 open = 0x4000178c;
 read = 0x400017dc;
-realloc = 0x4000becc;
 sbrk = 0x400017f4;
 times = 0x40001808;
 write = 0x4000181c;
