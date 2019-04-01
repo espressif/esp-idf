@@ -185,7 +185,7 @@ def test_method(**kwargs):
 
             # prepare for xunit test results
             junit_file_path = env_inst.app_cls.get_log_folder(env_config["test_suite_name"])
-            junit_test_case = JunitReport.create_test_case(case_info["name"])
+            junit_test_case = JunitReport.create_test_case(case_info["ID"])
             result = False
 
             try:
