@@ -457,7 +457,7 @@ esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_ex
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (!device_info){
+    if (!device_info && type <= ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID) {
         return ESP_ERR_INVALID_SIZE;
     }
     msg.sig = BTC_SIG_API_CALL;
@@ -465,7 +465,9 @@ esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_ex
     msg.act = BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST;
     arg.update_duplicate_exceptional_list.subcode = ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_ADD;
     arg.update_duplicate_exceptional_list.info_type = type;
-    memcpy(arg.update_duplicate_exceptional_list.device_info, device_info, sizeof(esp_bd_addr_t));
+    if (device_info) {
+        memcpy(arg.update_duplicate_exceptional_list.device_info, device_info, sizeof(esp_bd_addr_t));
+    }
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
@@ -479,7 +481,7 @@ esp_err_t esp_ble_gap_remove_duplicate_scan_exceptional_device(esp_ble_duplicate
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (!device_info){
+    if (!device_info && type <= ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID) {
         return ESP_ERR_INVALID_SIZE;
     }
     msg.sig = BTC_SIG_API_CALL;
@@ -487,7 +489,9 @@ esp_err_t esp_ble_gap_remove_duplicate_scan_exceptional_device(esp_ble_duplicate
     msg.act = BTC_GAP_BLE_UPDATE_DUPLICATE_SCAN_EXCEPTIONAL_LIST;
     arg.update_duplicate_exceptional_list.subcode = ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_REMOVE;
     arg.update_duplicate_exceptional_list.info_type = type;
-    memcpy(arg.update_duplicate_exceptional_list.device_info, device_info, sizeof(esp_bd_addr_t));
+    if (device_info) {
+        memcpy(arg.update_duplicate_exceptional_list.device_info, device_info, sizeof(esp_bd_addr_t));
+    }
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
