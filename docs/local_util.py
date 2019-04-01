@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 from io import open
 import os
 import shutil
+import urllib
 
 
 def run_cmd_get_output(cmd):
@@ -55,3 +56,11 @@ def copy_if_modified(src_path, dst_path):
             src_file_path = os.path.join(root, src_file_name)
             dst_file_path = os.path.join(dst_path + root[src_path_len:], src_file_name)
             copy_file_if_modified(src_file_path, dst_file_path)
+
+
+def download_file(from_url, to_path):
+    tmp_file, header = urllib.urlretrieve(from_url)
+    filename = os.path.basename(from_url)
+    with open(to_path + "/" + filename, 'wb') as fobj:
+        with open(tmp_file, 'rb') as tmp:
+            fobj.write(tmp.read())
