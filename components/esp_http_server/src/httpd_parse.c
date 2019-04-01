@@ -151,15 +151,28 @@ static esp_err_t pause_parsing(http_parser *parser, const char* at)
     struct httpd_req *r        = parser_data->req;
     struct httpd_req_aux *ra   = r->aux;
 
-    parser_data->pre_parsed = parser_data->raw_datalen
-                              - (at - ra->scratch);
+    /* The length of data that was not parsed due to interruption
+     * and hence needs to be read again later for parsing */
+    ssize_t unparsed = parser_data->raw_datalen - (at - ra->scratch);
+    if (unparsed < 0) {
+        ESP_LOGE(TAG, LOG_FMT("parsing beyond valid data = %d"), -unparsed);
+        return ESP_ERR_INVALID_STATE;
+    }
 
-    if (parser_data->pre_parsed != httpd_unrecv(r, at, parser_data->pre_parsed)) {
-        ESP_LOGE(TAG, LOG_FMT("data too large for un-recv = %d"),
-                 parser_data->pre_parsed);
+    /* Push back the un-parsed data into pending buffer for
+     * receiving again with httpd_recv_with_opt() later when
+     * read_block() executes */
+    if (unparsed && (unparsed != httpd_unrecv(r, at, unparsed))) {
+        ESP_LOGE(TAG, LOG_FMT("data too large for un-recv = %d"), unparsed);
         return ESP_FAIL;
     }
 
+    /* Signal http_parser to pause execution and save the maximum
+     * possible length, of the yet un-parsed data, that may get
+     * parsed before http_parser_execute() returns. This pre_parsed
+     * length will be updated then to reflect the actual length
+     * that got parsed, and must be skipped when parsing resumes */
+    parser_data->pre_parsed = unparsed;
     http_parser_pause(parser, 1);
     parser_data->paused = true;
     ESP_LOGD(TAG, LOG_FMT("paused"));
@@ -170,8 +183,8 @@ static size_t continue_parsing(http_parser *parser, size_t length)
 {
     parser_data_t *data = (parser_data_t *) parser->data;
 
-    /* Part of the blk may have been parsed before
-     * so we must skip that */
+    /* Part of the received data may have been parsed earlier
+     * so we must skip that before parsing resumes */
     length = MIN(length, data->pre_parsed);
     data->pre_parsed -= length;
     ESP_LOGD(TAG, LOG_FMT("skip pre-parsed data of size = %d"), length);
@@ -215,14 +228,18 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
             return ESP_FAIL;
         }
     } else if (parser_data->status == PARSING_HDR_VALUE) {
-        /* NULL terminate last header (key: value) pair */
-        size_t offset = parser_data->last.at - ra->scratch;
-        ra->scratch[offset + parser_data->last.length] = '\0';
+        /* Overwrite terminator (CRLFs) following last header
+         * (key: value) pair with null characters */
+        char *term_start = (char *)parser_data->last.at + parser_data->last.length;
+        memset(term_start, '\0', at - term_start);
 
         /* Store current values of the parser callback arguments */
         parser_data->last.at     = at;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_FIELD;
+
+        /* Increment header count */
+        ra->req_hdrs_count++;
     } else if (parser_data->status != PARSING_HDR_FIELD) {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
         parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
@@ -243,8 +260,6 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
 static esp_err_t cb_header_value(http_parser *parser, const char *at, size_t length)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
-    struct httpd_req *r        = parser_data->req;
-    struct httpd_req_aux *ra   = r->aux;
 
     /* Check previous status */
     if (parser_data->status == PARSING_HDR_FIELD) {
@@ -252,8 +267,6 @@ static esp_err_t cb_header_value(http_parser *parser, const char *at, size_t len
         parser_data->last.at     = at;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_VALUE;
-        /* Increment header count */
-        ra->req_hdrs_count++;
     } else if (parser_data->status != PARSING_HDR_VALUE) {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
         parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
@@ -288,12 +301,48 @@ static esp_err_t cb_headers_complete(http_parser *parser)
             return ESP_FAIL;
         }
     } else if (parser_data->status == PARSING_HDR_VALUE) {
-        /* NULL terminate last header (key: value) pair */
-        size_t offset = parser_data->last.at - ra->scratch;
-        ra->scratch[offset + parser_data->last.length] = '\0';
+        /* Locate end of last header */
+        char *at = (char *)parser_data->last.at + parser_data->last.length;
 
-        /* Reach end of last header */
-        parser_data->last.at += parser_data->last.length;
+        /* Check if there is data left to parse. This value should
+         * at least be equal to the number of line terminators, i.e. 2 */
+        ssize_t remaining_length = parser_data->raw_datalen - (at - ra->scratch);
+        if (remaining_length < 2) {
+            ESP_LOGE(TAG, LOG_FMT("invalid length of data remaining to be parsed"));
+            parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+
+        /* Locate end of headers section by skipping the remaining
+         * two line terminators. No assumption is made here about the
+         * termination sequence used apart from the necessity that it
+         * must end with an LF, because:
+         *      1) some clients may send non standard LFs instead of
+         *         CRLFs for indicating termination.
+         *      2) it is the responsibility of http_parser to check
+         *         that the termination is either CRLF or LF and
+         *         not any other sequence */
+        unsigned short remaining_terminators = 2;
+        while (remaining_length-- && remaining_terminators) {
+            if (*at == '\n') {
+                remaining_terminators--;
+            }
+            /* Overwrite termination characters with null */
+            *(at++) = '\0';
+        }
+        if (remaining_terminators) {
+            ESP_LOGE(TAG, LOG_FMT("incomplete termination of headers"));
+            parser_data->error = HTTPD_400_BAD_REQUEST;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+
+        /* Place the parser ptr right after the end of headers section */
+        parser_data->last.at = at;
+
+        /* Increment header count */
+        ra->req_hdrs_count++;
     } else {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
         parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
@@ -360,7 +409,6 @@ static esp_err_t cb_on_body(http_parser *parser, const char *at, size_t length)
 static esp_err_t cb_no_body(http_parser *parser)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
-    const char* at             = parser_data->last.at;
 
     /* Check previous status */
     if (parser_data->status == PARSING_URL) {
@@ -379,14 +427,11 @@ static esp_err_t cb_no_body(http_parser *parser)
         return ESP_FAIL;
     }
 
-    /* Get end of packet */
-    at += strlen("\r\n\r\n");
-
     /* Pause parsing so that if part of another packet
      * is in queue then it doesn't get parsed, which
      * may reset the parser state and cause current
      * request packet to be lost */
-    if (pause_parsing(parser, at) != ESP_OK) {
+    if (pause_parsing(parser, parser_data->last.at) != ESP_OK) {
         parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
         parser_data->status = PARSING_FAILED;
         return ESP_FAIL;
@@ -404,8 +449,8 @@ static int read_block(httpd_req_t *req, size_t offset, size_t length)
     struct httpd_req_aux *raux  = req->aux;
 
     /* Limits the read to scratch buffer size */
-    size_t buf_len = MIN(length, (sizeof(raux->scratch) - offset));
-    if (buf_len == 0) {
+    ssize_t buf_len = MIN(length, (sizeof(raux->scratch) - offset));
+    if (buf_len <= 0) {
         return 0;
     }
 
@@ -491,8 +536,11 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
         ESP_LOGW(TAG, LOG_FMT("parsing failed"));
         return -1;
     } else if (data->paused) {
-        /* Keep track of parsed data to be skipped
-         * during next parsing cycle */
+        /* Update the value of pre_parsed which was set when
+         * pause_parsing() was called. (length - nparsed) is
+         * the length of the data that will need to be parsed
+         * again later and hence must be deducted from the
+         * pre_parsed length */
         data->pre_parsed -= (length - nparsed);
         return 0;
     } else if (nparsed != length) {
@@ -504,7 +552,8 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
         return -1;
     }
 
-    /* Continue parsing this section of HTTP request packet */
+    /* Return with the total length of the request packet
+     * that has been parsed till now */
     ESP_LOGD(TAG, LOG_FMT("parsed block size = %d"), offset + nparsed);
     return offset + nparsed;
 }
@@ -608,7 +657,7 @@ static void httpd_req_cleanup(httpd_req_t *r)
 {
     struct httpd_req_aux *ra = r->aux;
 
-    /* Check if the context has changed and needs to be cleared */ 
+    /* Check if the context has changed and needs to be cleared */
     if ((r->ignore_sess_ctx_changes == false) && (ra->sd->ctx != r->sess_ctx)) {
         httpd_sess_free_ctx(ra->sd->ctx, ra->sd->free_ctx);
     }
@@ -836,9 +885,19 @@ size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field)
          */
         if ((val_ptr - hdr_ptr != strlen(field)) ||
             (strncasecmp(hdr_ptr, field, strlen(field)))) {
-            hdr_ptr += strlen(hdr_ptr) + strlen("\r\n");
+            if (count) {
+                /* Jump to end of header field-value string */
+                hdr_ptr = 1 + strchr(hdr_ptr, '\0');
+
+                /* Skip all null characters (with which the line
+                 * terminators had been overwritten) */
+                while (*hdr_ptr == '\0') {
+                    hdr_ptr++;
+                }
+            }
             continue;
         }
+
         /* Skip ':' */
         val_ptr++;
 
@@ -882,7 +941,16 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
          */
         if ((val_ptr - hdr_ptr != strlen(field)) ||
             (strncasecmp(hdr_ptr, field, strlen(field)))) {
-            hdr_ptr += strlen(hdr_ptr) + strlen("\r\n");
+            if (count) {
+                /* Jump to end of header field-value string */
+                hdr_ptr = 1 + strchr(hdr_ptr, '\0');
+
+                /* Skip all null characters (with which the line
+                 * terminators had been overwritten) */
+                while (*hdr_ptr == '\0') {
+                    hdr_ptr++;
+                }
+            }
             continue;
         }
 
