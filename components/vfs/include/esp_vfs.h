@@ -221,6 +221,8 @@ typedef struct
     /** stop_socket_select which can be called from ISR; set only for the socket driver */
     void (*stop_socket_select_isr)(BaseType_t *woken);
     /** end_select is called to stop the I/O multiplexing and deinitialize the environment created by start_select for the given VFS */
+    void* (*get_socket_select_semaphore)();
+    /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
     void (*end_select)();
 } esp_vfs_t;
 
