@@ -752,7 +752,7 @@ def nvs_part_gen(input_filename=None, output_filename=None, input_part_size=None
         output_file = open(output_filename, 'wb')
 
         with nvs_open(output_file, input_size) as nvs_obj:
-            reader = csv.DictReader(input_file, delimiter=',')
+            reader = csv.DictReader(filter(lambda row: row[0] != '#',input_file), delimiter=',')
             for row in reader:
                 try:
                     write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
