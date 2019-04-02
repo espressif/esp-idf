@@ -525,6 +525,7 @@ test cases:
   test point 2: mesh configuration test
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_0115
   <<: *MESH_CASE
   cmd set:
@@ -932,6 +933,7 @@ test cases:
   test point 2: network establish test
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_0213
   <<: *MESH_CASE
   cmd set:
@@ -1761,6 +1763,7 @@ test cases:
   test point 2: chain topology test
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_0505 #TODO: support layer>127
   <<: *MESH_CASE
   cmd set:
@@ -2688,35 +2691,6 @@ test cases:
   test point 2: mesh init/config/start test
   CI ready: 'Yes'
   #TODO: if start twice will connected successfully
-- ID: MESH_EST_3003
-  <<: *MESH_CASE
-  cmd set:
-  - ''
-  - - SSC SSC1 mesh -I
-    - - P SSC1 C +MESH:INIT,OK
-  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
-      <wrong_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
-    - - P SSC1 C +MESHSET:CFG,OK
-  - - SSC SSC1 mesh -T
-    - - P SSC1 C +MESH:START,OK
-  - - DELAY 10
-    - - P SSC1 C MESH_EVENT_NO_PARENT_FOUND
-  expected result: |-
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-  steps: |-
-    1. mesh init
-    2. mesh config with wrong channel
-    3. mesh start
-    4. check parent not found
-  test environment: SSC_T1_MESH1
-  summary: mesh start with wrong router channel
-  test point 1: abnormal/special use
-  test point 2: mesh init/config/start test
-  CI ready: 'No'
-  #TODO: not work after v3.3
 - ID: MESH_EST_3004
   <<: *MESH_CASE
   cmd set:
@@ -2781,6 +2755,7 @@ test cases:
   test point 2: mesh init/config/start test
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_3006
   <<: *MESH_CASE
   cmd set:
@@ -2814,6 +2789,7 @@ test cases:
   test point 2: mesh init/config/start test
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_3007
   <<: *MESH_CASE
   cmd set:
@@ -2841,6 +2817,35 @@ test cases:
   test point 1: abnormal/special use
   test point 2: mesh init/config/start test
   CI ready: 'Yes'
+- ID: MESH_EST_3008
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <wrong_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config with wrong channel
+    3. mesh start
+    4. check parent not found
+  test environment: SSC_T1_MESH1
+  summary: mesh start with wrong router channel
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'No'
+  #TODO: not work after v3.3
 - ID: MESH_EST_3101
   <<: *MESH_CASE
   cmd set:
@@ -2865,6 +2870,7 @@ test cases:
   test point 2: use wifi api after mesh start
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_3102
   <<: *MESH_CASE
   cmd set:
@@ -2887,6 +2893,7 @@ test cases:
   test point 2: use wifi api after mesh start
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_3103
   <<: *MESH_CASE
   cmd set:
@@ -2918,6 +2925,7 @@ test cases:
   test point 2: use wifi api after mesh start
   CI ready: 'No'
   auto test: 'No'
+  active: "No"
 - ID: MESH_EST_3104
   <<: *MESH_CASE
   cmd set:
@@ -4508,23 +4516,6 @@ test cases:
   test point 1: stress
   test point 2: mesh network establish
   test environment: SSC_T50_MESH1
-- ID: MESH_EST_5002
-  <<: *MESH_CASE
-  category: Stress
-  cmd set:
-  - MeshStress/MeshEstablishTime
-  - *est_performance_cmd_set
-  - - 'allow_roots = False'
-    - ['']
-  execution time: 2.0
-  expected result: |-
-    1. check the time spent
-  steps: |-
-    1. enable all nodes establish
-  summary: stress test, start all nodes with allow_roots false
-  test point 1: stress
-  test point 2: mesh network establish
-  test environment: SSC_T50_MESH1
 - ID: MESH_EST_5003
   <<: *MESH_CASE
   category: Stress
@@ -4560,6 +4551,23 @@ test cases:
   steps: |-
     1. enable all nodes establish network
   summary: stress test, start [1,2,3,4,8] nodes with interval , then start others
+  test point 1: stress
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5005
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'allow_roots = False'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+  steps: |-
+    1. enable all nodes establish
+  summary: stress test, start all nodes with allow_roots false
   test point 1: stress
   test point 2: mesh network establish
   test environment: SSC_T50_MESH1
@@ -4635,26 +4643,6 @@ test cases:
   test point 1: stress
   test point 2: mesh network re-establish
   test environment: SSC_T50_MESH1
-- ID: MESH_EST_5103
-  <<: *MESH_CASE
-  category: Stress
-  cmd set:
-  - MeshStress/MeshEstablishTime
-  - *est_performance_cmd_set
-  - - 'destroy_nodes = "RANDOM(10)"'
-    - ['']
-  execution time: 2.0
-  expected result: |-
-    1. check the time spent
-    1. check the time spent
-  initial condition: MESH_DEINIT_STA
-  steps: |-
-    1. enable all nodes establish network
-    2. destroy random 10 nodes after network established
-  summary: stress test, destroy random 10 nodes after network established
-  test point 1: stress
-  test point 2: mesh network re-establish
-  test environment: SSC_T50_MESH1
 - ID: MESH_EST_5104
   <<: *MESH_CASE
   category: Stress
@@ -4719,4 +4707,24 @@ test cases:
   summary: multiple router, reboot random 10 nodes after network established
   test point 1: stress
   test point 2: channel switch test
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5107
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy random 10 nodes after network established
+  summary: stress test, destroy random 10 nodes after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
   test environment: SSC_T50_MESH1

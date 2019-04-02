@@ -2136,6 +2136,12 @@ IT_006_07:
     - ESP32_IDF
     - SSC_T1_6
 
+IT_006_08:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
 IT_007_01:
   <<: *test_template
   tags:
