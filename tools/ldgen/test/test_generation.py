@@ -1190,6 +1190,48 @@ entries:
 
         self.compare_rules(expected, actual)
 
+    def test_rule_generation_condition_with_deprecated_mapping(self):
+        generation_with_condition = u"""
+[mapping]
+archive: lib.a
+entries:
+    : PERFORMANCE_LEVEL = 0
+    : PERFORMANCE_LEVEL = 1
+    obj1 (noflash)
+    : PERFORMANCE_LEVEL = 2
+    obj1 (noflash)
+    obj2 (noflash)
+    : PERFORMANCE_LEVEL = 3
+    obj1 (noflash)
+    obj2 (noflash)
+    obj3 (noflash)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            self.model.mappings = {}
+            self.add_fragments(generation_with_condition)
+
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self.compare_rules(expected, actual)
+
 
 if __name__ == "__main__":
     unittest.main()

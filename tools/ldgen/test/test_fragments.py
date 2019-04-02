@@ -735,5 +735,246 @@ entries:
             FragmentFile(test_fragment, self.sdkconfig)
 
 
+class DeprecatedMappingTest(FragmentTest):
+
+    def test_valid_grammar(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    obj:symbol (noflash)
+    # Comments should not matter
+    obj (noflash)
+    # Nor should whitespace
+                    obj  :     symbol_2 (    noflash )
+        obj_2  (    noflash )
+    * (noflash)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual("lib.a", fragment_file.fragments[0].archive)
+        self.assertEqual("lib_a", fragment_file.fragments[0].name)
+
+        expected = {("obj", "symbol", "noflash"),
+                    ("obj", None, "noflash"),
+                    ("obj", "symbol_2", "noflash"),
+                    ("obj_2", None, "noflash"),
+                    ("*", None, "noflash")
+                    }
+
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_explicit_blank_default_w_others(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a (noflash)
+    : default
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
+
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_implicit_blank_default_w_others(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a (noflash)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
+
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_explicit_blank_default(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : default
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
+
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_implicit_blank_default(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : default
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
+
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_multiple_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a1 (noflash)
+    obj_a2 (noflash)
+    : B = n
+    obj_b1 (noflash)
+    obj_b2 (noflash)
+    obj_b3 (noflash)
+    : C = n
+    obj_c1 (noflash)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("obj_b1", None, "noflash"),
+                    ("obj_b2", None, "noflash"),
+                    ("obj_b3", None, "noflash")}
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_blank_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a (noflash)
+    : B = n
+    : C = n
+    obj_c (noflash)
+    : default
+    obj (noflash)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_blank_first_condition(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    obj_a (noflash)
+    : CONFIG_B = y
+    obj_b (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_nonlast_default_1(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : default
+    obj_a (noflash)
+    : CONFIG_A = y
+    obj_A (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_nonlast_default_2(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = y
+    obj_A (noflash)
+    : default
+    obj_a (noflash)
+    : B = y
+    obj_B (noflash
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_nonlast_default_3(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = y
+    obj_A (noflash)
+    :
+    obj_a (noflash)
+    : B = y
+    obj_B (noflash
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_duplicate_default_1(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : CONFIG_A = y
+    obj_A (noflash)
+    : default
+    obj_a (noflash)
+    : CONFIG_B = y
+    obj_B (noflash)
+    : default
+    obj_a (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_duplicate_default_2(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : CONFIG_A = y
+    obj_A (noflash)
+    : CONFIG_B = y
+    obj_a (noflash)
+    : default
+    obj_B (noflash)
+    :
+    obj_a (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_mixed_deprecated_mapping(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_A (noflash)
+    : default
+    obj_B (noflash)
+
+
+[mapping:test]
+archive: lib.a
+entries:
+    if A = n:
+        obj_A (noflash)
+    else:
+        obj_B (noflash)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(2, len(fragment_file.fragments))
+
+        self.assertEqual(fragment_file.fragments[0].entries,
+                         fragment_file.fragments[1].entries)
+
+
 if __name__ == "__main__":
     unittest.main()
