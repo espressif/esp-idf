@@ -163,7 +163,7 @@ build_template_app:
     - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
     - make all V=1
     # Check if there are any stray printf/ets_printf references in WiFi libs
-    - cd ../components/esp32/lib
+    - cd ../components/esp_wifi/lib_esp32
     - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
     - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
 

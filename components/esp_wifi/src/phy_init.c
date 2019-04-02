@@ -38,7 +38,7 @@
 #include "phy_init_data.h"
 #include "esp_coexist_internal.h"
 #include "driver/periph_ctrl.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
 
