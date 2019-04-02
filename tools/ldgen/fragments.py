@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 import os
+import re
 
 from sdkconfig import SDKConfig
 from pyparsing import OneOrMore
@@ -176,7 +177,9 @@ class FragmentFile():
         fragment.setParseAction(fragment_parse_action)
         fragment.ignore("#" + restOfLine)
 
-        fragment_stmt << (Group(fragment) | Group(fragment_conditional))
+        deprecated_mapping = DeprecatedMapping.get_fragment_grammar(sdkconfig, fragment_file.name).setResultsName("value")
+
+        fragment_stmt << (Group(deprecated_mapping) | Group(fragment) | Group(fragment_conditional))
 
         def fragment_stmt_parsed(pstr, loc, toks):
             stmts = list()
@@ -322,6 +325,93 @@ class Mapping(Fragment):
         }
 
         return grammars
+
+
+class DeprecatedMapping():
+    """
+    Encapsulates a mapping fragment, which defines what targets the input sections of mappable entties are placed under.
+    """
+
+    # Name of the default condition entry
+    DEFAULT_CONDITION = "default"
+    MAPPING_ALL_OBJECTS = "*"
+
+    @staticmethod
+    def get_fragment_grammar(sdkconfig, fragment_file):
+
+        # Match header [mapping]
+        header = Suppress("[") + Suppress("mapping") + Suppress("]")
+
+        # There are three possible patterns for mapping entries:
+        #       obj:symbol (scheme)
+        #       obj (scheme)
+        #       * (scheme)
+        obj = Fragment.ENTITY.setResultsName("object")
+        symbol = Suppress(":") + Fragment.IDENTIFIER.setResultsName("symbol")
+        scheme = Suppress("(") + Fragment.IDENTIFIER.setResultsName("scheme") + Suppress(")")
+
+        pattern1 = Group(obj + symbol + scheme)
+        pattern2 = Group(obj + scheme)
+        pattern3 = Group(Literal(Mapping.MAPPING_ALL_OBJECTS).setResultsName("object") + scheme)
+
+        mapping_entry = pattern1 | pattern2 | pattern3
+
+        # To simplify parsing, classify groups of condition-mapping entry into two types: normal and default
+        # A normal grouping is one with a non-default condition. The default grouping is one which contains the
+        # default condition
+        mapping_entries = Group(ZeroOrMore(mapping_entry)).setResultsName("mappings")
+
+        normal_condition = Suppress(":") + originalTextFor(SDKConfig.get_expression_grammar())
+        default_condition = Optional(Suppress(":") + Literal(DeprecatedMapping.DEFAULT_CONDITION))
+
+        normal_group = Group(normal_condition.setResultsName("condition") + mapping_entries)
+        default_group = Group(default_condition + mapping_entries).setResultsName("default_group")
+
+        normal_groups = Group(ZeroOrMore(normal_group)).setResultsName("normal_groups")
+
+        # Any mapping fragment definition can have zero or more normal group and only one default group as a last entry.
+        archive = Suppress("archive") + Suppress(":") + Fragment.ENTITY.setResultsName("archive")
+        entries = Suppress("entries") + Suppress(":") + (normal_groups + default_group).setResultsName("entries")
+
+        mapping = Group(header + archive + entries)
+        mapping.ignore("#" + restOfLine)
+
+        def parsed_deprecated_mapping(pstr, loc, toks):
+            fragment = Mapping()
+            fragment.archive = toks[0].archive
+            fragment.name = re.sub(r"[^0-9a-zA-Z]+", "_", fragment.archive)
+
+            fragment.entries = set()
+            condition_true = False
+            for entries in toks[0].entries[0]:
+                condition  = next(iter(entries.condition.asList())).strip()
+                condition_val = sdkconfig.evaluate_expression(condition)
+
+                if condition_val:
+                    for entry in entries[1]:
+                        fragment.entries.add((entry.object, None if entry.symbol == '' else entry.symbol, entry.scheme))
+                    condition_true = True
+                    break
+
+            if not fragment.entries and not condition_true:
+                try:
+                    entries = toks[0].entries[1][1]
+                except IndexError:
+                    entries = toks[0].entries[1][0]
+                for entry in entries:
+                    fragment.entries.add((entry.object, None if entry.symbol == '' else entry.symbol, entry.scheme))
+
+            if not fragment.entries:
+                fragment.entries.add(("*", None, "default"))
+
+            dep_warning = str(ParseFatalException(pstr, loc,
+                              "Warning: Deprecated old-style mapping fragment parsed in file %s." % fragment_file))
+
+            print(dep_warning)
+            return fragment
+
+        mapping.setParseAction(parsed_deprecated_mapping)
+        return mapping
 
 
 FRAGMENT_TYPES = {
