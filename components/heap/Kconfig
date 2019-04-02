@@ -17,14 +17,31 @@ menu "Heap memory debugging"
             bool "Comprehensive"
     endchoice
 
-    config HEAP_TRACING
-        bool "Enable heap tracing"
+    choice HEAP_TRACING_DEST
+        bool "Heap tracing"
+        default HEAP_TRACING_OFF
         help
             Enables the heap tracing API defined in esp_heap_trace.h.
 
             This function causes a moderate increase in IRAM code side and a minor increase in heap function
-            (malloc/free/realloc) CPU overhead, even when the tracing feature is not used. So it's best to keep it
-            disabled unless tracing is being used.
+            (malloc/free/realloc) CPU overhead, even when the tracing feature is not used.
+            So it's best to keep it disabled unless tracing is being used.
+
+        config HEAP_TRACING_OFF
+            bool "Disabled"
+        config HEAP_TRACING_STANDALONE
+            bool "Standalone"
+            select HEAP_TRACING
+        config HEAP_TRACING_TOHOST
+            bool "Host-based"
+            select HEAP_TRACING
+    endchoice
+
+    config HEAP_TRACING
+        bool
+        default F
+        help
+            Enables/disables heap tracing API.
 
     config HEAP_TRACING_STACK_DEPTH
         int "Heap tracing stack depth"

@@ -23,7 +23,8 @@ COMPONENT_SRCDIRS += \
 	sys_view/SEGGER \
 	sys_view/Sample/OS \
 	sys_view/Sample/Config \
-	sys_view/esp32
+	sys_view/esp32 \
+	sys_view/ext
 else
 COMPONENT_SRCDIRS += gcov
 endif

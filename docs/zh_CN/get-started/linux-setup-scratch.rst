@@ -4,7 +4,7 @@
 :link_to_translation:`en:[English]`
 
 .. note::
-    
+
     安装工具链的标准流程可以通过阅读文档 :doc:`Linux 平台工具链的标准设置 <linux-setup>` 来获得，:ref:`工具链的自定义设置 <get-started-customized-setup>` 章节会介绍哪些情况下我们必须要重新定义工具链。
 
 
@@ -15,11 +15,11 @@
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
 
 .. note::
 
