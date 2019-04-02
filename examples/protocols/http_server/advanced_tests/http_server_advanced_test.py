@@ -96,6 +96,8 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
         failed = True
     if not client.recv_timeout_test(got_ip, got_port):
         failed = True
+    if not client.arbitrary_termination_test(got_ip, got_port):
+        failed = True
 
     # This test fails a lot! Enable when connection is stable
     # test_size = 50*1024 # 50KB
