@@ -929,6 +929,9 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
     }
+    if (buf == NULL || size == NULL || *size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     //TODO: callback system
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -963,8 +966,10 @@ uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, 
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return NULL;
     }
+    if (size == NULL || *size == 0) {
+        return NULL;
+    }
 
-    // ESP_APPTRACE_LOGE("esp_apptrace_down_buffer_get %d", *size);
     esp_apptrace_tmo_init(&tmo, user_tmo);
     return hw->get_down_buffer(size, &tmo);
 }
@@ -984,6 +989,9 @@ esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, u
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ptr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1006,6 +1014,9 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (data == NULL || size == 0) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1039,6 +1050,9 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (fmt == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1101,6 +1115,9 @@ uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return NULL;
     }
+    if (size == 0) {
+        return NULL;
+    }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
     return hw->get_up_buffer(size, &tmo);
@@ -1121,6 +1138,9 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ptr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);

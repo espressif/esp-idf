@@ -643,6 +643,30 @@ test_espcoredump:
     - cd components/espcoredump/test/
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh
 
+test_logtrace_proc:
+  <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/esp_app_trace/test/logtrace/output
+      - tools/esp_app_trace/test/logtrace/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/esp_app_trace/test/logtrace
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_sysviewtrace_proc:
+  <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/esp_app_trace/test/sysview/output
+      - tools/esp_app_trace/test/sysview/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
 push_to_github:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
