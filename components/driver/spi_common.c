@@ -35,11 +35,18 @@
 
 static const char *SPI_TAG = "spi";
 
-#define SPI_CHECK(a, str, ret_val) \
+#define SPI_CHECK(a, str, ret_val) do { \
     if (!(a)) { \
         ESP_LOGE(SPI_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
         return (ret_val); \
-    }
+    } \
+    } while(0)
+
+#define SPI_CHECK_PIN(pin_num, pin_name, check_output) if (check_output) { \
+            SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
+        } else { \
+            SPI_CHECK(GPIO_IS_VALID_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
+        }
 
 
 typedef struct spi_device_t spi_device_t;
@@ -118,6 +125,22 @@ bool spicommon_dma_chan_free(int dma_chan)
     return true;
 }
 
+static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)
+{
+    if (bus_config->sclk_io_num>=0 &&
+        bus_config->sclk_io_num != spi_periph_signal[host].spiclk_iomux_pin) return false;
+    if (bus_config->quadwp_io_num>=0 &&
+        bus_config->quadwp_io_num != spi_periph_signal[host].spiwp_iomux_pin) return false;
+    if (bus_config->quadhd_io_num>=0 &&
+        bus_config->quadhd_io_num != spi_periph_signal[host].spihd_iomux_pin) return false;
+    if (bus_config->mosi_io_num >= 0 &&
+        bus_config->mosi_io_num != spi_periph_signal[host].spid_iomux_pin) return false;
+    if (bus_config->miso_io_num>=0 &&
+        bus_config->miso_io_num != spi_periph_signal[host].spiq_iomux_pin) return false;
+
+    return true;
+}
+
 /*
 Do the common stuff to hook up a SPI host to a bus defined by a bunch of GPIO pins. Feed it a host number and a
 bus config struct and it'll set up the GPIO matrix and enable the device. If a pin is set to non-negative value,
@@ -125,67 +148,70 @@ it should be able to be initialized.
 */
 esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan, uint32_t flags, uint32_t* flags_o)
 {
-    bool use_iomux = true;
     uint32_t temp_flag=0;
-    bool quad_pins_exist = true;
-    //the MISO should be output capable in slave mode, or in DIO/QIO mode.
-    bool miso_output = !(flags&SPICOMMON_BUSFLAG_MASTER) || flags&SPICOMMON_BUSFLAG_DUAL;
-    //the MOSI should be output capble in master mode, or in DIO/QIO mode.
-    bool mosi_output = (flags&SPICOMMON_BUSFLAG_MASTER)!=0 || flags&SPICOMMON_BUSFLAG_DUAL;
 
-    //check pins existence and if the selected pins correspond to the iomux pins of the peripheral
+    bool miso_need_output;
+    bool mosi_need_output;
+    bool sclk_need_output;
+    if ((flags&SPICOMMON_BUSFLAG_MASTER) != 0) {
+        //initial for master
+        miso_need_output = ((flags&SPICOMMON_BUSFLAG_DUAL) != 0) ? true : false;
+        mosi_need_output = true;
+        sclk_need_output = true;
+    } else {
+        //initial for slave
+        miso_need_output = true;
+        mosi_need_output = ((flags&SPICOMMON_BUSFLAG_DUAL) != 0) ? true : false;
+        sclk_need_output = false;
+    }
+
+    const bool wp_need_output = true;
+    const bool hd_need_output = true;
+
+    //check pin capabilities
     if (bus_config->sclk_io_num>=0) {
         temp_flag |= SPICOMMON_BUSFLAG_SCLK;
-        SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->sclk_io_num), "sclk not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->sclk_io_num != spi_periph_signal[host].spiclk_iomux_pin) use_iomux = false;
-    } else {
-        SPI_CHECK((flags&SPICOMMON_BUSFLAG_SCLK)==0, "sclk pin required.", ESP_ERR_INVALID_ARG);
+        SPI_CHECK_PIN(bus_config->sclk_io_num, "sclk", sclk_need_output);
     }
     if (bus_config->quadwp_io_num>=0) {
-        SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadwp_io_num), "spiwp not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadwp_io_num != spi_periph_signal[host].spiwp_iomux_pin) use_iomux = false;
-    } else {
-        quad_pins_exist = false;
-        SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spiwp pin required.", ESP_ERR_INVALID_ARG);
+        SPI_CHECK_PIN(bus_config->quadwp_io_num, "wp", wp_need_output);
     }
     if (bus_config->quadhd_io_num>=0) {
-        SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->quadhd_io_num), "spihd not valid", ESP_ERR_INVALID_ARG);
-        if (bus_config->quadhd_io_num != spi_periph_signal[host].spihd_iomux_pin) use_iomux = false;
-    } else {
-        quad_pins_exist = false;
-        SPI_CHECK((flags&SPICOMMON_BUSFLAG_WPHD)==0, "spihd pin required.", ESP_ERR_INVALID_ARG);
+        SPI_CHECK_PIN(bus_config->quadhd_io_num, "hd", hd_need_output);
     }
+    //set flags for QUAD mode according to the existence of wp and hd
+    if (bus_config->quadhd_io_num >= 0 && bus_config->quadwp_io_num >= 0) temp_flag |= SPICOMMON_BUSFLAG_WPHD;
     if (bus_config->mosi_io_num >= 0) {
         temp_flag |= SPICOMMON_BUSFLAG_MOSI;
-        if (mosi_output) {
-            SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num), "mosi not valid", ESP_ERR_INVALID_ARG);
-        } else {
-            SPI_CHECK(GPIO_IS_VALID_GPIO(bus_config->mosi_io_num), "mosi not valid", ESP_ERR_INVALID_ARG);
-        }
-        if (bus_config->mosi_io_num != spi_periph_signal[host].spid_iomux_pin) use_iomux = false;
-    } else {
-        SPI_CHECK((flags&SPICOMMON_BUSFLAG_MOSI)==0, "mosi pin required.", ESP_ERR_INVALID_ARG);
+        SPI_CHECK_PIN(bus_config->mosi_io_num, "mosi", mosi_need_output);
     }
     if (bus_config->miso_io_num>=0) {
         temp_flag |= SPICOMMON_BUSFLAG_MISO;
-        if (miso_output) {
-            SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num), "miso not valid", ESP_ERR_INVALID_ARG);
-        } else {
-            SPI_CHECK(GPIO_IS_VALID_GPIO(bus_config->miso_io_num), "miso not valid", ESP_ERR_INVALID_ARG);
-        }
-        if (bus_config->miso_io_num != spi_periph_signal[host].spiq_iomux_pin) use_iomux = false;
-    } else {
-        SPI_CHECK((flags&SPICOMMON_BUSFLAG_MISO)==0, "miso pin required.", ESP_ERR_INVALID_ARG);
+        SPI_CHECK_PIN(bus_config->miso_io_num, "miso", miso_need_output);
     }
     //set flags for DUAL mode according to output-capability of MOSI and MISO pins.
     if ( (bus_config->mosi_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->mosi_io_num)) &&
         (bus_config->miso_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(bus_config->miso_io_num)) ) {
         temp_flag |= SPICOMMON_BUSFLAG_DUAL;
     }
-    //set flags for QUAD mode according to the existence of wp and hd
-    if (quad_pins_exist) temp_flag |= SPICOMMON_BUSFLAG_WPHD;
-    //check iomux pins if required.
-    SPI_CHECK((flags&SPICOMMON_BUSFLAG_NATIVE_PINS)==0 || use_iomux, "not using iomux pins", ESP_ERR_INVALID_ARG);
+
+    //check if the selected pins correspond to the iomux pins of the peripheral
+    bool use_iomux = bus_uses_iomux_pins(host, bus_config);
+    if (use_iomux) temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
+
+    uint32_t missing_flag = flags & ~temp_flag;
+    missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;//don't check this flag
+
+    if (missing_flag != 0) {
+    //check pins existence
+        if (missing_flag & SPICOMMON_BUSFLAG_SCLK) ESP_LOGE(SPI_TAG, "sclk pin required.");
+        if (missing_flag & SPICOMMON_BUSFLAG_MOSI) ESP_LOGE(SPI_TAG, "mosi pin required.");
+        if (missing_flag & SPICOMMON_BUSFLAG_MISO) ESP_LOGE(SPI_TAG, "miso pin required.");
+        if (missing_flag & SPICOMMON_BUSFLAG_DUAL) ESP_LOGE(SPI_TAG, "not both mosi and miso output capable");
+        if (missing_flag & SPICOMMON_BUSFLAG_WPHD) ESP_LOGE(SPI_TAG, "both wp and hd required.");
+        if (missing_flag & SPICOMMON_BUSFLAG_NATIVE_PINS) ESP_LOGE(SPI_TAG, "not using iomux pins");
+        SPI_CHECK(missing_flag == 0, "not all required capabilities satisfied.", ESP_ERR_INVALID_ARG);
+    }
 
     if (use_iomux) {
         //All SPI iomux pin selections resolve to 1, so we put that here instead of trying to figure
@@ -216,7 +242,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         //Use GPIO matrix
         ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host );
         if (bus_config->mosi_io_num >= 0) {
-            if (mosi_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
+            if (mosi_need_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->mosi_io_num, spi_periph_signal[host].spid_out, false, false);
             } else {
@@ -226,7 +252,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
         }
         if (bus_config->miso_io_num >= 0) {
-            if (miso_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
+            if (miso_need_output || (temp_flag&SPICOMMON_BUSFLAG_DUAL)) {
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT_OUTPUT);
                 gpio_matrix_out(bus_config->miso_io_num, spi_periph_signal[host].spiq_out, false, false);
             } else {
@@ -248,8 +274,12 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
         }
         if (bus_config->sclk_io_num >= 0) {
-            gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT_OUTPUT);
-            gpio_matrix_out(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_out, false, false);
+            if (sclk_need_output) {
+                gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT_OUTPUT);
+                gpio_matrix_out(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_out, false, false);
+            } else {
+                gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT);
+            }
             gpio_matrix_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in, false);
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
@@ -312,8 +342,12 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
         gpio_iomux_out(cs_io_num, FUNC_SPI, false);
     } else {
         //Use GPIO matrix
-        gpio_set_direction(cs_io_num, GPIO_MODE_INPUT_OUTPUT);
-        gpio_matrix_out(cs_io_num, spi_periph_signal[host].spics_out[cs_num], false, false);
+        if (GPIO_IS_VALID_OUTPUT_GPIO(cs_io_num)) {
+            gpio_set_direction(cs_io_num, GPIO_MODE_INPUT_OUTPUT);
+            gpio_matrix_out(cs_io_num, spi_periph_signal[host].spics_out[cs_num], false, false);
+        } else {
+            gpio_set_direction(cs_io_num, GPIO_MODE_INPUT);
+        }
         if (cs_num == 0) gpio_matrix_in(cs_io_num, spi_periph_signal[host].spics_in, false);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
     }

@@ -538,6 +538,7 @@ static const uint8_t data_drom[320+3] = {
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
 
+
 TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 {
 #ifdef CONFIG_SPIRAM_SUPPORT
@@ -822,6 +823,65 @@ static void task_slave(void* arg)
 
 #define TEST_SPI_HOST   HSPI_HOST
 #define TEST_SLAVE_HOST VSPI_HOST
+
+static esp_err_t test_master_pins(int mosi, int miso, int sclk, int cs)
+{
+    esp_err_t ret;
+    spi_bus_config_t cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    cfg.mosi_io_num = mosi;
+    cfg.miso_io_num = miso;
+    cfg.sclk_io_num = sclk;
+
+    spi_device_interface_config_t master_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    master_cfg.spics_io_num = cs;
+
+    ret = spi_bus_initialize(TEST_SPI_HOST, &cfg, 1);
+    if (ret != ESP_OK) return ret;
+
+    spi_device_handle_t spi;
+    ret = spi_bus_add_device(TEST_SPI_HOST, &master_cfg, &spi);
+    if (ret != ESP_OK) {
+        spi_bus_free(TEST_SPI_HOST);
+        return ret;
+    }
+
+    spi_bus_remove_device(spi);
+    spi_bus_free(TEST_SPI_HOST);
+    return ESP_OK;
+}
+
+static esp_err_t test_slave_pins(int mosi, int miso, int sclk, int cs)
+{
+    esp_err_t ret;
+    spi_bus_config_t cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    cfg.mosi_io_num = mosi;
+    cfg.miso_io_num = miso;
+    cfg.sclk_io_num = sclk;
+
+    spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    slave_cfg.spics_io_num = cs;
+
+    ret = spi_slave_initialize(TEST_SLAVE_HOST, &cfg, &slave_cfg, 1);
+    if (ret != ESP_OK) return ret;
+
+    spi_slave_free(TEST_SLAVE_HOST);
+    return ESP_OK;
+}
+
+TEST_CASE("spi placed on input-only pins", "[spi]")
+{
+    TEST_ESP_OK(test_master_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ASSERT(test_master_pins(34, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS)!=ESP_OK);
+    TEST_ESP_OK(test_master_pins(PIN_NUM_MOSI, 34, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ASSERT(test_master_pins(PIN_NUM_MOSI, PIN_NUM_MISO, 34, PIN_NUM_CS)!=ESP_OK);
+    TEST_ASSERT(test_master_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, 34)!=ESP_OK);
+
+    TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ESP_OK(test_slave_pins(34, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ASSERT(test_slave_pins(PIN_NUM_MOSI, 34, PIN_NUM_CLK, PIN_NUM_CS)!=ESP_OK);
+    TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, 34, PIN_NUM_CS));
+    TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, 34));
+}
 
 static uint8_t bitswap(uint8_t in)
 {
