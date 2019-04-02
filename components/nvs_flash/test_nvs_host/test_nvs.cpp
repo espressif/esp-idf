@@ -2418,7 +2418,9 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
                 "--encrypt",
                 "True",
                 "--keyfile",
-                "../nvs_partition_generator/testdata/encryption_keys.txt",NULL));
+                "../nvs_partition_generator/testdata/encryption_keys.txt",
+                "--version",
+                "v2",NULL));
     } else {
         CHECK(childpid > 0);
         int status;

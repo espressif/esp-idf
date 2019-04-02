@@ -674,7 +674,7 @@ def main():
             "--version",
             help='Set version. Default: v2',
             choices=['v1','v2'],
-            default='v2')
+            default='v1')
 
     parser.add_argument(
             "--keygen",
