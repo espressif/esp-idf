@@ -18,7 +18,7 @@
 
 #include "esp_wifi.h"
 
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 
 #include "lwip/err.h"
 

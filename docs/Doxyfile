@@ -24,12 +24,12 @@ INPUT = \
     ##
     ## Wi-Fi - API Reference
     ##
-    ../../components/esp32/include/esp_wifi.h \
-    ../../components/esp32/include/esp_wifi_types.h \
-    ../../components/esp32/include/esp_smartconfig.h \
-    ../../components/esp32/include/esp_now.h \
+    ../../components/esp_wifi/include/esp_wifi.h \
+    ../../components/esp_wifi/include/esp_wifi_types.h \
+    ../../components/esp_wifi/include/esp_smartconfig.h \
+    ../../components/esp_wifi/include/esp_now.h \
     ## Mesh - API Reference
-    ../../components/esp32/include/esp_mesh.h \
+    ../../components/esp_wifi/include/esp_mesh.h \
     ## Bluetooth - API Reference
     ## Controller && VHCI
     ../../components/bt/include/esp_bt.h \
