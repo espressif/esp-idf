@@ -222,17 +222,33 @@ function run_tests()
     idf.py reconfigure > /dev/null;
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
+    rm sdkconfig;
+    rm sdkconfig.defaults;
 
     print_status "Building a project with CMake and PSRAM workaround, all files compile with workaround"
-    cp sdkconfig sdkconfig.psram
     rm -rf build
-    echo "CONFIG_SPIRAM_SUPPORT=y" >> sdkconfig.psram
-    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.psram
+    echo "CONFIG_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
+    echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
     # note: we do 'reconfigure' here, as we just need to run cmake
-    idf.py reconfigure -D SDKCONFIG="`pwd`/sdkconfig.psram"
+    idf.py reconfigure -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults"
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
-    rm sdkconfig.psram
+    rm sdkconfig.defaults
+
+    print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
+    OLDPATH="$PATH"
+    PYTHON="$(which python)"
+    rm -rf build
+    cat > ./python << EOF
+    #!/bin/sh
+    echo "The build system has executed '/usr/bin/env python' or similar"
+    exit 1
+EOF
+    chmod +x ./python
+    export PATH="$(pwd):$PATH"
+    ${PYTHON} $IDF_PATH/tools/idf.py build || failure "build failed"
+    export PATH="$OLDPATH"
+    rm ./python
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

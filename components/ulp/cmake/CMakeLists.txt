@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 include(${IDF_PATH}/tools/cmake/utilities.cmake)
 project(${ULP_APP_NAME} ASM C)
 
-set(ULP_MAP_GEN ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
+set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
 set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)
 
 get_filename_component(sdkconfig_dir ${SDKCONFIG} DIRECTORY)
