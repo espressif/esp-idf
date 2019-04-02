@@ -2,8 +2,10 @@
 
 # Regexp for matching job names which are incompatible with Python 3
 # - assign_test, nvs_compatible_test, IT - auto_test_script causes the incompatibility
-# - UT_009_ - RS485 multi-device test is not started properly
-py3_incomp='assign_test|nvs_compatible_test|IT|UT_009_'
+# - UT_009_ - multi-device tests are not compatible
+# - UT_014_ - multi-device tests are not compatible
+# - UT_017_ - multi-device tests are not compatible
+py3_incomp='assign_test|nvs_compatible_test|IT|UT_009_|UT_013_|UT_014_|UT_017_'
 
 if [ -z ${PYTHON_VER+x} ] || [[ $CI_JOB_NAME =~ $py3_incomp ]]; then
     # Use this version of the Python interpreter if it was not defined before or
