@@ -132,7 +132,7 @@ static uint64_t adjust_boot_time()
         // and the correction will be equal to (1_000_000us >> 6) = 15_625 us.
         // The minimum possible correction step can be (64us >> 6) = 1us.
         // Example: if the time error is 1 second, then it will be compensate for 1 sec / 0,015625 = 64 seconds.
-        int64_t correction = (since_boot - adjtime_start) >> ADJTIME_CORRECTION_FACTOR;
+        int64_t correction = (since_boot >> ADJTIME_CORRECTION_FACTOR) - (adjtime_start >> ADJTIME_CORRECTION_FACTOR);
         if (correction > 0) {
             adjtime_start = since_boot;
             if (adjtime_total_correction < 0) {
