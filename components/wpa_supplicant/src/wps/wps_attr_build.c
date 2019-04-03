@@ -17,7 +17,6 @@
 
 #include "wpa/ieee802_11_defs.h"
 #include "wps/wps_i.h"
-#include "soc/dport_reg.h"
 
 int wps_build_public_key(struct wps_data *wps, struct wpabuf *msg, wps_key_mode_t mode)
 {

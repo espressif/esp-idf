@@ -19,6 +19,7 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/efuse.h"
 #include "soc/spi_struct.h"
+#include "soc/spi_reg.h"
 #include "soc/efuse_reg.h"
 #include "sdkconfig.h"
 

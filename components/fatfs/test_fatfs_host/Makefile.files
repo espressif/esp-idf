@@ -25,6 +25,7 @@ INCLUDE_DIRS := \
 	xtensa/include \
 	xtensa/esp32/include \
 	soc/esp32/include \
+	soc/include \
 	esp32/include \
 	esp_common/include \
 	bootloader_support/include \

@@ -22,12 +22,12 @@
  * examples and are not optimized for speed.
  */
 
-#include "crypto/common.h"
 #include "os.h"
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 #include "esp_system.h"
+#include "crypto/common.h"
 
 int os_get_time(struct os_time *t)
 {

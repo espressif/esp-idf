@@ -26,6 +26,7 @@
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
 #include "soc/gpio_periph.h"
+#include "soc/efuse_reg.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
 #include "sys/param.h"

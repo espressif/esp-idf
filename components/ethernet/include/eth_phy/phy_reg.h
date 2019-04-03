@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include <esp_bit_defs.h>
+
 /**
  * @brief This header contains register/bit masks for the standard PHY MII registers that should be supported by all PHY models.
  *

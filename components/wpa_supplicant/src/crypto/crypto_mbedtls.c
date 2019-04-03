@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef ESP_PLATFORM
+#include "esp_system.h"
+#include "mbedtls/bignum.h"
+#endif
+
 #include "crypto/includes.h"
 #include "crypto/common.h"
 #include "crypto/crypto.h"
@@ -20,10 +25,6 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 
-#ifdef ESP_PLATFORM
-#include "esp_system.h"
-#include "mbedtls/bignum.h"
-#endif
 
 
 #define IANA_SECP256R1 19
@@ -216,7 +217,7 @@ int crypto_bignum_legendre(const struct crypto_bignum *a,
 
     mbedtls_mpi_init(&exp);
     mbedtls_mpi_init(&tmp);
-    
+
     /* exp = (p-1) / 2 */
     MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(&exp, (const mbedtls_mpi *) p, 1));
     MBEDTLS_MPI_CHK(mbedtls_mpi_shift_r(&exp, 1));
@@ -224,10 +225,10 @@ int crypto_bignum_legendre(const struct crypto_bignum *a,
 
     if (mbedtls_mpi_cmp_int(&tmp, 1) == 0) {
         res = 1;
-    } else if (mbedtls_mpi_cmp_int(&tmp, 0) == 0 
-            /* The below check is workaround for the case where HW 
-             * does not behave properly for X ^ A mod M when X is 
-             * power of M. Instead of returning value 0, value M is 
+    } else if (mbedtls_mpi_cmp_int(&tmp, 0) == 0
+            /* The below check is workaround for the case where HW
+             * does not behave properly for X ^ A mod M when X is
+             * power of M. Instead of returning value 0, value M is
              * returned.*/
             || mbedtls_mpi_cmp_mpi(&tmp, (const mbedtls_mpi *)p) == 0) {
         res = 0;
@@ -303,7 +304,7 @@ struct crypto_ec_point *crypto_ec_point_init(struct crypto_ec *e)
     if( pt == NULL) {
         return NULL;
     }
-    
+
     mbedtls_ecp_point_init(pt);
 
     return (struct crypto_ec_point *) pt;
@@ -418,17 +419,17 @@ int crypto_ec_point_mul(struct crypto_ec *e, const struct crypto_ec_point *p,
     int ret;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
-    
+
     mbedtls_entropy_init(&entropy);
 
     MBEDTLS_MPI_CHK(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
-                                    NULL, 0)); 
- 
+                                    NULL, 0));
+
     MBEDTLS_MPI_CHK(mbedtls_ecp_mul(&e->group,
                 (mbedtls_ecp_point *) res,
                 (const mbedtls_mpi *)b,
                 (const mbedtls_ecp_point *)p,
-                mbedtls_ctr_drbg_random, 
+                mbedtls_ctr_drbg_random,
                 &ctr_drbg));
 cleanup:
     mbedtls_ctr_drbg_free( &ctr_drbg );
