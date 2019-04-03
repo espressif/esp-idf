@@ -25,6 +25,7 @@
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
 #include "../cache_utils.h"
+#include "soc/soc_memory_layout.h"
 
 const static char TAG[] = "test_spi";
 

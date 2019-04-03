@@ -35,6 +35,7 @@
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_impl.h"
 #include "esp32/pm.h"
+#include "esp_sleep.h"
 
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work
  * for the purpose of detecting a deadlock.

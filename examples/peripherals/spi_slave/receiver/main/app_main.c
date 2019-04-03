@@ -31,6 +31,7 @@
 #include "driver/spi_slave.h"
 #include "esp_log.h"
 #include "esp_spi_flash.h"
+#include "driver/gpio.h"
 
 
 
@@ -38,7 +39,7 @@
 /*
 SPI receiver (slave) example.
 
-This example is supposed to work together with the SPI sender. It uses the standard SPI pins (MISO, MOSI, SCLK, CS) to 
+This example is supposed to work together with the SPI sender. It uses the standard SPI pins (MISO, MOSI, SCLK, CS) to
 transmit data over in a full-duplex fashion, that is, while the master puts data on the MOSI pin, the slave puts its own
 data on the MISO pin.
 

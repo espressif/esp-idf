@@ -5,6 +5,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "driver/timer.h"
 #include "esp32/rom/rtc.h"
+#include "esp_sleep.h"
 
 #define RTC_BSS_ATTR __attribute__((section(".rtc.bss")))
 
@@ -275,7 +276,7 @@ static void timer_group_test_first_stage(void)
     timer_start(TIMER_GROUP_0, TIMER_0);
     //Waiting for timer_group to generate an interrupt
     while( !TIMERG0.int_raw.t0 && loop_cnt++ < 100) {
-        vTaskDelay(200);    
+        vTaskDelay(200);
     }
     //TIMERG0.int_raw.t0 == 1 means an interruption has occurred
     TEST_ASSERT_EQUAL(1, TIMERG0.int_raw.t0);

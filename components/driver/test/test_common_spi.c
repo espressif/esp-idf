@@ -1,6 +1,7 @@
 #include "test/test_common_spi.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 
 int test_freq_default[]=TEST_FREQ_DEFAULT();
 

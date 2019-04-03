@@ -6,6 +6,7 @@
 #include "unity.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
+#include "driver/gpio.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "test/test_common_spi.h"

@@ -2,6 +2,8 @@ set(COMPONENT_ADD_INCLUDEDIRS "port/include" "mbedtls/include")
 set(COMPONENT_SRCS "mbedtls.c")
 set(COMPONENT_REQUIRES lwip)
 
+set(MBEDTLS_PRIV_REQUIRES ${IDF_COMPONENT_REQUIRES_COMMON} soc)
+
 register_component()
 
 # Only build mbedtls libraries
@@ -95,7 +97,7 @@ foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
 
     # The mbedtls targets also depends on core components
-    foreach(common ${IDF_COMPONENT_REQUIRES_COMMON})
+    foreach(common ${MBEDTLS_PRIV_REQUIRES})
         component_get_target(common_target ${common})
         set_property(TARGET ${target} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${common_target})
         set_property(TARGET ${target} APPEND PROPERTY LINK_LIBRARIES ${common_target})

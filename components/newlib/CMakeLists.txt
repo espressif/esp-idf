@@ -56,6 +56,7 @@ else()
     endif()
 endif()
 set(COMPONENT_REQUIRES vfs)  # for sys/ioctl.h
+set(COMPONENT_PRIV_REQUIRES soc)
 
 list(APPEND COMPONENT_ADD_LDFRAGMENTS newlib.lf)
 

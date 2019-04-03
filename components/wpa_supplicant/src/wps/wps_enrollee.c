@@ -17,8 +17,6 @@
 #include "wps/wps.h"
 #include "wps/wps_dev_attr.h"
 
-#include "soc/dport_reg.h"
-
 
 static int wps_build_mac_addr(struct wps_data *wps, struct wpabuf *msg) {
 	wpa_printf(MSG_DEBUG,  "WPS:  * MAC Address");
@@ -1022,7 +1020,7 @@ static enum wps_process_res wps_process_m4(struct wps_data *wps,
 		res = WPS_CONTINUE;
 		goto _out;
 	}
-		
+
 	if (wps->state != RECV_M4) {
 		wpa_printf(MSG_DEBUG,  "WPS: Unexpected state (%d) for "
 			   "receiving M4", wps->state);
@@ -1250,7 +1248,7 @@ static enum wps_process_res wps_process_wsc_start(struct wps_data *wps,
 
 	wpa_printf(MSG_DEBUG,  "WPS: Received WSC_START");
 	ets_timer_disarm(&sm->wps_eapol_start_timer);
-        wps->state = SEND_M1; 
+        wps->state = SEND_M1;
 	return ret;
 }
 

@@ -23,7 +23,7 @@ if(CONFIG_HEAP_TRACING_TOHOST)
 endif()
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES heap)
+set(COMPONENT_PRIV_REQUIRES heap soc)
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 
 register_component()

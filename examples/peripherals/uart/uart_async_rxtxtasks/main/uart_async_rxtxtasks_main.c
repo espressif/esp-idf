@@ -13,6 +13,7 @@
 #include "driver/uart.h"
 #include "soc/uart_struct.h"
 #include "string.h"
+#include "driver/gpio.h"
 
 static const int RX_BUF_SIZE = 1024;
 

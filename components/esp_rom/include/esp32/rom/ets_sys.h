@@ -17,8 +17,13 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
+#include "sdkconfig.h"
+
+#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

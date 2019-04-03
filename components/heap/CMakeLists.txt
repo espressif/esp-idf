@@ -17,6 +17,7 @@ endif()
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 set(COMPONENT_REQUIRES "")
+set(COMPONENT_PRIV_REQUIRES soc)
 
 register_component()
 
