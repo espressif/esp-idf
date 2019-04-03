@@ -189,7 +189,14 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
         return ret;
     }
 
+#ifdef CONFIG_BTDM_CONTROLLER_MODE_BTDM
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+#elif defined CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+#else
+    ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
+    return ESP_FAIL;
+#endif
     if (ret) {
         ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
         return ret;
