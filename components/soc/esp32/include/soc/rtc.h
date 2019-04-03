@@ -88,7 +88,7 @@ typedef enum {
 /**
  * @brief CPU clock configuration structure
  */
-typedef struct {
+typedef struct rtc_cpu_freq_config_s {
     rtc_cpu_freq_src_t source;      //!< The clock from which CPU clock is derived
     uint32_t source_freq_mhz;       //!< Source clock frequency
     uint32_t div;                   //!< Divider, freq_mhz = source_freq_mhz / div
@@ -127,7 +127,7 @@ typedef enum {
 /**
  * Initialization parameters for rtc_clk_init
  */
-typedef struct {
+typedef struct rtc_clk_config_s {
     rtc_xtal_freq_t xtal_freq : 8;      //!< Main XTAL frequency
     rtc_cpu_freq_t cpu_freq_mhz : 10;   //!< CPU frequency to set, in MHz
     rtc_fast_freq_t fast_freq : 1;      //!< RTC_FAST_CLK frequency to set
@@ -535,7 +535,7 @@ void rtc_clk_wait_for_slow_cycle();
 /**
  * @brief sleep configuration for rtc_sleep_init function
  */
-typedef struct {
+typedef struct rtc_sleep_config_s {
     uint32_t lslp_mem_inf_fpu : 1;      //!< force normal voltage in sleep mode (digital domain memory)
     uint32_t rtc_mem_inf_fpu : 1;       //!< force normal voltage in sleep mode (RTC memory)
     uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if ULP/touch is used)
@@ -657,7 +657,7 @@ uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt);
 /**
  * RTC power and clock control initialization settings
  */
-typedef struct {
+typedef struct rtc_config_s {
     uint32_t ck8m_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for 8M clock to be ready
     uint32_t xtal_wait : 8;         //!< Number of rtc_fast_clk cycles to wait for XTAL clock to be ready
     uint32_t pll_wait : 8;          //!< Number of rtc_fast_clk cycles to wait for PLL to be ready
@@ -693,7 +693,7 @@ void rtc_init(rtc_config_t cfg);
 /**
  * Structure describing vddsdio configuration
  */
-typedef struct {
+typedef struct rtc_vddsdio_config_s {
     uint32_t force : 1;     //!< If 1, use configuration from RTC registers; if 0, use EFUSE/bootstrapping pins.
     uint32_t enable : 1;    //!< Enable VDDSDIO regulator
     uint32_t tieh  : 1;     //!< Select VDDSDIO voltage. One of RTC_VDDSDIO_TIEH_1_8V, RTC_VDDSDIO_TIEH_3_3V
