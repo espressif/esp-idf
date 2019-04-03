@@ -29,6 +29,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "IDF_TARGET_NOT_SET" if IDF_TARGET_ENV=""
         default IDF_TARGET_ENV
 
+    config IDF_TARGET_ESP32
+        bool
+        default y if IDF_TARGET="esp32"
+
+    config IDF_TARGET_ESP32S2BETA
+        bool
+        default y if IDF_TARGET="esp32s2beta"
 
     menu "SDK tool configuration"
         config SDK_TOOLPREFIX
