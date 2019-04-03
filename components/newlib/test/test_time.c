@@ -131,8 +131,6 @@ TEST_CASE("test adjtime function", "[newlib]")
 }
 
 static volatile bool exit_flag;
-static bool adjtime_test_result;
-static bool gettimeofday_test_result;
 
 static void adjtimeTask2(void *pvParameters)
 {
@@ -203,76 +201,123 @@ TEST_CASE("test for no interlocking adjtime, gettimeofday and settimeofday funct
     }
 }
 
-static void adjtimeTask(void *pvParameters)
-{
-    struct timeval delta = {.tv_sec = 0, .tv_usec = 0};
-    struct timeval outdelta = {.tv_sec = 0, .tv_usec = 0};
+#ifndef CONFIG_FREERTOS_UNICORE
+#define ADJTIME_CORRECTION_FACTOR 6
 
-    // although exit flag is set in another task, checking (exit_flag == false) is safe
-    while (exit_flag == false) {
-        delta.tv_sec = 1000;
-        delta.tv_usec = 0;
-        if(adjtime(&delta, &outdelta) != 0) {
-            adjtime_test_result = true;
-            exit_flag = true;
-        }
-        delta.tv_sec = 0;
-        delta.tv_usec = 1000;
-        if(adjtime(&delta, &outdelta) != 0) {
-            adjtime_test_result = true;
-            exit_flag = true;
-        }
-    }
-    vTaskDelete(NULL);
-}
+static int64_t result_adjtime_correction_us[2];
 
-static void gettimeofdayTask(void *pvParameters)
+static void get_time_task(void *pvParameters)
 {
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
     struct timeval tv_time;
-
-    gettimeofday(&tv_time, NULL);
-    uint64_t time_old = (uint64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
     // although exit flag is set in another task, checking (exit_flag == false) is safe
     while (exit_flag == false) {
         gettimeofday(&tv_time, NULL);
-        uint64_t time   = (uint64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
-        if(((time - time_old) > 1000000LL) || (time_old > time)) {
-            printf("ERROR: time jumped for %lld/1000 seconds. No locks. Need to use locks.\n", (time - time_old)/1000000LL);
-            gettimeofday_test_result = true;
-            exit_flag = true;
-        }
-        time_old = time;
     }
+    xSemaphoreGive(*sema);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("test for thread safety adjtime and gettimeofday functions", "[newlib]")
+static void start_measure(int64_t* sys_time, int64_t* real_time)
 {
-    TaskHandle_t th[4];
+    struct timeval tv_time;
+    *real_time = esp_timer_get_time();
+    gettimeofday(&tv_time, NULL);
+    *sys_time = (int64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
+}
+
+static void end_measure(int64_t* sys_time, int64_t* real_time)
+{
+    struct timeval tv_time;
+    gettimeofday(&tv_time, NULL);
+    *real_time = esp_timer_get_time();
+    *sys_time  = (int64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
+}
+
+static int64_t calc_correction(const char* tag, int64_t* sys_time, int64_t* real_time)
+{
+    int64_t dt_real_time_us = real_time[1] - real_time[0];
+    int64_t dt_sys_time_us  = sys_time[1] - sys_time[0];
+    int64_t calc_correction_us = dt_real_time_us >> ADJTIME_CORRECTION_FACTOR;
+    int64_t real_correction_us = dt_sys_time_us - dt_real_time_us;
+    int64_t error_us = calc_correction_us - real_correction_us;
+    printf("%s: dt_real_time = %lli us, dt_sys_time = %lli us, calc_correction = %lli us, error = %lli us\n",
+            tag, dt_real_time_us, dt_sys_time_us, calc_correction_us, error_us);
+
+    TEST_ASSERT_TRUE(dt_sys_time_us > 0 && dt_real_time_us > 0);
+    TEST_ASSERT_INT_WITHIN(100, 0, error_us);
+    return real_correction_us;
+}
+
+static void measure_time_task(void *pvParameters)
+{
+    struct timeval tv_time;
+    int64_t real_time_us[2];
+    int64_t sys_time_us[2];
+    int64_t delay_us = 2 * 1000000; // 2 sec
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    gettimeofday(&tv_time, NULL);
+    start_measure(&sys_time_us[0], &real_time_us[0]);
+    // although exit flag is set in another task, checking (exit_flag == false) is safe
+    while (exit_flag == false) {
+        ets_delay_us(delay_us);
+
+        end_measure(&sys_time_us[1], &real_time_us[1]);
+        result_adjtime_correction_us[1] += calc_correction("measure", sys_time_us, real_time_us);
+
+        sys_time_us[0]  = sys_time_us[1];
+        real_time_us[0] = real_time_us[1];
+    }
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=35]")
+{
+    int64_t real_time_us[2];
+    int64_t sys_time_us[2];
+
     exit_flag = false;
-    adjtime_test_result = false;
-    gettimeofday_test_result = false;
 
-    struct timeval tv_time = { .tv_sec = 1520000000, .tv_usec = 900000 };
-    TEST_ASSERT_EQUAL(settimeofday(&tv_time, NULL), 0);
+    struct timeval tv_time = {.tv_sec = 1550000000, .tv_usec = 0};
+    TEST_ASSERT_EQUAL(0, settimeofday(&tv_time, NULL));
 
-#ifndef CONFIG_FREERTOS_UNICORE
-    printf("CPU0 and CPU1. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask\n");
-    xTaskCreatePinnedToCore(adjtimeTask, "adjtimeTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[0], 0);
-    xTaskCreatePinnedToCore(gettimeofdayTask, "gettimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[1], 1);
-    xTaskCreatePinnedToCore(gettimeofdayTask, "gettimeofdayTask2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[2], 0);
-#else
-    printf("Only one CPU. Tasks run: 1 - adjtimeTask, 2 - gettimeofdayTask\n");
-    xTaskCreate(adjtimeTask, "adjtimeTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[0]);
-    xTaskCreate(gettimeofdayTask, "gettimeofdayTask1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, &th[1]);
-#endif
+    struct timeval delta = {.tv_sec = 2000, .tv_usec = 900000};
+    adjtime(&delta, NULL);
+    gettimeofday(&tv_time, NULL);
 
-    printf("start wait for 5 seconds\n");
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    xSemaphoreHandle exit_sema[2];
+    for (int i = 0; i < 2; ++i) {
+        exit_sema[i] = xSemaphoreCreateBinary();
+        result_adjtime_correction_us[i] = 0;
+    }
+
+    start_measure(&sys_time_us[0], &real_time_us[0]);
+
+    xTaskCreatePinnedToCore(get_time_task, "get_time_task", 2048, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(measure_time_task, "measure_time_task", 2048, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+
+    printf("start waiting for 30 seconds\n");
+    vTaskDelay(30000 / portTICK_PERIOD_MS);
 
     // set exit flag to let thread exit
     exit_flag = true;
-    vTaskDelay(20 / portTICK_PERIOD_MS);
 
-    TEST_ASSERT(adjtime_test_result == false && gettimeofday_test_result == false);
+    for (int i = 0; i < 2; ++i) {
+        if (!xSemaphoreTake(exit_sema[i], 2100/portTICK_PERIOD_MS)) {
+            TEST_FAIL_MESSAGE("exit_sema not released by test task");
+        }
+    }
+
+    end_measure(&sys_time_us[1], &real_time_us[1]);
+    result_adjtime_correction_us[0] = calc_correction("main", sys_time_us, real_time_us);
+
+    int64_t delta_us = result_adjtime_correction_us[0] - result_adjtime_correction_us[1];
+    printf("\nresult of adjtime correction: %lli us, %lli us. delta = %lli us\n", result_adjtime_correction_us[0], result_adjtime_correction_us[1], delta_us);
+    TEST_ASSERT_INT_WITHIN(100, 0, delta_us);
+
+    for (int i = 0; i < 2; ++i) {
+        vSemaphoreDelete(exit_sema[i]);
+    }
 }
+#endif
