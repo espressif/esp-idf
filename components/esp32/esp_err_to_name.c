@@ -19,6 +19,9 @@
 #if __has_include("esp_http_server.h")
 #include "esp_http_server.h"
 #endif
+#if __has_include("esp_https_ota.h")
+#include "esp_https_ota.h"
+#endif
 #if __has_include("esp_image_format.h")
 #include "esp_image_format.h"
 #endif
@@ -531,6 +534,13 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_HTTPD_TASK
     ERR_TBL_IT(ESP_ERR_HTTPD_TASK),                         /* 32776 0x8008 Failed to launch server task/thread */
+#   endif
+    // components/esp_https_ota/include/esp_https_ota.h
+#   ifdef      ESP_ERR_HTTPS_OTA_BASE
+    ERR_TBL_IT(ESP_ERR_HTTPS_OTA_BASE),                     /* 36864 0x9000 */
+#   endif
+#   ifdef      ESP_ERR_HTTPS_OTA_IN_PROGRESS
+    ERR_TBL_IT(ESP_ERR_HTTPS_OTA_IN_PROGRESS),              /* 36865 0x9001 */
 #   endif
     // components/spi_flash/include/esp_spi_flash.h
 #   ifdef      ESP_ERR_FLASH_BASE
