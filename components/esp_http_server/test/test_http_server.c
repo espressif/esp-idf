@@ -167,3 +167,22 @@ TEST_CASE("Basic Functionality Tests", "[HTTP SERVER]")
     test_handler_limit(hd);
     TEST_ASSERT(httpd_stop(hd) == ESP_OK);
 }
+
+TEST_CASE("Max Allowed Sockets Test", "[HTTP SERVER]")
+{
+    test_case_uses_tcpip();
+
+    httpd_handle_t hd;
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    /* Starting server with default config options should pass */
+    TEST_ASSERT(httpd_start(&hd, &config) == ESP_OK);
+    TEST_ASSERT(httpd_stop(hd) == ESP_OK);
+
+    /* Default value of max_open_sockets is already set as per
+     * maximum limit imposed by LWIP. Increasing this beyond the
+     * maximum allowed value, without increasing LWIP limit,
+     * should fail */
+    config.max_open_sockets += 1;
+    TEST_ASSERT(httpd_start(&hd, &config) != ESP_OK);
+}
