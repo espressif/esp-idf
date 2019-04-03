@@ -76,7 +76,7 @@ from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_ESP32_SPIRAM_SUPPORT
-    { 0x3F800000, 0x400000, 15, 0}, //SPI SRAM, if available
+    { SOC_EXTRAM_DATA_LOW, CONFIG_SPIRAM_SIZE, 15, 0}, //SPI SRAM, if available
 #endif
     { 0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
     { 0x3FFB0000, 0x8000, 0, 0}, //pool 15 <- if BT is enabled, used as BT HW shared memory
@@ -167,7 +167,7 @@ SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace me
 #endif
 
 #ifdef CONFIG_ESP32_SPIRAM_SUPPORT
-SOC_RESERVE_MEMORY_REGION(0x3f800000, 0x3fC00000, spi_ram); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
+SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE, spi_ram); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #endif
 
 #endif /* BOOTLOADER_BUILD */

@@ -160,10 +160,12 @@ inline static bool IRAM_ATTR esp_ptr_executable(const void *p)
 
 inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
 {
+    intptr_t ip = (intptr_t) p;
     bool r;
-    r = ((intptr_t)p >= SOC_BYTE_ACCESSIBLE_LOW && (intptr_t)p < SOC_BYTE_ACCESSIBLE_HIGH);
-#if CONFIG_ESP32_SPIRAM_SUPPORT
-    r |= ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
+    r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
+#if CONFIG_ESP32_SPIRAM_SUPPORT && CONFIG_SPIRAM_SIZE
+// ToDo: Use SOC_EXTRAM_DATA_HIGH if CONFIG_SPIRAM_SIZE is -1 (ie max possible SPIRAM size)
+    r |= (ip >= SOC_EXTRAM_DATA_LOW && ip < (SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE));
 #endif
     return r;
 }
