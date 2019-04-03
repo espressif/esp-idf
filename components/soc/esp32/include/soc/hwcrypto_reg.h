@@ -26,16 +26,22 @@
 
 #define RSA_M_DASH_REG                (DR_REG_RSA_BASE + 0x800)
 #define RSA_MODEXP_MODE_REG           (DR_REG_RSA_BASE + 0x804)
-#define RSA_START_MODEXP_REG          (DR_REG_RSA_BASE + 0x808)
+#define RSA_MODEXP_START_REG          (DR_REG_RSA_BASE + 0x808)
 #define RSA_MULT_MODE_REG             (DR_REG_RSA_BASE + 0x80c)
 #define RSA_MULT_START_REG            (DR_REG_RSA_BASE + 0x810)
 
-#define RSA_INTERRUPT_REG             (DR_REG_RSA_BASE + 0x814)
+#define RSA_CLEAR_INTERRUPT_REG       (DR_REG_RSA_BASE + 0x814)
+#define RSA_QUERY_INTERRUPT_REG       (DR_REG_RSA_BASE + 0x814) /* same */
 
-#define RSA_CLEAN_REG                 (DR_REG_RSA_BASE + 0x818)
+#define RSA_QUERY_CLEAN_REG           (DR_REG_RSA_BASE + 0x818)
+
+/* Backwards compatibility register names used pre-ESP32S2 */
+#define RSA_CLEAN_REG                 (RSA_QUERY_CLEAN_REG)
+#define RSA_INTERRUPT_REG             (RSA_CLEAR_INTERRUPT_REG)
+#define RSA_START_MODEXP_REG          (RSA_MODEXP_START_REG)
 
 /* SHA acceleration registers */
-#define SHA_TEXT_BASE          ((DR_REG_SHA_BASE) + 0x00)
+#define SHA_TEXT_BASE           ((DR_REG_SHA_BASE) + 0x00)
 
 #define SHA_1_START_REG         ((DR_REG_SHA_BASE) + 0x80)
 #define SHA_1_CONTINUE_REG      ((DR_REG_SHA_BASE) + 0x84)

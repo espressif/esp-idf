@@ -40,7 +40,8 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
         .module = PERIPH_SPI_MODULE,
-        .hw = &SPI1
+        .hw = &SPI1,
+        .func = SPI_FUNC_NUM
     }, {
         .spiclk_out = HSPICLK_OUT_IDX,
         .spiclk_in = HSPICLK_IN_IDX,
@@ -63,7 +64,8 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
         .module = PERIPH_HSPI_MODULE,
-        .hw = &SPI2
+        .hw = &SPI2,
+        .func = HSPI_FUNC_NUM
     }, {
         .spiclk_out = VSPICLK_OUT_IDX,
         .spiclk_in = VSPICLK_IN_IDX,
@@ -86,6 +88,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
         .module = PERIPH_VSPI_MODULE,
-        .hw = &SPI3
+        .hw = &SPI3,
+        .func = VSPI_FUNC_NUM
     }
 };

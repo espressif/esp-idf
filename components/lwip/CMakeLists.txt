@@ -86,11 +86,7 @@ set(COMPONENT_SRCS "apps/dhcpserver/dhcpserver.c"
                    "port/esp32/debug/lwip_debug.c"
                    "port/esp32/freertos/sys_arch.c"
                    "port/esp32/netif/dhcp_state.c"
-<<<<<<< bce8b14e7324423a5caad1c6a240e97fdc45afe2
-                   "port/esp32/netif/ethernetif.c"
                    "port/esp32/netif/nettestif.c"
-=======
->>>>>>> Ethernet peripheral will depend on IDF_TARGET
                    "port/esp32/netif/wlanif.c")
 
 if(CONFIG_IDF_TARGET_ESP32)

@@ -15,6 +15,9 @@
 #ifndef _SOC_SPI_PINS_H_
 #define _SOC_SPI_PINS_H_
 
+#define SPI_PERIPH_NUM          3
+
+#define SPI_FUNC_NUM            1
 #define SPI_IOMUX_PIN_NUM_MISO  7
 #define SPI_IOMUX_PIN_NUM_MOSI  8
 #define SPI_IOMUX_PIN_NUM_CLK   6
@@ -22,6 +25,7 @@
 #define SPI_IOMUX_PIN_NUM_WP    10
 #define SPI_IOMUX_PIN_NUM_HD    9
 
+#define HSPI_FUNC_NUM           1
 #define HSPI_IOMUX_PIN_NUM_MISO 12
 #define HSPI_IOMUX_PIN_NUM_MOSI 13
 #define HSPI_IOMUX_PIN_NUM_CLK  14
@@ -29,6 +33,7 @@
 #define HSPI_IOMUX_PIN_NUM_WP   2
 #define HSPI_IOMUX_PIN_NUM_HD   4
 
+#define VSPI_FUNC_NUM           1
 #define VSPI_IOMUX_PIN_NUM_MISO 19
 #define VSPI_IOMUX_PIN_NUM_MOSI 23
 #define VSPI_IOMUX_PIN_NUM_CLK  18
