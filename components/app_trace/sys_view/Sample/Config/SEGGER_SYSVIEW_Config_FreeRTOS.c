@@ -68,6 +68,7 @@ Revision: $Rev: 3734 $
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
 #include "esp32/clk.h"
+#include "soc/soc.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -130,7 +131,7 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 #define SYSVIEW_CPU_FREQ        (esp_clk_cpu_freq())
 
 // The lowest RAM address used for IDs (pointers)
-#define SYSVIEW_RAM_BASE        (0x3F400000)
+#define SYSVIEW_RAM_BASE        (SOC_DROM_LOW)
 
 #if CONFIG_FREERTOS_CORETIMER_0
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
