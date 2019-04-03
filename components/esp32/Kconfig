@@ -931,7 +931,7 @@ menu "ESP32-specific"
 
 config USE_FIXED_STATIC_RAM_SIZE
 	bool "Use fixed static RAM size"
-	default false
+	default n
     help
 	    Without this option, the Dram part of the heap starts right after the .bss sections,
 		within the dram0_0 region. As a result, adding or removing some static variables,
@@ -942,9 +942,10 @@ config USE_FIXED_STATIC_RAM_SIZE
 config FIXED_STATIC_RAM_SIZE
 	hex "Fixed Static RAM size"
 	default 0x1E000
+	range 0 0x2c200
     depends on USE_FIXED_STATIC_RAM_SIZE
 	help
-	    Ram size dedicated for static variables. Should be smaller than 0x2c200.
+	    Ram size dedicated for static variables.
 		Please note that the actual length will be reduced by BT_RESERVE_DRAM if configured.
 
 endmenu  # ESP32-Specific
