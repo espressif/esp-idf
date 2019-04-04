@@ -56,7 +56,8 @@
 #define XTPERF_CNT_OUTBOUND_PIF   23 /* Outbound PIF transactions */
 #define XTPERF_CNT_INBOUND_PIF    24 /* Inbound PIF transactions */
 #define XTPERF_CNT_PREFETCH       26 /* Prefetch events */
-
+#define XTPERF_CNT_IDMA           27 /* iDMA counters */
+#define XTPERF_CNT_INSN_LENGTH    28 /* Instruction length counters */
 
 /*
  * Masks for each of the selector listed above
@@ -280,4 +281,33 @@
 #define XTPERF_MASK_PREFETCH_D_MISS                0x0008 /* D prefetch-buffer-lookup miss */
 #define XTPERF_MASK_PREFETCH_D_L1_FILL             0x0020 /* Fill directly to DCache L1 */
 
+/*
+ * XTPERF_CNT_IDMA selector mask
+ */
+
+#define XTPERF_MASK_IDMA_ALL                       0x0001
+
+#define XTPERF_MASK_IDMA_ACTIVE_CYCLES             0x0001 /* Active Cycles */
+
+/*
+ * XTPERF_CNT_INSN_LENGTH selector mask
+ */
+
+#define XTPERF_MASK_INSN_LENGTH_ALL                0x7FFF
+
+#define XTPERF_MASK_INSN_LENGTH_16                 0x0001 /* 16-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_24                 0x0002 /* 24-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_32                 0x0004 /* 32-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_40                 0x0008 /* 40-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_48                 0x0010 /* 48-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_56                 0x0020 /* 56-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_64                 0x0040 /* 64-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_72                 0x0080 /* 72-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_80                 0x0100 /* 80-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_88                 0x0200 /* 88-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_96                 0x0400 /* 96-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_104                0x0800 /* 104-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_112                0x1000 /* 112-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_120                0x2000 /* 120-bit instruction length */
+#define XTPERF_MASK_INSN_LENGTH_128                0x4000 /* 128-bit instruction length */
 #endif /* __XT_PERF_CONSTS_H__ */
