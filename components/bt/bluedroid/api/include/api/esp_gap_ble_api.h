@@ -558,6 +558,7 @@ typedef enum {
     ESP_GAP_SEARCH_DISC_CMPL_EVT           = 4,      /*!< Discovery complete. */
     ESP_GAP_SEARCH_DI_DISC_CMPL_EVT        = 5,      /*!< Discovery complete. */
     ESP_GAP_SEARCH_SEARCH_CANCEL_CMPL_EVT  = 6,      /*!< Search cancelled */
+    ESP_GAP_SEARCH_INQ_DISCARD_NUM_EVT     = 7,      /*!< The number of pkt discarded by flow control */
 } esp_gap_search_evt_t;
 
 /**
@@ -588,12 +589,18 @@ typedef enum {
 typedef enum {
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR       = 0,  /*!< BLE advertising address , device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST */
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID,        /*!< BLE mesh link ID, it is for BLE mesh, device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_BEACON_TYPE,    /*!< BLE mesh beacon AD type, the format is | Len | 0x2B | Beacon Type | Beacon Data | */     
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROV_SRV_ADV,   /*!< BLE mesh provisioning service uuid, the format is | 0x02 | 0x01 | flags | 0x03 | 0x03 | 0x1827 | .... |` */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROXY_SRV_ADV,  /*!< BLE mesh adv with proxy service uuid, the format is | 0x02 | 0x01 | flags | 0x03 | 0x03 | 0x1828 | .... |` */
 } esp_ble_duplicate_exceptional_info_type_t;
 
 typedef enum {
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST         = BLE_BIT(0), /*!< duplicate scan exceptional addr list */
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST = BLE_BIT(1), /*!< duplicate scan exceptional mesh link ID list */
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST = (BLE_BIT(0) | BLE_BIT(1)), /*!< duplicate scan exceptional all list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST                  = BLE_BIT(0),             /*!< duplicate scan exceptional addr list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST          = BLE_BIT(1),             /*!< duplicate scan exceptional mesh link ID list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_BEACON_TYPE_LIST      = BLE_BIT(2),             /*!< duplicate scan exceptional mesh beacon type list */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_PROV_SRV_ADV_LIST     = BLE_BIT(3),             /*!< duplicate scan exceptional mesh adv with provisioning service uuid */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_PROXY_SRV_ADV_LIST    = BLE_BIT(4),             /*!< duplicate scan exceptional mesh adv with provisioning service uuid */
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ALL_LIST                   = 0xFFFF,                 /*!< duplicate scan exceptional all list */
 } esp_duplicate_scan_exceptional_list_type_t;
 
 typedef uint8_t esp_duplicate_info_t[ESP_BD_ADDR_LEN];
@@ -635,6 +642,7 @@ typedef union {
         int num_resps;                              /*!< Scan result number */
         uint8_t adv_data_len;                       /*!< Adv data length */
         uint8_t scan_rsp_len;                       /*!< Scan response length */
+        uint32_t num_dis;                          /*!< The number of discard packets */
     } scan_rst;                                     /*!< Event parameter of ESP_GAP_BLE_SCAN_RESULT_EVT */
     /**
      * @brief ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT
@@ -930,12 +938,13 @@ esp_err_t esp_ble_gap_config_local_icon (uint16_t icon);
 *
 * @param[in]        add_remove: the value is true if added the ble device to the white list, and false remove to the white list.
 * @param[in]        remote_bda: the remote device address add/remove from the white list.
+* @param[in]        wl_addr_type: whitelist address type
 * @return
 *                     - ESP_OK : success
 *                     - other  : failed
 *
 */
-esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda);
+esp_err_t esp_ble_gap_update_whitelist(bool add_remove, esp_bd_addr_t remote_bda, esp_ble_wl_addr_type_t wl_addr_type);
 
 /**
 * @brief            Get the whitelist size in the controller
@@ -1049,6 +1058,7 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
  *
  *
  * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ *                  when type is MESH_BEACON_TYPE, MESH_PROV_SRV_ADV or MESH_PROXY_SRV_ADV , device_info is invalid.
  * @param[in]       device_info: the device information.
  * @return
  *                  - ESP_OK : success
@@ -1061,6 +1071,7 @@ esp_err_t esp_ble_gap_add_duplicate_scan_exceptional_device(esp_ble_duplicate_ex
  *
  *
  * @param[in]       type: device info type, it is defined in esp_ble_duplicate_exceptional_info_type_t
+ *                  when type is MESH_BEACON_TYPE, MESH_PROV_SRV_ADV or MESH_PROXY_SRV_ADV , device_info is invalid.
  * @param[in]       device_info: the device information.
  * @return
  *                  - ESP_OK : success
@@ -1140,7 +1151,7 @@ esp_err_t esp_ble_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint32_t pas
 
 
 /**
-* @brief           Reply the confirm value to the peer device in the legacy connection stage.
+* @brief           Reply the confirm value to the peer device in the secure connection stage.
 *
 * @param[in]       bd_addr : BD address of the peer device
 * @param[in]       accept : numbers to compare are the same or different.

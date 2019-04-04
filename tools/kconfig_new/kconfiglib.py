@@ -500,6 +500,8 @@ class Kconfig(object):
     __slots__ = (
         "_choices",
         "_print_undef_assign",
+        "_print_override",
+        "_print_redun_assign",
         "_print_warnings",
         "_set_re_match",
         "_unset_re_match",
@@ -575,6 +577,7 @@ class Kconfig(object):
 
         self._print_warnings = warn
         self._print_undef_assign = False
+        self._print_redun_assign = self._print_override = True
 
         self.syms = {}
         self.const_syms = {}
@@ -826,10 +829,12 @@ class Kconfig(object):
                         display_val = val
                         display_user_val = sym.user_value
 
-                    self._warn('{} set more than once. Old value: "{}", new '
-                               'value: "{}".'
-                               .format(name, display_user_val, display_val),
-                               filename, linenr)
+                    msg = '{} set more than once. Old value: "{}", new value: "{}".'.format(name, display_user_val, display_val)
+
+                    if display_user_val == display_val:
+                        self._warn_redun_assign(msg, filename, linenr)
+                    else:
+                        self._warn_override(msg, filename, linenr)
 
                 sym.set_value(val)
 
@@ -1057,6 +1062,36 @@ class Kconfig(object):
         """
         self._print_undef_assign = False
 
+    def enable_redun_warnings(self):
+        """
+        Enables warnings for redundant assignments to symbols. Printed to
+        stderr. Enabled by default.
+        """
+        self._print_redun_assign = True
+
+    def disable_redun_warnings(self):
+        """
+        See enable_redun_warnings().
+        """
+        self._print_redun_assign = False
+
+    def enable_override_warnings(self):
+        """
+        Enables warnings for duplicated assignments in .config files that set
+        different values (e.g. CONFIG_FOO=m followed by CONFIG_FOO=y, where
+        the last value set is used).
+
+        These warnings are enabled by default. Disabling them might be helpful
+        in certain cases when merging configurations.
+        """
+        self._print_override = True
+
+    def disable_override_warnings(self):
+        """
+        See enable_override_warnings().
+        """
+        self._print_override = False
+
     def __repr__(self):
         """
         Returns a string with information about the Kconfig object when it is
@@ -1071,6 +1106,8 @@ class Kconfig(object):
             "warnings " + ("enabled" if self._print_warnings else "disabled"),
             "undef. symbol assignment warnings " +
                 ("enabled" if self._print_undef_assign else "disabled"),
+            "redundant symbol assignment warnings " +
+                ("enabled" if self._print_redun_assign else "disabled")
         )))
 
     #
@@ -2150,6 +2187,19 @@ class Kconfig(object):
             'attempt to assign the value "{}" to the undefined symbol {}' \
             .format(val, name), filename, linenr)
 
+    def _warn_redun_assign(self, msg, filename=None, linenr=None):
+        """
+        See the class documentation.
+        """
+        if self._print_redun_assign:
+            _stderr_msg("warning: " + msg, filename, linenr)
+
+    def _warn_override(self, msg, filename=None, linenr=None):
+        """
+        See the class documentation.
+        """
+        if self._print_override:
+            _stderr_msg("warning: " + msg, filename, linenr)
 
 class Symbol(object):
     """

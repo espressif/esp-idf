@@ -1,92 +1,94 @@
 menu "Example Configuration"
 
-choice PHY_MODEL
-    prompt "Ethernet PHY"
-    default CONFIG_PHY_TLK110
-    help
-        Select the PHY driver to use for the example.
+    choice PHY_MODEL
+        prompt "Ethernet PHY Device"
+        default PHY_TLK110
+        help
+            Select the PHY driver to use for the example.
+        config PHY_IP101
+            bool "IP101"
+            help
+                IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
+                Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
+        config PHY_TLK110
+            bool "TLK110"
+            help
+                TLK110 is an Industrial 10/100Mbps Ethernet Physical Layer Transceiver.
+                Goto http://www.ti.com/product/TLK110 for information about it.
+        config PHY_LAN8720
+            bool "LAN8720"
+            help
+                LAN8720 is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
+                Goto https://www.microchip.com/LAN8720A for more information about it.
+    endchoice
 
-config PHY_TLK110
-    bool "TI TLK110 PHY"
-    help
-        Select this to use the TI TLK110 PHY
+    config PHY_ADDRESS
+        int "Ethernet PHY Address"
+        default 31
+        range 0 31
+        help
+            PHY Address of your PHY device. It dependens on your schematic design.
 
-config PHY_LAN8720
-    bool "Microchip LAN8720 PHY"
-    help
-        Select this to use the Microchip LAN8720 PHY
+    choice PHY_CLOCK_MODE
+        prompt "Ethernet PHY Clock Mode"
+        default PHY_CLOCK_GPIO0_IN
+        help
+            Select external (input on GPIO0) or internal (output on GPIO0, GPIO16 or GPIO17) RMII clock.
+        config PHY_CLOCK_GPIO0_IN
+            bool "GPIO0 Input"
+            help
+                Input of 50MHz RMII clock on GPIO0.
+        config PHY_CLOCK_GPIO0_OUT
+            bool "GPIO0 Output"
+            help
+                Output the internal 50MHz RMII clock on GPIO0.
+        config PHY_CLOCK_GPIO16_OUT
+            bool "GPIO16 Output"
+            help
+                Output the internal 50MHz RMII clock on GPIO16.
+        config PHY_CLOCK_GPIO17_OUT
+            bool "GPIO17 Output (inverted)"
+            help
+                Output the internal 50MHz RMII clock on GPIO17 (inverted signal).
+    endchoice
 
-endchoice
+    config PHY_CLOCK_MODE
+        int
+        default 0 if PHY_CLOCK_GPIO0_IN
+        default 1 if PHY_CLOCK_GPIO0_OUT
+        default 2 if PHY_CLOCK_GPIO16_OUT
+        default 3 if PHY_CLOCK_GPIO17_OUT
 
+    config PHY_USE_POWER_PIN
+        bool "Use PHY Power (enable / disable) pin"
+        default n
+        help
+            Use a GPIO "power pin" to power the PHY on/off during operation.
+            When using GPIO0 to input RMII clock, the reset process will be interfered by this clock.
+            So we need another GPIO to control the switch on / off of the RMII clock.
 
-config PHY_ADDRESS
-    int "PHY Address (0-31)"
-    default 31
-    range 0 31
-    help
-        Select the PHY Address (0-31) for the hardware configuration and PHY model.
-        TLK110 default 31
-        LAN8720 default 1 or 0
+    if PHY_USE_POWER_PIN
+        config PHY_POWER_PIN
+            int "PHY Power GPIO"
+            default 17
+            range 0 33
+            depends on PHY_USE_POWER_PIN
+            help
+                GPIO number to use for powering on/off the PHY.
+    endif
 
+    config PHY_SMI_MDC_PIN
+        int "SMI MDC Pin Number"
+        default 23
+        range 0 33
+        help
+            GPIO number used for SMI clock signal.
 
-choice PHY_CLOCK_MODE
-    prompt "EMAC clock mode"
-    default PHY_CLOCK_GPIO0_IN
-    help
-        Select external (input on GPIO0) or internal (output on GPIO16 or GPIO17) clock
-
-
-config PHY_CLOCK_GPIO0_IN
-    bool "GPIO0 input"
-    help
-        Input of 50MHz refclock on GPIO0
-
-config PHY_CLOCK_GPIO16_OUT
-    bool "GPIO16 output"
-    help
-        Output the internal 50MHz APLL clock on GPIO16
-
-config PHY_CLOCK_GPIO17_OUT
-    bool "GPIO17 output (inverted)"
-    help
-        Output the internal 50MHz APLL clock on GPIO17 (inverted signal)
-
-endchoice
-
-config PHY_CLOCK_MODE
-    int
-    default 0 if PHY_CLOCK_GPIO0_IN
-    default 2 if PHY_CLOCK_GPIO16_OUT
-    default 3 if PHY_CLOCK_GPIO17_OUT
-
-
-config PHY_USE_POWER_PIN
-    bool "Use PHY Power (enable/disable) pin"
-    default y
-    help
-        Use a GPIO "power pin" to power the PHY on/off during operation.
-        Consult the example README for more details
-
-config PHY_POWER_PIN
-    int "PHY Power GPIO"
-    default 17
-    range 0 33
-    depends on PHY_USE_POWER_PIN
-    help
-        GPIO number to use for powering on/off the PHY.
-
-config PHY_SMI_MDC_PIN
-    int "SMI MDC Pin"
-    default 23
-    range 0 33
-    help
-        GPIO number to use for SMI clock output MDC to PHY.
-
-config PHY_SMI_MDIO_PIN
-    int "SMI MDIO Pin"
-    default 18
-    range 0 33
-    help
-       GPIO number to use for SMI data pin MDIO to/from PHY.
+    config PHY_SMI_MDIO_PIN
+        int "SMI MDIO Pin Number"
+        default 18
+        range 0 33
+        help
+            GPIO number used for SMI data signal.
 
 endmenu

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-#include "esp_flash_data_types.h"
+#include "esp_flash_partitions.h"
 #include "esp_image_format.h"
 
 /// Type of hold a GPIO in low state
@@ -110,6 +110,18 @@ esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t s
  *        - -1: If it does not have active otadata.
  */
 int bootloader_common_get_active_otadata(esp_ota_select_entry_t *two_otadata);
+
+/**
+ * @brief Returns the number of active otadata.
+ *
+ * @param[in] two_otadata       Pointer on array from two otadata structures.
+ * @param[in] valid_two_otadata Pointer on array from two bools. True means select.
+ * @param[in] max               True - will select the maximum ota_seq number, otherwise the minimum.
+ *
+ * @return The number of active otadata (0 or 1).
+ *        - -1: If it does not have active otadata.
+ */
+int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, bool *valid_two_otadata, bool max);
 
 /**
  * @brief Returns esp_app_desc structure for app partition. This structure includes app version.

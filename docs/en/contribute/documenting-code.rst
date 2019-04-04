@@ -166,6 +166,8 @@ How it renders:
 A check is added to the CI build script, which searches RST files for presence of hard-coded links (identified by tree/master, blob/master, or raw/master part of the URL). This check can be run manually: ``cd docs`` and then ``make gh-linkcheck``.
 
 
+.. _link-language-versions:
+
 Linking Language Versions
 -------------------------
 
@@ -235,6 +237,8 @@ OK, but I am new to Sphinx!
 4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
 
 
+.. _setup-for-building-documentation:
+
 Setup for building documentation locally
 ----------------------------------------
 
@@ -242,10 +246,11 @@ You can setup environment to build documentation locally on your PC by installin
 
 1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
-3. Docment theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
-4. Breathe - https://github.com/michaeljones/breathe#breathe
-5. Blockdiag - http://blockdiag.com/en/index.html
-6. Recommonmark - https://github.com/rtfd/recommonmark
+3. Breathe - https://github.com/michaeljones/breathe#breathe
+4. Document theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
+5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
+6. Blockdiag - http://blockdiag.com/en/index.html
+7. Recommonmark - https://github.com/rtfd/recommonmark
 
 The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
 
@@ -304,11 +309,15 @@ All remaining applications are `Python <https://www.python.org/>`_ packages and 
 
 	Installation steps assume that ESP-IDF is placed in ``~/esp/esp-idf`` directory, that is default location of ESP-IDF used in documentation.
 
+Change to directory with files for specific language::
+
+    cd en
+
 Now you should be ready to build documentation by invoking::
 
-	make html
+    make html
 
-This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/_buld/html`` folder. To see it, open ``index.html`` in a web browser.  
+This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/en/_build/html`` folder. To see it, open ``index.html`` in a web browser.  
 
 
 Wrap up
@@ -324,6 +333,7 @@ Related Documents
 -----------------
 
 * :doc:`../api-reference/template`
+* :doc:`add-ons-reference`
 
 
 .. _espressif/esp-idf: https://github.com/espressif/esp-idf/

@@ -132,7 +132,7 @@ test cases:
     6.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送1472*10字节数据
   sub module: UDP
   summary: STA mode, sendto test with different length
-  test environment: SSC_T1_6
+  test environment: SSC_T1_9
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -140,7 +140,7 @@ test cases:
   ID: TCPIP_UDP_0103
   SDK: ESP32_IDF
   Test App: SSC
-  allow fail: 1/3
+  allow fail: 1/5
   auto test: 'Yes'
   category: Function
   cmd set:
@@ -176,7 +176,7 @@ test cases:
     5.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送1473字节数据
   sub module: UDP
   summary: STA mode, sendto test with different length
-  test environment: SSC_T1_6
+  test environment: SSC_T1_9
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
   version: v1 (2016-8-15)
@@ -228,7 +228,113 @@ test cases:
     6.PC上SOC2 UDP传输，bing <test_udp_port2> <pc_ip2>
     7.PC往8266上发送1472字节数据
   sub module: UDP
-  summary: STA mode, recvfrom basic test
+  summary: (special case)STA mode, recvfrom basic test with STAM2
+  test environment: SSC_T1_9
+  test point 1: basic function
+  test point 2: use UDP SAP (socket/espconn API) with different parameter
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_UDP_0104_02
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: 1/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SOC SOC1 BIND_v6 <test_udp_port1> <pc_ip_v6>
+    - - R SOC_COM L OK
+  - - SSC SSC1 soc -B -t UDPv6 -i <target_ip_v6> -p <test_udp_port1>
+    - - R SSC1 A <sock1>:BIND:(\d+),OK
+  - - SOC SOC1 SENDTO 1 <test_udp_port1> <target_ip_v6>
+    - - R SSC1 SL <sock1>+1
+  - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ip_v6>
+    - - R SSC1 RE "RECVFROM:%%s,1472,%%s,%%u"%%(<sock1>,<pc_ip_v6>,<test_udp_port1>)
+  - - SOC SOC1 SENDTO 1473 <test_udp_port1> <target_ip_v6>
+    - - P SSC1 C +RECVFROM
+      - P SOC_COM C OK
+  - - SOC SOC2 BIND_v6 <test_udp_port2> <pc_ip2_v6>
+    - - R SOC_COM L OK
+  - - SOC SOC2 SENDTO 1472 <test_udp_port1> <target_ip_v6>
+    - - R SSC1 RE "RECVFROM:%%s,1472,%%s,%%u"%%(<sock1>,<pc_ip2_v6>,<test_udp_port2>)
+  execution time: 0.0
+  expected result: |-
+    1.OK
+    2.OK
+    3.OK
+    4.OK
+    5.OK
+    6.OK
+    7.OK
+  initial condition: STAM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.PC上SOC1 UDP传输，bing <test_udp_port1> <pc_ip_v6>
+    2.target1上UDP传输，Bind socket1,本地ip target_udp_port1
+    3.PC往8266上发送1字节数据
+    4.PC往8266上发送1472字节数据
+    5.PC往8266上发送1473字节数据
+    6.PC上SOC2 UDP传输，bing <test_udp_port2> <pc_ip2_v6>
+    7.PC往8266上发送1472字节数据
+  sub module: UDP
+  summary: (special case)STA mode, recvfrom basic test with STAM2(IPv6)
+  test environment: SSC_T1_9
+  test point 1: basic function
+  test point 2: use UDP SAP (socket/espconn API) with different parameter
+  version: v1 (2016-8-15)
+- CI ready: 'Yes'
+  ID: TCPIP_UDP_0104_01_02
+  SDK: |-
+    8266_NonOS
+    8266_RTOS
+    ESP32_IDF
+  Test App: SSC
+  allow fail: 1/3
+  auto test: 'Yes'
+  category: Function
+  cmd set:
+  - ''
+  - - SOC SOC1 BIND_v6 <test_udp_port1> <pc_ip_v6>
+    - - R SOC_COM L OK
+  - - SSC SSC1 soc -B -t UDPv6 -i <target_ip_v6> -p <test_udp_port1>
+    - - R SSC1 A <sock1>:BIND:(\d+),OK
+  - - SOC SOC1 SENDTO 1 <test_udp_port1> <target_ip_v6>
+    - - R SSC1 SL <sock1>+1
+  - - SOC SOC1 SENDTO 1472 <test_udp_port1> <target_ip_v6>
+    - - R SSC1 RE "RECVFROM:%%s,1472,%%s,%%u"%%(<sock1>,<pc_ip_v6>,<test_udp_port1>)
+  - - SOC SOC1 SENDTO 1473 <test_udp_port1> <target_ip_v6>
+    - - P SSC1 C +RECVFROM
+      - P SOC_COM C OK
+  - - SOC SOC2 BIND_v6 <test_udp_port2> <pc_ip2_v6>
+    - - R SOC_COM L OK
+  - - SOC SOC2 SENDTO 1472 <test_udp_port1> <target_ip_v6>
+    - - R SSC1 RE "RECVFROM:%%s,1472,%%s,%%u"%%(<sock1>,<pc_ip2_v6>,<test_udp_port2>)
+  execution time: 0.0
+  expected result: |-
+    1.OK
+    2.OK
+    3.OK
+    4.OK
+    5.OK
+    6.OK
+    7.OK
+  initial condition: STAAP2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1.PC上SOC1 UDP传输，bing <test_udp_port1> <pc_ip_v6>
+    2.target1上UDP传输，Bind socket1,本地ip target_udp_port1
+    3.PC往8266上发送1字节数据
+    4.PC往8266上发送1472字节数据
+    5.PC往8266上发送1473字节数据
+    6.PC上SOC2 UDP传输，bing <test_udp_port2> <pc_ip2_v6>
+    7.PC往8266上发送1472字节数据
+  sub module: UDP
+  summary: (special case)STA mode, recvfrom basic test with STAAP2(IPv6)
   test environment: SSC_T1_9
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
@@ -429,7 +535,7 @@ test cases:
     4.target1上使用步骤3创建的socket1，往pc_ip，test_tcp_port1上发送10字节数据
     5.target1上使用步骤3创建的socket1，往pc_ip2，test_tcp_port2上发送10字节数据
   sub module: UDP
-  summary: AP mode, sendto test. use different ip, port
+  summary: (special case)AP mode, sendto test. use different ip, port
   test environment: SSC_T2_2
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
@@ -582,7 +688,7 @@ test cases:
     6.PC上SOC2 UDP传输，bing <test_udp_port2> <pc_ip2>
     7.PC往8266上发送1472字节数据
   sub module: UDP
-  summary: AP mode, recvfrom basic test
+  summary: (special case)AP mode, recvfrom basic test
   test environment: SSC_T2_2
   test point 1: basic function
   test point 2: use UDP SAP (socket/espconn API) with different parameter
@@ -791,7 +897,7 @@ test cases:
   level: Integration
   module: TCPIP
   steps: |-
-    1.PC上SOC1 UDP传输，bing <test_udp_port1> <pc_ip>
+    1.PC上SOC1 UDP传输，bing <test_udp_port1> <pc_ip_wifi>
     2.target1上UDP传输，Bind socket1,本地ip target_udp_port1
     3.target1上关闭工作线程
     4.PC往8266上发送1472字节数据
@@ -909,7 +1015,7 @@ test cases:
   - ''
   - - SOC SOC1 BIND <test_udp_port1> <pc_ip>
     - - R SOC_COM L OK
-  - - SSC SSC1 soc -B -t UDP -p <test_udp_port1>
+  - - SSC SSC1 soc -B -t UDP -i <target_ip> -p <test_udp_port1>
     - - R SSC1 A <sock1>:BIND:(\d+),OK
   - - SSC SSC1 soc -S -s <sock1> -i <pc_ip> -p <test_udp_port1> -l 5
     - - P SSC1 RE SEND:(\d+),OK
@@ -917,7 +1023,7 @@ test cases:
   - - SSC SSC1 op -S -o 2
     - - P SSC1 C +MODE:OK
   - - SSC SSC1 soc -S -s <sock1> -i <pc_ip> -p <test_udp_port1> -l 5
-    - - P SSC1 RE SEND:(\d+),OK
+    - - P SSC1 RE SEND:(\d+),ERROR
   execution time: 0.0
   expected result: |-
     1.OK
@@ -932,7 +1038,7 @@ test cases:
     target_udp_port1\n3.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送5字节数据\n4.修改8266的Mode为softAP
     mode \n5.8266往PC上发送5字节数据"
   sub module: UDP
-  summary: do UDP  send after mode changed
+  summary: do UDP send after mode changed
   test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
@@ -974,7 +1080,7 @@ test cases:
     target_udp_port1\n3.target1上使用步骤2创建的socket1，往pc_ip，test_tcp_port1上发送5字节数据\n4.修改8266的Mode为softAP
     mode \n5.关闭建立的socket1连接"
   sub module: UDP
-  summary: close UDP  socket after mode changed
+  summary: close UDP socket after mode changed
   test environment: SSC_T1_6
   test point 1: abnormal/special use
   test point 2: UDP handling abnormal event
@@ -1792,6 +1898,78 @@ test cases:
   test point 1: Performance test
   test point 2: UDP throughput
   version: v1 (2016-10-18)
+- CI ready: 'Yes'
+  ID: TCPIP_UDP_5501
+  SDK: 'ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - UDPStress/UDPSendRecvIPv6
+  - - send_len = 1460
+    - [dummy]
+  - - test_time = 300
+    - ['']
+  - - duplex = True
+    - ['']
+  - - conn_num = 5
+    - ['']
+  - - send_delay = 20
+    - ['']
+  execution time: 12.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: T2_1
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. sta connect to softap
+    2. create multiple udp
+    3. do send/recv on all udp
+  sub module: UDP
+  summary: UDP send/recv stress test with UDPSendRecvIPv6(IPv6)
+  test environment: SSC_T2_5
+  test point 1: stress
+  test point 2: UDP stress test(IPv6)
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_UDP_5502
+  SDK: 'ESP32_IDF'
+  Test App: SSC
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - UDPStress/UDPAPSTASendRecvIPv6
+  - - send_len = 1460
+    - [dummy]
+  - - test_time = 300
+    - ['']
+  - - duplex = True
+    - ['']
+  - - conn_num = 5
+    - ['']
+  - - send_delay = 20
+    - ['']
+  execution time: 12.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: T3_1
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. sta connect to softap
+    2. create multiple udp
+    3. do send/recv on all udp
+  sub module: UDP
+  summary: UDP send/recv stress test with UDPAPSTASendRecvIPv6(IPv6)
+  test environment: SSC_T3_1
+  test point 1: stress
+  test point 2: UDP stress test(IPv6)
+  version: v2 (2016-11-15)
 - CI ready: 'No'
   ID: TCPIP_UDP_9901
   SDK: |-

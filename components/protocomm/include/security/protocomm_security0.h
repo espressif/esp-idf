@@ -16,6 +16,10 @@
 
 #include <protocomm_security.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief   Protocomm security version 0 implementation
  *
@@ -23,3 +27,7 @@
  * security is required for the protocomm instance
  */
 extern const protocomm_security_t protocomm_security0;
+
+#ifdef __cplusplus
+}
+#endif

@@ -28,7 +28,7 @@ if(NOT as_version STREQUAL as_supported_version)
                     the toolchain, or proceed at your own risk.")
 endif()
 
-set(ULP_MAP_GEN ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
+set(ULP_MAP_GEN ${PYTHON} ${IDF_PATH}/components/ulp/esp32ulp_mapgen.py)
 set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/esp32.ulp.ld)
 
 get_filename_component(sdkconfig_dir ${SDKCONFIG} DIRECTORY)

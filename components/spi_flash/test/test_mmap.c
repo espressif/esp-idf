@@ -68,7 +68,6 @@ static void setup_mmap_tests()
             }
             /* Only rewrite the sector if it has changed */
             if (sector_needs_write) {
-                printf("setup_mmap_tests(): Prepping sector %d\n", abs_sector);
                 ESP_ERROR_CHECK( spi_flash_erase_sector((uint16_t) abs_sector) );
                 ESP_ERROR_CHECK( spi_flash_write(sector_offs, (const uint8_t *) buffer, sizeof(buffer)) );
             }
@@ -402,3 +401,24 @@ TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash]")
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
 }
 
+TEST_CASE("no stale data read post mmap and write partition", "[spi_flash]")
+{
+    const char buf[] = "Test buffer data for partition";
+    char read_data[sizeof(buf)];
+    setup_mmap_tests();
+
+    const esp_partition_t *p = get_test_data_partition();
+
+    const uint32_t* data;
+    spi_flash_mmap_handle_t handle;
+    TEST_ESP_OK(esp_partition_mmap(p, 0, SPI_FLASH_MMU_PAGE_SIZE,
+            SPI_FLASH_MMAP_DATA, (const void **) &data, &handle) );
+    memcpy(read_data, data, sizeof(read_data));
+    TEST_ESP_OK(esp_partition_erase_range(p, 0, SPI_FLASH_MMU_PAGE_SIZE));
+    TEST_ESP_OK(esp_partition_write(p, 0, buf, sizeof(buf)));
+    /* This should retrigger actual flash content read */
+    memcpy(read_data, data, sizeof(read_data));
+
+    spi_flash_munmap(handle);
+    TEST_ASSERT_EQUAL(0, memcmp(buf, read_data, sizeof(buf)));
+}

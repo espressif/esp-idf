@@ -188,7 +188,7 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
 
     case SYSTEM_EVENT_STA_GOT_IP:
         ESP_LOGI(TAG, "STA Got IP");
-        /* Station got IP. That means configuraion is successful.
+        /* Station got IP. That means configuration is successful.
          * Schedule timer to stop provisioning app after 30 seconds. */
         g_prov->wifi_state = WIFI_PROV_STA_CONNECTED;
         if (g_prov && g_prov->timer) {
@@ -341,7 +341,7 @@ esp_err_t app_prov_start_ble_provisioning(int security, const protocomm_security
         return ESP_ERR_NO_MEM;
     }
 
-    /* Initialise app data */
+    /* Initialize app data */
     g_prov->pop = pop;
     g_prov->security = security;
 

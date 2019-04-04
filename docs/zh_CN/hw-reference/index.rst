@@ -1,6 +1,7 @@
 ************************
 ESP32 H/W 硬件参考
 ************************
+:link_to_translation:`en:[English]`
 
 .. toctree::
    :maxdepth: 2

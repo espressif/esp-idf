@@ -14,9 +14,8 @@
 #include <string.h>
 #include "esp_flash_partitions.h"
 #include "esp_log.h"
-#include "rom/spi_flash.h"
-#include "rom/md5_hash.h"
-#include "esp_flash_data_types.h"
+#include "esp32/rom/spi_flash.h"
+#include "esp32/rom/md5_hash.h"
 
 static const char *TAG = "flash_parts";
 

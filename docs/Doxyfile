@@ -60,6 +60,7 @@ INPUT = \
     ../../components/ethernet/include/eth_phy/phy.h \
     ../../components/ethernet/include/eth_phy/phy_tlk110.h \
     ../../components/ethernet/include/eth_phy/phy_lan8720.h \
+    ../../components/ethernet/include/eth_phy/phy_ip101.h \
     ##
     ## Peripherals - API Reference
     ##
@@ -136,6 +137,7 @@ INPUT = \
     ## Virtual Filesystem
     ../../components/vfs/include/esp_vfs.h \
     ../../components/vfs/include/esp_vfs_dev.h \
+    ../../components/vfs/include/esp_vfs_semihost.h \
     ## FAT Filesystem
     ## NOTE: for two lines below header_file.inc is not used
     ../../components/fatfs/src/esp_vfs_fat.h \
@@ -151,13 +153,13 @@ INPUT = \
     ../../components/heap/include/esp_heap_caps_init.h \
     ../../components/heap/include/multi_heap.h \
     ## Himem
-    ../../components/esp32/include/esp_himem.h \
+    ../../components/esp32/include/esp32/himem.h \
     ## Interrupt Allocation
     ../../components/esp32/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
-    ../../components/esp32/include/esp_int_wdt.h \
-    ../../components/esp32/include/esp_task_wdt.h \
+    ../../components/esp_common/include/esp_int_wdt.h \
+    ../../components/esp_common/include/esp_task_wdt.h \
     ## Hooks
     ../../components/esp32/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
@@ -172,7 +174,7 @@ INPUT = \
     ../../components/log/include/esp_log.h \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
-    ../../components/esp32/include/esp_system.h \
+    ../../components/esp_common/include/esp_system.h \
     ##
     ## ULP Coprocessor - API Guides
     ##
@@ -183,13 +185,15 @@ INPUT = \
     ##
     ../../components/app_trace/include/esp_app_trace.h \
     ### Power management
-    ../../components/esp32/include/esp_pm.h \
+    ../../components/esp_common/include/esp_pm.h \
     ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
-    ../../components/esp32/include/esp_timer.h \
+    ../../components/esp_common/include/esp_timer.h \
     ### esp_event, Event Loop Library
     ../../components/esp_event/include/esp_event.h \
     ../../components/esp_event/include/esp_event_base.h \
+    ### eFuse Manager
+    ../../components/efuse/include/esp_efuse.h \
     ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
     ###
@@ -203,9 +207,9 @@ INPUT = \
     ### Ringbuffer
     ../../components/esp_ringbuf/include/freertos/ringbuf.h \
     ### Helper functions for error codes
-    ../../components/esp32/include/esp_err.h \
+    ../../components/esp_common/include/esp_err.h \
     ### System APIs
-    ../../components/esp32/include/esp_system.h \
+    ../../components/esp_common/include/esp_system.h \
     ### Modbus controller component header file
     ../../components/freemodbus/modbus_controller/mbcontroller.h
 

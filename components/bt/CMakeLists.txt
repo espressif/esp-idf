@@ -11,6 +11,7 @@ if(CONFIG_BT_ENABLED)
             bluedroid/bta/av/include
             bluedroid/bta/dm/include
             bluedroid/bta/gatt/include
+            bluedroid/bta/hf_client/include
             bluedroid/bta/hh/include
             bluedroid/bta/jv/include
             bluedroid/bta/sdp/include

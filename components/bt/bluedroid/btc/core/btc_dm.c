@@ -290,6 +290,9 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 
     }
 
+#if (CONFIG_BT_STACK_NO_LOG)
+    (void) status;
+#endif
     BTC_TRACE_DEBUG("%s, authentication status = %x", __func__, status);
     return;
 

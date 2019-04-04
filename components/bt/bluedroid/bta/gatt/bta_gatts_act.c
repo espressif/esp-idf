@@ -707,8 +707,6 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
             } else {
                 if (p_msg->api_indicate.value) {
                     APPL_TRACE_ERROR("%s, incorrect length", __func__);
-                } else {
-                    APPL_TRACE_WARNING("%s, NULL value", __func__);
                 }
             }
             (*p_rcb->p_cback)(BTA_GATTS_CONF_EVT, &cb_data);
@@ -941,6 +939,9 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
             cb_data.req_data.trans_id   = trans_id;
             cb_data.req_data.p_data     = (tBTA_GATTS_REQ_DATA *)p_data;
 
+            if(req_type == BTA_GATTS_CONF_EVT) {
+               cb_data.req_data.handle =  p_data->handle; 
+            }
             (*p_rcb->p_cback)(req_type,  &cb_data);
         } else {
             APPL_TRACE_ERROR("connection request on gatt_if[%d] is not interested", gatt_if);

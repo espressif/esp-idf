@@ -97,7 +97,6 @@ confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
                 "--config", temp_sdkconfig_path,
-                "--create-config-if-missing",
                 "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
                 "--env", "IDF_PATH={}".format(idf_path),
@@ -254,7 +253,9 @@ html_redirect_pages = [('api-reference/ethernet/index', 'api-reference/network/i
                        ('api-reference/wifi/esp_now', 'api-reference/network/esp_now'),
                        ('api-reference/wifi/esp_smartconfig', 'api-reference/network/esp_smartconfig'),
                        ('api-reference/wifi/esp_wifi', 'api-reference/network/esp_wifi'),
-                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),]
+                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),
+                       ('get-started/idf-monitor', 'api-guides/tools/idf-monitor'),
+                       ('get-started-cmake/idf-monitor', 'api-guides/tools/idf-monitor'),]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

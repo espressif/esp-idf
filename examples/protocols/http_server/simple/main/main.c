@@ -152,6 +152,33 @@ httpd_uri_t echo = {
     .user_ctx  = NULL
 };
 
+/* This handler allows the custom error handling functionality to be
+ * tested from client side. For that, when a PUT request 0 is sent to
+ * URI /ctrl, the /hello and /echo URIs are unregistered and following
+ * custom error handler http_404_error_handler() is registered.
+ * Afterwards, when /hello or /echo is requested, this custom error
+ * handler is invoked which, after sending an error message to client,
+ * either closes the underlying socket (when requested URI is /echo)
+ * or keeps it open (when requested URI is /hello). This allows the
+ * client to infer if the custom error handler is functioning as expected
+ * by observing the socket state.
+ */
+esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
+{
+    if (strcmp("/hello", req->uri) == 0) {
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "/hello URI is not available");
+        /* Return ESP_OK to keep underlying socket open */
+        return ESP_OK;
+    } else if (strcmp("/echo", req->uri) == 0) {
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "/echo URI is not available");
+        /* Return ESP_FAIL to close underlying socket */
+        return ESP_FAIL;
+    }
+    /* For any other URI send 404 and close socket */
+    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Some 404 error message");
+    return ESP_FAIL;
+}
+
 /* An HTTP PUT handler. This demonstrates realtime
  * registration and deregistration of URI handlers
  */
@@ -168,15 +195,19 @@ esp_err_t ctrl_put_handler(httpd_req_t *req)
     }
 
     if (buf == '0') {
-        /* Handler can be unregistered using the uri string */
+        /* URI handlers can be unregistered using the uri string */
         ESP_LOGI(TAG, "Unregistering /hello and /echo URIs");
         httpd_unregister_uri(req->handle, "/hello");
         httpd_unregister_uri(req->handle, "/echo");
+        /* Register the custom error handler */
+        httpd_register_err_handler(req->handle, HTTPD_404_NOT_FOUND, http_404_error_handler);
     }
     else {
         ESP_LOGI(TAG, "Registering /hello and /echo URIs");
         httpd_register_uri_handler(req->handle, &hello);
         httpd_register_uri_handler(req->handle, &echo);
+        /* Unregister custom error handler */
+        httpd_register_err_handler(req->handle, HTTPD_404_NOT_FOUND, NULL);
     }
 
     /* Respond with empty body */

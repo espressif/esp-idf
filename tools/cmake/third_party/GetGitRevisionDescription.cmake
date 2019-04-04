@@ -112,6 +112,7 @@ function(git_describe _var _repo_dir)
 		"-C"
 		${_repo_dir}
 		describe
+		"--always"
 		${hash}
 		${ARGN}
 		WORKING_DIRECTORY

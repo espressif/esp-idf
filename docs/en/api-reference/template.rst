@@ -5,8 +5,6 @@ API Documentation Template
 
     *INSTRUCTIONS*
 
-
-
     1. Use this file (:idf_file:`docs/api-reference/template.rst`) as a template to document API.
     2. Change the file name to the name of the header file that represents documented API.
     3. Include respective files with descriptions from the API folder using ``..include::``
@@ -79,9 +77,9 @@ API Reference
 
        .. include:: /_build/inc/esp_wifi.inc
 
-       For example see :idf_file:`docs/api-reference/wifi/esp_wifi.rst`
+       For example see :idf_file:`docs/en/api-reference/wifi/esp_wifi.rst`
     
-    6. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/api-reference/system/deep_sleep.rst` for example.
+    6. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/en/api-guides/ulp-cmake.rst` for example.
 
        Below is the list of common ``.. doxygen...::`` directives:
 
@@ -101,5 +99,3 @@ API Reference
     7. In any case, to generate API reference, the file :idf_file:`docs/Doxyfile` should be updated with paths to ``*.h`` headers that are being documented.
     
     8. When changes are committed and documentation is build, check how this section has been rendered. :doc:`Correct annotations <../contribute/documenting-code>` in respective header files, if required.
-
-

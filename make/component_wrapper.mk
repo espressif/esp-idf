@@ -155,8 +155,6 @@ OWN_INCLUDES:=$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_PRIV_INCLUDED
 COMPONENT_INCLUDES := $(OWN_INCLUDES) $(filter-out $(OWN_INCLUDES),$(COMPONENT_INCLUDES))
 
 
-include $(IDF_PATH)/make/ldgen.mk
-
 ################################################################################
 # 4) Define a target to generate component_project_vars.mk Makefile which
 # contains common per-component settings which are included directly in the

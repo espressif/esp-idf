@@ -628,6 +628,7 @@ class ESPCoreDumpLoader(object):
                 logging.warning("Skip task's (%x) stack %d bytes @ 0x%x. (Reason: %s)" % (tcb_addr, stack_len_aligned, stack_base, e))
             core_off += stack_len_aligned
             try:
+                logging.info("Stack start_end: 0x%x @ 0x%x" % (stack_top, stack_end))
                 task_regs = self._get_registers_from_stack(data, stack_end > stack_top)
             except Exception as e:
                 print(e)

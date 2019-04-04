@@ -1,0 +1,12 @@
+menu "ESP HTTPS OTA"
+
+    config OTA_ALLOW_HTTP
+        bool "Allow HTTP for OTA (WARNING: ONLY FOR TESTING PURPOSE, READ HELP)"
+        default n
+        help
+            It is highly recommended to keep HTTPS (along with server certificate validation) enabled.
+            Enabling this option comes with potential risk of:
+            - Non-encrypted communication channel with server
+            - Accepting firmware upgrade image from server with fake identity
+
+endmenu

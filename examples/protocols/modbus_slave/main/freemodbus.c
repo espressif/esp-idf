@@ -129,7 +129,8 @@ void app_main()
         mb_event_group_t event = mbcontroller_check_event((MB_EVENT_HOLDING_REG_WR
                                                         | MB_EVENT_INPUT_REG_RD
                                                         | MB_EVENT_HOLDING_REG_RD
-                                                        | MB_EVENT_DISCRETE_RD));
+                                                        | MB_EVENT_DISCRETE_RD
+                                                        | MB_EVENT_COILS_RD));
         // Filter events and process them accordingly
         if((event & MB_EVENT_HOLDING_REG_WR) || (event & MB_EVENT_HOLDING_REG_RD)) {
             // Get parameter information from parameter queue

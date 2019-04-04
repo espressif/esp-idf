@@ -18,7 +18,7 @@
 #include <freertos/FreeRTOS.h>
 #include <soc/soc_memory_layout.h>
 #include "multi_heap.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +27,8 @@ extern "C" {
 /* Some common heap registration data structures used
    for heap_caps_init.c to share heap information with heap_caps.c
 */
+
+#define HEAP_SIZE_MAX (SOC_MAX_CONTIGUOUS_RAM_SIZE)
 
 /* Type for describing each registered heap */
 typedef struct heap_t_ {

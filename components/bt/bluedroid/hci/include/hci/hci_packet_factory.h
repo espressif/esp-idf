@@ -26,6 +26,7 @@ typedef struct {
     BT_HDR *(*make_reset)(void);
     BT_HDR *(*make_read_buffer_size)(void);
     BT_HDR *(*make_set_c2h_flow_control)(uint8_t enable);
+    BT_HDR *(*make_set_adv_report_flow_control)(uint8_t enable, uint16_t num, uint16_t lost_threshold);
     BT_HDR *(*make_host_buffer_size)(uint16_t acl_size, uint8_t sco_size, uint16_t acl_count, uint16_t sco_count);
     BT_HDR *(*make_read_local_version_info)(void);
     BT_HDR *(*make_read_bd_addr)(void);

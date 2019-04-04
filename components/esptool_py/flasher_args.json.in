@@ -8,20 +8,11 @@
         "flash_freq": "${ESPFLASHFREQ}"
     },
     "flash_files" : {
-        "${BOOTLOADER_OFFSET}" : "bootloader/bootloader.bin",
-        "${PARTITION_TABLE_OFFSET}" : "partition_table/partition-table.bin",
-        "${PHY_PARTITION_OFFSET}" : "${PHY_PARTITION_BIN_FILE}",
-        "${OTADATA_PARTITION_OFFSET}" : "${BLANK_OTADATA_FILE}",
-        "${APP_PARTITION_OFFSET}" : "${IDF_PROJECT_BIN}"
+        $<JOIN:$<TARGET_PROPERTY:flash_project_args_target,FLASH_PROJECT_ARGS_JSON>,,
+        >
     },
-    "bootloader" :      { "offset" : "${BOOTLOADER_OFFSET}",
-                          "file" : "bootloader/bootloader.bin" },
-    "partition_table" : { "offset" : "${PARTITION_TABLE_OFFSET}",
-                          "file" : "partition_table/partition-table.bin" },
-    "otadata" : { "offset" : "${OTADATA_PARTITION_OFFSET}",
-                  "file" : "${BLANK_OTADATA_FILE}" },
-    "app" :             { "offset" : "${APP_PARTITION_OFFSET}",
-                          "file" : "${IDF_PROJECT_BIN}" },
+    $<JOIN:$<TARGET_PROPERTY:flash_project_args_target,FLASH_PROJECT_ARGS_ENTRY_JSON>,,
+    >,
     "extra_esptool_args" : {
         "after"  : "${ESPTOOLPY_AFTER}",
         "before" : "${ESPTOOLPY_BEFORE}"

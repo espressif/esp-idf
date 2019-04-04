@@ -131,7 +131,8 @@ static void can_receive_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void can_transmit_task(void *arg) {
+static void can_transmit_task(void *arg)
+{
     while (1) {
         tx_task_action_t action;
         xQueueReceive(tx_task_queue, &action, portMAX_DELAY);
@@ -158,7 +159,8 @@ static void can_transmit_task(void *arg) {
     vTaskDelete(NULL);
 }
 
-void can_control_task(void *arg) {
+static void can_control_task(void *arg)
+{
     xSemaphoreTake(ctrl_task_sem, portMAX_DELAY);
     tx_task_action_t tx_action;
     rx_task_action_t rx_action;

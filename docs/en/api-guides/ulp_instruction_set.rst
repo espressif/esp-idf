@@ -336,9 +336,9 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Examples**::
 
-  1:        MOVE       R1, R2            //R1 = R2 >> R3
+  1:        MOVE       R1, R2            //R1 = R2
 
-  2:        MOVE       R1, 0x03          //R1 = R2 >> 0x03
+  2:        MOVE       R1, 0x03          //R1 = 0x03
 
   3:        .set       value1, 0x03      //constant value1=0x03
             MOVE       R1, value1        //R1 = value1

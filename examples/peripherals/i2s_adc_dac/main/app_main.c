@@ -67,7 +67,8 @@ void example_i2s_init()
 	    .channel_format = EXAMPLE_I2S_FORMAT,
 	    .intr_alloc_flags = 0,
 	    .dma_buf_count = 2,
-	    .dma_buf_len = 1024
+	    .dma_buf_len = 1024,
+	    .use_apll = 1,
 	 };
 	 //install and start i2s driver
 	 i2s_driver_install(i2s_num, &i2s_config, 0, NULL);

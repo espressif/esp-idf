@@ -16,6 +16,10 @@
 
 #include <protocomm.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PROTOCOMM_CONSOLE_DEFAULT_CONFIG() { \
     .stack_size     = 4096,                  \
     .task_priority  = tskIDLE_PRIORITY + 3,  \
@@ -25,7 +29,7 @@
  * @brief   Config parameters for protocomm console
  */
 typedef struct {
-    size_t   stack_size;        /*!< Stack size of console taks */
+    size_t   stack_size;        /*!< Stack size of console task */
     unsigned task_priority;     /*!< Priority of console task */
 } protocomm_console_config_t;
 
@@ -39,7 +43,7 @@ typedef struct {
  * @param[in] config Config param structure for protocomm console
  *
  * @return
- *  - ESP_OK : Server started succefully
+ *  - ESP_OK : Success
  *  - ESP_ERR_INVALID_ARG : Null arguments
  *  - ESP_ERR_NOT_SUPPORTED : Transport layer bound to another protocomm instance
  *  - ESP_ERR_INVALID_STATE : Transport layer already bound to this protocomm instance
@@ -53,7 +57,11 @@ esp_err_t protocomm_console_start(protocomm_t *pc, const protocomm_console_confi
  * @param[in] pc    Same protocomm instance that was passed to protocomm_console_start()
  *
  * @return
- *  - ESP_OK : Server stopped succefully
+ *  - ESP_OK : Success
  *  - ESP_ERR_INVALID_ARG : Null / incorrect protocomm instance pointer
  */
 esp_err_t protocomm_console_stop(protocomm_t *pc);
+
+#ifdef __cplusplus
+}
+#endif

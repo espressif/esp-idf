@@ -1,5 +1,6 @@
 Creating Examples
 =================
+:link_to_translation:`zh_CN:[中文]`
 
 Each ESP-IDF example is a complete project that someone else can copy and adapt the code to solve their own problem. Examples should demonstrate ESP-IDF functionality, while keeping this purpose in mind.
 

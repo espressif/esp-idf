@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := app_trace_to_host_test
+PROJECT_NAME := app_trace_to_host
 
 include $(IDF_PATH)/make/project.mk
 

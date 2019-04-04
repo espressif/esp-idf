@@ -54,7 +54,7 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
-#include "hwcrypto/sha.h"
+#include "esp32/sha.h"
 
 inline static esp_sha_type sha_type(const mbedtls_sha512_context *ctx)
 {

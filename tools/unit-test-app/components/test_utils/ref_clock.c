@@ -36,8 +36,8 @@
 #include "soc/pcnt_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/dport_reg.h"
-#include "rom/gpio.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
 #include "driver/gpio.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
@@ -118,6 +118,8 @@ void ref_clock_init()
     PCNT.ctrl.val &= ~(BIT(REF_CLOCK_PCNT_UNIT * 2 + 1));
     PCNT.ctrl.val |= BIT(REF_CLOCK_PCNT_UNIT * 2);
     PCNT.ctrl.val &= ~BIT(REF_CLOCK_PCNT_UNIT * 2);
+
+    ets_delay_us(10000);
 
     // Enable interrupt
     s_milliseconds = 0;

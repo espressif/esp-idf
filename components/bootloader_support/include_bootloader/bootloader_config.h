@@ -21,7 +21,7 @@ extern "C"
 {
 #endif
 
-#include "esp_flash_data_types.h"
+#include "esp_flash_partitions.h"
 #include "soc/soc.h"
 
 #define SPI_SEC_SIZE 0x1000

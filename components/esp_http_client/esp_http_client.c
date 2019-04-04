@@ -166,7 +166,7 @@ enum HttpStatus_Code
 };
 
 
-static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client);
+static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
 static esp_err_t esp_http_client_connect(esp_http_client_handle_t client);
 static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client);
 
@@ -461,8 +461,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Error allocate memory");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
     _success = (
@@ -473,8 +472,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
                );
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize transport");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
     esp_transport_handle_t ssl;
@@ -486,19 +484,27 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize SSL Transport");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
-    if (config->cert_pem) {
+    if (config->use_global_ca_store == true) {
+        esp_transport_ssl_enable_global_ca_store(ssl);
+    } else if (config->cert_pem) {
         esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+    }
+
+    if (config->client_cert_pem) {
+        esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+    }
+
+    if (config->client_key_pem) {
+        esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
     }
 #endif
 
     if (_set_config(client, config) != ESP_OK) {
         ESP_LOGE(TAG, "Error set configurations");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
     _success = (
                    (client->request->buffer->data  = malloc(client->buffer_size))  &&
@@ -507,20 +513,33 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Allocation failed");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
-    _success = (
-                   (esp_http_client_set_url(client, config->url) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
-               );
+    if (config->host != NULL && config->path != NULL) {
+        _success = (
+            (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+            (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+        );
 
-    if (!_success) {
-        ESP_LOGE(TAG, "Error set default configurations");
-        esp_http_client_cleanup(client);
-        return NULL;
+        if (!_success) {
+            ESP_LOGE(TAG, "Error while setting default configurations");
+            goto error;
+        }
+    } else if (config->url != NULL) {
+        _success = (
+                    (esp_http_client_set_url(client, config->url) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+                );
+
+        if (!_success) {
+            ESP_LOGE(TAG, "Error while setting default configurations");
+            goto error;
+        }
+    } else {
+        ESP_LOGE(TAG, "config should have either URL or host & path");
+        goto error;
     }
 
     client->parser_settings->on_message_begin = http_on_message_begin;
@@ -537,6 +556,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     client->state = HTTP_STATE_INIT;
     return client;
+error:
+    esp_http_client_cleanup(client);
+    return NULL;
 }
 
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
@@ -817,7 +839,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                 }
                 /* falls through */
             case HTTP_STATE_CONNECTED:
-                if ((err = esp_http_client_request_send(client)) != ESP_OK) {
+                if ((err = esp_http_client_request_send(client, client->post_len)) != ESP_OK) {
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
@@ -997,11 +1019,11 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
     return first_line_len;
 }
 
-static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client)
+static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len)
 {
     int first_line_len = 0;
     if (!client->first_line_prepared) {
-        if ((first_line_len = http_client_prepare_first_line(client, client->post_len)) < 0) {
+        if ((first_line_len = http_client_prepare_first_line(client, write_len)) < 0) {
             return first_line_len;
         }
         client->first_line_prepared = true;
@@ -1054,6 +1076,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client)
 
     client->data_written_index = 0;
     client->data_write_left = client->post_len;
+    http_dispatch_event(client, HTTP_EVENT_HEADER_SENT, NULL, 0);
     client->state = HTTP_STATE_REQ_COMPLETE_HEADER;
     return ESP_OK;
 }
@@ -1088,11 +1111,12 @@ success:
 
 esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
 {
+    client->post_len = write_len;
     esp_err_t err;
     if ((err = esp_http_client_connect(client)) != ESP_OK) {
         return err;
     }
-    if ((err = esp_http_client_request_send(client)) != ESP_OK) {
+    if ((err = esp_http_client_request_send(client, write_len)) != ESP_OK) {
         return err; 
     }
     return ESP_OK;

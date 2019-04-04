@@ -33,7 +33,9 @@
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
 #define COAP_DEFAULT_TIME_SEC 5
-#define COAP_DEFAULT_TIME_USEC 0
+
+/* Set this to 9 to get verbose logging from within libcoap */
+#define COAP_LOGGING_LEVEL 0
 
 /* The examples use uri "coap://californium.eclipse.org" that
    you can set via 'make menuconfig'.
@@ -52,17 +54,88 @@ const static int CONNECTED_BIT = BIT0;
 
 const static char *TAG = "CoAP_client";
 
-static void message_handler(struct coap_context_t *ctx, const coap_endpoint_t *local_interface, const coap_address_t *remote,
+static int resp_wait = 1;
+static coap_optlist_t *optlist = NULL;
+static int wait_ms;
+
+static void message_handler(coap_context_t *ctx, coap_session_t *session,
               coap_pdu_t *sent, coap_pdu_t *received,
                 const coap_tid_t id)
 {
     unsigned char* data = NULL;
     size_t data_len;
-    if (COAP_RESPONSE_CLASS(received->hdr->code) == 2) {
-        if (coap_get_data(received, &data_len, &data)) {
-            printf("Received: %s\n", data);
+    coap_pdu_t *pdu = NULL;
+    coap_opt_t *block_opt;
+    coap_opt_iterator_t opt_iter;
+    unsigned char buf[4];
+    coap_optlist_t *option;
+    coap_tid_t tid;
+
+    if (COAP_RESPONSE_CLASS(received->code) == 2) {
+        /* Need to see if blocked response */
+        block_opt = coap_check_option(received, COAP_OPTION_BLOCK2, &opt_iter);
+        if (block_opt) {
+            uint16_t blktype = opt_iter.type;
+
+            if (coap_opt_block_num(block_opt) == 0) {
+                printf("Received:\n");
+            }
+            if (coap_get_data(received, &data_len, &data)) {
+                printf("%.*s", (int)data_len, data);
+            }
+            if (COAP_OPT_BLOCK_MORE(block_opt)) {
+                /* more bit is set */
+
+                /* create pdu with request for next block */
+                pdu = coap_new_pdu(session);
+                if (!pdu) {
+                     ESP_LOGE(TAG, "coap_new_pdu() failed");
+                     goto clean_up;
+                }
+                pdu->type = COAP_MESSAGE_CON;
+                pdu->tid = coap_new_message_id(session);
+                pdu->code = COAP_REQUEST_GET;
+
+                /* add URI components from optlist */
+                for (option = optlist; option; option = option->next ) {
+                    switch (option->number) {
+                    case COAP_OPTION_URI_HOST :
+                    case COAP_OPTION_URI_PORT :
+                    case COAP_OPTION_URI_PATH :
+                    case COAP_OPTION_URI_QUERY :
+                        coap_add_option(pdu, option->number, option->length,
+                                  option->data);
+                        break;
+                    default:
+                        ;     /* skip other options */
+                    }
+                }
+
+                /* finally add updated block option from response, clear M bit */
+                /* blocknr = (blocknr & 0xfffffff7) + 0x10; */
+                coap_add_option(pdu,
+                                blktype,
+                                coap_encode_var_safe(buf, sizeof(buf),
+                                     ((coap_opt_block_num(block_opt) + 1) << 4) |
+                                      COAP_OPT_BLOCK_SZX(block_opt)), buf);
+
+                tid = coap_send(session, pdu);
+
+                if (tid != COAP_INVALID_TID) {
+                    resp_wait = 1;
+                    wait_ms = COAP_DEFAULT_TIME_SEC * 1000;
+                    return;
+                }
+            }
+            printf("\n");
+        } else {
+            if (coap_get_data(received, &data_len, &data)) {
+                printf("Received: %.*s\n", (int)data_len, data);
+            }
         }
     }
+clean_up:
+    resp_wait = 0;
 }
 
 static void coap_example_task(void *p)
@@ -70,17 +143,22 @@ static void coap_example_task(void *p)
     struct hostent *hp;
     struct ip4_addr *ip4_addr;
 
-    coap_context_t*   ctx = NULL;
     coap_address_t    dst_addr, src_addr;
     static coap_uri_t uri;
-    fd_set            readfds;
-    struct timeval    tv;
-    int flags, result;
-    coap_pdu_t*       request = NULL;
     const char*       server_uri = COAP_DEFAULT_DEMO_URI;
-    uint8_t     get_method = 1;
     char* phostname = NULL;
+
+    coap_set_log_level(COAP_LOGGING_LEVEL);
     while (1) {
+#define BUFSIZE 40
+        unsigned char _buf[BUFSIZE];
+        unsigned char *buf;
+        size_t buflen;
+        int res;
+        coap_context_t *ctx = NULL;
+        coap_session_t *session = NULL;
+        coap_pdu_t *request = NULL;
+
         /* Wait for the callback to set the CONNECTED_BIT in the
            event group.
         */
@@ -88,8 +166,15 @@ static void coap_example_task(void *p)
                             false, true, portMAX_DELAY);
         ESP_LOGI(TAG, "Connected to AP");
 
+        optlist = NULL;
         if (coap_split_uri((const uint8_t *)server_uri, strlen(server_uri), &uri) == -1) {
             ESP_LOGE(TAG, "CoAP server uri error");
+            break;
+        }
+
+        if ((uri.scheme==COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) ||
+            (uri.scheme==COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported())) {
+            ESP_LOGE(TAG, "CoAP server uri scheme error");
             break;
         }
 
@@ -107,6 +192,7 @@ static void coap_example_task(void *p)
         if (hp == NULL) {
             ESP_LOGE(TAG, "DNS lookup failed");
             vTaskDelay(1000 / portTICK_PERIOD_MS);
+            free(phostname);
             continue;
         }
 
@@ -121,46 +207,94 @@ static void coap_example_task(void *p)
         src_addr.addr.sin.sin_port        = htons(0);
         src_addr.addr.sin.sin_addr.s_addr = INADDR_ANY;
 
-        ctx = coap_new_context(&src_addr);
-        if (ctx) {
-            coap_address_init(&dst_addr);
-            dst_addr.addr.sin.sin_family      = AF_INET;
-            dst_addr.addr.sin.sin_port        = htons(COAP_DEFAULT_PORT);
-            dst_addr.addr.sin.sin_addr.s_addr = ip4_addr->addr;
+        if (uri.path.length) {
+            buflen = BUFSIZE;
+            buf = _buf;
+            res = coap_split_path(uri.path.s, uri.path.length, buf, &buflen);
 
-            request            = coap_new_pdu();
-            if (request){
-                request->hdr->type = COAP_MESSAGE_CON;
-                request->hdr->id   = coap_new_message_id(ctx);
-                request->hdr->code = get_method;
-                coap_add_option(request, COAP_OPTION_URI_PATH, uri.path.length, uri.path.s);
+            while (res--) {
+                coap_insert_optlist(&optlist,
+                    coap_new_optlist(COAP_OPTION_URI_PATH,
+                    coap_opt_length(buf),
+                    coap_opt_value(buf)));
 
-                coap_register_response_handler(ctx, message_handler);
-                coap_send_confirmed(ctx, ctx->endpoint, &dst_addr, request);
-
-                flags = fcntl(ctx->sockfd, F_GETFL, 0);
-                fcntl(ctx->sockfd, F_SETFL, flags|O_NONBLOCK);
-
-                tv.tv_usec = COAP_DEFAULT_TIME_USEC;
-                tv.tv_sec = COAP_DEFAULT_TIME_SEC;
-
-                for(;;) {
-                    FD_ZERO(&readfds);
-                    FD_CLR( ctx->sockfd, &readfds );
-                    FD_SET( ctx->sockfd, &readfds );
-                    result = select( ctx->sockfd+1, &readfds, 0, 0, &tv );
-                    if (result > 0) {
-                        if (FD_ISSET( ctx->sockfd, &readfds ))
-                            coap_read(ctx);
-                    } else if (result < 0) {
-                        break;
-                    } else {
-                        ESP_LOGE(TAG, "select timeout");
-                    }
-                }
+                buf += coap_opt_size(buf);
             }
-            coap_free_context(ctx);
         }
+
+        if (uri.query.length) {
+            buflen = BUFSIZE;
+            buf = _buf;
+            res = coap_split_query(uri.query.s, uri.query.length, buf, &buflen);
+
+            while (res--) {
+                coap_insert_optlist(&optlist,
+                    coap_new_optlist(COAP_OPTION_URI_QUERY,
+                    coap_opt_length(buf),
+                    coap_opt_value(buf)));
+
+                buf += coap_opt_size(buf);
+            }
+        }
+
+        ctx = coap_new_context(NULL);
+        if (!ctx) {
+           ESP_LOGE(TAG, "coap_new_context() failed");
+           goto clean_up;
+        }
+
+        coap_address_init(&dst_addr);
+        dst_addr.addr.sin.sin_family      = AF_INET;
+        dst_addr.addr.sin.sin_port        = htons(uri.port);
+        dst_addr.addr.sin.sin_addr.s_addr = ip4_addr->addr;
+
+        session = coap_new_client_session(ctx, &src_addr, &dst_addr,
+           uri.scheme==COAP_URI_SCHEME_COAP_TCP ? COAP_PROTO_TCP :
+           uri.scheme==COAP_URI_SCHEME_COAPS_TCP ? COAP_PROTO_TLS :
+           uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_UDP);
+        if (!session) {
+           ESP_LOGE(TAG, "coap_new_client_session() failed");
+           goto clean_up;
+        }
+
+        coap_register_response_handler(ctx, message_handler);
+
+        request = coap_new_pdu(session);
+        if (!request) {
+           ESP_LOGE(TAG, "coap_new_pdu() failed");
+           goto clean_up;
+        }
+        request->type = COAP_MESSAGE_CON;
+        request->tid = coap_new_message_id(session);
+        request->code = COAP_REQUEST_GET;
+        coap_add_optlist_pdu(request, &optlist);
+
+        resp_wait = 1;
+        coap_send(session, request);
+
+        wait_ms = COAP_DEFAULT_TIME_SEC * 1000;
+
+        while (resp_wait) {
+            int result = coap_run_once(ctx, wait_ms > 1000 ? 1000 : wait_ms);
+            if (result >= 0) {
+               if (result >= wait_ms) {
+                  ESP_LOGE(TAG, "select timeout");
+                  break;
+               } else {
+                  wait_ms -= result;
+               } 
+            }
+        }
+clean_up:
+        if (optlist) {
+            coap_delete_optlist(optlist);
+            optlist = NULL;
+        }
+        if (session) coap_session_release(session);
+        if (ctx) coap_free_context(ctx);
+        coap_cleanup();
+        /* Only send the request off once */
+        break;
     }
 
     vTaskDelete(NULL);
@@ -210,5 +344,5 @@ void app_main(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
     wifi_conn_init();
-    xTaskCreate(coap_example_task, "coap", 2048, NULL, 5, NULL);
+    xTaskCreate(coap_example_task, "coap", 1024 * 5, NULL, 5, NULL);
 }

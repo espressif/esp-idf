@@ -22,6 +22,7 @@
 
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "driver/gpio.h"
 
 #define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
 #define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
@@ -260,6 +261,25 @@ static void ota_example_task(void *pvParameter)
     return ;
 }
 
+static bool diagnostic(void)
+{
+    gpio_config_t io_conf;
+    io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode         = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (1ULL << CONFIG_GPIO_DIAGNOSTIC);
+    io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    io_conf.pull_up_en   = GPIO_PULLUP_ENABLE;
+    gpio_config(&io_conf);
+
+    ESP_LOGI(TAG, "Diagnostics (5 sec)...");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+
+    bool diagnostic_is_ok = gpio_get_level(CONFIG_GPIO_DIAGNOSTIC);
+
+    gpio_reset_pin(CONFIG_GPIO_DIAGNOSTIC);
+    return diagnostic_is_ok;
+}
+
 void app_main()
 {
     uint8_t sha_256[HASH_LEN] = { 0 };
@@ -288,7 +308,7 @@ void app_main()
     if (esp_ota_get_state_partition(running, &ota_state) == ESP_OK) {
         if (ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
             // run diagnostic function ...
-            bool diagnostic_is_ok = true;
+            bool diagnostic_is_ok = diagnostic();
             if (diagnostic_is_ok) {
                 ESP_LOGI(TAG, "Diagnostics completed successfully! Continuing execution ...");
                 esp_ota_mark_app_valid_cancel_rollback();

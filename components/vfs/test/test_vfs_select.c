@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -195,6 +195,67 @@ TEST_CASE("UART can do select()", "[vfs]")
     deinit(uart_fd, socket_fd);
 }
 
+TEST_CASE("UART can do poll()", "[vfs]")
+{
+    int uart_fd;
+    int socket_fd;
+    char recv_message[sizeof(message)];
+
+    init(&uart_fd, &socket_fd);
+
+    struct pollfd poll_fds[] = {
+        {
+            .fd = uart_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = -1,  // should be ignored according to the documentation of poll()
+        },
+    };
+
+    const test_task_param_t test_task_param = {
+        .fd = uart_fd,
+        .delay_ms = 50,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(test_task_param.sem);
+    start_task(&test_task_param);
+
+    int s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(s, 1);
+    TEST_ASSERT_EQUAL(uart_fd, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(POLLIN, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(-1, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
+
+    int read_bytes = read(uart_fd, recv_message, sizeof(message));
+    TEST_ASSERT_EQUAL(read_bytes, sizeof(message));
+    TEST_ASSERT_EQUAL_MEMORY(message, recv_message, sizeof(message));
+
+    TEST_ASSERT_EQUAL(xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS), pdTRUE);
+
+    poll_fds[1].fd = socket_fd;
+    poll_fds[1].events = POLLIN;
+
+    start_task(&test_task_param);
+
+    s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(s, 1);
+    TEST_ASSERT_EQUAL(uart_fd, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(POLLIN, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(socket_fd, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
+
+    read_bytes = read(uart_fd, recv_message, sizeof(message));
+    TEST_ASSERT_EQUAL(read_bytes, sizeof(message));
+    TEST_ASSERT_EQUAL_MEMORY(message, recv_message, sizeof(message));
+
+    TEST_ASSERT_EQUAL(xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS), pdTRUE);
+    vSemaphoreDelete(test_task_param.sem);
+
+    deinit(uart_fd, socket_fd);
+}
+
 TEST_CASE("socket can do select()", "[vfs]")
 {
     int uart_fd;
@@ -239,6 +300,58 @@ TEST_CASE("socket can do select()", "[vfs]")
     close(dummy_socket_fd);
 }
 
+TEST_CASE("socket can do poll()", "[vfs]")
+{
+    int uart_fd;
+    int socket_fd;
+    char recv_message[sizeof(message)];
+
+    init(&uart_fd, &socket_fd);
+    const int dummy_socket_fd = open_dummy_socket();
+
+    struct pollfd poll_fds[] = {
+        {
+            .fd = uart_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = socket_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = dummy_socket_fd,
+            .events = POLLIN,
+        },
+    };
+
+    const test_task_param_t test_task_param = {
+        .fd = socket_fd,
+        .delay_ms = 50,
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(test_task_param.sem);
+    start_task(&test_task_param);
+
+    int s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(s, 1);
+    TEST_ASSERT_EQUAL(uart_fd, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(socket_fd, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(POLLIN, poll_fds[1].revents);
+    TEST_ASSERT_EQUAL(dummy_socket_fd, poll_fds[2].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[2].revents);
+
+    int read_bytes = read(socket_fd, recv_message, sizeof(message));
+    TEST_ASSERT_EQUAL(read_bytes, sizeof(message));
+    TEST_ASSERT_EQUAL_MEMORY(message, recv_message, sizeof(message));
+
+    TEST_ASSERT_EQUAL(xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS), pdTRUE);
+    vSemaphoreDelete(test_task_param.sem);
+
+    deinit(uart_fd, socket_fd);
+    close(dummy_socket_fd);
+}
+
 TEST_CASE("select() timeout", "[vfs]")
 {
     int uart_fd;
@@ -266,6 +379,44 @@ TEST_CASE("select() timeout", "[vfs]")
     TEST_ASSERT_EQUAL(s, 0);
     TEST_ASSERT_UNLESS(FD_ISSET(uart_fd, &rfds));
     TEST_ASSERT_UNLESS(FD_ISSET(socket_fd, &rfds));
+
+    deinit(uart_fd, socket_fd);
+}
+
+TEST_CASE("poll() timeout", "[vfs]")
+{
+    int uart_fd;
+    int socket_fd;
+
+    init(&uart_fd, &socket_fd);
+
+    struct pollfd poll_fds[] = {
+        {
+            .fd = uart_fd,
+            .events = POLLIN,
+        },
+        {
+            .fd = socket_fd,
+            .events = POLLIN,
+        },
+    };
+
+    int s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(s, 0);
+    TEST_ASSERT_EQUAL(uart_fd, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(socket_fd, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
+
+    poll_fds[0].fd = -1;
+    poll_fds[1].fd = -1;
+
+    s = poll(poll_fds, sizeof(poll_fds)/sizeof(poll_fds[0]), 100);
+    TEST_ASSERT_EQUAL(s, 0);
+    TEST_ASSERT_EQUAL(-1, poll_fds[0].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[0].revents);
+    TEST_ASSERT_EQUAL(-1, poll_fds[1].fd);
+    TEST_ASSERT_EQUAL(0, poll_fds[1].revents);
 
     deinit(uart_fd, socket_fd);
 }

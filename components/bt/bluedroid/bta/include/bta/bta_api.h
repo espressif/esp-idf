@@ -1024,6 +1024,7 @@ typedef struct {
 #define BTA_DM_DISC_CMPL_EVT            4       /* Discovery complete. */
 #define BTA_DM_DI_DISC_CMPL_EVT         5       /* Discovery complete. */
 #define BTA_DM_SEARCH_CANCEL_CMPL_EVT   6       /* Search cancelled */
+#define BTA_DM_INQ_DISCARD_NUM_EVT      7       /* The number of inquiry discarded packets */
 
 typedef UINT8 tBTA_DM_SEARCH_EVT;
 
@@ -1054,6 +1055,11 @@ typedef struct {
 typedef struct {
     UINT8           num_resps;          /* Number of inquiry responses. */
 } tBTA_DM_INQ_CMPL;
+
+/* Structure associated with BTA_DM_INQ_DISCARD_NUM_EVT */
+typedef struct {
+    UINT32           num_dis;          /* The number of inquiry discarded packets. */
+} tBTA_DM_INQ_DISCARD;
 
 /* Structure associated with BTA_DM_DI_DISC_CMPL_EVT */
 typedef struct {
@@ -1092,6 +1098,7 @@ typedef union {
     tBTA_DM_DISC_RES    disc_res;       /* Discovery result for a peer device. */
     tBTA_DM_DISC_BLE_RES    disc_ble_res;   /* Discovery result for GATT based service */
     tBTA_DM_DI_DISC_CMPL    di_disc;        /* DI discovery result for a peer device */
+    tBTA_DM_INQ_DISCARD     inq_dis;       /* the discarded packets information of inquiry */
 } tBTA_DM_SEARCH;
 
 /* Structure of search callback event and structures */
@@ -1443,7 +1450,7 @@ extern void BTA_DisableTestMode(void);
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(const char *p_name);
 
-extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
+extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
 

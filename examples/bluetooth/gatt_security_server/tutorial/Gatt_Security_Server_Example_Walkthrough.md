@@ -13,7 +13,7 @@ This document only describes the security configuration. The rest of the GATT se
 The ESP32 requires a series of security parameters in order to define how the pairing request and response are going to be built. The Pairing Response packet built by the GATT Server includes fields such as the input/output capabilities, Secure Connections pairing, authenticated Man-In-The-Middle (MITM) protection or no security requirements (see Section 2.3.1 of the [Bluetooth Specification Version 4.2](https://www.bluetooth.com/specifications/bluetooth-core-specification) [Vol 3, Part H]). In this example, this procedure is done in the `app_main()` function. The pairing request is sent by the initiator which in this case is a remote GATT client. The ESP32 server implemented in this example receives this request and replies with a pairing response, which contains the same security parameters in order for both devices to agree on the resources available and the applicable pairing algorithm (*Just Works* or *Passkey Entry*). Both the pairing request and response commands have the following parameters:
 
 * *IO Capability*: describes if the device has input/output capabilities such as a display or a keyboard.
-* *OOB Flag*: describes if the device supports Out of Band passkey exchange, for example using NFC or Wi-Fi to exchange keys as TKs. Currently, the ESP32 does not support this feature.
+* *OOB Flag*: describes if the device supports Out of Band passkey exchange, for example using NFC or Wi-Fi to exchange keys as TKs.
 * *Authorization Request*: indicates the requested security properties such as Bonding, Secure Connections (SC), MITM protection or none that will be present in the Pairing Request and Response packets.
 * *Maximum Encryption Key Size*: maximum encryption key size in octets.
 * *Initiator Key Distribution/Generation*: indicates which keys the initiator is requesting to distribute/generate or use during the Transport Specific Key Distribution phase. In the pairing request, these keys are requested, while in the pairing response, these keys are confirmed to be distributed.
@@ -113,7 +113,7 @@ In this example, the I/O capabilities are set to *No Input No Output*, therefore
 ```c
 case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:    
      ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
-     ///show the passkey number to the user to input it in the peer deivce.
+     ///show the passkey number to the user to input it in the peer device.
      ESP_LOGE(GATTS_TABLE_TAG, "The passkey Notify number:%d", param->ble_security.key_notif.passkey);
      break;
 ```
@@ -226,7 +226,7 @@ During the communication between a master and a slave device, the slave might re
 ```c
 case ESP_GAP_BLE_SEC_REQ_EVT:
      /* send the positive (true) security response to the peer device to accept the security request.
-     If not accept the security request, should sent the security response with negative(false) accept value*/
+     If not accept the security request, should send the security response with negative(false) accept value*/
      esp_ble_gap_security_rsp(param->ble_security.ble_req.bd_addr, true);
      break;
 ```

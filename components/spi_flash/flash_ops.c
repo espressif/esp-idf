@@ -21,8 +21,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include <rom/spi_flash.h>
-#include <rom/cache.h>
+#include <esp32/rom/spi_flash.h>
+#include <esp32/rom/cache.h>
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
 #include "sdkconfig.h"
@@ -30,7 +30,7 @@
 #include "esp_attr.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_flash_partitions.h"
 #include "esp_ota_ops.h"
 #include "cache_utils.h"
@@ -238,6 +238,11 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
         }
     }
     COUNTER_STOP(erase);
+
+    spi_flash_guard_start();
+    spi_flash_check_and_flush_cache(start_addr, size);
+    spi_flash_guard_end();
+
     return spi_flash_translate_rc(rc);
 }
 
@@ -404,9 +409,9 @@ esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 out:
     COUNTER_STOP(write);
 
-    spi_flash_guard_op_lock();
-    spi_flash_mark_modified_region(dst, size);
-    spi_flash_guard_op_unlock();
+    spi_flash_guard_start();
+    spi_flash_check_and_flush_cache(dst, size);
+    spi_flash_guard_end();
 
     return spi_flash_translate_rc(rc);
 }
@@ -470,9 +475,9 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     COUNTER_ADD_BYTES(write, size);
     COUNTER_STOP(write);
 
-    spi_flash_guard_op_lock();
-    spi_flash_mark_modified_region(dest_addr, size);
-    spi_flash_guard_op_unlock();
+    spi_flash_guard_start();
+    spi_flash_check_and_flush_cache(dest_addr, size);
+    spi_flash_guard_end();
 
     return spi_flash_translate_rc(rc);
 }

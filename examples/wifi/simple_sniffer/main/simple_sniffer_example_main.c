@@ -75,9 +75,8 @@ static void initialize_wifi()
 /* Initialize console component */
 static void initialize_console()
 {
-    /* Disable buffering on stdin and stdout */
+    /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
@@ -120,6 +119,7 @@ static void initialize_console()
 #endif
 }
 
+#if CONFIG_SNIFFER_PCAP_DESTINATION_SD
 static struct {
     struct arg_str *device;
     struct arg_end *end;
@@ -155,7 +155,6 @@ static int mount(int argc, char **argv)
         // initialize SD card and mount FAT filesystem.
         sdmmc_card_t *card;
         esp_err_t ret = esp_vfs_fat_sdmmc_mount(CONFIG_SNIFFER_MOUNT_POINT, &host, &slot_config, &mount_config, &card);
-
         if (ret != ESP_OK) {
             if (ret == ESP_FAIL) {
                 ESP_LOGE(TAG, "Failed to mount filesystem. "
@@ -194,7 +193,7 @@ static int unmount(int argc, char **argv)
         arg_print_errors(stderr, mount_args.end, argv[0]);
         return 1;
     }
-    /* mount sd card */
+    /* unmount sd card */
     if (!strncmp(mount_args.device->sval[0], "sd", 2)) {
         if (esp_vfs_fat_sdmmc_unmount() != ESP_OK) {
             ESP_LOGE(TAG, "Card unmount failed");
@@ -218,6 +217,7 @@ static void register_unmount()
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }
+#endif // CONFIG_SNIFFER_PCAP_DESTINATION_SD
 
 void app_main(void)
 {
@@ -234,8 +234,10 @@ void app_main(void)
 
     /* Register commands */
     esp_console_register_help_command();
+#if CONFIG_SNIFFER_PCAP_DESTINATION_SD
     register_mount();
     register_unmount();
+#endif
     register_sniffer();
     register_system();
 

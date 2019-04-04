@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <assert.h>
+#include <sys/param.h>
 #include "esp_ota_ops.h"
+#include "esp_attr.h"
 #include "sdkconfig.h"
 
 // Application version info
@@ -59,4 +61,25 @@ _Static_assert(sizeof(PROJECT_NAME) <= sizeof(esp_app_desc.project_name), "PROJE
 const esp_app_desc_t *esp_ota_get_app_description(void)
 {
     return &esp_app_desc;
+}
+
+/* The following two functions may be called from the panic handler
+ * or core dump, hence IRAM_ATTR.
+ */
+
+static inline char IRAM_ATTR to_hex_digit(unsigned val)
+{
+    return (val < 10) ? ('0' + val) : ('a' + val - 10);
+}
+
+int IRAM_ATTR esp_ota_get_app_elf_sha256(char* dst, size_t size)
+{
+    size_t n = MIN((size - 1) / 2, sizeof(esp_app_desc.app_elf_sha256));
+    const uint8_t* src = esp_app_desc.app_elf_sha256;
+    for (size_t i = 0; i < n; ++i) {
+        dst[2*i] = to_hex_digit(src[i] >> 4);
+        dst[2*i + 1] = to_hex_digit(src[i] & 0xf);
+    }
+    dst[2*n] = 0;
+    return 2*n + 1;
 }

@@ -141,22 +141,33 @@ err_freeaddr:
     return ret;
 }
 
+esp_err_t esp_tls_init_global_ca_store()
+{
+    if (global_cacert == NULL) {
+        global_cacert = (mbedtls_x509_crt *)calloc(1, sizeof(mbedtls_x509_crt));
+        if (global_cacert == NULL) {
+            ESP_LOGE(TAG, "global_cacert not allocated");
+            return ESP_ERR_NO_MEM;
+        }
+        mbedtls_x509_crt_init(global_cacert);
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes)
 {
+    int ret;
     if (cacert_pem_buf == NULL) {
         ESP_LOGE(TAG, "cacert_pem_buf is null");
         return ESP_ERR_INVALID_ARG;
     }
-    if (global_cacert != NULL) {
-        mbedtls_x509_crt_free(global_cacert);
-    }
-    global_cacert = (mbedtls_x509_crt *)calloc(1, sizeof(mbedtls_x509_crt));
     if (global_cacert == NULL) {
-        ESP_LOGE(TAG, "global_cacert not allocated");
-        return ESP_ERR_NO_MEM;
+        ret = esp_tls_init_global_ca_store();
+        if (ret != ESP_OK) {
+            return ret;
+        }
     }
-    mbedtls_x509_crt_init(global_cacert);
-    int ret = mbedtls_x509_crt_parse(global_cacert, cacert_pem_buf, cacert_pem_bytes);
+    ret = mbedtls_x509_crt_parse(global_cacert, cacert_pem_buf, cacert_pem_bytes);
     if (ret < 0) {
         ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
         mbedtls_x509_crt_free(global_cacert);

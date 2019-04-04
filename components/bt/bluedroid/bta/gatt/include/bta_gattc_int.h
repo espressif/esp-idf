@@ -52,6 +52,7 @@ enum {
     BTA_GATTC_API_CONFIRM_EVT,
     BTA_GATTC_API_READ_MULTI_EVT,
     BTA_GATTC_API_REFRESH_EVT,
+    BTA_GATTC_API_CACHE_CLEAN_EVT,
 
     BTA_GATTC_INT_CONN_EVT,
     BTA_GATTC_INT_DISCOVER_EVT,
@@ -470,6 +471,7 @@ extern void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remot
 extern void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tGATT_DISCONN_REASON reason,
                                 BD_ADDR remote_bda, UINT16 conn_id);
 extern void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
+extern void bta_gattc_process_api_cache_clean(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_process_api_cache_assoc(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_process_api_cache_get_addr_list(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data);

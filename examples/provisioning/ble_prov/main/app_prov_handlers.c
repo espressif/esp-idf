@@ -1,4 +1,4 @@
-/* BLE based Provisioning Example
+/* SoftAP based Provisioning Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -23,9 +23,32 @@
 
 static const char* TAG = "app_prov_handler";
 
-static esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data)
+/* Provide definition of wifi_prov_ctx_t */
+struct wifi_prov_ctx {
+    wifi_config_t wifi_cfg;
+};
+
+static wifi_config_t *get_config(wifi_prov_ctx_t **ctx)
 {
-    /* Initialise to zero */
+    return (*ctx ? &(*ctx)->wifi_cfg : NULL);
+}
+
+static wifi_config_t *new_config(wifi_prov_ctx_t **ctx)
+{
+    free(*ctx);
+    (*ctx) = (wifi_prov_ctx_t *) calloc(1, sizeof(wifi_prov_ctx_t));
+    return get_config(ctx);
+}
+
+static void free_config(wifi_prov_ctx_t **ctx)
+{
+    free(*ctx);
+    *ctx = NULL;
+}
+
+static esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data, wifi_prov_ctx_t **ctx)
+{
+    /* Initialize to zero */
     memset(resp_data, 0, sizeof(wifi_prov_config_get_data_t));
 
     if (app_prov_get_wifi_state(&resp_data->wifi_state) != ESP_OK) {
@@ -60,16 +83,14 @@ static esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data)
     return ESP_OK;
 }
 
-static wifi_config_t *wifi_cfg;
-
-static esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data)
+static esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data, wifi_prov_ctx_t **ctx)
 {
+    wifi_config_t *wifi_cfg = get_config(ctx);
     if (wifi_cfg) {
-        free(wifi_cfg);
-        wifi_cfg = NULL;
+        free_config(ctx);
     }
 
-    wifi_cfg = (wifi_config_t *) calloc(1, sizeof(wifi_config_t));
+    wifi_cfg = new_config(ctx);
     if (!wifi_cfg) {
         ESP_LOGE(TAG, "Unable to alloc wifi config");
         return ESP_FAIL;
@@ -84,8 +105,9 @@ static esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data)
     return ESP_OK;
 }
 
-static esp_err_t apply_config_handler(void)
+static esp_err_t apply_config_handler(wifi_prov_ctx_t **ctx)
 {
+    wifi_config_t *wifi_cfg = get_config(ctx);
     if (!wifi_cfg) {
         ESP_LOGE(TAG, "WiFi config not set");
         return ESP_FAIL;
@@ -94,8 +116,7 @@ static esp_err_t apply_config_handler(void)
     app_prov_configure_sta(wifi_cfg);
     ESP_LOGI(TAG, "WiFi Credentials Applied");
 
-    free(wifi_cfg);
-    wifi_cfg = NULL;
+    free_config(ctx);
     return ESP_OK;
 }
 
@@ -103,4 +124,5 @@ wifi_prov_config_handlers_t wifi_prov_handlers = {
     .get_status_handler   = get_status_handler,
     .set_config_handler   = set_config_handler,
     .apply_config_handler = apply_config_handler,
+    .ctx = NULL
 };

@@ -5,9 +5,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
-#include "rom/cache.h"
+#include "esp32/rom/cache.h"
 #include "sdkconfig.h"
-#include "esp_himem.h"
+#include "esp32/himem.h"
 
 #if CONFIG_SPIRAM_BANKSWITCH_ENABLE
 

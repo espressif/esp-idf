@@ -1,5 +1,6 @@
 控制台终端
 ==========
+:link_to_translation:`en:[English]`
 
 ESP-IDF 提供了 ``console`` 组件，它包含了开发基于串口的交互式控制终端所需要的所有模块，主要支持以下功能：
 

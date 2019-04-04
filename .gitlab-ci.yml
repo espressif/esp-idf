@@ -19,7 +19,7 @@ variables:
   GET_SOURCES_ATTEMPTS: "10"
   ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
 
-  # We use get_sources.sh script to fetch the submodules and/or re-fetch the repo
+  # We use get-full-sources.sh script to fetch the submodules and/or re-fetch the repo
   # if it was corrupted (if submodule update fails this can happen)
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
@@ -32,6 +32,7 @@ variables:
   V: "0"
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
+  CUSTOM_TOOLCHAIN_PATH: "/opt/xtensa-custom"
 
 # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
@@ -53,6 +54,25 @@ variables:
 .apply_bot_filter: &apply_bot_filter
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
+.setup_custom_toolchain: &setup_custom_toolchain |
+  if [ "$IDF_XTENSA_TOOLCHAIN_URL" ] ; then
+  echo "Use a custom toolchain: ${IDF_XTENSA_TOOLCHAIN_URL:-Unknown}"
+  rm -rf "$CUSTOM_TOOLCHAIN_PATH" &&
+  mkdir -p -v "$CUSTOM_TOOLCHAIN_PATH" &&
+  pushd "$CUSTOM_TOOLCHAIN_PATH" &&
+  curl -sSL -o xtensa-custom.xxx "$IDF_XTENSA_TOOLCHAIN_URL" &&
+  ls -l xtensa-custom.xxx &&
+  tar xf xtensa-custom.xxx --strip-components 1 &&
+  ls -l . &&
+  popd
+  PATH=$CUSTOM_TOOLCHAIN_PATH/bin:$PATH
+  export PATH
+  fi
+
+.cleanup_custom_toolchain: &cleanup_custom_toolchain |
+  echo "Cleaning up $CUSTOM_TOOLCHAIN_PATH"
+  rm -rf "$CUSTOM_TOOLCHAIN_PATH"
+
 before_script:
   - source tools/ci/setup_python.sh
   - *git_clean_stale_submodules
@@ -71,6 +91,8 @@ before_script:
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source tools/ci/configure_ci_environment.sh
 
+  - *setup_custom_toolchain
+
   # fetch the submodules (& if necessary re-fetch repo) from gitlab
   - time ./tools/ci/get-full-sources.sh
 
@@ -79,6 +101,7 @@ before_script:
   before_script: &do_nothing_before_no_filter
     - source tools/ci/setup_python.sh
     - *git_clean_stale_submodules
+    - *setup_custom_toolchain
 
 # used for everything else where we want to do no prep, except for bot filter
 .do_nothing_before:
@@ -89,6 +112,7 @@ before_script:
     - *apply_bot_filter
     - echo "Not setting up GitLab key, not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
+    - *setup_custom_toolchain
 
 .add_gitlab_key_before:
   before_script: &add_gitlab_key_before
@@ -98,6 +122,7 @@ before_script:
     - *apply_bot_filter
     - echo "Not fetching submodules"
     - source tools/ci/configure_ci_environment.sh
+    - *setup_custom_toolchain
     # add gitlab ssh key
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -106,6 +131,9 @@ before_script:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
+after_script:
+  - *cleanup_custom_toolchain
+
 build_template_app:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
@@ -113,7 +141,6 @@ build_template_app:
     - build
   variables:
     BATCH_BUILD: "1"
-    IDF_CI_BUILD: "1"
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -210,8 +237,7 @@ build_esp_idf_tests_make:
     # Check if the tests demand Make built binaries. If not, delete them
     - if [ "$UNIT_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
     - rm -rf builds output sdkconfig
-    - rm -rf components/idf_test/unit_test/TestCaseAll.yml
-    - rm -rf components/idf_test/unit_test/CIConfigs/*.yml
+    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
 
 build_esp_idf_tests_cmake:
   <<: *build_esp_idf_unit_test_template
@@ -226,8 +252,7 @@ build_esp_idf_tests_cmake:
     # Check if the tests demand CMake built binaries. If not, delete them
     - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
     - rm -rf builds output sdkconfig
-    - rm -rf components/idf_test/unit_test/TestCaseAll.yml
-    - rm -rf components/idf_test/unit_test/CIConfigs/*.yml
+    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
 
 .build_examples_make_template: &build_examples_make_template
   <<: *build_template
@@ -238,6 +263,7 @@ build_esp_idf_tests_cmake:
     when: always
     paths:
       - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/sdkconfig
       - build_examples/*/*/*/build/*.elf
       - build_examples/*/*/*/build/*.map
       - build_examples/*/*/*/build/download.config
@@ -245,7 +271,6 @@ build_esp_idf_tests_cmake:
       - $LOG_PATH
     expire_in: 2 days
   variables:
-    IDF_CI_BUILD: "1"
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
   only:
     variables:
@@ -253,6 +278,7 @@ build_esp_idf_tests_cmake:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -270,14 +296,14 @@ build_esp_idf_tests_cmake:
     when: always
     paths:
       - build_examples_cmake/*/*/*/build/*.bin
+      - build_examples_cmake/*/*/*/sdkconfig
       - build_examples_cmake/*/*/*/build/*.elf
       - build_examples_cmake/*/*/*/build/*.map
-      - build_examples_cmake/*/*/*/build/download.config
+      - build_examples_cmake/*/*/*/build/flasher_args.json
       - build_examples_cmake/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
     expire_in: 2 days
   variables:
-    IDF_CI_BUILD: "1"
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
   only:
     variables:
@@ -285,6 +311,7 @@ build_esp_idf_tests_cmake:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -479,11 +506,9 @@ test_ldgen_on_host:
       - ${FUZZER_TEST_DIR}/fuzz_output.log
     expire_in: 1 week
   only:
-    refs:
-      # can only be triggered
-      - triggers
     variables:
       - $BOT_LABEL_FUZZER_TEST
+      - $BOT_LABEL_WEEKEND_TEST
   script:
     - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
     - cd ${FUZZER_TEST_DIR}
@@ -496,27 +521,23 @@ test_ldgen_on_host:
 test_mdns_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
 
 test_lwip_dns_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dns
 
 test_lwip_dhcp_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_client
 
 test_lwip_dhcps_fuzzer_on_host:
   <<: *host_fuzzer_test_template
   variables:
-    BOT_NEEDS_TRIGGER_BY_NAME: 1
     FUZZER_TEST_DIR: components/lwip/test_afl_host
     FUZZER_PARAMS: MODE=dhcp_server
 
@@ -559,7 +580,8 @@ test_build_system_cmake:
 test_idf_monitor:
   <<: *host_test_template
   artifacts:
-    when: on_failure
+    # save artifacts always in order to access results which were retried without consequent failure
+    when: always
     paths:
       - tools/test_idf_monitor/outputs/*
     expire_in: 1 week
@@ -592,6 +614,22 @@ test_esp_err_to_name_on_host:
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
     - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+
+test_esp_efuse_table_on_host:
+  <<: *host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/efuse/esp32/esp_efuse_table.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/components/efuse/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
+    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
+    - git diff --exit-code -- ../components/esp32/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - cd ${IDF_PATH}/components/efuse/test_efuse_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
 
 test_espcoredump:
   <<: *host_test_template
@@ -731,6 +769,23 @@ check_python_style:
     # run it only under Python 3 (it is very slow under Python 2)
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
 
+check_kconfigs:
+  <<: *check_job_template
+  before_script: *do_nothing_before
+  artifacts:
+    when: on_failure
+    paths:
+      - components/*/Kconfig*.new
+      - examples/*/*/*/Kconfig*.new
+      - examples/*/*/*/*/Kconfig*.new
+      - tools/*/Kconfig*.new
+      - tools/*/*/Kconfig*.new
+      - tools/*/*/*/Kconfig*.new
+    expire_in: 1 week
+  script:
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/test_check_kconfigs.py
+    - ${IDF_PATH}/tools/check_kconfigs.py
+
 check_ut_cmake_make:
   stage: check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
@@ -747,8 +802,11 @@ check_ut_cmake_make:
 
 check_submodule_sync:
   <<: *check_job_template
+  tags:
+    - github_sync
   variables:
     GIT_STRATEGY: clone
+  retry: 2
   script:
     # check if all submodules are correctly synced to public repostory
     - git submodule update --init --recursive
@@ -768,7 +826,7 @@ check_pipeline_triggered_by_label:
   script:
     # If the pipeline is triggered with label, the pipeline will only succeeded if "regular_test" label is added.
     # We want to make sure some jobs are always executed to detect regression.
-    - test "$BOT_LABEL_REGULAR_TEST" = "true" || exit -1
+    - test "$BOT_LABEL_REGULAR_TEST" = "true" || { echo "CI can only pass if 'regular_test' label is included"; exit -1; }
 
 assign_test:
   tags:
@@ -798,7 +856,6 @@ assign_test:
       - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_INTEGRATION_TEST
       - $BOT_LABEL_EXAMPLE_TEST
-  before_script: *add_gitlab_key_before
   script:
     # assign example tests
     - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $IDF_PATH/.gitlab-ci.yml $EXAMPLE_CONFIG_OUTPUT_PATH
@@ -890,6 +947,22 @@ assign_test:
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
 
+test_weekend_mqtt:
+  <<: *example_test_template
+  stage: target_test
+  tags:
+    - ESP32
+    - Example_WIFI
+  only:
+    variables:
+      - $BOT_LABEL_WEEKEND_TEST
+  variables:
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/config.yml"
+
 .test_template: &test_template
   stage: target_test
   when: on_success
@@ -978,7 +1051,7 @@ example_test_002_01:
     - ESP32
     - Example_ShieldBox_Basic
 
-example_test_003_01:
+.example_test_003_01:
   <<: *example_test_template
   tags:
     - ESP32
@@ -1264,6 +1337,18 @@ UT_001_42:
     - ESP32_IDF
     - UT_T1_1
 
+UT_001_43:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_001_43:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 UT_002_01:
   <<: *unit_test_template
   tags:
@@ -1405,7 +1490,7 @@ UT_004_15:
     - UT_T1_1
     - psram
 
-UT_004_14:
+UT_004_16:
   <<: *unit_test_template
   tags:
     - ESP32_IDF
@@ -1610,6 +1695,31 @@ UT_012_05:
     - ESP32_IDF
     - UT_T1_1
     - 8Mpsram
+
+UT_013_01:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+
+UT_013_02:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+
+UT_013_03:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+
+UT_013_04:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - Example_SPI_Multi_device
+    - psram
 
 UT_014_01:
   <<: *unit_test_template
@@ -1874,6 +1984,18 @@ IT_006_05:
     - ESP32_IDF
     - SSC_T1_6
 
+IT_006_06:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
+IT_006_07:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_6
+
 IT_007_01:
   <<: *test_template
   tags:
@@ -1881,6 +2003,12 @@ IT_007_01:
     - SSC_T1_7
 
 IT_007_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_7
+
+IT_007_03:
   <<: *test_template
   tags:
     - ESP32_IDF
@@ -1911,6 +2039,12 @@ IT_011_01:
     - SSC_T50_1
 
 IT_012_01:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_9
+
+IT_012_02:
   <<: *test_template
   tags:
     - ESP32_IDF

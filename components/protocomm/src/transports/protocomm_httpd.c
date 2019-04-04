@@ -26,6 +26,7 @@
 
 static const char *TAG = "protocomm_httpd";
 static protocomm_t *pc_httpd; /* The global protocomm instance for HTTPD */
+static bool pc_ext_httpd_handle_provided = false;
 static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
 
 #define MAX_REQ_BODY_LEN 4096
@@ -41,9 +42,9 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     int cur_session_id = httpd_req_to_sockfd(req);
 
     if (cur_session_id != session_id) {
-        /* Initialise new security session */
+        /* Initialize new security session */
         if (session_id != PROTOCOMM_NO_SESSION_ID) {
-            ESP_LOGV(TAG, "Closing session with ID: %d", session_id);
+            ESP_LOGD(TAG, "Closing session with ID: %d", session_id);
             /* Presently HTTP server doesn't support callback on socket closure so
              * previous session can only be closed when new session is requested */
             if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
@@ -65,7 +66,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
             }
         }
         session_id = cur_session_id;
-        ESP_LOGV(TAG, "New session with ID: %d", cur_session_id);
+        ESP_LOGD(TAG, "New session with ID: %d", cur_session_id);
     }
 
     if (req->content_len <= 0) {
@@ -124,7 +125,7 @@ out:
     return ret;
 }
 
-esp_err_t protocomm_httpd_add_endpoint(const char *ep_name,
+static esp_err_t protocomm_httpd_add_endpoint(const char *ep_name,
                                        protocomm_req_handler_t req_handler,
                                        void *priv_data)
 {
@@ -132,7 +133,7 @@ esp_err_t protocomm_httpd_add_endpoint(const char *ep_name,
         return ESP_ERR_INVALID_STATE;
     }
 
-    ESP_LOGV(TAG, "Adding endpoint : %s", ep_name);
+    ESP_LOGD(TAG, "Adding endpoint : %s", ep_name);
 
     /* Construct URI name by prepending '/' to ep_name */
     char* ep_uri = calloc(1, strlen(ep_name) + 2);
@@ -169,7 +170,7 @@ static esp_err_t protocomm_httpd_remove_endpoint(const char *ep_name)
         return ESP_ERR_INVALID_STATE;
     }
 
-    ESP_LOGV(TAG, "Removing endpoint : %s", ep_name);
+    ESP_LOGD(TAG, "Removing endpoint : %s", ep_name);
 
     /* Construct URI name by prepending '/' to ep_name */
     char* ep_uri = calloc(1, strlen(ep_name) + 2);
@@ -207,28 +208,36 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-    /* Private data will point to the HTTP server handle */
-    pc->priv = calloc(1, sizeof(httpd_handle_t));
-    if (!pc->priv) {
-        ESP_LOGE(TAG, "Malloc failed for HTTP server handle");
-        return ESP_ERR_NO_MEM;
+    if (config->ext_handle_provided) {
+        if (config->data.handle) {
+            pc->priv = config->data.handle;
+            pc_ext_httpd_handle_provided = true;
+        } else {
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else {
+        /* Private data will point to the HTTP server handle */
+        pc->priv = calloc(1, sizeof(httpd_handle_t));
+        if (!pc->priv) {
+            ESP_LOGE(TAG, "Malloc failed for HTTP server handle");
+            return ESP_ERR_NO_MEM;
+        }
+
+        /* Configure the HTTP server */
+        httpd_config_t server_config   = HTTPD_DEFAULT_CONFIG();
+        server_config.server_port      = config->data.config.port;
+        server_config.stack_size       = config->data.config.stack_size;
+        server_config.task_priority    = config->data.config.task_priority;
+        server_config.lru_purge_enable = true;
+        server_config.max_open_sockets = 1;
+
+        esp_err_t err;
+        if ((err = httpd_start((httpd_handle_t *)pc->priv, &server_config)) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to start http server: %s", esp_err_to_name(err));
+            free(pc->priv);
+            return err;
+        }
     }
-
-    /* Configure the HTTP server */
-    httpd_config_t server_config   = HTTPD_DEFAULT_CONFIG();
-    server_config.server_port      = config->port;
-    server_config.stack_size       = config->stack_size;
-    server_config.task_priority    = config->task_priority;
-    server_config.lru_purge_enable = true;
-    server_config.max_open_sockets = 1;
-
-    esp_err_t err;
-    if ((err = httpd_start((httpd_handle_t *)pc->priv, &server_config)) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start http server: %s", esp_err_to_name(err));
-        free(pc->priv);
-        return err;
-    }
-
     pc->add_endpoint    = protocomm_httpd_add_endpoint;
     pc->remove_endpoint = protocomm_httpd_remove_endpoint;
     pc_httpd = pc;
@@ -238,9 +247,13 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
 esp_err_t protocomm_httpd_stop(protocomm_t *pc)
 {
     if ((pc != NULL) && (pc == pc_httpd)) {
-        httpd_handle_t *server_handle = (httpd_handle_t *) pc_httpd->priv;
-        httpd_stop(*server_handle);
-        free(server_handle);
+        if (!pc_ext_httpd_handle_provided) {
+            httpd_handle_t *server_handle = (httpd_handle_t *) pc_httpd->priv;
+            httpd_stop(*server_handle);
+            free(server_handle);
+        } else {
+            pc_ext_httpd_handle_provided = false;
+        }
         pc_httpd->priv = NULL;
         pc_httpd = NULL;
         return ESP_OK;

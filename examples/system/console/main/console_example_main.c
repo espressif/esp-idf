@@ -59,9 +59,8 @@ static void initialize_nvs()
 
 static void initialize_console()
 {
-    /* Disable buffering on stdin and stdout */
+    /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
@@ -130,6 +129,7 @@ void app_main()
     esp_console_register_help_command();
     register_system();
     register_wifi();
+    register_nvs();
 
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.

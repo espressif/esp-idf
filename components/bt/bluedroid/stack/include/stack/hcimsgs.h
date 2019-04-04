@@ -555,6 +555,10 @@ BOOLEAN btsnd_hcic_write_voice_settings(UINT16 flags);            /* Write Voice
 #define HCI_HOST_FLOW_CTRL_SCO_ON       2
 #define HCI_HOST_FLOW_CTRL_BOTH_ON      3
 
+#define  HCI_HOST_FLOW_CTRL_ADV_REPORT_OFF     0
+#define  HCI_HOST_FLOW_CTRL_ADV_REPORT_ON      1
+
+
 BOOLEAN btsnd_hcic_write_auto_flush_tout(UINT16 handle,
         UINT16 timeout);    /* Write Retransmit Timout */
 
@@ -684,6 +688,7 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_SET_RAND_PRIV_ADDR_TIMOUT   2
 #define HCIC_PARAM_SIZE_BLE_SET_DATA_LENGTH             6
 #define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM  11
+#define HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL    2
 
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);
@@ -805,6 +810,8 @@ BOOLEAN btsnd_hcic_read_authenticated_payload_tout(UINT16 handle);
 
 BOOLEAN btsnd_hcic_write_authenticated_payload_tout(UINT16 handle,
         UINT16 timeout);
+
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num);
 
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT  4
 

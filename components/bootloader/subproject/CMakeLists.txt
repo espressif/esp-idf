@@ -10,11 +10,11 @@ if(NOT IDF_PATH)
         "in by the parent build process.")
 endif()
 
-set(COMPONENTS bootloader esptool_py esp32 partition_table soc bootloader_support log spi_flash micro-ecc soc main)
+set(COMPONENTS bootloader esptool_py esp32 partition_table soc bootloader_support log spi_flash micro-ecc main efuse)
 set(BOOTLOADER_BUILD 1)
 add_definitions(-DBOOTLOADER_BUILD=1)
 
-set(COMPONENT_REQUIRES_COMMON log esp32 soc)
+set(COMPONENT_REQUIRES_COMMON log esp32 soc esp_rom esp_common xtensa)
 
 include("${IDF_PATH}/tools/cmake/project.cmake")
 project(bootloader)
@@ -27,8 +27,8 @@ target_linker_script(bootloader.elf
 # as cmake won't attach linker args to a header-only library, attach
 # linker args directly to the bootloader.elf
 set(ESP32_BOOTLOADER_LINKER_SCRIPTS
-    "../../esp32/ld/esp32.rom.ld"
-    "../../esp32/ld/esp32.rom.spiram_incompatible_fns.ld"
+    "../../esp_rom/esp32/ld/esp32.rom.ld"
+    "../../esp_rom/esp32/ld/esp32.rom.spiram_incompatible_fns.ld"
     "../../esp32/ld/esp32.peripherals.ld")
 
 target_linker_script(bootloader.elf ${ESP32_BOOTLOADER_LINKER_SCRIPTS})

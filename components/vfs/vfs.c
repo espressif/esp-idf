@@ -1,4 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -657,21 +657,27 @@ int rmdir(const char* name)
     return ret;
 }
 
-int fcntl(int fd, int cmd, ...)
+int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
     int ret;
+    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, arg);
+    return ret;
+}
+
+int __attribute__((weak)) fcntl(int fd, int cmd, ...)
+{
     va_list args;
     va_start(args, cmd);
-    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, args);
+    int arg = va_arg(args, int);
     va_end(args);
-    return ret;
+    struct _reent* r = __getreent();
+    return _fcntl_r(r, fd, cmd, arg);
 }
 
 int ioctl(int fd, int cmd, ...)
@@ -1108,5 +1114,81 @@ int esp_vfs_utime(const char *path, const struct utimbuf *times)
     }
     const char* path_within_vfs = translate_path(vfs, path);
     CHECK_AND_CALL(ret, r, vfs, utime, path_within_vfs, times);
+    return ret;
+}
+
+int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout)
+{
+    struct timeval tv = {
+        // timeout is in milliseconds
+        .tv_sec = timeout / 1000,
+        .tv_usec = (timeout % 1000) * 1000,
+    };
+    int max_fd = -1;
+    fd_set readfds;
+    fd_set writefds;
+    fd_set errorfds;
+    struct _reent* r = __getreent();
+    int ret = 0;
+
+    if (fds == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+    FD_ZERO(&errorfds);
+
+    for (int i = 0; i < nfds; ++i) {
+        fds[i].revents = 0;
+
+        if (fds[i].fd < 0) {
+            // revents should remain 0 and events ignored (according to the documentation of poll()).
+            continue;
+        }
+
+        if (fds[i].fd >= MAX_FDS) {
+            fds[i].revents |= POLLNVAL;
+            ++ret;
+            continue;
+        }
+
+        if (fds[i].events & (POLLIN | POLLRDNORM | POLLRDBAND | POLLPRI)) {
+            FD_SET(fds[i].fd, &readfds);
+            FD_SET(fds[i].fd, &errorfds);
+            max_fd = MAX(max_fd, fds[i].fd);
+        }
+
+        if (fds[i].events & (POLLOUT | POLLWRNORM | POLLWRBAND)) {
+            FD_SET(fds[i].fd, &writefds);
+            FD_SET(fds[i].fd, &errorfds);
+            max_fd = MAX(max_fd, fds[i].fd);
+        }
+    }
+
+    const int select_ret = esp_vfs_select(max_fd + 1, &readfds, &writefds, &errorfds, timeout < 0 ? NULL: &tv);
+
+    if (select_ret > 0) {
+        ret += select_ret;
+
+        for (int i = 0; i < nfds; ++i) {
+            if (FD_ISSET(fds[i].fd, &readfds)) {
+                fds[i].revents |= POLLIN;
+            }
+
+            if (FD_ISSET(fds[i].fd, &writefds)) {
+                fds[i].revents |= POLLOUT;
+            }
+
+            if (FD_ISSET(fds[i].fd, &errorfds)) {
+                fds[i].revents |= POLLERR;
+            }
+        }
+    } else {
+        ret = select_ret;
+        // keeping the errno from select()
+    }
+
     return ret;
 }

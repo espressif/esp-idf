@@ -66,6 +66,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
             break;
+        default:
+            ESP_LOGI(TAG, "Other event id:%d", event->event_id);
+            break;
     }
     return ESP_OK;
 }
@@ -115,7 +118,7 @@ static void wifi_init(void)
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "ws://iot.eclipse.org:80/ws",
+        .uri = CONFIG_BROKER_URI,
         .event_handle = mqtt_event_handler,
         // .user_context = (void *)your_context
     };

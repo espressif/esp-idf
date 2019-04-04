@@ -65,6 +65,20 @@ typedef enum {
 	NVS_READWRITE  /*!< Read and write */
 } nvs_open_mode;
 
+typedef enum {
+    NVS_TYPE_U8    = 0x01,
+    NVS_TYPE_I8    = 0x11,
+    NVS_TYPE_U16   = 0x02,
+    NVS_TYPE_I16   = 0x12,
+    NVS_TYPE_U32   = 0x04,
+    NVS_TYPE_I32   = 0x14,
+    NVS_TYPE_U64   = 0x08,
+    NVS_TYPE_I64   = 0x18,
+    NVS_TYPE_STR   = 0x21,
+    NVS_TYPE_BLOB  = 0x42,
+    NVS_TYPE_ANY   = 0xff // Must be last
+} nvs_type_t;
+
 /**
  * @brief      Open non-volatile storage with a given namespace from the default NVS partition
  *

@@ -1469,10 +1469,15 @@
 /* LEDC_HSTIMER0_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in high speed
  timer0. the counter range is [0 2**reg_hstimer0_lim] the max bit width for counter is 20.*/
-#define LEDC_HSTIMER0_LIM  0x0000001F
-#define LEDC_HSTIMER0_LIM_M  ((LEDC_HSTIMER0_LIM_V)<<(LEDC_HSTIMER0_LIM_S))
-#define LEDC_HSTIMER0_LIM_V  0x1F
-#define LEDC_HSTIMER0_LIM_S  0
+#define LEDC_HSTIMER0_DUTY_RES  0x0000001F
+#define LEDC_HSTIMER0_DUTY_RES_M  ((LEDC_HSTIMER0_DUTY_RES_V)<<(LEDC_HSTIMER0_DUTY_RES_S))
+#define LEDC_HSTIMER0_DUTY_RES_V  0x1F
+#define LEDC_HSTIMER0_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_HSTIMER0_LIM         LEDC_HSTIMER0_DUTY_RES
+#define LEDC_HSTIMER0_LIM_M       LEDC_HSTIMER0_DUTY_RES_M
+#define LEDC_HSTIMER0_LIM_V       LEDC_HSTIMER0_DUTY_RES_V
+#define LEDC_HSTIMER0_LIM_S       LEDC_HSTIMER0_DUTY_RES_S
 
 #define LEDC_HSTIMER0_VALUE_REG          (DR_REG_LEDC_BASE + 0x0144)
 /* LEDC_HSTIMER0_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1513,10 +1518,15 @@
 /* LEDC_HSTIMER1_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in high speed
  timer1. the counter range is [0 2**reg_hstimer1_lim] the max bit width for counter is 20.*/
-#define LEDC_HSTIMER1_LIM  0x0000001F
-#define LEDC_HSTIMER1_LIM_M  ((LEDC_HSTIMER1_LIM_V)<<(LEDC_HSTIMER1_LIM_S))
-#define LEDC_HSTIMER1_LIM_V  0x1F
-#define LEDC_HSTIMER1_LIM_S  0
+#define LEDC_HSTIMER1_DUTY_RES  0x0000001F
+#define LEDC_HSTIMER1_DUTY_RES_M  ((LEDC_HSTIMER1_DUTY_RES_V)<<(LEDC_HSTIMER1_DUTY_RES_S))
+#define LEDC_HSTIMER1_DUTY_RES_V  0x1F
+#define LEDC_HSTIMER1_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_HSTIMER1_LIM       LEDC_HSTIMER1_DUTY_RES
+#define LEDC_HSTIMER1_LIM_M     LEDC_HSTIMER1_DUTY_RES_M
+#define LEDC_HSTIMER1_LIM_V     LEDC_HSTIMER1_DUTY_RES_V
+#define LEDC_HSTIMER1_LIM_S     LEDC_HSTIMER1_DUTY_RES_S
 
 #define LEDC_HSTIMER1_VALUE_REG          (DR_REG_LEDC_BASE + 0x014C)
 /* LEDC_HSTIMER1_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1557,10 +1567,15 @@
 /* LEDC_HSTIMER2_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in high speed
  timer2. the counter range is [0 2**reg_hstimer2_lim] the max bit width for counter is 20.*/
-#define LEDC_HSTIMER2_LIM  0x0000001F
-#define LEDC_HSTIMER2_LIM_M  ((LEDC_HSTIMER2_LIM_V)<<(LEDC_HSTIMER2_LIM_S))
-#define LEDC_HSTIMER2_LIM_V  0x1F
-#define LEDC_HSTIMER2_LIM_S  0
+#define LEDC_HSTIMER2_DUTY_RES  0x0000001F
+#define LEDC_HSTIMER2_DUTY_RES_M  ((LEDC_HSTIMER2_DUTY_RES_V)<<(LEDC_HSTIMER2_DUTY_RES_S))
+#define LEDC_HSTIMER2_DUTY_RES_V  0x1F
+#define LEDC_HSTIMER2_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_HSTIMER2_LIM       LEDC_HSTIMER2_DUTY_RES
+#define LEDC_HSTIMER2_LIM_M     LEDC_HSTIMER2_DUTY_RES_M
+#define LEDC_HSTIMER2_LIM_V     LEDC_HSTIMER2_DUTY_RES_V
+#define LEDC_HSTIMER2_LIM_S     LEDC_HSTIMER2_DUTY_RES_S
 
 #define LEDC_HSTIMER2_VALUE_REG          (DR_REG_LEDC_BASE + 0x0154)
 /* LEDC_HSTIMER2_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1601,10 +1616,15 @@
 /* LEDC_HSTIMER3_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in high speed
  timer3. the counter range is [0 2**reg_hstimer3_lim] the max bit width for counter is 20.*/
-#define LEDC_HSTIMER3_LIM  0x0000001F
-#define LEDC_HSTIMER3_LIM_M  ((LEDC_HSTIMER3_LIM_V)<<(LEDC_HSTIMER3_LIM_S))
-#define LEDC_HSTIMER3_LIM_V  0x1F
-#define LEDC_HSTIMER3_LIM_S  0
+#define LEDC_HSTIMER3_DUTY_RES  0x0000001F
+#define LEDC_HSTIMER3_DUTY_RES_M  ((LEDC_HSTIMER3_DUTY_RES_V)<<(LEDC_HSTIMER3_DUTY_RES_S))
+#define LEDC_HSTIMER3_DUTY_RES_V  0x1F
+#define LEDC_HSTIMER3_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_HSTIMER3_LIM       LEDC_HSTIMER3_DUTY_RES
+#define LEDC_HSTIMER3_LIM_M     LEDC_HSTIMER3_DUTY_RES_M
+#define LEDC_HSTIMER3_LIM_V     LEDC_HSTIMER3_DUTY_RES_V
+#define LEDC_HSTIMER3_LIM_S     LEDC_HSTIMER3_DUTY_RES_S
 
 #define LEDC_HSTIMER3_VALUE_REG          (DR_REG_LEDC_BASE + 0x015C)
 /* LEDC_HSTIMER3_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1651,10 +1671,15 @@
 /* LEDC_LSTIMER0_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in low speed
  timer0. the counter range is [0 2**reg_lstimer0_lim] the max bit width for counter is 20.*/
-#define LEDC_LSTIMER0_LIM  0x0000001F
-#define LEDC_LSTIMER0_LIM_M  ((LEDC_LSTIMER0_LIM_V)<<(LEDC_LSTIMER0_LIM_S))
-#define LEDC_LSTIMER0_LIM_V  0x1F
-#define LEDC_LSTIMER0_LIM_S  0
+#define LEDC_LSTIMER0_DUTY_RES  0x0000001F
+#define LEDC_LSTIMER0_DUTY_RES_M  ((LEDC_LSTIMER0_DUTY_RES_V)<<(LEDC_LSTIMER0_DUTY_RES_S))
+#define LEDC_LSTIMER0_DUTY_RES_V  0x1F
+#define LEDC_LSTIMER0_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_LSTIMER0_LIM       LEDC_LSTIMER0_DUTY_RES
+#define LEDC_LSTIMER0_LIM_M     LEDC_LSTIMER0_DUTY_RES_M
+#define LEDC_LSTIMER0_LIM_V     LEDC_LSTIMER0_DUTY_RES_V
+#define LEDC_LSTIMER0_LIM_S     LEDC_LSTIMER0_DUTY_RES_S
 
 #define LEDC_LSTIMER0_VALUE_REG          (DR_REG_LEDC_BASE + 0x0164)
 /* LEDC_LSTIMER0_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1701,10 +1726,15 @@
 /* LEDC_LSTIMER1_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in low speed
  timer1. the counter range is [0 2**reg_lstimer1_lim] the max bit width for counter is 20.*/
-#define LEDC_LSTIMER1_LIM  0x0000001F
-#define LEDC_LSTIMER1_LIM_M  ((LEDC_LSTIMER1_LIM_V)<<(LEDC_LSTIMER1_LIM_S))
-#define LEDC_LSTIMER1_LIM_V  0x1F
-#define LEDC_LSTIMER1_LIM_S  0
+#define LEDC_LSTIMER1_DUTY_RES  0x0000001F
+#define LEDC_LSTIMER1_DUTY_RES_M  ((LEDC_LSTIMER1_DUTY_RES_V)<<(LEDC_LSTIMER1_DUTY_RES_S))
+#define LEDC_LSTIMER1_DUTY_RES_V  0x1F
+#define LEDC_LSTIMER1_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_LSTIMER1_LIM       LEDC_LSTIMER1_DUTY_RES
+#define LEDC_LSTIMER1_LIM_M     LEDC_LSTIMER1_DUTY_RES_M
+#define LEDC_LSTIMER1_LIM_V     LEDC_LSTIMER1_DUTY_RES_V
+#define LEDC_LSTIMER1_LIM_S     LEDC_LSTIMER1_DUTY_RES_S
 
 #define LEDC_LSTIMER1_VALUE_REG          (DR_REG_LEDC_BASE + 0x016C)
 /* LEDC_LSTIMER1_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1751,10 +1781,15 @@
 /* LEDC_LSTIMER2_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in low speed
  timer2. the counter range is [0 2**reg_lstimer2_lim] the max bit width for counter is 20.*/
-#define LEDC_LSTIMER2_LIM  0x0000001F
-#define LEDC_LSTIMER2_LIM_M  ((LEDC_LSTIMER2_LIM_V)<<(LEDC_LSTIMER2_LIM_S))
-#define LEDC_LSTIMER2_LIM_V  0x1F
-#define LEDC_LSTIMER2_LIM_S  0
+#define LEDC_LSTIMER2_DUTY_RES  0x0000001F
+#define LEDC_LSTIMER2_DUTY_RES_M  ((LEDC_LSTIMER2_DUTY_RES_V)<<(LEDC_LSTIMER2_DUTY_RES_S))
+#define LEDC_LSTIMER2_DUTY_RES_V  0x1F
+#define LEDC_LSTIMER2_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_LSTIMER2_LIM       LEDC_LSTIMER2_DUTY_RES
+#define LEDC_LSTIMER2_LIM_M     LEDC_LSTIMER2_DUTY_RES_M
+#define LEDC_LSTIMER2_LIM_V     LEDC_LSTIMER2_DUTY_RES_V
+#define LEDC_LSTIMER2_LIM_S     LEDC_LSTIMER2_DUTY_RES_S
 
 #define LEDC_LSTIMER2_VALUE_REG          (DR_REG_LEDC_BASE + 0x0174)
 /* LEDC_LSTIMER2_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */
@@ -1801,10 +1836,15 @@
 /* LEDC_LSTIMER3_LIM : R/W ;bitpos:[4:0] ;default: 5'h0 ; */
 /*description: This register controls the range of the counter in low speed
  timer3. the counter range is [0 2**reg_lstimer3_lim] the max bit width for counter is 20.*/
-#define LEDC_LSTIMER3_LIM  0x0000001F
-#define LEDC_LSTIMER3_LIM_M  ((LEDC_LSTIMER3_LIM_V)<<(LEDC_LSTIMER3_LIM_S))
-#define LEDC_LSTIMER3_LIM_V  0x1F
-#define LEDC_LSTIMER3_LIM_S  0
+#define LEDC_LSTIMER3_DUTY_RES  0x0000001F
+#define LEDC_LSTIMER3_DUTY_RES_M  ((LEDC_LSTIMER3_DUTY_RES_V)<<(LEDC_LSTIMER3_DUTY_RES_S))
+#define LEDC_LSTIMER3_DUTY_RES_V  0x1F
+#define LEDC_LSTIMER3_DUTY_RES_S  0
+// Keep the definitions below to be compatible with previous version
+#define LEDC_LSTIMER3_LIM       LEDC_LSTIMER3_DUTY_RES
+#define LEDC_LSTIMER3_LIM_M     LEDC_LSTIMER3_DUTY_RES_M
+#define LEDC_LSTIMER3_LIM_V     LEDC_LSTIMER3_DUTY_RES_V
+#define LEDC_LSTIMER3_LIM_S     LEDC_LSTIMER3_DUTY_RES_S
 
 #define LEDC_LSTIMER3_VALUE_REG          (DR_REG_LEDC_BASE + 0x017C)
 /* LEDC_LSTIMER3_CNT : RO ;bitpos:[19:0] ;default: 20'b0 ; */

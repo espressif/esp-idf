@@ -37,7 +37,8 @@ make -j4 flash monitor
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
-Prerequisite: we startup a CoAP server on coap server example.  
+Prerequisite: we startup a CoAP server on coap server example,
+or use the default of coap://californium.eclipse.org.  
 
 and you could receive data from CoAP server if succeed,  
 such as the following log:
@@ -54,12 +55,26 @@ I (1692) wifi: pm start, type: 1
 
 I (2582) event: sta ip: 192.168.3.89, mask: 255.255.255.0, gw: 192.168.3.1
 I (2582) CoAP_client: Connected to AP
-I (2582) CoAP_client: DNS lookup succeeded. IP=192.168.3.84
-Received: Hello World!
-E (8102) CoAP_client: select timeout
-E (13102) CoAP_client: select timeout
+I (2582) CoAP_client: DNS lookup succeeded. IP=104.196.15.150
+Received:
+************************************************************
+CoAP RFC 7252                              Cf 2.0.0-SNAPSHOT
+************************************************************
+This server is using the Eclipse Californium (Cf) CoAP framework
+published under EPL+EDL: http://www.eclipse.org/californium/
+
+(c) 2014, 2015, 2016 Institute for Pervasive Computing, ETH Zurich and others
+************************************************************
 ...
 ```
 
+## libcoap Documentation
+This can be found at https://libcoap.net/doc/reference/4.2.0/
+
 ## Troubleshooting
-* Please make sure Target Url includes valid `host`, `port`, `path`, and begins with `coap://`  
+* Please make sure Target Url includes valid `host`, optional `port`, optional `path`, and begins
+with `coap://` or `coap+tcp://` for a coap server that supports TCP
+(not all do including coap+tcp://californium.eclipse.org).
+
+* libcoap logging can be increased by changing `#define COAP_LOGGING_LEVEL 0`
+to `#define COAP_LOGGING_LEVEL 9`

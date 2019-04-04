@@ -11,31 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_eth.h"
-
-#include "eth_phy/phy_lan8720.h"
 #include "eth_phy/phy_reg.h"
+#include "eth_phy/phy_lan8720.h"
 
-/* Value of MII_PHY_IDENTIFIER_REGs for Microchip LAN8720
- * (Except for bottom 4 bits of ID2, used for model revision)
- */
 #define LAN8720_PHY_ID1 0x0007
 #define LAN8720_PHY_ID2 0xc0f0
 #define LAN8720_PHY_ID2_MASK 0xFFF0
 
 /* LAN8720-specific registers */
-
-#define PHY_SPECIAL_CONTROL_STATUS_REG     (0x1f)
-#define AUTO_NEGOTIATION_DONE              BIT(12)
-#define DUPLEX_INDICATION_FULL             BIT(4)
-#define SPEED_INDICATION_100T              BIT(3)
-#define SPEED_INDICATION_10T               BIT(2)
-#define SPEED_DUPLEX_INDICATION_10T_HALF   0x04
-#define SPEED_DUPLEX_INDICATION_10T_FULL   0x14
-#define SPEED_DUPLEX_INDICATION_100T_HALF  0x08
-#define SPEED_DUPLEX_INDICATION_100T_FULL  0x18
+#define PHY_SPECIAL_CONTROL_STATUS_REG (0x1f)
+#define AUTO_NEGOTIATION_DONE BIT(12)
+#define DUPLEX_INDICATION_FULL BIT(4)
+#define SPEED_INDICATION_100T BIT(3)
+#define SPEED_INDICATION_10T BIT(2)
+#define SPEED_DUPLEX_INDICATION_10T_HALF 0x04
+#define SPEED_DUPLEX_INDICATION_10T_FULL 0x14
+#define SPEED_DUPLEX_INDICATION_100T_HALF 0x08
+#define SPEED_DUPLEX_INDICATION_100T_FULL 0x18
 
 static const char *TAG = "lan8720";
 
@@ -109,13 +103,9 @@ esp_err_t phy_lan8720_init(void)
 }
 
 const eth_config_t phy_lan8720_default_ethernet_config = {
-    // By default, the PHY address is 0 or 1 based on PHYAD0
-    // pin. Can also be overriden in software. See datasheet
-    // for defaults.
     .phy_addr = 0,
     .mac_mode = ETH_MODE_RMII,
     .clock_mode = ETH_CLOCK_GPIO0_IN,
-    //Only FULLDUPLEX mode support flow ctrl now!
     .flow_ctrl_enable = true,
     .phy_init = phy_lan8720_init,
     .phy_check_init = phy_lan8720_check_phy_init,

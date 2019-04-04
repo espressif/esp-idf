@@ -143,6 +143,9 @@ ifndef COMPONENT_DIRS
 EXTRA_COMPONENT_DIRS ?=
 COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 endif
+# Make sure that every directory in the list is an absolute path without trailing slash.
+# This is necessary to split COMPONENT_DIRS into SINGLE_COMPONENT_DIRS and MULTI_COMPONENT_DIRS below. 
+COMPONENT_DIRS := $(foreach cd,$(COMPONENT_DIRS),$(abspath $(cd)))
 export COMPONENT_DIRS
 
 ifdef SRCDIRS
@@ -150,33 +153,55 @@ $(warning SRCDIRS variable is deprecated. These paths can be added to EXTRA_COMP
 COMPONENT_DIRS += $(abspath $(SRCDIRS))
 endif
 
-# The project Makefile can define a list of components, but if it does not do this we just take all available components
-# in the component dirs. A component is COMPONENT_DIRS directory, or immediate subdirectory,
+# List of component directories, i.e. directories which contain a component.mk file 
+SINGLE_COMPONENT_DIRS := $(abspath $(dir $(dir $(foreach cd,$(COMPONENT_DIRS),\
+                             $(wildcard $(cd)/component.mk)))))
+
+# List of components directories, i.e. directories which may contain components 
+MULTI_COMPONENT_DIRS := $(filter-out $(SINGLE_COMPONENT_DIRS),$(COMPONENT_DIRS))
+
+# The project Makefile can define a list of components, but if it does not do this
+# we just take all available components in the component dirs.
+# A component is COMPONENT_DIRS directory, or immediate subdirectory,
 # which contains a component.mk file.
 #
 # Use the "make list-components" target to debug this step.
 ifndef COMPONENTS
 # Find all component names. The component names are the same as the
 # directories they're in, so /bla/components/mycomponent/component.mk -> mycomponent.
-COMPONENTS := $(dir $(foreach cd,$(COMPONENT_DIRS),                           \
-					$(wildcard $(cd)/*/component.mk) $(wildcard $(cd)/component.mk) \
-				))
+# We need to do this for MULTI_COMPONENT_DIRS only, since SINGLE_COMPONENT_DIRS
+# are already known to contain component.mk.
+COMPONENTS := $(dir $(foreach cd,$(MULTI_COMPONENT_DIRS),$(wildcard $(cd)/*/component.mk))) \
+              $(SINGLE_COMPONENT_DIRS)
 COMPONENTS := $(sort $(foreach comp,$(COMPONENTS),$(lastword $(subst /, ,$(comp)))))
 endif
-# After a full manifest of component names is determined, subtract the ones explicitly omitted by the project Makefile.
+# After a full manifest of component names is determined, subtract the ones explicitly
+# omitted by the project Makefile.
+EXCLUDE_COMPONENTS ?=
 ifdef EXCLUDE_COMPONENTS
-COMPONENTS := $(filter-out $(subst ",,$(EXCLUDE_COMPONENTS)), $(COMPONENTS)) 
+COMPONENTS := $(filter-out $(subst ",,$(EXCLUDE_COMPONENTS)), $(COMPONENTS))
 # to keep syntax highlighters happy: "))
 endif
 export COMPONENTS
 
 # Resolve all of COMPONENTS into absolute paths in COMPONENT_PATHS.
+# For each entry in COMPONENT_DIRS:
+# - either this is directory with multiple components, in which case check that
+#   a subdirectory with component name exists, and it contains a component.mk file.
+# - or, this is a directory of a single component, in which case the name of this
+#   directory has to match the component name
 #
 # If a component name exists in multiple COMPONENT_DIRS, we take the first match.
 #
 # NOTE: These paths must be generated WITHOUT a trailing / so we
 # can use $(notdir x) to get the component name.
-COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),$(firstword $(foreach cd,$(COMPONENT_DIRS),$(wildcard $(dir $(cd))$(comp) $(cd)/$(comp)))))
+COMPONENT_PATHS := $(foreach comp,$(COMPONENTS),\
+                        $(firstword $(foreach cd,$(COMPONENT_DIRS),\
+                            $(if $(findstring $(cd),$(MULTI_COMPONENT_DIRS)),\
+                                 $(abspath $(dir $(wildcard $(cd)/$(comp)/component.mk))),)\
+                            $(if $(findstring $(cd),$(SINGLE_COMPONENT_DIRS)),\
+                                 $(if $(filter $(comp),$(notdir $(cd))),$(cd),),)\
+                   )))
 export COMPONENT_PATHS
 
 TEST_COMPONENTS ?=
@@ -193,6 +218,66 @@ endif
 
 TEST_COMPONENT_PATHS := $(foreach comp,$(TEST_COMPONENTS_LIST),$(firstword $(foreach dir,$(COMPONENT_DIRS),$(wildcard $(dir)/$(comp)/test))))
 TEST_COMPONENT_NAMES := $(foreach comp,$(TEST_COMPONENT_PATHS),$(lastword $(subst /, ,$(dir $(comp))))_test)
+
+# Set default values that were not previously defined
+CC ?= gcc
+LD ?= ld
+AR ?= ar
+OBJCOPY ?= objcopy
+OBJDUMP ?= objdump
+SIZE ?= size
+
+# Set host compiler and binutils
+HOSTCC := $(CC)
+HOSTLD := $(LD)
+HOSTAR := $(AR)
+HOSTOBJCOPY := $(OBJCOPY)
+HOSTSIZE := $(SIZE)
+export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
+
+# Set variables common to both project & component (includes config)
+include $(IDF_PATH)/make/common.mk
+
+# Notify users when some of the required python packages are not installed
+.PHONY: check_python_dependencies
+check_python_dependencies:
+ifndef IS_BOOTLOADER_BUILD
+	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
+endif
+
+# include the config generation targets (dependency: COMPONENT_PATHS)
+#
+# (bootloader build doesn't need this, config is exported from top-level)
+ifndef IS_BOOTLOADER_BUILD
+include $(IDF_PATH)/make/project_config.mk
+endif
+
+#####################################################################
+# If SDKCONFIG_MAKEFILE hasn't been generated yet (detected if no
+# CONFIG_IDF_TARGET), stop the Makefile pass now to allow config to
+# be created. make will build SDKCONFIG_MAKEFILE and restart,
+# reevaluating everything from the top.
+#
+# This is important so config is present when the
+# component_project_vars.mk files are generated.
+#
+# (After both files exist, if SDKCONFIG_MAKEFILE is updated then the
+# normal dependency relationship will trigger a regeneration of
+# component_project_vars.mk)
+#
+#####################################################################
+ifndef CONFIG_IDF_TARGET
+ifdef IS_BOOTLOADER_BUILD  # we expect config to always have been expanded by top level project
+$(error "Internal error: config has not been passed correctly to bootloader subproject")
+endif
+ifdef MAKE_RESTARTS
+$(warning "Config was not evaluated after the first pass of 'make'")
+endif
+else  # CONFIG_IDF_TARGET
+#####################################################################
+# Config is valid, can include rest of the Project Makefile
+#####################################################################
+
 
 # Initialise project-wide variables which can be added to by
 # each component.
@@ -225,9 +310,6 @@ COMPONENT_INCLUDES += $(abspath $(BUILD_DIR_BASE)/include/)
 
 export COMPONENT_INCLUDES
 
-# Set variables common to both project & component
-include $(IDF_PATH)/make/common.mk
-
 all:
 ifdef CONFIG_SECURE_BOOT_ENABLED
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
@@ -245,10 +327,11 @@ endif
 
 # If we have `version.txt` then prefer that for extracting IDF version
 ifeq ("$(wildcard ${IDF_PATH}/version.txt)","")
-IDF_VER := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
+IDF_VER_T := $(shell cd ${IDF_PATH} && git describe --always --tags --dirty)
 else
-IDF_VER := `cat ${IDF_PATH}/version.txt`
+IDF_VER_T := $(shell cat ${IDF_PATH}/version.txt)
 endif
+IDF_VER := $(shell echo "$(IDF_VER_T)"  | cut -c 1-31)
 
 # Set default LDFLAGS
 EXTRA_LDFLAGS ?=
@@ -274,7 +357,7 @@ LDFLAGS ?= -nostdlib \
 #  before including project.mk. Default flags will be added before the ones provided in application Makefile.
 
 # CPPFLAGS used by C preprocessor
-# If any flags are defined in application Makefile, add them at the end. 
+# If any flags are defined in application Makefile, add them at the end.
 CPPFLAGS ?=
 EXTRA_CPPFLAGS ?=
 CPPFLAGS := -DESP_PLATFORM -D IDF_VER=\"$(IDF_VER)\" -MMD -MP $(CPPFLAGS) $(EXTRA_CPPFLAGS)
@@ -382,22 +465,6 @@ ARFLAGS := cru
 
 export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
-# Set default values that were not previously defined
-CC ?= gcc
-LD ?= ld
-AR ?= ar
-OBJCOPY ?= objcopy
-OBJDUMP ?= objdump
-SIZE ?= size
-
-# Set host compiler and binutils
-HOSTCC := $(CC)
-HOSTLD := $(LD)
-HOSTAR := $(AR)
-HOSTOBJCOPY := $(OBJCOPY)
-HOSTSIZE := $(SIZE)
-export HOSTCC HOSTLD HOSTAR HOSTOBJCOPY SIZE
-
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
 CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
@@ -417,19 +484,11 @@ export COMPILER_VERSION_STR COMPILER_VERSION_NUM GCC_NOT_5_2_0
 CPPFLAGS += -DGCC_NOT_5_2_0=$(GCC_NOT_5_2_0)
 export CPPFLAGS
 
-PYTHON=$(call dequote,$(CONFIG_PYTHON))
 
 # the app is the main executable built by the project
 APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf
 APP_MAP:=$(APP_ELF:.elf=.map)
 APP_BIN:=$(APP_ELF:.elf=.bin)
-
-# once we know component paths, we can include the config generation targets
-#
-# (bootloader build doesn't need this, config is exported from top-level)
-ifndef IS_BOOTLOADER_BUILD
-include $(IDF_PATH)/make/project_config.mk
-endif
 
 # include linker script generation utils makefile
 include $(IDF_PATH)/make/ldgen.mk
@@ -466,14 +525,6 @@ ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)"
 else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
-endif
-
-.PHONY: check_python_dependencies
-
-# Notify users when some of the required python packages are not installed
-check_python_dependencies:
-ifndef IS_BOOTLOADER_BUILD
-	$(PYTHON) $(IDF_PATH)/tools/check_python_dependencies.py
 endif
 
 all_binaries: $(APP_BIN)
@@ -597,7 +648,7 @@ list-components:
 	$(info $(TEST_COMPONENTS_LIST))
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info TEST_EXCLUDE_COMPONENTS (list of test excluded names))
-	$(info $(if $(EXCLUDE_COMPONENTS) || $(TEST_EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS) $(TEST_EXCLUDE_COMPONENTS),(none provided)))	
+	$(info $(if $(EXCLUDE_COMPONENTS) || $(TEST_EXCLUDE_COMPONENTS),$(EXCLUDE_COMPONENTS) $(TEST_EXCLUDE_COMPONENTS),(none provided)))
 	$(info $(call dequote,$(SEPARATOR)))
 	$(info COMPONENT_PATHS (paths to all components):)
 	$(foreach cp,$(COMPONENT_PATHS),$(info $(cp)))
@@ -650,3 +701,7 @@ endif # TOOLCHAIN_COMMIT_DESC
 
 endif #MAKE_RESTARTS
 endif #CONFIG_TOOLPREFIX
+
+#####################################################################
+endif #CONFIG_IDF_TARGET
+

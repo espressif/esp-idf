@@ -282,7 +282,7 @@ inline static uint32_t get_ccount(void)
         if (!esp_ptr_executable(callers[N])) {                          \
             return;                                                     \
         }                                                               \
-    } while(0);
+    } while(0)
 
 /* Static function to read the call stack for a traced heap call.
 

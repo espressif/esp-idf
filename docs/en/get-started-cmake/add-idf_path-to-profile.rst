@@ -32,7 +32,7 @@ You can set these environment variables for all users, or only for the current u
 - Click ``New...`` to add a new system variable named ``IDF_PATH``. Set the path to directory containing ESP-IDF, for example ``C:\Users\user-name\esp\esp-idf``.
 - Locate the ``Path`` environment variable and double-click to edit it. Append the following to the end: ``;%IDF_PATH%\tools``. This will allow you to run ``idf.py`` and other tools from Windows Command Prompt.
 
-If you got here from section :ref:`get-started-setup-path-cmake`, while installing s/w for ESP32 development, then go back to section :ref:`get-started-start-project-cmake`.
+If you got here from :ref:`get-started-setup-path-cmake`, while installing s/w for ESP32 development, then you can continue with :ref:`get-started-get-packages-cmake`.
 
 
 .. _add-idf_path-to-profile-linux-macos-cmake:
@@ -72,4 +72,4 @@ If you do not like to have ``IDF_PATH`` or ``PATH`` modifications set, you can e
     export IDF_PATH=~/esp/esp-idf
     export PATH="$IDF_PATH/tools:$PATH"
 
-If you got here from section :ref:`get-started-setup-path-cmake`, while installing s/w for ESP32 development, then go back to section :ref:`get-started-start-project-cmake`.
+If you got here from :ref:`get-started-setup-path-cmake`, while installing s/w for ESP32 development, then you can continue with :ref:`get-started-get-packages-cmake`.

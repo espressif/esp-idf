@@ -24,7 +24,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
-#include "esp_spiram.h"
+#include "esp32/spiram.h"
 #include "spiram_psram.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -33,8 +33,8 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "esp_heap_caps_init.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
-#include "rom/cache.h"
-#include "esp_himem.h"
+#include "esp32/himem.h"
+#include "esp32/rom/cache.h"
 
 #if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
@@ -131,6 +131,8 @@ esp_spiram_size_t esp_spiram_get_chip_size()
     }
     psram_size_t psram_size = psram_get_size();
     switch (psram_size) {
+        case PSRAM_SIZE_16MBITS:
+            return ESP_SPIRAM_SIZE_16MBITS;
         case PSRAM_SIZE_32MBITS:
             return ESP_SPIRAM_SIZE_32MBITS;
         case PSRAM_SIZE_64MBITS:
@@ -214,6 +216,7 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
 size_t esp_spiram_get_size()
 {
     psram_size_t size=esp_spiram_get_chip_size();
+    if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
     if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;
     if (size==PSRAM_SIZE_64MBITS) return 8*1024*1024;
     return CONFIG_SPIRAM_SIZE;

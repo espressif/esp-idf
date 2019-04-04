@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

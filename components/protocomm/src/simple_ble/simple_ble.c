@@ -103,7 +103,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
         g_ble_cfg_p->exec_write_fn(event, gatts_if, param);
         break;
     case ESP_GATTS_MTU_EVT:
-        ESP_LOGV(TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
+        ESP_LOGD(TAG, "ESP_GATTS_MTU_EVT, MTU %d", param->mtu.mtu);
         if (g_ble_cfg_p->set_mtu_fn) {
             g_ble_cfg_p->set_mtu_fn(event, gatts_if, param);
         }

@@ -144,7 +144,6 @@ build_example () {
             rm -rf build &&
             ./build.sh >>${BUILDLOG} 2>&1
         fi &&
-        cp build/flash_project_args build/download.config || # backwards compatible download.config filename
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }

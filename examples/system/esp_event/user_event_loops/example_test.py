@@ -22,7 +22,7 @@ TASK_ITERATION_HANDLING = "handling TASK_EVENTS:TASK_ITERATION_EVENT from {}, it
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_user_event_loops_example(env, extra_data):
-    dut = env.get_dut('user_event_loops', 'examples/system/event/user_event_loops')
+    dut = env.get_dut('user_event_loops', 'examples/system/esp_event/user_event_loops')
 
     dut.start_app()
 

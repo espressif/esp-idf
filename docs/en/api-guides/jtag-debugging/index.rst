@@ -1,5 +1,6 @@
 JTAG Debugging
 ==============
+:link_to_translation:`zh_CN:[中文]`
 
 This document provides a guide to installing OpenOCD for ESP32 and debugging using
 GDB. The document is structured as follows:
@@ -17,7 +18,7 @@ GDB. The document is structured as follows:
 :ref:`jtag-debugging-launching-debugger`
     Steps to start up a debug session with GDB from :ref:`jtag-debugging-using-debugger-eclipse` and from :ref:`jtag-debugging-using-debugger-command-line`.
 :ref:`jtag-debugging-examples`
-    If you are not familiar with GDB, check this section for debugging examples provided from from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
+    If you are not familiar with GDB, check this section for debugging examples provided from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 :ref:`jtag-debugging-building-openocd`
     Procedure to build OpenOCD from sources for :doc:`Windows <building-openocd-windows>`, :doc:`Linux <building-openocd-linux>` and :doc:`MacOS <building-openocd-macos>` operating systems.
 :ref:`jtag-debugging-tips-and-quirks`
@@ -59,7 +60,7 @@ Under "Application Loading and Monitoring" there is another software and hardwar
 
 Debugging using JTAG and application loading / monitoring is integrated under the `Eclipse <https://www.eclipse.org/>`_ environment, to provide quick and easy transition from writing, compiling and loading the code to debugging, back to writing the code, and so on. All the software is available for Windows, Linux and MacOS platforms.
 
-If the :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
+If the :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
 
 Depending on user preferences, both `debugger` and `make` can be operated directly from terminal / command line, instead from Eclipse.
 
@@ -69,11 +70,11 @@ Depending on user preferences, both `debugger` and `make` can be operated direct
 Selecting JTAG Adapter
 ----------------------
 
-The quickest and most convenient way to start with JTAG debugging is by using :doc:`ESP32 WROVER KIT <../../hw-reference/modules-and-boards>`. Each version of this development board has JTAG interface already build in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to ESP32. WROVER KIT is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
+The quickest and most convenient way to start with JTAG debugging is by using :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>`. Each version of this development board has JTAG interface already build in. No need for an external JTAG adapter and extra wiring / cable to connect JTAG to ESP32. WROVER KIT is using FT2232H JTAG interface operating at 20 MHz clock speed, which is difficult to achieve with an external adapter.
 
-If you decide to use separate JTAG adapter, look for one that is compatible with both the voltage levels on the ESP32 as well as with the OpenOCD software. The JTAG port on the ESP32 is an industry-standard JTAG port which lacks (and does not need) the TRST pin. The JTAG I/O pins all are powered from the VDD_3P3_RTC pin (which normally would be powered by a 3.3V rail) so the JTAG adapter needs to be able to work with JTAG pins in that voltage range. 
+If you decide to use separate JTAG adapter, look for one that is compatible with both the voltage levels on the ESP32 as well as with the OpenOCD software. The JTAG port on the ESP32 is an industry-standard JTAG port which lacks (and does not need) the TRST pin. The JTAG I/O pins all are powered from the VDD_3P3_RTC pin (which normally would be powered by a 3.3 V rail) so the JTAG adapter needs to be able to work with JTAG pins in that voltage range. 
 
-On the software side, OpenOCD supports a fair amount of JTAG adapters. See http://openocd.org/doc/html/Debug-Adapter-Hardware.html for an (unfortunately slightly incomplete) list of the adapters OpenOCD works with. This page lists SWD-compatible adapters as well; take note that the ESP32 does not support SWD. JTAG adapters that are hardcoded to a specific product line, e.g. STM32 debugging adapters, will not work.
+On the software side, OpenOCD supports a fair amount of JTAG adapters. See http://openocd.org/doc/html/Debug-Adapter-Hardware.html for an (unfortunately slightly incomplete) list of the adapters OpenOCD works with. This page lists SWD-compatible adapters as well; take note that the ESP32 does not support SWD. JTAG adapters that are hardcoded to a specific product line, e.g. ST-LINK debugging adapters for STM32 families, will not work.
 
 The minimal signalling to get a working JTAG connection are TDI, TDO, TCK, TMS and GND. Some JTAG debuggers also need a connection from the ESP32 power line to a line called e.g. Vtar to set the working voltage. SRST can optionally be connected to the CH_PD of the ESP32, although for now, support in OpenOCD for that line is pretty minimal.
 
@@ -169,7 +170,7 @@ Open terminal, go to directory where OpenOCD is installed and start it up::
 
 .. highlight:: none
 
-You should now see similar output (this log is for ESP32 WROVER KIT)::
+You should now see similar output (this log is for ESP-WROVER-KIT)::
 
     user-name@computer-name:~/esp/openocd-esp32$ bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
     Open On-Chip Debugger 0.10.0-dev-ged7b1a9 (2017-07-10-07:16)
@@ -196,7 +197,7 @@ You should now see similar output (this log is for ESP32 WROVER KIT)::
 Upload application for debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Build and upload your application to ESP32 as usual, see :ref:`get-started-build-flash`.
+Build and upload your application to ESP32 as usual, see :ref:`get-started-build-and-flash`.
 
 Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
 

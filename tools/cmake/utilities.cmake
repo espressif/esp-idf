@@ -73,30 +73,6 @@ function(move_if_different source destination)
 
 endfunction()
 
-
-# add_compile_options variant for C++ code only
-#
-# This adds global options, set target properties for
-# component-specific flags
-function(add_cxx_compile_options)
-    foreach(option ${ARGV})
-        # note: the Visual Studio Generator doesn't support this...
-        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${option}>)
-    endforeach()
-endfunction()
-
-# add_compile_options variant for C code only
-#
-# This adds global options, set target properties for
-# component-specific flags
-function(add_c_compile_options)
-    foreach(option ${ARGV})
-        # note: the Visual Studio Generator doesn't support this...
-        add_compile_options($<$<COMPILE_LANGUAGE:C>:${option}>)
-    endforeach()
-endfunction()
-
-
 # target_add_binary_data adds binary data into the built target,
 # by converting it to a generated source file which is then compiled
 # to a binary object as part of the build

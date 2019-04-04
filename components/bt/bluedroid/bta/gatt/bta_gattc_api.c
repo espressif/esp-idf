@@ -178,6 +178,11 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE 
 *******************************************************************************/
 void BTA_GATTC_CancelOpen(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, BOOLEAN is_direct)
 {
+    //If the registration callback is NULL, return
+    if(bta_sys_is_register(BTA_ID_GATTC) == FALSE) {
+        return;
+    }
+
     tBTA_GATTC_API_CANCEL_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_CANCEL_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_CANCEL_OPEN))) != NULL) {
@@ -925,7 +930,10 @@ void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash)
         bta_gattc_cache_reset(remote_bda);
     }
 #endif
-
+    //If the registration callback is NULL, return
+    if(bta_sys_is_register(BTA_ID_GATTC) == FALSE) {
+        return;
+    }
     tBTA_GATTC_API_OPEN  *p_buf;
 
     if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {
@@ -966,6 +974,34 @@ void BTA_GATTC_CacheGetAddrList(tBTA_GATTC_IF client_if)
     return;
 }
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_Clean
+**
+** Description      Clean the server cache of the remote device
+**
+** Parameters       remote_bda: remote device BD address.
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_GATTC_Clean(BD_ADDR remote_bda)
+{
+#if(GATTC_CACHE_NVS == TRUE)
+    /* used to reset cache in application */
+    bta_gattc_cache_reset(remote_bda);
+#endif
+
+    tBTA_GATTC_API_OPEN  *p_buf;
+
+    if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {
+        p_buf->hdr.event = BTA_GATTC_API_CACHE_CLEAN_EVT;
+        memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
+
+        bta_sys_sendmsg(p_buf);
+    }
+    return;
+}
 /*******************************************************************************
 **
 ** Function         BTA_GATTC_Listen

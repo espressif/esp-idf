@@ -16,8 +16,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rom/ets_sys.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/gpio.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/rtc.h"
@@ -39,7 +39,7 @@
 #include "esp_eth.h"
 #include "esp_intr_alloc.h"
 #include "esp_pm.h"
-#include "esp_spiram.h"
+#include "esp32/spiram.h"
 
 #include "driver/periph_ctrl.h"
 
@@ -1121,7 +1121,11 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
         REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_H_DIV_NUM, 0);
         REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_DIV_NUM, 0);
 
-        if (emac_config.clock_mode == ETH_CLOCK_GPIO16_OUT) {
+        if (emac_config.clock_mode == ETH_CLOCK_GPIO0_OUT) {
+            PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
+            REG_WRITE(PIN_CTRL, 6);
+            ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO0");
+        } else if (emac_config.clock_mode == ETH_CLOCK_GPIO16_OUT) {
             PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO16_U, FUNC_GPIO16_EMAC_CLK_OUT);
             ESP_LOGD(TAG, "EMAC 50MHz clock output on GPIO16");
         } else if (emac_config.clock_mode == ETH_CLOCK_GPIO17_OUT) {

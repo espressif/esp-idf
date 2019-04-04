@@ -8,17 +8,11 @@
 #include "driver/spi_slave.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "test/test_common_spi.h"
 
 #ifndef CONFIG_SPIRAM_SUPPORT
 //This test should be removed once the timing test is merged.
 
-#define PIN_NUM_MISO 25
-#define PIN_NUM_MOSI 23
-#define PIN_NUM_CLK  19
-#define PIN_NUM_CS   22
-
-static const char MASTER_TAG[] = "test_master";
-static const char SLAVE_TAG[] = "test_slave";
 
 #define MASTER_SEND {0x93, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0xaa, 0xcc, 0xff, 0xee, 0x55, 0x77, 0x88, 0x43}
 #define SLAVE_SEND { 0xaa, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10, 0x13, 0x57, 0x9b, 0xdf, 0x24, 0x68, 0xac, 0xe0 }
@@ -45,13 +39,14 @@ static void master_init_nodma( spi_device_handle_t* spi)
         .spics_io_num=PIN_NUM_CS,               //CS pin
         .queue_size=7,                          //We want to be able to queue 7 transactions at a time
         .pre_cb=NULL,
-        .cs_ena_posttrans=1,
+        .cs_ena_posttrans=5,
+        .cs_ena_pretrans=1,
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 0);
+    ret=spi_bus_initialize(TEST_SPI_HOST, &buscfg, 0);
     TEST_ASSERT(ret==ESP_OK);
     //Attach the LCD to the SPI bus
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, spi);
+    ret=spi_bus_add_device(TEST_SPI_HOST, &devcfg, spi);
     TEST_ASSERT(ret==ESP_OK);
 }
 
@@ -75,7 +70,7 @@ static void slave_init()
     gpio_set_pull_mode(PIN_NUM_CLK, GPIO_PULLUP_ONLY);
     gpio_set_pull_mode(PIN_NUM_CS, GPIO_PULLUP_ONLY);
     //Initialize SPI slave interface
-    TEST_ESP_OK( spi_slave_initialize(VSPI_HOST, &buscfg, &slvcfg, 2) );
+    TEST_ESP_OK( spi_slave_initialize(TEST_SLAVE_HOST, &buscfg, &slvcfg, 2) );
 }
 
 TEST_CASE("test slave send unaligned","[spi]")
@@ -105,7 +100,7 @@ TEST_CASE("test slave send unaligned","[spi]")
         slave_t.length=8*32;
         slave_t.tx_buffer=slave_txbuf+i;
         slave_t.rx_buffer=slave_rxbuf;
-        TEST_ESP_OK( spi_slave_queue_trans( VSPI_HOST, &slave_t, portMAX_DELAY ) );
+        TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_t, portMAX_DELAY));
 
         //send
         spi_transaction_t t = {};
@@ -117,7 +112,7 @@ TEST_CASE("test slave send unaligned","[spi]")
         spi_device_transmit( spi, (spi_transaction_t*)&t );
 
         //wait for end
-        TEST_ESP_OK( spi_slave_get_trans_result( VSPI_HOST, &out, portMAX_DELAY ) );
+        TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &out, portMAX_DELAY));
 
         //show result
         ESP_LOGI(SLAVE_TAG, "trans_len: %d", slave_t.trans_len);
@@ -136,10 +131,10 @@ TEST_CASE("test slave send unaligned","[spi]")
         memset( slave_rxbuf, 0x66, sizeof(slave_rxbuf));
     }
 
-    TEST_ASSERT(spi_slave_free(VSPI_HOST) == ESP_OK);
+    TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
 
     TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
-    TEST_ASSERT(spi_bus_free(HSPI_HOST) == ESP_OK);
+    TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
 
     ESP_LOGI(MASTER_TAG, "test passed.");
 }

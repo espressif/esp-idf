@@ -100,7 +100,11 @@ static void start_up(void)
     response = AWAIT_COMMAND(packet_factory->make_set_c2h_flow_control(HCI_HOST_FLOW_CTRL_ACL_ON));
     packet_parser->parse_generic_command_complete(response);
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
-
+#if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
+    // Enable adv flow control
+    response = AWAIT_COMMAND(packet_factory->make_set_adv_report_flow_control(HCI_HOST_FLOW_CTRL_ADV_REPORT_ON, (uint16_t)BLE_ADV_REPORT_FLOW_CONTROL_NUM, (uint16_t)BLE_ADV_REPORT_DISCARD_THRSHOLD));
+    packet_parser->parse_generic_command_complete(response);
+#endif
     // Tell the controller about our buffer sizes and buffer counts next
     // TODO(zachoverflow): factor this out. eww l2cap contamination. And why just a hardcoded 10?
     response = AWAIT_COMMAND(

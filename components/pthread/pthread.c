@@ -22,7 +22,7 @@
 #include <string.h>
 #include "esp_err.h"
 #include "esp_attr.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -286,7 +286,11 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     pthread->task_arg = task_arg;
     BaseType_t res = xTaskCreatePinnedToCore(&pthread_task_func,
                                              task_name,
-                                             stack_size,
+                                             // stack_size is in bytes. This transformation ensures that the units are
+                                             // transformed to the units used in FreeRTOS.
+                                             // Note: float division of ceil(m / n) ==
+                                             //       integer division of (m + n - 1) / n
+                                             (stack_size + sizeof(StackType_t) - 1) / sizeof(StackType_t),
                                              task_arg,
                                              prio,
                                              &xHandle,
@@ -395,8 +399,19 @@ int pthread_detach(pthread_t thread)
     TaskHandle_t handle = pthread_find_handle(thread);
     if (!handle) {
         ret = ESRCH;
-    } else {
+    } else if (pthread->detached) {
+        // already detached
+        ret = EINVAL;
+    } else if (pthread->join_task) {
+        // already have waiting task to join
+        ret = EINVAL;
+    } else if (pthread->state == PTHREAD_TASK_STATE_RUN) {
+        // pthread still running
         pthread->detached = true;
+    } else {
+        // pthread already stopped
+        pthread_delete(pthread);
+        vTaskDelete(handle);
     }
     xSemaphoreGive(s_threads_mux);
     ESP_LOGV(TAG, "%s %p EXIT %d", __FUNCTION__, pthread, ret);

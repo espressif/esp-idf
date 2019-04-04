@@ -5,9 +5,9 @@ endif()
 # Set some global esptool.py variables
 #
 # Many of these are read when generating flash_app_args & flash_project_args
-set(ESPTOOLPY "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
-set(ESPSECUREPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
-set(ESPEFUSEPY "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
+set(ESPTOOLPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
+set(ESPSECUREPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
+set(ESPEFUSEPY ${PYTHON} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
 set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
 set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
@@ -52,16 +52,14 @@ if(CONFIG_SECURE_BOOT_ENABLED AND
         ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
 endif()
 
+if(NOT BOOTLOADER_BUILD)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+endif()
+
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
     # as elf2image can't have 'detect' as an option...
     set(ESPFLASHSIZE detect)
-endif()
-
-# Set variables if the PHY data partition is in the flash
-if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
-    set(PHY_PARTITION_OFFSET   ${CONFIG_PHY_DATA_OFFSET})
-    set(PHY_PARTITION_BIN_FILE "esp32/phy_init_data.bin")
 endif()
 
 get_filename_component(IDF_PROJECT_NAME ${IDF_PROJECT_EXECUTABLE} NAME_WE)
@@ -75,7 +73,7 @@ endif()
 # Add 'app.bin' target - generates with elf2image
 #
 add_custom_command(OUTPUT "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS}
+    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
         -o "${IDF_BUILD_ARTIFACTS_DIR}/${unsigned_project_binary}" "${IDF_PROJECT_EXECUTABLE}"
     DEPENDS ${IDF_PROJECT_EXECUTABLE}
     VERBATIM
@@ -134,3 +132,55 @@ endfunction()
 esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")
 esptool_py_custom_target(bootloader-flash bootloader "bootloader")
+
+add_custom_target(flash_project_args_target)
+
+# esptool_py_flash_project_args
+#
+# Add file to the flasher args list, to be flashed at a particular offset
+function(esptool_py_flash_project_args entry offset image)
+    set(options FLASH_IN_PROJECT)  # flash the image when flashing the project
+    set(single_value FLASH_FILE_TEMPLATE) # template file to use to be able to
+                                        # flash the image individually using esptool
+    cmake_parse_arguments(flash_entry "${options}" "${single_value}" "" "${ARGN}")
+
+    get_property(flash_project_entries TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ENTRIES)
+
+    if(${entry} IN_LIST flash_project_entries)
+        message(FATAL_ERROR "entry '${entry}' has already been added to flash project entries")
+    endif()
+
+    list(APPEND flash_project_entries "${entry}")
+    set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ENTRIES "${flash_project_entries}")
+
+    file(RELATIVE_PATH image ${CMAKE_BINARY_DIR} ${image})
+
+    # Generate the standalone flash file to flash the image individually using esptool
+    set(entry_flash_args ${IDF_BUILD_ARTIFACTS_DIR}/flash_${entry}_args)
+    if(NOT flash_entry_FLASH_FILE_TEMPLATE)
+        file(GENERATE OUTPUT ${entry_flash_args} CONTENT "${offset} ${image}")
+    else()
+        configure_file(${flash_entry_FLASH_FILE_TEMPLATE} ${entry_flash_args})
+    endif()
+
+    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES ${entry_flash_args})
+
+    # Generate standalone entries in the flasher args json file
+    get_property(flash_project_args_entry_json TARGET
+                flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_ENTRY_JSON)
+    list(APPEND flash_project_args_entry_json
+                "\"${entry}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
+    set_property(TARGET flash_project_args_target
+                PROPERTY FLASH_PROJECT_ARGS_ENTRY_JSON "${flash_project_args_entry_json}")
+
+    # Generate entries in the flasher args json file
+    if(flash_entry_FLASH_IN_PROJECT)
+        get_property(flash_project_args TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS)
+        list(APPEND flash_project_args "${offset} ${image}")
+        set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS "${flash_project_args}")
+
+        get_property(flash_project_args_json TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_JSON)
+        list(APPEND flash_project_args_json "\"${offset}\" : \"${image}\"")
+        set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_JSON "${flash_project_args_json}")
+    endif()
+endfunction()

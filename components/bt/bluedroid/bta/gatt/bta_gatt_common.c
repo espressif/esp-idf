@@ -28,3 +28,9 @@ void BTA_GATT_SetLocalMTU(uint16_t mtu)
 {
     gatt_set_local_mtu(mtu);
 }
+
+uint16_t BTA_GATT_GetLocalMTU(void)
+{
+    return gatt_get_local_mtu();
+}
+

@@ -27,20 +27,20 @@ endif()
 # cmake project under this one
 #
 #
-set(bootloader_build_dir "${IDF_BUILD_ARTIFACTS_DIR}/bootloader")
+set(BOOTLOADER_BUILD_DIR "${IDF_BUILD_ARTIFACTS_DIR}/bootloader")
 set(bootloader_binary_files
-    "${bootloader_build_dir}/bootloader.elf"
-    "${bootloader_build_dir}/bootloader.bin"
-    "${bootloader_build_dir}/bootloader.map"
+    "${BOOTLOADER_BUILD_DIR}/bootloader.elf"
+    "${BOOTLOADER_BUILD_DIR}/bootloader.bin"
+    "${BOOTLOADER_BUILD_DIR}/bootloader.map"
     )
 
 # These additional files may get generated
 if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     set(bootloader_binary_files
         ${bootloader_binary_files}
-        "${bootloader_build_dir}/bootloader-reflash-digest.bin"
-        "${bootloader_build_dir}/secure-bootloader-key-192.bin"
-        "${bootloader_build_dir}/secure-bootloader-key-256.bin"
+        "${BOOTLOADER_BUILD_DIR}/bootloader-reflash-digest.bin"
+        "${BOOTLOADER_BUILD_DIR}/secure-bootloader-key-192.bin"
+        "${BOOTLOADER_BUILD_DIR}/secure-bootloader-key-256.bin"
         )
 endif()
 
@@ -50,7 +50,7 @@ if((NOT CONFIG_SECURE_BOOT_ENABLED) OR
     externalproject_add(bootloader
         # TODO: support overriding the bootloader in COMPONENT_PATHS
         SOURCE_DIR "${IDF_PATH}/components/bootloader/subproject"
-        BINARY_DIR "${bootloader_build_dir}"
+        BINARY_DIR "${BOOTLOADER_BUILD_DIR}"
         CMAKE_ARGS  -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH=${IDF_PATH}
                     -DSECURE_BOOT_SIGNING_KEY=${secure_boot_signing_key}
         INSTALL_COMMAND ""

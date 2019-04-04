@@ -60,6 +60,75 @@ TEST_CASE("pthread create join", "[pthread]")
     }
 }
 
+static void *waiting_thread(void *arg)
+{
+    TaskHandle_t *task_handle = (TaskHandle_t *)arg;
+    TaskHandle_t parent_task  = *task_handle;
+
+    *task_handle = xTaskGetCurrentTaskHandle();
+
+    xTaskNotify(parent_task, 0, eNoAction);
+    xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+    return NULL;
+}
+
+TEST_CASE("pthread detach", "[pthread]")
+{
+    int res = 0;
+    pthread_t new_thread = (pthread_t)NULL;
+    TaskHandle_t task_handle = NULL;
+    const int task_count = uxTaskGetNumberOfTasks();
+    bool detach_works = false;
+
+    if (TEST_PROTECT()) {
+        task_handle = xTaskGetCurrentTaskHandle();
+        res = pthread_create(&new_thread, NULL, waiting_thread, (void *)&task_handle);
+        TEST_ASSERT_EQUAL_INT(0, res);
+
+        res = xTaskNotifyWait(0, 0, NULL, 100 / portTICK_PERIOD_MS);
+        TEST_ASSERT_EQUAL_INT(pdTRUE, res);
+
+        xTaskNotify(task_handle, 0, eNoAction);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+
+        res = pthread_detach(new_thread);
+        TEST_ASSERT_EQUAL_INT(0, res);
+
+        res = uxTaskGetNumberOfTasks();
+        TEST_ASSERT_EQUAL_INT(task_count, res);
+        detach_works = true;
+    }
+
+    if (!detach_works) {
+        vTaskDelete(task_handle);
+    } else {
+        detach_works = false;
+    }
+
+    if (TEST_PROTECT()) {
+        task_handle = xTaskGetCurrentTaskHandle();
+        res = pthread_create(&new_thread, NULL, waiting_thread, (void *)&task_handle);
+        TEST_ASSERT_EQUAL_INT(0, res);
+
+        res = xTaskNotifyWait(0, 0, NULL, 100 / portTICK_PERIOD_MS);
+        TEST_ASSERT_EQUAL_INT(pdTRUE, res);
+
+        res = pthread_detach(new_thread);
+        TEST_ASSERT_EQUAL_INT(0, res);
+
+        xTaskNotify(task_handle, 0, eNoAction);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+
+        res = uxTaskGetNumberOfTasks();
+        TEST_ASSERT_EQUAL_INT(task_count, res);
+        detach_works = true;
+    }
+
+    if (!detach_works) {
+        vTaskDelete(task_handle);
+    }
+}
+
 TEST_CASE("pthread attr init destroy", "[pthread]")
 {
     int res = 0;

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_types.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -11,15 +11,15 @@
 #include "soc/cpu.h"
 #include "unity.h"
 #include "test_utils.h"
-#include "rom/uart.h"
-#include "rom/sha.h"
+#include "esp32/rom/uart.h"
+#include "esp32/rom/sha.h"
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "esp_log.h"
 #include "mbedtls/sha256.h"
-#include "hwcrypto/sha.h"
-#include "hwcrypto/aes.h"
+#include "esp32/sha.h"
+#include "esp32/aes.h"
 #include "mbedtls/rsa.h"
 
 static const char *TAG = "test";

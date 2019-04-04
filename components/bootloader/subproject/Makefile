@@ -8,14 +8,17 @@ endif
 
 PROJECT_NAME := bootloader
 
-COMPONENTS := esptool_py bootloader_support log spi_flash micro-ecc soc main
+COMPONENTS := esptool_py bootloader_support log spi_flash micro-ecc soc main efuse
 
 # Clear C and CXX from top level project
 CFLAGS =
 CXXFLAGS =
 
-#We cannot include the esp32 component directly but we need its includes.
+#We cannot include the esp32, esp_rom, esp_common component directly but we need their includes.
 CFLAGS += -I $(IDF_PATH)/components/esp32/include
+CFLAGS += -I $(IDF_PATH)/components/esp_rom/include
+CFLAGS += -I $(IDF_PATH)/components/esp_common/include
+CFLAGS += -I $(IDF_PATH)/components/xtensa/include -I $(IDF_PATH)/components/xtensa/esp32/include
 
 # The bootloader pseudo-component is also included in this build, for its Kconfig.projbuild to be included.
 #

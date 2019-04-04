@@ -5,12 +5,15 @@ components/espcoredump/espcoredump.py
 components/heap/test_multi_heap_host/test_all_configs.sh
 components/idf_test/unit_test/TestCaseScript/IDFUnitTest/__init__.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
+components/efuse/efuse_table_gen.py
+components/efuse/test_efuse_host/efuse_tests.py
 components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py
 components/app_update/gen_empty_partition.py
 components/app_update/otatool.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/ulp/esp32ulp_mapgen.py
+components/spiffs/spiffsgen.py
 docs/check_doc_warnings.sh
 docs/check_lang_folder_sync.sh
 docs/gen-kconfig-doc.py
@@ -71,3 +74,5 @@ tools/ldgen/test/test_generation.py
 examples/build_system/cmake/idf_as_lib/build.sh
 examples/storage/parttool/parttool_example.py
 examples/system/ota/otatool/otatool_example.py
+tools/check_kconfigs.py
+tools/test_check_kconfigs.py

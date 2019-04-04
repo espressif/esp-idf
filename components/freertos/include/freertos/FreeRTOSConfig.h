@@ -117,7 +117,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 /* configASSERT behaviour */
 #ifndef __ASSEMBLER__
 #include <stdlib.h> /* for abort() */
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
 #define configASSERT(a) /* assertions disabled */
@@ -312,6 +312,12 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #include "SEGGER_SYSVIEW_FreeRTOS.h"
 #undef INLINE // to avoid redefinition
 #endif /* def __ASSEMBLER__ */
+#endif
+
+#if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
+#define configCHECK_MUTEX_GIVEN_BY_OWNER    1
+#else
+#define configCHECK_MUTEX_GIVEN_BY_OWNER    0
 #endif
 
 #endif /* FREERTOS_CONFIG_H */

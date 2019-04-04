@@ -85,7 +85,7 @@ Double-click the ``Path`` variable (either User or System Path, depending if you
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf-cmake`.
+To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf-cmake`.
 
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/

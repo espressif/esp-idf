@@ -20,8 +20,8 @@
 #include "soc/soc.h"
 #include "soc/cpu.h"
 #include "soc/rtc_cntl_reg.h"
-#include "rom/ets_sys.h"
-#include "esp_system_internal.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp_private/system_internal.h"
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
 

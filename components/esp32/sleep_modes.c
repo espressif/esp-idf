@@ -17,14 +17,14 @@
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "esp_sleep.h"
-#include "esp_timer_impl.h"
+#include "esp_private/esp_timer_impl.h"
 #include "esp_log.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp_newlib.h"
 #include "esp_spi_flash.h"
-#include "rom/cache.h"
-#include "rom/rtc.h"
-#include "rom/uart.h"
+#include "esp32/rom/cache.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/uart.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -81,7 +81,9 @@ static sleep_config_t s_config = {
     .wakeup_triggers = 0
 };
 
-bool s_light_sleep_wakeup = false;
+/* Internal variable used to track if light sleep wakeup sources are to be
+   expected when determining wakeup cause. */
+static bool s_light_sleep_wakeup = false;
 
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe. */

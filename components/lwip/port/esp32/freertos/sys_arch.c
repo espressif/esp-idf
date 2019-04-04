@@ -352,7 +352,6 @@ sys_mbox_free(sys_mbox_t *mbox)
   uint32_t mbox_message_num = 0;
 
   if ( (NULL == mbox) || (NULL == *mbox) ) {
-      ESP_LOGW(TAG, "WARNING: free null mbox\n");
       return;
   }
 
@@ -390,12 +389,13 @@ sys_mbox_free(sys_mbox_t *mbox)
     /* For recvmbox or acceptmbox, free them in netconn_free() when all sockets' API are returned */
     vQueueDelete((*mbox)->os_mbox);
     free(*mbox);
+    *mbox = NULL;
   }
 #else
   vQueueDelete((*mbox)->os_mbox);
   free(*mbox);
-#endif
   *mbox = NULL;
+#endif
 }
 
 /*-----------------------------------------------------------------------------------*/

@@ -21,7 +21,7 @@ SOURCE_FILES = \
 	crc.cpp \
 	main.cpp
 
-CPPFLAGS += -I../include -I../src -I./ -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -DCONFIG_NVS_ENCRYPTION
+CPPFLAGS += -I../include -I../src -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage -DCONFIG_NVS_ENCRYPTION
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
@@ -61,5 +61,10 @@ clean:
 	rm -f $(COVERAGE_FILES) *.gcov
 	rm -rf coverage_report/
 	rm -f coverage.info
+	rm ../nvs_partition_generator/partition_single_page.bin
+	rm ../nvs_partition_generator/partition_multipage_blob.bin
+	rm ../nvs_partition_generator/partition_encrypted.bin
+	rm ../nvs_partition_generator/partition_encrypted_using_keygen.bin
+	rm ../nvs_partition_generator/partition_encrypted_using_keyfile.bin
 
 .PHONY: clean all test long-test

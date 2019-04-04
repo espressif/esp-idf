@@ -23,7 +23,6 @@ void phy_rmii_configure_data_interface_pins(void)
 {
     // CRS_DRV to GPIO27
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO27_U, FUNC_GPIO27_EMAC_RX_DV);
-
     // TXD0 to GPIO19
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO19_U, FUNC_GPIO19_EMAC_TXD0);
     // TX_EN to GPIO21
@@ -71,7 +70,7 @@ bool phy_mii_check_link_status(void)
 
 bool phy_mii_get_partner_pause_enable(void)
 {
-    if((esp_eth_smi_read(MII_PHY_LINK_PARTNER_ABILITY_REG) & MII_PARTNER_PAUSE)) {
+    if ((esp_eth_smi_read(MII_PHY_LINK_PARTNER_ABILITY_REG) & MII_PARTNER_PAUSE)) {
         ESP_LOGD(TAG, "phy_mii_get_partner_pause_enable(TRUE)");
         return true;
     } else {

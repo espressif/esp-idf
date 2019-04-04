@@ -184,10 +184,20 @@ def test_method(**kwargs):
                 # log failure
                 junit_test_case.add_failure_info(str(e) + ":\r\n" + traceback.format_exc())
             finally:
+                # do close all DUTs, if result is False then print DUT debug info
+                close_errors = env_inst.close(dut_debug=(not result))
+                # We have a hook in DUT close, allow DUT to raise error to fail test case.
+                # For example, we don't allow DUT exception (reset) during test execution.
+                # We don't want to implement in exception detection in test function logic,
+                # as we need to add it to every test case.
+                # We can implement it in DUT receive thread,
+                # and raise exception in DUT close to fail test case if reset detected.
+                if close_errors:
+                    for error in close_errors:
+                        junit_test_case.add_failure_info(str(error))
+                    result = False
                 if not case_info["junit_report_by_case"]:
                     JunitReport.test_case_finish(junit_test_case)
-                # do close all DUTs, if result is False then print DUT debug info
-                env_inst.close(dut_debug=(not result))
 
             # end case and output result
             JunitReport.output_report(junit_file_path)

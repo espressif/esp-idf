@@ -789,25 +789,20 @@ test cases:
     - - R SSC1 C +JAP:CONNECTED
   - - SSC SSC1 sta -D
     - - R SSC1 RE JAP:DISCONNECTED,\d+,8
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <random_string>
-    - - R SSC1 RE JAP:DISCONNECTED,\d+,15
   - - SSC SSC1 sta -C -s <random_string> -p <ap_password>
     - - R SSC1 RE JAP:DISCONNECTED,\d+,201
   execution time: 0.0
   expected result: |-
     1. disconnect event reason REASON_ASSOC_LEAVE
-    2. disconnect event reason REASON_4WAY_HANDSHAKE_TIMEOUT
-    3. disconnect event reason REASON_NO_AP_FOUND
+    2. disconnect event reason REASON_NO_AP_FOUND
   initial condition: STAM1
   level: Integration
   module: WIFI MAC
   steps: |-
     1. sta connect to AP, and disconnect
-    2. connect to AP with wrong password
-    3. connect to AP not exist
+    2. connect to AP not exist
   sub module: WIFI Connect
-  summary: test wifi disconnect reason REASON_ASSOC_LEAVE, REASON_4WAY_HANDSHAKE_TIMEOUT,
-    REASON_NO_AP_FOUND
+  summary: test wifi disconnect reason REASON_ASSOC_LEAVE, REASON_NO_AP_FOUND
   test environment: SSC_T1_1
   test point 1: basic function
   test point 2: wifi disconnect reason test
@@ -886,7 +881,7 @@ test cases:
   - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 3 -m 1
     - - R SSC1 C +SAP:OK
   - - SSC SSC2 sta -C -s <random_string> -p 1234567890
-    - - R SSC2 RE JAP:DISCONNECTED,\d+,204
+    - - R SSC2 RE JAP:DISCONNECTED,\d+,15
   - - SSC SSC2 sta -D
     - - R SSC2 C +QAP:OK
   - - WIFI <pc_wifi_nic> CONN <random_string> <random_string> <pc_ip_wifi>
@@ -896,7 +891,7 @@ test cases:
   execution time: 0.0
   expected result: |-
     1. succeed
-    2. disconnect event REASON_HANDSHAKE_TIMEOUT
+    2. disconnect event REASON_4WAY_HANDSHAKE_TIMEOUT
     3. succeed
     4. succeed
     5. disconnect event REASON_ASSOC_TOOMANY
@@ -910,7 +905,7 @@ test cases:
     4. PC WIFI NIC connect to target1
     5. target2 connect to target1 with correct password
   sub module: WIFI Connect
-  summary: test wifi disconnect reason REASON_ASSOC_TOOMANY, REASON_HANDSHAKE_TIMEOUT
+  summary: test wifi disconnect reason REASON_ASSOC_TOOMANY, REASON_4WAY_HANDSHAKE_TIMEOUT
   test environment: SSC_T2_2
   test point 1: basic function
   test point 2: wifi disconnect reason test

@@ -31,6 +31,8 @@ extern "C"
 
 extern void BTA_GATT_SetLocalMTU(uint16_t mtu);
 
+extern uint16_t BTA_GATT_GetLocalMTU(void);
+
 #ifdef __cplusplus
 }
 #endif

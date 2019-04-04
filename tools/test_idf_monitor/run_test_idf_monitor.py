@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import pty
 import filecmp
 import threading
 import errno
+import tempfile
 
 test_list = (
     # Add new tests here. All files should be placed in IN_DIR. Columns are:
@@ -41,24 +42,24 @@ test_list = (
 
 IN_DIR = 'tests/'       # tests are in this directory
 OUT_DIR = 'outputs/'    # test results are written to this directory (kept only for debugging purposes)
-ERR_OUT = OUT_DIR + 'monitor_error_output'
-ELF_FILE = './dummy.elf'  # ELF file used for starting the monitor
-IDF_MONITOR = '{}/tools/idf_monitor.py'.format(os.getenv("IDF_PATH"))
+ERR_OUT = 'monitor_error_output.'
+IDF_MONITOR_WAPPER = 'idf_monitor_wrapper.py'
+SERIAL_ALIVE_FILE = '/tmp/serial_alive'  # the existence of this file signalize that idf_monitor is ready to receive
 
 # connection related to communicating with idf_monitor through sockets
 HOST = 'localhost'
 # blocking socket operations are used with timeout:
 SOCKET_TIMEOUT = 30
 # the test is restarted after failure (idf_monitor has to be killed):
-RETRIES_PER_TEST = 5
+RETRIES_PER_TEST = 3
 
 
 def monitor_timeout(process):
     if process.poll() is None:
-        # idf_monitor is still running
+        # idf_monitor_wrapper is still running
         try:
             process.kill()
-            print('\tidf_monitor was killed because it did not finish in time.')
+            print('\tidf_monitor_wrapper was killed because it did not finish in time.')
         except OSError as e:
             if e.errno == errno.ESRCH:
                 # ignores a possible race condition which can occur when the process exits between poll() and kill()
@@ -70,7 +71,6 @@ def monitor_timeout(process):
 class TestRunner(object):
     def __enter__(self):
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serversocket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         self.serversocket.bind((HOST, 0))
         self.port = self.serversocket.getsockname()[1]
         self.serversocket.listen(5)
@@ -85,49 +85,68 @@ class TestRunner(object):
         """ returns a socket for sending the input for idf_monitor which must be closed before calling this again. """
         (clientsocket, address) = self.serversocket.accept()
         # exception will be thrown here if the idf_monitor didn't connect in time
-        clientsocket.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
         return clientsocket
 
 
-def test_iteration(runner, test, startup_timeout):
+def test_iteration(runner, test):
+    try:
+        # Make sure that the file doesn't exist. It will be recreated by idf_monitor_wrapper.py
+        os.remove(SERIAL_ALIVE_FILE)
+    except OSError:
+        pass
     print('\nRunning test on {} with filter "{}" and expecting {}'.format(test[0], test[1], test[2]))
     try:
-        with open(OUT_DIR + test[2], "w", encoding='utf-8') as o_f, open(ERR_OUT, "w", encoding='utf-8') as e_f:
-            monitor_cmd = [sys.executable,
-                           IDF_MONITOR, '--port', 'socket://{}:{}'.format(HOST, runner.port), '--print_filter', test[1], ELF_FILE]
+        with open(OUT_DIR + test[2], "w", encoding='utf-8') as o_f, \
+                tempfile.NamedTemporaryFile(dir=OUT_DIR, prefix=ERR_OUT, mode="w", delete=False) as e_f:
+            monitor_cmd = [sys.executable, IDF_MONITOR_WAPPER,
+                           '--port', 'socket://{}:{}?logging=debug'.format(HOST, runner.port),
+                           '--print_filter', test[1],
+                           '--serial_alive_file', SERIAL_ALIVE_FILE]
             (master_fd, slave_fd) = pty.openpty()
             print('\t', ' '.join(monitor_cmd), sep='')
             print('\tstdout="{}" stderr="{}" stdin="{}"'.format(o_f.name, e_f.name, os.ttyname(slave_fd)))
             print('\tMonitor timeout: {} seconds'.format(test[3]))
             start = time.time()
             # the server socket is alive so idf_monitor can start now
-            proc = subprocess.Popen(monitor_cmd, stdin=slave_fd, stdout=o_f, stderr=e_f, close_fds=True, bufsize=-1)
+            proc = subprocess.Popen(monitor_cmd, stdin=slave_fd, stdout=o_f, stderr=e_f, close_fds=True, bufsize=0)
             # - idf_monitor's stdin needs to be connected to some pseudo-tty in docker image even when it is not
             #   used at all
             # - setting bufsize is needed because the default value is different on Python 2 and 3
             # - the default close_fds is also different on Python 2 and 3
-            monitor_watchdog = threading.Timer(test[3], monitor_timeout, [proc])
-            monitor_watchdog.start()
-            client = runner.accept_connection()
-            # The connection is ready but idf_monitor cannot yet receive data. This seems to happen on Ubuntu 16.04 LTS
-            # and is not related to the version of Python or pyserial. There seems to be no reliable way other than to
-            # do a sleep. The idf_monitor header in ERR_OUT could be checked on Python 2 but the file is not flushed
-            # on Python 3.
-            print('\tSleeping for {:.2f} seconds'.format(startup_timeout))
-            time.sleep(startup_timeout)
-            with open(IN_DIR + test[0], "r", encoding='utf-8') as f:
-                print('\tSending {} to the socket'.format(f.name))
-                for line in f:
-                    client.sendall(line.encode())
-            idf_exit_sequence = b'\x1d\n'
-            print('\tSending <exit> to the socket')
-            client.sendall(idf_exit_sequence)
-            ret = proc.wait()
-            end = time.time()
-            print('\tidf_monitor exited after {:.2f} seconds'.format(end - start))
-            if ret < 0:
-                raise RuntimeError('idf_monitor was terminated by signal {}'.format(-ret))
-            # idf_monitor needs to end before the socket is closed in order to exit without an exception.
+        monitor_watchdog = threading.Timer(test[3], monitor_timeout, [proc])
+        monitor_watchdog.start()
+        client = runner.accept_connection()
+        # The connection is ready but idf_monitor cannot yet receive data (the serial reader thread is not running).
+        # This seems to happen on Ubuntu 16.04 LTS and is not related to the version of Python or pyserial.
+        # Updating to Ubuntu 18.04 LTS also helps but here, a workaround is used: A wrapper is used for IDF monitor
+        # which checks the serial reader thread and creates a file when it is running.
+        while not os.path.isfile(SERIAL_ALIVE_FILE) and proc.poll() is None:
+            print('\tSerial reader is not ready. Do a sleep...')
+            time.sleep(1)
+        # Only now can we send the inputs:
+        with open(IN_DIR + test[0], 'rb') as f:
+            print('\tSending {} to the socket'.format(f.name))
+            for chunk in iter(lambda: f.read(1024), b''):
+                client.sendall(chunk)
+        idf_exit_sequence = b'\x1d\n'
+        print('\tSending <exit> to the socket')
+        client.sendall(idf_exit_sequence)
+        close_end_time = start + 0.75 * test[3]  # time when the process is close to be killed
+        while True:
+            ret = proc.poll()
+            if ret is not None:
+                break
+            if time.time() > close_end_time:
+                # The process isn't finished yet so we are starting to send additional exit sequences because maybe
+                # the other end didn't received it.
+                print('\tSending additional <exit> to the socket')
+                client.sendall(idf_exit_sequence)
+            time.sleep(1)
+        end = time.time()
+        print('\tidf_monitor exited after {:.2f} seconds'.format(end - start))
+        if ret < 0:
+            raise RuntimeError('idf_monitor was terminated by signal {}'.format(-ret))
+        # idf_monitor needs to end before the socket is closed in order to exit without an exception.
     finally:
         if monitor_watchdog:
             monitor_watchdog.cancel()
@@ -153,21 +172,19 @@ def main():
     socket.setdefaulttimeout(SOCKET_TIMEOUT)
 
     for test in test_list:
-        startup_timeout = 1.0
         for i in range(RETRIES_PER_TEST):
             with TestRunner() as runner:
                 # Each test (and each retry) is run with a different port (and server socket). This is done for
                 # the CI run where retry with a different socket is necessary to pass the test. According to the
                 # experiments, retry with the same port (and server socket) is not sufficient.
                 try:
-                    test_iteration(runner, test, startup_timeout)
+                    test_iteration(runner, test)
                     # no more retries if test_iteration exited without an exception
                     break
                 except Exception as e:
                     if i < RETRIES_PER_TEST - 1:
                         print('Test has failed with exception:', e)
                         print('Another attempt will be made.')
-                        startup_timeout += 1
                     else:
                         raise
 

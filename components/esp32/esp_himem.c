@@ -14,10 +14,10 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_spiram.h"
-#include "rom/cache.h"
+#include "esp32/spiram.h"
+#include "esp32/rom/cache.h"
 #include "sdkconfig.h"
-#include "esp_himem.h"
+#include "esp32/himem.h"
 #include "soc/soc.h"
 #include "esp_log.h"
 
@@ -161,7 +161,7 @@ void __attribute__((constructor)) esp_himem_init()
         free(s_range_descriptor);
         return;
     }
-    ESP_EARLY_LOGI(TAG, "Initialized. Using last %d 32KB address blocks for bank switching on %d KB of physical memory.", 
+    ESP_EARLY_LOGI(TAG, "Initialized. Using last %d 32KB address blocks for bank switching on %d KB of physical memory.",
                 SPIRAM_BANKSWITCH_RESERVE, (paddr_end - paddr_start)/1024);
 }
 

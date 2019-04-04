@@ -58,9 +58,12 @@ macro(idf_set_variables)
 
     set_default(IDF_COMPONENT_DIRS "${IDF_EXTRA_COMPONENT_DIRS} ${IDF_PATH}/components")
     set_default(IDF_COMPONENTS "")
-    set_default(IDF_COMPONENT_REQUIRES_COMMON "cxx ${IDF_TARGET} newlib freertos heap log soc")
+    set_default(IDF_COMPONENT_REQUIRES_COMMON "cxx ${IDF_TARGET} newlib freertos heap log soc \
+                                                esp_rom esp_common xtensa")
 
     set(IDF_PROJECT_PATH "${CMAKE_SOURCE_DIR}")
+
+    set(ESP_PLATFORM 1 CACHE BOOL INTERNAL)
 
     spaces2list(IDF_COMPONENT_DIRS)
     spaces2list(IDF_COMPONENTS)
@@ -221,11 +224,13 @@ endfunction()
 function(idf_get_git_revision)
     git_describe(IDF_VER_GIT "${IDF_PATH}")
     if(EXISTS "${IDF_PATH}/version.txt")
-        file(STRINGS "${IDF_PATH}/version.txt" IDF_VER)
+        file(STRINGS "${IDF_PATH}/version.txt" IDF_VER_T)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${IDF_PATH}/version.txt")
     else()
-        set(IDF_VER ${IDF_VER_GIT})
+        set(IDF_VER_T ${IDF_VER_GIT})
     endif()
+    # cut IDF_VER to required 32 characters.
+    string(SUBSTRING "${IDF_VER_T}" 0 31 IDF_VER)
     message(STATUS "IDF_VER: ${IDF_VER}")
     add_definitions(-DIDF_VER=\"${IDF_VER}\")
     git_submodule_check("${IDF_PATH}")

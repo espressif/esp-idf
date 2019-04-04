@@ -757,6 +757,9 @@ void btc_gattc_call_handler(btc_msg_t *msg)
     case BTC_GATTC_ATC_CACHE_GET_ADDR_LIST:
         BTA_GATTC_CacheGetAddrList(arg->get_addr_list.gattc_if);
         break;
+    case BTC_GATTC_ACT_CACHE_CLEAN:
+        BTA_GATTC_Clean(arg->cache_clean.remote_bda);
+        break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
@@ -980,6 +983,12 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         btc_gattc_cb_to_app(ESP_GATTC_GET_ADDR_LIST_EVT, gattc_if, &param);
         break;
     }
+    case BTA_GATTC_DIS_SRVC_CMPL_EVT:
+        gattc_if = BTC_GATT_GET_GATT_IF(arg->dis_cmpl.conn_id);
+        param.dis_srvc_cmpl.status = arg->dis_cmpl.status;
+        param.dis_srvc_cmpl.conn_id = BTC_GATT_GET_CONN_ID(arg->dis_cmpl.conn_id);
+        btc_gattc_cb_to_app(ESP_GATTC_DIS_SRVC_CMPL_EVT, gattc_if, &param);
+        break;
     default:
         BTC_TRACE_DEBUG("%s: Unhandled event (%d)!", __FUNCTION__, msg->act);
         break;

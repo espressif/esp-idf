@@ -54,7 +54,8 @@ typedef enum {
 typedef union {
     // BTC_BT_GAP_ACT_SET_SCAN_MODE,
     struct set_bt_scan_mode_args {
-        esp_bt_scan_mode_t mode;
+        esp_bt_connection_mode_t c_mode;
+        esp_bt_discovery_mode_t d_mode;
     } set_scan_mode;
 
     // BTC_GAP_BT_ACT_START_DISCOVERY

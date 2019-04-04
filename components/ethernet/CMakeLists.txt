@@ -2,7 +2,8 @@ set(COMPONENT_SRCS "emac_dev.c"
                    "emac_main.c"
                    "eth_phy/phy_common.c"
                    "eth_phy/phy_lan8720.c"
-                   "eth_phy/phy_tlk110.c")
+                   "eth_phy/phy_tlk110.c"
+                   "eth_phy/phy_ip101.c")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
 set(COMPONENT_REQUIRES)

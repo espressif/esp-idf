@@ -19,6 +19,10 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     HTTPD_SSL_TRANSPORT_SECURE,      // SSL Enabled
     HTTPD_SSL_TRANSPORT_INSECURE     // SSL disabled
@@ -76,6 +80,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .httpd = {                                    \
         .task_priority      = tskIDLE_PRIORITY+5, \
         .stack_size         = 10240,              \
+        .core_id            = tskNO_AFFINITY,     \
         .server_port        = 0,                  \
         .ctrl_port          = 32768,              \
         .max_open_sockets   = 4,                  \
@@ -91,7 +96,12 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .global_transport_ctx_free_fn = NULL,     \
         .open_fn = NULL,                          \
         .close_fn = NULL,                         \
+        .uri_match_fn = NULL                      \
     },                                            \
+    .cacert_pem = NULL,                           \
+    .cacert_len = 0,                              \
+    .prvtkey_pem = NULL,                          \
+    .prvtkey_len = 0,                             \
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
@@ -113,5 +123,9 @@ esp_err_t httpd_ssl_start(httpd_handle_t *handle, httpd_ssl_config_t *config);
  * @param[in] handle
  */
 void httpd_ssl_stop(httpd_handle_t handle);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ESP_HTTPS_SERVER_H_

@@ -185,6 +185,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_QUEUE_FULL_EVT        38 /* GATTC queue full event */
 #define BTA_GATTC_ASSOC_EVT             39 /* GATTC association address event */
 #define BTA_GATTC_GET_ADDR_LIST_EVT     40 /* GATTC get address list in the cache event */
+#define BTA_GATTC_DIS_SRVC_CMPL_EVT     41 /* GATTC discover service complete */
 
 typedef UINT8 tBTA_GATTC_EVT;
 
@@ -320,6 +321,11 @@ typedef struct {
 
 typedef struct {
     UINT16              conn_id;
+    tBTA_GATT_STATUS    status;
+}tBTA_GATTC_DIS_CMPL;
+
+typedef struct {
+    UINT16              conn_id;
     UINT16              start_handle;
     UINT16              end_handle;
     tBTA_GATT_ID        service_uuid;
@@ -413,8 +419,8 @@ typedef struct {
 
 typedef union {
     tBTA_GATT_STATUS        status;
-
-    tBTA_GATTC_SEARCH_CMPL  search_cmpl;    /* discovery complete */
+    tBTA_GATTC_DIS_CMPL     dis_cmpl;    /* discovery complete */
+    tBTA_GATTC_SEARCH_CMPL  search_cmpl;    /* search complete */
     tBTA_GATTC_SRVC_RES     srvc_res;       /* discovery result */
     tBTA_GATTC_REG          reg_oper;       /* registration data */
     tBTA_GATTC_OPEN         open;
@@ -1118,6 +1124,18 @@ extern void BTA_GATTC_CacheAssoc(tBTA_GATTC_IF client_if, BD_ADDR src_addr, BD_A
 
 extern void BTA_GATTC_CacheGetAddrList(tBTA_GATTC_IF client_if);
 
+/*******************************************************************************
+**
+** Function         BTA_GATTC_Clean
+**
+** Description      Clean the server cache of the remote device
+**
+** Parameters       remote_bda: remote device BD address.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_GATTC_Clean(BD_ADDR remote_bda);
 
 /*******************************************************************************
 **

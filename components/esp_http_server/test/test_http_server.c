@@ -167,3 +167,68 @@ TEST_CASE("Basic Functionality Tests", "[HTTP SERVER]")
     test_handler_limit(hd);
     TEST_ASSERT(httpd_stop(hd) == ESP_OK);
 }
+
+TEST_CASE("URI Wildcard Matcher Tests", "[HTTP SERVER]")
+{
+    struct uritest {
+        const char *template;
+        const char *uri;
+        bool matches;
+    };
+
+    struct uritest uris[] = {
+        {"/", "/", true},
+        {"", "", true},
+        {"/", "", false},
+        {"/wrong", "/", false},
+        {"/", "/wrong", false},
+        {"/asdfghjkl/qwertrtyyuiuioo", "/asdfghjkl/qwertrtyyuiuioo", true},
+        {"/path", "/path", true},
+        {"/path", "/path/", false},
+        {"/path/", "/path", false},
+
+        {"?", "", false}, // this is not valid, but should not crash
+        {"?", "sfsdf", false},
+
+        {"/path/?", "/pa", false},
+        {"/path/?", "/path", true},
+        {"/path/?", "/path/", true},
+        {"/path/?", "/path/alalal", false},
+
+        {"/path/*", "/path", false},
+        {"/path/*", "/", false},
+        {"/path/*", "/path/", true},
+        {"/path/*", "/path/blabla", true},
+
+        {"*", "", true},
+        {"*", "/", true},
+        {"*", "/aaa", true},
+
+        {"/path/?*", "/pat", false},
+        {"/path/?*", "/pathb", false},
+        {"/path/?*", "/pathxx", false},
+        {"/path/?*", "/pathblabla", false},
+        {"/path/?*", "/path", true},
+        {"/path/?*", "/path/", true},
+        {"/path/?*", "/path/blabla", true},
+
+        {"/path/*?", "/pat", false},
+        {"/path/*?", "/pathb", false},
+        {"/path/*?", "/pathxx", false},
+        {"/path/*?", "/path", true},
+        {"/path/*?", "/path/", true},
+        {"/path/*?", "/path/blabla", true},
+
+        {"/path/*/xxx", "/path/", false},
+        {"/path/*/xxx", "/path/*/xxx", true},
+        {}
+    };
+
+    struct uritest *ut = &uris[0];
+
+    while(ut->template != 0) {
+        bool match = httpd_uri_match_wildcard(ut->template, ut->uri, strlen(ut->uri));
+        TEST_ASSERT(match == ut->matches);
+        ut++;
+    }
+}

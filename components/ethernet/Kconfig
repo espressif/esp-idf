@@ -1,60 +1,55 @@
 menu Ethernet
 
-config DMA_RX_BUF_NUM
-    int "Number of DMA RX buffers"
-    range 3 20
-    default 10
-    help
-        Number of DMA receive buffers. Each buffer is 1600 bytes.
-        Buffers are allocated statically.
-        Larger number of buffers increases throughput.
-        If enable flow ctrl, the num must be above 9 .
+    config DMA_RX_BUF_NUM
+        int "Number of DMA RX buffers"
+        range 3 20
+        default 10
+        help
+            Number of DMA receive buffers. Each buffer is 1600 bytes.
+            These buffers are allocated dynamically.
+            More buffers will increase throughput.
+            If flow ctrl is enabled, make sure this number is larger than 9.
 
-config DMA_TX_BUF_NUM
-    int "Number of DMA TX buffers"
-    range 3 20
-    default 10
-    help
-        Number of DMA transmit buffers. Each buffer is 1600 bytes.
-        Buffers are allocated statically.
-        Larger number of buffers increases throughput.
+    config DMA_TX_BUF_NUM
+        int "Number of DMA TX buffers"
+        range 3 20
+        default 10
+        help
+            Number of DMA transmit buffers. Each buffer is 1600 bytes.
+            These buffers are allocated dynamically.
+            More buffers will increase throughput.
 
-config EMAC_L2_TO_L3_RX_BUF_MODE
-    bool "Enable copy between Layer2 and Layer3"
-    default y
-    help
-        If this options is selected, a copy of each received buffer will be created when
-        passing it from the Ethernet MAC (L2) to the IP stack (L3). Otherwise, IP stack
-        will receive pointers to the DMA buffers used by Ethernet MAC.
+    config EMAC_L2_TO_L3_RX_BUF_MODE
+        bool "Enable received buffers be copied to Layer3 from Layer2"
+        default y
+        help
+            If this option is selected, a copy of each received buffer will be allocated from the heap
+            before passing it to the IP Layer (L3).
+            Which means, the total amount of received buffers is limited by the heap size.
 
-        When Ethernet MAC doesn't have any unused buffers left, it will drop incoming
-        packets (flow control may help with this problem, to some extent).
+            If this option is not selected, IP layer only uses the pointers to the DMA buffers owned by Ethernet MAC.
+            When Ethernet MAC doesn't have any available buffers left, it will drop the incoming packets.
 
-        The buffers for the IP stack are allocated from the heap, so the total number of
-        receive buffers is limited by the available heap size, if this option is selected.
+    config EMAC_CHECK_LINK_PERIOD_MS
+        int "Period (ms) of checking Ethernet linkup status"
+        range 1000 5000
+        default 2000
+        help
+            The emac driver uses an internal timer to check the Ethernet linkup status.
+            Here you should choose a valid interval time.
 
-        If unsure, choose n.
+    config EMAC_TASK_PRIORITY
+        int "EMAC_TASK_PRIORITY"
+        default 20
+        range 3 22
+        help
+            Priority of Ethernet MAC task.
 
-config EMAC_CHECK_LINK_PERIOD_MS
-    int "Period(ms) of checking Ethernet linkup status"
-    range 1000 5000
-    default 2000
-    help
-        The emac driver uses an internal timer to check the ethernet linkup
-        status. Here you should choose a valid the interval time.
-
-config EMAC_TASK_PRIORITY
-    int "EMAC_TASK_PRIORITY"
-    default 20
-    range 3 22
-    help
-        Ethernet MAC task priority.
-
-config EMAC_TASK_STACK_SIZE
-    int "Stack Size of EMAC Task"
-    default 3072
-    range 2000 8000
-    help
-        Stack Size of Ethernet MAC task.
+    config EMAC_TASK_STACK_SIZE
+        int "Stack Size of EMAC Task"
+        default 3072
+        range 2000 8000
+        help
+            Stack Size of Ethernet MAC task.
 
 endmenu

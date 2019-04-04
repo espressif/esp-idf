@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-
+#include "unity.h"
 
 // task crash indicators
 #define TCI_NULL_PTR    0x1
@@ -23,7 +23,7 @@ volatile unsigned long crash_flags = TCI_UNALIGN_PTR;
 void bad_ptr_func()
 {
     unsigned long *ptr = (unsigned long *)0;
-    volatile int cnt;
+    volatile int cnt = 0;
     int i = 0;
 
     for (i = 0; i < 1000; i++) {
@@ -51,7 +51,7 @@ void recur_func()
 {
     static int rec_cnt;
     unsigned short *ptr = (unsigned short *)0x5;
-    volatile int cnt;
+    volatile int cnt = 0;
     int i = 0;
 
     if (rec_cnt++ > 2) {
@@ -96,7 +96,7 @@ void failed_assert_task(void *pvParameter)
     fflush(stdout);
 }
 
-void app_main()
+TEST_CASE("verify coredump functionality", "[coredump][ignore]")
 {
     nvs_flash_init();
     xTaskCreate(&bad_ptr_task, "bad_ptr_task", 2048, NULL, 5, NULL);

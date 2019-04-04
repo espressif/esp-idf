@@ -4,7 +4,7 @@ ESP-WROVER-KIT V4.1 入门指南
 
 本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../hw-reference/index`。
 
-如果你希望开始 ESP-WROVER-KIT V4.1 的应用开发，请直接前往章节 :ref:`应用程序开发 <get-started-esp-wrover-kit-start-development>`。
+如果你希望开始 ESP-WROVER-KIT V4.1 的应用开发，请直接前往章节 :ref:`应用程序开发 <get-started-esp-wrover-kit-v4.1-start-development>`。
 
 
 准备工作
@@ -67,7 +67,7 @@ CTS/RTS
     串口流控信号。管脚默认不连接至电路。为了使能该功能，必须用跳线帽断路掉 JP14 连接器的相应管脚。
 
 JTAG
-    FT2232HL 和 ESP32 的串口 JTAG 信号已引出至 JP2 连接器的两端。默认情况下，这两路信号不连接。如需使能 JTAG，请按照 :ref:`设置选项 <get-started-esp-wrover-kit-setup-options>` 中的介绍，连接跳线帽。 
+    FT2232HL 和 ESP32 的串口 JTAG 信号已引出至 JP2 连接器的两端。默认情况下，这两路信号不连接。如需使能 JTAG，请按照 :ref:`设置选项 <get-started-esp-wrover-kit-v4.1-setup-options>` 中的介绍，连接跳线帽。 
     
 USB 端口
     USB 端口，可用作电路板的供电电源或连接 PC 端的通信接口。
@@ -82,7 +82,7 @@ Boot 按键
     拨置右侧，开发板上电；拨置左侧，开发板掉电。
 
 电源选择开关
-    ESP-WROVER-KIT 开发板可通过 USB 端口或 5V 输入端口供电。用户可使用跳线帽在两种供电模式中进行选择。更多详细信息，请见章节 :ref:`设置选项 <get-started-esp-wrover-kit-setup-options>` 中有关 JP7 连接器的描述。
+    ESP-WROVER-KIT 开发板可通过 USB 端口或 5V 输入端口供电。用户可使用跳线帽在两种供电模式中进行选择。更多详细信息，请见章节 :ref:`设置选项 <get-started-esp-wrover-kit-v4.1-setup-options>` 中有关 JP7 连接器的描述。
     
 5V 输入
     5V 电源接口仅用于全负荷工作下的后备电源。
@@ -126,7 +126,7 @@ LCD 显示器
     ESP-WROVER-KIT 开发板 - 背面
 
 
-.. _get-started-esp-wrover-kit-setup-options:
+.. _get-started-esp-wrover-kit-v4.1-setup-options:
 
 设置选项
 -------------
@@ -316,7 +316,7 @@ No.  ESP32 管脚     LCD 信号
 === ============== =============
 
 
-.. _get-started-esp-wrover-kit-start-development:
+.. _get-started-esp-wrover-kit-v4.1-start-development:
 
 应用程序开发
 -----------------------------
@@ -348,8 +348,8 @@ USB 供电         使能 UART 通信
 
 * :ref:`设置 Toolchain <get-started-setup-toolchain>`，以便用 C 语言开发应用
 * :ref:`连接 <get-started-connect>` 模组至 PC，并确认访问状态
-* :ref:`构建并向 ESP32 烧录示例 <get-started-build-flash>`
-* :ref:`即刻监测 <get-started-build-monitor>` 应用程序的动作
+* :ref:`构建并向 ESP32 烧录示例 <get-started-build-and-flash>`
+* :ref:`即刻监测 <get-started-monitor>` 应用程序的动作
 
 
 相关文档

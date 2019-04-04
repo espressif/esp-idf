@@ -62,7 +62,25 @@ typedef struct sys_mbox_s {
 #endif
 
 #define sys_mbox_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
-#define sys_mbox_set_invalid( x ) ( ( *x ) = NULL )
+
+/* Define the sys_mbox_set_invalid() to empty to support lock-free mbox in ESP LWIP.
+ * 
+ * The basic idea about the lock-free mbox is that the mbox should always be valid unless
+ * no socket APIs are using the socket and the socket is closed. ESP LWIP achieves this by
+ * following two changes to official LWIP:
+ * 1. Postpone the deallocation of mbox to netconn_free(), in other words, free the mbox when
+ *    no one is using the socket.
+ * 2. Define the sys_mbox_set_invalid() to empty if the mbox is not actually freed.
+
+ * The second change is necessary. Consider a common scenario: the application task calls 
+ * recv() to receive packets from the socket, the sys_mbox_valid() returns true. Because there
+ * is no lock for the mbox, the LWIP CORE can call sys_mbox_set_invalid() to set the mbox at 
+ * anytime and the thread-safe issue may happen.
+ *
+ * However, if the sys_mbox_set_invalid() is not called after sys_mbox_free(), e.g. in netconn_alloc(),
+ * we need to initialize the mbox to invalid explicitly since sys_mbox_set_invalid() now is empty.
+ */
+#define sys_mbox_set_invalid( x ) 
 
 #define sys_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
 #define sys_sem_set_invalid( x ) ( ( *x ) = NULL )

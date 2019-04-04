@@ -18,9 +18,9 @@
 #include "esp_types.h"
 #include "esp_log.h"
 
-#include "rom/cache.h"
-#include "rom/ets_sys.h"
-#include "rom/secure_boot.h"
+#include "esp32/rom/cache.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/secure_boot.h"
 
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"

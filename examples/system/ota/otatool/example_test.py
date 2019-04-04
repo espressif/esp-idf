@@ -32,9 +32,9 @@ def test_otatool_example(env, extra_data):
     script_path = os.path.join(os.getenv("IDF_PATH"), "examples", "system", "ota", "otatool", "otatool_example.py")
     binary_path = ""
 
-    for config in dut.download_config:
-        if "otatool.bin" in config:
-            binary_path = config
+    for flash_file in dut.app.flash_files:
+        if "otatool.bin" in flash_file[1]:
+            binary_path = flash_file[1]
             break
 
     subprocess.check_call([sys.executable, script_path, "--binary", binary_path])

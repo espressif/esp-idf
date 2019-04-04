@@ -165,7 +165,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
         if args.generator is None:
             args.generator = detect_cmake_generator()
         try:
-            cmake_args = ["cmake", "-G", args.generator, "-DPYTHON_DEPS_CHECKED=1"]
+            cmake_args = ["cmake", "-G", args.generator, "-DPYTHON_DEPS_CHECKED=1", "-DESP_PLATFORM=1"]
             if not args.no_warnings:
                 cmake_args += ["--warn-uninitialized"]
             if args.no_ccache:
@@ -353,6 +353,17 @@ def fullclean(action, args):
             os.remove(f)
 
 
+def _safe_relpath(path, start=None):
+    """ Return a relative path, same as os.path.relpath, but only if this is possible.
+
+    It is not possible on Windows, if the start directory and the path are on different drives.
+    """
+    try:
+        return os.path.relpath(path, os.curdir if start is None else start)
+    except ValueError:
+        return os.path.abspath(path)
+
+
 def print_closing_message(args):
     # print a closing message of some kind
     #
@@ -369,7 +380,7 @@ def print_closing_message(args):
             flasher_args = json.load(f)
 
         def flasher_path(f):
-            return os.path.relpath(os.path.join(args.build_dir, f))
+            return _safe_relpath(os.path.join(args.build_dir, f))
 
         if key != "project":  # flashing a single item
             cmd = ""
@@ -386,7 +397,7 @@ def print_closing_message(args):
                 cmd += o + " " + flasher_path(f) + " "
 
         print("%s -p %s -b %s --after %s write_flash %s" % (
-            os.path.relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
+            _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
             args.port or "(PORT)",
             args.baud,
             flasher_args["extra_esptool_args"]["after"],
@@ -422,6 +433,9 @@ ACTIONS = {
     "bootloader-flash":      (flash,        ["bootloader"], ["erase_flash"]),
     "app":                   (build_target, [], ["clean", "fullclean", "reconfigure"]),
     "app-flash":             (flash,        ["app"], ["erase_flash"]),
+    "efuse_common_table":    (build_target, [], ["reconfigure"]),
+    "efuse_custom_table":    (build_target, [], ["reconfigure"]),
+    "show_efuse_table":      (build_target, [], ["reconfigure"]),
     "partition_table":       (build_target, [], ["reconfigure"]),
     "partition_table-flash": (flash,        ["partition_table"], ["erase_flash"]),
     "flash":                 (flash,        ["all"], ["erase_flash"]),
@@ -557,7 +571,20 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        # On MSYS2 we need to run idf.py with "winpty" in order to be able to cancel the subprocesses properly on
+        # keyboard interrupt (CTRL+C).
+        # Using an own global variable for indicating that we are running with "winpty" seems to be the most suitable
+        # option as os.environment['_'] contains "winpty" only when it is run manually from console.
+        WINPTY_VAR = 'WINPTY'
+        WINPTY_EXE = 'winpty'
+        if ('MSYSTEM' in os.environ) and (not os.environ['_'].endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ):
+            os.environ[WINPTY_VAR] = '1'    # the value is of no interest to us
+            # idf.py calls itself with "winpty" and WINPTY global variable set
+            ret = subprocess.call([WINPTY_EXE, sys.executable] + sys.argv, env=os.environ)
+            if ret:
+                raise SystemExit(ret)
+        else:
+            main()
     except FatalError as e:
         print(e)
         sys.exit(2)

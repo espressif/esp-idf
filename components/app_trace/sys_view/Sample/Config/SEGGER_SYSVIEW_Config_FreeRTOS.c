@@ -63,11 +63,11 @@ Revision: $Rev: 3734 $
 */
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 

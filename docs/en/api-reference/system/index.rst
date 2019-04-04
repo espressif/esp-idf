@@ -11,6 +11,7 @@ System API
    Himem (large external SPI RAM) API <himem>
    Interrupt Allocation <intr_alloc>
    Watchdogs <wdts>
+   eFuse Manager <efuse>
    Inter-Processor Call <ipc>
    High Resolution Timer <esp_timer>
    Logging <log>

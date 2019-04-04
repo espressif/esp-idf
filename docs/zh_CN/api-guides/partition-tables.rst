@@ -1,5 +1,6 @@
 分区表
 ======
+:link_to_translation:`en:[English]`
 
 概述
 ----

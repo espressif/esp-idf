@@ -55,7 +55,7 @@ typedef struct {
 } simple_ble_cfg_t;
 
 
-/** Initialise a simple ble connection
+/** Initialize a simple ble connection
  *
  * This function allocates memory and returns a pointer to the
  * configuration structure.

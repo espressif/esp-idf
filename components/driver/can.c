@@ -438,6 +438,8 @@ static void can_intr_handler_rx(BaseType_t *task_woken, int *alert_req)
             can_alert_handler(CAN_ALERT_RX_QUEUE_FULL, alert_req);
         }
     }
+    //Todo: Add Software Filters
+    //Todo: Check for data overrun of RX FIFO, then trigger alert
 }
 
 static void can_intr_handler_tx(can_status_reg_t *status, int *alert_req)
@@ -496,7 +498,6 @@ static void can_intr_handler_main(void *arg)
         //Triggers when arbitration is lost
         can_intr_handler_arb_lost(&alert_req);
     }
-    //Todo: Check data overrun bug where interrupt does not trigger even when enabled
 
     //Handle TX/RX interrupts
     if (intr_reason.rx) {
@@ -913,7 +914,7 @@ esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_aler
     CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
     CAN_ENTER_CRITICAL();
     uint32_t cur_alerts;
-    cur_alerts = can_read_alerts(&cur_alerts, 0);       //Clear any unhandled alerts
+    can_read_alerts(&cur_alerts, 0);                    //Clear any unhandled alerts
     p_can_obj->alerts_enabled = alerts_enabled;         //Update enabled alerts
     CAN_EXIT_CRITICAL();
 
@@ -977,3 +978,30 @@ esp_err_t can_get_status_info(can_status_info_t *status_info)
     return ESP_OK;
 }
 
+esp_err_t can_clear_transmit_queue()
+{
+    //Check State
+    CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
+    CAN_CHECK(p_can_obj->tx_queue != NULL, ESP_ERR_NOT_SUPPORTED);
+
+    CAN_ENTER_CRITICAL();
+    //If a message is currently undergoing transmission, the tx interrupt handler will decrement tx_msg_count
+    p_can_obj->tx_msg_count = (p_can_obj->control_flags & CTRL_FLAG_TX_BUFF_OCCUPIED) ? 1 : 0;
+    xQueueReset(p_can_obj->tx_queue);
+    CAN_EXIT_CRITICAL();
+
+    return ESP_OK;
+}
+
+esp_err_t can_clear_receive_queue()
+{
+    //Check State
+    CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
+
+    CAN_ENTER_CRITICAL();
+    p_can_obj->rx_msg_count = 0;
+    xQueueReset(p_can_obj->rx_queue);
+    CAN_EXIT_CRITICAL();
+
+    return ESP_OK;
+}

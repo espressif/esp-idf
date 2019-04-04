@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_types.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -10,7 +10,7 @@
 #include "soc/cpu.h"
 #include "unity.h"
 #include "test_utils.h"
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
@@ -66,8 +66,7 @@ void run_tasks(const char *task1_description, void (* task1_func)(void *), const
 
     for (i=0; i<2; i++) {
         if((task1_func != NULL && i == 0) || (task2_func != NULL && i == 1)){
-            exit_sema[i] = xSemaphoreCreateMutex();
-            xSemaphoreTake(exit_sema[i], portMAX_DELAY);
+            exit_sema[i] = xSemaphoreCreateBinary();
         }
     }
 

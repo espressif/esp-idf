@@ -11,45 +11,37 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_eth.h"
-
-#include "eth_phy/phy_tlk110.h"
 #include "eth_phy/phy_reg.h"
+#include "eth_phy/phy_tlk110.h"
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-
-/* Value of MII_PHY_IDENTIFIER_REG for TI TLK110,
-   Excluding bottom 4 bytes of ID2, used for model revision
- */
 #define TLK110_PHY_ID1 0x2000
 #define TLK110_PHY_ID2 0xa210
 #define TLK110_PHY_ID2_MASK 0xFFF0
 
 /* TLK110-specific registers */
-#define SW_STRAP_CONTROL_REG            (0x9)
-#define SW_STRAP_CONFIG_DONE               BIT(15)
-#define AUTO_MDIX_ENABLE                   BIT(14)
-#define AUTO_NEGOTIATION_ENABLE            BIT(13)
-#define AN_1                               BIT(12)
-#define AN_0                               BIT(11)
-#define LED_CFG                            BIT(10)
-#define RMII_ENHANCED_MODE                 BIT(9)
+#define SW_STRAP_CONTROL_REG (0x9)
+#define SW_STRAP_CONFIG_DONE BIT(15)
+#define AUTO_MDIX_ENABLE BIT(14)
+#define AUTO_NEGOTIATION_ENABLE BIT(13)
+#define AN_1 BIT(12)
+#define AN_0 BIT(11)
+#define LED_CFG BIT(10)
+#define RMII_ENHANCED_MODE BIT(9)
 
-#define DEFAULT_STRAP_CONFIG (AUTO_MDIX_ENABLE|AUTO_NEGOTIATION_ENABLE|AN_1|AN_0|LED_CFG)
+#define DEFAULT_STRAP_CONFIG (AUTO_MDIX_ENABLE | AUTO_NEGOTIATION_ENABLE | AN_1 | AN_0 | LED_CFG)
 
-#define PHY_STATUS_REG                  (0x10)
-#define AUTO_NEGOTIATION_STATUS             BIT(4)
-#define DUPLEX_STATUS                      BIT(2)
-#define SPEED_STATUS                       BIT(1)
+#define PHY_STATUS_REG (0x10)
+#define AUTO_NEGOTIATION_STATUS BIT(4)
+#define DUPLEX_STATUS BIT(2)
+#define SPEED_STATUS BIT(1)
 
-#define CABLE_DIAGNOSTIC_CONTROL_REG    (0x1e)
-#define DIAGNOSTIC_DONE                    BIT(1)
+#define CABLE_DIAGNOSTIC_CONTROL_REG (0x1e)
+#define DIAGNOSTIC_DONE BIT(1)
 
-#define PHY_RESET_CONTROL_REG           (0x1f)
-#define SOFTWARE_RESET                     BIT(15)
+#define PHY_RESET_CONTROL_REG (0x1f)
+#define SOFTWARE_RESET BIT(15)
 
 static const char *TAG = "tlk110";
 
@@ -64,7 +56,7 @@ void phy_tlk110_check_phy_init(void)
 
 eth_speed_mode_t phy_tlk110_get_speed_mode(void)
 {
-    if ((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS ) != SPEED_STATUS) {
+    if ((esp_eth_smi_read(PHY_STATUS_REG) & SPEED_STATUS) != SPEED_STATUS) {
         ESP_LOGD(TAG, "phy_tlk110_get_speed_mode(100)");
         return ETH_SPEED_MODE_100M;
     } else {
@@ -75,7 +67,7 @@ eth_speed_mode_t phy_tlk110_get_speed_mode(void)
 
 eth_duplex_mode_t phy_tlk110_get_duplex_mode(void)
 {
-    if ((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS ) == DUPLEX_STATUS) {
+    if ((esp_eth_smi_read(PHY_STATUS_REG) & DUPLEX_STATUS) == DUPLEX_STATUS) {
         ESP_LOGD(TAG, "phy_tlk110_get_duplex_mode(FULL)");
         return ETH_MODE_FULLDUPLEX;
     } else {
@@ -122,12 +114,9 @@ esp_err_t phy_tlk110_init(void)
 }
 
 const eth_config_t phy_tlk110_default_ethernet_config = {
-    // PHY address configured by PHYADx pins. Default value of 0x1
-    // is used if all pins are unconnected.
     .phy_addr = 0x1,
     .mac_mode = ETH_MODE_RMII,
     .clock_mode = ETH_CLOCK_GPIO0_IN,
-    //Only FULLDUPLEX mode support flow ctrl now!
     .flow_ctrl_enable = true,
     .phy_init = phy_tlk110_init,
     .phy_check_init = phy_tlk110_check_phy_init,

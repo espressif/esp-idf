@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
 #include "esp_event.h"
@@ -248,6 +248,15 @@ void *wifi_realloc( void *ptr, size_t size );
   * @return    A pointer to the memory allocated on success, NULL on failure
   */
 void *wifi_calloc( size_t n, size_t size );
+
+/**
+  * @brief     Update WiFi MAC time
+  *
+  * @param     uint32_t time_delta : time duration since the WiFi/BT common clock is disabled
+  *
+  * @return    Always returns ESP_OK
+  */
+typedef esp_err_t (* wifi_mac_time_update_cb_t)( uint32_t time_delta );
 
 /**
   * @brief     Update WiFi MAC time

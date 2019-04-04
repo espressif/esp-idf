@@ -53,6 +53,18 @@ static BT_HDR *make_set_c2h_flow_control(uint8_t enable)
     return packet;
 }
 
+static BT_HDR *make_set_adv_report_flow_control(uint8_t enable, uint16_t num, uint16_t lost_threshold)
+{
+    uint8_t *stream;
+    const uint8_t parameter_size = 1 + 2 + 2;
+    BT_HDR *packet = make_command(HCI_VENDOR_BLE_SET_ADV_FLOW_CONTROL, parameter_size, &stream);
+
+    UINT8_TO_STREAM(stream, enable);
+    UINT16_TO_STREAM(stream, num);
+    UINT16_TO_STREAM(stream, lost_threshold);
+    return packet;
+}
+
 static BT_HDR *make_host_buffer_size(uint16_t acl_size, uint8_t sco_size, uint16_t acl_count, uint16_t sco_count)
 {
     uint8_t *stream;
@@ -239,6 +251,7 @@ static const hci_packet_factory_t interface = {
     make_reset,
     make_read_buffer_size,
     make_set_c2h_flow_control,
+    make_set_adv_report_flow_control,
     make_host_buffer_size,
     make_read_local_version_info,
     make_read_bd_addr,

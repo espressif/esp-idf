@@ -1,5 +1,6 @@
 Using Debugger
 --------------
+:link_to_translation:`zh_CN:[中文]`
 
 This section covers configuration and running debugger either from :ref:`jtag-debugging-using-debugger-eclipse`
 or :ref:`jtag-debugging-using-debugger-command-line`. It is recommended to first check if debugger works from :ref:`jtag-debugging-using-debugger-command-line` and then move to using Eclipse.

@@ -74,7 +74,6 @@ static USHORT uiRxBufferPos = 0;    // position in the receiver buffer
 void vMBPortSerialEnable(BOOL bRxEnable, BOOL bTxEnable)
 {
     // This function can be called from xMBRTUTransmitFSM() of different task
-    ENTER_CRITICAL_SECTION();
     if (bRxEnable) {
         //uart_enable_rx_intr(ucUartNumber);
         bRxStateEnabled = TRUE;
@@ -88,7 +87,6 @@ void vMBPortSerialEnable(BOOL bRxEnable, BOOL bTxEnable)
     } else {
         bTxStateEnabled = FALSE;
     }
-    EXIT_CRITICAL_SECTION();
 }
 
 static void vMBPortSerialRxPoll(size_t xEventSize)

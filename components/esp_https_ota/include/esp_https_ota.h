@@ -33,6 +33,7 @@ extern "C" {
  * @return
  *    - ESP_OK: OTA data updated, next reboot will use specified partition.
  *    - ESP_FAIL: For generic failure.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_OTA_VALIDATE_FAILED: Invalid app image
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.

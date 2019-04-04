@@ -40,9 +40,9 @@ static void lwip_stop_socket_select_isr(BaseType_t *woken)
     }
 }
 
-static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args)
+static int lwip_fcntl_r_wrapper(int fd, int cmd, int arg)
 {
-    return lwip_fcntl_r(fd, cmd, va_arg(args, int));
+    return lwip_fcntl_r(fd, cmd, arg);
 }
 
 static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)

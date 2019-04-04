@@ -14,8 +14,8 @@
 #include <string.h>
 #include "unity.h"
 #include "sdkconfig.h"
-#include "rom/uart.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
+#include "esp32/rom/uart.h"
 #include "soc/cpu.h"
 
 static uint32_t s_test_start, s_test_stop;

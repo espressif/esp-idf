@@ -4,7 +4,9 @@ Wi-Fi Provisioning
 Overview
 --------
 
-This component provides protocomm endpoint handler - `wifi_prov_config_data_handler` - and related protobuf framework which can be used for Wi-Fi configuration in the context of device provisioning, though it may be used in non-provisioning cases as well. The configuration consists of three commands :
+This component provides protocomm endpoint handler - `wifi_prov_config_data_handler` - and related protobuf framework which can be used for Wi-Fi configuration in the context of device provisioning, though it may be used in non-provisioning cases as well.
+
+The configuration consists of three commands :
     * `get_status` - For querying the Wi-Fi connection status
     * `set_config` - For setting the Wi-Fi connection credentials
     * `apply_config` - For applying the credentials saved during `set_config` and (re)start the Wi-Fi station
@@ -18,7 +20,7 @@ Application Example
 
     ::
 
-        esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data)
+        esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data, wifi_prov_ctx_t **ctx)
         {
             /* Fill the wifi_prov_config_get_data_t structure
              * with Wi-Fi station connection status information. */
@@ -26,7 +28,7 @@ Application Example
             return ESP_OK;
         }
 
-        esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data)
+        esp_err_t set_config_handler(const wifi_prov_config_set_data_t *req_data, wifi_prov_ctx_t **ctx)
         {
             /* Copy contents of req_data->ssid and req_data->password
              * which are Wi-Fi AP credentials to which the device will connect */
@@ -34,7 +36,7 @@ Application Example
              return ESP_OK;
         }
 
-        esp_err_t apply_config_handler(void)
+        esp_err_t apply_config_handler(wifi_prov_ctx_t **ctx)
         {
             /* Apply the Wi-Fi STA credentials saved during set_config */
 
@@ -47,6 +49,7 @@ Application Example
             .get_status_handler   = get_status_handler,
             .set_config_handler   = set_config_handler,
             .apply_config_handler = apply_config_handler,
+            .ctx = NULL
         };
 
         /* Set the endpoint handler */

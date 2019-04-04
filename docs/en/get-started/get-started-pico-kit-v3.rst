@@ -1,40 +1,34 @@
 ESP32-PICO-KIT V3 Getting Started Guide
 =======================================
+:link_to_translation:`zh_CN:[中文]`
 
-This user guide shows how to get started with the ESP32-PICO-KIT V3 mini development board. For description of other versions of the ESP32-PICO-KIT check :doc:`../hw-reference/index`.
+This guide shows how to get started with the ESP32-PICO-KIT V3 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../hw-reference/index`.
 
 
 What You Need
 -------------
 
-* 1 × ESP32-PICO-KIT V3 mini development board
-* 1 × USB A / Micro USB B cable
-* 1 × PC loaded with Windows, Linux or Mac OS
+* ESP32-PICO-KIT V3 mini development board
+* USB 2.0 A to Micro B cable
+* Computer running Windows, Linux, or macOS
+
+You can skip the introduction sections and go directly to Section `Start Application Development`_.
 
 
 Overview
 --------
 
-ESP32-PICO-KIT V3 is a mini development board based on the ESP32-PICO-D4 SIP module produced by `Espressif <https://espressif.com>`_. All the IO signals and system power on ESP32-PICO-D4 are led out through two standard 20 pin x 0.1" pitch headers on both sides for easy interfacing. The development board integrates a USB-UART Bridge circuit, allowing the developers to connect the development board to a PC's USB port for downloads and debugging.
+ESP32-PICO-KIT V3 is an ESP32-based mini development board produced by `Espressif <https://espressif.com>`_. The core of this board is ESP32-PICO-D4 - a System-in-Package (SiP) module.
+
+The development board features a USB-UART Bridge circuit, which allows developers to connect the board to a computer's USB port for flashing and debugging.
+
+All the IO signals and system power on ESP32-PICO-D4 are led out to two rows of 20 x 0.1" header pads on both sides of the development board for easy access.
 
 
 Functional Description
 ----------------------
 
-The following list and figure below describe key components, interfaces and controls of ESP32-PICO-KIT V3 board.
-
-ESP32-PICO-D4
-    Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT V3 board. The complete system of the ESP32 chip has been integrated into the SIP module, requiring only external antenna with LC matching network, decoupling capacitors and pull-up resistors for EN signals to function properly.
-USB-UART Bridge
-    A single chip USB-UART bridge provides up to 1 Mbps transfers rates.
-I/O
-    All the pins on ESP32-PICO-D4 are broken out to the pin headers on the board. Users can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
-Micro USB Port
-    USB interface. It functions as the power supply for the board and the communication interface between PC and ESP32-PICO-KIT V3.
-EN Button
-    Reset button; pressing this button resets the system.
-BOOT Button
-    Holding down the Boot button and pressing the EN button initiates the firmware download mode. Then user can download firmware through the serial port.
+The following figure and the table below describe the key components, interfaces, and controls of the ESP32-PICO-KIT V3 board.
 
 .. figure:: ../../_static/esp32-pico-kit-v3-layout.jpg
     :align: center
@@ -43,18 +37,35 @@ BOOT Button
 
     ESP32-PICO-KIT V3 board layout
 
+Below is the description of the items identified in the figure starting from the top left corner and going clockwise.
+
+==================  =================================================================================================================================
+Key Component       Description
+==================  =================================================================================================================================
+ESP32-PICO-D4       Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT V3 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+
+LDO                 5V-to-3.3V Low dropout voltage regulator (LDO).
+
+USB-UART bridge     Single-chip USB-UART bridge provides up to 1 Mbps transfers rates.
+
+Micro USB Port      USB interface. Power supply for the board as well as the communication interface between a computer and the board.
+
+Power On LED        This red LED turns on when power is supplied to the board.
+
+I/O                 All the pins on ESP32-PICO-D4 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
+
+BOOT Button         Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+
+EN Button           Reset button.
+==================  =================================================================================================================================
+
 
 Start Application Development
-------------------------------
+-----------------------------
 
-Before powering up the ESP32-PICO-KIT V3, please make sure that the board has been received in good condition with no obvious signs of damage.
+Before powering up your ESP32-PICO-KIT V3, please make sure that the board is in good condition with no obvious signs of damage.
 
-To start development of applications, proceed to section :doc:`index`, that will walk you through the following steps:
-
-* :ref:`get-started-setup-toolchain` in your PC to develop applications for ESP32 in C language
-* :ref:`get-started-connect` the module to the PC and verify if it is accessible
-* :ref:`get-started-build-flash` an example application to the ESP32
-* :ref:`get-started-build-monitor` instantly what the application is doing
+After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents

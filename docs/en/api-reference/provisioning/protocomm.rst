@@ -54,8 +54,13 @@ For complete example see :example:`provisioning/softap_prov`
         {
             protocomm_t *pc = protocomm_new();
 
+
             /* Config for protocomm_httpd_start() */
-            protocomm_httpd_config_t pc_config = PROTOCOMM_HTTPD_DEFAULT_CONFIG();
+            protocomm_httpd_config_t pc_config = {
+                .data = {
+                .config = PROTOCOMM_HTTPD_DEFAULT_CONFIG()
+                }
+            };
 
             /* Start protocomm server on top of HTTP */
             protocomm_httpd_start(pc, &pc_config);

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "unity.h"
-#include "rom/ets_sys.h"
-#include "rom/uart.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/uart.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
@@ -13,7 +13,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "../esp_clk_internal.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 
 

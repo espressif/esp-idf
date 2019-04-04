@@ -74,11 +74,19 @@ def _get_partition_table(args):
     else:
         port_info = (" on port " + args.port if args.port else "")
         status("Reading partition table from device{}...".format(port_info))
-        with tempfile.NamedTemporaryFile() as partition_table_file:
-            invoke_args = ["read_flash", str(gen.offset_part_table), str(gen.MAX_PARTITION_LENGTH), partition_table_file.name]
+
+        f_name = None
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f_name = f.name
+
+        try:
+            invoke_args = ["read_flash", str(gen.offset_part_table), str(gen.MAX_PARTITION_LENGTH), f_name]
             _invoke_esptool(invoke_args, args)
-            partition_table = gen.PartitionTable.from_binary(partition_table_file.read())
-        status("Partition table read from device" + port_info)
+            with open(f_name, "rb") as f:
+                partition_table = gen.PartitionTable.from_binary(f.read())
+                status("Partition table read from device" + port_info)
+        finally:
+            os.unlink(f_name)
 
     return partition_table
 

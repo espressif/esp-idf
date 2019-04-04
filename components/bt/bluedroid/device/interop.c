@@ -27,6 +27,7 @@
 #define CASE_RETURN_STR(const) case const: return #const;
 
 #if (SMP_INCLUDED == TRUE)
+#if (!CONFIG_BT_STACK_NO_LOG)
 static const char *interop_feature_string(const interop_feature_t feature)
 {
     switch (feature) {
@@ -36,7 +37,7 @@ static const char *interop_feature_string(const interop_feature_t feature)
 
     return "UNKNOWN";
 }
-
+#endif // (!CONFIG_BT_STACK_NO_LOG)
 // Interface functions
 bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr)
 {
@@ -47,7 +48,9 @@ bool interop_match(const interop_feature_t feature, const bt_bdaddr_t *addr)
     for (size_t i = 0; i != db_size; ++i) {
         if (feature == interop_database[i].feature &&
                 memcmp(addr, &interop_database[i].addr, interop_database[i].len) == 0) {
+#if (!CONFIG_BT_STACK_NO_LOG)
             char bdstr[20] = {0};
+#endif
             LOG_WARN("%s() Device %s is a match for interop workaround %s", __func__,
                      bdaddr_to_string(addr, bdstr, sizeof(bdstr)), interop_feature_string(feature));
             return true;

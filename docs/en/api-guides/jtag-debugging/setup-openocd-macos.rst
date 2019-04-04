@@ -1,7 +1,7 @@
 ************************
 Set up OpenOCD for MacOS
 ************************
-
+:link_to_translation:`zh_CN:[中文]`
 
 Install libusb
 ==============

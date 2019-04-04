@@ -1,5 +1,6 @@
 Debugging Examples
 ==================
+:link_to_translation:`zh_CN:[中文]`
 
 This section describes debugging with GDB from :ref:`jtag-debugging-examples-eclipse` as well as from :ref:`jtag-debugging-examples-command-line`.
 
@@ -34,8 +35,8 @@ Examples in this section
 
 .. _jtag-debugging-examples-eclipse-01:
 
-Navigating though the code, call stack and threads
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Navigating through the code, call stack and threads
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When the target is halted, debugger shows the list of threads in "Debug" window. The line of code where program halted is highlighted in another window below, as shown on the following picture. The LED stops blinking. 
 
@@ -59,7 +60,7 @@ By expanding threads you can navigate throughout the application. Expand Thread 
 
 In another window on right, you can see the disassembled machine code no matter if your project provides it in source or only the binary form.
 
-Go back to the ``app_main()`` in Thread #1 to familiar code of ``blink.c`` file that will be examined in more details in the following examples. Debugger makes it easy to navigate through the code of entire application. This comes handy when stepping though the code and working with breakpoints and will be discussed below.
+Go back to the ``app_main()`` in Thread #1 to familiar code of ``blink.c`` file that will be examined in more details in the following examples. Debugger makes it easy to navigate through the code of entire application. This comes handy when stepping through the code and working with breakpoints and will be discussed below.
 
 
 .. _jtag-debugging-examples-eclipse-02:
@@ -163,7 +164,7 @@ Now resume program by pressing F8 and observe "Monitor" tab.
     :alt: Observing memory location 0x3FF44004 changing one bit to ON"
     :figclass: align-center
 
-    Observing memory location 0x3FF44004 changing one bit to ON"
+    Observing memory location 0x3FF44004 changing one bit to "ON"
 
 You should see one bit being flipped over at memory location ``0x3FF44004`` (and LED changing the state) each time F8 is pressed.
 
@@ -172,7 +173,7 @@ You should see one bit being flipped over at memory location ``0x3FF44004`` (and
     :alt: Observing memory location 0x3FF44004 changing one bit to ON"
     :figclass: align-center
 
-    Observing memory location 0x3FF44004 changing one bit to ON"
+    Observing memory location 0x3FF44004 changing one bit to "OFF"
 
 To set memory use the same "Monitor" tab and the same memory location. Type in alternate bit pattern as previously observed. Immediately after pressing enter you will see LED changing the state. 
 
@@ -182,7 +183,7 @@ To set memory use the same "Monitor" tab and the same memory location. Type in a
 Watching and setting program variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A common debugging tasks is checking the value of a program variable as the program runs. To be able to demonstrate this functionality, update file ``blink.c`` by adding a declaration of a global variable ``int i`` above definition of function ``blink_task``. Then add ``i++`` inside ``loop(1)`` of this function to get ``i`` incremented on each blink.
+A common debugging tasks is checking the value of a program variable as the program runs. To be able to demonstrate this functionality, update file ``blink.c`` by adding a declaration of a global variable ``int i`` above definition of function ``blink_task``. Then add ``i++`` inside ``while(1)`` of this function to get ``i`` incremented on each blink.
 
 Exit debugger, so it is not confused with new code, build and flash the code to the ESP and restart debugger. There is no need to restart OpenOCD.
 
@@ -227,9 +228,9 @@ Command Line
 
 Verify if your target is ready and loaded with :example:`get-started/blink` example. Configure and start debugger following steps in section :ref:`jtag-debugging-using-debugger-command-line`. Pick up where target was left by debugger, i.e. having the application halted at breakpoint established at ``app_main()``::
 
-	Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-	(gdb) 
+    Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
+    43      xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    (gdb) 
 
 
 
@@ -247,123 +248,123 @@ Examples in this section
 
 .. _jtag-debugging-examples-command-line-01:
 
-Navigating though the code, call stack and threads
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Navigating through the code, call stack and threads
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When you see the ``(gdb)`` prompt, the application is halted. LED should not be blinking. 
 
 To find out where exactly the code is halted, enter ``l`` or ``list``, and debugger will show couple of lines of code around the halt point (line 43 of code in file ``blink.c``) ::
 
-	(gdb) l
-	38	    }
-	39	}
-	40	
-	41	void app_main()
-	42	{
-	43	    xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
-	44	}
-	(gdb) 
+    (gdb) l
+    38      }
+    39  }
+    40  
+    41  void app_main()
+    42  {
+    43      xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
+    44  }
+    (gdb) 
 
 
 Check how code listing works by entering, e.g. ``l 30, 40`` to see particular range of lines of code.
 
 You can use ``bt`` or ``backtrace`` to see what function calls lead up to this code::
 
-	(gdb) bt
-	#0  app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
-	(gdb) 
+    (gdb) bt
+    #0  app_main () at /home/user-name/esp/blink/main/./blink.c:43
+    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
+    (gdb) 
 
 Line #0 of output provides the last function call before the application halted, i.e. ``app_main ()`` we have listed previously. The ``app_main ()`` was in turn called by function ``main_task`` from line 339 of code located in file ``cpu_start.c``. 
 
 To get to the context of ``main_task`` in file ``cpu_start.c``, enter ``frame  N``, where N = 1, because the ``main_task`` is listed under #1)::
 
-	(gdb) frame 1
-	#1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
-	339	    app_main();
-	(gdb)
+    (gdb) frame 1
+    #1  0x400d057e in main_task (args=0x0) at /home/user-name/esp/esp-idf/components/esp32/./cpu_start.c:339
+    339     app_main();
+    (gdb)
 
 Enter ``l`` and this will reveal the piece of code that called ``app_main()`` (in line 339)::
 
-	(gdb) l
-	334	        ;
-	335	    }
-	336	#endif
-	337	    //Enable allocation in region where the startup stacks were located.
-	338	    heap_caps_enable_nonos_stack_heaps();
-	339	    app_main();
-	340	    vTaskDelete(NULL);
-	341	}
-	342	
-	(gdb) 
+    (gdb) l
+    334         ;
+    335     }
+    336 #endif
+    337     //Enable allocation in region where the startup stacks were located.
+    338     heap_caps_enable_nonos_stack_heaps();
+    339     app_main();
+    340     vTaskDelete(NULL);
+    341 }
+    342 
+    (gdb) 
 
 By listing some lines before, you will see the function name ``main_task`` we have been looking for::
 
-	(gdb) l 326, 341
-	326	static void main_task(void* args)
-	327	{
-	328	    // Now that the application is about to start, disable boot watchdogs
-	329	    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-	330	    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
-	331	#if !CONFIG_FREERTOS_UNICORE
-	332	    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
-	333	    while (port_xSchedulerRunning[1] == 0) {
-	334	        ;
-	335	    }
-	336	#endif
-	337	    //Enable allocation in region where the startup stacks were located.
-	338	    heap_caps_enable_nonos_stack_heaps();
-	339	    app_main();
-	340	    vTaskDelete(NULL);
-	341	}
-	(gdb) 
+    (gdb) l 326, 341
+    326 static void main_task(void* args)
+    327 {
+    328     // Now that the application is about to start, disable boot watchdogs
+    329     REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
+    330     REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
+    331 #if !CONFIG_FREERTOS_UNICORE
+    332     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+    333     while (port_xSchedulerRunning[1] == 0) {
+    334         ;
+    335     }
+    336 #endif
+    337     //Enable allocation in region where the startup stacks were located.
+    338     heap_caps_enable_nonos_stack_heaps();
+    339     app_main();
+    340     vTaskDelete(NULL);
+    341 }
+    (gdb) 
 
 To see the other code, enter ``i threads``. This will show the list of threads running on target::
 
-	(gdb) i threads
-	  Id   Target Id         Frame 
-	  8    Thread 1073411336 (dport) 0x400d0848 in dport_access_init_core (arg=<optimized out>)
-	    at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:170
-	  7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200, 
-	    xJustPeeking=0) at /home/user-name/esp/esp-idf/components/freertos/./queue.c:1452
-	  6    Thread 1073431096 (Tmr Svc) prvTimerTask (pvParameters=0x0)
-	    at /home/user-name/esp/esp-idf/components/freertos/./timers.c:445
-	  5    Thread 1073410208 (ipc1 : Running) 0x4000bfea in ?? ()
-	  4    Thread 1073432224 (dport) dport_access_init_core (arg=0x0)
-	    at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:150
-	  3    Thread 1073413156 (IDLE) prvIdleTask (pvParameters=0x0)
-	    at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
-	  2    Thread 1073413512 (IDLE) prvIdleTask (pvParameters=0x0)
-	    at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
-	* 1    Thread 1073411772 (main : Running) app_main () at /home/user-name/esp/blink/main/./blink.c:43
-	(gdb) 
+    (gdb) i threads
+      Id   Target Id         Frame 
+      8    Thread 1073411336 (dport) 0x400d0848 in dport_access_init_core (arg=<optimized out>)
+        at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:170
+      7    Thread 1073408744 (ipc0) xQueueGenericReceive (xQueue=0x3ffae694, pvBuffer=0x0, xTicksToWait=1644638200, 
+        xJustPeeking=0) at /home/user-name/esp/esp-idf/components/freertos/./queue.c:1452
+      6    Thread 1073431096 (Tmr Svc) prvTimerTask (pvParameters=0x0)
+        at /home/user-name/esp/esp-idf/components/freertos/./timers.c:445
+      5    Thread 1073410208 (ipc1 : Running) 0x4000bfea in ?? ()
+      4    Thread 1073432224 (dport) dport_access_init_core (arg=0x0)
+        at /home/user-name/esp/esp-idf/components/esp32/./dport_access.c:150
+      3    Thread 1073413156 (IDLE) prvIdleTask (pvParameters=0x0)
+        at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
+      2    Thread 1073413512 (IDLE) prvIdleTask (pvParameters=0x0)
+        at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:3282
+    * 1    Thread 1073411772 (main : Running) app_main () at /home/user-name/esp/blink/main/./blink.c:43
+    (gdb) 
 
 The thread list shows the last function calls per each thread together with the name of C source file if available.
 
 You can navigate to specific thread by entering  ``thread N``, where ``N`` is the thread Id. To see how it works go to thread thread 5::
 
-	(gdb) thread 5
-	[Switching to thread 5 (Thread 1073410208)]
-	#0  0x4000bfea in ?? ()
-	(gdb)
+    (gdb) thread 5
+    [Switching to thread 5 (Thread 1073410208)]
+    #0  0x4000bfea in ?? ()
+    (gdb)
 
 Then check the backtrace::
 
-	(gdb) bt
-	#0  0x4000bfea in ?? ()
-	#1  0x40083a85 in vPortCPUReleaseMutex (mux=<optimized out>) at /home/user-name/esp/esp-idf/components/freertos/./port.c:415
-	#2  0x40083fc8 in vTaskSwitchContext () at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:2846
-	#3  0x4008532b in _frxt_dispatch ()
-	#4  0x4008395c in xPortStartScheduler () at /home/user-name/esp/esp-idf/components/freertos/./port.c:222
-	#5  0x4000000c in ?? ()
-	#6  0x4000000c in ?? ()
-	#7  0x4000000c in ?? ()
-	#8  0x4000000c in ?? ()
-	(gdb) 
+    (gdb) bt
+    #0  0x4000bfea in ?? ()
+    #1  0x40083a85 in vPortCPUReleaseMutex (mux=<optimized out>) at /home/user-name/esp/esp-idf/components/freertos/./port.c:415
+    #2  0x40083fc8 in vTaskSwitchContext () at /home/user-name/esp/esp-idf/components/freertos/./tasks.c:2846
+    #3  0x4008532b in _frxt_dispatch ()
+    #4  0x4008395c in xPortStartScheduler () at /home/user-name/esp/esp-idf/components/freertos/./port.c:222
+    #5  0x4000000c in ?? ()
+    #6  0x4000000c in ?? ()
+    #7  0x4000000c in ?? ()
+    #8  0x4000000c in ?? ()
+    (gdb) 
 
 As you see, the backtrace  may contain several entries. This will let you check what exact sequence of function calls lead to the code where the target halted. Question marks ``??`` instead of a function name indicate that application is available only in binary format, without any source file in C language. The value like ``0x4000bfea`` is the memory address of the function call.
 
-Using ``bt``, ``i threads``, ``thread N`` and ``list`` commands we are now able to navigate through the code of entire application. This comes handy when stepping though the code and working with breakpoints and will be discussed below.
+Using ``bt``, ``i threads``, ``thread N`` and ``list`` commands we are now able to navigate through the code of entire application. This comes handy when stepping through the code and working with breakpoints and will be discussed below.
 
 
 .. _jtag-debugging-examples-command-line-02:
@@ -430,22 +431,22 @@ When debugging, you may resume application and enter code waiting for some event
 
 To check it delete all breakpoints and enter ``c`` to resume application. Then enter Ctrl+C. Application will be halted at some random point and LED will stop blinking. Debugger will print the following::
 
-	(gdb) c
-	Continuing.
-	^CTarget halted. PRO_CPU: PC=0x400D0C00             APP_CPU: PC=0x400D0C00 (active)
-	[New Thread 1073433352]
+    (gdb) c
+    Continuing.
+    ^CTarget halted. PRO_CPU: PC=0x400D0C00             APP_CPU: PC=0x400D0C00 (active)
+    [New Thread 1073433352]
 
-	Program received signal SIGINT, Interrupt.
-	[Switching to Thread 1073413512]
-	0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/esp32/./freertos_hooks.c:52
-	52	        asm("waiti 0");
-	(gdb) 
+    Program received signal SIGINT, Interrupt.
+    [Switching to Thread 1073413512]
+    0x400d0c00 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/esp32/./freertos_hooks.c:52
+    52          asm("waiti 0");
+    (gdb) 
 
 In particular case above, the application has been halted in line 52 of code in file ``freertos_hooks.c``. Now you can resume it again by enter ``c`` or do some debugging as discussed below.
 
 .. note::
 
-	In MSYS2 shell Ctrl+C does not halt the target but exists debugger. To resolve this issue consider debugging with :ref:`jtag-debugging-examples-eclipse` or check a workaround under http://www.mingw.org/wiki/Workaround_for_GDB_Ctrl_C_Interrupt.
+    In MSYS2 shell Ctrl+C does not halt the target but exists debugger. To resolve this issue consider debugging with :ref:`jtag-debugging-examples-eclipse` or check a workaround under http://www.mingw.org/wiki/Workaround_for_GDB_Ctrl_C_Interrupt.
 
 
 .. _jtag-debugging-examples-command-line-04:
@@ -556,7 +557,7 @@ You should see the LED to turn on immediately after entering ``set {unsigned int
 Watching and setting program variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A common debugging tasks is checking the value of a program variable as the program runs. To be able to demonstrate this functionality, update file ``blink.c`` by adding a declaration of a global variable ``int i`` above definition of function ``blink_task``. Then add ``i++`` inside ``loop(1)`` of this function to get ``i`` incremented on each blink.
+A common debugging tasks is checking the value of a program variable as the program runs. To be able to demonstrate this functionality, update file ``blink.c`` by adding a declaration of a global variable ``int i`` above definition of function ``blink_task``. Then add ``i++`` inside ``while(1)`` of this function to get ``i`` incremented on each blink.
 
 Exit debugger, so it is not confused with new code, build and flash the code to the ESP and restart debugger. There is no need to restart OpenOCD.
 

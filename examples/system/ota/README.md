@@ -55,6 +55,10 @@ openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365
 
 ```
 
+* openssl configuration may require you to enter a passphrase for the key.
+* When prompted for the `Common Name (CN)`, enter the name of the server that the ESP32 will connect to. For this local example, it is probably the IP address. The HTTPS client will make sure that the `CN` matches the address given in the HTTPS URL (see Step 3).
+
+
 Copy the certificate to `server_certs` directory inside OTA example directory:
 
 ```
@@ -68,7 +72,7 @@ Start the HTTPS server:
 openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070
 ```
 
-NB: You've probably noticed there is nothing special about the "hello world" example when used for OTA updates. This is because any .bin app file which is built by esp-idf can be used as an app image for OTA. The only difference is whether it is written to a factory partition or an OTA partition.
+NB: You've probably noticed there is nothing special about the "hello world" example when used for OTA updates. This is because any .bin app file which is built by esp-idf can be used as an app image for OTA. The only difference is that when flashed via serial the binary is flashed to the "factory" app partition, and an OTA update flashes to an OTA app partition.
 
 If you have any firewall software running that will block incoming access to port 8070, configure it to allow access while running the example.
 
@@ -85,6 +89,8 @@ https://<host-ip-address>:<host-port>/<firmware-image-filename>
 for e.g,
 https://192.168.0.3:8070/hello-world.bin
 ```
+
+Note: The server part of this URL (e.g. `192.168.0.3`) must match the CN used when generating the certificate and key in Step 2.
 
 Save your changes, and type `make` to build the example.
 
@@ -108,6 +114,25 @@ When the example starts up, it will print "Starting OTA example..." then:
 2. Connect to the HTTP server and download the new image.
 3. Write the image to flash, and configure the next boot from this image.
 4. Reboot
+
+## Support the rollback
+
+This feature allows you to roll back to the previous firmware if the app is not operable. Option :ref:`CONFIG_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the``Over The Air Updates (OTA)`` article). 
+For ``native_ota_example``, added a bit of code to demonstrate how a rollback works. To use it, you need enable the :ref:`CONFIG_APP_ROLLBACK_ENABLE` option in Kconfig and under the "Example Configuration" submenu to set "Number of the GPIO input for diagnostic" to manage the rollback process.
+
+To trigger a rollback, this GPIO must be pulled low while the message `Diagnostics (5 sec)...` which will be on first boot.
+If GPIO is not pulled low then the operable of the app will be confirmed.
+
+## Support the version of application
+
+For ``native_ota_example``, code has been added to demonstrate how to check the version of the application and prevent infinite firmware updates. Only the application with the new version can be downloaded. Version checking is performed after the very first firmware image package has been received, which contains data about the firmware version. The application version can be taken from three places:
+
+1. If ``PROJECT_VER`` variable set in project Cmake/Makefile file, its value will be used.
+2. Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+3. Else, if the project is located inside a Git repository, the output of ``git describe`` will be used.
+4. Otherwise, ``PROJECT_VER`` will be "1".
+
+In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the version of app. Change the version in the file to compile the new firmware.
 
 ## Troubleshooting
 

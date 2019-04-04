@@ -29,7 +29,7 @@
 #include <sys/lock.h>
 #include "esp_vfs.h"
 #include "esp_err.h"
-#include "rom/spi_flash.h"
+#include "esp32/rom/spi_flash.h"
 #include "spiffs_api.h"
 
 static const char* TAG = "SPIFFS";

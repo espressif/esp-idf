@@ -15,7 +15,7 @@
 #include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_log.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
@@ -44,7 +44,7 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 
 #define ADC_FSM_RSTB_WAIT_DEFAULT     (8)
@@ -1506,7 +1506,6 @@ esp_err_t adc1_adc_mode_acquire()
     //lazy initialization
     //for adc1, block until acquire the lock
     _lock_acquire( &adc1_i2s_lock );
-    ESP_LOGD( RTC_MODULE_TAG, "adc mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
     // for now the WiFi would use ADC2 and set xpd_sar force on.
     // so we can not reset xpd_sar to fsm mode directly.
@@ -1526,7 +1525,6 @@ esp_err_t adc1_lock_release()
     // We should handle this after the synchronization mechanism is established.
 
     _lock_release( &adc1_i2s_lock );
-    ESP_LOGD( RTC_MODULE_TAG, "returns adc1 lock." );
     return ESP_OK;
 }
 

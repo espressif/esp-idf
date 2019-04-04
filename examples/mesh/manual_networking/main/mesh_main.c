@@ -69,6 +69,7 @@ void mesh_scan_done_handler(int num)
                      i, record.ssid, assoc.layer, assoc.layer_cap, assoc.assoc,
                      assoc.assoc_cap, assoc.layer2_cap, MAC2STR(record.bssid),
                      record.primary, record.rssi, MAC2STR(assoc.mesh_id), assoc.encrypted ? "IE Encrypted" : "IE Unencrypted");
+
 #ifdef MESH_SET_NODE
             if (assoc.mesh_type != MESH_IDLE && assoc.layer_cap
                     && assoc.assoc < assoc.assoc_cap && record.rssi > -70) {
@@ -82,6 +83,7 @@ void mesh_scan_done_handler(int num)
                         my_type = MESH_LEAF;
                     }
                     my_layer = parent_assoc.layer + 1;
+                    break;
                 }
             }
 #endif
@@ -99,7 +101,7 @@ void mesh_scan_done_handler(int num)
 #endif
         }
     }
-
+    esp_mesh_flush_scan_result();
     if (parent_found) {
         /*
          * parent
@@ -110,11 +112,20 @@ void mesh_scan_done_handler(int num)
                sizeof(parent_record.ssid));
         parent.sta.bssid_set = 1;
         memcpy(&parent.sta.bssid, parent_record.bssid, 6);
+        ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(parent_record.authmode));
         if (my_type == MESH_ROOT) {
+            if (parent_record.authmode != WIFI_AUTH_OPEN) {
+                memcpy(&parent.sta.password, CONFIG_MESH_ROUTER_PASSWD,
+                       strlen(CONFIG_MESH_ROUTER_PASSWD));
+            }
             ESP_LOGW(MESH_TAG, "<PARENT>%s, "MACSTR", channel:%u, rssi:%d",
                      parent_record.ssid, MAC2STR(parent_record.bssid),
                      parent_record.primary, parent_record.rssi);
         } else {
+            if (parent_record.authmode != WIFI_AUTH_OPEN) {
+                memcpy(&parent.sta.password, CONFIG_MESH_AP_PASSWD,
+                       strlen(CONFIG_MESH_AP_PASSWD));
+            }
             ESP_LOGW(MESH_TAG,
                      "<PARENT>%s, layer:%d/%d, assoc:%d/%d, %d, "MACSTR", channel:%u, rssi:%d",
                      parent_record.ssid, parent_assoc.layer,
@@ -131,13 +142,14 @@ void mesh_scan_done_handler(int num)
         if (CONFIG_MESH_IE_CRYPTO_FUNCS) {
             /* modify IE crypto key */
             ESP_LOGW(MESH_TAG, "<Config>modify IE crypto key to %s", CONFIG_MESH_IE_CRYPTO_KEY);
+            ESP_ERROR_CHECK(esp_mesh_set_ie_crypto_funcs(&g_wifi_default_mesh_crypto_funcs));
             ESP_ERROR_CHECK(esp_mesh_set_ie_crypto_key(CONFIG_MESH_IE_CRYPTO_KEY, strlen(CONFIG_MESH_IE_CRYPTO_KEY)));
         } else {
             /* disable IE crypto */
             ESP_LOGW(MESH_TAG, "<Config>disable IE crypto");
             ESP_ERROR_CHECK(esp_mesh_set_ie_crypto_funcs(NULL));
         }
-        ESP_ERROR_CHECK(esp_wifi_scan_stop());
+        esp_wifi_scan_stop();
         scan_config.show_hidden = 1;
         scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
         ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));
@@ -156,7 +168,7 @@ void mesh_event_handler(mesh_event_t event)
         ESP_LOGI(MESH_TAG, "<MESH_EVENT_STARTED>ID:"MACSTR"", MAC2STR(id.addr));
         mesh_layer = esp_mesh_get_layer();
         ESP_ERROR_CHECK(esp_mesh_set_self_organized(0, 0));
-        ESP_ERROR_CHECK(esp_wifi_scan_stop());
+        esp_wifi_scan_stop();
         wifi_scan_config_t scan_config = { 0 };
         /* mesh softAP is hidden */
         scan_config.show_hidden = 1;
@@ -214,7 +226,7 @@ void mesh_event_handler(mesh_event_t event)
         mesh_disconnected_indicator();
         mesh_layer = esp_mesh_get_layer();
         if (event.info.disconnected.reason == WIFI_REASON_ASSOC_TOOMANY) {
-            ESP_ERROR_CHECK(esp_wifi_scan_stop());
+            esp_wifi_scan_stop();
             scan_config.show_hidden = 1;
             scan_config.scan_type = WIFI_SCAN_TYPE_PASSIVE;
             ESP_ERROR_CHECK(esp_wifi_scan_start(&scan_config, 0));

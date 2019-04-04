@@ -1,0 +1,2 @@
+# For CI build example assuming certificates stored on sdcard
+CONFIG_EXAMPLE_SDCARD_CERTS=y

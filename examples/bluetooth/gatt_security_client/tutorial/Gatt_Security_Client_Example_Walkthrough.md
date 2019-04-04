@@ -73,7 +73,7 @@ The rest of the configuration for the GATT Client is performed normally in the s
 ```c
  case ESP_GAP_BLE_PASSKEY_NOTIF_EVT:  
  ///the app will receive this evt when the IO  has Output capability and the peer device IO has Input capability.
- ///show the passkey number to the user to input it in the peer deivce.
+ ///show the passkey number to the user to input it in the peer device.
       ESP_LOGE(GATTS_TABLE_TAG, "The passkey Notify number:%d", param->ble_security.key_notif.passkey);
       break;
 

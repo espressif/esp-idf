@@ -2,6 +2,8 @@
 # and component makefiles (component_wrapper.mk)
 #
 
+PYTHON=$(call dequote,$(CONFIG_PYTHON))
+
 # Include project config makefile, if it exists.
 #
 # (Note that we only rebuild this makefile automatically for some

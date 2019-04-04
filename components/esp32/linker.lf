@@ -1,7 +1,6 @@
 [mapping]
 archive: libesp32.a
 entries: 
-    core_dump (noflash_text)
     panic (noflash)
 
 [mapping]
@@ -28,3 +27,16 @@ entries:
 archive: libgcov.a
 entries: 
     * (noflash)
+
+[mapping]
+archive: libpp.a
+entries: 
+    : ESP32_WIFI_IRAM_OPT = y
+    * (wifi_iram)
+ 
+[mapping]
+archive: libnet80211.a
+entries: 
+    : ESP32_WIFI_IRAM_OPT = y
+    * (wifi_iram)
+ 

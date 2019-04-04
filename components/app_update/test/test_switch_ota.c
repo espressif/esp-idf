@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include "string.h"
 
-#include "rom/spi_flash.h"
-#include "rom/rtc.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/spi_flash.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -237,6 +237,12 @@ static void reset_output_pin(uint32_t num_pin)
 }
 #endif
 
+static void mark_app_valid(void)
+{
+#ifdef CONFIG_APP_ROLLBACK_ENABLE
+    TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
+#endif
+}
 
 /* @brief Checks and prepares the partition so that the factory app is launched after that.
  */
@@ -262,15 +268,18 @@ static void test_flow1(void)
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            mark_app_valid();
             copy_current_app_to_next_part_and_reboot(cur_app);
             break;
         case 4:
             ESP_LOGI(TAG, "OTA1");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+            mark_app_valid();
             copy_current_app_to_next_part_and_reboot(cur_app);
             break;
         case 5:
             ESP_LOGI(TAG, "OTA0");
+            mark_app_valid();
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             erase_ota_data();
             break;
@@ -302,6 +311,7 @@ static void test_flow2(void)
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            mark_app_valid();
             copy_current_app_to_next_part(cur_app, get_next_update_partition());
             corrupt_ota_data(CORR_CRC_1_SECTOR_OTA_DATA);
             reboot_as_deep_sleep();
@@ -338,11 +348,13 @@ static void test_flow3(void)
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            mark_app_valid();
             copy_current_app_to_next_part_and_reboot(cur_app);
             break;
         case 4:
             ESP_LOGI(TAG, "OTA1");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+            mark_app_valid();
             copy_current_app_to_next_part(cur_app, get_next_update_partition());
             corrupt_ota_data(CORR_CRC_2_SECTOR_OTA_DATA);
             reboot_as_deep_sleep();
@@ -394,7 +406,7 @@ static void test_flow4(void)
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
-
+            mark_app_valid();
             TEST_ESP_OK(nvs_flash_init());
             TEST_ESP_OK(nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &handle));
             TEST_ESP_OK(nvs_get_i32(handle, "boot_count", &boot_count_nvs));
@@ -523,7 +535,7 @@ static void test_rollback1(void)
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
 #endif
-            esp_ota_mark_app_valid_cancel_rollback();
+            TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
             TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
             reboot_as_deep_sleep();
@@ -602,7 +614,7 @@ static void test_rollback2(void)
 #else
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_PENDING_VERIFY, ota_state);
 #endif
-            esp_ota_mark_app_valid_cancel_rollback();
+            TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
             TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
             TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
             TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
@@ -683,6 +695,7 @@ static void test_erase_last_app_flow(void)
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            mark_app_valid();
             app_update();
             reboot_as_deep_sleep();
             break;

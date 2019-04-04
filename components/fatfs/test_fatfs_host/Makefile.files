@@ -5,7 +5,7 @@ SOURCE_FILES := \
 	ffsystem.c \
 	ffunicode.c \
 	diskio_wl.c \
-	) 
+	)
 
 INCLUDE_DIRS := \
 	. \
@@ -21,8 +21,12 @@ INCLUDE_DIRS := \
 	vfs/include \
 	) \
 	$(addprefix ../../../components/, \
+	esp_rom/include \
+	xtensa/include \
+	xtensa/esp32/include \
 	soc/esp32/include \
 	esp32/include \
+	esp_common/include \
 	bootloader_support/include \
 	app_update/include \
 	spi_flash/include \

@@ -33,7 +33,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCI_CMD_BUF_SIZE))
+#define HCI_GET_CMD_BUF(paramlen)       ((BT_HDR *)osi_malloc(HCIC_PREAMBLE_SIZE + sizeof(BT_HDR) + paramlen))
 
 #if (defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE)
 
@@ -524,7 +524,7 @@ BOOLEAN btsnd_hcic_ble_encrypt (UINT8 *key, UINT8 key_len,
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF(sizeof(BT_HDR) + sizeof (void *) +
+    if ((p = HCI_GET_CMD_BUF(sizeof (void *) +
                              HCIC_PARAM_SIZE_BLE_ENCRYPT)) == NULL) {
         return (FALSE);
     }
@@ -563,7 +563,7 @@ BOOLEAN btsnd_hcic_ble_rand (void *p_cmd_cplt_cback)
     BT_HDR *p;
     UINT8 *pp;
 
-    if ((p = HCI_GET_CMD_BUF(sizeof(BT_HDR) + sizeof (void *) +
+    if ((p = HCI_GET_CMD_BUF(sizeof (void *) +
                              HCIC_PARAM_SIZE_BLE_RAND)) == NULL) {
         return (FALSE);
     }
@@ -994,6 +994,28 @@ BOOLEAN btsnd_hcic_ble_set_data_length(UINT16 conn_handle, UINT16 tx_octets, UIN
     UINT16_TO_STREAM(pp, conn_handle);
     UINT16_TO_STREAM(pp, tx_octets);
     UINT16_TO_STREAM(pp, tx_time);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+
+BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF (HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_VENDOR_BLE_ADV_REPORT_FLOW_CONTROL);
+    UINT8_TO_STREAM (pp, HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL);
+    UINT16_TO_STREAM (pp, num);
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
     return TRUE;

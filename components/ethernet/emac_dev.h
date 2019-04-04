@@ -15,12 +15,12 @@
 #ifndef _EMAC_DEV_H_
 #define _EMAC_DEV_H_
 
-#include <stdint.h>
-#include "soc/emac_reg_v2.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "esp_types.h"
+#include "soc/emac_reg_v2.h"
 
 #define EMAC_INTR_ENABLE_BIT (EMAC_DMAIN_TIE | EMAC_DMAIN_RIE | EMAC_DMAIN_RBUE | EMAC_DMAIN_NISE)
 
@@ -37,7 +37,7 @@ typedef struct dma_extended_desc {
     uint32_t desc5;
     uint32_t desc6;
     uint32_t desc7;
-}dma_extended_desc_t;
+} dma_extended_desc_t;
 
 void emac_enable_clk(bool enable);
 esp_err_t emac_reset(void);

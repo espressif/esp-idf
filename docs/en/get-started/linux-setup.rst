@@ -71,10 +71,10 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
         printenv PATH
 
-    You are looking for similar result containing toolchain's path at the end of displayed string::
+    You are looking for similar result containing toolchain's path at the beginning of displayed string::
 
         $ printenv PATH
-        /home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/user-name/esp/xtensa-esp32-elf/bin
+        /home/user-name/esp/xtensa-esp32-elf/bin:/home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
     Instead of ``/home/user-name`` there should be a home path specific to your installation.
 
