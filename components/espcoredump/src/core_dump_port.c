@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <string.h>
 #include <stdbool.h>
-#include "esp_panic.h"
+#include "esp_debug_helpers.h"
 #include "esp_core_dump_priv.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
@@ -41,7 +41,7 @@ uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t* const tasks,
 bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snaphort, uint32_t tcb_sz)
 {
     XtExcFrame *exc_frame = (XtExcFrame*)frame;
-     
+
     if (!esp_tcb_addr_is_sane((uint32_t)task_snaphort->tcb_addr, tcb_sz)) {
         ESP_COREDUMP_LOG_PROCESS("Bad TCB addr %x!", task_snaphort->tcb_addr);
         return false;
@@ -74,7 +74,7 @@ bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snapho
 }
 
 bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_t *length)
-{      
+{
     uint32_t len = 0;
     bool task_is_valid = false;
     len = (uint32_t)task_snaphort->stack_end - (uint32_t)task_snaphort->stack_start;

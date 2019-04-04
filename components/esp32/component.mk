@@ -17,8 +17,7 @@ LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.project.ld esp32.peripherals.ld
 #ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
 #linker will ignore panic_highint_hdl.S as it has no other files depending on any
 #symbols in it.
-COMPONENT_ADD_LDFLAGS += $(COMPONENT_PATH)/libhal.a \
-                         -L $(COMPONENT_PATH)/ld \
+COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/ld \
                          -T esp32_out.ld \
                          -u ld_include_panic_highint_hdl \
                          $(addprefix -T ,$(LINKER_SCRIPTS)) \

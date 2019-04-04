@@ -33,7 +33,7 @@
 #include "driver/dac.h"
 #include "adc1_i2s_private.h"
 
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"

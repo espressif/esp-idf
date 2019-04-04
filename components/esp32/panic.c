@@ -33,7 +33,8 @@
 #include "soc/rtc_wdt.h"
 
 #include "esp_private/gdbstub.h"
-#include "esp_panic.h"
+#include "esp_debug_helpers.h"
+#include "esp_private/panic_reason.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_core_dump.h"
@@ -382,7 +383,7 @@ static void illegal_instruction_helper(XtExcFrame *frame)
     panicPutStr("Memory dump at 0x");
     panicPutHex(epc);
     panicPutStr(": ");
-    
+
     panicPutHex(*pepc);
     panicPutStr(" ");
     panicPutHex(*(pepc + 1));

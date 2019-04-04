@@ -319,7 +319,8 @@ def main():
         idf_path = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
     parser = argparse.ArgumentParser(description='ESP32 esp_err_to_name lookup generator for esp_err_t')
-    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.', default=idf_path + '/components/esp32/esp_err_to_name.c.in')
+    parser.add_argument('--c_input', help='Path to the esp_err_to_name.c.in template input.',
+                        default=idf_path + '/components/esp_common/src/esp_err_to_name.c.in')
     parser.add_argument('--c_output', help='Path to the esp_err_to_name.c output.', default=idf_path + '/components/esp32/esp_err_to_name.c')
     parser.add_argument('--rst_output', help='Generate .rst output and save it into this file')
     args = parser.parse_args()

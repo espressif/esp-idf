@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <esp_types.h>
 #include <string.h>
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"

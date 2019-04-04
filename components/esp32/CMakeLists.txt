@@ -20,12 +20,10 @@ else()
                    "esp_adapter.c"
                    "esp_timer_esp32.c"
                    "esp_himem.c"
-                   "freertos_hooks.c"
                    "gdbstub.c"
                    "hw_random.c"
                    "int_wdt.c"
                    "intr_alloc.c"
-                   "ipc.c"
                    "panic.c"
                    "pm_esp32.c"
                    "pm_trace.c"
@@ -70,7 +68,6 @@ else()
 
     target_linker_script(${COMPONENT_TARGET} "ld/esp32.peripherals.ld")
 
-    target_link_libraries(${COMPONENT_TARGET} "${CMAKE_CURRENT_SOURCE_DIR}/libhal.a")
     target_link_libraries(${COMPONENT_TARGET} gcc)
     target_link_libraries(${COMPONENT_TARGET} "-u call_user_start_cpu0")
 

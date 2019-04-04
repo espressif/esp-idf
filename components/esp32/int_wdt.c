@@ -23,7 +23,7 @@
 #include "freertos/task.h"
 #include <esp_types.h>
 #include "esp_err.h"
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_group_struct.h"
