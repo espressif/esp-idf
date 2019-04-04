@@ -321,7 +321,7 @@ class GenerationModel:
 
         return scheme_dictionary
 
-    def generate_rules(self, sdkconfig, sections_infos):
+    def generate_rules(self, sections_infos):
         placement_rules = collections.defaultdict(list)
 
         scheme_dictionary = self._build_scheme_dictionary()
@@ -334,33 +334,18 @@ class GenerationModel:
 
         # Generate rules based on mapping fragments
         for mapping in self.mappings.values():
-            for (condition, entries) in mapping.entries:
-                condition_true = False
+            mapping_rules = list()
+            archive = mapping.archive
+            for (obj, symbol, scheme_name) in mapping.entries:
+                try:
+                    if not (obj == Mapping.MAPPING_ALL_OBJECTS and symbol is None and
+                            scheme_name == GenerationModel.DEFAULT_SCHEME):
+                        self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
+                except KeyError:
+                    message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
+                    raise GenerationException(message, mapping)
 
-                # Only non-default condition are evaluated agains sdkconfig model
-                if condition != Mapping.DEFAULT_CONDITION:
-                    try:
-                        condition_true = sdkconfig.evaluate_expression(condition)
-                    except Exception as e:
-                        raise GenerationException(e.message, mapping)
-                else:
-                    condition_true = True
-
-                if condition_true:
-
-                    mapping_rules = list()
-
-                    archive = mapping.archive
-                    for (obj, symbol, scheme_name) in entries:
-                        try:
-                            self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
-                        except KeyError:
-                            message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
-                            raise GenerationException(message, mapping)
-
-                    all_mapping_rules[mapping.name] = mapping_rules
-
-                    break   # Exit on first condition that evaluates to true
+            all_mapping_rules[mapping.name] = mapping_rules
 
         # Detect rule conflicts
         for mapping_rules in all_mapping_rules.items():
@@ -397,8 +382,7 @@ class GenerationModel:
                 if intersections and rule_a.maps_same_entities_as(rule_b):
                     rules_string = str([str(rule_a), str(rule_b)])
                     message = "Rules " + rules_string + " map sections " + str(list(intersections)) + " into multiple targets."
-                    mapping = self.mappings[Mapping.get_mapping_name_from_archive(archive)]
-                    raise GenerationException(message, mapping)
+                    raise GenerationException(message)
 
     def _create_extra_rules(self, rules):
         # This function generates extra rules for symbol specific rules. The reason for generating extra rules is to isolate,
@@ -523,7 +507,7 @@ class TemplateModel:
                 # Does not match marker syntax
                 self.members.append(line)
 
-    def fill(self, mapping_rules, sdkconfig):
+    def fill(self, mapping_rules):
         for member in self.members:
             target = None
             try:

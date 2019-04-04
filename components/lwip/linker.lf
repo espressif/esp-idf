@@ -1,7 +1,7 @@
-[mapping]
+[mapping:lwip]
 archive: liblwip.a
 entries:
-    :LWIP_IRAM_OPTIMIZATION = y
+  if LWIP_IRAM_OPTIMIZATION = y:
     ethernetif:ethernet_low_level_output (noflash_text)
     ethernetif:ethernetif_input (noflash_text)
     wlanif:low_level_output (noflash_text)
@@ -55,3 +55,5 @@ entries:
     pbuf:pbuf_header_impl (noflash_text)
     pbuf:pbuf_header (noflash_text)
     ethernet:ethernet_input (noflash_text)
+  else:
+    * (default)
