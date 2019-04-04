@@ -837,10 +837,10 @@ static void l2c_csm_config (tL2C_CCB *p_ccb, UINT16 event, void *p_data)
         if (p_ccb->local_cid >= L2CAP_FIRST_FIXED_CHNL &&
                 p_ccb->local_cid <= L2CAP_LAST_FIXED_CHNL) {
             if (p_ccb->local_cid < L2CAP_BASE_APPL_CID) {
-                if (l2cb.fixed_reg[p_ccb->local_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb)
+                if (l2cb.fixed_reg[p_ccb->local_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb) {
                     (*l2cb.fixed_reg[p_ccb->local_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb)
                     (p_ccb->local_cid, p_ccb->p_lcb->remote_bd_addr, (BT_HDR *)p_data);
-                else {
+                } else {
                     osi_free (p_data);
                 }
                 break;
