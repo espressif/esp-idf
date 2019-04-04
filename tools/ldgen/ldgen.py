@@ -19,10 +19,11 @@ import argparse
 import sys
 import tempfile
 
-from fragments import FragmentFileModel
+from fragments import FragmentFile
 from sdkconfig import SDKConfig
 from generation import GenerationModel, TemplateModel, SectionsInfo
 from common import LdGenFailure
+from pyparsing import ParseException, ParseFatalException
 
 
 def main():
@@ -52,13 +53,11 @@ def main():
 
     argparser.add_argument(
         "--config", "-c",
-        help="Project configuration",
-        type=argparse.FileType("r"))
+        help="Project configuration")
 
     argparser.add_argument(
         "--kconfig", "-k",
-        help="IDF Kconfig file",
-        type=argparse.FileType("r"))
+        help="IDF Kconfig file")
 
     argparser.add_argument(
         "--env", "-e",
@@ -89,15 +88,22 @@ def main():
 
         generation_model = GenerationModel()
 
+        sdkconfig = SDKConfig(kconfig_file, config_file, args.env)
+
         for fragment_file in fragment_files:
-            fragment_file = FragmentFileModel(fragment_file)
+            try:
+                fragment_file = FragmentFile(fragment_file, sdkconfig)
+            except (ParseException, ParseFatalException) as e:
+                # ParseException is raised on incorrect grammar
+                # ParseFatalException is raised on correct grammar, but inconsistent contents (ex. duplicate
+                # keys, key unsupported by fragment, unexpected number of values, etc.)
+                raise LdGenFailure("failed to parse %s\n%s" % (fragment_file.name, str(e)))
             generation_model.add_fragments_from_file(fragment_file)
 
-        sdkconfig = SDKConfig(kconfig_file, config_file, args.env)
-        mapping_rules = generation_model.generate_rules(sdkconfig, sections_infos)
+        mapping_rules = generation_model.generate_rules(sections_infos)
 
         script_model = TemplateModel(input_file)
-        script_model.fill(mapping_rules, sdkconfig)
+        script_model.fill(mapping_rules)
 
         with tempfile.TemporaryFile("w+") as output:
             script_model.write(output)

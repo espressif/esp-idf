@@ -1,4 +1,4 @@
-[mapping]
+[mapping:app_trace]
 archive: libapp_trace.a
 entries: 
     app_trace (noflash)
@@ -8,10 +8,11 @@ entries:
     SEGGER_SYSVIEW_Config_FreeRTOS (noflash)
     SEGGER_SYSVIEW_FreeRTOS (noflash)
 
-[mapping]
+[mapping:driver]
 archive: libdriver.a
 entries:
-    : SYSVIEW_TS_SOURCE_TIMER_00 = y || SYSVIEW_TS_SOURCE_TIMER_01 = y 
-      || SYSVIEW_TS_SOURCE_TIMER_10 = y || SYSVIEW_TS_SOURCE_TIMER_11 = y
-    timer (noflash)
-
+    if SYSVIEW_TS_SOURCE_TIMER_00 = y || SYSVIEW_TS_SOURCE_TIMER_01 = y
+       || SYSVIEW_TS_SOURCE_TIMER_10 = y || SYSVIEW_TS_SOURCE_TIMER_11 = y:
+      timer (noflash)
+    else:
+      * (default)
