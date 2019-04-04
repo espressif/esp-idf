@@ -25,6 +25,14 @@
 
 const static char TAG[] = "test_spi";
 
+#define PIN_NUM_MISO    HSPI_IOMUX_PIN_NUM_MISO
+#define PIN_NUM_MOSI    HSPI_IOMUX_PIN_NUM_MOSI
+#define PIN_NUM_CLK     HSPI_IOMUX_PIN_NUM_CLK
+#define PIN_NUM_CS      HSPI_IOMUX_PIN_NUM_CS
+
+#define TEST_SPI_HOST   HSPI_HOST
+#define TEST_SLAVE_HOST VSPI_HOST
+
 #define SPI_BUS_TEST_DEFAULT_CONFIG() {\
         .miso_io_num=PIN_NUM_MISO, \
         .mosi_io_num=PIN_NUM_MOSI,\
@@ -43,6 +51,14 @@ const static char TAG[] = "test_spi";
     .cs_ena_posttrans = 0,\
     .input_delay_ns = 62.5,\
 }
+
+//default device config for slave devices
+#define SPI_SLAVE_TEST_DEFAULT_CONFIG() {\
+        .mode=0,\
+        .spics_io_num=PIN_NUM_CS,\
+        .queue_size=3,\
+        .flags=0,\
+    }
 
 #define FUNC_SPI    1
 #define FUNC_GPIO   2
@@ -289,6 +305,65 @@ TEST_CASE("SPI Master test, interaction of multiple devs", "[spi][ignore]") {
     ret=spi_bus_remove_device(handle2);
     TEST_ASSERT(ret==ESP_OK);
     destroy_spi_bus(handle1);
+}
+
+static esp_err_t test_master_pins(int mosi, int miso, int sclk, int cs)
+{
+    esp_err_t ret;
+    spi_bus_config_t cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    cfg.mosi_io_num = mosi;
+    cfg.miso_io_num = miso;
+    cfg.sclk_io_num = sclk;
+
+    spi_device_interface_config_t master_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    master_cfg.spics_io_num = cs;
+
+    ret = spi_bus_initialize(TEST_SPI_HOST, &cfg, 1);
+    if (ret != ESP_OK) return ret;
+
+    spi_device_handle_t spi;
+    ret = spi_bus_add_device(TEST_SPI_HOST, &master_cfg, &spi);
+    if (ret != ESP_OK) {
+        spi_bus_free(TEST_SPI_HOST);
+        return ret;
+    }
+
+    TEST_ASSERT(spi_bus_remove_device(spi) == ESP_OK);
+    TEST_ASSERT(spi_bus_free(TEST_SPI_HOST) == ESP_OK);
+    return ESP_OK;
+}
+
+static esp_err_t test_slave_pins(int mosi, int miso, int sclk, int cs)
+{
+    esp_err_t ret;
+    spi_bus_config_t cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    cfg.mosi_io_num = mosi;
+    cfg.miso_io_num = miso;
+    cfg.sclk_io_num = sclk;
+
+    spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+    slave_cfg.spics_io_num = cs;
+
+    ret = spi_slave_initialize(TEST_SLAVE_HOST, &cfg, &slave_cfg, 1);
+    if (ret != ESP_OK) return ret;
+
+    spi_slave_free(TEST_SLAVE_HOST);
+    return ESP_OK;
+}
+
+TEST_CASE("spi placed on input-only pins", "[spi]")
+{
+    TEST_ESP_OK(test_master_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ASSERT(test_master_pins(34, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS)!=ESP_OK);
+    TEST_ESP_OK(test_master_pins(PIN_NUM_MOSI, 34, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ASSERT(test_master_pins(PIN_NUM_MOSI, PIN_NUM_MISO, 34, PIN_NUM_CS)!=ESP_OK);
+    TEST_ASSERT(test_master_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, 34)!=ESP_OK);
+
+    TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ESP_OK(test_slave_pins(34, PIN_NUM_MISO, PIN_NUM_CLK, PIN_NUM_CS));
+    TEST_ASSERT(test_slave_pins(PIN_NUM_MOSI, 34, PIN_NUM_CLK, PIN_NUM_CS)!=ESP_OK);
+    TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, 34, PIN_NUM_CS));
+    TEST_ESP_OK(test_slave_pins(PIN_NUM_MOSI, PIN_NUM_MISO, PIN_NUM_CLK, 34));
 }
 
 TEST_CASE("spi bus setting with different pin configs", "[spi]")
@@ -676,13 +751,6 @@ static void master_deinit(spi_device_handle_t spi)
 {
     TEST_ESP_OK( spi_bus_remove_device(spi) );
     TEST_ESP_OK( spi_bus_free(HSPI_HOST) );
-}
-
-#define SPI_SLAVE_TEST_DEFAULT_CONFIG() {\
-        .mode=0,\
-        .spics_io_num=PIN_NUM_CS,\
-        .queue_size=3,\
-        .flags=0,\
 }
 
 static void slave_pull_up(const spi_bus_config_t* cfg, int spics_io_num)
