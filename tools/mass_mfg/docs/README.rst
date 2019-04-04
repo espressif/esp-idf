@@ -181,3 +181,5 @@ The mfg\_gen.py utility is using the generated CSV Configuration file and Master
 .. note:: The default numeric value: 1,2,3... of ``fileid`` argument, corresponds to each row having device instance values in master csv values file.
 
 .. note:: ``bin/`` **and** ``csv/`` **sub-directories are created in the** ``outdir`` **directory specified while running this utility. The binary files generated will be stored in** ``bin/`` **and the intermediate csv files generated will be stored in** ``csv/``.
+
+.. note:: Comments are supported in input config csv file only.

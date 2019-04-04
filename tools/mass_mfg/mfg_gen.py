@@ -55,7 +55,7 @@ def verify_keys_exist(values_file_keys, input_config_file):
     keys_missing = []
 
     config_file = open(input_config_file,'r')
-    config_file_reader = csv.reader(config_file, delimiter=',')
+    config_file_reader = csv.reader(filter(lambda row: row[0] != '#',config_file), delimiter=',')
     for line_no, config_data in enumerate(config_file_reader,1):
         if 'namespace' not in config_data:
             if values_file_keys:
@@ -84,7 +84,7 @@ def verify_datatype_encoding(input_config_file):
     line_no = 0
 
     config_file = open(input_config_file,'r')
-    config_file_reader = csv.reader(config_file, delimiter=',')
+    config_file_reader = csv.reader(filter(lambda row: row[0] != '#',config_file), delimiter=',')
     for config_data in config_file_reader:
         line_no += 1
         if config_data[1] not in valid_datatypes:
@@ -102,7 +102,7 @@ def verify_file_data_count(input_config_file, keys_repeat):
     """
     line_no = 0
     config_file = open(input_config_file, 'r')
-    config_file_reader = csv.reader(config_file, delimiter=',')
+    config_file_reader = csv.reader(filter(lambda row: row[0] != '#',config_file), delimiter=',')
     for line in config_file_reader:
         line_no += 1
         if len(line) != 3 and line[0] not in keys_repeat:
@@ -155,7 +155,7 @@ def add_config_data_per_namespace(input_config_file):
     config_data_per_namespace = []
 
     csv_config_file = open(input_config_file,'r')
-    config_file_reader = csv.reader(csv_config_file, delimiter=',')
+    config_file_reader = csv.reader(filter(lambda row: row[0] != '#',csv_config_file), delimiter=',')
 
     # `config_data_per_namespace` is added to `config_data_to_write` list after reading next namespace
     for config_data in config_file_reader:
@@ -515,7 +515,6 @@ def main(input_config_file=None,input_values_file=None,target_file_name_prefix=N
                 output_target_dir = create_dir("bin/", output_dir_path)
 
                 # Verify if output bin file does not exist
-                # todo for keys
                 output_file_prefix = target_file_name_prefix + "-" + file_identifier_value
                 output_bin_file = output_target_dir + output_file_prefix + ".bin"
                 if os.path.isfile(output_bin_file):
