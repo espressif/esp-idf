@@ -54,7 +54,7 @@ else()
     set(COMPONENT_ADD_INCLUDEDIRS "include")
     set(COMPONENT_PRIV_INCLUDEDIRS "include_bootloader")
     set(COMPONENT_REQUIRES)
-    set(COMPONENT_PRIV_REQUIRES spi_flash mbedtls micro-ecc efuse)
+    set(COMPONENT_PRIV_REQUIRES spi_flash mbedtls efuse)
 endif()
 
 register_component()
