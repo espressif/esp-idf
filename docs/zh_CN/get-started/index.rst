@@ -168,7 +168,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
 .. _get-started-get-packages:
 
-第四步：安装 Phthon 软件包
+第四步：安装 Python 软件包
 ==========================
 
 ESP-IDF 所需 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您可以运行以下命令进行安装： :: 
