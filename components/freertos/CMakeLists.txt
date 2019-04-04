@@ -1,8 +1,8 @@
 set(COMPONENT_ADD_INCLUDEDIRS include)
 set(COMPONENT_PRIV_INCLUDEDIRS include/freertos)
-set(COMPONENT_SRCS "FreeRTOS-openocd.c"
-                   "croutine.c"
+set(COMPONENT_SRCS "croutine.c"
                    "event_groups.c"
+                   "FreeRTOS-openocd.c"
                    "list.c"
                    "port.c"
                    "portasm.S"
@@ -20,6 +20,7 @@ set(COMPONENT_SRCS "FreeRTOS-openocd.c"
 # app_trace is required by FreeRTOS headers only when CONFIG_SYSVIEW_ENABLE=y,
 # but requirements can't depend on config options, so always require it.
 set(COMPONENT_REQUIRES app_trace)
+set(COMPONENT_PRIV_REQUIRES esp_common)
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 register_component()
 

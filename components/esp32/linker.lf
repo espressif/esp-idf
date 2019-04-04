@@ -4,11 +4,6 @@ entries:
     panic (noflash)
 
 [mapping]
-archive: libhal.a
-entries:
-    * (noflash_text)
-
-[mapping]
 archive: libgcc.a
 entries:
     lib2funcs (noflash_text)

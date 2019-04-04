@@ -11,6 +11,8 @@ else()
         "src/esp_err_to_name.c"
         "src/esp_timer.c"
         "src/ets_timer_legacy.c"
+        "src/freertos_hooks.c"
+        "src/ipc.c"
         "src/pm_locks.c"
         "src/stack_check.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")

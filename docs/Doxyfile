@@ -161,9 +161,9 @@ INPUT = \
     ../../components/esp_common/include/esp_int_wdt.h \
     ../../components/esp_common/include/esp_task_wdt.h \
     ## Hooks
-    ../../components/esp32/include/esp_freertos_hooks.h \
+    ../../components/esp_common/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
-    ../../components/esp32/include/esp_ipc.h \
+    ../../components/esp_common/include/esp_ipc.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
     ## ESP HTTPS OTA

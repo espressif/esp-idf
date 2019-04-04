@@ -31,7 +31,7 @@
 #include "soc/hwcrypto_reg.h"
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
 
