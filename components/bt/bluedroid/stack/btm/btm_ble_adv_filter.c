@@ -312,9 +312,10 @@ void btm_ble_scan_pf_cmpl_cback(tBTM_VSC_CMPL *p_params)
         if (HCI_SUCCESS == status) {
             if (memcmp(&btm_ble_adv_filt_cb.cur_filter_target.bda, &na_bda, BD_ADDR_LEN) == 0) {
                 btm_ble_cs_update_pf_counter(action, cond_type, NULL, num_avail);
-            } else
+            } else {
                 btm_ble_cs_update_pf_counter(action, cond_type,
                                              &btm_ble_adv_filt_cb.cur_filter_target, num_avail);
+            }
         }
 
         /* send ADV PF operation complete */
@@ -855,9 +856,10 @@ tBTM_STATUS btm_ble_update_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
                                          len,
                                          param,
                                          btm_ble_scan_pf_cmpl_cback)) != BTM_NO_RESOURCES) {
-        if (p_uuid_cond && p_uuid_cond->p_target_addr)
+        if (p_uuid_cond && p_uuid_cond->p_target_addr) {
             memcpy(&btm_ble_adv_filt_cb.cur_filter_target, p_uuid_cond->p_target_addr,
                    sizeof(tBLE_BD_ADDR));
+        }
         else {
             memset(&btm_ble_adv_filt_cb.cur_filter_target, 0, sizeof(tBLE_BD_ADDR));
         }
@@ -914,15 +916,17 @@ tBTM_STATUS btm_ble_clear_scan_pf_filter(tBTM_BLE_SCAN_COND_OP action,
         /* clear manufactuer data filter */
         st = btm_ble_update_pf_manu_data(BTM_BLE_SCAN_COND_CLEAR, filt_index, NULL,
                                          BTM_BLE_PF_MANU_DATA, cb_evt, ref_value);
-        if (BTM_CMD_STARTED == st)
+        if (BTM_CMD_STARTED == st) {
             btm_ble_advfilt_enq_op_q(action, BTM_BLE_META_PF_MANU_DATA, cb_evt,
                                      ref_value, NULL, NULL);
+        }
 
         /* clear local name filter */
         st = btm_ble_update_pf_local_name(BTM_BLE_SCAN_COND_CLEAR, filt_index, NULL);
-        if (BTM_CMD_STARTED == st)
+        if (BTM_CMD_STARTED == st) {
             btm_ble_advfilt_enq_op_q(action, BTM_BLE_META_PF_LOCAL_NAME, cb_evt,
                                      ref_value, NULL, NULL);
+        }
 
         /* update the counter for service data */
         st = btm_ble_update_srvc_data_change(BTM_BLE_SCAN_COND_CLEAR, filt_index, NULL);
@@ -936,16 +940,18 @@ tBTM_STATUS btm_ble_clear_scan_pf_filter(tBTM_BLE_SCAN_COND_OP action,
 
         st = btm_ble_update_uuid_filter(BTM_BLE_SCAN_COND_CLEAR, filt_index,
                                         BTM_BLE_PF_SRVC_SOL_UUID, NULL, cb_evt, ref_value);
-        if (BTM_CMD_STARTED == st)
+        if (BTM_CMD_STARTED == st) {
             btm_ble_advfilt_enq_op_q(action, BTM_BLE_META_PF_SOL_UUID, cb_evt,
                                      ref_value, NULL, NULL);
+        }
 
         /* clear service data filter */
         st = btm_ble_update_pf_manu_data(BTM_BLE_SCAN_COND_CLEAR, filt_index, NULL,
                                          BTM_BLE_PF_SRVC_DATA_PATTERN, cb_evt, ref_value);
-        if (BTM_CMD_STARTED == st)
+        if (BTM_CMD_STARTED == st) {
             btm_ble_advfilt_enq_op_q(action, BTM_BLE_META_PF_SRVC_DATA, cb_evt,
                                      ref_value, NULL, NULL);
+        }
     }
 
     /* select feature based on control block settings */
@@ -1053,9 +1059,10 @@ tBTM_STATUS BTM_BleAdvFilterParamSetup(int action, tBTM_BLE_PF_FILT_INDEX filt_i
 
         if (cmn_ble_vsc_cb.version_supported == BTM_VSC_CHIP_CAPABILITY_L_VERSION) {
             len = BTM_BLE_ADV_FILT_META_HDR_LENGTH + BTM_BLE_ADV_FILT_FEAT_SELN_LEN;
-        } else
+        } else {
             len = BTM_BLE_ADV_FILT_META_HDR_LENGTH + BTM_BLE_ADV_FILT_FEAT_SELN_LEN +
                   BTM_BLE_ADV_FILT_TRACK_NUM;
+        }
 
         if ((st = BTM_VendorSpecificCommand (HCI_BLE_ADV_FILTER_OCF,
                                              (UINT8)len,

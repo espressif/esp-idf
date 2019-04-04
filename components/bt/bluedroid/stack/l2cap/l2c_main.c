@@ -242,7 +242,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
             /* nothing to do */
         } else
 #endif
+        {
             osi_free (p_msg);
+        }
     }
 #if (BLE_INCLUDED == TRUE)
     else if (rcv_cid == L2CAP_BLE_SIGNALLING_CID) {
@@ -268,9 +270,10 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
 #if (CLASSIC_BT_INCLUDED == TRUE)
                 l2c_fcr_proc_pdu (p_ccb, p_msg);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-            } else
+            } else {
                 (*l2cb.fixed_reg[rcv_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb)
                 (rcv_cid, p_lcb->remote_bd_addr, p_msg);
+            }
         } else {
             osi_free (p_msg);
         }
@@ -400,7 +403,6 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
                 STREAM_TO_UINT16 (rej_mtu, p);
                 /* What to do with the MTU reject ? We have negotiated an MTU. For now */
                 /* we will ignore it and let a higher protocol timeout take care of it */
-
                 L2CAP_TRACE_WARNING ("L2CAP - MTU rej Handle: %d MTU: %d", p_lcb->handle, rej_mtu);
             }
             if (rej_reason == L2CAP_CMD_REJ_INVALID_CID) {
@@ -763,6 +765,7 @@ static void process_l2cap_cmd (tL2C_LCB *p_lcb, UINT8 *p, UINT16 pkt_len)
         }
     }
 
+    UNUSED(rej_mtu);
 }
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
@@ -885,7 +888,7 @@ void l2c_free(void)
     l2cb.rcv_pending_q = NULL;
 #if L2C_DYNAMIC_MEMORY
     FREE_AND_RESET(l2c_cb_ptr);
-#endif 
+#endif
 }
 
 /*******************************************************************************

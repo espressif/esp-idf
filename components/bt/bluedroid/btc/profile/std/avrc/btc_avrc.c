@@ -335,6 +335,8 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
     } else {
         BTC_TRACE_ERROR("%s DUT does not support AVRCP controller role", __FUNCTION__);
     }
+
+    UNUSED(status);
 #else
     BTC_TRACE_ERROR("%s AVRCP controller role is not enabled", __FUNCTION__);
 #endif
