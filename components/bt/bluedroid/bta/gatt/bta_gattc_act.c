@@ -676,7 +676,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
                 bta_gattc_reset_discover_st(p_clcb->p_srcb, BTA_GATT_OK);
                 //register service change
                 bta_gattc_register_service_change_notify(p_clcb->bta_conn_id, p_clcb->bda);
-            } else 
+            } else
 #endif
             { /* cache is building */
                 p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
@@ -1073,8 +1073,9 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 *******************************************************************************/
 void bta_gattc_read(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
-    if (!bta_gattc_enqueue(p_clcb, p_data))
+    if (!bta_gattc_enqueue(p_clcb, p_data)) {
         return;
+    }
 
     tGATT_READ_PARAM    read_param;
     memset (&read_param, 0 ,sizeof(tGATT_READ_PARAM));
@@ -1142,8 +1143,9 @@ void bta_gattc_read_multi(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 *******************************************************************************/
 void bta_gattc_write(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
 {
-    if (!bta_gattc_enqueue(p_clcb, p_data))
+    if (!bta_gattc_enqueue(p_clcb, p_data)) {
         return;
+    }
 
     tBTA_GATT_STATUS    status = BTA_GATT_OK;
     tGATT_VALUE attr;
@@ -1744,7 +1746,7 @@ void bta_gattc_process_api_cache_assoc(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_m
     tBTA_GATTC gattc_cb = {0};
     gattc_cb.set_assoc.client_if = p_msg->api_assoc.client_if;
     BOOLEAN state = FALSE;
-    tBTA_GATTC_CLCB *p_assoc_clcb = bta_gattc_find_clcb_by_cif(p_msg->api_assoc.client_if, 
+    tBTA_GATTC_CLCB *p_assoc_clcb = bta_gattc_find_clcb_by_cif(p_msg->api_assoc.client_if,
                                                              p_msg->api_assoc.assoc_addr, BTA_TRANSPORT_LE);
     tBTA_GATTC_RCB *p_clrcb = bta_gattc_cl_get_regcb(p_msg->api_assoc.client_if);
     if (p_assoc_clcb != NULL) {
@@ -1785,7 +1787,7 @@ void bta_gattc_process_api_cache_assoc(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_m
     }
 
     return;
- 
+
 }
 void bta_gattc_process_api_cache_get_addr_list(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
 {

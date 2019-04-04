@@ -28,6 +28,7 @@
 #include <string.h>
 #include "bta/bta_av_co.h"
 #include "bta_av_int.h"
+#include "osi/osi.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -564,7 +565,7 @@ void bta_av_set_scb_sst_incoming (tBTA_AV_SCB *p_scb)
 ** Returns          char *
 **
 *******************************************************************************/
-static char *bta_av_sst_code(UINT8 state)
+UNUSED_ATTR static char *bta_av_sst_code(UINT8 state)
 {
     switch (state) {
     case BTA_AV_INIT_SST: return "INIT";

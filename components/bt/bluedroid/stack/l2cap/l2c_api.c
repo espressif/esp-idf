@@ -270,17 +270,21 @@ UINT16 L2CA_ErtmConnectReq (UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_ERTM_INFO *p_e
         p_ccb->ertm_info  = *p_ertm_info;
 
         /* Replace default indicators with the actual default pool */
-        if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
+        }
 
-        if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
+        }
 
-        if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
+        }
 
-        if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
+        }
 
         p_ccb->max_rx_mtu = p_ertm_info->user_rx_buf_size -
             (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
@@ -416,17 +420,21 @@ BOOLEAN L2CA_ErtmConnectRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 re
         p_ccb->ertm_info  = *p_ertm_info;
 
         /* Replace default indicators with the actual default pool */
-        if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
+        }
 
-        if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
+        }
 
-        if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
+        }
 
-        if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
+        if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE) {
             p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
+        }
 
         p_ccb->max_rx_mtu = p_ertm_info->user_rx_buf_size -
             (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
@@ -1340,8 +1348,9 @@ UINT16 L2CA_RegisterLECoc(UINT16 psm, tL2CAP_APPL_INFO *p_cb_info)
         for (vpsm = 0x0080; vpsm < 0x0100; vpsm++)
         {
             p_rcb = l2cu_find_ble_rcb_by_psm(vpsm);
-            if (p_rcb == NULL)
+            if (p_rcb == NULL) {
                 break;
+            }
         }
 
         L2CAP_TRACE_API("%s Real PSM: 0x%04x  Virtual PSM: 0x%04x", __func__, psm, vpsm);
@@ -1390,20 +1399,24 @@ void L2CA_DeregisterLECoc(UINT16 psm)
     tL2C_LCB *p_lcb = &l2cb.lcb_pool[0];
     for (int i = 0; i < MAX_L2CAP_LINKS; i++, p_lcb++)
     {
-        if (!p_lcb->in_use || p_lcb->transport != BT_TRANSPORT_LE)
+        if (!p_lcb->in_use || p_lcb->transport != BT_TRANSPORT_LE) {
             continue;
+        }
 
         tL2C_CCB *p_ccb = p_lcb->ccb_queue.p_first_ccb;
-        if ((p_ccb == NULL) || (p_lcb->link_state == LST_DISCONNECTING))
+        if ((p_ccb == NULL) || (p_lcb->link_state == LST_DISCONNECTING)) {
             continue;
+        }
 
         if (p_ccb->in_use &&
            (p_ccb->chnl_state == CST_W4_L2CAP_DISCONNECT_RSP ||
-            p_ccb->chnl_state == CST_W4_L2CA_DISCONNECT_RSP))
+            p_ccb->chnl_state == CST_W4_L2CA_DISCONNECT_RSP)) {
             continue;
+        }
 
-        if (p_ccb->p_rcb == p_rcb)
+        if (p_ccb->p_rcb == p_rcb) {
             l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
+        }
     }
 
     l2cu_release_rcb (p_rcb);
@@ -1473,8 +1486,9 @@ UINT16 L2CA_ConnectLECocReq(UINT16 psm, BD_ADDR p_bd_addr, tL2CAP_LE_CFG_INFO *p
     p_ccb->p_rcb = p_rcb;
 
     /* Save the configuration */
-    if (p_cfg)
+    if (p_cfg) {
         memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    }
 
     /* If link is up, start the L2CAP connection */
     if (p_lcb->link_state == LST_CONNECTED)
@@ -1549,8 +1563,9 @@ BOOLEAN L2CA_ConnectLECocRsp (BD_ADDR p_bd_addr, UINT8 id, UINT16 lcid, UINT16 r
         return FALSE;
     }
 
-    if (p_cfg)
+    if (p_cfg) {
         memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    }
 
     if (result == L2CAP_CONN_OK)
         l2c_csm_execute (p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
@@ -1589,8 +1604,9 @@ BOOLEAN L2CA_GetPeerLECocConfig (UINT16 lcid, tL2CAP_LE_CFG_INFO* peer_cfg)
         return FALSE;
     }
 
-    if (peer_cfg != NULL)
+    if (peer_cfg != NULL) {
         memcpy(peer_cfg, &p_ccb->peer_conn_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    }
 
     return TRUE;
 }
@@ -1675,7 +1691,9 @@ BOOLEAN L2CA_ConnectFixedChnl (UINT16 fixed_cid, BD_ADDR rem_bda, tBLE_ADDR_TYPE
             peer_channel_mask = l2cb.l2c_ble_fixed_chnls_mask;
         } else
 #endif
+        {
             peer_channel_mask = p_lcb->peer_chnl_mask[0];
+        }
 
         // Check for supported channel
         if (!(peer_channel_mask & (1 << fixed_cid))) {
@@ -1795,7 +1813,9 @@ UINT16 L2CA_SendFixedChnlData (UINT16 fixed_cid, BD_ADDR rem_bda, BT_HDR *p_buf)
         peer_channel_mask = l2cb.l2c_ble_fixed_chnls_mask;
     } else
 #endif
+    {
         peer_channel_mask = p_lcb->peer_chnl_mask[0];
+    }
 
     if ((peer_channel_mask & (1 << fixed_cid)) == 0) {
         L2CAP_TRACE_WARNING ("L2CA_SendFixedChnlData() - peer does not support fixed chnl: 0x%04x", fixed_cid);

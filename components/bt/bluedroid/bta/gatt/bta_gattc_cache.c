@@ -93,7 +93,7 @@ static char *bta_gattc_attr_type[] = {
 };
 /* utility functions */
 
-bool display_cache_attribute(void *data, void *context) 
+bool display_cache_attribute(void *data, void *context)
 {
     //tBTA_GATTC_CACHE_ATTR *p_attr = data;
     //APPL_TRACE_ERROR("\t Attr handle[%d] uuid[0x%04x] type[%s] prop[0x%1x]",
@@ -102,7 +102,7 @@ bool display_cache_attribute(void *data, void *context)
     return true;
 }
 
-bool display_cache_service(void *data, void *context) 
+bool display_cache_service(void *data, void *context)
 {
     tBTA_GATTC_SERVICE    *p_cur_srvc = data;
     APPL_TRACE_API("Service: handle[%d ~ %d] %s[0x%04x] inst[%d]",
@@ -213,9 +213,9 @@ static void bta_gattc_free(void *ptr)
     osi_free(ptr);
 }
 
-void bta_gattc_insert_sec_service_to_cache(list_t *services, tBTA_GATTC_SERVICE *p_new_srvc) 
+void bta_gattc_insert_sec_service_to_cache(list_t *services, tBTA_GATTC_SERVICE *p_new_srvc)
 {
-    // services/p_new_srvc is NULL 
+    // services/p_new_srvc is NULL
     if (!services || !p_new_srvc) {
         APPL_TRACE_ERROR("%s services/p_new_srvc is NULL", __func__);
         return;
@@ -243,7 +243,7 @@ void bta_gattc_insert_sec_service_to_cache(list_t *services, tBTA_GATTC_SERVICE 
                     return;
                 }
             }
-        }  
+        }
     }
 }
 
@@ -314,8 +314,9 @@ static tBTA_GATT_STATUS bta_gattc_add_char_to_cache(tBTA_GATTC_SERV *p_srvc_cb,
     /* TODO(jpawlowski): We should use attribute handle, not value handle to refer to characteristic.
        This is just a temporary workaround.
     */
-    if (service->e_handle < value_handle)
+    if (service->e_handle < value_handle) {
         service->e_handle = value_handle;
+    }
 
     tBTA_GATTC_CHARACTERISTIC *characteristic = osi_malloc(sizeof(tBTA_GATTC_CHARACTERISTIC));
     if (!characteristic) {
@@ -554,10 +555,10 @@ void bta_gattc_update_include_service(const list_t *services) {
             if(include_service && !include_service->included_service) {
                 //update
                 include_service->included_service = bta_gattc_find_matching_service(services, include_service->incl_srvc_s_handle);
-                if(!include_service->included_service) { 
+                if(!include_service->included_service) {
                     //not match, free it
                     list_remove(service->included_svc, include_service);
-                    osi_free(include_service);    
+                    osi_free(include_service);
                 }
             }
         }
@@ -980,12 +981,13 @@ void bta_gattc_disc_res_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT_
                                               p_data->value.incl_service.e_handle,
                                               p_data->value.incl_service.service_type);
 
-            if (!pri_srvc)
+            if (!pri_srvc) {
                 bta_gattc_add_srvc_to_list(p_srvc_cb,
                                            p_data->value.incl_service.s_handle,
                                            p_data->value.incl_service.e_handle,
                                            p_data->value.incl_service.service_type,
                                            FALSE);
+            }
             /* add into database */
             bta_gattc_add_attr_to_cache(p_srvc_cb,
                                         p_data->handle,
@@ -1007,8 +1009,8 @@ void bta_gattc_disc_res_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT_
 
         case GATT_DISC_CHAR_DSCPT:
             bta_gattc_add_attr_to_cache(p_srvc_cb,
-                                        p_data->handle, 
-                                        &p_data->type, 
+                                        p_data->handle,
+                                        &p_data->type,
                                         0,
                                         0 /* incl_srvc_s_handle */,
                                         0 /* incl_srvc_e_handle */,
@@ -1023,8 +1025,9 @@ void bta_gattc_disc_cmpl_cback (UINT16 conn_id, tGATT_DISC_TYPE disc_type, tGATT
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
     if ( p_clcb && (status != GATT_SUCCESS || p_clcb->status != GATT_SUCCESS) ) {
-        if (status == GATT_SUCCESS)
+        if (status == GATT_SUCCESS) {
             p_clcb->status = status;
+        }
         bta_gattc_sm_execute(p_clcb, BTA_GATTC_DISCOVER_CMPL_EVT, NULL);
         return;
     }
@@ -1071,15 +1074,17 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB *p_clcb, tBT_UUID *p_uuid)
 {
     tBTA_GATTC          cb_data;
 
-    if (!p_clcb->p_srcb->p_srvc_cache || list_is_empty(p_clcb->p_srcb->p_srvc_cache))
+    if (!p_clcb->p_srcb->p_srvc_cache || list_is_empty(p_clcb->p_srcb->p_srvc_cache)) {
         return;
+    }
 
     for (list_node_t *sn = list_begin(p_clcb->p_srcb->p_srvc_cache);
          sn != list_end(p_clcb->p_srcb->p_srvc_cache); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *p_cache = list_node(sn);
 
-        if (!bta_gattc_uuid_compare(p_uuid, &p_cache->uuid, FALSE))
+        if (!bta_gattc_uuid_compare(p_uuid, &p_cache->uuid, FALSE)) {
             continue;
+        }
 
 #if (defined BTA_GATT_DEBUG && BTA_GATT_DEBUG == TRUE)
         APPL_TRACE_DEBUG("found service [0x%04x], inst[%d] handle [%d]",
@@ -1087,8 +1092,9 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB *p_clcb, tBT_UUID *p_uuid)
                           p_cache->handle,
                           p_cache->s_handle);
 #endif
-        if (!p_clcb->p_rcb->p_cback)
+        if (!p_clcb->p_rcb->p_cback) {
             continue;
+        }
 
         memset(&cb_data, 0, sizeof(tBTA_GATTC));
 
@@ -1103,8 +1109,9 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB *p_clcb, tBT_UUID *p_uuid)
 }
 
 list_t* bta_gattc_get_services_srcb(tBTA_GATTC_SERV *p_srcb) {
-    if (!p_srcb || !p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache))
+    if (!p_srcb || !p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache)) {
         return NULL;
+    }
 
     return p_srcb->p_srvc_cache;
 }
@@ -1112,8 +1119,9 @@ list_t* bta_gattc_get_services_srcb(tBTA_GATTC_SERV *p_srcb) {
 const list_t* bta_gattc_get_services(UINT16 conn_id) {
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
-    if (p_clcb == NULL )
+    if (p_clcb == NULL ) {
         return NULL;
+    }
 
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
 
@@ -1121,63 +1129,68 @@ const list_t* bta_gattc_get_services(UINT16 conn_id) {
 }
 
 tBTA_GATTC_SERVICE*  bta_gattc_find_matching_service(const list_t *services, UINT16 handle) {
-    if (!services || list_is_empty(services))
+    if (!services || list_is_empty(services)) {
         return NULL;
+    }
 
     for (list_node_t *sn = list_begin(services);
          sn != list_end(services); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *service = list_node(sn);
 
-        if (handle >= service->s_handle && handle <= service->e_handle)
+        if (handle >= service->s_handle && handle <= service->e_handle) {
             return service;
+        }
     }
 
     return NULL;
 }
 
-const tBTA_GATTC_SERVICE*  bta_gattc_get_service_for_handle_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle) 
+const tBTA_GATTC_SERVICE*  bta_gattc_get_service_for_handle_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle)
 {
     const list_t *services = bta_gattc_get_services_srcb(p_srcb);
 
     return bta_gattc_find_matching_service(services, handle);
 }
 
-const tBTA_GATTC_SERVICE*  bta_gattc_get_service_for_handle(UINT16 conn_id, UINT16 handle) 
+const tBTA_GATTC_SERVICE*  bta_gattc_get_service_for_handle(UINT16 conn_id, UINT16 handle)
 {
     const list_t *services = bta_gattc_get_services(conn_id);
 
     return bta_gattc_find_matching_service(services, handle);
 }
 
-tBTA_GATTC_CHARACTERISTIC*  bta_gattc_get_characteristic_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle) 
+tBTA_GATTC_CHARACTERISTIC*  bta_gattc_get_characteristic_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle)
 {
     const tBTA_GATTC_SERVICE* service = bta_gattc_get_service_for_handle_srcb(p_srcb, handle);
 
-    if (!service)
+    if (!service) {
         return NULL;
+    }
 
     for (list_node_t *cn = list_begin(service->characteristics);
          cn != list_end(service->characteristics); cn = list_next(cn)) {
         tBTA_GATTC_CHARACTERISTIC *p_char = list_node(cn);
-        if (handle == p_char->handle)
+        if (handle == p_char->handle) {
             return p_char;
+        }
     }
 
     return NULL;
 }
 
-tBTA_GATTC_CHARACTERISTIC*  bta_gattc_get_characteristic(UINT16 conn_id, UINT16 handle) 
+tBTA_GATTC_CHARACTERISTIC*  bta_gattc_get_characteristic(UINT16 conn_id, UINT16 handle)
 {
    tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
-    if (p_clcb == NULL )
+    if (p_clcb == NULL ) {
         return NULL;
+    }
 
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
     return bta_gattc_get_characteristic_srcb(p_srcb, handle);
 }
 
-tBTA_GATTC_DESCRIPTOR*  bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle) 
+tBTA_GATTC_DESCRIPTOR*  bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle)
 {
     const tBTA_GATTC_SERVICE* service = bta_gattc_get_service_for_handle_srcb(p_srcb, handle);
 
@@ -1191,20 +1204,22 @@ tBTA_GATTC_DESCRIPTOR*  bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV *p_srcb, U
         for (list_node_t *dn = list_begin(p_char->descriptors);
              dn != list_end(p_char->descriptors); dn = list_next(dn)) {
             tBTA_GATTC_DESCRIPTOR *p_desc = list_node(dn);
-            if (handle == p_desc->handle)
+            if (handle == p_desc->handle) {
                 return p_desc;
+            }
         }
     }
 
     return NULL;
 }
 
-tBTA_GATTC_DESCRIPTOR*  bta_gattc_get_descriptor(UINT16 conn_id, UINT16 handle) 
+tBTA_GATTC_DESCRIPTOR*  bta_gattc_get_descriptor(UINT16 conn_id, UINT16 handle)
 {
     tBTA_GATTC_CLCB *p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
-    if (p_clcb == NULL )
+    if (p_clcb == NULL ) {
         return NULL;
+    }
 
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
     return bta_gattc_get_descriptor_srcb(p_srcb, handle);
@@ -1443,7 +1458,7 @@ void bta_gattc_get_db_with_opration(UINT16 conn_id,
                     }
                 }
             }
-            
+
         }
     }
 
@@ -1476,7 +1491,7 @@ static size_t bta_gattc_get_db_size_with_type(list_t *services,
         }
 
         if (type == BTGATT_DB_PRIMARY_SERVICE || type == BTGATT_DB_SECONDARY_SERVICE) {
-            if ((type == BTGATT_DB_PRIMARY_SERVICE && p_cur_srvc->is_primary) || 
+            if ((type == BTGATT_DB_PRIMARY_SERVICE && p_cur_srvc->is_primary) ||
                 (type == BTGATT_DB_SECONDARY_SERVICE && !p_cur_srvc->is_primary)) {
                 // if the current service is the last service in the db, need to ensure the current service start handle is not less than the start_handle.
                 if (!svc_length) {
@@ -1572,10 +1587,11 @@ static size_t bta_gattc_get_db_size_with_type(list_t *services,
 ** Returns          number of elements inside db from start_handle to end_handle
 *******************************************************************************/
 static size_t bta_gattc_get_db_size(list_t *services,
-                                    UINT16 start_handle, UINT16 end_handle) 
+                                    UINT16 start_handle, UINT16 end_handle)
 {
-    if (!services || list_is_empty(services))
+    if (!services || list_is_empty(services)) {
         return 0;
+    }
 
     size_t db_size = 0;
     UINT16 svc_length = list_length(services) - 1;
@@ -1598,9 +1614,10 @@ static size_t bta_gattc_get_db_size(list_t *services,
         } else {
             db_size++;
         }
-        
-        if (!p_cur_srvc->characteristics || list_is_empty(p_cur_srvc->characteristics))
+
+        if (!p_cur_srvc->characteristics || list_is_empty(p_cur_srvc->characteristics)) {
             continue;
+        }
 
         for (list_node_t *cn = list_begin(p_cur_srvc->characteristics);
              cn != list_end(p_cur_srvc->characteristics); cn = list_next(cn)) {
@@ -1657,7 +1674,7 @@ void bta_gattc_get_db_size_handle(UINT16 conn_id, UINT16 start_handle, UINT16 en
         *count = 0;
         return;
     }
-    
+
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
     if (!p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache)) {
         *count = 0;
@@ -1676,7 +1693,7 @@ void bta_gattc_get_db_size_with_type_handle(UINT16 conn_id, bt_gatt_db_attribute
         *count = 0;
         return;
     }
-    
+
     tBTA_GATTC_SERV *p_srcb = p_clcb->p_srcb;
     if (!p_srcb->p_srvc_cache || list_is_empty(p_srcb->p_srvc_cache)) {
         *count = 0;
@@ -1694,7 +1711,7 @@ void bta_gattc_get_db_size_with_type_handle(UINT16 conn_id, bt_gatt_db_attribute
         }
     }
     *count = bta_gattc_get_db_size_with_type(p_srcb->p_srvc_cache, type, NULL, start_handle, end_handle);
-    
+
 }
 
 /*******************************************************************************
@@ -1786,8 +1803,9 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV *p_srvc_cb,
                                           p_char->properties);
                 curr_db_attr++;
 
-                if (!p_char->descriptors || list_is_empty(p_char->descriptors))
+                if (!p_char->descriptors || list_is_empty(p_char->descriptors)) {
                     continue;
+                }
 
                 for (list_node_t *dn = list_begin(p_char->descriptors);
                      dn != list_end(p_char->descriptors); dn = list_next(dn)) {
@@ -1815,8 +1833,9 @@ static void bta_gattc_get_gatt_db_impl(tBTA_GATTC_SERV *p_srvc_cb,
             }
         }
 
-        if (!p_cur_srvc->included_svc || list_is_empty(p_cur_srvc->included_svc))
+        if (!p_cur_srvc->included_svc || list_is_empty(p_cur_srvc->included_svc)) {
             continue;
+        }
 
         for (list_node_t *isn = list_begin(p_cur_srvc->included_svc);
              isn != list_end(p_cur_srvc->included_svc); isn = list_next(isn)) {
@@ -1983,8 +2002,9 @@ void bta_gattc_fill_nv_attr(tBTA_GATTC_NV_ATTR *p_attr, UINT8 type, UINT16 s_han
 *******************************************************************************/
 void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
 {
-    if (!p_srvc_cb->p_srvc_cache || list_is_empty(p_srvc_cb->p_srvc_cache))
+    if (!p_srvc_cb->p_srvc_cache || list_is_empty(p_srvc_cb->p_srvc_cache)) {
         return;
+    }
 
     int i = 0;
     size_t db_size = bta_gattc_get_db_size(p_srvc_cb->p_srvc_cache, 0x0000, 0xFFFF);
@@ -2017,8 +2037,9 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
          sn != list_end(p_srvc_cb->p_srvc_cache); sn = list_next(sn)) {
         tBTA_GATTC_SERVICE *p_cur_srvc = list_node(sn);
 
-        if (!p_cur_srvc->characteristics || list_is_empty(p_cur_srvc->characteristics))
+        if (!p_cur_srvc->characteristics || list_is_empty(p_cur_srvc->characteristics)) {
             continue;
+        }
 
         for (list_node_t *cn = list_begin(p_cur_srvc->characteristics);
              cn != list_end(p_cur_srvc->characteristics); cn = list_next(cn)) {
@@ -2034,8 +2055,9 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
                                    0 /* incl_srvc_e_handle */,
                                    FALSE);
 
-            if (!p_char->descriptors || list_is_empty(p_char->descriptors))
+            if (!p_char->descriptors || list_is_empty(p_char->descriptors)) {
                 continue;
+            }
 
             for (list_node_t *dn = list_begin(p_char->descriptors);
                  dn != list_end(p_char->descriptors); dn = list_next(dn)) {
@@ -2053,8 +2075,9 @@ void bta_gattc_cache_save(tBTA_GATTC_SERV *p_srvc_cb, UINT16 conn_id)
             }
         }
 
-        if (!p_cur_srvc->included_svc || list_is_empty(p_cur_srvc->included_svc))
+        if (!p_cur_srvc->included_svc || list_is_empty(p_cur_srvc->included_svc)) {
             continue;
+        }
 
         for (list_node_t *an = list_begin(p_cur_srvc->included_svc);
              an != list_end(p_cur_srvc->included_svc); an = list_next(an)) {

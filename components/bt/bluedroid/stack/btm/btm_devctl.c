@@ -273,13 +273,15 @@ static void btm_decode_ext_features_page (UINT8 page_number, const UINT8 *p_feat
         btm_cb.btm_acl_pkt_types_supported = (BTM_ACL_PKT_TYPES_MASK_DH1 +
                                               BTM_ACL_PKT_TYPES_MASK_DM1);
 
-        if (HCI_3_SLOT_PACKETS_SUPPORTED(p_features))
+        if (HCI_3_SLOT_PACKETS_SUPPORTED(p_features)) {
             btm_cb.btm_acl_pkt_types_supported |= (BTM_ACL_PKT_TYPES_MASK_DH3 +
                                                    BTM_ACL_PKT_TYPES_MASK_DM3);
+        }
 
-        if (HCI_5_SLOT_PACKETS_SUPPORTED(p_features))
+        if (HCI_5_SLOT_PACKETS_SUPPORTED(p_features)) {
             btm_cb.btm_acl_pkt_types_supported |= (BTM_ACL_PKT_TYPES_MASK_DH5 +
                                                    BTM_ACL_PKT_TYPES_MASK_DM5);
+        }
 
         /* Add in EDR related ACL types */
         if (!HCI_EDR_ACL_2MPS_SUPPORTED(p_features)) {
@@ -297,13 +299,15 @@ static void btm_decode_ext_features_page (UINT8 page_number, const UINT8 *p_feat
         /* Check to see if 3 and 5 slot packets are available */
         if (HCI_EDR_ACL_2MPS_SUPPORTED(p_features) ||
                 HCI_EDR_ACL_3MPS_SUPPORTED(p_features)) {
-            if (!HCI_3_SLOT_EDR_ACL_SUPPORTED(p_features))
+            if (!HCI_3_SLOT_EDR_ACL_SUPPORTED(p_features)) {
                 btm_cb.btm_acl_pkt_types_supported |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
                                                        BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
+            }
 
-            if (!HCI_5_SLOT_EDR_ACL_SUPPORTED(p_features))
+            if (!HCI_5_SLOT_EDR_ACL_SUPPORTED(p_features)) {
                 btm_cb.btm_acl_pkt_types_supported |= (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 +
                                                        BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+            }
         }
 
         BTM_TRACE_DEBUG("Local supported ACL packet types: 0x%04x",

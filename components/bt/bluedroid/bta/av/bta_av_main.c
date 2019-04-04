@@ -1268,7 +1268,7 @@ BOOLEAN bta_av_hdl_event(BT_HDR *p_msg)
 ** Returns          char *
 **
 *******************************************************************************/
-static char *bta_av_st_code(UINT8 state)
+UNUSED_ATTR static char *bta_av_st_code(UINT8 state)
 {
     switch (state) {
     case BTA_AV_INIT_ST: return "INIT";

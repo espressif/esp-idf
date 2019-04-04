@@ -308,6 +308,7 @@ static void bta_hf_client_sco_disc_cback(UINT16 sco_idx)
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
         tBTM_STATUS status = BTM_ConfigScoPath(BTM_SCO_ROUTE_PCM, NULL, NULL, TRUE);
         APPL_TRACE_DEBUG("%s close config status = %d", __FUNCTION__, status);
+        UNUSED(status);
         /* SCO clean up here */
         bta_hf_client_sco_co_close();
 #endif
