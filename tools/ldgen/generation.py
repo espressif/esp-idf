@@ -345,7 +345,7 @@ class GenerationModel:
                     message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
                     raise GenerationException(message, mapping)
 
-            all_mapping_rules[mapping.name] = mapping_rules
+            all_mapping_rules[mapping.archive] = mapping_rules
 
         # Detect rule conflicts
         for mapping_rules in all_mapping_rules.items():
