@@ -49,4 +49,17 @@ esp_err_t _mdns_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_pr
  */
 size_t _mdns_udp_pcb_write(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, const ip_addr_t *ip, uint16_t port, uint8_t * data, size_t len);
 
+/**
+ * @brief  Compares currently opened pcb's interface ip address with currently assigned tcpip address
+ *
+ * When new IP address is assigned this function can be called if current pcb uses the same IP address
+ * and thus can be reused. Otherwise pcb needs to be reinitialized as it is tightly coupled with it's IP
+ *
+ * @param  tcpip_if    interface type
+ * @param  ip_protocol protocol type
+ *
+ * @return true if current address if different from the one used in pcb
+ */
+bool _mdns_pcb_is_ip_updated(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
+
 #endif /* ESP_MDNS_NETWORKING_H_ */

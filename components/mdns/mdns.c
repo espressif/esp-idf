@@ -3005,6 +3005,9 @@ clear_rx_packet:
  */
 void _mdns_enable_pcb(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
 {
+    if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb && _mdns_pcb_is_ip_updated(tcpip_if, ip_protocol)) {
+        _mdns_pcb_deinit(tcpip_if, ip_protocol);
+    }
     if (!_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb) {
         if (_mdns_pcb_init(tcpip_if, ip_protocol)) {
             return;
