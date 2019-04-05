@@ -65,7 +65,6 @@ TEST_CASE("Malloc/overwrite, then free all available DRAM", "[heap]")
     TEST_ASSERT(m1==m2);
 }
 
-
 #if CONFIG_SPIRAM_USE_MALLOC
 
 #if (CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL > 1024)
@@ -88,3 +87,29 @@ TEST_CASE("Check if reserved DMA pool still can allocate even when malloc()'ed m
 #endif
 
 #endif
+
+TEST_CASE("alloc overflows should all fail", "[heap]")
+{
+    /* allocates 8 bytes if size_t overflows */
+    TEST_ASSERT_NULL(calloc(SIZE_MAX / 2 + 4, 2));
+
+    /* will overflow if any poisoning is enabled
+       (should fail for sensible OOM reasons, otherwise) */
+    TEST_ASSERT_NULL(malloc(SIZE_MAX - 1));
+    TEST_ASSERT_NULL(calloc(SIZE_MAX - 1, 1));
+
+    /* will overflow when the size is rounded up to word align it */
+    TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_32BIT));
+
+    TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_EXEC));
+}
+
+TEST_CASE("unreasonable allocs should all fail", "[heap]")
+{
+    TEST_ASSERT_NULL(calloc(16, 1024*1024));
+    TEST_ASSERT_NULL(malloc(16*1024*1024));
+    TEST_ASSERT_NULL(malloc(SIZE_MAX / 2));
+    TEST_ASSERT_NULL(malloc(SIZE_MAX - 256));
+    TEST_ASSERT_NULL(malloc(xPortGetFreeHeapSize() - 1));
+}
+
