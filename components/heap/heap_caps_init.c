@@ -31,7 +31,9 @@ struct registered_heap_ll registered_heaps;
 
 static void register_heap(heap_t *region)
 {
-    region->heap = multi_heap_register((void *)region->start, region->end - region->start);
+    size_t heap_size = region->end - region->start;
+    assert(heap_size <= HEAP_SIZE_MAX);
+    region->heap = multi_heap_register((void *)region->start, heap_size);
     if (region->heap != NULL) {
         ESP_EARLY_LOGD(TAG, "New heap initialised at %p", region->heap);
     }

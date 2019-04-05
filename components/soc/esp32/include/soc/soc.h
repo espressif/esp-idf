@@ -72,6 +72,8 @@
 #define SOC_EXTRAM_DATA_LOW     0x3F800000
 #define SOC_EXTRAM_DATA_HIGH    0x3FC00000
 
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
+
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
 #define DR_REG_AES_BASE                         0x3ff01000
