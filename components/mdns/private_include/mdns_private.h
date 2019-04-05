@@ -296,6 +296,7 @@ typedef struct {
     uint8_t probe_ip;
     uint8_t probe_running;
     uint16_t failed_probes;
+    ip_addr_t if_addr;
 } mdns_pcb_t;
 
 typedef enum {

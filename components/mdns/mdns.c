@@ -111,6 +111,42 @@ static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char
  * */
 
 /**
+ * @brief  Compares currently opened pcb's interface ip address with currently assigned tcpip address
+ *
+ * When new IP address is assigned this function can be called if current pcb uses the same IP address
+ * and thus can be reused. Otherwise pcb needs to be reinitialized as it is tightly coupled with it's IP
+ *
+ * @param  tcpip_if    interface type
+ * @param  ip_protocol protocol type
+ *
+ * @return true if current address if different from the one used in pcb
+ */
+bool _mdns_pcb_is_ip_updated(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
+{
+    tcpip_adapter_ip_info_t if_ip_info;
+    if (!_mdns_server || !_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb) {
+        return false;
+    }
+    mdns_pcb_t pcb = _mdns_server->interfaces[tcpip_if].pcbs[ip_protocol];
+
+    if (ip_protocol == MDNS_IP_PROTOCOL_V4) {
+        if (tcpip_adapter_get_ip_info(tcpip_if, &if_ip_info) || if_ip_info.ip.addr == 0) {
+            return false;
+        }
+        ip_addr_t interface_addr = IPADDR4_INIT(if_ip_info.ip.addr);
+        return !ip_addr_cmp(&interface_addr, &pcb.if_addr);
+    } else if (ip_protocol == MDNS_IP_PROTOCOL_V6) {
+        ip_addr_t interface_addr;
+        interface_addr.type = IPADDR_TYPE_V6;
+        if (tcpip_adapter_get_ip6_linklocal(tcpip_if, &interface_addr.u_addr.ip6)) {
+            return false;
+        }
+        return !ip_addr_cmp(&interface_addr, &pcb.if_addr);
+    }
+    return false;
+}
+
+/**
  * @brief  Queue RX packet action
  */
 static esp_err_t _mdns_send_rx_action(mdns_rx_packet_t * packet)
@@ -259,6 +295,7 @@ static esp_err_t _udp_pcb_v4_init(tcpip_adapter_if_t tcpip_if)
     pcb->remote_port = MDNS_SERVICE_PORT;
     ip_addr_copy(pcb->multicast_ip, interface_addr);
     ip_addr_copy(pcb->remote_ip, multicast_addr);
+    ip_addr_copy(_mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].if_addr, interface_addr);
 
     _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].pcb = pcb;
     _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].failed_probes = 0;
@@ -300,6 +337,7 @@ static esp_err_t _udp_pcb_v6_init(tcpip_adapter_if_t tcpip_if)
 
     pcb->remote_port = MDNS_SERVICE_PORT;
     ip_addr_copy(pcb->remote_ip, multicast_addr);
+    ip_addr_copy(_mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V6].if_addr, interface_addr);
 
     _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V6].pcb = pcb;
     _mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V6].failed_probes = 0;
@@ -3068,6 +3106,9 @@ clear_rx_packet:
  */
 void _mdns_enable_pcb(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
 {
+    if (_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb && _mdns_pcb_is_ip_updated(tcpip_if, ip_protocol)) {
+        _mdns_pcb_deinit(tcpip_if, ip_protocol);
+    }
     if (!_mdns_server->interfaces[tcpip_if].pcbs[ip_protocol].pcb) {
         if (_mdns_pcb_init(tcpip_if, ip_protocol)) {
             return;
