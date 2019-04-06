@@ -788,7 +788,12 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 |                           |       |         |                                                             |
 |                           |       |         | For the ESP32 Station, this reason is reported when:        |
 |                           |       |         |                                                             |
-|                           |       |         |  - auth is timed out                                        |
+|                           |       |         |  - auth is timed out. This can arise while connecting to    |
+|                           |       |         |    the network when the AP is out of range                  |
+|                           |       |         |    of the ESP32, i.e., the ESP32 can receive packets        |
+|                           |       |         |    the AP is sending, but the AP is not able to receive     |
+|                           |       |         |    packets that the ESP32 is sending. Try moving the ESP32  |
+|                           |       |         |    closer to the AP.                                        |
 |                           |       |         |  - the reason is received from the AP.                      |
 |                           |       |         |                                                             |
 |                           |       |         | For the ESP32 AP, this reason is reported when:             |
