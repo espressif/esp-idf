@@ -384,7 +384,7 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType
  *        Only call this function in I2C slave mode
  *
  * @param i2c_num I2C port number
- * @param data data pointer to write into internal buffer
+ * @param data data pointer to accept data from internal buffer
  * @param max_size Maximum data size to read
  * @param ticks_to_wait Maximum waiting ticks
  *
