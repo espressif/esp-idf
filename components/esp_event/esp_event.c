@@ -569,7 +569,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 
         if (!exec) {
             // No handlers were registered, not even loop/base level handlers
-            ESP_LOGW(TAG, "no handlers have been registered for event %s:%d posted to loop %p", base, id, event_loop);
+            ESP_LOGD(TAG, "no handlers have been registered for event %s:%d posted to loop %p", base, id, event_loop);
         }
     }
 
