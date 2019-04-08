@@ -221,6 +221,17 @@ esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
      return ESP_FAIL;
 }
 
+esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
+{
+    for (int i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+        if (shutdown_handlers[i] == handler) {
+            shutdown_handlers[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
 void esp_restart_noos() __attribute__ ((noreturn));
 
 void IRAM_ATTR esp_restart(void)

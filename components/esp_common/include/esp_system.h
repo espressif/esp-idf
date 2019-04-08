@@ -84,6 +84,17 @@ typedef void (*shutdown_handler_t)(void);
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handle);
 
 /**
+  * @brief  Unregister shutdown handler
+  *
+  * This function allows you to unregister a handler which was previously
+  * registered using esp_register_shutdown_handler function.
+  *   - ESP_OK on success
+  *   - ESP_ERR_INVALID_STATE if the given handler hasn't been registered before
+  */
+esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handle);
+
+
+/**
   * @brief  Restart PRO and APP CPUs.
   *
   * This function can be called both from PRO and APP CPUs.
