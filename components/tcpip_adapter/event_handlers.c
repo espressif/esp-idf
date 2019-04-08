@@ -242,7 +242,7 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers()
     }
 
     err = esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
-    if (err != ESP_OK) {
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         goto fail;
     }
 
@@ -263,8 +263,7 @@ esp_err_t tcpip_adapter_clear_default_wifi_handlers()
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, handle_ap_stop);
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, handle_sta_got_ip);
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, handle_eth_got_ip);
-
-    /* TODO: introduce esp_unregister_shutdown_handler or similar, call it here */
+    esp_unregister_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
 
     return ESP_OK;
 }
