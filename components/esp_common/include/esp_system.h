@@ -323,7 +323,8 @@ const char* esp_get_idf_version(void);
  * @brief Chip models
  */
 typedef enum {
-    CHIP_ESP32 = 1, //!< ESP32
+    CHIP_ESP32  = 1, //!< ESP32
+    CHIP_ESP32S2BETA = 2, //!< ESP32S2BETA
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */

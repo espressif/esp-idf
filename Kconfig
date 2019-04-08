@@ -31,11 +31,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     config IDF_TARGET_ESP32
         bool
-        default y if IDF_TARGET="esp32"
+        default "y" if IDF_TARGET="esp32"
+        default "n"
 
     config IDF_TARGET_ESP32S2BETA
         bool
-        default y if IDF_TARGET="esp32s2beta"
+        default "y" if IDF_TARGET="esp32s2beta"
+        default "n"
 
     menu "SDK tool configuration"
         config SDK_TOOLPREFIX
