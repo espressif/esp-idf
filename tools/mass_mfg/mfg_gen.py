@@ -515,7 +515,6 @@ def main(input_config_file=None,input_values_file=None,target_file_name_prefix=N
                 output_target_dir = create_dir("bin/", output_dir_path)
 
                 # Verify if output bin file does not exist
-                # todo for keys
                 output_file_prefix = target_file_name_prefix + "-" + file_identifier_value
                 output_bin_file = output_target_dir + output_file_prefix + ".bin"
                 if os.path.isfile(output_bin_file):
