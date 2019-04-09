@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 
-typedef struct esp_transport_list_t* esp_transport_list_handle_t;
+typedef struct esp_transport_internal* esp_transport_list_handle_t;
 typedef struct esp_transport_item_t* esp_transport_handle_t;
 
 typedef int (*connect_func)(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
@@ -297,6 +297,25 @@ esp_err_t esp_transport_set_async_connect_func(esp_transport_handle_t t, connect
  *     - ESP_FAIL
  */
 esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payload_transfer_func _parent_transport);
+
+/**
+ * @brief      Returns last error in esp_tls (if any) and clears it.
+ *
+ * @param[in]  A transport handle
+ *
+ * @return
+ *            - ESP_OK if no error occurred
+ *            - specific error code (based on ESP_ERR_ESP_TLS_BASE) otherwise
+  */
+esp_err_t get_and_clear_last_error(esp_transport_handle_t t);
+
+/**
+ * @brief      Sets error to common transport handle
+ *
+ * @param[in]  A transport handle
+ *
+ */
+void esp_transport_set_error(esp_transport_handle_t t, esp_err_t err);
 
 #ifdef __cplusplus
 }
