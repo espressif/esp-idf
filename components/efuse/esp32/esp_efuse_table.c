@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 840523b9e1313240e6102615e3a497a5
+// md5_digest_table 544d434da010ce22f7db1b14d38e1d66
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -96,7 +96,7 @@ static const esp_efuse_desc_t CONSOLE_DEBUG_DISABLE[] = {
 };
 
 static const esp_efuse_desc_t FLASH_CRYPT_CNT[] = {
-    {EFUSE_BLK0, 20, 8}, 	 // Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.,
+    {EFUSE_BLK0, 20, 7}, 	 // Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_CRYPT_CNT[] = {
