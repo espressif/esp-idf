@@ -201,7 +201,7 @@ static void transport_simple_ble_write(esp_gatts_cb_event_t event, esp_gatt_if_t
 
     ret = protocomm_req_handle(protoble_internal->pc_ble,
                                handle_to_handler(param->write.handle),
-                               param->exec_write.conn_id,
+                               param->write.conn_id,
                                param->write.value,
                                param->write.len,
                                &outbuf, &outlen);
@@ -246,7 +246,7 @@ static void transport_simple_ble_exec_write(esp_gatts_cb_event_t event, esp_gatt
 
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Invalid content received, killing connection");
-            esp_ble_gatts_close(gatts_if, param->write.conn_id);
+            esp_ble_gatts_close(gatts_if, param->exec_write.conn_id);
         } else {
             hexdump("Response from exec write", outbuf, outlen);
             esp_ble_gatts_set_attr_value(prepare_write_env.handle, outlen, outbuf);
