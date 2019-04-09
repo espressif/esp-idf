@@ -41,7 +41,7 @@ DISABLE_DL_DECRYPT,     EFUSE_BLK0,    200,   1,    Flash encrypt. Disable UART 
 DISABLE_DL_CACHE,       EFUSE_BLK0,    201,   1,    Flash encrypt. Disable UART bootloader MMU cache. EFUSE_DISABLE_DL_CACHE. 
 DISABLE_JTAG,           EFUSE_BLK0,    198,   1,    Flash encrypt. Disable JTAG. EFUSE_RD_DISABLE_JTAG. 
 CONSOLE_DEBUG_DISABLE,  EFUSE_BLK0,    194,   1,    Flash encrypt. Disable ROM BASIC interpreter fallback. EFUSE_RD_CONSOLE_DEBUG_DISABLE. 
-FLASH_CRYPT_CNT,        EFUSE_BLK0,    20,    8,    Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.
+FLASH_CRYPT_CNT,        EFUSE_BLK0,    20,    7,    Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.
 
 # Write protection #
 ####################
