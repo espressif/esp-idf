@@ -92,6 +92,8 @@ function(idf_set_global_compile_options)
 
     list(APPEND compile_definitions "ESP_PLATFORM" "HAVE_CONFIG_H")
 
+    spaces2list(CMAKE_C_FLAGS)
+    spaces2list(CMAKE_CXX_FLAGS)
     list(APPEND compile_options "${CMAKE_C_FLAGS}")
     list(APPEND c_compile_options "${CMAKE_C_FLAGS}")
     list(APPEND cxx_compile_options "${CMAKE_CXX_FLAGS}")
