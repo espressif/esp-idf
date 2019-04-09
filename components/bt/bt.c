@@ -818,7 +818,7 @@ static void btdm_sleep_enter_phase1_wrapper(uint32_t lpcycles)
     // start a timer to wake up and acquire the pm_lock before modem_sleep awakes
     uint32_t us_to_sleep = btdm_lpcycles_2_us(lpcycles);
 
-#define BTDM_MIN_TIMER_UNCERTAINTY_US      (1800)
+#define BTDM_MIN_TIMER_UNCERTAINTY_US      (500)
     assert(us_to_sleep > BTDM_MIN_TIMER_UNCERTAINTY_US);
     // allow a maximum time uncertainty to be about 488ppm(1/2048) at least as clock drift
     // and set the timer in advance
