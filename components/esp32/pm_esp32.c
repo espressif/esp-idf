@@ -457,6 +457,10 @@ void IRAM_ATTR esp_pm_impl_isr_hook()
 {
     int core_id = xPortGetCoreID();
     ESP_PM_TRACE_ENTER(ISR_HOOK, core_id);
+    /* Prevent higher level interrupts (than the one this function was called from)
+     * from happening in this section, since they will also call into esp_pm_impl_isr_hook. 
+     */
+    uint32_t state = portENTER_CRITICAL_NESTED();
 #if portNUM_PROCESSORS == 2
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
@@ -467,6 +471,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook()
 #else
     leave_idle();
 #endif // portNUM_PROCESSORS == 2
+    portEXIT_CRITICAL_NESTED(state);
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 
