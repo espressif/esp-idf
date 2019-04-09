@@ -37,6 +37,21 @@ typedef enum {
     ESP_BT_MODE_BTDM       = 0x03,   /*!< Run dual mode */
 } esp_bt_mode_t;
 
+/**
+ * @brief BLE sleep clock accuracy(SCA), values for ble_sca field in esp_bt_controller_config_t,
+ *        currently only ESP_BLE_SCA_500PPM and ESP_BLE_SCA_250PPM are supported
+ */
+enum {
+    ESP_BLE_SCA_500PPM     = 0,   /*!< BLE SCA at 500ppm */
+    ESP_BLE_SCA_250PPM,           /*!< BLE SCA at 250ppm */
+    ESP_BLE_SCA_150PPM,           /*!< BLE SCA at 150ppm */
+    ESP_BLE_SCA_100PPM,           /*!< BLE SCA at 100ppm */
+    ESP_BLE_SCA_75PPM,            /*!< BLE SCA at 75ppm */
+    ESP_BLE_SCA_50PPM,            /*!< BLE SCA at 50ppm */
+    ESP_BLE_SCA_30PPM,            /*!< BLE SCA at 30ppm */
+    ESP_BLE_SCA_20PPM,            /*!< BLE SCA at 20ppm */
+};
+
 #ifdef CONFIG_BT_ENABLED
 /* While scanning, if the free memory value in controller is less than SCAN_SEND_ADV_RESERVED_SIZE,
 the adv packet will be discarded until the memory is restored. */
@@ -106,15 +121,16 @@ the adv packet will be discarded until the memory is restored. */
     .hci_uart_no = BT_HCI_UART_NO_DEFAULT,                                 \
     .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,                     \
     .scan_duplicate_mode = SCAN_DUPLICATE_MODE,                            \
-    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                     \
+    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                      \
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
     .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,                \
     .mode = BTDM_CONTROLLER_MODE_EFF,                                      \
-    .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,               \
-    .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,     \
-    .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,   \
+    .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,                     \
+    .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,           \
+    .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,         \
+    .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,                  \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -150,6 +166,7 @@ typedef struct {
      * So, do not modify the value when esp_bt_controller_init()
      */
     uint8_t bt_max_sync_conn;               /*!< BR/EDR maximum ACL connection numbers. Effective in menuconfig */
+    uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 

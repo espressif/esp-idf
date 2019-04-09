@@ -161,22 +161,64 @@ menu Bluetooth
                 prompt "Bluetooth low power clock"
                 depends on BTDM_MODEM_SLEEP_MODE_ORIG
                 help
-                    Select the low power clock source for bluetooth controller
+                    Select the low power clock source for bluetooth controller. Bluetooth low power clock is
+                    the clock source to maintain time in sleep mode.
+
+                    - "Main crystal" option provides good accuracy and can support Dynamic Frequency Scaling
+                      to be used with Bluetooth modem sleep. Light sleep is not supported.
+                    - "External 32kHz crystal" option allows user to use a 32.768kHz crystal as Bluetooth low
+                      power clock. This option is allowed as long as External 32kHz crystal is configured as
+                      the system RTC clock source. This option provides good accuracy and supports Bluetooth
+                      modem sleep to be used alongside Dynamic Frequency Scaling or light sleep.
 
                 config BTDM_LPCLK_SEL_MAIN_XTAL
                     bool "Main crystal"
                     help
                         Main crystal can be used as low power clock for bluetooth modem sleep. If this option is
                         selected, bluetooth modem sleep can work under Dynamic Frequency Scaling(DFS) enabled, but
-                        cannot work when light sleep is enabled. Main crystal has a relatively better performance than
-                        other bluetooth low power clock sources.
+                        cannot work when light sleep is enabled. Main crystal has a good performance in accuracy as
+                        the bluetooth low power clock source.
 
                 config BTDM_LPCLK_SEL_EXT_32K_XTAL
                     bool "External 32kHz crystal"
                     depends on ESP32_RTC_CLK_SRC_EXT_CRYS
+                    help
+                        External 32kHz crystal has a nominal frequency of 32.768kHz and provides good frequency
+                        stability. If used as Bluetooth low power clock, External 32kHz can support Bluetooth
+                        modem sleep to be used with both DFS and light sleep.
             endchoice
 
         endmenu
+
+        choice BTDM_BLE_SLEEP_CLOCK_ACCURACY
+            prompt "BLE Sleep Clock Accuracy"
+            depends on BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+            default BTDM_BLE_DEFAULT_SCA_250PPM
+            help
+                BLE Sleep Clock Accuracy(SCA) for the local device is used to estimate window widening in BLE
+                connection events. With a lower level of clock accuracy(e.g. 500ppm over 250ppm), the slave
+                needs a larger RX window to synchronize with master in each anchor point, thus resulting in an
+                increase of power consumption but a higher level of robustness in keeping connected. According
+                to the requirements of Bluetooth Core specification 4.2, the worst-case accuracy of Classic
+                Bluetooth low power oscialltor(LPO) is +/-250ppm in STANDBY and in low power modes such as
+                sniff. For BLE the worst-case SCA is +/-500ppm.
+
+                - "151ppm to 250ppm" option is the default value for Bluetooth Dual mode
+                - "251ppm to 500ppm" option can be used in BLE only mode when using external 32kHz crystal as
+                   low power clock. This option is provided in case that BLE sleep clock has a lower level of
+                   accuracy, or other error sources contribute to the inaccurate timing during sleep.
+
+            config BTDM_BLE_DEFAULT_SCA_500PPM
+                bool "251ppm to 500ppm"
+                depends on BTDM_LPCLK_SEL_EXT_32K_XTAL && BTDM_CTRL_MODE_BLE_ONLY
+            config BTDM_BLE_DEFAULT_SCA_250PPM
+                bool "151ppm to 250ppm"
+        endchoice
+        config BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF
+            int
+            default 0 if BTDM_BLE_DEFAULT_SCA_500PPM
+            default 1 if BTDM_BLE_DEFAULT_SCA_250PPM
+            default 1
 
         config BTDM_BLE_SCAN_DUPL
             bool "BLE Scan Duplicate Options"
