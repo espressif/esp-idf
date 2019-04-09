@@ -1148,7 +1148,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     set_div_ret = btdm_lpclk_set_div(0);
     assert(select_src_ret && set_div_ret);
     btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = esp_clk_slowclk_cal_get();
+    btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
+        (1000000 >> (15 - RTC_CLK_CAL_FRACT));
     assert(btdm_lpcycle_us != 0);
 #endif // CONFIG_BTDM_LPCLK_SEL_XX
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_ORIG);
