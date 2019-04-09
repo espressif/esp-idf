@@ -80,7 +80,8 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     if (esp_transport_connect(ws->parent, host, port, timeout_ms) < 0) {
-        ESP_LOGE(TAG, "Error connect to ther server");
+        ESP_LOGE(TAG, "Error connect to the server");
+        return -1;
     }
 
     unsigned char random_key[16];
