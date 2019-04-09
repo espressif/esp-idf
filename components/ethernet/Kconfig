@@ -1,4 +1,5 @@
 menu Ethernet
+    depends on IDF_TARGET_ESP32
 
     config ETH_DMA_RX_BUF_NUM
         int "Number of DMA RX buffers"
