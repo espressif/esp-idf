@@ -51,7 +51,7 @@ static int ssl_connect_async(esp_transport_handle_t t, const char *host, int por
         ssl->cfg.timeout_ms = timeout_ms;
         ssl->cfg.non_block = true;
         ssl->ssl_initialized = true;
-        ssl->tls = calloc(1, sizeof(esp_tls_t));
+        ssl->tls = esp_tls_init();
         if (!ssl->tls) {
             return -1;
         }
@@ -69,9 +69,12 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
 
     ssl->cfg.timeout_ms = timeout_ms;
     ssl->ssl_initialized = true;
-    ssl->tls = esp_tls_conn_new(host, strlen(host), port, &ssl->cfg);
-    if (!ssl->tls) {
+    ssl->tls = esp_tls_init();
+    if (esp_tls_conn_new(host, strlen(host), port, &ssl->cfg, ssl->tls) < 0) {
         ESP_LOGE(TAG, "Failed to open a new connection");
+        esp_transport_set_error(t, esp_tls_get_and_clear_last_error(ssl->tls));
+        esp_tls_conn_delete(ssl->tls);
+        ssl->tls = NULL;
         return -1;
     }
     return 0;
@@ -112,7 +115,7 @@ static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int 
     ret = esp_tls_conn_write(ssl->tls, (const unsigned char *) buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_write error, errno=%s", strerror(errno));
-        return -1;
+        esp_transport_set_error(t, esp_tls_get_and_clear_last_error(ssl->tls));
     }
     return ret;
 }
@@ -130,7 +133,7 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
     ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
-        return -1;
+        esp_transport_set_error(t, esp_tls_get_and_clear_last_error(ssl->tls));
     }
     if (ret == 0) {
         ret = -1;

@@ -31,6 +31,26 @@
 extern "C" {
 #endif
 
+#define ESP_ERR_ESP_TLS_BASE           0x8000             /*!< Starting number of ESP-TLS error codes */
+#define ESP_ERR_ESP_TLS_CANNOT_RESOLVE_HOSTNAME           (ESP_ERR_ESP_TLS_BASE + 0x01)  /*!< Error if hostname couldn't be resolved upon tls connection */
+#define ESP_ERR_ESP_TLS_CANNOT_CREATE_SOCKET              (ESP_ERR_ESP_TLS_BASE + 0x02)  /*!< Failed to create socket */
+#define ESP_ERR_ESP_TLS_UNSUPPORTED_PROTOCOL_FAMILY       (ESP_ERR_ESP_TLS_BASE + 0x03)  /*!< Unsupported protocol family */
+#define ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST            (ESP_ERR_ESP_TLS_BASE + 0x04)  /*!< Failed to connnect to host */
+#define ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x05)  /*!< failed to set socket option */
+#define ESP_ERR_MBEDTLS_CERT_PARTLY_OK                    (ESP_ERR_ESP_TLS_BASE + 0x06)  /*!< embedtls parse certificates was partly successful */
+#define ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x07)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x08)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED        (ESP_ERR_ESP_TLS_BASE + 0x09)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED    (ESP_ERR_ESP_TLS_BASE + 0x0A)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED             (ESP_ERR_ESP_TLS_BASE + 0x0B)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED          (ESP_ERR_ESP_TLS_BASE + 0x0C)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0D)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0E)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x0F)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< embedtls api returned failed  */
+
+typedef struct esp_error_private* esp_error_handle_t;
+
 /**
  *  @brief ESP-TLS Connection State
  */
@@ -186,7 +206,21 @@ typedef struct esp_tls {
     esp_tls_role_t role;                                                        /*!< esp-tls role
                                                                                      - ESP_TLS_CLIENT
                                                                                      - ESP_TLS_SERVER */
+
+    esp_error_handle_t error_handle;                                            /*!< handle to internal error descriptor */
+
 } esp_tls_t;
+
+
+/**
+ * @brief      Create TLS connection
+ *
+ * This function allocates and initializes esp-tls structure handle.
+ *
+ * @return      tls     Pointer to esp-tls as esp-tls handle if successfully initialized,
+ *                      NULL if allocation error
+ */
+esp_tls_t *esp_tls_init();
 
 /**
  * @brief      Create a new blocking TLS/SSL connection
@@ -200,9 +234,14 @@ typedef struct esp_tls {
  *                       non-TLS connection, keep this NULL. For TLS connection,
  *                       a pass pointer to esp_tls_cfg_t. At a minimum, this
  *                       structure should be zero-initialized.
- * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
+ * @param[in]  tls       Pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *             - -1      If connection establishment fails.
+ *             -  1      If connection establishment is successful.
+ *             -  0      Reserved for connection state is in progress.
  */
-esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg);
+int esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
 /**
  * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
@@ -317,7 +356,7 @@ void esp_tls_conn_delete(esp_tls_t *tls);
  *            - bytes available in the application data
  *              record read buffer
  */
-size_t esp_tls_get_bytes_avail(esp_tls_t *tls);
+ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls);
 
 /**
  * @brief      Create a global CA store, initially empty.
@@ -372,6 +411,17 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store();
  * freed up. The application can call this API if it no longer needs the global CA store.
  */
 void esp_tls_free_global_ca_store();
+
+/**
+ * @brief      Returns last error in esp_tls (if any) and clears it.
+ *
+ * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *            - ESP_OK if no error occurred
+ *            - specific error code (based on ESP_ERR_ESP_TLS_BASE) otherwise
+ */
+esp_err_t esp_tls_get_and_clear_last_error(esp_tls_t* tls);
 
 #ifdef CONFIG_ESP_TLS_SERVER
 /**
