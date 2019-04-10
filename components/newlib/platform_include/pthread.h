@@ -16,8 +16,12 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/features.h>
 
+// Remove this when GCC 5.2.0 is no longer supported
+#ifndef _POSIX_TIMEOUTS
 #define _POSIX_TIMEOUTS     // For pthread_mutex_timedlock
+#endif
 
 #include_next <pthread.h>
 
