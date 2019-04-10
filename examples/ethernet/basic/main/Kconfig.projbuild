@@ -1,13 +1,5 @@
 menu "Example Configuration"
 
-    config EXAMPLE_STORE_HISTORY
-        bool "Store command history in flash"
-        default y
-        help
-            Linenoise line editing library provides functions to save and load
-            command history. If this option is enabled, initalizes a FAT filesystem
-            and uses it to store command history.
-
     choice EXAMPLE_ETH_PHY_MODEL
         prompt "Ethernet PHY Device"
         default EXAMPLE_ETH_PHY_IP101
