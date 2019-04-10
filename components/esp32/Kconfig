@@ -788,6 +788,19 @@ config ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256
     bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
 endchoice
 
+config ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+    bool "Additional current for external 32kHz crystal"
+    depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+    default "n"
+    help
+        Choose which additional current is used for rtc external crystal.
+
+        - With some 32kHz crystal configurations, the X32N and X32P pins may not
+          have enough drive strength to keep the crystal oscillating during deep sleep.
+          If this option is enabled, additional current from touchpad 9 is provided
+          internally to drive the 32kHz crystal. If this option is enabled, deep sleep current
+          is slightly higher (4-5uA) and the touchpad and ULP wakeup sources are not available.
+
 config ESP32_RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
     default 3000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
