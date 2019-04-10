@@ -24,6 +24,13 @@
 #define MB_PAR_INFO_GET_TOUT                (10) // Timeout for get parameter info
 #define MB_CHAN_DATA_MAX_VAL                (10)
 #define MB_CHAN_DATA_OFFSET                 (0.01f)
+#define MB_READ_MASK                        (MB_EVENT_INPUT_REG_RD \
+                                                | MB_EVENT_HOLDING_REG_RD \
+                                                | MB_EVENT_DISCRETE_RD \
+                                                | MB_EVENT_COILS_RD)
+#define MB_WRITE_MASK                       (MB_EVENT_HOLDING_REG_WR \
+                                                | MB_EVENT_COILS_WR)
+#define MB_READ_WRITE_MASK                  (MB_READ_MASK | MB_WRITE_MASK)
 
 static const char *TAG = "MODBUS_SLAVE_APP";
 
@@ -124,18 +131,16 @@ void app_main()
 
     // The cycle below will be terminated when parameter holdingRegParams.dataChan0
     // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
-    for(;holding_reg_params.data_chan0 < MB_CHAN_DATA_MAX_VAL;){
+    for(;holding_reg_params.data_chan0 < MB_CHAN_DATA_MAX_VAL;) {
         // Check for read/write events of Modbus master for certain events
-        mb_event_group_t event = mbcontroller_check_event((MB_EVENT_HOLDING_REG_WR
-                                                        | MB_EVENT_INPUT_REG_RD
-                                                        | MB_EVENT_HOLDING_REG_RD
-                                                        | MB_EVENT_DISCRETE_RD
-                                                        | MB_EVENT_COILS_RD));
+        mb_event_group_t event = mbcontroller_check_event(MB_READ_WRITE_MASK);
+        const char* rw_str = (event & MB_READ_MASK) ? "READ" : "WRITE";
         // Filter events and process them accordingly
-        if((event & MB_EVENT_HOLDING_REG_WR) || (event & MB_EVENT_HOLDING_REG_RD)) {
+        if(event & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD)) {
             // Get parameter information from parameter queue
             ESP_ERROR_CHECK(mbcontroller_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            printf("HOLDING READ/WRITE: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+            printf("HOLDING %s: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+                    rw_str,
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
                     (uint32_t)reg_info.type,
@@ -161,9 +166,10 @@ void app_main()
                                 (uint32_t)reg_info.type,
                                 (uint32_t)reg_info.address,
                                 (uint32_t)reg_info.size);
-        } else if (event & MB_EVENT_COILS_RD) {
+        } else if (event & (MB_EVENT_COILS_RD | MB_EVENT_COILS_WR)) {
             ESP_ERROR_CHECK(mbcontroller_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            printf("COILS READ: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+            printf("COILS %s: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+                                rw_str,
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
                                 (uint32_t)reg_info.type,
