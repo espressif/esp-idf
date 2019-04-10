@@ -422,8 +422,8 @@ eMBErrorCode eMBRegCoilsCB(UCHAR* pucRegBuffer, USHORT usAddress,
                     usCoils--;
                 }
                 // Send an event to notify application task about event
-                (void)send_param_access_notification(MB_EVENT_COILS_WR);
-                (void)send_param_info(MB_EVENT_COILS_WR, (uint16_t)usAddress,
+                (void)send_param_access_notification(MB_EVENT_COILS_RD);
+                (void)send_param_info(MB_EVENT_COILS_RD, (uint16_t)usAddress,
                                 (uint8_t*)(pucCoilsDataBuf), (uint16_t)usNCoils);
                 break;
             case MB_REG_WRITE:
