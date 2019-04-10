@@ -3749,6 +3749,7 @@ BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
 				pxTaskStatusArray[ uxTask ].xTaskNumber = pxNextTCB->uxTCBNumber;
 				pxTaskStatusArray[ uxTask ].eCurrentState = eState;
 				pxTaskStatusArray[ uxTask ].uxCurrentPriority = pxNextTCB->uxPriority;
+				pxTaskStatusArray[ uxTask ].pxStackBase = pxNextTCB->pxStack;
 
 				#if ( INCLUDE_vTaskSuspend == 1 )
 				{
