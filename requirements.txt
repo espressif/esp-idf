@@ -5,6 +5,7 @@ setuptools
 # The setuptools package is required to install source distributions and on some systems is not installed by default.
 # Please keep it as the first item of this list.
 #
+click>=5.0
 pyserial>=3.0
 future>=0.15.2
 cryptography>=2.1.4
