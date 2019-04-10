@@ -3049,13 +3049,13 @@ void _mdns_disable_pcb(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protoc
 /**
  * @brief  Dispatch interface changes based on system events
  */
-static void _mdns_handle_system_event(esp_event_base_t event_base, 
+static void _mdns_handle_system_event(esp_event_base_t event_base,
                                       int32_t event_id, tcpip_adapter_if_t interface)
 {
     if (!_mdns_server) {
         return;
     }
-    
+
     tcpip_adapter_dhcp_status_t dcst;
     if (event_base == WIFI_EVENT) {
         switch(event_id) {
@@ -3723,7 +3723,7 @@ static void _mdns_execute_action(mdns_action_t * action)
 
     switch(action->type) {
     case ACTION_SYSTEM_EVENT:
-        _mdns_handle_system_event(action->data.sys_event.event_base, 
+        _mdns_handle_system_event(action->data.sys_event.event_base,
             action->data.sys_event.event_id, action->data.sys_event.interface);
         break;
     case ACTION_HOSTNAME_SET:
@@ -4120,7 +4120,7 @@ esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
-static void event_handler(void* arg, esp_event_base_t event_base, 
+static void event_handler(void* arg, esp_event_base_t event_base,
                      int32_t event_id, void* event_data)
 {
     if (!_mdns_server) {
@@ -4142,7 +4142,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 
     if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
         free(action);
-    }    
+    }
 }
 
 esp_err_t mdns_init()

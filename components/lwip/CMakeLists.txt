@@ -6,7 +6,7 @@ set(include_dirs
     port/esp32/include/arch
     )
 
-set(srcs 
+set(srcs
     "apps/dhcpserver/dhcpserver.c"
     "apps/ping/esp_ping.c"
     "apps/ping/ping.c"
@@ -92,7 +92,7 @@ set(srcs
     "port/esp32/netif/wlanif.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
-    list(APPEND srcs 
+    list(APPEND srcs
         "lwip/src/netif/ppp/auth.c"
         "lwip/src/netif/ppp/ccp.c"
         "lwip/src/netif/ppp/chap-md5.c"
@@ -129,7 +129,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES ethernet tcpip_adapter nvs_flash)
+                    PRIV_REQUIRES esp_eth tcpip_adapter nvs_flash)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)

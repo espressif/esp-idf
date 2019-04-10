@@ -1,0 +1,8 @@
+[mapping:esp_eth]
+archive: libesp_eth.a
+entries:
+    esp_eth_mac_esp32:emac_hal_tx_complete_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_tx_unavail_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_rx_complete_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_rx_early_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_rx_unavail_cb (noflash_text)

@@ -30,118 +30,38 @@ menu "Example Connection Configuration"
             WiFi password (WPA or WPA2) for the example to use.
             Can be left blank if the network has no security set.
 
-
-    choice EXAMPLE_PHY_MODEL
-        prompt "Ethernet PHY"
+    choice EXAMPLE_ETH_PHY_MODEL
         depends on EXAMPLE_CONNECT_ETHERNET
-        default EXAMPLE_PHY_TLK110
+        prompt "Ethernet PHY Device"
+        default EXAMPLE_ETH_PHY_IP101
         help
             Select the PHY driver to use for the example.
 
-        config EXAMPLE_PHY_IP101
+        config EXAMPLE_ETH_PHY_IP101
             bool "IP101"
             help
                 IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
                 Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
 
-        config EXAMPLE_PHY_TLK110
-            bool "TI TLK110 PHY"
+        config EXAMPLE_ETH_PHY_RTL8201
+            bool "RTL8201/SR8201"
             help
-                Select this to use the TI TLK110 PHY
+                    RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
+                    Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
 
-        config EXAMPLE_PHY_LAN8720
-            bool "Microchip LAN8720 PHY"
+        config EXAMPLE_ETH_PHY_LAN8720
+            bool "LAN8720"
             help
-                Select this to use the Microchip LAN8720 PHY
+                    LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
+                    Goto https://www.microchip.com/LAN8720A for more information about it.
+
+        config EXAMPLE_ETH_PHY_DP83848
+            bool "DP83848"
+            help
+                    DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
+                    Goto http://www.ti.com/product/DP83848J for more information about it.
 
     endchoice
-
-
-    config EXAMPLE_PHY_ADDRESS
-        int "PHY Address (0-31)"
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default 31
-        range 0 31
-        help
-            Select the PHY Address (0-31) for the hardware configuration and PHY model.
-            TLK110 default 31
-            LAN8720 default 1 or 0
-
-
-    choice EXAMPLE_PHY_CLOCK_MODE
-        prompt "EMAC clock mode"
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default EXAMPLE_PHY_CLOCK_GPIO0_IN
-        help
-            Select external (input on GPIO0) or internal (output on GPIO16 or GPIO17) clock
-
-
-        config EXAMPLE_PHY_CLOCK_GPIO0_IN
-            bool "GPIO0 input"
-            depends on EXAMPLE_CONNECT_ETHERNET
-            help
-                Input of 50MHz PHY clock on GPIO0.
-
-        config EXAMPLE_PHY_CLOCK_GPIO0_OUT
-            bool "GPIO0 Output"
-            help
-                Output the internal 50MHz RMII clock on GPIO0.
-
-        config EXAMPLE_PHY_CLOCK_GPIO16_OUT
-            bool "GPIO16 output"
-            depends on EXAMPLE_CONNECT_ETHERNET
-            help
-                Output the internal 50MHz APLL clock on GPIO16.
-
-        config EXAMPLE_PHY_CLOCK_GPIO17_OUT
-            bool "GPIO17 output (inverted)"
-            depends on EXAMPLE_CONNECT_ETHERNET
-            help
-                Output the internal 50MHz APLL clock on GPIO17 (inverted signal).
-
-    endchoice
-
-    config EXAMPLE_PHY_CLOCK_MODE
-        int
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default 0 if EXAMPLE_PHY_CLOCK_GPIO0_IN
-        default 1 if EXAMPLE_PHY_CLOCK_GPIO0_OUT
-        default 2 if EXAMPLE_PHY_CLOCK_GPIO16_OUT
-        default 3 if EXAMPLE_PHY_CLOCK_GPIO17_OUT
-
-
-    config EXAMPLE_PHY_USE_POWER_PIN
-        bool "Use PHY Power (enable/disable) pin"
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default y
-        help
-            Use a GPIO "power pin" to power the PHY on/off during operation.
-            Consult the example README for more details
-
-    config EXAMPLE_PHY_POWER_PIN
-        int "PHY Power GPIO"
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default 17
-        range 0 33
-        depends on EXAMPLE_PHY_USE_POWER_PIN
-        help
-            GPIO number to use for powering on/off the PHY.
-
-    config EXAMPLE_PHY_SMI_MDC_PIN
-        int "SMI MDC Pin"
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default 23
-        range 0 33
-        help
-            GPIO number to use for SMI clock output MDC to PHY.
-
-    config EXAMPLE_PHY_SMI_MDIO_PIN
-        int "SMI MDIO Pin"
-        depends on EXAMPLE_CONNECT_ETHERNET
-        default 18
-        range 0 33
-        help
-            GPIO number to use for SMI data pin MDIO to/from PHY.
 
     config EXAMPLE_CONNECT_IPV6
         bool "Obtain IPv6 link-local address"

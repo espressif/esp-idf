@@ -34,10 +34,8 @@ In the `Example Connection Configuration` menu:
 * Choose the network interface in `Connect using`  option based on your board. Currently we support both Wi-Fi and Ethernet.
 * If you have selected the Wi-Fi interface, you also have to set:
   * Wi-Fi SSID and Wi-Fi password that your ESP32 will connect to
-* If you have selected the Ethernet interface, you also have to set:
-  * PHY model in `Ethernet PHY` option, e.g. IP101
-  * PHY address in `PHY Address` option, which should be determined by your board schematic
-  * EMAC Clock mode, SMI GPIOs
+* If you have selected the Ethernet interface, you also have to:
+  * Set PHY model under `Ethernet PHY Device` option, e.g. IP101.
 
 In the `Example Configuration` menu:
 
