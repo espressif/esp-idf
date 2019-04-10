@@ -348,7 +348,7 @@ function run_tests()
     echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
     # note: we do 'reconfigure' here, as we just need to run cmake
-    idf.py -C $IDF_PATH/examples/build_system/cmake/import_lib -B `pwd`/build reconfigure -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults"
+    idf.py -C $IDF_PATH/examples/build_system/cmake/import_lib -B `pwd`/build -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults" reconfigure
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
     rm -r sdkconfig.defaults build
@@ -411,7 +411,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     print_status "Check ccache is used to build when present"
     touch ccache && chmod +x ccache  # make sure that ccache is present for this test
     (export PATH=$PWD:$PATH && idf.py reconfigure | grep "ccache will be used for faster builds") || failure "ccache should be used when present"
-    (export PATH=$PWD:$PATH && idf.py reconfigure --no-ccache | grep -c "ccache will be used for faster builds" | grep -wq 0) \
+    (export PATH=$PWD:$PATH && idf.py  --no-ccache reconfigure| grep -c "ccache will be used for faster builds" | grep -wq 0) \
         || failure "ccache should not be used even when present if --no-ccache is specified"
     rm -f ccache
 
