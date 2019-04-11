@@ -9,7 +9,7 @@ LINKER_SCRIPTS := \
     $(IDF_TARGET).bootloader.ld \
     $(IDF_TARGET).bootloader.rom.ld \
     $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.ld \
-    $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.spiram_incompatible_fns.ld \
+    $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.newlib-funcs.ld \
     $(IDF_PATH)/components/$(IDF_TARGET)/ld/$(IDF_TARGET).peripherals.ld
 
 ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
