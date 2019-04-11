@@ -26,4 +26,4 @@ System API
    Miscellaneous System APIs <system>
 
 
-Example code for this API section is provided in :example:`system` directory of ESP-IDF examples.
+Code examples for this API section are provided in the :example:`system` directory of ESP-IDF examples.
