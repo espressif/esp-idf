@@ -1,3 +1,9 @@
+/* Unlike other ROM functions which are exported using PROVIDE, which declares
+   weak symbols, these libgcc functions are exported using assignment,
+   which declares strong symbols. This is done so that ROM functions are always
+   used instead of the ones provided by libgcc.a.
+*/
+
 __absvdi2 = 0x4006387c;
 __absvsi2 = 0x40063868;
 __adddf3 = 0x40002590;
@@ -41,6 +47,7 @@ __floatundidf = 0x4000c978;
 __floatundisf = 0x4000c8b0;
 __floatunsidf = 0x4000c938;
 __floatunsisf = 0x4000c864;
+__gcc_bcmp = 0x40064a70;
 __gedf2 = 0x40063768;
 __gesf2 = 0x4006340c;
 __gtdf2 = 0x400636dc;

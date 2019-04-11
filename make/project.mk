@@ -397,6 +397,7 @@ endif #CONFIG_WARN_WRITE_STRINGS
 
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \
+	-Wno-frame-address \
 	-ffunction-sections -fdata-sections \
 	-fstrict-volatile-bitfields \
 	-mlongcalls \

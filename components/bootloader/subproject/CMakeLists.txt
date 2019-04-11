@@ -26,9 +26,10 @@ target_linker_script(bootloader.elf
 
 # as cmake won't attach linker args to a header-only library, attach
 # linker args directly to the bootloader.elf
+# esp32.rom.newlib-funcs.ld is included to use memset/memcpy.
 set(BOOTLOADER_LINKER_SCRIPTS
     "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.ld"
-    "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.spiram_incompatible_fns.ld"
+    "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.newlib-funcs.ld"
     "${IDF_PATH}/components/${IDF_TARGET}/ld/${IDF_TARGET}.peripherals.ld")
 
 target_linker_script(bootloader.elf ${BOOTLOADER_LINKER_SCRIPTS})

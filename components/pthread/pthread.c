@@ -460,7 +460,8 @@ void pthread_exit(void *value_ptr)
         vTaskSuspend(NULL);
     }
 
-    ESP_LOGV(TAG, "%s EXIT", __FUNCTION__);
+    // Should never be reached
+    abort();
 }
 
 int pthread_cancel(pthread_t thread)

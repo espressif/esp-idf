@@ -41,5 +41,4 @@ void IRAM_ATTR esp_reent_init(struct _reent* r)
     r->__sglue._next = NULL;
     r->__sglue._niobs = 0;
     r->__sglue._iobs = NULL;
-    r->_current_locale = "C";
 }
