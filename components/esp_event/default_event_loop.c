@@ -55,6 +55,20 @@ esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id,
 }
 
 
+#if CONFIG_POST_EVENTS_FROM_ISR
+esp_err_t esp_event_isr_post(esp_event_base_t event_base, int32_t event_id,
+        void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
+{
+    if (s_default_loop == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    return esp_event_isr_post_to(s_default_loop, event_base, event_id,
+            event_data, event_data_size, task_unblocked);
+}
+#endif
+
+
 esp_err_t esp_event_loop_create_default()
 {
     if (s_default_loop) {

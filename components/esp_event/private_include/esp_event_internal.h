@@ -16,6 +16,7 @@
 #define ESP_EVENT_INTERNAL_H_
 
 #include "esp_event.h"
+#include "stdatomic.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,18 +78,30 @@ typedef struct esp_event_loop_instance {
     esp_event_loop_nodes_t loop_nodes;                              /**< set of linked lists containing the
                                                                             registered handlers for the loop */
 #ifdef CONFIG_EVENT_LOOP_PROFILING
-    uint32_t events_recieved;                                       /**< number of events successfully posted to the loop */
-    uint32_t events_dropped;                                        /**< number of events dropped due to queue being full */
+    atomic_uint_least32_t events_recieved;                          /**< number of events successfully posted to the loop */
+    atomic_uint_least32_t events_dropped;                           /**< number of events dropped due to queue being full */
     SemaphoreHandle_t profiling_mutex;                              /**< mutex used for profiliing */
     SLIST_ENTRY(esp_event_loop_instance) next;                      /**< next event loop in the list */
 #endif
 } esp_event_loop_instance_t;
 
+#if CONFIG_POST_EVENTS_FROM_ISR
+typedef union esp_event_post_data {
+    uint32_t val;
+    void *ptr;
+} esp_event_post_data_t;
+#else
+typedef void* esp_event_post_data_t;
+#endif
+
 /// Event posted to the event queue
 typedef struct esp_event_post_instance {
+#if CONFIG_POST_EVENTS_FROM_ISR
+    bool data_allocd;                                                /**< indicates whether data is alloc'd */
+#endif
     esp_event_base_t base;                                           /**< the event base */
     int32_t id;                                                      /**< the event id */
-    void* data;                                                      /**< data associated with the event */
+    esp_event_post_data_t data;                                      /**< data associated with the event */
 } esp_event_post_instance_t;
 
 #ifdef __cplusplus
