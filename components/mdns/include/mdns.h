@@ -34,8 +34,8 @@ extern "C" {
  * @brief   mDNS enum to specify the ip_protocol type
  */
 typedef enum {
-    MDNS_IP_PROTOCOL_V4,
-    MDNS_IP_PROTOCOL_V6,
+    MDNS_IP_PROTOCOL_V4 = IPADDR_TYPE_V4,
+    MDNS_IP_PROTOCOL_V6 = IPADDR_TYPE_V6,
     MDNS_IP_PROTOCOL_MAX
 } mdns_ip_protocol_t;
 
