@@ -106,7 +106,7 @@ static void app_prov_stop_service(void)
 
     /* Remove event handler */
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler);
-    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, app_prov_event_handler);
 }
 
 /* Task spawned by timer callback */
@@ -223,17 +223,6 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
     nvs_flash_erase();
 #endif
 
-    if (nvs_flash_init() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init NVS");
-        return ESP_FAIL;
-    }
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init wifi");
-        return ESP_FAIL;
-    }
-
     /* Get WiFi Station configuration */
     wifi_config_t wifi_cfg;
     if (esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg) != ESP_OK) {
@@ -250,12 +239,6 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
 
 esp_err_t app_prov_configure_sta(wifi_config_t *wifi_cfg)
 {
-    /* Initialize WiFi with default config */
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init WiFi");
-        return ESP_FAIL;
-    }
     /* Configure WiFi as station */
     if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set WiFi mode");
@@ -324,7 +307,7 @@ esp_err_t app_prov_start_console_provisioning(int security, const protocomm_secu
         return err;
     }
 
-    err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler, NULL);
+    err = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, app_prov_event_handler, NULL);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register IP event handler");
         return err;
