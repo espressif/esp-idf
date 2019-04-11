@@ -72,6 +72,14 @@ else()
     register_component()
 
     target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib")
+
+    # Add a different linker search path depending on WiFi optimisations
+    if (CONFIG_ESP32_WIFI_IRAM_OPT)
+        target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/ld/wifi_iram_opt")
+    else()
+        target_link_libraries(esp32 "-L ${CMAKE_CURRENT_SOURCE_DIR}/ld/wifi_iram_noopt")
+    endif()
+
     if(NOT CONFIG_NO_BLOBS)
         target_link_libraries(esp32 coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
     endif()
