@@ -29,7 +29,6 @@
 extern "C" {
 #endif
 
-
 /// Configuration for creating event loops
 typedef struct {
     int32_t queue_size;                         /**< size of the event loop queue */
@@ -224,16 +223,15 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop,
  * handler recieves is always valid.
  *
  * @param[in] event_base the event base that identifies the event
- * @param[in] event_id the the event id that identifies the event
+ * @param[in] event_id the event id that identifies the event
  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
  * @param[in] event_data_size the size of the event data
  * @param[in] ticks_to_wait number of ticks to block on a full event queue
  *
- * @note posting events from an ISR is not supported
- *
  * @return
  *  - ESP_OK: Success
- *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired
+ *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired, 
+ *                      queue full when posting from ISR
  *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id
  *  - Others: Fail
  */
@@ -253,16 +251,15 @@ esp_err_t esp_event_post(esp_event_base_t event_base,
  *
  * @param[in] event_loop the event loop to post to
  * @param[in] event_base the event base that identifies the event
- * @param[in] event_id the the event id that identifies the event
+ * @param[in] event_id the event id that identifies the event
  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
  * @param[in] event_data_size the size of the event data
  * @param[in] ticks_to_wait number of ticks to block on a full event queue
  *
- * @note posting events from an ISR is not supported
- *
  * @return
  *  - ESP_OK: Success
- *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired
+ *  - ESP_ERR_TIMEOUT: Time to wait for event queue to unblock expired, 
+ *                      queue full when posting from ISR
  *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id
  *  - Others: Fail
  */
@@ -272,6 +269,65 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop,
                             void* event_data,
                             size_t event_data_size,
                             TickType_t ticks_to_wait);
+
+#if CONFIG_POST_EVENTS_FROM_ISR
+/**
+ * @brief Special variant of esp_event_post for posting events from interrupt handlers.
+ * 
+ * @param[in] event_base the event base that identifies the event
+ * @param[in] event_id the event id that identifies the event
+ * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
+ * @param[in] event_data_size the size of the event data; max is 4 bytes
+ * @param[out] task_unblocked an optional parameter (can be NULL) which indicates that an event task with 
+ *                            higher priority than currently running task has been unblocked by the posted event;
+ *                            a context switch should be requested before the interrupt is existed.
+ *
+ * @note this function is only available when CONFIG_POST_EVENTS_FROM_ISR is enabled
+ * @note when this function is called from an interrupt handler placed in IRAM, this function should
+ *       be placed in IRAM as well by enabling CONFIG_POST_EVENTS_FROM_IRAM_ISR
+ *
+ * @return
+ *  - ESP_OK: Success
+ *  - ESP_FAIL: Event queue for the default event loop full
+ *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id,
+ *                          data size of more than 4 bytes 
+ *  - Others: Fail
+ */
+esp_err_t esp_event_isr_post(esp_event_base_t event_base,
+                            int32_t event_id,
+                            void* event_data,
+                            size_t event_data_size,
+                            BaseType_t* task_unblocked);
+
+/**
+ * @brief Special variant of esp_event_post_to for posting events from interrupt handlers
+ *
+ * @param[in] event_base the event base that identifies the event
+ * @param[in] event_id the event id that identifies the event
+ * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
+ * @param[in] event_data_size the size of the event data
+ * @param[out] task_unblocked an optional parameter (can be NULL) which indicates that an event task with 
+ *                            higher priority than currently running task has been unblocked by the posted event;
+ *                            a context switch should be requested before the interrupt is existed.
+ *
+ * @note this function is only available when CONFIG_POST_EVENTS_FROM_ISR is enabled
+ * @note when this function is called from an interrupt handler placed in IRAM, this function should
+ *       be placed in IRAM as well by enabling CONFIG_POST_EVENTS_FROM_IRAM_ISR
+ *
+ * @return
+ *  - ESP_OK: Success
+ *  - ESP_FAIL: Event queue for the loop full
+ *  - ESP_ERR_INVALID_ARG: Invalid combination of event base and event id,
+ *                          data size of more than 4 bytes 
+ *  - Others: Fail
+ */
+esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop,
+                            esp_event_base_t event_base,
+                            int32_t event_id,
+                            void* event_data,
+                            size_t event_data_size,
+                            BaseType_t* task_unblocked);
+#endif
 
 /**
  * @brief Dumps statistics of all event loops.
