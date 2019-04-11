@@ -53,9 +53,7 @@ static void wifi_init_sta()
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, event_handler, NULL));
 
-    /* Start wifi in station mode with credentials set during provisioning */
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+    /* Start Wi-Fi in station mode with credentials set during provisioning */
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 }
@@ -92,6 +90,13 @@ void app_main()
      * main app and the provisioning service */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+    /* Initialize NVS needed by Wi-Fi */
+    ESP_ERROR_CHECK(nvs_flash_init());
+
+    /* Initialize Wi-Fi with default config */
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
     /* Check if device is provisioned */
     bool provisioned;
     if (app_prov_is_provisioned(&provisioned) != ESP_OK) {
@@ -106,6 +111,6 @@ void app_main()
     } else {
         /* Else start as station with credentials set during provisioning */
         ESP_LOGI(TAG, "Starting WiFi station");
-        wifi_init_sta(NULL);
+        wifi_init_sta();
     }
 }
