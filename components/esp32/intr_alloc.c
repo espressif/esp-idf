@@ -31,6 +31,7 @@
 #include "esp_ipc.h"
 #include <limits.h>
 #include <assert.h>
+#include "soc/soc.h"
 
 static const char* TAG = "intr_alloc";
 
