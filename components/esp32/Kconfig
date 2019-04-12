@@ -999,15 +999,19 @@ config SW_COEXIST_PREFERENCE_VALUE
 
 config ESP32_WIFI_STATIC_RX_BUFFER_NUM
     int "Max number of WiFi static RX buffers"
-    range 2 25
-    default 10
+    range 2 25 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    range 8 25 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    default 10 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    default 16 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
     help
         Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
         The static rx buffers are allocated when esp_wifi_init is called, they are not freed
         until esp_wifi_deinit is called.
 
         WiFi hardware use these buffers to receive all 802.11 frames.
-        A higher number may allow higher throughput but increases memory use.
+        A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED 
+        is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to 
+        achieve better throughput and compatibility with both stations and APs.
 
 config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
     int "Max number of WiFi dynamic RX buffers"
@@ -1120,13 +1124,16 @@ config ESP32_WIFI_AMPDU_RX_ENABLED
 config ESP32_WIFI_RX_BA_WIN
     int "WiFi AMPDU RX BA window size"
     depends on ESP32_WIFI_AMPDU_RX_ENABLED
-    range 2 32
-    default 6
+    range 2 32 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    range 16 32 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    default 6 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+    default 16 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
     help
-        Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput but 
-        more memory. Most of time we should NOT change the default value unless special reason, e.g.  
+        Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better 
+        compatibility but more memory. Most of time we should NOT change the default value unless special reason, e.g.
         test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the recommended
-        value is 9~12.
+        value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first, the default 
+        and minimum value should be 16 to achieve better throughput and compatibility with both stations and APs.
 
 config ESP32_WIFI_NVS_ENABLED
     bool "WiFi NVS flash"
