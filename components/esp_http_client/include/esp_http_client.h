@@ -245,6 +245,7 @@ esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char
  *
  * @return
  *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
  */
 esp_err_t esp_http_client_get_username(esp_http_client_handle_t client, char **value);
 
