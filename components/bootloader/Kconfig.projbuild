@@ -219,6 +219,31 @@ menu "Bootloader config"
             It allow to test anti-rollback implemention without permanent write eFuse bits.
             In partition table should be exist this partition `emul_efuse, data, 5, , 0x2000`.
 
+    config BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+        bool "Skip image validation when exiting deep sleep"
+        depends on (SECURE_BOOT_ENABLED && SECURE_BOOT_INSECURE) || !SECURE_BOOT_ENABLED
+        default n
+        help
+            This option disables the normal validation of an image coming out of
+            deep sleep (checksums, SHA256, and signature). This is a trade-off
+            between wakeup performance from deep sleep, and image integrity checks.
+
+            Only enable this if you know what you are doing. It should not be used
+            in conjunction with using deep_sleep() entry and changing the active OTA
+            partition as this would skip the validation upon first load of the new
+            OTA partition.
+
+    config BOOTLOADER_RESERVE_RTC_SIZE
+        hex
+        default 0x10 if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+        default 0
+        help
+            Reserve RTC FAST memory for Skip image validation. This option in bytes.
+            This option reserves an area in the RTC FAST memory (access only PRO_CPU).
+            Used to save the addresses of the selected application.
+            When a wakeup occurs (from Deep sleep), the bootloader retrieves it and
+            loads the application without validation.
+
 endmenu  # Bootloader
 
 
