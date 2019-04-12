@@ -3048,56 +3048,69 @@ void _mdns_disable_pcb(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protoc
 /**
  * @brief  Dispatch interface changes based on system events
  */
-void _mdns_handle_system_event(system_event_id_t event, tcpip_adapter_if_t interface)
+static void _mdns_handle_system_event(esp_event_base_t event_base, 
+                                      int32_t event_id, tcpip_adapter_if_t interface)
 {
     if (!_mdns_server) {
         return;
     }
-
+    
     tcpip_adapter_dhcp_status_t dcst;
-    switch(event) {
-    case SYSTEM_EVENT_STA_CONNECTED:
-        if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_STA, &dcst)) {
-            if (dcst != TCPIP_ADAPTER_DHCP_STARTED) {
+    if (event_base == WIFI_EVENT) {
+        switch(event_id) {
+            case WIFI_EVENT_STA_CONNECTED:
+                if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_STA, &dcst)) {
+                    if (dcst != TCPIP_ADAPTER_DHCP_STARTED) {
+                        _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
+                    }
+                }
+                break;
+            case WIFI_EVENT_STA_DISCONNECTED:
+                _mdns_disable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
+                _mdns_disable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V6);
+                break;
+            case WIFI_EVENT_AP_START:
+                _mdns_enable_pcb(TCPIP_ADAPTER_IF_AP, MDNS_IP_PROTOCOL_V4);
+                break;
+            case WIFI_EVENT_AP_STOP:
+                _mdns_disable_pcb(TCPIP_ADAPTER_IF_AP, MDNS_IP_PROTOCOL_V4);
+                _mdns_disable_pcb(TCPIP_ADAPTER_IF_AP, MDNS_IP_PROTOCOL_V6);
+                break;
+            default:
+                break;
+        }
+    } else if (event_base == ETH_EVENT) {
+        switch (event_id) {
+            case ETHERNET_EVENT_CONNECTED:
+                if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_ETH, &dcst)) {
+                    if (dcst != TCPIP_ADAPTER_DHCP_STARTED) {
+                        _mdns_enable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
+                    }
+                }
+                break;
+            case ETHERNET_EVENT_DISCONNECTED:
+                _mdns_disable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
+                _mdns_disable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V6);
+                break;
+            default:
+                break;
+        }
+    } else if (event_base == IP_EVENT) {
+        switch (event_id) {
+            case IP_EVENT_STA_GOT_IP:
                 _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
-            }
-        }
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
-        _mdns_announce_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V6, NULL, 0, true);
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        _mdns_disable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
-        _mdns_disable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V6);
-        break;
-    case SYSTEM_EVENT_AP_START:
-        _mdns_enable_pcb(TCPIP_ADAPTER_IF_AP, MDNS_IP_PROTOCOL_V4);
-        break;
-    case SYSTEM_EVENT_AP_STOP:
-        _mdns_disable_pcb(TCPIP_ADAPTER_IF_AP, MDNS_IP_PROTOCOL_V4);
-        _mdns_disable_pcb(TCPIP_ADAPTER_IF_AP, MDNS_IP_PROTOCOL_V6);
-        break;
-    case SYSTEM_EVENT_GOT_IP6:
-        _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V6);
-        _mdns_announce_pcb(interface, MDNS_IP_PROTOCOL_V4, NULL, 0, true);
-        break;
-    case SYSTEM_EVENT_ETH_CONNECTED:
-        if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_ETH, &dcst)) {
-            if (dcst != TCPIP_ADAPTER_DHCP_STARTED) {
+                _mdns_announce_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V6, NULL, 0, true);
+                break;
+            case IP_EVENT_ETH_GOT_IP:
                 _mdns_enable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
-            }
+                break;
+            case IP_EVENT_GOT_IP6:
+                _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V6);
+                _mdns_announce_pcb(interface, MDNS_IP_PROTOCOL_V4, NULL, 0, true);
+                break;
+            default:
+                break;
         }
-        break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
-        _mdns_enable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
-        break;
-    case SYSTEM_EVENT_ETH_DISCONNECTED:
-        _mdns_disable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
-        _mdns_disable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V6);
-        break;
-    default:
-        break;
     }
 }
 
@@ -3709,7 +3722,8 @@ static void _mdns_execute_action(mdns_action_t * action)
 
     switch(action->type) {
     case ACTION_SYSTEM_EVENT:
-        _mdns_handle_system_event(action->data.sys_event.event_id, action->data.sys_event.interface);
+        _mdns_handle_system_event(action->data.sys_event.event_base, 
+            action->data.sys_event.event_id, action->data.sys_event.interface);
         break;
     case ACTION_HOSTNAME_SET:
         _mdns_send_final_bye(true);
@@ -4099,22 +4113,33 @@ static esp_err_t _mdns_service_task_stop()
 
 esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event)
 {
+    /* no-op, kept for compatibility */
+    return ESP_OK;
+}
+
+static void event_handler(void* arg, esp_event_base_t event_base, 
+                     int32_t event_id, void* event_data)
+{
     if (!_mdns_server) {
-        return ESP_OK;
+        return;
     }
 
-    mdns_action_t * action = (mdns_action_t *)malloc(sizeof(mdns_action_t));
+    mdns_action_t * action = (mdns_action_t *)calloc(1, sizeof(mdns_action_t));
     if (!action) {
         HOOK_MALLOC_FAILED;
-        return ESP_OK;
+        return;
     }
     action->type = ACTION_SYSTEM_EVENT;
-    action->data.sys_event.event_id = event->event_id;
-    action->data.sys_event.interface = (event->event_id == SYSTEM_EVENT_GOT_IP6)?event->event_info.got_ip6.if_index:0;
+    action->data.sys_event.event_base = event_base;
+    action->data.sys_event.event_id = event_id;
+    if (event_base == IP_EVENT && event_id == IP_EVENT_GOT_IP6) {
+        ip_event_got_ip6_t* event = (ip_event_got_ip6_t*) event_data;
+        action->data.sys_event.interface = event->if_index;
+    }
+
     if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
         free(action);
-    }
-    return ESP_OK;
+    }    
 }
 
 esp_err_t mdns_init()
@@ -4144,6 +4169,16 @@ esp_err_t mdns_init()
         goto free_lock;
     }
 
+    if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
+        goto free_event_handlers;
+    }
+    if ((err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
+        goto free_event_handlers;
+    }
+    if ((err = esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
+        goto free_event_handlers;
+    }
+
     uint8_t i;
     ip6_addr_t tmp_addr6;
     tcpip_adapter_ip_info_t if_ip_info;
@@ -4170,6 +4205,10 @@ free_all_and_disable_pcbs:
         _mdns_disable_pcb(i, MDNS_IP_PROTOCOL_V6);
         _mdns_disable_pcb(i, MDNS_IP_PROTOCOL_V4);
     }
+free_event_handlers:
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     vQueueDelete(_mdns_server->action_queue);
 free_lock:
     vSemaphoreDelete(_mdns_server->lock);
@@ -4215,6 +4254,9 @@ void mdns_free()
         free(h);
     }
     vSemaphoreDelete(_mdns_server->lock);
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     free(_mdns_server);
     _mdns_server = NULL;
 }

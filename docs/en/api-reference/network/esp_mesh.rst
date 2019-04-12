@@ -37,6 +37,8 @@ The ESP-MESH software stack is built atop the Wi-Fi Driver/FreeRTOS and may use 
 
     ESP-MESH Software Stack
 
+.. _mesh-events:
+
 System Events
 ^^^^^^^^^^^^^
 

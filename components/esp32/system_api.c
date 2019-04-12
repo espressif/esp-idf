@@ -211,14 +211,26 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
 
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
 {
-     int i;
-     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
-	  if (shutdown_handlers[i] == NULL) {
-	       shutdown_handlers[i] = handler;
-	       return ESP_OK;
-	  }
-     }
-     return ESP_FAIL;
+    for (int i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+        if (shutdown_handlers[i] == handler) {
+            return ESP_ERR_INVALID_STATE;
+        } else if (shutdown_handlers[i] == NULL) {
+            shutdown_handlers[i] = handler;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NO_MEM;
+}
+
+esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
+{
+    for (int i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+        if (shutdown_handlers[i] == handler) {
+            shutdown_handlers[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
 }
 
 void esp_restart_noos() __attribute__ ((noreturn));

@@ -15,7 +15,7 @@ Using ``esp_event`` APIs
 
 There are two objects of concern for users of this library: events and event loops.
 
-Events are occurences of note. For example, for WiFi, a successful connection to the access point may be an event.
+Events are occurrences of note. For example, for WiFi, a successful connection to the access point may be an event. 
 Events are referenced using a two part identifier which are discussed more :ref:`here <esp-event-declaring-defining-events>`.
 Event loops are the vehicle by which events get posted by event sources and handled by event handler functions.
 These two appear prominently in the event loop library APIs.
@@ -200,7 +200,7 @@ handlers will also get executed in between.
 Event loop profiling
 --------------------
 
-A configuration option :envvar:`CONFIG_EVENT_LOOP_PROFILING` can be enabled in order to activate statistics collection for all event loops created.
+A configuration option :ref:`CONFIG_EVENT_LOOP_PROFILING` can be enabled in order to activate statistics collection for all event loops created.
 The function :cpp:func:`esp_event_dump` can be used to output the collected statistics to a file stream. More details on the information included in the dump
 can be found in the :cpp:func:`esp_event_dump` API Reference.
 
@@ -218,3 +218,11 @@ API Reference
 
 .. include:: /_build/inc/esp_event.inc
 .. include:: /_build/inc/esp_event_base.inc
+
+Related Documents
+-----------------
+
+.. toctree::
+    :maxdepth: 1
+
+    Legacy event loop API reference <esp_event_legacy>

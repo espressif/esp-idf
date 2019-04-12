@@ -18,10 +18,8 @@
 #include "esp_private/wifi.h"
 #include "esp_pm.h"
 #include "soc/rtc.h"
-#include "esp_mesh.h"
 
-/* mesh event callback handler */
-mesh_event_cb_t g_mesh_event_cb = NULL;
+ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 
 #ifdef CONFIG_PM_ENABLE
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
@@ -29,6 +27,8 @@ static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 
 /* Callback function to update WiFi MAC time */
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
+
+static const char* TAG = "wifi_init";
 
 static void __attribute__((constructor)) s_set_default_wifi_log_level()
 {
@@ -98,7 +98,10 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         }
     }
 #endif
-    esp_event_set_default_wifi_handlers();
+    esp_err_t err = tcpip_adapter_set_default_wifi_handlers();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);
+    }
     esp_err_t result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
         esp_wifi_set_debug_log();

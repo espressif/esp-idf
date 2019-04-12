@@ -2,6 +2,7 @@ set(COMPONENT_SRCS
     "src/coexist.c"
     "src/fast_crypto_ops.c"
     "src/lib_printf.c"
+    "src/mesh_event.c"
     "src/phy_init.c"
     "src/restore.c"
     "src/wifi_init.c")

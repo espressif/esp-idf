@@ -143,6 +143,37 @@ typedef enum{
 /* Deprecated name for tcpip_adapter_dhcp_option_id_t, to remove after ESP-IDF V4.0 */
 typedef tcpip_adapter_dhcp_option_id_t tcpip_adapter_option_id_t;
 
+/** IP event declarations */
+typedef enum {
+    IP_EVENT_STA_GOT_IP,               /*!< ESP32 station got IP from connected AP */
+    IP_EVENT_STA_LOST_IP,              /*!< ESP32 station lost IP and the IP is reset to 0 */
+    IP_EVENT_AP_STAIPASSIGNED,         /*!< ESP32 soft-AP assign an IP to a connected station */
+    IP_EVENT_GOT_IP6,                  /*!< ESP32 station or ap or ethernet interface v6IP addr is preferred */
+    IP_EVENT_ETH_GOT_IP,               /*!< ESP32 ethernet got IP from connected AP */
+} ip_event_t;
+
+/** @brief IP event base declaration */
+ESP_EVENT_DECLARE_BASE(IP_EVENT);
+
+/** Event structure for IP_EVENT_STA_GOT_IP, IP_EVENT_ETH_GOT_IP events  */
+typedef struct {
+    tcpip_adapter_if_t if_index;        /*!< Interface for which the event is received */
+    tcpip_adapter_ip_info_t ip_info;    /*!< IP address, netmask, gatway IP address */
+    bool ip_changed;                    /*!< Whether the assigned IP has changed or not */
+} ip_event_got_ip_t;
+
+/** Event structure for IP_EVENT_GOT_IP6 event */
+typedef struct {
+    tcpip_adapter_if_t if_index;        /*!< Interface for which the event is received */
+    tcpip_adapter_ip6_info_t ip6_info;  /*!< IPv6 address of the interface */
+} ip_event_got_ip6_t;
+
+/** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
+typedef struct {
+    ip4_addr_t ip; /*!< IP address which was assigned to the station */
+} ip_event_ap_staipassigned_t;
+
+
 /**
  * @brief  Initialize the underlying TCP/IP stack
  *
@@ -660,6 +691,40 @@ esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
  *         - false - Interface is down
  */
 bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
+
+
+/**
+ * @brief  Install default event handlers for Ethernet interface
+ * @return
+ *      - ESP_OK on success
+ *      - one of the errors from esp_event on failure
+ */
+esp_err_t tcpip_adapter_set_default_eth_handlers();
+
+/**
+ * @brief Uninstall default event handlers for Ethernet interface
+ * @return
+ *      - ESP_OK on success
+ *      - one of the errors from esp_event on failure
+ */
+esp_err_t tcpip_adapter_clear_default_eth_handlers();
+
+/**
+ * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
+ * @return
+ *      - ESP_OK on success
+ *      - one of the errors from esp_event on failure
+ */
+esp_err_t tcpip_adapter_set_default_wifi_handlers();
+
+/**
+ * @brief  Uninstall default event handlers for Wi-Fi interfaces (station and AP)
+ * @return
+ *      - ESP_OK on success
+ *      - one of the errors from esp_event on failure
+ */
+esp_err_t tcpip_adapter_clear_default_wifi_handlers();
+
 
 #ifdef __cplusplus
 }
