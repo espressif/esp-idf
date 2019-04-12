@@ -18,6 +18,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include "unity.h"
+#include "esp_system.h"
 
 /* similar to UNITY_PRINT_EOL */
 #define UNITY_PRINT_TAB() UNITY_OUTPUT_CHAR('\t')
@@ -61,7 +62,29 @@ static void print_multiple_function_test_menu(const test_desc_t *test_ms)
     }
 }
 
-static void multiple_function_option(const test_desc_t *test_ms)
+/*
+ * This function looks like UnityDefaultTestRun function only without UNITY_CLR_DETAILS.
+ * void UnityDefaultTestRun(UnityTestFunction Func, const char* FuncName, const int FuncLineNum)
+ * was moved from `components/unity/unity/src/unity.c` to here.
+*/
+static void unity_default_test_run(UnityTestFunction Func, const char* FuncName, const int FuncLineNum)
+{
+    Unity.CurrentTestName = FuncName;
+    Unity.CurrentTestLineNumber = (UNITY_LINE_TYPE)FuncLineNum;
+    Unity.NumberOfTests++;
+    if (TEST_PROTECT())
+    {
+        setUp();
+        Func();
+    }
+    if (TEST_PROTECT())
+    {
+        tearDown();
+    }
+    UnityConcludeTest();
+}
+
+static int multiple_function_option(const test_desc_t *test_ms)
 {
     int selection;
     char cmdline[256] = {0};
@@ -76,12 +99,13 @@ static void multiple_function_option(const test_desc_t *test_ms)
     }
     selection = atoi((const char *) cmdline) - 1;
     if (selection >= 0 && selection < test_ms->test_fn_count) {
-        UnityDefaultTestRun(test_ms->fn[selection], test_ms->name, test_ms->line);
+        unity_default_test_run(test_ms->fn[selection], test_ms->name, test_ms->line);
     } else {
         UnityPrint("Invalid selection, your should input number 1-");
         UnityPrintNumber(test_ms->test_fn_count);
         UNITY_PRINT_EOL();
     }
+    return selection;
 }
 
 static void unity_run_single_test(const test_desc_t *test)
@@ -95,10 +119,27 @@ static void unity_run_single_test(const test_desc_t *test)
 
     Unity.TestFile = test->file;
     Unity.CurrentDetail1 = test->desc;
+    bool reset_after_test = strstr(Unity.CurrentDetail1, "[leaks") != NULL;
+    bool multi_device = strstr(Unity.CurrentDetail1, "[multi_device]") != NULL;
     if (test->test_fn_count == 1) {
-        UnityDefaultTestRun(test->fn[0], test->name, test->line);
+        unity_default_test_run(test->fn[0], test->name, test->line);
     } else {
-        multiple_function_option(test);
+        int selection = multiple_function_option(test);
+        if (reset_after_test && multi_device == false) {
+            if (selection != (test->test_fn_count - 1)) {
+                // to do a reset for all stages except the last stage.
+                esp_restart();
+            }
+        }
+    }
+
+    if (reset_after_test) {
+        // print a result of test before to do reset for the last stage.
+        UNITY_END();
+        UnityPrint("Enter next test, or 'enter' to see menu");
+        UNITY_PRINT_EOL();
+        UNITY_OUTPUT_FLUSH();
+        esp_restart();
     }
 }
 
