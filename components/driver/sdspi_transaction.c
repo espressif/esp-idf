@@ -79,11 +79,36 @@ static void r1_response_to_err(uint8_t r1, int cmd, esp_err_t *out_err)
     }
 }
 
+static void r1_sdio_response_to_err(uint8_t r1, int cmd, esp_err_t *out_err)
+{
+    if (r1 & SD_SPI_R1_NO_RESPONSE) {
+        ESP_LOGI(TAG, "cmd=%d, R1 response not found", cmd);
+        *out_err = ESP_ERR_TIMEOUT;
+    } else if (r1 & SD_SPI_R1_CMD_CRC_ERR) {
+        ESP_LOGI(TAG, "cmd=%d, R1 response: command CRC error", cmd);
+        *out_err = ESP_ERR_INVALID_CRC;
+    } else if (r1 & SD_SPI_R1_ILLEGAL_CMD) {
+        ESP_LOGI(TAG, "cmd=%d, R1 response: command not supported", cmd);
+        *out_err = ESP_ERR_NOT_SUPPORTED;
+    } else if (r1 & SD_SPI_R1_PARAM_ERR) {
+        ESP_LOGI(TAG, "cmd=%d, R1 response: size error", cmd);
+        *out_err = ESP_ERR_INVALID_SIZE;
+    } else if (r1 & SDIO_R1_FUNC_NUM_ERR) {
+        ESP_LOGI(TAG, "cmd=%d, R1 response: function number error", cmd);
+        *out_err = ESP_ERR_INVALID_ARG;
+    } else if (r1 & SD_SPI_R1_IDLE_STATE) {
+        // Idle state is handled at command layer
+    } else if (r1 != 0) {
+        ESP_LOGI(TAG, "cmd=%d, R1 response: unexpected value 0x%02x", cmd, r1);
+        *out_err = ESP_ERR_INVALID_RESPONSE;
+    }
+}
+
 esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
 {
     _lock_acquire(&s_lock);
     // Convert the command to wire format
-    sdspi_hw_cmd_t hw_cmd;
+    WORD_ALIGNED_ATTR sdspi_hw_cmd_t hw_cmd;
     make_hw_cmd(cmdinfo->opcode, cmdinfo->arg, cmdinfo->timeout_ms, &hw_cmd);
 
     // Flags indicate which of the transfer types should be used
@@ -92,6 +117,11 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
         flags = SDSPI_CMD_FLAG_DATA | SDSPI_CMD_FLAG_WRITE;
     } else if (SCF_CMD(cmdinfo->flags) == (SCF_CMD_ADTC | SCF_CMD_READ)) {
         flags = SDSPI_CMD_FLAG_DATA;
+    }
+
+    // The block size is 512, when larger than 512, the data must send in multi blocks
+    if (cmdinfo->datalen > SDSPI_MAX_DATA_LEN) {
+        flags |= SDSPI_CMD_FLAG_MULTI_BLK;
     }
 
     // In SD host, response format is encoded using SCF_RSP_* flags which come
@@ -111,6 +141,15 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
             !(cmdinfo->flags & SCF_RSP_R1)) {
         /* used to send CMD0 without expecting a response */
         flags |= SDSPI_CMD_FLAG_NORSP;
+    } else if (!s_app_cmd && cmdinfo->opcode == SD_IO_SEND_OP_COND) {
+        flags |= SDSPI_CMD_FLAG_RSP_R4;
+    } else if (!s_app_cmd && cmdinfo->opcode == SD_IO_RW_DIRECT) {
+        flags |= SDSPI_CMD_FLAG_RSP_R5;
+    } else if (!s_app_cmd && cmdinfo->opcode == SD_IO_RW_EXTENDED) {
+        flags |= SDSPI_CMD_FLAG_RSP_R5 | SDSPI_CMD_FLAG_DATA;
+        if (cmdinfo->arg & SD_ARG_CMD53_WRITE) flags |= SDSPI_CMD_FLAG_WRITE;
+        // The CMD53 can assign block mode in the arg when the length is exactly 512 bytes
+        if (cmdinfo->arg & SD_ARG_CMD53_BLOCK_MODE) flags |= SDSPI_CMD_FLAG_MULTI_BLK;
     } else {
         flags |= SDSPI_CMD_FLAG_RSP_R1;
     }
@@ -131,6 +170,12 @@ esp_err_t sdspi_host_do_transaction(int slot, sdmmc_command_t *cmdinfo)
         } else if (flags & (SDSPI_CMD_FLAG_RSP_R3 | SDSPI_CMD_FLAG_RSP_R7)) {
             r1_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
             cmdinfo->response[0] = __builtin_bswap32(hw_cmd.response[0]);
+        } else if (flags & SDSPI_CMD_FLAG_RSP_R4) {
+            r1_sdio_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
+            cmdinfo->response[0] = __builtin_bswap32(hw_cmd.response[0]);
+        } else if (flags & SDSPI_CMD_FLAG_RSP_R5) {
+            r1_sdio_response_to_err(hw_cmd.r1, cmdinfo->opcode, &ret);
+            cmdinfo->response[0] = hw_cmd.response[0];
         }
     }
 

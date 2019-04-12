@@ -21,6 +21,9 @@
 #include "esp_attr.h"
 #include "esp_slave.h"
 #include "sdkconfig.h"
+#include "driver/sdmmc_host.h"
+#include "driver/sdspi_host.h"
+#include "soc/sdio_slave_pins.h"
 
 /*
  * For SDIO master-slave board, we have 3 pins controlling power of 3 different
@@ -29,6 +32,7 @@
 #define GPIO_B1     5
 #define GPIO_B2     18
 #define GPIO_B3     19
+
 #if CONFIG_EXAMPLE_SLAVE_B1
 #define SLAVE_PWR_GPIO GPIO_B1
 #elif CONFIG_EXAMPLE_SLAVE_B2
@@ -79,7 +83,7 @@
    */
 
 #define WRITE_BUFFER_LEN    4096
-#define READ_BUFFER_LEN     1024
+#define READ_BUFFER_LEN     4096
 
 static const char TAG[] = "example_host";
 
@@ -117,14 +121,31 @@ esp_err_t slave_reset(esp_slave_context_t *context)
     return ret;
 }
 
+#ifdef CONFIG_SDIO_EXAMPLE_OVER_SPI
+static void gpio_d2_set_high()
+{
+    gpio_config_t d2_config = {
+        .pin_bit_mask = BIT(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = true,
+    };
+    gpio_config(&d2_config);
+    gpio_set_level(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2, 1);
+}
+#endif
+
 //host use this to initialize the slave card as well as SDIO registers
 esp_err_t slave_init(esp_slave_context_t *context)
 {
+    esp_err_t err;
     /* Probe */
+#ifndef CONFIG_SDIO_EXAMPLE_OVER_SPI
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
 #ifdef CONFIG_SDIO_EXAMPLE_4BIT
+    ESP_LOGI(TAG, "Probe using SD 4-bit...\n");
     config.flags = SDMMC_HOST_FLAG_4BIT;
 #else
+    ESP_LOGI(TAG, "Probe using SD 1-bit...\n");
     config.flags = SDMMC_HOST_FLAG_1BIT;
 #endif
 
@@ -142,8 +163,33 @@ esp_err_t slave_init(esp_slave_context_t *context)
        real design.
     */
     //slot_config.flags = SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
-    sdmmc_host_init();
-    sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
+    err = sdmmc_host_init();
+    assert(err==ESP_OK);
+
+    err = sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
+    assert(err==ESP_OK);
+#else   //over SPI
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+
+    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+    slot_config.gpio_miso = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D0;
+    slot_config.gpio_mosi = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CMD;
+    slot_config.gpio_sck  = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CLK;
+    slot_config.gpio_cs   = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D3;
+    slot_config.gpio_int = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D1;
+
+    err = gpio_install_isr_service(0);
+    assert(err == ESP_OK);
+    err = sdspi_host_init();
+    assert(err==ESP_OK);
+
+    err = sdspi_host_init_slot(HSPI_HOST, &slot_config);
+    assert(err==ESP_OK);
+    ESP_LOGI(TAG, "Probe using SPI...\n");
+
+    //we have to pull up all the slave pins even when the pin is not used
+    gpio_d2_set_high();
+#endif  //over SPI
     sdmmc_card_t *card = (sdmmc_card_t *)malloc(sizeof(sdmmc_card_t));
     if (card == NULL) {
         return ESP_ERR_NO_MEM;
@@ -179,16 +225,28 @@ esp_err_t slave_init(esp_slave_context_t *context)
 void slave_power_on()
 {
 #ifdef SLAVE_PWR_GPIO
+    int level_active;
+#ifdef CONFIG_EXAMPLE_SLAVE_PWR_NEGTIVE_ACTIVE
+    level_active = 0;
+#else
+    level_active = 1;
+#endif
     gpio_config_t cfg = {
-        .pin_bit_mask = BIT(SLAVE_PWR_GPIO),
+        .pin_bit_mask = BIT(GPIO_B1) | BIT(GPIO_B2) | BIT(GPIO_B3),
         .mode = GPIO_MODE_DEF_OUTPUT,
         .pull_up_en = false,
         .pull_down_en = false,
         .intr_type = GPIO_INTR_DISABLE,
     };
     gpio_config(&cfg);
-    gpio_set_level(SLAVE_PWR_GPIO, 0);  //low active
+    gpio_set_level(GPIO_B1, !level_active);
+    gpio_set_level(GPIO_B2, !level_active);
+    gpio_set_level(GPIO_B3, !level_active);
+
     vTaskDelay(100);
+    gpio_set_level(SLAVE_PWR_GPIO, level_active);
+    vTaskDelay(100);
+
 #endif
 }
 
@@ -274,15 +332,16 @@ void job_write_reg(esp_slave_context_t *context, int value)
     ESP_LOG_BUFFER_HEXDUMP(TAG, reg_read, 64, ESP_LOG_INFO);
 }
 
-//use 1+1+1+1+4+4=12 packets, 513 and 517 not sent
-int packet_len[] = {3, 6, 12, 128, 511, 512, 513, 517};
+//the slave only load 16 buffers a time
+//so first 5 packets (use 1+1+8+4+1=15 buffers) are sent, the others (513, 517) failed (timeout)
+int packet_len[] = {6, 12, 1024, 512, 3, 513, 517};
 //the sending buffer should be word aligned
 DMA_ATTR uint8_t send_buffer[READ_BUFFER_LEN];
 
 //send packets to the slave (they will return and be handled by the interrupt handler)
 void job_fifo(esp_slave_context_t *context)
 {
-    for (int i = 0; i < 1024; i++) {
+    for (int i = 0; i < READ_BUFFER_LEN; i++) {
         send_buffer[i] = 0x46 + i * 5;
     }
 

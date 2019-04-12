@@ -13,11 +13,10 @@
 // limitations under the License.
 
 #include "sdmmc_cmd.h"
-#include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "soc/host_reg.h"
 
-/* 
+/*
  * NOTE: This component is for example purpose only. Assertion fails if any of
  * the preconditions (connections, grounding, slave data preparation, etc.) is
  * not met.
