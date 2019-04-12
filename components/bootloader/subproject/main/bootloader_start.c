@@ -14,16 +14,20 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "esp_log.h"
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/spi_flash.h"
 #include "bootloader_config.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
 #include "sdkconfig.h"
 #include "esp_image_format.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/gpio.h"
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/gpio.h"
+#include "esp32s2beta/rom/spi_flash.h"
+#endif
 
 static const char* TAG = "boot";
 
