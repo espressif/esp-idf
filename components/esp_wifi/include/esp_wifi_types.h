@@ -21,6 +21,7 @@
 #include "sys/queue.h"
 #include "esp_err.h"
 #include "esp_interface.h"
+#include "esp_event_base.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -491,6 +492,97 @@ typedef enum {
     WIFI_PHY_RATE_LORA_500K = 0x2A, /**< 500 Kbps */
     WIFI_PHY_RATE_MAX,
 } wifi_phy_rate_t;
+
+
+/** WiFi event declarations */
+typedef enum {
+    WIFI_EVENT_WIFI_READY = 0,           /**< ESP32 WiFi ready */
+    WIFI_EVENT_SCAN_DONE,                /**< ESP32 finish scanning AP */
+    WIFI_EVENT_STA_START,                /**< ESP32 station start */
+    WIFI_EVENT_STA_STOP,                 /**< ESP32 station stop */
+    WIFI_EVENT_STA_CONNECTED,            /**< ESP32 station connected to AP */
+    WIFI_EVENT_STA_DISCONNECTED,         /**< ESP32 station disconnected from AP */
+    WIFI_EVENT_STA_AUTHMODE_CHANGE,      /**< the auth mode of AP connected by ESP32 station changed */
+
+    WIFI_EVENT_STA_WPS_ER_SUCCESS,       /**< ESP32 station wps succeeds in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PIN,           /**< ESP32 station wps pin code in enrollee mode */
+
+    WIFI_EVENT_AP_START,                 /**< ESP32 soft-AP start */
+    WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
+    WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
+    WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
+
+    WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
+} wifi_event_t;
+
+/** @cond **/
+/** @brief WiFi event base declaration */
+ESP_EVENT_DECLARE_BASE(WIFI_EVENT);
+/** @endcond **/
+
+/** Argument structure for WIFI_EVENT_SCAN_DONE event */
+typedef struct {
+    uint32_t status;          /**< status of scanning APs: 0 — success, 1 - failure */
+    uint8_t  number;          /**< number of scan results */
+    uint8_t  scan_id;         /**< scan sequence number, used for block scan */
+} wifi_event_sta_scan_done_t;
+
+/** Argument structure for WIFI_EVENT_STA_CONNECTED event */
+typedef struct {
+    uint8_t ssid[32];         /**< SSID of connected AP */
+    uint8_t ssid_len;         /**< SSID length of connected AP */
+    uint8_t bssid[6];         /**< BSSID of connected AP*/
+    uint8_t channel;          /**< channel of connected AP*/
+    wifi_auth_mode_t authmode;/**< authentication mode used by AP*/
+} wifi_event_sta_connected_t;
+
+/** Argument structure for WIFI_EVENT_STA_DISCONNECTED event */
+typedef struct {
+    uint8_t ssid[32];         /**< SSID of disconnected AP */
+    uint8_t ssid_len;         /**< SSID length of disconnected AP */
+    uint8_t bssid[6];         /**< BSSID of disconnected AP */
+    uint8_t reason;           /**< reason of disconnection */
+} wifi_event_sta_disconnected_t;
+
+/** Argument structure for WIFI_EVENT_STA_AUTHMODE_CHANGE event */
+typedef struct {
+    wifi_auth_mode_t old_mode;         /**< the old auth mode of AP */
+    wifi_auth_mode_t new_mode;         /**< the new auth mode of AP */
+} wifi_event_sta_authmode_change_t;
+
+/** Argument structure for WIFI_EVENT_STA_WPS_ER_PIN event */
+typedef struct {
+    uint8_t pin_code[8];         /**< PIN code of station in enrollee mode */
+} wifi_event_sta_wps_er_pin_t;
+
+/** Argument structure for WIFI_EVENT_STA_WPS_ER_FAILED event */
+typedef enum {
+    WPS_FAIL_REASON_NORMAL = 0,     /**< ESP32 WPS normal fail reason */
+    WPS_FAIL_REASON_RECV_M2D,       /**< ESP32 WPS receive M2D frame */
+    WPS_FAIL_REASON_MAX
+} wifi_event_sta_wps_fail_reason_t;
+
+/** Argument structure for WIFI_EVENT_AP_STACONNECTED event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station connected to ESP32 soft-AP */
+    uint8_t aid;              /**< the aid that ESP32 soft-AP gives to the station connected to  */
+} wifi_event_ap_staconnected_t;
+
+/** Argument structure for WIFI_EVENT_AP_STADISCONNECTED event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station disconnects to ESP32 soft-AP */
+    uint8_t aid;              /**< the aid that ESP32 soft-AP gave to the station disconnects to  */
+} wifi_event_ap_stadisconnected_t;
+
+/** Argument structure for WIFI_EVENT_AP_PROBEREQRECVED event */
+typedef struct {
+    int rssi;                 /**< Received probe request signal strength */
+    uint8_t mac[6];           /**< MAC address of the station which send probe request */
+} wifi_event_ap_probe_req_rx_t;
+
+
 
 #ifdef __cplusplus
 }

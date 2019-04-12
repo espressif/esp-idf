@@ -70,6 +70,8 @@ static sys_sem_t api_lock_sem = NULL;
 extern sys_thread_t g_lwip_task;
 static const char* TAG = "tcpip_adapter";
 
+ESP_EVENT_DEFINE_BASE(IP_EVENT);
+
 static void tcpip_adapter_api_cb(void* api_msg)
 {
     tcpip_adapter_api_msg_t *msg = (tcpip_adapter_api_msg_t*)api_msg;

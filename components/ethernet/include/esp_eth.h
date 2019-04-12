@@ -19,6 +19,9 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
+#include <stdint.h>
+#include "esp_event_base.h"
 #include "esp_types.h"
 #include "esp_err.h"
 
@@ -129,6 +132,17 @@ typedef struct {
     eth_phy_power_enable_func phy_power_enable;                         /*!< enable or disable phy power */
     uint32_t reset_timeout_ms;                                          /*!< timeout value for reset emac */
 } eth_config_t;
+
+/** Ethernet event declarations */
+typedef enum {
+    ETHERNET_EVENT_START,                /**< ESP32 ethernet start */
+    ETHERNET_EVENT_STOP,                 /**< ESP32 ethernet stop */
+    ETHERNET_EVENT_CONNECTED,            /**< ESP32 ethernet phy link up */
+    ETHERNET_EVENT_DISCONNECTED,         /**< ESP32 ethernet phy link down */
+} eth_event_t;
+
+/** @brief Ethernet event base declaration */
+ESP_EVENT_DECLARE_BASE(ETH_EVENT);
 
 /**
  * @brief  Init ethernet mac
