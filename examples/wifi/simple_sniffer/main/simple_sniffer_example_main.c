@@ -13,7 +13,7 @@
 #include "argtable3/argtable3.h"
 #include "tcpip_adapter.h"
 #include "esp_console.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_fat.h"
 #include "esp_wifi.h"
@@ -65,7 +65,7 @@ static void initialize_nvs()
 static void initialize_wifi()
 {
     tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));

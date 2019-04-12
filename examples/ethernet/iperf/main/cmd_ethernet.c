@@ -13,7 +13,7 @@
 #include "tcpip_adapter.h"
 #include "esp_log.h"
 #include "esp_console.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_eth.h"
 #include "argtable3/argtable3.h"
 #include "iperf.h"
@@ -216,31 +216,26 @@ static int eth_cmd_iperf(int argc, char **argv)
     return 0;
 }
 
-static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
+static void event_handler(void* arg, esp_event_base_t event_base, 
+                          int32_t event_id, void* event_data)
 {
-    switch (event->event_id) {
-    case SYSTEM_EVENT_ETH_START:
+    if (event_base == ETH_EVENT && event_id == ETHERNET_EVENT_START) {
         started = true;
-        break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
-        memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-        ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip));
-        xEventGroupSetBits(eth_event_group, GOTIP_BIT);
-        break;
-    case SYSTEM_EVENT_ETH_STOP:
+    } else if (event_base == ETH_EVENT && event_id == ETHERNET_EVENT_STOP) {
         xEventGroupClearBits(eth_event_group, GOTIP_BIT);
         started = false;
-    default:
-        break;
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_ETH_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        memcpy(&ip, &event->ip_info, sizeof(ip));
+        xEventGroupSetBits(eth_event_group, GOTIP_BIT);
     }
-    return ESP_OK;
 }
 
 void register_ethernet()
 {
     eth_event_group = xEventGroupCreate();
     tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(eth_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
     config.phy_addr = CONFIG_PHY_ADDRESS;
@@ -254,6 +249,8 @@ void register_ethernet()
 #endif
 
     ESP_ERROR_CHECK(esp_eth_init(&config));
+    ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &event_handler, NULL));
 
     eth_control_args.control = arg_str1(NULL, NULL, "<start|stop|info>", "Start/Stop Ethernet or Get info of Ethernet");
     eth_control_args.end = arg_end(1);
