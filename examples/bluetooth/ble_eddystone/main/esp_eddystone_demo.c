@@ -70,7 +70,7 @@ static void esp_eddystone_show_inform(const esp_eddystone_result_t* res)
             ESP_LOGI(DEMO_TAG, "battery voltage: %d mV", res->inform.tlm.battery_voltage);
             ESP_LOGI(DEMO_TAG, "beacon temperature in degrees Celsius: %6.1f", res->inform.tlm.temperature);
             ESP_LOGI(DEMO_TAG, "adv pdu count since power-up: %d", res->inform.tlm.adv_count);
-            ESP_LOGI(DEMO_TAG, "time since power-up: %d s", res->inform.tlm.time);
+            ESP_LOGI(DEMO_TAG, "time since power-up: %d s", (res->inform.tlm.time)/10);
             break;
         }
         default:
