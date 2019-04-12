@@ -393,11 +393,10 @@ void start_cpu0_default(void)
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO
-    rtc_cpu_freq_t max_freq;
-    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
+    int xtal_freq = (int) rtc_clk_xtal_freq_get();
     esp_pm_config_esp32_t cfg = {
-            .max_cpu_freq = max_freq,
-            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+        .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
+        .min_freq_mhz = xtal_freq,
     };
     esp_pm_configure(&cfg);
 #endif //CONFIG_PM_DFS_INIT_AUTO
