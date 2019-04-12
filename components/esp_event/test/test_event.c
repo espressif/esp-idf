@@ -868,7 +868,7 @@ TEST_CASE("performance test - dedicated task", "[event]")
     performance_test(true);
 }
 
-TEST_CASE("performance test - no dedicated task", "[event]")
+TEST_CASE("performance test - no dedicated task", "[event][leaks=2736]")
 {
     performance_test(false);
 }

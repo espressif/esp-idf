@@ -196,3 +196,43 @@ static inline void unity_send_signal(const char* signal_name)
  * @param[out] mac_addr store converted MAC address
  */
 bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr);
+
+/**
+ * @brief Leak for components
+ */
+typedef enum {
+    COMP_LEAK_GENERAL = 0,  /**< Leak by default */
+    COMP_LEAK_LWIP,         /**< Leak for LWIP */
+    COMP_LEAK_NVS,          /**< Leak for NVS */
+    COMP_LEAK_ALL,          /**< Use for getting the summary leak level */
+} esp_comp_leak_t;
+
+/**
+ * @brief Type of leak
+ */
+typedef enum {
+    TYPE_LEAK_WARNING = 0,  /**< Warning level of leak */
+    TYPE_LEAK_CRITICAL,     /**< Critical level of leak */
+    TYPE_LEAK_MAX,          /**< Max number of leak levels */
+} esp_type_leak_t;
+
+/**
+ * @brief Set a leak level for the required type and component.
+ *
+ * @param[in] leak_level Level of leak
+ * @param[in] type       Type of leak
+ * @param[in] component  Name of component
+ *
+ * return ESP_OK: Successful.
+ *        ESP_ERR_INVALID_ARG: Invalid argument.
+ */
+esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type, esp_comp_leak_t component);
+
+/**
+ * @brief Get a leak level for the required type and component.
+ *
+ * @param[in] type       Type of leak.
+ * @param[in] component  Name of component. If COMP_LEAK_ALL, then the level will be summarized for all components.
+ * return Leak level
+ */
+size_t test_utils_get_leak_level(esp_type_leak_t type, esp_comp_leak_t component);

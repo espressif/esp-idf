@@ -56,6 +56,15 @@ When we add new test case, it will construct a structure to save case data durin
 2. the rest tags should be [type=value]. Tags could have default value and omitted value. For example, reset tag default value is "POWERON_RESET", omitted value is "" (do not reset) :
     * "[reset]" equal to [reset=POWERON_RESET]
     * if reset tag doesn't exist, then it equals to [reset=""]
+3. the `[leaks]` tag is used to disable the leak checking. A specific maximum memory leakage can be set as follows: `[leaks=500]`. This allows no more than 500 bytes of heap to be leaked. Also there is a special function to set the critical level of leakage not through a tag, just directly in the test code ``test_utils_set_critical_leak_level()``. 
+
+The priority of using leakage level is as follows:
+
+1. Setting by tag `[leaks=500]`.
+2. Setting by ``test_utils_set_critical_leak_level()`` function.
+3. Setting by default leakage in Kconfig ``CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL``.
+
+Tests marked as `[leaks]` or `[leaks=xxx]` reset the device after completion (or after each stage in multistage tests).
 
 `TagDefinition.yml` defines how we should parse the description. In `TagDefinition.yml`, we declare the tags we are interested in, their default value and omitted value. Parser will parse the properities of test cases according to this file, and add them as test case attributes.
 
