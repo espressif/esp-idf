@@ -53,7 +53,7 @@ static inline uint16_t big_endian_read_16(const uint8_t *buffer, uint8_t pos)
 
 static inline uint32_t big_endian_read_32(const uint8_t *buffer, uint8_t pos)
 {
-    return (((uint32_t)buffer[pos]) << 24) | (((uint32_t)buffer[(pos)+1]) >> 16) | (((uint32_t)buffer[(pos)+2]) >> 8) | ((uint32_t)buffer[(pos)+3]);
+    return (((uint32_t)buffer[pos]) << 24) | (((uint32_t)buffer[(pos)+1]) << 16) | (((uint32_t)buffer[(pos)+2]) << 8) | ((uint32_t)buffer[(pos)+3]);
 }
 
 /*
