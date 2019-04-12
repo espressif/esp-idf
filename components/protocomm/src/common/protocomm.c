@@ -59,7 +59,7 @@ void protocomm_delete(protocomm_t *pc)
 
     /* Free memory allocated to security */
     if (pc->sec && pc->sec->cleanup) {
-        pc->sec->cleanup();
+        pc->sec->cleanup(pc->sec_inst);
     }
     if (pc->pop) {
         free(pc->pop);
@@ -182,7 +182,7 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
             }
 
             ssize_t dec_inbuf_len = inlen;
-            ret = pc->sec->decrypt(session_id, inbuf, inlen, dec_inbuf, &dec_inbuf_len);
+            ret = pc->sec->decrypt(pc->sec_inst, session_id, inbuf, inlen, dec_inbuf, &dec_inbuf_len);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Decryption of response failed for endpoint %s", ep_name);
                 free(dec_inbuf);
@@ -214,7 +214,7 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
             }
 
             ssize_t enc_resp_len = plaintext_resp_len;
-            ret = pc->sec->encrypt(session_id, plaintext_resp, plaintext_resp_len,
+            ret = pc->sec->encrypt(pc->sec_inst, session_id, plaintext_resp, plaintext_resp_len,
                                    enc_resp, &enc_resp_len);
 
             if (ret != ESP_OK) {
@@ -253,7 +253,8 @@ static int protocomm_common_security_handler(uint32_t session_id,
     protocomm_t *pc = (protocomm_t *) priv_data;
 
     if (pc->sec && pc->sec->security_req_handler) {
-        return pc->sec->security_req_handler(pc->pop, session_id,
+        return pc->sec->security_req_handler(pc->sec_inst,
+                                             pc->pop, session_id,
                                              inbuf, inlen,
                                              outbuf, outlen,
                                              priv_data);
@@ -283,7 +284,7 @@ esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
     }
 
     if (sec->init) {
-        ret = sec->init();
+        ret = sec->init(&pc->sec_inst);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Error initializing security");
             protocomm_remove_endpoint(pc, ep_name);
@@ -297,7 +298,8 @@ esp_err_t protocomm_set_security(protocomm_t *pc, const char *ep_name,
         if (pc->pop == NULL) {
             ESP_LOGE(TAG, "Error allocating Proof of Possession");
             if (pc->sec && pc->sec->cleanup) {
-                pc->sec->cleanup();
+                pc->sec->cleanup(pc->sec_inst);
+                pc->sec_inst = NULL;
                 pc->sec = NULL;
             }
 
@@ -316,7 +318,8 @@ esp_err_t protocomm_unset_security(protocomm_t *pc, const char *ep_name)
     }
 
     if (pc->sec && pc->sec->cleanup) {
-        pc->sec->cleanup();
+        pc->sec->cleanup(pc->sec_inst);
+        pc->sec_inst = NULL;
         pc->sec = NULL;
     }
 
