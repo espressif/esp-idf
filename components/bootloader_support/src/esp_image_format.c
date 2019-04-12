@@ -225,7 +225,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     }
 
 #ifdef BOOTLOADER_BUILD
-    if (do_load) { // Need to deobfuscate RAM
+    if (do_load && ram_obfs_value[0] != 0 && ram_obfs_value[1] != 0) { // Need to deobfuscate RAM
         for (int i = 0; i < data->image.segment_count; i++) {
             uint32_t load_addr = data->segments[i].load_addr;
             if (should_load(load_addr)) {
@@ -401,6 +401,12 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed",
                  data_addr, data_len);
         return ESP_FAIL;
+    }
+
+    if (checksum == NULL && sha_handle == NULL) {
+        memcpy((void *)load_addr, data, data_len);
+        bootloader_munmap(data);
+        return ESP_OK;
     }
 
 #ifdef BOOTLOADER_BUILD
