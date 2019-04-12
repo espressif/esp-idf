@@ -97,7 +97,7 @@ static esp_err_t __attribute__((unused)) verify_simple_hash(bootloader_sha256_ha
 static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)
 {
 #ifdef BOOTLOADER_BUILD
-    bool do_load = (mode == ESP_IMAGE_LOAD);
+    bool do_load = (mode == ESP_IMAGE_LOAD || mode == ESP_IMAGE_LOAD_NO_VALIDATE);
 #else
     bool do_load = false; // Can't load the image in app mode
 #endif
@@ -105,6 +105,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     esp_err_t err = ESP_OK;
     // checksum the image a word at a time. This shaves 30-40ms per MB of image size
     uint32_t checksum_word = ESP_ROM_CHECKSUM_INITIAL;
+    uint32_t *checksum = NULL;
     bootloader_sha256_handle_t sha_handle = NULL;
 
     if (data == NULL || part == NULL) {
@@ -125,17 +126,26 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         goto err;
     }
 
-    // Calculate SHA-256 of image if secure boot is on, or if image has a hash appended
-#ifdef SECURE_BOOT_CHECK_SIGNATURE
-    if (1) {
+#ifdef BOOTLOADER_BUILD
+    if (mode != ESP_IMAGE_LOAD_NO_VALIDATE)
 #else
-    if (data->image.hash_appended) {
+    if (1)
 #endif
-        sha_handle = bootloader_sha256_start();
-        if (sha_handle == NULL) {
-            return ESP_ERR_NO_MEM;
+    {
+        checksum = &checksum_word;
+
+        // Calculate SHA-256 of image if secure boot is on, or if image has a hash appended
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
+        if (1) {
+#else
+        if (data->image.hash_appended) {
+#endif
+            sha_handle = bootloader_sha256_start();
+            if (sha_handle == NULL) {
+                return ESP_ERR_NO_MEM;
+            }
+            bootloader_sha256_data(sha_handle, &data->image, sizeof(esp_image_header_t));
         }
-        bootloader_sha256_data(sha_handle, &data->image, sizeof(esp_image_header_t));
     }
 
     ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08x",
@@ -159,7 +169,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     for(int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
-        err = process_segment(i, next_addr, header, silent, do_load, sha_handle, &checksum_word);
+        err = process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum);
         if (err != ESP_OK) {
             goto err;
         }
@@ -176,12 +186,13 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
     data->image_len = end_addr - data->start_addr;
     ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
-    if (!esp_cpu_in_ocd_debug_mode()) {
+    if (NULL != checksum && !esp_cpu_in_ocd_debug_mode()) {
         err = verify_checksum(sha_handle, checksum_word, data);
         if (err != ESP_OK) {
             goto err;
         }
     }
+
     if (data->image_len > part->size) {
         FAIL_LOAD("Image length %d doesn't fit in partition length %d", data->image_len, part->size);
     }
@@ -193,15 +204,22 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
        rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.
     */
     if (!is_bootloader) {
-#ifdef SECURE_BOOT_CHECK_SIGNATURE
-        // secure boot images have a signature appended
-        err = verify_secure_boot_signature(sha_handle, data);
+#ifdef BOOTLOADER_BUILD
+        if (mode != ESP_IMAGE_LOAD_NO_VALIDATE)
 #else
-        // No secure boot, but SHA-256 can be appended for basic corruption detection
-        if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
-            err = verify_simple_hash(sha_handle, data);
-        }
+        if (1)
+#endif
+        {
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
+            // secure boot images have a signature appended
+            err = verify_secure_boot_signature(sha_handle, data);
+#else
+            // No secure boot, but SHA-256 can be appended for basic corruption detection
+            if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
+                err = verify_simple_hash(sha_handle, data);
+            }
 #endif // SECURE_BOOT_CHECK_SIGNATURE
+        }
     } else { // is_bootloader
         // bootloader may still have a sha256 digest handle open
         if (sha_handle != NULL) {
@@ -258,6 +276,15 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 {
 #ifdef BOOTLOADER_BUILD
     return image_load(ESP_IMAGE_LOAD, part, data);
+#else
+    return ESP_FAIL;
+#endif
+}
+
+esp_err_t bootloader_load_image_no_verify(const esp_partition_pos_t *part, esp_image_metadata_t *data)
+{
+#ifdef BOOTLOADER_BUILD
+    return image_load(ESP_IMAGE_LOAD_NO_VALIDATE, part, data);
 #else
     return ESP_FAIL;
 #endif
@@ -398,6 +425,14 @@ err:
 
 static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, uint32_t data_len, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
 {
+    // If we are not loading, and the checksum is empty, skip processing this
+    // segment for data
+    if(!do_load && NULL == checksum)
+    {
+        ESP_LOGD(TAG, "skipping checksum for segment");
+        return ESP_OK;
+    }
+
     const uint32_t *data = (const uint32_t *)bootloader_mmap(data_addr, data_len);
     if(!data) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed",
@@ -418,7 +453,10 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
     for (int i = 0; i < data_len; i += 4) {
         int w_i = i/4; // Word index
         uint32_t w = src[w_i];
-        *checksum ^= w;
+        if(NULL != checksum)
+        {
+            *checksum ^= w;
+        }
 #ifdef BOOTLOADER_BUILD
         if (do_load) {
             dest[w_i] = w ^ ((w_i & 1) ? ram_obfs_value[0] : ram_obfs_value[1]);

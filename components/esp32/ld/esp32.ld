@@ -21,6 +21,10 @@
 #define CONFIG_BT_RESERVE_DRAM 0
 #endif
 
+#ifndef CONFIG_BOOTLOADER_RESERVE_RTC
+#define CONFIG_BOOTLOADER_RESERVE_RTC 0
+#endif
+
 MEMORY
 {
   /* All these values assume the flash cache is on, and have the blocks this uses subtracted from the length
@@ -60,10 +64,10 @@ MEMORY
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
+  rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000 - CONFIG_BOOTLOADER_RESERVE_RTC
   
   /* RTC fast memory (same block as above), viewed from data bus */
-  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000
+  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000 - CONFIG_BOOTLOADER_RESERVE_RTC
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
 

@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <assert.h>
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
@@ -422,11 +423,39 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
 
 #define TRY_LOG_FORMAT "Trying partition index %d offs 0x%x size 0x%x"
 
+#ifdef CONFIG_BOOT_SKIP_VALIDATE_OUT_OF_DEEP_SLEEP
+typedef struct rtc_reserved_s {
+    int index;
+    esp_partition_pos_t partition;
+} rtc_reserved_t;
+_Static_assert(sizeof(rtc_reserved_t) <= CONFIG_BOOTLOADER_RESERVE_RTC, "Reserved RTC area must exceed size of rtc_reserved_t");
+#endif
+
 void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index)
 {
     int index = start_index;
     esp_partition_pos_t part;
     esp_image_metadata_t image_data;
+
+#ifdef CONFIG_BOOT_SKIP_VALIDATE_OUT_OF_DEEP_SLEEP
+    rtc_reserved_t * const rtc_last_partition = (rtc_reserved_t *)(SOC_RTC_DRAM_HIGH - sizeof(rtc_reserved_t));
+    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET)
+    {
+        // Check if the RTC cache matches a valid partition configuration
+        part = index_to_partition(bs, rtc_last_partition->index);
+        if(!memcmp(&part, &rtc_last_partition->partition, sizeof(part)) &&
+            check_anti_rollback(&part) &&
+            bootloader_load_image_no_verify(&part, &image_data) == ESP_OK)
+        {
+            ESP_LOGI(TAG, "Skipped validation while loading app from partition at offset 0x%x",
+                    part.offset);
+            load_image(&image_data);
+        }
+    } else {
+        // Otherwise, clear out the last booted partition cache
+        memset(rtc_last_partition, 0, sizeof(*rtc_last_partition));
+    }
+#endif
 
     if(start_index == TEST_APP_INDEX) {
         if (try_load_partition(&bs->test, &image_data)) {
@@ -446,6 +475,10 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
         ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
         if (check_anti_rollback(&part) && try_load_partition(&part, &image_data)) {
             set_actual_ota_seq(bs, index);
+#ifdef CONFIG_BOOT_SKIP_VALIDATE_OUT_OF_DEEP_SLEEP
+            rtc_last_partition->partition = part;
+            rtc_last_partition->index = index;
+#endif
             load_image(&image_data);
         }
         log_invalid_app_partition(index);
@@ -460,6 +493,10 @@ void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_
         ESP_LOGD(TAG, TRY_LOG_FORMAT, index, part.offset, part.size);
         if (check_anti_rollback(&part) && try_load_partition(&part, &image_data)) {
             set_actual_ota_seq(bs, index);
+#ifdef CONFIG_BOOT_SKIP_VALIDATE_OUT_OF_DEEP_SLEEP
+            rtc_last_partition->partition = part;
+            rtc_last_partition->index = index;
+#endif
             load_image(&image_data);
         }
         log_invalid_app_partition(index);

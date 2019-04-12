@@ -125,7 +125,8 @@ typedef enum {
     ESP_IMAGE_VERIFY,        /* Verify image contents, load metadata. Print errors. */
     ESP_IMAGE_VERIFY_SILENT, /* Verify image contents, load metadata. Don't print errors. */
 #ifdef BOOTLOADER_BUILD
-    ESP_IMAGE_LOAD,          /* Verify image contents, load to memory. Print errors. */
+    ESP_IMAGE_LOAD,             /* Verify image contents, load to memory. Print errors. */
+    ESP_IMAGE_LOAD_NO_VALIDATE, /* Load to memory. Print errors. */
 #endif
 } esp_image_load_mode_t;
 
@@ -211,6 +212,29 @@ esp_err_t esp_image_verify(esp_image_load_mode_t mode, const esp_partition_pos_t
  * - ESP_ERR_INVALID_ARG if the partition or data pointers are invalid.
  */
 esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metadata_t *data);
+
+/**
+ * @brief Load an app image without verification (available only in space of bootloader).
+ *
+ * If encryption is enabled, data will be transparently decrypted.
+ *
+ * @param part Partition to load the app from.
+ * @param[inout] data Pointer to the image metadata structure which is be filled in by this function.
+ *                    'start_addr' member should be set (to the start address of the image.)
+ *                    Other fields will all be initialised by this function.
+ *
+ * Image validation checks:
+ * - Magic byte.
+ * - Partition smaller than 16MB.
+ * - All segments & image fit in partition.
+ *
+ * @return
+ * - ESP_OK if verify or load was successful
+ * - ESP_ERR_IMAGE_FLASH_FAIL if a SPI flash error occurs
+ * - ESP_ERR_IMAGE_INVALID if the image appears invalid.
+ * - ESP_ERR_INVALID_ARG if the partition or data pointers are invalid.
+ */
+esp_err_t bootloader_load_image_no_verify(const esp_partition_pos_t *part, esp_image_metadata_t *data);
 
 /**
  * @brief Verify the bootloader image.
