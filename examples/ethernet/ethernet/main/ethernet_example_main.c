@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_event_loop.h"
+#include "esp_err.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_eth.h"
@@ -92,51 +93,48 @@ static void eth_gpio_config_rmii(void)
     phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
 }
 
-/**
- * @brief event handler for ethernet
- *
- * @param ctx
- * @param event
- * @return esp_err_t
- */
-static esp_err_t eth_event_handler(void *ctx, system_event_t *event)
+/** Event handler for Ethernet events */
+static void eth_event_handler(void* arg, esp_event_base_t event_base, 
+                              int32_t event_id, void* event_data)
 {
-    tcpip_adapter_ip_info_t ip;
-
-    switch (event->event_id) {
-    case SYSTEM_EVENT_ETH_CONNECTED:
+    switch (event_id) {
+    case ETHERNET_EVENT_CONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Up");
         break;
-    case SYSTEM_EVENT_ETH_DISCONNECTED:
+    case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
         break;
-    case SYSTEM_EVENT_ETH_START:
+    case ETHERNET_EVENT_START:
         ESP_LOGI(TAG, "Ethernet Started");
         break;
-    case SYSTEM_EVENT_ETH_GOT_IP:
-        memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
-        ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip));
-        ESP_LOGI(TAG, "Ethernet Got IP Addr");
-        ESP_LOGI(TAG, "~~~~~~~~~~~");
-        ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip.ip));
-        ESP_LOGI(TAG, "ETHMASK:" IPSTR, IP2STR(&ip.netmask));
-        ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip.gw));
-        ESP_LOGI(TAG, "~~~~~~~~~~~");
-        break;
-    case SYSTEM_EVENT_ETH_STOP:
+    case ETHERNET_EVENT_STOP:
         ESP_LOGI(TAG, "Ethernet Stopped");
         break;
     default:
         break;
     }
-    return ESP_OK;
+}
+
+/** Event handler for IP_EVENT_ETH_GOT_IP */
+static void got_ip_event_handler(void* arg, esp_event_base_t event_base, 
+                                 int32_t event_id, void* event_data)
+{
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+    const tcpip_adapter_ip_info_t* ip_info = &event->ip_info;
+
+    ESP_LOGI(TAG, "Ethernet Got IP Address");
+    ESP_LOGI(TAG, "~~~~~~~~~~~");
+    ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip_info->ip));
+    ESP_LOGI(TAG, "ETHMASK:" IPSTR, IP2STR(&ip_info->netmask));
+    ESP_LOGI(TAG, "ETHGW:" IPSTR, IP2STR(&ip_info->gw));
+    ESP_LOGI(TAG, "~~~~~~~~~~~");
 }
 
 void app_main()
 {
     tcpip_adapter_init();
 
-    ESP_ERROR_CHECK(esp_event_loop_init(eth_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
     config.phy_addr = CONFIG_PHY_ADDRESS;
@@ -150,5 +148,7 @@ void app_main()
 #endif
 
     ESP_ERROR_CHECK(esp_eth_init(&config));
+    ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
     ESP_ERROR_CHECK(esp_eth_enable()) ;
 }
