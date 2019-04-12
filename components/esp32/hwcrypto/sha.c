@@ -182,9 +182,6 @@ static bool esp_sha_lock_engine_common(esp_sha_type sha_type, TickType_t ticks_t
         /* Just locked first engine,
            so enable SHA hardware */
         periph_module_enable(PERIPH_SHA_MODULE);
-        DPORT_STALL_OTHER_CPU_START();
-        ets_sha_enable();
-        DPORT_STALL_OTHER_CPU_END();
     }
 
     engines_in_use++;
