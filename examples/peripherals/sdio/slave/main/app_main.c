@@ -60,7 +60,7 @@
 #define SDIO_SLAVE_QUEUE_SIZE 11
 
 #define BUFFER_SIZE     128
-#define BUFFER_NUM      12
+#define BUFFER_NUM      16
 
 #define EV_STR(s) "================ "s" ================"
 

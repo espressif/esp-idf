@@ -68,6 +68,18 @@ esp_err_t esp_slave_init_io(esp_slave_context_t *context)
     if (err != ESP_OK) return err;
     ESP_LOGD(TAG, "IE: 0x%02x", ie);
 
+    // get bus width register
+    uint8_t bus_width;
+    err = sdmmc_io_read_byte(card, 0, SD_IO_CCCR_BUS_WIDTH, &bus_width);
+    if (err != ESP_OK) return err;
+    ESP_LOGD(TAG,"BUS_WIDTH: 0x%02x", bus_width);
+
+    // enable continuous SPI interrupts
+    bus_width |= CCCR_BUS_WIDTH_ECSI;
+    err = sdmmc_io_write_byte(card, 0, SD_IO_CCCR_BUS_WIDTH, bus_width, &bus_width);
+    if (err != ESP_OK) return err;
+    ESP_LOGD(TAG, "BUS_WIDTH: 0x%02x", bus_width);
+
     uint16_t bs = 512;
     const uint8_t* bs_u8 = (const uint8_t*) &bs;
     uint16_t bs_read = 0;
