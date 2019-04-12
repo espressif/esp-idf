@@ -136,7 +136,7 @@ TEST_CASE("test uart get baud-rate","[uart]")
     ESP_LOGI(UART_TAG, "get baud-rate test passed  ....\n");
 }
 
-TEST_CASE("test uart tx data with break","[uart]")
+TEST_CASE("test uart tx data with break","[uart][leaks=2192]")
 {
     const int buf_len = 200;
     const int send_len = 128;

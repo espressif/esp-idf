@@ -55,6 +55,8 @@ void test_case_uses_tcpip()
 
     // Reset the leak checker as LWIP allocates a lot of memory on first run
     unity_reset_leak_checks();
+    test_utils_set_leak_level(0, TYPE_LEAK_CRITICAL, COMP_LEAK_GENERAL);
+    test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_LWIP, TYPE_LEAK_CRITICAL, COMP_LEAK_LWIP);
 }
 
 // wait user to send "Enter" key or input parameter
@@ -114,3 +116,30 @@ bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr)
     return true;
 }
 
+static size_t test_unity_leak_level[TYPE_LEAK_MAX][COMP_LEAK_ALL] = { 0 };
+
+esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type_of_leak, esp_comp_leak_t component)
+{
+    if (type_of_leak >= TYPE_LEAK_MAX || component >= COMP_LEAK_ALL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    test_unity_leak_level[type_of_leak][component] = leak_level;
+    return ESP_OK;
+}
+
+size_t test_utils_get_leak_level(esp_type_leak_t type_of_leak, esp_comp_leak_t component)
+{
+    size_t leak_level = 0;
+    if (type_of_leak >= TYPE_LEAK_MAX || component > COMP_LEAK_ALL) {
+        leak_level = 0;
+    } else {
+        if (component == COMP_LEAK_ALL) {
+            for (int comp = 0; comp < COMP_LEAK_ALL; ++comp) {
+                leak_level += test_unity_leak_level[type_of_leak][comp];
+            }
+        } else {
+            leak_level = test_unity_leak_level[type_of_leak][component];
+        }
+    }
+    return leak_level;
+}
