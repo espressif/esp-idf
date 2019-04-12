@@ -77,7 +77,7 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cache_disabled]")
+TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cache_disabled][leaks=1216]")
 {
     semphr_done = xSemaphoreCreateCounting(1, 0);
 
