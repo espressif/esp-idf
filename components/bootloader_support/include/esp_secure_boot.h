@@ -46,6 +46,25 @@ static inline bool esp_secure_boot_enabled(void) {
     return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
 }
 
+/** @brief Generate secure digest from bootloader image
+ *
+ * @important This function is intended to be called from bootloader code only.
+ *
+ * If secure boot is not yet enabled for bootloader, this will:
+ *     1) generate the secure boot key and burn it on EFUSE
+ *        (without enabling R/W protection)
+ *     2) generate the digest from bootloader and save it
+ *        to flash address 0x0
+ *
+ * If first boot gets interrupted after calling this function
+ * but before esp_secure_boot_permanently_enable() is called, then
+ * the key burned on EFUSE will not be regenerated, unless manually
+ * done using espefuse.py tool
+ *
+ * @return ESP_OK if secure boot digest is generated
+ * successfully or found to be already present
+ */
+esp_err_t esp_secure_boot_generate_digest(void);
 
 /** @brief Enable secure boot if it is not already enabled.
  *
@@ -54,16 +73,19 @@ static inline bool esp_secure_boot_enabled(void) {
  *
  * @important This function is intended to be called from bootloader code only.
  *
+ * @important This will enable r/w protection of secure boot key on EFUSE,
+ * therefore it is to be ensured that esp_secure_boot_generate_digest()
+ * is called before this
+ *
  * If secure boot is not yet enabled for bootloader, this will
- * generate the secure boot digest and enable secure boot by blowing
- * the EFUSE_RD_ABS_DONE_0 efuse.
+ *     1) enable R/W protection of secure boot key on EFUSE
+ *     2) enable secure boot by blowing the EFUSE_RD_ABS_DONE_0 efuse.
  *
  * This function does not verify secure boot of the bootloader (the
  * ROM bootloader does this.)
  *
  * Will fail if efuses have been part-burned in a way that indicates
  * secure boot should not or could not be correctly enabled.
- *
  *
  * @return ESP_ERR_INVALID_STATE if efuse state doesn't allow
  * secure boot to be enabled cleanly. ESP_OK if secure boot

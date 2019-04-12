@@ -224,18 +224,18 @@ static esp_err_t encrypt_bootloader()
             return err;
         }
 
-        if (esp_secure_boot_enabled()) {
-            /* If secure boot is enabled and bootloader was plaintext, also
-               need to encrypt secure boot IV+digest.
-            */
-            ESP_LOGD(TAG, "Encrypting secure bootloader IV & digest...");
-            err = esp_flash_encrypt_region(FLASH_OFFS_SECURE_BOOT_IV_DIGEST,
-                                           FLASH_SECTOR_SIZE);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "Failed to encrypt bootloader IV & digest in place: 0x%x", err);
-                return err;
-            }
+#ifdef CONFIG_SECURE_BOOT_ENABLED
+        /* If secure boot is enabled and bootloader was plaintext, also
+         * need to encrypt secure boot IV+digest.
+         */
+        ESP_LOGD(TAG, "Encrypting secure bootloader IV & digest...");
+        err = esp_flash_encrypt_region(FLASH_OFFS_SECURE_BOOT_IV_DIGEST,
+                                       FLASH_SECTOR_SIZE);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to encrypt bootloader IV & digest in place: 0x%x", err);
+            return err;
         }
+#endif
     }
     else {
         ESP_LOGW(TAG, "no valid bootloader was found");
