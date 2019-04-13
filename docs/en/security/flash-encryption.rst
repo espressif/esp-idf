@@ -146,7 +146,7 @@ Limited Updates
 
 Only 4 plaintext serial update cycles of this kind are possible, including the initial encrypted flash.
 
-After the fourth time encryption is enabled, :ref:`FLASH_CRYPT_CNT` has the maximum value ``0x7F`` (7 bits set) and encryption is permanently enabled. Flashing :ref:`FLASH_CRYPT_CNT` to ``0xFF`` (8 bits set) does not re-disable encryption, the eighth bit is ignored.
+After the fourth time encryption is enabled, :ref:`FLASH_CRYPT_CNT` has the maximum value ``0x7F`` (7 bits set) and encryption is permanently enabled. 
 
 Using :ref:`updating-encrypted-flash-ota` or :ref:`pregenerated-flash-encryption-key` allows you to exceed this limit.
 
@@ -381,9 +381,9 @@ The following sections provide some reference information about the operation of
 FLASH_CRYPT_CNT efuse
 ^^^^^^^^^^^^^^^^^^^^^
 
-``FLASH_CRYPT_CNT`` is an 8-bit efuse field which controls flash encryption. Flash encryption enables or disables based on the number of bits in this efuse which are set to "1":
+``FLASH_CRYPT_CNT`` is a 7-bit efuse field which controls flash encryption. Flash encryption enables or disables based on the number of bits in this efuse which are set to "1":
 
-- When an even number of bits (0,2,4,6,8) are set: Flash encryption is disabled, any encrypted data cannot be decrypted.
+- When an even number of bits (0,2,4,6) are set: Flash encryption is disabled, any encrypted data cannot be decrypted.
 
   - If the bootloader was built with "Enable flash encryption on boot" then it will see this situation and immediately re-encrypt the flash wherever it finds unencrypted data. Once done, it sets another bit in the efuse to '1' meaning an odd number of bits are now set.
 
@@ -394,7 +394,7 @@ FLASH_CRYPT_CNT efuse
 
 - When an odd number of bits (1,3,5,7) are set: Transparent reading of encrypted flash is enabled.
 
-- After all 8 bits are set (efuse value 0xFF): Transparent reading of encrypted flash is disabled, any encrypted data is permanently inaccessible. Bootloader will normally detect this condition and halt. To avoid use of this state to load unauthorised code, secure boot must be used or :ref:`FLASH_CRYPT_CNT` must be write-protected.
+- To avoid use of :ref:`FLASH_CRYPT_CNT` state to disable flash encryption, load unauthorised code, then re-enabled flash encryption, secure boot must be used or :ref:`FLASH_CRYPT_CNT` must be write-protected.
 
 
 .. _flash-encryption-algorithm:
