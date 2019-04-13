@@ -22,7 +22,7 @@ import tempfile
 from fragments import FragmentFile
 from sdkconfig import SDKConfig
 from generation import GenerationModel, TemplateModel, SectionsInfo
-from common import LdGenFailure
+from ldgen_common import LdGenFailure
 from pyparsing import ParseException, ParseFatalException
 
 
