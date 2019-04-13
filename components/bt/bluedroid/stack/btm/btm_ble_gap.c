@@ -1680,11 +1680,31 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
     device_info_array[2] = (type >> 8) & 0xff;
     device_info_array[3] = (type >> 16) & 0xff;
     device_info_array[4] = (type >> 24) & 0xff;
-    if(type == BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR) {
-        bt_rcopy(&device_info_array[5], device_info, BD_ADDR_LEN);
-    } else {
-        memcpy(&device_info_array[5], device_info, 4);
+    switch (type)
+    {
+        case BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR:
+            bt_rcopy(&device_info_array[5], device_info, BD_ADDR_LEN);
+            break;
+        case BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID:
+            memcpy(&device_info_array[5], device_info, 4);
+            break;
+        case BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_BEACON_TYPE:
+            //do nothing
+            break;
+        case BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROV_SRV_ADV:
+            //do nothing
+            break;
+        case BTM_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROXY_SRV_ADV:
+            //do nothing
+            break;
+        default:
+            //do nothing
+            break;
     }
+    if(status == BTM_ILLEGAL_VALUE) {
+        return status;
+    }
+
     status = BTM_VendorSpecificCommand(HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST, 1 + 4 + BD_ADDR_LEN, device_info_array, NULL);
     if(status == BTM_CMD_STARTED) {
         status = BTM_SUCCESS;
