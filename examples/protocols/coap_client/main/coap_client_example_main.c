@@ -7,6 +7,13 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 
+/*
+ * WARNING
+ * libcoap is not multi-thread safe, so only this thread must make any coap_*()
+ * calls.  Any external (to this thread) data transmitted in/out via libcoap
+ * therefore has to be passed in/out by xQueue*() via this thread.
+ */
+
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -23,12 +30,36 @@
 
 #include "protocol_examples_common.h"
 
+#if 1
+/* Needed until coap_dtls.h becomes a part of libcoap proper */
+#include "libcoap.h"
+#include "coap_dtls.h"
+#endif
 #include "coap.h"
 
 #define COAP_DEFAULT_TIME_SEC 5
 
-/* Set this to 9 to get verbose logging from within libcoap */
-#define COAP_LOGGING_LEVEL 0
+/* The examples use simple Pre-Shared-Key configuration that you can set via
+   'make menuconfig'.
+
+   If you'd rather not, just change the below entries to strings with
+   the config you want - ie #define EXAMPLE_COAP_PSK_KEY "some-agreed-preshared-key"
+
+   Note: PSK will only be used if the URI is prefixed with coaps://
+   instead of coap:// and the PSK must be one that the server supports
+   (potentially associated with the IDENTITY)
+*/
+#define EXAMPLE_COAP_PSK_KEY CONFIG_COAP_PSK_KEY
+#define EXAMPLE_COAP_PSK_IDENTITY CONFIG_COAP_PSK_IDENTITY
+
+/* The examples use uri Logging Level that
+   you can set via 'make menuconfig'.
+
+   If you'd rather not, just change the below entry to a value
+   that is between 0 and 7 with
+   the config you want - ie #define EXAMPLE_COAP_LOG_DEFAULT_LEVEL 7
+*/
+#define EXAMPLE_COAP_LOG_DEFAULT_LEVEL CONFIG_COAP_LOG_DEFAULT_LEVEL
 
 /* The examples use uri "coap://californium.eclipse.org" that
    you can set via the project configuration (idf.py menuconfig)
@@ -124,17 +155,44 @@ clean_up:
     resp_wait = 0;
 }
 
-static void coap_example_task(void *p)
+#ifdef CONFIG_MBEDTLS_COAP_PKI
+
+#ifdef __GNUC__
+#define UNUSED_PARAM __attribute__ ((unused))
+#else /* not a GCC */
+#define UNUSED_PARAM
+#endif /* GCC */
+
+#ifndef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
+static int
+verify_cn_callback(const char *cn,
+                   const uint8_t *asn1_public_cert UNUSED_PARAM,
+                   size_t asn1_length UNUSED_PARAM,
+                   coap_session_t *session UNUSED_PARAM,
+                   unsigned depth,
+                   int validated UNUSED_PARAM,
+                   void *arg UNUSED_PARAM
+) {
+  coap_log(LOG_INFO, "CN '%s' presented by server (%s)\n",
+           cn, depth ? "CA" : "Certificate");
+  return 1;
+}
+#endif /* CONFIG_MBEDTLS_COAP_PKI */
+
+static void coap_example_client(void *p)
 {
     struct hostent *hp;
-    struct ip4_addr *ip4_addr;
 
-    coap_address_t    dst_addr, src_addr;
+    coap_address_t    dst_addr;
     static coap_uri_t uri;
     const char*       server_uri = COAP_DEFAULT_DEMO_URI;
     char* phostname = NULL;
 
-    coap_set_log_level(COAP_LOGGING_LEVEL);
+    coap_set_log_level(EXAMPLE_COAP_LOG_DEFAULT_LEVEL);
+
     while (1) {
 #define BUFSIZE 40
         unsigned char _buf[BUFSIZE];
@@ -153,7 +211,7 @@ static void coap_example_task(void *p)
 
         if ((uri.scheme==COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) ||
             (uri.scheme==COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported())) {
-            ESP_LOGE(TAG, "CoAP server uri scheme error");
+            ESP_LOGE(TAG, "CoAP server uri scheme is not supported");
             break;
         }
 
@@ -172,19 +230,31 @@ static void coap_example_task(void *p)
             ESP_LOGE(TAG, "DNS lookup failed");
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             free(phostname);
-            continue;
+            goto clean_up;
         }
-
-        /* Code to print the resolved IP.
-
-           Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
-        ip4_addr = (struct ip4_addr *)hp->h_addr;
-        ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*ip4_addr));
-
-        coap_address_init(&src_addr);
-        src_addr.addr.sin.sin_family      = AF_INET;
-        src_addr.addr.sin.sin_port        = htons(0);
-        src_addr.addr.sin.sin_addr.s_addr = INADDR_ANY;
+        {
+        char tmpbuf[INET6_ADDRSTRLEN];
+            coap_address_init(&dst_addr);
+            switch (hp->h_addrtype) {
+            case AF_INET:
+                dst_addr.addr.sin.sin_family      = AF_INET;
+                dst_addr.addr.sin.sin_port        = htons(uri.port);
+                memcpy(&dst_addr.addr.sin.sin_addr, hp->h_addr, sizeof(dst_addr.addr.sin.sin_addr));
+                inet_ntop(AF_INET, &dst_addr.addr.sin.sin_addr, tmpbuf, sizeof(tmpbuf));
+                ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", tmpbuf);
+                break;
+            case AF_INET6:
+                dst_addr.addr.sin6.sin6_family      = AF_INET6;
+                dst_addr.addr.sin6.sin6_port        = htons(uri.port);
+                memcpy(&dst_addr.addr.sin6.sin6_addr, hp->h_addr, sizeof(dst_addr.addr.sin6.sin6_addr));
+                inet_ntop(AF_INET6, &dst_addr.addr.sin6.sin6_addr, tmpbuf, sizeof(tmpbuf));
+                ESP_LOGI(TAG, "DNS lookup succeeded. IP=%s", tmpbuf);
+                break;
+            default:
+                ESP_LOGE(TAG, "DNS lookup response failed");
+                goto clean_up;
+            }
+        }
 
         if (uri.path.length) {
             buflen = BUFSIZE;
@@ -222,15 +292,102 @@ static void coap_example_task(void *p)
            goto clean_up;
         }
 
-        coap_address_init(&dst_addr);
-        dst_addr.addr.sin.sin_family      = AF_INET;
-        dst_addr.addr.sin.sin_port        = htons(uri.port);
-        dst_addr.addr.sin.sin_addr.s_addr = ip4_addr->addr;
+        /*
+         * Note that if the URI starts with just coap:// (not coaps://) the
+         * session will still be plain text.
+         *
+         * coaps+tcp:// is NOT supported by the libcoap->mbedtls interface
+         * so COAP_URI_SCHEME_COAPS_TCP will have failed in a test above,
+         * but the code is left in for completeness.
+         */
+        if (uri.scheme==COAP_URI_SCHEME_COAPS || uri.scheme==COAP_URI_SCHEME_COAPS_TCP) {
+#ifdef CONFIG_MBEDTLS_COAP_PSK
+            session = coap_new_client_session_psk(ctx, NULL, &dst_addr,
+               uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
+               EXAMPLE_COAP_PSK_IDENTITY,
+               (const uint8_t*)EXAMPLE_COAP_PSK_KEY,
+               sizeof(EXAMPLE_COAP_PSK_KEY)-1);
+#endif /* CONFIG_MBEDTLS_COAP_PSK */
 
-        session = coap_new_client_session(ctx, &src_addr, &dst_addr,
-           uri.scheme==COAP_URI_SCHEME_COAP_TCP ? COAP_PROTO_TCP :
-           uri.scheme==COAP_URI_SCHEME_COAPS_TCP ? COAP_PROTO_TLS :
-           uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_UDP);
+#ifdef CONFIG_MBEDTLS_COAP_PKI
+/* CA cert, taken from coap_ca.pem
+   Client cert, taken from coap_client.crt
+   Client key, taken from coap_client.key
+
+   The PEM, CRT and KEY file are examples taken from the wpa2 enterprise
+   example.
+
+   To embed it in the app binary, the PEM, CRT and KEY file is named
+   in the component.mk COMPONENT_EMBED_TXTFILES variable.
+*/
+extern uint8_t ca_pem_start[] asm("_binary_coap_ca_pem_start");
+extern uint8_t ca_pem_end[]   asm("_binary_coap_ca_pem_end");
+extern uint8_t client_crt_start[] asm("_binary_coap_client_crt_start");
+extern uint8_t client_crt_end[]   asm("_binary_coap_client_crt_end");
+extern uint8_t client_key_start[] asm("_binary_coap_client_key_start");
+extern uint8_t client_key_end[]   asm("_binary_coap_client_key_end");
+            unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
+            unsigned int client_crt_bytes = client_crt_end - client_crt_start;
+            unsigned int client_key_bytes = client_key_end - client_key_start;
+            coap_dtls_pki_t dtls_pki;
+            static char client_sni[256];
+
+            memset (&dtls_pki, 0, sizeof(dtls_pki));
+            dtls_pki.version = COAP_DTLS_PKI_SETUP_VERSION;
+            if (ca_pem_bytes) {
+                /*
+                 * Add in additional certificate checking.
+                 * This list of enabled can be tuned for the specific
+                 * requirements - see 'man coap_encryption'.
+                 *
+                 * Note: A list of root ca file can be setup separately using
+                 * coap_context_set_pki_root_cas(), but the below is used to
+                 * define what checking actually takes place.
+                 */
+                dtls_pki.verify_peer_cert        = 1;
+                dtls_pki.require_peer_cert       = 1;
+                dtls_pki.allow_self_signed       = 1;
+                dtls_pki.allow_expired_certs     = 1;
+                dtls_pki.cert_chain_validation   = 1;
+                dtls_pki.cert_chain_verify_depth = 2;
+                dtls_pki.check_cert_revocation   = 1;
+                dtls_pki.allow_no_crl            = 1;
+                dtls_pki.allow_expired_crl       = 1;
+                dtls_pki.allow_bad_md_hash       = 1;
+                dtls_pki.allow_short_rsa_length  = 1;
+                dtls_pki.validate_cn_call_back   = verify_cn_callback;
+                dtls_pki.cn_call_back_arg        = NULL;
+                dtls_pki.validate_sni_call_back  = NULL;
+                dtls_pki.sni_call_back_arg       = NULL;
+                memset(client_sni, 0, sizeof(client_sni));
+                if (uri.host.length)
+                    memcpy(client_sni, uri.host.s, min(uri.host.length, sizeof(client_sni)));
+                else
+                    memcpy(client_sni, "localhost", 9);
+                dtls_pki.client_sni = client_sni;
+            }
+            dtls_pki.pki_key.key_type = COAP_PKI_KEY_PEM_BUF;
+            dtls_pki.pki_key.key.pem_buf.public_cert = client_crt_start;
+            dtls_pki.pki_key.key.pem_buf.public_cert_len = client_crt_bytes;
+            dtls_pki.pki_key.key.pem_buf.private_key = client_key_start;
+            dtls_pki.pki_key.key.pem_buf.private_key_len = client_key_bytes;
+            dtls_pki.pki_key.key.pem_buf.ca_cert = ca_pem_start;
+            dtls_pki.pki_key.key.pem_buf.ca_cert_len = ca_pem_bytes;
+
+            session = coap_new_client_session_pki(ctx, NULL, &dst_addr,
+               uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
+               &dtls_pki);
+#endif /* CONFIG_MBEDTLS_COAP_PKI */
+
+#ifdef CONFIG_MBEDTLS_COAP_NONE
+            session = coap_new_client_session(ctx, NULL, &dst_addr,
+               uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS);
+#endif /* CONFIG_MBEDTLS_COAP_NONE */
+        } else {
+            session = coap_new_client_session(ctx, NULL, &dst_addr,
+               uri.scheme==COAP_URI_SCHEME_COAP_TCP ? COAP_PROTO_TCP :
+               COAP_PROTO_UDP);
+        }
         if (!session) {
            ESP_LOGE(TAG, "coap_new_client_session() failed");
            goto clean_up;
@@ -272,7 +429,10 @@ clean_up:
         if (session) coap_session_release(session);
         if (ctx) coap_free_context(ctx);
         coap_cleanup();
-        /* Only send the request off once */
+        /*
+         * change the following line to something like sleep(2)
+         * if you want the request to continually be sent
+         */
         break;
     }
 
@@ -285,11 +445,19 @@ void app_main(void)
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
+#if 0
+/* See https://github.com/Ebiroll/qemu_esp32 for further information */
+#include "emul_ip.h"
+    if (is_running_qemu()) {
+        xTaskCreate(task_lwip_init, "task_lwip_init", 2*4096, NULL, 20, NULL); 
+    }
+    else
+#endif
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
 
-    xTaskCreate(coap_example_task, "coap", 5 * 1024, NULL, 5, NULL);
+    xTaskCreate(coap_example_client, "coap", 8 * 1024, NULL, 5, NULL);
 }
