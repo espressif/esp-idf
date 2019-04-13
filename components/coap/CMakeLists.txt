@@ -8,7 +8,7 @@ set(srcs
     "libcoap/src/coap_hashkey.c"
     "libcoap/src/coap_session.c"
     "libcoap/src/coap_time.c"
-    "libcoap/src/coap_debug.c"
+    "port/coap_debug.c"
     "libcoap/src/encode.c"
     "libcoap/src/mem.c"
     "libcoap/src/net.c"
@@ -18,8 +18,8 @@ set(srcs
     "libcoap/src/str.c"
     "libcoap/src/subscribe.c"
     "libcoap/src/uri.c"
-    "libcoap/src/coap_notls.c"
-    "port/coap_io.c")
+    "libcoap/src/coap_io.c"
+    "port/coap_mbedtls.c")
 
 set(COMPONENT_REQUIRES lwip)
 
@@ -28,7 +28,7 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES lwip)
 
 # Silence format truncation warning, until it is fixed upstream
-set_source_files_properties(libcoap/src/coap_debug.c PROPERTIES COMPILE_FLAGS -Wno-format-truncation)
+set_source_files_properties(port/coap_debug.c PROPERTIES COMPILE_FLAGS -Wno-format-truncation)
 
 # Needed for coap headers in public builds, also.
 #
