@@ -1,36 +1,15 @@
-menu "Example CoAP Client Configuration"
+menu "Example CoAP Server Configuration"
 
-    config TARGET_DOMAIN_URI
-        string "Target Uri"
-        default "coap://californium.eclipse.org"
+    config MBEDTLS_COAP_PSK
+        bool "Pre-Shared Keys (PSK)"
+        default n
         help
-            Target uri for the example to use. Use coaps:// prefix for encrypted traffic
-            using Pre-Shared Key (PSK) or Public Key Infrastructure (PKI).
-
-    choice MBEDTLS_COAP_ENCRYPTION_MODE
-        prompt "CoAP Encryption method"
-        default MBEDTLS_COAP_PKI_NONE
-        help
-            If the CoAP information is to be encrypted, the encryption environment
-            can be set up in one of three ways
-
-            - None defined (will use PKI if coaps:// used)
-            - Encrypt using defined Pre-Shared Keys (PSK)
-            - Encrypt using defined Public Key Infrastructure (PKI)
-
-        config MBEDTLS_COAP_NONE
-            bool "None defined"
-
-        config MBEDTLS_COAP_PSK
-            bool "Pre-Shared Keys"
-
-        config MBEDTLS_COAP_PKI
-            bool "PKI Certificates"
-
-    endchoice #MBEDTLS_COAP_ENCRYPTION_MODE
+            Use Pre-Shared Keys to encrypt the communications between the
+            CoAP Server and CoAP Client. Both ends need the same
+            Pre-Shared Key.
 
     config COAP_PSK_KEY
-        string "Preshared Key (PSK) to used in the connection to the CoAP server"
+        string "Preshared Key (PSK) to used in the connection from the CoAP client"
         depends on MBEDTLS_COAP_PSK
         default "secret-key"
         help
@@ -38,13 +17,12 @@ menu "Example CoAP Client Configuration"
             used at both ends of the CoAP connection, and the CoaP client must request 
             an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
 
-    config COAP_PSK_IDENTITY
-        string "PSK Client identity (username)"
-        depends on MBEDTLS_COAP_PSK
-        default "coap-client"
+    config MBEDTLS_COAP_PKI
+        bool "Public Key Infrastructure (PKI)"
+        default n
         help
-            The identity (or username) to use to identify to the CoAP server which
-            PSK key to use.
+            Use PKI Certificates and Private Keys to encrypt the communications
+            between the CoAP Server and CoAP Client.
 
     config MBEDTLS_COAP_DEBUG
         bool "Enable CoAP debugging"

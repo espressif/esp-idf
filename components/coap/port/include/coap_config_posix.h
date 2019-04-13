@@ -21,18 +21,27 @@
 #ifdef WITH_POSIX
 
 #include <sys/socket.h>
+#include <net/if.h>
 
 #define HAVE_SYS_SOCKET_H
 #define HAVE_MALLOC
 #define HAVE_ARPA_INET_H
 #define HAVE_TIME_H
+#define HAVE_NETDB_H
+#define HAVE_NETINET_IN_H
 
 #define IPV6_PKTINFO IPV6_V6ONLY
 
 #define PACKAGE_NAME "libcoap-posix"
 #define PACKAGE_VERSION "?"
 
-#define COAP_BAD_RECVMSG
+#define HAVE_MBEDTLS
+#define COAP_CONSTRAINED_STACK 1
+#define ESPIDF_VERSION
+
+#define _POSIX_TIMERS 1
+
+#define gai_strerror(x) "gai_strerror() not supported"
 
 #endif /* WITH_POSIX */
 #endif /* COAP_CONFIG_POSIX_H_ */
