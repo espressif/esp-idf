@@ -30,7 +30,7 @@ from pyparsing import Literal
 from pyparsing import ZeroOrMore
 from pyparsing import Optional
 from pyparsing import originalTextFor
-from common import LdGenFailure
+from ldgen_common import LdGenFailure
 
 
 class FragmentFileModel():
