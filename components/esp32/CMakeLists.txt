@@ -72,21 +72,21 @@ else()
     target_linker_script(${COMPONENT_TARGET} "${CMAKE_CURRENT_BINARY_DIR}/esp32_out.ld")
 
     if(CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY)
-        # This has to be linked before esp32.common.ld
+        # This has to be linked before esp32.project.ld
         target_linker_script(${COMPONENT_TARGET} "ld/esp32.extram.bss.ld")
     endif()
 
     if(IDF_PROJECT_EXECUTABLE)
         # Process the template file through the linker script generation mechanism, and use the output for linking the
         # final binary
-        set(esp32_common_script "${CMAKE_CURRENT_BINARY_DIR}/esp32.common.ld")
-        set(esp32_common_template "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.common.ld.in")
+        set(esp32_project_script "${CMAKE_CURRENT_BINARY_DIR}/esp32.project.ld")
+        set(esp32_project_template "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in")
 
-        ldgen_process_template(${esp32_common_template} ${esp32_common_script})
+        ldgen_process_template(${esp32_project_template} ${esp32_project_script})
 
-        target_link_libraries(${COMPONENT_TARGET} "-T ${esp32_common_script}")
-        
-        set_property(TARGET ${IDF_PROJECT_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS ${esp32_common_script})
+        target_link_libraries(${COMPONENT_TARGET} "-T ${esp32_project_script}")
+
+        set_property(TARGET ${IDF_PROJECT_EXECUTABLE} APPEND PROPERTY LINK_DEPENDS ${esp32_project_script})
     endif()
 
     target_linker_script(${COMPONENT_TARGET}
