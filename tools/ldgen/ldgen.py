@@ -22,7 +22,7 @@ import tempfile
 from fragments import FragmentFileModel
 from sdkconfig import SDKConfig
 from generation import GenerationModel, TemplateModel, SectionsInfo
-from common import LdGenFailure
+from ldgen_common import LdGenFailure
 
 
 def main():

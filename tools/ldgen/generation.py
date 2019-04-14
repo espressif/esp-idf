@@ -22,7 +22,7 @@ import fnmatch
 from fragments import Sections, Scheme, Mapping, Fragment
 from pyparsing import Suppress, White, ParseException, Literal, Group, ZeroOrMore
 from pyparsing import Word, OneOrMore, nums, alphanums, alphas, Optional, LineEnd, printables
-from common import LdGenFailure
+from ldgen_common import LdGenFailure
 
 
 class PlacementRule():
