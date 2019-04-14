@@ -26,12 +26,13 @@
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
-#include "esp32/rom/lldesc.h"
+#include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "driver/spi_common.h"
 #include "stdatomic.h"
+#include "hal/spi_hal.h"
 
 static const char *SPI_TAG = "spi";
 
@@ -387,29 +388,7 @@ void spicommon_cs_free_io(int cs_gpio_num)
 //Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.
 void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const uint8_t *data, bool isrx)
 {
-    int n = 0;
-    while (len) {
-        int dmachunklen = len;
-        if (dmachunklen > SPI_MAX_DMA_LEN) dmachunklen = SPI_MAX_DMA_LEN;
-        if (isrx) {
-            //Receive needs DMA length rounded to next 32-bit boundary
-            dmadesc[n].size = (dmachunklen + 3) & (~3);
-            dmadesc[n].length = (dmachunklen + 3) & (~3);
-        } else {
-            dmadesc[n].size = dmachunklen;
-            dmadesc[n].length = dmachunklen;
-        }
-        dmadesc[n].buf = (uint8_t *)data;
-        dmadesc[n].eof = 0;
-        dmadesc[n].sosf = 0;
-        dmadesc[n].owner = 1;
-        dmadesc[n].qe.stqe_next = &dmadesc[n + 1];
-        len -= dmachunklen;
-        data += dmachunklen;
-        n++;
-    }
-    dmadesc[n - 1].eof = 1; //Mark last DMA desc as end of stream.
-    dmadesc[n - 1].qe.stqe_next = NULL;
+    lldesc_setup_link(dmadesc, data, len, isrx);
 }
 
 

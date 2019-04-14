@@ -1,6 +1,6 @@
 [mapping:soc]
 archive: libsoc.a
-entries: 
+entries:
     cpu_util (noflash_text)
     rtc_clk (noflash)
     rtc_clk_init (noflash_text)
@@ -10,3 +10,5 @@ entries:
     rtc_sleep (noflash_text)
     rtc_time (noflash_text)
     rtc_wdt (noflash_text)
+    spi_hal_iram (noflash_text)
+    lldesc (noflash_text)
