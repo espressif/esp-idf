@@ -276,12 +276,14 @@ class Mapping(Fragment):
 
     MAPPING_ALL_OBJECTS = "*"
 
+    def __init__(self):
+        Fragment.__init__(self)
+        self.entries = set()
+
     def set_key_value(self, key, parse_results):
         if key == "archive":
             self.archive = parse_results[0]["archive"]
         elif key == "entries":
-            self.entries = set()
-
             for result in parse_results:
                 obj = None
                 symbol = None
@@ -321,7 +323,7 @@ class Mapping(Fragment):
 
         grammars = {
             "archive": KeyGrammar(Fragment.ENTITY.setResultsName("archive"), 1, 1, True),
-            "entries": KeyGrammar(entry, 1, None, True)
+            "entries": KeyGrammar(entry, 0, None, True)
         }
 
         return grammars
