@@ -138,6 +138,7 @@ typedef enum{
     TCPIP_ADAPTER_REQUESTED_IP_ADDRESS          = 50,   /**< Request specific IP address */
     TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME         = 51,   /**< Request IP address lease time */
     TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME         = 52,   /**< Request IP address retry counter */
+    TCPIP_ADAPTER_CAPTIVE_PORTAL		= 160,	/**< Captive Portal address */
 } tcpip_adapter_dhcp_option_id_t;
 
 /* Deprecated name for tcpip_adapter_dhcp_option_id_t, to remove after ESP-IDF V4.0 */

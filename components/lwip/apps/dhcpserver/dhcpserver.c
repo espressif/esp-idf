@@ -57,6 +57,7 @@
 #define DHCP_OPTION_PERFORM_ROUTER_DISCOVERY 31
 #define DHCP_OPTION_BROADCAST_ADDRESS 28
 #define DHCP_OPTION_REQ_LIST     55
+#define DHCP_OPTION_CAPTIVE_PORTAL	160
 #define DHCP_OPTION_END         255
 
 //#define USE_CLASS_B_NET 1
@@ -90,6 +91,10 @@ static ip4_addr_t client_address_plus;
 
 static list_node *plist = NULL;
 static bool renew = false;
+
+static bool captive_portal = false;
+static char* captive_portal_uri;
+static char captive_portal_uri_length;
 
 static dhcps_lease_t dhcps_poll;
 static dhcps_time_t dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
@@ -136,6 +141,12 @@ void *dhcps_option_info(u8_t op_id, u32_t opt_len)
             }
 
             break;
+	case CAPTIVE_PORTAL:
+	    captive_portal = true;
+	    captive_portal_uri_length = opt_len;
+	    captive_portal_uri = realloc(captive_portal_uri, captive_portal_uri_length);
+	    option_arg = captive_portal_uri;
+	    break;
 
         default:
             break;
@@ -184,6 +195,9 @@ void dhcps_set_option_info(u8_t op_id, void *opt_info, u32_t opt_len)
                 dhcps_dns = *(dhcps_offer_t *)opt_info;
             }
             break;
+	case CAPTIVE_PORTAL:
+	    //captive_portal_uri = (char *)opt_info;
+	    break;
 
         default:
             break;
@@ -375,6 +389,14 @@ static u8_t *add_offer_options(u8_t *optptr)
     *optptr++ = 2;
     *optptr++ = 0x05;
     *optptr++ = 0xdc;
+
+    *optptr++ = DHCP_OPTION_CAPTIVE_PORTAL; // Captive portal
+    *optptr++ = captive_portal_uri_length;
+
+    int count;
+    for(count = 0; count < captive_portal_uri_length; count++) {
+	    *optptr++ = captive_portal_uri[count];
+    }
 
     *optptr++ = DHCP_OPTION_PERFORM_ROUTER_DISCOVERY;
     *optptr++ = 1;
