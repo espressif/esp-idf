@@ -122,6 +122,9 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 			    struct eap_method_ret *ret)
 {
 	const char *label;
+	const u8 eap_tls13_context[] = { EAP_TYPE_TLS };
+	const u8 *context = NULL;
+	size_t context_len = 0;
 
 	wpa_printf(MSG_DEBUG, "EAP-TLS: Done");
 
@@ -132,6 +135,8 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 
 	if (data->ssl.tls_v13) {
 		label = "EXPORTER_EAP_TLS_Key_Material";
+		context = eap_tls13_context;
+		context_len = 1;
 
 		/* A possible NewSessionTicket may be received before
 		 * EAP-Success, so need to allow it to be received. */
@@ -146,7 +151,7 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 
 	eap_tls_free_key(data);
 	data->key_data = eap_peer_tls_derive_key(sm, &data->ssl, label,
-						 NULL, 0,
+						 context, context_len,
 						 EAP_TLS_KEY_LEN +
 						 EAP_EMSK_LEN);
 	if (data->key_data) {
