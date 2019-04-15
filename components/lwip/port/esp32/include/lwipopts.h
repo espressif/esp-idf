@@ -779,6 +779,14 @@
 #endif
 #define ESP_IRAM_ATTR
 
+#ifdef CONFIG_LWIP_TIMERS_ONDEMAND
+#define ESP_LWIP_IGMP_TIMERS_ONDEMAND            1
+#define ESP_LWIP_MLD6_TIMERS_ONDEMAND            1
+#else
+#define ESP_LWIP_IGMP_TIMERS_ONDEMAND            0
+#define ESP_LWIP_MLD6_TIMERS_ONDEMAND            0
+#endif
+
 #if ESP_PERF
 #define DBG_PERF_PATH_SET(dir, point)
 #define DBG_PERF_FILTER_LEN             1000
