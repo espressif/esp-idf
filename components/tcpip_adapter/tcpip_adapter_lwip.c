@@ -681,7 +681,10 @@ esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tc
             }
             break;
         }
-       
+	case CAPTIVE_PORTAL: {
+	    memcpy(opt_info, opt_val, opt_len);
+	    break;
+	}
         default:
             break;
         }

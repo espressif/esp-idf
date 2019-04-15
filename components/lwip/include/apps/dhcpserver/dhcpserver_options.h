@@ -131,4 +131,5 @@ typedef enum
     SUBNET_SELECTION = 118,
     DOMAIN_SEARCH = 119,
     CLASSLESS_ROUTE = 121,
+    CAPTIVE_PORTAL = 160,
 } dhcp_msg_option;
