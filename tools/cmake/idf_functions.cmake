@@ -107,6 +107,9 @@ function(idf_set_global_compile_options)
     list(APPEND c_compile_options "-std=gnu99")
     list(APPEND cxx_compile_options "-std=gnu++11" "-fno-rtti")
 
+    # IDF uses some GNU extension from libc
+    list(APPEND compile_definitions "_GNU_SOURCE")
+
     if(CONFIG_CXX_EXCEPTIONS)
         list(APPEND cxx_compile_options "-fexceptions")
     else()
