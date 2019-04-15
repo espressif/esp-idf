@@ -25,12 +25,7 @@ else()
         )
     target_linker_script(${COMPONENT_LIB} "${scripts}")
 
-    if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all components that depend on esp32.
-        #
-        # To handle some corner cases, the same flag is set in project_include.cmake
-        target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
-    else()
+    if(NOT CONFIG_SPIRAM_CACHE_WORKAROUND)
         target_linker_script(${COMPONENT_LIB} "esp32/ld/esp32.rom.newlib-funcs.ld")
     endif()
 

@@ -454,10 +454,10 @@ macro(idf_build_process target)
     set(ESP_PLATFORM 1)
     idf_build_set_property(COMPILE_DEFINITIONS "-DESP_PLATFORM" APPEND)
 
-    __build_process_project_includes()
-
     # Perform component processing (inclusion of project_include.cmake, adding component
     # subdirectories, creating library targets, linking libraries, etc.)
+    __build_process_project_includes()
+
     idf_build_get_property(idf_path IDF_PATH)
     add_subdirectory(${idf_path} ${build_dir}/esp-idf)
 

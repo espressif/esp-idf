@@ -22,6 +22,7 @@ if(GCC_NOT_5_2_0)
     set(EXTRA_LINK_FLAGS "-u newlib_include_locks_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_heap_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_syscalls_impl")
+    list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_pthread_impl")
 else()
     # Remove this section when GCC 5.2.0 is no longer supported
     # 'include' and 'lib' directories should also be removed.
@@ -49,10 +50,10 @@ if(GCC_NOT_5_2_0)
     # Toolchain libraries require code defined in this component
     add_library(extra INTERFACE)
     idf_component_get_property(newlib newlib COMPONENT_LIB)
-    target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} "$<TARGET_FILE:${newlib}>")
+    target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} gcc "$<TARGET_FILE:${newlib}>")
     target_link_libraries(${COMPONENT_LIB} extra)
 else()
-    target_link_libraries(${COMPONENT_LIB} ${LIBC} ${LIBM})
+    target_link_libraries(${COMPONENT_LIB} ${LIBC} ${LIBM} gcc)
 endif()
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
