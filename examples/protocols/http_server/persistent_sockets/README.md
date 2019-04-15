@@ -1,12 +1,9 @@
-# HTTPD Server Persistant Sockets Example
+# HTTPD Server Persistent Sockets Example
 
 The Example consists of HTTPD server persistent sockets demo.
-This sort of persistancy enables the server to have independent sessions/contexts per client.
+This sort of persistency enables the server to have independent sessions/contexts per client.
 
-* Configure the project using "make menuconfig" and goto :
-    * Example Configuration ->
-        1. WIFI SSID: WIFI network to which your PC is also connected to.
-        2. WIFI Password: WIFI password
+* Run `make menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
 * In order to test the HTTPD server persistent sockets demo :
     1. compile and burn the firmware "make flash"

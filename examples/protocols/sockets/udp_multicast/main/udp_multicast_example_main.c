@@ -13,24 +13,23 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "tcpip_adapter.h"
+#include "protocol_examples_common.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
-/* The examples use simple WiFi configuration that you can set via
+/* The examples use simple configuration that you can set via
    'make menuconfig'.
 
    If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
+   the config you want - ie #define UDP_PORT 3333
 */
-#define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
-#define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
-
 #define UDP_PORT CONFIG_EXAMPLE_PORT
 
 #define MULTICAST_LOOPBACK CONFIG_EXAMPLE_LOOPBACK
@@ -40,16 +39,7 @@
 #define MULTICAST_IPV4_ADDR CONFIG_EXAMPLE_MULTICAST_IPV4_ADDR
 #define MULTICAST_IPV6_ADDR CONFIG_EXAMPLE_MULTICAST_IPV6_ADDR
 
-#define LISTEN_DEFAULT_IF CONFIG_EXAMPLE_LISTEN_DEFAULT_IF
-
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
-
-/* The event group allows multiple bits for each event,
-   we use two - one for IPv4 "got ip", and
-   one for IPv6 "got ip". */
-const int IPV4_GOTIP_BIT = BIT0;
-const int IPV6_GOTIP_BIT = BIT1;
+#define LISTEN_ALL_IF   EXAMPLE_MULTICAST_LISTEN_ALL_IF
 
 static const char *TAG = "multicast";
 #ifdef CONFIG_EXAMPLE_IPV4
@@ -59,53 +49,6 @@ static const char *V4TAG = "mcast-ipv4";
 static const char *V6TAG = "mcast-ipv6";
 #endif
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
-{
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-        /* enable ipv6 */
-        tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, IPV4_GOTIP_BIT);
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        /* This is a workaround as ESP32 WiFi libs don't currently
-           auto-reassociate. */
-        esp_wifi_connect();
-        xEventGroupClearBits(wifi_event_group, IPV4_GOTIP_BIT);
-        xEventGroupClearBits(wifi_event_group, IPV6_GOTIP_BIT);
-        break;
-    case SYSTEM_EVENT_AP_STA_GOT_IP6:
-        xEventGroupSetBits(wifi_event_group, IPV6_GOTIP_BIT);
-    default:
-        break;
-    }
-    return ESP_OK;
-}
-
-static void initialise_wifi(void)
-{
-    tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = EXAMPLE_WIFI_SSID,
-            .password = EXAMPLE_WIFI_PASS,
-        },
-    };
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
-}
 
 #ifdef CONFIG_EXAMPLE_IPV4
 /* Add a socket, either IPV4-only or IPV6 dual mode, to the IPV4
@@ -116,17 +59,17 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
     struct in_addr iaddr = { 0 };
     int err = 0;
     // Configure source interface
-#if USE_DEFAULT_IF
+#if LISTEN_ALL_IF
     imreq.imr_interface.s_addr = IPADDR_ANY;
 #else
     tcpip_adapter_ip_info_t ip_info = { 0 };
-    err = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
+    err = tcpip_adapter_get_ip_info(EXAMPLE_INTERFACE, &ip_info);
     if (err != ESP_OK) {
         ESP_LOGE(V4TAG, "Failed to get IP address info. Error 0x%x", err);
         goto err;
     }
     inet_addr_from_ip4addr(&iaddr, &ip_info.ip);
-#endif
+#endif // LISTEN_ALL_IF
     // Configure multicast address to listen to
     err = inet_aton(MULTICAST_IPV4_ADDR, &imreq.imr_multiaddr.s_addr);
     if (err != 1) {
@@ -248,7 +191,7 @@ static int create_multicast_ipv6_socket()
     }
 
     // Selct the interface to use as multicast source for this socket.
-#if USE_DEFAULT_IF
+#if LISTEN_ALL_IF
     bzero(&if_inaddr.un, sizeof(if_inaddr.un));
 #else
     // Read interface adapter link-local address and use it
@@ -257,13 +200,13 @@ static int create_multicast_ipv6_socket()
     // (Note the interface may have other non-LL IPV6 addresses as well,
     // but it doesn't matter in this context as the address is only
     // used to identify the interface.)
-    err = tcpip_adapter_get_ip6_linklocal(TCPIP_ADAPTER_IF_STA, &if_ipaddr);
+    err = tcpip_adapter_get_ip6_linklocal(EXAMPLE_INTERFACE, &if_ipaddr);
     inet6_addr_from_ip6addr(&if_inaddr, &if_ipaddr);
     if (err != ESP_OK) {
         ESP_LOGE(V6TAG, "Failed to get IPV6 LL address. Error 0x%x", err);
         goto err;
     }
-#endif
+#endif // LISTEN_ALL_IF
 
     // Assign the multicast source interface, via its IP
     err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &if_inaddr,
@@ -297,11 +240,11 @@ static int create_multicast_ipv6_socket()
     // group for listening...
 
     // Configure source interface
-#if USE_DEFAULT_IF
+#if LISTEN_ALL_IF
     v6imreq.imr_interface.s_addr = IPADDR_ANY;
 #else
     inet6_addr_from_ip6addr(&v6imreq.ipv6mr_interface, &if_ipaddr);
-#endif
+#endif // LISTEN_ALL_IF
 #ifdef CONFIG_EXAMPLE_IPV6
     // Configure multicast address to listen to
     err = inet6_aton(MULTICAST_IPV6_ADDR, &v6imreq.ipv6mr_multiaddr);
@@ -356,19 +299,6 @@ err:
 static void mcast_example_task(void *pvParameters)
 {
     while (1) {
-        /* Wait for all the IPs we care about to be set
-        */
-        uint32_t bits = 0;
-#ifdef CONFIG_EXAMPLE_IPV4
-        bits |= IPV4_GOTIP_BIT;
-#endif
-#ifdef CONFIG_EXAMPLE_IPV6
-        bits |= IPV6_GOTIP_BIT;
-#endif
-        ESP_LOGI(TAG, "Waiting for AP connection...");
-        xEventGroupWaitBits(wifi_event_group, bits, false, true, portMAX_DELAY);
-        ESP_LOGI(TAG, "Connected to AP");
-
         int sock;
 
 #ifdef CONFIG_EXAMPLE_IPV4_ONLY
@@ -547,7 +477,15 @@ static void mcast_example_task(void *pvParameters)
 
 void app_main()
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
-    initialise_wifi();
+    ESP_ERROR_CHECK(nvs_flash_init());
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
+
     xTaskCreate(&mcast_example_task, "mcast_task", 4096, NULL, 5, NULL);
 }

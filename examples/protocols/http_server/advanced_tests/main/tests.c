@@ -7,10 +7,9 @@
 
 #include "tests.h"
 
-static const char *TAG="TESTS";
+static const char *TAG = "TESTS";
 
-int pre_start_mem, post_stop_mem, post_stop_min_mem;
-bool basic_sanity = true;
+static int pre_start_mem, post_stop_mem;
 
 struct async_resp_arg {
     httpd_handle_t hd;
@@ -19,7 +18,7 @@ struct async_resp_arg {
 
 /********************* Basic Handlers Start *******************/
 
-esp_err_t hello_get_handler(httpd_req_t *req)
+static esp_err_t hello_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     ESP_LOGI(TAG, "Free Stack for server task: '%d'", uxTaskGetStackHighWaterMark(NULL));
@@ -28,7 +27,7 @@ esp_err_t hello_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-esp_err_t hello_type_get_handler(httpd_req_t *req)
+static esp_err_t hello_type_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
@@ -37,7 +36,7 @@ esp_err_t hello_type_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-esp_err_t hello_status_get_handler(httpd_req_t *req)
+static esp_err_t hello_status_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_set_status(req, HTTPD_500);
@@ -46,7 +45,7 @@ esp_err_t hello_status_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-esp_err_t echo_post_handler(httpd_req_t *req)
+static esp_err_t echo_post_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "/echo handler read content length %d", req->content_len);
 
@@ -101,7 +100,7 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-void adder_free_func(void *ctx)
+static void adder_free_func(void *ctx)
 {
     ESP_LOGI(TAG, "Custom Free Context function called");
     free(ctx);
@@ -110,7 +109,7 @@ void adder_free_func(void *ctx)
 /* Create a context, keep incrementing value in the context, by whatever was
  * received. Return the result
  */
-esp_err_t adder_post_handler(httpd_req_t *req)
+static esp_err_t adder_post_handler(httpd_req_t *req)
 {
     char buf[10];
     char outbuf[50];
@@ -143,7 +142,7 @@ esp_err_t adder_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-esp_err_t leftover_data_post_handler(httpd_req_t *req)
+static esp_err_t leftover_data_post_handler(httpd_req_t *req)
 {
     /* Only echo the first 10 bytes of the request, leaving the rest of the
      * request data as is.
@@ -166,8 +165,9 @@ esp_err_t leftover_data_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
-void generate_async_resp(void *arg)
+extern int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
+
+static void generate_async_resp(void *arg)
 {
     char buf[250];
     struct async_resp_arg *resp_arg = (struct async_resp_arg *)arg;
@@ -190,7 +190,7 @@ void generate_async_resp(void *arg)
     free(arg);
 }
 
-esp_err_t async_get_handler(httpd_req_t *req)
+static esp_err_t async_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_send(req, STR, strlen(STR));
@@ -211,7 +211,7 @@ esp_err_t async_get_handler(httpd_req_t *req)
 }
 
 
-httpd_uri_t basic_handlers[] = {
+static const httpd_uri_t basic_handlers[] = {
     { .uri      = "/hello/type_html",
       .method   = HTTP_GET,
       .handler  = hello_type_get_handler,
@@ -254,8 +254,9 @@ httpd_uri_t basic_handlers[] = {
     }
 };
 
-int basic_handlers_no = sizeof(basic_handlers)/sizeof(httpd_uri_t);
-void register_basic_handlers(httpd_handle_t hd)
+static const int basic_handlers_no = sizeof(basic_handlers)/sizeof(httpd_uri_t);
+
+static void register_basic_handlers(httpd_handle_t hd)
 {
     int i;
     ESP_LOGI(TAG, "Registering basic handlers");
@@ -269,7 +270,7 @@ void register_basic_handlers(httpd_handle_t hd)
     ESP_LOGI(TAG, "Success");
 }
 
-httpd_handle_t test_httpd_start()
+static httpd_handle_t test_httpd_start()
 {
     pre_start_mem = esp_get_free_heap_size();
     httpd_handle_t hd;
@@ -291,7 +292,7 @@ httpd_handle_t test_httpd_start()
     return NULL;
 }
 
-void test_httpd_stop(httpd_handle_t hd)
+static void test_httpd_stop(httpd_handle_t hd)
 {
     httpd_stop(hd);
     post_stop_mem = esp_get_free_heap_size();

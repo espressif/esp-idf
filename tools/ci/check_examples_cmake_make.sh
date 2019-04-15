@@ -2,7 +2,7 @@
 
 # While we support GNU Make & CMake together, check the same examples are present for both
 
-CMAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/main/" | grep -v "/build_system/cmake/")
+CMAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/common_components/" | grep -v "/main/" | grep -v "/build_system/cmake/")
 MAKE_EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/")
 
 CMAKE_EXAMPLE_PATHS="$(/usr/bin/dirname $CMAKE_EXAMPLE_PATHS | sort -n)"

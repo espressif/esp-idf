@@ -12,12 +12,10 @@ Shows how to use mDNS to advertise lookup services and hosts
 
 ### Configure the project
 
-```
-make menuconfig
-```
+* Run `make menuconfig` (or `idf.py menuconfig` if using CMake build system)
 
-* Set `Default serial port` under `Serial flasher config`.
-* Set `WiFi SSID` and  `WiFi Password` for the board to connect to AP.
+* Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+* When using Make build system, set `Default serial port` under `Serial flasher config`.
 * Set `mDNS Hostname` as host name prefix for the device and its instance name in `mDNS Instance Name`
 * Disable `Resolve test services` to prevent the example from querying defined names/services on startup (cause warnings in example logs, as illustrated below)
 
@@ -28,6 +26,7 @@ Build the project and flash it to the board, then run monitor tool to view seria
 ```
 make -j4 flash monitor
 ```
+
 - Wait for WiFi to connect to your access point
 - You can now ping the device at `[board-hostname].local`, where `[board-hostname]` is preconfigured hostname, `esp32-mdns` by default.
 - You can also browse for `_http._tcp` on the same network to find the advertised service
