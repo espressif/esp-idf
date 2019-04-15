@@ -1,19 +1,20 @@
-# ASIO chat server example
+# Asio chat server example
 
-Simple asio chat server using WiFi STA
+Simple Asio chat server using WiFi STA or Ethernet.
 
 ## Example workflow
 
-- WiFi STA is started and trying to connect to the access point defined through `make menuconfig`
-- Once connected and acquired IP address, ASIO chat server is started on port number defined through `make menuconfig`
-- Chat server echoes a message (received from any client) to all connected clients
+- Wi-Fi or Ethernet connection is established, and IP address is obtained.
+- Asio chat server is started on port number defined through `make menuconfig`.
+- Chat server echoes a message (received from any client) to all connected clients.
 
 ## Running the example
 
-- Run `make menuconfig` to configure the access point's SSID and Password and port number
-- Run `make flash monitor` to build and upload the example to your board and connect to it's serial terminal
-- Wait for WiFi to connect to your access point (note the IP address)
-- Connect to the server using multiple clients, for example using any option below
+- Run `make menuconfig` to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+- Set server port number in menuconfig, "Example configuration".
+- Run `make flash monitor` to build and upload the example to your board and connect to it's serial terminal.
+- Wait for the board to connect to WiFi or Ethernet (note the IP address).
+- Connect to the server using multiple clients, for example using any option below.
     - build and run asi chat client on your host machine
     - run chat_client asio example on ESP platform
     - since chat message consist of ascii size and message, it is possible to 

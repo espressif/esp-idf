@@ -44,10 +44,6 @@ Set following parameter under Serial Flasher Options:
 
 Set following parameters under Example Configuration Options:
 
-* Set `WiFi SSID` of the Router (Access-Point).
-
-* Set `WiFi Password` of the Router (Access-Point).
-
 * Set `IP version` of example to be IPV4 or IPV6.
 
 * Set `IPV4 Address` in case your chose IP version IPV4 above.
@@ -55,6 +51,8 @@ Set following parameters under Example Configuration Options:
 * Set `IPV6 Address` in case your chose IP version IPV6 above.
 
 * Set `Port` number that represents remote port the example will connect to.
+
+Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
 ## Build and Flash
 

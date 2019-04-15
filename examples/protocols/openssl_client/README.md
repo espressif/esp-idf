@@ -2,12 +2,13 @@
 
 The Example contains of OpenSSL client demo.
 
-First you should config the project by "make menuconfig":
-  Example Configuration ->
-    1. Target Domain : the domain that you want to connect to, and default is "www.baidu.com".
-    2. Target port number : the port number of the target domain, and default is 443.
-    3. WIFI SSID : your own WIFI, which is connected to the Internet, and default is "myssid".
-    4. WIFI Password : WIFI password, and default is "mypassword"
+To configure the project, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system).
+
+* Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+
+* When using Make build system, set `Default serial port` under `Serial flasher config`.
+
+* Configure target domain and port number under "Example Configuration"
 
 If you want to test the OpenSSL client demo:
   1. compile the code and load the firmware

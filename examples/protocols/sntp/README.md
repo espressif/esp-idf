@@ -2,6 +2,14 @@
 
 This example demonstrates the use of LwIP SNTP module to obtain time from Internet servers. See the README.md file in the upper level 'examples' directory for more information about examples.
 
+## Configuring the Example
+
+To configure the project, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system).
+
+* Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+
+* When using Make build system, set `Default serial port` under `Serial flasher config`.
+
 ## Obtaining time using LwIP SNTP module
 
 When this example boots first time after ESP32 is reset, it connects to WiFi and obtains time using SNTP.

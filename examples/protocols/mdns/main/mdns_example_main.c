@@ -12,89 +12,23 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "tcpip_adapter.h"
+#include "protocol_examples_common.h"
 #include "mdns.h"
 #include "driver/gpio.h"
 #include <sys/socket.h>
 #include <netdb.h>
 
-/* The examples use simple WiFi configuration that you can set via
-   'make menuconfig'.
-
-   If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
-*/
-#define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
-#define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
 
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
-
-
-/* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
-
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
-const int IP4_CONNECTED_BIT = BIT0;
-const int IP6_CONNECTED_BIT = BIT1;
+static const char c_config_hostname[] = CONFIG_MDNS_HOSTNAME;
+#define EXAMPLE_BUTTON_GPIO     0
 
 static const char *TAG = "mdns-test";
-static bool auto_reconnect = true;
 static char* generate_hostname();
-
-static esp_err_t event_handler(void *ctx, system_event_t *event)
-{
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-        /* enable ipv6 */
-        tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, IP4_CONNECTED_BIT);
-        break;
-    case SYSTEM_EVENT_AP_STA_GOT_IP6:
-        xEventGroupSetBits(wifi_event_group, IP6_CONNECTED_BIT);
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        /* This is a workaround as ESP32 WiFi libs don't currently
-           auto-reassociate. */
-        if (auto_reconnect) {
-            esp_wifi_connect();
-        }
-        xEventGroupClearBits(wifi_event_group, IP4_CONNECTED_BIT | IP6_CONNECTED_BIT);
-        break;
-    default:
-        break;
-    }
-    mdns_handle_system_event(ctx, event);
-    return ESP_OK;
-}
-
-static void initialise_wifi(void)
-{
-    tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = EXAMPLE_WIFI_SSID,
-            .password = EXAMPLE_WIFI_PASS,
-        },
-    };
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
-}
 
 static void initialise_mdns(void)
 {
@@ -123,7 +57,10 @@ static void initialise_mdns(void)
     free(hostname);
 }
 
+/* these strings match tcpip_adapter_if_t enumeration */
 static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
+
+/* these strings match mdns_ip_protocol_t enumeration */
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
 static void mdns_print_results(mdns_result_t * results){
@@ -200,9 +137,9 @@ static void query_mdns_host(const char * host_name)
 
 static void initialise_button(void)
 {
-    gpio_config_t io_conf;
+    gpio_config_t io_conf = {0};
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
-    io_conf.pin_bit_mask = 1;
+    io_conf.pin_bit_mask = BIT64(EXAMPLE_BUTTON_GPIO);
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = 1;
     io_conf.pull_down_en = 0;
@@ -212,7 +149,7 @@ static void initialise_button(void)
 static void check_button(void)
 {
     static bool old_level = true;
-    bool new_level = gpio_get_level(GPIO_NUM_0);
+    bool new_level = gpio_get_level(EXAMPLE_BUTTON_GPIO);
     if (!new_level && old_level) {
         query_mdns_host("esp32");
         query_mdns_service("_arduino", "_tcp");
@@ -229,10 +166,6 @@ static void check_button(void)
 
 static void mdns_example_task(void *pvParameters)
 {
-    /* Wait for the callback to set the CONNECTED_BIT in the event group. */
-    xEventGroupWaitBits(wifi_event_group, IP4_CONNECTED_BIT | IP6_CONNECTED_BIT,
-                     false, true, portMAX_DELAY);
-
 #if CONFIG_RESOLVE_TEST_SERVICES == 1
     /* Send initial queries that are started by CI tester */
     query_mdns_host("tinytester");
@@ -246,9 +179,18 @@ static void mdns_example_task(void *pvParameters)
 
 void app_main()
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
-    initialise_wifi();
+    ESP_ERROR_CHECK(nvs_flash_init());
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     initialise_mdns();
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
+
     initialise_button();
     xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
 }

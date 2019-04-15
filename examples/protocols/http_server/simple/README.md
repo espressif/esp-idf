@@ -4,10 +4,7 @@ The Example consists of HTTPD server demo with demostration of URI handling :
     1. URI \hello for GET command returns "Hello World!" message
     2. URI \echo for POST command echoes back the POSTed message
 
-* Configure the project using "make menuconfig" and goto :
-    * Example Configuration ->
-        1. WIFI SSID: WIFI network to which your PC is also connected to.
-        2. WIFI Password: WIFI password
+* Run `make menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
 * In order to test the HTTPD server persistent sockets demo :
     1. compile and burn the firmware "make flash"
