@@ -269,6 +269,13 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
         VerOffset prevStart,  nextStart;
         prevStart = nextStart = VerOffset::VER_0_OFFSET;
         if (findPage) {
+            // Do a sanity check that the item in question is actually being modified.
+            // If it isn't, it is cheaper to purposefully not write out new data.
+            // since it may invoke an erasure of flash.
+            if (cmpMultiPageBlob(nsIndex, key, data, dataSize) == ESP_OK) {
+                return ESP_OK;
+            }
+
             if (findPage->state() == Page::PageState::UNINITIALIZED ||
                     findPage->state() == Page::PageState::INVALID) {
                 ESP_ERROR_CHECK(findItem(nsIndex, datatype, key, findPage, item));
@@ -311,6 +318,13 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
             }
         }
     } else {
+        // Do a sanity check that the item in question is actually being modified.
+        // If it isn't, it is cheaper to purposefully not write out new data.
+        // since it may invoke an erasure of flash.
+        if (findPage != nullptr &&
+                findPage->cmpItem(nsIndex, datatype, key, data, dataSize) == ESP_OK) {
+            return ESP_OK;
+        }
 
         Page& page = getCurrentPage();
         err = page.writeItem(nsIndex, datatype, key, data, dataSize);
@@ -439,6 +453,48 @@ esp_err_t Storage::readMultiPageBlob(uint8_t nsIndex, const char* key, void* dat
     }
     if (err == ESP_ERR_NVS_NOT_FOUND) {
         eraseMultiPageBlob(nsIndex, key); // cleanup if a chunk is not found
+    }
+    return err;
+}
+
+esp_err_t Storage::cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize)
+{
+    Item item;
+    Page* findPage = nullptr;
+
+    /* First read the blob index */
+    auto err = findItem(nsIndex, ItemType::BLOB_IDX, key, findPage, item);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    uint8_t chunkCount = item.blobIndex.chunkCount;
+    VerOffset chunkStart = item.blobIndex.chunkStart;
+    size_t readSize = item.blobIndex.dataSize;
+    size_t offset = 0;
+
+    if (dataSize != readSize) {
+        return ESP_ERR_NVS_CONTENT_DIFFERS;
+    }
+
+    /* Now read corresponding chunks */
+    for (uint8_t chunkNum = 0; chunkNum < chunkCount; chunkNum++) {
+        err = findItem(nsIndex, ItemType::BLOB_DATA, key, findPage, item, static_cast<uint8_t> (chunkStart) + chunkNum);
+        if (err != ESP_OK) {
+            if (err == ESP_ERR_NVS_NOT_FOUND) {
+                break;
+            }
+            return err;
+        }
+        err = findPage->cmpItem(nsIndex, ItemType::BLOB_DATA, key, static_cast<const uint8_t*>(data) + offset, item.varLength.dataSize, static_cast<uint8_t> (chunkStart) + chunkNum);
+        if (err != ESP_OK) {
+            return err;
+        }
+        assert(static_cast<uint8_t> (chunkStart) + chunkNum == item.chunkIndex);
+        offset += item.varLength.dataSize;
+    }
+    if (err == ESP_OK) {
+        assert(offset == dataSize);
     }
     return err;
 }
