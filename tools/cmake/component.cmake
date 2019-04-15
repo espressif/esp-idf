@@ -112,6 +112,18 @@ function(__component_add component_dir prefix)
     get_filename_component(abs_dir ${component_dir} ABSOLUTE)
     get_filename_component(base_dir ${abs_dir} NAME)
 
+    # Check this is really a directory and that a CMakeLists.txt file for this component exists
+    # - warn and skip anything which isn't valid looking (probably cruft)
+    if(NOT IS_DIRECTORY "${abs_dir}")
+        message(WARNING "Unexpected file in components directory: ${abs_dir}")
+        return()
+    endif()
+    if(NOT EXISTS "${abs_dir}/CMakeLists.txt")
+        message(WARNING "Component directory ${abs_dir} does not contain a CMakeLists.txt file. "
+            "No component will be added")
+        return()
+    endif()
+
     set(component_name ${base_dir})
     # The component target has three underscores as a prefix. The corresponding component library
     # only has two.
