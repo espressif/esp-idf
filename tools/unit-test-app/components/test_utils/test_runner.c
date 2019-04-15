@@ -19,6 +19,7 @@
 #include "freertos/task.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_newlib.h"
 
 #ifdef CONFIG_HEAP_TRACING
 #include "esp_heap_trace.h"
@@ -120,6 +121,9 @@ void tearDown(void)
 {
     /* some FreeRTOS stuff is cleaned up by idle task */
     vTaskDelay(5);
+
+    /* clean up some of the newlib's lazy allocations */
+    esp_reent_cleanup();
 
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);

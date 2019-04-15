@@ -118,7 +118,7 @@ static void uart_config(uint32_t baud_rate, bool use_ref_tick)
     uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
 }
 
-TEST_CASE("test uart get baud-rate","[uart]")
+TEST_CASE("test uart get baud-rate", "[uart]")
 {
     uint32_t baud_rate1 = 0;
     uint32_t baud_rate2 = 0;
@@ -136,13 +136,13 @@ TEST_CASE("test uart get baud-rate","[uart]")
     ESP_LOGI(UART_TAG, "get baud-rate test passed  ....\n");
 }
 
-TEST_CASE("test uart tx data with break","[uart][leaks=2192]")
+TEST_CASE("test uart tx data with break", "[uart]")
 {
     const int buf_len = 200;
     const int send_len = 128;
     const int brk_len = 10;
     char *psend = (char *)malloc(buf_len);
-    TEST_ASSERT( psend != NULL);
+    TEST_ASSERT(psend != NULL);
     memset(psend, '0', buf_len);
     uart_config(UART_BAUD_115200, false);
     printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
@@ -151,6 +151,7 @@ TEST_CASE("test uart tx data with break","[uart][leaks=2192]")
     //If the code is running here, it means the test passed, otherwise it will crash due to the interrupt wdt timeout.
     printf("Send data with break test passed\n");
     free(psend);
+    uart_driver_delete(UART_NUM1);
 }
 
 // Calculate buffer checksum using tables 

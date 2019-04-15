@@ -69,7 +69,7 @@ TEST_CASE("(raw) can read file", "[fatfs]")
     test_teardown();
 }
 
-TEST_CASE("(raw) can open maximum number of files", "[fatfs][leaks=2028]")
+TEST_CASE("(raw) can open maximum number of files", "[fatfs]")
 {
     size_t max_files = FOPEN_MAX - 3; /* account for stdin, stdout, stderr */
     test_setup(max_files);
