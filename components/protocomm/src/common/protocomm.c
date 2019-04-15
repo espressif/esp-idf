@@ -149,6 +149,38 @@ esp_err_t protocomm_remove_endpoint(protocomm_t *pc, const char *ep_name)
     return ESP_ERR_NOT_FOUND;
 }
 
+esp_err_t protocomm_open_session(protocomm_t *pc, uint32_t session_id)
+{
+    if (!pc) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (pc->sec && pc->sec->new_transport_session) {
+        esp_err_t ret = pc->sec->new_transport_session(pc->sec_inst, session_id);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to launch new session with ID: %d", session_id);
+            return ret;
+        }
+    }
+    return ESP_OK;
+}
+
+esp_err_t protocomm_close_session(protocomm_t *pc, uint32_t session_id)
+{
+    if (!pc) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (pc->sec && pc->sec->close_transport_session) {
+        esp_err_t ret = pc->sec->close_transport_session(pc->sec_inst, session_id);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Error while closing session with ID: %d", session_id);
+            return ret;
+        }
+    }
+    return ESP_OK;
+}
+
 esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t session_id,
                                const uint8_t *inbuf, ssize_t inlen,
                                uint8_t **outbuf, ssize_t *outlen)
