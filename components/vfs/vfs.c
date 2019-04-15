@@ -544,6 +544,34 @@ int esp_vfs_rename(struct _reent *r, const char *src, const char *dst)
     return ret;
 }
 
+/* Create aliases for newlib syscalls
+
+   These functions are also available in ROM as stubs which use the syscall table, but linking them
+   directly here saves an additional function call when a software function is linked to one, and
+   makes linking with -stdlib easier.
+ */
+int _open_r(struct _reent *r, const char * path, int flags, int mode)
+    __attribute__((alias("esp_vfs_open")));
+ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
+    __attribute__((alias("esp_vfs_write")));
+off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
+    __attribute__((alias("esp_vfs_lseek")));
+ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
+    __attribute__((alias("esp_vfs_read")));
+int _close_r(struct _reent *r, int fd)
+    __attribute__((alias("esp_vfs_close")));
+int _fstat_r(struct _reent *r, int fd, struct stat * st)
+    __attribute__((alias("esp_vfs_fstat")));
+int _stat_r(struct _reent *r, const char * path, struct stat * st)
+    __attribute__((alias("esp_vfs_stat")));
+int _link_r(struct _reent *r, const char* n1, const char* n2)
+    __attribute__((alias("esp_vfs_link")));
+int _unlink_r(struct _reent *r, const char *path)
+    __attribute__((alias("esp_vfs_unlink")));
+int _rename_r(struct _reent *r, const char *src, const char *dst)
+    __attribute__((alias("esp_vfs_rename")));
+
+
 DIR* opendir(const char* name)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
@@ -1192,4 +1220,9 @@ int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout)
     }
 
     return ret;
+}
+
+void vfs_include_syscalls_impl()
+{
+    // Linker hook function, exists to make the linker examine this fine
 }
