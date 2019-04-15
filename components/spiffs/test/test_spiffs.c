@@ -531,7 +531,7 @@ TEST_CASE("can read file", "[spiffs]")
     test_teardown();
 }
 
-TEST_CASE("can open maximum number of files", "[spiffs][leaks=2244]")
+TEST_CASE("can open maximum number of files", "[spiffs]")
 {
     size_t max_files = FOPEN_MAX - 3; /* account for stdin, stdout, stderr */
     esp_vfs_spiffs_conf_t conf = {
@@ -602,7 +602,7 @@ TEST_CASE("readdir with large number of files", "[spiffs][timeout=30]")
     test_teardown();
 }
 
-TEST_CASE("multiple tasks can use same volume", "[spiffs][leaks=1128]")
+TEST_CASE("multiple tasks can use same volume", "[spiffs]")
 {
     test_setup();
     test_spiffs_concurrent("/spiffs/f");

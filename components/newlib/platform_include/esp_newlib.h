@@ -25,6 +25,11 @@
  */
 void esp_reent_init(struct _reent* r);
 
+/** 
+ * Clean up some of lazily allocated buffers in REENT structures.
+ */
+void esp_reent_cleanup();
+
 /**
  * Function which sets up syscall table used by newlib functions in ROM.
  *
