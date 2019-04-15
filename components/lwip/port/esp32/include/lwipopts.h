@@ -43,7 +43,7 @@
 #include "esp_task.h"
 #include "esp_system.h"
 #include "sdkconfig.h"
-
+#include "sntp.h"
 #include "netif/dhcp_state.h"
 
 /* Enable all Espressif-only options */
@@ -823,7 +823,7 @@ enum {
 #define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
     do { \
         struct timeval tv = { .tv_sec = sec, .tv_usec = us }; \
-        settimeofday(&tv, NULL); \
+        sntp_sync_time(&tv); \
     } while (0);
 
 #define SNTP_GET_SYSTEM_TIME(sec, us) \
@@ -832,6 +832,7 @@ enum {
         gettimeofday(&tv, NULL); \
         (sec) = tv.tv_sec;  \
         (us) = tv.tv_usec; \
+        sntp_set_sync_status(SNTP_SYNC_STATUS_RESET); \
     } while (0);
 
 #define SOC_SEND_LOG //printf
