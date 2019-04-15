@@ -21,6 +21,7 @@ if(CONFIG_BT_ENABLED)
             bluedroid/osi/include
             bluedroid/external/sbc/decoder/include
             bluedroid/external/sbc/encoder/include
+            bluedroid/external/sbc/plc/include
             bluedroid/btc/profile/esp/blufi/include
             bluedroid/btc/profile/esp/include
             bluedroid/btc/profile/std/a2dp/include
@@ -156,6 +157,7 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/external/sbc/encoder/srce/sbc_enc_coeffs.c"
                    "bluedroid/external/sbc/encoder/srce/sbc_encoder.c"
                    "bluedroid/external/sbc/encoder/srce/sbc_packing.c"
+                   "bluedroid/external/sbc/plc/sbc_plc.c"
                    "bluedroid/hci/hci_audio.c"
                    "bluedroid/hci/hci_hal_h4.c"
                    "bluedroid/hci/hci_layer.c"

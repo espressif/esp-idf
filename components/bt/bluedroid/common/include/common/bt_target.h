@@ -77,6 +77,7 @@
 #if CONFIG_BT_HFP_CLIENT_ENABLE
 #define BTC_HF_CLIENT_INCLUDED      TRUE
 #define BTA_HF_INCLUDED             TRUE
+#define PLC_INCLUDED                TRUE
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             TRUE
 #endif
