@@ -15,9 +15,30 @@
 #include "bta/bta_hf_client_co.h"
 #include "hci/hci_audio.h"
 #include "btc_hf_client.h"
+#include "osi/allocator.h"
+#include <string.h>
+
 #if (BTA_HF_INCLUDED == TRUE)
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
+
+#if (PLC_INCLUDED == TRUE)
+#include "sbc_plc.h"
+
+typedef struct {
+    sbc_plc_state_t plc_state;
+    int16_t sbc_plc_out[SBC_FS];
+} bta_hf_ct_plc_t;
+
+#if HFP_DYNAMIC_MEMORY == FALSE
+static bta_hf_ct_plc_t bta_hf_ct_plc;
+#else
+static bta_hf_ct_plc_t *bta_hf_ct_plc_ptr;
+#define bta_hf_ct_plc (*bta_hf_ct_plc_ptr)
+#endif
+
+#endif  ///(PLC_INCLUDED == TRUE)
+
 /*******************************************************************************
 **
 ** Function         bta_hf_client_co_audio_state
@@ -65,6 +86,7 @@ tBTA_HFP_SCO_ROUTE_TYPE bta_hf_client_sco_co_init(UINT32 rx_bw, UINT32 tx_bw,
 {
     APPL_TRACE_EVENT("%s rx_bw %d, tx_bw %d, codec %d", __FUNCTION__, rx_bw, tx_bw,
                      p_codec_info->codec_type);
+
     return BTA_HFP_SCO_ROUTE_HCI;
 }
 
@@ -82,6 +104,19 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 pkt_size, UINT16 event)
 {
     APPL_TRACE_EVENT("%s hdl %x, pkt_sz %u, event %u", __FUNCTION__, handle,
                      pkt_size, event);
+
+#if (PLC_INCLUDED == TRUE)
+
+#if (HFP_DYNAMIC_MEMORY == TRUE)
+    if ((bta_hf_ct_plc_ptr = (bta_hf_ct_plc_t *)osi_malloc(sizeof(bta_hf_ct_plc_t))) == NULL) {
+        APPL_TRACE_ERROR("%s malloc fail.", __FUNCTION__);
+        return;
+    }
+    memset((void *)bta_hf_ct_plc_ptr, 0, sizeof(bta_hf_ct_plc_t));
+#endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
+
+    sbc_plc_init(&(bta_hf_ct_plc.plc_state));
+#endif  ///(PLC_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
@@ -97,6 +132,15 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 pkt_size, UINT16 event)
 void bta_hf_client_sco_co_close(void)
 {
     APPL_TRACE_EVENT("%s", __FUNCTION__);
+
+#if (PLC_INCLUDED == TRUE)
+    sbc_plc_deinit(&(bta_hf_ct_plc.plc_state));
+
+#if (HFP_DYNAMIC_MEMORY == TRUE)
+    osi_free(bta_hf_ct_plc_ptr);
+#endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
+
+#endif  ///(PLC_INCLUDED == TRUE)
 }
 
 /*******************************************************************************
@@ -129,6 +173,10 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
 
     STREAM_SKIP_UINT16(p);
     STREAM_TO_UINT8 (pkt_size, p);
+
+    if(status != BTM_SCO_DATA_CORRECT){
+        APPL_TRACE_DEBUG("%s: not a correct frame(%d).", __func__, status);
+    }
     btc_hf_client_incoming_data_cb_to_app(p, pkt_size);
 }
 
