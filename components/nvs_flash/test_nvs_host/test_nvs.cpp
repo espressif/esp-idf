@@ -376,8 +376,8 @@ TEST_CASE("storage doesn't add duplicates within one page", "[nvs]")
     emu.setBounds(4, 8);
     CHECK(storage.init(4, 4) == ESP_OK);
     int bar = 0;
-    CHECK(storage.writeItem(1, "bar", bar) == ESP_OK);
-    CHECK(storage.writeItem(1, "bar", bar) == ESP_OK);
+    CHECK(storage.writeItem(1, "bar", ++bar) == ESP_OK);
+    CHECK(storage.writeItem(1, "bar", ++bar) == ESP_OK);
 
     Page page;
     page.load(4);
@@ -404,11 +404,11 @@ TEST_CASE("storage doesn't add duplicates within multiple pages", "[nvs]")
     emu.setBounds(4, 8);
     CHECK(storage.init(4, 4) == ESP_OK);
     int bar = 0;
-    CHECK(storage.writeItem(1, "bar", bar) == ESP_OK);
+    CHECK(storage.writeItem(1, "bar", ++bar) == ESP_OK);
     for (size_t i = 0; i < Page::ENTRY_COUNT; ++i) {
-        CHECK(storage.writeItem(1, "foo", static_cast<int>(bar)) == ESP_OK);
+        CHECK(storage.writeItem(1, "foo", static_cast<int>(++bar)) == ESP_OK);
     }
-    CHECK(storage.writeItem(1, "bar", bar) == ESP_OK);
+    CHECK(storage.writeItem(1, "bar", ++bar) == ESP_OK);
 
     Page page;
     page.load(4);
@@ -750,6 +750,58 @@ TEST_CASE("wifi test", "[nvs]")
 
 }
 
+TEST_CASE("writing the identical content does not write or erase", "[nvs]")
+{
+    SpiFlashEmulator emu(20);
+
+    const uint32_t NVS_FLASH_SECTOR = 5;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 10;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    nvs_handle misc_handle;
+    TEST_ESP_OK(nvs_open("test", NVS_READWRITE, &misc_handle));
+
+    // Test writing a u8 twice, then changing it
+    nvs_set_u8(misc_handle, "test_u8", 8);
+    emu.clearStats();
+    nvs_set_u8(misc_handle, "test_u8", 8);
+    CHECK(emu.getWriteOps() == 0);
+    CHECK(emu.getEraseOps() == 0);
+    CHECK(emu.getReadOps()  != 0);
+    emu.clearStats();
+    nvs_set_u8(misc_handle, "test_u8", 9);
+    CHECK(emu.getWriteOps() != 0);
+    CHECK(emu.getReadOps()  != 0);
+
+    // Test writing a string twice, then changing it
+    static const char *test[2] = {"Hello world.", "Hello world!"};
+    nvs_set_str(misc_handle, "test_str", test[0]);
+    emu.clearStats();
+    nvs_set_str(misc_handle, "test_str", test[0]);
+    CHECK(emu.getWriteOps() == 0);
+    CHECK(emu.getEraseOps() == 0);
+    CHECK(emu.getReadOps()  != 0);
+    emu.clearStats();
+    nvs_set_str(misc_handle, "test_str", test[1]);
+    CHECK(emu.getWriteOps() != 0);
+    CHECK(emu.getReadOps()  != 0);
+
+    // Test writing a multi-page blob, then changing it
+    uint8_t blob[Page::CHUNK_MAX_SIZE * 3] = {0};
+    memset(blob, 1, sizeof(blob));
+    nvs_set_blob(misc_handle, "test_blob", blob, sizeof(blob));
+    emu.clearStats();
+    nvs_set_blob(misc_handle, "test_blob", blob, sizeof(blob));
+    CHECK(emu.getWriteOps() == 0);
+    CHECK(emu.getEraseOps() == 0);
+    CHECK(emu.getReadOps()  != 0);
+    blob[sizeof(blob) - 1]++;
+    emu.clearStats();
+    nvs_set_blob(misc_handle, "test_blob", blob, sizeof(blob));
+    CHECK(emu.getWriteOps() != 0);
+    CHECK(emu.getReadOps()  != 0);
+}
 
 TEST_CASE("can init storage from flash with random contents", "[nvs]")
 {
