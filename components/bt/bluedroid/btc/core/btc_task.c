@@ -78,7 +78,8 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_PRF_QUE]     = {btc_profile_queue_handler,   NULL                    },
 #if BTC_AV_INCLUDED
     [BTC_PID_A2DP]        = {btc_a2dp_call_handler,       btc_a2dp_cb_handler     },
-    [BTC_PID_AVRC]        = {btc_avrc_call_handler,       NULL                    },
+    [BTC_PID_AVRC_CT]     = {btc_avrc_ct_call_handler,    NULL                    },
+    [BTC_PID_AVRC_TG]     = {btc_avrc_tg_call_handler,    NULL                    },
 #endif /* #if BTC_AV_INCLUDED */
 #if CONFIG_BT_SPP_ENABLED
     [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },

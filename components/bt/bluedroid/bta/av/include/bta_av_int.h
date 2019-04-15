@@ -174,6 +174,7 @@ typedef struct {
     UINT8               tsep; // local SEP type
     tBTA_AV_DATA_CBACK  *p_app_data_cback;
     tBTA_AV_CO_FUNCTS   *bta_av_cos;
+    tBTA_AVRC_CO_FUNCTS *bta_avrc_cos;
 } tBTA_AV_API_REG;
 
 
@@ -473,6 +474,8 @@ typedef struct {
     UINT8   shdl;   /* stream handle (hdi + 1) */
     UINT8   lidx;   /* (index+1) to LCB */
     tBTA_AV_FEAT        peer_features;  /* peer features mask */
+    UINT16              peer_ct_features;
+    UINT16              peer_tg_features;
 } tBTA_AV_RCB;
 #define BTA_AV_NUM_RCB      (BTA_AV_NUM_STRS  + 2)
 
@@ -509,6 +512,7 @@ typedef struct {
     tBTA_AV_FEAT        features;       /* features mask */
     tBTA_SEC            sec_mask;       /* security mask */
     tBTA_AV_HNDL        handle;         /* the handle for SDP activity */
+    tBTA_AVRC_CO_FUNCTS *p_rc_cos;      /* AVRCP call-out functions */
     BOOLEAN             disabling;      /* TRUE if api disabled called */
     UINT8               disc;           /* (hdi+1) or (rc_handle|BTA_AV_CHNL_MSK) if p_disc_db is in use */
     UINT8               state;          /* state machine state */
@@ -544,12 +548,7 @@ extern tBTA_AV_CB *bta_av_cb_ptr;
 /* config struct */
 extern tBTA_AV_CFG *p_bta_av_cfg;
 
-/* rc id config struct */
-extern UINT16 *p_bta_av_rc_id;
-extern UINT16 *p_bta_av_rc_id_ac;
-
 extern const tBTA_AV_SACT bta_av_a2d_action[];
-// extern const tBTA_AV_CO_FUNCTS bta_av_a2d_cos;
 extern const tBTA_AV_SACT bta_av_vdp_action[];
 extern tAVDT_CTRL_CBACK *const bta_av_dt_cback[];
 extern void bta_av_stream_data_cback(UINT8 handle, BT_HDR *p_pkt, UINT32 time_stamp, UINT8 m_pt);

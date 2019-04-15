@@ -593,6 +593,10 @@ static tAVRC_STS avrc_bld_notify_rsp (tAVRC_REG_NOTIF_RSP *p_rsp, BT_HDR *p_pkt)
         }
         break;
 
+    case AVRC_EVT_VOLUME_CHANGE:
+        UINT8_TO_BE_STREAM(p_data, p_rsp->param.volume);
+        len = 2;
+        break;
     default:
         status = AVRC_STS_BAD_PARAM;
         AVRC_TRACE_ERROR("unknown event_id");
@@ -649,6 +653,31 @@ tAVRC_STS avrc_bld_group_navigation_rsp (UINT16 navi_id, BT_HDR *p_pkt)
     p_data = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
     UINT16_TO_BE_STREAM(p_data, navi_id);
     p_pkt->len = 2;
+    return AVRC_STS_NO_ERROR;
+}
+
+/*******************************************************************************
+**
+** Function         avrc_bld_set_absolute_volume_rsp
+**
+** Description      This function builds the Set Absolute Volume command
+**                  response
+**
+** Returns          AVRC_STS_NO_ERROR, if the response is built successfully
+**                  Otherwise, the error code.
+**
+*******************************************************************************/
+tAVRC_STS avrc_bld_set_absolute_volume_rsp(tAVRC_SET_VOLUME_RSP *p_rsp, BT_HDR *p_pkt)
+{
+    UINT8   *p_data, *p_start;
+
+    p_start = (UINT8 *)(p_pkt + 1) + p_pkt->offset;
+    p_data = p_start + 2; /* pdu + rsvd */
+    UINT16_TO_BE_STREAM(p_data, 1); /* fixed length 1 */
+    UINT8_TO_BE_STREAM(p_data, p_rsp->volume);
+
+    p_pkt->len = (p_data - p_start);
+
     return AVRC_STS_NO_ERROR;
 }
 
@@ -842,8 +871,11 @@ tAVRC_STS AVRC_BldResponse( UINT8 handle, tAVRC_RESPONSE *p_rsp, BT_HDR **pp_pkt
         status = avrc_bld_next_rsp(&p_rsp->continu, p_pkt);
         break;
 
-    case AVRC_PDU_ABORT_CONTINUATION_RSP:       /*          0x41 */
+    case AVRC_PDU_ABORT_CONTINUATION_RSP:       /*        0x41 */
         status = avrc_bld_next_rsp(&p_rsp->abort, p_pkt);
+        break;
+    case AVRC_PDU_SET_ABSOLUTE_VOLUME:          /*        0x50 */
+        status = avrc_bld_set_absolute_volume_rsp(&p_rsp->volume, p_pkt);
         break;
     }
 

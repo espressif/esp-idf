@@ -38,17 +38,14 @@
 /*****************************************************************************
 **  Constants & Macros
 ******************************************************************************/
-/* for AVRC 1.4 need to change this */
-#define MAX_RC_NOTIFICATIONS AVRC_EVT_APP_SETTING_CHANGE
+#define BTC_RC_CT_INIT_MAGIC            0x20181128
+#define BTC_RC_TG_INIT_MAGIC            0x20181129
 
-#define MAX_VOLUME 128
-#define MAX_LABEL 16
-#define MAX_TRANSACTIONS_PER_SESSION 16
-#define MAX_CMD_QUEUE_LEN 8
+#define MAX_RC_NOTIFICATIONS            (13)  // refer to ESP_AVRC_RN_MAX_EVT
 
 #define CHECK_ESP_RC_CONNECTED       do { \
         BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
-        if (btc_rc_vb.rc_connected == FALSE) { \
+        if (btc_rc_cb.rc_connected == FALSE) { \
             BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
         return ESP_ERR_INVALID_STATE; \
         } \
@@ -58,73 +55,402 @@
 **  Local type definitions
 ******************************************************************************/
 typedef struct {
-    UINT8 bNotify;
+    BOOLEAN registered;
     UINT8 label;
-} btc_rc_reg_notifications_t;
+} btc_rc_reg_ntf_t;
 
-typedef struct {
-    UINT8   label;
-    UINT8   ctype;
-    BOOLEAN is_rsp_pending;
-} btc_rc_cmd_ctxt_t;
-
-/* TODO : Merge btc_rc_reg_notifications_t and btc_rc_cmd_ctxt_t to a single struct */
 typedef struct {
     BOOLEAN                     rc_connected;
     UINT8                       rc_handle;
     tBTA_AV_FEAT                rc_features;
+    UINT16                      rc_ct_features;
+    UINT16                      rc_tg_features;
     BD_ADDR                     rc_addr;
-    UINT16                      rc_pending_play;
-    btc_rc_cmd_ctxt_t           rc_pdu_info[MAX_CMD_QUEUE_LEN];
-    btc_rc_reg_notifications_t  rc_notif[MAX_RC_NOTIFICATIONS];
-    unsigned int                rc_volume;
-    uint8_t                     rc_vol_label;
+    btc_rc_reg_ntf_t            rc_ntf[MAX_RC_NOTIFICATIONS];
 } btc_rc_cb_t;
 
-typedef struct {
-    BOOLEAN in_use;
-    UINT8 lbl;
-    UINT8 handle;
-} rc_transaction_t;
-
-typedef struct {
-    osi_mutex_t lbllock;
-    rc_transaction_t transaction[MAX_TRANSACTIONS_PER_SESSION];
-} rc_device_t;
-
-rc_device_t device;
-
+static UINT8 opcode_from_pdu(UINT8 pdu);
+static void send_reject_response (UINT8 rc_handle, UINT8 label, UINT8 pdu, UINT8 status);
 static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open);
 static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close);
 static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp);
-static void handle_rc_metadata_rsp ( tBTA_AV_META_MSG *p_remote_rsp);
+static void handle_rc_metamsg_cmd ( tBTA_AV_META_MSG *p_meta_msg);
+static void handle_rc_metamsg_rsp ( tBTA_AV_META_MSG *p_remote_rsp);
+static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 ctype, UINT8 label);
 
 /*****************************************************************************
 **  Static variables
 ******************************************************************************/
-static btc_rc_cb_t btc_rc_vb;
+
+/* flag indicating wheter TG/CT is initialized */
+static uint32_t s_rc_ct_init;
+static uint32_t s_rc_tg_init;
+
+static btc_rc_cb_t btc_rc_cb;
+
+const static uint16_t cs_psth_allowed_cmd[8] = {
+    0x0000, /* bit mask: 0=SELECT, 1=UP, 2=DOWN, 3=LEFT,
+                         4=RIGHT, 5=RIGHT_UP, 6=RIGHT_DOWN, 7=LEFT_UP,
+                         8=LEFT_DOWN, 9=ROOT_MENU, 10=SETUP_MENU, 11=CONT_MENU,
+                         12=FAV_MENU, 13=EXIT */
+    0x0000, /* not used */
+    0x1FFF, /* bit mask: 0=0, 1=1, 2=2, 3=3,
+                         4=4, 5=5, 6=6, 7=7,
+                         8=8, 9=9, 10=DOT, 11=ENTER,
+                         12=CLEAR */
+    0x0078, /* bit mask: 0=CHAN_UP, 1=CHAN_DOWN, 2=PREV_CHAN, 3=SOUND_SEL,
+                         4=INPUT_SEL, 5=DISP_INFO, 6=HELP, 7=PAGE_UP,
+                         8=PAGE_DOWN */
+    0x1b3F, /* bit mask: 0=POWER, 1=VOL_UP, 2=VOL_DOWN, 3=MUTE,
+                         4=PLAY, 5=STOP, 6=PAUSE, 7=RECORD,
+                         8=REWIND, 9=FAST_FOR, 10=EJECT, 11=FORWARD,
+                         12=BACKWARD */
+    0x0000, /* bit mask: 0=ANGLE, 1=SUBPICT */
+    0x0000, /* not used */
+    0x003E  /* bit mask: 0=not used, 1=F1, 2=F2, 3=F3,
+                         4=F4, 5=F5 */
+};
+
+const static uint16_t cs_psth_dft_supported_cmd[8] = {0};
+static uint16_t s_psth_supported_cmd[8];
+
+const static uint16_t cs_rn_allowed_evt = \
+        0x2000; /* bit mask: 0=rsvd, 1=play_status, 2=track_chg, 3=reached_end,
+                             4=reached_start, 5=pos_chg, 6=batt_status, 7=sys_status_chg,
+                             8=player_app_setting, 9=now_playing_content, 10=avail_players, 11=addressed_player,
+                             12=UID, 13=volume_chg */
+
+const static uint16_t cs_rn_dft_supported_evt = 0;
+static uint16_t s_rn_supported_evt;
+
+// event ids supported to register as CT
+const static uint16_t cs_ct_rn_supported_evt = \
+        0x2026; /* bit mask: 0=rsvd, 1=play_status, 2=track_chg, 3=reached_end,
+                             4=reached_start, 5=pos_chg, 6=batt_status, 7=sys_status_chg,
+                             8=player_app_setting, 9=now_playing_content, 10=avail_players, 11=addressed_player,
+                             12=UID, 13=volume_chg */
 
 /*****************************************************************************
 **  Externs
 ******************************************************************************/
+const uint16_t *btc_avrc_tg_get_allowed_command(void)
+{
+    return cs_psth_allowed_cmd;
+}
+
+const uint16_t *btc_avrc_tg_get_supported_command(void)
+{
+    return s_psth_supported_cmd;
+}
+
+bool btc_avrc_tg_check_supported_command(const uint16_t *cmd_set)
+{
+    if (cmd_set == NULL) {
+        return false;
+    }
+
+    // check if cmd_set is a subset of allowed command set
+    bool ret = true;
+    for (int i = 0; i < 8; ++i) {
+        if (cs_psth_allowed_cmd[i] != (cmd_set[i] | cs_psth_allowed_cmd[i])) {
+            ret = false;
+            break;
+        }
+    }
+
+    return ret;
+}
+
+uint16_t btc_avrc_tg_get_rn_allowed_evt(void)
+{
+    return cs_rn_allowed_evt;
+}
+
+uint16_t btc_avrc_tg_get_rn_supported_evt(void)
+{
+    return s_rn_supported_evt;
+}
+
+bool btc_avrc_tg_check_rn_supported_evt(uint16_t evt_set)
+{
+    uint16_t evt_super_set = evt_set | cs_rn_allowed_evt;
+    if (evt_super_set == cs_rn_allowed_evt) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool btc_avrc_tg_rn_evt_supported(uint8_t event_id)
+{
+    uint16_t event_bits = s_rn_supported_evt;
+    return ((event_bits >> event_id) & 0x0001) ?
+           true : false;
+}
+
+bool btc_avrc_ct_rn_evt_supported(uint8_t event_id)
+{
+    uint16_t event_bits = cs_ct_rn_supported_evt;
+    return ((event_bits >> event_id) & 0x0001) ?
+           true : false;
+}
+
+bool btc_avrc_tg_init_p(void)
+{
+    return (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC);
+}
+
+bool btc_avrc_ct_init_p(void)
+{
+    return (s_rc_ct_init == BTC_RC_CT_INIT_MAGIC);
+}
+
+bool btc_avrc_tg_connected_p(void)
+{
+    return (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC) &&
+           (btc_rc_cb.rc_connected = TRUE) &&
+           (btc_rc_cb.rc_features & BTA_AV_FEAT_RCCT);
+}
+
+bool btc_avrc_ct_connected_p(void)
+{
+    return (s_rc_ct_init == BTC_RC_CT_INIT_MAGIC) &&
+           (btc_rc_cb.rc_connected = TRUE) &&
+           (btc_rc_cb.rc_features & BTA_AV_FEAT_RCTG);
+}
+
+void btc_avrc_tg_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    btc_avrc_tg_args_t *dst = (btc_avrc_tg_args_t *) p_dest;
+    btc_avrc_tg_args_t *src = (btc_avrc_tg_args_t *)p_src;
+    size_t len;
+
+    switch (msg->act) {
+    case BTC_AVRC_TG_API_SET_PSTH_SUPPORTED_CMD_EVT:
+        len = 8 * sizeof(uint16_t);
+        dst->set_psth_cmd = (uint16_t *)osi_malloc(len);
+        if (dst->set_psth_cmd) {
+            memcpy(dst->set_psth_cmd, src->set_psth_cmd, len);
+        } else {
+            BTC_TRACE_ERROR("%s %d no mem\n", __FUNCTION__, msg->act);
+        }
+        break;
+    default:
+        BTC_TRACE_DEBUG("%s Unhandled deep copy %d\n", __FUNCTION__, msg->act);
+        break;
+    }
+}
+
 /*****************************************************************************
 **  Static functions
 ******************************************************************************/
+static void btc_avrc_tg_arg_deep_free(btc_msg_t *msg)
+{
+    btc_avrc_tg_args_t *arg = (btc_avrc_tg_args_t *)msg->arg;
+
+    switch (msg->act) {
+    case BTC_AVRC_TG_API_SET_PSTH_SUPPORTED_CMD_EVT:
+        if (arg->set_psth_cmd) {
+            osi_free(arg->set_psth_cmd);
+        }
+        break;
+    default:
+        BTC_TRACE_DEBUG("%s Unhandled deep free %d\n", __FUNCTION__, msg->act);
+        break;
+    }
+}
+
+static bool btc_avrc_tg_set_supported_command(const uint16_t *cmd_set)
+{
+    if (!btc_avrc_tg_init_p()) {
+        BTC_TRACE_WARNING("%s failed: AVRC TG not yet initialized\n", __FUNCTION__);
+        return false;
+    }
+    if (!btc_avrc_tg_check_supported_command(cmd_set)) {
+        return false;
+    } else {
+        memcpy(s_psth_supported_cmd, cmd_set, sizeof(s_psth_supported_cmd));
+        return true;
+    }
+}
+
+static bool btc_avrc_tg_set_rn_supported_evt(uint16_t evt_set)
+{
+    if (!btc_avrc_tg_init_p()) {
+        BTC_TRACE_WARNING("%s failed: AVRC TG not yet initialized\n", __FUNCTION__);
+        return false;
+    }
+
+    if (btc_avrc_tg_check_rn_supported_evt(evt_set)) {
+        s_rn_supported_evt = evt_set;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 static inline void btc_avrc_ct_cb_to_app(esp_avrc_ct_cb_event_t event, esp_avrc_ct_cb_param_t *param)
 {
-    esp_avrc_ct_cb_t btc_avrc_cb = (esp_avrc_ct_cb_t)btc_profile_cb_get(BTC_PID_AVRC);
-    if (btc_avrc_cb) {
-        btc_avrc_cb(event, param);
+    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+        return;
+    }
+
+    esp_avrc_ct_cb_t btc_avrc_ct_cb = (esp_avrc_ct_cb_t)btc_profile_cb_get(BTC_PID_AVRC_CT);
+    if (btc_avrc_ct_cb) {
+        btc_avrc_ct_cb(event, param);
+    }
+}
+
+static inline void btc_avrc_tg_cb_to_app(esp_avrc_tg_cb_event_t event, esp_avrc_tg_cb_param_t *param)
+{
+    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+        return;
+    }
+
+    esp_avrc_tg_cb_t btc_avrc_tg_cb = (esp_avrc_tg_cb_t)btc_profile_cb_get(BTC_PID_AVRC_TG);
+    if (btc_avrc_tg_cb) {
+        btc_avrc_tg_cb(event, param);
+    }
+}
+
+/***************************************************************************
+ *  Function       send_metamsg_rsp
+ *
+ *  - Argument:
+ *                  rc_handle     RC handle corresponding to the connected RC
+ *                  label            Label of the RC response
+ *                  code            Response type
+ *                  p_meta_rsp      Vendor response
+ *
+ *  - Description: Remote control metamsg response handler (AVRCP 1.3)
+ *
+ ***************************************************************************/
+static void send_metamsg_rsp (UINT8 rc_handle, UINT8 label, tBTA_AV_CODE code,
+                              tAVRC_RESPONSE *p_meta_rsp)
+{
+    UINT8 ctype;
+
+    if (!p_meta_rsp) {
+        BTC_TRACE_WARNING("%s: Invalid response received from application", __FUNCTION__);
+        return;
+    }
+
+    BTC_TRACE_EVENT("%s: rc_handle: %d, label: %d, code: 0x%02x, pdu: %d", __FUNCTION__,
+                    rc_handle, label, code, p_meta_rsp->rsp.pdu);
+
+    if (p_meta_rsp->rsp.status != AVRC_STS_NO_ERROR) {
+        ctype = AVRC_RSP_REJ;
+    } else {
+        if (code < AVRC_RSP_NOT_IMPL) {
+            if (code == AVRC_CMD_NOTIF) {
+                ctype = AVRC_RSP_INTERIM;
+            } else if (code == AVRC_CMD_STATUS) {
+                ctype = AVRC_RSP_IMPL_STBL;
+            } else {
+                ctype = AVRC_RSP_ACCEPT;
+            }
+        } else {
+            ctype = code;
+        }
+    }
+
+    /* if response is for register_notification, make sure the rc has actually registered for this */
+    if ((p_meta_rsp->rsp.pdu == AVRC_PDU_REGISTER_NOTIFICATION) && (code == AVRC_RSP_CHANGED)) {
+        UINT8   event_id = p_meta_rsp->reg_notif.event_id;
+        BOOLEAN notify = (btc_rc_cb.rc_connected) && (btc_rc_cb.rc_ntf[event_id - 1].registered);
+
+        /* de-register this notification for a CHANGED response */
+        btc_rc_cb.rc_ntf[event_id - 1].registered = FALSE;
+        BTC_TRACE_DEBUG("%s rc_handle: %d. event_id: 0x%02d deregistered", __FUNCTION__,
+                        btc_rc_cb.rc_handle, event_id);
+        if (notify) {
+            BT_HDR *p_msg = NULL;
+            tAVRC_STS status = AVRC_BldResponse(btc_rc_cb.rc_handle, p_meta_rsp, &p_msg);
+
+            if (status == AVRC_STS_NO_ERROR) {
+                BTC_TRACE_DEBUG("%s Sending notification to rc_handle: %d. event_id: 0x%02d",
+                                __FUNCTION__, btc_rc_cb.rc_handle, event_id);
+                BTA_AvMetaRsp(btc_rc_cb.rc_handle, btc_rc_cb.rc_ntf[event_id - 1].label, ctype, p_msg);
+            } else {
+                BTC_TRACE_WARNING("%s failed to build metamsg response. status: 0x%02x",
+                                  __FUNCTION__, status);
+            }
+        }
+    } else {
+        // send response
+        BT_HDR *p_msg = NULL;
+        tAVRC_STS status;
+
+        status = AVRC_BldResponse(rc_handle, p_meta_rsp, &p_msg);
+
+        if (status == AVRC_STS_NO_ERROR) {
+            BTA_AvMetaRsp(rc_handle, label, ctype, p_msg);
+        } else {
+            BTC_TRACE_ERROR("%s: failed to build metamsg response. status: 0x%02x",
+                            __FUNCTION__, status);
+        }
+    }
+}
+
+
+static UINT8 opcode_from_pdu(UINT8 pdu)
+{
+    UINT8 opcode = 0;
+
+    switch (pdu) {
+    case AVRC_PDU_NEXT_GROUP:
+    case AVRC_PDU_PREV_GROUP: /* pass thru */
+        opcode  = AVRC_OP_PASS_THRU;
+        break;
+
+    default: /* vendor */
+        opcode  = AVRC_OP_VENDOR;
+        break;
+    }
+
+    return opcode;
+}
+
+/* Generic reject response */
+static void send_reject_response (UINT8 rc_handle, UINT8 label, UINT8 pdu, UINT8 status)
+{
+    UINT8 ctype = AVRC_RSP_REJ;
+    tAVRC_RESPONSE avrc_rsp;
+    BT_HDR *p_msg = NULL;
+    memset (&avrc_rsp, 0, sizeof(tAVRC_RESPONSE));
+
+    avrc_rsp.rsp.opcode = opcode_from_pdu(pdu);
+    avrc_rsp.rsp.pdu    = pdu;
+    avrc_rsp.rsp.status = status;
+
+    if (AVRC_STS_NO_ERROR == (status = AVRC_BldResponse(rc_handle, &avrc_rsp, &p_msg)) ) {
+        BTC_TRACE_DEBUG("%s: Sending error notification to handle:%d. pdu:%s,status:0x%02x",
+                        __FUNCTION__, rc_handle, dump_rc_pdu(pdu), status);
+        BTA_AvMetaRsp(rc_handle, label, ctype, p_msg);
     }
 }
 
 static void handle_rc_features(void)
 {
-    esp_avrc_ct_cb_param_t param;
-    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-    param.rmt_feats.feat_mask = btc_rc_vb.rc_features;
-    memcpy(param.rmt_feats.remote_bda, btc_rc_vb.rc_addr, sizeof(esp_bd_addr_t));
-    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_REMOTE_FEATURES_EVT, &param);
+    if ((btc_rc_cb.rc_features & BTA_AV_FEAT_RCTG) &&
+        (btc_rc_cb.rc_tg_features != 0)) {
+        esp_avrc_ct_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        param.rmt_feats.feat_mask = btc_rc_cb.rc_features;
+        param.rmt_feats.tg_feat_flag = btc_rc_cb.rc_tg_features;
+        memcpy(param.rmt_feats.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_REMOTE_FEATURES_EVT, &param);
+    }
+
+    if ((btc_rc_cb.rc_features & BTA_AV_FEAT_RCCT) &&
+        (btc_rc_cb.rc_ct_features != 0)) {
+        esp_avrc_tg_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_tg_cb_param_t));
+        param.rmt_feats.feat_mask = btc_rc_cb.rc_features;
+        param.rmt_feats.ct_feat_flag = btc_rc_cb.rc_ct_features;
+        memcpy(param.rmt_feats.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
+        btc_avrc_tg_cb_to_app(ESP_AVRC_TG_REMOTE_FEATURES_EVT, &param);
+    }
 }
 
 
@@ -143,40 +469,50 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
 
     if (p_rc_open->status == BTA_AV_SUCCESS) {
         //check if already some RC is connected
-        if (btc_rc_vb.rc_connected) {
+        if (btc_rc_cb.rc_connected) {
             BTC_TRACE_ERROR("Got RC OPEN in connected state, Connected RC: %d \
-                and Current RC: %d", btc_rc_vb.rc_handle, p_rc_open->rc_handle );
-            if ((btc_rc_vb.rc_handle != p_rc_open->rc_handle)
-                    && (bdcmp(btc_rc_vb.rc_addr, p_rc_open->peer_addr))) {
+                and Current RC: %d", btc_rc_cb.rc_handle, p_rc_open->rc_handle );
+            if ((btc_rc_cb.rc_handle != p_rc_open->rc_handle)
+                    && (bdcmp(btc_rc_cb.rc_addr, p_rc_open->peer_addr))) {
                 BTC_TRACE_DEBUG("Got RC connected for some other handle");
                 BTA_AvCloseRc(p_rc_open->rc_handle);
                 return;
             }
         }
-        memcpy(btc_rc_vb.rc_addr, p_rc_open->peer_addr, sizeof(BD_ADDR));
-        btc_rc_vb.rc_features = p_rc_open->peer_features;
-        btc_rc_vb.rc_vol_label = MAX_LABEL;
-        btc_rc_vb.rc_volume = MAX_VOLUME;
+        memcpy(btc_rc_cb.rc_addr, p_rc_open->peer_addr, sizeof(BD_ADDR));
+        btc_rc_cb.rc_features = p_rc_open->peer_features;
+        btc_rc_cb.rc_connected = TRUE;
+        btc_rc_cb.rc_handle = p_rc_open->rc_handle;
 
-        btc_rc_vb.rc_connected = TRUE;
-        btc_rc_vb.rc_handle = p_rc_open->rc_handle;
+        bdcpy(rc_addr.address, btc_rc_cb.rc_addr);
 
-        bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
+        // callback to application
+        if (p_rc_open->peer_features & BTA_AV_FEAT_RCTG) {
+            esp_avrc_ct_cb_param_t param;
+            memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+            param.conn_stat.connected = true;
+            memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+            btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+        }
 
-        esp_avrc_ct_cb_param_t param;
-        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-        param.conn_stat.connected = true;
-        memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+        if (p_rc_open->peer_features & BTA_AV_FEAT_RCCT) {
+            esp_avrc_tg_cb_param_t param;
+            memset(&param, 0, sizeof(esp_avrc_tg_cb_param_t));
+            param.conn_stat.connected = true;
+            memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
+            btc_avrc_tg_cb_to_app(ESP_AVRC_TG_CONNECTION_STATE_EVT, &param);
+        }
 
         /* on locally initiated connection we will get remote features as part of connect */
         if (p_rc_open->sdp_disc_done == TRUE) {
+            btc_rc_cb.rc_ct_features = p_rc_open->peer_ct_features;
+            btc_rc_cb.rc_tg_features = p_rc_open->peer_tg_features;
             handle_rc_features();
         }
     } else {
         BTC_TRACE_ERROR("%s Connect failed with error code: %d",
-                  __FUNCTION__, p_rc_open->status);
-        btc_rc_vb.rc_connected = FALSE;
+                        __FUNCTION__, p_rc_open->status);
+        btc_rc_cb.rc_connected = FALSE;
     }
 }
 
@@ -190,37 +526,44 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
  ***************************************************************************/
 static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
 {
-    bt_bdaddr_t rc_addr;
-
     BTC_TRACE_DEBUG("%s: rc_handle: %d", __FUNCTION__, p_rc_close->rc_handle);
-    if ((p_rc_close->rc_handle != btc_rc_vb.rc_handle)
-            && (bdcmp(btc_rc_vb.rc_addr, p_rc_close->peer_addr))) {
+    if ((p_rc_close->rc_handle != btc_rc_cb.rc_handle)
+            && (bdcmp(btc_rc_cb.rc_addr, p_rc_close->peer_addr))) {
         BTC_TRACE_ERROR("Got disconnect of unknown device");
         return;
     }
 
-    btc_rc_vb.rc_handle = 0;
-    btc_rc_vb.rc_connected = FALSE;
-    memcpy(btc_rc_vb.rc_addr, p_rc_close->peer_addr, sizeof(BD_ADDR));
-    memset(btc_rc_vb.rc_notif, 0, sizeof(btc_rc_vb.rc_notif));
+    tBTA_AV_FEAT rc_features = btc_rc_cb.rc_features;
 
-    btc_rc_vb.rc_features = 0;
-    btc_rc_vb.rc_vol_label = MAX_LABEL;
-    btc_rc_vb.rc_volume = MAX_VOLUME;
+    // clean up the state
+    btc_rc_cb.rc_handle = 0;
+    btc_rc_cb.rc_connected = FALSE;
 
-    bdcpy(rc_addr.address, btc_rc_vb.rc_addr);
-
-    memset(btc_rc_vb.rc_addr, 0, sizeof(BD_ADDR));
+    btc_rc_cb.rc_features = 0;
+    btc_rc_cb.rc_ct_features = 0;
+    btc_rc_cb.rc_tg_features = 0;
+    memset(btc_rc_cb.rc_addr, 0, sizeof(BD_ADDR));
+    memset(btc_rc_cb.rc_ntf, 0, sizeof(btc_rc_cb.rc_ntf));
 
     /* report connection state */
-    esp_avrc_ct_cb_param_t param;
-    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-    param.conn_stat.connected = false;
-    memcpy(param.conn_stat.remote_bda, &rc_addr, sizeof(esp_bd_addr_t));
-    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+    if (rc_features & BTA_AV_FEAT_RCTG) {
+        esp_avrc_ct_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        param.conn_stat.connected = false;
+        memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+    }
+
+    if (rc_features & BTA_AV_FEAT_RCCT) {
+        esp_avrc_tg_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        param.conn_stat.connected = false;
+        memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
+        btc_avrc_tg_cb_to_app(ESP_AVRC_TG_CONNECTION_STATE_EVT, &param);
+    }
 }
 
-static void handle_rc_attributes_rsp ( tAVRC_MSG_VENDOR *vendor_msg)
+static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
 {
     uint8_t attr_count = vendor_msg->p_vendor_data[4];
     int attr_index = 5;
@@ -255,49 +598,263 @@ static void handle_rc_attributes_rsp ( tAVRC_MSG_VENDOR *vendor_msg)
     }
 }
 
-static void handle_rc_notification_rsp ( tAVRC_MSG_VENDOR *vendor_msg)
+static void handle_rc_notification_rsp (tAVRC_MSG_VENDOR *vendor_msg)
 {
     esp_avrc_ct_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
 
     param.change_ntf.event_id = vendor_msg->p_vendor_data[4];
 
-    param.change_ntf.event_parameter = vendor_msg->p_vendor_data[5] << 24 | vendor_msg->p_vendor_data[6] << 16 |
-                                       vendor_msg->p_vendor_data[7] << 8 | vendor_msg->p_vendor_data[8];
+    uint8_t *data = &vendor_msg->p_vendor_data[5];
+    if (!btc_avrc_ct_rn_evt_supported(param.change_ntf.event_id)) {
+        BTC_TRACE_WARNING("%s unsupported notification on CT, event id 0x%x", __FUNCTION__,
+                          param.change_ntf.event_id);
+        return;
+    }
 
+    switch (param.change_ntf.event_id) {
+    case ESP_AVRC_RN_PLAY_STATUS_CHANGE:
+        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.playback, data);
+        break;
+    case ESP_AVRC_RN_TRACK_CHANGE:
+        memcpy(param.change_ntf.event_parameter.elm_id, data, 8);
+        break;
+    case ESP_AVRC_RN_PLAY_POS_CHANGED:
+        BE_STREAM_TO_UINT32(param.change_ntf.event_parameter.play_pos, data);
+        break;
+    case ESP_AVRC_RN_BATTERY_STATUS_CHANGE:
+        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.batt, data);
+        break;
+    case ESP_AVRC_RN_VOLUME_CHANGE:
+        BE_STREAM_TO_UINT8(param.change_ntf.event_parameter.volume, data);
+        break;
+    // for non-parameter event response
+    case ESP_AVRC_RN_TRACK_REACHED_END:
+    case ESP_AVRC_RN_TRACK_REACHED_START:
+        break;
+    // for other unsupported event:
+    case ESP_AVRC_RN_SYSTEM_STATUS_CHANGE:
+    case ESP_AVRC_RN_APP_SETTING_CHANGE:
+    case ESP_AVRC_RN_NOW_PLAYING_CHANGE:
+    case ESP_AVRC_RN_AVAILABLE_PLAYERS_CHANGE:
+    case ESP_AVRC_RN_ADDRESSED_PLAYER_CHANGE:
+    case ESP_AVRC_RN_UIDS_CHANGE:
+    default:
+        BTC_TRACE_WARNING("%s RC unhandled notification response, event id 0x%x", __FUNCTION__,
+                          param.change_ntf.event_id);
+        break;
+    }
     btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CHANGE_NOTIFY_EVT, &param);
 }
 
+static void handle_rc_get_caps_rsp (tAVRC_GET_CAPS_RSP *rsp)
+{
+    if (rsp->capability_id == AVRC_CAP_EVENTS_SUPPORTED) {
+        esp_avrc_ct_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+        param.get_rn_caps_rsp.cap_count = rsp->count;
+        for (int i = 0; i < rsp->count; ++i) {
+            esp_avrc_rn_evt_bit_mask_operation(ESP_AVRC_BIT_MASK_OP_SET, &param.get_rn_caps_rsp.evt_set,
+                                               rsp->param.event_id[i]);
+        }
+        btc_avrc_ct_cb_to_app(ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT, &param);
+    } else {
+        // ignore other capability_id
+        BTC_TRACE_WARNING("AVRC unhandled event, CapabilityID: 0x%x", rsp->capability_id);
+        return;
+    }
+}
+
 /***************************************************************************
- *  Function       handle_rc_metadata_rsp
+ *  Function       handle_rc_metamsg_cmd
+ *
+ *  - Argument:    tBTA_AV_VENDOR Structure containing the received
+ *                          metamsg command
+ *
+ *  - Description: Remote control metamsg command handler (AVRCP 1.3)
+ *
+ ***************************************************************************/
+static void handle_rc_metamsg_cmd (tBTA_AV_META_MSG *p_meta_msg)
+{
+    BTC_TRACE_DEBUG("%s, opcode 0x%x, len %d, code %d", __FUNCTION__, p_meta_msg->p_msg->hdr.opcode, p_meta_msg->len, p_meta_msg->code);
+
+    if (p_meta_msg->p_msg->hdr.opcode != AVRC_OP_VENDOR) {
+        BTC_TRACE_WARNING("Invalid opcode: %x", p_meta_msg->p_msg->hdr.opcode);
+        return;
+    }
+    if (p_meta_msg->len < 3) {
+        BTC_TRACE_WARNING("Invalid length.Opcode: 0x%x, len: 0x%x", p_meta_msg->p_msg->hdr.opcode,
+                          p_meta_msg->len);
+        return;
+    }
+
+    if (p_meta_msg->code >= AVRC_RSP_NOT_IMPL) {
+#if (AVRC_ADV_CTRL_INCLUDED == TRUE)
+        handle_rc_metamsg_rsp(p_meta_msg);
+#else
+        BTC_TRACE_WARNING("%s:Received vendor dependent rsp. code: %d len: %d. Not processing it.",
+                          __FUNCTION__, p_meta_msg->code, p_meta_msg->len);
+#endif
+        return;
+    }
+
+#define RC_CMD_PRS_BUF_LEN  (512)
+    uint8_t *buf = (uint8_t *)osi_calloc(RC_CMD_PRS_BUF_LEN);
+    tAVRC_COMMAND avrc_command = {0};
+    tAVRC_STS status;
+
+    status = AVRC_ParsCommand(p_meta_msg->p_msg, &avrc_command, buf, RC_CMD_PRS_BUF_LEN);
+    BTC_TRACE_DEBUG("Rcv vendor cmd: code %d, PDU 0x%x, label %d", p_meta_msg->code,
+                    avrc_command.cmd.pdu, p_meta_msg->label);
+
+    if (status != AVRC_STS_NO_ERROR) {
+        /* return error */
+        BTC_TRACE_WARNING("%s: Error in parsing vendor command. status: 0x%02x",
+                          __FUNCTION__, status);
+        send_reject_response(p_meta_msg->rc_handle, p_meta_msg->label, avrc_command.pdu, status);
+    } else {
+        btc_rc_upstreams_evt(avrc_command.cmd.pdu, &avrc_command, p_meta_msg->code, p_meta_msg->label);
+    }
+
+    osi_free(buf);
+}
+
+/*******************************************************************************
+**
+** Function         btc_rc_upstreams_evt
+**
+** Description      Executes AVRC UPSTREAMS events in btc context.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btc_rc_upstreams_evt(UINT16 event, tAVRC_COMMAND *pavrc_cmd, UINT8 ctype, UINT8 label)
+{
+    BTC_TRACE_EVENT("%s pdu: 0x%x handle: 0x%x ctype:%x label:%x", __FUNCTION__,
+                    pavrc_cmd->pdu, btc_rc_cb.rc_handle, ctype, label);
+
+    switch (event) {
+    case AVRC_PDU_SET_ABSOLUTE_VOLUME: {
+        // set up response
+        tAVRC_RESPONSE avrc_rsp;
+        BTC_TRACE_EVENT("%s() AVRC_PDU_SET_ABSOLUTE_VOLUME", __FUNCTION__);
+        memset(&(avrc_rsp.volume), 0, sizeof(tAVRC_RSP));
+        avrc_rsp.volume.opcode = opcode_from_pdu(AVRC_PDU_SET_ABSOLUTE_VOLUME);
+        avrc_rsp.volume.pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME;
+        avrc_rsp.volume.status = AVRC_STS_NO_ERROR;
+        avrc_rsp.volume.volume = pavrc_cmd->volume.volume;
+        send_metamsg_rsp(btc_rc_cb.rc_handle, label, ctype, &avrc_rsp);
+
+        // set up callback
+        esp_avrc_tg_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_tg_cb_param_t));
+        param.set_abs_vol.volume = pavrc_cmd->volume.volume;
+        btc_avrc_tg_cb_to_app(ESP_AVRC_TG_SET_ABSOLUTE_VOLUME_CMD_EVT, &param);
+    }
+    break;
+    case AVRC_PDU_GET_PLAY_STATUS:
+    case AVRC_PDU_GET_ELEMENT_ATTR:
+    case AVRC_PDU_INFORM_DISPLAY_CHARSET:
+    //todo: check the valid response for these PDUs
+    case AVRC_PDU_LIST_PLAYER_APP_ATTR:
+    case AVRC_PDU_LIST_PLAYER_APP_VALUES:
+    case AVRC_PDU_GET_CUR_PLAYER_APP_VALUE:
+    case AVRC_PDU_SET_PLAYER_APP_VALUE:
+    case AVRC_PDU_GET_PLAYER_APP_ATTR_TEXT:
+    case AVRC_PDU_GET_PLAYER_APP_VALUE_TEXT: {
+        send_reject_response (btc_rc_cb.rc_handle, label, pavrc_cmd->pdu, AVRC_STS_BAD_CMD);
+    }
+    break;
+    case AVRC_PDU_REGISTER_NOTIFICATION: {
+        UINT8 event_id = pavrc_cmd->reg_notif.event_id;
+        if (event_id > MAX_RC_NOTIFICATIONS) {
+            BTC_TRACE_WARNING("Invalid event_id: 0x%x", event_id);
+            break;
+        }
+
+        btc_rc_cb.rc_ntf[event_id - 1].registered = TRUE;
+        btc_rc_cb.rc_ntf[event_id - 1].label = label;
+        BTC_TRACE_EVENT("%s: New registerd notification: event_id:0x%x, label:0x%x",
+                        __FUNCTION__, event_id, label);
+
+        // set up callback
+        esp_avrc_tg_cb_param_t param;
+        memset(&param, 0, sizeof(esp_avrc_tg_cb_param_t));
+        param.reg_ntf.event_id = pavrc_cmd->reg_notif.event_id;
+        param.reg_ntf.event_parameter = pavrc_cmd->reg_notif.param;
+        btc_avrc_tg_cb_to_app(ESP_AVRC_TG_REGISTER_NOTIFICATION_EVT, &param);
+    }
+    break;
+    default: {
+        send_reject_response (btc_rc_cb.rc_handle, label, pavrc_cmd->pdu,
+                              (pavrc_cmd->pdu == AVRC_PDU_SEARCH) ? AVRC_STS_SEARCH_NOT_SUP : AVRC_STS_BAD_CMD);
+    }
+    break;
+    }
+    return;
+}
+
+/***************************************************************************
+ *  Function       handle_rc_metamsg_rsp
  *
  *  - Argument:    tBTA_AV_META_MSG metadata command response
  *
  *  - Description: Vendor metadata response handler
  *
  ***************************************************************************/
-static void handle_rc_metadata_rsp ( tBTA_AV_META_MSG *p_remote_rsp)
+static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
 {
-#if (AVRC_METADATA_INCLUDED == TRUE)
-    tAVRC_MSG *avrc_msg = p_remote_rsp->p_msg;
-    tAVRC_MSG_VENDOR *vendor_msg = &avrc_msg->vendor;
-
-    //Check what type of metadata was received
-    switch (vendor_msg->hdr.ctype) {
-    case AVRC_RSP_CHANGED:
-        if (vendor_msg->p_vendor_data[0] == AVRC_PDU_REGISTER_NOTIFICATION) {
-            handle_rc_notification_rsp(vendor_msg);
-        }
-        break;
-
-    case AVRC_RSP_IMPL_STBL:
-        if (vendor_msg->p_vendor_data[0] == AVRC_PDU_GET_ELEMENT_ATTR) {
-            handle_rc_attributes_rsp(vendor_msg);
-        }
-        break;
+    tAVRC_RESPONSE avrc_response = {0};
+    tAVRC_STS status;
+    tAVRC_MSG_VENDOR *vendor_msg = &p_meta_msg->p_msg->vendor;
+    BTC_TRACE_DEBUG("%s: opcode %d, pdu 0x%x, code %d", __FUNCTION__, p_meta_msg->p_msg->hdr.opcode, vendor_msg->p_vendor_data[0],
+                    p_meta_msg->code);
+    if ( p_meta_msg->p_msg->hdr.opcode != AVRC_OP_VENDOR) {
+        return;
     }
-#else
-    BTC_TRACE_ERROR("%s AVRCP metadata is not enabled", __FUNCTION__);
-#endif
+    if (p_meta_msg->code != AVRC_RSP_CHANGED &&
+            p_meta_msg->code != AVRC_RSP_INTERIM &&
+            p_meta_msg->code != AVRC_RSP_ACCEPT &&
+            p_meta_msg->code != AVRC_RSP_REJ &&
+            p_meta_msg->code != AVRC_RSP_NOT_IMPL &&
+            p_meta_msg->code != AVRC_RSP_IMPL_STBL) {
+        return;
+    }
+
+    // handle GET_ELEMENT_ATTR response
+    if (p_meta_msg->code == AVRC_RSP_IMPL_STBL &&
+            vendor_msg->p_vendor_data[0] == AVRC_PDU_GET_ELEMENT_ATTR) {
+        handle_rc_attributes_rsp(vendor_msg);
+        return;
+    }
+
+    status = AVRC_ParsResponse(p_meta_msg->p_msg, &avrc_response);
+    if (status != AVRC_STS_NO_ERROR) {
+        BTC_TRACE_WARNING("%s: code %d error 0x%x", __FUNCTION__, p_meta_msg->code, status);
+        return;
+    }
+
+    tAVRC_MSG *avrc_msg = p_meta_msg->p_msg;
+    vendor_msg = &avrc_msg->vendor;
+    switch (avrc_response.rsp.pdu) {
+    case AVRC_PDU_REGISTER_NOTIFICATION:
+        if (vendor_msg->hdr.ctype == AVRC_RSP_CHANGED) {
+            handle_rc_notification_rsp(vendor_msg);
+        } else if (vendor_msg->hdr.ctype == AVRC_RSP_INTERIM) {
+            // ignore this response
+        }
+        break;
+    case AVRC_PDU_GET_ELEMENT_ATTR:
+        // todo: handle this PDU here
+        break;
+    case AVRC_PDU_GET_CAPABILITIES:
+        if (vendor_msg->hdr.ctype == AVRC_RSP_IMPL_STBL) {
+            handle_rc_get_caps_rsp(&avrc_response.get_caps);
+        }
+        break;
+    default:
+        BTC_TRACE_WARNING("%s: unhandled meta rsp: pdu 0x%x", __FUNCTION__, avrc_response.rsp.pdu);
+    }
 }
 
 /***************************************************************************
@@ -312,7 +869,7 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
 {
 #if (AVRC_CTLR_INCLUDED == TRUE)
     const char *status;
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_RCTG) {
         int key_state;
         if (p_remote_rsp->key_state == AVRC_STATE_RELEASE) {
             status = "released";
@@ -342,6 +899,23 @@ static void handle_rc_passthrough_rsp ( tBTA_AV_REMOTE_RSP *p_remote_rsp)
 #endif
 }
 
+/***************************************************************************
+ *  Function       handle_rc_passthrough_cmd
+ *
+ *  - Argument:    tBTA_AV_RC rc_id   remote control command ID
+ *                 tBTA_AV_STATE key_state status of key press
+ *
+ *  - Description: Remote control command handler
+ *
+ ***************************************************************************/
+void handle_rc_passthrough_cmd ( tBTA_AV_REMOTE_CMD *p_remote_cmd)
+{
+    esp_avrc_tg_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_tg_cb_param_t));
+    param.psth_cmd.key_code = p_remote_cmd->rc_id;
+    param.psth_cmd.key_state = p_remote_cmd->key_state;
+    btc_avrc_tg_cb_to_app(ESP_AVRC_TG_PASSTHROUGH_CMD_EVT, &param);
+}
 
 /***************************************************************************
  **
@@ -355,7 +929,7 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
     BTC_TRACE_DEBUG ("%s event:%s", __FUNCTION__, dump_rc_event(event));
     switch (event) {
     case BTA_AV_RC_OPEN_EVT: {
-        BTC_TRACE_DEBUG("Peer_features:%x", p_data->rc_open.peer_features);
+        BTC_TRACE_DEBUG("RC open, peer_features:%x", p_data->rc_open.peer_features);
         handle_rc_connect( &(p_data->rc_open) );
     } break;
 
@@ -366,25 +940,50 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
 #if (AVRC_CTLR_INCLUDED == TRUE)
     case BTA_AV_REMOTE_RSP_EVT: {
         BTC_TRACE_DEBUG("RSP: rc_id:0x%x key_state:%d", p_data->remote_rsp.rc_id,
-                  p_data->remote_rsp.key_state);
+                        p_data->remote_rsp.key_state);
         handle_rc_passthrough_rsp( (&p_data->remote_rsp) );
     }
     break;
 #endif
     case BTA_AV_RC_FEAT_EVT: {
         BTC_TRACE_DEBUG("Peer_features:%x", p_data->rc_feat.peer_features);
-        btc_rc_vb.rc_features = p_data->rc_feat.peer_features;
+        do {
+            // report connection state if connection state wasn't reported on BTA_AV_RC_OPEN_EVT
+            tBTA_AV_FEAT old_feats = btc_rc_cb.rc_features;
+            if ((p_data->rc_feat.peer_features & BTA_AV_FEAT_RCTG) &&
+                !(old_feats & BTA_AV_FEAT_RCTG)) {
+                esp_avrc_ct_cb_param_t param;
+                memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+                param.conn_stat.connected = true;
+                memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
+                btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+            }
+            if ((p_data->rc_feat.peer_features & BTA_AV_FEAT_RCCT) &&
+                !(old_feats & BTA_AV_FEAT_RCCT)) {
+                esp_avrc_tg_cb_param_t param;
+                memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+                param.conn_stat.connected = true;
+                memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
+                btc_avrc_tg_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
+            }
+        } while (0);
+        btc_rc_cb.rc_features = p_data->rc_feat.peer_features;
+        btc_rc_cb.rc_ct_features = p_data->rc_feat.peer_ct_features;
+        btc_rc_cb.rc_tg_features = p_data->rc_feat.peer_tg_features;
         handle_rc_features();
     }
     break;
 
     case BTA_AV_META_MSG_EVT: {
-        handle_rc_metadata_rsp(&(p_data->meta_msg));
+        handle_rc_metamsg_cmd(&(p_data->meta_msg));
     }
     break;
-
-    // below events are not handled for now
-    case BTA_AV_REMOTE_CMD_EVT:
+    case BTA_AV_REMOTE_CMD_EVT: {
+        BTC_TRACE_DEBUG("rc_id:0x%x key_state:%d", p_data->remote_cmd.rc_id,
+                        p_data->remote_cmd.key_state);
+        handle_rc_passthrough_cmd(&p_data->remote_cmd);
+    }
+    break;
     default:
         BTC_TRACE_DEBUG("Unhandled RC event : 0x%x", event);
     }
@@ -399,8 +998,8 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
  ***************************************************************************/
 BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 {
-    if (btc_rc_vb.rc_connected == TRUE) {
-        bdcpy(peer_addr, btc_rc_vb.rc_addr);
+    if (btc_rc_cb.rc_connected == TRUE) {
+        bdcpy(peer_addr, btc_rc_cb.rc_addr);
         return TRUE;
     }
     return FALSE;
@@ -414,7 +1013,7 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 **
 ** Function         btc_avrc_ct_init
 **
-** Description      Initializes the AVRC interface
+** Description      Initializes the AVRC Controller interface
 **
 ** Returns          esp_err_t
 **
@@ -422,16 +1021,24 @@ BOOLEAN btc_rc_get_connected_peer(BD_ADDR peer_addr)
 static void btc_avrc_ct_init(void)
 {
     BTC_TRACE_DEBUG("## %s ##", __FUNCTION__);
+    if (s_rc_ct_init == BTC_RC_CT_INIT_MAGIC) {
+        BTC_TRACE_WARNING("%s already initialized", __FUNCTION__);
+        return;
+    }
 
-    memset (&btc_rc_vb, 0, sizeof(btc_rc_vb));
-    btc_rc_vb.rc_vol_label = MAX_LABEL;
-    btc_rc_vb.rc_volume = MAX_VOLUME;
+    /// initialize CT-specific resources
+    s_rc_ct_init = BTC_RC_CT_INIT_MAGIC;
+
+    /// initialize CT-TG shared resources
+    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+    }
 }
 
 
 /***************************************************************************
 **
-** Function         cleanup_ctrl
+** Function         btc_avrc_ct_deinit
 **
 ** Description      Closes the AVRC Controller interface
 **
@@ -442,7 +1049,19 @@ static void btc_avrc_ct_deinit(void)
 {
     BTC_TRACE_API("## %s ##", __FUNCTION__);
 
-    memset(&btc_rc_vb, 0, sizeof(btc_rc_cb_t));
+    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+        BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
+        return;
+    }
+
+    /// deinit CT-specific resources
+    s_rc_ct_init = 0;
+
+    /// deinit CT-TG shared resources
+    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+    }
+
     BTC_TRACE_API("## %s ## completed", __FUNCTION__);
 }
 
@@ -468,8 +1087,41 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
 
     status = AVRC_BldCommand(&avrc_cmd, &p_msg);
     if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA) {
-            BTA_AvMetaCmd(btc_rc_vb.rc_handle, tl, BTA_AV_CMD_CTRL, p_msg);
+        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, BTA_AV_CMD_CTRL, p_msg);
+            status = BT_STATUS_SUCCESS;
+        } else {
+            status = BT_STATUS_FAIL;
+            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
+        }
+    }
+
+#else
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
+#endif
+
+    return status;
+}
+
+static bt_status_t btc_avrc_ct_send_get_rn_caps_cmd(uint8_t tl)
+{
+    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+
+#if (AVRC_METADATA_INCLUDED == TRUE)
+    CHECK_ESP_RC_CONNECTED;
+
+    tAVRC_COMMAND avrc_cmd = {0};
+    BT_HDR *p_msg = NULL;
+
+    avrc_cmd.get_caps.opcode = AVRC_OP_VENDOR;
+    avrc_cmd.get_caps.status = AVRC_STS_NO_ERROR;
+    avrc_cmd.get_caps.pdu = AVRC_PDU_GET_CAPABILITIES;
+    avrc_cmd.get_caps.capability_id = AVRC_CAP_EVENTS_SUPPORTED;
+
+    status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+    if (status == AVRC_STS_NO_ERROR) {
+        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
             status = BT_STATUS_SUCCESS;
         } else {
             status = BT_STATUS_FAIL;
@@ -502,8 +1154,8 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
 
     status = AVRC_BldCommand(&avrc_cmd, &p_msg);
     if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA) {
-            BTA_AvMetaCmd(btc_rc_vb.rc_handle, tl, AVRC_CMD_NOTIF, p_msg);
+        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_NOTIF, p_msg);
             status = BT_STATUS_SUCCESS;
         } else {
             status = BT_STATUS_FAIL;
@@ -544,8 +1196,8 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 
     status = AVRC_BldCommand(&avrc_cmd, &p_msg);
     if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_vb.rc_features & BTA_AV_FEAT_METADATA) {
-            BTA_AvMetaCmd(btc_rc_vb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
+        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
             status = BT_STATUS_SUCCESS;
         } else {
             status = BT_STATUS_FAIL;
@@ -567,9 +1219,9 @@ static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code
 #if (AVRC_CTLR_INCLUDED == TRUE)
     CHECK_ESP_RC_CONNECTED;
     BTC_TRACE_DEBUG("%s: key-code: %d, key-state: %d", __FUNCTION__,
-              key_code, key_state);
-    if (btc_rc_vb.rc_features & BTA_AV_FEAT_RCTG) {
-        BTA_AvRemoteCmd(btc_rc_vb.rc_handle, tl,
+                    key_code, key_state);
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_RCTG) {
+        BTA_AvRemoteCmd(btc_rc_cb.rc_handle, tl,
                         (tBTA_AV_RC)key_code, (tBTA_AV_STATE)key_state);
         status =  BT_STATUS_SUCCESS;
         BTC_TRACE_API("%s: succesfully sent passthrough command to BTA", __FUNCTION__);
@@ -584,16 +1236,113 @@ static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code
     return status;
 }
 
-void btc_avrc_call_handler(btc_msg_t *msg)
+
+/*******************************************************************************
+**
+** Function         btc_avrc_tg_init
+**
+** Description      Initializes the AVRC Target interface
+**
+** Returns          esp_err_t
+**
+*******************************************************************************/
+static void btc_avrc_tg_init(void)
+{
+    BTC_TRACE_DEBUG("## %s ##", __FUNCTION__);
+    if (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC) {
+        BTC_TRACE_WARNING("%s already initialized", __FUNCTION__);
+        return;
+    }
+
+    /// initialize TG-specific resources
+    memcpy(s_psth_supported_cmd, cs_psth_dft_supported_cmd, sizeof(s_psth_supported_cmd));
+    s_rn_supported_evt = cs_rn_dft_supported_evt;
+
+    /// initialize CT-TG shared resources
+    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+    }
+
+    s_rc_tg_init = BTC_RC_TG_INIT_MAGIC;
+}
+
+
+/***************************************************************************
+**
+** Function         btc_avrc_tg_deinit
+**
+** Description      Closes the AVRC Target interface
+**
+** Returns          void
+**
+***************************************************************************/
+static void btc_avrc_tg_deinit(void)
+{
+    BTC_TRACE_API("## %s ##", __FUNCTION__);
+
+    if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
+        BTC_TRACE_WARNING("%s not initialized", __FUNCTION__);
+        return;
+    }
+
+    /// deinit TG-specific resources
+    memset(s_psth_supported_cmd, 0, sizeof(s_psth_supported_cmd));
+    s_rn_supported_evt = 0;
+    s_rc_tg_init = 0;
+
+    /// deinit CT-TG shared resources
+    if (s_rc_ct_init != BTC_RC_CT_INIT_MAGIC) {
+        memset (&btc_rc_cb, 0, sizeof(btc_rc_cb));
+    }
+
+    BTC_TRACE_API("## %s ## completed", __FUNCTION__);
+}
+
+static void btc_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_rsp_t rsp, const esp_avrc_rn_param_t *param)
+{
+    tAVRC_RESPONSE avrc_rsp;
+    if (! btc_avrc_tg_connected_p()) {
+        BTC_TRACE_WARNING("%s, RC unconnected, operation fail, event_id 0x%x", __FUNCTION__, event_id);
+        return;
+    }
+
+    if (btc_rc_cb.rc_ntf[event_id - 1].registered == FALSE) {
+        BTC_TRACE_ERROR("Event id not registered: event_id = %x", event_id);
+        return;
+    }
+    memset(&(avrc_rsp.reg_notif), 0, sizeof(tAVRC_REG_NOTIF_RSP));
+    avrc_rsp.reg_notif.event_id = event_id;
+
+    switch (event_id) {
+    case ESP_AVRC_RN_VOLUME_CHANGE:
+        avrc_rsp.reg_notif.param.volume = param->volume;
+        break;
+    // todo: implement other event notifications
+    default:
+        BTC_TRACE_WARNING("%s : Unhandled event ID : 0x%x", __FUNCTION__, event_id);
+        return;
+    }
+
+    avrc_rsp.reg_notif.pdu = AVRC_PDU_REGISTER_NOTIFICATION;
+    avrc_rsp.reg_notif.opcode = opcode_from_pdu(AVRC_PDU_REGISTER_NOTIFICATION);
+    avrc_rsp.get_play_status.status = AVRC_STS_NO_ERROR;
+
+    /* Send the response. */
+    send_metamsg_rsp(btc_rc_cb.rc_handle, btc_rc_cb.rc_ntf[event_id - 1].label,
+                     ((rsp == ESP_AVRC_RN_RSP_INTERIM) ? AVRC_CMD_NOTIF : AVRC_RSP_CHANGED), &avrc_rsp);
+    return;
+}
+
+void btc_avrc_ct_call_handler(btc_msg_t *msg)
 {
     btc_avrc_args_t *arg = (btc_avrc_args_t *)(msg->arg);
     switch (msg->act) {
-    case BTC_AVRC_CTRL_API_INIT_EVT: {
+    case BTC_AVRC_CT_API_INIT_EVT: {
         btc_avrc_ct_init();
         // todo: callback to application
         break;
     }
-    case BTC_AVRC_CTRL_API_DEINIT_EVT: {
+    case BTC_AVRC_CT_API_DEINIT_EVT: {
         btc_avrc_ct_deinit();
         // todo: callback to application
         break;
@@ -607,17 +1356,53 @@ void btc_avrc_call_handler(btc_msg_t *msg)
         btc_avrc_ct_send_metadata_cmd(arg->md_cmd.tl, arg->md_cmd.attr_mask);
         break;
     }
+    case BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT: {
+        btc_avrc_ct_send_get_rn_caps_cmd(arg->get_caps_cmd.tl);
+        break;
+    }
     case BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT: {
         btc_avrc_ct_send_register_notification_cmd(arg->rn_cmd.tl, arg->rn_cmd.event_id, arg->rn_cmd.event_parameter);
         break;
     }
-    case BTC_AVRC_CTRL_API_SET_PLAYER_SETTING_EVT: {
+    case BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT: {
         btc_avrc_ct_send_set_player_value_cmd(arg->ps_cmd.tl, arg->ps_cmd.attr_id, arg->ps_cmd.value_id);
         break;
     }
     default:
         BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
     }
+}
+
+void btc_avrc_tg_call_handler(btc_msg_t *msg)
+{
+    btc_avrc_tg_args_t *arg = (btc_avrc_tg_args_t *)(msg->arg);
+    switch (msg->act) {
+    case BTC_AVRC_TG_API_INIT_EVT: {
+        btc_avrc_tg_init();
+        break;
+    }
+    case BTC_AVRC_TG_API_DEINIT_EVT: {
+        btc_avrc_tg_deinit();
+        break;
+    }
+    case BTC_AVRC_TG_API_SET_RN_SUPPORTED_EVT: {
+        btc_avrc_tg_set_rn_supported_evt(arg->set_rn_evt);
+        break;
+    }
+    case BTC_AVRC_TG_API_SET_PSTH_SUPPORTED_CMD_EVT: {
+        btc_avrc_tg_set_supported_command(arg->set_psth_cmd);
+        break;
+    }
+    case BTC_AVRC_TG_API_SEND_RN_RSP_EVT: {
+        btc_avrc_tg_send_rn_rsp(arg->rn_rsp.event_id, arg->rn_rsp.rsp,
+                                &arg->rn_rsp.param);
+        break;
+    }
+    default:
+        BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
+    }
+
+    btc_avrc_tg_arg_deep_free(msg);
 }
 
 #endif /* #if BTC_AV_INCLUDED */
