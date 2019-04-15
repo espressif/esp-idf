@@ -1,14 +1,15 @@
 set(COMPONENT_ADD_INCLUDEDIRS
     include/apps
+    include/apps/sntp
     lwip/src/include
     port/esp32/include
     port/esp32/include/arch
-    include_compat
     )
 
 set(COMPONENT_SRCS "apps/dhcpserver/dhcpserver.c"
                    "apps/ping/esp_ping.c"
                    "apps/ping/ping.c"
+                   "apps/sntp/sntp.c"
                    "lwip/src/api/api_lib.c"
                    "lwip/src/api/api_msg.c"
                    "lwip/src/api/err.c"
