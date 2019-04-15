@@ -246,13 +246,13 @@ void l2c_fcr_cleanup (tL2C_CCB *p_ccb)
 
     fixed_queue_free(p_fcrb->retrans_q, osi_free_func);
     p_fcrb->retrans_q = NULL;
-	
+
     btu_free_quick_timer (&p_fcrb->ack_timer);
     memset(&p_fcrb->ack_timer, 0, sizeof(TIMER_LIST_ENT));
-    
+
     btu_free_quick_timer (&p_ccb->fcrb.mon_retrans_timer);
     memset(&p_fcrb->mon_retrans_timer, 0, sizeof(TIMER_LIST_ENT));
-    
+
 #if (L2CAP_ERTM_STATS == TRUE)
     if ( (p_ccb->local_cid >= L2CAP_BASE_APPL_CID) && (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) ) {
         UINT32  dur = osi_time_get_os_boottime_ms() - p_ccb->fcrb.connect_tick_count;
@@ -1382,7 +1382,9 @@ static BOOLEAN do_sar_reassembly (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_wo
                 (p_ccb->local_cid, p_ccb->p_lcb->remote_bd_addr, p_buf);
         } else
 #endif
+        {
             l2c_csm_execute (p_ccb, L2CEVT_L2CAP_DATA, p_buf);
+        }
     }
 
     return (packet_ok);
@@ -2149,8 +2151,9 @@ static void l2c_fcr_collect_ack_delay (tL2C_CCB *p_ccb, UINT8 num_bufs_acked)
 
     /* update sum, max and min of round trip delay of acking */
     list_t *list = NULL;
-    if (! fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q))
+    if (! fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q)) {
         list = fixed_queue_get_list(p_ccb->fcrb.waiting_for_ack_q);
+    }
     if (list != NULL) {
         for (const list_node_t *node = list_begin(list), xx = 0;
              (node != list_end(list)) && (xx < num_bufs_acked);

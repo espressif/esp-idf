@@ -495,10 +495,11 @@ static UINT64 time_now_us()
 static void log_tstamps_us(char *comment)
 {
     static UINT64 prev_us = 0;
-    const UINT64 now_us = time_now_us();
+    UINT64 now_us = time_now_us();
     APPL_TRACE_DEBUG("[%s] ts %08llu, diff : %08llu, queue sz %d", comment, now_us, now_us - prev_us,
                      fixed_queue_length(btc_aa_src_cb.TxAaQ));
     prev_us = now_us;
+    UNUSED(prev_us);
 }
 
 /* when true media task discards any tx frames */

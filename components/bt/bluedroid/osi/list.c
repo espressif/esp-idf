@@ -61,8 +61,9 @@ bool list_contains(const list_t *list, const void *data)
   assert(data != NULL);
 
   for (const list_node_t *node = list_begin(list); node != list_end(list); node = list_next(node)) {
-    if (list_node(node) == data)
+    if (list_node(node) == data) {
       return true;
+    }
   }
 
   return false;
@@ -201,8 +202,9 @@ list_node_t *list_foreach(const list_t *list, list_iter_cb callback, void *conte
 
   for (list_node_t *node = list->head; node; ) {
     list_node_t *next = node->next;
-    if (!callback(node->data, context))
+    if (!callback(node->data, context)) {
       return node;
+    }
     node = next;
   }
   return NULL;

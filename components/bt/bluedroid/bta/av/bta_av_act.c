@@ -829,10 +829,11 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
             if (p_data->rc_msg.msg.pass.op_id == AVRC_ID_VENDOR) {
                 p_data->rc_msg.msg.hdr.ctype = BTA_AV_RSP_NOT_IMPL;
 #if (AVRC_METADATA_INCLUDED == TRUE)
-                if (p_cb->features & BTA_AV_FEAT_METADATA)
+                if (p_cb->features & BTA_AV_FEAT_METADATA) {
                     p_data->rc_msg.msg.hdr.ctype =
                         bta_av_group_navi_supported(p_data->rc_msg.msg.pass.pass_len,
                                                     p_data->rc_msg.msg.pass.p_pass_data, is_inquiry);
+                }
 #endif
             } else {
                 p_data->rc_msg.msg.hdr.ctype = bta_av_op_supported(p_data->rc_msg.msg.pass.op_id, is_inquiry);
@@ -890,7 +891,9 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
                 evt = bta_av_proc_meta_cmd (&rc_rsp, &p_data->rc_msg, &ctype);
             } else
 #endif
+            {
                 evt = BTA_AV_VENDOR_CMD_EVT;
+            }
         }
         /* else if configured to support vendor specific and it's a response */
         else if ((p_cb->features & BTA_AV_FEAT_VENDOR) &&
@@ -902,7 +905,9 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
                 evt = BTA_AV_META_MSG_EVT;
             } else
 #endif
+            {
                 evt = BTA_AV_VENDOR_RSP_EVT;
+            }
 
         }
         /* else if not configured to support vendor specific and it's a command */
