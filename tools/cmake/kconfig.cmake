@@ -188,6 +188,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     idf_build_get_property(menuconfig_depends __MENUCONFIG_DEPENDS)
 
+    idf_build_get_property(mconf __MCONF)
+
     # Generate the menuconfig target (uses C-based mconf-idf tool, either prebuilt or via mconf-idf target above)
     add_custom_target(menuconfig
         ${menuconfig_depends}
@@ -198,7 +200,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${sdkconfig}"
-        ${MCONF} ${root_kconfig}
+        ${mconf} ${root_kconfig}
         VERBATIM
         USES_TERMINAL
         # additional run of confgen esures that the deprecated options will be inserted into sdkconfig (for backward
