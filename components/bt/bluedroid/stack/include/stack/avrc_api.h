@@ -590,8 +590,7 @@ extern tAVRC_STS AVRC_ParsCommand (tAVRC_MSG *p_msg, tAVRC_COMMAND *p_result,
 **                  Otherwise, the error code defined by AVRCP 1.4
 **
 *******************************************************************************/
-extern tAVRC_STS AVRC_ParsResponse (tAVRC_MSG *p_msg, tAVRC_RESPONSE *p_result,
-                                    UINT8 *p_buf, UINT16 buf_len);
+extern tAVRC_STS AVRC_ParsResponse (tAVRC_MSG *p_msg, tAVRC_RESPONSE *p_result);
 
 /*******************************************************************************
 **

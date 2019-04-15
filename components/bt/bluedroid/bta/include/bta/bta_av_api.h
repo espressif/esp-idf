@@ -279,19 +279,34 @@ typedef void *(*tBTA_AV_CO_DATAPATH) (tBTA_AV_CODEC codec_type,
                                       UINT32 *p_len, UINT32 *p_timestamp);
 typedef void (*tBTA_AV_CO_DELAY) (tBTA_AV_HNDL hndl, UINT16 delay);
 
+/// AVRCP call-out function
+// check whether PASSTHROUGH command is supported
+typedef BOOLEAN (*tBTA_AVRC_CO_CMD_ALLOWED) (tBTA_AV_RC rc_id);
+// get the event notification capabilities
+typedef UINT8 (*tBTA_AVRC_CO_RN_EVT_CAP) (UINT8 *event_ids);
+// check whether the event_id is supported
+typedef BOOLEAN (*tBTA_AVRC_CO_RN_EVT_SUPPORTED) (UINT8 event_id);
+
 /* the call-out functions for one stream */
 typedef struct {
-    tBTA_AV_CO_INIT     init;
-    tBTA_AV_CO_DISC_RES disc_res;
-    tBTA_AV_CO_GETCFG   getcfg;
-    tBTA_AV_CO_SETCFG   setcfg;
-    tBTA_AV_CO_OPEN     open;
-    tBTA_AV_CO_CLOSE    close;
-    tBTA_AV_CO_START    start;
-    tBTA_AV_CO_STOP     stop;
-    tBTA_AV_CO_DATAPATH data;
-    tBTA_AV_CO_DELAY    delay;
+    tBTA_AV_CO_INIT               init;
+    tBTA_AV_CO_DISC_RES           disc_res;
+    tBTA_AV_CO_GETCFG             getcfg;
+    tBTA_AV_CO_SETCFG             setcfg;
+    tBTA_AV_CO_OPEN               open;
+    tBTA_AV_CO_CLOSE              close;
+    tBTA_AV_CO_START              start;
+    tBTA_AV_CO_STOP               stop;
+    tBTA_AV_CO_DATAPATH           data;
+    tBTA_AV_CO_DELAY              delay;
 } tBTA_AV_CO_FUNCTS;
+
+/* the call-out functions for AVRCP */
+typedef struct {
+    tBTA_AVRC_CO_CMD_ALLOWED         rc_cmd;
+    tBTA_AVRC_CO_RN_EVT_CAP          rn_evt_cap;
+    tBTA_AVRC_CO_RN_EVT_SUPPORTED    rn_evt_supported;
+} tBTA_AVRC_CO_FUNCTS;
 
 typedef UINT8 tBTA_AV_EVT;
 
@@ -307,6 +322,7 @@ typedef struct {
     UINT8           app_id;     /* ID associated with call to BTA_AvRegister() */
     tBTA_AV_STATUS  status;
     tBTA_AV_CO_FUNCTS *p_bta_av_cos;
+    tBTA_AVRC_CO_FUNCTS *p_bta_avrc_cos;
 } tBTA_AV_REGISTER;
 
 /* data associated with BTA_AV_OPEN_EVT */
@@ -377,6 +393,8 @@ typedef struct {
     UINT8           rc_handle;
     BOOLEAN         sdp_disc_done;
     tBTA_AV_FEAT    peer_features;
+    UINT16          peer_ct_features;
+    UINT16          peer_tg_features;
     BD_ADDR         peer_addr;
     tBTA_AV_STATUS  status;
 } tBTA_AV_RC_OPEN;
@@ -391,6 +409,8 @@ typedef struct {
 typedef struct {
     UINT8           rc_handle;
     tBTA_AV_FEAT    peer_features;
+    UINT16          peer_ct_features;
+    UINT16          peer_tg_features;
 } tBTA_AV_RC_FEAT;
 
 /* data associated with BTA_AV_REMOTE_CMD_EVT */
@@ -519,10 +539,8 @@ typedef struct {
     UINT16  video_flush_to;     /* AVDTP video transport channel flush timeout */
     BOOLEAN avrc_group;         /* TRUE, to accept AVRC 1.3 group nevigation command */
     UINT8   num_co_ids;         /* company id count in p_meta_co_ids */
-    UINT8   num_evt_ids;        /* event id count in p_meta_evt_ids */
     tBTA_AV_CODE  rc_pass_rsp;  /* the default response code for pass through commands */
     const UINT32 *p_meta_co_ids;/* the metadata Get Capabilities response for company id */
-    const UINT8 *p_meta_evt_ids;/* the the metadata Get Capabilities response for event id */
     const tBTA_AV_ACT *p_act_tbl;/* the action function table for VDP stream */
     tBTA_AV_REG       *p_reg;   /* action function to register VDP */
     char              avrc_controller_name[BTA_SERVICE_NAME_LEN]; /* Default AVRCP controller name */
@@ -580,7 +598,9 @@ void BTA_AvDisable(void);
 **
 *******************************************************************************/
 void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
-                    UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback, tBTA_AV_CO_FUNCTS *bta_av_cos, UINT8 tsep);
+                    UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback,
+                    tBTA_AV_CO_FUNCTS *bta_av_cos, tBTA_AVRC_CO_FUNCTS *bta_avrc_cos,
+                    UINT8 tsep);
 
 /*******************************************************************************
 **
