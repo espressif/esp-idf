@@ -1151,9 +1151,10 @@ void smp_calculate_local_commitment(tSMP_CB *p_cb)
     switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-        if (p_cb->role  == HCI_ROLE_MASTER)
+        if (p_cb->role  == HCI_ROLE_MASTER) {
             SMP_TRACE_WARNING ("local commitment calc on master is not expected \
                                     for Just Works/Numeric Comparison models\n");
+        }
         smp_calculate_f4(p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, p_cb->rand, 0,
                          p_cb->commitment);
         break;
@@ -1196,9 +1197,10 @@ void smp_calculate_peer_commitment(tSMP_CB *p_cb, BT_OCTET16 output_buf)
     switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-        if (p_cb->role  == HCI_ROLE_SLAVE)
+        if (p_cb->role  == HCI_ROLE_SLAVE) {
             SMP_TRACE_WARNING ("peer commitment calc on slave is not expected \
                 for Just Works/Numeric Comparison models\n");
+        }
         smp_calculate_f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x, p_cb->rrand, 0,
                          output_buf);
         break;

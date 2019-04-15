@@ -2140,7 +2140,9 @@ void gatt_end_operation(tGATT_CLCB *p_clcb, tGATT_STATUS status, void *p_data)
     UINT8               op = p_clcb->operation, disc_type = GATT_DISC_MAX;
     tGATT_DISC_CMPL_CB  *p_disc_cmpl_cb = (p_clcb->p_reg) ? p_clcb->p_reg->app_cb.p_disc_cmpl_cb : NULL;
     UINT16              conn_id;
+#if (!CONFIG_BT_STACK_NO_LOG)
     UINT8               operation;
+#endif
 
     GATT_TRACE_DEBUG ("gatt_end_operation status=%d op=%d subtype=%d",
                       status, p_clcb->operation, p_clcb->op_subtype);
@@ -2182,7 +2184,10 @@ void gatt_end_operation(tGATT_CLCB *p_clcb, tGATT_STATUS status, void *p_data)
         osi_free(p_clcb->p_attr_buf);
     }
 
+#if !CONFIG_BT_STACK_NO_LOG
     operation =  p_clcb->operation;
+#endif
+
     conn_id = p_clcb->conn_id;
     btu_stop_timer(&p_clcb->rsp_timer_ent);
 
