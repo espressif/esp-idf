@@ -427,6 +427,9 @@ ifdef CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED
 CPPFLAGS += -DNDEBUG
 endif
 
+# IDF uses some GNU extension from libc
+CPPFLAGS += -D_GNU_SOURCE
+
 # Enable generation of debugging symbols
 # (we generate even in Release mode, as this has no impact on final binary size.)
 DEBUG_FLAGS ?= -ggdb
