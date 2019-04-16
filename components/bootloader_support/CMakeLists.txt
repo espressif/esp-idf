@@ -2,20 +2,20 @@ set(COMPONENT_SRCS "src/bootloader_clock.c"
                    "src/bootloader_common.c"
                    "src/bootloader_flash.c"
                    "src/bootloader_random.c"
-                   "src/bootloader_sha.c"
                    "src/bootloader_utility.c"
                    "src/esp_image_format.c"
-                   "src/flash_encrypt.c"
                    "src/flash_partitions.c"
-                   "src/flash_qio_mode.c"
-                   "src/secure_boot.c"
-                   "src/secure_boot_signatures.c")
+                   "src/flash_qio_mode.c")
 
 if(${BOOTLOADER_BUILD})
     set(COMPONENT_ADD_INCLUDEDIRS "include include_bootloader")
     set(COMPONENT_REQUIRES)
     set(COMPONENT_PRIV_REQUIRES spi_flash micro-ecc efuse)
-    list(APPEND COMPONENT_SRCS "src/bootloader_init.c")
+    list(APPEND COMPONENT_SRCS "src/bootloader_init.c"
+                               "src/${IDF_TARGET}/bootloader_sha.c"
+                               "src/${IDF_TARGET}/flash_encrypt.c"
+                               "src/${IDF_TARGET}/secure_boot_signatures.c"
+                               "src/${IDF_TARGET}/secure_boot.c")
 
     if(CONFIG_SECURE_SIGNED_APPS)
         get_filename_component(secure_boot_verification_key
@@ -51,6 +51,8 @@ if(${BOOTLOADER_BUILD})
             "${secure_boot_verification_key}")
     endif()
 else()
+    list(APPEND COMPONENT_SRCS "src/idf/bootloader_sha.c"
+                               "src/idf/secure_boot_signatures.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
     set(COMPONENT_PRIV_INCLUDEDIRS "include_bootloader")
     set(COMPONENT_REQUIRES)
