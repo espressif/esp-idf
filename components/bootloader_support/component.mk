@@ -10,6 +10,12 @@ endif
 COMPONENT_SRCDIRS := src
 
 ifndef IS_BOOTLOADER_BUILD
+COMPONENT_SRCDIRS += src/idf  # idf sub-directory contains platform agnostic IDF versions
+else
+COMPONENT_SRCDIRS += src/$(IDF_TARGET)  # one sub-dir per chip
+endif
+
+ifndef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE := src/bootloader_init.o
 endif
 

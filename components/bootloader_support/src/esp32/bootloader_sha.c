@@ -16,59 +16,17 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/param.h>
-
-#ifndef BOOTLOADER_BUILD
-// App version is a wrapper around mbedTLS SHA API
-#include <mbedtls/sha256.h>
-
-bootloader_sha256_handle_t bootloader_sha256_start()
-{
-    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)malloc(sizeof(mbedtls_sha256_context));
-    if (!ctx) {
-        return NULL;
-    }
-    mbedtls_sha256_init(ctx);
-    int ret = mbedtls_sha256_starts_ret(ctx, false);
-    if (ret != 0) {
-        return NULL;
-    }
-    return ctx;
-}
-
-void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
-{
-    assert(handle != NULL);
-    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
-    int ret = mbedtls_sha256_update_ret(ctx, data, data_len);
-    assert(ret == 0);
-}
-
-void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
-{
-    assert(handle != NULL);
-    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
-    if (digest != NULL) {
-        int ret = mbedtls_sha256_finish_ret(ctx, digest);
-        assert(ret == 0);
-    }
-    mbedtls_sha256_free(ctx);
-    free(handle);
-}
-
-#else // Bootloader version
-
 #include "esp32/rom/sha.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
-
 #include "esp32/rom/ets_sys.h" // TO REMOVE
 
 static uint32_t words_hashed;
 
 // Words per SHA256 block
-static const size_t BLOCK_WORDS = (64/sizeof(uint32_t));
+static const size_t BLOCK_WORDS = (64 / sizeof(uint32_t));
 // Words in final SHA256 digest
-static const size_t DIGEST_WORDS = (32/sizeof(uint32_t));
+static const size_t DIGEST_WORDS = (32 / sizeof(uint32_t));
 
 bootloader_sha256_handle_t bootloader_sha256_start()
 {
@@ -95,7 +53,7 @@ void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data,
         copy_words = MIN(word_len, copy_words);
 
         // Wait for SHA engine idle
-        while(REG_READ(SHA_256_BUSY_REG) != 0) { }
+        while (REG_READ(SHA_256_BUSY_REG) != 0) { }
 
         // Copy to memory block
         //ets_printf("block_count %d copy_words %d\n", block_count, copy_words);
@@ -148,7 +106,7 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
     bootloader_sha256_data(handle, padding, pad_bytes);
 
-    assert(words_hashed % BLOCK_WORDS == 60/4); // 32-bits left in block
+    assert(words_hashed % BLOCK_WORDS == 60 / 4); // 32-bits left in block
 
     // Calculate 32-bit length for final 32 bits of data
     uint32_t bit_count = __builtin_bswap32( data_words * 32 );
@@ -156,9 +114,9 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
     assert(words_hashed % BLOCK_WORDS == 0);
 
-    while(REG_READ(SHA_256_BUSY_REG) == 1) { }
+    while (REG_READ(SHA_256_BUSY_REG) == 1) { }
     REG_WRITE(SHA_256_LOAD_REG, 1);
-    while(REG_READ(SHA_256_BUSY_REG) == 1) { }
+    while (REG_READ(SHA_256_BUSY_REG) == 1) { }
 
     uint32_t *digest_words = (uint32_t *)digest;
     uint32_t *sha_text_reg = (uint32_t *)(SHA_TEXT_BASE);
@@ -166,24 +124,4 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
         digest_words[i] = __builtin_bswap32(sha_text_reg[i]);
     }
     asm volatile ("memw");
-}
-
-#endif
-
-esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)
-{
-    if (out_str == NULL || in_array_hex == NULL || len == 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    for (int i = 0; i < len; i++) {
-        for (int shift = 0; shift < 2; shift++) {
-            uint8_t nibble = (in_array_hex[i] >> (shift ? 0 : 4)) & 0x0F;
-            if (nibble < 10) {
-                out_str[i*2+shift] = '0' + nibble;
-            } else {
-                out_str[i*2+shift] = 'a' + nibble - 10;
-            }
-        }
-    }
-    return ESP_OK;
 }
