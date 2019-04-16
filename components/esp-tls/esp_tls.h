@@ -35,21 +35,30 @@ extern "C" {
 #define ESP_ERR_ESP_TLS_CANNOT_RESOLVE_HOSTNAME           (ESP_ERR_ESP_TLS_BASE + 0x01)  /*!< Error if hostname couldn't be resolved upon tls connection */
 #define ESP_ERR_ESP_TLS_CANNOT_CREATE_SOCKET              (ESP_ERR_ESP_TLS_BASE + 0x02)  /*!< Failed to create socket */
 #define ESP_ERR_ESP_TLS_UNSUPPORTED_PROTOCOL_FAMILY       (ESP_ERR_ESP_TLS_BASE + 0x03)  /*!< Unsupported protocol family */
-#define ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST            (ESP_ERR_ESP_TLS_BASE + 0x04)  /*!< Failed to connnect to host */
+#define ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST            (ESP_ERR_ESP_TLS_BASE + 0x04)  /*!< Failed to connect to host */
 #define ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x05)  /*!< failed to set socket option */
-#define ESP_ERR_MBEDTLS_CERT_PARTLY_OK                    (ESP_ERR_ESP_TLS_BASE + 0x06)  /*!< embedtls parse certificates was partly successful */
-#define ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x07)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x08)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED        (ESP_ERR_ESP_TLS_BASE + 0x09)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED    (ESP_ERR_ESP_TLS_BASE + 0x0A)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED             (ESP_ERR_ESP_TLS_BASE + 0x0B)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED          (ESP_ERR_ESP_TLS_BASE + 0x0C)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0D)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0E)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x0F)  /*!< embedtls api returned failed  */
-#define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< embedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_CERT_PARTLY_OK                    (ESP_ERR_ESP_TLS_BASE + 0x06)  /*!< mbedtls parse certificates was partly successful */
+#define ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x07)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED           (ESP_ERR_ESP_TLS_BASE + 0x08)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED        (ESP_ERR_ESP_TLS_BASE + 0x09)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED    (ESP_ERR_ESP_TLS_BASE + 0x0A)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED             (ESP_ERR_ESP_TLS_BASE + 0x0B)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED          (ESP_ERR_ESP_TLS_BASE + 0x0C)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_SSL_SETUP_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0D)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0E)  /*!< mbedtls api returned error */
+#define ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x0F)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< mbedtls api returned failed  */
 
-typedef struct esp_error_private* esp_error_handle_t;
+typedef struct esp_tls_last_error* esp_tls_error_handle_t;
+
+/**
+*  @brief Error structure containing relevant errors in case tls error occurred
+*/
+typedef struct esp_tls_last_error {
+    esp_err_t last_error;               /*!< error code (based on ESP_ERR_ESP_TLS_BASE) of the last occurred error */
+    int       mbedtls_error_code;       /*!< mbedtls error code from last mbedtls failed api */
+    int       mbedtls_flags;            /*!< last certification verification flags */
+} esp_tls_last_error_t;
 
 /**
  *  @brief ESP-TLS Connection State
@@ -207,7 +216,7 @@ typedef struct esp_tls {
                                                                                      - ESP_TLS_CLIENT
                                                                                      - ESP_TLS_SERVER */
 
-    esp_error_handle_t error_handle;                                            /*!< handle to internal error descriptor */
+    esp_tls_error_handle_t error_handle;                                        /*!< handle to error descriptor */
 
 } esp_tls_t;
 
@@ -222,15 +231,39 @@ typedef struct esp_tls {
  */
 esp_tls_t *esp_tls_init();
 
+
+
+
 /**
  * @brief      Create a new blocking TLS/SSL connection
  *
  * This function establishes a TLS/SSL connection with the specified host in blocking manner.
- * 
+ *
+ * Note: This API is present for backward compatibility reasons. Alternative function
+ * with the same functionality is `esp_tls_conn_new_sync` (and its asynchronous version
+ * `esp_tls_conn_new_async`)
+ *
  * @param[in]  hostname  Hostname of the host.
  * @param[in]  hostlen   Length of hostname.
  * @param[in]  port      Port number of the host.
- * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open 
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open
+ *                       non-TLS connection, keep this NULL. For TLS connection,
+ *                       a pass pointer to esp_tls_cfg_t. At a minimum, this
+ *                       structure should be zero-initialized.
+ *
+ * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
+ */
+esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)  __attribute__ ((deprecated));
+
+/**
+ * @brief      Create a new blocking TLS/SSL connection
+ *
+ * This function establishes a TLS/SSL connection with the specified host in blocking manner.
+ *
+ * @param[in]  hostname  Hostname of the host.
+ * @param[in]  hostlen   Length of hostname.
+ * @param[in]  port      Port number of the host.
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open
  *                       non-TLS connection, keep this NULL. For TLS connection,
  *                       a pass pointer to esp_tls_cfg_t. At a minimum, this
  *                       structure should be zero-initialized.
@@ -241,7 +274,7 @@ esp_tls_t *esp_tls_init();
  *             -  1      If connection establishment is successful.
  *             -  0      Reserved for connection state is in progress.
  */
-int esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
+int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
 /**
  * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
@@ -413,15 +446,21 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store();
 void esp_tls_free_global_ca_store();
 
 /**
- * @brief      Returns last error in esp_tls (if any) and clears it.
+ * @brief      Returns last error in esp_tls with detailed mbedtls related error codes.
+ *             The error information is cleared internally upon return
  *
- * @param[in]  tls  pointer to esp-tls as esp-tls handle.
+ * @param[in]  h              esp-tls error handle.
+ * @param[out] mbedtls_code   last error code returned from mbedtls api (set to zero if none)
+ *                            This pointer could be NULL if caller does not care about mbedtls_code
+ * @param[out] mbedtls_flags  last certification verification flags (set to zero if none)
+ *                            This pointer could be NULL if caller does not care about mbedtls_flags
  *
  * @return
- *            - ESP_OK if no error occurred
+ *            - ESP_ERR_INVALID_STATE if invalid parameters
+ *            - ESP_OK (0) if no error occurred
  *            - specific error code (based on ESP_ERR_ESP_TLS_BASE) otherwise
  */
-esp_err_t esp_tls_get_and_clear_last_error(esp_tls_t* tls);
+esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *mbedtls_code, int *mbedtls_flags);
 
 #ifdef CONFIG_ESP_TLS_SERVER
 /**

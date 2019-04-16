@@ -19,6 +19,9 @@
 * This version is internal to esp-tls component and only saves single esp_err of last occurred error
 */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
 * Definition of different types/sources of error codes reported
@@ -33,16 +36,26 @@ typedef enum {
 } err_type_t;
 
 /**
-* Internal structure for error description
-* - contains only the last error of esp_err_t in this implementation
-*/
-typedef struct esp_error_private {
-    esp_err_t last_error;
-} esp_error_private_t;
-
-/**
- * Error tracker logging macro, this implementation only saves the ERR_TYPE_ESP error, other types are ignored
+ * Error tracker logging macro, this implementation saves latest errors of
+ *  ERR_TYPE_ESP, ERR_TYPE_MBEDTLS and ERR_TYPE_MBEDTLS_CERT_FLAGS types
  */
-#define ESP_INT_EVENT_TRACKER_CAPTURE(h, type, code)    do { if (h && type==ERR_TYPE_ESP) { h->last_error = code; } } while (0)
+#define ESP_INT_EVENT_TRACKER_CAPTURE(h, type, code)    esp_int_event_tracker_capture(h, type, code)
+
+static inline void esp_int_event_tracker_capture(esp_tls_error_handle_t h, uint32_t type, int code)
+{
+    if (h) {
+        if (type == ERR_TYPE_ESP) {
+            h->last_error = code;
+        } else if (type == ERR_TYPE_MBEDTLS) {
+            h->mbedtls_error_code = code;
+        } else if (type == ERR_TYPE_MBEDTLS_CERT_FLAGS) {
+            h->mbedtls_flags = code;
+        }
+    }
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //__ESP_TLS_ERROR_CAPTURE_INTERNAL_H__

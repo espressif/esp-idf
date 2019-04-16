@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <esp_tls.h>
 
 #include "sys/queue.h"
 #include "esp_log.h"
@@ -42,7 +43,7 @@ struct esp_transport_item_t {
     trans_func      _destroy;       /*!< Destroy and free transport */
     connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
     payload_transfer_func  _parent_transfer;        /*!< Function returning underlying transport layer */
-    esp_err_t* error_handle;                         /*!< Pointer to the last error */
+    esp_tls_error_handle_t     error_handle;            /*!< Pointer to esp-tls error handle */
 
     STAILQ_ENTRY(esp_transport_item_t) next;
 };
@@ -58,7 +59,7 @@ STAILQ_HEAD(esp_transport_list_t, esp_transport_item_t);
  */
 typedef struct esp_transport_internal {
     struct esp_transport_list_t list;                      /*!< List of transports */
-    esp_err_t* error_handle;                               /*!< Pointer to the error tracker if enabled  */
+    esp_tls_error_handle_t  error_handle;                               /*!< Pointer to the error tracker if enabled  */
 } esp_transport_internal_t;
 
 static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_handle_t t)
@@ -74,7 +75,7 @@ esp_transport_list_handle_t esp_transport_list_init()
     esp_transport_list_handle_t transport = calloc(1, sizeof(esp_transport_internal_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, transport, return NULL);
     STAILQ_INIT(&transport->list);
-    transport->error_handle = calloc(1, sizeof(esp_err_t));
+    transport->error_handle = calloc(1, sizeof(esp_tls_last_error_t));
     return transport;
 }
 
@@ -88,7 +89,7 @@ esp_err_t esp_transport_list_add(esp_transport_list_handle_t h, esp_transport_ha
     strcpy(t->scheme, scheme);
     STAILQ_INSERT_TAIL(&h->list, t, next);
     // Each transport in a list to share the same error tracker
-    t->error_handle =  h->error_handle;
+    t->error_handle = h->error_handle;
     return ESP_OK;
 }
 
@@ -291,17 +292,17 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
     return ESP_OK;
 }
 
-esp_err_t get_and_clear_last_error(esp_transport_handle_t t)
+esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t)
 {
-    esp_err_t err = *(t->error_handle);
-    *(t->error_handle) = 0;
-    return err;
-}
-
-void esp_transport_set_error(esp_transport_handle_t t, esp_err_t err)
-{
-    if (t)  {
-        *t->error_handle = err;
+    if (t) {
+        return t->error_handle;
     }
     return NULL;
+}
+
+void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle)
+{
+    if (t)  {
+        memcpy(t->error_handle, error_handle, sizeof(esp_tls_last_error_t));
+    }
 }

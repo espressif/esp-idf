@@ -24,6 +24,7 @@
 #include "esp_transport.h"
 #include "esp_transport_ssl.h"
 #include "esp_transport_utils.h"
+#include "esp_transport_ssl_internal.h"
 
 static const char *TAG = "TRANS_SSL";
 
@@ -70,9 +71,9 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     ssl->cfg.timeout_ms = timeout_ms;
     ssl->ssl_initialized = true;
     ssl->tls = esp_tls_init();
-    if (esp_tls_conn_new(host, strlen(host), port, &ssl->cfg, ssl->tls) < 0) {
+    if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) < 0) {
         ESP_LOGE(TAG, "Failed to open a new connection");
-        esp_transport_set_error(t, esp_tls_get_and_clear_last_error(ssl->tls));
+        esp_transport_set_errors(t, ssl->tls->error_handle);
         esp_tls_conn_delete(ssl->tls);
         ssl->tls = NULL;
         return -1;
@@ -115,7 +116,7 @@ static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int 
     ret = esp_tls_conn_write(ssl->tls, (const unsigned char *) buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_write error, errno=%s", strerror(errno));
-        esp_transport_set_error(t, esp_tls_get_and_clear_last_error(ssl->tls));
+        esp_transport_set_errors(t, ssl->tls->error_handle);
     }
     return ret;
 }
@@ -133,7 +134,7 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
     ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
-        esp_transport_set_error(t, esp_tls_get_and_clear_last_error(ssl->tls));
+        esp_transport_set_errors(t, ssl->tls->error_handle);
     }
     if (ret == 0) {
         ret = -1;

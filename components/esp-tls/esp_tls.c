@@ -81,7 +81,7 @@ static ssize_t tls_read(esp_tls_t *tls, char *data, size_t datalen)
             return 0;
         }
         if (ret != MBEDTLS_ERR_SSL_WANT_READ  && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
             ESP_LOGE(TAG, "read error :%d:", ret);
         }
     }
@@ -626,7 +626,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             } else {
                 if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
                     ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
-                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, ret);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
                     ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
                     if (cfg->cacert_pem_buf != NULL || cfg->use_global_ca_store == true) {
                         /* This is to check whether handshake failed due to invalid certificate*/
@@ -653,10 +653,31 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
 /**
  * @brief      Create a new TLS/SSL connection
  */
-int esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
+esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)
 {
+    esp_tls_t *tls = (esp_tls_t *)calloc(1, sizeof(esp_tls_t));
+    if (!tls) {
+        return NULL;
+    }
     /* esp_tls_conn_new() API establishes connection in a blocking manner thus this loop ensures that esp_tls_conn_new()
        API returns only after connection is established unless there is an error*/
+    while (1) {
+        int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
+        if (ret == 1) {
+            return tls;
+        } else if (ret == -1) {
+            esp_tls_conn_delete(tls);
+            ESP_LOGE(TAG, "Failed to open new connection");
+            return NULL;
+        }
+    }
+    return NULL;
+}
+
+int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
+{
+    /* esp_tls_conn_new_sync() is a sync alternative to esp_tls_conn_new_async() with symetric function prototype
+    it is an alternative to esp_tls_conn_new() which is left for compatibility reasons */
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
         if (ret == 1) {
@@ -666,7 +687,7 @@ int esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_
             return -1;
         }
     }
-    return NULL;
+    return 0;
 }
 
 /*
@@ -703,7 +724,7 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
     esp_tls_t *tls = esp_tls_init();
     if (!tls) return NULL;
     /* Connect to host */
-    if (esp_tls_conn_new(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
+    if (esp_tls_conn_new_sync(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
                      get_port(url, &u), cfg, tls) == 1) {
         return tls;
     }
@@ -782,19 +803,27 @@ esp_tls_t *esp_tls_init()
     if (!tls) {
         return NULL;
     }
-    tls->error_handle = calloc(1, sizeof(esp_err_t));
+    tls->error_handle = calloc(1, sizeof(esp_tls_last_error_t));
+    if (!tls->error_handle) {
+        free(tls);
+        return NULL;
+    }
     tls->server_fd.fd = tls->sockfd = -1;
     return tls;
 }
 
-esp_err_t esp_tls_get_and_clear_last_error(esp_tls_t* tls)
+esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *mbedtls_code, int *mbedtls_flags)
 {
-    if (tls && tls->error_handle) {
-        esp_err_t last_err = tls->error_handle->last_error;
-        if (last_err != ESP_OK) {
-            tls->error_handle->last_error = ESP_OK;
-            return last_err;
-        }
+    if (!h) {
+        return ESP_ERR_INVALID_STATE;
     }
-    return ESP_OK;
+    esp_err_t last_err = h->last_error;
+    if (mbedtls_code) {
+        *mbedtls_code = h->mbedtls_error_code;
+    }
+    if (mbedtls_flags) {
+        *mbedtls_flags = h->mbedtls_flags;
+    }
+    memset(h, 0, sizeof(esp_tls_last_error_t));
+    return last_err;
 }
