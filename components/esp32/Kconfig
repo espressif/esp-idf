@@ -1180,6 +1180,13 @@ config ESP32_WIFI_IRAM_OPT
         Select this option to place frequently called Wi-Fi library functions in IRAM. When this option is disabled,
         more than 10Kbytes of IRAM memory will be saved but Wi-Fi throughput will be reduced.
 
+config ESP32_WIFI_MGMT_SBUF_NUM
+    int "WiFi mgmt short buffer number"
+    range 6 32
+    default 32
+    help
+        Set the number of WiFi management short buffer.
+
 endmenu  # Wi-Fi
 
 menu PHY
