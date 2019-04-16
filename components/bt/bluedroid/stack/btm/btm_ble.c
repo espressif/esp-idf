@@ -2006,9 +2006,18 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
             btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, TRUE);
 #endif
         }
+
     }
 
-    btm_ble_update_mode_operation(role, bda, status);
+    BOOLEAN bg_con = btm_ble_update_mode_operation(role, bda, status);
+    if (status != HCI_SUCCESS && !bg_con) {
+        // notify connection failed
+        l2c_link_hci_disc_comp (handle, status);
+#if (SMP_INCLUDED == TRUE)
+        /* Notify security manager */
+        btm_sec_disconnected (handle, status);
+#endif  ///SMP_INCLUDED == TRUE
+    }
 }
 
 

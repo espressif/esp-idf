@@ -4229,8 +4229,9 @@ void btm_ble_update_link_topology_mask(UINT8 link_role, BOOLEAN increase)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 status)
+BOOLEAN btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 status)
 {
+    BOOLEAN bg_con = FALSE;
     if (status == HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT) {
         btm_cb.ble_ctr_cb.inq_var.adv_mode  = BTM_BLE_ADV_DISABLE;
         /* make device fall back into undirected adv mode by default */
@@ -4249,8 +4250,10 @@ void btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 statu
        now in order */
     if (btm_ble_get_conn_st() == BLE_CONN_IDLE && status != HCI_ERR_HOST_REJECT_RESOURCES &&
             !btm_send_pending_direct_conn()) {
-        btm_ble_resume_bg_conn();
+        bg_con = btm_ble_resume_bg_conn();
     }
+
+    return bg_con;
 }
 
 /*******************************************************************************
