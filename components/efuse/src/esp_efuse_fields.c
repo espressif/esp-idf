@@ -39,7 +39,7 @@ uint8_t esp_efuse_get_chip_ver(void)
 // Returns chip package from efuse
 uint32_t esp_efuse_get_pkg_ver(void)
 {
-    uint32_t pkg_ver;
+    uint32_t pkg_ver = 0;
     esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_PKG, &pkg_ver, 3);
     return pkg_ver;
 }
