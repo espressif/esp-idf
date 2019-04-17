@@ -236,12 +236,42 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
 
 /**
+ * @brief      Get http request username.
+ *             The address of username buffer will be assigned to value parameter.
+ *             This function must be called after `esp_http_client_init`.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[out] value   The username value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_get_username(esp_http_client_handle_t client, char **value);
+
+/**
+ * @brief      Get http request password.
+ *             The address of password buffer will be assigned to value parameter.
+ *             This function must be called after `esp_http_client_init`.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[out] value   The password value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **value);
+
+/**
  * @brief      Set http request method
  *
  * @param[in]  client  The esp_http_client handle
  * @param[in]  method  The method
  *
- * @return     ESP_OK
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
  */
 esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_client_method_t method);
 
