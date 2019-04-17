@@ -70,7 +70,7 @@ TEST_CASE("(WL) can read file", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
-TEST_CASE("(WL) can open maximum number of files", "[fatfs][wear_levelling][leaks=2460]")
+TEST_CASE("(WL) can open maximum number of files", "[fatfs][wear_levelling]")
 {
     size_t max_files = FOPEN_MAX - 3; /* account for stdin, stdout, stderr */
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
@@ -152,14 +152,14 @@ TEST_CASE("(WL) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs]
     test_teardown();
 }
 
-TEST_CASE("(WL) multiple tasks can use same volume", "[fatfs][wear_levelling][leaks=1340]")
+TEST_CASE("(WL) multiple tasks can use same volume", "[fatfs][wear_levelling]")
 {
     test_setup();
     test_fatfs_concurrent("/spiflash/f");
     test_teardown();
 }
 
-TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60][leaks=1156]")
+TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60]")
 {
     /* Erase partition before running the test to get consistent results */
     const esp_partition_t* part = get_test_data_partition();
