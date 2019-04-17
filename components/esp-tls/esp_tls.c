@@ -95,7 +95,6 @@ static int esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd,
         ESP_LOGE(TAG, "Failed to create socket (family %d socktype %d protocol %d)", res->ai_family, res->ai_socktype, res->ai_protocol);
         goto err_freeaddr;
     }
-    *sockfd = fd;
 
     void *addr_ptr;
     if (res->ai_family == AF_INET) {
@@ -125,12 +124,13 @@ static int esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd,
     }
 
     ret = connect(fd, addr_ptr, res->ai_addrlen);
-    if (ret < 0 && !(errno == EINPROGRESS && cfg->non_block)) {
+    if (ret < 0 && !(errno == EINPROGRESS && cfg && cfg->non_block)) {
 
-        ESP_LOGE(TAG, "Failed to connnect to host (errno %d)", errno);
+        ESP_LOGE(TAG, "Failed to connect to host (errno %d)", errno);
         goto err_freesocket;
     }
 
+    *sockfd = fd;
     freeaddrinfo(res);
     return 0;
 
@@ -222,14 +222,12 @@ static void mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_ssl_config_free(&tls->conf);
     mbedtls_ctr_drbg_free(&tls->ctr_drbg);
     mbedtls_ssl_free(&tls->ssl);
-    mbedtls_net_free(&tls->server_fd);
 }
 
 static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostlen, const esp_tls_cfg_t *cfg)
 {
     int ret;
-    
-    mbedtls_net_init(&tls->server_fd);
+
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ctr_drbg_init(&tls->ctr_drbg);
@@ -343,7 +341,9 @@ void esp_tls_conn_delete(esp_tls_t *tls)
 {
     if (tls != NULL) {
         mbedtls_cleanup(tls);
-        if (tls->sockfd) {
+        if (tls->is_tls) {
+            mbedtls_net_free(&tls->server_fd);
+        } else if (tls->sockfd >= 0) {
             close(tls->sockfd);
         }
         free(tls);
@@ -376,13 +376,15 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
     and in case of blocking connect these cases will get executed one after the other */
     switch (tls->conn_state) {
         case ESP_TLS_INIT:
-            ;
-            int sockfd;
-            int ret = esp_tcp_connect(hostname, hostlen, port, &sockfd, cfg);
+            tls->sockfd = -1;
+            if (cfg != NULL) {
+                mbedtls_net_init(&tls->server_fd);
+                tls->is_tls = true;
+            }
+            int ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, cfg);
             if (ret < 0) {
                 return -1;
             }
-            tls->sockfd = sockfd;
             if (!cfg) {
                 tls->read = tcp_read;
                 tls->write = tcp_write;
