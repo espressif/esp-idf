@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -31,7 +32,7 @@ typedef uint32_t nvs_handle_t;
 /*
  * Pre-IDF V4.0 uses nvs_handle, so leaving the original typedef here for compatibility.
  */
-typedef nvs_handle_t nvs_handle;
+typedef nvs_handle_t nvs_handle IDF_DEPRECATED("Replace with nvs_handle_t");
 
 #define ESP_ERR_NVS_BASE                    0x1100                     /*!< Starting number of error codes */
 #define ESP_ERR_NVS_NOT_INITIALIZED         (ESP_ERR_NVS_BASE + 0x01)  /*!< The storage driver is not initialized */
@@ -74,7 +75,7 @@ typedef enum {
 /*
  * Pre-IDF V4.0 uses nvs_open_mode, so leaving the original typedef here for compatibility.
  */
-typedef nvs_open_mode_t nvs_open_mode
+typedef nvs_open_mode_t nvs_open_mode IDF_DEPRECATED("Replace with nvs_open_mode_t");
 
 typedef enum {
     NVS_TYPE_U8    = 0x01,
