@@ -24,7 +24,6 @@
 
 
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
-static const char c_config_hostname[] = CONFIG_MDNS_HOSTNAME;
 #define EXAMPLE_BUTTON_GPIO     0
 
 static const char *TAG = "mdns-test";
