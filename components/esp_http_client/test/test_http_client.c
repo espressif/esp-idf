@@ -20,7 +20,11 @@
 #include "unity.h"
 #include "test_utils.h"
 
-TEST_CASE("Input Param Tests", "[ESP HTTP CLIENT]")
+#define HOST  "httpbin.org"
+#define USERNAME  "user"
+#define PASSWORD  "challenge"
+
+TEST_CASE("Test in common case: Only URL and hostname are specified.", "[ESP HTTP CLIENT]")
 {
     esp_http_client_config_t config_incorrect = {0};
 
@@ -38,10 +42,88 @@ TEST_CASE("Input Param Tests", "[ESP HTTP CLIENT]")
 
 
     esp_http_client_config_t config_with_hostname_path = {
-        .host = "httpbin.org",
+        .host = HOST,
         .path = "/get",
     };
     client = esp_http_client_init(&config_with_hostname_path);
     TEST_ASSERT(client != NULL);
     TEST_ASSERT(esp_http_client_cleanup(client) == ESP_OK);
+}
+
+TEST_CASE("Get username and password after initialization.", "[ESP HTTP CLIENT]")
+{
+    esp_http_client_config_t config_with_auth = {
+        .host = HOST,
+        .path = "/",
+        .username = USERNAME,
+        .password = PASSWORD
+    };
+    char *value = NULL;
+    esp_http_client_handle_t client = esp_http_client_init(&config_with_auth);
+    TEST_ASSERT_NOT_NULL(client);
+    // Test with username
+    esp_err_t r = esp_http_client_get_username(client, &value);
+    TEST_ASSERT_EQUAL(ESP_OK, r);
+    TEST_ASSERT_NOT_NULL(value);
+    TEST_ASSERT_EQUAL_STRING(USERNAME, value);
+    // Test with password
+    value = NULL;
+    r = esp_http_client_get_password(client, &value);
+    TEST_ASSERT_EQUAL(ESP_OK, r);
+    TEST_ASSERT_NOT_NULL(value);
+    TEST_ASSERT_EQUAL_STRING(PASSWORD, value);
+    esp_http_client_cleanup(client);
+}
+
+/**
+ * Test case to test that, the esp_http_client_set_url won't drop username and password
+ * when pass a path "/abc" for url.
+ **/
+TEST_CASE("Username is unmodified when we change to new path", "[ESP HTTP CLIENT]")
+{
+    esp_http_client_config_t config_with_auth = {
+        .host = HOST,
+        .path = "/",
+        .username = USERNAME,
+        .password = PASSWORD
+    };
+    char *value = NULL;
+    esp_http_client_handle_t client = esp_http_client_init(&config_with_auth);
+    TEST_ASSERT_NOT_NULL(client);
+    esp_err_t r = esp_http_client_get_username(client, &value);
+    TEST_ASSERT_EQUAL(ESP_OK, r);
+    TEST_ASSERT_NOT_NULL(value);
+    TEST_ASSERT_EQUAL_STRING(USERNAME, value);
+    esp_http_client_set_url(client, "/something-else/");
+    r = esp_http_client_get_username(client, &value);
+    TEST_ASSERT_EQUAL(ESP_OK, r);
+    TEST_ASSERT_NOT_NULL(value);
+    TEST_ASSERT_EQUAL_STRING(USERNAME, value);
+    esp_http_client_cleanup(client);
+}
+
+/**
+ * Test case to test that, the esp_http_client_set_url will reset username and password
+ * when passing a full URL with username & password missing.
+ **/
+TEST_CASE("Username is reset if new absolute URL doesnot specify username.", "[ESP HTTP CLIENT]")
+{
+    esp_http_client_config_t config_with_auth = {
+        .host = HOST,
+        .path = "/",
+        .username = USERNAME,
+        .password = PASSWORD
+    };
+    char *value = NULL;
+    esp_http_client_handle_t client = esp_http_client_init(&config_with_auth);
+    TEST_ASSERT_NOT_NULL(client);
+    esp_err_t r = esp_http_client_get_username(client, &value);
+    TEST_ASSERT_EQUAL(ESP_OK, r);
+    TEST_ASSERT_NOT_NULL(value);
+    TEST_ASSERT_EQUAL_STRING(USERNAME, value);
+    esp_http_client_set_url(client, "http://" HOST "/get");
+    r = esp_http_client_get_username(client, &value);
+    TEST_ASSERT_EQUAL(ESP_OK, r);
+    TEST_ASSERT_NULL(value);
+    esp_http_client_cleanup(client);
 }
