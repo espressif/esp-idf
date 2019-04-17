@@ -56,9 +56,13 @@ URI
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = "mqtt://iot.eclipse.org",
-        .event_handle = mqtt_event_handler,
         // .user_context = (void *)your_context
     };
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
+    esp_mqtt_client_start(client);
+
+-  Note: By default mqtt client uses event loop library to post related mqtt events (connected, subsribed, published, etc.)
 
 -  If there are any options related to the URI in
    ``esp_mqtt_client_config_t``, the option defined by the URI will be
@@ -68,7 +72,6 @@ URI
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = "mqtt://iot.eclipse.org:1234",
-        .event_handle = mqtt_event_handler,
         .port = 4567,
     };
     //MQTT client will connect to iot.eclipse.org using port 4567
