@@ -62,6 +62,7 @@ static void echo_task(void *arg)
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 122,
+        .source_clk = UART_SCLK_APB,
     };
     
     // Set UART log level
@@ -69,16 +70,15 @@ static void echo_task(void *arg)
     
     ESP_LOGI(TAG, "Start RS485 application test and configure UART.");
 
+    // Install UART driver (we don't need an event queue here)
+    // In this example we don't even use a buffer for sending data.
+    uart_driver_install(uart_num, BUF_SIZE * 2, 0, 0, NULL, 0);
     // Configure UART parameters
     uart_param_config(uart_num, &uart_config);
     
     ESP_LOGI(TAG, "UART set pins, mode and install driver.");
     // Set UART1 pins(TX: IO23, RX: I022, RTS: IO18, CTS: IO19)
     uart_set_pin(uart_num, ECHO_TEST_TXD, ECHO_TEST_RXD, ECHO_TEST_RTS, ECHO_TEST_CTS);
-
-    // Install UART driver (we don't need an event queue here)
-    // In this example we don't even use a buffer for sending data.
-    uart_driver_install(uart_num, BUF_SIZE * 2, 0, 0, NULL, 0);
 
     // Set RS485 half duplex mode
     uart_set_mode(uart_num, UART_MODE_RS485_HALF_DUPLEX);

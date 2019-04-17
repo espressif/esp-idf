@@ -1,9 +1,8 @@
-// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,20 +13,6 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define UART_FIFO_LEN          (128)      /*!< The UART hardware FIFO length */
-#define UART_BITRATE_MAX       (5000000)  /*!< Max bit rate supported by UART */
-
-// ESP32 have 3 UART.
-#define SOC_UART_NUM           (3)
-#define SOC_UART_MIN_WAKEUP_THRESH (2)
-
-#define UART_INTR_MASK         (0x7ffff) //All interrupt mask
-
-#ifdef __cplusplus
-}
-#endif
-
+#include "soc/uhci_reg.h"
+#include "soc/uhci_struct.h"
+#include "soc/periph_defs.h"

@@ -34,11 +34,11 @@ static void uart_config(uint32_t baud_rate, bool use_ref_tick)
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .use_ref_tick = use_ref_tick,
     };
+    uart_config.source_clk = use_ref_tick ? UART_SCLK_REF_TICK : UART_SCLK_APB;
+    uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
     uart_param_config(UART_NUM1, &uart_config);
     uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
 }
 
 static volatile bool exit_flag;
@@ -64,7 +64,7 @@ static void test_task2(void *pvParameters)
     while (exit_flag == false) {
         // This task obstruct a setting tx_done_sem semaphore in the UART interrupt.
         // It leads to waiting the ticks_to_wait time in uart_wait_tx_done() function.
-        uart_disable_intr_mask(UART_NUM1, UART_TX_DONE_INT_ENA_M);
+        uart_disable_tx_intr(UART_NUM1);
     }
     vTaskDelete(NULL);
 }

@@ -18,6 +18,7 @@
 #include <sys/param.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
+#include "soc/uart_struct.h"
 #include "driver/uart.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
@@ -101,10 +102,11 @@ static void uart1_init(void)
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
     };
-    uart_param_config(UART_NUM_1, &uart_config);
     uart_driver_install(UART_NUM_1, 256, 256, 0, NULL, 0);
+    uart_param_config(UART_NUM_1, &uart_config);
 }
 
 static void send_task(void *param)
@@ -128,7 +130,7 @@ static void init(int *uart_fd, int *socket_fd)
     test_case_uses_tcpip();
 
     uart1_init();
-    UART1.conf0.loopback = 1;
+    uart_set_loop_back(UART_NUM_1, true);
 
     *uart_fd = open("/dev/uart/1", O_RDWR);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(*uart_fd, -1, "Cannot open UART");
@@ -142,7 +144,6 @@ static void deinit(int uart_fd, int socket_fd)
 {
     esp_vfs_dev_uart_use_nonblocking(1);
     close(uart_fd);
-    UART1.conf0.loopback = 0;
     uart_driver_delete(UART_NUM_1);
 
     close(socket_fd);
