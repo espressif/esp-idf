@@ -44,6 +44,7 @@
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
+#include "esp_timer.h"
 
 
 /* bytes erased by SPIEraseBlock() ROM function */
@@ -238,6 +239,9 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
     rc = spi_flash_unlock();
     if (rc == ESP_ROM_SPIFLASH_RESULT_OK) {
         for (size_t sector = start; sector != end && rc == ESP_ROM_SPIFLASH_RESULT_OK; ) {
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+            int64_t start_time_us = esp_timer_get_time();
+#endif
             spi_flash_guard_start();
             if (sector % sectors_per_block == 0 && end - sector >= sectors_per_block) {
                 rc = esp_rom_spiflash_erase_block(sector / sectors_per_block);
@@ -249,6 +253,17 @@ esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
                 COUNTER_ADD_BYTES(erase, SPI_FLASH_SEC_SIZE);
             }
             spi_flash_guard_end();
+#ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
+            int dt_ms = (esp_timer_get_time() - start_time_us) / 1000;
+            if (dt_ms >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS ||
+                dt_ms * 2 >= CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS) {
+                /* For example when dt_ms = 15 and CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS = 20.
+                 * In this case we need to call vTaskDelay because
+                 * the duration of this command + the next command probably will exceed more than 20.
+                */
+                vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+            }
+#endif
         }
     }
     COUNTER_STOP(erase);
