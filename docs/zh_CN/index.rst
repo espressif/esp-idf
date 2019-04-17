@@ -27,6 +27,8 @@ ESP-IDF 编程指南
 .. |API 指南| image:: ../_static/api-guides.gif
 .. _API 指南: api-guides/index.html
 
+.. _Libraries and Frameworks: libraries-and-frameworks/index.html
+
 .. |贡献代码| image:: ../_static/contribute.gif
 .. _贡献代码: contribute/index.html
 
@@ -42,6 +44,7 @@ ESP-IDF 编程指南
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
    API 指南 <api-guides/index>
+   Libraries and Frameworks <libraries-and-frameworks/index>
    贡献代码 <contribute/index>
    版本 <versions>
    相关资源 <resources>
