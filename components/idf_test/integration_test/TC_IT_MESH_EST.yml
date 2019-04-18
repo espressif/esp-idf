@@ -1,217 +1,4722 @@
-test cases:
-- CI ready: 'Yes'
-  ID: MESH_EST_0106
+.MESH_CASE: &MESH_CASE
   SDK: ESP32_IDF
   Test App: SSC_MESH
   auto test: 'Yes'
   category: Function
+  test point 1: self organized function
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T50_MESH1
+  execution time: 0.0
+  module: Mesh
+  sub module: Establish
+  version: v1 (2018-08-15)
+  CI ready: 'No'
+  level: Integration
+  allow fail: ''
+
+.mesh_init_all_duts: &mesh_init_all_duts
+  LIST_MERGE:
+    - - 'MSSC SSC[1-<node_num>] mesh -I'
+      - ['P SSC[1-<node_num>] C +MESH:INIT,OK']
+
+.mesh_start_all_duts: &mesh_start_all_duts
+  LIST_MERGE:
+    - - 'MSSC SSC[1-<node_num>] mesh -T'
+      - ['P SSC[1-<node_num>] C +MESH:START,OK']
+
+.mesh_config_all_duts: &mesh_config_all_duts
+  LIST_MERGE:
+    - - 'MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10'
+      - ['P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+        <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>'
+      - ['P SSC[1-<node_num>] C +MESHSET:CFG,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -L -o 0 -l <max_layer>'
+      - ['P SSC[1-<node_num>] C +MESHSET:MLAYER,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>'
+      - ['P SSC[1-<node_num>] C +MESHSET:SWITCH,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -K -o 0 -i <allow_roots>'
+      - ['P SSC[1-<node_num>] C +MESHSET:ALLOW_ROOTS,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -J -o 0 -t <assoc_expire>'
+      - ['P SSC[1-<node_num>] C +MESHSET:ASSOC,OK']
+
+.mesh_config_all_duts_no_router: &mesh_config_all_duts_no_router
+  LIST_MERGE:
+    - - 'SSC SSC1 meshset -T -o 0 -t 1'
+      - ['P SSC1 C +MESHSET:TYPE,OK']
+    - - 'MSSC SSC[2-<node_num>] meshset -X -o 0 -i 1'
+      - ['P SSC[2-<node_num>] C +MESHSET:FIX_ROOT,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10'
+      - ['P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK']
+    - - 'SSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>'
+      - ['P SSC[1-<node_num>] C +MESHSET:CFG,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -L -o 0 -l <max_layer>'
+      - ['P SSC[1-<node_num>] C +MESHSET:MLAYER,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>'
+      - ['P SSC[1-<node_num>] C +MESHSET:SWITCH,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -K -o 0 -i <allow_roots>'
+      - ['P SSC[1-<node_num>] C +MESHSET:ALLOW_ROOTS,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -J -o 0 -t <assoc_expire>'
+      - ['P SSC[1-<node_num>] C +MESHSET:ASSOC,OK']
+
+.mesh_config_dut1: &mesh_config_dut1
+  LIST_MERGE:
+    - - 'SSC SSC1 meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10'
+      - ['P SSC1 C +MESHSET:MAP_AUTH,OK']
+    - - 'SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+        <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>'
+      - ['P SSC1 C +MESHSET:CFG,OK']
+    - - 'SSC SSC meshset -L -o 0 -l <max_layer>'
+      - ['P SSC1 C +MESHSET:MLAYER,OK']
+    - - 'SSC SSC1 meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>'
+      - ['P SSC1 C +MESHSET:SWITCH,OK']
+    - - 'SSC SSC1 meshset -K -o 0 -i <allow_roots>'
+    - - 'SSC SSC1 meshset -K -o 0 -i <allow_roots>'
+      - ['P SSC1 C +MESHSET:ALLOW_ROOTS,OK']
+    - - 'SSC SSC1 meshset -J -o 0 -t <assoc_expire>'
+      - ['P SSC1 C +MESHSET:ASSOC,OK']
+
+.mesh_config_dut1_no_router: &mesh_config_dut1_no_router
+  LIST_MERGE:
+    - - 'SSC SSC1 meshset -T -o 0 -t 1'
+      - ['P SSC1 C +MESHSET:TYPE,OK']
+    - - 'SSC SSC1 meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10'
+      - ['P SSC1 C +MESHSET:MAP_AUTH,OK']
+    - - 'SSC SSC1 meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>'
+      - ['P SSC1 C +MESHSET:CFG,OK']
+    - - 'SSC SSC1 meshset -L -o 0 -l <max_layer>'
+      - ['P SSC1 C +MESHSET:MLAYER,OK']
+    - - 'SSC SSC1 meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>'
+      - ['P SSC1 C +MESHSET:SWITCH,OK']
+    - - 'SSC SSC1 meshset -K -o 0 -i <allow_roots>'
+    - - 'SSC SSC1 meshset -K -o 0 -i <allow_roots>'
+      - ['P SSC1 C +MESHSET:ALLOW_ROOTS,OK']
+    - - 'SSC SSC1 meshset -J -o 0 -t <assoc_expire>'
+      - ['P SSC1 C +MESHSET:ASSOC,OK']
+
+.mesh_config_cs_duts: &mesh_config_cs_duts
+  LIST_MERGE:
+    - - 'MSSC SSC[4-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10'
+      - ['P SSC[4-<node_num>] C +MESHSET:MAP_AUTH,OK']
+    - - 'MSSC SSC[4-<node_num>] meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n <try_channel> -h 1 -t
+        <max_connect> -e <map_password> -i <ie_encrypt>'
+      - ['P SSC[4-<node_num>] C +MESHSET:CFG,OK']
+    - - 'MSSC SSC[4-<node_num>] meshset -L -o 0 -l <max_layer>'
+      - ['P SSC[4-<node_num>] C +MESHSET:MLAYER,OK']
+    - - 'MSSC SSC[4-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>'
+      - ['P SSC[4-<node_num>] C +MESHSET:SWITCH,OK']
+    - - 'MSSC SSC[4-<node_num>] meshset -K -o 0 -i <allow_roots>'
+      - ['P SSC[4-<node_num>] C +MESHSET:ALLOW_ROOTS,OK']
+    - - 'MSSC SSC[4-<node_num>] meshset -J -o 0 -t 15'
+      - ['P SSC[4-<node_num>] C +MESHSET:ASSOC,OK']
+
+.mesh_check_tree_num: &mesh_check_tree_num
+  LIST_MERGE:
+    - - 'MSSC SSC[1-<node_num>] mesh -Q -o 2'
+      - ['P SSC[1-<node_num>] T topo']
+    - - 'MESHTREE'
+      - ['R PC_COM RE "MESHTREE:%%s"%%(<tree_node_num>)']
+
+.mesh_tree_stably: &mesh_tree_stably
+  LIST_MERGE:
+    - - 'SSC MNODE(0) mesh -Q -o 1 -t <stable_check_time>'
+      - ['R MNODE(0) C MESH_STABLE_CHECK:PASS']
+
+.est_performance_cmd_set: &est_performance_cmd_set
+  LIST_MERGE:
+    - - 'test_counts = 15'
+      - ['']
+    - - 'start_number_list = [0]'
+      - ['']
+    - - 'ie_encrypt = True'
+      - ['']
+    - - 'establish_fail_time = 1200'
+      - ['']
+    - - 'assoc_time = 20'
+      - ['']
+    - - 'stable_time = 120'
+      - ['']
+    - - 'map_encrypt = True'
+      - ['']
+    - - 'destroy_mode = "deinit"'
+      - ['']
+
+test cases:
+- ID: MESH_EST_0101
+  <<: *MESH_CASE
   cmd set:
   - ''
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -A -o 7 -t 25
-    - - P SSC[1-<node_num>] C +MESH_SET_TX_POWER:OK
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  - - SSC SSC[1-<node_num>] mesh -T
-    - - P SSC[1-<node_num>] C +MESH:START
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  execution time: 0.0
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n 15 -t <max_connect>
+    - - R SSC1 C +MESHSET:CFG,FAIL
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n <router_channel> -t 11
+    - - R SSC1 C +MESHSET:CFG,FAIL
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n <router_channel> -t 0
+    - - R SSC1 C +MESHSET:CFG,FAIL
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect>
+    - - R SSC1 C +MESHSET:CFG,FAIL
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 meshset -G -o 1
+    - - P SSC1 RE "MESH_ID,%%s"%%(<mesh_id>)
+      - P SSC1 C +MESHGET:CFG,OK
+  expected result: |-
+    1. fail
+    2. fail
+    3. fail
+    4. fail
+    5. succeed
+  steps: |-
+    1. mesh init
+    2. set config with channel 15
+    3. set config with max_connection 0 / 11
+    4. set config without router ssid
+    5. set/get valid config
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get config before mesh start
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0102
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -S -o 0 -t 0
+    - - P SSC1 C +MESHSET:SCAN_TIME,FAIL
+  - - SSC SSC1 meshset -S -o 0 -t 2000
+    - - P SSC1 C +MESHSET:SCAN_TIME,FAIL
+  - - SSC SSC1 meshset -S -o 0 -t 500
+    - - P SSC1 C +MESHSET:SCAN_TIME,OK
+  - - SSC SSC1 meshset -S -o 1
+    - - P SSC1 C +MESHGET:SCAN_TIME,OK,500
   expected result: |-
     1. succeed
     2. succeed
     3. succeed
-  initial condition: DISABLED_1
-  level: Integration
-  module: Mesh
   steps: |-
     1. mesh init
-    2. mesh config
-    3. mesh start
-  sub module: Network Establish
-  summary: set node with different tx power, then establish network
-  test environment: SSC_T50_1
-  test point 1: basic function
-  test point 2: mesh config
-  version: v1 (2017-7-20)
-- CI ready: 'Yes'
-  ID: MESH_EST_0313
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+    2. set invalid scan time
+    3. set/get valid scan time
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get passive scan time before mesh start
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0103
+  <<: *MESH_CASE
   cmd set:
   - ''
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -Q -o 0 -i 15
+    - - P SSC1 C +MESHSET:QSIZE,FAIL
+  - - SSC SSC1 meshset -Q -o 0 -i 40
+    - - P SSC1 C +MESHSET:QSIZE,OK
+  - - SSC SSC1 meshset -Q -o 1
+    - - P SSC1 C +MESHGET:QSIZE,OK,40
+  expected result: |-
+    1. succeed
+    2. fail
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. set invalid qsize
+    3. set/get valid qsize
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get qsize before mesh start
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0104
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -P -o 0 -n 0
+    - - P SSC1 C +MESHSET:PERCENT,FAIL
+  - - SSC SSC1 meshset -P -o 0 -n 110
+    - - P SSC1 C +MESHSET:PERCENT,FAIL
+  - - SSC SSC1 meshset -P -o 0 -n 100
+    - - P SSC1 C +MESHSET:PERCENT,OK
+  - - SSC SSC1 meshset -P -o 1
+    - - P SSC1 C +MESHGET:PERCENT,OK,1
+  expected result: |-
+    1. succeed
+    2. fail
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. set invalid vote percentage
+    3. set/get valid vote percentage
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get vote percentage before mesh start
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0105
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+#  - - SSC SSC1 meshset -Z -x 1 -o 0 -t 300 -l 3000
+#    - - P SSC1 C +MESHSET:ANNOUNCE,FAIL
+#  - - SSC SSC1 meshset -Z -x 1 -o 0 -t 500 -l 1000
+#    - - P SSC1 C +MESHSET:ANNOUNCE,FAIL
+  - - SSC SSC1 meshset -Z -x 1 -o 0 -t 500 -l 3000
+    - - P SSC1 C +MESHSET:ANNOUNCE,OK
+  - - SSC SSC1 meshset -Z -x 1 -o 1
+    - - P SSC1 C +MESHGET:ANNOUNCE,OK,500,3000
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. set invalid announce interval
+    3. set/get valid announce interval
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get announce interval before mesh start
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0106
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -J -o 0 -t 9
+    - - P SSC1 C +MESHSET:ASSOC,FAIL
+  - - SSC SSC1 meshset -J -o 0 -t 10
+    - - P SSC1 C +MESHSET:ASSOC,OK
+  - - SSC SSC1 meshset -J -o 1
+    - - P SSC1 C +MESHGET:ASSOC,OK,10
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. set invalid assoc expire
+    3. set/get valid assoc expire
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get assoc expire before mesh start
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0107 #TODO: support max_layer>127
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -L -o 0 -l 0
+    - - P SSC1 C +MESHSET:MLAYER,FAIL
+  - - SSC SSC1 meshset -L -o 0 -l -1
+    - - P SSC1 C +MESHSET:MLAYER,FAIL
+  - - SSC SSC1 meshset -L -o 0 -l 65537
+    - - P SSC1 C +MESHSET:MLAYER,FAIL
+#  - - SSC SSC1 meshset -L -o 0 -l 26
+#    - - P SSC1 C +MESHSET:MLAYER,FAIL
+  - - SSC SSC1 meshset -L -o 0 -l 1
+    - - P SSC1 C +MESHSET:MLAYER,OK
+  - - SSC SSC1 meshset -L -o 1
+    - - P SSC1 C +MESHGET:MLAYER,OK,1
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. set invalid max_layer
+    3. set/get valid max_layer
+  test environment: SSC_T1_MESH1
+  summary: mesh set/get max_lay test
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0108 #TODO: map_password can only be set in esp_mesh_set_config
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC1 C +MESHSET:MAP_AUTH,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 meshset -o 0 -L -l 2
+    - - P SSC1 C +MESHSET:MLAYER,OK
+  - - SSC SSC1 meshset -P -o 0 -n 60
+    - - P SSC1 C +MESHSET:PERCENT,OK
+  - - SSC SSC1 meshset -o 0 -J -t 20
+    - - P SSC1 C +MESHSET:ASSOC,OK
+  - - SSC SSC1 meshset -o 0 -K -i 1
+    - - P SSC1 C +MESHSET:ALLOW_ROOTS,OK
+  - - SSC SSC1 meshset -S -o 0 -t 500
+    - - P SSC1 C +MESHSET:SCAN_TIME,OK
+  - - SSC SSC1 meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC1 C +MESHSET:SWITCH,OK
+  - - SSC SSC1 meshset -H -o 0 -t <threshold_high> -i <threshold_medium> -l <threshold_low>
+    - - P SSC1 C +MESHSET:THRESHOLD,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. set invalid max_layer
+    3. set/get valid max_layer
+  test environment: SSC_T1_MESH1
+  summary: mesh set all configurations in order
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0110
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] meshset -o 0 -L -l 1
+    - - P SSC[1-2] C +MESHSET:MLAYER,OK
   - - SSC SSC[1-2] mesh -T
-    - - P SSC[1-2] C +MESH:START
-  - - DELAY 30
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC[1-2] C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config two duts with max_lay = 0
+    2. start mesh
+    3. check .....
+  test environment: SSC_T2_MESH1
+  summary: two duts establish mesh network with max layer = 1
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0111
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e [<map_password>,<temp_string>] -i 0
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - DELAY 20
+    - - P PC_COM C DELAYDONE
+      - P SSC2 NC MESH_EVENT_CONNECTED
+      - P SSC1 NC MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config two duts with different map_password and ie not encrypted
+    2. start mesh
+    3. check not connected
+  test environment: SSC_T2_MESH1
+  summary: two duts establish mesh network with different map_password
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0112
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i [0,1]
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC[1-2] C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config two duts with different ie_encrypt
+    2. start mesh
+    3. check both connected with router
+  test environment: SSC_T2_MESH1
+  summary: two duts establish mesh network with different ie_encrypt
+  test point 2: mesh configuration test
+  CI ready: 'Yes'
+- ID: MESH_EST_0113
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      [<router_channel>,<wrong_channel>] -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+      - P SSC2 C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config two duts with different channel
+    2. start mesh
+    3. check dut1 connected and dut2 disconnected
+  test environment: SSC_T2_MESH1
+  summary: two duts establish mesh network with different channel
+  test point 2: mesh configuration test
+  CI ready: 'No'
+  #TODO: not work after v3.3
+- ID: MESH_EST_0114
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] meshset -o 0 -L -l [2,1]
+    - - P SSC[1-2] C +MESHSET:MLAYER,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - DELAY 60
     - - ''
   - - SSC SSC[1-2] mesh -Q -o 2
-    - - R SSC[1-2] T 2
-  - - MESHTREE
-    - - R PC_COM C MESHTREE:2%20nodes
-  - - SSC MNODE(0) reboot
-    - - P MNODE(0) C !!!ready!!!
-      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
-  - - DELAY 10
-    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1
-  execution time: 0.0
+    - - P SSC[1-2] T topo
+  - - ASSERT
+    - - ''
   expected result: |-
     1. succeed
     2. succeed
     3. succeed
     4. succeed
-  initial condition: DISABLED_1
-  level: Integration
-  module: Mesh
   steps: |-
-    1. switch to sta+softap mode
+    1. config two duts with different max_layer [2,1]
+    2. start dut1(max_layer=2) first
+    3. dut1 connected with router then start dut2(max_layer=1)
+    4. check .....
+  test environment: SSC_T2_MESH1
+  summary: (ASSERT) two duts establish mesh network with different max_layer[2,1]
+  test point 2: mesh configuration test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0115
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] mesh -I
+    - - P SSC[1-3] C +MESH:INIT,OK
+  - - SSC SSC[1-3] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 1 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-3] C +MESHSET:CFG,OK
+  - - SSC SSC[1-3] meshset -o 0 -L -l 2
+    - - P SSC[1-3] C +MESHSET:MLAYER,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - SSC SSC1 mesh -Q -o 3
+    - - ''
+  - - DELAY 5
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+  - - SSC SSC3 mesh -T
+    - - P SSC3 C +MESH:START,OK
+  - - SSC SSC[1-3] mesh -Q -o 3
+    - - ''
+  - - DELAY 10
+    - - P SSC3 C MESH_EVENT_NO_PARENT_FOUND
+  - - DELAY 60
+    - - ''
+  - - SSC SSC[1-3] mesh -Q -o 2
+    - - P SSC[1-3] T topo
+# TODO: check more?
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. config 3 duts with different max_layer=2 and max_connect=1
+    2. start dut1(max_layer=2) first
+    3. dut1 connected with router then start dut2(max_layer=1)
+    3. dut1 connected with router then start dut2(max_layer=1)
+    4. check .....
+  test environment: SSC_T3_MESH1
+  summary: 3 duts establish mesh network with max_connection 1 and max_layer 2
+  test point 2: mesh configuration test
+  CI ready: 'No'
+- ID: MESH_EST_0201
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config
+    3. mesh start
+    4. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: dut1 establish mesh network with simple configuration
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0202
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - LOOP 2 6 "[2,3]"
+    - - ''
+  - - SSC SSC1 reboot
+    - - P SSC1 C !!!ready!!!
+  - - SSC SSC1 op -S -o {%d}
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  steps: |-
+    1. set wifi op_mode (AP/APSTA)
     2. mesh init
     3. mesh config
     4. mesh start
-  sub module: Network Establish
-  summary: 2 nodes do mesh network establish,then reboot root
-  test environment: SSC_T50_1
-  test point 1: basic function
-  test point 2: mesh network establish
-  version: v1 (2017-7-20)
-- CI ready: 'Yes'
-  ID: MESH_EST_0317
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+    5. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: dut1 start mesh in different wifi mode (AP/APSTA)
+  test point 2: network establish test
+  CI ready: 'No'
+#TODO: add case: start mesh with station connected
+- ID: MESH_EST_0203 #TODO: which step call wifi scan
+  <<: *MESH_CASE
   cmd set:
   - ''
-  - - SSC SSC[1-<node_num>] mesh -I
-    - - P SSC[1-<node_num>] C +MESH:INITED
-  - - SSC SSC[1-<node_num>] mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m 1 -y 15
-    - - P SSC[1-<node_num>] C +MESH:CONFIG,OK
-  - - SSC SSC[1-15] mesh -T
-    - - P SSC[1-15] C +MESH:START
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-15] mesh -Q -o 2
-    - - R SSC[1-15] T 15
-  - - MESHTREE
-    - - R PC_COM C MESHTREE:15%20nodes
-  execution time: 0.0
+  - - SSC SSC1 sta -S
+    - - P SSC1 C +SCAN_DONE:OK
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
   expected result: |-
     1. succeed
     2. succeed
     3. succeed
     4. succeed
     5. succeed
-  initial condition: DISABLED_1
-  level: Integration
-  module: Mesh
   steps: |-
-    1. switch to sta+softap mode
+    1. wifi scan
     2. mesh init
-    3. mesh config: set mesh layer=15
-    4. start 15 nodes
-    5. check mesh tree
-  sub module: Network Establish
-  summary: set special mesh tree which layer=15
-  test environment: SSC_T50_1
-  test point 1: basic function
+    3. mesh config
+    4. mesh start
+    5. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: dut1 start mesh during wifi scan
+  test point 2: network establish test
+  CI ready: 'No'
+- ID: MESH_EST_0204
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 sta -C -s <router_ssid> -p <router_password>
+    - - P SSC1 C +JAP:CONNECTED
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  steps: |-
+    1. connect to router
+    2. mesh init
+    3. mesh config
+    4. mesh start
+    5. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: dut1 start mesh after wifi connected with router
+  test point 2: network establish test
+  CI ready: 'Yes'
+#TODO: start during connecting to router
+- ID: MESH_EST_0205
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config with max_layer 1
+    3. mesh start
+    4. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: dut1 start mesh with max layer 1, establish mesh network
+  test point 2: network establish test
+  CI ready: 'No'
+- ID: MESH_EST_0206
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>'
+    - - P SOC_COM L OK
+  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
+    - - P MNODE(0) C +CONNECT,OK
+      - P SOC1 C ACCEPT
+  - - SOC SOC1 MACCEPT GSOC1
+    - - P SOC_COM L OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. mesh network already established
+    2. root connect to TCP server
+  initial condition: MESH_INIT1
+  test environment: SSC_T1_MESH2
+  summary: dut1 establish mesh network, then root connect to TCP server
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0207
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config
+    3. mesh start
+    4. check mesh tree established and stable
+  test environment: SSC_T2_MESH1
+  summary: two duts start mesh together to establish mesh network
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0208
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i 0
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config without ie_encrypt
+    3. mesh start
+    4. check mesh tree established and stable
+  test environment: SSC_T2_MESH1
+  summary: two duts start mesh without ie_encrypt, establish mesh network
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0209
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config without map_password
+    3. mesh start
+    4. check mesh tree established and stable
+  test environment: SSC_T2_MESH1
+  summary: two duts start mesh without map_password, establish mesh network
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0210
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. start mesh on dut1
+    2. dut1 connected with router
+    3. start mesh on dut2
+    4. dut2 connected with dut1
+  test environment: SSC_T2_MESH1
+  summary: dut2 start mesh after dut1 connected, establish mesh network
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0211
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - DELAY 10 30
+    - - ''
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. start mesh on dut1
+    2. dut1 connected with router
+    3. delay some time then start mesh on dut2
+    4. dut2 connected with dut1
+  test environment: SSC_T2_MESH1
+  summary: dut2 start mesh after dut1 connected more than 10s, establish mesh network
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0212
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] meshset -o 0 -L -l 1
+    - - P SSC[1-2] C +MESHSET:MLAYER,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config two duts with max_lay = 1
+    2. start mesh
+    3. check .....
+  sub module: Establish
+  test environment: SSC_T2_MESH1
+  summary: (ASSERT) 2 duts start mesh with max_layer=1, establish mesh network
+  test point 2: network establish test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0213
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-12] mesh -I
+    - - P SSC[1-12] C +MESH:INIT,OK
+  - - MSSC SSC[1-12] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 10 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-12] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-12] meshset -o 0 -L -l 2
+    - - P SSC[1-12] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-11] mesh -T
+    - - P SSC[1-11] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config 11 duts with max_layer=2 and mac_connection=10
+    2. 11 duts start mesh
+    3. check mesh network establish
+  sub module: Establish
+  test environment: SSC_T12_MESH1
+  summary: establish special mesh_network with max_lay=2 and max_connection=10
+  test point 2: network establish test
+  CI ready: 'No'
+- ID: MESH_EST_0214
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-7] mesh -I
+    - - P SSC[1-7] C +MESH:INIT,OK
+  - - MSSC SSC[1-7] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 2 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-7] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-7] meshset -o 0 -L -l 3
+    - - P SSC[1-7] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-7] mesh -T
+    - - P SSC[1-7] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> 7
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config 7 duts with max_lay=3 and max_connection=2
+    2. 7 duts start mesh
+    3. check mesh network establish
+  sub module: Establish
+  test environment: SSC_T12_MESH1
+  summary: set max_conn=2 and max_layer=3, establish full mesh tree
+  test point 2: network establish test
+  CI ready: 'No'
+# TODO: full tree, destroy and re-establish
+- ID: MESH_EST_0215
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-25] mesh -I
+    - - P SSC[1-25] C +MESH:INIT,OK
+  - - MSSC SSC[1-25] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 1 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-25] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-25] meshset -o 0 -L -l 25
+    - - P SSC[1-25] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-25] mesh -T
+    - - P SSC[1-25] C +MESH:START,OK
+  - - DELAY 120
+    - - ''
+  - - VALUE <tree_node_num> 25
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config 25 duts with max_connection=1
+    2. 25 duts start mesh
+    3. check mesh network establish
+  test environment: SSC_T50_MESH1
+  summary: establish special mesh_network with max_connection=1 and max_layer=25
+  test point 2: network establish test
+  CI ready: 'Yes'
+- ID: MESH_EST_0216
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -o 0 -L -l <max_layer>
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config all duts with simple configuration
+    2. all duts start mesh
+    3. check mesh network establish
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes establish mesh_network simple configuration
+  test point 2: network establish test
+  CI ready: 'Yes'
+
+- ID: MESH_EST_0301
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 5
+    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. reboot root
+    2. layer2 disconnected and then become new root
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: 2 duts establish mesh network, then reboot root
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0302
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) mesh -I -o 1
+    - - P MNODE(0,0) C MESH:DEINIT,OK
+      - P MNODE(0) C MESH_EVENT_CHILD_DISCONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. layer2 stop mesh
+    2. root find child leave
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: 2 duts establish mesh network, then layer2 stop mesh
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0303
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY 5
+    - - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 15
+    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. power reset root
+    2. layer2 disconnected and then become new root
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: 2 duts establish mesh network, then power reset root
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0304
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - SSC MNODE(0) op -S -o 2
+    - - P MNODE(0) C +MODE:OK
+      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 15
+    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. power reset root and
+    2. layer2 disconnected and then become new root
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: 2 duts establish mesh network, power reset root and switch to softAP mode
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0305
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -V -o 2
+    - - P MNODE(0) C MESH:SAVE,OK
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - SSC MNODE(0) mesh -T -o 2
+    - - P MNODE(0) C MESH:START,OK
+  - - DELAY 10
+    - - P MNODE(0) C MESH_EVENT_CONNECTED,1
+      - P MNODE(0,0) C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root set auto start mesh and power reboot
+    2. it become root again and the other node join
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: 2 duts establish mesh network, root restart mesh, it still root
+  test point 2: network destroy test
+  CI ready: 'No'
+  #TODO: root still root after restart will not run on CI
+- ID: MESH_EST_0306
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - FREBOOT MNODE(0,0)
+    - - P MNODE(0,0) C !!!ready!!!
+      - P MNODE(0) C MESH_EVENT_CHILD_DISCONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. power reset layer2
+    2. root find child leave
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: 2 duts establish mesh network, then power reset layer2
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0307
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -I -o 1
+    - - P MNODE(0) C MESH:DEINIT,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root mesh stop
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, root mesh stop
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0308
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. reboot root
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, reboot root
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0309
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. power reboot root
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, power reboot root
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0310
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -V -o 2
+    - - P MNODE(0) C MESH:SAVE,OK
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - SSC MNODE(0) mesh -T -o 2
+    - - P MNODE(0) C MESH:START,OK
+  - - DELAY 10
+    - - P MNODE(0) C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root set auto start mesh and power reboot
+    2. it become root again and the other node join
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes establish mesh network, root restart mesh, it still root
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0311
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) mesh -I -o 1
+    - - P MNODE(0,0) C MESH:DEINIT,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. one of layer2 nodes mesh deinit
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, one of layer2 nodes mesh deinit
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0313
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) reboot
+    - - P MNODE(0,0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. reboot one of layer2 nodes
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, reboot one of layer2 nodes
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0314
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - FREBOOT MNODE(0,0)
+    - - P MNODE(0,0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. reboot one of layer2 nodes
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, power reset one of layer2 nodes
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0315
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) mesh -I -o 1
+    - - P MNODE(0,-1) C MESH:DEINIT,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. one of leaf nodes mesh stop
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, one of leaf nodes mesh stop
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0316
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) reboot
+    - - P MNODE(0,-1) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. reboot one of leaf nodes
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, reboot one of leaf nodes
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0317
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - FREBOOT MNODE(0,-1)
+    - - P MNODE(0,-1) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. reboot one of leaf nodes
+    2. others re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, power reset one of leaf nodes
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0318
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -V -o 2
+    - - P MNODE(0) C MESH:SAVE,OK
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - SSC MNODE(0) mesh -T -o 2
+    - - P MNODE(0) C MESH:START,OK
+  - - DELAY 10
+    - - P MNODE(0) C MESH_EVENT_CONNECTED,1
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root restart mesh with same configuration
+    2. re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, root reboot and start mesh, it still root
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0319
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -V -o 2
+    - - P MNODE(0) C MESH:SAVE,OK
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - SSC MNODE(0) mesh -T -o 2
+    - - P MNODE(0) C MESH:START,OK
+  - - DELAY 10
+    - - P MNODE(0) C MESH_EVENT_CONNECTED,1
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root restart mesh with same configuration
+    2. re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, root power reset and start mesh, it still root
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0320
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -V -o 2
+    - - P MNODE(0) C MESH:SAVE,OK
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY 1 5
+    - - ''
+  - - SSC MNODE(0) mesh -T -o 2
+    - - P MNODE(0) C MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root restart mesh with same configuration
+    2. re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, root reboot and wait some time, then start mesh
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0321
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n <router_channel> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 mesh -I
+    - - P SSC2 C +MESH:INIT,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n
+      <router_channel> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1
+  - - FREBOOT SSC1
+    - - P SSC1 C !!!ready!!!
+  - - DELAY 10
+    - - P SSC2 C MESH_EVENT_DISCONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. set dut2 ap mode, dut1 start mesh and connect to dut2
+    2. power reset dut2 (station mode), check dut1 disconnected
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: power off router, check root disconnected
+  test point 2: network destroy test
+  CI ready: 'Yes'
+- ID: MESH_EST_0322
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n <router_channel> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 mesh -I
+    - - P SSC2 C +MESH:INIT,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n
+      <router_channel> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1
+  - - FREBOOT SSC1
+    - - P SSC1 C !!!ready!!!
+  - - DELAY 10
+    - - P SSC2 C MESH_EVENT_DISCONNECTED
+  - - DELAY 30
+    - - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. set dut2 ap mode, dut1 start mesh and connect to dut2
+    2. power reset dut2 (station mode), check dut1 disconnected
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: power off router for a while, check root connected
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0323
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n <router_channel> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 mesh -I
+    - - P SSC2 C +MESH:INIT,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n
+      <router_channel> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1
+  - - SSC SSC1 ap -K -a 1
+    - - P SSC1 C +AP:KICK
+      - P SSC2 C MESH_EVENT_DISCONNECTED C MESH_EVENT_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. set dut2 ap mode, dut1 start mesh and connect to dut2
+    2. router deauth root, check dut1 disconnected then connected
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: router deauth root, check root disconnected then connected
+  test point 2: network destroy test
+  CI ready: 'Yes'
+#TODO: waive root
+- ID: MESH_EST_0324
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -W -o 0 -t 100
+    - - P MNODE(0) C +MESH:VOTE,OK
+  - - DELAY 1 3
+    - - ''
+  - - FREBOOT MNODE(0)
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. waive_root and power reset root
+    2. re-establish network
+  initial condition: MESH_INIT1
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, root waive vote after network established, then power reboot root
+  test point 2: network destroy test
+  CI ready: 'No'
+- ID: MESH_EST_0501 #TODO: support layer>127
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -o 0 -L -l 1000
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config all duts with max_connection=1 and max_layer>127
+    2. all duts start mesh
+    3. check mesh network establish
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: (chain) establish mesh_network with max_connection=1 and max_layer>127
+  test point 2: chain topology test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0502 #TODO: support layer>127
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 1 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -o 0 -L -l 1000
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config all duts with max_layer>127
+    2. all duts start mesh
+    3. check mesh network establish
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: (chain) establish mesh_network with max_layer>127
+  test point 2: chain topology test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0503 #TODO: support layer>127
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] meshset -o 0 -L -l [127,128]
+    - - P SSC[1-2] C +MESHSET:MLAYER,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 60
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. set a node with max_layer 127 and another 128
+    2. 2 duts start mesh
+    3. check mesh network establish
+  sub module: Establish
+  test environment: SSC_T2_MESH1
+  summary: (chain) set a node with max_layer 126 and another 127, establish mesh_network
+  test point 2: chain topology test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0504 #TODO: support layer>127
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 1 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -o 0 -L -l 1000
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config all duts with max_layer>127
+    2. all duts start mesh
+    3. check mesh network establish
+    4. reboot root, others re-establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: (chain) (ASSERT) establis mesh_network first, then reboot root
+  test point 2: chain topology test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0505 #TODO: support layer>127
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t 1 -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -o 0 -L -l 1000
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. config all duts with max_layer>127
+    2. all duts start mesh
+    3. check mesh network establish
+    4. reboot leaf, others re-establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: (chain) (ASSERT) establis mesh_network first, then reboot leaf
+  test point 2: chain topology test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_0601
+  <<: *MESH_CASE
+  cmd set:
+  - MeshStress/MeshChannelSwitch
+  - - 'simple_test = True'
+    - ['']
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. channel switch function test
+  sub module: Establish
+  test environment: SSC_T6_MESH1
+  summary: (channel switch) channel switch function test
+  test point 2: channel switch test
+  CI ready: 'No'
+  auto test: 'Yes'
+- ID: MESH_EST_0602
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o 2
+    - - P SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] ap -S -s <target_ssid> -p <target_password> -n [6,7] -t <target_auth_enum>
+    - - P SSC[1-2] C +SAP:OK
+  - - SSC SSC2 op -S -o 1
+    - - P SSC2 C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - SSC SSC2 op -S -o 2
+    - - P SSC2 C +MODE:OK
+  - - SSC SSC1 op -S -o 1
+    - - P SSC1 C +MODE:OK
+  - - DELAY 30
+    - - P SSC2 C +SOFTAP:STACONNECTED
+  - - DELAY 20
+    - - ''
+  - *mesh_check_tree_num
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:7
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1,dut2 set esp32 softAP in different channel
+    2. dut[3-<node_num>] start mesh and connected with dut1
+    3. reboot dut1's softAP, check dut[3-<node_num>] connected with dut2
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  stop router1,mesh network switch to another channel router network
+  test point 2: channel switch test
+  CI ready: 'No'
+  auto test: 'Yes'
+- ID: MESH_EST_0603
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o 2
+    - - P SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] ap -S -s <target_ssid> -p <target_password> -n [6,7] -t <target_auth_enum>
+    - - P SSC[1-2] C +SAP:OK
+  - - SSC SSC2 op -S -o 1
+    - - P SSC2 C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - MSSC SSC2 op -S -o 2
+    - - P SSC2 C +MODE:OK
+  - - FREBOOT SSC1
+    - - P SSC1 C !!!ready!!!
+  - - DELAY 30
+    - - P SSC2 C +SOFTAP:STACONNECTED
+  - - DELAY 20
+    - - ''
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:7
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1,dut2 set esp32 softAP in different channel
+    2. dut[3-<node_num>] start mesh and connected with dut1
+    3. stop dut1's softAP, check dut[3-<node_num>] connected with dut2
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  power reset router1,mesh network switch to another channel router network
+  test point 2: channel switch test
+- ID: MESH_EST_0604
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o 2
+    - - P SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] ap -S -s <target_ssid> -p <target_password> -n [6,7] -t <target_auth_enum>
+    - - P SSC[1-2] C +SAP:OK
+  - - SSC SSC2 op -S -o 1
+    - - P SSC2 C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - SSC SSC2 op -S -o 2
+    - - P SSC2 C +MODE:OK
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:6
+  - - SSC SSC2 mac
+    - - P SSC2 A <softap_mac>:\+APMAC:(.+)\r\n
+  - - SSC MNODE(0) mesh -H -m <softap_mac> -n 7 -t 10
+    - - P MNODE(0) C MESH:SWITCH_CHANNEL,OK
+  - - DELAY <delay_time>
+    - - P SSC2 C +SOFTAP:STACONNECTED
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:7
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. dut[1-2]set esp32 softAP in channel [6,7]
+    2. dut[3-<node_num>] start mesh and connected with dut1
+    3. root switch channel to new channel 7
+    4. check dut[3-<node_num>] disconnected with dut1,connected to dut2,and switch to new channel
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: root switch channel,mesh form old network switch to another channel router network
+  test point 2: channel switch test
+- ID: MESH_EST_0605
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o 2
+    - - P SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] ap -S -s <target_ssid> -p <target_password> -n [1,6,11] -t <target_auth_enum>
+    - - P SSC[1-3] C +SAP:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[4-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[4-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[4-<node_num>] meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n 1 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[4-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[4-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[4-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[4-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[4-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[4-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[4-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[4-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[4-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - *mesh_check_tree_num
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:1
+  - - SSC SSC1 op -S -o 1
+    - - P SSC1 C +MODE:OK
+  - - DELAY 60
+    - - ''
+  - - MSSC SSC[4-<node_num>] mesh -Q -o 2
+    - - P SSC[4-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>) NC ROOT_CONFLICT
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. dut[1-3]set esp32 softAP in channel [1,6,11]
+    2. dut[4-<node_num>] start mesh and connected with dut1
+    3. dut1 set sta mode
+    4. check dut[4-<node_num>] connected with router,and switch to new channel establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: stop router1,mesh choice switch to another channel router establish network
+  test point 2: channel switch test
+- ID: MESH_EST_0606
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o 2
+    - - P SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] ap -S -s <target_ssid> -p <target_password> -n [6,7] -t <target_auth_enum>
+    - - P SSC[1-2] C +SAP:OK
+  - - SSC SSC2 op -S -o 1
+    - - P SSC2 C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - SSC SSC2 op -S -o 2
+    - - P SSC2 C +MODE:OK
+  - - SSC SSC1 op -S -o 1
+    - - P SSC1 C +MODE:OK
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - P SSC2 C +SOFTAP:STACONNECTED
+  - - VALUE <tree_node_num> <tree_node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1,dut2 set esp32 softAP in different channel
+    2. dut[3-<node_num>] start mesh and connected with dut1
+    3. stop dut1's softAP and reboot root, check mesh switch channel and establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  stop dut1's softAP and reboot root, mesh choice switch to another channel router establish network
+  test point 2: channel switch test
+- ID: MESH_EST_0607
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1] op -S -o 2
+    - - P SSC[1] C +MODE:OK
+  - - SSC SSC[1] ap -S -s <target_ssid> -p <target_password> -n 6 -t <target_auth_enum>
+    - - P SSC[1] C +SAP:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - SSC SSC[1] ap -S -s <target_ssid> -p <target_password> -n 7 -t <target_auth_enum>
+    - - P SSC[1] C +SAP:OK
+  - - DELAY 30
+    - - P SSC1 C +SOFTAP:STACONNECTED
+  - - DELAY 20
+    - - ''
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:7
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1,dut2 set esp32 softAP in different channel
+    2. dut[2-<node_num>] start mesh and connected with dut1
+    3. stop dut1's softAP and reboot root, check mesh switch channel and establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  router switch another channel, mesh choice switch to another channel  establish network
+  test point 2: channel switch test
+- ID: MESH_EST_0608
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[4] meshset -T -o 0 -t 1
+    - - P SSC[4] C +MESHSET:TYPE,OK
+  - - MSSC SSC[5-<node_num>] meshset -X -o 0 -i 1
+    - - P SSC[5-<node_num>] C +MESHSET:FIX_ROOT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[5-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - P SSC[5-<node_num>] C MESH_EVENT_CONNECTED
+  - - SSC SSC[1] op -S -o 2
+    - - P SSC[1] C +MODE:OK
+  - - SSC SSC[1] ap -S -s <target_ssid> -p <target_password> -n 7 -t <target_auth_enum>
+    - - P SSC[1] C +SAP:OK
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:7
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. no-router mesh network fix root
+    2. dut[4-<node_num>] start mesh and establish mesh network
+    3. dut1 set ap mode in diffent channel,check mesh switch channel and establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  mesh set fix root, choice switch to another channel link new router
+  test point 2: channel switch test
+- ID: MESH_EST_0609
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o 2
+    - - P SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] ap -S -s <target_ssid> -p <target_password> -n [6,7] -t <target_auth_enum>
+    - - P SSC[1-2] C +SAP:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[4-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[4-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[4-<node_num>] meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n 6 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[4-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[4-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[4-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[4-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[4-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[4-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[4-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[4-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[4-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. set two router in different channel
+    2. all duts set channel to the first router
+    3. check mesh network connected with the first router
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: two routers, set channel, establish network
+  test point 2: channel switch test
+- ID: MESH_EST_0610
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o 2
+    - - P SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n
+        [<router_channel>,<router_channel>,<wrong_channel>]
+    - - P SSC[1-3] C +SAP:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - - MSSC SSC[4-<node_num>] mesh -Q -o 2
+    - - P SSC[4-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>) NC ROOT_CONFLICT
+  - - DELAY 10
+    - - P PC_COM C +DELAYDONE
+      - P SSC[4-<node_num>] NC MESH_EVENT_DISCONNECTED
+  execution time: 2.0
+  expected result: |-
+    1. set router
+    2. check network establish
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. set three router with different channel
+    2. start all nodes to establish mesh network
+  summary: multiple router, establish mesh network
+  test point 2: channel switch test
+  test environment: SSC_T50_MESH1
+  CI ready: 'Yes'
+  auto test: 'Yes'
+- ID: MESH_EST_0611
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o 2
+    - - P SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n
+        [<router_channel>,<router_channel>,<wrong_channel>]
+    - - P SSC[1-3] C +SAP:OK
+  - - SSC SSC[2-3] op -S -o 1
+    - - P SSC[2-3] C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - - MSSC SSC[4-<node_num>] mesh -Q -o 2
+    - - P SSC[4-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>) NC ROOT_CONFLICT
+  - - DELAY 10
+    - - P PC_COM C +DELAYDONE
+      - P SSC[4-<node_num>] NC MESH_EVENT_DISCONNECTED
+  - - SSC SSC[2-3] op -S -o 2
+    - - P SSC[2-3] C +MODE:OK
+  - - FREBOOT SSC1
+    - - P SSC1 C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[2-3] op -S -o 2
+    - - P SSC[2-3] C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -Q -o 2
+    - - P SSC[4-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>) NC ROOT_CONFLICT
+  execution time: 2.0
+  expected result: |-
+    1. establish mesh network
+    2. power reset router and check restablish mesh network
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. establish mesh network with channel and bssid allow switch
+    2. power reset the the router, check the network connected with other router
+  summary: multiple router, network switch router
+  test point 2: channel switch test
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_0612
+  <<: *MESH_CASE
+  cmd set:
+  - MeshStress/MeshNetworkDestroy
+  - - 'destroy_nodes = "MNODE(*,)"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_INIT_SWITCH
+  steps: |-
+    1. enable all nodes establish network
+    2. reboot all roots after network established
+  summary: multiple router, reboot all roots after network established
+  test point 2: channel switch test
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_0613
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n 6 -t <target_auth_enum>
+    - - P SSC1 C +SAP:OK
+  - - MSSC SSC[2-<node_num>] mesh -I
+    - - P SSC[2-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[2-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[2-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[2-<node_num>] meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n 6 -h 0 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[2-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[2-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[2-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[2-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[2-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[2-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[2-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[2-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[2-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[2-<node_num>] mesh -T
+    - - P SSC[2-<node_num>] C +MESH:START,OK
+  - - DELAY 60
+    - - P SSC[2-<node_num>] C MESH_EVENT_CONNECTED
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n 7 -t <target_auth_enum>
+    - - P SSC1 C +SAP:OK
+  - - DELAY 30
+    - - ''
+  - - MSSC SSC[2-<node_num>] channel -G
+    - - P SSC[2-<node_num>] C +CHANNEL:7
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - SSC MNODE(0,0) reboot
+    - - P MNODE(0,0) C !!!ready!!!
+  - - DELAY 60
+    - - P MNODE(0,0,0) C MESH_EVENT_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1 set esp32 softAP in channel 6
+    2. dut[2-<node_num>] start mesh and connected with dut1
+    3. set dut1's softAP dfferent channel and reboot dut MNODE(0,0), check MNODE(0,0,0) CONNECTED
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: mesh tree channel switch follow router,reboot layer2 check layer3
+  test point 2: channel switch test
+- ID: MESH_EST_0614
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o 2
+    - - P SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] ap -S -s <target_ssid> -p <target_password> -n [6,7] -t <target_auth_enum> -h 1
+    - - P SSC[1-2] C +SAP:OK
+  - - SSC SSC2 op -S -o 1
+    - - P SSC2 C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_cs_duts
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - - MSSC SSC2 op -S -o 2
+    - - P SSC2 C +MODE:OK
+  - - SSC SSC1 op -S -o 1
+    - - P SSC1 C +MODE:OK
+  - - DELAY <delay_time>
+    - - P SSC2 C +SOFTAP:STACONNECTED
+  - - DELAY 20
+    - - ''
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:7
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1,dut2 set esp32 softAP in different channel
+    2. dut[3-<node_num>] start mesh and connected with dut1
+    3. stop dut1's softAP, check dut[3-<node_num>] connected with hide dut2
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  stop router1,mesh network switch to another channel hide router network
+  test point 2: channel switch test
+- ID: MESH_EST_0615
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o 2
+    - - P SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] ap -S -s <target_ssid> -p <target_password> -n [1,6,11] -t <target_auth_enum> -h 1
+    - - P SSC[1-3] C +SAP:OK
+  - - SSC SSC[2-3] op -S -o 1
+    - - P SSC[2-3] C +MODE:OK
+  - - MSSC SSC[4-<node_num>] mesh -I
+    - - P SSC[4-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[4-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[4-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[4-<node_num>] meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n 1 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[4-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[4-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[4-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[4-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[4-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[4-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[4-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[4-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[4-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[4-<node_num>] mesh -T
+    - - P SSC[4-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>-3
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - *mesh_check_tree_num
+  - - MSSC SSC[4-<node_num>] channel -G
+    - - P SSC[4-<node_num>] C +CHANNEL:1
+  - - SSC SSC1 op -S -o 1
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC[2-3] op -S -o 2
+    - - P SSC[2-3] C +MODE:OK
+  - - DELAY 60
+    - - ''
+  - - MSSC SSC[4-<node_num>] mesh -Q -o 2
+    - - P SSC[4-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>) NC ROOT_CONFLICT
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. dut[1-3]set esp32 softAP in channel [1,6,11]
+    2. dut[4-<node_num>] start mesh and connected with dut1
+    3. dut1 set sta mode
+    4. check dut[4-<node_num>] connected with router,and switch to new channel establish mesh network
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary: stop router1,mesh choice switch to another hide channel router establish network
+  test point 2: channel switch test
+- ID: MESH_EST_0616
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[1-3] meshset -T -o 0 -t 1
+    - - P SSC[1-3] C +MESHSET:TYPE,OK
+  - - MSSC SSC[4-<node_num>] meshset -X -o 0 -i 1
+    - - P SSC[4-<node_num>] C +MESHSET:FIX_ROOT,OK
+  - - MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -n 0 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[1-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[1-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[1-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[1-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[1-<node_num>] mesh -Q -o 2
+    - - P SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>)
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. no-router mesh set three roots
+    2. dut[1-<node_num>] start mesh and establish mesh trees
+    3. check mesh trees
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  mesh no router and set three roots, establish trees and check
+  test point 2: channel switch test
+- ID: MESH_EST_0617
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -T -o 0 -t 1
+    - - P SSC[1-2] C +MESHSET:TYPE,OK
+  - - MSSC SSC[3-<node_num>] meshset -X -o 0 -i 1
+    - - P SSC[3-<node_num>] C +MESHSET:FIX_ROOT,OK
+  - - MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -n 0 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[1-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[1-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[1-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[1-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[1-<node_num>] mesh -Q -o 2
+    - - P SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "TREE_TOTAL_NODES:%%s"%%(<tree_node_num>)
+  - - SSC SSC1 reboot
+    - - P SSC1 C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. no-router mesh set two roots
+    2. dut[1-<node_num>] start mesh and establish mesh trees
+    3. reboot dut1,check establish mesh trees
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  mesh no router and set two roots, reboot one root establish tree and check mesh tree
+  test point 2: channel switch test
+- ID: MESH_EST_0618
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[1] meshset -T -o 0 -t 1
+    - - P SSC[1] C +MESHSET:TYPE,OK
+  - - MSSC SSC[2-<node_num>] meshset -X -o 0 -i 1
+    - - P SSC[2-<node_num>] C +MESHSET:FIX_ROOT,OK
+  - - MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -n 6 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[1-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[1-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[1-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[1-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - *mesh_check_tree_num
+  - - SSC SSC1 mesh -T -o 1
+    - - P SSC1 C +MESH:STOP,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n 7 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[1-<node_num>] channel -G
+    - - P SSC[1-<node_num>] C +CHANNEL:7
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. no-router mesh set fix root
+    2. dut[1-<node_num>] start mesh and establish mesh trees
+    3. stop dut1 set another channel then start,check establish mesh trees
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  no router change root to another channel, establish tree and check mesh tree
+  test point 2: channel switch test
+- ID: MESH_EST_0619
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[1] meshset -T -o 0 -t 1
+    - - P SSC[1] C +MESHSET:TYPE,OK
+  - - MSSC SSC[2-<node_num>] meshset -X -o 0 -i 1
+    - - P SSC[2-<node_num>] C +MESHSET:FIX_ROOT,OK
+  - - MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10
+    - - P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -n 6 -h 1 -t
+      <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -L -o 0 -l <max_layer>
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] meshset -W -o 0 -t <duration_ms> -n <cnx_rssi> -l <select_rssi> -i <switch_rssi> -k <backoff_rssi>
+    - - P SSC[1-<node_num>] C +MESHSET:SWITCH,OK
+  - - MSSC SSC[1-<node_num>] meshset -K -o 0 -i <allow_roots>
+    - - P SSC[1-<node_num>] C +MESHSET:ALLOW_ROOTS,OK
+  - - MSSC SSC[1-<node_num>] meshset -J -o 0 -t <assoc_expire>
+    - - P SSC[1-<node_num>] C +MESHSET:ASSOC,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - - DELAY <delay_time>
+    - - ''
+  - *mesh_check_tree_num
+  - - SSC SSC1 mesh -H -n 7 -t 10
+    - - P SSC1 C MESH:SWITCH_CHANNEL,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[1-<node_num>] channel -G
+    - - P SSC[1-<node_num>] C +CHANNEL:7
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. no-router mesh set fix root
+    2. dut[1-<node_num>] start mesh and establish mesh trees
+    3. dut1 call channel switch API to another channel,check establish mesh trees
+  sub module: Establish
+  test environment: SSC_T50_MESH1
+  summary:  no router root call channel switch API, establish tree and check mesh tree
+  test point 2: channel switch test
+- ID: MESH_EST_3001
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -t <max_connect>
+    - - P SSC1 C +MESHSET:CFG,FAIL
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -t <max_connect>
+    - - P SSC1 C +MESHSET:CFG,OK
+  expected result: |-
+    1. fail
+    2. succeed
+  steps: |-
+    1. set config without init
+    2. init and set config
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T1_MESH1
+  summary: mesh config without mesh init
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'Yes'
+- ID: MESH_EST_3002
+  <<: *MESH_CASE
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T1_MESH1
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,FAIL
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,FAIL
+  expected result: |-
+    1. fail
+    2. fail
+  steps: |-
+    1. mesh start without init
+    2. mesh start without set config
+  summary: mesh start without init or config
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'Yes'
+- ID: MESH_EST_3003
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 1 10
+    - - ''
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. mesh init/config
+    2. mesh start twice
+  test environment: SSC_T1_MESH1
+  summary: mesh start again after mesh start
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'Yes'
+  #TODO: if start twice will connected successfully
+- ID: MESH_EST_3003
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <wrong_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config with wrong channel
+    3. mesh start
+    4. check parent not found
+  test environment: SSC_T1_MESH1
+  summary: mesh start with wrong router channel
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'No'
+  #TODO: not work after v3.3
+- ID: MESH_EST_3004
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - R SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -t <max_connect>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 meshset -M -o 0 -t 8 -s <map_password> -l 10
+    - - P SSC1 C +MESHSET:MAP_AUTH,FAIL
+  - - SSC SSC1 meshset -M -o 0 -t 3 -s <map_password> -l 100
+    - - P SSC1 C +MESHSET:MAP_PWD,FAIL
+  - - SSC SSC1 meshset -E -o 0 -i 1 -s <temp_string> -l 100
+    - - P SSC1 C +MESHSET:MIE_KEY,FAIL
+  expected result: |-
+    1. succeed
+    2. fail
+    3. fail
+    3. fail
+  steps: |-
+    1. mesh init/config
+    2. set map_password with auth=8
+    3. set map_password with len>64
+    4. set ie_key with len>64
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T1_MESH1
+  summary: mesh config with parameter value overflow
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'Yes'
+- ID: MESH_EST_3005
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config and switch wifi op_mode to station
+    3. mesh start
+    4. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: (ASSERT) switch to station mode after mesh config
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_3006
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config and switch wifi op_mode to station
+    3. mesh start
+    4. check mesh connected and layer is 1
+  test environment: SSC_T1_MESH1
+  summary: (ASSERT) switch to soft_ap mode after mesh config
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_3007
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <temp_string> -n <router_channel> -t <max_connect>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config with inexistent router
+    3. mesh start
+    4. check mesh no parent found
+  test environment: SSC_T1_MESH1
+  summary: start mesh with inexistent router
+  test point 1: abnormal/special use
+  test point 2: mesh init/config/start test
+  CI ready: 'Yes'
+- ID: MESH_EST_3101
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) sta -S
+    - - P MNODE(0) C +SCANDONE
+  - - DELAY 5
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0) NC MESH_EVENT_SCAN_DONE
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. establish mesh network
+    2. wifi scan and check no MESH_EVENT_SCAN_DONE
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: (ASSERT) wifi scan on root without set self organized
+  test point 1: abnormal/special use
+  test point 2: use wifi api after mesh start
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_3102
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) sta -S
+    - - P MNODE(0,0) C +SCANDONE
+      - P MNODE(0,0) NC MESH_EVENT_SCAN_DONE
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. establish mesh network
+    2. wifi scan and check no MESH_EVENT_SCAN_DONE
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: (ASSERT) wifi scan on layer2 without set self organized
+  test point 1: abnormal/special use
+  test point 2: use wifi api after mesh start
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_3103
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 1
+    - - ''
+  - - SSC SSC1 sta -S
+    - - P SSC1 C +SCANDONE
+      - P SSC1 NC MESH_EVENT_SCAN_DONE
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. establish mesh network
+    2. wifi scan and check no MESH_EVENT_SCAN_DONE
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T1_MESH1
+  summary: (ASSERT) wifi scan during mesh scan without set self organized
+  test point 1: abnormal/special use
+  test point 2: use wifi api after mesh start
+  CI ready: 'No'
+  auto test: 'No'
+- ID: MESH_EST_3104
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC2 mesh -I
+    - - P SSC2 C +MESH:INIT,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - DELAY 5
+    - - P SSC2 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 ap -Q
+    - - R SSC2 A <softap_ssid>:\+APCONFIG:(\w+)
+  - - SSC SSC1 sta -C -s <softap_ssid> -p <map_password>
+    - - P SSC1 C +JAP:DISCONNECTED
+  - - DELAY 10
+    - - P PC_COM C DELAYDONE
+      - P SSC1 NC +JAP:CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut2 start mesh
+    2. dut1 connect to dut2, check disconnected
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: normal station can't connected with mesh root
+  test point 1: abnormal/special use
+  test point 2: use wifi api after mesh start
+  CI ready: 'Yes'
+#TODO: one(some) of the nodes set wrong password, establish----
+- ID: MESH_EST_2001
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 meshset -U -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -b <router_bssid> -n
+      <router_channel> -t 1 -l 1
+    - - P SSC1 C +MESHSET:PARENT,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init/config
+    2. dut1 set parent be router
+    3. start dut1 and check it connected with router
+    4. start dut2 and check it connected with dut1
+  test environment: SSC_T2_MESH1
+  summary: set dut1 parent as router with mesh_id, dut2 without set_parent, check dut2 connected with dut1
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'Yes'
+- ID: MESH_EST_2002
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 meshset -U -o 0 -s <router_ssid> -p <router_password> -b <router_bssid> -n
+      <router_channel> -t 1 -l 1
+    - - P SSC1 C +MESHSET:PARENT,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init/config
+    2. set dut1 parent to router without mesh_id
+    3. start dut1 and check it connected with router
+    4. start dut2 and check it connected with dut1
+  test environment: SSC_T2_MESH1
+  summary: set dut1 parent to router without mesh_id, dut2 without set_parent, check dut2 connected with dut1
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'Yes'
+- ID: MESH_EST_2003
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 meshset -U -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -b <router_bssid> -n
+      <router_channel> -t 1 -l 1
+    - - P SSC1 C +MESHSET:PARENT,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC2 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init/config
+    2. set dut1 parent to router
+    3. start dut2 and check it connected with router
+    4. start dut1 and check it connected with router
+  test environment: SSC_T2_MESH1
+  summary: set dut1 parent to router, start dut1 with amother root already exists
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'Yes'
+- ID: MESH_EST_2004
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 ap -Q
+    - - R SSC1 A <meshap_ssid>:\+APCONFIG:(\w+),
+  - - SSC SSC2 meshset -U -o 0 -m <mesh_id> -s <meshap_ssid> -p <map_password> -n <router_channel> -t 2 -l 2
+    - - P SSC2 C +MESHSET:PARENT,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init/config
+    2. set dut2 parent to dut1
+    3. start dut1 and check it connected with router
+    4. start dut2 and check it connected with dut1
+  test environment: SSC_T2_MESH1
+  summary: set dut2 parent to dut1(root), start dut2 after dut1 connected
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'Yes'
+- ID: MESH_EST_2005
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 ap -Q
+    - - R SSC1 A <meshap_ssid>:\+APCONFIG:(\w+),
+  - - SSC SSC2 meshset -U -o 0 -s <meshap_ssid> -p <map_password> -n <router_channel> -t 2 -l 2
+    - - P SSC2 C +MESHSET:PARENT,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init/config
+    2. set dut2 parent to dut1 without mesh_id
+    3. start dut1 and check it connected with router
+    4. start dut2 and check it connected with dut1
+  test environment: SSC_T2_MESH1
+  summary: set dut2 parent to dut1(root) without mesh_id, start dut2 after dut1 connected
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'Yes'
+- ID: MESH_EST_2006
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] mesh -I
+    - - P SSC[1-3] C +MESH:INIT,OK
+  - - SSC SSC[1-3] meshset -G -o 0 -m [<mesh_id>,<mesh_id>,<mesh_id2>] -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-3] C +MESHSET:CFG,OK
+  - - SSC SSC[1,3] mesh -T
+    - - P SSC[1,3] C +MESH:START,OK
+      - P SSC[1,3] C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  - - SSC SSC3 ap -Q
+    - - R SSC3 A <meshap_ssid>:\+APCONFIG:(\w+),
+  - - SSC SSC2 meshset -U -o 0 -m <mesh_id2> -s <meshap_ssid> -p <map_password> -n <router_channel> -t 2 -l 2
+    - - P SSC2 C +MESHSET:PARENT,OK C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_DISCONNECTED
+      - P SSC3 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  steps: |-
+    1. mesh init/config
+    2. dut1,dut3 start mesh with different mesh id
+    3. dut2 connect to dut1 first
+    4. set dut2's parent to dut3
+    5. check dut2 leave dut1 and join dut3
+  test environment: SSC_T3_MESH1
+  summary: set one node's parent to another mesh network
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'No'
+- ID: MESH_EST_2007
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 op -S -o 2
+    - - P SSC2 C +MODE:OK
+  - - SSC SSC2 ap -S -s <target_ssid> -n <router_channel>
+    - - P SSC2 C +SAP:OK
+  - - SSC SSC1 meshset -U -o 0 -s <target_ssid> -n <router_channel> -t 1 -l 1
+    - - P SSC1 C +MESHSET:PARENT,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+      - P SSC2 C +SOFTAP:STACONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init/config
+    2. dut1 start mesh and establish network
+    3. set dut2 softAP mode
+    4. set dut1's parent to dut2
+  test environment: SSC_T2_MESH1
+  summary: set ont node's parent to another Router after connected
+  test point 1: manual network function
+  test point 2: set parent test
+  CI ready: 'No'
+#- ID: MESH_EST_2008
+#  <<: *MESH_CASE
+#  cmd set:
+#  - ''
+#  - - SSC SSC[1-2] mesh -I
+#    - - P SSC[1-2] C +MESH:INIT,OK
+#  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <temp_string> -n <router_channel> -t <max_connect> -i <ie_encrypt>
+#    - - P SSC[1-2] C +MESHSET:CFG,OK
+#  - - SSC SSC1 meshset -U -o 0 -s <temp_string> -n <router_channel> -t 1 -l 1
+#    - - P SSC1 C +MESHSET:PARENT,OK
+#  - - SSC SSC[1-2] mesh -T
+#    - - P SSC[1-2] C +MESH:START,OK
+#      - P SSC2 C MESH_EVENT_CONNECTED,2
+#      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+#  expected result: |-
+#    1. succeed
+#    2. succeed
+#    3. succeed
+#    4. succeed
+#  steps: |-
+#    1. mesh init/config
+#    2. dut1 set parent to inexist router
+#    3. start mesh
+#    4. check dut2 connected with dut1
+#  test environment: SSC_T2_MESH1
+#  summary: set one node's parent to inexist router and establish network
+#  test point 1: manual network function
+#  test point 2: set parent test
+#  CI ready: 'Yes'
+- ID: MESH_EST_2101
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 0 -t 1
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - SSC SSC1 mesh -Q -o 2
+    - - P SSC1 C IS_ROOT
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init/config dut1 no-router and set type root
+    2. mesh start
+    3. check dut1 is root
+  test environment: SSC_T1_MESH1
+  summary: dut1 set type root, start mesh without router
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2102
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 0 -t 1
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 mesh -Q -o 2
+    - - P SSC1 C IS_ROOT
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init/config dut1 set type root
+    2. mesh start
+    3. check dut1 connected with router and type root
+  test environment: SSC_T1_MESH1
+  summary: dut1 set type root, set router and start mesh
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2103
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 0 -t 1
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC2 meshset -X -o 0 -i 1
+    - - P SSC2 C +MESHSET:FIX_ROOT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init/config all duts no-router, set dut1 root
+    2. mesh start all duts
+    3. check mesh tree established and stably
+  test environment: SSC_T2_MESH1
+  summary: dut1 set type root, dut2 fix root, establish mesh network without router
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2104
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 0 -t 1
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init/config all duts no-router, set dut1 root
+    2. mesh start all duts
+    3. check mesh tree established and stably
+  test environment: SSC_T2_MESH1
+  summary: dut1 set type root without router, dut2 set router without set type, establish mesh network
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'No'
+- ID: MESH_EST_2105
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -t 1
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 2 5
+    - - ''
+  - - SSC SSC1 mesh -I -o 1
+    - - P SSC1 C +MESH:DEINIT,OK
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 1
+    - - P SSC1 C +MESHGET:TYPE,OK,0
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - DELAY 5
+    - - P SSC2 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK C MESH_EVENT_CONNECTED,2
+      - P SSC2 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. start one dut with root leaf
+    2. check mesh type cleared after re-init mesh
+    3. start mesh and let this dut be layer2
+  test environment: SSC_T2_MESH1
+  summary: check mesh root type info cleared after mesh re-init
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2106
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - *mesh_init_all_duts
+  - *mesh_config_all_duts_no_router
+  - *mesh_start_all_duts
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init/config all duts no-router, set dut1 root
+    2. mesh start all duts
+    3. check mesh tree established and stably
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, establish mesh network without router
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2107
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - *mesh_init_all_duts
+  - *mesh_config_all_duts_no_router
+  - *mesh_start_all_duts
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - SSC SSC1 reboot
+    - - P SSC1 C !!!ready!!!
+      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 50
+    - - P SSC[2-<node_num>] C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. establish mesh no-router network
+    2. root reboot
+    3. check others can't connected
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, establish mesh network without router, then root reboot
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'No'
+- ID: MESH_EST_2108
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 0 -t 1
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC2 meshset -X -o 0 -i 1
+    - - P SSC2 C +MESHSET:FIX_ROOT,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-2] meshset -A -n <scan_times> -t <vote_time> -l 15 -i <monitor_ie>
+    - - P SSC[1-2] C +MESHSET:ATTEMPTS,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+  - - SSC SSC1 mesh -I -o 1
+    - - P SSC1 C +MESH:DEINIT,OK
+      - P SSC2 C MESH_EVENT_DISCONNECTED
+  - - DELAY 40
+    - - P SSC2 C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. establish mesh no-router network
+    2. root deinit
+    3. check layer2 no parent found
+  test environment: SSC_T2_MESH1
+  summary: no-router, root deinit and check layer2 no parent found
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'No'
+- ID: MESH_EST_2109
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - *mesh_init_all_duts
+  - *mesh_config_all_duts_no_router
+  - - MSSC SSC[1-<node_num>] meshset -A -n <scan_times> -t <vote_time> -l 15 -i <monitor_ie>
+    - - P SSC[1-<node_num>] C +MESHSET:ATTEMPTS,OK
+  - *mesh_start_all_duts
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - SSC SSC1 mesh -I -o 1
+    - - P SSC1 C +MESH:DEINIT,OK
+      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 60
+    - - P MNODE(0,0) C MESH_EVENT_NO_PARENT_FOUND
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. establish mesh no-router network
+    2. root deinit
+    3. check others can't connected
+  test environment: SSC_T6_MESH1
+  summary: multiple nodes, establish mesh network without router, then root deinit
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'No'
+- ID: MESH_EST_2110
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - *mesh_init_all_duts
+  - *mesh_config_all_duts_no_router
+  - *mesh_start_all_duts
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - FREBOOT SSC1
+    - - P SSC1 C !!!ready!!!
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - *mesh_config_dut1_no_router
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. establish mesh no-router network
+    2. root restart mesh
+    3. check mesh tree re-establish
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, establish mesh network without router, then root restart root and check mesh network re-establish
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2111
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - *mesh_init_all_duts
+  - *mesh_config_all_duts_no_router
+  - *mesh_start_all_duts
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - SSC MNODE(0,0) reboot
+    - - P MNODE(0,0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>-1
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. establish mesh no-router network
+    2. one of the l2 nodes reboot
+    3. check mesh tree re-establish
+  test environment: SSC_T50_MESH1
+  summary: multiple nodes, establish mesh network without router, then reboot one of the l2 nodes
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'No'
+- ID: MESH_EST_2112
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-3] mesh -I
+    - - P SSC[1-3] C +MESH:INIT,OK
+  - - SSC SSC[1-2] meshset -T -o 0 -t 1
+    - - P SSC[1-2] C +MESHSET:TYPE,OK
+  - - SSC SSC3 meshset -X -o 0 -i 1
+    - - P SSC3 C +MESHSET:FIX_ROOT,OK
+  - - SSC SSC[1-3] meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>
+    - - P SSC[1-3] C +MESHSET:CFG,OK
+  - - SSC SSC[2-3] mesh -T
+    - - P SSC[2-3] C +MESH:START,OK
+      - P SSC3 C MESH_EVENT_CONNECTED,2
+  - - SSC SSC2 mesh -I -o 1
+    - - P SSC2 C +MESH:DEINIT,OK
+      - P SSC3 C MESH_EVENT_DISCONNECTED
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+      - P SSC3 C MESH_EVENT_CONNECTED,2
+      - P SSC1 C MESH_EVENT_CHILD_CONNECTED
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. all duts set no-router, dut1 and dut2 is root, dut3 fix root
+    2. start dut2 and dut3 establish network
+    3. deinit dut2 and start dut1, dut3 disconencted with dut2 then connect to dut1
+  test environment: SSC_T3_MESH1
+  summary: set two no-router root, check node switch between two root
+  test point 1: manual network function
+  test point 2: no-router function test
+  CI ready: 'Yes'
+- ID: MESH_EST_2201
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -t 3
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - MSSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - MSSC SSC1 meshset -o 0 -L -l <max_layer>
+    - - P SSC1 C +MESHSET:MLAYER,OK
+  - - MSSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_NO_PARENT_FOUND
+  - - SSC SSC1 op -Q
+    - - P SSC1 C +CURMODE:1
+  - - LOOP 3 2 "[0,1,2]" "[0,1,2]"
+    - ''
+  - - SSC SSC1 sleep -S -t {%d}
+    - - P SSC1 C +SLEEP_MODE:OK
+  - - SSC SSC1 sleep -Q
+    - - P SSC1 C +CURMODE:{%d}
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. start one dut with mesh type leaf
+    2. check not connect to Router
+    3. check station mode
+    4. check nonsleep/light/modem sleep mode setable
+  test environment: SSC_T1_MESH1
+  summary: start dut1 as leaf, check disconnected, station mode, and sleep mode setable
+  test point 1: manual network function
+  test point 2: standalone station test
+  CI ready: 'Yes'
+- ID: MESH_EST_2202
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -t 3
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] meshset -o 0 -L -l <max_layer>
+    - - P SSC[1-2] C +MESHSET:MLAYER,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 15
+    - - ''
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - DELAY 5
+    - - P SSC2 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+      - P SSC1 C MESH_EVENT_CONNECTED,2
+  - - SSC SSC1 op -Q
+    - - P SSC1 C +CURMODE:1
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. first start one dut with mesh type leaf
+    2. then start the normal node
+    3. check if networking established
+    4. check wifo op mode station
+  test environment: SSC_T2_MESH1
+  summary: dut1 start mesh with type leaf, dut2 normal node, establish network
+  test point 1: manual network function
+  test point 2: standalone station test
+  CI ready: 'Yes'
+- ID: MESH_EST_2203
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -t 3
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 3 10
+    - - ''
+  - - SSC SSC1 mesh -I -o 1
+    - - P SSC1 C +MESH:DEINIT,OK
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 1
+    - - P SSC1 C +MESHGET:TYPE,OK,0
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 5
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. start one dut with type leaf
+    2. check mesh type cleared after re-init mesh
+    3. start mesh and connected with Router
+  test environment: SSC_T1_MESH1
+  summary: check mesh leaf type info cleared after mesh re-init
+  test point 1: manual network function
+  test point 2: standalone station test
+  CI ready: 'Yes'
+- ID: MESH_EST_2204
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-5] meshset -T -t 3
+    - - P SSC[1-5] C +MESHSET:TYPE,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] meshset -o 0 -L -l <max_layer>
+    - - P SSC[1-<node_num>] C +MESHSET:MLAYER,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - MSSC SSC[1-5] meshset -T -o 1
+    - - P SSC[1-5] C +MESHGET:TYPE,OK,3
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. several duts set type leaf
+    2. all duts start mesh together
+    3. check if networking established
+    4. check leaf type nodes
+  test environment: SSC_T50_MESH1
+  summary: several duts set type leaf, all duts start mesh together
+  test point 1: manual network function
+  test point 2: standalone station test
+  CI ready: 'No'
+- ID: MESH_EST_2301
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshset -D -m <mesh_id2>
+    - - P MNODE(0,0) C MESHSET:MESH_ID,OK
+      - P MNODE(0,0) C MESH_EVENT_DISCONNECTED
+  - - DELAY 10
+    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. dynamic set mesh id
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh id, check disconnected with parent
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+  #TODO: v3.1 will not run dynamic cases on CI
+- ID: MESH_EST_2302
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshset -D -m <mesh_id2>
+    - - P MNODE(0) C MESHSET:MESH_ID,OK
+      - P MNODE(0) C MESH_EVENT_CHILD_DISCONNECTED
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root dynamic set mesh id
+  initial condition: MESH_INIT1
+  test environment: SSC_T2_MESH1
+  summary: root dynamic set mesh id, check child leave
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2303
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshset -D -m <mesh_id2>
+    - - P MNODE(0,0) C MESHSET:MESH_ID,OK
+      - P MNODE(0,0) C MESH_EVENT_CHILD_DISCONNECTED C MESH_EVENT_DISCONNECTED
+  - - DELAY 15
+    - - ''
+  - - SSC MNODE(0,0) mesh -Q -o 2
+    - - P MNODE(0,0) C IS_ROOT
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. layer2 dynamic set mesh id
+  initial condition: MESH_INIT1
+  test environment: SSC_T6_MESH1
+  summary: layer2 dynamic set mesh id, check disconnected and child leave
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2304
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -i 0
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - SSC MNODE(0,0) meshset -D -m <mesh_id2>
+    - - P MNODE(0,0) C MESHSET:MESH_ID,OK
+      - P MNODE(0,0) C MESH_EVENT_CHILD_DISCONNECTED C MESH_EVENT_DISCONNECTED
+  - - DELAY 10
+    - - P MNODE(0,0) C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root dynamic set mesh id
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T6_MESH1
+  summary: layer2 dynamic set mesh id  without ie_encrypt, check disconnected and child leave
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2305
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - MSSC SSC[1-2] meshset -G -o 0 -m [<mesh_id>,<mesh_id2>] -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - MSSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - MSSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - SSC SSC1 meshset -D -m <mesh_id2>
+    - - P SSC1 C MESHSET:MESH_ID,OK
+      - P SSC1 C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. layer2 dynamic set mesh id
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh id on disconnected node, check connected
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2306
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - MSSC SSC[1-2] meshset -G -o 0 -m [<mesh_id>,<mesh_id2>] -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - MSSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 meshset -D -m <mesh_id2>
+    - - P SSC1 C MESHSET:MESH_ID,OK
+  - - MSSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. layer2 dynamic set mesh id
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh id on root, check new node join
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2307
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - MSSC SSC[1-2] meshset -G -o 0 -m [<mesh_id>,<mesh_id2>] -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC[1-2] C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC1 meshset -D -m <mesh_id2>
+    - - P SSC1 C MESHSET:MESH_ID,OK
+    - - P SSC1 C MESH_EVENT_DISCONNECTED
+  - - DELAY 5
+      - P SSC1 C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. set 2 duts with different mesh_id, both root
+    2. dynamic set mesh id on dut1
+    3. dut1 disconnected with router and join the other network
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh id on root, check disconnected and join new network
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2308
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i 0
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - SSC MNODE(0,0) meshset -E -i 1 -e <map_password> -l 10
+    - - P MNODE(0,0) C MESHSET:MIE_FUNC,OK C MESHSET:MIE_KEY,OK
+      - P MNODE(0,0) C MESH_EVENT_CHILD_DISCONNECTED C MESH_EVENT_DISCONNECTED
+  - - DELAY 15
+    - - ''
+  - - SSC MNODE(0,0) mesh -Q -o 2
+    - - P MNODE(0,0) C IS_ROOT
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. all duts establish mesh neetwork with ie_encrypt = 0
+    2. layer 2 dynamic set mesh ie encrypt
+    3. check layer2 disconnected with parent and then become root
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T6_MESH1
+  summary: dynamic set mesh ie encrypt, check disconnected and child leave
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'No'
+- ID: MESH_EST_2309
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - MSSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i 1
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - MSSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+    - - R PC_COM L OK
+  - *mesh_check_tree_num
+  - *mesh_tree_stably
+  - - SSC MNODE(0,0) meshset -E -i 1 -e <temp_string> -l 10
+    - - P MNODE(0,0) C MESHSET:MIE_FUNC,OK C MESHSET:MIE_KEY,OK
+      - P MNODE(0,0) C MESH_EVENT_CHILD_DISCONNECTED C MESH_EVENT_DISCONNECTED
+  - - DELAY 15
+    - - ''
+  - - SSC MNODE(0,0) mesh -Q -o 2
+    - - P MNODE(0,0) C IS_ROOT
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. all duts establish mesh neetwork with ie_encrypt = 1
+    2. layer 2 dynamic set mesh ie encrypt key
+    3. check layer2 disconnected with parent and then become root
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T6_MESH1
+  summary: dynamic set mesh ie key, check disconnected and child leave
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2310
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - MSSC SSC[1-2] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i [0,1]
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - SSC SSC2 meshset -E -i 0 -e <map_password> -l 10
+    - - P SSC2 C MESHSET:MIE_FUNC,OK C MESHSET:MIE_KEY,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. dut1 set ie_encrypt=0 and dut2 set ie encrypt=1
+    2. start dut1 to be root first
+    3. start dut2 and dynamic set mesh ie encrypt=0
+    4. check dut2 connected with dut1
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh ie encrypt to 0, check connected
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2311
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - MSSC SSC[1-2] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i [1,0]
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - SSC SSC2 meshset -E -i 1 -e <map_password> -l 10
+    - - P SSC2 C MESHSET:MIE_FUNC,OK C MESHSET:MIE_KEY,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. dut1 set ie_encrypt=1 and dut2 set ie encrypt=0
+    2. start dut1 to be root first
+    3. start dut2 and dynamic set mesh ie encrypt=1
+    4. check dut2 connected with dut1
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh ie encrypt to 1, check connected
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2312
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - MSSC SSC[1-2] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i 0
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] meshset -E -i 1 -e [<map_password>,<temp_string>] -l 10
+    - - P SSC[1-2] C MESHSET:MIE_FUNC,OK C MESHSET:MIE_KEY,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 10
+    - - P SSC1 C MESH_EVENT_CONNECTED,1 C MESH_EVENT_ROOT_GOT_IP
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+  - - SSC SSC2 meshset -E -i 1 -e <map_password> -l 10
+    - - P SSC2 C MESHSET:MIE_FUNC,OK C MESHSET:MIE_KEY,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,2
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. 2 duts config mesh with different ie_encrypt key
+    2. dut2 dynamic set mesh ie encrypt key after start
+    3. check dut2 connected with dut1
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: dynamic set mesh ie key, check connected
+  test point 1: manual network function
+  test point 2: dynamic set configuration
+  CI ready: 'Yes'
+- ID: MESH_EST_2401
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 mesh -I
+    - - P SSC1 C +MESH:INIT,OK
+  - - SSC SSC1 meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC1 C +MESHSET:CFG,OK
+  - - SSC SSC1 mesh -T
+    - - P SSC1 C +MESH:START,OK
+  - - DELAY 1 2
+    - - ''
+  - - SSC SSC1 meshset -O -o 0 -n 0 -t 0
+    - - P SSC1 C +MESHSET:SELF_ORG,OK
+  - - SSC SSC1 sta -S -T
+    - - P SSC1 C MESH_EVENT_SCAN_DONE
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. dut1 start mesh then set self_organized(0,0)
+    2. wifi scan
+    2. check MESH_EVENT_SCAN_DONE on dut1
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T1_MESH1
+  summary: set self_organized (0,0) and user scan after mesh start
+  test point 1: manual network function
+  test point 2: self_organized
+  CI ready: 'Yes'
+- ID: MESH_EST_2402
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n <router_channel> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 mesh -I
+    - - P SSC2 C +MESH:INIT,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n
+      <router_channel> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1
+  - - SSC SSC1 reboot
+    - - P SSC1 C !!!ready!!!
+      - P SSC2 C MESH_EVENT_DISCONNECTE
+  - - SSC SSC2 meshset -O -o 0 -n 0 -t 0
+    - - P SSC2 C +MESHSET:SELF_ORG,OK
+  - - DELAY 1
+    - - P SSC2 C MESH_EVENT_STOP_RECONNECTION
+  - - SSC SSC2 sta -S -T
+    - - P SSC2 C MESH_EVENT_SCAN_DONE
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. dut1 set AP, dut2 start mesh and connected with dut1
+    2. reboot dut1, dut2 disconnected with dut1
+    3. set self_organized(0,0) and then use scan (stop scan first)
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: set self_organized (0,0) when root connecting to router
+  test point 1: manual network function
+  test point 2: self_organized
+  CI ready: 'Yes'
+  # TODO: discussion
+- ID: MESH_EST_2403
+  <<: *MESH_CASE
+  cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - P SSC1 C +MODE:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -n <router_channel> -t <target_auth_enum>
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 mesh -I
+    - - P SSC2 C +MESH:INIT,OK
+  - - SSC SSC2 meshset -G -o 0 -m <mesh_id> -s <target_ssid> -p <target_password> -n
+      <router_channel> -t <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC2 C +MESHSET:CFG,OK
+  - - SSC SSC2 mesh -T
+    - - P SSC2 C +MESH:START,OK
+      - P SSC2 C MESH_EVENT_CONNECTED,1
+  - - SSC SSC1 reboot
+    - - P SSC1 C !!!ready!!!
+      - P SSC2 C MESH_EVENT_DISCONNECTE
+  - - SSC SSC1 meshset -O -o 0 -n 1 -t 1
+    - - P SSC1 C +MESHSET:SELF_ORG,OK
+  - - SSC SSC1 meshset -T -o 1
+    - - P SSC1 C MESHGET:TYPE,OK,0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. dut1 set AP, dut2 start mesh and connected with dut1
+    2. reboot dut1, dut2 disconnected with dut1
+    3. set self_organized(1,1) and check dut2 IDLE
+  initial condition: MESH_DEINIT_STA
+  test environment: SSC_T2_MESH1
+  summary: set self_organized (1,1) to give up root state
+  test point 1: manual network function
+  test point 2: self_organized
+  CI ready: 'Yes'
+- ID: MESH_EST_6001
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent on mesh network establish
+  steps: |-
+    1. enable all nodes establish network
+  summary: performance test, start all nodes to establish network
+  test point 1: performance
   test point 2: mesh network establish
-  version: v1 (2017-7-20)
-- CI ready: 'No'
-  ID: MESH_EST_0404
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6002
+  <<: *MESH_CASE
+  category: Performance
   cmd set:
-  - ''
-  - - SSC MNODE(0) reboot
-    - - P MNODE(0) C !!!ready!!!
-  - - DELAY 2
-    - - ''
-  - - SSC MNODE(0) mesh -I
-    - - P MNODE(0) C +MESH:INITED
-  - - SSC MNODE(0) mesh -A -o 9 -t <auth_mode> -s <map_password>
-    - - P MNODE(0) C +MESH_SET_AP_AUTH_MODE:OK C +MESH_SET_AP_AUTH_PWD:OK
-  - - SSC MNODE(0) mesh -P -g <mesh_id> -s <ap_ssid> -p <ap_password> -n
-      <ap_channel> -m <max_connect> -y <max_layer>
-    - - P MNODE(0) C +MESH:CONFIG,OK
-  - - SSC MNODE(0) mesh -T
-    - - P MNODE(0) C +MESH:START
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
-  execution time: 0.0
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'ie_encrypt = False'
+    - ['']
+  execution time: 2.0
   expected result: |-
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. succeed
-  initial condition: ENABLED_2
-  level: Integration
-  module: Mesh
+    1. check the time spent on mesh network establish
   steps: |-
-    1. mesh init
-    2. mesh config
-    3. mesh start
-    4. save value
-    5. all nodes reboot
-  sub module: Network Establish
-  summary: after network is establish, disable root,wait some time, start the root node again
-  test environment: SSC_T50_1
-  test point 1: basic function
-  test point 2: mesh network re-establish
-  version: v1 (2017-7-20)
-- CI ready: 'No'
-  ID: MESH_EST_0405
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+    1. enable all nodes establish network without mesh ie encrypted
+  summary: performance test, start all nodes to establish network without mesh ie encrypted
+  test point 1: performance
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6003
+  <<: *MESH_CASE
+  category: Performance
   cmd set:
-  - ''
-  - - SSC MNODE(0) reboot
-    - - P MNODE(0) C !!!ready!!!
-  - - DELAY <delay_time>
-    - - ''
-  - - SSC SSC[1-<node_num>] mesh -Q -o 2
-    - - R SSC[1-<node_num>] T <node_num>
-  - - MESHTREE
-    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num-1>)
-  execution time: 0.0
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'map_encrypt = False'
+    - ['']
+  execution time: 2.0
   expected result: |-
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. succeed
-  initial condition: ENABLED_2
-  level: Integration
-  module: Mesh
+    1. check the time spent on mesh network establish
   steps: |-
-    1. mesh init
-    2. mesh config
-    3. mesh start
-    4. save value
-    5. all nodes reboot
-  sub module: Network Establish
-  summary: after network is establish, disable root, check mesh network
-  test environment: SSC_T50_1
-  test point 1: basic function
+    1. enable all nodes establish network without mesh ap encrypted
+  summary: performance test, start all nodes to establish network without mesh ap encrypted
+  test point 1: performance
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6004
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'map_encrypt = False'
+    - ['']
+  - - 'ie_encrypt = False'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent on mesh network establish
+  steps: |-
+    1. enable all nodes establish network without map/mie encrypted
+  summary: performance test, start all nodes to establish network without map/mie encrypted
+  test point 1: performance
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6005
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'default_switch_rssi = True'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent on mesh network establish
+  steps: |-
+    1. enable all nodes establish network without default switch rssi
+  summary: performance test, start all nodes to establish network with default switch rssi
+  test point 1: performance
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6101
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = ["MNODE(0)"]'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, destroy root after network established
+  test point 1: performance
   test point 2: mesh network re-establish
-  version: v1 (2017-7-20)
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6102
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = ["MNODE(l2)"]'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, destroy L2 nodes after network established
+  test point 1: performance
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6103
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = ["MNODE(l1-l2)"]'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, destroy root and L2 nodes after network established
+  test point 1: performance
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6104
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, destroy random 10 nodes after network established
+  test point 1: performance
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6105
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "MNODE(0)"'
+    - ['']
+  - - 'restart_mesh = True'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, root restart mesh after network established
+  test point 1: performance
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6106
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "MNODE(0)"'
+    - ['']
+  - - 'destroy_mode = "power"'
+    - ['']
+  - - 'restart_mesh = True'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, power reset root and restart mesh after network established
+  test point 1: performance
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_6107
+  <<: *MESH_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  - - 'destroy_mode = "power"'
+    - ['']
+  - - 'restart_mesh = True'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: performance test, power reset random nodes and restart mesh after network established
+  test point 1: performance
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+
+- ID: MESH_EST_5001
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'start_number_list = [1,0]'
+    - ['']
+  - - 'start_interval_sec = 15'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent on mesh network establish
+  steps: |-
+    1. enable all nodes establish network without map/mie encrypted
+  summary: stress test, start one nodes to be root first, then start all others
+  test point 1: stress
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5002
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'start_number_list = [1,0]'
+    - ['']
+  - - 'start_interval_sec = random.uniform(1,10)'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+  steps: |-
+    1. enable all nodes establish
+  summary: stress test, start one nodes first, then start others
+  test point 1: stress
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5002
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'allow_roots = False'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+  steps: |-
+    1. enable all nodes establish
+  summary: stress test, start all nodes with allow_roots false
+  test point 1: stress
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5003
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'start_number_list = [1,1,1,1,1,1,1,1,1,1,0]'
+    - ['']
+  - - 'start_interval_sec = random.uniform(1,5)'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+  steps: |-
+    1. enable all nodes establish network
+  summary: stress test, start 10 nodes one by one, then start others
+  test point 1: stress
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5004
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'start_number_list = [1,2,3,4,8,0]'
+    - ['']
+  - - 'start_interval_sec = random.uniform(1,5)'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent on mesh network establish
+  steps: |-
+    1. enable all nodes establish network
+  summary: stress test, start [1,2,3,4,8] nodes with interval , then start others
+  test point 1: stress
+  test point 2: mesh network establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5101
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "MNODE(0)"'
+    - ['']
+  - - 'establish_fail_time = 1200'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: stress test, destroy root after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5102
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "MNODE(0)"'
+    - ['']
+  - - 'establish_fail_time = 1200'
+    - ['']
+  - - 'destroy_mode = "power"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: stress test, power reset root after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5103
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "MNODE(0)"'
+    - ['']
+  - - 'establish_fail_time = 1200'
+    - ['']
+  - - 'destroy_mode = "power"'
+    - ['']
+  - - 'restart_mesh = True'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy root after network established
+  summary: stress test, power reset root and restart mesh after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5103
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. destroy random 10 nodes after network established
+  summary: stress test, destroy random 10 nodes after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5104
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  - - 'destroy_mode = "power"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. power reset 10 nodes after network established
+  summary: stress test, power reset 10 nodes after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5105
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshEstablishTime
+  - *est_performance_cmd_set
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  - - 'destroy_mode = "power"'
+    - ['']
+  - - 'restart_mesh = True'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_DEINIT_STA
+  steps: |-
+    1. enable all nodes establish network
+    2. power reset random 10 nodes and restart after network established
+  summary: stress test, power reset random 10 nodes and restart after network established
+  test point 1: stress
+  test point 2: mesh network re-establish
+  test environment: SSC_T50_MESH1
+- ID: MESH_EST_5106
+  <<: *MESH_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshNetworkDestroy
+  - - 'destroy_nodes = "RANDOM(10)"'
+    - ['']
+  execution time: 2.0
+  expected result: |-
+    1. check the time spent
+    1. check the time spent
+  initial condition: MESH_INIT_SWITCH
+  steps: |-
+    1. enable all nodes establish network
+    2. reboot random 10 nodes after network established
+  summary: multiple router, reboot random 10 nodes after network established
+  test point 1: stress
+  test point 2: channel switch test
+  test environment: SSC_T50_MESH1
