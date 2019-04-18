@@ -1790,7 +1790,49 @@ IT_011_01:
   <<: *test_template
   tags:
     - ESP32_IDF
-    - SSC_T50_1
+    - SSC_T1_MESH1
+
+IT_011_02:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_MESH1
+
+IT_011_03:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T2_MESH1
+
+IT_011_04:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T3_MESH1
+
+IT_011_05:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T6_MESH1
+
+IT_011_06:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T12_MESH1
+
+IT_011_07:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T50_MESH1
+
+IT_011_08:
+  <<: *test_template
+  tags:
+    - ESP32_IDF
+    - SSC_T1_MESH2
 
 IT_012_01:
   <<: *test_template
