@@ -26,6 +26,7 @@
 #include "soc/rmt_struct.h"
 #include "driver/periph_ctrl.h"
 #include "driver/rmt.h"
+#include "soc/soc_memory_layout.h"
 
 #include <sys/lock.h>
 
@@ -947,7 +948,7 @@ esp_err_t rmt_get_channel_status(rmt_channel_status_result_t *channel_status)
             if( p_rmt_obj[i]->tx_sem != NULL ) {
                 if( xSemaphoreTake(p_rmt_obj[i]->tx_sem, (TickType_t)0) == pdTRUE ) {
                     channel_status->status[i] = RMT_CHANNEL_IDLE;
-                    xSemaphoreGive(p_rmt_obj[i]->tx_sem); 
+                    xSemaphoreGive(p_rmt_obj[i]->tx_sem);
                 } else {
                     channel_status->status[i] = RMT_CHANNEL_BUSY;
                 }

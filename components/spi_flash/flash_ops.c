@@ -25,6 +25,7 @@
 #include <esp32/rom/cache.h>
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
+#include <soc/soc_memory_layout.h>
 #include "sdkconfig.h"
 #include "esp_ipc.h"
 #include "esp_attr.h"

@@ -33,6 +33,7 @@
 #include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc_wdt.h"
+#include "soc/soc_memory_layout.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"

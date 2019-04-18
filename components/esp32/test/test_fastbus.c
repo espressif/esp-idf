@@ -12,6 +12,7 @@
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/io_mux_reg.h"
+#include "driver/gpio.h"
 
 
 /*

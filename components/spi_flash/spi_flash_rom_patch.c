@@ -16,6 +16,8 @@
 #include "esp32/rom/gpio.h"
 #include "esp32/rom/spi_flash.h"
 #include "sdkconfig.h"
+#include "soc/spi_reg.h"
+
 
 #define SPI_IDX   1
 #define OTH_IDX   0

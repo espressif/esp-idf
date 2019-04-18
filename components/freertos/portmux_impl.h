@@ -34,18 +34,19 @@
    It should be #included by freertos port.c or tasks.c, in esp-idf.
 
    The way it works is that it essentially uses portmux_impl.inc.h as a
-   generator template of sorts. When no external memory is used, this 
+   generator template of sorts. When no external memory is used, this
    template is only used to generate the vPortCPUAcquireMutexIntsDisabledInternal
    and vPortCPUReleaseMutexIntsDisabledInternal functions, which use S32C1 to
    do an atomic compare & swap. When external memory is used the functions
    vPortCPUAcquireMutexIntsDisabledExtram and vPortCPUReleaseMutexIntsDisabledExtram
    are also generated, which use uxPortCompareSetExtram to fake the S32C1 instruction.
-   The wrapper functions vPortCPUAcquireMutexIntsDisabled and 
+   The wrapper functions vPortCPUAcquireMutexIntsDisabled and
    vPortCPUReleaseMutexIntsDisabled will then use the appropriate function to do the
    actual lock/unlock.
 */
 #include "soc/cpu.h"
 #include "portable.h"
+#include "soc/soc_memory_layout.h"
 
 /* XOR one core ID with this value to get the other core ID */
 #define CORE_ID_XOR_SWAP (CORE_ID_PRO ^ CORE_ID_APP)

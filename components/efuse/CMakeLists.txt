@@ -13,7 +13,7 @@ list(APPEND COMPONENT_SRCS "src/esp_efuse_api.c"
                            "src/esp_efuse_utility.c")
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES bootloader_support)
+set(COMPONENT_PRIV_REQUIRES bootloader_support soc)
 register_component()
 
 set(GEN_EFUSE_TABLE_ARG --max_blk_len ${CONFIG_EFUSE_MAX_BLK_LEN})

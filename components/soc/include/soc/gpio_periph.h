@@ -17,6 +17,10 @@
 #include "stdint.h"
 #include "soc/gpio_pins.h"
 #include "soc/io_mux_reg.h"
+#include "soc/gpio_struct.h"
+#include "soc/gpio_reg.h"
+#include "soc/gpio_sig_map.h"
+
 #ifdef __cplusplus
 extern "C"
 {

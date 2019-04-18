@@ -18,6 +18,7 @@ else()
     set(COMPONENT_ADD_INCLUDEDIRS "include")
     set(COMPONENT_PRIV_INCLUDEDIRS)
     set(COMPONENT_REQUIRES)
+    set(COMPONENT_PRIV_REQUIRES soc)
 
     register_component()
 

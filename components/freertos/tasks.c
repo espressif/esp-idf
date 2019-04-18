@@ -86,6 +86,7 @@ task.h is included from an application file. */
 #include "timers.h"
 #include "StackMacros.h"
 #include "portmacro.h"
+#include "portmacro_priv.h"
 #include "semphr.h"
 
 /* Lint e961 and e750 are suppressed as a MISRA exception justified because the

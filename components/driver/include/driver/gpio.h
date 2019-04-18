@@ -16,15 +16,17 @@
 #define _DRIVER_GPIO_H_
 #include "esp_err.h"
 #include <esp_types.h>
-#include "soc/gpio_reg.h"
-#include "soc/gpio_struct.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
+#include <esp_bit_defs.h>
 #include "esp32/rom/gpio.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/gpio_periph.h"
+
+#include "sdkconfig.h"
+
+#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
+#include "soc/rtc_io_reg.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -566,7 +568,7 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num);
   * the default level if this function is called. If you dont't want the level changes, the gpio should be configured to
   * a known state before this function is called.
   *  e.g.
-  *     If you hold gpio18 high during Deep-sleep, after the chip is woken up and `gpio_hold_dis` is called, 
+  *     If you hold gpio18 high during Deep-sleep, after the chip is woken up and `gpio_hold_dis` is called,
   *     gpio18 will output low level(because gpio18 is input mode by default). If you don't want this behavior,
   *     you should configure gpio18 as output mode and set it to hight level before calling `gpio_hold_dis`.
   *
