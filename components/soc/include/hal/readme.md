@@ -20,4 +20,6 @@ This layer should depend on the operating system as little as possible. It's a w
 layer can combine basic steps into different working ways (polling, non-polling, interrupt, etc.). Without using
 queues/locks/delay/loop/etc., this layer can be easily port to other os or simulation systems.
 
+To get better performance and better porting ability, ``context``s are used to hold sustainable data and pass the parameters.
+
 To develop your own driver, it is suggested to copy the HAL layer to your own code and keep them until manual update.

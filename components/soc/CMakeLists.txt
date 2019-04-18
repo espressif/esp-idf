@@ -9,7 +9,14 @@ if(EXISTS "${COMPONENT_DIR}/${soc_name}")
 endif()
 
 list(APPEND COMPONENT_ADD_INCLUDEDIRS include)
-list(APPEND COMPONENT_SRCS "src/memory_layout_utils.c src/lldesc.c src/hal/spi_hal.c src/hal/spi_hal_iram.c src/soc_include_legacy_warn.c")
+list(APPEND COMPONENT_SRCS "src/memory_layout_utils.c"
+        "src/lldesc.c"
+        "src/hal/spi_hal.c"
+        "src/hal/spi_hal_iram.c"
+        "src/hal/spi_slave_hal.c"
+        "src/hal/spi_slave_hal_iram.c"
+        "src/soc_include_legacy_warn.c"
+    )
 
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 
