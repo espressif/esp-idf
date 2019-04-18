@@ -186,7 +186,7 @@ void BTU_StartUp(void)
         goto error_exit;
     }
 
-    if (btu_task_post(SIG_BTU_START_UP, NULL, OSI_THREAD_BLOCKING) == false) {
+    if (btu_task_post(SIG_BTU_START_UP, NULL, OSI_THREAD_MAX_TIMEOUT) == false) {
         goto error_exit;
     }
 

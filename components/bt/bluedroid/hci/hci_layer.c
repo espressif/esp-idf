@@ -135,9 +135,9 @@ void hci_shut_down(void)
 }
 
 
-bool hci_host_task_post(osi_thread_blocking_t blocking)
+bool hci_host_task_post(uint32_t timeout)
 {
-    return osi_thread_post(hci_host_thread, hci_host_thread_handler, NULL, 0, blocking);
+    return osi_thread_post(hci_host_thread, hci_host_thread_handler, NULL, 0, timeout);
 }
 
 static int hci_layer_init_env(void)
@@ -252,8 +252,8 @@ static void transmit_command(
     HCI_TRACE_DEBUG("HCI Enqueue Comamnd opcode=0x%x\n", wait_entry->opcode);
     BTTRC_DUMP_BUFFER(NULL, command->data + command->offset, command->len);
 
-    fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    hci_host_task_post(OSI_THREAD_BLOCKING);
+    fixed_queue_enqueue(hci_host_env.command_queue, wait_entry, FIXED_QUEUE_MAX_TIMEOUT);
+    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
 
 }
 
@@ -273,8 +273,8 @@ static future_t *transmit_command_futured(BT_HDR *command)
     // in case the upper layer didn't already
     command->event = MSG_STACK_TO_HC_HCI_CMD;
 
-    fixed_queue_enqueue(hci_host_env.command_queue, wait_entry);
-    hci_host_task_post(OSI_THREAD_BLOCKING);
+    fixed_queue_enqueue(hci_host_env.command_queue, wait_entry, FIXED_QUEUE_MAX_TIMEOUT);
+    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
     return future;
 }
 
@@ -284,10 +284,10 @@ static void transmit_downward(uint16_t type, void *data)
         transmit_command((BT_HDR *)data, NULL, NULL, NULL);
         HCI_TRACE_WARNING("%s legacy transmit of command. Use transmit_command instead.\n", __func__);
     } else {
-        fixed_queue_enqueue(hci_host_env.packet_queue, data);
+        fixed_queue_enqueue(hci_host_env.packet_queue, data, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
-    hci_host_task_post(OSI_THREAD_BLOCKING);
+    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
 
@@ -297,7 +297,7 @@ static void event_command_ready(fixed_queue_t *queue)
     waiting_command_t *wait_entry = NULL;
     command_waiting_response_t *cmd_wait_q = &hci_host_env.cmd_waiting_q;
 
-    wait_entry = fixed_queue_dequeue(queue);
+    wait_entry = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
 
     if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE 
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
@@ -323,7 +323,7 @@ static void event_command_ready(fixed_queue_t *queue)
 
 static void event_packet_ready(fixed_queue_t *queue)
 {
-    BT_HDR *packet = (BT_HDR *)fixed_queue_dequeue(queue);
+    BT_HDR *packet = (BT_HDR *)fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
     // The queue may be the command queue or the packet queue, we don't care
 
     packet_fragmenter->fragment_and_dispatch(packet);
@@ -461,7 +461,7 @@ intercepted:
     /*Tell HCI Host Task to continue TX Pending commands*/
     if (hci_host_env.command_credits &&
             !fixed_queue_is_empty(hci_host_env.command_queue)) {
-        hci_host_task_post(OSI_THREAD_BLOCKING);
+        hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
     }
 
     if (wait_entry) {
@@ -489,7 +489,7 @@ static void dispatch_reassembled(BT_HDR *packet)
 {
     // Events should already have been dispatched before this point
     //Tell Up-layer received packet.
-    if (btu_task_post(SIG_BTU_HCI_MSG, packet, OSI_THREAD_BLOCKING) == false) {
+    if (btu_task_post(SIG_BTU_HCI_MSG, packet, OSI_THREAD_MAX_TIMEOUT) == false) {
         osi_free(packet);
     }
 }

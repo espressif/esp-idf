@@ -2221,7 +2221,7 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
 
     /* If needed, flush buffers in the CCB xmit hold queue */
     while ( (num_to_flush != 0) && (!fixed_queue_is_empty(p_ccb->xmit_hold_q))) {
-        BT_HDR *p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+        BT_HDR *p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
         if (p_buf) {
             osi_free (p_buf);
         }

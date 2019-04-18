@@ -2364,7 +2364,7 @@ void btm_acl_resubmit_page (void)
     BD_ADDR bda;
     BTM_TRACE_DEBUG ("btm_acl_resubmit_page\n");
     /* If there were other page request schedule can start the next one */
-    if ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(btm_cb.page_queue)) != NULL) {
+    if ((p_buf = (BT_HDR *)fixed_queue_dequeue(btm_cb.page_queue, 0)) != NULL) {
         /* skip 3 (2 bytes opcode and 1 byte len) to get to the bd_addr
          * for both create_conn and rmt_name */
         pp = (UINT8 *)(p_buf + 1) + p_buf->offset + 3;
@@ -2395,7 +2395,7 @@ void  btm_acl_reset_paging (void)
     BT_HDR *p;
     BTM_TRACE_DEBUG ("btm_acl_reset_paging\n");
     /* If we sent reset we are definitely not paging any more */
-    while ((p = (BT_HDR *)fixed_queue_try_dequeue(btm_cb.page_queue)) != NULL) {
+    while ((p = (BT_HDR *)fixed_queue_dequeue(btm_cb.page_queue, 0)) != NULL) {
         osi_free (p);
     }
 
@@ -2419,7 +2419,7 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
                      (bda[0] << 16) + (bda[1] << 8) + bda[2], (bda[3] << 16) + (bda[4] << 8) + bda[5]);
     if (btm_cb.discing) {
         btm_cb.paging = TRUE;
-        fixed_queue_enqueue(btm_cb.page_queue, p);
+        fixed_queue_enqueue(btm_cb.page_queue, p, FIXED_QUEUE_MAX_TIMEOUT);
     } else {
         if (!BTM_ACL_IS_CONNECTED (bda)) {
             BTM_TRACE_DEBUG ("connecting_bda: %06x%06x\n",
@@ -2429,7 +2429,7 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR bda)
                              btm_cb.connecting_bda[5]);
             if (btm_cb.paging &&
                     memcmp (bda, btm_cb.connecting_bda, BD_ADDR_LEN) != 0) {
-                fixed_queue_enqueue(btm_cb.page_queue, p);
+                fixed_queue_enqueue(btm_cb.page_queue, p, FIXED_QUEUE_MAX_TIMEOUT);
             } else {
                 p_dev_rec = btm_find_or_alloc_dev (bda);
                 memcpy (btm_cb.connecting_bda, p_dev_rec->bd_addr,   BD_ADDR_LEN);

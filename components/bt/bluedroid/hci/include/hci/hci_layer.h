@@ -97,6 +97,6 @@ const hci_t *hci_layer_get_interface();
 int hci_start_up(void);
 void hci_shut_down(void);
 
-bool hci_host_task_post(osi_thread_blocking_t blocking);
+bool hci_host_task_post(uint32_t timeout);
 
 #endif /* _HCI_LAYER_H_ */

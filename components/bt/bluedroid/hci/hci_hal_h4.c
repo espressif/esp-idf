@@ -170,9 +170,9 @@ static void hci_hal_h4_rx_handler(void *arg)
     fixed_queue_process(hci_hal_env.rx_q);
 }
 
-bool hci_hal_h4_task_post(osi_thread_blocking_t blocking)
+bool hci_hal_h4_task_post(uint32_t timeout)
 {
-    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 1, blocking);
+    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 1, timeout);
 }
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
@@ -314,7 +314,7 @@ static void event_uart_has_bytes(fixed_queue_t *queue)
 {
     BT_HDR *packet;
     while (!fixed_queue_is_empty(queue)) {
-        packet = fixed_queue_dequeue(queue);
+        packet = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
         hci_hal_h4_hdl_rx_packet(packet);
     }
 }
@@ -323,7 +323,7 @@ static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
-    hci_host_task_post(OSI_THREAD_BLOCKING);
+    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
@@ -347,8 +347,8 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->len = len;
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
-    fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
-    hci_hal_h4_task_post(OSI_THREAD_NON_BLOCKING);
+    fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
+    hci_hal_h4_task_post(0);
 
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);

@@ -596,13 +596,13 @@ void l2c_ucd_delete_sec_pending_q(tL2C_LCB  *p_lcb)
 {
     /* clean up any security pending UCD */
     while (p_lcb->ucd_out_sec_pending_q.p_first) {
-        osi_free(fixed_queue_try_dequeue(p_lcb->ucd_out_sec_pending_q));
+        osi_free(fixed_queue_dequeue(p_lcb->ucd_out_sec_pending_q, 0));
 	}
     fixed_queue_free(p_lcb->ucd_out_sec_pending_q, NULL);
     p_lcb->ucd_out_sec_pending_q = NULL;
 
     while (! fixed_queue_is_empty(p_lcb->ucd_in_sec_pending_q)) {
-        osi_free(fixed_queue_try_dequeue(p_lcb->ucd_in_sec_pending_q));
+        osi_free(fixed_queue_dequeue(p_lcb->ucd_in_sec_pending_q, 0));
 	}
     fixed_queue_free(p_lcb->ucd_in_sec_pending_q);
     p_lcb->ucd_in_sec_pending_q = NULL;
@@ -683,7 +683,7 @@ BOOLEAN l2c_ucd_check_pending_info_req(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 void l2c_ucd_enqueue_pending_out_sec_q(tL2C_CCB  *p_ccb, void *p_data)
 {
-    fixed_queue_enqueue(p_ccb->p_lcb->ucd_out_sec_pending_q, p_data);
+    fixed_queue_enqueue(p_ccb->p_lcb->ucd_out_sec_pending_q, p_data, FIXED_QUEUE_MAX_TIMEOUT);
     l2cu_check_channel_congestion (p_ccb);
 }
 
@@ -727,7 +727,7 @@ BOOLEAN l2c_ucd_check_pending_out_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 void l2c_ucd_send_pending_out_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->p_lcb->ucd_out_sec_pending_q);
+    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_out_sec_pending_q, 0);
 
     if (p_buf != NULL) {
         l2c_enqueue_peer_data (p_ccb, (BT_HDR *)p_buf);
@@ -747,7 +747,7 @@ void l2c_ucd_send_pending_out_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 void l2c_ucd_discard_pending_out_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->p_lcb->ucd_out_sec_pending_q);
+    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_out_sec_pending_q, 0);
 
     /* we may need to report to application */
 
@@ -767,7 +767,7 @@ void l2c_ucd_discard_pending_out_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 BOOLEAN l2c_ucd_check_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q);
+    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0);
 
     if (p_buf != NULL) {
         UINT16 psm;
@@ -795,7 +795,7 @@ BOOLEAN l2c_ucd_check_pending_in_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 void l2c_ucd_send_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q)
+    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0)
 
     if (p_buf != NULL) {
         p_ccb->p_rcb->ucd.cb_info.pL2CA_UCD_Data_Cb(p_ccb->p_lcb->remote_bd_addr, (BT_HDR *)p_buf);
@@ -814,7 +814,7 @@ void l2c_ucd_send_pending_in_sec_q(tL2C_CCB  *p_ccb)
 *******************************************************************************/
 void l2c_ucd_discard_pending_in_sec_q(tL2C_CCB  *p_ccb)
 {
-    BT_HDR *p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q);
+    BT_HDR *p_buf = (BT_HDR*)fixed_queue_dequeue(p_ccb->p_lcb->ucd_in_sec_pending_q, 0);
 
     if (p_buf) {
         osi_free (p_buf);
@@ -898,7 +898,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
             break;
 
         case L2CEVT_L2CAP_DATA:         /* Peer data packet rcvd    */
-            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data);
+            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data, FIXED_QUEUE_MAX_TIMEOUT);
             break;
 
         case L2CEVT_L2CA_DATA_WRITE:    /* Upper layer data to send */
@@ -958,7 +958,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
             break;
 
         case L2CEVT_L2CAP_DATA:         /* Peer data packet rcvd    */
-            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data);
+            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data, FIXED_QUEUE_MAX_TIMEOUT);
             break;
 
         case L2CEVT_L2CAP_INFO_RSP:
@@ -1006,7 +1006,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
             break;
 
         case L2CEVT_L2CAP_DATA:             /* Peer data packet rcvd    */
-            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data);
+            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data, FIXED_QUEUE_MAX_TIMEOUT);
             break;
 
         case L2CEVT_SEC_RE_SEND_CMD:        /* BTM has enough info to proceed */
@@ -1033,7 +1033,7 @@ BOOLEAN l2c_ucd_process_event(tL2C_CCB *p_ccb, UINT16 event, void *p_data)
             /* stop idle timer of UCD */
             btu_stop_timer (&p_ccb->timer_entry);
 
-            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data);
+            fixed_queue_enqueue(p_ccb->p_lcb->ucd_in_sec_pending_q, p_data, FIXED_QUEUE_MAX_TIMEOUT);
             l2c_ucd_check_pending_in_sec_q (p_ccb);
             break;
 

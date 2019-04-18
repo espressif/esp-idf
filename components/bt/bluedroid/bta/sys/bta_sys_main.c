@@ -572,7 +572,7 @@ void bta_sys_sendmsg(void *p_msg)
     // there is a procedure in progress that can schedule a task via this
     // message queue. This causes |btu_bta_msg_queue| to get cleaned up before
     // it gets used here; hence we check for NULL before using it.
-    if (btu_task_post(SIG_BTU_BTA_MSG, p_msg, OSI_THREAD_BLOCKING) == false) {
+    if (btu_task_post(SIG_BTU_BTA_MSG, p_msg, OSI_THREAD_MAX_TIMEOUT) == false) {
         osi_free(p_msg);
     }
 }
@@ -592,7 +592,7 @@ void bta_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, OSI_THREAD_BLOCKING);
+    btu_task_post(SIG_BTU_BTA_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
 }
 
 void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms)

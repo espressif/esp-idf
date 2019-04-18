@@ -249,7 +249,7 @@ static bool btc_a2dp_source_ctrl_post(uint32_t sig, void *param)
     evt->sig = sig;
     evt->param = param;
 
-    return osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 0, OSI_THREAD_BLOCKING);
+    return osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 0, OSI_THREAD_MAX_TIMEOUT);
 }
 
 static void btc_a2dp_source_ctrl_handler(void *arg)
@@ -421,7 +421,7 @@ void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
 
 static void btc_a2dp_source_data_post(void)
 {
-    osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_BLOCKING);
+    osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
 }
 
 static UINT64 time_now_us()
@@ -510,7 +510,7 @@ BT_HDR *btc_a2dp_source_audio_readbuf(void)
     if (btc_a2dp_source_state != BTC_A2DP_SOURCE_STATE_ON){
         return NULL;
     }
-    return fixed_queue_try_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ);
+    return fixed_queue_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, 0);
 }
 
 /*******************************************************************************
@@ -1378,7 +1378,7 @@ static void btc_media_aa_prep_sbc_2_send(UINT8 nb_frame)
             }
 
             /* Enqueue the encoded SBC frame in AA Tx Queue */
-            fixed_queue_enqueue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, p_buf);
+            fixed_queue_enqueue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         } else {
             osi_free(p_buf);
         }
@@ -1407,7 +1407,7 @@ static void btc_a2dp_source_prep_2_send(UINT8 nb_frame)
     }
 
     while (fixed_queue_length(a2dp_source_local_param.btc_aa_src_cb.TxAaQ) > (MAX_OUTPUT_A2DP_SRC_FRAME_QUEUE_SZ - nb_frame)) {
-        osi_free(fixed_queue_try_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ));
+        osi_free(fixed_queue_dequeue(a2dp_source_local_param.btc_aa_src_cb.TxAaQ, 0));
     }
 
     // Transcode frame
@@ -1589,7 +1589,7 @@ static void btc_a2dp_source_aa_stop_tx(void)
 static void btc_a2dp_source_flush_q(fixed_queue_t *p_q)
 {
     while (! fixed_queue_is_empty(p_q)) {
-        osi_free(fixed_queue_try_dequeue(p_q));
+        osi_free(fixed_queue_dequeue(p_q, 0));
     }
 }
 

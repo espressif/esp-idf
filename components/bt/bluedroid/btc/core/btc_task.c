@@ -128,7 +128,7 @@ static void btc_thread_handler(void *arg)
     osi_free(msg);
 }
 
-static bt_status_t btc_task_post(btc_msg_t *msg, osi_thread_blocking_t blocking)
+static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 {
     btc_msg_t *lmsg;
 
@@ -139,7 +139,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, osi_thread_blocking_t blocking)
 
     memcpy(lmsg, msg, sizeof(btc_msg_t));
 
-    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 2, blocking) == false) {
+    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 2, timeout) == false) {
         return BT_STATUS_BUSY;
     }
 
@@ -171,7 +171,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
         lmsg.arg = NULL;
     }
 
-    return btc_task_post(&lmsg, OSI_THREAD_BLOCKING);
+    return btc_task_post(&lmsg, OSI_THREAD_MAX_TIMEOUT);
 
 }
 

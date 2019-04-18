@@ -2791,7 +2791,7 @@ void btm_sec_check_pending_reqs (void)
         btm_cb.sec_pending_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
 
-        while ((p_e = (tBTM_SEC_QUEUE_ENTRY *)fixed_queue_try_dequeue(bq)) != NULL) {
+        while ((p_e = (tBTM_SEC_QUEUE_ENTRY *)fixed_queue_dequeue(bq, 0)) != NULL) {
             /* Check that the ACL is still up before starting security procedures */
             if (btm_bda_to_acl(p_e->bd_addr, p_e->transport) != NULL) {
                 if (p_e->psm != 0) {
@@ -5784,7 +5784,7 @@ static BOOLEAN btm_sec_queue_mx_request (BD_ADDR bd_addr,  UINT16 psm,  BOOLEAN 
         BTM_TRACE_EVENT ("%s() PSM: 0x%04x  Is_Orig: %u  mx_proto_id: %u  mx_chan_id: %u\n",
                          __func__, psm, is_orig, mx_proto_id, mx_chan_id);
 
-    fixed_queue_enqueue(btm_cb.sec_pending_q, p_e);
+    fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT);
 
         return (TRUE);
     }
@@ -5883,7 +5883,7 @@ static BOOLEAN btm_sec_queue_encrypt_request (BD_ADDR bd_addr, tBT_TRANSPORT tra
         *(UINT8 *)p_e->p_ref_data = *(UINT8 *)(p_ref_data);
         p_e->transport  = transport;
         memcpy(p_e->bd_addr, bd_addr, BD_ADDR_LEN);
-        fixed_queue_enqueue(btm_cb.sec_pending_q, p_e);
+        fixed_queue_enqueue(btm_cb.sec_pending_q, p_e, FIXED_QUEUE_MAX_TIMEOUT);
         return TRUE;
     }
 
