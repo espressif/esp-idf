@@ -193,6 +193,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
                  child_disconnected->aid,
                  MAC2STR(child_disconnected->mac));
     }
+    break;
     case MESH_EVENT_ROUTING_TABLE_ADD: {
         mesh_event_routing_table_change_t *routing_table = (mesh_event_routing_table_change_t *)event_data;
         ESP_LOGW(MESH_TAG, "<MESH_EVENT_ROUTING_TABLE_ADD>add %d, new:%d",
