@@ -352,7 +352,7 @@ test environment:
     PC has 1 wired NIC connected to AP.
     PC has 1 WiFi NIC.
     37 SSC DUT connect with PC by UART.
-- tag: SSC_T50_1
+- tag: SSC_T12_MESH1
   <<: *TEST_ENV
   Special: Y
   Target Count: 50
