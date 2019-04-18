@@ -182,7 +182,7 @@ static bool btc_a2dp_sink_ctrl_post(uint32_t sig, void *param)
     evt->sig = sig;
     evt->param = param;
 
-    return osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl,  btc_a2dp_sink_ctrl_handler, evt, 0, OSI_THREAD_BLOCKING);
+    return osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl,  btc_a2dp_sink_ctrl_handler, evt, 0, OSI_THREAD_MAX_TIMEOUT);
 }
 
 static void btc_a2dp_sink_ctrl_handler(void *arg)
@@ -322,7 +322,7 @@ void btc_a2dp_sink_on_suspended(tBTA_AV_SUSPEND *p_av)
 
 static void btc_a2dp_sink_data_post(void)
 {
-    osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl, btc_a2dp_sink_data_ready, NULL, 1, OSI_THREAD_BLOCKING);
+    osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl, btc_a2dp_sink_data_ready, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
 }
 
 /*******************************************************************************
@@ -390,7 +390,7 @@ static void btc_a2dp_sink_data_ready(UNUSED_ATTR void *context)
                 return;
             }
             btc_a2dp_sink_handle_inc_media(p_msg);
-            p_msg = (tBT_SBC_HDR *)fixed_queue_try_dequeue(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ);
+            p_msg = (tBT_SBC_HDR *)fixed_queue_dequeue(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ, 0);
             if ( p_msg == NULL ) {
                 APPL_TRACE_ERROR("Insufficient data in que ");
                 break;
@@ -695,7 +695,7 @@ UINT8 btc_a2dp_sink_enque_buf(BT_HDR *p_pkt)
         memcpy(p_msg, p_pkt, (sizeof(BT_HDR) + p_pkt->offset + p_pkt->len));
         p_msg->num_frames_to_be_processed = (*((UINT8 *)(p_msg + 1) + p_msg->offset)) & 0x0f;
         APPL_TRACE_VERBOSE("btc_a2dp_sink_enque_buf %d + \n", p_msg->num_frames_to_be_processed);
-        fixed_queue_enqueue(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ, p_msg);
+        fixed_queue_enqueue(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ, p_msg, FIXED_QUEUE_MAX_TIMEOUT);
         btc_a2dp_sink_data_post();
     } else {
         /* let caller deal with a failed allocation */
@@ -721,7 +721,7 @@ static void btc_a2dp_sink_handle_clear_track (void)
 static void btc_a2dp_sink_flush_q(fixed_queue_t *p_q)
 {
     while (! fixed_queue_is_empty(p_q)) {
-        osi_free(fixed_queue_try_dequeue(p_q));
+        osi_free(fixed_queue_dequeue(p_q, 0));
     }
 }
 

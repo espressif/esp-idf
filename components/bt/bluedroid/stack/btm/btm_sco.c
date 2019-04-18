@@ -86,7 +86,7 @@ void btm_sco_flush_sco_data(UINT16 sco_inx)
 
     if (sco_inx < BTM_MAX_SCO_LINKS) {
         p = &btm_cb.sco_cb.sco_db[sco_inx];
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p->xmit_data_q)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p->xmit_data_q, 0)) != NULL) {
             osi_free(p_buf);
         }
     }
@@ -292,7 +292,7 @@ void btm_sco_check_send_pkts (UINT16 sco_inx)
     BT_HDR  *p_buf;
     while (p_cb->xmit_window_size != 0)
     {
-        if ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_data_q)) == NULL) {
+        if ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_data_q, 0)) == NULL) {
             break;
         }
 #if BTM_SCO_HCI_DEBUG
@@ -441,7 +441,7 @@ tBTM_STATUS BTM_WriteScoData (UINT16 sco_inx, BT_HDR *p_buf)
             p_buf->len += HCI_SCO_PREAMBLE_SIZE;
 
             if (fixed_queue_length(p_ccb->xmit_data_q) < BTM_SCO_XMIT_QUEUE_THRS) {
-                fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf);
+                fixed_queue_enqueue(p_ccb->xmit_data_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
                 btm_sco_check_send_pkts (sco_inx);
             } else {
                 BTM_TRACE_WARNING ("SCO xmit Q overflow, pkt dropped");

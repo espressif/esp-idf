@@ -246,7 +246,7 @@ void btu_thread_handler(void *arg)
     osi_free(evt);
 }
 
-bool btu_task_post(uint32_t sig, void *param, osi_thread_blocking_t blocking)
+bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
 {
     btu_thread_evt_t *evt;
 
@@ -258,7 +258,7 @@ bool btu_task_post(uint32_t sig, void *param, osi_thread_blocking_t blocking)
     evt->sig = sig;
     evt->param = param;
 
-    return osi_thread_post(btu_thread, btu_thread_handler, evt, 0, blocking);
+    return osi_thread_post(btu_thread, btu_thread_handler, evt, 0, timeout);
 }
 
 void btu_task_start_up(void)
@@ -417,7 +417,7 @@ void btu_general_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, OSI_THREAD_BLOCKING);
+    btu_task_post(SIG_BTU_GENERAL_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
 }
 
 void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
@@ -531,7 +531,7 @@ static void btu_l2cap_alarm_cb(void *data)
     assert(data != NULL);
     TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)data;
 
-    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, OSI_THREAD_BLOCKING);
+    btu_task_post(SIG_BTU_L2CAP_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
 }
 
 void btu_start_quick_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_ticks)
@@ -614,7 +614,7 @@ void btu_oneshot_alarm_cb(void *data)
 
     btu_stop_timer_oneshot(p_tle);
 
-    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, OSI_THREAD_BLOCKING);
+    btu_task_post(SIG_BTU_ONESHOT_ALARM, p_tle, OSI_THREAD_MAX_TIMEOUT);
 }
 
 /*

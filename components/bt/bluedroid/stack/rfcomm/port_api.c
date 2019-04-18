@@ -1098,7 +1098,7 @@ int PORT_Purge (UINT16 handle, UINT8 purge_flags)
 
         count = fixed_queue_length(p_port->rx.queue);
 
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue, 0)) != NULL) {
             osi_free (p_buf);
         }
 
@@ -1115,7 +1115,7 @@ int PORT_Purge (UINT16 handle, UINT8 purge_flags)
     if (purge_flags & PORT_PURGE_TXCLEAR) {
         osi_mutex_global_lock();  /* to prevent tx.queue_size from being negative */
 
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->tx.queue)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->tx.queue, 0)) != NULL) {
             osi_free (p_buf);
         }
 
@@ -1218,7 +1218,7 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
                 p_data  += p_buf->len;
             }
 
-            osi_free(fixed_queue_try_dequeue(p_port->rx.queue));
+            osi_free(fixed_queue_dequeue(p_port->rx.queue, 0));
 
             osi_mutex_global_unlock();
 
@@ -1274,7 +1274,7 @@ int PORT_Read (UINT16 handle, BT_HDR **pp_buf)
 
     osi_mutex_global_lock();
 
-    p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue);
+    p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue, 0);
     if (p_buf) {
         p_port->rx.queue_size -= p_buf->len;
 
@@ -1340,7 +1340,7 @@ static int port_write (tPORT *p_port, BT_HDR *p_buf)
                             p_port->rfc.state,
                             p_port->port_ctrl);
 
-        fixed_queue_enqueue(p_port->tx.queue, p_buf);
+        fixed_queue_enqueue(p_port->tx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         p_port->tx.queue_size += p_buf->len;
 
         return (PORT_CMD_PENDING);

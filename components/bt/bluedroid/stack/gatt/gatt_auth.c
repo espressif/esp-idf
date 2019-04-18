@@ -176,7 +176,7 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_d
             return;
         }
         tGATT_PENDING_ENC_CLCB *p_buf =
-            (tGATT_PENDING_ENC_CLCB *)fixed_queue_try_dequeue(p_tcb->pending_enc_clcb);
+            (tGATT_PENDING_ENC_CLCB *)fixed_queue_dequeue(p_tcb->pending_enc_clcb, 0);
         if (p_buf != NULL) {
             if (result == BTM_SUCCESS) {
                 if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM ) {
@@ -194,7 +194,7 @@ void gatt_enc_cmpl_cback(BD_ADDR bd_addr, tBT_TRANSPORT transport, void *p_ref_d
             /* start all other pending operation in queue */
             for (size_t count = fixed_queue_length(p_tcb->pending_enc_clcb);
                  count > 0; count--) {
-                p_buf = (tGATT_PENDING_ENC_CLCB *)fixed_queue_try_dequeue(p_tcb->pending_enc_clcb);
+                p_buf = (tGATT_PENDING_ENC_CLCB *)fixed_queue_dequeue(p_tcb->pending_enc_clcb, 0);
                 if (p_buf != NULL) {
                     gatt_security_check_start(p_buf->p_clcb);
                     osi_free(p_buf);
@@ -238,7 +238,7 @@ void gatt_notify_enc_cmpl(BD_ADDR bd_addr)
             size_t count = fixed_queue_length(p_tcb->pending_enc_clcb);
             for (; count > 0; count--) {
                 tGATT_PENDING_ENC_CLCB *p_buf =
-                    (tGATT_PENDING_ENC_CLCB *)fixed_queue_try_dequeue(p_tcb->pending_enc_clcb);
+                    (tGATT_PENDING_ENC_CLCB *)fixed_queue_dequeue(p_tcb->pending_enc_clcb, 0);
                 if (p_buf != NULL) {
                     gatt_security_check_start(p_buf->p_clcb);
                     osi_free(p_buf);

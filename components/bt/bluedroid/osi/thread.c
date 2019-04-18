@@ -63,7 +63,7 @@ static void osi_thread_run(void *arg)
         }
 
         while (!thread->stop && idx < thread->work_queue_num) {
-            work_item_t *item = fixed_queue_try_dequeue(thread->work_queues[idx]);
+            work_item_t *item = fixed_queue_dequeue(thread->work_queues[idx], 0);
             if (item) {
                 item->func(item->context);
                 osi_free(item);
@@ -227,7 +227,7 @@ void osi_thread_free(osi_thread_t *thread)
     osi_free(thread);
 }
 
-bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context, int queue_idx, osi_thread_blocking_t blocking)
+bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context, int queue_idx, uint32_t timeout)
 {
     assert(thread != NULL);
     assert(func != NULL);
@@ -243,13 +243,9 @@ bool osi_thread_post(osi_thread_t *thread, osi_thread_func_t func, void *context
     item->func = func;
     item->context = context;
 
-    if (blocking == OSI_THREAD_BLOCKING) {
-        fixed_queue_enqueue(thread->work_queues[queue_idx], item);
-    } else {
-        if (fixed_queue_try_enqueue(thread->work_queues[queue_idx], item) == false) {
-            osi_free(item);
-            return false;
-        }
+    if (fixed_queue_enqueue(thread->work_queues[queue_idx], item, timeout) == false) {
+        osi_free(item);
+        return false;
     }
 
     osi_sem_give(&thread->work_sem);

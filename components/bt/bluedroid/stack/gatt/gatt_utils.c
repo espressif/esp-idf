@@ -97,7 +97,7 @@ void gatt_free_pending_ind(tGATT_TCB *p_tcb)
 	
     /* release all queued indications */
     while (!fixed_queue_is_empty(p_tcb->pending_ind_q)) {
-        osi_free(fixed_queue_try_dequeue(p_tcb->pending_ind_q));
+        osi_free(fixed_queue_dequeue(p_tcb->pending_ind_q, 0));
 	}
     fixed_queue_free(p_tcb->pending_ind_q, NULL);
     p_tcb->pending_ind_q = NULL;
@@ -121,7 +121,7 @@ void gatt_free_pending_enc_queue(tGATT_TCB *p_tcb)
 	
     /* release all queued indications */
     while (!fixed_queue_is_empty(p_tcb->pending_enc_clcb)) {
-        osi_free(fixed_queue_try_dequeue(p_tcb->pending_enc_clcb));
+        osi_free(fixed_queue_dequeue(p_tcb->pending_enc_clcb, 0));
     }
 	fixed_queue_free(p_tcb->pending_enc_clcb, NULL);
     p_tcb->pending_enc_clcb = NULL;
@@ -143,7 +143,7 @@ void gatt_free_pending_prepare_write_queue(tGATT_TCB *p_tcb)
     if (p_tcb->prepare_write_record.queue) {
         /* release all queued prepare write packets */
         while (!fixed_queue_is_empty(p_tcb->prepare_write_record.queue)) {
-            osi_free(fixed_queue_dequeue(p_tcb->prepare_write_record.queue));
+            osi_free(fixed_queue_dequeue(p_tcb->prepare_write_record.queue, FIXED_QUEUE_MAX_TIMEOUT));
         }
         fixed_queue_free(p_tcb->prepare_write_record.queue, NULL);
         p_tcb->prepare_write_record.queue = NULL;
@@ -265,7 +265,7 @@ tGATT_VALUE *gatt_add_pending_ind(tGATT_TCB  *p_tcb, tGATT_VALUE *p_ind)
     if ((p_buf = (tGATT_VALUE *)osi_malloc((UINT16)sizeof(tGATT_VALUE))) != NULL) {
         GATT_TRACE_DEBUG ("enqueue a pending indication");
         memcpy(p_buf, p_ind, sizeof(tGATT_VALUE));
-    fixed_queue_enqueue(p_tcb->pending_ind_q, p_buf);
+    fixed_queue_enqueue(p_tcb->pending_ind_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
     return p_buf;
 }
@@ -288,7 +288,7 @@ tGATTS_PENDING_NEW_SRV_START *gatt_add_pending_new_srv_start(tGATTS_HNDL_RANGE *
     if ((p_buf = (tGATTS_PENDING_NEW_SRV_START *)osi_malloc((UINT16)sizeof(tGATTS_PENDING_NEW_SRV_START))) != NULL) {
         GATT_TRACE_DEBUG ("enqueue a new pending new srv start");
         p_buf->p_new_srv_start = p_new_srv_start;
-    fixed_queue_enqueue(gatt_cb.pending_new_srv_start_q, p_buf);
+    fixed_queue_enqueue(gatt_cb.pending_new_srv_start_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
     return p_buf;
 }
@@ -310,7 +310,7 @@ tGATTS_SRV_CHG *gatt_add_srv_chg_clt(tGATTS_SRV_CHG *p_srv_chg)
     if ((p_buf = (tGATTS_SRV_CHG *)osi_malloc((UINT16)sizeof(tGATTS_SRV_CHG))) != NULL) {
         GATT_TRACE_DEBUG ("enqueue a srv chg client");
         memcpy(p_buf, p_srv_chg, sizeof(tGATTS_SRV_CHG));
-    fixed_queue_enqueue(gatt_cb.srv_chg_clt_q, p_buf);
+    fixed_queue_enqueue(gatt_cb.srv_chg_clt_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
     return p_buf;
@@ -469,7 +469,7 @@ void gatt_free_hdl_buffer(tGATT_HDL_LIST_ELEM *p)
 
     if (p) {
         while (!fixed_queue_is_empty(p->svc_db.svc_buffer)) {
-            osi_free(fixed_queue_try_dequeue(p->svc_db.svc_buffer));
+            osi_free(fixed_queue_dequeue(p->svc_db.svc_buffer, 0));
 		}
         fixed_queue_free(p->svc_db.svc_buffer, NULL);
         memset(p, 0, sizeof(tGATT_HDL_LIST_ELEM));
@@ -495,7 +495,7 @@ void gatt_free_srvc_db_buffer_app_id(tBT_UUID *p_app_id)
         if (memcmp(p_app_id, &p_elem->asgn_range.app_uuid128, sizeof(tBT_UUID)) == 0) {
             gatt_free_attr_value_buffer(p_elem);
             while (!fixed_queue_is_empty(p_elem->svc_db.svc_buffer)) {
-                osi_free(fixed_queue_try_dequeue(p_elem->svc_db.svc_buffer));
+                osi_free(fixed_queue_dequeue(p_elem->svc_db.svc_buffer, 0));
 			}
             fixed_queue_free(p_elem->svc_db.svc_buffer, NULL);
             p_elem->svc_db.svc_buffer = NULL;
@@ -2733,7 +2733,7 @@ tGATT_PENDING_ENC_CLCB *gatt_add_pending_enc_channel_clcb(tGATT_TCB *p_tcb, tGAT
     if ((p_buf = (tGATT_PENDING_ENC_CLCB *)osi_malloc((UINT16)sizeof(tGATT_PENDING_ENC_CLCB))) != NULL) {
         GATT_TRACE_DEBUG ("enqueue a new pending encryption channel clcb");
         p_buf->p_clcb = p_clcb;
-    fixed_queue_enqueue(p_tcb->pending_enc_clcb, p_buf);
+    fixed_queue_enqueue(p_tcb->pending_enc_clcb, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
     return p_buf;
 }

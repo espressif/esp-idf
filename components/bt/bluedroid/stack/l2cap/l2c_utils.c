@@ -249,7 +249,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
     {
         while (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
         {
-            tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+            tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q, FIXED_QUEUE_MAX_TIMEOUT);
             if (p_buf->p_callback) {
                 p_buf->p_callback(p_lcb->remote_bd_addr, p_lcb->transport, p_buf->p_ref_data, BTM_DEV_RESET);
             }
@@ -930,7 +930,7 @@ void l2cu_send_peer_disc_req (tL2C_CCB *p_ccb)
        layer checks that all buffers are sent before disconnecting.
     */
     if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
-        while ((p_buf2 = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q)) != NULL) {
+        while ((p_buf2 = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0)) != NULL) {
             l2cu_set_acl_hci_header (p_buf2, p_ccb);
             l2c_link_check_send_pkts (p_ccb->p_lcb, p_ccb, p_buf2);
         }
@@ -3488,7 +3488,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
 
         } else {
             if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-                p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+                p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
                 if (NULL == p_buf) {
                     L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send: No data to be sent");
                     return (NULL);
@@ -3525,7 +3525,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
         }
 
     } else {
-        p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+        p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
         if (NULL == p_buf) {
             L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send() #2: No data to be sent");
             return (NULL);

@@ -288,7 +288,7 @@ void btu_task_shut_down(void);
 
 UINT16 BTU_BleAclPktSize(void);
 
-bool btu_task_post(uint32_t sig, void *param, osi_thread_blocking_t blocking);
+bool btu_task_post(uint32_t sig, void *param, uint32_t timeout);
 
 /*
 #ifdef __cplusplus

@@ -145,7 +145,7 @@ void gap_ble_dealloc_clcb(tGAP_CLCB *p_clcb)
 {
     tGAP_BLE_REQ    *p_q;
 
-    while ((p_q = (tGAP_BLE_REQ *)fixed_queue_try_dequeue(p_clcb->pending_req_q)) != NULL) {
+    while ((p_q = (tGAP_BLE_REQ *)fixed_queue_dequeue(p_clcb->pending_req_q, 0)) != NULL) {
         /* send callback to all pending requests if being removed*/
         if (p_q->p_cback != NULL) {
             (*p_q->p_cback)(FALSE, p_clcb->bda, 0, NULL);
@@ -173,7 +173,7 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
     if (p_q != NULL) {
         p_q->p_cback = p_cback;
         p_q->uuid = uuid;
-        fixed_queue_enqueue(p_clcb->pending_req_q, p_q);
+        fixed_queue_enqueue(p_clcb->pending_req_q, p_q, FIXED_QUEUE_MAX_TIMEOUT);
         return TRUE;
     }
 
@@ -190,7 +190,7 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
 *******************************************************************************/
 BOOLEAN gap_ble_dequeue_request (tGAP_CLCB *p_clcb, UINT16 *p_uuid, tGAP_BLE_CMPL_CBACK **p_cback)
 {
-    tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)fixed_queue_try_dequeue(p_clcb->pending_req_q);;
+    tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)fixed_queue_dequeue(p_clcb->pending_req_q, 0);;
 
     if (p_q != NULL) {
         *p_cback    = p_q->p_cback;

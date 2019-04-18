@@ -1086,7 +1086,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
 
-    btu_task_post(SIG_BTU_HCI_MSG, event, OSI_THREAD_BLOCKING);
+    btu_task_post(SIG_BTU_HCI_MSG, event, OSI_THREAD_MAX_TIMEOUT);
 }
 
 
@@ -1291,7 +1291,7 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR *command, void *c
 
     event->event = BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK;
 
-    btu_task_post(SIG_BTU_HCI_MSG, event, OSI_THREAD_BLOCKING);
+    btu_task_post(SIG_BTU_HCI_MSG, event, OSI_THREAD_MAX_TIMEOUT);
 }
 
 /*******************************************************************************
