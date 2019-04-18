@@ -13,7 +13,7 @@ set(COMPONENT_SRCS "src/bootloader_clock.c"
 
 if(${BOOTLOADER_BUILD})
     set(COMPONENT_ADD_INCLUDEDIRS "include include_bootloader")
-    set(COMPONENT_REQUIRES)
+    set(COMPONENT_REQUIRES soc) #unfortunately the header directly uses SOC registers
     set(COMPONENT_PRIV_REQUIRES spi_flash micro-ecc efuse)
     list(APPEND COMPONENT_SRCS "src/bootloader_init.c")
 
@@ -53,7 +53,7 @@ if(${BOOTLOADER_BUILD})
 else()
     set(COMPONENT_ADD_INCLUDEDIRS "include")
     set(COMPONENT_PRIV_INCLUDEDIRS "include_bootloader")
-    set(COMPONENT_REQUIRES)
+    set(COMPONENT_REQUIRES soc) #unfortunately the header directly uses SOC registers
     set(COMPONENT_PRIV_REQUIRES spi_flash mbedtls efuse)
 endif()
 

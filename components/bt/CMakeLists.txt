@@ -274,7 +274,7 @@ if(CONFIG_BT_ENABLED)
 endif()
 
 # requirements can't depend on config
-set(COMPONENT_PRIV_REQUIRES nvs_flash)
+set(COMPONENT_PRIV_REQUIRES nvs_flash soc)
 
 register_component()
 

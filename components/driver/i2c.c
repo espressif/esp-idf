@@ -30,6 +30,7 @@
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_pm.h"
+#include "soc/soc_memory_layout.h"
 
 static const char* I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \

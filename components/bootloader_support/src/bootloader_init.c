@@ -40,6 +40,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/rtc_wdt.h"
+#include "soc/spi_reg.h"
 
 #include "sdkconfig.h"
 #include "esp_image_format.h"

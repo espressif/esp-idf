@@ -24,6 +24,7 @@
 #include <esp32/rom/cache.h>
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
+#include <soc/soc_memory_layout.h>
 #include "sdkconfig.h"
 #include "esp_ipc.h"
 #include "esp_attr.h"
@@ -163,7 +164,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
     // Algorithm is essentially naïve strstr algorithm, except that unused MMU
     // entries are treated as wildcards.
     int start;
-    // the " + 1" is a fix when loop the MMU table pages, because the last MMU page 
+    // the " + 1" is a fix when loop the MMU table pages, because the last MMU page
     // is valid as well if it have not been used
     int end = region_begin + region_size - page_count + 1;
     for (start = region_begin; start < end; ++start) {
@@ -172,7 +173,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
         DPORT_INTERRUPT_DISABLE();
         for (pos = start; pos < start + page_count; ++pos, ++pageno) {
             int table_val = (int) DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[pos]);
-            uint8_t refcnt = s_mmap_page_refcnt[pos]; 
+            uint8_t refcnt = s_mmap_page_refcnt[pos];
             if (refcnt != 0 && table_val != pages[pageno]) {
                 break;
             }

@@ -3,7 +3,7 @@ require_idf_targets(esp32)
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32 is headers
     set(COMPONENT_ADD_INCLUDEDIRS include)
-    set(COMPONENT_REQUIRES ${IDF_COMPONENTS})
+    set(COMPONENT_REQUIRES ${IDF_COMPONENTS} soc) #unfortunately rom/uart uses SOC registers directly
     set(COMPONENT_SRCS )
     register_component()
 else()
@@ -35,7 +35,8 @@ else()
                    "task_wdt.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-    set(COMPONENT_REQUIRES driver esp_event efuse)
+    set(COMPONENT_REQUIRES driver esp_event efuse soc) #unfortunately rom/uart uses SOC registers directly
+
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(COMPONENT_PRIV_REQUIRES

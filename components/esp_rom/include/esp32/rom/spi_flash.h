@@ -20,7 +20,11 @@
 
 #include "esp_attr.h"
 
+#include "sdkconfig.h"
+
+#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/spi_reg.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -359,7 +363,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
   *         ESP_ROM_SPIFLASH_RESULT_ERR : Update error.
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Update timeout.
   */
-esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size, 
+esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size,
                                                         uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
 
 /**

@@ -12,7 +12,6 @@
 #include "wpa2/tls/asn1.h"
 #include "wpa2/tls/bignum.h"
 #include "wpa2/tls/rsa.h"
-#include "soc/dport_reg.h"
 
 struct crypto_rsa_key {
 	int private_key; /* whether private key is set */
@@ -80,7 +79,7 @@ crypto_rsa_import_public_key(const u8 *buf, size_t len)
 	 * PKCS #1, 7.1:
 	 * RSAPublicKey ::= SEQUENCE {
 	 *     modulus INTEGER, -- n
-	 *     publicExponent INTEGER -- e 
+	 *     publicExponent INTEGER -- e
 	 * }
 	 */
 
@@ -252,7 +251,7 @@ int crypto_rsa_exptmod(const u8 *in, size_t inlen, u8 *out, size_t *outlen,
 	tmp = bignum_init();
 	if (tmp == NULL)
 		return -1;
-	
+
 	if (bignum_set_unsigned_bin(tmp, in, inlen) < 0)
 		goto error;
 	if (bignum_cmp(key->n, tmp) < 0) {
