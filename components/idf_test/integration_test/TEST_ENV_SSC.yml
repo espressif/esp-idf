@@ -130,6 +130,20 @@ test environment:
     PC has 1 WiFi NIC.
     1 SSC DUT connect with PC by UART.
     AP todo IOT test are placed near SSC1.
+- tag: SSC_T1_MESH1
+  Special: Y
+  <<: *TEST_ENV
+  Target Count: 1
+  test environment detail: |-
+    1 SSC target connect with PC by UART.
+    A router with fixed channel nearby
+- tag: SSC_T1_MESH2
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |-
+    1 SSC target connect with PC by UART.
+    PC has 1 wired NIC connected to a fixed channel Router.
 - tag: SSC_T1_InitData
   <<: *TEST_ENV
   Special: Y
@@ -287,6 +301,13 @@ test environment:
   test environment detail: |
     refer to figure.
     2 SSC DUT connect with PC by UART. Put 1 DUT board to temperature box.
+- tag: SSC_T2_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 2
+  test environment detail: |-
+    2 SSC target connect with PC by UART.
+    A router with fixed channel nearby
 - tag: SSC_T3_1
   <<: *TEST_ENV
   Special: N
@@ -294,6 +315,12 @@ test environment:
   test environment detail: |-
     PC has 1 wired NIC connected to AP.
     PC has 1 WiFi NIC.
+    3 SSC DUT connect with PC by UART.
+- tag: SSC_T3_2
+  <<: *TEST_ENV
+  Special: N
+  Target Count: 3
+  test environment detail: |-
     3 SSC DUT connect with PC by UART.
 - tag: SSC_T3_PhyMode
   <<: *TEST_ENV
@@ -304,6 +331,20 @@ test environment:
     PC has one WiFi NIC support capture wlan packet using libpcap.
     Set 4 AP with (HT20, channel1), (HT20, channel2), (HT40, channel1), (HT40, channel2).
     Put 4 APs near SSC DUTs.
+- tag: SSC_T3_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 3
+  test environment detail: |-
+    3 SSC target connect with PC by UART.
+    A router with fixed channel nearby
+- tag: SSC_T3_MESH2
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 3
+  test environment detail: |-
+    3 SSC target connect with PC by UART.
+    PC has 1 wired NIC connected to a fixed channel Router.
 - tag: SSC_T5_1
   <<: *TEST_ENV
   Target Count: 5
@@ -323,6 +364,20 @@ test environment:
     PC has 1 wired NIC connected to AP.
     PC has 1 WiFi NIC.
     6 SSC DUT connect with PC by UART.
+- tag: SSC_T6_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 6
+  test environment detail: |-
+    6 SSC target connect with PC by UART.
+    A router with fixed channel nearby
+- tag: SSC_T6_MESH2
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 6
+  test environment detail: |-
+    6 SSC target connect with PC by UART.
+    PC has 1 wired NIC connected to a fixed channel Router.
 - tag: SSC_T1_DNS
   <<: *TEST_ENV
   Target Count: 1
@@ -336,6 +391,20 @@ test environment:
     PC has 1 wired NIC connect to Common AP.
     Several AP are placed near AT DUT.
     Several smart phone installed test APK are placed near SSC DUT.
+- tag: SSC_T12_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 12
+  test environment detail: |-
+    12 SSC target connect with PC by UART.
+    A router with fixed channel nearby
+- tag: SSC_T12_MESH2
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 12
+  test environment detail: |-
+    12 SSC target connect with PC by UART.
+    PC has 1 wired NIC connected to a fixed channel Router.
 - tag: SSC_T20_1
   <<: *TEST_ENV
   Special: Y
@@ -360,6 +429,13 @@ test environment:
     PC has 1 wired NIC connected to AP.
     PC has 1 WiFi NIC.
     50 SSC DUT connect with PC by UART.
+- tag: SSC_T50_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 50
+  test environment detail: |-
+    50 SSC target connect with PC by UART.
+    A router with fixed channel nearby
 - tag: SSC_T60_1
   <<: *TEST_ENV
   Special: Y
@@ -384,3 +460,15 @@ test environment:
     PC has 1 wired NIC connected to AP.
     PC has 1 WiFi NIC.
     100 SSC DUT connect with PC by UART.
+- tag: SSC_T50_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 50
+  test environment detail: |-
+    50 SSC target connect with PC by UART.
+- tag: SSC_T100_MESH1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 100
+  test environment detail: |-
+    100 SSC target connect with PC by UART.
