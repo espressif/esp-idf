@@ -147,14 +147,9 @@ eMBRTUStop( void )
     EXIT_CRITICAL_SECTION(  );
 }
 
-// The lines below are required to suppress GCC warnings about unused but set variable 'xFrameReceived'
-// This warning is treated as error during compilation.
-#pragma GCC diagnostic push // required for GCC
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 eMBErrorCode
 eMBRTUReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
 {
-    BOOL            xFrameReceived = FALSE;
     eMBErrorCode    eStatus = MB_ENOERR;
 
     ENTER_CRITICAL_SECTION(  );
@@ -176,7 +171,6 @@ eMBRTUReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
 
         /* Return the start of the Modbus PDU to the caller. */
         *pucFrame = ( UCHAR * ) & ucRTUBuf[MB_SER_PDU_PDU_OFF];
-        xFrameReceived = TRUE;
     }
     else
     {
@@ -186,7 +180,6 @@ eMBRTUReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
     EXIT_CRITICAL_SECTION(  );
     return eStatus;
 }
-#pragma GCC diagnostic pop   // require GCC
 
 eMBErrorCode
 eMBRTUSend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
