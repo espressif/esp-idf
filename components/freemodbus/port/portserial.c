@@ -1,3 +1,17 @@
+/* Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
  * Copyright (C) 2010 Christian Walter <cwalter@embedded-solutions.at>
@@ -39,6 +53,7 @@
 #include "mb.h"
 #include "mbport.h"
 #include "sdkconfig.h"              // for KConfig options
+#include "port_serial_slave.h"
 
 // Definitions of UART default pin numbers
 #define MB_UART_RXD   (CONFIG_MB_UART_RXD)
@@ -231,7 +246,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
             FALSE, "mb config failure, uart_param_config() returned (0x%x).", (uint32_t)xErr);
     // Install UART driver, and get the queue.
     xErr = uart_driver_install(ucUartNumber, MB_SERIAL_BUF_SIZE, MB_SERIAL_BUF_SIZE,
-            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LOWMED);
+            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LEVEL3);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
 #ifndef MB_TIMER_PORT_ENABLED

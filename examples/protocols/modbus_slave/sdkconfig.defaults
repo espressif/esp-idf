@@ -1,0 +1,6 @@
+#
+# Modbus configuration
+#
+CONFIG_MB_UART_RXD=22
+CONFIG_MB_UART_TXD=23
+CONFIG_MB_UART_RTS=18

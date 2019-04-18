@@ -26,10 +26,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * File: $Id: mbconfig.h,v 1.15 2010/06/06 13:54:40 wolti Exp $
+ *       $Id: mbconfig.h,v 1.60 2013/08/13 21:19:55 Armink Add Master Functions $
  */
 
 #ifndef _MB_CONFIG_H
 #define _MB_CONFIG_H
+
+#include "sdkconfig.h" // for KConfig options
 
 #ifdef __cplusplus
 PR_BEGIN_EXTERN_C
@@ -46,15 +49,18 @@ PR_BEGIN_EXTERN_C
 /*! \addtogroup modbus_cfg
  *  @{
  */
-/*! \brief If Modbus ASCII support is enabled. */
-#define MB_ASCII_ENABLED                        (  0 )
-
-/*! \brief If Modbus RTU support is enabled. */
-#define MB_RTU_ENABLED                          (  1 )
-
-/*! \brief If Modbus TCP support is enabled. */
-#define MB_TCP_ENABLED                          (  0 )
-
+/*! \brief If Modbus Master ASCII support is enabled. */
+#define MB_MASTER_ASCII_ENABLED                 (  0 ) 
+/*! \brief If Modbus Master RTU support is enabled. */
+#define MB_MASTER_RTU_ENABLED                   (  1 ) 
+/*! \brief If Modbus Master TCP support is enabled. */
+#define MB_MASTER_TCP_ENABLED                   (  0 )
+/*! \brief If Modbus Slave ASCII support is enabled. */
+#define MB_SLAVE_ASCII_ENABLED                  (  1 )
+/*! \brief If Modbus Slave RTU support is enabled. */
+#define MB_SLAVE_RTU_ENABLED                    (  1 )
+/*! \brief If Modbus Slave TCP support is enabled. */
+#define MB_TCP_ENABLED                          (  1 )
 /*! \brief The character timeout value for Modbus ASCII.
  *
  * The character timeout value is not fixed for Modbus ASCII and is therefore
@@ -62,7 +68,6 @@ PR_BEGIN_EXTERN_C
  * time of the network.
  */
 #define MB_ASCII_TIMEOUT_SEC                    (  1 )
-
 /*! \brief Timeout to wait in ASCII prior to enabling transmitter.
  *
  * If defined the function calls vMBPortSerialDelay with the argument
@@ -127,6 +132,20 @@ PR_BEGIN_EXTERN_C
 
 /*! @} */
 #ifdef __cplusplus
-PR_END_EXTERN_C
+    PR_END_EXTERN_C
 #endif
+
+#if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
+/*! \brief If master send a broadcast frame, the master will wait time of convert to delay,
+ * then master can send other frame */
+#define MB_MASTER_DELAY_MS_CONVERT              ( CONFIG_MB_MASTER_DELAY_MS_CONVERT )
+/*! \brief If master send a frame which is not broadcast,the master will wait sometime for slave.
+ * And if slave is not respond in this time,the master will process this timeout error.
+ * Then master can send other frame */
+#define MB_MASTER_TIMEOUT_MS_RESPOND            ( CONFIG_MB_MASTER_TIMEOUT_MS_RESPOND )
+/*! \brief The total slaves in Modbus Master system.
+ * \note : The slave ID must be continuous from 1.*/
+#define MB_MASTER_TOTAL_SLAVE_NUM               ( 247 )
+#endif
+
 #endif

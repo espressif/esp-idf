@@ -1,44 +1,62 @@
 menu "Modbus configuration"
 
+    config MB_MASTER_TIMEOUT_MS_RESPOND
+        int "Slave respond timeout (Milliseconds)"
+        default 150
+        range 50 400
+
+        help
+                If master sends a frame which is not broadcast, it has to wait sometime for slave response.
+                if slave is not respond in this time, the master will process timeout error.
+
+    config MB_MASTER_DELAY_MS_CONVERT
+        int "Slave conversion delay (Milliseconds)"
+        default 200
+        range 50 400
+
+        help
+                If master sends a broadcast frame, it has to wait conversion time to delay,
+                then master can send next frame.
+
     config MB_QUEUE_LENGTH
         int "Modbus serial task queue length"
         range 0 200
         default 20
         help
-            Modbus serial driver queue length. It is used by event queue task.
-            See the serial driver API for more information.
+                Modbus serial driver queue length. It is used by event queue task.
+                See the serial driver API for more information.
 
     config MB_SERIAL_TASK_STACK_SIZE
         int "Modbus serial task stack size"
         range 768 8192
         default 2048
         help
-            Modbus serial task stack size for event queue task.
-            It may be adjusted when debugging is enabled (for example).
+                Modbus serial task stack size for event queue task.
+                It may be adjusted when debugging is enabled (for example).
 
     config MB_SERIAL_BUF_SIZE
         int "Modbus serial task RX/TX buffer size"
         range 0 2048
         default 256
         help
-            Modbus serial task RX and TX buffer size for UART driver initialization.
-            This buffer is used for Modbus frame transfer. The Modbus protocol maximum
-            frame size is 256 bytes. Bigger size can be used for non standard implementations.
+                Modbus serial task RX and TX buffer size for UART driver initialization.
+                This buffer is used for modbus frame transfer. The Modbus protocol maximum
+                frame size is 256 bytes. Bigger size can be used for non standard implementations.
 
     config MB_SERIAL_TASK_PRIO
         int "Modbus serial task priority"
         range 3 10
         default 10
         help
-            Modbus UART driver event task priority.
-            The priority of Modbus controller task is equal to (CONFIG_MB_SERIAL_TASK_PRIO - 1).
+                Modbus UART driver event task priority.
+                The priority of Modbus controller task is equal to (CONFIG_MB_SERIAL_TASK_PRIO - 1).
 
     config MB_CONTROLLER_SLAVE_ID_SUPPORT
         bool "Modbus controller slave ID support"
         default n
         help
-            Modbus slave ID support enable.
-            When enabled the Modbus <Report Slave ID> command is supported by stack.
+                Modbus slave ID support enable.
+                When enabled the Modbus <Report Slave ID> command is supported by stack.
 
     config MB_CONTROLLER_SLAVE_ID
         hex "Modbus controller slave ID"
@@ -46,54 +64,53 @@ menu "Modbus configuration"
         default 0x00112233
         depends on MB_CONTROLLER_SLAVE_ID_SUPPORT
         help
-            Modbus slave ID value to identify modbus device
-            in the network using <Report Slave ID> command.
-            Most significant byte of ID is used as short device ID and
-            other three bytes used as long ID.
+                Modbus slave ID value to identify modbus device
+                in the network using <Report Slave ID> command.
+                Most significant byte of ID is used as short device ID and
+                other three bytes used as long ID.
 
     config MB_CONTROLLER_NOTIFY_TIMEOUT
         int "Modbus controller notification timeout (ms)"
         range 0 200
         default 20
         help
-            Modbus controller notification timeout in milliseconds.
-            This timeout is used to send notification about accessed parameters.
+                Modbus controller notification timeout in milliseconds.
+                This timeout is used to send notification about accessed parameters.
 
     config MB_CONTROLLER_NOTIFY_QUEUE_SIZE
         int "Modbus controller notification queue size"
         range 0 200
         default 20
         help
-            Modbus controller notification queue size.
-            The notification queue is used to get information about accessed parameters.
+                Modbus controller notification queue size.
+                The notification queue is used to get information about accessed parameters.
 
     config MB_CONTROLLER_STACK_SIZE
         int "Modbus controller stack size"
         range 0 8192
         default 4096
         help
-            Modbus controller task stack size. The Stack size may be adjusted when
-            debug mode is used which requires more stack size (for example).
+                Modbus controller task stack size. The Stack size may be adjusted when
+                debug mode is used which requires more stack size (for example).
 
     config MB_EVENT_QUEUE_TIMEOUT
         int "Modbus stack event queue timeout (ms)"
         range 0 500
         default 20
         help
-            Modbus stack event queue timeout in milliseconds. This may help to optimize
-            Modbus stack event processing time.
+                Modbus stack event queue timeout in milliseconds. This may help to optimize
+                Modbus stack event processing time.
 
     config MB_TIMER_PORT_ENABLED
-        bool "Modbus stack use timer for 3.5T symbol time measurement"
+        bool "Modbus slave stack use timer for 3.5T symbol time measurement"
         default y
         help
-            If this option is set the Modbus stack uses timer for T3.5 time measurement.
-            Else the internal UART TOUT timeout is used for 3.5T symbol time measurement.
+                If this option is set the Modbus stack uses timer for T3.5 time measurement.
+                Else the internal UART TOUT timeout is used for 3.5T symbol time measurement.
 
     config MB_TIMER_GROUP
         int "Modbus Timer group number"
         range 0 1
-        depends on MB_TIMER_PORT_ENABLED
         default 0
         help
             Modbus Timer group number that is used for timeout measurement.
@@ -101,9 +118,8 @@ menu "Modbus configuration"
     config MB_TIMER_INDEX
         int "Modbus Timer index in the group"
         range 0 1
-        depends on MB_TIMER_PORT_ENABLED
         default 0
         help
-            Modbus Timer Index in the group that is used for timeout measurement.
+                Modbus Timer Index in the group that is used for timeout measurement.
 
 endmenu
