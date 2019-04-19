@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "esp_coexist.h"
-#include "coexist_internal.h"
+#include "esp_coexist_internal.h"
 
 const char *esp_coex_version_get(void)
 {

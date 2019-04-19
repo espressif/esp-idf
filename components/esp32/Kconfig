@@ -967,6 +967,8 @@ config SW_COEXIST_ENABLE
         If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
         Recommended for heavy traffic scenarios. Both coexistence configuration options are
         automatically managed, no user intervention is required.
+        If only Bluetooth is used, it is recommended to disable this option to reduce binary file
+        size.
 
 choice SW_COEXIST_PREFERENCE
     prompt "WiFi/Bluetooth coexistence performance preference"

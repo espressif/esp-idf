@@ -222,6 +222,15 @@ void *wifi_calloc( size_t n, size_t size );
   *
   * @return    Always returns ESP_OK
   */
+typedef esp_err_t (* wifi_mac_time_update_cb_t)( uint32_t time_delta );
+
+/**
+  * @brief     Update WiFi MAC time
+  *
+  * @param     uint32_t time_delta : time duration since the WiFi/BT common clock is disabled
+  *
+  * @return    Always returns ESP_OK
+  */
 esp_err_t esp_wifi_internal_update_mac_time( uint32_t time_delta );
 
 #ifdef __cplusplus

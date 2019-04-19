@@ -59,7 +59,7 @@
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
 #include "esp_cache_err_int.h"
-#include "esp_coexist.h"
+#include "esp_coexist_internal.h"
 #include "esp_panic.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
@@ -383,6 +383,10 @@ void start_cpu0_default(void)
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
+#endif
+
+#if CONFIG_SW_COEXIST_ENABLE
+    esp_coex_adapter_register(&g_coex_adapter_funcs);
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
