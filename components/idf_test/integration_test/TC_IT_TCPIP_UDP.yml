@@ -1325,7 +1325,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking, SSC_PSRAM
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -1471,11 +1471,47 @@ test cases:
   version: v1 (2016-10-18)
 - CI ready: 'No'
   ID: TCPIP_UDP_5005
+  SDK: ESP32_IDF
+  Test App: SSC, SSC_NonBlocking, SSC_PSRAM
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - UDPStress/UDPMultiSTASendRecv
+  - - send_len = 1460
+    - - dummy
+  - - test_time = 300
+    - - ''
+  - - server_echo = True
+    - - ''
+  - - sta_number = 5
+    - - ''
+  - - send_delay = 500
+    - - ''
+  execution time: 5.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. 5 sta connect to softap
+    2. create udp socket on all sta
+    3. all sta do udp send/recv
+  sub module: UDP
+  summary: 1 SoftAP 5 STA, create UDP server on one STA, create UDP client on other
+    STA, do UDP send/recv
+  test environment: SSC_T6_1
+  test point 1: stress
+  test point 2: UDP stress test
+  version: v1 (2016-8-15)
+- CI ready: 'No'
+  ID: TCPIP_UDP_5005
   SDK: |-
     8266_NonOS
     8266_RTOS
-    ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -1546,7 +1582,7 @@ test cases:
     3. all sta do udp send/recv
   sub module: UDP
   summary: 1 SoftAP 2 STA, create multi UDP socket on STA, do UDP send/recv
-  test environment: SSC_T3_1
+  test environment: SSC_T3_2
   test point 1: stress
   test point 2: UDP stress test
   version: v1 (2016-8-15)
@@ -1636,7 +1672,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Performance
   cmd set:
@@ -1674,7 +1710,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Performance
   cmd set:
@@ -1712,7 +1748,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -1740,7 +1776,7 @@ test cases:
     Loop for step 1-2
   sub module: UDP
   summary: UDP throughput Tx for Ethernet
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: UDP stress test
   version: v1 (2016-8-15)
@@ -1750,7 +1786,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -1778,7 +1814,7 @@ test cases:
     Loop for step 1-2
   sub module: UDP
   summary: UDP throughput Rx for Ethernet
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: UDP stress test
   version: v1 (2016-8-15)
@@ -1788,7 +1824,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -1816,7 +1852,7 @@ test cases:
     3. DUT calculate the packet lose rate
   sub module: UDP
   summary: UDP loss rate on DUT Rx for Eth
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: Performance test
   test point 2: UDP stress test
   version: v1 (2016-10-18)

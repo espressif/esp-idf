@@ -285,16 +285,19 @@ def run_unit_test_cases(env, extra_data):
         Utility.console_log("Download finished, start running test cases", "O")
 
         for one_case in case_config[ut_config]:
+            performance_items = []
             # create junit report test case
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
                 run_one_normal_case(dut, one_case, junit_test_case)
+                performance_items = dut.get_performance_items()
             except TestCaseFailed:
                 failed_cases.append(one_case["name"])
             except Exception as e:
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
                 failed_cases.append(one_case["name"])
             finally:
+                TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
 
     # raise exception if any case fails
@@ -445,6 +448,13 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, app_bin, junit
 
     if not result:
         junit_test_case.add_failure_info(output)
+
+    # collect performances from DUTs
+    performance_items = []
+    for dut_name in duts:
+        performance_items.extend(duts[dut_name].get_performance_items())
+    TinyFW.JunitReport.update_performance(performance_items)
+
     return result
 
 
@@ -628,15 +638,18 @@ def run_multiple_stage_cases(env, extra_data):
         dut.start_app()
 
         for one_case in case_config[ut_config]:
+            performance_items = []
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
                 run_one_multiple_stage_case(dut, one_case, junit_test_case)
+                performance_items = dut.get_performance_items()
             except TestCaseFailed:
                 failed_cases.append(one_case["name"])
             except Exception as e:
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
                 failed_cases.append(one_case["name"])
             finally:
+                TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
 
     # raise exception if any case fails

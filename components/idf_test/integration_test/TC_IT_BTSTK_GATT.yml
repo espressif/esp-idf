@@ -1815,9 +1815,9 @@ test cases:
   cmd set:
   - ""
   - *primary_service_discovery
-  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v -x01 -w 1"
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v 0x01 -w 1"
     - ["R SSC1 C +GATTC:Write,OK"]
-  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v -x01 -w 1"
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC302 -p 0x10 -v 0x01 -w 1"
     - ["R SSC1 C +GATTC:Write,OK"]
 - ID: BTSTK_GATT_25015
   <<: *GATT_CASE
@@ -2045,6 +2045,23 @@ test cases:
   - - "SSC SSC1 gattc -R -z multiple -u 0xA00xC100#0xA00xC101#0xA00xC1000x29010xA00xC1070x2902"
     - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
 - ID: BTSTK_GATT_27003
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read char and descriptor of table create service
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read all char and descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA2"
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u 0xA20xC300#0xA20xC301#0xA20xC310#0xA20xC311#"
+    - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
+- ID: BTSTK_GATT_27004
   <<: *GATT_CASE
   test point 2: BLE GATT read multiple
   summary: GATT client read char and descriptor of included service and table service
@@ -2848,6 +2865,7 @@ test cases:
     - ""
 - ID: BTSTK_GATT_50007
   <<: *GATT_CASE
+  Test App: SSC_BLE, SSC_PSRAM
   category: Performance
   test point 1: performance + stress
   test point 2: BLE GATT performance test
@@ -2871,9 +2889,9 @@ test cases:
     - ""
   - - gatt_op = "write"
     - ""
-  - - op_char = "0xC304"
+  - - op_char = "0xC317"
     - ""
-  - - op_len = 256
+  - - op_len = 490
     - ""
   - - master_duts = ["SSC1"]
     - ""
@@ -2904,9 +2922,9 @@ test cases:
     - ""
   - - gatt_op = "write"
     - ""
-  - - op_char = "0xC304"
+  - - op_char = "0xC317"
     - ""
-  - - op_len = 256
+  - - op_len = 490
     - ""
   - - master_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
     - ""
@@ -2939,7 +2957,7 @@ test cases:
     - ""
   - - op_char = "0xC305"
     - ""
-  - - op_len = 256
+  - - op_len = 490
     - ""
   - - master_duts = ["SSC1"]
     - ""
@@ -2972,13 +2990,14 @@ test cases:
     - ""
   - - op_char = "0xC305"
     - ""
-  - - op_len = 256
+  - - op_len = 490
     - ""
   - - master_duts = ["SSC2", "SSC3", "SSC4", "SSC5"]
     - ""
   - - slave_duts = ["SSC1"]
     - ""
 - ID: BTSTK_GATT_50011
+  Test App: SSC_BLE, SSC_PSRAM
   <<: *GATT_CASE
   category: Performance
   test point 1: performance + stress

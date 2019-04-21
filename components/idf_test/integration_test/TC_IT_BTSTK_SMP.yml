@@ -1771,7 +1771,7 @@ test cases:
   cmd set:
   - ""
   - *config_numberic_comparision
-  - - LOOP 2 6 "[1,0]"
+  - - LOOP 2 7 "[1,0]"
     - ""
   - *start_pair
   - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
@@ -2028,7 +2028,112 @@ test cases:
     - ['P SSC2 C +BLE:GattsDisconnect', 'P SSC1 C +BLE:GattcDisconnect,OK']
 - ID: BTSTK_SMP_07001
   <<: *SMP_CASE
-  test point 2: BLE SMP no bond test and reconnect
+  test point 2: BLE SMP no bond test and repairing
+  summary: BLE SMP just work pairing and reconnect
+  steps: |
+    1. DUT1 and DUT2 SMP with just work pair
+    2. DUT1 disconnect
+    3. DUT1 connect to DUT2
+    4. DUT2 send auth request
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  cmd set:
+  - ""
+  - *config_just_work
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
+    - ['P SSC2 C +BLESMP:SecReq']
+  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - *disconnect
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
+    - ["P SSC1 C +BLESMP:SecReq"]
+  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success']
+- ID: BTSTK_SMP_07002
+  <<: *SMP_CASE
+  test point 2: BLE SMP no bond test and repairing
+  summary: BLE SMP just work pairing and reboot
+  steps: |
+    1. DUT1 and DUT2 SMP with just work pair
+    2. DUT1 reboot
+    3. DUT1 connect to DUT2
+    4. DUT2 send auth request
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. failed
+  cmd set:
+  - ""
+  - *config_just_work
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
+    - ['P SSC2 C +BLESMP:SecReq']
+  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - - "SSC SSC1 reboot"
+    - ['P SSC2 C +BLE:GattsDisconnect']
+  - - "SSC SSC1 ble -R"
+    - ['R SSC1 C +BLE:']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - *slave_passkey_entry_pair
+- ID: BTSTK_SMP_07003
+  <<: *SMP_CASE
+  test point 2: BLE SMP no bond test and repairing
+  summary: BLE SMP slave passkey enter and reconnect
+  steps: |
+    1. DUT1 and DUT2 SMP with slave passkey enter
+    2. DUT1 reconnect
+    3. DUT1 connect to DUT2
+    4. DUT2 send auth request
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - *slave_passkey_entry_pair
+  - *disconnect
+  - *slave_passkey_entry_pair
+- ID: BTSTK_SMP_07004
+  <<: *SMP_CASE
+  test point 2: BLE SMP no bond test and repairing
+  summary: BLE SMP slave passkey enter and reboot
+  steps: |
+    1. DUT1 and DUT2 SMP with slave passkey enter
+    2. DUT1 reboot
+    3. DUT1 connect to DUT2
+    4. DUT2 send auth request
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. failed
+  cmd set:
+  - ""
+  - *config_slave_passkey_entry
+  - *slave_passkey_entry_pair
+  - - "SSC SSC1 reboot"
+    - ['P SSC2 C +BLE:GattsDisconnect']
+  - - "SSC SSC1 ble -R"
+    - ['R SSC1 C +BLE:']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+    - *slave_passkey_entry_pair
+- ID: BTSTK_SMP_07005
+  <<: *SMP_CASE
+  test point 2: BLE SMP no bond test and repairing
   summary: BLE SMP initiator with master passkey entry and reconnect
   steps: |
     1. DUT1 and DUT2 SMP with master passkey entry
@@ -2043,22 +2148,15 @@ test cases:
   cmd set:
   - ""
   - *config_master_passkey_entry
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
-    - ['P SSC2 C +BLESMP:SecReq']
-  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
-    - ['P SSC1 C +BLESMP:PassKeyReq', 'P SSC2 A <key>:BLESMP:PassKeyNotify,(\d+)']
-  - - "SSC SSC1 blesmp -K -r <dut2_bt_mac> -a 1 -k <key>"
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - *master_passkey_entry_pair
   - *disconnect
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
     - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
   - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success']
-- ID: BTSTK_SMP_07002
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_07006
   <<: *SMP_CASE
-  test point 2: BLE SMP no bond test and reboot
+  test point 2: BLE SMP no bond test and repairing
   summary: BLE SMP initiator with master passkey entry and reboot
   steps: |
     1. DUT1 and DUT2 SMP bond with lagecy pairing
@@ -2073,35 +2171,17 @@ test cases:
   cmd set:
   - ""
   - *config_master_passkey_entry
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
-    - ['P SSC2 C +BLESMP:SecReq']
-  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
-    - ['P SSC1 C +BLESMP:PassKeyReq', 'P SSC2 A <key>:BLESMP:PassKeyNotify,(\d+)']
-  - - "SSC SSC1 blesmp -K -r <dut2_bt_mac> -a 1 -k <key>"
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
-  - - "SSC SSC[1-2] reboot"
-    - ['P SSC[1-2] C !!!ready!!!']
-  - - "SSC SSC[1-2] ble -R"
-    - ['R SSC[1-2] C +BLE:']
-  - - "SSC SSC2 gatts -S -z load -p 0xA0"
-    - ['R SSC2 C +GATTS:StartService,OK,A000']
-  - - "SSC SSC2 bleadv -L -c 0 -t 3"
-    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - *master_passkey_entry_pair
+  - - "SSC SSC1 reboot"
+    - ['P SSC2 C +BLE:GattsDisconnect']
+  - - "SSC SSC1 ble -R"
+    - ['R SSC1 C +BLE:']
   - - "SSC SSC2 bleadv -D -z start"
     - ['R SSC2 C +BLEADV:OK']
-  - - "SSC SSC[1-2] blesmp -L -c [1,0]"
-    - ['R SSC[1-2] C +BLESMP:OK']
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC2 C +BLESMP:OK']
-  - - DELAY 10
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
-- ID: BTSTK_SMP_07003
+  - *numberic_comparision_pair
+- ID: BTSTK_SMP_07007
   <<: *SMP_CASE
-  test point 2: BLE SMP no bond test and reconnect
+  test point 2: BLE SMP no bond test and repairing
   summary: BLE SMP initiator numberic comparision and reconnect
   steps: |
     1. DUT1 and DUT2 SMP with numberic comparision
@@ -2116,23 +2196,16 @@ test cases:
   cmd set:
   - ""
   - *config_numberic_comparision
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
-    - ['P SSC2 C +BLESMP:SecReq']
-  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
-    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
-  - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a 1"
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+  - *numberic_comparision_pair
   - *disconnect
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
     - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
   - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success']
-- ID: BTSTK_SMP_07004
+    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
+- ID: BTSTK_SMP_07008
   <<: *SMP_CASE
-  test point 2: BLE SMP no bond test and reconnect
-  summary: BLE SMP initiator numberic comparision and reconnect
+  test point 2: BLE SMP no bond test and repairing
+  summary: BLE SMP initiator numberic comparision and reboot
   steps: |
     1. DUT1 and DUT2 SMP with numberic comparision
     2. DUT1 disconnect
@@ -2146,32 +2219,14 @@ test cases:
   cmd set:
   - ""
   - *config_numberic_comparision
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC1 blesmp -E -r <dut2_bt_mac> -z Enc"
-    - ['P SSC2 C +BLESMP:SecReq']
-  - - "SSC SSC2 blesmp -R -a 1 -r <dut1_bt_mac>"
-    - ['R SSC2 A <key>:BLESMP:NCReq,(\d+)', 'R SSC1 C NCReq P <key>']
-  - - "SSC SSC[1-2] blesmp -C -r <dut[2,1]_bt_mac> -a 1"
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
-  - - "SSC SSC[1-2] reboot"
-    - ['P SSC[1-2] C !!!ready!!!']
-  - - "SSC SSC[1-2] ble -R"
-    - ['R SSC[1-2] C +BLE:']
-  - - "SSC SSC2 gatts -S -z load -p 0xA0"
-    - ['R SSC2 C +GATTS:StartService,OK,A000']
-  - - "SSC SSC2 bleadv -L -c 0 -t 3"
-    - ['R SSC2 C +BLEADV:SetAdv,OK']
+  - *numberic_comparision_pair
+  - - "SSC SSC1 reboot"
+    - ['P SSC2 C +BLE:GattsDisconnect']
+  - - "SSC SSC1 ble -R"
+    - ['R SSC1 C +BLE:']
   - - "SSC SSC2 bleadv -D -z start"
     - ['R SSC2 C +BLEADV:OK']
-  - - "SSC SSC[1-2] blesmp -L -c [1,0]"
-    - ['R SSC[1-2] C +BLESMP:OK']
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC2 C +BLESMP:OK']
-  - - DELAY 10
-    - ['P SSC[1-2] C +BLESMP:AuthComplete,Fail']
+  - *numberic_comparision_pair
 - ID: BTSTK_SMP_08001
   <<: *SMP_CASE
   test point 2: BLE SMP bond item management test
@@ -2610,4 +2665,26 @@ test cases:
   - - "fail_ratio = 0.01"
     - ""
   - - "fail_timeout = 10"
+    - ""
+- ID: BTSTK_SMP_52001
+  <<: *SMP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE SMP performance test for bond
+  summary: BLE SMP bond, remove, get bondlist, rebond
+  steps: |
+    1. DUT1 bond 15 devices and get bond list
+    2. DUT1 bond 16th device and get bond list
+    3. rebond removed bond device and get bond list
+    4. remove all bond and get bond list
+    5. loop step 1 to step 4
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  execution time: 2
+  cmd set:
+  - "BLEStress/BLESMPBondPerformance"
+  - - test_time = 120
     - ""
