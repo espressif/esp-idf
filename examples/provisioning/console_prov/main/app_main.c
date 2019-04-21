@@ -12,7 +12,7 @@
 #include <freertos/task.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
-#include <esp_event_loop.h>
+#include <esp_event.h>
 #include <esp_log.h>
 #include <nvs_flash.h>
 
@@ -21,55 +21,44 @@
 
 #include "app_prov.h"
 
+#define EXAMPLE_AP_RECONN_ATTEMPTS  CONFIG_AP_RECONN_ATTEMPTS
+
 static const char *TAG = "app";
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int event_id, void* event_data)
 {
-    /* Invoke Provisioning event handler first */
-    app_prov_event_handler(ctx, event);
+    static int s_retry_num = 0;
 
-    switch(event->event_id) {
-    case SYSTEM_EVENT_AP_START:
-        ESP_LOGI(TAG, "SoftAP started");
-        break;
-    case SYSTEM_EVENT_AP_STOP:
-        ESP_LOGI(TAG, "SoftAP stopped");
-        break;
-    case SYSTEM_EVENT_STA_START:
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        if (s_retry_num < EXAMPLE_AP_RECONN_ATTEMPTS) {
+            esp_wifi_connect();
+            s_retry_num++;
+            ESP_LOGI(TAG, "retry to connect to the AP");
+        }
+        ESP_LOGI(TAG,"connect to the AP fail");
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "got ip:%s",
-                 ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-        break;
-    case SYSTEM_EVENT_AP_STACONNECTED:
-        ESP_LOGI(TAG, "station:"MACSTR" join, AID=%d",
-                 MAC2STR(event->event_info.sta_connected.mac),
-                 event->event_info.sta_connected.aid);
-        break;
-    case SYSTEM_EVENT_AP_STADISCONNECTED:
-        ESP_LOGI(TAG, "station:"MACSTR"leave, AID=%d",
-                 MAC2STR(event->event_info.sta_disconnected.mac),
-                 event->event_info.sta_disconnected.aid);
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        break;
-    default:
-        break;
+                 ip4addr_ntoa(&event->ip_info.ip));
+        s_retry_num = 0;
     }
-    return ESP_OK;
 }
 
 static void wifi_init_sta()
 {
-    /* Start wifi in station mode with credentials set during provisioning */
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK(esp_wifi_start() );
+    /* Set our event handling */
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, event_handler, NULL));
+
+    /* Start Wi-Fi in station mode with credentials set during provisioning */
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-void app_main()
+static void start_console_provisioning()
 {
     /* Security version */
     int security = 0;
@@ -89,11 +78,24 @@ void app_main()
     pop = &app_pop;
 #endif
 
+    ESP_ERROR_CHECK(app_prov_start_console_provisioning(security, pop));
+}
+
+void app_main()
+{
     /* Initialize networking stack */
     tcpip_adapter_init();
 
-    /* Set our event handling */
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+    /* Create default event loop needed by the
+     * main app and the provisioning service */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* Initialize NVS needed by Wi-Fi */
+    ESP_ERROR_CHECK(nvs_flash_init());
+
+    /* Initialize Wi-Fi with default config */
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     /* Check if device is provisioned */
     bool provisioned;
@@ -105,10 +107,10 @@ void app_main()
     if (provisioned == false) {
         /* If not provisioned, start provisioning via console */
         ESP_LOGI(TAG, "Starting console provisioning");
-        app_prov_start_console_provisioning(security, pop);
+        start_console_provisioning();
     } else {
         /* Else start as station with credentials set during provisioning */
         ESP_LOGI(TAG, "Starting WiFi station");
-        wifi_init_sta(NULL);
+        wifi_init_sta();
     }
 }

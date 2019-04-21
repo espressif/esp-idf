@@ -7,17 +7,17 @@ menu "Example Configuration"
             Set SoftAP SSID as PROV_<MAC>.
 
     config SOFTAP_SSID
-        string "WiFi SSID"
+        string "Wi-Fi SSID"
         default "PROV_SSID"
         depends on !SOFTAP_SSID_SET_MAC
         help
             SSID (network name) for the example to connect to.
 
     config SOFTAP_PASS
-        string "WiFi Password"
+        string "Wi-Fi Password"
         default "PROV_PASS"
         help
-            WiFi password (WPA or WPA2) for the example to use.
+            Wi-Fi password (WPA or WPA2) for the example to use.
 
     config USE_SEC_1
         bool
@@ -48,6 +48,12 @@ menu "Example Configuration"
         prompt "Reset provisioned status of the device"
         help
             This erases the NVS to reset provisioned status of the device on every reboot.
-            Provisioned status is determined by the WiFi STA configuration, saved on the NVS.
+            Provisioned status is determined by the Wi-Fi STA configuration, saved on the NVS.
+
+    config AP_RECONN_ATTEMPTS
+        int "Maximum AP connection attempts"
+        default 5
+        help
+            Set the maximum connection attempts to perform when connecting to a Wi-Fi AP.
 
 endmenu
