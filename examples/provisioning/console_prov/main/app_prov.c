@@ -13,6 +13,7 @@
 #include <esp_wifi.h>
 #include <nvs_flash.h>
 #include <nvs.h>
+#include <esp_event.h>
 
 #include <protocomm.h>
 #include <protocomm_console.h>
@@ -23,6 +24,9 @@
 #include "app_prov.h"
 
 static const char *TAG = "app_prov";
+
+/* Handler for catching WiFi events */
+static void app_prov_event_handler(void* handler_arg, esp_event_base_t base, int id, void* data);
 
 /* Handlers for wifi_config provisioning endpoint */
 extern wifi_prov_config_handlers_t wifi_prov_handlers;
@@ -99,6 +103,10 @@ static void app_prov_stop_service(void)
     protocomm_console_stop(g_prov->pc);
     /* Delete protocomm instance */
     protocomm_delete(g_prov->pc);
+
+    /* Remove event handler */
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, app_prov_event_handler);
 }
 
 /* Task spawned by timer callback */
@@ -126,33 +134,24 @@ static void _stop_prov_cb(void * arg)
     xTaskCreate(&stop_prov_task, "stop_prov", 2048, NULL, tskIDLE_PRIORITY, NULL);
 }
 
-/* Event handler for starting/stopping provisioning.
- * To be called from within the context of the main
- * event handler.
- */
-esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
+/* Event handler for starting/stopping provisioning */
+static void app_prov_event_handler(void* handler_arg, esp_event_base_t event_base,
+                                   int event_id, void* event_data)
 {
-    /* For accessing reason codes in case of disconnection */
-    system_event_info_t *info = &event->event_info;
-
     /* If pointer to provisioning application data is NULL
-     * then provisioning is not running, therefore return without
-     * error */
+     * then provisioning is not running */
     if (!g_prov) {
-        return ESP_OK;
+        return;
     }
 
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         ESP_LOGI(TAG, "STA Start");
         /* Once configuration is received through protocomm,
          * device is started as station. Once station starts,
          * wait for connection to establish with configured
          * host SSID and password */
         g_prov->wifi_state = WIFI_PROV_STA_CONNECTING;
-        break;
-
-    case SYSTEM_EVENT_STA_GOT_IP:
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ESP_LOGI(TAG, "STA Got IP");
         /* Station got IP. That means configuration is successful.
          * Schedule timer to stop provisioning app after 30 seconds. */
@@ -160,16 +159,16 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
         if (g_prov && g_prov->timer) {
             esp_timer_start_once(g_prov->timer, 30000*1000U);
         }
-        break;
-
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGE(TAG, "STA Disconnected");
         /* Station couldn't connect to configured host SSID */
         g_prov->wifi_state = WIFI_PROV_STA_DISCONNECTED;
-        ESP_LOGE(TAG, "Disconnect reason : %d", info->disconnected.reason);
+
+        wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
+        ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
 
         /* Set code corresponding to the reason for disconnection */
-        switch (info->disconnected.reason) {
+        switch (disconnected->reason) {
         case WIFI_REASON_AUTH_EXPIRE:
         case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
         case WIFI_REASON_BEACON_TIMEOUT:
@@ -189,12 +188,7 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
             g_prov->wifi_state = WIFI_PROV_STA_CONNECTING;
             esp_wifi_connect();
         }
-        break;
-
-    default:
-        break;
     }
-    return ESP_OK;
 }
 
 esp_err_t app_prov_get_wifi_state(wifi_prov_sta_state_t* state)
@@ -229,17 +223,6 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
     nvs_flash_erase();
 #endif
 
-    if (nvs_flash_init() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init NVS");
-        return ESP_FAIL;
-    }
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init wifi");
-        return ESP_FAIL;
-    }
-
     /* Get WiFi Station configuration */
     wifi_config_t wifi_cfg;
     if (esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg) != ESP_OK) {
@@ -256,12 +239,6 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
 
 esp_err_t app_prov_configure_sta(wifi_config_t *wifi_cfg)
 {
-    /* Initialize WiFi with default config */
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init WiFi");
-        return ESP_FAIL;
-    }
     /* Configure WiFi as station */
     if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set WiFi mode");
@@ -321,6 +298,18 @@ esp_err_t app_prov_start_console_provisioning(int security, const protocomm_secu
     esp_err_t err = esp_timer_create(&timer_conf, &g_prov->timer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create timer");
+        return err;
+    }
+
+    err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register WiFi event handler");
+        return err;
+    }
+
+    err = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, app_prov_event_handler, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register IP event handler");
         return err;
     }
 
