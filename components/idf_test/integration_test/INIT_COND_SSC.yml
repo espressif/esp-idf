@@ -17,8 +17,7 @@
 initial condition:
 - tag: APM1
   <<: *SSC_INIT_COND
-  initial condition detail: AP mode, DHCP on, will autogen a TC with initial condition
-    APSTA1
+  initial condition detail: (SSC) DUT set to SoftAP mode and config SoftAP, enable DHCP server
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -54,8 +53,7 @@ initial condition:
     - - R SSC1 C +SAP:OK
 - tag: APM2
   <<: *SSC_INIT_COND
-  initial condition detail: AP mode, PC join AP, DHCP on, will autogen a TC with initial
-    condition APSTA2
+  initial condition detail: (SSC) DUT set to SoftAP mode, PC Wi-Fi NIC connected with SoftAP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -99,8 +97,7 @@ initial condition:
     - - R PC_COM NC ERROR C +WIFICONN:OK
 - tag: APO1
   <<: *SSC_INIT_COND
-  initial condition detail: AP mode, will NOT autogen a TC with initial condition
-    APSTA1
+  initial condition detail: (SSC) DUT set to SoftAP mode and config SoftAP, enable DHCP server
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -136,8 +133,7 @@ initial condition:
     - - R SSC1 C +SAP:OK
 - tag: APO2
   <<: *SSC_INIT_COND
-  initial condition detail: AP mode, will NOT autogen a TC with initial condition
-    APSTA2
+  initial condition detail: (SSC) DUT set to SoftAP mode, PC Wi-Fi NIC connected with SoftAP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -179,51 +175,9 @@ initial condition:
   - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
       <target_encryption>
     - - R PC_COM NC ERROR C +WIFICONN:OK
-- <<: *SSC_INIT_COND
-  check cmd set:
-  - ''
-  - *dut1_start_wifi
-  - - SSC SSC1 upgrade -Q -t 1
-    - - R SSC1 C BIN_ID,0
-  - - SSC SSC1 upgrade -Q -t 2 -b 0
-    - - R SSC1 C BIN_INFO,0
-  - - SSC SSC1 op -S -o 2
-    - - R SSC1 C +MODE:OK
-  force restore cmd set:
-  - ''
-  - - SSC SSC1 upgrade -R -r 1 -s <ota_bin_size>
-    - - R SSC1 NC ERROR C !!!ready!!!
-  - - SSC SSC1 op -S -o 1
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 dhcp -S -o 1
-    - - R SSC1 C +DHCP
-  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
-    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
-  - - SOC SOC1 ULISTEN <test_tcp_port1> <pc_ip>
-    - - R SOC_COM L OK
-  - - SOC SOC1 SETOPT REPLY BIN
-    - - R SOC_COM C OK
-  - - SSC SSC1 upgrade -I -b 0 -f 0
-    - - P SSC1 C +UPGRADE:OK
-  - - SSC SSC1 upgrade -U -i <pc_ip> -p <test_tcp_port1> -u <ota_bin>
-    - - P SSC1 C +UPGRADE:SUCCEED
-  - - SSC SSC1 upgrade -R -b 0
-    - - R SSC1 C !!!ready!!!
-  - - SSC SSC1 op -S -o 2
-    - - R SSC1 C +MODE:OK
-  initial condition detail: AP only mode, running BIN0 (located on flash id 0)
-  restore cmd set:
-  - ''
-  - - SSC SSC1 upgrade -Q -t 2 -b 0
-    - - R SSC1 C BIN_INFO,0
-  - - SSC SSC1 upgrade -R -b 0
-    - - R SSC1 C !!!ready!!!
-  - - SSC SSC1 op -S -o 2
-    - - R SSC1 C +MODE:OK
-  tag: APOBIN0
 - tag: APSTA1
   <<: *SSC_INIT_COND
-  initial condition detail: testing ap on sta + ap mode (autogen by APM1)
+  initial condition detail: (SSC) DUT set to STA+SoftAP mode, config SoftAP and enable DHCP server
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -259,7 +213,7 @@ initial condition:
     - - R SSC1 C +SAP:OK
 - tag: APSTA2
   <<: *SSC_INIT_COND
-  initial condition detail: testing ap on sta + ap mode,  PC join AP (autogen by APM2)
+  initial condition detail: (SSC) DUT set to STA+SoftAP mode, PC Wi-Fi NIC connected with SoftAP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -303,7 +257,7 @@ initial condition:
     - - R PC_COM NC ERROR C +WIFICONN:OK
 - tag: APWIFISTO
   <<: *SSC_INIT_COND
-  initial condition detail: AP mode, wifi will stop with initial condition APWIFISTO
+  initial condition detail: (SSC) DUT set to SoftAP mode, stop Wi-Fi
   check cmd set:
   - ''
   - - SSC SSC1 op -Q
@@ -338,8 +292,7 @@ initial condition:
     - - R SSC1 C +MODE:OK
 - tag: BLE_CONN2
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, DUT1 connected with DUT2,
-    DUT2 created GATT service 0xA000
+  initial condition detail: (SSC) enable BLE one 2 DUTs, GATT service 0xA000 started on DUT2, DUT1 connected with DUT2
   check cmd set:
   - ''
   - - ASSERT
@@ -416,8 +369,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_CONN3
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, DUT1 connected with DUT2,
-    DUT2 created GATT service 0xA002
+  initial condition detail: (SSC) enable BLE on 2 DUTs, GATT service 0xA002 started on DUT2, DUT1 connected with DUT2
   check cmd set:
   - ''
   - - ASSERT
@@ -494,8 +446,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_CONN4
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, create both GATTC and GATTS
-    app on DUT1 and DUT2. DUT1 connected with DUT2. use GATT service A002.
+  initial condition detail: (SSC) enable BLE and create both GATTC and GATTS app on DUT1 and DUT2. DUT1 connected with DUT2. use GATT service A002.
   check cmd set:
   - ''
   - - ASSERT
@@ -576,8 +527,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_CONN5
   <<: *SSC_INIT_COND
-  initial condition detail: 5 DUT which BLE is enabled, DUT1 connected with DUT2-5
-    as master, DUT2-5 created GATT service 0xA002
+  initial condition detail: (SSC) enable BLE on 5 DUTs, DUT1 connected with DUT2-5 as master, DUT2-5 use GATT service 0xA002
   check cmd set:
   - ''
   - - ASSERT
@@ -654,8 +604,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_CONN6
   <<: *SSC_INIT_COND
-  initial condition detail: 5 DUT which BLE is enabled, DUT1 is slave, connected by
-    DUT2-5, DUT1 created GATT service 0xA002
+  initial condition detail: (SSC) enable BLE on 5 DUTs, DUT1 is slave, connected by DUT2-5, DUT1 use GATT service 0xA002
   check cmd set:
   - ''
   - - ASSERT
@@ -685,7 +634,7 @@ initial condition:
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC1 gatts -S -z load -p 0xA2
     - - R SSC1 C +GATTS:StartService,OK,A002
-  - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
+  - - LOOP 4 3 "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleadv -D -z start
     - - P SSC1 C +BLEADV:Start,OK
@@ -732,8 +681,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_CONN7
   <<: *SSC_INIT_COND
-  initial condition detail: 5 DUT which BLE is enabled, DUT1 connected with DUT2-3
-    as master, connected with DUT4-5 as slave, GATTS created service 0xA002
+  initial condition detail: (SSC) BLE is enable on 5 DUTs, DUT1 connected with DUT2-3 as master, connected with DUT4-5 as slave, use service 0xA002 on GATTS
   check cmd set:
   - ''
   - - ASSERT
@@ -820,8 +768,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_CONN_SMP
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, DUT1 connected with DUT2,
-    DUT2 created GATT service 0xA000,DUT2 and DUT1 pairing
+  initial condition detail: (SSC) enable BLE on 2 DUTs, DUT1 connected and paired with DUT2, DUT2 created GATT service 0xA000
   check cmd set:
   - ''
   - - ASSERT
@@ -918,7 +865,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_DEINIT1
   <<: *SSC_INIT_COND
-  initial condition detail: 1 DUT which BLE is not enabled
+  initial condition detail: (SSC) DUT deinit BT host
   check cmd set:
   - ''
   - - SSC SSC1 bt -Q
@@ -943,7 +890,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BTC_DEINIT1
   <<: *SSC_INIT_COND
-  initial condition detail: 1 DUT which BLE is not enabled
+  initial condition detail: (SSC) DUT deinit BT controller
   check cmd set:
   - ''
   - - SSC SSC1 reboot
@@ -988,7 +935,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT1
   <<: *SSC_INIT_COND
-  initial condition detail: 1 DUT which BLE is enabled, no active connection
+  initial condition detail: (SSC) enable BLE on DUT
   check cmd set:
   - ''
   - - SSC SSC1 bt -Q
@@ -1036,8 +983,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT2
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    load service 0xA0 and start adv
+  initial condition detail: (SSC) enable BLE on 2 DUTs, no active connection, DUT2 load service 0xA0 and start adv
   check cmd set:
   - ''
   - - SSC SSC[1-2] bt -Q
@@ -1086,8 +1032,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT3
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    load service 0xA2 and start adv
+  initial condition detail: (SSC) enable BLE on 2 DUTs, no active connection, DUT2 load service 0xA002 and start adv
   check cmd set:
   - ''
   - - SSC SSC[1-2] bt -Q
@@ -1132,7 +1077,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT5
   <<: *SSC_INIT_COND
-  initial condition detail: 5 DUT which BLE is enabled, no active connection
+  initial condition detail: (SSC) enable BLE on 5 DUTs, no active connection
   check cmd set:
   - ''
   - - SSC SSC[1-5] bt -Q
@@ -1178,9 +1123,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT_SMP
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT which BLE is enabled, no active connection, DUT2
-    create GATT service 0xA002, DUT2 start adv, SMP enabled on both DUT and DUT1 load
-    default initiator param, DUT2 load default responder param
+  initial condition detail: (SSC) enable BLE on 2 DUTs, no active connection, create GATT service 0xA002 on DUT2, DUT2 start adv, DUT1 load default initiator param, DUT2 load default responder param
   check cmd set:
   - ''
   - - ASSERT
@@ -1252,9 +1195,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT_SMP5
   <<: *SSC_INIT_COND
-  initial condition detail: 5 DUT which BLE is enabled, no active connection, DUT5
-    create GATT service 0xA000, DUT5 start adv, SMP enabled on both DUT and DUT5 load
-    default initiator param, DUT5 load default responder param
+  initial condition detail: (SSC) enable BLE on 5 DUTs, no active connection, create GATT service 0xA000 on DUT2-5, DUT2-5 start adv, DUT1 load default initiator param, DUT2-5 load default responder param
   check cmd set:
   - ''
   - - ASSERT
@@ -1315,8 +1256,10 @@ initial condition:
     - - R SSC[2-5] C +BLEADV:SetAdv,OK
   - - SSC SSC[2-5] bleadv -D -z start
     - - R SSC[2-5] C +BLEADV:OK
-  - - SSC SSC[1-5] blesmp -L -c [1,0]
-    - - R SSC[1-5] C +BLESMP:OK
+  - - SSC SSC1 blesmp -L -c 1
+    - - R SSC1 C +BLESMP:OK
+  - - SSC SSC[2-5] blesmp -L -c 0
+    - - R SSC[2-5] C +BLESMP:OK
   # do wifi disconnect, to prevent wifi reconnect cause bad BLE performance
   - - SSC SSC[1-5] sta -D
     - []
@@ -1326,7 +1269,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: NOW1
   <<: *SSC_INIT_COND
-  initial condition detail: one target in AP mode and espnow is de-initialized
+  initial condition detail: (SSC) DUT1 in AP mode and espnow is de-initialized
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1360,7 +1303,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: NOW2
   <<: *SSC_INIT_COND
-  initial condition detail: multiple (<dev_num>) targets in AP mode, espnow is initialized
+  initial condition detail: (SSC) multiple (<dev_num>) DUTs in AP mode, espnow is initialized
     with self role slave
   check cmd set:
   - ''
@@ -1415,7 +1358,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: None
   <<: *SSC_INIT_COND
-  initial condition detail: none
+  initial condition detail: (SSC) do nothing
   check cmd set:
   - ''
   - - DELAY 0.1
@@ -1434,7 +1377,7 @@ initial condition:
     - - dummy
 - tag: PAIR1
   <<: *SSC_INIT_COND
-  initial condition detail: one target and simple is de-inited
+  initial condition detail: (SSC) DUT1 and simple is de-inited
   check cmd set:
   - ''
   - - SSC SSC1 sp -D
@@ -1453,7 +1396,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: PAIR2
   <<: *SSC_INIT_COND
-  initial condition detail: target1 in AP mode, target2 in STA mode, two targets de-init
+  initial condition detail: (SSC) DUT1 in SoftAP mode, DUT2 in STA mode, two DUTs deinit simple pair
     and init simple pair
   check cmd set:
   - ''
@@ -1501,7 +1444,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: PAIR3
   <<: *SSC_INIT_COND
-  initial condition detail: target1 and target2 in STA+AP mode, two targets de-init
+  initial condition detail: (SSC) DUT1 and DUT2 set to STA+SoftAP mode, two DUTs deinit simple pair
     and init simple pair
   check cmd set:
   - ''
@@ -1545,7 +1488,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: STAAP1
   <<: *SSC_INIT_COND
-  initial condition detail: testing sta on sta + ap mode, quit AP (autogen by STAM1)
+  initial condition detail: (SSC) DUT set to STA+SoftAP mode, disconnected from AP, enable DHCP client
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1581,8 +1524,7 @@ initial condition:
     - - R SSC1 C +MAC:STA,OK
 - tag: STAAP2
   <<: *SSC_INIT_COND
-  initial condition detail: testing sta on sta + ap mode,  join AP, DHCP on (autogen
-    by STAM2)
+  initial condition detail: (SSC) DUT set to STA+SoftAP mode, connected with AP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1618,8 +1560,7 @@ initial condition:
     - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
 - tag: STAM1
   <<: *SSC_INIT_COND
-  initial condition detail: sta mode, quit AP, DHCP on, will autogen a TC with initial
-    condition STAAP1
+  initial condition detail: (SSC) DUT set to STA mode, disconnected from AP, enable DHCP client
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1655,8 +1596,7 @@ initial condition:
     - - R SSC1 C +MAC:STA,OK
 - tag: STAM2
   <<: *SSC_INIT_COND
-  initial condition detail: sta mode, join AP, DHCP on, will autogen a TC with initial
-    condition STAAP2
+  initial condition detail: (SSC) DUT set to STA mode, connected with AP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1692,8 +1632,7 @@ initial condition:
     - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
 - tag: STAO1
   <<: *SSC_INIT_COND
-  initial condition detail: sta mode, quit AP, will NOT autogen a TC with initial
-    condition STAAP1
+  initial condition detail: (SSC) DUT set to STA mode, disconnected from AP, enable DHCP client
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1729,8 +1668,7 @@ initial condition:
     - - R SSC1 C +MAC:STA,OK
 - tag: STAO2
   <<: *SSC_INIT_COND
-  initial condition detail: sta mode, join AP, DHCP on, will NOT autogen a TC with
-    initial condition STAAP2
+  initial condition detail: (SSC) DUT set to STA mode, connected with AP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1764,44 +1702,9 @@ initial condition:
     - - R SSC1 C +MAC:STA,OK
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
-- tag: STAWIFISTO
-  <<: *SSC_INIT_COND
-  initial condition detail: STA mode,  wifi will stop with initial condition STAWIFISTO
-  check cmd set:
-  - ''
-  - - SSC SSC1 op -Q
-    - - R SSC1 C +CURMODE:1
-  - - SSC SSC1 op -W -a init
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a start
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a stop
-    - - R SSC1 C +MODE:OK
-  restore cmd set:
-  - ''
-  - - SSC SSC1 op -S -o 1
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a init
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a start
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a stop
-    - - R SSC1 C +MODE:OK
-  force restore cmd set:
-  - ''
-  - - SSC SSC1 reboot
-    - - R SSC1 C !!!ready!!!
-  - - SSC SSC1 op -S -o 1
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a init
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a start
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a stop
-    - - R SSC1 C +MODE:OK
 - tag: T1_ETH
   <<: *SSC_INIT_COND
-  initial condition detail: ethernet is enabled and got IP from AP
+  initial condition detail: (SSC) ethernet is enabled and got IP from AP
   check cmd set:
   - ''
   - - SSC SSC1 eth -N
@@ -1832,8 +1735,7 @@ initial condition:
     - - R SSC1 C +ETHIP:192.168
 - tag: T2O_1
   <<: *SSC_INIT_COND
-  initial condition detail: same as T2_1 but will NOT autogen a TC with initial condition
-    T2_2
+  initial condition detail: (SSC) DUT1 set to SoftAP mode, DUT2 set to STA mode, enable DHCP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1895,8 +1797,7 @@ initial condition:
     - - R SSC2 C +MAC:STA,OK
 - tag: T2_1
   <<: *SSC_INIT_COND
-  initial condition detail: target 1 as SoftAP, target 2 as STA, will autogen a TC
-    with initial condition T2_2
+  initial condition detail: (SSC) DUT1 set to SoftAP mode, DUT2 set to STA mode, enable DHCP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -1958,7 +1859,7 @@ initial condition:
     - - R SSC2 C +MAC:STA,OK
 - tag: T2_2
   <<: *SSC_INIT_COND
-  initial condition detail: target 1 as AP+STA, target 2 as AP+STA (autogen)
+  initial condition detail: (SSC) DUT1 and DUT2 set to STA+SoftAP mode, enable DHCP
   check cmd set:
   - ''
   - *dut1_start_wifi
@@ -2018,12 +1919,60 @@ initial condition:
     - - R SSC1 C +MAC:AP,OK
   - - SSC SSC2 mac -S -o 1 -m <target2_mac>
     - - R SSC2 C +MAC:STA,OK
+- tag: T3_1
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to STA+SoftAP mode, DUT2 and DUT3 set to STA mode
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:3
+  - - SSC SSC[2-3] op -Q
+    - - R SSC[2-3] C +CURMODE:1
+  - - SSC SSC[1-3] sta -D
+    - - 'R SSC[1-3] C +QAP:'
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC[2-3] dhcp -Q -o 1
+    - - R SSC[2-3] C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 2
+    - - R SSC1 P <target_ap_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC3 mac -Q -o 1
+    - - R SSC3 P <target3_mac>
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o [3,1,1]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] sta -D
+    - - 'R SSC[1-3] C +QAP:'
+  - - SSC SSC[1-3] dhcp -S -o [2,1,1]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - - R SSC[1-3] C !!!ready!!!
+  - - SSC SSC[1-3] op -S -o [3,1,1]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] sta -D
+    - - 'R SSC[1-3] C +QAP:'
+  - - SSC SSC[1-3] dhcp -S -o [2,1,1]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
 - tag: T3_PHY1
   <<: *SSC_INIT_COND
-  initial condition detail: |-
-    1. target 1 and target 2 set to AP+STA mode, target 3 set to STA mode
-    2. all interface of target 2,3 set to 11n ht40
-    3. config softAP of target 1 and target 2
+  initial condition detail: (SSC) DUT1-2 set to STA+SoftAP mode, DUT3 set to STA mode. All interface of DUT2-3 set to 11n ht40. Set DUT1-2 SoftAP config.
   check cmd set:
   - ''
   - - SSC SSC[1-3] op -Q
@@ -2054,8 +2003,7 @@ initial condition:
     - - R SSC1 A <heap_size>:(\d+)
 - tag: WIFIBTSTOP
   <<: *SSC_INIT_COND
-  initial condition detail: bt controller and host will be disabled and deinit with
-    initial condition wifibtstop
+  initial condition detail: (SSC) deinit Wi-Fi and BT host/controller
   check cmd set:
   - ''
   - - SSC SSC1 op -Q
@@ -2120,7 +2068,7 @@ initial condition:
     - - 'R SSC1 C +BT:'
 - tag: WIFISTO
   <<: *SSC_INIT_COND
-  initial condition detail: wifi will stop with initial condition WIFISTO
+  initial condition detail: (SSC) DUT in STA mode, stop Wi-Fi
   check cmd set:
   - ''
   - - SSC SSC1 op -W -a init
@@ -2149,7 +2097,7 @@ initial condition:
     - - R SSC1 C +MODE:OK
 - tag: BLE_INIT_REBOOT2
   <<: *SSC_INIT_COND
-  initial condition detail: 2 DUT should reboot at first and BLE is enabled, no active connection
+  initial condition detail: (SSC) reboot and enable BLE on DUT1 and DUT2
   check cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -2188,44 +2136,49 @@ initial condition:
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
-- tag: T3_1
+- tag: T3_2
   <<: *SSC_INIT_COND
-  initial condition detail: target 1 as SoftAP + STA, target 2 as SoftAP, target 3 as STA
-      with initial condition T2_2
+  initial condition detail: (SSC) DUT set to STA+SoftAP mode, DUT2 set to SoftAP mode, DUT3 set to STA mode
   check cmd set:
   - ''
-  - *dut1_start_wifi
-  - - SSC SSC1 op -Q
-    - - R SSC1 C +CURMODE:3
-  - - SSC SSC2 op -Q
-    - - R SSC2 C +CURMODE:2
-  - - SSC SSC3 op -Q
-    - - R SSC3 C +CURMODE:1
+  - - SSC SSC[1,2,3] op -Q
+    - - R SSC[1,2,3] C +CURMODE:[3,2,1]
   - - SSC SSC3 sta -D
     - - 'R SSC3 C +QAP:'
   restore cmd set:
   - ''
-  - - SSC SSC1 op -S -o 3
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC2 op -S -o 2
-    - - R SSC2 C +MODE:OK
-  - - SSC SSC3 op -S -o 1
-    - - R SSC3 C +MODE:OK
+  - - SSC SSC[1,2,3] op -S -o [3,2,1]
+    - - R SSC[1,2,3] C +MODE:OK
   - - SSC SSC3 sta -D
     - - 'R SSC3 C +QAP:'
   force restore cmd set:
   - ''
-  - - SSC SSC1 reboot
-    - - R SSC1 C !!!ready!!!
-  - - SSC SSC2 reboot
-    - - R SSC2 C !!!ready!!!
-  - - SSC SSC3 reboot
-    - - R SSC3 C !!!ready!!!
-  - - SSC SSC1 op -S -o 3
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC2 op -S -o 2
-    - - R SSC2 C +MODE:OK
-  - - SSC SSC3 op -S -o 1
-    - - R SSC3 C +MODE:OK
+  - - SSC SSC[1,2,3] reboot
+    - - R SSC[1,2,3] C !!!ready!!!
+  - - SSC SSC[1,2,3] op -S -o [3,2,1]
+    - - R SSC[1,2,3] C +MODE:OK
   - - SSC SSC3 sta -D
     - - 'R SSC3 C +QAP:'
+- tag: T3_3
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to SoftAp mode, DUT2-3 set to STA mode
+  check cmd set:
+  - ''
+  - - SSC SSC[1,2,3] op -Q
+    - - R SSC[1,2,3] C +CURMODE:[2,1,1]
+  - - SSC SSC[2,3] sta -D
+    - - 'R SSC[2,3] C +QAP:'
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2,3] op -S -o [2,1,1]
+    - - R SSC[1,2,3] C +MODE:OK
+  - - SSC SSC[2,3] sta -D
+    - - 'R SSC[2,3] C +QAP:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2,3] reboot
+    - - R SSC[1,2,3] C !!!ready!!!
+  - - SSC SSC[1,2,3] op -S -o [2,1,1]
+    - - R SSC[1,2,3] C +MODE:OK
+  - - SSC SSC[2,3] sta -D
+    - - 'R SSC[2,3] C +QAP:'

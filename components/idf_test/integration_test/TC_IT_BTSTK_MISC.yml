@@ -5,7 +5,7 @@
   category: Function
   test point 1: basic function
   initial condition: BLE_DEINIT1
-  test environment: SSC_T1_1
+  test environment: SSC_T1_4
   execution time: 0
   module: BT Stack
   sub module: Misc

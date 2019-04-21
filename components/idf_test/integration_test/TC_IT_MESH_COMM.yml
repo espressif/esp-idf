@@ -629,6 +629,7 @@ test cases:
   test environment: SSC_T3_MESH1
   test point 1: basic function
   test point 2: ucast meshsend test
+  active: "No"
 - ID: MESH_COMM_0132
   <<: *MESH_COMM_CASE
   cmd set:
@@ -646,6 +647,7 @@ test cases:
   test environment: SSC_T12_MESH1
   test point 1: basic function
   test point 2: ucast meshsend test
+  active: "No"
 - ID: MESH_COMM_0133
   <<: *MESH_COMM_CASE
   cmd set:
@@ -663,6 +665,7 @@ test cases:
   test environment: SSC_T12_MESH1
   test point 1: basic function
   test point 2: ucast meshsend test
+  active: "No"
 - ID: MESH_COMM_0134
   <<: *MESH_COMM_CASE
   cmd set:
@@ -2770,6 +2773,7 @@ test cases:
   test point 2: ucast/mcast/bcast throughput and packetloss
 - ID: MESH_COMM_6101
   <<: *MESH_COMM_CASE
+  category: Performance
   cmd set:
   - MeshStress/MeshSendRecv
   - - test_time = 1
@@ -2798,6 +2802,7 @@ test cases:
   test point 2: ucast/mcast/bcast delaytime and packetloss
 - ID: MESH_COMM_6102
   <<: *MESH_COMM_CASE
+  category: Performance
   cmd set:
   - MeshStress/MeshSendRecv
   - - test_time = 1
@@ -2826,6 +2831,7 @@ test cases:
   test point 2: ucast/mcast/bcast delaytime and packetloss
 - ID: MESH_COMM_6103
   <<: *MESH_COMM_CASE
+  category: Performance
   cmd set:
   - MeshStress/MeshSendRecv
   - - test_time = 1
@@ -2852,3 +2858,18 @@ test cases:
   test environment: SSC_T50_MESH1
   test point 1: meshsend performance
   test point 2: ucast/mcast/bcast delaytime and packetloss
+- ID: MESH_COMM_6201
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshPing
+  execution time: 1
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: ping test, calculate round trip time on different leavels
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast ping time

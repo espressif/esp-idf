@@ -858,6 +858,7 @@ test cases:
     - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
 - ID: BTSTK_GAP_03010
   <<: *GAP_CASE
+  CI ready: "No"  # can't restore to use public address after set to use private address
   test point 2: BLE GAP set advertise param
   summary: ble adv with privacy address and RPA_RANDOM
   initial condition: BLE_INIT_SMP
@@ -881,6 +882,7 @@ test cases:
     - ["R SSC1 NP <dut2_bt_mac> C Complete"]
 - ID: BTSTK_GAP_03011
   <<: *GAP_CASE
+  CI ready: "No"  # can't restore to use public address after set to use private address
   test point 2: BLE GAP set advertise param
   summary: ble set adv owner address type as RPA_RANDOM
   initial condition: BLE_INIT_SMP
@@ -930,6 +932,25 @@ test cases:
     - ["R SSC1 P <dut2_bt_mac> C Complete"]
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
     - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+- ID: BTSTK_GAP_03012
+  <<: *GAP_CASE
+  test point 2: BLE GAP set advertise param
+  summary: set ble adv peer_address_type as RPA_PUBLIC and RPA_RANDOM
+  initial condition: BLE_INIT_SMP
+  steps: |
+    1. DUT1 set peer address and peer address type RPA_PUBLIC
+    2. DUT1 set peer address and peer address type RPA_RANDOM
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:Stop,OK"]
+  - - "SSC SSC1 bleadv -D -z start -b <dut2_bt_mac> -y 2"
+    - ["R SSC1 C +BLEADV:Start,ERROR"]
+  - - "SSC SSC1 bleadv -D -z start -b <dut2_bt_mac> -y 3"
+    - ["R SSC1 C +BLEADV:Start,ERROR"]
 - ID: BTSTK_GAP_04001
   <<: *GAP_CASE
   test point 2: BLE GAP set scan param
@@ -1017,13 +1038,13 @@ test cases:
   - - "SSC SSC2 bleadv -D -z start"
     - ["R SSC2 C +BLEADV:OK"]
   - *dut1_stop_adv
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0004 -w 0x0004"
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0004 -w 0x0003"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4000 -w 0x4000"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0003 -w 0x0003"
     - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4001 -i 0x4001"
+  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4001 -w 0x4001"
     - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
 - ID: BTSTK_GAP_04004
   <<: *GAP_CASE
@@ -1043,7 +1064,7 @@ test cases:
   test environment: SSC_T1_4
   cmd set:
   - ""
-  - - "SSC SSC1 blescan -L -c 0 -w 0x0004 -i 0x0004"
+  - - "SSC SSC1 blescan -L -c 0 -w 0x0004 -i 0x004"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 blescan -L -c 0 -w 0x4000 -i 0x4000"
     - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
@@ -2768,126 +2789,6 @@ test cases:
   - - LOOP 4 1 "[2,3,4,5]"
   - - "SSC SSC{%d} bleconn -D -z all"
     - ["P SSC1 C Disconnect"]
-- ID: BTSTK_GAP_40001
-  <<: *GAP_CASE
-  auto test: 'No'
-  test point 2: test if BLE work after switch off some sub modules
-  summary: GAP only test
-  steps: |
-    1. download GAP only SSC bin on both DUT
-    2. DUT1 set ascii device name
-    3. stop advertising
-    4. config scan response and start advertising
-    5. DUT2 do active scan
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. device name in scan result
-  initial condition: None
-  version: v1 (2017-05-19)
-  cmd set:
-  - ""
-  - - "SSC SSC[1-2] reboot"
-    - ['R SSC[1-2] C !!!ready!!!']
-  - - "SSC SSC[1-2] ble -R"
-    - ["R SSC[1-2] C +BLE:OK"]
-  - *set_default_ble_name
-  - *set_default_adv_data
-  - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
-    - ["R SSC2 P <dut1_ble_name>"]
-- ID: BTSTK_GAP_50001
-  <<: *GAP_CASE
-  category: Performance
-  test point 1: performance + stress
-  test point 2: BLE GAP performance test
-  summary: BLE Connect and disconnect performance test
-  steps: |
-    1. DUT1 disconnect with DUT2
-    2. DUT2 start advertising
-    3. DUT1 connect to DUT2
-    4. do service discovery
-    5. loop step 1-4
-    6. check connection fail ratio and average conn time
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. succeed
-    6. meet pass standard
-  initial condition: BLE_INIT2
-  execution time: 6
-  version: v1 (2017-05-19)
-  CI ready: 'No'
-  cmd set:
-  - "BLEStress/BLEConnPerformance"
-  - - "test_time = 420"
-    - ""
-  - - "average_conn_time = 3"
-    - ""
-  - - "fail_ratio = 0.01"
-    - ""
-  - - "fail_timeout = 10"
-    - ""
-- ID: BTSTK_GAP_50004
-  <<: *GAP_CASE
-  category: Performance
-  test point 1: performance + stress
-  test point 2: BLE GAP performance test
-  summary: BLE Connect and disconnect correct performance test
-  steps: |
-    1. DUT1 disconnect with DUT2
-    2. DUT2 start advertising
-    3. DUT1 connect to DUT2
-    4. loop step 1-4 1000 times
-    5. reboot
-    6. loop step 1-5
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. succeed
-    6. meet pass standard
-  initial condition: BLE_INIT2
-  execution time: 6
-  version: v1 (2017-05-19)
-  CI ready: 'No'
-  cmd set:
-  - "BLEStress/BLEConnCorPerformance"
-  - - "test_time = 100"
-    - ""
-  - - "reboot_time = 1000"
-    - ""
-  - - "average_conn_time = 3"
-    - ""
-  - - "fail_ratio = 0.01"
-    - ""
-  - - "fail_timeout = 10"
-    - ""
-- ID: BTSTK_GAP_51001
-  <<: *GAP_CASE
-  category: Performance
-  test point 1: performance + stress
-  test point 2: BLE GAP performance test
-  summary: BLE adv and scan forever
-  steps: |
-    1. DUT1 do adv
-    2. DUT2 do scan
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_INIT2
-  execution time: 10
-  cmd set:
-  - "BLEStress/BLEAdvScanPerformance"
-  - - "test_time = 600"
-    - ""
 - ID: BTSTK_GAP_13001
   <<: *GAP_CASE
   test point 2: BLE GAP param packet data length test
@@ -3070,7 +2971,7 @@ test cases:
 - ID: BTSTK_GAP_14008
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address and reconnect after disconnect
+  summary: BLE pairing and set random address as resolvable private address, reconnect after disconnect
   steps: |
     1. SSC2 set AuthReqMode and IOCAP,set RspKey as Enc and IRK
     2. pairing
@@ -3113,7 +3014,7 @@ test cases:
 - ID: BTSTK_GAP_14009
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address and reconnect after reboot
+  summary: BLE pairing and set random address as resolvable private address, reconnect after reboot
   steps: |
     1. SSC2 set AuthReqMode and IOCAP,set RspKey as Enc and IRK
     2. pairing
@@ -3253,3 +3154,169 @@ test cases:
     - ['P SSC1 C +BLE:GetWhiteList,OK,0']
   - - "SSC SSC1 ble -W -a c0:9b:0e:36:6d:7c -z add"
     - ['P SSC1 C +BLE:AddWhiteList,Fail']
+- ID: BTSTK_GAP_16001
+  <<: *GAP_CASE
+  test point 2: BLE low power test
+  summary: test adv current and adv interval 32-32
+  category: Performance
+  steps: |
+   1. DUT2 start adv
+   2. test DUT2 current
+  expected result: |
+   1. succeed
+   2. succeed
+  cmd set:
+  - "BLEFunction/BLELowPower"
+  - - op_test = "start_adv"
+    - ''
+- ID: BTSTK_GAP_16002
+  <<: *GAP_CASE
+  test point 2: BLE low power test
+  summary: test scan current and scan window/interval 04
+  category: Performance
+  steps: |
+   1. DUT2 start scan
+   2. test DUT2 current
+  expected result: |
+   1. succeed
+   2. succeed
+  cmd set:
+  - "BLEFunction/BLELowPower"
+  - - op_test = "start_scan"
+    - ""
+- ID: BTSTK_GAP_16003
+  <<: *GAP_CASE
+  test point 2: BLE low power test
+  summary: test connect current and interval 6-6
+  category: Performance
+  steps: |
+   1. DUT1 connect to DUT2
+   2. test DUT2 current
+  expected result: |
+   1. succeed
+   2. succeed
+  cmd set:
+  - "BLEFunction/BLELowPower"
+  - - op_test = "do_connect"
+    - ""
+- ID: BTSTK_GAP_40001
+  <<: *GAP_CASE
+  auto test: 'No'
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GAP only test
+  steps: |
+    1. download GAP only SSC bin on both DUT
+    2. DUT1 set ascii device name
+    3. stop advertising
+    4. config scan response and start advertising
+    5. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. device name in scan result
+  initial condition: None
+  version: v1 (2017-05-19)
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] reboot"
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ["R SSC[1-2] C +BLE:OK"]
+  - *set_default_ble_name
+  - *set_default_adv_data
+  - *dut2_stop_adv
+  - - "SSC SSC2 blescan -L -c 0"
+    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 3"
+    - ["R SSC2 P <dut1_ble_name>"]
+- ID: BTSTK_GAP_50001
+  <<: *GAP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GAP performance test
+  summary: BLE Connect and disconnect performance test
+  steps: |
+    1. DUT1 disconnect with DUT2
+    2. DUT2 start advertising
+    3. DUT1 connect to DUT2
+    4. do service discovery
+    5. loop step 1-4
+    6. check connection fail ratio and average conn time
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. meet pass standard
+  initial condition: BLE_INIT2
+  execution time: 6
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  cmd set:
+  - "BLEStress/BLEConnPerformance"
+  - - "test_time = 420"
+    - ""
+  - - "average_conn_time = 3"
+    - ""
+  - - "fail_ratio = 0.01"
+    - ""
+  - - "fail_timeout = 10"
+    - ""
+- ID: BTSTK_GAP_50004
+  <<: *GAP_CASE
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GAP performance test
+  summary: BLE Connect and disconnect correct performance test
+  steps: |
+    1. DUT1 disconnect with DUT2
+    2. DUT2 start advertising
+    3. DUT1 connect to DUT2
+    4. loop step 1-4 1000 times
+    5. reboot
+    6. loop step 1-5
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. meet pass standard
+  initial condition: BLE_INIT2
+  execution time: 6
+  version: v1 (2017-05-19)
+  CI ready: 'No'
+  cmd set:
+  - "BLEStress/BLEConnCorPerformance"
+  - - "test_time = 100"
+    - ""
+  - - "reboot_time = 1000"
+    - ""
+  - - "average_conn_time = 3"
+    - ""
+  - - "fail_ratio = 0.01"
+    - ""
+  - - "fail_timeout = 10"
+    - ""
+- ID: BTSTK_GAP_51001
+  <<: *GAP_CASE
+  Test App: SSC_BLE, SSC_PSRAM
+  category: Performance
+  test point 1: performance + stress
+  test point 2: BLE GAP performance test
+  summary: BLE adv and scan forever
+  steps: |
+    1. DUT1 do adv
+    2. DUT2 do scan
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_INIT2
+  execution time: 10
+  cmd set:
+  - "BLEStress/BLEAdvScanPerformance"
+  - - "test_time = 600"
+    - ""

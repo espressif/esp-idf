@@ -4,14 +4,7 @@
   test script: EnvBase
 
 test environment:
-- tag: SSC_T1_1
-  <<: *TEST_ENV
-  Target Count: 1
-  test environment detail: |-
-    PC has 2 wired NIC connected to AP.
-    PC has 1 WiFi NIC.
-    1 SSC DUT connect with PC by UART.
-- tag: ETH_T1_1
+- tag: SSC_T1_Ethernet
   <<: *TEST_ENV
   Target Count: 1
   test environment detail: |-
@@ -223,13 +216,6 @@ test environment:
   test environment detail: |-
     1 SSC DUT connect with PC by UART.
     One WEP share key AP placed near SSC1.
-- tag: SSC_T2_1
-  <<: *TEST_ENV
-  Target Count: 2
-  test environment detail: |-
-    PC has 1 wired NIC connected to AP.
-    PC has 1 WiFi NIC.
-    2 SSC DUTs connect with PC by UART.
 - tag: SSC_T2_2
   <<: *TEST_ENV
   Target Count: 2
@@ -285,6 +271,14 @@ test environment:
     refer to figure.
     2 SSC DUT connect with PC by UART. Put DUT board to different Shield boxes.
     2 shield boxes are connected with programmable attenuator.
+- tag: SSC_T2_Sleep1
+  <<: *TEST_ENV
+  Special: Y
+  Target Count: 1
+  test environment detail: |
+    Multimeter connected with DUT1 to measure its current consumption.
+    DUT1 placed near DUT1.
+    AP placed near DUT1, PC connected with AP with wired NIC.
 - tag: SSC_T2_Sniffer
   <<: *TEST_ENV
   PC OS: 'linux'

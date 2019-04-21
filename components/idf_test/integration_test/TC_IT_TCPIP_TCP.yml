@@ -131,7 +131,7 @@ test cases:
   level: Integration
   module: TCPIP
   steps: |
-    1.PC上建立TCP 监听 test_tcp_port1
+    1. PC上建立TCP 监听 test_tcp_port1
     2.target1上创建TCP socket
     3.target1上使用步骤2创建的socket，去连接 PC的ip，test_tcp_port1
     4.PC与target1 创建好TCP 连接，有ACCEPT
@@ -3457,7 +3457,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -3490,11 +3490,52 @@ test cases:
   version: v2 (2016-11-15)
 - CI ready: 'Yes'
   ID: TCPIP_TCP_5101
+  SDK: ESP32_IDF
+  Test App: SSC, SSC_NonBlocking, SSC_PSRAM
+  auto test: 'Yes'
+  category: Stable
+  cmd set:
+  - TCPStress/TCPAPNSTA
+  - - send_len = 1460
+    - - dummy
+  - - test_time = 720
+    - - ''
+  - - server_port = "<random_port>"
+    - - ''
+  - - server_echo = True
+    - - ''
+  - - sta_number = 4
+    - - ''
+  - - send_delay = 50
+    - - ''
+  - - ap_ip = "<target_ap_ip>"
+    - - ''
+  execution time: 12.0
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. all TCP connection not disconnected
+  initial condition: None
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. all sta connect to softap
+    2. create tcp server on softap
+    3. all sta connect to softap tcp server
+    4. do bi-direction send on all tcp connections
+  sub module: TCP
+  summary: 1 AP 4 STA TCP stable test
+  test environment: SSC_T5_1
+  test point 1: stable
+  test point 2: TCP stable test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5101
   SDK: |-
     8266_NonOS
     8266_RTOS
-    ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stable
   cmd set:
@@ -3723,7 +3764,7 @@ test cases:
     2. PC send random length data to target
   sub module: TCP
   summary: send random length segment to target for Ethernet
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stable
   test point 2: TCP stable test
   version: v2 (2016-11-15)
@@ -3768,11 +3809,44 @@ test cases:
   version: v2 (2016-11-15)
 - CI ready: 'Yes'
   ID: TCPIP_TCP_5202
+  SDK: ESP32_IDF
+  Test App: SSC, SSC_NonBlocking, SSC_PSRAM
+  auto test: 'Yes'
+  category: Stress
+  cmd set:
+  - TCPStress/TCPDataValidation
+  - - test_time = 1440
+    - - dummy
+  - - tx_enable = True
+    - - ''
+  - - rx_enable = True
+    - - ''
+  - - conn_num = 1
+    - - ''
+  - - send_len = 1024
+    - - ''
+  execution time: 24.0
+  expected result: |-
+    1. succeed
+    2. verify reciveid data on target and PC succeed
+  initial condition: STAM2
+  level: Integration
+  module: TCPIP
+  steps: |-
+    1. create TCP connection
+    2. send specified pattern on both direction
+  sub module: TCP
+  summary: TCP send/recv data validation
+  test environment: SSC_T1_6
+  test point 1: stress
+  test point 2: TCP stress test
+  version: v2 (2016-11-15)
+- CI ready: 'Yes'
+  ID: TCPIP_TCP_5202
   SDK: |-
     8266_NonOS
     8266_RTOS
-    ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -3844,7 +3918,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -3871,7 +3945,7 @@ test cases:
     2. send specified pattern on both direction
   sub module: TCP
   summary: TCP send/recv data validation for Ethernet
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: TCP stress test
   version: v2 (2016-11-15)
@@ -3881,7 +3955,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -3892,7 +3966,7 @@ test cases:
     - - ''
   - - rx_enable = False
     - - ''
-  - - measure_period = 5
+  - - measure_period = 30
     - - ''
   execution time: 2.0
   expected result: |-
@@ -3919,7 +3993,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -3930,7 +4004,7 @@ test cases:
     - - ''
   - - rx_enable = True
     - - ''
-  - - measure_period = 5
+  - - measure_period = 30
     - - ''
   execution time: 2.0
   expected result: |-
@@ -3957,7 +4031,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -3985,7 +4059,7 @@ test cases:
     Loop for step 1-2
   sub module: TCP
   summary: TCP throughput Tx for Ethernet
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -3995,7 +4069,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -4023,7 +4097,7 @@ test cases:
     Loop for step 1-2
   sub module: TCP
   summary: TCP throughput Rx for Ethernet
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -4033,7 +4107,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -4061,7 +4135,7 @@ test cases:
     Loop for step 1-3
   sub module: TCP
   summary: Eth random close while sending packets
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -4149,7 +4223,7 @@ test cases:
     8266_NonOS
     8266_RTOS
     ESP32_IDF
-  Test App: SSC
+  Test App: SSC_Ethernet
   auto test: 'Yes'
   category: Stress
   cmd set:
@@ -4179,7 +4253,7 @@ test cases:
     4. ip query
   sub module: TCP
   summary: Eth get ip test
-  test environment: ETH_T1_1
+  test environment: SSC_T1_Ethernet
   test point 1: stress
   test point 2: TCP stress test
   version: v1 (2016-8-15)
@@ -4258,7 +4332,7 @@ test cases:
 - CI ready: 'Yes'
   ID: TCPIP_TCP_5803
   SDK: 'ESP32_IDF'
-  Test App: SSC
+  Test App: SSC, SSC_NonBlocking
   auto test: 'Yes'
   category: Stress
   cmd set:
