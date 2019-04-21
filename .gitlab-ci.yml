@@ -774,6 +774,9 @@ deploy_test_result:
     - deploy_test
   when: always
   only:
+    refs:
+      - master
+      - schedules
     variables:
       - $DEPLOY_TEST_RESULT_TO_JIRA == "Yes"
   artifacts:
