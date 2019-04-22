@@ -96,7 +96,7 @@ static void iperf_report_task(void *arg)
                (double)((s_iperf_ctrl.total_len - last_len) * 8) / interval / 1e6);
         cur += interval;
         last_len = s_iperf_ctrl.total_len;
-        if (cur == time) {
+        if (cur >= time) {
             break;
         }
     }
@@ -160,7 +160,6 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
         return ESP_FAIL;
     }
 
-    iperf_start_report();
     buffer = s_iperf_ctrl.buffer;
     want_recv = s_iperf_ctrl.buffer_len;
     while (!s_iperf_ctrl.finish) {
@@ -173,6 +172,7 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
             return ESP_FAIL;
         } else {
             printf("accept: %s,%d\n", inet_ntoa(remote_addr.sin_addr), htons(remote_addr.sin_port));
+            iperf_start_report();
 
             t.tv_sec = IPERF_SOCKET_RX_TIMEOUT;
             setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t));
@@ -182,6 +182,7 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
             actual_recv = recv(sockfd, buffer, want_recv, 0);
             if (actual_recv < 0) {
                 iperf_show_socket_error_reason("tcp server recv", listen_socket);
+                s_iperf_ctrl.finish = true;
                 break;
             } else {
                 s_iperf_ctrl.total_len += actual_recv;
@@ -206,6 +207,7 @@ static esp_err_t IRAM_ATTR iperf_run_udp_server(void)
     uint8_t *buffer;
     int sockfd;
     int opt;
+    bool udp_recv_start = true ;
 
     sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sockfd < 0) {
@@ -227,7 +229,6 @@ static esp_err_t IRAM_ATTR iperf_run_udp_server(void)
     addr.sin_port = htons(s_iperf_ctrl.cfg.sport);
     addr.sin_addr.s_addr = s_iperf_ctrl.cfg.sip;
 
-    iperf_start_report();
     buffer = s_iperf_ctrl.buffer;
     want_recv = s_iperf_ctrl.buffer_len;
     ESP_LOGI(TAG, "want recv=%d", want_recv);
@@ -240,6 +241,10 @@ static esp_err_t IRAM_ATTR iperf_run_udp_server(void)
         if (actual_recv < 0) {
             iperf_show_socket_error_reason("udp server recv", sockfd);
         } else {
+            if(udp_recv_start){
+                iperf_start_report();
+                udp_recv_start = false;
+            }
             s_iperf_ctrl.total_len += actual_recv;
         }
     }
@@ -350,6 +355,7 @@ static esp_err_t iperf_run_tcp_client(void)
         }
     }
 
+    s_iperf_ctrl.finish = true;
     close(sockfd);
     return ESP_OK;
 }
