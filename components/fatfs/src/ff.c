@@ -2727,10 +2727,13 @@ void get_fileinfo (
 		if (di == 0) {	/* If LFN and SFN both are invalid, this object is inaccesible */
 			fno->fname[di++] = '?';
 		} else {
+            int dotflg = 0;     /* #IDFGH-1012 modified for SFN */
 			for (si = di = 0; fno->altname[si]; si++, di++) {	/* Copy altname[] to fname[] with case information */
 				wc = (WCHAR)fno->altname[si];
-				if (IsUpper(wc) && (dp->dir[DIR_NTres] & ((si >= 9) ? NS_EXT : NS_BODY))) wc += 0x20;
+                
+				if (IsUpper(wc) && (dp->dir[DIR_NTres] & ((dotflg) ? NS_EXT : NS_BODY))) wc += 0x20;
 				fno->fname[di] = (TCHAR)wc;
+                if(wc=='.'){dotflg = 1;}
 			}
 		}
 		fno->fname[di] = 0;	/* Terminate the LFN */
