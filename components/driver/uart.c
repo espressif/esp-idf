@@ -665,20 +665,35 @@ esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num)
     return ESP_OK;
 }
 
+static periph_module_t get_periph_module(uart_port_t uart_num)
+{
+    periph_module_t periph_module = PERIPH_UART0_MODULE;
+    if (uart_num == UART_NUM_0) {
+        periph_module = PERIPH_UART0_MODULE;
+    } else if (uart_num == UART_NUM_1) {
+        periph_module = PERIPH_UART1_MODULE;
+    }
+#if SOC_UART_NUM > 2
+    else if (uart_num == UART_NUM_2) {
+        periph_module = PERIPH_UART2_MODULE;
+    }
+#endif
+    else {
+        assert(0 && "uart_num error");
+    }
+    return periph_module;
+}
+
 esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config)
 {
     esp_err_t r;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((uart_config), "param null", ESP_FAIL);
-    if(uart_num == UART_NUM_0) {
-        periph_module_enable(PERIPH_UART0_MODULE);
-    } else if(uart_num == UART_NUM_1) {
-        periph_module_enable(PERIPH_UART1_MODULE);
-#if UART_NUM > 2
-    } else if(uart_num == UART_NUM_2) {
-        periph_module_enable(PERIPH_UART2_MODULE);
-#endif
+    periph_module_t periph_module = get_periph_module(uart_num);
+    if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+        periph_module_reset(periph_module);
     }
+    periph_module_enable(periph_module);
     r = uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
     if (r != ESP_OK) return r;
 
@@ -1463,16 +1478,9 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     free(p_uart_obj[uart_num]);
     p_uart_obj[uart_num] = NULL;
 
-    if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM ) {
-       if(uart_num == UART_NUM_0) {
-           periph_module_disable(PERIPH_UART0_MODULE);
-       } else if(uart_num == UART_NUM_1) {
-           periph_module_disable(PERIPH_UART1_MODULE);
-#if UART_NUM > 2
-       } else if(uart_num == UART_NUM_2) {
-           periph_module_disable(PERIPH_UART2_MODULE);
-#endif
-       }
+    if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
+       periph_module_t periph_module = get_periph_module(uart_num);
+       periph_module_disable(periph_module);
     }
     return ESP_OK;
 }
