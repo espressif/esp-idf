@@ -283,7 +283,7 @@ Linux and MacOS
     cd ~/esp/hello_world
     idf.py menuconfig
 
-If your default version of Python is 3.x, you may need to run ``python2 idf.py`` instead.
+If your default version of Python is 3.x, you may need to run ``python2 $(which idf.py) menuconfig`` instead.
 
 Windows
 ~~~~~~~
