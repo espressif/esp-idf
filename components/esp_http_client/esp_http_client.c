@@ -567,6 +567,17 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (client->location == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return esp_http_client_set_url(client, client->location);
+}
+
 static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 {
     char *auth_header = NULL;
