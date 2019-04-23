@@ -16,7 +16,7 @@
 
 #include <esp_log.h>
 #include <esp_wifi.h>
-#include <esp_event_loop.h>
+#include <esp_event.h>
 #include <nvs_flash.h>
 
 #include <wifi_provisioning/manager.h>
@@ -30,73 +30,56 @@ const int WIFI_CONNECTED_EVENT = BIT0;
 static EventGroupHandle_t wifi_event_group;
 
 /* Event handler for catching system events */
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void event_handler(void* arg, esp_event_base_t event_base,
+                          int event_id, void* event_data)
 {
-    /* Pass event information to provisioning manager so that it can
-     * maintain its internal state depending upon the system event */
-    wifi_prov_mgr_event_handler(ctx, event);
-
-    /* Global event handling */
-    switch (event->event_id) {
-        case SYSTEM_EVENT_STA_START:
-            esp_wifi_connect();
-            break;
-        case SYSTEM_EVENT_STA_GOT_IP:
-            ESP_LOGI(TAG, "Connected with IP Address:%s",
-                     ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-            xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
-            break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
-            esp_wifi_connect();
-            break;
-        default:
-            break;
-    }
-    return ESP_OK;
-}
-
-/* Event handler for catching provisioning manager events */
-static void prov_event_handler(void *user_data,
-                               wifi_prov_cb_event_t event, void *event_data)
-{
-    switch (event) {
-        case WIFI_PROV_START:
-            ESP_LOGI(TAG, "Provisioning started");
-            break;
-        case WIFI_PROV_CRED_RECV: {
-            wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
-            /* If SSID length is exactly 32 bytes, null termination
-             * will not be present, so explicitly obtain the length */
-            size_t ssid_len = strnlen((const char *)wifi_sta_cfg->ssid, sizeof(wifi_sta_cfg->ssid));
-            ESP_LOGI(TAG, "Received Wi-Fi credentials"
-                     "\n\tSSID     : %.*s\n\tPassword : %s",
-                     ssid_len, (const char *) wifi_sta_cfg->ssid,
-                     (const char *) wifi_sta_cfg->password);
-            break;
+    if (event_base == WIFI_PROV_EVENT) {
+        switch (event_id) {
+            case WIFI_PROV_START:
+                ESP_LOGI(TAG, "Provisioning started");
+                break;
+            case WIFI_PROV_CRED_RECV: {
+                wifi_sta_config_t *wifi_sta_cfg = (wifi_sta_config_t *)event_data;
+                ESP_LOGI(TAG, "Received Wi-Fi credentials"
+                         "\n\tSSID     : %s\n\tPassword : %s",
+                         (const char *) wifi_sta_cfg->ssid,
+                         (const char *) wifi_sta_cfg->password);
+                break;
+            }
+            case WIFI_PROV_CRED_FAIL: {
+                wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
+                ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
+                         "\n\tPlease reset to factory and retry provisioning",
+                         (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
+                         "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
+                break;
+            }
+            case WIFI_PROV_CRED_SUCCESS:
+                ESP_LOGI(TAG, "Provisioning successful");
+                break;
+            case WIFI_PROV_END:
+                /* De-initialize manager once provisioning is finished */
+                wifi_prov_mgr_deinit();
+                break;
+            default:
+                break;
         }
-        case WIFI_PROV_CRED_FAIL: {
-            wifi_prov_sta_fail_reason_t *reason = (wifi_prov_sta_fail_reason_t *)event_data;
-            ESP_LOGE(TAG, "Provisioning failed!\n\tReason : %s"
-                     "\n\tPlease reset to factory and retry provisioning",
-                     (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
-                     "Wi-Fi AP password incorrect" : "Wi-Fi AP not found");
-            break;
-        }
-        case WIFI_PROV_CRED_SUCCESS:
-            ESP_LOGI(TAG, "Provisioning successful");
-            break;
-        case WIFI_PROV_END:
-            /* De-initialize manager once provisioning is finished */
-            wifi_prov_mgr_deinit();
-            break;
-        default:
-            break;
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ESP_LOGI(TAG, "Connected with IP Address:%s", ip4addr_ntoa(&event->ip_info.ip));
+        /* Signal main application to continue execution */
+        xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        ESP_LOGI(TAG, "Disconnected. Connecting to the AP again...");
+        esp_wifi_connect();
     }
 }
 
 static void wifi_init_sta()
 {
+    /* Start Wi-Fi in station mode */
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 }
@@ -123,10 +106,17 @@ void app_main()
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    /* Initialize TCP/IP and the event loop */
+    /* Initialize TCP/IP */
     tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, NULL));
+
+    /* Initialize the event loop */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifi_event_group = xEventGroupCreate();
+
+    /* Register our event handler for Wi-Fi, IP and Provisioning related events */
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_PROV_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
     /* Initialize Wi-Fi */
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -146,14 +136,7 @@ void app_main()
          * appropriate scheme specific event handler allows the manager
          * to take care of this automatically. This can be set to
          * WIFI_PROV_EVENT_HANDLER_NONE when using wifi_prov_scheme_softap*/
-        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM,
-
-        /* Do we want an application specific handler be executed on
-         * various provisioning related events */
-        .app_event_handler = {
-            .event_cb = prov_event_handler,
-            .user_data = NULL
-        }
+        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM
     };
 
     /* Initialize provisioning manager with the
@@ -219,7 +202,7 @@ void app_main()
 
         /* Uncomment the following to wait for the provisioning to finish and then release
          * the resources of the manager. Since in this case de-initialization is triggered
-         * by the configured prov_event_handler(), we don't need to call the following */
+         * by the default event loop handler, we don't need to call the following */
         // wifi_prov_mgr_wait();
         // wifi_prov_mgr_deinit();
     } else {
