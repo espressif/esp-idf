@@ -78,12 +78,11 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         # V1: no 'visibility' key, send value None for any invisible item
         values_dict = dict((k, v if visible_dict[k] else False) for (k,v) in config_dict.items())
         json.dump({"version": 1, "values": values_dict, "ranges": ranges_dict}, sys.stdout)
-        sys.stdout.flush()
     else:
         # V2 onwards: separate visibility from version
         json.dump({"version": default_version, "values": config_dict, "ranges": ranges_dict, "visible": visible_dict}, sys.stdout)
-        sys.stdout.flush()
     print("\n")
+    sys.stdout.flush()
 
     while True:
         line = sys.stdin.readline()
@@ -94,8 +93,8 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         except ValueError as e:  # json module throws JSONDecodeError (sublcass of ValueError) on Py3 but ValueError on Py2
             response = {"version": default_version, "error": ["JSON formatting error: %s" % e]}
             json.dump(response, sys.stdout)
-            sys.stdout.flush()
             print("\n")
+            sys.stdout.flush()
             continue
         before = confgen.get_json_values(config)
         before_ranges = get_ranges(config)
@@ -144,8 +143,8 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
                 print("Error: %s" % e, file=sys.stderr)
             response["error"] = error
         json.dump(response, sys.stdout)
-        sys.stdout.flush()
         print("\n")
+        sys.stdout.flush()
 
 
 def handle_request(deprecated_options, config, req):
