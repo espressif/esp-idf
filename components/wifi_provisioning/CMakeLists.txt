@@ -1,9 +1,11 @@
 set(srcs "src/wifi_config.c"
+        "src/wifi_scan.c"
         "src/manager.c"
         "src/handlers.c"
         "src/scheme_softap.c"
         "src/scheme_console.c"
         "proto-c/wifi_config.pb-c.c"
+        "proto-c/wifi_scan.pb-c.c"
         "proto-c/wifi_constants.pb-c.c")
 
 if(CONFIG_BT_ENABLED)
