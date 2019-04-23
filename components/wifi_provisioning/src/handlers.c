@@ -21,6 +21,7 @@
 #include <tcpip_adapter.h>
 
 #include "wifi_provisioning/wifi_config.h"
+#include "wifi_provisioning/wifi_scan.h"
 #include "wifi_provisioning/manager.h"
 #include "wifi_provisioning_priv.h"
 
@@ -134,13 +135,65 @@ static esp_err_t apply_config_handler(wifi_prov_ctx_t **ctx)
     return ret;
 }
 
-wifi_prov_config_handlers_t get_wifi_prov_handlers(void)
+esp_err_t get_wifi_prov_handlers(wifi_prov_config_handlers_t *ptr)
 {
-    wifi_prov_config_handlers_t wifi_prov_handlers = {
-        .get_status_handler   = get_status_handler,
-        .set_config_handler   = set_config_handler,
-        .apply_config_handler = apply_config_handler,
-        .ctx = NULL
-    };
-    return wifi_prov_handlers;
+    if (!ptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ptr->get_status_handler   = get_status_handler;
+    ptr->set_config_handler   = set_config_handler;
+    ptr->apply_config_handler = apply_config_handler;
+    ptr->ctx = NULL;
+    return ESP_OK;
+}
+
+/*************************************************************************/
+
+static esp_err_t scan_start(bool blocking, bool passive,
+                            uint8_t group_channels, uint32_t period_ms,
+                            wifi_prov_scan_ctx_t **ctx)
+{
+    return wifi_prov_mgr_wifi_scan_start(blocking, passive, group_channels, period_ms);
+}
+
+static esp_err_t scan_status(bool *scan_finished,
+                             uint16_t *result_count,
+                             wifi_prov_scan_ctx_t **ctx)
+{
+    *scan_finished = wifi_prov_mgr_wifi_scan_finished();
+    *result_count  = wifi_prov_mgr_wifi_scan_result_count();
+    return ESP_OK;
+}
+
+static esp_err_t scan_result(uint16_t result_index,
+                             wifi_prov_scan_result_t *result,
+                             wifi_prov_scan_ctx_t **ctx)
+{
+    const wifi_ap_record_t *record = wifi_prov_mgr_wifi_scan_result(result_index);
+    if (!record) {
+        return ESP_FAIL;
+    }
+
+    /* Compile time check ensures memory safety in case SSID length in
+     * record / result structure definition changes in future */
+    _Static_assert(sizeof(result->ssid) == sizeof(record->ssid),
+                   "source and destination should be of same size");
+    memcpy(result->ssid, record->ssid, sizeof(record->ssid));
+    memcpy(result->bssid, record->bssid, sizeof(record->bssid));
+    result->channel = record->primary;
+    result->rssi = record->rssi;
+    result->auth = record->authmode;
+    return ESP_OK;
+}
+
+esp_err_t get_wifi_scan_handlers(wifi_prov_scan_handlers_t *ptr)
+{
+    if (!ptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ptr->scan_start  = scan_start;
+    ptr->scan_status = scan_status;
+    ptr->scan_result = scan_result;
+    ptr->ctx = NULL;
+    return ESP_OK;
 }
