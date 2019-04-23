@@ -20,6 +20,7 @@ import argparse
 import time
 import os
 import sys
+import json
 
 try:
     import security
@@ -81,13 +82,26 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
         return None
 
 
-def version_match(tp, protover):
+def version_match(tp, protover, verbose=False):
     try:
         response = tp.send_data('proto-ver', protover)
-        if response != protover:
-            return False
-        return True
-    except RuntimeError as e:
+
+        if verbose:
+            print("proto-ver response : ", response)
+
+        # First assume this to be a simple version string
+        if response.lower() == protover.lower():
+            return True
+
+        # Else interpret this as JSON structure containing
+        # information with versions and capabilities of both
+        # provisioning service and application
+        info = json.loads(response)
+        if info['prov']['ver'].lower() == protover.lower():
+            return True
+
+        return False
+    except Exception as e:
         on_except(e)
         return None
 
@@ -132,7 +146,7 @@ def apply_wifi_config(tp, sec):
     try:
         message = prov.config_apply_config_request(sec)
         response = tp.send_data('prov-config', message)
-        return (prov.config_set_config_response(sec, response) == 0)
+        return (prov.config_apply_config_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
@@ -159,7 +173,7 @@ if __name__ == '__main__':
     parser.add_argument("--sec_ver", dest='secver', type=int,
                         help="Security scheme version", default=1)
     parser.add_argument("--proto_ver", dest='protover', type=str,
-                        help="Protocol version", default='V0.1')
+                        help="Protocol version", default='')
     parser.add_argument("--pop", dest='pop', type=str,
                         help="Proof of possession", default='')
 
@@ -182,7 +196,8 @@ if __name__ == '__main__':
     parser.add_argument("-v","--verbose", help="increase output verbosity", action="store_true")
     args = parser.parse_args()
 
-    print("==== Esp_Prov Version: " + args.protover + " ====")
+    if args.protover != '':
+        print("==== Esp_Prov Version: " + args.protover + " ====")
 
     obj_security = get_security(args.secver, args.pop, args.verbose)
     if obj_security is None:
@@ -194,11 +209,12 @@ if __name__ == '__main__':
         print("---- Invalid provisioning mode ----")
         exit(2)
 
-    print("\n==== Verifying protocol version ====")
-    if not version_match(obj_transport, args.protover):
-        print("---- Error in protocol version matching ----")
-        exit(3)
-    print("==== Verified protocol version successfully ====")
+    if args.protover != '':
+        print("\n==== Verifying protocol version ====")
+        if not version_match(obj_transport, args.protover, args.verbose):
+            print("---- Error in protocol version matching ----")
+            exit(3)
+        print("==== Verified protocol version successfully ====")
 
     print("\n==== Starting Session ====")
     if not establish_session(obj_transport, obj_security):
