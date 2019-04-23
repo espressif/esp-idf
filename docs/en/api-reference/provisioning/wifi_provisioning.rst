@@ -234,6 +234,9 @@ Once connected to the device, the provisioning related protocomm endpoints can b
    * - prov-session
      - http://<mdns-hostname>.local/prov-session
      - Security endpoint used for session establishment
+   * - prov-scan
+     - http://wifi-prov.local/prov-scan
+     - Endpoint used for starting Wi-Fi scan and receiving scan results
    * - prov-config
      - http://<mdns-hostname>.local/prov-config
      - Endpoint used for configuring Wi-Fi credentials on device
@@ -247,12 +250,29 @@ User side applications need to implement the signature handshaking required for 
 
 See Unified Provisioning for more details about the secure handshake and encryption used. Applications must use the `.proto` files found under `components/protocomm/proto <https://github.com/espressif/esp-idf/components/protocomm/proto>`_, which define the Protobuf message structures supported by `prov-session` endpoint.
 
-Once a session is established, Wi-Fi credentials are configured using the following set of commands, serialized as Protobuf messages (the corresponding `.proto` files can be found under `components/wifi_provisioning/proto <https://github.com/espressif/esp-idf/components/wifi_provisioning/proto>`_) :
+Once a session is established, Wi-Fi credentials are configured using the following set of `wifi_config` commands, serialized as Protobuf messages (the corresponding `.proto` files can be found under `components/wifi_provisioning/proto <https://github.com/espressif/esp-idf/components/wifi_provisioning/proto>`_) :
 
     * `get_status` - For querying the Wi-Fi connection status. The device will respond with a status which will be one of connecting / connected / disconnected. If status is disconnected, a disconnection reason will also be included in the status response.
     * `set_config` - For setting the Wi-Fi connection credentials
     * `apply_config` - For applying the credentials saved during `set_config` and start the Wi-Fi station
 
+After session establishment, client can also request Wi-Fi scan results from the device. The results returned is a list of AP SSIDs, sorted in descending order of signal strength. This allows client applications to display APs nearby to the device at the time of provisioning, and users can select one of the SSIDs and provide the password which is then sent using the `wifi_config` commands described above. The `wifi_scan` endpoint supports the following protobuf commands :
+
+    * `scan_start` - For starting Wi-Fi scan with various options :
+
+        * `blocking` (input) - If true, the command returns only when the scanning is finished
+        * `passive` (input) - If true scan is started in passive mode (this may be slower) instead of active mode
+        * `group_channels` (input) - This specifies whether to scan all channels in one go (when zero) or perform scanning of channels in groups, with 120ms delay between scanning of consecutive groups, and the value of this parameter sets the number of channels in each group. This is useful when transport mode is SoftAP, where scanning all channels in one go may not give the Wi-Fi driver enough time to send out beacons, and hence may cause disconnection with any connected stations. When scanning in groups, the manager will wait for atleast 120ms after completing scan on a group of channels, and thus allow the driver to send out the beacons. For example, given that the total number of Wi-Fi channels is 14, then setting group_channels to 4, will create 5 groups, with each group having 3 channels, except the last one which will have 14 % 3 = 2 channels. So, when scan is started, the first 3 channels will be scanned, followed by a 120ms delay, and then the next 3 channels, and so on, until all the 14 channels have been scanned. One may need to adjust this parameter as having only few channels in a group may slow down the overall scan time, while having too many may again cause disconnection. Usually a value of 4 should work for most cases. Note that for any other mode of transport, e.g. BLE, this can be safely set to 0, and hence achieve the fastest overall scanning time.
+        * `period_ms` (input) - Scan parameter specifying how long to wait on each channel
+    * `scan_status` - Gives the status of scanning process :
+
+        * `scan_finished` (output) - When scan has finished this returns true
+        * `result_count` (output) - This gives the total number of results obtained till now. If scan is yet happening this number will keep on updating
+    * `scan_result` - For fetching scan results. This can be called even if scan is still on going
+
+        * `start_index` (input) - Starting index from where to fetch the entries from the results list
+        * `count` (input) - Number of entries to fetch from the starting index
+        * `entries` (output) - List of entries returned. Each entry consists of `ssid`, `channel` and `rssi` information
 
 Additional Endpoints
 ^^^^^^^^^^^^^^^^^^^^

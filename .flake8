@@ -156,6 +156,7 @@ exclude =
         components/protocomm/python/sec0_pb2.py,
         components/protocomm/python/sec1_pb2.py,
         components/protocomm/python/session_pb2.py,
+        components/wifi_provisioning/python/wifi_scan_pb2.py,
         components/wifi_provisioning/python/wifi_config_pb2.py,
         components/wifi_provisioning/python/wifi_constants_pb2.py,
         examples/provisioning/custom_config/components/custom_provisioning/python/custom_config_pb2.py,

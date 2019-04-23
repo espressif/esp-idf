@@ -119,6 +119,7 @@ INPUT = \
     ../../components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     ##
     ## Storage - API Reference
     ##

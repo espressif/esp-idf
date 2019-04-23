@@ -54,8 +54,8 @@ static esp_err_t start_wifi_ap(const char *ssid, const char *pass)
         wifi_config.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
     }
 
-    /* Start Wi-Fi in AP mode with configuration built above */
-    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_AP);
+    /* Run Wi-Fi in AP + STA mode with configuration built above */
+    esp_err_t err = esp_wifi_set_mode(WIFI_MODE_APSTA);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set Wi-Fi mode : %d", err);
         return err;
@@ -65,12 +65,7 @@ static esp_err_t start_wifi_ap(const char *ssid, const char *pass)
         ESP_LOGE(TAG, "Failed to set Wi-Fi config : %d", err);
         return err;
     }
-    err = esp_wifi_start();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to start Wi-Fi : %d", err);
-        return err;
-    }
-    ESP_LOGD(TAG, "Wi-Fi SoftAP started");
+
     return ESP_OK;
 }
 

@@ -1,0 +1,10 @@
+menu "Wi-Fi Provisioning Manager"
+
+    config WIFI_PROV_SCAN_MAX_ENTRIES
+        int "Max Wi-Fi Scan Result Entries"
+        default 16
+        range 1 255
+        help
+            This sets the maximum number of entries of Wi-Fi scan results that will be kept by the provisioning manager
+
+endmenu
