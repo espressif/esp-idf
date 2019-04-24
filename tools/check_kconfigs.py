@@ -41,11 +41,9 @@ IGNORE_DIRS = (
 
 SPACES_PER_INDENT = 4
 
-# TODO decrease the value (after the names have been refactored)
-CONFIG_NAME_MAX_LENGTH = 60
+CONFIG_NAME_MAX_LENGTH = 40
 
-# TODO increase prefix length (after the names have been refactored)
-CONFIG_NAME_MIN_PREFIX_LENGTH = 0
+CONFIG_NAME_MIN_PREFIX_LENGTH = 4
 
 # The checker will not fail if it encounters this string (it can be used for temporarily resolve conflicts)
 RE_NOERROR = re.compile(r'\s+#\s+NOERROR\s+$')

@@ -454,16 +454,16 @@ void start_cpu1_default(void)
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 
-#ifdef CONFIG_CXX_EXCEPTIONS
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 size_t __cxx_eh_arena_size_get()
 {
-    return CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE;
+    return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
 }
 #endif
 
 static void do_global_ctors(void)
 {
-#ifdef CONFIG_CXX_EXCEPTIONS
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
 #endif

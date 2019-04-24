@@ -410,7 +410,7 @@ menu "FreeRTOS"
 
     config FREERTOS_TASK_FUNCTION_WRAPPER
         bool "Enclose all task functions in a wrapper function"
-        depends on OPTIMIZATION_LEVEL_DEBUG
+        depends on COMPILER_OPTIMIZATION_LEVEL_DEBUG
         default y
         help
             If enabled, all FreeRTOS task functions will be enclosed in a wrapper function.

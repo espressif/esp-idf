@@ -22,7 +22,7 @@
 
 #include_next <assert.h>
 
-#if defined(CONFIG_OPTIMIZATION_ASSERTIONS_SILENT) && !defined(NDEBUG)
+#if defined(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT) && !defined(NDEBUG)
 #undef assert
 #define assert(__e) ((__e) ? (void)0 : abort())
 #endif

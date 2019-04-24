@@ -105,7 +105,7 @@ void _esp_error_check_failed_without_abort(esp_err_t rc, const char *file, int l
         esp_err_t __err_rc = (x);                                       \
         (void) sizeof(__err_rc);                                        \
     } while(0)
-#elif defined(CONFIG_OPTIMIZATION_ASSERTIONS_SILENT)
+#elif defined(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT)
 #define ESP_ERROR_CHECK(x) do {                                         \
         esp_err_t __err_rc = (x);                                       \
         if (__err_rc != ESP_OK) {                                       \
