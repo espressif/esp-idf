@@ -101,7 +101,7 @@ If you are not quite sure how to use GDB, check :ref:`jtag-debugging-examples-ec
 Command Line
 ^^^^^^^^^^^^
 
-1.  To be able start debugging session, the target should be up and running. If not done already, complete steps described under :ref:`jtag-debugging-configuring-esp32-target`.
+1.  Begin with completing steps described under :ref:``jtag-debugging-configuring-esp32-target``. This is prerequisite to start a debugging session.
 
 .. highlight:: bash
 
@@ -180,7 +180,7 @@ Command Line
         [New Thread 1073432196]
         [New Thread 1073411552]
         [Switching to Thread 1073411996]
-
+        
         Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
         43      xTaskCreate(&blink_task, "blink_task", 512, NULL, 5, NULL);
         (gdb) 
