@@ -283,7 +283,7 @@ Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` docume
 Stack Smashing
 ^^^^^^^^^^^^^^
 
-Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
+Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
 
     Stack smashing protect failure!
 

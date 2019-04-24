@@ -18,19 +18,19 @@ endif()
 
 list(APPEND compile_definitions "-DGCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
 
-if(CONFIG_OPTIMIZATION_LEVEL_RELEASE)
+if(CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE)
     list(APPEND compile_options "-Os")
 else()
     list(APPEND compile_options "-Og")
 endif()
 
-if(CONFIG_CXX_EXCEPTIONS)
+if(CONFIG_COMPILER_CXX_EXCEPTIONS)
     list(APPEND cxx_compile_options "-fexceptions")
 else()
     list(APPEND cxx_compile_options "-fno-exceptions")
 endif()
 
-if(CONFIG_DISABLE_GCC8_WARNINGS)
+if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
     list(APPEND compile_options "-Wno-parentheses"
                                 "-Wno-sizeof-pointer-memaccess"
                                 "-Wno-clobbered")
@@ -50,15 +50,15 @@ if(CONFIG_DISABLE_GCC8_WARNINGS)
     endif()
 endif()
 
-if(CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED)
+if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)
     list(APPEND compile_definitions "NDEBUG")
 endif()
 
-if(CONFIG_STACK_CHECK_NORM)
+if(CONFIG_COMPILER_STACK_CHECK_MODE_NORM)
     list(APPEND compile_options "-fstack-protector")
-elseif(CONFIG_STACK_CHECK_STRONG)
+elseif(CONFIG_COMPILER_STACK_CHECK_MODE_STRONG)
     list(APPEND compile_options "-fstack-protector-strong")
-elseif(CONFIG_STACK_CHECK_ALL)
+elseif(CONFIG_COMPILER_STACK_CHECK_MODE_ALL)
     list(APPEND compile_options "-fstack-protector-all")
 endif()
 
