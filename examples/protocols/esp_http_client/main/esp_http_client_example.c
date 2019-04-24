@@ -492,6 +492,25 @@ static void https_async()
     esp_http_client_cleanup(client);
 }
 
+static void https_with_invalid_url()
+{
+    esp_http_client_config_t config = {
+            .url = "https://not.existent.url",
+            .event_handler = _http_event_handler,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %d",
+                 esp_http_client_get_status_code(client),
+                 esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+
 
 static void http_test_task(void *pvParameters)
 {
@@ -508,6 +527,7 @@ static void http_test_task(void *pvParameters)
     http_download_chunk();
     http_perform_as_stream_reader();
     https_async();
+    https_with_invalid_url();
 
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
@@ -529,6 +549,7 @@ void app_main()
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+    ESP_LOGI(TAG, "Connected to AP, begin http example");
 
     xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
 }
