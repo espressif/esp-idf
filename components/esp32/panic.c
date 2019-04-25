@@ -37,7 +37,9 @@
 #include "esp_private/panic_reason.h"
 #include "esp_attr.h"
 #include "esp_err.h"
+#ifdef _DECL_espcoredump
 #include "esp_core_dump.h"
+#endif
 #include "esp_spi_flash.h"
 #include "esp32/cache_err_int.h"
 #include "esp_app_trace.h"
@@ -614,6 +616,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     panicPutStr("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler(frame);
 #else
+#ifdef _DECL_espcoredump
 #if CONFIG_ESP32_ENABLE_COREDUMP
     static bool s_dumping_core;
     if (s_dumping_core) {
@@ -631,6 +634,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
         reconfigureAllWdts();
     }
 #endif /* CONFIG_ESP32_ENABLE_COREDUMP */
+#endif
     rtc_wdt_disable();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");

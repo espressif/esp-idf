@@ -17,7 +17,9 @@
 #include "esp_event_legacy.h"
 #include "esp_wifi_types.h"
 #include "tcpip_adapter.h"
+#ifdef _DECL_ethernet
 #include "esp_eth.h"
+#endif
 
 /**
  * The purpose of this file is to provide an "esp_event_send_to_default_loop"
@@ -91,6 +93,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
 
         /* Ethernet events */
         /* Some extra defines to fit the old naming scheme... */
+#ifdef _DECL_ethernet
 #define ETH_EVENT_ETH_START ETHERNET_EVENT_START
 #define ETH_EVENT_ETH_STOP ETHERNET_EVENT_STOP
 #define ETH_EVENT_ETH_CONNECTED ETHERNET_EVENT_CONNECTED
@@ -102,8 +105,9 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT(ETH, ETH_DISCONNECTED);
 
         /* IP events */
-        HANDLE_SYS_EVENT_ARG(IP, STA_GOT_IP, got_ip);
         HANDLE_SYS_EVENT_ARG(IP, ETH_GOT_IP, got_ip);
+#endif
+        HANDLE_SYS_EVENT_ARG(IP, STA_GOT_IP, got_ip);
         HANDLE_SYS_EVENT(IP, STA_LOST_IP);
         HANDLE_SYS_EVENT_ARG(IP, GOT_IP6, got_ip6);
         HANDLE_SYS_EVENT(IP, AP_STAIPASSIGNED);
@@ -282,6 +286,7 @@ static void esp_system_event_debug(const system_event_t* event)
                      IP6_ADDR_BLOCK8(addr));
             break;
         }
+#ifdef _DECL_ethernet
         case SYSTEM_EVENT_ETH_START: {
             ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_START");
             break;
@@ -306,6 +311,7 @@ static void esp_system_event_debug(const system_event_t* event)
                 IP2STR(&got_ip->ip_info.gw));
             break;
         }
+#endif
         default: {
             ESP_LOGW(TAG, "unexpected system event %d!", event->event_id);
             break;

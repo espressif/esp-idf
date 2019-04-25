@@ -402,7 +402,6 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
         p_i2c->tx_ring_buf = NULL;
         p_i2c->tx_buf_length = 0;
     }
-(??)
 #endif
 #if CONFIG_SPIRAM_USE_MALLOC
     if (p_i2c_obj[i2c_num]->evt_queue_storage) {

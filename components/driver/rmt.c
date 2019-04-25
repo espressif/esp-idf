@@ -612,16 +612,12 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                         } else {
 
                             }
-                        } else
-#else
-                            ESP_EARLY_LOGE(RMT_TAG, "RMT RX disabled in config\n");
-#endif 
-                        {
-                            ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
-                        }
                     } else {
                         ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR\n");
                     }
+#else
+                    ESP_EARLY_LOGE(RMT_TAG, "RMT RX disabled in config\n");
+#endif 
                     RMT.conf_ch[channel].conf1.mem_wr_rst = 1;
                     RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
                     RMT.conf_ch[channel].conf1.rx_en = 1;

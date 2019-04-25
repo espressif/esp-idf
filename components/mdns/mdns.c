@@ -4181,9 +4181,11 @@ esp_err_t mdns_init(void)
     if ((err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         goto free_event_handlers;
     }
+#ifdef _DECL_ethernet
     if ((err = esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         goto free_event_handlers;
     }
+#endif
 
     uint8_t i;
     ip6_addr_t tmp_addr6;
@@ -4214,7 +4216,9 @@ free_all_and_disable_pcbs:
 free_event_handlers:
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#ifdef _DECL_ethernet
     esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#endif
     vQueueDelete(_mdns_server->action_queue);
 free_lock:
     vSemaphoreDelete(_mdns_server->lock);
@@ -4262,7 +4266,9 @@ void mdns_free(void)
     vSemaphoreDelete(_mdns_server->lock);
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#ifdef _DECL_ethernet
     esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#endif
     free(_mdns_server);
     _mdns_server = NULL;
 }

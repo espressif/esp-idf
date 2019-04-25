@@ -21,7 +21,9 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_event.h"
+#ifdef _DECL_ethernet
 #include "esp_eth.h"
+#endif
 
 
 /**

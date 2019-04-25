@@ -57,22 +57,15 @@
 #include "esp_phy_init.h"
 #include "esp32/cache_err_int.h"
 #include "esp_coexist_internal.h"
+#ifdef _DECL_espcoredump
 #include "esp_core_dump.h"
+#endif
 #include "esp_app_trace.h"
-<<<<<<< HEAD
 #include "esp_private/dbg_stubs.h"
-#include "esp_flash_encrypt.h"
-#include "esp32/spiram.h"
-=======
-#include "esp_dbg_stubs.h"
 #ifdef _DECL_esp_event
 #include "esp_event.h"
 #endif
-#ifdef _DECL_bootloader_support
-#include "esp_efuse.h"
-#endif
-#include "esp_spiram.h"
->>>>>>> Step 2: Fix inter-component dependencies errors so it can be build faster and smaller without useless components
+#include "esp32/spiram.h"
 #include "esp_clk_internal.h"
 #include "esp_timer.h"
 #include "esp_pm.h"
@@ -439,6 +432,7 @@ void start_cpu0_default(void)
 #endif //CONFIG_PM_DFS_INIT_AUTO
 #endif //CONFIG_PM_ENABLE
 
+#ifdef _DECL_espcoredump
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
     size_t core_data_sz = 0;
@@ -446,6 +440,7 @@ void start_cpu0_default(void)
     if (esp_core_dump_image_get(&core_data_addr, &core_data_sz) == ESP_OK && core_data_sz > 0) {
         ESP_LOGI(TAG, "Found core dump %d bytes in flash @ 0x%x", core_data_sz, core_data_addr);
     }
+#endif
 #endif
 
 #if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
