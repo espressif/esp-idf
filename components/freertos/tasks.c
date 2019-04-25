@@ -2465,12 +2465,11 @@ BaseType_t xSwitchRequired = pdFALSE;
 	Increments the tick then checks to see if the new tick value will cause any
 	tasks to be unblocked. */
 
-	/* Only let core 0 increase the tick count, to keep accurate track of time. */
-	/* ToDo: This doesn't really play nice with the logic below: it means when core 1 is
-	   running a low-priority task, it will keep running it until there is a context
-	   switch, even when this routine (running on core 0) unblocks a bunch of high-priority
-	   tasks... this is less than optimal -- JD. */
-	if ( xPortGetCoreID()!=0 ) {
+	/* Only allow core 0 increase the tick count in the case of xPortSysTickHandler processing. */
+	/* And allow core 0 and core 1 to unwind uxPendedTicks during xTaskResumeAll. */
+
+	if ( xPortInIsrContext() )
+	{
 		#if ( configUSE_TICK_HOOK == 1 )
 		vApplicationTickHook();
 		#endif /* configUSE_TICK_HOOK */
@@ -2478,11 +2477,10 @@ BaseType_t xSwitchRequired = pdFALSE;
 		esp_vApplicationTickHook();
 		#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
 
-		/*
-		  We can't really calculate what we need, that's done on core 0... just assume we need a switch.
-		  ToDo: Make this more intelligent? -- JD
-		*/
-		return pdTRUE;
+		if (xPortGetCoreID() == 1 )
+		{
+			return pdTRUE;
+		}
 	}
 
 
@@ -2607,39 +2605,11 @@ BaseType_t xSwitchRequired = pdFALSE;
 		}
 		#endif /* ( ( configUSE_PREEMPTION == 1 ) && ( configUSE_TIME_SLICING == 1 ) ) */
 
-		{
-			/* Guard against the tick hook being called when the pended tick
-			count is being unwound (when the scheduler is being unlocked). */
-			if( uxPendedTicks == ( UBaseType_t ) 0U )
-			{
-				#if ( configUSE_TICK_HOOK == 1 )
-				vApplicationTickHook();
-				#endif /* configUSE_TICK_HOOK */
-				#if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
-				esp_vApplicationTickHook();
-				#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
-			}
-			else
-			{
-				mtCOVERAGE_TEST_MARKER();
-			}
-		}
 		taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 	}
 	else
 	{
 		++uxPendedTicks;
-
-		/* The tick hook gets called at regular intervals, even if the
-		scheduler is locked. */
-		#if ( configUSE_TICK_HOOK == 1 )
-		{
-			vApplicationTickHook();
-		}
-		#endif
-		#if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
-		esp_vApplicationTickHook();
-		#endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
 	}
 
 	#if ( configUSE_PREEMPTION == 1 )
