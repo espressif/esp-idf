@@ -715,10 +715,13 @@ void btc_gatts_call_handler(btc_msg_t *msg)
 #else
         //BTA_DmAddBleDevice(p_cb->bd_addr.address, addr_type, device_type);
 #endif
+        /*
+         not support background connection
         // Mark background connections
         if (!arg->open.is_direct) {
             BTA_DmBleSetBgConnType(BTM_BLE_CONN_AUTO, NULL);
         }
+        */
 
         transport = BTA_GATT_TRANSPORT_LE;
 
