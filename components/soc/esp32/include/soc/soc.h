@@ -30,7 +30,7 @@
 #define SOC_IROM_HIGH           0x40400000
 #define SOC_DROM_LOW            0x3F400000
 #define SOC_DROM_HIGH           0x3F800000
-#define SOC_DRAM_LOW            0x3FAE0000
+#define SOC_DRAM_LOW            0x3FFAE000
 #define SOC_DRAM_HIGH           0x40000000
 #define SOC_RTC_IRAM_LOW        0x400C0000
 #define SOC_RTC_IRAM_HIGH       0x400C2000
