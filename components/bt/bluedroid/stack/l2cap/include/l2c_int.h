@@ -66,7 +66,7 @@
 #define L2CAP_WAIT_UNPARK_TOUT       2            /* 2 seconds */
 #define L2CAP_LINK_INFO_RESP_TOUT    2            /* 2 seconds */
 #define L2CAP_UPDATE_CONN_PARAM_TOUT 6            /* 6 seconds */
-#define L2CAP_BLE_LINK_CONNECT_TOUT  30           /* 30 seconds */
+#define L2CAP_BLE_LINK_CONNECT_TOUT  BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT  // configed in menuconfig
 #define L2CAP_BLE_CONN_PARAM_UPD_TOUT   30        /* 30 seconds */
 
 /* quick timer uses millisecond unit */
