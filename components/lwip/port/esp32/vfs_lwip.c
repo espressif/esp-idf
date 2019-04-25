@@ -27,16 +27,24 @@
 
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
 
-static void lwip_stop_socket_select()
+static void lwip_stop_socket_select(void *sem)
 {
-    sys_sem_signal(sys_thread_sem_get()); //socket_select will return
+    sys_sem_signal(sem); //socket_select will return
 }
 
-static void lwip_stop_socket_select_isr(BaseType_t *woken)
+static void lwip_stop_socket_select_isr(void *sem, BaseType_t *woken)
 {
-    if (sys_sem_signal_isr(sys_thread_sem_get()) && woken) {
+    if (sys_sem_signal_isr(sem) && woken) {
         *woken = pdTRUE;
     }
+}
+
+static void *lwip_get_socket_select_semaphore()
+{
+    /* Calling this from the same process as select() will ensure that the semaphore won't be allocated from
+     * ISR (lwip_stop_socket_select_isr).
+     */
+    return (void *) sys_thread_sem_get();
 }
 
 static int lwip_fcntl_r_wrapper(int fd, int cmd, int arg)
@@ -61,6 +69,7 @@ void esp_vfs_lwip_sockets_register()
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
         .socket_select = &lwip_select,
+        .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .stop_socket_select = &lwip_stop_socket_select,
         .stop_socket_select_isr = &lwip_stop_socket_select_isr,
     };
