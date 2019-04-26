@@ -101,7 +101,7 @@ PR_BEGIN_EXTERN_C
 #define MB_FUNC_OTHER_REP_SLAVEID_BUF           ( 32 )
 
 /*! \brief If the <em>Report Slave ID</em> function should be enabled. */
-#define MB_FUNC_OTHER_REP_SLAVEID_ENABLED       (  CONFIG_MB_CONTROLLER_SLAVE_ID_SUPPORT )
+#define MB_FUNC_OTHER_REP_SLAVEID_ENABLED       (  CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT )
 
 /*! \brief If the <em>Read Input Registers</em> function should be enabled. */
 #define MB_FUNC_READ_INPUT_ENABLED              (  1 )
@@ -138,11 +138,11 @@ PR_BEGIN_EXTERN_C
 #if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
 /*! \brief If master send a broadcast frame, the master will wait time of convert to delay,
  * then master can send other frame */
-#define MB_MASTER_DELAY_MS_CONVERT              ( CONFIG_MB_MASTER_DELAY_MS_CONVERT )
+#define MB_MASTER_DELAY_MS_CONVERT              ( CONFIG_FMB_MASTER_DELAY_MS_CONVERT )
 /*! \brief If master send a frame which is not broadcast,the master will wait sometime for slave.
  * And if slave is not respond in this time,the master will process this timeout error.
  * Then master can send other frame */
-#define MB_MASTER_TIMEOUT_MS_RESPOND            ( CONFIG_MB_MASTER_TIMEOUT_MS_RESPOND )
+#define MB_MASTER_TIMEOUT_MS_RESPOND            ( CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND )
 /*! \brief The total slaves in Modbus Master system.
  * \note : The slave ID must be continuous from 1.*/
 #define MB_MASTER_TOTAL_SLAVE_NUM               ( 247 )

@@ -21,14 +21,14 @@
 #include "esp_modbus_callbacks.h"   // for modbus callbacks function pointers declaration
 #include "mbc_serial_slave.h"       // for create function of serial port
 
-#ifdef CONFIG_MB_CONTROLLER_SLAVE_ID_SUPPORT
+#ifdef CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
 
 #define MB_ID_BYTE0(id) ((uint8_t)(id))
 #define MB_ID_BYTE1(id) ((uint8_t)(((uint16_t)(id) >> 8) & 0xFF))
 #define MB_ID_BYTE2(id) ((uint8_t)(((uint32_t)(id) >> 16) & 0xFF))
 #define MB_ID_BYTE3(id) ((uint8_t)(((uint32_t)(id) >> 24) & 0xFF))
 
-#define MB_CONTROLLER_SLAVE_ID (CONFIG_MB_CONTROLLER_SLAVE_ID)
+#define MB_CONTROLLER_SLAVE_ID (CONFIG_FMB_CONTROLLER_SLAVE_ID)
 #define MB_SLAVE_ID_SHORT      (MB_ID_BYTE3(MB_CONTROLLER_SLAVE_ID))
 
 // Slave ID constant
@@ -127,7 +127,7 @@ esp_err_t mbc_slave_start()
     MB_SLAVE_CHECK((slave_interface_ptr->start != NULL), 
                     ESP_ERR_INVALID_STATE,
                     "Slave interface is not correctly initialized.");
-#ifdef CONFIG_MB_CONTROLLER_SLAVE_ID_SUPPORT
+#ifdef CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
     // Set the slave ID if the KConfig option is selected
     eMBErrorCode status = eMBSetSlaveID(MB_SLAVE_ID_SHORT, TRUE, (UCHAR*)mb_slave_id, sizeof(mb_slave_id));
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack set slave ID failure.");
