@@ -301,6 +301,8 @@ def write_cmake(deprecated_options, config, filename):
 #
 """)
 
+        configs_list = list()
+
         def write_node(node):
             sym = node.item
             if not isinstance(sym, kconfiglib.Symbol):
@@ -314,10 +316,15 @@ def write_cmake(deprecated_options, config, filename):
                     val = ""  # write unset values as empty variables
                 write("set({}{} \"{}\")\n".format(
                     prefix, sym.name, val))
+
+                configs_list.append(prefix + sym.name)
                 dep_opt = deprecated_options.get_deprecated_option(sym.name)
                 if dep_opt:
                     tmp_dep_list.append("set({}{} \"{}\")\n".format(prefix, dep_opt, val))
+                    configs_list.append(prefix + dep_opt)
+
         config.walk_menu(write_node)
+        write("set(CONFIGS_LIST {})".format(";".join(configs_list)))
 
         if len(tmp_dep_list) > 0:
             write('\n# List of deprecated options for backward compatibility\n')

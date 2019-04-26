@@ -31,7 +31,8 @@ function(crosstool_version_check expected_ctng_version)
 endfunction()
 
 function(get_expected_ctng_version _toolchain_ver _gcc_ver)
-    file(STRINGS ${IDF_PATH}/tools/toolchain_versions.mk config_contents)
+    idf_build_get_property(idf_path IDF_PATH)
+    file(STRINGS ${idf_path}/tools/toolchain_versions.mk config_contents)
     foreach(name_and_value ${config_contents})
         # Strip spaces
         string(REPLACE " " "" name_and_value ${name_and_value})
