@@ -8,7 +8,7 @@ ESPFLASHSIZE ?= $(CONFIG_ESPTOOLPY_FLASHSIZE)
 
 CONFIG_ESPTOOLPY_COMPRESSED ?=
 
-PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
+PYTHON ?= $(call dequote,$(CONFIG_SDK_PYTHON))
 
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
@@ -99,7 +99,7 @@ simple_monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 
 PRINT_FILTER ?=
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_SDK_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
 
 monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	$(summary) MONITOR

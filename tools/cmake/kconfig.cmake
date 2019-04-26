@@ -138,7 +138,11 @@ function(kconfig_process_config)
         "IDF_TARGET=${IDF_TARGET}"
         ${MCONF} ${ROOT_KCONFIG}
         VERBATIM
-        USES_TERMINAL)
+        USES_TERMINAL
+        # additional run of confgen esures that the deprecated options will be inserted into sdkconfig (for backward
+        # compatibility)
+        COMMAND ${confgen_basecommand} --env "IDF_TARGET=${IDF_TARGET}" --output config ${SDKCONFIG}
+        )
 
     # Custom target to run confserver.py from the build tool
     add_custom_target(confserver
