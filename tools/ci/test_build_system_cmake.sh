@@ -58,7 +58,7 @@ function run_tests()
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
     PARTITION_BIN="partition_table/partition-table.bin"
-    IDF_COMPONENT_PREFIX="idf_component"
+    IDF_COMPONENT_PREFIX="__idf"
 
     print_status "Initial clean build"
     # if build fails here, everything fails
