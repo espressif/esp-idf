@@ -111,13 +111,31 @@ class DeprecatedOptions(object):
                 f_out.write(line)
 
     def append_doc(self, config, path_output):
+
+        def option_was_written(opt):
+            return any(gen_kconfig_doc.node_should_write(node) for node in config.syms[opt].nodes)
+
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
                 header = 'Deprecated options and their replacements'
                 f_o.write('{}\n{}\n\n'.format(header, '-' * len(header)))
-                for key in sorted(self.r_dic):
-                    f_o.write('- {}{}: :ref:`{}{}`\n'.format(config.config_prefix, key,
-                                                             config.config_prefix, self.r_dic[key]))
+                for dep_opt in sorted(self.r_dic):
+                    new_opt = self.r_dic[dep_opt]
+                    if new_opt not in config.syms or (config.syms[new_opt].choice is None and option_was_written(new_opt)):
+                        # everything except config for a choice (no link reference for those in the docs)
+                        f_o.write('- {}{} (:ref:`{}{}`)\n'.format(config.config_prefix, dep_opt,
+                                                                  config.config_prefix, new_opt))
+
+                        if new_opt in config.named_choices:
+                            # here are printed config options which were filtered out
+                            syms = config.named_choices[new_opt].syms
+                            for sym in syms:
+                                if sym.name in self.rev_r_dic:
+                                    # only if the symbol has been renamed
+                                    dep_name = self.rev_r_dic[sym.name]
+
+                                    # config options doesn't have references
+                                    f_o.write('    - {}{}\n'.format(config.config_prefix, dep_name))
 
     def append_config(self, config, path_output):
         tmp_list = []
