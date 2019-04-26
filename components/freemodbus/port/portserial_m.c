@@ -54,14 +54,14 @@
 /* ----------------------- Defines ------------------------------------------*/
 
 #define MB_BAUD_RATE_DEFAULT        (115200)
-#define MB_QUEUE_LENGTH             (CONFIG_MB_QUEUE_LENGTH)
+#define MB_QUEUE_LENGTH             (CONFIG_FMB_QUEUE_LENGTH)
 
-#define MB_SERIAL_TASK_PRIO         (CONFIG_MB_SERIAL_TASK_PRIO)
-#define MB_SERIAL_TASK_STACK_SIZE   (CONFIG_MB_SERIAL_TASK_STACK_SIZE)
+#define MB_SERIAL_TASK_PRIO         (CONFIG_FMB_SERIAL_TASK_PRIO)
+#define MB_SERIAL_TASK_STACK_SIZE   (CONFIG_FMB_SERIAL_TASK_STACK_SIZE)
 #define MB_SERIAL_TOUT              (3) // 3.5*8 = 28 ticks, TOUT=3 -> ~24..33 ticks
 
 // Set buffer size for transmission
-#define MB_SERIAL_BUF_SIZE          (CONFIG_MB_SERIAL_BUF_SIZE)
+#define MB_SERIAL_BUF_SIZE          (CONFIG_FMB_SERIAL_BUF_SIZE)
 #define MB_SERIAL_TX_TOUT_MS        (100)
 #define MB_SERIAL_TX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS) // timeout for transmission
 

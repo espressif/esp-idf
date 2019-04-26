@@ -26,8 +26,8 @@
 #define MB_INST_MIN_SIZE                    (2) // The minimal size of Modbus registers area in bytes
 #define MB_INST_MAX_SIZE                    (65535 * 2) // The maximum size of Modbus area in bytes
 
-#define MB_CONTROLLER_NOTIFY_QUEUE_SIZE     (CONFIG_MB_CONTROLLER_NOTIFY_QUEUE_SIZE) // Number of messages in parameter notification queue
-#define MB_CONTROLLER_NOTIFY_TIMEOUT        (pdMS_TO_TICKS(CONFIG_MB_CONTROLLER_NOTIFY_TIMEOUT)) // notification timeout
+#define MB_CONTROLLER_NOTIFY_QUEUE_SIZE     (CONFIG_FMB_CONTROLLER_NOTIFY_QUEUE_SIZE) // Number of messages in parameter notification queue
+#define MB_CONTROLLER_NOTIFY_TIMEOUT        (pdMS_TO_TICKS(CONFIG_FMB_CONTROLLER_NOTIFY_TIMEOUT)) // notification timeout
 
 #define MB_SLAVE_TAG "MB_CONTROLLER_SLAVE"
 

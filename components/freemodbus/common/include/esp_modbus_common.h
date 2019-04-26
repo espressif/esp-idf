@@ -18,8 +18,8 @@
 
 #include "driver/uart.h"                    // for UART types
 
-#define MB_CONTROLLER_STACK_SIZE            (CONFIG_MB_CONTROLLER_STACK_SIZE)   // Stack size for Modbus controller
-#define MB_CONTROLLER_PRIORITY              (CONFIG_MB_SERIAL_TASK_PRIO - 1)    // priority of MB controller task
+#define MB_CONTROLLER_STACK_SIZE            (CONFIG_FMB_CONTROLLER_STACK_SIZE)   // Stack size for Modbus controller
+#define MB_CONTROLLER_PRIORITY              (CONFIG_FMB_SERIAL_TASK_PRIO - 1)    // priority of MB controller task
 
 // Default port defines
 #define MB_DEVICE_ADDRESS   (1)             // Default slave device address in Modbus
