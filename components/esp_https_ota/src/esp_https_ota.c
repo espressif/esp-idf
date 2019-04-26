@@ -35,9 +35,9 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (!config->cert_pem) {
-        ESP_LOGE(TAG, "Server certificate not found in esp_http_client config");
-        return ESP_FAIL;
+    if (!config->cert_pem && !config->use_global_ca_store) {
+        ESP_LOGE(TAG, "Server certificate not found, either through configuration or global CA store");
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_http_client_handle_t client = esp_http_client_init(config);
