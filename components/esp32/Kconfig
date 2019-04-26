@@ -68,7 +68,7 @@ menu "ESP32-specific"
                 bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
             config SPIRAM_USE_MALLOC
                 bool "Make RAM allocatable using malloc() as well"
-                select SUPPORT_STATIC_ALLOCATION
+                select FREERTOS_SUPPORT_STATIC_ALLOCATION
         endchoice
 
         choice SPIRAM_TYPE
