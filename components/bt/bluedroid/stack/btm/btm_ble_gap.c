@@ -1654,6 +1654,10 @@ tBTM_STATUS BTM_BleWriteScanRsp(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
     osi_mutex_lock(&adv_data_lock, OSI_MUTEX_MAX_TIMEOUT);
     memset(rsp_data, 0, BTM_BLE_AD_DATA_LEN);
     btm_ble_build_adv_data(&data_mask, &p, p_data);
+    if (data_mask != 0) {
+        //data length should not exceed 31 bytes
+        BTM_TRACE_WARNING("%s, Partial data write into ADV", __func__);
+    }
 
     if (btsnd_hcic_ble_set_scan_rsp_data((UINT8)(p - rsp_data), rsp_data)) {
         osi_sem_take(&adv_data_sem, OSI_SEM_MAX_TIMEOUT);
@@ -1798,7 +1802,8 @@ tBTM_STATUS BTM_BleWriteAdvData(tBTM_BLE_AD_MASK data_mask, tBTM_BLE_ADV_DATA *p
     p_cb_data->p_pad = p;
 
     if (mask != 0) {
-        BTM_TRACE_DEBUG("Partial data write into ADV");
+        //data length should not exceed 31 bytes
+        BTM_TRACE_WARNING("%s, Partial data write into ADV", __func__);
     }
 
     p_cb_data->data_mask &= ~mask;
