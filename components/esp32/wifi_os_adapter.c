@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -50,6 +51,8 @@
 
 extern void esp_dport_access_stall_other_cpu_start_wrap(void);
 extern void esp_dport_access_stall_other_cpu_end_wrap(void);
+
+#define TAG "esp_adapter"
 
 /*
  If CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
@@ -214,6 +217,41 @@ static void *IRAM_ATTR semphr_create_wrapper(uint32_t max, uint32_t init)
 static void IRAM_ATTR semphr_delete_wrapper(void *semphr)
 {
     vSemaphoreDelete(semphr);
+}
+
+static void wifi_thread_semphr_free(void* data)
+{
+    xSemaphoreHandle *sem = (xSemaphoreHandle*)(data);
+
+    if (sem) {
+        vSemaphoreDelete(sem);
+    }
+}
+
+static void * wifi_thread_semphr_get_wrapper(void)
+{
+    static bool s_wifi_thread_sem_key_init = false;
+    static pthread_key_t s_wifi_thread_sem_key;
+    xSemaphoreHandle sem = NULL;
+
+    if (s_wifi_thread_sem_key_init == false) {
+        if (0 != pthread_key_create(&s_wifi_thread_sem_key, wifi_thread_semphr_free)) {
+            return NULL;
+        }
+        s_wifi_thread_sem_key_init = true;
+    }
+
+    sem = pthread_getspecific(s_wifi_thread_sem_key);
+    if (!sem) {
+        sem = xSemaphoreCreateCounting(1, 0);
+        if (sem) {
+            pthread_setspecific(s_wifi_thread_sem_key, sem);
+            ESP_LOGV(TAG, "thread sem create: sem=%p", sem);
+        }
+    }
+
+    ESP_LOGV(TAG, "thread sem get: sem=%p", sem);
+    return (void*)sem;
 }
 
 static int32_t IRAM_ATTR semphr_take_from_isr_wrapper(void *semphr, void *hptw)
@@ -414,6 +452,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
     ._semphr_take = semphr_take_wrapper,
     ._semphr_give = semphr_give_wrapper,
+    ._wifi_thread_semphr_get = wifi_thread_semphr_get_wrapper,
     ._mutex_create = mutex_create_wrapper,
     ._recursive_mutex_create = recursive_mutex_create_wrapper,
     ._mutex_delete = mutex_delete_wrapper,
