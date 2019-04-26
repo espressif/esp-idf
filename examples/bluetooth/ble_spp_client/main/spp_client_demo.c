@@ -129,6 +129,10 @@ static void notify_event_handler(esp_ble_gattc_cb_param_t * p_data)
         ESP_LOGI(GATTC_TAG,"+INDICATE:handle = %d,length = %d ", p_data->notify.handle, p_data->notify.value_len);
     }
     handle = p_data->notify.handle;
+    if(db == NULL) {
+        ESP_LOGE(GATTC_TAG, " %s db is NULL\n", __func__);
+        return;
+    }
     if(handle == db[SPP_IDX_SPP_DATA_NTY_VAL].attribute_handle){
 #ifdef SPP_DEBUG_MODE
         esp_log_buffer_char(GATTC_TAG, (char *)p_data->notify.value, p_data->notify.value_len);
@@ -464,19 +468,21 @@ void spp_client_reg_task(void* arg)
     for(;;) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_reg_queue, &cmd_id, portMAX_DELAY)) {
-            if(cmd_id == SPP_IDX_SPP_DATA_NTY_VAL){
-                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_DATA_NTY_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
-                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
-            }else if(cmd_id == SPP_IDX_SPP_STATUS_VAL){
-                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_STATUS_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
-                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
-            }
+            if(db != NULL) {
+                if(cmd_id == SPP_IDX_SPP_DATA_NTY_VAL){
+                    ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_DATA_NTY_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
+                    esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_DATA_NTY_VAL)->attribute_handle);
+                }else if(cmd_id == SPP_IDX_SPP_STATUS_VAL){
+                    ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_STATUS_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
+                    esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_STATUS_VAL)->attribute_handle);
+                }
 #ifdef SUPPORT_HEARTBEAT
-            else if(cmd_id == SPP_IDX_SPP_HEARTBEAT_VAL){
-                ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
-                esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
-            }
+                else if(cmd_id == SPP_IDX_SPP_HEARTBEAT_VAL){
+                    ESP_LOGI(GATTC_TAG,"Index = %d,UUID = 0x%04x, handle = %d \n", cmd_id, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->uuid.uuid.uuid16, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
+                    esp_ble_gattc_register_for_notify(spp_gattc_if, gl_profile_tab[PROFILE_APP_ID].remote_bda, (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle);
+                }
 #endif
+            }
         }
     }
 }
@@ -490,7 +496,7 @@ void spp_heart_beat_task(void * arg)
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_heartbeat_queue, &cmd_id, portMAX_DELAY)) {
             while(1){
-                if((is_connect == true)&&((db+SPP_IDX_SPP_HEARTBEAT_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))){
+                if((is_connect == true) && (db != NULL) && ((db+SPP_IDX_SPP_HEARTBEAT_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))){
                     esp_ble_gattc_write_char( spp_gattc_if,
                                               spp_conn_id,
                                               (db+SPP_IDX_SPP_HEARTBEAT_VAL)->attribute_handle,
@@ -551,7 +557,7 @@ void uart_task(void *pvParameters)
             switch (event.type) {
             //Event of UART receving data
             case UART_DATA:
-                if (event.size && (is_connect == true) && ((db+SPP_IDX_SPP_DATA_RECV_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))) {
+                if (event.size && (is_connect == true) && (db != NULL) && ((db+SPP_IDX_SPP_DATA_RECV_VAL)->properties & (ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_WRITE))) {
                     uint8_t * temp = NULL;
                     temp = (uint8_t *)malloc(sizeof(uint8_t)*event.size);
                     if(temp == NULL){

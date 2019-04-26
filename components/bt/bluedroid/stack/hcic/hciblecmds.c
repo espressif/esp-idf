@@ -160,6 +160,7 @@ BOOLEAN btsnd_hcic_ble_set_adv_data (UINT8 data_len, UINT8 *p_data)
     if (p_data != NULL && data_len > 0) {
         if (data_len > HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA) {
             data_len = HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA;
+            HCI_TRACE_WARNING("Data length exceeds 31 bytes, only the first 31 bytes are used.\n");
         }
 
         UINT8_TO_STREAM (pp, data_len);
@@ -193,6 +194,7 @@ BOOLEAN btsnd_hcic_ble_set_scan_rsp_data (UINT8 data_len, UINT8 *p_scan_rsp)
 
         if (data_len > HCIC_PARAM_SIZE_BLE_WRITE_SCAN_RSP ) {
             data_len = HCIC_PARAM_SIZE_BLE_WRITE_SCAN_RSP;
+            HCI_TRACE_WARNING("Data length exceeds 31 bytes, only the first 31 bytes are used.\n");
         }
 
         UINT8_TO_STREAM (pp, data_len);
