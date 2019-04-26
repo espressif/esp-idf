@@ -58,6 +58,12 @@ class DeprecatedOptions(object):
         rep_dic = {}
         rev_rep_dic = {}
 
+        def remove_config_prefix(string):
+            if string.startswith(self.config_prefix):
+                return string[len(self.config_prefix):]
+            raise RuntimeError('Error in {} (line {}): Config {} is not prefixed with {}'
+                               ''.format(rep_path, line_number, string, self.config_prefix))
+
         for root, dirnames, filenames in os.walk(repl_dir):
             for filename in fnmatch.filter(filenames, self._REN_FILE):
                 rep_path = os.path.join(root, filename)
@@ -75,7 +81,8 @@ class DeprecatedOptions(object):
                                                'replacement {} is defined'.format(rep_path, line_number,
                                                                                   rep_dic[sp_line[0]], sp_line[0],
                                                                                   sp_line[1]))
-                        (dep_opt, new_opt) = (x.lstrip(self.config_prefix) for x in sp_line)
+
+                        (dep_opt, new_opt) = (remove_config_prefix(x) for x in sp_line)
                         rep_dic[dep_opt] = new_opt
                         rev_rep_dic[new_opt] = dep_opt
         return rep_dic, rev_rep_dic
