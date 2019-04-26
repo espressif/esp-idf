@@ -143,7 +143,7 @@ build_example () {
         else
             rm -rf build &&
             ./build.sh >>${BUILDLOG} 2>&1
-        fi &&
+        fi ||
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }
