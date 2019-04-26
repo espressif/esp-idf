@@ -1,9 +1,9 @@
 #
 # SDK tool configuration
 #
-CONFIG_TOOLPREFIX="xtensa-esp32-elf-"
-CONFIG_PYTHON="python"
-CONFIG_MAKE_WARN_UNDEFINED_VARIABLES=y
+CONFIG_SDK_TOOLPREFIX="xtensa-esp32-elf-"
+CONFIG_SDK_PYTHON="python"
+CONFIG_SDK_MAKE_WARN_UNDEFINED_VARIABLES=y
 
 #
 # Bootloader config
