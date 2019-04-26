@@ -13,6 +13,7 @@
 // limitations under the License.
 #pragma once
 
+#include "bootloader_config.h"
 #include "esp_image_format.h"
 
 /**
@@ -62,3 +63,26 @@ __attribute__((noreturn)) void bootloader_utility_load_boot_image(const bootload
  * It is not recommended to call this function from an app (if called, the app will abort).
  */
 __attribute__((noreturn)) void bootloader_reset(void);
+
+/**
+ * @brief Converts an array to a printable string.
+ *
+ * This function is useful for printing SHA-256 digest.
+ * \code{c}
+ * // Example of using. image_hash will be printed
+ * #define HASH_LEN 32 // SHA-256 digest length
+ * ...
+ * char hash_print[HASH_LEN * 2 + 1];
+ * hash_print[HASH_LEN * 2] = 0;
+ * bootloader_sha256_hex_to_str(hash_print, image_hash, HASH_LEN);
+ * ESP_LOGI(TAG, %s", hash_print);
+ * \endcode
+
+ * @param[out] out_str       Output string
+ * @param[in]  in_array_hex  Pointer to input array
+ * @param[in]  len           Length of input array
+ *
+ * @return   ESP_OK: Successful
+ *           ESP_ERR_INVALID_ARG: Error in the passed arguments
+ */
+esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len);

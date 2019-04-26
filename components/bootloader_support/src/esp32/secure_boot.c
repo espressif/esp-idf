@@ -40,8 +40,6 @@
  * from the bootloader code.
  */
 
-#ifdef BOOTLOADER_BUILD
-
 static const char* TAG = "secure_boot";
 
 /**
@@ -233,5 +231,3 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         return ESP_ERR_INVALID_STATE;
     }
 }
-
-#endif // #ifdef BOOTLOADER_BUILD

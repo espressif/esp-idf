@@ -18,17 +18,10 @@
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
-
-#ifdef BOOTLOADER_BUILD
-#include "esp32/rom/sha.h"
-#include "uECC.h"
-typedef SHA_CTX sha_context;
-#else
 #include "mbedtls/sha256.h"
 #include "mbedtls/x509.h"
-#endif
 
-static const char* TAG = "secure_boot";
+static const char *TAG = "secure_boot";
 
 extern const uint8_t signature_verification_key_start[] asm("_binary_signature_verification_key_bin_start");
 extern const uint8_t signature_verification_key_end[] asm("_binary_signature_verification_key_bin_end");
@@ -46,20 +39,13 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 
     data = bootloader_mmap(src_addr, length + sizeof(esp_secure_boot_sig_block_t));
-    if(data == NULL) {
-        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr, length+sizeof(esp_secure_boot_sig_block_t));
+    if (data == NULL) {
+        ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr, length + sizeof(esp_secure_boot_sig_block_t));
         return ESP_FAIL;
     }
 
     // Calculate digest of main image
-#ifdef BOOTLOADER_BUILD
-    bootloader_sha256_handle_t handle = bootloader_sha256_start();
-    bootloader_sha256_data(handle, data, length);
-    bootloader_sha256_finish(handle, digest);
-#else
-    /* Use thread-safe mbedTLS version */
     mbedtls_sha256_ret(data, length, digest, 0);
-#endif
 
     // Map the signature block and verify the signature
     sigblock = (const esp_secure_boot_sig_block_t *)(data + length);
@@ -73,7 +59,7 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
     ptrdiff_t keylen;
 
     keylen = signature_verification_key_end - signature_verification_key_start;
-    if(keylen != SIGNATURE_VERIFICATION_KEYLEN) {
+    if (keylen != SIGNATURE_VERIFICATION_KEYLEN) {
         ESP_LOGE(TAG, "Embedded public verification key has wrong length %d", keylen);
         return ESP_FAIL;
     }
@@ -85,16 +71,6 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
 
     ESP_LOGD(TAG, "Verifying secure boot signature");
 
-#ifdef BOOTLOADER_BUILD
-    bool is_valid;
-    is_valid = uECC_verify(signature_verification_key_start,
-                                image_digest,
-                                DIGEST_LEN,
-                                sig_block->signature,
-                                uECC_secp256r1());
-    ESP_LOGD(TAG, "Verification result %d", is_valid);
-    return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
-#else /* BOOTLOADER_BUILD */
     int ret;
     mbedtls_mpi r, s;
 
@@ -102,7 +78,7 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
     mbedtls_mpi_init(&s);
 
     /* Extract r and s components from RAW ECDSA signature of 64 bytes */
-    #define ECDSA_INTEGER_LEN 32
+#define ECDSA_INTEGER_LEN 32
     ret = mbedtls_mpi_read_binary(&r, &sig_block->signature[0], ECDSA_INTEGER_LEN);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed mbedtls_mpi_read_binary(1), err:%d", ret);
@@ -122,7 +98,7 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
 
     mbedtls_ecp_group_load(&ecdsa_context.grp, MBEDTLS_ECP_DP_SECP256R1);
     size_t plen = mbedtls_mpi_size(&ecdsa_context.grp.P);
-    if (keylen != 2*plen) {
+    if (keylen != 2 * plen) {
         ESP_LOGE(TAG, "Incorrect ECDSA key length %d", keylen);
         ret = ESP_FAIL;
         goto cleanup;
@@ -141,5 +117,4 @@ cleanup:
     mbedtls_mpi_free(&s);
     mbedtls_ecdsa_free(&ecdsa_context);
     return ret == 0 ? ESP_OK : ESP_ERR_IMAGE_INVALID;
-#endif /* !BOOTLOADER_BUILD */
 }
