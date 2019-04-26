@@ -14,7 +14,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_spiffs.h"
-#include "esp32/rom/md5_hash.h"
+#include "mbedtls/md5.h"
 
 static const char *TAG = "example";
 
@@ -53,19 +53,20 @@ static void compute_alice_txt_md5()
     #define MD5_MAX_LEN 16
 
     char buf[64];
-    struct MD5Context ctx;
+    mbedtls_md5_context ctx;
     unsigned char digest[MD5_MAX_LEN];
 
-    MD5Init(&ctx);
+    mbedtls_md5_init(&ctx);
+    mbedtls_md5_starts_ret(&ctx);
 
     size_t read;
 
     do {
         read = fread((void*) buf, 1, sizeof(buf), f);
-        MD5Update(&ctx, (unsigned const char*) buf, read);
+        mbedtls_md5_update_ret(&ctx, (unsigned const char*) buf, read);
     } while(read == sizeof(buf));
 
-    MD5Final(digest, &ctx);
+    mbedtls_md5_finish_ret(&ctx, digest);
 
     // Create a string of the digest
     char digest_str[MD5_MAX_LEN * 2];
