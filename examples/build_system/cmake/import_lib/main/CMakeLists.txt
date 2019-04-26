@@ -9,13 +9,18 @@ register_component()
 option(BUILD_SHARED_LIBS OFF)
 option(BUILD_TESTING OFF)
 
+# Unfortunately the library performs install and export. Would 
+# have been nice if devs made that an option like BUILD_SHARED_LIBS
+# and BUILD_TESTING. Override install() and export() to do nothing
+# instead.
+function(install)
+endfunction()
+
+function(export)
+endfunction()
+
 # Import tinyxml2 targets 
 add_subdirectory(lib/tinyxml2)
 
-# Propagate compile settings to tinyxml2
-target_include_directories(tinyxml2 PRIVATE ${IDF_INCLUDE_DIRECTORIES})
-target_compile_options(tinyxml2 PRIVATE "${IDF_COMPILE_OPTIONS}")
-target_compile_options(tinyxml2 PRIVATE "${IDF_CXX_COMPILE_OPTIONS}")
-
 # Link tinyxml2 to main component
-target_link_libraries(${COMPONENT_TARGET} tinyxml2)
+target_link_libraries(${COMPONENT_LIB} tinyxml2)
