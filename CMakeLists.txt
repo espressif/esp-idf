@@ -1,161 +1,150 @@
 cmake_minimum_required(VERSION 3.5)
 project(esp-idf C CXX ASM)
 
-if(NOT IDF_PATH)
-    set(IDF_PATH ${CMAKE_CURRENT_LIST_DIR})
-endif()
+# Include the sdkconfig cmake file, since the following operations require
+# knowledge of config values.
+idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
+include(${sdkconfig_cmake})
 
-include(tools/cmake/idf_functions.cmake)
-
-#
-# Set variables that control the build configuration and the build itself
-#
-idf_set_variables()
-
-kconfig_set_variables()
-
-#
-# Generate a component dependencies file, enumerating components to be included in the build
-# as well as their dependencies.
-#
-execute_process(COMMAND "${CMAKE_COMMAND}"
-    -D "COMPONENTS=${IDF_COMPONENTS}"
-    -D "COMPONENT_REQUIRES_COMMON=${IDF_COMPONENT_REQUIRES_COMMON}"
-    -D "EXCLUDE_COMPONENTS=${IDF_EXCLUDE_COMPONENTS}"
-    -D "TEST_COMPONENTS=${IDF_TEST_COMPONENTS}"
-    -D "TEST_EXCLUDE_COMPONENTS=${IDF_TEST_EXCLUDE_COMPONENTS}"
-    -D "BUILD_TESTS=${IDF_BUILD_TESTS}"
-    -D "DEPENDENCIES_FILE=${CMAKE_BINARY_DIR}/component_depends.cmake"
-    -D "COMPONENT_DIRS=${IDF_COMPONENT_DIRS}"
-    -D "BOOTLOADER_BUILD=${BOOTLOADER_BUILD}"
-    -D "IDF_TARGET=${IDF_TARGET}"
-    -D "IDF_PATH=${IDF_PATH}"
-    -D "DEBUG=${DEBUG}"
-    -P "${IDF_PATH}/tools/cmake/scripts/expand_requirements.cmake"
-    WORKING_DIRECTORY "${PROJECT_PATH}"
-    RESULT_VARIABLE expand_requirements_result)
-
-if(expand_requirements_result)
-    message(FATAL_ERROR "Failed to expand component requirements")
-endif()
-
-include("${CMAKE_BINARY_DIR}/component_depends.cmake")
-
-#
-# We now have the following component-related variables:
-#
-# IDF_COMPONENTS is the list of initial components set by the user
-# (or empty to include all components in the build).
-# BUILD_COMPONENTS is the list of components to include in the build.
-# BUILD_COMPONENT_PATHS is the paths to all of these components, obtained from the component dependencies file.
-#
-# Print the list of found components and test components
-#
-string(REPLACE ";" " " BUILD_COMPONENTS_SPACES "${BUILD_COMPONENTS}")
-message(STATUS "Component names: ${BUILD_COMPONENTS_SPACES}")
-unset(BUILD_COMPONENTS_SPACES)
-message(STATUS "Component paths: ${BUILD_COMPONENT_PATHS}")
-
-# Print list of test components
-if(TESTS_ALL EQUAL 1 OR TEST_COMPONENTS)
-    string(REPLACE ";" " " BUILD_TEST_COMPONENTS_SPACES "${BUILD_TEST_COMPONENTS}")
-    message(STATUS "Test component names: ${BUILD_TEST_COMPONENTS_SPACES}")
-    unset(BUILD_TEST_COMPONENTS_SPACES)
-    message(STATUS "Test component paths: ${BUILD_TEST_COMPONENT_PATHS}")
-endif()
-
-# Generate project configuration
-kconfig_process_config()
-
-# Include sdkconfig.cmake so rest of the build knows the configuration
-include(${SDKCONFIG_CMAKE})
-
-# Verify the environment is configured correctly
-idf_verify_environment()
-
-# Check git revision (may trigger reruns of cmake)
-##  sets IDF_VER to IDF git revision
-idf_get_git_revision()
-
-# Check that the targets set in cache, sdkconfig, and in environment all match
-idf_check_config_target()
-
-## get PROJECT_VER
-if(NOT BOOTLOADER_BUILD)
-    app_get_revision("${CMAKE_SOURCE_DIR}")
-endif()
-
-# Add some idf-wide definitions
-idf_set_global_compile_options()
-
-# generate compile_commands.json (needs to come after project)
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-
-#
-# Setup variables for linker script generation
-#
-ldgen_set_variables()
-
-# Include any top-level project_include.cmake files from components
-foreach(component ${BUILD_COMPONENT_PATHS})
-    set(COMPONENT_PATH "${component}")
-    include_if_exists("${component}/project_include.cmake")
-    unset(COMPONENT_PATH)
+# Make each build property available as a read-only variable
+idf_build_get_property(build_properties __BUILD_PROPERTIES)
+foreach(build_property ${build_properties})
+    idf_build_get_property(val ${build_property})
+    set(${build_property} "${val}")
 endforeach()
 
-#
-# Add each component to the build as a library
-#
-foreach(COMPONENT_PATH ${BUILD_COMPONENT_PATHS})
-    get_filename_component(COMPONENT_NAME ${COMPONENT_PATH} NAME)
+# Check that the CMake target value matches the Kconfig target value.
+__target_check()
 
-    list(FIND BUILD_TEST_COMPONENT_PATHS ${COMPONENT_PATH} idx)
+unset(compile_options)
+unset(c_compile_options)
+unset(cxx_compile_options)
+unset(compile_definitions)
 
-    if(NOT idx EQUAL -1)
-        list(GET BUILD_TEST_COMPONENTS ${idx} test_component)
-        set(COMPONENT_NAME ${test_component})
+# Add the following build specifications here, since these seem to be dependent
+# on config values on the root Kconfig.
+
+# Temporary trick to support both gcc5 and gcc8 builds
+if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
+    set(GCC_NOT_5_2_0 0 CACHE STRING "GCC is 5.2.0 version")
+else()
+    set(GCC_NOT_5_2_0 1 CACHE STRING "GCC is not 5.2.0 version")
+endif()
+
+list(APPEND compile_definitions "-DGCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
+
+if(CONFIG_OPTIMIZATION_LEVEL_RELEASE)
+    list(APPEND compile_options "-Os")
+else()
+    list(APPEND compile_options "-Og")
+endif()
+
+if(CONFIG_CXX_EXCEPTIONS)
+    list(APPEND cxx_compile_options "-fexceptions")
+else()
+    list(APPEND cxx_compile_options "-fno-exceptions")
+endif()
+
+if(CONFIG_DISABLE_GCC8_WARNINGS)
+    list(APPEND compile_options "-Wno-parentheses"
+                                "-Wno-sizeof-pointer-memaccess"
+                                "-Wno-clobbered")
+
+    # doesn't use GCC_NOT_5_2_0 because idf_set_global_variables was not called before
+    if(GCC_NOT_5_2_0)
+        list(APPEND compile_options "-Wno-format-overflow"
+                                    "-Wno-stringop-truncation"
+                                    "-Wno-misleading-indentation"
+                                    "-Wno-cast-function-type"
+                                    "-Wno-implicit-fallthrough"
+                                    "-Wno-unused-const-variable"
+                                    "-Wno-switch-unreachable"
+                                    "-Wno-format-truncation"
+                                    "-Wno-memset-elt-size"
+                                    "-Wno-int-in-bool-context")
     endif()
+endif()
 
-    component_get_target(COMPONENT_TARGET ${COMPONENT_NAME})
+if(CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED)
+    list(APPEND compile_definitions "NDEBUG")
+endif()
 
-    add_subdirectory(${COMPONENT_PATH} ${COMPONENT_NAME})
-endforeach()
-unset(COMPONENT_NAME)
-unset(COMPONENT_PATH)
+if(CONFIG_STACK_CHECK_NORM)
+    list(APPEND compile_options "-fstack-protector")
+elseif(CONFIG_STACK_CHECK_STRONG)
+    list(APPEND compile_options "-fstack-protector-strong")
+elseif(CONFIG_STACK_CHECK_ALL)
+    list(APPEND compile_options "-fstack-protector-all")
+endif()
 
-# each component should see the include directories of its requirements
-#
-# (we can't do this until all components are registered and targets exist in cmake, as we have
-# a circular requirements graph...)
-foreach(component ${BUILD_COMPONENTS})
-    component_get_target(component_target ${component})
-    if(TARGET ${component_target})
-        get_component_requirements(${component} deps priv_deps)
+# All targets built under this scope is with the ESP-IDF build system
+set(ESP_PLATFORM 1)
+list(APPEND compile_definitions "-DESP_PLATFORM")
 
-        list(APPEND priv_deps ${IDF_COMPONENT_REQUIRES_COMMON})
+idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
+idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
+idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
+idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
 
-        foreach(dep ${deps})
-            component_get_target(dep_target ${dep})
-            add_component_dependencies(${component_target} ${dep_target} PUBLIC)
-        endforeach()
+idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
 
-        foreach(dep ${priv_deps})
-            component_get_target(dep_target ${dep})
-            add_component_dependencies(${component_target} ${dep_target} PRIVATE)
-        endforeach()
+# Include each component's project_include.cmake
+foreach(component_target ${build_component_targets})
+    __component_get_property(dir ${component_target} COMPONENT_DIR)
+    __component_get_property(_name ${component_target} COMPONENT_NAME)
+    set(COMPONENT_NAME ${_name})
+    set(COMPONENT_DIR ${dir})
+    set(COMPONENT_PATH ${dir})  # this is deprecated, users are encouraged to use COMPONENT_DIR;
+                                # retained for compatibility
+    if(EXISTS ${COMPONENT_DIR}/project_include.cmake)
+        include(${COMPONENT_DIR}/project_include.cmake)
     endif()
 endforeach()
 
-if(IDF_BUILD_ARTIFACTS)
-    # Write project description JSON file
-    make_json_list("${BUILD_COMPONENTS}" build_components_json)
-    make_json_list("${BUILD_COMPONENT_PATHS}" build_component_paths_json)
-    configure_file("${IDF_PATH}/tools/cmake/project_description.json.in"
-        "${IDF_BUILD_ARTIFACTS_DIR}/project_description.json")
-    unset(build_components_json)
-    unset(build_component_paths_json)
-endif()
+# Add each component as a subdirectory, processing each component's CMakeLists.txt
+foreach(component_target ${build_component_targets})
+    __component_get_property(dir ${component_target} COMPONENT_DIR)
+    __component_get_property(_name ${component_target} COMPONENT_NAME)
+    __component_get_property(prefix ${component_target} __PREFIX)
+    __component_get_property(alias ${component_target} COMPONENT_ALIAS)
+    set(COMPONENT_NAME ${_name})
+    set(COMPONENT_DIR ${dir})
+    set(COMPONENT_ALIAS ${alias})
+    set(COMPONENT_PATH ${dir}) # same deprecation situation here
+    idf_build_get_property(build_prefix __PREFIX)
+    set(__idf_component_context 1)
+    if(NOT prefix STREQUAL build_prefix)
+        add_subdirectory(${dir} ${prefix}_${_name} EXCLUDE_FROM_ALL)
+    else()
+        add_subdirectory(${dir} ${_name} EXCLUDE_FROM_ALL)
+    endif()
+    set(__idf_component_context 0)
+endforeach()
 
-set(BUILD_COMPONENTS ${BUILD_COMPONENTS} PARENT_SCOPE)
+# Establish dependencies between components
+idf_build_get_property(build_components BUILD_COMPONENTS)
+foreach(build_component ${build_components})
+    __component_get_target(component_target ${build_component})
+    __component_get_property(component_lib ${component_target} COMPONENT_LIB)
+    __component_get_property(reqs ${component_target} __REQUIRES)
+    foreach(req ${reqs})
+        __component_get_property(req_lib ${req} COMPONENT_LIB)
+        if(TARGET ${req_lib})
+            set_property(TARGET ${component_lib} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${req_lib})
+        endif()
+    endforeach()
 
-ldgen_add_dependencies()
+    get_property(type TARGET ${component_lib} PROPERTY TYPE)
+    if(type STREQUAL STATIC_LIBRARY)
+        __component_get_property(reqs ${component_target} __REQUIRES)
+        __component_get_property(priv_reqs ${component_target} __PRIV_REQUIRES)
+        foreach(req ${reqs} ${priv_reqs})
+            __component_get_property(req_lib ${req} COMPONENT_LIB)
+            if(TARGET ${req_lib})
+                set_property(TARGET ${component_lib} APPEND PROPERTY LINK_LIBRARIES ${req_lib})
+            endif()
+        endforeach()
+    endif()
+endforeach()
+
+

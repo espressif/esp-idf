@@ -77,21 +77,23 @@ endfunction()
 # by converting it to a generated source file which is then compiled
 # to a binary object as part of the build
 function(target_add_binary_data target embed_file embed_type)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(idf_path IDF_PATH)
 
     get_filename_component(embed_file "${embed_file}" ABSOLUTE)
 
     get_filename_component(name "${embed_file}" NAME)
-    set(embed_srcfile "${IDF_BUILD_ARTIFACTS_DIR}/${name}.S")
+    set(embed_srcfile "${build_dir}/${name}.S")
 
     add_custom_command(OUTPUT "${embed_srcfile}"
         COMMAND "${CMAKE_COMMAND}"
         -D "DATA_FILE=${embed_file}"
         -D "SOURCE_FILE=${embed_srcfile}"
         -D "FILE_TYPE=${embed_type}"
-        -P "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
+        -P "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake"
         MAIN_DEPENDENCY "${embed_file}"
-        DEPENDS "${IDF_PATH}/tools/cmake/scripts/data_file_embed_asm.cmake"
-        WORKING_DIRECTORY "${IDF_BUILD_ARTIFACTS_DIR}"
+        DEPENDS "${idf_path}/tools/cmake/scripts/data_file_embed_asm.cmake"
+        WORKING_DIRECTORY "${build_dir}"
         VERBATIM)
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${embed_srcfile}")
@@ -128,25 +130,50 @@ endfunction()
 # Automatically adds a -L search path for the containing directory (if found),
 # and then adds -T with the filename only. This allows INCLUDE directives to be
 # used to include other linker scripts in the same directory.
-function(target_linker_script target)
-    foreach(scriptfile ${ARGN})
+function(target_linker_script target scriptfiles)
+    cmake_parse_arguments(_ "PROCESS" "" "" ${ARGN})
+    foreach(scriptfile ${scriptfiles})
         get_filename_component(abs_script "${scriptfile}" ABSOLUTE)
         message(STATUS "Adding linker script ${abs_script}")
+
+        if(__PROCESS)
+            __ldgen_process_template(output ${abs_script})
+            set(abs_script ${output})
+        endif()
 
         get_filename_component(search_dir "${abs_script}" DIRECTORY)
         get_filename_component(scriptname "${abs_script}" NAME)
 
-        get_target_property(link_libraries "${target}" LINK_LIBRARIES)
-        list(FIND "${link_libraries}" "-L ${search_dir}" found_search_dir)
-        if(found_search_dir EQUAL "-1")  # not already added as a search path
-            target_link_libraries("${target}" "-L ${search_dir}")
+        get_target_property(type ${target} TYPE)
+        if(type STREQUAL "INTERFACE_LIBRARY")
+            set(is_interface "INTERFACE")
         endif()
 
-        target_link_libraries("${target}" "-T ${scriptname}")
+        if(is_interface)
+            get_target_property(link_libraries "${target}" INTERFACE_LINK_LIBRARIES)
+        else()
+            get_target_property(link_libraries "${target}" LINK_LIBRARIES)
+        endif()
+
+        list(FIND "${link_libraries}" "-L ${search_dir}" found_search_dir)
+        if(found_search_dir EQUAL "-1")  # not already added as a search path
+            target_link_libraries("${target}" "${is_interface}" "-L ${search_dir}")
+        endif()
+
+        target_link_libraries("${target}" "${is_interface}" "-T ${scriptname}")
 
         # Note: In ESP-IDF, most targets are libraries and libary LINK_DEPENDS don't propagate to
-        # executable(s) the library is linked to. This is done manually in components.cmake.
-        set_property(TARGET "${target}" APPEND PROPERTY LINK_DEPENDS "${abs_script}")
+        # executable(s) the library is linked to. Attach manually to executable once it is known.
+        #
+        # Property INTERFACE_LINK_DEPENDS is available in CMake 3.13 which should propagate link
+        # dependencies.
+        if(NOT __PROCESS)
+            if(is_interface)
+                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_LINK_DEPENDS ${abs_script})
+            else()
+                set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS ${abs_script})
+            endif()
+        endif()
     endforeach()
 endfunction()
 
@@ -177,6 +204,7 @@ endfunction()
 # We cannot use CMAKE_CONFIGURE_DEPENDS instead because it only works for files which exist at CMake runtime.
 #
 function(fail_at_build_time target_name message_line0)
+    idf_build_get_property(idf_path IDF_PATH)
     set(message_lines COMMAND ${CMAKE_COMMAND} -E echo "${message_line0}")
     foreach(message_line ${ARGN})
         set(message_lines ${message_lines} COMMAND ${CMAKE_COMMAND} -E echo "${message_line}")
@@ -184,6 +212,44 @@ function(fail_at_build_time target_name message_line0)
     add_custom_target(${target_name} ALL
         ${message_lines}
         COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/CMakeCache.txt"
-        COMMAND ${CMAKE_COMMAND} -P ${IDF_PATH}/tools/cmake/scripts/fail.cmake
+        COMMAND ${CMAKE_COMMAND} -P ${idf_path}/tools/cmake/scripts/fail.cmake
         VERBATIM)
+endfunction()
+
+function(check_exclusive_args args prefix)
+    set(_args ${args})
+    spaces2list(_args)
+    set(only_arg 0)
+    foreach(arg ${_args})
+        if(${prefix}_${arg} AND only_arg)
+            message(FATAL_ERROR "${args} are exclusive arguments")
+        endif()
+
+        if(${prefix}_${arg})
+            set(only_arg 1)
+        endif()
+    endforeach()
+endfunction()
+
+
+# add_compile_options variant for C++ code only
+#
+# This adds global options, set target properties for
+# component-specific flags
+function(add_cxx_compile_options)
+    foreach(option ${ARGV})
+        # note: the Visual Studio Generator doesn't support this...
+        add_compile_options($<$<COMPILE_LANGUAGE:CXX>:${option}>)
+    endforeach()
+endfunction()
+
+# add_compile_options variant for C code only
+#
+# This adds global options, set target properties for
+# component-specific flags
+function(add_c_compile_options)
+    foreach(option ${ARGV})
+        # note: the Visual Studio Generator doesn't support this...
+        add_compile_options($<$<COMPILE_LANGUAGE:C>:${option}>)
+    endforeach()
 endfunction()

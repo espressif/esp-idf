@@ -357,9 +357,9 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 .. highlight:: cmake
 
-在编译特定组件的源文件时，可以使用 ``component_compile_options`` 命令来传递编译器选项::
+在编译特定组件的源文件时，可以使用 ``target_compile_options(${COMPONENT_TARGET} PRIVATE `` 命令来传递编译器选项::
 
-    component_compile_options(-Wno-unused-variable)
+    target_compile_options(${COMPONENT_TARGET} PRIVATE -Wno-unused-variable)
 
 这条命令封装了 CMake 的 `target_compile_options`_ 命令。
 
