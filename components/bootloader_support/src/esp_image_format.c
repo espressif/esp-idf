@@ -16,7 +16,7 @@
 
 #include <esp32/rom/rtc.h>
 #include <soc/cpu.h>
-#include <esp_image_format.h>
+#include <bootloader_utility.h>
 #include <esp_secure_boot.h>
 #include <esp_log.h>
 #include <esp_spi_flash.h>
