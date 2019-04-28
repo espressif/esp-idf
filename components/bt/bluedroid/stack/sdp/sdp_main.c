@@ -467,12 +467,13 @@ static void sdp_disconnect_ind (UINT16 l2cap_cid, BOOLEAN ack_needed)
     SDP_TRACE_EVENT ("SDP - Rcvd L2CAP disc, CID: 0x%x\n", l2cap_cid);
 #if SDP_CLIENT_ENABLED == TRUE
     /* Tell the user if he has a callback */
-    if (p_ccb->p_cb)
+    if (p_ccb->p_cb) {
         (*p_ccb->p_cb) ((UINT16) ((p_ccb->con_state == SDP_STATE_CONNECTED) ?
                                   SDP_SUCCESS : SDP_CONN_FAILED));
-    else if (p_ccb->p_cb2)
+    } else if (p_ccb->p_cb2) {
         (*p_ccb->p_cb2) ((UINT16) ((p_ccb->con_state == SDP_STATE_CONNECTED) ?
                                    SDP_SUCCESS : SDP_CONN_FAILED), p_ccb->user_data);
+    }
 
 #endif
     sdpu_release_ccb (p_ccb);

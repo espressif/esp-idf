@@ -1293,9 +1293,10 @@ void bta_av_setconfig_rsp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
             /* if SBC is used by the SNK as INT, discover req is not sent in bta_av_config_ind.
                        * call disc_res now */
             /* this is called in A2DP SRC path only, In case of SINK we don't need it  */
-            if (local_sep == AVDT_TSEP_SRC)
+            if (local_sep == AVDT_TSEP_SRC) {
                 p_scb->p_cos->disc_res(p_scb->hndl, num, num, 0, p_scb->peer_addr,
                                        UUID_SERVCLASS_AUDIO_SOURCE);
+            }
         } else {
             /* we do not know the peer device and it is using non-SBC codec
              * we need to know all the SEPs on SNK */

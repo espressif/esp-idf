@@ -1042,9 +1042,10 @@ tBTM_STATUS  BTM_ReadRemoteDeviceName (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb
         return btm_ble_read_remote_name(remote_bda, p_cur, p_cb);
     } else
 #endif
-
+    {
         return (btm_initiate_rem_name (remote_bda, p_cur, BTM_RMT_NAME_EXT,
                                        BTM_EXT_RMT_NAME_TIMEOUT, p_cb));
+    }
 }
 
 /*******************************************************************************
@@ -1080,11 +1081,13 @@ tBTM_STATUS  BTM_CancelRemoteDeviceName (void)
             }
         } else
 #endif
+        {
             if (btsnd_hcic_rmt_name_req_cancel (p_inq->remname_bda)) {
                 return (BTM_CMD_STARTED);
             } else {
                 return (BTM_NO_RESOURCES);
             }
+        }
     } else {
         return (BTM_WRONG_MODE);
     }

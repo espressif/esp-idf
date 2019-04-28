@@ -280,9 +280,10 @@ void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy)
         /* if adv active, stop and restart */
         btm_ble_stop_adv ();
 
-        if (p_cb->connectable_mode & BTM_BLE_CONNECTABLE)
+        if (p_cb->connectable_mode & BTM_BLE_CONNECTABLE) {
             p_cb->evt_type = btm_set_conn_mode_adv_init_addr(p_cb, p_addr_ptr, &init_addr_type,
                              &p_cb->adv_addr_type);
+        }
 
         btsnd_hcic_ble_write_adv_params ((UINT16)(p_cb->adv_interval_min ? p_cb->adv_interval_min :
                                          BTM_BLE_GAP_ADV_SLOW_INT),
@@ -738,7 +739,7 @@ void BTM_VendorHciEchoCmdTest(uint8_t echo)
 {
     BTM_VendorSpecificCommand (HCI_VENDOR_COMMON_ECHO_CMD_OPCODE,
                                 1,
-                                &echo, 
+                                &echo,
                                 BTM_VendorHciEchoCmdCallback);
 }
 
@@ -1281,7 +1282,7 @@ tBTM_STATUS BTM_BleSetAdvParamsStartAdv(UINT16 adv_int_min, UINT16 adv_int_max, 
 
     if (!BTM_BLE_ISVALID_PARAM(adv_int_min, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX) ||
             !BTM_BLE_ISVALID_PARAM(adv_int_max, BTM_BLE_ADV_INT_MIN, BTM_BLE_ADV_INT_MAX)) {
-         BTM_TRACE_ERROR ("adv_int_min or adv_int_max is invalid\n");    
+         BTM_TRACE_ERROR ("adv_int_min or adv_int_max is invalid\n");
         if(adv_cb) {
             (* adv_cb)(HCI_ERR_ESP_VENDOR_FAIL);
         }
@@ -1644,8 +1645,9 @@ tBTM_STATUS BTM_BleWriteAdvDataRaw(UINT8 *p_raw_adv, UINT32 raw_adv_len)
 *******************************************************************************/
 tBTM_STATUS BTM_BleSetRandAddress(BD_ADDR rand_addr)
 {
-	if (rand_addr == NULL)
+	if (rand_addr == NULL) {
 		return BTM_SET_STATIC_RAND_ADDR_FAIL;
+    }
 
 /*
  *  Temporary solutions for pair with random address:
@@ -1701,7 +1703,7 @@ BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type)
         memset(addr, 0, BD_ADDR_LEN);
         return FALSE;
     }
-    return TRUE; 
+    return TRUE;
 }
 
 /*******************************************************************************
@@ -2684,7 +2686,7 @@ void btm_ble_cache_adv_data(BD_ADDR bda, tBTM_INQ_RESULTS *p_cur, UINT8 data_len
         memset(p_le_inq_cb->adv_data_cache, 0, BTM_BLE_CACHE_ADV_DATA_MAX);
         p_cur->adv_data_len = 0;
         p_cur->scan_rsp_len = 0;
-    } 
+    }
 
     //Clear the adv cache if the addresses are not equal
     if(memcmp(bda, p_le_inq_cb->adv_addr, BD_ADDR_LEN) != 0) {
@@ -3138,7 +3140,7 @@ void btm_ble_process_adv_pkt (UINT8 *p_data)
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
         temp_addr_type = addr_type;
         memcpy(temp_bda, bda, BD_ADDR_LEN);
-        
+
         /* map address to security record */
         match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
 
@@ -3260,13 +3262,13 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
         0x02 Scannable undirected advertising (ADV_SCAN_IND)
         0x03 Non connectable undirected advertising (ADV_NONCONN_IND)
         0x04 Scan Response (SCAN_RSP)
-        0x05-0xFF Reserved for future use 
+        0x05-0xFF Reserved for future use
     */
    //if scan duplicate is enabled, the adv packet without scan response is allowed to report to upper layer
    if(p_le_inq_cb->scan_duplicate_filter == BTM_BLE_SCAN_DUPLICATE_ENABLE) {
        /*
         Bluedroid will put the advertising packet and scan response into a packet and send it to the higher layer.
-        If two advertising packets are not with the same address, or can't be combined into a packet, then the first advertising 
+        If two advertising packets are not with the same address, or can't be combined into a packet, then the first advertising
         packet will be discarded. So we added the following judgment:
         1. For different addresses, send the last advertising packet to higher layer
         2. For same address and same advertising type (not scan response), send the last advertising packet to higher layer
@@ -3614,7 +3616,7 @@ tBTM_STATUS btm_ble_start_adv(void)
         btm_execute_wl_dev_operation();
         btm_cb.ble_ctr_cb.wl_state |= BTM_BLE_WL_ADV;
     }
-    /* The complete event comes up immediately after the 'btsnd_hcic_ble_set_adv_enable' being called in dual core, 
+    /* The complete event comes up immediately after the 'btsnd_hcic_ble_set_adv_enable' being called in dual core,
     this causes the 'adv_mode' and 'state' not be set yet, so we set the state first */
     tBTM_BLE_GAP_STATE temp_state = p_cb->state;
     UINT8 adv_mode = p_cb->adv_mode;
@@ -3923,7 +3925,7 @@ BOOLEAN btm_ble_clear_topology_mask (tBTM_BLE_STATE_MASK request_state_mask)
 **
 ** Description      Get BLE topology bit mask
 **
-** Returns          state mask.   
+** Returns          state mask.
 **
 *******************************************************************************/
 tBTM_BLE_STATE_MASK btm_ble_get_topology_mask (void)

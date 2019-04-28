@@ -66,7 +66,7 @@ extern void gatt_notify_enc_cmpl(BD_ADDR bd_addr);
 **                  bd_name          - Name of the peer device.  NULL if unknown.
 **                  dev_type         - Remote device's device type.
 **                  addr_type        - LE device address type.
-**                  auth_mode        - auth mode             
+**                  auth_mode        - auth mode
 **
 ** Returns          TRUE if added OK, else FALSE
 **
@@ -887,8 +887,9 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
             return BTM_SEC_OK;
         }
 
-        if (security_required & BTM_SEC_OUT_MITM)
+        if (security_required & BTM_SEC_OUT_MITM) {
             auth_req |= BTM_LE_AUTH_REQ_MITM;
+        }
     }
     else
     {
@@ -898,8 +899,9 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
             return BTM_SEC_OK;
         }
 
-        if (security_required & BTM_SEC_IN_MITM)
+        if (security_required & BTM_SEC_IN_MITM) {
             auth_req |= BTM_LE_AUTH_REQ_MITM;
+        }
     }
 
     tBTM_BLE_SEC_REQ_ACT ble_sec_act = BTM_BLE_SEC_REQ_ACT_NONE;
@@ -907,11 +909,13 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
 
     BTM_TRACE_DEBUG ("%s ble_sec_act %d", __func__ , ble_sec_act);
 
-    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD)
+    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD) {
         return BTM_SEC_ENC_PENDING;
+    }
 
-    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_NONE)
+    if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_NONE) {
         return BTM_SEC_OK;
+    }
 
     UINT8 sec_flag = 0;
     BTM_GetSecurityFlagsByTransport(bdaddr, &sec_flag, BT_TRANSPORT_LE);
@@ -920,11 +924,13 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
     BOOLEAN is_key_mitm = FALSE;
     if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED| BTM_SEC_FLAG_LKEY_KNOWN))
     {
-        if (sec_flag & BTM_SEC_FLAG_ENCRYPTED)
+        if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) {
             is_link_encrypted = TRUE;
+        }
 
-        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
             is_key_mitm = TRUE;
+        }
     }
 
     if (auth_req & BTM_LE_AUTH_REQ_MITM)
@@ -933,16 +939,18 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
         {
             return BTM_SEC_ENCRYPT_MITM;
         } else {
-            if (is_link_encrypted)
+            if (is_link_encrypted) {
                 return BTM_SEC_OK;
-            else
+            } else {
                 return BTM_SEC_ENCRYPT;
+            }
         }
     } else {
-        if (is_link_encrypted)
+        if (is_link_encrypted) {
             return BTM_SEC_OK;
-        else
+        } else {
             return BTM_SEC_ENCRYPT_NO_MITM;
+        }
     }
 
     return BTM_SEC_OK;
@@ -1012,8 +1020,9 @@ BOOLEAN btm_ble_start_sec_check(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originat
             break;
     }
 
-    if (ble_sec_act == BTM_BLE_SEC_NONE)
+    if (ble_sec_act == BTM_BLE_SEC_NONE) {
         return status;
+    }
 
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
     p_lcb->sec_act = sec_act;

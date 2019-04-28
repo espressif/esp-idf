@@ -605,8 +605,9 @@ void avct_lcb_free_msg_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
 {
     UNUSED(p_lcb);
 
-    if (p_data == NULL)
+    if (p_data == NULL) {
         return;
+    }
 
     osi_free(p_data->p_buf);
     p_data->p_buf = NULL;

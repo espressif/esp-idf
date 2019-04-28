@@ -1038,9 +1038,10 @@ static void bta_dm_pm_hid_check(BOOLEAN bScoActive)
             bta_dm_pm_set_sniff_policy( bta_dm_find_peer_device(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr), bScoActive);
 
             /* if we had disabled link policy, seems like the hid device stop retrying SNIFF after a few tries. force sniff if needed */
-            if (!bScoActive)
+            if (!bScoActive) {
                 bta_dm_pm_set_mode(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr, BTA_DM_PM_NO_ACTION,
                                    BTA_DM_PM_RESTART);
+            }
         }
     }
 

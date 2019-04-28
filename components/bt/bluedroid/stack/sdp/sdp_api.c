@@ -899,11 +899,11 @@ UINT16 SDP_DiDiscover( BD_ADDR remote_device, tSDP_DISCOVERY_DB *p_db,
     init_uuid.len = 2;
     init_uuid.uu.uuid16 = di_uuid;
 
-    if ( SDP_InitDiscoveryDb(p_db, len, num_uuids, &init_uuid, 0, NULL) )
+    if ( SDP_InitDiscoveryDb(p_db, len, num_uuids, &init_uuid, 0, NULL) ) {
         if ( SDP_ServiceSearchRequest(remote_device, p_db, p_cb) ) {
             result = SDP_SUCCESS;
         }
-
+    }
     return result;
 #else
     return SDP_DI_DISC_FAILED;

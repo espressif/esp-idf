@@ -1199,10 +1199,13 @@ static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
             BTC_TRACE_ERROR("ERROR dump_codec_info A2D_ParsSbcInfo fail:%d\n", a2d_status);
         }
     }
+    UNUSED(que_len);
 }
 #else
 static void bte_av_media_callback(tBTA_AV_EVT event, tBTA_AV_MEDIA *p_data)
 {
+    UNUSED(event);
+    UNUSED(p_data);
     BTC_TRACE_WARNING("%s : event %u\n", __func__, event);
 }
 #endif
