@@ -12,7 +12,8 @@ set(COMPONENT_SRCS  "src/common/protocomm.c"
                     "src/transports/protocomm_console.c"
                     "src/transports/protocomm_httpd.c")
 
-set(COMPONENT_PRIV_REQUIRES protobuf-c mbedtls console esp_http_server bt)
+set(COMPONENT_REQUIRES protobuf-c bt)
+set(COMPONENT_PRIV_REQUIRES mbedtls console esp_http_server)
 
 if(CONFIG_BT_ENABLED)
     if(CONFIG_BT_BLUEDROID_ENABLED)

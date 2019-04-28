@@ -9,8 +9,8 @@ set(COMPONENT_SRCS "src/bootloader_clock.c"
 
 if(BOOTLOADER_BUILD)
     set(COMPONENT_ADD_INCLUDEDIRS "include include_bootloader")
-    set(COMPONENT_REQUIRES soc) #unfortunately the header directly uses SOC registers
-    set(COMPONENT_PRIV_REQUIRES spi_flash micro-ecc efuse)
+    set(COMPONENT_REQUIRES spi_flash soc) #unfortunately the header directly uses SOC registers
+    set(COMPONENT_PRIV_REQUIRES micro-ecc efuse)
     list(APPEND COMPONENT_SRCS "src/bootloader_init.c"
                                "src/${IDF_TARGET}/bootloader_sha.c"
                                "src/${IDF_TARGET}/flash_encrypt.c"

@@ -8,8 +8,8 @@ set(COMPONENT_SRCS
     "src/wifi_init.c")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS)
-set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES "wpa_supplicant" "nvs_flash")
+set(COMPONENT_REQUIRES wpa_supplicant smartconfig_ack)
+set(COMPONENT_PRIV_REQUIRES "nvs_flash")
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
     set(COMPONENT_ADD_LDFRAGMENTS "linker.lf")
@@ -19,8 +19,20 @@ register_component()
 target_link_libraries(${COMPONENT_LIB} "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}")
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
-    target_link_libraries(${COMPONENT_LIB} "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}")
-    target_link_libraries(${COMPONENT_LIB} coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
+    set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
+    foreach(blob ${blobs})
+        add_library(${blob} STATIC IMPORTED)
+        set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}/lib${blob}.a)
+        target_link_libraries(${COMPONENT_LIB} ${blob})
+
+        foreach(_blob ${blobs})
+            if(NOT _blob STREQUAL ${blob})
+                set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${_blob})
+            endif()
+        endforeach()
+
+        set_property(TARGET ${blob} APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${COMPONENT_LIB})
+    endforeach()
 endif()
 
 if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
