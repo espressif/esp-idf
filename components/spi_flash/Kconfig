@@ -77,6 +77,28 @@ config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
      bool "Allowed"
 endchoice
 
+    config SPI_FLASH_YIELD_DURING_ERASE
+        bool "Enables yield operation during flash erase"
+        default n
+        help
+            This allows to yield the CPUs between erase commands.
+            Prevents starvation of other tasks.
+
+    config SPI_FLASH_ERASE_YIELD_DURATION_MS
+        int "Duration of erasing to yield CPUs (ms)"
+        depends on SPI_FLASH_YIELD_DURING_ERASE
+        default 20
+        help
+            If a duration of one erase command is large
+            then it will yield CPUs after finishing a current command.
+
+    config SPI_FLASH_ERASE_YIELD_TICKS
+        int "CPU release time (tick)"
+        depends on SPI_FLASH_YIELD_DURING_ERASE
+        default 1
+        help
+            Defines how many ticks will be before returning to continue a erasing.
+
 endmenu
 
 
