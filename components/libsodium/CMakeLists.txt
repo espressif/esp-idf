@@ -1,7 +1,7 @@
 set(SRC libsodium/src/libsodium)
 # Derived from libsodium/src/libsodium/Makefile.am
 # (ignoring the !MINIMAL set)
-set(COMPONENT_SRCS "${SRC}/crypto_aead/chacha20poly1305/sodium/aead_chacha20poly1305.c"
+set(srcs "${SRC}/crypto_aead/chacha20poly1305/sodium/aead_chacha20poly1305.c"
                    "${SRC}/crypto_aead/xchacha20poly1305/sodium/aead_xchacha20poly1305.c"
                    "${SRC}/crypto_auth/crypto_auth.c"
                    "${SRC}/crypto_auth/hmacsha256/auth_hmacsha256.c"
@@ -116,18 +116,19 @@ set(COMPONENT_SRCS "${SRC}/crypto_aead/chacha20poly1305/sodium/aead_chacha20poly
                    "port/randombytes_esp32.c")
 
 if(CONFIG_LIBSODIUM_USE_MBEDTLS_SHA)
-    list(APPEND COMPONENT_SRCS "port/crypto_hash_mbedtls/crypto_hash_sha256_mbedtls.c"
+    list(APPEND srcs "port/crypto_hash_mbedtls/crypto_hash_sha256_mbedtls.c"
                    "port/crypto_hash_mbedtls/crypto_hash_sha512_mbedtls.c")
 else()
-    list(APPEND COMPONENT_SRCS "${SRC}/crypto_hash/sha256/cp/hash_sha256_cp.c"
+    list(APPEND srcs "${SRC}/crypto_hash/sha256/cp/hash_sha256_cp.c"
                    "${SRC}/crypto_hash/sha512/cp/hash_sha512_cp.c")
 endif()
 
-set(COMPONENT_ADD_INCLUDEDIRS ${SRC}/include port_include)
-set(COMPONENT_PRIV_INCLUDEDIRS ${SRC}/include/sodium port_include/sodium port)
-
-set(COMPONENT_REQUIRES mbedtls)
-register_component()
+set(include_dirs ${SRC}/include port_include)
+set(priv_include_dirs ${SRC}/include/sodium port_include/sodium port)
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS "${include_dirs}"
+                    PRIV_INCLUDE_DIRS "${priv_include_dirs}"
+                    REQUIRES mbedtls)
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE 
     CONFIGURED

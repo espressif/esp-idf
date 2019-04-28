@@ -1,9 +1,6 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_REQUIRES unity test_utils mbedtls)
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                    INCLUDE_DIRS "."
+                    REQUIRES unity test_utils mbedtls)
 
 idf_component_get_property(mbedtls mbedtls COMPONENT_LIB)
 target_compile_definitions(${mbedtls} PUBLIC "-DMBEDTLS_DEPRECATED_WARNING")

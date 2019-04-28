@@ -1,6 +1,6 @@
-set(COMPONENT_ADD_INCLUDEDIRS port/include port/include/coap libcoap/include libcoap/include/coap2)
+set(include_dirs port/include port/include/coap libcoap/include libcoap/include/coap2)
 
-set(COMPONENT_SRCS "libcoap/src/address.c"
+set(srcs "libcoap/src/address.c"
                    "libcoap/src/async.c"
                    "libcoap/src/block.c"
                    "libcoap/src/coap_event.c"
@@ -22,7 +22,9 @@ set(COMPONENT_SRCS "libcoap/src/address.c"
 
 set(COMPONENT_REQUIRES lwip)
 
-register_component()
+idf_component_register(SRCS "${srcs}"
+                INCLUDE_DIRS "${include_dirs}"
+                REQUIRES lwip)
 
 # Silence format truncation warning, until it is fixed upstream
 set_source_files_properties(libcoap/src/coap_debug.c PROPERTIES COMPILE_FLAGS -Wno-format-truncation)

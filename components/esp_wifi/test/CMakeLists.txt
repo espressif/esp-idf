@@ -1,9 +1,6 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ". ${CMAKE_CURRENT_BINARY_DIR}")
-
-set(COMPONENT_REQUIRES unity test_utils nvs_flash ulp esp_common)
-
-register_component()
+idf_component_register(SRCDIRS "."
+                    INCLUDE_DIRS "." "${CMAKE_CURRENT_BINARY_DIR}"
+                    REQUIRES unity test_utils nvs_flash ulp esp_common)
 
 idf_component_get_property(esp_wifi_dir esp_wifi COMPONENT_DIR)
 
