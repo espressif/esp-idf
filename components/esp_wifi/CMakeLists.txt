@@ -1,7 +1,7 @@
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(build_dir BUILD_DIR)
 
-set(COMPONENT_SRCS
+set(srcs
     "src/coexist.c"
     "src/fast_crypto_ops.c"
     "src/lib_printf.c"
@@ -9,15 +9,16 @@ set(COMPONENT_SRCS
     "src/phy_init.c"
     "src/restore.c"
     "src/wifi_init.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include" "${idf_target}/include")
-set(COMPONENT_PRIV_INCLUDEDIRS)
-set(COMPONENT_PRIV_REQUIRES wpa_supplicant nvs_flash)
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
-    set(COMPONENT_ADD_LDFRAGMENTS "linker.lf")
+    set(ldfragments "linker.lf")
 endif()
 
-register_component()
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS "include" "${idf_target}/include"
+                    PRIV_REQUIRES wpa_supplicant nvs_flash
+                    LDFRAGMENTS "${ldfragments}")
+
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}")
 
 if(NOT CONFIG_ESP32_NO_BLOBS)

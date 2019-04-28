@@ -1,9 +1,6 @@
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need is headers
-    set(COMPONENT_ADD_INCLUDEDIRS "include")
-    set(COMPONENT_REQUIRES ${IDF_COMPONENTS})
-    set(COMPONENT_SRCS)
-    register_component()
+    idf_component_register(INCLUDE_DIRS include)
     set(scripts
         "esp32/ld/esp32.rom.ld"
         "esp32/ld/esp32.rom.newlib-funcs.ld"
@@ -12,10 +9,8 @@ if(BOOTLOADER_BUILD)
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 else()
     # Regular app build
-    set(COMPONENT_SRCS "esp_rom.c")
-    set(COMPONENT_ADD_INCLUDEDIRS "include")
-
-    register_component()
+    idf_component_register(SRCS "esp_rom.c"
+                        INCLUDE_DIRS include)
 
     set(scripts
         "esp32/ld/esp32.rom.ld"

@@ -1,10 +1,7 @@
-set(COMPONENT_SRCS "eri.c" "trax.c" "debug_helpers.c" "debug_helpers_asm.S")
+idf_build_get_property(target IDF_TARGET)
+idf_component_register(SRCS "eri.c" "trax.c" "debug_helpers.c" "debug_helpers_asm.S"
+                    INCLUDE_DIRS include ${target}/include
+                    LDFRAGMENTS linker.lf
+                    PRIV_REQUIRES soc)
 
-set(COMPONENT_ADD_INCLUDEDIRS "include" "${IDF_TARGET}/include")
-
-set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
-set(COMPONENT_PRIV_REQUIRES soc)
-
-register_component()
-
-target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${IDF_TARGET}/libhal.a")
+target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${target}/libhal.a")

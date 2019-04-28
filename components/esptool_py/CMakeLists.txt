@@ -1,5 +1,4 @@
-set(COMPONENT_PRIV_REQUIRES bootloader)
-register_component()
+idf_component_register(REQUIRES bootloader)
 
 string(REPLACE ";" " " ESPTOOLPY_FLASH_PROJECT_OPTIONS "${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS}")
 set(ESPTOOLPY_FLASH_PROJECT_OPTIONS

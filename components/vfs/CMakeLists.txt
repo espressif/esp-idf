@@ -1,8 +1,7 @@
-set(COMPONENT_SRCS "vfs.c"
-                   "vfs_uart.c"
-                   "vfs_semihost.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-register_component()
+idf_component_register(SRCS "vfs.c"
+                            "vfs_uart.c"
+                            "vfs_semihost.c"
+                    INCLUDE_DIRS include)
 
 # Some newlib syscalls are implemented in vfs.c, make sure these are always
 # seen by the linker

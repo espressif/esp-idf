@@ -1,11 +1,11 @@
 if(CONFIG_BT_ENABLED)
 
-    set(COMPONENT_SRCS "bt.c")
-    set(COMPONENT_ADD_INCLUDEDIRS include)
+    set(srcs "bt.c")
+    set(include_dirs include)
 
     if(CONFIG_BT_BLUEDROID_ENABLED)
 
-        list(APPEND COMPONENT_PRIV_INCLUDEDIRS
+        list(APPEND priv_include_dirs
             bluedroid/bta/include
             bluedroid/bta/ar/include
             bluedroid/bta/av/include
@@ -41,9 +41,9 @@ if(CONFIG_BT_ENABLED)
             bluedroid/stack/include
             bluedroid/common/include)
 
-        list(APPEND COMPONENT_ADD_INCLUDEDIRS bluedroid/api/include/api)
+        list(APPEND include_dirs bluedroid/api/include/api)
 
-        list(APPEND COMPONENT_SRCS "bluedroid/api/esp_a2dp_api.c"
+        list(APPEND srcs "bluedroid/api/esp_a2dp_api.c"
                    "bluedroid/api/esp_avrc_api.c"
                    "bluedroid/api/esp_blufi_api.c"
                    "bluedroid/api/esp_bt_device.c"
@@ -287,9 +287,10 @@ if(CONFIG_BT_ENABLED)
 endif()
 
 # requirements can't depend on config
-set(COMPONENT_PRIV_REQUIRES nvs_flash soc)
-
-register_component()
+idf_component_register(SRCS "${srcs}"
+                INCLUDE_DIRS "${include_dirs}"
+                PRIV_INCLUDE_DIRS "${priv_include_dirs}"
+                REQUIRES nvs_flash soc)
 
 if(CONFIG_BT_ENABLED)
     if(GCC_NOT_5_2_0)

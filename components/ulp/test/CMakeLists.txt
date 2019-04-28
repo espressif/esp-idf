@@ -1,9 +1,6 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_REQUIRES unity ulp soc esp_common)
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                    INCLUDE_DIRS "."
+                    REQUIRES unity ulp soc esp_common)
 
 set(ulp_app_name ulp_test_app)
 set(ulp_s_sources "ulp/test_jumps.S")
