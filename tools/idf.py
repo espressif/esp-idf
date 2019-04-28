@@ -520,7 +520,20 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        # On MSYS2 we need to run idf.py with "winpty" in order to be able to cancel the subprocesses properly on
+        # keyboard interrupt (CTRL+C).
+        # Using an own global variable for indicating that we are running with "winpty" seems to be the most suitable
+        # option as os.environment['_'] contains "winpty" only when it is run manually from console.
+        WINPTY_VAR = 'WINPTY'
+        WINPTY_EXE = 'winpty'
+        if ('MSYSTEM' in os.environ) and (not os.environ['_'].endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ):
+            os.environ[WINPTY_VAR] = '1'    # the value is of no interest to us
+            # idf.py calls itself with "winpty" and WINPTY global variable set
+            ret = subprocess.call([WINPTY_EXE, sys.executable] + sys.argv, env=os.environ)
+            if ret:
+                raise SystemExit(ret)
+        else:
+            main()
     except FatalError as e:
         print(e)
         sys.exit(2)
