@@ -54,13 +54,15 @@ git submodule init
 # 2
 # Replacing each submodule URL of the current repository
 # according to the one found in the MIRRORLIST
-
-#   SED parses the strings like:
 #
-#-b991c67c1d91574ef22336cc3a5944d1e63230c9 roms/ipxe
-#b991c67c1d91574ef22336cc3a5944d1e63230c9 roms/ipxe (v1.0.0-2388-gb991c67)
-#
-for SUBPATH in $(git submodule status | sed -E 's/.*[[:space:]](.*)([[:space:]].*|$)/\1/')
+# Selecting paths among lines:
+# ...
+#submodule.components/esp32/lib.path
+#submodule.components/esp32/lib.url
+#submodule.components/esptool_py/esptool.path
+#submodule.components/esptool_py/esptool.url
+#...
+for SUBPATH in $(git config -f .gitmodules --list --name-only | grep "\.path" | sed 's/^submodule\.\([^ ]*\)\.path$/\1/')
 do
     SUBMIRROR=$(join -o"2.2" <(echo ${SUBPATH}) <(sort ${MIRRORLIST}))
     [ ${SUBMIRROR} ] || continue

@@ -19,7 +19,7 @@ variables:
   GET_SOURCES_ATTEMPTS: "10"
   ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
 
-  # We use get_sources.sh script to fetch the submodules and/or re-fetch the repo
+  # We use get-full-sources.sh script to fetch the submodules and/or re-fetch the repo
   # if it was corrupted (if submodule update fails this can happen)
   GIT_STRATEGY: fetch
   GIT_SUBMODULE_STRATEGY: none
