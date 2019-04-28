@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "smartconfig_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "smartconfig_main.c"
+                    INCLUDE_DIRS ".")

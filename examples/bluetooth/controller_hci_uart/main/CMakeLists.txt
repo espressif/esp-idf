@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "controller_hci_uart_demo.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "controller_hci_uart_demo.c"
+                    INCLUDE_DIRS ".")
