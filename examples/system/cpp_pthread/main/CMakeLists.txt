@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "cpp_pthread.cpp")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "cpp_pthread.cpp"
+                    INCLUDE_DIRS ".")

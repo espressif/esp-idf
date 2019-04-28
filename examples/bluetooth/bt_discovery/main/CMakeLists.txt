@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "bt_discovery.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "bt_discovery.c"
+                    INCLUDE_DIRS ".")
