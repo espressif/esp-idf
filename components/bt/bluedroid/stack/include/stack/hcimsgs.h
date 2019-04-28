@@ -688,6 +688,7 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_SET_RAND_PRIV_ADDR_TIMOUT   2
 #define HCIC_PARAM_SIZE_BLE_SET_DATA_LENGTH             6
 #define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM  11
+#define HCIC_PARAM_SIZE_BLE_UPDATE_ADV_FLOW_CONTROL    2
 
 /* ULP HCI command */
 BOOLEAN btsnd_hcic_ble_set_evt_mask (BT_EVENT_MASK event_mask);
