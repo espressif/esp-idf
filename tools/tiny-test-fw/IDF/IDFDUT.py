@@ -20,14 +20,83 @@ import subprocess
 import functools
 import random
 import tempfile
+import subprocess
+
+# python2 and python3 queue package name is different
+try:
+    import Queue as _queue
+except ImportError:
+    import queue as _queue
 
 from serial.tools import list_ports
 
 import DUT
+import Utility
 
 
 class IDFToolError(OSError):
     pass
+
+
+class IDFDUTException(RuntimeError):
+    pass
+
+
+class IDFRecvThread(DUT.RecvThread):
+
+    PERFORMANCE_PATTERN = re.compile(r"\[Performance]\[(\w+)]: ([^\r\n]+)\r?\n")
+    EXCEPTION_PATTERNS = [
+        re.compile(r"(Guru Meditation Error: Core\s+\d panic'ed \([\w].*?\))"),
+        re.compile(r"(abort\(\) was called at PC 0x[a-fA-F\d]{8} on core \d)"),
+        re.compile(r"(rst 0x\d+ \(TG\dWDT_SYS_RESET|TGWDT_CPU_RESET\))")
+    ]
+    BACKTRACE_PATTERN = re.compile(r"Backtrace:((\s(0x[0-9a-f]{8}):0x[0-9a-f]{8})+)")
+    BACKTRACE_ADDRESS_PATTERN = re.compile(r"(0x[0-9a-f]{8}):0x[0-9a-f]{8}")
+
+    def __init__(self, read, dut):
+        super(IDFRecvThread, self).__init__(read, dut)
+        self.exceptions = _queue.Queue()
+
+    def collect_performance(self, comp_data):
+        matches = self.PERFORMANCE_PATTERN.findall(comp_data)
+        for match in matches:
+            Utility.console_log("[Performance][{}]: {}".format(match[0], match[1]),
+                                color="orange")
+
+    def detect_exception(self, comp_data):
+        for pattern in self.EXCEPTION_PATTERNS:
+            start = 0
+            while True:
+                match = pattern.search(comp_data, pos=start)
+                if match:
+                    start = match.end()
+                    self.exceptions.put(match.group(0))
+                    Utility.console_log("[Exception]: {}".format(match.group(0)), color="red")
+                else:
+                    break
+
+    def detect_backtrace(self, comp_data):
+        start = 0
+        while True:
+            match = self.BACKTRACE_PATTERN.search(comp_data, pos=start)
+            if match:
+                start = match.end()
+                Utility.console_log("[Backtrace]:{}".format(match.group(1)), color="red")
+                # translate backtrace
+                addresses = self.BACKTRACE_ADDRESS_PATTERN.findall(match.group(1))
+                translated_backtrace = ""
+                for addr in addresses:
+                    ret = self.dut.lookup_pc_address(addr)
+                    if ret:
+                        translated_backtrace += ret + "\n"
+                if translated_backtrace:
+                    Utility.console_log("Translated backtrace\n:" + translated_backtrace, color="yellow")
+                else:
+                    Utility.console_log("Failed to translate backtrace", color="yellow")
+            else:
+                break
+
+    CHECK_FUNCTIONS = [collect_performance, detect_exception, detect_backtrace]
 
 
 def _tool_method(func):
@@ -50,10 +119,13 @@ class IDFDUT(DUT.SerialDUT):
     INVALID_PORT_PATTERN = re.compile(r"AMA|Bluetooth")
     # if need to erase NVS partition in start app
     ERASE_NVS = True
+    RECV_THREAD_CLS = IDFRecvThread
+    TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 
-    def __init__(self, name, port, log_file, app, **kwargs):
+    def __init__(self, name, port, log_file, app, allow_dut_exception=False, **kwargs):
         self.download_config, self.partition_table = app.process_app_info()
         super(IDFDUT, self).__init__(name, port, log_file, app, **kwargs)
+        self.allow_dut_exception = allow_dut_exception
 
     @classmethod
     def get_chip(cls, app, port):
@@ -194,3 +266,31 @@ class IDFDUT(DUT.SerialDUT):
                 return [port_hint] + ports
 
         return ports
+
+    def lookup_pc_address(self, pc_addr):
+        cmd = ["%saddr2line" % self.TOOLCHAIN_PREFIX,
+               "-pfiaC", "-e", self.app.elf_file, pc_addr]
+        ret = ""
+        try:
+            translation = subprocess.check_output(cmd)
+            ret = translation.decode()
+        except OSError:
+            pass
+        return ret
+
+    def get_exceptions(self):
+        """ Get exceptions detected by DUT receive thread. """
+        exceptions = []
+        if self.receive_thread:
+            while True:
+                try:
+                    exceptions.append(self.receive_thread.exceptions.get(timeout=0))
+                except _queue.Empty:
+                    break
+        return exceptions
+
+    def close(self):
+        super(IDFDUT, self).close()
+        if not self.allow_dut_exception and self.get_exceptions():
+            Utility.console_log("DUT exception detected on {}".format(self), color="red")
+            raise IDFDUTException()
