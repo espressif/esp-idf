@@ -270,7 +270,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop,
                             size_t event_data_size,
                             TickType_t ticks_to_wait);
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 /**
  * @brief Special variant of esp_event_post for posting events from interrupt handlers.
  * 
@@ -282,9 +282,9 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop,
  *                            higher priority than currently running task has been unblocked by the posted event;
  *                            a context switch should be requested before the interrupt is existed.
  *
- * @note this function is only available when CONFIG_POST_EVENTS_FROM_ISR is enabled
+ * @note this function is only available when CONFIG_ESP_EVENT_POST_FROM_ISR is enabled
  * @note when this function is called from an interrupt handler placed in IRAM, this function should
- *       be placed in IRAM as well by enabling CONFIG_POST_EVENTS_FROM_IRAM_ISR
+ *       be placed in IRAM as well by enabling CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
  *
  * @return
  *  - ESP_OK: Success
@@ -310,9 +310,9 @@ esp_err_t esp_event_isr_post(esp_event_base_t event_base,
  *                            higher priority than currently running task has been unblocked by the posted event;
  *                            a context switch should be requested before the interrupt is existed.
  *
- * @note this function is only available when CONFIG_POST_EVENTS_FROM_ISR is enabled
+ * @note this function is only available when CONFIG_ESP_EVENT_POST_FROM_ISR is enabled
  * @note when this function is called from an interrupt handler placed in IRAM, this function should
- *       be placed in IRAM as well by enabling CONFIG_POST_EVENTS_FROM_IRAM_ISR
+ *       be placed in IRAM as well by enabling CONFIG_ESP_EVENT_POST_FROM_IRAM_ISR
  *
  * @return
  *  - ESP_OK: Success
@@ -366,7 +366,7 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop,
  *
  * @param[in] file the file stream to output to
  *
- * @note this function is a noop when CONFIG_EVENT_LOOP_PROFILING is disabled
+ * @note this function is a noop when CONFIG_ESP_EVENT_LOOP_PROFILING is disabled
  *
  * @return
  *  - ESP_OK: Success

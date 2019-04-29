@@ -28,7 +28,7 @@ typedef SLIST_HEAD(base_nodes, base_node) base_nodes_t;
 typedef struct esp_event_handler_instance {
     esp_event_handler_t handler;                                    /**< event handler function*/
     void* arg;                                                      /**< event handler argument */
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     uint32_t invoked;                                               /**< number of times this handler has been invoked */
     int64_t time;                                                   /**< total runtime of this handler across all calls */
 #endif
@@ -77,7 +77,7 @@ typedef struct esp_event_loop_instance {
     SemaphoreHandle_t mutex;                                        /**< mutex for updating the events linked list */
     esp_event_loop_nodes_t loop_nodes;                              /**< set of linked lists containing the
                                                                             registered handlers for the loop */
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     atomic_uint_least32_t events_recieved;                          /**< number of events successfully posted to the loop */
     atomic_uint_least32_t events_dropped;                           /**< number of events dropped due to queue being full */
     SemaphoreHandle_t profiling_mutex;                              /**< mutex used for profiliing */
@@ -85,7 +85,7 @@ typedef struct esp_event_loop_instance {
 #endif
 } esp_event_loop_instance_t;
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 typedef union esp_event_post_data {
     uint32_t val;
     void *ptr;
@@ -96,7 +96,7 @@ typedef void* esp_event_post_data_t;
 
 /// Event posted to the event queue
 typedef struct esp_event_post_instance {
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
     bool data_allocd;                                                /**< indicates whether data is alloc'd */
 #endif
     esp_event_base_t base;                                           /**< the event base */

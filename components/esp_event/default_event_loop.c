@@ -55,7 +55,7 @@ esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id,
 }
 
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 esp_err_t esp_event_isr_post(esp_event_base_t event_base, int32_t event_id,
         void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
 {
