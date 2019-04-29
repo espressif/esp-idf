@@ -276,7 +276,7 @@ static void test_teardown()
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define TIMER_INTERVAL0_SEC   (2.0) // sample test interval for the first timer
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     SemaphoreHandle_t *sem = (SemaphoreHandle_t*) event_handler_arg;
@@ -287,7 +287,7 @@ static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t
 }
 #endif
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 void IRAM_ATTR test_event_on_timer_alarm(void* para)
 {
     /* Retrieve the interrupt status and the counter value
@@ -313,7 +313,7 @@ void IRAM_ATTR test_event_on_timer_alarm(void* para)
         portYIELD_FROM_ISR();
     }
 }
-#endif //CONFIG_POST_EVENTS_FROM_ISR
+#endif //CONFIG_ESP_EVENT_POST_FROM_ISR
 
 TEST_CASE("can create and delete event loops", "[event]")
 {
@@ -850,7 +850,7 @@ static void performance_test(bool dedicated_task)
 
     TEST_TEARDOWN();
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     ESP_LOGI(TAG, "events dispatched/second with profiling enabled: %d", average);
     // Enabling profiling will slow down event dispatch, so the set threshold
     // is not valid when it is enabled.
@@ -860,7 +860,7 @@ static void performance_test(bool dedicated_task)
 #else
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH_PSRAM, "%d", average);
 #endif // CONFIG_SPIRAM_SUPPORT
-#endif // CONFIG_EVENT_LOOP_PROFILING
+#endif // CONFIG_ESP_EVENT_LOOP_PROFILING
 }
 
 TEST_CASE("performance test - dedicated task", "[event]")
@@ -1148,7 +1148,7 @@ TEST_CASE("events are dispatched in the order they are registered", "[event]")
     TEST_TEARDOWN();
 }
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
@@ -1186,7 +1186,7 @@ TEST_CASE("can post events from interrupt handler", "[event]")
 }
 #endif
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 TEST_CASE("can dump event loop profile", "[event]")
 {
     /* this test aims to verify that dumping event loop statistics succeed */
