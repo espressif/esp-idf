@@ -14,10 +14,10 @@ Application Protocols
    ESP-MQTT <mqtt>
    Modbus <modbus>
 
-Example code for this API section is provided in :example:`protocols` directory of ESP-IDF examples.
+Code examples for this API section are provided in the :example:`protocols` directory of ESP-IDF examples.
 
 
 IP Network Layer
 ================
 
-Documentation for IP Network Layer protocols (below the Application Protocol layer) is provided in :doc:`../network/index`.
+Documentation for IP Network Layer protocols (below the Application Protocol layer) are provided in :doc:`../network/index`.

@@ -12,16 +12,17 @@ The WiFi libraries provide support for configuring and monitoring the ESP32 WiFi
 
 - Various security modes for the above (WPA, WPA2, WEP, etc.)
 - Scanning for access points (active & passive scanning).
-- Promiscuous mode monitoring of IEEE802.11 WiFi packets.
+- Promiscuous mode for monitoring of IEEE802.11 WiFi packets.
+
 
 Application Examples
 --------------------
 
-See :example:`wifi` directory of ESP-IDF examples that contains the following applications:
+The :example:`wifi` directory of ESP-IDF examples contains the following applications:
 
-* Simple application showing how to connect ESP32 module to an Access Point - `esp-idf-template <https://github.com/espressif/esp-idf-template>`_.
+Code examples for Wi-Fi are provided in the :example:`wifi` directory of ESP-IDF examples.
 
-* Using power save mode of Wi-Fi - :example:`wifi/power_save`.
+In addition, there is a simple `esp-idf-template <https://github.com/espressif/esp-idf-template>`_ application that shows how to connect ESP32 module to an Access Point.
 
 
 API Reference

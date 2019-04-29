@@ -8,4 +8,4 @@ Provisioning API
    Protocol Communication <protocomm>
    Wi-Fi Provisioning <wifi_provisioning>
 
-Example code for this API section is provided in :example:`provisioning` directory of ESP-IDF examples.
+Code examples for this API section are provided in the :example:`provisioning` directory of ESP-IDF examples.
