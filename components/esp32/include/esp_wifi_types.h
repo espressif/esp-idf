@@ -451,6 +451,34 @@ typedef struct {
                     enabled_ant1: 4;      /**< Index (in antenna GPIO configuration) of enabled WIFI_ANT_MODE_ANT1 */
 } wifi_ant_config_t;
 
+/** 
+  * @brief WiFi ioctl command type
+  *
+  */
+typedef enum {
+    WIFI_IOCTL_SET_STA_HT2040_COEX = 1, /**< Set the configuration of STA's HT2040 coexist management */
+    WIFI_IOCTL_GET_STA_HT2040_COEX,     /**< Get the configuration of STA's HT2040 coexist management */
+    WIFI_IOCTL_MAX,
+} wifi_ioctl_cmd_t;
+
+/** 
+ * @brief Configuration for STA's HT2040 coexist management
+ *
+ */
+typedef struct {
+    int enable;                         /**< Indicate whether STA's HT2040 coexist management is enabled or not */
+} wifi_ht2040_coex_t;
+
+/** 
+  * @brief Configuration for WiFi ioctl
+  *
+  */
+typedef struct {
+    union {
+        wifi_ht2040_coex_t ht2040_coex; /**< Configuration of STA's HT2040 coexist management */
+    } data;                             /**< Configuration of ioctl command */
+} wifi_ioctl_config_t;
+
 #ifdef __cplusplus
 }
 #endif
