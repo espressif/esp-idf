@@ -18,12 +18,14 @@
 import argparse
 import sys
 import tempfile
+import subprocess
 
 from fragments import FragmentFile
 from sdkconfig import SDKConfig
 from generation import GenerationModel, TemplateModel, SectionsInfo
 from ldgen_common import LdGenFailure
 from pyparsing import ParseException, ParseFatalException
+from io import StringIO
 
 
 def main():
@@ -42,9 +44,9 @@ def main():
         nargs="+")
 
     argparser.add_argument(
-        "--sections", "-s",
+        "--libraries-file",
         type=argparse.FileType("r"),
-        help="Library sections info")
+        help="File that contains the list of libraries in the build")
 
     argparser.add_argument(
         "--output", "-o",
@@ -64,27 +66,28 @@ def main():
         action='append', default=[],
         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
+    argparser.add_argument(
+        "--objdump",
+        help="Path to toolchain objdump")
+
     args = argparser.parse_args()
 
     input_file = args.input
     fragment_files = [] if not args.fragments else args.fragments
+    libraries_file = args.libraries_file
     config_file = args.config
     output_path = args.output
     kconfig_file = args.kconfig
-    sections = args.sections
+    objdump = args.objdump
 
     try:
         sections_infos = SectionsInfo()
-
-        if sections:
-            section_info_contents = [s.strip() for s in sections.read().split("\n")]
-            section_info_contents = [s for s in section_info_contents if s]
-        else:
-            section_info_contents = []
-
-        for sections_info_file in section_info_contents:
-            with open(sections_info_file) as sections_info_file_obj:
-                sections_infos.add_sections_info(sections_info_file_obj)
+        for library in libraries_file:
+            library = library.strip()
+            if library:
+                dump = StringIO(subprocess.check_output([objdump, "-h", library]).decode())
+                dump.name = library
+                sections_infos.add_sections_info(dump)
 
         generation_model = GenerationModel()
 
