@@ -309,36 +309,36 @@
  * TCP_QUEUE_OOSEQ==1: TCP will queue segments that arrive out of order.
  * Define to 0 if your device is low on memory.
  */
-#define TCP_QUEUE_OOSEQ                 CONFIG_TCP_QUEUE_OOSEQ
+#define TCP_QUEUE_OOSEQ                 CONFIG_LWIP_TCP_QUEUE_OOSEQ
 
 /**
  * ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES==1: Keep TCP connection when IP changed
  * scenario happens: 192.168.0.2 -> 0.0.0.0 -> 192.168.0.2 or 192.168.0.2 -> 0.0.0.0
  */
 
-#define ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES  CONFIG_ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
+#define ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES  CONFIG_LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
 /*
  *     LWIP_EVENT_API==1: The user defines lwip_tcp_event() to receive all
  *         events (accept, sent, etc) that happen in the system.
  *     LWIP_CALLBACK_API==1: The PCB callback function is called directly
  *         for the event. This is the default.
 */
-#define TCP_MSS                         CONFIG_TCP_MSS
+#define TCP_MSS                         CONFIG_LWIP_TCP_MSS
 
 /**
  * TCP_MSL: The maximum segment lifetime in milliseconds
  */
-#define TCP_MSL                         CONFIG_TCP_MSL
+#define TCP_MSL                         CONFIG_LWIP_TCP_MSL
 
 /**
  * TCP_MAXRTX: Maximum number of retransmissions of data segments.
  */
-#define TCP_MAXRTX                      CONFIG_TCP_MAXRTX
+#define TCP_MAXRTX                      CONFIG_LWIP_TCP_MAXRTX
 
 /**
  * TCP_SYNMAXRTX: Maximum number of retransmissions of SYN segments.
  */
-#define TCP_SYNMAXRTX                   CONFIG_TCP_SYNMAXRTX
+#define TCP_SYNMAXRTX                   CONFIG_LWIP_TCP_SYNMAXRTX
 
 /**
  * TCP_LISTEN_BACKLOG: Enable the backlog option for tcp listen pcb.
@@ -350,13 +350,13 @@
  * TCP_OVERSIZE: The maximum number of bytes that tcp_write may
  * allocate ahead of time
  */
-#ifdef CONFIG_TCP_OVERSIZE_MSS
+#ifdef CONFIG_LWIP_TCP_OVERSIZE_MSS
 #define TCP_OVERSIZE                    TCP_MSS
 #endif
-#ifdef CONFIG_TCP_OVERSIZE_QUARTER_MSS
+#ifdef CONFIG_LWIP_TCP_OVERSIZE_QUARTER_MSS
 #define TCP_OVERSIZE                    (TCP_MSS/4)
 #endif
-#ifdef CONFIG_TCP_OVERSIZE_DISABLE
+#ifdef CONFIG_LWIP_TCP_OVERSIZE_DISABLE
 #define TCP_OVERSIZE                    0
 #endif
 #ifndef TCP_OVERSIZE
@@ -446,21 +446,21 @@
  * The queue size value itself is platform-dependent, but is passed to
  * sys_mbox_new() when tcpip_init is called.
  */
-#define TCPIP_MBOX_SIZE                 CONFIG_TCPIP_RECVMBOX_SIZE
+#define TCPIP_MBOX_SIZE                 CONFIG_LWIP_TCPIP_RECVMBOX_SIZE
 
 /**
  * DEFAULT_UDP_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
  * NETCONN_UDP. The queue size value itself is platform-dependent, but is passed
  * to sys_mbox_new() when the recvmbox is created.
  */
-#define DEFAULT_UDP_RECVMBOX_SIZE       CONFIG_UDP_RECVMBOX_SIZE
+#define DEFAULT_UDP_RECVMBOX_SIZE       CONFIG_LWIP_UDP_RECVMBOX_SIZE
 
 /**
  * DEFAULT_TCP_RECVMBOX_SIZE: The mailbox size for the incoming packets on a
  * NETCONN_TCP. The queue size value itself is platform-dependent, but is passed
  * to sys_mbox_new() when the recvmbox is created.
  */
-#define DEFAULT_TCP_RECVMBOX_SIZE       CONFIG_TCP_RECVMBOX_SIZE
+#define DEFAULT_TCP_RECVMBOX_SIZE       CONFIG_LWIP_TCP_RECVMBOX_SIZE
 
 /**
  * DEFAULT_ACCEPTMBOX_SIZE: The mailbox size for the incoming connections.
@@ -572,34 +572,34 @@
 /**
  * PPP_SUPPORT==1: Enable PPP.
  */
-#define PPP_SUPPORT                     CONFIG_PPP_SUPPORT
+#define PPP_SUPPORT                     CONFIG_LWIP_PPP_SUPPORT
 
 #if PPP_SUPPORT
 
 /**
  * PPP_NOTIFY_PHASE==1: Support PPP notify phase.
  */
-#define PPP_NOTIFY_PHASE                CONFIG_PPP_NOTIFY_PHASE_SUPPORT
+#define PPP_NOTIFY_PHASE                CONFIG_LWIP_PPP_NOTIFY_PHASE_SUPPORT
 
 /**
  * PAP_SUPPORT==1: Support PAP.
  */
-#define PAP_SUPPORT                     CONFIG_PPP_PAP_SUPPORT
+#define PAP_SUPPORT                     CONFIG_LWIP_PPP_PAP_SUPPORT
 
 /**
  * CHAP_SUPPORT==1: Support CHAP.
  */
-#define CHAP_SUPPORT                    CONFIG_PPP_CHAP_SUPPORT
+#define CHAP_SUPPORT                    CONFIG_LWIP_PPP_CHAP_SUPPORT
 
 /**
  * MSCHAP_SUPPORT==1: Support MSCHAP.
  */
-#define MSCHAP_SUPPORT                  CONFIG_PPP_MSCHAP_SUPPORT
+#define MSCHAP_SUPPORT                  CONFIG_LWIP_PPP_MSCHAP_SUPPORT
 
 /**
  * CCP_SUPPORT==1: Support CCP.
  */
-#define MPPE_SUPPORT                    CONFIG_PPP_MPPE_SUPPORT
+#define MPPE_SUPPORT                    CONFIG_LWIP_PPP_MPPE_SUPPORT
 
 /**
  * PPP_MAXIDLEFLAG: Max Xmit idle time (in ms) before resend flag char.
@@ -614,7 +614,7 @@
 /**
  * PPP_DEBUG: Enable debugging for PPP.
  */
-#define PPP_DEBUG_ON					CONFIG_PPP_DEBUG_ON
+#define PPP_DEBUG_ON                    CONFIG_LWIP_PPP_DEBUG_ON
 
 #if PPP_DEBUG_ON
 #define PPP_DEBUG                       LWIP_DBG_ON
@@ -749,7 +749,7 @@
 #define ESP_RANDOM_TCP_PORT             1
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
-#define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
+#define ESP_L2_TO_L3_COPY               CONFIG_LWIP_L2_TO_L3_COPY
 #define ESP_STATS_MEM                   CONFIG_LWIP_STATS
 #define ESP_STATS_DROP                  CONFIG_LWIP_STATS
 #define ESP_STATS_TCP                   0
@@ -759,7 +759,7 @@
 #define ESP_PING                        1
 #define ESP_HAS_SELECT                  1
 #define ESP_AUTO_RECV                   1
-#define ESP_GRATUITOUS_ARP              CONFIG_ESP_GRATUITOUS_ARP
+#define ESP_GRATUITOUS_ARP              CONFIG_LWIP_ESP_GRATUITOUS_ARP
 
 #ifdef ESP_IRAM_ATTR
 #undef ESP_IRAM_ATTR
@@ -790,12 +790,12 @@ enum {
 #define DBG_PERF_FILTER_LEN             1000
 #endif
 
-#define TCP_SND_BUF                     CONFIG_TCP_SND_BUF_DEFAULT
-#define TCP_WND                         CONFIG_TCP_WND_DEFAULT
+#define TCP_SND_BUF                     CONFIG_LWIP_TCP_SND_BUF_DEFAULT
+#define TCP_WND                         CONFIG_LWIP_TCP_WND_DEFAULT
 
 #if ESP_PER_SOC_TCP_WND
-#define TCP_WND_DEFAULT                 CONFIG_TCP_WND_DEFAULT
-#define TCP_SND_BUF_DEFAULT             CONFIG_TCP_SND_BUF_DEFAULT
+#define TCP_WND_DEFAULT                 CONFIG_LWIP_TCP_WND_DEFAULT
+#define TCP_SND_BUF_DEFAULT             CONFIG_LWIP_TCP_SND_BUF_DEFAULT
 #define TCP_WND(pcb)                    (pcb->per_soc_tcp_wnd)
 #define TCP_SND_BUF(pcb)                (pcb->per_soc_tcp_snd_buf)
 #define TCP_SND_QUEUELEN(pcb)           ((4 * (TCP_SND_BUF((pcb))) + (TCP_MSS - 1))/(TCP_MSS))

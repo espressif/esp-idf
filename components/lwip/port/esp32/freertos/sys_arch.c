@@ -412,7 +412,7 @@ sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize
   portBASE_TYPE result;
 
   result = xTaskCreatePinnedToCore(thread, name, stacksize, arg, prio, &created_task,
-          CONFIG_TCPIP_TASK_AFFINITY);
+          CONFIG_LWIP_TCPIP_TASK_AFFINITY);
 
   if (result != pdPASS) {
     return NULL;

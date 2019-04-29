@@ -89,7 +89,7 @@ set(COMPONENT_SRCS "apps/dhcpserver/dhcpserver.c"
                    "port/esp32/netif/ethernetif.c"
                    "port/esp32/netif/wlanif.c")
 
-if(CONFIG_PPP_SUPPORT)
+if(CONFIG_LWIP_PPP_SUPPORT)
     list(APPEND COMPONENT_SRCS "lwip/src/netif/ppp/auth.c"
                    "lwip/src/netif/ppp/ccp.c"
                    "lwip/src/netif/ppp/chap-md5.c"
