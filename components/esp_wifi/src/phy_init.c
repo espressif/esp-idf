@@ -165,12 +165,12 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
         }
     }
 
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     if ((module == PHY_BT_MODULE) || (module == PHY_WIFI_MODULE)){
         uint32_t phy_bt_wifi_mask = BIT(PHY_BT_MODULE) | BIT(PHY_WIFI_MODULE);
         if ((s_module_phy_rf_init & phy_bt_wifi_mask) == phy_bt_wifi_mask) { //both wifi & bt enabled
             coex_init();
-            coex_preference_set(CONFIG_SW_COEXIST_PREFERENCE_VALUE);
+            coex_preference_set(CONFIG_ESP32_WIFI_SW_COEXIST_PREFERENCE_VALUE);
             coex_resume();
         }
     }
@@ -197,7 +197,7 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
     s_module_phy_rf_init &= ~BIT(module);
     esp_err_t status = ESP_OK;
 
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     if ((module == PHY_BT_MODULE) || (module == PHY_WIFI_MODULE)){
         if (is_both_wifi_bt_enabled == true) {
             coex_deinit();
@@ -246,7 +246,7 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
 
 esp_err_t esp_modem_sleep_enter(modem_sleep_module_t module)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     uint32_t phy_bt_wifi_mask = BIT(PHY_BT_MODULE) | BIT(PHY_WIFI_MODULE);
 #endif
 
@@ -262,7 +262,7 @@ esp_err_t esp_modem_sleep_enter(modem_sleep_module_t module)
     else {
         _lock_acquire(&s_modem_sleep_lock);
         s_modem_sleep_module_enter |= BIT(module);
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
         _lock_acquire(&s_phy_rf_init_lock);
         if (((s_module_phy_rf_init & phy_bt_wifi_mask) == phy_bt_wifi_mask)  //both wifi & bt enabled
                 && (s_modem_sleep_module_enter & (MODEM_BT_MASK | MODEM_WIFI_MASK)) != 0){
@@ -283,7 +283,7 @@ esp_err_t esp_modem_sleep_enter(modem_sleep_module_t module)
 
 esp_err_t esp_modem_sleep_exit(modem_sleep_module_t module)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     uint32_t phy_bt_wifi_mask = BIT(PHY_BT_MODULE) | BIT(PHY_WIFI_MODULE);
 #endif
 
@@ -305,7 +305,7 @@ esp_err_t esp_modem_sleep_exit(modem_sleep_module_t module)
                 s_is_modem_sleep_en = false;
             }
         }
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
         _lock_acquire(&s_phy_rf_init_lock);
         if (((s_module_phy_rf_init & phy_bt_wifi_mask) == phy_bt_wifi_mask)  //both wifi & bt enabled
                 && (s_modem_sleep_module_enter & (MODEM_BT_MASK | MODEM_WIFI_MASK)) == 0){

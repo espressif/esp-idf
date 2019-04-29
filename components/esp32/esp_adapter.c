@@ -396,7 +396,7 @@ static void sc_ack_send_wrapper(void *param)
 
 static uint32_t coex_status_get_wrapper(void)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_status_get();
 #else
     return 0;
@@ -405,7 +405,7 @@ static uint32_t coex_status_get_wrapper(void)
 
 static int coex_wifi_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_wifi_request(event, latency, duration);
 #else
     return 0;
@@ -414,7 +414,7 @@ static int coex_wifi_request_wrapper(uint32_t event, uint32_t latency, uint32_t 
 
 static int coex_wifi_release_wrapper(uint32_t event)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_wifi_release(event);
 #else
     return 0;
@@ -423,7 +423,7 @@ static int coex_wifi_release_wrapper(uint32_t event)
 
 int IRAM_ATTR coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t duration)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_bt_request(event, latency, duration);
 #else
     return 0;
@@ -432,7 +432,7 @@ int IRAM_ATTR coex_bt_request_wrapper(uint32_t event, uint32_t latency, uint32_t
 
 int IRAM_ATTR coex_bt_release_wrapper(uint32_t event)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_bt_release(event);
 #else
     return 0;
@@ -441,7 +441,7 @@ int IRAM_ATTR coex_bt_release_wrapper(uint32_t event)
 
 int coex_register_bt_cb_wrapper(coex_func_cb_t cb)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_register_bt_cb(cb);
 #else
     return 0;
@@ -450,7 +450,7 @@ int coex_register_bt_cb_wrapper(coex_func_cb_t cb)
 
 uint32_t IRAM_ATTR coex_bb_reset_lock_wrapper(void)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     return coex_bb_reset_lock();
 #else
     return 0;
@@ -459,7 +459,7 @@ uint32_t IRAM_ATTR coex_bb_reset_lock_wrapper(void)
 
 void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
 {
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     coex_bb_reset_unlock(restore);
 #endif
 }
