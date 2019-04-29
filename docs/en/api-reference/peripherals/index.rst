@@ -24,4 +24,4 @@ Peripherals API
    Touch Sensor <touch_pad>
    UART <uart>
 
-Example code for this API section is provided in :example:`peripherals` directory of ESP-IDF examples.
+Code examples for this API section are provided in the :example:`peripherals` directory of ESP-IDF examples.

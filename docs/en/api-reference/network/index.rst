@@ -12,9 +12,10 @@ Wi-Fi
    ESP-NOW <esp_now>
    ESP Mesh <esp_mesh>
 
-Example code for the Wi-Fi API is provided in :example:`wifi` directory of ESP-IDF examples.
+Code examples for the Wi-Fi API are provided in the :example:`wifi` directory of ESP-IDF examples.
 
-Example code for ESP Mesh is provided in :example:`mesh` directory of ESP-IDF examples.
+Code examples for ESP-MESH are provided in the :example:`mesh` directory of ESP-IDF examples.
+
 
 Ethernet
 ========
@@ -24,7 +25,8 @@ Ethernet
 
    Ethernet <esp_eth>
 
-Example code for the Ethernet API is provided in :example:`ethernet` directory of ESP-IDF examples.
+Code examples for the Ethernet API are provided in the :example:`ethernet` directory of ESP-IDF examples.
+
 
 IP Network Layer
 ================
@@ -34,9 +36,9 @@ IP Network Layer
 
    TCP/IP Adapter <tcpip_adapter.rst>
 
-Example code for TCP/IP socket APIs is provided in :example:`protocols/sockets` directory of ESP-IDF examples.
+Code examples for TCP/IP socket APIs are provided in the :example:`protocols/sockets` directory of ESP-IDF examples.
 
-Application Layer
+Application Layer 
 =================
 
-Documentation for application layer network protocols (above the IP network layer) is provided in :doc:`../protocols/index`.
+Documentation for Application layer network protocols (above the IP Network layer) are provided in :doc:`../protocols/index`.
