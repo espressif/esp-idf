@@ -617,8 +617,10 @@ entries:
         * (noflash) # if condition is false, then no 'entries' key value
 """)
 
-        with self.assertRaises(ParseFatalException):
-            FragmentFile(test_fragment, self.sdkconfig)
+        expected = set()
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
         test_fragment = self.create_fragment_file(u"""
 [mapping:test]

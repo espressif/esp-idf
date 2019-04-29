@@ -1108,6 +1108,20 @@ entries:
 
             self.compare_rules(expected, actual)
 
+    def test_rule_generation_empty_entries(self):
+        normal = u"""
+[mapping:test]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL >= 1: # is false, generate no special rules
+        obj.a (noflash)
+"""
+
+        self.add_fragments(normal)
+        actual = self.model.generate_rules(self.sections_info)
+        expected = self.generate_default_rules()  # only default rules
+        self.compare_rules(expected, actual)
+
     def test_conditional_sections_1(self):
         generation_with_condition = u"""
 [sections:cond_text_data]
