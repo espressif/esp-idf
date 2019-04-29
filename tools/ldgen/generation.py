@@ -573,8 +573,8 @@ class SectionsInfo(dict):
     def __init__(self):
         self.sections = dict()
 
-    def add_sections_info(self, sections_info_file):
-        first_line = sections_info_file.readline()
+    def add_sections_info(self, sections_info_dump):
+        first_line = sections_info_dump.readline()
 
         archive_path = (Literal("In archive").suppress() +
                         # trim the last character from archive_path, :
@@ -587,10 +587,10 @@ class SectionsInfo(dict):
         try:
             results = parser.parseString(first_line)
         except ParseException as p:
-            raise ParseException("File " + sections_info_file.name + " is not a valid sections info file. " + p.message)
+            raise ParseException("Parsing sections info for library " + sections_info_dump.name + " failed. " + p.message)
 
         archive = os.path.basename(results.archive_path)
-        self.sections[archive] = SectionsInfo.__info(sections_info_file.name, sections_info_file.read())
+        self.sections[archive] = SectionsInfo.__info(sections_info_dump.name, sections_info_dump.read())
 
     def _get_infos_from_file(self, info):
         # Object file line: '{object}:  file format elf32-xtensa-le'
