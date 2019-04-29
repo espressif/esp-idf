@@ -411,7 +411,7 @@ void start_cpu0_default(void)
     }
 #endif
 
-#if CONFIG_SW_COEXIST_ENABLE
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
 #endif
 
