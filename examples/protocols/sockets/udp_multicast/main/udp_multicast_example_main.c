@@ -74,6 +74,8 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
     err = inet_aton(MULTICAST_IPV4_ADDR, &imreq.imr_multiaddr.s_addr);
     if (err != 1) {
         ESP_LOGE(V4TAG, "Configured IPV4 multicast address '%s' is invalid.", MULTICAST_IPV4_ADDR);
+        // Errors in the return value have to be negative
+        err = -1;
         goto err;
     }
     ESP_LOGI(TAG, "Configured IPV4 Multicast address %s", inet_ntoa(imreq.imr_multiaddr.s_addr));
@@ -424,6 +426,10 @@ static void mcast_example_task(void *pvParameters)
                                       &res);
                 if (err < 0) {
                     ESP_LOGE(TAG, "getaddrinfo() failed for IPV4 destination address. error: %d", err);
+                    break;
+                }
+                if (res == 0) {
+                    ESP_LOGE(TAG, "getaddrinfo() did not return any addresses");
                     break;
                 }
 #ifdef CONFIG_EXAMPLE_IPV4_ONLY
