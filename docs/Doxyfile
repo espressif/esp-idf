@@ -199,6 +199,8 @@ INPUT = \
     ../../components/esp_event/include/esp_event_base.h \
     ### eFuse Manager
     ../../components/efuse/include/esp_efuse.h \
+    ### App Image Format
+    ../../components/bootloader_support/include/esp_app_format.h \
     ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
     ###
