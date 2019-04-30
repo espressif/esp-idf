@@ -83,7 +83,7 @@ ethernet_low_level_init(struct netif *netif)
 #endif
 #endif
 
-#ifndef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+#ifndef CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE
   netif->l2_buffer_free_notify = esp_eth_free_rx_buf;
 #endif
 }
@@ -150,7 +150,7 @@ ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * @param buffer the ethernet buffer
  * @param len the len of buffer
  *
- * @note When CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE is enabled, a copy of buffer
+ * @note When CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE is enabled, a copy of buffer
  *       will be made for high layer (LWIP) and ethernet is responsible for
  *       freeing the buffer. Otherwise, high layer and ethernet share the
  *       same buffer and high layer is responsible for freeing the buffer.
@@ -161,7 +161,7 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
   struct pbuf *p;
 
   if(buffer== NULL || !netif_is_up(netif)) {
-#ifndef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+#ifndef CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE
     if (buffer) {
       esp_eth_free_rx_buf(buffer);
     }
@@ -169,7 +169,7 @@ ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
     return;
   }
 
-#ifdef CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+#ifdef CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
     return;

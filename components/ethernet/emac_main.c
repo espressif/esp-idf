@@ -467,7 +467,7 @@ static uint32_t IRAM_ATTR emac_get_rxbuf_count_in_intr(void)
     return cnt;
 }
 
-#if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+#if CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE
 static void emac_process_rx(void)
 {
     if (emac_config.emac_status == EMAC_RUNTIME_STOP) {
@@ -649,7 +649,7 @@ static void emac_check_phy_init(void)
     } else {
         REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACFESPEED);
     }
-#if CONFIG_EMAC_L2_TO_L3_RX_BUF_MODE
+#if CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE
     emac_disable_flowctrl();
     emac_config.emac_flow_ctrl_partner_support = false;
 #else
@@ -768,7 +768,7 @@ void emac_link_check_func(void *pv_parameters)
 static bool emac_link_check_timer_init(void)
 {
     emac_timer = xTimerCreate("emac_timer",
-                              (CONFIG_EMAC_CHECK_LINK_PERIOD_MS / portTICK_PERIOD_MS),
+                              (CONFIG_ETH_CHECK_LINK_STATUS_PERIOD_MS / portTICK_PERIOD_MS),
                               pdTRUE,
                               NULL,
                               emac_link_check_func);
