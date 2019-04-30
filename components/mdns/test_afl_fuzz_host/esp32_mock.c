@@ -9,6 +9,23 @@ void*     g_queue;
 int       g_queue_send_shall_fail = 0;
 int       g_size = 0;
 
+const char * WIFI_EVENT = "wifi_event";
+const char * IP_EVENT = "ip_event";
+const char * ETH_EVENT = "eth_event";
+
+esp_err_t esp_event_handler_register(const char * event_base,
+                                        int32_t event_id,
+                                        void* event_handler,
+                                        void* event_handler_arg)
+{
+    return ESP_OK;
+}
+
+esp_err_t esp_event_handler_unregister(const char * event_base, int32_t event_id, void* event_handler)
+{
+    return ESP_OK;
+}
+
 esp_err_t esp_timer_delete(esp_timer_handle_t timer)
 {
     return ESP_OK;
