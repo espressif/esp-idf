@@ -70,7 +70,7 @@ Optionally, user can opt to have the image automatically flashed together with t
 If FLASH_IN_PROJECT is not specified, the image is still generated,
 but user has to flash it manually using ``esptool.py``, ``parttool.py`` or a custom build system target.
 
-For an example, see :example:`examples/build_system/spiffsgen>`.
+For an example, see :example:`examples/storage/spiffsgen>`.
 
 
 mkspiffs
