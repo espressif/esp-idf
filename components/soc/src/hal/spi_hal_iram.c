@@ -41,11 +41,12 @@ void spi_hal_setup_trans(const spi_hal_context_t *hal)
 {
     spi_dev_t *hw = hal->hw;
 
+    //clear int bit
     spi_ll_clear_int_stat(hal->hw);
+    //We should be done with the transmission.
     assert(spi_ll_get_running_cmd(hw) == 0);
 
-    //clear int bit
-    spi_ll_master_set_io_mode(hw, SPI_LL_IO_MODE_NORMAL);
+    spi_ll_master_set_io_mode(hw, hal->io_mode);
 
     int extra_dummy = 0;
     //when no_dummy is not set and in half-duplex mode, sets the dummy bit if RX phase exist
