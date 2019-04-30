@@ -15,7 +15,7 @@ except ImportError:
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_examples_spiffsgen(env, extra_data):
     # Test with default build configurations
-    dut = env.get_dut('spiffsgen', 'examples/build_system/spiffsgen')
+    dut = env.get_dut('spiffsgen', 'examples/storage/spiffsgen')
     dut.start_app()
 
     base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spiffs_image')
