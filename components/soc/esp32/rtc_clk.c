@@ -127,7 +127,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DRES_XTAL_32K, dres);
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, dbias);
 
-#ifdef CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     /* TOUCH sensor can provide additional current to external XTAL.
        In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
     SET_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
@@ -141,7 +141,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
        So the Touch DAC start to drive some current from VDD to TOUCH8(which is also XTAL-N)
      */
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
-#endif // CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+#endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     /* Power up external xtal */
     SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K_M);
 }
@@ -155,10 +155,10 @@ void rtc_clk_32k_enable(bool enable)
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K_M);
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
-#ifdef CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
         /* Power down TOUCH */
         CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
-#endif // CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+#endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     }
 }
 

@@ -4,6 +4,12 @@
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
+    # Hidden option to support checking for this specific target in C code and Kconfig files
+    config IDF_TARGET_ESP32
+        bool
+        default "y" if IDF_TARGET="esp32"
+        default "n"
+
     config IDF_CMAKE
         bool
         option env="IDF_CMAKE"

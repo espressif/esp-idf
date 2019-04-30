@@ -346,7 +346,7 @@ void test_posix_timers_clock (void)
     printf("WITH_RTC    ");
 #endif
 
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
     printf("External (crystal) Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());
 #else
     printf("Internal Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());

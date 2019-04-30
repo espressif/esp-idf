@@ -23,7 +23,7 @@ This code tests the interaction between PSRAM and SPI flash routines.
 #include "esp_partition.h"
 #include "test_utils.h"
 
-#if CONFIG_SPIRAM_SUPPORT
+#if CONFIG_ESP32_SPIRAM_SUPPORT
 
 #if CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC
 #define USE_CAPS_ALLOC 1
@@ -181,4 +181,4 @@ IRAM_ATTR TEST_CASE("Spiram memcmp weirdness at 80MHz", "[spiram]") {
 #endif
 }
 
-#endif // CONFIG_SPIRAM_SUPPORT
+#endif // CONFIG_ESP32_SPIRAM_SUPPORT

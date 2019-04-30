@@ -32,14 +32,14 @@
 #include "driver/periph_ctrl.h"
 #include "esp_int_wdt.h"
 
-#if CONFIG_INT_WDT
+#if CONFIG_ESP_INT_WDT
 
 
 #define WDT_INT_NUM 24
 
 
 //Take care: the tick hook can also be called before esp_int_wdt_init() is called.
-#if CONFIG_INT_WDT_CHECK_CPU1
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
 //Not static; the ISR assembly checks this.
 bool int_wdt_app_cpu_ticked=false;
 
@@ -50,8 +50,8 @@ static void IRAM_ATTR tick_hook(void) {
         //Only feed wdt if app cpu also ticked.
         if (int_wdt_app_cpu_ticked) {
             TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-            TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
-            TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
+            TIMERG1.wdt_config2=CONFIG_ESP_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
+            TIMERG1.wdt_config3=CONFIG_ESP_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
             TIMERG1.wdt_feed=1;
             TIMERG1.wdt_wprotect=0;
             int_wdt_app_cpu_ticked=false;
@@ -62,8 +62,8 @@ static void IRAM_ATTR tick_hook(void) {
 static void IRAM_ATTR tick_hook(void) {
     if (xPortGetCoreID()!=0) return;
     TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
-    TIMERG1.wdt_config3=CONFIG_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
+    TIMERG1.wdt_config2=CONFIG_ESP_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
+    TIMERG1.wdt_config3=CONFIG_ESP_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
     TIMERG1.wdt_feed=1;
     TIMERG1.wdt_wprotect=0;
 }

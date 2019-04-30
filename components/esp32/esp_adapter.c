@@ -54,12 +54,12 @@ extern void esp_dport_access_stall_other_cpu_start_wrap(void);
 extern void esp_dport_access_stall_other_cpu_end_wrap(void);
 
 /*
- If CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
+ If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
  If failed, try to allocate it in internal memory then.
  */
 IRAM_ATTR void *wifi_malloc( size_t size )
 {
-#if CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
     return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return malloc(size);
@@ -67,12 +67,12 @@ IRAM_ATTR void *wifi_malloc( size_t size )
 }
 
 /*
- If CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
+ If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
  If failed, try to allocate it in internal memory then.
  */
 IRAM_ATTR void *wifi_realloc( void *ptr, size_t size )
 {
-#if CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
     return heap_caps_realloc_prefer(ptr, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return realloc(ptr, size);
@@ -80,12 +80,12 @@ IRAM_ATTR void *wifi_realloc( void *ptr, size_t size )
 }
 
 /*
- If CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
+ If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
  If failed, try to allocate it in internal memory then.
  */
 IRAM_ATTR void *wifi_calloc( size_t n, size_t size )
 {
-#if CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+#if CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP
     return heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return calloc(n, size);

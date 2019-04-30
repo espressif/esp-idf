@@ -76,7 +76,7 @@ esp_err_t esp_event_loop_create_default()
     }
 
     esp_event_loop_args_t loop_args = {
-        .queue_size = CONFIG_SYSTEM_EVENT_QUEUE_SIZE,
+        .queue_size = CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE,
         .task_name = "sys_evt",
         .task_stack_size = ESP_TASKD_EVENT_STACK,
         .task_priority = ESP_TASKD_EVENT_PRIO,

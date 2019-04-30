@@ -43,7 +43,7 @@ SPACES_PER_INDENT = 4
 
 CONFIG_NAME_MAX_LENGTH = 40
 
-CONFIG_NAME_MIN_PREFIX_LENGTH = 4
+CONFIG_NAME_MIN_PREFIX_LENGTH = 3
 
 # The checker will not fail if it encounters this string (it can be used for temporarily resolve conflicts)
 RE_NOERROR = re.compile(r'\s+#\s+NOERROR\s+$')

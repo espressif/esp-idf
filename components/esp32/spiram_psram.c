@@ -36,7 +36,7 @@
 #include "driver/spi_common.h"
 #include "driver/periph_ctrl.h"
 
-#if CONFIG_SPIRAM_SUPPORT
+#if CONFIG_ESP32_SPIRAM_SUPPORT
 #include "soc/rtc.h"
 
 //Commands for PSRAM chip
@@ -118,7 +118,7 @@ typedef enum {
 #define PICO_FLASH_SPIHD_SD2_IO         11
 
 #define PICO_PSRAM_CLK_IO                6
-#define PICO_PSRAM_CS_IO                CONFIG_PICO_PSRAM_CS_IO
+#define PICO_PSRAM_CS_IO                CONFIG_SPIRAM_PICO_PSRAM_CS_IO
 #define PICO_PSRAM_SPIQ_SD0_IO          17
 #define PICO_PSRAM_SPID_SD1_IO           8
 #define PICO_PSRAM_SPIWP_SD3_IO          7
@@ -836,4 +836,4 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
     CLEAR_PERI_REG_MASK(SPI_PIN_REG(0), SPI_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
 }
 
-#endif // CONFIG_SPIRAM_SUPPORT
+#endif // CONFIG_ESP32_SPIRAM_SUPPORT

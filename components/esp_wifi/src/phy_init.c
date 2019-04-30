@@ -582,7 +582,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle handle,
     return err;
 }
 
-#if CONFIG_REDUCE_PHY_TX_POWER
+#if CONFIG_ESP32_REDUCE_PHY_TX_POWER
 static void esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
 {
     uint8_t i;
@@ -603,7 +603,7 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
         abort();
     }
 
-#if CONFIG_REDUCE_PHY_TX_POWER
+#if CONFIG_ESP32_REDUCE_PHY_TX_POWER
     const esp_phy_init_data_t* phy_init_data = esp_phy_get_init_data();
     if (phy_init_data == NULL) {
         ESP_LOGE(TAG, "failed to obtain PHY init data");
@@ -653,7 +653,7 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     esp_phy_rf_init(init_data, PHY_RF_CAL_FULL, cal_data, module);
 #endif
 
-#if CONFIG_REDUCE_PHY_TX_POWER
+#if CONFIG_ESP32_REDUCE_PHY_TX_POWER
     esp_phy_release_init_data(phy_init_data);
     free(init_data);
 #else

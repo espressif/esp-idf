@@ -344,7 +344,7 @@ function run_tests()
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -rf build
-    echo "CONFIG_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
+    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> sdkconfig.defaults
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
     # note: we do 'reconfigure' here, as we just need to run cmake
     idf.py -C $IDF_PATH/examples/build_system/cmake/import_lib -B `pwd`/build reconfigure -D SDKCONFIG_DEFAULTS="`pwd`/sdkconfig.defaults"
@@ -353,7 +353,7 @@ function run_tests()
     rm -r sdkconfig.defaults build
     # Test for external libraries in custom CMake projects with ESP-IDF components linked
     mkdir build && touch build/sdkconfig
-    echo "CONFIG_SPIRAM_SUPPORT=y" >> build/sdkconfig
+    echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" >> build/sdkconfig
     echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> build/sdkconfig
     # note: we just need to run cmake
     (cd build && cmake $IDF_PATH/examples/build_system/cmake/idf_as_lib -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DTARGET=esp32)

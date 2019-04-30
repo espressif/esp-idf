@@ -67,8 +67,8 @@
 //printf may be broken, so we fix our own printing fns...
 static void panicPutChar(char c)
 {
-    while (((READ_PERI_REG(UART_STATUS_REG(CONFIG_CONSOLE_UART_NUM)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
-    WRITE_PERI_REG(UART_FIFO_REG(CONFIG_CONSOLE_UART_NUM), c);
+    while (((READ_PERI_REG(UART_STATUS_REG(CONFIG_ESP_CONSOLE_UART_NUM)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
+    WRITE_PERI_REG(UART_FIFO_REG(CONFIG_ESP_CONSOLE_UART_NUM), c);
 }
 
 static void panicPutStr(const char *c)
@@ -434,7 +434,7 @@ static void esp_panic_dig_reset() __attribute__((noreturn));
 static void esp_panic_dig_reset()
 {
     // make sure all the panic handler output is sent from UART FIFO
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_freq_set_xtal();
     // reset the digital part

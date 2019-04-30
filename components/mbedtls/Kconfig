@@ -24,7 +24,7 @@ menu "mbedTLS"
 
         config MBEDTLS_EXTERNAL_MEM_ALLOC
             bool "External SPIRAM"
-            depends on SPIRAM_SUPPORT
+            depends on ESP32_SPIRAM_SUPPORT
 
         config MBEDTLS_DEFAULT_MEM_ALLOC
             bool "Default alloc mode"

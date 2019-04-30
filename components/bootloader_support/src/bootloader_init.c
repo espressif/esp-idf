@@ -412,11 +412,11 @@ static void IRAM_ATTR flash_gpio_configure(const esp_image_header_t* pfhdr)
 
 static void uart_console_configure(void)
 {
-#if CONFIG_CONSOLE_UART_NONE
+#if CONFIG_ESP_CONSOLE_UART_NONE
     ets_install_putc1(NULL);
     ets_install_putc2(NULL);
-#else // CONFIG_CONSOLE_UART_NONE
-    const int uart_num = CONFIG_CONSOLE_UART_NUM;
+#else // CONFIG_ESP_CONSOLE_UART_NONE
+    const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
 
     uartAttach();
     ets_install_uart_printf();
@@ -424,10 +424,10 @@ static void uart_console_configure(void)
     // Wait for UART FIFO to be empty.
     uart_tx_wait_idle(0);
 
-#if CONFIG_CONSOLE_UART_CUSTOM
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM
     // Some constants to make the following code less upper-case
-    const int uart_tx_gpio = CONFIG_CONSOLE_UART_TX_GPIO;
-    const int uart_rx_gpio = CONFIG_CONSOLE_UART_RX_GPIO;
+    const int uart_tx_gpio = CONFIG_ESP_CONSOLE_UART_TX_GPIO;
+    const int uart_rx_gpio = CONFIG_ESP_CONSOLE_UART_RX_GPIO;
     // Switch to the new UART (this just changes UART number used for
     // ets_printf in ROM code).
     uart_tx_switch(uart_num);
@@ -450,13 +450,13 @@ static void uart_console_configure(void)
         gpio_matrix_out(uart_tx_gpio, tx_idx, 0, 0);
         gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
     }
-#endif // CONFIG_CONSOLE_UART_CUSTOM
+#endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
 
     // Set configured UART console baud rate
-    const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+    const int uart_baud = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
     uart_div_modify(uart_num, (rtc_clk_apb_freq_get() << 4) / uart_baud);
 
-#endif // CONFIG_CONSOLE_UART_NONE
+#endif // CONFIG_ESP_CONSOLE_UART_NONE
 }
 
 static void wdt_reset_cpu0_info_enable(void)

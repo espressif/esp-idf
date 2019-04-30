@@ -25,11 +25,11 @@
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
 
-#ifdef CONFIG_BROWNOUT_DET_LVL
-#define BROWNOUT_DET_LVL CONFIG_BROWNOUT_DET_LVL
+#ifdef CONFIG_ESP32_BROWNOUT_DET_LVL
+#define BROWNOUT_DET_LVL CONFIG_ESP32_BROWNOUT_DET_LVL
 #else
 #define BROWNOUT_DET_LVL 0
-#endif //CONFIG_BROWNOUT_DET_LVL
+#endif //CONFIG_ESP32_BROWNOUT_DET_LVL
 
 static void rtc_brownout_isr_handler()
 {
