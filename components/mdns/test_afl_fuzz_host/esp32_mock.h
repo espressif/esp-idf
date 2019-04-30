@@ -40,6 +40,10 @@ void GetLastItem(void *pvBuffer);
 
 void ForceTaskDelete();
 
+esp_err_t esp_event_handler_register(const char * event_base, int32_t event_id, void* event_handler, void* event_handler_arg);
+
+esp_err_t esp_event_handler_unregister(const char * event_base, int32_t event_id, void* event_handler);
+
 #define _mdns_udp_pcb_write(tcpip_if, ip_protocol, ip, port, data, len) len
 
 #endif /* ESP32_MOCK_H_ */
