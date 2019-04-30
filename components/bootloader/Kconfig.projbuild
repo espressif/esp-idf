@@ -140,7 +140,7 @@ menu "Bootloader config"
             source for slow_clk - and ends calling app_main.
             Re-set timeout is needed due to WDT uses a SLOW_CLK clock source. After changing a frequency slow_clk a
             time of WDT needs to re-set for new frequency.
-            slow_clk depends on ESP32_RTC_CLOCK_SOURCE (INTERNAL_RC or EXTERNAL_CRYSTAL).
+            slow_clk depends on ESP32_RTC_CLC_SRC (INTERNAL_RC or EXTERNAL_CRYSTAL).
 
     config BOOTLOADER_WDT_DISABLE_IN_USER_CODE
         bool "Allows RTC watchdog disable in user code"

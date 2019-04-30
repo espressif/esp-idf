@@ -11,14 +11,14 @@ set(COMPONENT_PRIV_INCLUDEDIRS)
 set(COMPONENT_REQUIRES)
 set(COMPONENT_PRIV_REQUIRES "wpa_supplicant" "nvs_flash")
 
-if(NOT CONFIG_NO_BLOBS)
+if(NOT CONFIG_ESP32_NO_BLOBS)
     set(COMPONENT_ADD_LDFRAGMENTS "linker.lf")
 endif()
 
 register_component()
 target_link_libraries(${COMPONENT_LIB} "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}")
 
-if(NOT CONFIG_NO_BLOBS)
+if(NOT CONFIG_ESP32_NO_BLOBS)
     target_link_libraries(${COMPONENT_LIB} "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}")
     target_link_libraries(${COMPONENT_LIB} coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
 endif()

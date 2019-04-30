@@ -173,7 +173,7 @@ menu Bluetooth
 
                 config BTDM_LPCLK_SEL_EXT_32K_XTAL
                     bool "External 32kHz crystal"
-                    depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+                    depends on ESP32_RTC_CLK_SRC_EXT_CRYS
             endchoice
 
         endmenu

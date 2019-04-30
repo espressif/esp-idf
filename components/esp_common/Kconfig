@@ -1,0 +1,219 @@
+menu "Common ESP-related"
+
+    config ESP_TIMER_PROFILING
+        bool "Enable esp_timer profiling features"
+        default n
+        help
+            If enabled, esp_timer_dump will dump information such as number of times the timer was started, number of
+            times the timer has triggered, and the total time it took for the callback to run. This option has some
+            effect on timer performance and the amount of memory used for timer storage, and should only be used for
+            debugging/testing purposes.
+
+    config ESP_ERR_TO_NAME_LOOKUP
+        bool "Enable lookup of error code strings"
+        default "y"
+        help
+            Functions esp_err_to_name() and esp_err_to_name_r() return string representations of error codes from a
+            pre-generated lookup table. This option can be used to turn off the use of the look-up table in order to
+            save memory but this comes at the price of sacrificing distinguishable (meaningful) output string
+            representations.
+
+    config ESP_SYSTEM_EVENT_QUEUE_SIZE
+        int "System event queue size"
+        default 32
+        help
+            Config system event queue size in different application.
+
+    config ESP_SYSTEM_EVENT_TASK_STACK_SIZE
+        int "Event loop task stack size"
+        default 2304
+        help
+            Config system event task stack size in different application.
+
+    config ESP_MAIN_TASK_STACK_SIZE
+        int "Main task stack size"
+        default 3584
+        help
+            Configure the "main task" stack size. This is the stack of the task
+            which calls app_main(). If app_main() returns then this task is deleted
+            and its stack memory is freed.
+
+    config ESP_IPC_TASK_STACK_SIZE
+        int "Inter-Processor Call (IPC) task stack size"
+        default 1024
+        range 512 65536 if !ESP32_APPTRACE_ENABLE
+        range 2048 65536 if ESP32_APPTRACE_ENABLE
+        help
+            Configure the IPC tasks stack size. One IPC task runs on each core
+            (in dual core mode), and allows for cross-core function calls.
+
+            See IPC documentation for more details.
+
+            The default stack size should be enough for most common use cases.
+            It can be shrunk if you are sure that you do not use any custom
+            IPC functionality.
+
+    config ESP_TIMER_TASK_STACK_SIZE
+        int "High-resolution timer task stack size"
+        default 3584
+        range 2048 65536
+        help
+            Configure the stack size of esp_timer/ets_timer task. This task is used
+            to dispatch callbacks of timers created using ets_timer and esp_timer
+            APIs. If you are seing stack overflow errors in timer task, increase
+            this value.
+
+            Note that this is not the same as FreeRTOS timer task. To configure
+            FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
+            in "FreeRTOS" menu.
+
+    choice ESP_CONSOLE_UART
+        prompt "UART for console output"
+        default ESP_CONSOLE_UART_DEFAULT
+        help
+            Select whether to use UART for console output (through stdout and stderr).
+
+            - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
+            - If "Custom" is selected, UART0 or UART1 can be chosen,
+              and any pins can be selected.
+            - If "None" is selected, there will be no console output on any UART, except
+              for initial output from ROM bootloader. This output can be further suppressed by
+              bootstrapping GPIO13 pin to low logic level.
+
+        config ESP_CONSOLE_UART_DEFAULT
+            bool "Default: UART0, TX=GPIO1, RX=GPIO3"
+        config ESP_CONSOLE_UART_CUSTOM
+            bool "Custom"
+        config ESP_CONSOLE_UART_NONE
+            bool "None"
+    endchoice
+
+    choice ESP_CONSOLE_UART_NUM
+        prompt "UART peripheral to use for console output (0-1)"
+        depends on ESP_CONSOLE_UART_CUSTOM
+        default ESP_CONSOLE_UART_CUSTOM_NUM_0
+        help
+            Due of a ROM bug, UART2 is not supported for console output
+            via ets_printf.
+
+        config ESP_CONSOLE_UART_CUSTOM_NUM_0
+            bool "UART0"
+        config ESP_CONSOLE_UART_CUSTOM_NUM_1
+            bool "UART1"
+    endchoice
+
+    config ESP_CONSOLE_UART_NUM
+        int
+        default 0 if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_NONE
+        default 0 if ESP_CONSOLE_UART_CUSTOM_NUM_0
+        default 1 if ESP_CONSOLE_UART_CUSTOM_NUM_1
+
+    config ESP_CONSOLE_UART_TX_GPIO
+        int "UART TX on GPIO#"
+        depends on ESP_CONSOLE_UART_CUSTOM
+        range 0 33
+        default 19
+
+    config ESP_CONSOLE_UART_RX_GPIO
+        int "UART RX on GPIO#"
+        depends on ESP_CONSOLE_UART_CUSTOM
+        range 0 39
+        default 21
+
+    config ESP_CONSOLE_UART_BAUDRATE
+        int "UART console baud rate"
+        depends on !ESP_CONSOLE_UART_NONE
+        default 115200
+        range 1200 4000000
+
+
+    config ESP_GDBSTUB_SUPPORT_TASKS
+        bool "GDBStub: enable listing FreeRTOS tasks"
+        default y
+        depends on ESP32_PANIC_GDBSTUB
+        help
+            If enabled, GDBStub can supply the list of FreeRTOS tasks to GDB.
+            Thread list can be queried from GDB using 'info threads' command.
+            Note that if GDB task lists were corrupted, this feature may not work.
+            If GDBStub fails, try disabling this feature.
+
+    config ESP_GDBSTUB_MAX_TASKS
+        int "GDBStub: maximum number of tasks supported"
+        default 32
+        depends on ESP_GDBSTUB_SUPPORT_TASKS
+        help
+            Set the number of tasks which GDB Stub will support.
+
+
+    config ESP_INT_WDT
+        bool "Interrupt watchdog"
+        default y
+        help
+            This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
+            either because a task turned off interrupts and did not turn them on for a long time, or because an
+            interrupt handler did not return. It will try to invoke the panic handler first and failing that
+            reset the SoC.
+
+    config ESP_INT_WDT_TIMEOUT_MS
+        int "Interrupt watchdog timeout (ms)"
+        depends on ESP_INT_WDT
+        default 300 if !ESP32_SPIRAM_SUPPORT
+        default 800 if ESP32_SPIRAM_SUPPORT
+        range 10 10000
+        help
+            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
+
+    config ESP_INT_WDT_CHECK_CPU1
+        bool "Also watch CPU1 tick interrupt"
+        depends on ESP_INT_WDT && !FREERTOS_UNICORE
+        default y
+        help
+            Also detect if interrupts on CPU 1 are disabled for too long.
+
+    config ESP_TASK_WDT
+        bool "Initialize Task Watchdog Timer on startup"
+        default y
+        help
+            The Task Watchdog Timer can be used to make sure individual tasks are still
+            running. Enabling this option will cause the Task Watchdog Timer to be
+            initialized automatically at startup. The Task Watchdog timer can be
+            initialized after startup as well (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_PANIC
+        bool "Invoke panic handler on Task Watchdog timeout"
+        depends on ESP_TASK_WDT
+        default n
+        help
+            If this option is enabled, the Task Watchdog Timer will be configured to
+            trigger the panic handler when it times out. This can also be configured
+            at run time (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_TIMEOUT_S
+        int "Task Watchdog timeout period (seconds)"
+        depends on ESP_TASK_WDT
+        range 1 60
+        default 5
+        help
+            Timeout period configuration for the Task Watchdog Timer in seconds.
+            This is also configurable at run time (see Task Watchdog Timer API Reference)
+
+    config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+        bool "Watch CPU0 Idle Task"
+        depends on ESP_TASK_WDT
+        default y
+        help
+            If this option is enabled, the Task Watchdog Timer will watch the CPU0
+            Idle Task. Having the Task Watchdog watch the Idle Task allows for detection
+            of CPU starvation as the Idle Task not being called is usually a symptom of
+            CPU starvation. Starvation of the Idle Task is detrimental as FreeRTOS household
+            tasks depend on the Idle Task getting some runtime every now and then.
+
+    config ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+        bool "Watch CPU1 Idle Task"
+        depends on ESP_TASK_WDT && !FREERTOS_UNICORE
+        default y
+        help
+            If this option is enabled, the Task Wtachdog Timer will wach the CPU1
+            Idle Task.
+
+endmenu # Common ESP-related

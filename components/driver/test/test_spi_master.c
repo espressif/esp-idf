@@ -544,7 +544,7 @@ static const uint8_t data_drom[320+3] = {
 
 TEST_CASE("SPI Master DMA test, TX and RX in different regions", "[spi]")
 {
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
     //test psram if enabled
     ESP_LOGI(TAG, "testing PSRAM...");
     uint32_t* data_malloc = (uint32_t*)heap_caps_malloc(324, MALLOC_CAP_SPIRAM);

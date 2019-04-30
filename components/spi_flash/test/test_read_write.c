@@ -219,7 +219,7 @@ TEST_CASE("Test spi_flash_write", "[spi_flash]")
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
 }
 
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
 
 TEST_CASE("spi_flash_read can read into buffer in external RAM", "[spi_flash]")
 {
@@ -265,4 +265,4 @@ TEST_CASE("spi_flash_write can write from external RAM buffer", "[spi_flash]")
     free(buf_int);
 }
 
-#endif // CONFIG_SPIRAM_SUPPORT
+#endif // CONFIG_ESP32_SPIRAM_SUPPORT

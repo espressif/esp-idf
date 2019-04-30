@@ -11,7 +11,7 @@
 #include "sdkconfig.h"
 #include "test/test_common_spi.h"
 
-#ifndef CONFIG_SPIRAM_SUPPORT
+#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
 //This test should be removed once the timing test is merged.
 
 
@@ -140,4 +140,4 @@ TEST_CASE("test slave send unaligned","[spi]")
     ESP_LOGI(MASTER_TAG, "test passed.");
 }
 
-#endif // !CONFIG_SPIRAM_SUPPORT
+#endif // !CONFIG_ESP32_SPIRAM_SUPPORT

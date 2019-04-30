@@ -273,9 +273,9 @@ static int sendPacket(const char * text) {
 	return ST_OK;
 }
 
-#if CONFIG_GDBSTUB_SUPPORT_TASKS
+#if CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
-#define STUB_TASKS_NUM  CONFIG_GDBSTUB_MAX_TASKS
+#define STUB_TASKS_NUM  CONFIG_ESP_GDBSTUB_MAX_TASKS
 
 //Remember the exception frame that caused panic since it's not saved in TCB
 static XtExcFrame paniced_frame;
@@ -365,7 +365,7 @@ static int findCurrentTaskIndex() {
 	return curTaskIndex;
 }
 
-#endif // CONFIG_GDBSTUB_SUPPORT_TASKS
+#endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 //Handle a command as received from GDB.
 static int gdbHandleCommand(unsigned char *cmd, int len) {
@@ -392,7 +392,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 		gdbPacketEnd();
 	} else if (cmd[0]=='?') {	//Reply with stop reason
 		sendReason();
-#if CONFIG_GDBSTUB_SUPPORT_TASKS
+#if CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 	} else if (handlerState != HANDLER_TASK_SUPPORT_DISABLED) {
 		if (cmd[0]=='H') { //Continue with task
 			if (cmd[1]=='g' || cmd[1]=='c') {
@@ -473,7 +473,7 @@ static int gdbHandleCommand(unsigned char *cmd, int len) {
 			}
 			return sendPacket(NULL);
 		}
-#endif // CONFIG_GDBSTUB_SUPPORT_TASKS
+#endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 	} else {
 		//We don't recognize or support whatever GDB just sent us.
 		return sendPacket(NULL);
@@ -532,7 +532,7 @@ static int gdbReadCommand() {
 
 
 void esp_gdbstub_panic_handler(XtExcFrame *frame) {
-#if CONFIG_GDBSTUB_SUPPORT_TASKS
+#if CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 	if (handlerState == HANDLER_STARTED) {
 		//We have re-entered GDB Stub. Try disabling task support.
 		handlerState = HANDLER_TASK_SUPPORT_DISABLED;
@@ -542,9 +542,9 @@ void esp_gdbstub_panic_handler(XtExcFrame *frame) {
 		memcpy(&paniced_frame, frame, sizeof(paniced_frame));
 		dumpHwToRegfile(&paniced_frame);
 	}
-#else // CONFIG_GDBSTUB_SUPPORT_TASKS
+#else // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 	dumpHwToRegfile(frame);
-#endif // CONFIG_GDBSTUB_SUPPORT_TASKS
+#endif // CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
 	//Make sure txd/rxd are enabled
 	gpio_pullup_dis(1);

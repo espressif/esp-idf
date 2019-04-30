@@ -33,7 +33,7 @@ void unity_putc(int c)
 
 void unity_flush()
 {
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 
 /* To start a unit test from a GDB session without console input,

@@ -107,8 +107,8 @@ TEST_CASE("access DPORT and APB at same time", "[esp32]")
 
 void run_tasks_with_change_freq_cpu(int cpu_freq_mhz)
 {
-    const int uart_num = CONFIG_CONSOLE_UART_NUM;
-    const int uart_baud = CONFIG_CONSOLE_UART_BAUDRATE;
+    const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
+    const int uart_baud = CONFIG_ESP_CONSOLE_UART_BAUDRATE;
     dport_test_result = false;
     apb_test_result = false;
     rtc_cpu_freq_config_t old_config;

@@ -11,7 +11,7 @@ In certain situations, execution of the program can not be continued in a well d
 - System level checks and safeguards:
 
   - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
-  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_TASK_WDT_PANIC` is set)
+  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
   - Cache access error
   - Brownout detection event
   - Stack overflow
@@ -260,7 +260,7 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_BROWNOUT_DET` and :ref:`CONFIG_BROWNOUT_DET_LVL_SEL` options.
+ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_ESP32_BROWNOUT_DET` and :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` options.
 When brownout detector triggers, the following message is printed::
 
     Brownout detector was triggered
