@@ -120,6 +120,21 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         return ESP_ERR_INVALID_ARG;
     }
 
+#if defined(BOOTLOADER_BUILD) && !defined(SECURE_BOOT_CHECK_SIGNATURE)
+    // If we're in the bootloader, the debugger is attached, and we're not
+    // doing secure boot signature checks, disable verification since we may
+    // have a software breakpoint set within the image we're validating which
+    // will throw off validation.
+    if (do_verify && esp_cpu_in_ocd_debug_mode()) {
+        ESP_LOGW(TAG, "skipping image validation due to debugger");
+        do_verify = false;
+    }
+#else
+    if (do_verify && esp_cpu_in_ocd_debug_mode()) {
+        ESP_LOGW(TAG, "debugger is attached; image validation may fail due to software breakpoints");
+    }
+#endif
+
     if (part->size > SIXTEEN_MB) {
         err = ESP_ERR_INVALID_ARG;
         FAIL_LOAD("partition size 0x%x invalid, larger than 16MB", part->size);
@@ -190,11 +205,9 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
         data->image_len = end_addr - data->start_addr;
         ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
-        if (NULL != checksum && !esp_cpu_in_ocd_debug_mode()) {
-            err = verify_checksum(sha_handle, checksum_word, data);
-            if (err != ESP_OK) {
-                goto err;
-            }
+        err = verify_checksum(sha_handle, checksum_word, data);
+        if (err != ESP_OK) {
+            goto err;
         }
 
         /* For secure boot on ESP32, we don't calculate SHA or verify signautre on bootloaders.
@@ -220,7 +233,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             err = verify_secure_boot_signature(sha_handle, data);
 #else
             // No secure boot, but SHA-256 can be appended for basic corruption detection
-            if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
+            if (sha_handle != NULL) {
                 err = verify_simple_hash(sha_handle, data);
             }
 #endif // SECURE_BOOT_CHECK_SIGNATURE
