@@ -371,7 +371,7 @@ tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
                            seting default max latency and min remote timeout as 0,
                            and always read individual device preference from HH module */
     {1200,   2, 2},     /* BTA_DM_PM_SSR2 - others (as long as sniff is allowed)*/
-    {360,  160, 2}      /* BTA_DM_PM_SSR3 - HD */
+    {360,  160, 1600}      /* BTA_DM_PM_SSR3 - HD */
 };
 
 tBTA_DM_SSR_SPEC *p_bta_dm_ssr_spec = (tBTA_DM_SSR_SPEC *) &bta_dm_ssr_spec;

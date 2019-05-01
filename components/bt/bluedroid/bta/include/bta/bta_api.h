@@ -87,18 +87,19 @@ typedef UINT8 tBTA_STATUS;
 #define BTA_HDP_SERVICE_ID      27          /* Health Device Profile */
 #define BTA_PCE_SERVICE_ID      28          /* PhoneBook Access Client*/
 #define BTA_SDP_SERVICE_ID      29          /* SDP Search*/
+#define BTA_HIDD_SERVICE_ID     30          /* HID Device */
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
 /* BLE profile service ID */
-#define BTA_BLE_SERVICE_ID      30          /* GATT profile */
+#define BTA_BLE_SERVICE_ID      31          /* GATT profile */
 
 // btla-specific ++
-#define BTA_USER_SERVICE_ID     31          /* User requested UUID */
+#define BTA_USER_SERVICE_ID     32          /* User requested UUID */
 
-#define BTA_MAX_SERVICE_ID      32
+#define BTA_MAX_SERVICE_ID      33
 // btla-specific --
 #else
-#define BTA_USER_SERVICE_ID     30          /* User requested UUID */
-#define BTA_MAX_SERVICE_ID      31
+#define BTA_USER_SERVICE_ID     31          /* User requested UUID */
+#define BTA_MAX_SERVICE_ID      32
 #endif
 /* service IDs (BTM_SEC_SERVICE_FIRST_EMPTY + 1) to (BTM_SEC_MAX_SERVICES - 1)
  * are used by BTA JV */
@@ -137,22 +138,23 @@ typedef UINT8 tBTA_SERVICE_ID;
 #define BTA_MN_SERVICE_MASK         0x04000000  /* Message Notification Profile */
 #define BTA_HL_SERVICE_MASK         0x08000000  /* Health Device Profile */
 #define BTA_PCE_SERVICE_MASK        0x10000000  /* Phone Book Client */
+#define BTA_HIDD_SERVICE_MASK       0x20000000  /* HID Device */
 
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
-#define BTA_BLE_SERVICE_MASK        0x20000000  /* GATT based service */
+#define BTA_BLE_SERVICE_MASK        0x40000000  /* GATT based service */
 // btla-specific ++
-#define BTA_USER_SERVICE_MASK       0x40000000  /* Message Notification Profile */
+#define BTA_USER_SERVICE_MASK       0x80000000  /* Message Notification Profile */
 // btla-specific --
 #else
 // btla-specific ++
-#define BTA_USER_SERVICE_MASK       0x20000000  /* Message Notification Profile */
+#define BTA_USER_SERVICE_MASK       0x40000000  /* Message Notification Profile */
 // btla-specific --
 #endif
 
 #if BLE_INCLUDED == TRUE && BTA_GATT_INCLUDED == TRUE
-#define BTA_ALL_SERVICE_MASK        0x3FFFFFFF  /* All services supported by BTA. */
+#define BTA_ALL_SERVICE_MASK        0x7FFFFFFF  /* All services supported by BTA. */
 #else
-#define BTA_ALL_SERVICE_MASK        0x1FFFFFFF  /* All services supported by BTA. */
+#define BTA_ALL_SERVICE_MASK        0x3FFFFFFF  /* All services supported by BTA. */
 #endif
 
 typedef UINT32 tBTA_SERVICE_MASK;
@@ -1290,8 +1292,8 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #endif
 
 #ifndef BTA_DM_PM_SNIFF2_MAX
-#define BTA_DM_PM_SNIFF2_MAX     180
-#define BTA_DM_PM_SNIFF2_MIN     150
+#define BTA_DM_PM_SNIFF2_MAX     54
+#define BTA_DM_PM_SNIFF2_MIN     30
 #define BTA_DM_PM_SNIFF2_ATTEMPT 4
 #define BTA_DM_PM_SNIFF2_TIMEOUT 1
 #endif
