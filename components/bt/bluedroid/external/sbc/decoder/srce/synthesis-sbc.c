@@ -280,7 +280,7 @@ PRIVATE void OI_SBC_SynthFrame_80(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT1
 
         for (ch = 0; ch < nrof_channels; ch++) {
             DCT2_8(context->common.filterBuffer[ch] + offset, s);
-            SYNTH80(pcm + ch, context->common.filterBuffer[ch] + offset, pcmStrideShift);
+            SYNTH80(ch ? pcm : pcm + 1, context->common.filterBuffer[ch] + offset, pcmStrideShift);
             s += 8;
         }
         pcm += (8 << pcmStrideShift);
@@ -310,7 +310,7 @@ PRIVATE void OI_SBC_SynthFrame_4SB(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT
         }
         for (ch = 0; ch < nrof_channels; ch++) {
             cosineModulateSynth4(context->common.filterBuffer[ch] + offset, s);
-            SynthWindow40_int32_int32_symmetry_with_sum(pcm + ch,
+            SynthWindow40_int32_int32_symmetry_with_sum(ch ? pcm : pcm + 1,
                     context->common.filterBuffer[ch] + offset,
                     pcmStrideShift);
             s += 4;
@@ -344,7 +344,7 @@ PRIVATE void OI_SBC_SynthFrame_Enhanced(OI_CODEC_SBC_DECODER_CONTEXT *context, O
         }
         for (ch = 0; ch < nrof_channels; ++ch) {
             DCT2_8(context->common.filterBuffer[ch] + offset, s);
-            SYNTH112(pcm + ch, context->common.filterBuffer[ch] + offset, pcmStrideShift);
+            SYNTH112(ch ? pcm : pcm + 1, context->common.filterBuffer[ch] + offset, pcmStrideShift);
             s += 8;
         }
         pcm += (8 << pcmStrideShift);
