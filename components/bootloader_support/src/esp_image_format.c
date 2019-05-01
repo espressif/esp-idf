@@ -186,9 +186,9 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
     data->image_len = end_addr - data->start_addr;
     ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
-    if (NULL != checksum && !esp_cpu_in_ocd_debug_mode()) {
+    if (NULL != checksum) {
         err = verify_checksum(sha_handle, checksum_word, data);
-        if (err != ESP_OK) {
+        if (err != ESP_OK && !esp_cpu_in_ocd_debug_mode()) {
             goto err;
         }
     }
