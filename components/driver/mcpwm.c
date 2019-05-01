@@ -658,7 +658,7 @@ esp_err_t mcpwm_capture_enable(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t ca
     portENTER_CRITICAL(&mcpwm_spinlock);
     MCPWM[mcpwm_num]->cap_timer_cfg.timer_en = 1;
     MCPWM[mcpwm_num]->cap_cfg_ch[cap_sig].en = 1;
-    MCPWM[mcpwm_num]->cap_cfg_ch[cap_sig].mode = (1 << cap_edge);
+    MCPWM[mcpwm_num]->cap_cfg_ch[cap_sig].mode = cap_edge;
     MCPWM[mcpwm_num]->cap_cfg_ch[cap_sig].prescale = num_of_pulse;
     portEXIT_CRITICAL(&mcpwm_spinlock);
     return ESP_OK;
