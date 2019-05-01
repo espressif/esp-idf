@@ -14,7 +14,7 @@ endif
 # the components
 ifeq ($(ON_WINDOWS),y)
 define ldgen_process_template
-$(BUILD_DIR_BASE)/ldgen.section_infos: $(LDGEN_LIBRARIES) $(IDF_PATH)/make/ldgen.mk
+$(BUILD_DIR_BASE)/ldgen_libraries: $(LDGEN_LIBRARIES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach info,$(LDGEN_LIBRARIES),$(subst \,/,$(shell cygpath -w $(info)))\n)" > $(BUILD_DIR_BASE)/ldgen_libraries
 
 $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_libraries
