@@ -92,6 +92,11 @@
 #define BT_SSP_INCLUDED             TRUE
 #endif /* CONFIG_BT_SSP_ENABLED */
 
+#if CONFIG_BT_HID_DEV_ENABLED
+#define HID_DEV_INCLUDED            TRUE
+#define BTA_HD_INCLUDED             TRUE
+#endif /* CONFIG_BT_HID_DEV_ENABLED */
+
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 #ifndef CLASSIC_BT_INCLUDED

@@ -23,9 +23,9 @@
  ******************************************************************************/
 #ifndef BTA_HD_INT_H
 #define BTA_HD_INT_H
-#include "bta_hd_api.h"
-#include "bta_sys.h"
-#include "hiddefs.h"
+#include "bta/bta_hd_api.h"
+#include "bta/bta_sys.h"
+#include "stack/hiddefs.h"
 enum {
   BTA_HD_API_REGISTER_APP_EVT = BTA_SYS_EVT_START(BTA_ID_HD),
   BTA_HD_API_UNREGISTER_APP_EVT,

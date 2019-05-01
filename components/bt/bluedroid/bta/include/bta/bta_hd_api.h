@@ -19,7 +19,7 @@
 #ifndef BTA_HD_API_H
 #define BTA_HD_API_H
 #include "bta_api.h"
-#include "hidd_api.h"
+#include "stack/hidd_api.h"
 /*****************************************************************************
  *  Constants and Type Definitions
  ****************************************************************************/

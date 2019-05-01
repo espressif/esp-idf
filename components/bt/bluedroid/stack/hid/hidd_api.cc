@@ -24,12 +24,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btu.h"
-#include "hidd_api.h"
+//#include "bt_types.h"
+#include "stack/btm_api.h"
+#include "stack/btu.h"
+#include "stack/hidd_api.h"
 #include "hidd_int.h"
-#include "hiddefs.h"
+#include "stack/hiddefs.h"
+#include "osi/allocator.h"
+
+#if (HID_DEV_INCLUDED == TRUE)
 #if HID_DYNAMIC_MEMORY == FALSE
 tHID_DEV_CTB hd_cb;
 #endif
@@ -515,3 +518,4 @@ tHID_STATUS HID_DevSetOutgoingQos(uint8_t service_type, uint32_t token_rate,
   hd_cb.l2cap_intr_cfg.qos.delay_variation = delay_variation;
   return HID_SUCCESS;
 }
+#endif

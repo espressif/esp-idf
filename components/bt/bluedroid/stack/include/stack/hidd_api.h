@@ -20,6 +20,8 @@
 #define HIDD_API_H
 #include "hiddefs.h"
 #include "sdp_api.h"
+
+#if (HID_DEV_INCLUDED == TRUE)
 /*****************************************************************************
  *  Type Definitions
  ****************************************************************************/
@@ -231,5 +233,6 @@ extern tHID_STATUS HID_DevSetOutgoingQos(
 extern uint8_t HID_DevSetTraceLevel(uint8_t new_level);
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif /* HIDD_API_H */

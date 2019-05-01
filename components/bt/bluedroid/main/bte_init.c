@@ -57,7 +57,7 @@
 #endif
 
 #if (defined(HID_DEV_INCLUDED) && HID_DEV_INCLUDED == TRUE)
-#include "hidd_api.h"
+#include "stack/hidd_api.h"
 #endif
 
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)

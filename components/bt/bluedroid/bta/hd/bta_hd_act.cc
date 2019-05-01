@@ -21,14 +21,15 @@
  *  This file contains the HID device action functions.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 #include <string.h>
-#include "bt_utils.h"
+//#include "bt_utils.h"
 #include "bta_hd_int.h"
-#include "bta_sys.h"
-#include "btm_api.h"
-#include "osi/include/osi.h"
+#include "bta/bta_sys.h"
+#include "stack/btm_api.h"
+#include "osi/allocator.h"
+#include "osi/osi.h"
 static void bta_hd_cback(BD_ADDR bd_addr, uint8_t event, uint32_t data,
                          BT_HDR* pdata);
 static bool check_descriptor(uint8_t* data, uint16_t length,
@@ -100,7 +101,7 @@ void bta_hd_api_disable(void) {
   if ((ret = HID_DevDeregister()) == HID_SUCCESS) {
     status = BTA_HD_OK;
   } else {
-    APPL_TRACE_ERROR("%s: Failed to deregister HID device (%s)", __func__, ret);
+    APPL_TRACE_ERROR("Failed to deregister HID device (%i)", ret);
   }
   (*bta_hd_cb.p_cback)(BTA_HD_DISABLE_EVT, (tBTA_HD*)&status);
   memset(&bta_hd_cb, 0, sizeof(tBTA_HD_CB));

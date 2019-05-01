@@ -24,17 +24,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bt_types.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
-#include "btm_api.h"
+//#include "bt_types.h"
+#include "stack/l2c_api.h"
+#include "stack/l2cdefs.h"
+#include "stack/btm_api.h"
 #include "btm_int.h"
-#include "btu.h"
-#include "hiddefs.h"
-#include "bt_utils.h"
-#include "hidd_api.h"
+#include "stack/btu.h"
+#include "stack/hiddefs.h"
+//#include "bt_utils.h"
+#include "stack/hidd_api.h"
 #include "hidd_int.h"
-#include "osi/include/osi.h"
+#include "osi/osi.h"
+#include "osi/allocator.h"
+
+#if (HID_DEV_INCLUDED == TRUE)
 static void hidd_l2cif_connect_ind(BD_ADDR bd_addr, uint16_t cid, uint16_t psm,
                                    uint8_t id);
 static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result);
@@ -806,3 +809,4 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type,
   if (!L2CA_DataWrite(cid, p_buf)) return (HID_ERR_CONGESTED);
   return (HID_SUCCESS);
 }
+#endif

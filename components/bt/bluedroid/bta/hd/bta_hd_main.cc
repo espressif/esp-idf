@@ -21,10 +21,10 @@
  *  This file contains the HID host main functions and state machine.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 #include <string.h>
-#include "bta_hd_api.h"
+#include "bta/bta_hd_api.h"
 #include "bta_hd_int.h"
 /*****************************************************************************
  * Constants and types

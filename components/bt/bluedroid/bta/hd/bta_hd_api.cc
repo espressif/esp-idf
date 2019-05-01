@@ -21,13 +21,14 @@
  *  This file contains the HID DEVICE API in the subsystem of BTA.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "bta_hd_api.h"
+#include "bta/bta_hd_api.h"
 #include "bta_hd_int.h"
+#include "osi/allocator.h"
 /*****************************************************************************
  *  Constants
  ****************************************************************************/

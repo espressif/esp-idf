@@ -24,8 +24,10 @@
 #ifndef HIDD_INT_H
 #define HIDD_INT_H
 #include "hid_conn.h"
-#include "hidd_api.h"
-#include "l2c_api.h"
+#include "stack/hidd_api.h"
+#include "stack/l2c_api.h"
+
+#if (HID_DEV_INCLUDED == TRUE)
 enum { HIDD_DEV_NO_CONN, HIDD_DEV_CONNECTED };
 typedef struct device_ctb {
   bool in_use;
@@ -69,5 +71,6 @@ extern tHID_DEV_CTB* hidd_cb_ptr;
 #endif
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif

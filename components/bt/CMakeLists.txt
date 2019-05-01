@@ -12,6 +12,7 @@ if(CONFIG_BT_ENABLED)
             bluedroid/bta/dm/include
             bluedroid/bta/gatt/include
             bluedroid/bta/hf_client/include
+            bluedroid/bta/hd/include
             bluedroid/bta/hh/include
             bluedroid/bta/jv/include
             bluedroid/bta/sdp/include
@@ -29,6 +30,7 @@ if(CONFIG_BT_ENABLED)
             bluedroid/stack/btm/include
             bluedroid/stack/gap/include
             bluedroid/stack/gatt/include
+            bluedroid/stack/hid/include
             bluedroid/stack/l2cap/include
             bluedroid/stack/sdp/include
             bluedroid/stack/smp/include
@@ -84,6 +86,10 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/bta/gatt/bta_gatts_co.c"
                    "bluedroid/bta/gatt/bta_gatts_main.c"
                    "bluedroid/bta/gatt/bta_gatts_utils.c"
+                   "bluedroid/bta/hd/bta_hd_api.cc"
+                   "bluedroid/bta/hd/bta_hd_act.cc"
+                   "bluedroid/bta/hd/bta_hd_main.cc"
+                   "bluedroid/bta/hh/bta_hh_act.c"
                    "bluedroid/bta/hh/bta_hh_act.c"
                    "bluedroid/bta/hh/bta_hh_api.c"
                    "bluedroid/bta/hh/bta_hh_cfg.c"
@@ -234,6 +240,8 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/stack/gatt/gatt_utils.c"
                    "bluedroid/stack/hcic/hciblecmds.c"
                    "bluedroid/stack/hcic/hcicmds.c"
+                   "bluedroid/stack/hid/hidd_api.cc"
+                   "bluedroid/stack/hid/hidd_conn.cc"
                    "bluedroid/stack/l2cap/l2c_api.c"
                    "bluedroid/stack/l2cap/l2c_ble.c"
                    "bluedroid/stack/l2cap/l2c_csm.c"
