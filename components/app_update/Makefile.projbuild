@@ -2,6 +2,8 @@
 #
 .PHONY: blank_ota_data erase_otadata read_otadata
 
+ESPPORT ?= $(CONFIG_ESPTOOLPY_PORT)
+
 OTATOOL_PY := $(PYTHON) $(COMPONENT_PATH)/otatool.py
 PARTTOOL_PY := $(PYTHON) $(IDF_PATH)/components/partition_table/parttool.py
 
@@ -30,10 +32,10 @@ blank_ota_data: $(BLANK_OTA_DATA_FILE)
 ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
 
 erase_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) erase_otadata
+	ESPTOOL_PORT=${ESPPORT} $(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) erase_otadata
 
 read_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) read_otadata
+	ESPTOOL_PORT=${ESPPORT} $(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) read_otadata
 
 erase_ota: erase_otadata
 	@echo "WARNING: erase_ota is deprecated. Use erase_otadata instead."
