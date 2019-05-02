@@ -22,6 +22,7 @@ extern "C" {
 #include <stdint.h>
 #include "esp_err.h"
 #include "soc/dac_channel.h"
+#include "driver/gpio.h"
 
 typedef enum {
     DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 */
