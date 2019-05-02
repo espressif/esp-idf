@@ -3,7 +3,7 @@ if(CONFIG_BT_ENABLED)
     set(COMPONENT_SRCS "bt.c")
     set(COMPONENT_ADD_INCLUDEDIRS include)
 
-    if(CONFIG_BLUEDROID_ENABLED)
+    if(CONFIG_BT_BLUEDROID_ENABLED)
 
         list(APPEND COMPONENT_PRIV_INCLUDEDIRS
             bluedroid/bta/include

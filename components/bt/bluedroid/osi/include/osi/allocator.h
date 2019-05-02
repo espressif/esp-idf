@@ -30,7 +30,7 @@ void *osi_malloc_func(size_t size);
 void *osi_calloc_func(size_t size);
 void osi_free_func(void *ptr);
 
-#ifdef CONFIG_BLUEDROID_MEM_DEBUG
+#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
 
 void osi_mem_dbg_init(void);
 void osi_mem_dbg_record(void *p, int size, const char *func, int line);
@@ -127,7 +127,7 @@ do {                                                    \
 #endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
 #define osi_free(p)                       free((p))
 
-#endif /* CONFIG_BLUEDROID_MEM_DEBUG */
+#endif /* CONFIG_BT_BLUEDROID_MEM_DEBUG */
 
 #define FREE_AND_RESET(a)   \
 do {                        \
