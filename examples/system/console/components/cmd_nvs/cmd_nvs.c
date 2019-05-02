@@ -78,7 +78,7 @@ static nvs_type_t str_to_type(const char *type)
 {
     for (int i = 0; i < TYPE_STR_PAIR_SIZE; i++) {
         const type_str_pair_t *p = &type_str_pair[i];
-        if (strncmp(type, p->str, strlen(p->str)) == 0) {
+        if (strcmp(type, p->str) == 0) {
             return  p->type;
         }
     }
