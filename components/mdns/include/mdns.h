@@ -44,8 +44,8 @@ typedef enum {
  *          Used in mdns_service_add()
  */
 typedef struct {
-    char * key;                             /*!< item key name */
-    char * value;                           /*!< item value string */
+    const char * key;                       /*!< item key name */
+    const char * value;                     /*!< item value string */
 } mdns_txt_item_t;
 
 /**
