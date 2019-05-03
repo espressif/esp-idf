@@ -35,7 +35,9 @@ typedef struct esp_http_client_event *esp_http_client_event_handle_t;
 typedef enum {
     HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
     HTTP_EVENT_ON_CONNECTED,    /*!< Once the HTTP has been connected to the server, no data exchange has been performed */
-    HTTP_EVENT_HEADER_SENT,     /*!< After sending all the headers to the server */
+    HTTP_EVENT_HEADERS_SENT,     /*!< After sending all the headers to the server */
+    HTTP_EVENT_HEADER_SENT = HTTP_EVENT_HEADERS_SENT, /*!< This header has been kept for backward compatability
+                                                           and will be deprecated in future versions esp-idf */
     HTTP_EVENT_ON_HEADER,       /*!< Occurs when receiving each header sent from the server */
     HTTP_EVENT_ON_DATA,         /*!< Occurs when receiving data from the server, possibly multiple portions of the packet */
     HTTP_EVENT_ON_FINISH,       /*!< Occurs when finish a HTTP session */
