@@ -1895,11 +1895,11 @@ typedef UINT8 tBTM_CONTRL_STATE;
 /*****************************************************************************
 **  EXTERNAL FUNCTION DECLARATIONS
 *****************************************************************************/
-/*
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-*/
+
 /*****************************************************************************
 **  DEVICE CONTROL and COMMON FUNCTIONS
 *****************************************************************************/
@@ -4096,10 +4096,10 @@ void BTM_PCM2Setup_Write (BOOLEAN clk_master, tBTM_VSC_CMPL_CB *p_arc_cb);
 *******************************************************************************/
 //extern
 tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
-/*
+
 #ifdef __cplusplus
 }
 #endif
-*/
+
 
 #endif /* BTM_API_H */

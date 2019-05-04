@@ -908,12 +908,12 @@ extern tBTM_CallbackFunc conn_param_update_cb;
 
 typedef UINT8 tBTM_SEC_ACTION;
 
-/*
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-*/
+
 
 #if BTM_DYNAMIC_MEMORY == FALSE
 extern tBTM_CB  btm_cb;
@@ -1146,10 +1146,10 @@ void btm_sem_free(void);
 
 void btm_lock_free(void);
 
-/*
+
 #ifdef __cplusplus
 }
 #endif
-*/
+
 
 #endif

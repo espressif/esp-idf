@@ -409,7 +409,7 @@ menu Bluetooth
             This enables the Secure Simple Pairing. If disable this option, Bluedroid will only support Legacy Pairing
 
     config BT_HID_DEV_ENABLED
-        bool "HID Device"
+        bool "HIDD"
         depends on CLASSIC_BT_ENABLED
         default n
         help

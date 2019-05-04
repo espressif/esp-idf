@@ -1275,7 +1275,11 @@
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
+#if defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)
+#define SDP_MAX_REC_ATTR            25
+#else
 #define SDP_MAX_REC_ATTR            8
+#endif
 #endif
 
 #ifndef SDP_MAX_PAD_LEN

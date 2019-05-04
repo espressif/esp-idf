@@ -20,6 +20,8 @@
 #define BTA_HD_API_H
 #include "bta_api.h"
 #include "stack/hidd_api.h"
+
+#if BTA_HD_INCLUDED == TRUE
 /*****************************************************************************
  *  Constants and Type Definitions
  ****************************************************************************/
@@ -233,4 +235,5 @@ extern void BTA_HdReportError(uint8_t error);
 #ifdef __cplusplus
 }
 #endif
+#endif /* BTA_HD_INCLUDED */
 #endif /* BTA_HD_API_H */
