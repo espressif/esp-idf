@@ -101,6 +101,7 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/btc/profile/std/gatt        \
                         bluedroid/btc/profile/std/a2dp        \
                         bluedroid/btc/profile/std/avrc        \
+                        bluedroid/btc/profile/std/hid         \
                         bluedroid/btc/profile/std/spp         \
                         bluedroid/btc/profile/std/hf_client   \
                         bluedroid/btc/profile                 \

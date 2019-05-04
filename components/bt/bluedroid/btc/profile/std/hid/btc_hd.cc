@@ -182,7 +182,7 @@ static void btc_hd_upstreams_evt(uint16_t event, char* p_param) {
       break;
     case BTA_HD_OPEN_EVT: {
       bt_bdaddr_t* addr = (bt_bdaddr_t*)&p_data->conn.bda;
-      BTC_TRACE_WARNING(
+      BTC_TRACE_EVENT(
           "BTA_HD_OPEN_EVT, address (%02x:%02x:%02x:%02x:%02x:%02x)",
           addr->address[0], addr->address[1], addr->address[2],
           addr->address[3], addr->address[4], addr->address[5]);

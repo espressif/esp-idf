@@ -53,8 +53,8 @@ typedef struct {
 extern "C" {
 #endif
 
-extern void btc_hd_call_handler(btc_msg_t *msg);
-extern void btc_hd_cb_handler(btc_msg_t *msg);
+void btc_hd_call_handler(btc_msg_t *msg);
+void btc_hd_cb_handler(btc_msg_t *msg);
 
 //extern btc_hd_cb_t btc_hd_cb;
 //extern void btc_hd_remove_device(bt_bdaddr_t bd_addr);
