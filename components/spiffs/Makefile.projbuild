@@ -20,7 +20,7 @@ endif
 define spiffs_create_partition_image
 
 
-$(1)_bin: $(PARTITION_TABLE_BIN) | check_python_dependencies
+$(1)_bin: $(PARTITION_TABLE_BIN) $(DEPENDS) | check_python_dependencies
 	partition_size=`$(GET_PART_INFO) \
 	--partition-table-file $(PARTITION_TABLE_BIN) \
 	get_partition_info --partition-name $(1) --info size`; \
