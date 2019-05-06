@@ -104,6 +104,7 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     } else { // 3/4 Coding Scheme
         bootloader_fill_random(raw, sizeof(raw));
         esp_err_t r = esp_efuse_apply_34_encoding(raw, buf, sizeof(raw));
+        (void) r;
         assert(r == ESP_OK);
     }
 
