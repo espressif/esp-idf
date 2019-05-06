@@ -372,6 +372,13 @@ EOF
     grep "$PWD/components/bootloader/subproject/main/bootloader_start.c" build/bootloader/compile_commands.json \
         || failure "Custom bootloader source files should be built instead of the original's"
     rm -rf components
+    
+    print_status "Check ccache is used to build when present"
+    touch ccache && chmod +x ccache  # make sure that ccache is present for this test
+    (export PATH=$PWD:$PATH && idf.py reconfigure | grep "ccache will be used for faster builds") || failure "ccache should be used when present"
+    (export PATH=$PWD:$PATH && idf.py reconfigure --no-ccache | grep -c "ccache will be used for faster builds" | grep -wq 0) \
+        || failure "ccache should not be used even when present if --no-ccache is specified"
+    rm -f ccache
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
