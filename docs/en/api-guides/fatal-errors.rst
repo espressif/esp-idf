@@ -64,27 +64,30 @@ Behavior of panic handler is affected by two other configuration options.
 The following diagram illustrates panic handler behavior:
 
 .. blockdiag::
-    :caption: Panic Handler Flowchart
+    :scale: 100%
+    :caption: Panic Handler Flowchart (click to enlarge)
     :align: center
     
     blockdiag panic-handler {
         orientation = portrait;
         edge_layout = flowchart;
         default_group_color = white;
+        node_width = 160;
+        node_height = 60;
 
         cpu_exception [label = "CPU Exception", shape=roundedbox];
         sys_check [label = "Cache error,\nInterrupt WDT,\nabort()", shape=roundedbox];
-        check_ocd [label = "JTAG debugger\nconnected?", shape=diamond, width=160, height=80];
+        check_ocd [label = "JTAG debugger\nconnected?", shape=diamond, height=80];
         print_error_cause [label = "Print error/\nexception cause"];
         use_jtag [label = "Send signal to\nJTAG debugger", shape=roundedbox];
         dump_registers [label = "Print registers\nand backtrace"];
-        check_coredump [label = "Core dump\nenabled?", shape=flowchart.condition];
+        check_coredump [label = "Core dump\nenabled?", shape=diamond, height=80];
         do_coredump [label = "Core dump\nto UART or Flash"];
-        check_gdbstub [label = "GDB Stub\nenabled?", shape=flowchart.condition];
+        check_gdbstub [label = "GDB Stub\nenabled?", shape=diamond, height=80];
         do_gdbstub [label = "Start GDB Stub", shape=roundedbox];
         halt [label = "Halt", shape=roundedbox];
         reboot [label = "Reboot", shape=roundedbox];
-        check_halt [label = "Halt?", shape=flowchart.condition];
+        check_halt [label = "Halt?", shape=diamond, height=80];
 
         group {cpu_exception, sys_check};
 
