@@ -48,6 +48,10 @@ ignore_dirs = ('examples')
 # macros from here have higher priorities in case of collisions
 priority_headers = ['components/esp_common/include/esp_err.h']
 
+# The following headers won't be included. This is useful if they are permanently included from esp_err_to_name.c.in.
+dont_include = ['soc/soc.h',
+                'esp_err.h']
+
 err_dict = collections.defaultdict(list)  # identified errors are stored here; mapped by the error code
 rev_err_dict = dict()  # map of error string to error code
 unproc_list = list()  # errors with unknown codes which depend on other errors
@@ -265,7 +269,8 @@ def generate_c_output(fin, fout):
 
         elif re.match(r'@HEADERS@', line):
             for i in include_list:
-                fout.write("#if __has_include(\"" + i + "\")\n#include \"" + i + "\"\n#endif\n")
+                if i not in dont_include:
+                    fout.write("#if __has_include(\"" + i + "\")\n#include \"" + i + "\"\n#endif\n")
         elif re.match(r'@ERROR_ITEMS@', line):
             last_file = ""
             for k in sorted(err_dict.keys()):

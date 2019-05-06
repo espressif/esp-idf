@@ -11,9 +11,6 @@
 #if __has_include("esp_efuse.h")
 #include "esp_efuse.h"
 #endif
-#if __has_include("esp_err.h")
-#include "esp_err.h"
-#endif
 #if __has_include("esp_http_client.h")
 #include "esp_http_client.h"
 #endif
