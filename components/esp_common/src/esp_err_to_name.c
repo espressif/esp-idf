@@ -60,7 +60,7 @@ typedef struct {
 } esp_err_msg_t;
 
 static const esp_err_msg_t esp_err_msg_table[] = {
-    // components/esp32/include/esp_err.h
+    // components/esp_common/include/esp_err.h
 #   ifdef      ESP_FAIL
     ERR_TBL_IT(ESP_FAIL),                                   /*    -1 Generic esp_err_t code indicating failure */
 #   endif
@@ -272,11 +272,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_IMAGE_INVALID
     ERR_TBL_IT(ESP_ERR_IMAGE_INVALID),                      /*  8194 0x2002 */
 #   endif
-    // components/esp32/include/esp_err.h
+    // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_WIFI_BASE
     ERR_TBL_IT(ESP_ERR_WIFI_BASE),                          /* 12288 0x3000 Starting number of WiFi error codes */
 #   endif
-    // components/esp32/include/esp_wifi.h
+    // components/esp_wifi/include/esp_wifi.h
 #   ifdef      ESP_ERR_WIFI_NOT_INIT
     ERR_TBL_IT(ESP_ERR_WIFI_NOT_INIT),                      /* 12289 0x3001 WiFi driver was not installed by esp_wifi_init */
 #   endif
@@ -323,7 +323,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_NOT_CONNECT
     ERR_TBL_IT(ESP_ERR_WIFI_NOT_CONNECT),                   /* 12303 0x300f Station still in disconnect status */
 #   endif
-    // components/esp32/include/esp_wps.h
+    // components/esp_wifi/include/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                     /* 12339 0x3033 WPS registrar is not supported */
 #   endif
@@ -333,7 +333,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_WPS_SM
     ERR_TBL_IT(ESP_ERR_WIFI_WPS_SM),                        /* 12341 0x3035 WPS state machine is not initialized */
 #   endif
-    // components/esp32/include/esp_now.h
+    // components/esp_wifi/include/esp_now.h
 #   ifdef      ESP_ERR_ESPNOW_BASE
     ERR_TBL_IT(ESP_ERR_ESPNOW_BASE),                        /* 12388 0x3064 ESPNOW error number base. */
 #   endif
@@ -361,11 +361,11 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESPNOW_IF
     ERR_TBL_IT(ESP_ERR_ESPNOW_IF),                          /* 12396 0x306c Interface error */
 #   endif
-    // components/esp32/include/esp_err.h
+    // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_MESH_BASE
     ERR_TBL_IT(ESP_ERR_MESH_BASE),                          /* 16384 0x4000 Starting number of MESH error codes */
 #   endif
-    // components/esp32/include/esp_mesh.h
+    // components/esp_wifi/include/esp_mesh.h
 #   ifdef      ESP_ERR_MESH_WIFI_NOT_START
     ERR_TBL_IT(ESP_ERR_MESH_WIFI_NOT_START),                /* 16385 0x4001 */
 #   endif
