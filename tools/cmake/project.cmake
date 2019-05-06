@@ -83,6 +83,15 @@ macro(project name)
     # Now the configuration is loaded, set the toolchain appropriately
     idf_set_toolchain()
 
+    # Enable ccache if it's on the path
+    if(NOT CCACHE_DISABLE)
+        find_program(CCACHE_FOUND ccache)
+        if(CCACHE_FOUND)
+            message(STATUS "ccache will be used for faster builds")
+            set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+        endif()
+    endif()
+
     __project(${name} C CXX ASM)
 
     set(IDF_BUILD_ARTIFACTS ON)
