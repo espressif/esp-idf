@@ -3,17 +3,9 @@
 LDGEN_SECTIONS_INFO_FILES = $(foreach lib, $(COMPONENT_LIBRARIES), $(BUILD_DIR_BASE)/$(lib)/lib$(lib).a.sections_info)
 LDGEN_FRAGMENT_FILES = $(COMPONENT_LDFRAGMENTS)
 
-ON_WINDOWS:=n
-
-ifdef OS
-	ifeq ($(OS),Windows_NT)
-		ON_WINDOWS:=y
-	endif
-endif
-
 # Target to generate linker script generator from fragments presented by each of
 # the components
-ifeq ($(ON_WINDOWS),y)
+ifeq ($(OS),Windows_NT)
 define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen.section_infos: $(LDGEN_SECTIONS_INFO_FILES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach info,$(LDGEN_SECTIONS_INFO_FILES),$(subst \,/,$(shell cygpath -w $(info)))\n)" > $(BUILD_DIR_BASE)/ldgen.section_infos
@@ -31,7 +23,7 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen.section_
 		--env           "COMPONENT_KCONFIGS_PROJBUILD=$(foreach k, $(COMPONENT_KCONFIGS_PROJBUILD), $(shell cygpath -w $(k)))" \
 		--env           "IDF_CMAKE=n"
 endef
-else # ON_WINDOWS
+else # Windows_NT
 define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen.section_infos: $(LDGEN_SECTIONS_INFO_FILES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach info,$(LDGEN_SECTIONS_INFO_FILES),$(info)\n)" > $(BUILD_DIR_BASE)/ldgen.section_infos
@@ -49,7 +41,7 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen.section_
 		--env           "COMPONENT_KCONFIGS_PROJBUILD=$(COMPONENT_KCONFIGS_PROJBUILD)" \
 		--env           "IDF_CMAKE=n"
 endef
-endif # ON_WINDOWS
+endif # Windows_NT
 
 define ldgen_create_commands
 $(foreach lib, $(COMPONENT_LIBRARIES), \
