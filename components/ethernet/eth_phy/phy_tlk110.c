@@ -125,7 +125,8 @@ const eth_config_t phy_tlk110_default_ethernet_config = {
     .phy_get_duplex_mode = phy_tlk110_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_mii_get_partner_pause_enable,
     .phy_power_enable = phy_tlk110_power_enable,
-    .reset_timeout_ms = 1000
+    .reset_timeout_ms = 1000,
+    .promiscuous_enable = false,
 };
 
 void phy_tlk110_dump_registers()
