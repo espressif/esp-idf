@@ -70,11 +70,19 @@ esp_err_t phy_ip101_init(void)
     esp_err_t res1, res2;
     ESP_LOGD(TAG, "phy_ip101_init()");
     phy_ip101_dump_registers();
+
+    esp_eth_smi_write(MII_BASIC_MODE_CONTROL_REG, MII_SOFTWARE_RESET);
+
     do {
         // Call esp_eth_smi_wait_value() with a timeout so it prints an error periodically
         res1 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_1_REG, IP101_PHY_ID1, UINT16_MAX, 1000);
         res2 = esp_eth_smi_wait_value(MII_PHY_IDENTIFIER_2_REG, IP101_PHY_ID2, IP101_PHY_ID2_MASK, 1000);
     } while (res1 != ESP_OK || res2 != ESP_OK);
+
+    uint32_t data = esp_eth_smi_read(MII_BASIC_MODE_CONTROL_REG);
+    data |= MII_AUTO_NEGOTIATION_ENABLE | MII_RESTART_AUTO_NEGOTIATION;
+    esp_eth_smi_write(MII_BASIC_MODE_CONTROL_REG, data);
+
     ets_delay_us(300);
     // TODO: only do this if config.flow_ctrl_enable == true
     phy_mii_enable_flow_ctrl();
@@ -97,6 +105,8 @@ const eth_config_t phy_ip101_default_ethernet_config = {
     .phy_get_duplex_mode = phy_ip101_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_mii_get_partner_pause_enable,
     .phy_power_enable = phy_ip101_power_enable,
+    .reset_timeout_ms = 1000,
+    .promiscuous_enable = false,
 };
 
 void phy_ip101_dump_registers()
