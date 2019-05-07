@@ -88,6 +88,16 @@ def _run_tool(tool_name, args, cwd):
         raise FatalError("%s failed with exit code %d" % (tool_name, e.returncode))
 
 
+def _realpath(path):
+    """
+    Return the cannonical path with normalized case.
+
+    It is useful on Windows to comparision paths in case-insensitive manner.
+    On Unix and Mac OS X it works as `os.path.realpath()` only.
+    """
+    return os.path.normcase(os.path.realpath(path))
+
+
 def check_environment():
     """
     Verify the environment contains the top-level tools we need to operate
@@ -97,9 +107,9 @@ def check_environment():
     if not executable_exists(["cmake", "--version"]):
         raise FatalError("'cmake' must be available on the PATH to use idf.py")
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
-    detected_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    detected_idf_path = _realpath(os.path.join(os.path.dirname(__file__), ".."))
     if "IDF_PATH" in os.environ:
-        set_idf_path = os.path.realpath(os.environ["IDF_PATH"])
+        set_idf_path = _realpath(os.environ["IDF_PATH"])
         if set_idf_path != detected_idf_path:
             print("WARNING: IDF_PATH environment variable is set to %s but idf.py path indicates IDF directory %s. "
                   "Using the environment variable directory, but results may be unexpected..."
@@ -196,9 +206,9 @@ def _ensure_build_directory(args, always_run_cmake=False):
 
     try:
         home_dir = cache["CMAKE_HOME_DIRECTORY"]
-        if os.path.normcase(os.path.realpath(home_dir)) != os.path.normcase(os.path.realpath(project_dir)):
+        if _realpath(home_dir) != _realpath(project_dir):
             raise FatalError("Build directory '%s' configured for project '%s' not '%s'. Run 'idf.py fullclean' to start again."
-                             % (build_dir, os.path.realpath(home_dir), os.path.realpath(project_dir)))
+                             % (build_dir, _realpath(home_dir), _realpath(project_dir)))
     except KeyError:
         pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
 
@@ -560,12 +570,12 @@ def main():
     check_environment()
 
     # Advanced parameter checks
-    if args.build_dir is not None and os.path.realpath(args.project_dir) == os.path.realpath(args.build_dir):
+    if args.build_dir is not None and _realpath(args.project_dir) == _realpath(args.build_dir):
         raise FatalError("Setting the build directory to the project directory is not supported. Suggest dropping "
                          "--build-dir option, the default is a 'build' subdirectory inside the project directory.")
     if args.build_dir is None:
         args.build_dir = os.path.join(args.project_dir, "build")
-    args.build_dir = os.path.realpath(args.build_dir)
+    args.build_dir = _realpath(args.build_dir)
 
     completed_actions = set()
 
