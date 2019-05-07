@@ -53,6 +53,8 @@ void emac_disable_dma_rx(void);
 void emac_enable_flowctrl(void);
 void emac_disable_flowctrl(void);
 void emac_mac_enable_txrx(void);
+void emac_enable_promiscuous(void);
+void emac_disable_promiscuous(void);
 
 static inline uint32_t emac_read_tx_cur_reg(void)
 {
