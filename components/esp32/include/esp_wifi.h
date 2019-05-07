@@ -1102,6 +1102,19 @@ esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config);
   */
 esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config);
 
+/**
+  * @brief     A general API to set/get WiFi internal configuration, it's for debug only
+  *
+  * @param     cmd : ioctl command type
+  * @param     cfg : configuration for the command
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_internal_ioctl(int cmd, wifi_ioctl_config_t *cfg);
+
+
 #ifdef __cplusplus
 }
 #endif
