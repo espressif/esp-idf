@@ -91,3 +91,8 @@ bool bootloader_common_label_search(const char *list, char *label);
  *          - ESP_FAIL: An allocation error occurred.
  */
 esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
+
+/**
+ * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
+ */
+void bootloader_common_vddsdio_configure();
