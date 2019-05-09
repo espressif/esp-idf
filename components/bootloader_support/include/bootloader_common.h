@@ -96,3 +96,11 @@ esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t s
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
  */
 void bootloader_common_vddsdio_configure();
+
+/**
+ * @brief Set the flash CS setup and hold time.
+ *
+ * CS setup time is recomemded to be 1.5T, and CS hold time is recommended to be 2.5T.
+ * cs_setup = 1, cs_setup_time = 0; cs_hold = 1, cs_hold_time = 1
+ */
+void bootloader_common_set_flash_cs_timing();
