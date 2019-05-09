@@ -46,15 +46,15 @@ class DeprecatedOptions(object):
     _RE_DEP_OP_BEGIN = re.compile(_DEP_OP_BEGIN)
     _RE_DEP_OP_END = re.compile(_DEP_OP_END)
 
-    def __init__(self, config_prefix, path_rename_files):
+    def __init__(self, config_prefix, path_rename_files, ignore_dirs=()):
         self.config_prefix = config_prefix
         # r_dic maps deprecated options to new options; rev_r_dic maps in the opposite direction
-        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files)
+        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files, ignore_dirs)
 
         # note the '=' at the end of regex for not getting partial match of configs
         self._RE_CONFIG = re.compile(r'{}(\w+)='.format(self.config_prefix))
 
-    def _parse_replacements(self, repl_dir):
+    def _parse_replacements(self, repl_dir, ignore_dirs):
         rep_dic = {}
         rev_rep_dic = {}
 
@@ -67,6 +67,10 @@ class DeprecatedOptions(object):
         for root, dirnames, filenames in os.walk(repl_dir):
             for filename in fnmatch.filter(filenames, self._REN_FILE):
                 rep_path = os.path.join(root, filename)
+
+                if rep_path.startswith(ignore_dirs):
+                    print('Ignoring: {}'.format(rep_path))
+                    continue
 
                 with open(rep_path) as f_rep:
                     for line_number, line in enumerate(f_rep, start=1):
@@ -222,7 +226,10 @@ def main():
                 raise RuntimeError("Defaults file not found: %s" % name)
             config.load_config(name, replace=False)
 
-    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
+    # don't collect rename options from examples because those are separate projects and no need to "stay compatible"
+    # with example projects
+    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"],
+                                           ignore_dirs=(os.path.join(os.environ["IDF_PATH"], 'examples')))
 
     # If config file previously exists, load it
     if args.config and os.path.exists(args.config):
