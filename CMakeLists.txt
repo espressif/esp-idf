@@ -1,21 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(esp-idf C CXX ASM)
 
-# Include the sdkconfig cmake file, since the following operations require
-# knowledge of config values.
-idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
-include(${sdkconfig_cmake})
-
-# Make each build property available as a read-only variable
-idf_build_get_property(build_properties __BUILD_PROPERTIES)
-foreach(build_property ${build_properties})
-    idf_build_get_property(val ${build_property})
-    set(${build_property} "${val}")
-endforeach()
-
-# Check that the CMake target value matches the Kconfig target value.
-__target_check()
-
 unset(compile_options)
 unset(c_compile_options)
 unset(cxx_compile_options)
@@ -88,19 +73,6 @@ idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
 
 idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
 
-# Include each component's project_include.cmake
-foreach(component_target ${build_component_targets})
-    __component_get_property(dir ${component_target} COMPONENT_DIR)
-    __component_get_property(_name ${component_target} COMPONENT_NAME)
-    set(COMPONENT_NAME ${_name})
-    set(COMPONENT_DIR ${dir})
-    set(COMPONENT_PATH ${dir})  # this is deprecated, users are encouraged to use COMPONENT_DIR;
-                                # retained for compatibility
-    if(EXISTS ${COMPONENT_DIR}/project_include.cmake)
-        include(${COMPONENT_DIR}/project_include.cmake)
-    endif()
-endforeach()
-
 # Add each component as a subdirectory, processing each component's CMakeLists.txt
 foreach(component_target ${build_component_targets})
     __component_get_property(dir ${component_target} COMPONENT_DIR)
@@ -146,5 +118,3 @@ foreach(build_component ${build_components})
         endforeach()
     endif()
 endforeach()
-
-
