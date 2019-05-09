@@ -44,6 +44,7 @@ typedef struct {
     void (*_semphr_delete)(void *semphr);
     int32_t (*_semphr_take)(void *semphr, uint32_t block_time_tick);
     int32_t (*_semphr_give)(void *semphr);
+    void *(*_wifi_thread_semphr_get)(void);
     void *(*_mutex_create)(void);
     void *(*_recursive_mutex_create)(void);
     void (*_mutex_delete)(void *mutex);
