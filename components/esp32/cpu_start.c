@@ -71,6 +71,7 @@
 #include "trax.h"
 #include "esp_ota_ops.h"
 #include "esp_efuse.h"
+#include "bootloader_common.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -172,6 +173,8 @@ void IRAM_ATTR call_start_cpu0()
         abort();
 #endif
     }
+# else  // If psram is uninitialized, we need to improve the flash cs timing.
+    bootloader_common_set_flash_cs_timing();
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
