@@ -185,7 +185,7 @@ void IRAM_ATTR call_start_cpu0()
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
         ESP_EARLY_LOGI(TAG, "App version:      %s", app_desc->version);
 #endif
-#ifdef CONFIG_APP_SECURE_VERSION
+#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
         ESP_EARLY_LOGI(TAG, "Secure version:   %d", app_desc->secure_version);
 #endif
 #ifdef CONFIG_APP_COMPILE_TIME_DATE
@@ -520,7 +520,7 @@ static void main_task(void* args)
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
     rtc_wdt_disable();
 #endif
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
     if (efuse_partition) {
         esp_efuse_init(efuse_partition->address, efuse_partition->size);

@@ -1,32 +1,32 @@
 menu "Bootloader config"
-    choice LOG_BOOTLOADER_LEVEL
+    choice BOOTLOADER_LOG_LEVEL
         bool "Bootloader log verbosity"
-        default LOG_BOOTLOADER_LEVEL_INFO
+        default BOOTLOADER_LOG_LEVEL_INFO
         help
             Specify how much output to see in bootloader logs.
 
-        config LOG_BOOTLOADER_LEVEL_NONE
+        config BOOTLOADER_LOG_LEVEL_NONE
             bool "No output"
-        config LOG_BOOTLOADER_LEVEL_ERROR
+        config BOOTLOADER_LOG_LEVEL_ERROR
             bool "Error"
-        config LOG_BOOTLOADER_LEVEL_WARN
+        config BOOTLOADER_LOG_LEVEL_WARN
             bool "Warning"
-        config LOG_BOOTLOADER_LEVEL_INFO
+        config BOOTLOADER_LOG_LEVEL_INFO
             bool "Info"
-        config LOG_BOOTLOADER_LEVEL_DEBUG
+        config BOOTLOADER_LOG_LEVEL_DEBUG
             bool "Debug"
-        config LOG_BOOTLOADER_LEVEL_VERBOSE
+        config BOOTLOADER_LOG_LEVEL_VERBOSE
             bool "Verbose"
     endchoice
 
-    config LOG_BOOTLOADER_LEVEL
+    config BOOTLOADER_LOG_LEVEL
         int
-        default 0 if LOG_BOOTLOADER_LEVEL_NONE
-        default 1 if LOG_BOOTLOADER_LEVEL_ERROR
-        default 2 if LOG_BOOTLOADER_LEVEL_WARN
-        default 3 if LOG_BOOTLOADER_LEVEL_INFO
-        default 4 if LOG_BOOTLOADER_LEVEL_DEBUG
-        default 5 if LOG_BOOTLOADER_LEVEL_VERBOSE
+        default 0 if BOOTLOADER_LOG_LEVEL_NONE
+        default 1 if BOOTLOADER_LOG_LEVEL_ERROR
+        default 2 if BOOTLOADER_LOG_LEVEL_WARN
+        default 3 if BOOTLOADER_LOG_LEVEL_INFO
+        default 4 if BOOTLOADER_LOG_LEVEL_DEBUG
+        default 5 if BOOTLOADER_LOG_LEVEL_VERBOSE
 
     config BOOTLOADER_SPI_WP_PIN
         int "SPI Flash WP Pin when customising pins via eFuse (read help)"
@@ -140,7 +140,7 @@ menu "Bootloader config"
             source for slow_clk - and ends calling app_main.
             Re-set timeout is needed due to WDT uses a SLOW_CLK clock source. After changing a frequency slow_clk a
             time of WDT needs to re-set for new frequency.
-            slow_clk depends on ESP32_RTC_CLC_SRC (INTERNAL_RC or EXTERNAL_CRYSTAL).
+            slow_clk depends on ESP32_RTC_CLK_SRC (INTERNAL_RC or EXTERNAL_CRYSTAL).
 
     config BOOTLOADER_WDT_DISABLE_IN_USER_CODE
         bool "Allows RTC watchdog disable in user code"
@@ -163,7 +163,7 @@ menu "Bootloader config"
             - these options can increase the execution time.
             Note: RTC_WDT will reset while encryption operations will be performed.
 
-    config APP_ROLLBACK_ENABLE
+    config BOOTLOADER_APP_ROLLBACK_ENABLE
         bool "Enable app rollback support"
         default n
         help
@@ -175,22 +175,22 @@ menu "Bootloader config"
             Note: If during the first boot a new app the power goes out or the WDT works, then roll back will happen.
             Rollback is possible only between the apps with the same security versions.
 
-    config APP_ANTI_ROLLBACK
+    config BOOTLOADER_APP_ANTI_ROLLBACK
         bool "Enable app anti-rollback support"
-        depends on APP_ROLLBACK_ENABLE
+        depends on BOOTLOADER_APP_ROLLBACK_ENABLE
         default n
         help
             This option prevents rollback to previous firmware/application image with lower security version.
 
-    config APP_SECURE_VERSION
+    config BOOTLOADER_APP_SECURE_VERSION
         int "eFuse secure version of app"
-        depends on APP_ANTI_ROLLBACK
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK
         default 0
         help
             The secure version is the sequence number stored in the header of each firmware.
             The security version is set in the bootloader, version is recorded in the eFuse field
             as the number of set ones. The allocated number of bits in the efuse field
-            for storing the security version is limited (see APP_SECURE_VERSION_SIZE_EFUSE_FIELD option).
+            for storing the security version is limited (see BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD option).
 
             Bootloader: When bootloader selects an app to boot, an app is selected that has
             a security version greater or equal that recorded in eFuse field.
@@ -201,19 +201,19 @@ menu "Bootloader config"
 
             Your partition table should has a scheme with ota_0 + ota_1 (without factory).
 
-    config APP_SECURE_VERSION_SIZE_EFUSE_FIELD
+    config BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
         int "Size of the efuse secure version field"
-        depends on APP_ANTI_ROLLBACK
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK
         range 1 32
         default 32
         help
             The size of the efuse secure version field. Its length is limited to 32 bits.
             This determines how many times the security version can be increased.
 
-    config EFUSE_SECURE_VERSION_EMULATE
+    config BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
         bool "Emulate operations with efuse secure version(only test)"
         default n
-        depends on APP_ANTI_ROLLBACK
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK
         help
             This option allow emulate read/write operations with efuse secure version.
             It allow to test anti-rollback implemention without permanent write eFuse bits.
@@ -400,7 +400,7 @@ menu "Security features"
 
             Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
 
-    config FLASH_ENCRYPTION_ENABLED
+    config SECURE_FLASH_ENC_ENABLED
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
         default N
         help
@@ -411,9 +411,9 @@ menu "Security features"
 
             Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html before enabling.
 
-    config FLASH_ENCRYPTION_INSECURE
+    config SECURE_FLASH_ENC_INSECURE
         bool "Allow potentially insecure options"
-        depends on FLASH_ENCRYPTION_ENABLED
+        depends on SECURE_FLASH_ENC_ENABLED
         default N
         help
             You can disable some of the default protections offered by flash encryption, in order to enable testing or
@@ -425,17 +425,17 @@ menu "Security features"
             https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html for details.
 
     menu "Potentially insecure options"
-        visible if FLASH_ENCRYPTION_INSECURE || SECURE_BOOT_INSECURE
+        visible if SECURE_FLASH_ENC_INSECURE || SECURE_BOOT_INSECURE
 
         # NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
-        # and/or FLASH_ENCRYPTION_INSECURE in "depends on", as the menu
+        # and/or SECURE_FLASH_ENC_INSECURE in "depends on", as the menu
         # itself doesn't enable/disable its children (if it's not set,
         # it's possible for the insecure menu to be disabled but the insecure option
         # to remain on which is very bad.)
 
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
-            depends on SECURE_BOOT_INSECURE || FLASH_ENCRYPTION_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENC_INSECURE
             default N
             help
                 By default, the BASIC ROM Console starts on reset if no valid bootloader is
@@ -449,7 +449,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_JTAG
             bool "Allow JTAG Debugging"
-            depends on SECURE_BOOT_INSECURE || FLASH_ENCRYPTION_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENC_INSECURE
             default N
             help
                 If not set (default), the bootloader will permanently disable JTAG (across entire chip) on first boot
@@ -474,9 +474,9 @@ menu "Security features"
                 image to this length. It is generally not recommended to set this option, unless you have a legacy
                 partitioning scheme which doesn't support 64KB aligned partition lengths.
 
-        config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_ENCRYPT
+        config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
-            depends on FLASH_ENCRYPTION_INSECURE
+            depends on SECURE_FLASH_ENC_INSECURE
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader encryption access on
@@ -484,9 +484,9 @@ menu "Security features"
 
                 It is recommended to only set this option in testing environments.
 
-        config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_DECRYPT
+        config SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
             bool "Leave UART bootloader decryption enabled"
-            depends on FLASH_ENCRYPTION_INSECURE
+            depends on SECURE_FLASH_ENC_INSECURE
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader decryption access on
@@ -495,9 +495,9 @@ menu "Security features"
                 Only set this option in testing environments. Setting this option allows complete bypass of flash
                 encryption.
 
-        config FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
+        config SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
             bool "Leave UART bootloader flash cache enabled"
-            depends on FLASH_ENCRYPTION_INSECURE
+            depends on SECURE_FLASH_ENC_INSECURE
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader flash cache access on
