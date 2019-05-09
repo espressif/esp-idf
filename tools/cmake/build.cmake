@@ -297,6 +297,23 @@ macro(__build_set_default var default)
     unset(_var)
 endmacro()
 
+#
+# Import configs as build instance properties so that they are accessible
+# using idf_build_get_config(). Config has to have been generated before calling
+# this command.
+#
+function(__build_import_configs)
+    # Include the sdkconfig cmake file, since the following operations require
+    # knowledge of config values.
+    idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
+    include(${sdkconfig_cmake})
+
+    idf_build_set_property(__CONFIG_VARIABLES "${CONFIGS_LIST}")
+    foreach(config ${CONFIGS_LIST})
+        set_property(TARGET __idf_build_target PROPERTY ${config} "${${config}}")
+    endforeach()
+endfunction()
+
 # idf_build_process
 #
 # @brief Main processing step for ESP-IDF build: config generation, adding components to the build,
@@ -349,6 +366,7 @@ macro(idf_build_process target)
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
     __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+    __build_import_configs()
 
     # Write the partial build properties to a temporary file.
     # The path to this generated file is set to a short-lived build
@@ -468,4 +486,17 @@ function(idf_build_executable elf)
 
     # Add dependency of the build target to the executable
     add_dependencies(${elf} __idf_build_target)
+endfunction()
+
+# idf_build_get_config
+#
+# @brief Get value of specified config variable
+function(idf_build_get_config var config)
+    cmake_parse_arguments(_ "GENERATOR_EXPRESSION" "" "" ${ARGN})
+    if(__GENERATOR_EXPRESSION)
+        set(val "$<TARGET_PROPERTY:__idf_build_target,${config}>")
+    else()
+        get_property(val TARGET __idf_build_target PROPERTY ${config})
+    endif()
+    set(${var} ${val} PARENT_SCOPE)
 endfunction()

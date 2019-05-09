@@ -980,6 +980,14 @@ The call requires the target chip to be specified with *target* argument. Option
 Specify the executable *executable* for ESP-IDF build. This attaches additional targets such as dependencies related to
 flashing, generating additional binary files, etc. Should be called after ``idf_build_process``.
 
+.. code-block:: none
+
+  idf_build_get_config(var config [GENERATOR_EXPRESSION])
+
+Get the value of the specified config. Much like build properties, specifying
+*GENERATOR_EXPRESSION* will retrieve the generator expression string for that config, instead of the actual value, which
+can be used with CMake commands that support generator expressions. Actual config values are only known after call to `idf_build_process`, however.
+
 .. _cmake-build-properties:
 
 idf-build-properties
