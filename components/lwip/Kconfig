@@ -295,7 +295,7 @@ menu "LWIP"
         config TCP_MSS
             int "Maximum Segment Size (MSS)"
             default 1440
-            range 576 1460
+            range 536 1460
             help
                 Set maximum segment size for TCP transmission.
 
