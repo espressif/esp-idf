@@ -21,7 +21,7 @@
 
 #include "app_prov.h"
 
-#define EXAMPLE_AP_RECONN_ATTEMPTS  CONFIG_AP_RECONN_ATTEMPTS
+#define EXAMPLE_AP_RECONN_ATTEMPTS  CONFIG_EXAMPLE_AP_RECONN_ATTEMPTS
 
 static const char *TAG = "app";
 
@@ -94,15 +94,15 @@ static void start_ble_provisioning()
     /* Proof of possession */
     const protocomm_security_pop_t *pop = NULL;
 
-#ifdef CONFIG_USE_SEC_1
+#ifdef CONFIG_EXAMPLE_USE_SEC_1
     security = 1;
 #endif
 
     /* Having proof of possession is optional */
-#ifdef CONFIG_USE_POP
+#ifdef CONFIG_EXAMPLE_USE_POP
     const static protocomm_security_pop_t app_pop = {
-        .data = (uint8_t *) CONFIG_POP,
-        .len = (sizeof(CONFIG_POP)-1)
+        .data = (uint8_t *) CONFIG_EXAMPLE_POP,
+        .len = (sizeof(CONFIG_EXAMPLE_POP)-1)
     };
     pop = &app_pop;
 #endif

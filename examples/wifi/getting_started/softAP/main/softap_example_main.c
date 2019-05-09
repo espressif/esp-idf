@@ -26,7 +26,7 @@
 */
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD
-#define EXAMPLE_MAX_STA_CONN       CONFIG_MAX_STA_CONN
+#define EXAMPLE_MAX_STA_CONN       CONFIG_ESP_MAX_STA_CONN
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;

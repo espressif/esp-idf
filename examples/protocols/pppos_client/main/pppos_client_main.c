@@ -24,7 +24,7 @@ static const int CONNECT_BIT = BIT0;
 static const int STOP_BIT = BIT1;
 static const int GOT_DATA_BIT = BIT2;
 
-#if CONFIG_SEND_MSG
+#if CONFIG_EXAMPLE_SEND_MSG
 /**
  * @brief This example will also show how to send short message using the infrastructure provided by esp modem library.
  * @note Not all modem support SMG.
@@ -189,9 +189,9 @@ void app_main()
     /* Register event handler */
     ESP_ERROR_CHECK(esp_modem_add_event_handler(dte, modem_event_handler, NULL));
     /* create dce object */
-#if CONFIG_ESP_MODEM_DEVICE_SIM800
+#if CONFIG_EXAMPLE_MODEM_DEVICE_SIM800
     modem_dce_t *dce = sim800_init(dte);
-#elif CONFIG_ESP_MODEM_DEVICE_BG96
+#elif CONFIG_EXAMPLE_MODEM_DEVICE_BG96
     modem_dce_t *dce = bg96_init(dte);
 #else
 #error "Unsupported DCE"
@@ -227,9 +227,9 @@ void app_main()
     /* Exit PPP mode */
     ESP_ERROR_CHECK(esp_modem_exit_ppp(dte));
     xEventGroupWaitBits(event_group, STOP_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
-#if CONFIG_SEND_MSG
+#if CONFIG_EXAMPLE_SEND_MSG
     const char *message = "Welcome to ESP32!";
-    ESP_ERROR_CHECK(example_send_message_text(dce, CONFIG_SEND_MSG_PEER_PHONE_NUMBER, message));
+    ESP_ERROR_CHECK(example_send_message_text(dce, CONFIG_EXAMPLE_SEND_MSG_PEER_PHONE_NUMBER, message));
     ESP_LOGI(TAG, "Send send message [%s] ok", message);
 #endif
     /* Power down module */

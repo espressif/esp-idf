@@ -38,20 +38,20 @@
 
 #define GATTS_TAG "GATTS_DEMO"
 
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
 #define GATTS_NOTIFY_LEN    490
 static SemaphoreHandle_t gatts_semaphore;
 static bool can_send_notify = false;
 static uint8_t indicate_data[GATTS_NOTIFY_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a};
 
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
 static bool start = false;
 static uint64_t write_len = 0;
 static uint64_t start_time = 0;
 static uint64_t current_time = 0;
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
 static bool is_connecet = false;
 ///Declare the static function
@@ -88,7 +88,7 @@ static uint8_t adv_config_done = 0;
 #define adv_config_flag      (1 << 0)
 #define scan_rsp_config_flag (1 << 1)
 
-#ifdef CONFIG_SET_RAW_ADV_DATA
+#ifdef CONFIG_EXAMPLE_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
         0x02, 0x01, 0x06,
         0x02, 0x0a, 0xeb, 0x03, 0x03, 0xab, 0xcd
@@ -142,7 +142,7 @@ static esp_ble_adv_data_t scan_rsp_data = {
     .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
 };
 
-#endif /* CONFIG_SET_RAW_ADV_DATA */
+#endif /* CONFIG_EXAMPLE_SET_RAW_ADV_DATA */
 
 static esp_ble_adv_params_t adv_params = {
     .adv_int_min        = 0x20,
@@ -214,7 +214,7 @@ static uint8_t check_sum(uint8_t *addr, uint16_t count)
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
-#ifdef CONFIG_SET_RAW_ADV_DATA
+#ifdef CONFIG_EXAMPLE_SET_RAW_ADV_DATA
     case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
         adv_config_done &= (~adv_config_flag);
         if (adv_config_done==0){
@@ -341,7 +341,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         if (set_dev_name_ret){
             ESP_LOGE(GATTS_TAG, "set device name failed, error code = %x", set_dev_name_ret);
         }
-#ifdef CONFIG_SET_RAW_ADV_DATA
+#ifdef CONFIG_EXAMPLE_SET_RAW_ADV_DATA
         esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, sizeof(raw_adv_data));
         if (raw_adv_ret){
             ESP_LOGE(GATTS_TAG, "config raw adv data failed, error code = %x ", raw_adv_ret);
@@ -384,7 +384,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     }
     case ESP_GATTS_WRITE_EVT: {
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
         ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, conn_id %d, trans_id %d, handle %d", param->write.conn_id, param->write.trans_id, param->write.handle);
         if (!param->write.is_prep){
             ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
@@ -425,9 +425,9 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
 
             }
         }
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
         example_write_event_env(gatts_if, &a_prepare_write_env, param);
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->write.handle == gl_profile_tab[PROFILE_A_APP_ID].char_handle) {
             // The last value byte is the checksum data, should used to check the data is received corrected or not.
             if (param->write.value[param->write.len - 1] == 
@@ -441,13 +441,13 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                 break;
             }
         }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
         break;
     }
     case ESP_GATTS_EXEC_WRITE_EVT:
         ESP_LOGI(GATTS_TAG,"ESP_GATTS_EXEC_WRITE_EVT");
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         if (param->exec_write.exec_write_flag == ESP_GATT_PREP_WRITE_CANCEL) {
             if (write_len > a_prepare_write_env.prepare_len) {
                 write_len -= a_prepare_write_env.prepare_len;
@@ -455,7 +455,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                 write_len = 0;
             }
         }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         esp_ble_gatts_send_response(gatts_if, param->write.conn_id, param->write.trans_id, ESP_GATT_OK, NULL);
         example_exec_write_event_env(&a_prepare_write_env, param);
         break;
@@ -546,11 +546,11 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_CONF_EVT, status %d", param->conf.status);
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         start_time = false;
         current_time = 0;
         write_len = 0;
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
         break;
     case ESP_GATTS_OPEN_EVT:
     case ESP_GATTS_CANCEL_OPEN_EVT:
@@ -558,14 +558,14 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_LISTEN_EVT:
         break;
     case ESP_GATTS_CONGEST_EVT:
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
         if (param->congest.congested) {
             can_send_notify = false;
         } else {
             can_send_notify = true;
             xSemaphoreGive(gatts_semaphore);
         }
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
         break;
     default:
         break;
@@ -604,14 +604,14 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 void throughput_server_task(void *param)
 {
     vTaskDelay(2000 / portTICK_PERIOD_MS);
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     uint8_t sum = check_sum(indicate_data, sizeof(indicate_data) - 1);
     // Added the check sum in the last data value.
     indicate_data[GATTS_NOTIFY_LEN - 1] = sum;
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
     while(1) {
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT) 
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) 
         if (!can_send_notify) {
             int res = xSemaphoreTake(gatts_semaphore, portMAX_DELAY);
             assert(res == pdTRUE);
@@ -622,9 +622,9 @@ void throughput_server_task(void *param)
                                             sizeof(indicate_data), indicate_data, false);
             }
         }
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
 
-#if (CONFIG_GATTC_WRITE_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT)
         uint32_t bit_rate = 0;
         vTaskDelay(2000 / portTICK_PERIOD_MS);
         if (start_time) {
@@ -635,7 +635,7 @@ void throughput_server_task(void *param)
         } else {
             ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = 0 Btye/s, = 0 bit/s");
         }
-#endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT) */
 
     }
 }
@@ -699,12 +699,12 @@ void app_main()
     }
 
     xTaskCreate(&throughput_server_task, "throughput_server_task", 4048, NULL, 15, NULL);
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
+#if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     gatts_semaphore = xSemaphoreCreateMutex();
     if (!gatts_semaphore) {
         ESP_LOGE(GATTS_TAG, "%s, init fail, the gatts semaphore create fail.", __func__);
         return;
     }
-#endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
+#endif /* #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT) */
     return;
 }

@@ -27,14 +27,14 @@
 #include "cmd_decl.h"
 #include "sdkconfig.h"
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_SNIFFER_STORE_HISTORY
 #define HISTORY_MOUNT_POINT "/data"
 #define HISTORY_FILE_PATH HISTORY_MOUNT_POINT "/history.txt"
 #endif
 
 static const char *TAG = "example";
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_SNIFFER_STORE_HISTORY
 /* Initialize filesystem for command history store */
 static void initialize_filesystem()
 {
@@ -113,7 +113,7 @@ static void initialize_console()
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_SNIFFER_STORE_HISTORY
     /* Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_FILE_PATH);
 #endif
@@ -223,7 +223,7 @@ void app_main(void)
 {
     initialize_nvs();
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_SNIFFER_STORE_HISTORY
     initialize_filesystem();
 #endif
 
@@ -286,7 +286,7 @@ void app_main(void)
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_SNIFFER_STORE_HISTORY
         /* Save command history to filesystem */
         linenoiseHistorySave(HISTORY_FILE_PATH);
 #endif

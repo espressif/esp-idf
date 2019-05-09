@@ -23,10 +23,10 @@ menu "Example Configuration"
             bool "Other external storage"
     endchoice
 
-    choice BASE_MAC_STORED_EFUSE_BLK3_ERROR_BEHAVIOR
+    choice BASE_MAC_STORED_EFUSE_BLK3_ERROR_BEHAV
         prompt "Read base MAC address from BLK3 of eFuse error behavior"
         depends on BASE_MAC_STORED_EFUSE_BLK3
-        default BASE_MAC_STORED_EFUSE_BLK3_ERROR_USE_DEFAULT
+        default BASE_MAC_STORED_EFUSE_BLK3_ERROR_DEFAULT
         help
             Select behavior when reading base MAC address from BLK3 of eFuse error.
             If "Abort" is selected, esp32 will abort.
@@ -35,7 +35,7 @@ menu "Example Configuration"
 
         config BASE_MAC_STORED_EFUSE_BLK3_ERROR_ABORT
             bool "Abort"
-        config BASE_MAC_STORED_EFUSE_BLK3_ERROR_USE_DEFAULT
+        config BASE_MAC_STORED_EFUSE_BLK3_ERROR_DEFAULT
             bool "Use base MAC address from BLK3 of eFuse"
     endchoice
 
