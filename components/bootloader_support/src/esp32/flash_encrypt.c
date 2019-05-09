@@ -114,19 +114,19 @@ static esp_err_t initialise_flash_encryption(void)
     esp_efuse_burn_new_values();
 
     uint32_t new_wdata6 = 0;
-#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_ENCRYPT
+#ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
     ESP_LOGI(TAG, "Disable UART bootloader encryption...");
     new_wdata6 |= EFUSE_DISABLE_DL_ENCRYPT;
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader encryption");
 #endif
-#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_DECRYPT
+#ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
     ESP_LOGI(TAG, "Disable UART bootloader decryption...");
     new_wdata6 |= EFUSE_DISABLE_DL_DECRYPT;
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader decryption - SECURITY COMPROMISED");
 #endif
-#ifndef CONFIG_FLASH_ENCRYPTION_UART_BOOTLOADER_ALLOW_CACHE
+#ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
     ESP_LOGI(TAG, "Disable UART bootloader MMU cache...");
     new_wdata6 |= EFUSE_DISABLE_DL_CACHE;
 #else
