@@ -68,3 +68,11 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
  * @return    Returns true if the list contains the label, false otherwise.
  */
 bool bootloader_common_label_search(const char *list, char *label);
+
+/**
+ * @brief Set the flash CS setup and hold time.
+ *
+ * CS setup time is recomemded to be 1.5T, and CS hold time is recommended to be 2.5T.
+ * cs_setup = 1, cs_setup_time = 0; cs_hold = 1, cs_hold_time = 1
+ */
+void bootloader_common_set_flash_cs_timing();
