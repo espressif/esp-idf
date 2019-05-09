@@ -32,7 +32,7 @@ menu "Bootloader config"
         int "SPI Flash WP Pin when customising pins via eFuse (read help)"
         range 0 33
         default 7
-        depends on FLASHMODE_QIO || FLASHMODE_QOUT
+        depends on ESPTOOLPY_FLASHMODE_QIO || ESPTOOLPY_FLASHMODE_QOUT
         help
             This value is ignored unless flash mode is set to QIO or QOUT *and* the SPI flash pins have been
             overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
