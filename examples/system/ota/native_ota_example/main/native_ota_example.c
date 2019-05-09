@@ -24,9 +24,9 @@
 #include "nvs_flash.h"
 #include "driver/gpio.h"
 
-#define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
-#define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
-#define EXAMPLE_SERVER_URL CONFIG_FIRMWARE_UPG_URL
+#define EXAMPLE_WIFI_SSID CONFIG_EXAMPLE_WIFI_SSID
+#define EXAMPLE_WIFI_PASS CONFIG_EXAMPLE_WIFI_PASSWORD
+#define EXAMPLE_SERVER_URL CONFIG_EXAMPLE_FIRMWARE_UPG_URL
 #define BUFFSIZE 1024
 #define HASH_LEN 32 /* SHA-256 digest length */
 
@@ -266,7 +266,7 @@ static bool diagnostic(void)
     gpio_config_t io_conf;
     io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
     io_conf.mode         = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (1ULL << CONFIG_GPIO_DIAGNOSTIC);
+    io_conf.pin_bit_mask = (1ULL << CONFIG_EXAMPLE_GPIO_DIAGNOSTIC);
     io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
     io_conf.pull_up_en   = GPIO_PULLUP_ENABLE;
     gpio_config(&io_conf);
@@ -274,9 +274,9 @@ static bool diagnostic(void)
     ESP_LOGI(TAG, "Diagnostics (5 sec)...");
     vTaskDelay(5000 / portTICK_PERIOD_MS);
 
-    bool diagnostic_is_ok = gpio_get_level(CONFIG_GPIO_DIAGNOSTIC);
+    bool diagnostic_is_ok = gpio_get_level(CONFIG_EXAMPLE_GPIO_DIAGNOSTIC);
 
-    gpio_reset_pin(CONFIG_GPIO_DIAGNOSTIC);
+    gpio_reset_pin(CONFIG_EXAMPLE_GPIO_DIAGNOSTIC);
     return diagnostic_is_ok;
 }
 

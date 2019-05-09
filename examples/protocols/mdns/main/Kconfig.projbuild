@@ -12,7 +12,7 @@ menu "Example Configuration"
         help
             mDNS Instance Name for example to use
 
-    config RESOLVE_TEST_SERVICES
+    config MDNS_RESOLVE_TEST_SERVICES
         bool "Resolve test services"
         default n
         help

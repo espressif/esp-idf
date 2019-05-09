@@ -24,7 +24,7 @@
 
 static const char *TAG = "i2c-tools";
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_EXAMPLE_STORE_HISTORY
 
 #define MOUNT_PATH "/data"
 #define HISTORY_PATH MOUNT_PATH "/history.txt"
@@ -42,7 +42,7 @@ static void initialize_filesystem()
         return;
     }
 }
-#endif // CONFIG_STORE_HISTORY
+#endif // CONFIG_EXAMPLE_STORE_HISTORY
 
 static void initialize_nvs()
 {
@@ -85,8 +85,8 @@ static void initialize_console()
 
     /* Initialize the console */
     esp_console_config_t console_config = {
-        .max_cmdline_args = CONFIG_MAX_CMD_ARGUMENTS,
-        .max_cmdline_length = CONFIG_MAX_CMD_LENGTH,
+        .max_cmdline_args = CONFIG_EXAMPLE_MAX_CMD_ARGUMENTS,
+        .max_cmdline_length = CONFIG_EXAMPLE_MAX_CMD_LENGTH,
 #if CONFIG_LOG_COLORS
         .hint_color = atoi(LOG_COLOR_CYAN)
 #endif
@@ -103,7 +103,7 @@ static void initialize_console()
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_EXAMPLE_STORE_HISTORY
     /* Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_PATH);
 #endif
@@ -113,7 +113,7 @@ void app_main()
 {
     initialize_nvs();
 
-#if CONFIG_STORE_HISTORY
+#if CONFIG_EXAMPLE_STORE_HISTORY
     initialize_filesystem();
 #endif
 
@@ -170,7 +170,7 @@ void app_main()
         }
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
-#if CONFIG_STORE_HISTORY
+#if CONFIG_EXAMPLE_STORE_HISTORY
         /* Save command history to filesystem */
         linenoiseHistorySave(HISTORY_PATH);
 #endif

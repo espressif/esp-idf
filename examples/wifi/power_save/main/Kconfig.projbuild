@@ -1,18 +1,18 @@
 menu "Example Configuration"
 
-    config WIFI_SSID
+    config EXAMPLE_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
         help
             SSID (network name) for the example to connect to.
 
-    config WIFI_PASSWORD
+    config EXAMPLE_WIFI_PASSWORD
         string "WiFi Password"
         default "mypassword"
         help
             WiFi password (WPA or WPA2) for the example to use.
 
-    config WIFI_LISTEN_INTERVAL
+    config EXAMPLE_WIFI_LISTEN_INTERVAL
         int "WiFi listen interval"
         default 3
         help
@@ -20,9 +20,9 @@ menu "Example Configuration"
             For example, if beacon interval is 100 ms and listen interval is 3, the interval for station to listen
             to beacon is 300 ms.
 
-    choice POWER_SAVE_MODE
+    choice EXAMPLE_POWER_SAVE_MODE
         prompt "power save mode"
-        default POWER_SAVE_MIN_MODEM
+        default EXAMPLE_POWER_SAVE_MIN_MODEM
         help
             Power save mode for the esp32 to use. Modem sleep mode includes minimum and maximum power save modes.
             In minimum power save mode, station wakes up every DTIM to receive beacon. Broadcast data will not be
@@ -32,11 +32,11 @@ menu "Example Configuration"
             may be lost because station may be in sleep state at DTIM time. If listen interval is longer, more power
             is saved but broadcast data is more easy to lose.
 
-        config POWER_SAVE_NONE
+        config EXAMPLE_POWER_SAVE_NONE
             bool "none"
-        config POWER_SAVE_MIN_MODEM
+        config EXAMPLE_POWER_SAVE_MIN_MODEM
             bool "minimum modem"
-        config POWER_SAVE_MAX_MODEM
+        config EXAMPLE_POWER_SAVE_MAX_MODEM
             bool "maximum modem"
     endchoice
 

@@ -31,7 +31,7 @@ make -j4 flash monitor
 - You can now ping the device at `[board-hostname].local`, where `[board-hostname]` is preconfigured hostname, `esp32-mdns` by default.
 - You can also browse for `_http._tcp` on the same network to find the advertised service
 - Pressing the BOOT button will start querying the local network for the predefined in `check_button` hosts and services
-- Note that for purpose of CI tests, configuration options of `RESOLVE_TEST_SERVICES` and `MDNS_ADD_MAC_TO_HOSTNAME` are available, but disabled by default. If enabled, then the hostname suffix of last 3 bytes from device MAC address is added, e.g. `esp32-mdns-80FFFF`, and a query for test service is issued.
+- Note that for purpose of CI tests, configuration options of `MDNS_RESOLVE_TEST_SERVICES` and `MDNS_ADD_MAC_TO_HOSTNAME` are available, but disabled by default. If enabled, then the hostname suffix of last 3 bytes from device MAC address is added, e.g. `esp32-mdns-80FFFF`, and a query for test service is issued.
 
 
 (To exit the serial monitor, type ``Ctrl-]``.)

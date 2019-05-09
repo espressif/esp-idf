@@ -680,7 +680,7 @@ void app_main()
     ESP_ERROR_CHECK(err);
 
     i2s_config_t i2s_config = {
-#ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
         .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
 #else
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
@@ -697,14 +697,14 @@ void app_main()
 
 
     i2s_driver_install(0, &i2s_config, 0, NULL);
-#ifdef CONFIG_A2DP_SINK_OUTPUT_INTERNAL_DAC
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
     i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
     i2s_set_pin(0, NULL);
 #else
     i2s_pin_config_t pin_config = {
-        .bck_io_num = CONFIG_I2S_BCK_PIN,
-        .ws_io_num = CONFIG_I2S_LRCK_PIN,
-        .data_out_num = CONFIG_I2S_DATA_PIN,
+        .bck_io_num = CONFIG_EXAMPLE_I2S_BCK_PIN,
+        .ws_io_num = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+        .data_out_num = CONFIG_EXAMPLE_I2S_DATA_PIN,
         .data_in_num = -1                                                       //Not used
     };
 

@@ -65,8 +65,8 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = CONFIG_WIFI_SSID,
-            .password = CONFIG_WIFI_PASSWORD,
+            .ssid = CONFIG_EXAMPLE_WIFI_SSID,
+            .password = CONFIG_EXAMPLE_WIFI_PASSWORD,
         },
     };
     ESP_LOGI(TAG, "Setting WiFi configuration SSID %s", wifi_config.sta.ssid);
@@ -104,7 +104,7 @@ void advanced_ota_example_task(void * pvParameter)
     
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
-        .url = CONFIG_FIRMWARE_UPGRADE_URL,
+        .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
         .cert_pem = (char *)server_cert_pem_start,
     };
     
