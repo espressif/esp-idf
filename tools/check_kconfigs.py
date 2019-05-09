@@ -34,6 +34,9 @@ OUTPUT_SUFFIX = '.new'
 IGNORE_DIRS = (
     # Kconfigs from submodules need to be ignored:
     os.path.join('components', 'mqtt', 'esp-mqtt'),
+    # Test Kconfigs are also ignored
+    os.path.join('tools', 'ldgen', 'test', 'data'),
+    os.path.join('tools', 'kconfig_new', 'test'),
 )
 
 SPACES_PER_INDENT = 4
