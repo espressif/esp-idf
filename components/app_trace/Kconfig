@@ -37,7 +37,7 @@ menu "Application Level Tracing"
             Timeout for flushing last trace data to host in case of panic. In ms.
             Use -1 to disable timeout and wait forever.
 
-    config ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH
+    config ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
         int "Threshold for flushing last trace data to host on panic"
         depends on ESP32_APPTRACE_DEST_TRAX
         range 0 16384
