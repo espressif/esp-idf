@@ -75,7 +75,8 @@
 //    trace data are necessary, e.g. for analyzing crashes. On panic the latest data from current input block are exposed to host and host can read them.
 //    It can happen that system panic occurs when there are very small amount of data which are not exposed to host yet (e.g. crash just after the
 //    TRAX block switch). In this case the previous 16KB of collected data will be dropped and host will see the latest, but very small piece of trace.
-//    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH
+//    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option
+//    CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
 //    which controls the threshold for flushing data in case of panic.
 //  - Streaming mode. Tracing module enters this mode when host connects to target and sets respective bits in control registers (per core).
 //    In this mode before switching the block tracing module waits for the host to read all the data from the previously exposed block.
