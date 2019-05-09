@@ -51,7 +51,7 @@ if((NOT CONFIG_SECURE_BOOT_ENABLED) OR
         # TODO: support overriding the bootloader in COMPONENT_PATHS
         SOURCE_DIR "${IDF_PATH}/components/bootloader/subproject"
         BINARY_DIR "${BOOTLOADER_BUILD_DIR}"
-        CMAKE_ARGS  -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH=${IDF_PATH}
+        CMAKE_ARGS  -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH=${IDF_PATH} -DIDF_TARGET=${IDF_TARGET}
                     -DSECURE_BOOT_SIGNING_KEY=${secure_boot_signing_key}
         INSTALL_COMMAND ""
         BUILD_ALWAYS 1  # no easy way around this...
