@@ -42,13 +42,19 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
         if (sel_transport == 'softap'):
             tp = transport.Transport_Softap(softap_endpoint)
         elif (sel_transport == 'ble'):
-            tp = transport.Transport_BLE(devname = ble_devname,
-                                         service_uuid = '0000ffff-0000-1000-8000-00805f9b34fb',
-                                         nu_lookup = {
-                                             'prov-session': 'ff51',
-                                             'prov-config' : 'ff52',
-                                             'proto-ver'   : 'ff53'
-                                         })
+            # BLE client is now capable of automatically figuring out
+            # the primary service from the advertisement data and the
+            # characteristics corresponding to each endpoint.
+            # Below, the service_uuid field and 16bit UUIDs in the nu_lookup
+            # table are provided only to support devices running older firmware,
+            # in which case, the automated discovery will fail and the client
+            # will fallback to using the provided UUIDs instead
+            tp = transport.Transport_BLE(devname=ble_devname,
+                                         service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
+                                         nu_lookup={'prov-session': 'ff51',
+                                                    'prov-config': 'ff52',
+                                                    'proto-ver': 'ff53'
+                                                    })
         elif (sel_transport == 'console'):
             tp = transport.Transport_Console()
         return tp
