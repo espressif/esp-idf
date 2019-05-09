@@ -872,7 +872,10 @@ size_t httpd_req_get_url_query_len(httpd_req_t *r);
  *    a URI handler where httpd_req_t* request pointer is valid
  *  - If output size is greater than input, then the value is truncated,
  *    accompanied by truncation error as return value
- *  - Use httpd_req_get_url_query_len() to know the right buffer length
+ *  - Prior to calling this function, one can use httpd_req_get_url_query_len()
+ *    to know the query string length beforehand and hence allocate the buffer
+ *    of right size (usually query string length + 1 for null termination)
+ *    for storing the query string
  *
  * @param[in]  r         The request being responded to
  * @param[out] buf       Pointer to the buffer into which the query string will be copied (if found)
