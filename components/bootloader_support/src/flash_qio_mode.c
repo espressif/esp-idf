@@ -211,7 +211,7 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
     ESP_LOGD(TAG, "Enabling QIO mode...");
 
     esp_rom_spiflash_read_mode_t mode;
-#if CONFIG_FLASHMODE_QOUT
+#if CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     mode = ESP_ROM_SPIFLASH_QOUT_MODE;
 #else
     mode = ESP_ROM_SPIFLASH_QIO_MODE;
