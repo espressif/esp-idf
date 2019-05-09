@@ -249,6 +249,41 @@ function(__build_check_python)
 endfunction()
 
 #
+# Prepare for component processing expanding each component's project include
+#
+macro(__build_process_project_includes)
+    # Include the sdkconfig cmake file, since the following operations require
+    # knowledge of config values.
+    idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
+    include(${sdkconfig_cmake})
+
+    # Make each build property available as a read-only variable
+    idf_build_get_property(build_properties __BUILD_PROPERTIES)
+    foreach(build_property ${build_properties})
+        idf_build_get_property(val ${build_property})
+        set(${build_property} "${val}")
+    endforeach()
+
+    # Check that the CMake target value matches the Kconfig target value.
+    __target_check()
+
+    idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
+
+    # Include each component's project_include.cmake
+    foreach(component_target ${build_component_targets})
+        __component_get_property(dir ${component_target} COMPONENT_DIR)
+        __component_get_property(_name ${component_target} COMPONENT_NAME)
+        set(COMPONENT_NAME ${_name})
+        set(COMPONENT_DIR ${dir})
+        set(COMPONENT_PATH ${dir})  # this is deprecated, users are encouraged to use COMPONENT_DIR;
+                                    # retained for compatibility
+        if(EXISTS ${COMPONENT_DIR}/project_include.cmake)
+            include(${COMPONENT_DIR}/project_include.cmake)
+        endif()
+    endforeach()
+endmacro()
+
+#
 # Utility macro for setting default property value if argument is not specified
 # for idf_build_process().
 #
@@ -280,7 +315,7 @@ endmacro()
 #                       to none (Kconfig defaults or previously generated config are used)
 # @param[in, optional] BUILD_DIR (single value) directory for build artifacts; defautls to CMAKE_BINARY_DIR
 # @param[in, optional] COMPONENTS (multivalue) starting components for trimming build
-function(idf_build_process target)
+macro(idf_build_process target)
     set(options)
     set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG SDKCONFIG_DEFAULTS)
     set(multi_value COMPONENTS)
@@ -291,7 +326,7 @@ function(idf_build_process target)
     # Check build target is specified. Since this target corresponds to a component
     # name, the target component is automatically added to the list of common component
     # requirements.
-    if(NOT target OR target STREQUAL "")
+    if(target STREQUAL "")
         message(FATAL_ERROR "Build target not specified.")
     endif()
 
@@ -386,11 +421,13 @@ function(idf_build_process target)
         idf_build_set_property(___COMPONENT_REQUIRES_COMMON ${lib} APPEND)
     endforeach()
 
+    __build_process_project_includes()
+
     # Perform component processing (inclusion of project_include.cmake, adding component
     # subdirectories, creating library targets, linking libraries, etc.)
     idf_build_get_property(idf_path IDF_PATH)
     add_subdirectory(${idf_path} ${build_dir}/esp-idf)
-endfunction()
+endmacro()
 
 # idf_build_executable
 #
