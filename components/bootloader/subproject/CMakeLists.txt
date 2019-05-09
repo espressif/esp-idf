@@ -10,6 +10,11 @@ if(NOT IDF_PATH)
         "in by the parent build process.")
 endif()
 
+if(NOT IDF_TARGET)
+    message(FATAL_ERROR "Bootloader subproject expects the IDF_TARGET variable to be passed "
+        "in by the parent build process.")
+endif()
+
 set(COMPONENTS bootloader esptool_py partition_table soc bootloader_support log spi_flash micro-ecc main efuse)
 set(BOOTLOADER_BUILD 1)
 add_definitions(-DBOOTLOADER_BUILD=1)
