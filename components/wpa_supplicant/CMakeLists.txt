@@ -79,8 +79,8 @@ set(COMPONENT_PRIV_REQUIRES mbedtls)
 
 register_component()
 
-component_compile_options(-Wno-strict-aliasing)
-component_compile_definitions(
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing)
+target_compile_definitions(${COMPONENT_LIB} PRIVATE
     __ets__
     EMBEDDED_SUPP
     IEEE8021X_EAPOL

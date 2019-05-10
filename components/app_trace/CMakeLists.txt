@@ -30,6 +30,5 @@ register_component()
 
 # disable --coverage for this component, as it is used as transport
 # for gcov
-component_compile_options("-fno-profile-arcs" "-fno-test-coverage")
-
-target_link_libraries(${COMPONENT_TARGET} gcov)
+target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-profile-arcs" "-fno-test-coverage")
+target_link_libraries(${COMPONENT_LIB} gcov ${LIBC} ${LIBM})
