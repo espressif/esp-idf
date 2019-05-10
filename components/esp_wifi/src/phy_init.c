@@ -16,13 +16,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-
 #include <sys/lock.h>
 
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/rtc.h"
 #include "soc/rtc.h"
-
+#include "soc/dport_reg.h"
 #include "esp_err.h"
 #include "esp_phy_init.h"
 #include "esp_system.h"
@@ -30,7 +27,6 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "sdkconfig.h"
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "phy.h"
@@ -38,6 +34,14 @@
 #include "esp_coexist_internal.h"
 #include "driver/periph_ctrl.h"
 #include "esp_private/wifi.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/rom/rtc.h"
+#endif
 
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
 
@@ -100,7 +104,7 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
     }
 }
 
-esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibration_mode_t mode, 
+esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibration_mode_t mode,
                           esp_phy_calibration_data_t* calibration_data, phy_rf_module_t module)
 {
     /* 3 modules may call phy_init: Wi-Fi, BT, Modem Sleep */
@@ -123,9 +127,9 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
     }
     else {
         /* If Wi-Fi, BT all disabled, modem sleep should not take effect;
-         * If either Wi-Fi or BT is enabled, should allow modem sleep requires 
+         * If either Wi-Fi or BT is enabled, should allow modem sleep requires
          * to enter sleep;
-         * If Wi-Fi, BT co-exist, it is disallowed that only one module 
+         * If Wi-Fi, BT co-exist, it is disallowed that only one module
          * support modem sleep, E,g. BT support modem sleep but Wi-Fi not
          * support modem sleep;
          */
@@ -577,7 +581,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: store calibration nvs commit failed(0x%x)\n", __func__, err);
     }
-    
+
     return err;
 }
 
@@ -585,10 +589,10 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
 static void esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
 {
     uint8_t i;
-                                         
+
     for(i = 0; i < PHY_TX_POWER_NUM; i++) {
         // LOWEST_PHY_TX_POWER is the lowest tx power
-        init_data->params[PHY_TX_POWER_OFFSET+i] = PHY_TX_POWER_LOWEST;   
+        init_data->params[PHY_TX_POWER_OFFSET+i] = PHY_TX_POWER_LOWEST;
     }
 }
 #endif
