@@ -31,7 +31,7 @@ else()
     set(ESPTOOLPY_COMPRESSED_OPT -u)
 endif()
 
-set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
+set(ESPTOOLPY_FLASH_OPTIONS
     --flash_mode ${ESPFLASHMODE}
     --flash_freq ${ESPFLASHFREQ}
     --flash_size ${ESPFLASHSIZE}
@@ -40,17 +40,16 @@ set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
 # String for printing flash command
 string(REPLACE ";" " " ESPTOOLPY_WRITE_FLASH_STR
     "${ESPTOOLPY} --port (PORT) --baud (BAUD) --before ${ESPTOOLPY_BEFORE} --after ${ESPTOOLPY_AFTER} "
-    "write_flash ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
-
-if(CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
-    NOT BOOTLOADER_BUILD)
-    set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
-        ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
-endif()
+    "write_flash ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
 
 if(NOT BOOTLOADER_BUILD)
     set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+endif()
+
+if(CONFIG_SECURE_BOOT_ENABLED AND
+    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+    AND NOT BOOTLOADER_BUILD)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --secure-pad)
 endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
@@ -76,7 +75,7 @@ set(PROJECT_BIN "${elf_name}.bin")
 # Add 'app.bin' target - generates with elf2image
 #
 add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
+    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
         -o "${build_dir}/${unsigned_project_binary}" "${elf}"
     COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
     COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
@@ -86,6 +85,11 @@ add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
     COMMENT "Generating binary image from built executable"
     )
 add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
+
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    "${build_dir}/${unsigned_project_binary}"
+    )
 
 if(NOT BOOTLOADER_BUILD AND
     CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
@@ -103,6 +107,11 @@ if(NOT BOOTLOADER_BUILD AND
         )
     add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
     add_dependencies(gen_project_binary gen_signed_project_binary)
+
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        "${build_dir}/${PROJECT_BIN}"
+        )
 endif()
 
 if(NOT BOOTLOADER_BUILD)
