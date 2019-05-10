@@ -75,6 +75,7 @@ struct emac_config_data {
     eth_phy_get_partner_pause_enable_func emac_phy_get_partner_pause_enable;
     eth_phy_power_enable_func emac_phy_power_enable;
     uint32_t reset_timeout_ms;
+    bool promiscuous_enable;
 };
 
 enum emac_post_type {
