@@ -2886,7 +2886,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                         col = 1;
                     } else if (!clas) {
                         col = -1;
-                    } else {
+                    } else if (service) { // only detect txt collision if service existed
                         col = _mdns_check_txt_collision(service->service, data_ptr, data_len);
                     }
                     if (col && !_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running) {

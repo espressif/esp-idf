@@ -260,7 +260,7 @@ typedef struct mdns_srv_item_s {
 typedef struct mdns_out_question_s {
     struct mdns_out_question_s * next;
     uint16_t type;
-    uint8_t unicast;
+    bool unicast;
     const char * host;
     const char * service;
     const char * proto;
