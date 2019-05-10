@@ -1,6 +1,8 @@
 ESP-IDF Versions
 ================
 
+:link_to_translation:`zh_CN:[中文]`
+
 The ESP-IDF GitHub repository is updated regularly, especially the master branch where new development takes place.
 
 For production use, there are also stable releases available.
