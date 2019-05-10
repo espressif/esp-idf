@@ -91,40 +91,37 @@ set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     "${build_dir}/${unsigned_project_binary}"
     )
 
-if(NOT BOOTLOADER_BUILD AND
-    CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-
-    # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
-    add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
-        COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
-            -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
-                                "from ${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
-        DEPENDS "${build_dir}/.bin_timestamp"
-        VERBATIM
-        COMMENT "Generating signed binary image"
-        )
-    add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
-    add_dependencies(gen_project_binary gen_signed_project_binary)
-
-    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-        "${build_dir}/${PROJECT_BIN}"
-        )
-endif()
-
 add_custom_target(app ALL DEPENDS gen_project_binary)
 
-if(NOT BOOTLOADER_BUILD AND
-    CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_command(TARGET app POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "App built but not signed. Sign app before flashing"
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${build_dir}/${elf_bin}"
-        VERBATIM)
+if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
+        add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
+            COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
+                -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
+            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
+                                    "from ${build_dir}/${unsigned_project_binary}"
+            COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
+            DEPENDS "${build_dir}/.bin_timestamp"
+            VERBATIM
+            COMMENT "Generating signed binary image"
+            )
+        add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
+        add_dependencies(gen_project_binary gen_signed_project_binary)
+
+        set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+            "${build_dir}/${PROJECT_BIN}"
+            )
+    else()
+        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
+        add_custom_command(TARGET app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "App built but not signed. Sign app before flashing"
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/${PROJECT_BIN}"
+            VERBATIM)
+    endif()
 endif()
 
 #
