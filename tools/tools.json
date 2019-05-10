@@ -307,6 +307,49 @@
       ]
     },
     {
+      "description": "IDF wrapper tool for Windows",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/esp-idf/tree/master/tools/windows/idf_exe",
+      "install": "never",
+      "license": "Apache-2.0",
+      "name": "idf-exe",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win32",
+            "win64"
+          ]
+        }
+      ],
+      "version_cmd": [
+        "idf.py.exe",
+        "-v"
+      ],
+      "version_regex": "([0-9.]+)",
+      "versions": [
+        {
+          "name": "1.0",
+          "status": "recommended",
+          "win32": {
+            "sha256": "83a83ac7a246cbae93884db7c5f2ef9a7607d602340b1cf1e64ec2a925071748",
+            "size": 11289,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.zip"
+          },
+          "win64": {
+            "sha256": "83a83ac7a246cbae93884db7c5f2ef9a7607d602340b1cf1e64ec2a925071748",
+            "size": 11289,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.zip"
+          }
+        }
+      ]
+    },
+    {
       "description": "Ccache (compiler cache)",
       "export_paths": [
         [
