@@ -168,10 +168,13 @@ static esp_err_t load_partitions()
         item->info.type = it->type;
         item->info.subtype = it->subtype;
         item->info.encrypted = it->flags & PART_FLAG_ENCRYPTED;
-        if (esp_flash_encryption_enabled() && (
-                it->type == PART_TYPE_APP
+
+        if (!esp_flash_encryption_enabled()) {
+            /* If flash encryption is not turned on, no partitions should be treated as encrypted */
+            item->info.encrypted = false;
+        } else if (it->type == PART_TYPE_APP
                 || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_OTA)
-                || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_NVS_KEYS))) {
+                || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
             /* If encryption is turned on, all app partitions and OTA data
                are always encrypted */
             item->info.encrypted = true;
