@@ -130,7 +130,7 @@ set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 register_component()
 
 # lots of LWIP source files evaluate macros that check address of stack variables
-component_compile_options(-Wno-address)
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
 
 if(GCC_NOT_5_2_0)
     set_source_files_properties(

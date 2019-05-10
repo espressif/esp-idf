@@ -7,7 +7,7 @@ set(COMPONENT_SRCS "src/bootloader_clock.c"
                    "src/flash_partitions.c"
                    "src/flash_qio_mode.c")
 
-if(${BOOTLOADER_BUILD})
+if(BOOTLOADER_BUILD)
     set(COMPONENT_ADD_INCLUDEDIRS "include include_bootloader")
     set(COMPONENT_REQUIRES soc) #unfortunately the header directly uses SOC registers
     set(COMPONENT_PRIV_REQUIRES spi_flash micro-ecc efuse)

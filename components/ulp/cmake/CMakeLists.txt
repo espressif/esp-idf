@@ -38,7 +38,7 @@ foreach(include ${COMPONENT_INCLUDES})
 endforeach()
 
 list(APPEND ULP_PREPROCESSOR_ARGS ${component_includes})
-list(APPEND ULP_PREPROCESSOR_ARGS -I${COMPONENT_PATH})
+list(APPEND ULP_PREPROCESSOR_ARGS -I${COMPONENT_DIR})
 list(APPEND ULP_PREPROCESSOR_ARGS -I${sdkconfig_dir})
 
 include_directories(${component_includes})

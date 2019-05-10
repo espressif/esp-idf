@@ -16,9 +16,7 @@ endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
-set(COMPONENT_REQUIRES "")
 set(COMPONENT_PRIV_REQUIRES soc)
-
 register_component()
 
 if(CONFIG_HEAP_TRACING)
@@ -34,7 +32,7 @@ if(CONFIG_HEAP_TRACING)
         heap_caps_realloc_default)
 
     foreach(wrap ${WRAP_FUNCTIONS})
-        target_link_libraries(${COMPONENT_TARGET} "-Wl,--wrap=${wrap}")
+        target_link_libraries(${COMPONENT_LIB} "-Wl,--wrap=${wrap}")
     endforeach()
 
 endif()
