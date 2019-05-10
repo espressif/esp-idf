@@ -516,7 +516,7 @@ def main():
         for root, dirs, files in os.walk(args.base_dir):
             for f in files:
                 full_path = os.path.join(root, f)
-                spiffs.create_file("/" + os.path.relpath(full_path, args.base_dir), full_path)
+                spiffs.create_file("/" + os.path.relpath(full_path, args.base_dir).replace("\\", "/"), full_path)
 
         image = spiffs.to_binary()
 
