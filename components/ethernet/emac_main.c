@@ -326,6 +326,7 @@ static void emac_set_user_config_data(eth_config_t *config)
 #endif
     emac_config.emac_phy_get_partner_pause_enable = config->phy_get_partner_pause_enable;
     emac_config.emac_phy_power_enable = config->phy_power_enable;
+    emac_config.promiscuous_enable = config->promiscuous_enable;
 }
 
 static void emac_enable_intr()
@@ -823,6 +824,13 @@ static void emac_start(void *param)
     emac_set_rx_base_reg();
 
     emac_mac_init();
+
+    /* check if enable promiscuous mode */
+    if(emac_config.promiscuous_enable){
+        emac_enable_promiscuous();
+    }else{
+        emac_disable_promiscuous();
+    }
 
     emac_enable_intr();
 

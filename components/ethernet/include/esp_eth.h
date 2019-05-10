@@ -131,6 +131,7 @@ typedef struct {
     eth_phy_get_partner_pause_enable_func phy_get_partner_pause_enable; /*!< get partner pause enable */
     eth_phy_power_enable_func phy_power_enable;                         /*!< enable or disable phy power */
     uint32_t reset_timeout_ms;                                          /*!< timeout value for reset emac */
+    bool promiscuous_enable;                                            /*!< set true to enable promiscuous mode */
 } eth_config_t;
 
 /** Ethernet event declarations */
