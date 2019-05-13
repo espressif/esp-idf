@@ -40,6 +40,14 @@ static void lwip_stop_socket_select_isr(BaseType_t *woken)
     }
 }
 
+static void *lwip_get_socket_select_semaphore()
+{
+    /* Calling this from the same process as select() will ensure that the semaphore won't be allocated from
+     * ISR (lwip_stop_socket_select_isr).
+     */
+    return (void *) sys_thread_sem_get();
+}
+
 static int lwip_fcntl_r_wrapper(int fd, int cmd, va_list args)
 {
     return lwip_fcntl_r(fd, cmd, va_arg(args, int));
@@ -61,6 +69,7 @@ void esp_vfs_lwip_sockets_register()
         .read = &lwip_read_r,
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
+        .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .socket_select = &lwip_select,
         .stop_socket_select = &lwip_stop_socket_select,
         .stop_socket_select_isr = &lwip_stop_socket_select_isr,
