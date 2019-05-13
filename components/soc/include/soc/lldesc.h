@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #pragma once
-
 #include <stdbool.h>
 #include "esp32/rom/lldesc.h"
 

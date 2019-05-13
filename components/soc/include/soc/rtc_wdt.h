@@ -47,12 +47,10 @@ without description where were CPUs when it happened.
 @endcode
  */
 
-#ifndef _SOC_RTC_WDT_H
-#define _SOC_RTC_WDT_H
-
+#pragma once
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -198,5 +196,3 @@ bool rtc_wdt_is_on();
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _SOC_RTC_WDT_H
