@@ -155,9 +155,10 @@ size_t httpd_unrecv(struct httpd_req *r, const char *buf, size_t buf_len)
     /* Truncate if external buf_len is greater than pending_data buffer size */
     ra->sd->pending_len = MIN(sizeof(ra->sd->pending_data), buf_len);
 
-    /* Copy data into internal pending_data buffer */
+    /* Copy data into internal pending_data buffer with the exact offset
+     * such that it is right aligned inside the buffer */
     size_t offset = sizeof(ra->sd->pending_data) - ra->sd->pending_len;
-    memcpy(ra->sd->pending_data + offset, buf, buf_len);
+    memcpy(ra->sd->pending_data + offset, buf, ra->sd->pending_len);
     ESP_LOGD(TAG, LOG_FMT("length = %d"), ra->sd->pending_len);
     return ra->sd->pending_len;
 }
