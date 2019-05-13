@@ -886,12 +886,6 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S DAC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
 
-    if (i2s_num == I2S_NUM_1) {
-        periph_module_enable(PERIPH_I2S1_MODULE);
-    } else {
-        periph_module_enable(PERIPH_I2S0_MODULE);
-    }
-
     if(i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
         //in ADC built-in mode, we need to call i2s_set_adc_mode to
         //initialize the specific ADC channel.
@@ -1099,8 +1093,10 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 
         //To make sure hardware is enabled before any hardware register operations.
         if (i2s_num == I2S_NUM_1) {
+            periph_module_reset(PERIPH_I2S1_MODULE);
             periph_module_enable(PERIPH_I2S1_MODULE);
         } else {
+            periph_module_reset(PERIPH_I2S0_MODULE);
             periph_module_enable(PERIPH_I2S0_MODULE);
         }
 
