@@ -15,7 +15,6 @@
 
 #include "esp_private/pm_trace.h"
 #include "driver/gpio.h"
-#include "soc/gpio_reg.h"
 
 /* GPIOs to use for tracing of esp_pm events.
  * Two entries in the array for each type, one for each CPU.

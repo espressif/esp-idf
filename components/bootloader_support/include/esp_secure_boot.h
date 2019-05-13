@@ -15,7 +15,7 @@
 
 #include <stdbool.h>
 #include <esp_err.h>
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 
 #include "sdkconfig.h"
 

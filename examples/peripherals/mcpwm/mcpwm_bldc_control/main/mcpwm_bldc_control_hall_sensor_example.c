@@ -23,8 +23,7 @@
 #include "esp_attr.h"
 #include "soc/rtc.h"
 #include "driver/mcpwm.h"
-#include "soc/mcpwm_reg.h"
-#include "soc/mcpwm_struct.h"
+#include "soc/mcpwm_periph.h"
 
 #define INITIAL_DUTY 10.0   //initial duty cycle is 10.0%
 #define MCPWM_GPIO_INIT 0   //select which function to use to initialize gpio signals

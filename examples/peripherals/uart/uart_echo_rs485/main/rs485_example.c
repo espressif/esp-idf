@@ -16,7 +16,6 @@
 #include "driver/uart.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
-#include "soc/uart_struct.h"
 
 /**
  * This is a example example which echos any data it receives on UART back to the sender.

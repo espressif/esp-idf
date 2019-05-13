@@ -17,7 +17,6 @@
 #include <sys/fcntl.h>
 #include <sys/param.h>
 #include "unity.h"
-#include "soc/uart_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/uart.h"
 #include "esp_vfs.h"

@@ -94,7 +94,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
-#include "soc/dport_reg.h"
 
 /*
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.

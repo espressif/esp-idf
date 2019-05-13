@@ -20,8 +20,7 @@
 #include "esp_attr.h"
 
 #include "driver/mcpwm.h"
-#include "soc/mcpwm_reg.h"
-#include "soc/mcpwm_struct.h"
+#include "soc/mcpwm_periph.h"
 
 #define GPIO_PWM0A_OUT 15   //Set GPIO 15 as PWM0A
 #define GPIO_PWM0B_OUT 16   //Set GPIO 16 as PWM0B

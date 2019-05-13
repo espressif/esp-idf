@@ -15,7 +15,7 @@
 #include "esp_slave.h"
 #include "esp_log.h"
 #include "freertos/task.h"
-#include "soc/host_reg.h"
+#include "soc/sdio_slave_periph.h"
 
 static const char TAG[] = "esp_slave";
 

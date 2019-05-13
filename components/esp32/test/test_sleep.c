@@ -4,15 +4,14 @@
 #include "esp_sleep.h"
 #include "esp32/clk.h"
 #include "driver/rtc_io.h"
-#include "soc/gpio_reg.h"
-#include "soc/rtc.h"
-#include "soc/uart_reg.h"
 #include "esp32/rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "soc/gpio_periph.h"
+#include "soc/uart_periph.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
-#include "soc/rtc_cntl_reg.h"   // for read rtc registers directly (cause)
+#include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
 #include "esp32/rom/rtc.h"
 #include "esp_newlib.h"

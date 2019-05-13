@@ -29,7 +29,6 @@
 #include "esp_attr.h"
 #include "soc/dport_reg.h"
 #include "sdkconfig.h"
-#include "esp32/dport_access.h"
 
 void esp_cache_err_int_init()
 {

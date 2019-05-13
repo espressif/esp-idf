@@ -15,7 +15,7 @@
 #include "esp_attr.h"
 #include "soc/cpu.h"
 #include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "sdkconfig.h"
 
 void IRAM_ATTR esp_cpu_stall(int cpu_id)

@@ -35,8 +35,7 @@
 
 #include "esp32/sha.h"
 #include "esp32/rom/ets_sys.h"
-#include "soc/dport_reg.h"
-#include "soc/hwcrypto_reg.h"
+#include "soc/hwcrypto_periph.h"
 #include "driver/periph_ctrl.h"
 
 inline static uint32_t SHA_LOAD_REG(esp_sha_type sha_type) {
