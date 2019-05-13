@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SDIO_SLAVE_PERIPH_H_
-#define _SOC_SDIO_SLAVE_PERIPH_H_
-
+#pragma once
 #include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/sdio_slave_pins.h"
@@ -45,5 +43,3 @@ extern const sdio_slave_slot_info_t sdio_slave_slot_info[];
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _SOC_SDIO_SLAVE_PERIPH_H_ */

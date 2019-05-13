@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SPI_PERIPH_H_
-#define _SOC_SPI_PERIPH_H_
-
+#pragma once
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
@@ -62,5 +60,3 @@ extern const spi_signal_conn_t spi_periph_signal[3];
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _SOC_SPI_PERIPH_H_ */
