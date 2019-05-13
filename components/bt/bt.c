@@ -40,7 +40,6 @@
 #include "esp_ipc.h"
 #include "driver/periph_ctrl.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
 #include "esp32/clk.h"
 #include "esp_coexist_internal.h"

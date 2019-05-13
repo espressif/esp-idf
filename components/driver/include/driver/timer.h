@@ -17,8 +17,7 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "soc/soc.h"
-#include "soc/timer_group_reg.h"
-#include "soc/timer_group_struct.h"
+#include "soc/timer_periph.h"
 #include "esp_intr_alloc.h"
 
 #ifdef __cplusplus

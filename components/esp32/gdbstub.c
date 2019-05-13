@@ -20,8 +20,8 @@
 
 #include <string.h>
 #include "esp32/rom/ets_sys.h"
-#include "soc/uart_reg.h"
-#include "soc/io_mux_reg.h"
+#include "soc/uart_periph.h"
+#include "soc/gpio_periph.h"
 #include "esp_private/gdbstub.h"
 #include "esp_debug_helpers.h"
 #include "driver/gpio.h"

@@ -22,7 +22,6 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
 #include "soc/rtc.h"
-#include "soc/dport_reg.h"
 
 #include "esp_err.h"
 #include "esp_phy_init.h"

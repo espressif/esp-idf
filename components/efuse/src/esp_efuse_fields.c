@@ -21,7 +21,7 @@
 #include "assert.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 #include "bootloader_random.h"
 
 const static char *TAG = "efuse";

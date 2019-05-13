@@ -25,8 +25,7 @@
 #include <esp_spi_flash.h>
 #include <esp32/rom/spi_flash.h>
 #include "../cache_utils.h"
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
+#include "soc/timer_periph.h"
 #include "esp_heap_caps.h"
 
 /* Base offset in flash for tests. */

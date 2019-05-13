@@ -44,7 +44,7 @@
 #include "port.h"
 #include "driver/uart.h"
 #include "freertos/queue.h" // for queue support
-#include "soc/uart_reg.h"
+#include "soc/uart_periph.h"
 #include "driver/gpio.h"
 #include "esp_log.h"        // for esp_log
 #include "esp_err.h"        // for ESP_ERROR_CHECK macro

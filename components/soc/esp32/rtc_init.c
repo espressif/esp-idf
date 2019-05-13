@@ -16,10 +16,10 @@
 
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_reg.h"
-#include "soc/gpio_reg.h"
+#include "soc/efuse_periph.h"
+#include "soc/gpio_periph.h"
 
 
 void rtc_init(rtc_config_t cfg)

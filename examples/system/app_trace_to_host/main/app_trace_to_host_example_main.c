@@ -12,8 +12,8 @@
 #include "freertos/task.h"
 #include "esp_app_trace.h"
 #include "esp_log.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
 #include "driver/adc.h"
 #include "driver/dac.h"
 

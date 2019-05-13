@@ -23,7 +23,6 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
-#include "soc/gpio_reg.h"
 #include "unity.h"
 
 /* Second ESP32 board attached as follows:

@@ -13,15 +13,12 @@
 // limitations under the License.
 #include <esp_types.h>
 #include <string.h>
-#include "esp_intr_alloc.h"
-#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/gpio_periph.h"
 #include "driver/ledc.h"
-#include "soc/ledc_reg.h"
-#include "soc/ledc_struct.h"
+#include "soc/ledc_periph.h"
 #include "esp_log.h"
 
 static const char* LEDC_TAG = "ledc";

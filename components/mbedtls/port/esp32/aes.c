@@ -29,8 +29,7 @@
 #include "mbedtls/aes.h"
 #include "mbedtls/platform_util.h"
 #include "esp32/aes.h"
-#include "soc/dport_reg.h"
-#include "soc/hwcrypto_reg.h"
+#include "soc/hwcrypto_periph.h"
 #include <sys/lock.h>
 
 #include <freertos/FreeRTOS.h>

@@ -18,12 +18,10 @@
 #include <soc/lldesc.h>
 #include "driver/spi_common.h"
 #include "driver/spi_slave.h"
-#include "soc/dport_reg.h"
 #include "soc/spi_periph.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
-#include "esp_intr_alloc.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -32,12 +30,9 @@
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
-#include "soc/soc.h"
 #include "soc/soc_memory_layout.h"
-#include "soc/dport_reg.h"
 #include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
 
 static const char *SPI_TAG = "spi_slave";

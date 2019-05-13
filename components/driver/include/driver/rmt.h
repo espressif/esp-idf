@@ -15,9 +15,7 @@
 #ifndef _DRIVER_RMT_CTRL_H_
 #define _DRIVER_RMT_CTRL_H_
 #include "esp_err.h"
-#include "soc/rmt_reg.h"
-#include "soc/dport_reg.h"
-#include "soc/rmt_struct.h"
+#include "soc/rmt_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
