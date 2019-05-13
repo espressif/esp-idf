@@ -183,9 +183,6 @@ static bool esp_sha_lock_engine_common(esp_sha_type sha_type, TickType_t ticks_t
         /* Just locked first engine,
            so enable SHA hardware */
         periph_module_enable(PERIPH_SHA_MODULE);
-        DPORT_STALL_OTHER_CPU_START();
-        ets_sha_enable();
-        DPORT_STALL_OTHER_CPU_END();
     }
 
     engines_in_use++;
@@ -304,62 +301,4 @@ void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_
        as a performance tweak - delay waiting until the next time we need the SHA
        unit, instead.
     */
-}
-
-void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
-{
-    size_t block_len = block_length(sha_type);
-
-    // Max number of blocks to pass per each call to esp_sha_lock_memory_block()
-    // (keep low enough to avoid starving interrupt handlers, especially if reading
-    // data into SHA via flash cache, but high enough that spinlock overhead is low)
-    const size_t BLOCKS_PER_CHUNK = 100;
-    const size_t MAX_CHUNK_LEN = BLOCKS_PER_CHUNK * block_len;
-
-    SHA_CTX ctx;
-
-    esp_sha_lock_engine(sha_type);
-
-    ets_sha_init(&ctx);
-
-    while (ilen > 0) {
-        size_t chunk_len = (ilen > MAX_CHUNK_LEN) ? MAX_CHUNK_LEN : ilen;
-
-        // Wait for idle before entering critical section
-        // (to reduce time spent in it), then check again after
-        esp_sha_wait_idle();
-        esp_sha_lock_memory_block();
-        esp_sha_wait_idle();
-
-        DPORT_STALL_OTHER_CPU_START();
-        while (chunk_len > 0) {
-            // This SHA ROM function reads DPORT regs
-            // (can accept max one SHA block each call)
-            size_t update_len = (chunk_len > block_len) ? block_len : chunk_len;
-            ets_sha_update(&ctx, sha_type, input, update_len * 8);
-
-            input += update_len;
-            chunk_len -= update_len;
-            ilen -= update_len;
-        }
-        DPORT_STALL_OTHER_CPU_END();
-
-        if (ilen == 0) {
-            /* Finish the last block before releasing the memory
-               block lock, as ets_sha_update() may have written data to
-               the memory block already (partial last block) and hardware
-               hasn't yet processed it.
-            */
-            DPORT_STALL_OTHER_CPU_START();
-            {
-                // This SHA ROM function also reads DPORT regs
-                ets_sha_finish(&ctx, sha_type, output);
-            }
-            DPORT_STALL_OTHER_CPU_END();
-        }
-
-        esp_sha_unlock_memory_block();
-    }
-
-    esp_sha_unlock_engine(sha_type);
 }

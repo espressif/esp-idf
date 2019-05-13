@@ -81,6 +81,7 @@ set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 target_sources(mbedtls PRIVATE "${COMPONENT_PATH}/port/esp_bignum.c"
                                 "${COMPONENT_PATH}/port/esp_hardware.c"
                                 "${COMPONENT_PATH}/port/esp_mem.c"
+                                "${COMPONENT_PATH}/port/esp_sha.c"
                                 "${COMPONENT_PATH}/port/esp_sha1.c"
                                 "${COMPONENT_PATH}/port/esp_sha256.c"
                                 "${COMPONENT_PATH}/port/esp_sha512.c"
