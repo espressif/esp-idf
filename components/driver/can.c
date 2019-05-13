@@ -677,6 +677,7 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
         ret = ESP_ERR_INVALID_STATE;
         goto err;
     }
+    periph_module_reset(PERIPH_CAN_MODULE);
     periph_module_enable(PERIPH_CAN_MODULE);            //Enable APB CLK to CAN peripheral
     configASSERT(can_enter_reset_mode() == ESP_OK);     //Must enter reset mode to write to config registers
     can_config_pelican();                               //Use PeliCAN addresses
