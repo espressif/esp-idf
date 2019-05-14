@@ -23,7 +23,7 @@ import argparse
 from io import open
 
 # regular expression for matching Kconfig files
-RE_KCONFIG = r'^Kconfig(?:\.projbuild)?$'
+RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
 
 # ouput file with suggestions will get this suffix
 OUTPUT_SUFFIX = '.new'
