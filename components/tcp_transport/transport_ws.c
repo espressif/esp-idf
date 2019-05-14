@@ -113,10 +113,17 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "Error write Upgrade header %s", ws->buffer);
         return -1;
     }
-    if ((len = esp_transport_read(ws->parent, ws->buffer, DEFAULT_WS_BUFFER, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
-        return -1;
-    }
+    int header_len = 0;
+    do {
+        if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, DEFAULT_WS_BUFFER - header_len, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
+            return -1;
+        }
+        header_len += len;
+        ws->buffer[header_len] = '\0';
+        ESP_LOGD(TAG, "Read header chunk %d, current header size: %d", len, header_len);
+    } while (NULL == strstr(ws->buffer, "\r\n\r\n") && header_len < DEFAULT_WS_BUFFER);
+
     char *server_key = get_http_header(ws->buffer, "Sec-WebSocket-Accept:");
     if (server_key == NULL) {
         ESP_LOGE(TAG, "Sec-WebSocket-Accept not found");
