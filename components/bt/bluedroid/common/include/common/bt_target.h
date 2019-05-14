@@ -87,6 +87,12 @@
 #ifndef BTM_MAX_SCO_LINKS
 #define BTM_MAX_SCO_LINKS           (1)
 #endif
+#ifndef SBC_DEC_INCLUDED
+#define SBC_DEC_INCLUDED            TRUE
+#endif
+#ifndef SBC_ENC_INCLUDED
+#define SBC_ENC_INCLUDED            TRUE
+#endif
 #endif  /* CONFIG_HFP_HF_ENABLE */
 
 #if CONFIG_BT_SSP_ENABLED
@@ -152,13 +158,13 @@
 
 #ifndef CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
 #define BLE_ADV_REPORT_FLOW_CONTROL_NUM   100
-#else 
+#else
 #define BLE_ADV_REPORT_FLOW_CONTROL_NUM     CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
 #endif /* CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM */
 
 #ifndef CONFIG_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
 #define BLE_ADV_REPORT_DISCARD_THRSHOLD  20
-#else 
+#else
 #define BLE_ADV_REPORT_DISCARD_THRSHOLD  CONFIG_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
 #endif /* CONFIG_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD */
 
@@ -608,6 +614,16 @@
 /* max TX SCO data packet size */
 #ifndef BTM_SCO_DATA_SIZE_MAX
 #define BTM_SCO_DATA_SIZE_MAX       120 //240
+#endif
+
+/* max TX eSCO data packet size */
+#ifndef BTM_ESCO_DATA_SIZE_MAX
+#define BTM_ESCO_DATA_SIZE_MAX      60
+#endif
+
+/* TX eSCO data packet size */
+#ifndef BTM_ESCO_DATA_SIZE
+#define BTM_ESCO_DATA_SIZE          57
 #endif
 
 /* The size in bytes of the BTM inquiry database. 5 As Default */

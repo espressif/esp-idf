@@ -50,21 +50,25 @@ static float rcos[SBC_OLAL] = {
 //     0.96984631f,0.88302222f,      0.75f,0.58682409f,
 //     0.41317591f,      0.25f,0.11697778f,0.09015369f};
 
+
 static float SqrtByCarmack(const float x){
-    int i;
-    float x2, y;
+    union {
+        int i;
+        float y;
+    } float_int;
+
+    float x2;
     const float threehalfs = 1.5f;
 
     x2 = x * 0.5f;
-    y = x;
-    i = *(int *)&y;
-    i = 0x5f375a86 - (i >> 1);
-    y = *(float *)&i;
-    y = y * (threehalfs - (x2 * y *y));
-    // y = y * (threehalfs - (x2 * y *y));
-    // y = y * (threehalfs - (x2 * y *y));
+    float_int.y = x;
 
-    return (x * y);
+    float_int.i = 0x5f375a86 - (float_int.i >> 1);
+    float_int.y = float_int.y * (threehalfs - (x2 * float_int.y * float_int.y));
+    // float_int.y = float_int.y * (threehalfs - (x2 * float_int.y * float_int.y));
+    // float_int.y = float_int.y * (threehalfs - (x2 * float_int.y * float_int.y));
+
+    return (x * float_int.y);
 }
 
 static float absolute(float x){

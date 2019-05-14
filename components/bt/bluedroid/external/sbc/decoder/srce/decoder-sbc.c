@@ -79,9 +79,9 @@ PRIVATE OI_STATUS FindSyncword(OI_CODEC_SBC_DECODER_CONTEXT *context,
         return OI_CODEC_SBC_NO_SYNCWORD;
     }
 #else  // SBC_ENHANCED
-
-    while (*frameBytes && (**frameData != OI_SBC_SYNCWORD)
-            && (**frameData != OI_mSBC_SYNCWORD)) {
+    while (*frameBytes
+        && (!(context->sbc_mode == OI_SBC_MODE_STD && **frameData == OI_SBC_SYNCWORD))
+        && (!(context->sbc_mode == OI_SBC_MODE_MSBC && **frameData == OI_mSBC_SYNCWORD))) {
         (*frameBytes)--;
         (*frameData)++;
     }
@@ -230,9 +230,10 @@ OI_STATUS OI_CODEC_SBC_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                     OI_UINT32 decoderDataBytes,
                                     OI_UINT8 maxChannels,
                                     OI_UINT8 pcmStride,
-                                    OI_BOOL enhanced)
+                                    OI_BOOL enhanced,
+                                    OI_BOOL msbc_enable)
 {
-    return internal_DecoderReset(context, decoderData, decoderDataBytes, maxChannels, pcmStride, enhanced);
+    return internal_DecoderReset(context, decoderData, decoderDataBytes, maxChannels, pcmStride, enhanced, msbc_enable);
 }
 
 OI_STATUS OI_CODEC_SBC_DecodeFrame(OI_CODEC_SBC_DECODER_CONTEXT *context,
