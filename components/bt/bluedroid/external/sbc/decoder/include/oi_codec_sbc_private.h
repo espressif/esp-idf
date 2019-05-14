@@ -170,7 +170,8 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_UINT32 decoderDataBytes,
                                        OI_BYTE maxChannels,
                                        OI_BYTE pcmStride,
-                                       OI_BOOL enhanced);
+                                       OI_BOOL enhanced,
+                                       OI_BOOL msbc_enable);
 
 INLINE OI_UINT16 OI_SBC_CalculateFrameAndHeaderlen(OI_CODEC_SBC_FRAME_INFO *frame, OI_UINT *headerLen_);
 

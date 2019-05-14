@@ -78,6 +78,9 @@ Declarations of codec functions, data types, and macros.
 #define OI_SBC_ENHANCED_SYNCWORD 0x9d
 #define OI_mSBC_SYNCWORD 0xad
 
+#define OI_SBC_MODE_STD      0
+#define OI_SBC_MODE_MSBC     1
+
 /**@name Sampling frequencies */
 /**@{*/
 #define SBC_FREQ_16000 0 /**< The sampling frequency is 16 kHz. One possible value for the @a frequency parameter of OI_CODEC_SBC_EncoderConfigure() */
@@ -200,6 +203,7 @@ typedef struct {
     OI_UINT8 restrictSubbands;
     OI_UINT8 enhancedEnabled;
     OI_UINT8 bufferedBlocks;
+    OI_UINT8 sbc_mode;                      /* OI_SBC_MODE_STD or OI_SBC_MODE_MSBC */
 } OI_CODEC_SBC_DECODER_CONTEXT;
 
 typedef struct {
@@ -236,7 +240,8 @@ OI_STATUS OI_CODEC_SBC_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                     OI_UINT32 decoderDataBytes,
                                     OI_UINT8 maxChannels,
                                     OI_UINT8 pcmStride,
-                                    OI_BOOL enhanced);
+                                    OI_BOOL enhanced,
+                                    OI_BOOL msbc_enable);
 
 /**
  * This function restricts the kind of SBC frames that the Decoder will

@@ -47,7 +47,8 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_UINT32 decoderDataBytes,
                                        OI_BYTE maxChannels,
                                        OI_BYTE pcmStride,
-                                       OI_BOOL enhanced)
+                                       OI_BOOL enhanced,
+                                       OI_BOOL msbc_enable)
 {
     OI_UINT i;
     OI_STATUS status;
@@ -64,6 +65,12 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
         return OI_STATUS_INVALID_PARAMETERS;
     }
 #endif
+
+    if (msbc_enable) {
+        context->sbc_mode = OI_SBC_MODE_MSBC;
+    } else {
+        context->sbc_mode = OI_SBC_MODE_STD;
+    }
 
     status = OI_CODEC_SBC_Alloc(&context->common, decoderData, decoderDataBytes, maxChannels, pcmStride);
 

@@ -232,6 +232,8 @@ const tBTA_HF_CLIENT_ST_TBL bta_hf_client_st_tbl[] = {
     bta_hf_client_st_closing
 };
 
+const char *bta_hf_client_version = "1.6";
+
 /* HF Client control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_HF_CLIENT_CB  bta_hf_client_cb;
@@ -385,15 +387,11 @@ static void bta_hf_client_api_enable(tBTA_HF_CLIENT_DATA *p_data)
     bta_hf_client_cb.p_cback = p_data->api_enable.p_cback;
 
     /* check if mSBC support enabled */
-#if 0 // todo
-    char value[PROPERTY_VALUE_MAX];
-    property_get("ro.bluetooth.hfp.ver", value, "0");
-    if (strcmp(value, "1.6") == 0) {
+    if (strcmp(bta_hf_client_version, "1.6") == 0) {
         bta_hf_client_cb.msbc_enabled = TRUE;
+    } else{
+        bta_hf_client_cb.msbc_enabled = FALSE;
     }
-#else
-    bta_hf_client_cb.msbc_enabled = FALSE;
-#endif
 
     bta_hf_client_cb.scb.negotiated_codec = BTM_SCO_CODEC_CVSD;
 
