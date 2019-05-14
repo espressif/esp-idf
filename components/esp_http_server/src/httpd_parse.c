@@ -711,18 +711,25 @@ esp_err_t httpd_req_delete(struct httpd_data *hd)
     /* Finish off reading any pending/leftover data */
     while (ra->remaining_len) {
         /* Any length small enough not to overload the stack, but large
-         * enough to finish off the buffers fast
-         */
-        char dummy[32];
-        int recv_len = MIN(sizeof(dummy) - 1, ra->remaining_len);
-        int ret = httpd_req_recv(r, dummy, recv_len);
-        if (ret <  0) {
+         * enough to finish off the buffers fast */
+        char dummy[CONFIG_HTTPD_PURGE_BUF_LEN];
+        int recv_len = MIN(sizeof(dummy), ra->remaining_len);
+        recv_len = httpd_req_recv(r, dummy, recv_len);
+        if (recv_len < 0) {
             httpd_req_cleanup(r);
             return ESP_FAIL;
         }
 
-        dummy[ret] = '\0';
-        ESP_LOGD(TAG, LOG_FMT("purging data : %s"), dummy);
+        ESP_LOGD(TAG, LOG_FMT("purging data size : %d bytes"), recv_len);
+
+#ifdef CONFIG_HTTPD_LOG_PURGE_DATA
+        /* Enabling this will log discarded binary HTTP content data at
+         * Debug level. For large content data this may not be desirable
+         * as it will clutter the log */
+        ESP_LOGD(TAG, "================= PURGED DATA =================");
+        ESP_LOG_BUFFER_HEX_LEVEL(TAG, dummy, recv_len, ESP_LOG_DEBUG);
+        ESP_LOGD(TAG, "===============================================");
+#endif
     }
 
     httpd_req_cleanup(r);
