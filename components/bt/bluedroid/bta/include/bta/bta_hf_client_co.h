@@ -73,7 +73,7 @@ tBTA_HFP_SCO_ROUTE_TYPE bta_hf_client_sco_co_init(UINT32 rx_bw, UINT32 tx_bw,
 ** Returns          void
 **
 *******************************************************************************/
-void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 pkt_size, UINT16 event);
+void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_size, UINT16 event);
 
 /*******************************************************************************
 **

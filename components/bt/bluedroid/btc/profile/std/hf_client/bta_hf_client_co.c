@@ -22,8 +22,6 @@
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 
-#include "btm_int.h"
-#include "stack/btm_api.h"
 #include "oi_codec_sbc.h"
 #include "oi_status.h"
 #include "sbc_encoder.h"
@@ -48,28 +46,35 @@ static bta_hf_ct_plc_t *bta_hf_ct_plc_ptr;
 
 
 #define HF_SBC_DEC_CONTEXT_DATA_LEN     (CODEC_DATA_WORDS(1, SBC_CODEC_FAST_FILTER_BUFFERS))
-#define HF_SBC_DEC_PCM_DATA_LEN         240
-#define HF_SBC_ENC_PCM_DATA_LEN         240
+#define HF_SBC_DEC_RAW_DATA_SIZE        240
+#define HF_SBC_ENC_RAW_DATA_SIZE        240
+
+/* BTA-HF-CO control block to map bdaddr to BTA handle */
+typedef struct
+{
+    OI_CODEC_SBC_DECODER_CONTEXT    decoder_context;
+    OI_UINT32                       decoder_context_data[HF_SBC_DEC_CONTEXT_DATA_LEN];
+    OI_INT16                        decode_raw_data[HF_SBC_DEC_RAW_DATA_SIZE];
+
+    SBC_ENC_PARAMS                  encoder;
+
+    UINT8                           sequence_number;
+    bool                            is_bad_frame;
+    bool                            decode_first_pkt;
+    OI_BYTE                         decode_msbc_data[BTM_MSBC_FRAME_SIZE];
+    bool                            encode_first_pkt;
+    OI_BYTE                         encode_msbc_data[BTM_MSBC_FRAME_SIZE];
+} bta_hf_client_co_cb_t;
 
 #if HFP_DYNAMIC_MEMORY == FALSE
-static OI_CODEC_SBC_DECODER_CONTEXT hf_sbc_decoder_context;
-static OI_UINT32 hf_sbc_decoder_context_data[HF_SBC_DEC_CONTEXT_DATA_LEN];
-static OI_INT16 hf_sbc_decode_pcm_data[HF_SBC_DEC_PCM_DATA_LEN];
-
-static SBC_ENC_PARAMS hf_sbc_encoder;
+static bta_hf_client_co_cb_t bta_hf_client_co_cb;
 #else
-static OI_CODEC_SBC_DECODER_CONTEXT *hf_sbc_decoder_context_ptr;
-static OI_UINT32 *hf_sbc_decoder_context_data;
-static OI_INT16 *hf_sbc_decode_pcm_data;
-#define hf_sbc_decoder_context (*hf_sbc_decoder_context_ptr)
-
-static SBC_ENC_PARAMS *hf_sbc_encoder_ptr;
-#define hf_sbc_encoder (*hf_sbc_encoder_ptr)
+static bta_hf_client_co_cb_t *bta_hf_client_co_cb_ptr;
+#define bta_hf_client_co_cb (*bta_hf_client_co_cb_ptr)
 #endif /* HFP_DYNAMIC_MEMORY == FALSE */
 
-static UINT8 hf_sequence_number = 0;
 static UINT8 hf_air_mode;
-static UINT8 hf_pkt_size;
+static UINT8 hf_inout_pkt_size;
 
 /*******************************************************************************
 **
@@ -137,7 +142,7 @@ static void bta_hf_dec_init(void) {
 
     OI_STATUS status;
 
-    status = OI_CODEC_SBC_DecoderReset(&hf_sbc_decoder_context, hf_sbc_decoder_context_data,
+    status = OI_CODEC_SBC_DecoderReset(&bta_hf_client_co_cb.decoder_context, bta_hf_client_co_cb.decoder_context_data,
                                        HF_SBC_DEC_CONTEXT_DATA_LEN * sizeof(OI_UINT32), 1, 1, FALSE, TRUE);
     if (!OI_SUCCESS(status)) {
         APPL_TRACE_ERROR("OI_CODEC_SBC_DecoderReset failed with error code %d\n", status);
@@ -154,18 +159,21 @@ static void bta_hf_dec_init(void) {
  **
  *******************************************************************************/
 static void bta_hf_enc_init(void) {
-    hf_sequence_number = 0;
+    bta_hf_client_co_cb.sequence_number = 0;
+    bta_hf_client_co_cb.decode_first_pkt = true;
+    bta_hf_client_co_cb.encode_first_pkt = true;
+    bta_hf_client_co_cb.is_bad_frame =  false;
 
-    hf_sbc_encoder.sbc_mode = SBC_MODE_MSBC;
-    hf_sbc_encoder.s16NumOfBlocks    = 15;
-    hf_sbc_encoder.s16NumOfSubBands  = 8;
-    hf_sbc_encoder.s16AllocationMethod = SBC_LOUDNESS;
-    hf_sbc_encoder.s16BitPool   = 26;
-    hf_sbc_encoder.s16ChannelMode = SBC_MONO;
-    hf_sbc_encoder.s16NumOfChannels = 1;
-    hf_sbc_encoder.s16SamplingFreq = SBC_sf16000;
+    bta_hf_client_co_cb.encoder.sbc_mode = SBC_MODE_MSBC;
+    bta_hf_client_co_cb.encoder.s16NumOfBlocks    = 15;
+    bta_hf_client_co_cb.encoder.s16NumOfSubBands  = 8;
+    bta_hf_client_co_cb.encoder.s16AllocationMethod = SBC_LOUDNESS;
+    bta_hf_client_co_cb.encoder.s16BitPool   = 26;
+    bta_hf_client_co_cb.encoder.s16ChannelMode = SBC_MONO;
+    bta_hf_client_co_cb.encoder.s16NumOfChannels = 1;
+    bta_hf_client_co_cb.encoder.s16SamplingFreq = SBC_sf16000;
 
-    SBC_Encoder_Init(&(hf_sbc_encoder));
+    SBC_Encoder_Init(&(bta_hf_client_co_cb.encoder));
 }
 
 /*******************************************************************************
@@ -178,28 +186,19 @@ static void bta_hf_enc_init(void) {
 ** Returns          void
 **
 *******************************************************************************/
-void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 pkt_size, UINT16 event)
+void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_size, UINT16 event)
 {
     APPL_TRACE_EVENT("%s hdl %x, pkt_sz %u, event %u", __FUNCTION__, handle,
-                     pkt_size, event);
+                     inout_pkt_size, event);
 
     hf_air_mode = air_mode;
-    hf_pkt_size = pkt_size;
+    hf_inout_pkt_size = inout_pkt_size;
 
     if (air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
 #if (HFP_DYNAMIC_MEMORY == TRUE)
-        hf_sbc_decoder_context_ptr = osi_calloc(sizeof(OI_CODEC_SBC_DECODER_CONTEXT));
-        hf_sbc_decoder_context_data = osi_calloc(HF_SBC_DEC_CONTEXT_DATA_LEN * sizeof(OI_UINT32));
-        hf_sbc_decode_pcm_data = osi_calloc(HF_SBC_DEC_PCM_DATA_LEN * sizeof(OI_INT16));
-        if (!hf_sbc_decoder_context_ptr || !hf_sbc_decoder_context_data || !hf_sbc_decode_pcm_data) {
-            APPL_TRACE_ERROR("%s failed to allocate SBC decoder", __FUNCTION__);
-            goto error_exit;
-        }
-
-        hf_sbc_encoder_ptr = osi_calloc(sizeof(SBC_ENC_PARAMS));
-
-        if (!hf_sbc_encoder_ptr) {
-            APPL_TRACE_ERROR("%s failed to allocate SBC encoder", __FUNCTION__);
+        bta_hf_client_co_cb_ptr = osi_calloc(sizeof(bta_hf_client_co_cb_t));
+        if (!bta_hf_client_co_cb_ptr) {
+            APPL_TRACE_ERROR("%s allocate failed", __FUNCTION__);
             goto error_exit;
         }
 
@@ -220,21 +219,9 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 pkt_size, UI
 
 error_exit:;
 #if (HFP_DYNAMIC_MEMORY == TRUE)
-        if (hf_sbc_decoder_context_ptr) {
-            osi_free(hf_sbc_decoder_context_ptr);
-            hf_sbc_decoder_context_ptr = NULL;
-        }
-        if (hf_sbc_decoder_context_data) {
-            osi_free(hf_sbc_decoder_context_data);
-            hf_sbc_decoder_context_data = NULL;
-        }
-        if (hf_sbc_decode_pcm_data) {
-            osi_free(hf_sbc_decode_pcm_data);
-            hf_sbc_decode_pcm_data = NULL;
-        }
-        if (hf_sbc_encoder_ptr) {
-            osi_free(hf_sbc_encoder_ptr);
-            hf_sbc_encoder_ptr = NULL;
+        if (bta_hf_client_co_cb_ptr) {
+            osi_free(bta_hf_client_co_cb_ptr);
+            bta_hf_client_co_cb_ptr = NULL;
         }
 
 #if (PLC_INCLUDED == TRUE)
@@ -273,22 +260,14 @@ void bta_hf_client_sco_co_close(void)
 
 #if (HFP_DYNAMIC_MEMORY == TRUE)
         osi_free(bta_hf_ct_plc_ptr);
+        bta_hf_ct_plc_ptr = NULL;
 #endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
 
 #endif  ///(PLC_INCLUDED == TRUE)
 
 #if (HFP_DYNAMIC_MEMORY == TRUE)
-        osi_free(hf_sbc_decoder_context_ptr);
-        hf_sbc_decoder_context_ptr = NULL;
-
-        osi_free(hf_sbc_decoder_context_data);
-        hf_sbc_decoder_context_data = NULL;
-
-        osi_free(hf_sbc_decode_pcm_data);
-        hf_sbc_decode_pcm_data = NULL;
-
-        osi_free(hf_sbc_encoder_ptr);
-        hf_sbc_encoder_ptr = NULL;
+        osi_free(bta_hf_client_co_cb_ptr);
+        bta_hf_client_co_cb_ptr = NULL;
 #endif /* HFP_DYNAMIC_MEMORY == TRUE */
     } else {
         // Nothing to do
@@ -316,15 +295,15 @@ static void bta_hf_client_h2_header(UINT16 *p_buf)
 #define BTA_HF_H2_HEADER_SN1_BIT_OFFSET2 15
 
     UINT16 h2_header = BTA_HF_H2_HEADER;
-    UINT8 h2_header_sn0 = hf_sequence_number & BTA_HF_H2_HEADER_BIT0_MASK;
-    UINT8 h2_header_sn1 = hf_sequence_number & BTA_HF_H2_HEADER_BIT1_MASK;
+    UINT8 h2_header_sn0 = bta_hf_client_co_cb.sequence_number & BTA_HF_H2_HEADER_BIT0_MASK;
+    UINT8 h2_header_sn1 = bta_hf_client_co_cb.sequence_number & BTA_HF_H2_HEADER_BIT1_MASK;
     h2_header |= (h2_header_sn0 << BTA_HF_H2_HEADER_SN0_BIT_OFFSET1
                 | h2_header_sn0 << BTA_HF_H2_HEADER_SN0_BIT_OFFSET2
                 | h2_header_sn1 << (BTA_HF_H2_HEADER_SN1_BIT_OFFSET1 - 1)
                 | h2_header_sn1 << (BTA_HF_H2_HEADER_SN1_BIT_OFFSET2 - 1)
                 );
 
-    hf_sequence_number++;
+    bta_hf_client_co_cb.sequence_number++;
     *p_buf = h2_header;
 }
 
@@ -341,27 +320,52 @@ uint32_t bta_hf_client_sco_co_out_data(UINT8 *p_buf)
 {
     if (hf_air_mode == BTM_SCO_AIR_MODE_CVSD) {
         // CVSD
-        return btc_hf_client_outgoing_data_cb_to_app(p_buf, hf_pkt_size);
+        uint32_t hf_raw_pkt_size = hf_inout_pkt_size;
+        return btc_hf_client_outgoing_data_cb_to_app(p_buf, hf_raw_pkt_size);
     } else if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
         // mSBC
-        UINT32 size = btc_hf_client_outgoing_data_cb_to_app((UINT8 *)hf_sbc_encoder.as16PcmBuffer, HF_SBC_ENC_PCM_DATA_LEN);
-        if (size != HF_SBC_ENC_PCM_DATA_LEN){
-            return 0;
-        }
 
-        bta_hf_client_h2_header((UINT16 *)p_buf);
-        hf_sbc_encoder.pu8Packet = p_buf + 2;
+        if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE / 2) {
+            if (bta_hf_client_co_cb.encode_first_pkt){
+                UINT32 size = btc_hf_client_outgoing_data_cb_to_app((UINT8 *)bta_hf_client_co_cb.encoder.as16PcmBuffer, HF_SBC_ENC_RAW_DATA_SIZE);
+                if (size != HF_SBC_ENC_RAW_DATA_SIZE){
+                    return 0;
+                }
 
-        SBC_Encoder(&hf_sbc_encoder);
-        if (hf_sbc_encoder.u16PacketLength == BTM_ESCO_DATA_SIZE) {
-            return BTM_ESCO_DATA_SIZE_MAX;
+                bta_hf_client_h2_header((UINT16 *)bta_hf_client_co_cb.encode_msbc_data);
+                bta_hf_client_co_cb.encoder.pu8Packet = bta_hf_client_co_cb.encode_msbc_data + 2;
+
+                SBC_Encoder(&bta_hf_client_co_cb.encoder);
+                memcpy(p_buf, bta_hf_client_co_cb.encode_msbc_data, hf_inout_pkt_size);
+                bta_hf_client_co_cb.encode_first_pkt = !bta_hf_client_co_cb.encode_first_pkt;
+                return hf_inout_pkt_size;
+            } else {
+                memcpy(p_buf, bta_hf_client_co_cb.encode_msbc_data + hf_inout_pkt_size, hf_inout_pkt_size);
+                bta_hf_client_co_cb.encode_first_pkt = !bta_hf_client_co_cb.encode_first_pkt;
+                return hf_inout_pkt_size;
+            }
+
+        } else if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE) {
+            UINT32 size = btc_hf_client_outgoing_data_cb_to_app((UINT8 *)bta_hf_client_co_cb.encoder.as16PcmBuffer, HF_SBC_ENC_RAW_DATA_SIZE);
+            if (size != HF_SBC_ENC_RAW_DATA_SIZE){
+                return 0;
+            }
+
+            bta_hf_client_h2_header((UINT16 *)p_buf);
+            bta_hf_client_co_cb.encoder.pu8Packet = p_buf + 2;
+
+            SBC_Encoder(&bta_hf_client_co_cb.encoder);
+            return hf_inout_pkt_size;
         } else {
-            return 0;
+            //Never run to here.
         }
+
+
+
     } else {
         APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, hf_air_mode);
-        return 0;
     }
+    return 0;
 }
 
 /*******************************************************************************
@@ -376,16 +380,16 @@ uint32_t bta_hf_client_sco_co_out_data(UINT8 *p_buf)
 static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN is_bad_frame){
     OI_STATUS status;
     const OI_BYTE *zero_signal_frame_data;
-    UINT8 zero_signal_frame_len = BTM_ESCO_DATA_SIZE;
-    UINT32 sbc_frame_len = HF_SBC_DEC_PCM_DATA_LEN;
+    UINT8 zero_signal_frame_len = BTM_MSBC_FRAME_DATA_SIZE;
+    UINT32 sbc_raw_data_size = HF_SBC_DEC_RAW_DATA_SIZE;
 
     if (is_bad_frame){
         status = OI_CODEC_SBC_CHECKSUM_MISMATCH;
     } else {
-        status = OI_CODEC_SBC_DecodeFrame(&hf_sbc_decoder_context, (const OI_BYTE **)data,
+        status = OI_CODEC_SBC_DecodeFrame(&bta_hf_client_co_cb.decoder_context, (const OI_BYTE **)data,
                                           (OI_UINT32 *)length,
-                                          (OI_INT16 *)hf_sbc_decode_pcm_data,
-                                          (OI_UINT32 *)&sbc_frame_len);
+                                          (OI_INT16 *)bta_hf_client_co_cb.decode_raw_data,
+                                          (OI_UINT32 *)&sbc_raw_data_size);
     }
 
 // PLC_INCLUDED will be set to TRUE when enabling Wide Band Speech
@@ -393,7 +397,7 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
     switch(status){
         case OI_OK:
             bta_hf_ct_plc.first_good_frame_found = TRUE;
-            sbc_plc_good_frame(&(bta_hf_ct_plc.plc_state), (int16_t *)hf_sbc_decode_pcm_data, bta_hf_ct_plc.sbc_plc_out);
+            sbc_plc_good_frame(&(bta_hf_ct_plc.plc_state), (int16_t *)bta_hf_client_co_cb.decode_raw_data, bta_hf_ct_plc.sbc_plc_out);
         case OI_CODEC_SBC_NOT_ENOUGH_HEADER_DATA:
         case OI_CODEC_SBC_NOT_ENOUGH_BODY_DATA:
         case OI_CODEC_SBC_NOT_ENOUGH_AUDIO_DATA:
@@ -404,13 +408,13 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
                 break;
             }
             zero_signal_frame_data = sbc_plc_zero_signal_frame();
-            sbc_frame_len = HF_SBC_DEC_PCM_DATA_LEN;
-            status = OI_CODEC_SBC_DecodeFrame(&hf_sbc_decoder_context, &zero_signal_frame_data,
+            sbc_raw_data_size = HF_SBC_DEC_RAW_DATA_SIZE;
+            status = OI_CODEC_SBC_DecodeFrame(&bta_hf_client_co_cb.decoder_context, &zero_signal_frame_data,
                                                 (OI_UINT32 *)&zero_signal_frame_len,
-                                                (OI_INT16 *)hf_sbc_decode_pcm_data,
-                                                (OI_UINT32 *)&sbc_frame_len);
-
-            sbc_plc_bad_frame(&(bta_hf_ct_plc.plc_state), hf_sbc_decode_pcm_data, bta_hf_ct_plc.sbc_plc_out);
+                                                (OI_INT16 *)bta_hf_client_co_cb.decode_raw_data,
+                                                (OI_UINT32 *)&sbc_raw_data_size);
+            sbc_plc_bad_frame(&(bta_hf_ct_plc.plc_state), bta_hf_client_co_cb.decode_raw_data, bta_hf_ct_plc.sbc_plc_out);
+            APPL_TRACE_DEBUG("bad frame, using PLC to fix it.");
             break;
         case OI_STATUS_INVALID_PARAMETERS:
             // This caused by corrupt frames.
@@ -418,7 +422,7 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
             // Re-initialize the codec.
             APPL_TRACE_ERROR("Frame decode error: OI_STATUS_INVALID_PARAMETERS");
 
-            if (!OI_SUCCESS(OI_CODEC_SBC_DecoderReset(&hf_sbc_decoder_context, hf_sbc_decoder_context_data,
+            if (!OI_SUCCESS(OI_CODEC_SBC_DecoderReset(&bta_hf_client_co_cb.decoder_context, bta_hf_client_co_cb.decoder_context_data,
                                        HF_SBC_DEC_CONTEXT_DATA_LEN * sizeof(OI_UINT32), 1, 1, FALSE, TRUE))) {
                 APPL_TRACE_ERROR("OI_CODEC_SBC_DecoderReset failed with error code %d\n", status);
             }
@@ -430,7 +434,7 @@ static void bta_hf_client_decode_msbc_frame(UINT8 **data, UINT8 *length, BOOLEAN
 #endif  ///(PLC_INCLUDED == TRUE)
 
     if (OI_SUCCESS(status)){
-        btc_hf_client_incoming_data_cb_to_app((const uint8_t *)(bta_hf_ct_plc.sbc_plc_out), sbc_frame_len);
+        btc_hf_client_incoming_data_cb_to_app((const uint8_t *)(bta_hf_ct_plc.sbc_plc_out), sbc_raw_data_size);
     }
 }
 
@@ -447,35 +451,51 @@ void bta_hf_client_sco_co_in_data(BT_HDR  *p_buf, tBTM_SCO_DATA_FLAG status)
 {
     UINT8 *p = (UINT8 *)(p_buf + 1) + p_buf->offset;
     UINT8 pkt_size = 0;
-    UINT16 handle, sco_index;
 
-    STREAM_TO_UINT16 (handle, p);
+    STREAM_SKIP_UINT16(p);
     STREAM_TO_UINT8 (pkt_size, p);
 
-    handle = BTMD_GET_HANDLE (handle);
-    sco_index = btm_find_scb_by_handle(handle);
-    tSCO_CONN *sco_p = &btm_cb.sco_cb.sco_db[sco_index];
-
-    if (sco_p->esco.data.air_mode == BTM_SCO_AIR_MODE_CVSD) {
+    if (hf_air_mode == BTM_SCO_AIR_MODE_CVSD) {
         // CVSD
         if(status != BTM_SCO_DATA_CORRECT){
             APPL_TRACE_DEBUG("%s: not a correct frame(%d).", __func__, status);
         }
         btc_hf_client_incoming_data_cb_to_app(p, pkt_size);
-    } else if (sco_p->esco.data.air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
+    } else if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
         // mSBC
-        BOOLEAN is_bad_frame = false;
-        UINT8 msbc_frame_size = BTM_ESCO_DATA_SIZE;
-        if (pkt_size < msbc_frame_size) {
-            is_bad_frame = true;
+        UINT8 *data = NULL;
+
+        if (pkt_size != hf_inout_pkt_size) {
+            bta_hf_client_co_cb.is_bad_frame = true;
         }
         if (status != BTM_SCO_DATA_CORRECT) {
-            is_bad_frame = true;
+            bta_hf_client_co_cb.is_bad_frame = true;
         }
-        UINT8 *data = p;
-        bta_hf_client_decode_msbc_frame(&data, &pkt_size, is_bad_frame);
+        if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE / 2) {
+            if (bta_hf_client_co_cb.decode_first_pkt){
+                if (!bta_hf_client_co_cb.is_bad_frame){
+                    memcpy(bta_hf_client_co_cb.decode_msbc_data, p, pkt_size);
+                }
+            } else {
+                if (!bta_hf_client_co_cb.is_bad_frame){
+                    memcpy(bta_hf_client_co_cb.decode_msbc_data + BTM_MSBC_FRAME_SIZE / 2, p, pkt_size);
+                }
+
+                data = bta_hf_client_co_cb.decode_msbc_data;
+                bta_hf_client_decode_msbc_frame(&data, &pkt_size, bta_hf_client_co_cb.is_bad_frame);
+                bta_hf_client_co_cb.is_bad_frame = false;
+            }
+            bta_hf_client_co_cb.decode_first_pkt = !bta_hf_client_co_cb.decode_first_pkt;
+
+        } else if (hf_inout_pkt_size == BTM_MSBC_FRAME_SIZE) {
+            data = p;
+            bta_hf_client_decode_msbc_frame(&data, &pkt_size, bta_hf_client_co_cb.is_bad_frame);
+            bta_hf_client_co_cb.is_bad_frame = false;
+        } else {
+            //Never run to here.
+        }
     } else {
-        APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, sco_p->esco.data.air_mode);
+        APPL_TRACE_ERROR("%s invaild air mode: %d", __FUNCTION__, hf_air_mode);
     }
 }
 

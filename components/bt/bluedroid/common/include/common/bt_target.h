@@ -617,13 +617,13 @@
 #endif
 
 /* max TX eSCO data packet size */
-#ifndef BTM_ESCO_DATA_SIZE_MAX
-#define BTM_ESCO_DATA_SIZE_MAX      60
+#ifndef BTM_MSBC_FRAME_SIZE
+#define BTM_MSBC_FRAME_SIZE      60
 #endif
 
 /* TX eSCO data packet size */
-#ifndef BTM_ESCO_DATA_SIZE
-#define BTM_ESCO_DATA_SIZE          57
+#ifndef BTM_MSBC_FRAME_DATA_SIZE
+#define BTM_MSBC_FRAME_DATA_SIZE          57
 #endif
 
 /* The size in bytes of the BTM inquiry database. 5 As Default */
