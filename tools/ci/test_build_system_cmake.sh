@@ -411,6 +411,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
         || failure "ccache should not be used even when present if --no-ccache is specified"
     rm -f ccache
 
+    print_status "Custom bootloader overrides original"
+    clean_build_dir
+    (mkdir components && cd components && cp -r $IDF_PATH/components/bootloader .)
+    idf.py build
+    grep "$PWD/components/bootloader/subproject/main/bootloader_start.c" build/bootloader/compile_commands.json \
+        || failure "Custom bootloader source files should be built instead of the original's"
+    rm -rf components
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
