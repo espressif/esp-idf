@@ -49,10 +49,11 @@ if((NOT CONFIG_SECURE_BOOT_ENABLED) OR
     CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
     externalproject_add(bootloader
         # TODO: support overriding the bootloader in COMPONENT_PATHS
-        SOURCE_DIR "${IDF_PATH}/components/bootloader/subproject"
+        SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
         BINARY_DIR "${bootloader_build_dir}"
         CMAKE_ARGS  -DSDKCONFIG=${SDKCONFIG} -DIDF_PATH=${IDF_PATH}
                     -DSECURE_BOOT_SIGNING_KEY=${secure_boot_signing_key}
+                    -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
         INSTALL_COMMAND ""
         BUILD_ALWAYS 1  # no easy way around this...
         BUILD_BYPRODUCTS ${bootloader_binary_files}

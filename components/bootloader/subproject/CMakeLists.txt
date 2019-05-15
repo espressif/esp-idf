@@ -27,9 +27,9 @@ target_linker_script(bootloader.elf
 # as cmake won't attach linker args to a header-only library, attach
 # linker args directly to the bootloader.elf
 set(ESP32_BOOTLOADER_LINKER_SCRIPTS
-    "../../esp32/ld/esp32.rom.ld"
-    "../../esp32/ld/esp32.rom.spiram_incompatible_fns.ld"
-    "../../esp32/ld/esp32.peripherals.ld")
+    "${IDF_PATH}/components/esp32/ld/esp32.rom.ld"
+    "${IDF_PATH}/components/esp32/ld/esp32.rom.spiram_incompatible_fns.ld"
+    "${IDF_PATH}/components/esp32/ld/esp32.peripherals.ld")
 
 target_linker_script(bootloader.elf ${ESP32_BOOTLOADER_LINKER_SCRIPTS})
 
