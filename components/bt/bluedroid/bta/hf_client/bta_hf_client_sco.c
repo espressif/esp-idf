@@ -283,11 +283,11 @@ static void bta_hf_client_sco_conn_cback(UINT16 sco_idx)
         bta_hf_client_cb.scb.retrans_window = sco_data.retrans_window;
         bta_hf_client_cb.scb.air_mode = sco_data.air_mode;
         if (sco_data.air_mode == BTM_SCO_AIR_MODE_CVSD) {
-            bta_hf_client_cb.scb.tx_pkt_len = sco_data.tx_pkt_len * 2;
-            bta_hf_client_cb.scb.rx_pkt_len = sco_data.rx_pkt_len * 2;
+            bta_hf_client_cb.scb.out_pkt_len = sco_data.tx_pkt_len * 2;
+            bta_hf_client_cb.scb.in_pkt_len = sco_data.rx_pkt_len * 2;
         } else {
-            bta_hf_client_cb.scb.tx_pkt_len = sco_data.tx_pkt_len;
-            bta_hf_client_cb.scb.rx_pkt_len = sco_data.rx_pkt_len;
+            bta_hf_client_cb.scb.out_pkt_len = sco_data.tx_pkt_len;
+            bta_hf_client_cb.scb.in_pkt_len = sco_data.rx_pkt_len;
         }
 
         if ((p_buf = (BT_HDR *) osi_malloc(sizeof(BT_HDR))) != NULL) {
@@ -447,7 +447,7 @@ static void bta_hf_client_sco_event(UINT8 event)
         UINT16 len_to_send = 0;
         while (true)
         {
-            p_buf = osi_calloc(sizeof(BT_HDR) + pkt_offset + p_scb->tx_pkt_len);
+            p_buf = osi_calloc(sizeof(BT_HDR) + pkt_offset + p_scb->out_pkt_len);
             if (!p_buf) {
                 APPL_TRACE_WARNING("%s, no mem", __FUNCTION__);
                 break;
@@ -456,7 +456,7 @@ static void bta_hf_client_sco_event(UINT8 event)
             p_buf->offset = pkt_offset;
             len_to_send = bta_hf_client_sco_co_out_data(p_buf->data + pkt_offset);
             p_buf->len = len_to_send;
-            if (len_to_send == p_scb->tx_pkt_len) {
+            if (len_to_send == p_scb->out_pkt_len) {
                 // expect to get the exact size of data from upper layer
                 if (bta_hf_client_cb.scb.sco_state == BTA_HF_CLIENT_SCO_OPEN_ST) {
                     tBTM_STATUS write_stat = BTM_WriteScoData(p_scb->sco_idx, p_buf);
@@ -747,7 +747,7 @@ void bta_hf_client_sco_conn_open(tBTA_HF_CLIENT_DATA *p_data)
     bta_hf_client_co_audio_state(bta_hf_client_cb.scb.sco_idx, SCO_STATE_ON, 0);
     /* open SCO codec if SCO is routed through transport */
     bta_hf_client_sco_co_open(bta_hf_client_cb.scb.sco_idx, bta_hf_client_cb.scb.air_mode,
-                                bta_hf_client_cb.scb.tx_pkt_len, BTA_HF_CLIENT_CI_SCO_DATA_EVT);
+                                bta_hf_client_cb.scb.out_pkt_len, BTA_HF_CLIENT_CI_SCO_DATA_EVT);
 #endif
 
     if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_MSBC) {
