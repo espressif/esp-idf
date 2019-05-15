@@ -992,6 +992,9 @@ static IRAM_ATTR void spi_transmit_polling_measure(spi_device_handle_t spi, spi_
 
 TEST_CASE("spi_speed","[spi]")
 {
+#ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+    return;
+#endif
     uint32_t t_flight;
     //to get rid of the influence of randomly interrupts, we measured the performance by median value
     uint32_t t_flight_sorted[TEST_TIMES];
