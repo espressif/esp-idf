@@ -1,8 +1,10 @@
 #include <math.h>
 #include <stdio.h>
+#include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
+#include "test_utils.h"
 
 /* Note: these functions are included here for unit test purposes. They are not needed for writing
  * normal code. If writing standard C floating point code, libgcc should correctly include implementations
@@ -195,3 +197,70 @@ TEST_CASE("context switch saves FP registers", "[fp]")
     }
     TEST_ASSERT(state.fail == 0);
 }
+
+/* Note: not static, to avoid optimisation of const result */
+float IRAM_ATTR test_fp_benchmark_fp_divide(int counts, unsigned *cycles)
+{
+    float f = MAXFLOAT;
+    uint32_t before, after;
+    RSR(CCOUNT, before);
+
+    for (int i = 0; i < counts; i++) {
+        f /= 1.000432f;
+    }
+
+    RSR(CCOUNT, after);
+    *cycles = (after - before) / counts;
+
+    return f;
+}
+
+TEST_CASE("floating point division performance", "[fp]")
+{
+    const unsigned COUNTS = 1000;
+    unsigned cycles = 0;
+
+    // initialize fpu
+    volatile __attribute__((unused)) float dummy = sqrtf(rand());
+
+    float f = test_fp_benchmark_fp_divide(COUNTS, &cycles);
+
+    printf("%d divisions from %f = %f\n", COUNTS, MAXFLOAT, f);
+    printf("Per division = %d cycles\n", cycles);
+
+    TEST_PERFORMANCE_LESS_THAN(ESP32_CYCLES_PER_DIV, "%d cycles", cycles);
+}
+
+/* Note: not static, to avoid optimisation of const result */
+float IRAM_ATTR test_fp_benchmark_fp_sqrt(int counts, unsigned *cycles)
+{
+    float f = MAXFLOAT;
+    uint32_t before, after;
+    RSR(CCOUNT, before);
+
+    for (int i = 0; i < counts; i++) {
+        f = sqrtf(f);
+    }
+
+    RSR(CCOUNT, after);
+    *cycles = (after - before) / counts;
+
+    return f;
+}
+
+TEST_CASE("floating point square root performance", "[fp]")
+{
+    const unsigned COUNTS = 200;
+    unsigned cycles = 0;
+
+    // initialize fpu
+    volatile float __attribute__((unused)) dummy = sqrtf(rand());
+
+    float f = test_fp_benchmark_fp_sqrt(COUNTS, &cycles);
+
+    printf("%d square roots from %f = %f\n", COUNTS, MAXFLOAT, f);
+    printf("Per sqrt = %d cycles\n", cycles);
+
+    TEST_PERFORMANCE_LESS_THAN(ESP32_CYCLES_PER_SQRT, "%d cycles", cycles);
+}
+
