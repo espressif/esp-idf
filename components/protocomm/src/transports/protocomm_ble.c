@@ -15,6 +15,7 @@
 #include <sys/param.h>
 #include <esp_log.h>
 #include <esp_gatt_common_api.h>
+#include <esp_gap_bt_api.h>
 
 #include <protocomm.h>
 #include <protocomm_ble.h>
@@ -28,10 +29,17 @@
 static const char *TAG = "protocomm_ble";
 
 /* BLE specific configuration parameters */
-const uint16_t GATTS_SERVICE_UUID_PROV      = 0xFFFF;
-const uint16_t primary_service_uuid         = ESP_GATT_UUID_PRI_SERVICE;
-const uint16_t character_declaration_uuid   = ESP_GATT_UUID_CHAR_DECLARE;
-const uint8_t char_prop_read_write          = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+static const uint16_t primary_service_uuid       = ESP_GATT_UUID_PRI_SERVICE;
+static const uint16_t character_declaration_uuid = ESP_GATT_UUID_CHAR_DECLARE;
+static const uint16_t character_user_description = ESP_GATT_UUID_CHAR_DESCRIPTION;
+static const uint8_t  character_prop_read_write  = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE;
+static const uint8_t  ble_advertisement_flags    = ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT;
+
+typedef struct {
+    uint8_t type;
+    uint8_t length;
+    uint8_t *data_p;
+} raw_data_info_t;
 
 typedef struct {
     uint8_t                *prepare_buf;
@@ -41,11 +49,21 @@ typedef struct {
 
 static prepare_type_env_t prepare_write_env;
 
+typedef struct name_uuid128 {
+    const char *name;
+    uint8_t uuid128[ESP_UUID_LEN_128];
+} name_uuid128_t;
+
 typedef struct _protocomm_ble {
     protocomm_t *pc_ble;
-    protocomm_ble_name_uuid_t *g_nu_lookup;
+    name_uuid128_t *g_nu_lookup;
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
+    uint8_t *service_uuid;
+    uint8_t *raw_adv_data_p;
+    uint8_t raw_adv_data_len;
+    uint8_t *raw_scan_rsp_data_p;
+    uint8_t raw_scan_rsp_data_len;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
@@ -61,34 +79,25 @@ static esp_ble_adv_params_t adv_params = {
 
 static char* protocomm_ble_device_name = NULL;
 
-/* The length of adv data must be less than 31 bytes */
-static esp_ble_adv_data_t adv_data = {
-    .set_scan_rsp        = false,
-    .include_name        = true,
-    .include_txpower     = true,
-    .min_interval        = 0x100,
-    .max_interval        = 0x100,
-    .appearance          = ESP_BLE_APPEARANCE_UNKNOWN,
-    .manufacturer_len    = 0,
-    .p_manufacturer_data = NULL,
-    .service_data_len    = 0,
-    .p_service_data      = NULL,
-    .service_uuid_len    = 0,
-    .p_service_uuid      = NULL,
-    .flag = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
-};
-
 static void hexdump(const char *msg, uint8_t *buf, int len)
 {
     ESP_LOGD(TAG, "%s:", msg);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_DEBUG);
 }
 
+static const uint16_t *uuid128_to_16(const uint8_t *uuid128)
+{
+    return (const uint16_t *) &uuid128[12];
+}
+
 static const char *handle_to_handler(uint16_t handle)
 {
-    uint16_t uuid = simple_ble_get_uuid(handle);
+    const uint8_t *uuid128 = simple_ble_get_uuid128(handle);
+    if (!uuid128) {
+        return NULL;
+    }
     for (int i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
-        if (protoble_internal->g_nu_lookup[i].uuid == uuid ) {
+        if (*uuid128_to_16(protoble_internal->g_nu_lookup[i].uuid128) == *uuid128_to_16(uuid128)) {
             return protoble_internal->g_nu_lookup[i].name;
         }
     }
@@ -226,7 +235,6 @@ static void transport_simple_ble_write(esp_gatts_cb_event_t event, esp_gatt_if_t
     }
 }
 
-
 static void transport_simple_ble_exec_write(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
 {
     esp_err_t err;
@@ -314,12 +322,17 @@ static esp_err_t protocomm_ble_remove_endpoint(const char *ep_name)
     return ESP_OK;
 }
 
-
 static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
 {
     int i;
-    /* We need esp_gatts_attr_db_t of size 2 * number of handlers + 1 for service */
-    ssize_t gatt_db_generated_entries = 2 * protoble_internal->g_nu_lookup_count + 1;
+    /* Each endpoint requires 3 attributes:
+     * 1) for Characteristic Declaration
+     * 2) for Characteristic Value (for reading and writing to an endpoint)
+     * 3) for Characteristic User Description (endpoint name)
+     *
+     * Therefore, we need esp_gatts_attr_db_t of size 3 * number of endpoints + 1 for service
+     */
+    ssize_t gatt_db_generated_entries = 3 * protoble_internal->g_nu_lookup_count + 1;
 
     *gatt_db_generated = (esp_gatts_attr_db_t *) malloc(sizeof(esp_gatts_attr_db_t) *
                                                         (gatt_db_generated_entries));
@@ -333,28 +346,38 @@ static ssize_t populate_gatt_db(esp_gatts_attr_db_t **gatt_db_generated)
     (*gatt_db_generated)[0].att_desc.uuid_length        = ESP_UUID_LEN_16;
     (*gatt_db_generated)[0].att_desc.uuid_p             = (uint8_t *) &primary_service_uuid;
     (*gatt_db_generated)[0].att_desc.perm               = ESP_GATT_PERM_READ;
-    (*gatt_db_generated)[0].att_desc.max_length         = sizeof(uint16_t);
-    (*gatt_db_generated)[0].att_desc.length             = sizeof(GATTS_SERVICE_UUID_PROV);
-    (*gatt_db_generated)[0].att_desc.value              = (uint8_t *) &GATTS_SERVICE_UUID_PROV;
+    (*gatt_db_generated)[0].att_desc.max_length         = ESP_UUID_LEN_128;
+    (*gatt_db_generated)[0].att_desc.length             = ESP_UUID_LEN_128;
+    (*gatt_db_generated)[0].att_desc.value              = protoble_internal->service_uuid;
 
     /* Declare characteristics */
     for (i = 1 ; i < gatt_db_generated_entries ; i++) {
-        (*gatt_db_generated)[i].attr_control.auto_rsp   = ESP_GATT_RSP_BY_APP;
+        (*gatt_db_generated)[i].attr_control.auto_rsp     = ESP_GATT_RSP_BY_APP;
 
-        (*gatt_db_generated)[i].att_desc.uuid_length    = ESP_UUID_LEN_16;
-        (*gatt_db_generated)[i].att_desc.perm           = ESP_GATT_PERM_READ |
-                                                          ESP_GATT_PERM_WRITE;
-
-        if (i % 2 == 1) { /* Char Declaration */
-            (*gatt_db_generated)[i].att_desc.uuid_p     = (uint8_t *) &character_declaration_uuid;
-            (*gatt_db_generated)[i].att_desc.max_length = sizeof(uint8_t);
-            (*gatt_db_generated)[i].att_desc.length     = sizeof(uint8_t);
-            (*gatt_db_generated)[i].att_desc.value      = (uint8_t *) &char_prop_read_write;
-        } else { /* Char Value */
-            (*gatt_db_generated)[i].att_desc.uuid_p     = (uint8_t *)&protoble_internal->g_nu_lookup[i / 2 - 1].uuid;
-            (*gatt_db_generated)[i].att_desc.max_length = CHAR_VAL_LEN_MAX;
-            (*gatt_db_generated)[i].att_desc.length     = 0;
-            (*gatt_db_generated)[i].att_desc.value      = NULL;
+        if (i % 3 == 1) {
+            /* Characteristic Declaration */
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ;
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_16;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_declaration_uuid;
+            (*gatt_db_generated)[i].att_desc.max_length   = sizeof(uint8_t);
+            (*gatt_db_generated)[i].att_desc.length       = sizeof(uint8_t);
+            (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) &character_prop_read_write;
+        } else if (i % 3 == 2) {
+            /* Characteristic Value */
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_128;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = protoble_internal->g_nu_lookup[i / 3].uuid128;
+            (*gatt_db_generated)[i].att_desc.max_length   = CHAR_VAL_LEN_MAX;
+            (*gatt_db_generated)[i].att_desc.length       = 0;
+            (*gatt_db_generated)[i].att_desc.value        = NULL;
+        } else {
+            /* Characteristic User Description (for keeping endpoint names) */
+            (*gatt_db_generated)[i].att_desc.perm         = ESP_GATT_PERM_READ;
+            (*gatt_db_generated)[i].att_desc.uuid_length  = ESP_UUID_LEN_16;
+            (*gatt_db_generated)[i].att_desc.uuid_p       = (uint8_t *) &character_user_description;
+            (*gatt_db_generated)[i].att_desc.max_length   = strlen(protoble_internal->g_nu_lookup[i / 3 - 1].name);
+            (*gatt_db_generated)[i].att_desc.length       = (*gatt_db_generated)[i].att_desc.max_length;
+            (*gatt_db_generated)[i].att_desc.value        = (uint8_t *) protoble_internal->g_nu_lookup[i / 3 - 1].name;
         }
     }
     return gatt_db_generated_entries;
@@ -371,17 +394,14 @@ static void protocomm_ble_cleanup(void)
             }
             free(protoble_internal->g_nu_lookup);
         }
+        free(protoble_internal->raw_adv_data_p);
+        free(protoble_internal->raw_scan_rsp_data_p);
         free(protoble_internal);
         protoble_internal = NULL;
     }
     if (protocomm_ble_device_name) {
         free(protocomm_ble_device_name);
         protocomm_ble_device_name = NULL;
-    }
-    if (adv_data.p_service_uuid) {
-        free(adv_data.p_service_uuid);
-        adv_data.p_service_uuid = NULL;
-        adv_data.service_uuid_len = 0;
     }
 }
 
@@ -395,16 +415,6 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         ESP_LOGE(TAG, "Protocomm BLE already started");
         return ESP_FAIL;
     }
-
-    /* Store service UUID internally */
-    adv_data.service_uuid_len = sizeof(config->service_uuid);
-    adv_data.p_service_uuid   = malloc(sizeof(config->service_uuid));
-    if (adv_data.p_service_uuid == NULL) {
-        ESP_LOGE(TAG, "Error allocating memory for storing service UUID");
-        protocomm_ble_cleanup();
-        return ESP_ERR_NO_MEM;
-    }
-    memcpy(adv_data.p_service_uuid, config->service_uuid, adv_data.service_uuid_len);
 
     /* Store BLE device name internally */
     protocomm_ble_device_name = strdup(config->device_name);
@@ -421,8 +431,8 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
         return ESP_ERR_NO_MEM;
     }
 
-    protoble_internal->g_nu_lookup_count =  config->nu_lookup_count;
-    protoble_internal->g_nu_lookup = malloc(config->nu_lookup_count * sizeof(protocomm_ble_name_uuid_t));
+    protoble_internal->g_nu_lookup_count = config->nu_lookup_count;
+    protoble_internal->g_nu_lookup = malloc(config->nu_lookup_count * sizeof(name_uuid128_t));
     if (protoble_internal->g_nu_lookup == NULL) {
         ESP_LOGE(TAG, "Error allocating internal name UUID table");
         protocomm_ble_cleanup();
@@ -430,7 +440,10 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     }
 
     for (unsigned i = 0; i < protoble_internal->g_nu_lookup_count; i++) {
-        protoble_internal->g_nu_lookup[i].uuid = config->nu_lookup[i].uuid;
+        memcpy(protoble_internal->g_nu_lookup[i].uuid128, config->service_uuid, ESP_UUID_LEN_128);
+        memcpy((uint8_t *)uuid128_to_16(protoble_internal->g_nu_lookup[i].uuid128),
+               &config->nu_lookup[i].uuid, ESP_UUID_LEN_16);
+
         protoble_internal->g_nu_lookup[i].name = strdup(config->nu_lookup[i].name);
         if (protoble_internal->g_nu_lookup[i].name == NULL) {
             ESP_LOGE(TAG, "Error allocating internal name UUID entry");
@@ -443,6 +456,120 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     pc->remove_endpoint = protocomm_ble_remove_endpoint;
     protoble_internal->pc_ble = pc;
     protoble_internal->gatt_mtu = ESP_GATT_DEF_BLE_MTU_SIZE;
+
+    /* The BLE advertisement data (max 31 bytes) consists of:
+     * 1) Flags -
+     *      Size : length (1 byte) + type (1 byte) + value (1 byte) = 3 bytes
+     * 2) Complete 128 bit UUID of the service -
+     *      Size : length (1 byte) + type (1 byte) + value (16 bytes) = 18 bytes
+     *
+     * Remaining 31 - (3 + 18) = 10 bytes could be used for manufacturer data
+     * or something else in the future.
+     */
+    raw_data_info_t adv_data[] = {
+        {   /* Flags */
+            .type   = ESP_BLE_AD_TYPE_FLAG,
+            .length = sizeof(ble_advertisement_flags),
+            .data_p = (uint8_t *) &ble_advertisement_flags
+        },
+        {   /* 128 bit Service UUID */
+            .type   = ESP_BLE_AD_TYPE_128SRV_CMPL,
+            .length = ESP_UUID_LEN_128,
+            .data_p = (uint8_t *) config->service_uuid
+        },
+    };
+
+    /* Get the total raw data length required for above entries */
+    uint8_t adv_data_len = 0;
+    for (uint8_t i = 0; i < (sizeof(adv_data)/sizeof(adv_data[0])); i++) {
+        /* Add extra bytes required per entry, i.e.
+         * length (1 byte) + type (1 byte) = 2 bytes */
+        adv_data_len += adv_data[i].length + 2;
+    }
+    if (adv_data_len > ESP_BLE_ADV_DATA_LEN_MAX) {
+        ESP_LOGE(TAG, "Advertisement data too long = %d bytes", adv_data_len);
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Allocate memory for the raw advertisement data */
+    protoble_internal->raw_adv_data_len = adv_data_len;
+    protoble_internal->raw_adv_data_p = malloc(adv_data_len);
+    if (protoble_internal->raw_adv_data_p == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for raw advertisement data");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Form the raw advertisement data using above entries */
+    for (uint8_t i = 0, len = 0; i < (sizeof(adv_data)/sizeof(adv_data[0])); i++) {
+        protoble_internal->raw_adv_data_p[len++] = adv_data[i].length + 1; // + 1 byte for type
+        protoble_internal->raw_adv_data_p[len++] = adv_data[i].type;
+        memcpy(&protoble_internal->raw_adv_data_p[len],
+               adv_data[i].data_p, adv_data[i].length);
+
+        if (adv_data[i].type == ESP_BLE_AD_TYPE_128SRV_CMPL) {
+            /* Remember where the primary service UUID is kept in the
+             * raw advertisement data, so that it can be used while
+             * populating the GATT database
+             */
+            protoble_internal->service_uuid = &protoble_internal->raw_adv_data_p[len];
+        }
+
+        len += adv_data[i].length;
+    }
+
+    size_t ble_devname_len = strlen(protocomm_ble_device_name);
+    /* The BLE scan response (31 bytes) consists of:
+     * 1) Device name (complete / incomplete) -
+     *      Size : The maximum supported name length
+     *              will be 31 - 2 (length + type) = 29 bytes
+     *
+     * Any remaining space may be used for accommodating
+     * other fields in the future
+     */
+    raw_data_info_t scan_resp_data[] = {
+        {   /* If full device name can fit in the scan response then indicate
+             * that by setting type to "Complete Name", else set it to "Short Name"
+             * so that client can fetch full device name - after connecting - by
+             * reading the device name characteristic under GAP service */
+            .type   = (ble_devname_len > (ESP_BLE_SCAN_RSP_DATA_LEN_MAX - 2) ?
+                       ESP_BLE_AD_TYPE_NAME_SHORT : ESP_BLE_AD_TYPE_NAME_CMPL),
+            .length = MIN(ble_devname_len, (ESP_BLE_SCAN_RSP_DATA_LEN_MAX - 2)),
+            .data_p = (uint8_t *) protocomm_ble_device_name
+        },
+    };
+
+    /* Get the total raw scan response data length required for above entries */
+    uint8_t scan_resp_data_len = 0;
+    for (int i = 0; i < (sizeof(scan_resp_data)/sizeof(scan_resp_data[0])); i++) {
+        /* Add extra bytes required per entry, i.e.
+         * length (1 byte) + type (1 byte) = 2 bytes */
+        scan_resp_data_len += scan_resp_data[i].length + 2;
+    }
+    if (scan_resp_data_len > ESP_BLE_SCAN_RSP_DATA_LEN_MAX) {
+        ESP_LOGE(TAG, "Scan response data too long = %d bytes", scan_resp_data_len);
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Allocate memory for the raw scan response data */
+    protoble_internal->raw_scan_rsp_data_len = scan_resp_data_len;
+    protoble_internal->raw_scan_rsp_data_p = malloc(scan_resp_data_len);
+    if (protoble_internal->raw_scan_rsp_data_p == NULL) {
+        ESP_LOGE(TAG, "Error allocating memory for raw response data");
+        protocomm_ble_cleanup();
+        return ESP_ERR_NO_MEM;
+    }
+
+    /* Form the raw scan response data using above entries */
+    for (uint8_t i = 0, len = 0; i < (sizeof(scan_resp_data)/sizeof(scan_resp_data[0])); i++) {
+        protoble_internal->raw_scan_rsp_data_p[len++] = scan_resp_data[i].length + 1; // + 1 byte for type
+        protoble_internal->raw_scan_rsp_data_p[len++] = scan_resp_data[i].type;
+        memcpy(&protoble_internal->raw_scan_rsp_data_p[len],
+               scan_resp_data[i].data_p, scan_resp_data[i].length);
+        len += scan_resp_data[i].length;
+    }
 
     simple_ble_cfg_t *ble_config = simple_ble_init();
     if (ble_config == NULL) {
@@ -460,8 +587,12 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->set_mtu_fn      = transport_simple_ble_set_mtu;
 
     /* Set parameters required for advertising */
-    ble_config->adv_data        = adv_data;
     ble_config->adv_params      = adv_params;
+
+    ble_config->raw_adv_data_p        = protoble_internal->raw_adv_data_p;
+    ble_config->raw_adv_data_len      = protoble_internal->raw_adv_data_len;
+    ble_config->raw_scan_rsp_data_p   = protoble_internal->raw_scan_rsp_data_p;
+    ble_config->raw_scan_rsp_data_len = protoble_internal->raw_scan_rsp_data_len;
 
     ble_config->device_name     = protocomm_ble_device_name;
     ble_config->gatt_db_count   = populate_gatt_db(&ble_config->gatt_db);
