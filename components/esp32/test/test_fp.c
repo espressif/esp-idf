@@ -4,6 +4,10 @@
 #include "freertos/task.h"
 #include "unity.h"
 
+/* Note: these functions are included here for unit test purposes. They are not needed for writing
+ * normal code. If writing standard C floating point code, libgcc should correctly include implementations
+ * that use the floating point registers correctly. */
+
 static float addsf(float a, float b)
 {
     float result;
@@ -48,7 +52,7 @@ static float divsf(float a, float b)
         "const.s f2, 0 \n"
         "neg.s f9, f8 \n"
         "maddn.s f5,f4,f6 \n"
-        "maddn.s f2, f0, f3 \n"
+        "maddn.s f2, f9, f3 \n"
         "mkdadj.s f7, f0 \n"
         "maddn.s f6,f5,f6 \n"
         "maddn.s f9,f4,f2 \n"
