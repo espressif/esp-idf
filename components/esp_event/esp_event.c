@@ -132,8 +132,18 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_i
 #endif
     // Execute the handler
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-    (*(handler->handler))(handler->arg, post.base, post.id, post.data_allocd ? post.data.ptr : &post.data.val);
-#else 
+    void* data_ptr = NULL;
+
+    if (post.data_set) {
+        if (post.data_allocated) {
+            data_ptr = post.data.ptr;
+        } else {
+            data_ptr = &post.data.val;
+        }
+    }
+
+    (*(handler->handler))(handler->arg, post.base, post.id, data_ptr);
+#else
     (*(handler->handler))(handler->arg, post.base, post.id, post.data);
 #endif
 
@@ -380,7 +390,7 @@ static void loop_node_remove_all_handler(esp_event_loop_node_t* loop_node)
 static void inline __attribute__((always_inline)) post_instance_delete(esp_event_post_instance_t* post)
 {
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-    if (post->data_allocd && post->data.ptr) {
+    if (post->data_allocated && post->data.ptr) {
         free(post->data.ptr);
     }
 #else
@@ -740,20 +750,28 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     esp_event_post_instance_t post;
-    memset((void*)(&(post.data)), 0, sizeof(post.data));
+    memset((void*)(&post), 0, sizeof(post));
 
     if (event_data != NULL && event_data_size != 0) {
-        // Make persistent copy of event data on heap.
-        void* event_data_copy = calloc(1, event_data_size);
-
-        if (event_data_copy == NULL) {
-            return ESP_ERR_NO_MEM;
-        }
-
-        memcpy(event_data_copy, event_data, event_data_size);
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-        post.data.ptr = event_data_copy;
-        post.data_allocd = true;
+        if(event_data_size > sizeof(post.data.val)) {
+#endif
+            // Make persistent copy of event data on heap.
+            void* event_data_copy = calloc(1, event_data_size);
+
+            if (event_data_copy == NULL) {
+                return ESP_ERR_NO_MEM;
+            }
+
+            memcpy(event_data_copy, event_data, event_data_size);
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
+            post.data.ptr = event_data_copy;
+            post.data_allocated = true;
+        } else {
+            memcpy(&post.data.val, event_data, event_data_size);
+            post.data_allocated = false;
+        }
+        post.data_set = true;
 #else
         post.data = event_data_copy;
 #endif
@@ -816,7 +834,7 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_ba
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     esp_event_post_instance_t post;
-    memset((void*)(&(post.data)), 0, sizeof(post.data));
+    memset((void*)(&post), 0, sizeof(post));
 
     if (event_data_size > sizeof(post.data.val)) {
         return ESP_ERR_INVALID_ARG;
@@ -824,7 +842,8 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_ba
 
     if (event_data != NULL && event_data_size != 0) {
         memcpy((void*)(&(post.data.val)), event_data, event_data_size);
-        post.data_allocd = false;
+        post.data_allocated = false;
+        post.data_set = true;
     }
     post.base = event_base;
     post.id = event_id;
