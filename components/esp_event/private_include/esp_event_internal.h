@@ -97,7 +97,8 @@ typedef void* esp_event_post_data_t;
 /// Event posted to the event queue
 typedef struct esp_event_post_instance {
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-    bool data_allocd;                                                /**< indicates whether data is alloc'd */
+    bool data_allocated;                                             /**< indicates whether data is allocated from heap */
+    bool data_set;                                                   /**< indicates if data is null */
 #endif
     esp_event_base_t base;                                           /**< the event base */
     int32_t id;                                                      /**< the event id */
