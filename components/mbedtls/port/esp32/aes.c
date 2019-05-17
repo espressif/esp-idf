@@ -27,6 +27,7 @@
  */
 #include <string.h>
 #include "mbedtls/aes.h"
+#include "mbedtls/platform_util.h"
 #include "esp32/aes.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
@@ -118,19 +119,45 @@ static inline void esp_aes_setkey_hardware( esp_aes_context *ctx, int mode)
  *
  * Call only while holding esp_aes_acquire_hardware().
  */
-static inline void esp_aes_block(const void *input, void *output)
+static void esp_aes_block(const void *input, void *output)
 {
     const uint32_t *input_words = (const uint32_t *)input;
+    uint32_t i0, i1, i2, i3;
     uint32_t *output_words = (uint32_t *)output;
-    uint32_t *mem_block = (uint32_t *)AES_TEXT_BASE;
 
-    for(int i = 0; i < 4; i++) {
-        mem_block[i] = input_words[i];
-    }
+    /* Storing i0,i1,i2,i3 in registers not an array
+       helps a lot with optimisations at -Os level */
+    i0 = input_words[0];
+    DPORT_REG_WRITE(AES_TEXT_BASE, i0);
+
+    i1 = input_words[1];
+    DPORT_REG_WRITE(AES_TEXT_BASE + 4, i1);
+
+    i2 = input_words[2];
+    DPORT_REG_WRITE(AES_TEXT_BASE + 8, i2);
+
+    i3 = input_words[3];
+    DPORT_REG_WRITE(AES_TEXT_BASE + 12, i3);
 
     DPORT_REG_WRITE(AES_START_REG, 1);
+
     while (DPORT_REG_READ(AES_IDLE_REG) != 1) { }
-    esp_dport_access_read_buffer(output_words, (uint32_t)&mem_block[0], 4);
+
+    esp_dport_access_read_buffer(output_words, AES_TEXT_BASE, 4);
+
+    /* Physical security check: Verify the AES accelerator actually ran, and wasn't
+       skipped due to external fault injection while starting the peripheral.
+
+       Note that i0,i1,i2,i3 are copied from input buffer in case input==output.
+
+       Bypassing this check requires at least one additional fault.
+    */
+    if(i0 == output_words[0] && i1 == output_words[1] && i2 == output_words[2] && i3 == output_words[3]) {
+        // calling two zeroing functions to narrow the
+        // window for a double-fault here
+        memset(output, 0, 16);
+        mbedtls_platform_zeroize(output, 16);
+    }
 }
 
 /*
