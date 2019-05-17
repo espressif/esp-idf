@@ -497,7 +497,7 @@ def get_default_serial_port():
     ports = list(reversed(sorted(
         p.device for p in serial.tools.list_ports.comports())))
     try:
-        print("Choosing default port %s (use '-p PORT' option to set a specific serial port)" % ports[0])
+        print("Choosing default port %s (use '-p PORT' option to set a specific serial port)" % ports[0].encode('ascii', 'ignore'))
         return ports[0]
     except IndexError:
         raise RuntimeError("No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
