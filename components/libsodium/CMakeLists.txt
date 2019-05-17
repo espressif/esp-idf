@@ -1,7 +1,4 @@
 set(SRC libsodium/src/libsodium)
-
-set(COMPONENT_REQUIRES "mbedtls")
-
 # Derived from libsodium/src/libsodium/Makefile.am
 # (ignoring the !MINIMAL set)
 set(COMPONENT_SRCS "${SRC}/crypto_aead/chacha20poly1305/sodium/aead_chacha20poly1305.c"
@@ -129,9 +126,10 @@ endif()
 set(COMPONENT_ADD_INCLUDEDIRS ${SRC}/include port_include)
 set(COMPONENT_PRIV_INCLUDEDIRS ${SRC}/include/sodium port_include/sodium port)
 
+set(COMPONENT_REQUIRES mbedtls vfs)
 register_component()
 
-component_compile_definitions(
+target_compile_definitions(${COMPONENT_LIB} PRIVATE 
     CONFIGURED
     NATIVE_LITTLE_ENDIAN
     HAVE_WEAK_SYMBOLS

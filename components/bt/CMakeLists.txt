@@ -280,9 +280,9 @@ register_component()
 
 if(CONFIG_BT_ENABLED)
     if(GCC_NOT_5_2_0)
-        component_compile_options(-Wno-implicit-fallthrough -Wno-unused-const-variable)
+        target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
     endif()
 
-    target_link_libraries(${COMPONENT_TARGET} "-L${CMAKE_CURRENT_LIST_DIR}/lib")
-    target_link_libraries(${COMPONENT_TARGET} btdm_app)
+    target_link_libraries(${COMPONENT_LIB} "-L${CMAKE_CURRENT_LIST_DIR}/lib")
+    target_link_libraries(${COMPONENT_LIB} btdm_app)
 endif()

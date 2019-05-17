@@ -4,6 +4,7 @@ if(BOOTLOADER_BUILD)
     set(COMPONENT_REQUIRES ${IDF_COMPONENTS})
     set(COMPONENT_SRCS )
     register_component()
+    set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
 else()
     # Regular app build
     set(COMPONENT_SRCS
@@ -26,4 +27,6 @@ else()
         "src/stack_check.c"
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
+    set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_LIBRARIES "-Wl,--gc-sections")
+    set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
 endif()

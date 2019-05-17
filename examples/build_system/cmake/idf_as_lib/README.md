@@ -1,13 +1,17 @@
 # Using ESP-IDF in Custom CMake Projects
 
-This example illustrates using ESP-IDF components as libraries in custom CMake projects. This builds
-an equivalent application to the `hello_world` example under `examples/get-started/hello_world`.
+This example illustrates using ESP-IDF components as libraries in custom CMake projects. The application
+in this example can run on either host or on an ESP32, and the appropriate libraries are linked
+to the executable depending on which target is specified. If the target is an ESP32, the libraries
+created from ESP-IDF components are linked. On the other hand, stub libraries are linked if example
+is meant to be run on the host to simulate the same application behavior.
+
+The application in this example is equivalent to the `hello_world` example under `examples/get-started/hello_world`.
 
 ## Example Flow
 
 Users looking at this example should focus on the [top-level CMakeLists.txt file](./CMakeLists.txt). This builds an
-application that can run on targets without relying on the typical ESP-IDF application template. The application itself
-follows a similar code flow to the aforementioned `hello_world` example.
+application that can run on the target without relying on the typical ESP-IDF application template.
 
 ### Output
 
@@ -29,40 +33,37 @@ Restarting in 0 seconds...
 
 ## Building this Example
 
-To build this example, run the following commands from this directory:
+To build this example, the user can either run [build-esp32.sh](./build-esp32.sh) to build for the ESP32
+or run [build.sh](./build.sh) to build for the host:
 
 ```bash
-# Create a build directory, and change location to that directory.
-mkdir build; cd build
-# Invoke CMake, specifying the top-level CMakeLists.txt directory and toolchain file to use. This will generate
-# the build system files.
-cmake .. -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-esp32.cmake -DIDF_TARGET=esp32
-# Build using the generated build system files.
-cmake --build .
+# Builds the example for ESP32
+./build-esp32.sh
 ```
 
-Or, execute `build.sh` script, which contains the same commands mentioned above.
+or
+
+```bash
+# Builds the example to run on host
+./build.sh
+```
 
 ## Flashing and Running this Example
 
-To flash this example, we will have to invoke `esptool.py` and `idf_monitor.py` manually. While still in the build directory:
-
-### Flashing to target
-
-```bash
-# Write project binaries to flash.
-esptool.py --port /dev/ttyUSB0 write_flash @flash_project_args
-```
-
-### Running on target
+To flash and run the example, users can run either  [run-esp32.sh](./run-esp32.sh) or [run.sh](./run.sh) depending
+on what the example was built for. In the case of ``run-esp32.sh``, the port needs to be specified:
 
 ```bash
-# Monitor the output of the flashed firmware.
-idf_monitor.py --port /dev/ttyUSB0 idf_as_lib.elf
+# Run the example on device connected to /dev/ttyUSB1
+./run-esp32.sh /dev/ttyUSB1
 ```
 
-Of course, you should replace the specified ports in the commands specified above to the proper one where your device
-is connected.
+or
+
+```bash
+# Run the example on the host
+./run.sh
+```
 
 ---
 

@@ -173,7 +173,7 @@ def convert_component(project_path, component_path):
         else:
             f.write("register_config_only_component()\n")
         if cflags is not None:
-            f.write("component_compile_options(%s)\n" % cflags)
+            f.write("target_compile_options(${COMPONENT_LIB} PRIVATE %s)\n" % cflags)
 
     print("Converted %s" % cmakelists_path)
 

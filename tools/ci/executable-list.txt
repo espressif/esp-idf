@@ -73,7 +73,10 @@ components/espcoredump/test/test_espcoredump.sh
 tools/ldgen/ldgen.py
 tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
+examples/build_system/cmake/idf_as_lib/build-esp32.sh
 examples/build_system/cmake/idf_as_lib/build.sh
+examples/build_system/cmake/idf_as_lib/run-esp32.sh
+examples/build_system/cmake/idf_as_lib/run.sh
 examples/storage/parttool/parttool_example.py
 examples/system/ota/otatool/otatool_example.py
 tools/check_kconfigs.py

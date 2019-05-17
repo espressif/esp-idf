@@ -224,7 +224,6 @@ Project CMakeLists File
 
 Each project has a single top-level ``CMakeLists.txt`` file that contains build settings for the entire project. By default, the project CMakeLists can be quite minimal.
 
-
 Minimal Example CMakeLists
 --------------------------
 
@@ -254,10 +253,9 @@ Optional Project Variables
 
 These variables all have default values that can be overridden for custom behaviour. Look in :idf_file:`/tools/cmake/project.cmake` for all of the implementation details.
 
-- ``COMPONENT_DIRS``: Directories to search for components. Defaults to `${IDF_PATH}/components`, `${PROJECT_PATH}/components`, and ``EXTRA_COMPONENT_DIRS``. Override this variable if you don't want to search for components in these places.
-- ``EXTRA_COMPONENT_DIRS``: Optional list of additional directories to search for components. Paths can be relative to the project directory, or absolute.
-- ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via ``COMPONENT_REQUIRES`` will automatically have it added to this list, so the ``COMPONENTS`` list can be very short.
-- ``COMPONENT_REQUIRES_COMMON``: A list of components that every component requires. These components are automatically added to every component's ``COMPONENT_PRIV_REQUIRES`` list and also the project's ``COMPONENTS`` list. By default, this variable is set to the minimal set of core "system" components needed for any ESP-IDF project. Usually, you would not change this variable in your project.
+- ``COMPONENT_DIRS``,``COMPONENTS_DIRS``: Directories to search for components. Defaults to `IDF_PATH/components`, `PROJECT_DIR/components`, and ``EXTRA_COMPONENT_DIRS``. Override this variable if you don't want to search for components in these places.
+- ``EXTRA_COMPONENT_DIRS``, ``EXTRA_COMPONENTS_DIRS``: Optional list of additional directories to search for components. Paths can be relative to the project directory, or absolute.
+- ``COMPONENTS``: A list of component names to build into the project. Defaults to all components found in the ``COMPONENT_DIRS`` directories. Use this variable to "trim down" the project for faster build times. Note that any component which "requires" another component via the REQUIRES or PRIV_REQUIRES arguments on component registration will automatically have it added to this list, so the ``COMPONENTS`` list can be very short.
 
 Any paths in these variables can be absolute paths, or set relative to the project directory.
 
@@ -269,18 +267,16 @@ Renaming ``main`` component
 ----------------------------
 
 The build system provides special treatment to the ``main`` component. It is a component that gets automatically added to the build provided
-that it is in the expected location, `${PROJECT_PATH}/main`. All other components in the build are also added as its dependencies,
+that it is in the expected location, PROJECT_DIR/main. All other components in the build are also added as its dependencies,
 saving the user from hunting down dependencies and providing a build that works right out of the box. Renaming the ``main`` component
 causes the loss of these behind-the-scences heavy lifting, requiring the user to specify the location of the newly renamed component
 and manually specifying its dependencies. Specifically, the steps to renaming ``main`` are as follows:
 
 1. Rename ``main`` directory.
 2. Set ``EXTRA_COMPONENT_DIRS`` in the project CMakeLists.txt to include the renamed ``main`` directory.
-3. Specify the dependencies in the renamed component's CMakeLists.txt file via ``COMPONENT_REQUIRES`` or ``COMPONENT_PRIV_REQUIRES``.
-
+3. Specify the dependencies in the renamed component's CMakeLists.txt file via REQUIRES or PRIV_REQUIRES arguments :ref:`on component registration<cmake_minimal_component_cmakelists>`.
 
 .. _component-directories-cmake:
-
 
 Component CMakeLists Files
 ==========================
@@ -304,22 +300,26 @@ contain component sub-directories with the same name, the component in the last 
 with a modified version by copying that component from the ESP-IDF components directory to the project components directory and then modifying it there.
 If used in this way, the ESP-IDF directory itself can remain untouched.
 
+.. _cmake_minimal_component_cmakelists:
+
 Minimal Component CMakeLists
 ----------------------------
 
 .. highlight:: cmake
 
-The minimal component ``CMakeLists.txt`` file is as follows::
+The minimal component ``CMakeLists.txt`` file simply registers the component to the build system using ``idf_component_register``::
 
-  set(COMPONENT_SRCS "foo.c")
-  set(COMPONENT_ADD_INCLUDEDIRS "include")
-  register_component()
+  idf_component_register(SRCS "foo.c" "bar.c"
+                         INCLUDE_DIRS "include")
 
-- ``COMPONENT_SRCS`` is a (space-separated) list of source files (``*.c``, ``*.cpp``, ``*.cc``, ``*.S``). These source files will be compiled into the component library.
-- ``COMPONENT_ADD_INCLUDEDIRS`` is a (space-separated) list of directories to add to the global include search path for any component which requires this component, and also the main source files.
-- ``register_component()`` is required to add the component (using the variables set above) to the build. A library with the name of the component will be built and linked into the final app. If this step is skipped (perhaps due to use of a CMake `if function <cmake if_>`_ or similar), this component will not be part of the build.
+- ``SRCS`` is a list of source files (``*.c``, ``*.cpp``, ``*.cc``, ``*.S``). These source files will be compiled into the component library.
+- ``INCLUDE_DIRS`` is a list of directories to add to the global include search path for any component which requires this component, and also the main source files.
 
+A library with the name of the component will be built and linked into the final app. 
 Directories are usually specified relative to the ``CMakeLists.txt`` file itself, although they can be absolute.
+
+There are other arguments that can be passed to ``idf_component_register``. These arguments 
+are discussed :ref:`here<cmake-component-register>`.
 
 See `example component CMakeLists`_ for more complete component ``CMakeLists.txt`` examples.
 
@@ -330,71 +330,44 @@ Preset Component Variables
 
 The following component-specific variables are available for use inside component CMakeLists, but should not be modified:
 
-- ``COMPONENT_PATH``: The component directory. Evaluates to the absolute path of the directory containing ``CMakeLists.txt``. The component path cannot contain spaces. This is the same as the ``CMAKE_CURRENT_SOURCE_DIR`` variable.
+- ``COMPONENT_DIR``: The component directory. Evaluates to the absolute path of the directory containing ``CMakeLists.txt``. The component path cannot contain spaces. This is the same as the ``CMAKE_CURRENT_SOURCE_DIR`` variable.
 - ``COMPONENT_NAME``: Name of the component. Same as the name of the component directory.
-- ``COMPONENT_TARGET``: Name of the library target created internally by the build system for the component.
+- ``COMPONENT_ALIAS``: Alias of the library created internally by the build system for the component.
+- ``COMPONENT_LIB``: Name of the library created internally by the build system for the component. 
 
 The following variables are set at the project level, but available for use in component CMakeLists:
 
-- ``PROJECT_NAME``: Name of the project, as set in project CMakeLists.txt file.
-- ``PROJECT_PATH``: Absolute path of the project directory containing the project CMakeLists. Same as the ``CMAKE_SOURCE_DIR`` variable.
-- ``COMPONENTS``: Names of all components that are included in this build, formatted as a semicolon-delimited CMake list.
 - ``CONFIG_*``: Each value in the project configuration has a corresponding variable available in cmake. All names begin with ``CONFIG_``. :doc:`More information here </api-reference/kconfig>`.
+- ``ESP_PLATFORM``: Set to 1 when the CMake file is processed within ESP-IDF build system.
+
+Build/Project Variables
+------------------------
+
+The following are some project/build variables that are available as build properties and whose values can be queried using ``idf_build_get_property``
+from the component CMakeLists.txt:
+
+- ``PROJECT_NAME``: Name of the project, as set in project CMakeLists.txt file.
+- ``PROJECT_DIR``: Absolute path of the project directory containing the project CMakeLists. Same as the ``CMAKE_SOURCE_DIR`` variable.
+- ``COMPONENTS``: Names of all components that are included in this build, formatted as a semicolon-delimited CMake list.
 - ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
 - ``IDF_TARGET``: Name of the target for which the project is being built.
 - ``PROJECT_VER``: Project version.
 
   * If ``PROJECT_VER`` variable is set in project CMakeLists.txt file, its value will be used.
-  * Else, if the ``$(PROJECT_PATH}/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
+  * Else, if the ``PROJECT_DIR/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
   * Else, if the project is located inside a Git repository, the output of git describe will be used.
   * Otherwise, ``PROJECT_VER`` will be "1".
 
-- ``ESP_PLATFORM``: Set to 1 whenever the ESP-IDF build system is being used.
-
-If you modify any of these variables inside ``CMakeLists.txt`` then this will not prevent other components from building but it may make your component hard to build and/or debug.
-
-- ``COMPONENT_ADD_INCLUDEDIRS``: Paths, relative to the component directory, which will be added to the include search path for
-  all other components which require this one. If an include directory is only needed to compile this specific component,
-  add it to ``COMPONENT_PRIV_INCLUDEDIRS`` instead.
-- ``COMPONENT_REQUIRES`` is a (space-separated) list of components that are required to include this project's header files into other components. If this component has a header file in a ``COMPONENT_ADD_INCLUDEDIRS`` directory that includes a header from another component, that component should be listed in ``COMPONENT_REQUIRES``. Requirements are recursive.
-
-  The ``COMPONENT_REQUIRES`` list can be empty because some very common components (like newlib for libc, freertos for RTOS functions, etc) are always required by all components. This list is found in the project-level variable ``COMPONENT_REQUIRES_COMMON``.
-
-  If a component only requires another component's headers to compile its source files (not for including this component's headers), then these components should be listed in ``COMPONENT_PRIV_REQUIRES`` instead.
-
-  See `Component Requirements`_ for more details.
-
-Optional Component-Specific Variables
--------------------------------------
-
-The following variables can be set inside ``CMakeLists.txt`` to control the build of that component:
-
-- ``COMPONENT_PRIV_INCLUDEDIRS``: Directory paths, must be relative to
-  the component directory, which will be added to the include search
-  path for this component's source files only.
-- ``COMPONENT_PRIV_REQUIRES`` is a (space-separated) list of components that are required to either compile or link this component's source files. These components' header paths do not propagate to other components which require it, they are only used to compile this component's sources. See `Component Requirements`_ for more details.
-- ``COMPONENT_SRCS``: Paths to individual source files to compile as part of the component. This is the recommended way of adding source files to the build.
-- ``COMPONENT_SRCDIRS``: Directory paths, must be relative to the component directory, which will be searched for source files (``*.cpp``,
-  ``*.c``, ``*.S``). Source files are globbed from the listed directories and compiled as part of the component in place of ``COMPONENT_SRCS``, i.e. setting this will cause ``COMPONENT_SRCS`` to be ignored.
-  This can be a convenient way of including source files to the components en masse, but is generally not recommended due to caveats attached to CMake globbing (see `File Globbing & Incremental Builds`).
-- ``COMPONENT_SRCEXCLUDE``: Paths to source files to exclude from component. Can be set in conjunction with ``COMPONENT_SRCDIRS`` if there is a directory with a large number of source files to include in the component but one or more source files which should not be. Paths can be specified relative to the component directory or absolute.
-- ``COMPONENT_ADD_LDFRAGMENTS``: Paths to linker fragment files for the linker script generation functionality. See :doc:`Linker Script Generation <linker-script-generation>`.
-
-.. note::
-
-  If you don't set ``COMPONENT_SRCDIRS`` or ``COMPONENT_SRCS``, your component won't compile a library but it may still add include paths for use when compiling other components.
-
+Other build properties are listed :ref:`here<cmake-build-properties>`.
 
 Controlling Component Compilation
 ---------------------------------
 
 .. highlight:: cmake
 
-To pass compiler options when compiling source files belonging to a particular component, use the ``component_compile_options`` function::
+To pass compiler options when compiling source files belonging to a particular component, use the ``target_compile_options`` function::
 
-  component_compile_options(-Wno-unused-variable)
-
-This is a wrapper around the CMake `target_compile_options`_ command.
+  target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-variable)
 
 To apply the compilation flags to a single source file, use the CMake `set_source_files_properties`_ command::
 
@@ -405,7 +378,7 @@ To apply the compilation flags to a single source file, use the CMake `set_sourc
 
 This can be useful if there is upstream code that emits warnings.
 
-When using these commands, place them after the ``register_component()`` line in the component CMakeLists file.
+When using these commands, place them after the call to ``idf_component_register`` in the component CMakeLists file.
 
 .. _component-configuration-cmake:
 
@@ -434,22 +407,23 @@ Component Requirements
 
 When compiling each component, the ESP-IDF build system recursively evaluates its components.
 
-Each component's source file is compiled with these include path directories:
+Each component's source file is compiled with these include path directories, as specified in the passed arguments
+to ``idf_component_register``:
 
-- The current component's ``COMPONENT_ADD_INCLUDEDIRS`` and ``COMPONENT_PRIV_INCLUDEDIRS``.
-- The ``COMPONENT_ADD_INCLUDEDIRS`` set by all components in the current component's ``COMPONENT_REQUIRES`` and ``COMPONENT_PRIV_REQUIRES`` variables (ie all the current component's public and private dependencies).
-- All of the ``COMPONENT_REQUIRES`` of those components, evaluated recursively (ie all public dependencies of this component's dependencies, recursively expanded).
+- The current component's ``INCLUDE_DIRS`` and ``PRIV_INCLUDE_DIRS``.
+- The ``INCLUDE_DIRS`` set by all components in the current component's ``REQUIRES`` and ``PRIV_REQUIRES`` variables (ie all the current component's public and private dependencies).
+- All of the ``REQUIRES`` of those components, evaluated recursively (ie all public dependencies of this component's dependencies, recursively expanded).
 
 When writing a component
 ------------------------
 
-- ``COMPONENT_REQUIRES`` should be set to all components whose header files are #included from the *public* header files of this component.
-- ``COMPONENT_PRIV_REQUIRES`` should be set to all components whose header files are #included from *any source files* of this component, unless already listed in ``COMPONENT_REQUIRES``. Or any component which is required to be linked in order for this component to function correctly.
-- ``COMPONENT_REQUIRES`` and/or ``COMPONENT_PRIV_REQUIRES`` should be set before calling ``register_component()``.
-- The values of ``COMPONENT_REQUIRES`` and ``COMPONENT_PRIV_REQUIRES`` should not depend on any configuration choices (``CONFIG_xxx`` macros). This is because requirements are expanded before configuration is loaded. Other component variables (like include paths or source files) can depend on configuration choices.
+- ``REQUIRES`` should be set to all components whose header files are #included from the *public* header files of this component.
+- ``PRIV_REQUIRES`` should be set to all components whose header files are #included from *any source files* of this component, unless already listed in ``COMPONENT_REQUIRES``. Or any component which is required to be linked in order for this component to function correctly.
+- ``REQUIRES`` and/or ``PRIV_REQUIRES`` should be set before calling ``idf_component_register()``.
+- The values of ``REQUIRES`` and ``PRIV_REQUIRES`` should not depend on any configuration choices (``CONFIG_xxx`` macros). This is because requirements are expanded before configuration is loaded. Other component variables (like include paths or source files) can depend on configuration choices.
 - Not setting either or both ``REQUIRES`` variables is fine. If the component has no requirements except for the "common" components needed for RTOS, libc, etc (``COMPONENT_REQUIRES_COMMON``) then both variables can be empty or unset.
 
-Components which support only some targets (values of ``IDF_TARGET``) may call ``require_idf_targets(NAMES...)`` CMake function to express these requirements. In this case the build system will generate an error if the component is included into the build, but does not support selected target.
+Components which support only some targets (values of ``IDF_TARGET``) may specify ``REQUIRED_IDF_TARGETS`` in the ``idf_component_register`` call to express these requirements. In this case the build system will generate an error if the component is included into the build, but does not support selected target.
 
 When creating a project
 -----------------------
@@ -508,7 +482,7 @@ The custom ``project()`` function performs the following steps:
 - Declares the actual cmake-level project by calling the `CMake project function <cmake project_>`_.
 - Loads the git version. This includes some magic which will automatically re-run CMake if a new revision is checked out in git. See `File Globbing & Incremental Builds`_.
 - Includes :ref:`project_include.cmake` files from any components which have them.
-- Adds each component to the build. Each component CMakeLists file calls ``register_component``, calls the CMake `add_library <cmake add_library_>`_ function to add a library and then adds source files, compile options, etc.
+- Adds each component to the build. Each component CMakeLists file calls ``idf_component_register``, calls the CMake `add_library <cmake add_library_>`_ function to add a library and then adds source files, compile options, etc.
 - Adds the final app executable to the build.
 - Goes back and adds inter-component dependencies between components (ie adding the public header directories of each component to each other component).
 
@@ -546,7 +520,7 @@ component directory. This CMake file is included when ``project.cmake`` is evalu
 
 ``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
 
-Unlike component ``CMakeLists.txt`` files, when including a ``project_include.cmake`` file the current source directory (``CMAKE_CURRENT_SOURCE_DIR`` and working directory) is the project directory. Use the variable ``COMPONENT_PATH`` for the absolute directory of the component.
+Unlike component ``CMakeLists.txt`` files, when including a ``project_include.cmake`` file the current source directory (``CMAKE_CURRENT_SOURCE_DIR`` and working directory) is the project directory. Use the variable ``COMPONENT_DIR`` for the absolute directory of the component.
 
 Note that ``project_include.cmake`` isn't necessary for the most common component uses - such as adding include directories to the project, or ``LDFLAGS`` to the final linking step. These values can be customised via the ``CMakeLists.txt`` file itself. See `Optional Project Variables`_ for details.
 
@@ -566,9 +540,8 @@ Take care when adding configuration values in this file, as they will be include
 Configuration-Only Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Special components which contain no source files, only ``Kconfig.projbuild`` and ``KConfig``, can have a one-line ``CMakeLists.txt`` file which calls the function ``register_config_only_component()``. This function will include the component in the project build, but no library will be built *and* no header files will be added to any include paths.
-
-If a CMakeLists.txt file doesn't call ``register_component()`` or ``register_config_only_component()``, it will be excluded from the project entirely. This may sometimes be desirable, depending on the project configuration.
+Special components which contain no source files, only ``Kconfig.projbuild`` and ``KConfig``, can have a one-line ``CMakeLists.txt`` file which calls the function ``idf_component_register()`` with no 
+arguments specified. This function will include the component in the project build, but no library will be built *and* no header files will be added to any include paths.
 
 Example Component CMakeLists
 ============================
@@ -661,14 +634,14 @@ tool called bmp2h. The header file is then included in as C source
 file called graphics_lib.c::
 
     add_custom_command(OUTPUT logo.h
-         COMMAND bmp2h -i ${COMPONENT_PATH}/logo.bmp -o log.h
-         DEPENDS ${COMPONENT_PATH}/logo.bmp
+         COMMAND bmp2h -i ${COMPONENT_DIR}/logo.bmp -o log.h
+         DEPENDS ${COMPONENT_DIR}/logo.bmp
          VERBATIM)
 
     add_custom_target(logo DEPENDS logo.h)
-    add_dependencies(${COMPONENT_TARGET} logo)
+    add_dependencies(${COMPONENT_LIB} logo)
 
-    set_property(DIRECTORY "${COMPONENT_PATH}" APPEND PROPERTY
+    set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
          ADDITIONAL_MAKE_CLEAN_FILES logo.h)
 
 This answer is adapted from the `CMake FAQ entry <cmake faq generated files_>`_, which contains some other examples that will also work with ESP-IDF builds.
@@ -681,23 +654,28 @@ it is added to the `ADDITIONAL_MAKE_CLEAN_FILES`_ property.
 
 .. note::
 
-   If generating files as part of the project CMakeLists.txt file, not a component CMakeLists.txt, then use ``${PROJECT_PATH}`` instead of ``${COMPONENT_PATH}`` and ``${PROJECT_NAME}.elf`` instead of ``${COMPONENT_TARGET}``.)
+   If generating files as part of the project CMakeLists.txt file, not a component CMakeLists.txt, then use build property ``PROJECT_DIR`` instead of ``${COMPONENT_DIR}`` and ``${PROJECT_NAME}.elf`` instead of ``${COMPONENT_LIB}``.)
 
 If a a source file from another component included ``logo.h``, then ``add_dependencies`` would need to be called to add a dependency between
 the two components, to ensure that the component source files were always compiled in the correct order.
+
+.. _cmake_embed_data:
 
 Embedding Binary Data
 ---------------------
 
 Sometimes you have a file with some binary or text data that you'd like to make available to your component - but you don't want to reformat the file as C source.
 
-You can set a variable ``COMPONENT_EMBED_FILES`` in your component's CMakeLists, giving space-delimited names of the files to embed::
+You can specify argument ``COMPONENT_EMBED_FILES`` in the component registration, giving space-delimited names of the files to embed::
 
-  set(COMPONENT_EMBED_FILES server_root_cert.der)
+  idf_component_register(...
+                         EMBED_FILES server_root_cert.der)
+
 
 Or if the file is a string, you can use the variable ``COMPONENT_EMBED_TXTFILES``. This will embed the contents of the text file as a null-terminated string::
 
-  set(COMPONENT_EMBED_TXTFILES server_root_cert.pem)
+  idf_component_register(...
+                         EMBED_TXTFILES server_root_cert.pem)
 
 .. highlight:: c
 
@@ -742,8 +720,8 @@ the ESP-IDF build system entirely by using a CMake feature called ExternalProjec
   # External build process for quirc, runs in source dir and
   # produces libquirc.a
   externalproject_add(quirc_build
-      PREFIX ${COMPONENT_PATH}
-      SOURCE_DIR ${COMPONENT_PATH}/quirc
+      PREFIX ${COMPONENT_DIR}
+      SOURCE_DIR ${COMPONENT_DIR}/quirc
       CONFIGURE_COMMAND ""
       BUILD_IN_SOURCE 1
       BUILD_COMMAND make CC=${CMAKE_C_COMPILER} libquirc.a
@@ -756,12 +734,12 @@ the ESP-IDF build system entirely by using a CMake feature called ExternalProjec
    add_dependencies(quirc quirc_build)
 
    set_target_properties(quirc PROPERTIES IMPORTED_LOCATION
-        ${COMPONENT_PATH}/quirc/libquirc.a)
+        ${COMPONENT_DIR}/quirc/libquirc.a)
    set_target_properties(quirc PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-        ${COMPONENT_PATH}/quirc/lib)
+        ${COMPONENT_DIR}/quirc/lib)
 
    set_directory_properties( PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
-        "${COMPONENT_PATH}/quirc/libquirc.a")
+        "${COMPONENT_DIR}/quirc/libquirc.a")
 
 (The above CMakeLists.txt can be used to create a component named ``quirc`` that builds the quirc_ project using its own Makefile.)
 
@@ -882,7 +860,7 @@ not yet be provided by a component, or use another library for the same function
 Importing a library might look like this for a hypothetical library ``foo`` to be used in the ``main`` component::
 
   # Register the component
-  register_component()
+  idf_component_register()
 
   # Set values of hypothetical variables that control the build of `foo`
   set(FOO_BUILD_STATIC OFF)
@@ -890,11 +868,6 @@ Importing a library might look like this for a hypothetical library ``foo`` to b
 
   # Create and import the library targets
   add_subdirectory(foo)
-
-  # Propagate IDF-wide compile settings/definitions/options to `foo`
-  target_include_directories(foo ${IDF_INCLUDE_DIRECTORIES})
-  target_compile_options(foo ${IDF_COMPILE_OPTIONS})
-  target_compile_definitions(foo ${IDF_COMPILE_DEFINITIONS})
 
   # Link `foo` to `main` component
   target_link_libraries(main foo)
@@ -913,56 +886,241 @@ Using ESP-IDF in Custom CMake Projects
 ======================================
 
 ESP-IDF provides a template CMake project for easily creating an application. However, in some instances the user might already
-have an existing CMake project or may want to create one. In these cases it is desirable to be able to consume IDF components
+have an existing CMake project or may want to create a custom one. In these cases it is desirable to be able to consume IDF components
 as libraries to be linked to the user's targets (libraries/ executables).
 
-.. highlight:: cmake
+It is possible to do so by using the :ref:`build system APIs provided<cmake_buildsystem_api>` by :idf_file:`tools/cmake/idf.cmake`. For example:
 
-It is possible to do so by using functions  ``idf_import_components``
-and ``idf_link_components`` provided provided by :idf_file:`tools/cmake/idf_functions.cmake`. For example::
+.. code-block:: cmake
 
   cmake_minimum_required(VERSION 3.5)
   project(my_custom_app C)
 
-  # The source file main.c contains app_main() definition
+  # Include CMake file that provides ESP-IDF CMake build system APIs.
+  include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
+
+  # Include ESP-IDF components in the build, may be thought as an equivalent of 
+  # add_subdirectory() but with some additional procesing and magic for ESP-IDF build
+  # specific build processes.
+  idf_build_process(esp32)
+  
+  # Create the project executable and plainly link the newlib component to it using 
+  # its alias, idf::newlib.
   add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
+  target_link_libraries(${CMAKE_PROJECT_NAME}.elf idf::newlib)
 
-  # Provides idf_import_components and idf_link_components
-  include($ENV{IDF_PATH}/tools/cmake/idf_functions.cmake)
-
-  # Do some configuration for idf_import_components. This enables creation of artifacts (which might not be
-  # needed) for some projects
-  set(IDF_BUILD_ARTIFACTS ON)
-  set(IDF_PROJECT_EXECUTABLE ${CMAKE_PROJECT_NAME}.elf)
-  set(IDF_BUILD_ARTIFACTS_DIR ${CMAKE_BINARY_DIR})
-
-  # Wraps add_subdirectory() to create library targets for components, and then `return` them using the given variable.
-  # In this case the variable is named `component`
-  idf_import_components(components $ENV{IDF_PATH} esp-idf)
-
-  # Wraps target_link_libraries() to link processed components by idf_import_components to target
-  idf_link_components(${CMAKE_PROJECT_NAME}.elf "${components}")
-
-
-The snippet above includes all of the components in the ESP-IDF directory and uses KConfig defaults.
-It also builds artifacts (partition table, project information json files, bootloader, etc.). There are also other build
-parameters which can be set, the full list of which is as follows:
-
-- ``IDF_BUILD_ARTIFACTS``: Build artifacts such as bootloader, partition table binary file, partition binaries, project information json typically needed for flashing binaries to the target chip. Requires ``IDF_PROJECT_EXECUTABLE`` and ``IDF_BUILD_ARTIFACTS_DIR`` to be set as well.
-- ``IDF_PROJECT_EXECUTABLE``: Name of the final executable file. This parameter is needed for creating some of the artifacts.
-- ``IDF_BUILD_ARTIFACTS_DIR``: Location where created artifacts are to be placed.
-- ``IDF_EXTRA_COMPONENTS_DIR``: Locations to search for components in aside from the :idf:`default components directory <components>`
-- ``IDF_COMPONENTS``: A list of components to import. Use this to trim down the imported components to only what is needed for faster builds. If not set, all components found from the default components directory as well as ``IDF_EXTRA_COMPONENTS_DIR`` (if specified) are imported. Note that dependencies of components in this list (other than ``IDF_COMPONENT_REQUIRES_COMMON``) will also get pulled into the build.
-- ``IDF_COMPONENT_REQUIRES_COMMON``: List of components that every component requires. Components in this list (and their dependencies) are imported regardless of the value of ``IDF_COMPONENTS``. By default, this variable is set to the minimal set of core "system" components.
-- ``IDF_SDKCONFIG_DEFAULTS``: Path to the configuration override file. If unset, components are built with default configurations.
-- ``IDF_BUILD_TESTS``: Include component tests in the build. By default, all component tests are included. The component tests are filtered using ``IDF_TEST_COMPONENTS`` and ``IDF_TEST_EXCLUDE_COMPONENTS``.
-- ``IDF_TEST_COMPONENTS``: If ``IDF_BUILD_TESTS`` is set, only component tests in this list will be included in the build. Ignored if ``IDF_BUILD_TESTS`` is not set.
-- ``IDF_TEST_EXCLUDE_COMPONENTS``: If ``IDF_BUILD_TESTS`` is set, component tests in this list will not be included in the build. Ignored if ``IDF_BUILD_TESTS`` is not set. This variable takes precedence over ``IDF_TEST_COMPONENTS``. This means that a component test in this list will not be included in the build even if it is also present in ``IDF_TEST_COMPONENTS``.
+  # Let the build system know what the project executable is to attach more targets, dependencies, etc.
+  idf_build_executable(${CMAKE_PROJECT_NAME}.elf)
 
 The example in :example:`build_system/cmake/idf_as_lib` demonstrates the creation of an application equivalent to :example:`hello world application <get-started/hello_world>`
 using a custom CMake project.
 
 .. note:: The IDF build system can only set compiler flags for source files that it builds. When an external CMakeLists.txt file is used and PSRAM is enabled, remember to add ``-mfix-esp32-psram-cache-issue`` to the C compiler arguments. See :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND` for details of this flag.
+.. _cmake_buildsystem_api:
+
+ESP-IDF CMake Build System API
+==============================
+
+idf-build-commands
+------------------
+
+.. code-block:: none
+
+  idf_build_get_property(var property [GENERATOR_EXPRESSION])
+
+Retrieve a :ref:`build property<cmake-build-properties>` *property* and store it in *var* accessible from the current scope. Specifying
+*GENERATOR_EXPRESSION* will retrieve the generator expression string for that property, instead of the actual value, which
+can be used with CMake commands that support generator expressions.
+
+.. code-block:: none
+
+  idf_build_set_property(property val [APPEND])
+
+Set a :ref:`build property<cmake-build-properties>` *property* with value *val*. Specifying *APPEND* will append the specified value to the current
+value of the property. If the property does not previously exist or it is currently empty, the specified value becomes 
+the first element/member instead. 
+
+.. code-block:: none
+
+  idf_build_component(component_dir)
+
+Add a directory *component_dir* that contains a component to the build. 
+
+.. code-block:: none
+
+  idf_build_process(target 
+                    [PROJECT_DIR project_dir]
+                    [PROJECT_VER project_ver]
+                    [PROJECT_NAME project_name]
+                    [SDKCONFIG sdkconfig]
+                    [SDKCONFIG_DEFAULTS sdkconfig_defaults]
+                    [BUILD_DIR build_dir]
+                    [COMPONENTS component1 component2 ...])
+
+Performs the bulk of the behind-the-scenes magic for including ESP-IDF components such as component configuration, libraries creation, 
+dependency expansion and resolution. Among these functions, perhaps the most important 
+from a user's perspective is the libraries creation by calling each component's ``idf_component_register``. This command creates the libraries for each component, which are accessible using aliases in the form
+idf::*component_name*. These aliases can be used to link the components to the user's own targets, either libraries
+or executables. 
+
+The call requires the target chip to be specified with *target* argument. Optional arguments for the call include:
+
+- PROJECT_DIR - directory of the project; defaults to CMAKE_SOURCE_DIR
+- PROJECT_NAME - name of the project; defaults to CMAKE_PROJECT_NAME
+- PROJECT_VER - version/revision of the project; defaults to "0.0.0"
+- SDKCONFIG - output path of generated sdkconfig file; defaults to PROJECT_DIR/sdkconfig or CMAKE_SOURCE_DIR/sdkconfig depending if PROJECT_DIR is set
+- SDKCONFIG_DEFAULTS - defaults file to use for the build; defaults to empty
+- BUILD_DIR - directory to place ESP-IDF build-related artifacts, such as generated binaries, text files, components; defaults to CMAKE_BINARY_DIR
+- COMPONENTS - starting components for trimming the build; components not in the list are automatically if they are required in the expanded dependency tree
+
+.. code-block:: none
+
+  idf_build_executable(executable)
+
+Specify the executable *executable* for ESP-IDF build. This attaches additional targets such as dependencies related to
+flashing, generating additional binary files, etc. Should be called after ``idf_build_process``.
+
+.. code-block:: none
+
+  idf_build_get_config(var config [GENERATOR_EXPRESSION])
+
+Get the value of the specified config. Much like build properties, specifying
+*GENERATOR_EXPRESSION* will retrieve the generator expression string for that config, instead of the actual value, which
+can be used with CMake commands that support generator expressions. Actual config values are only known after call to `idf_build_process`, however.
+
+.. _cmake-build-properties:
+
+idf-build-properties
+--------------------
+
+These are properties that describe the build. Values of build properties can be retrieved by using the build command ``idf_build_get_property``.
+For example, to get the Python interpreter used for the build:
+
+.. code-block: cmake
+
+  idf_build_get_property(python PYTHON)
+  message(STATUS "The Python intepreter is: ${python}")
+
+  - BUILD_DIR - build directory; set from ``idf_build_process`` BUILD_DIR argument
+  - BUILD_COMPONENTS - list of components (more specifically, component aliases) included in the build; set by ``idf_build_process``
+  - C_COMPILE_OPTIONS - compile options applied to all components' C source files
+  - COMPILE_OPTIONS - compile options applied to all components' source files, regardless of it being C or C++
+  - COMPILE_DEFINITIONS - compile definitions applied to all component source files
+  - CXX_COMPILE_OPTIONS - compile options applied to all components' C++ source files
+  - EXECUTABLE - project executable; set by call to ``idf_build_executable``
+  - EXECUTABLE_NAME - name of project executable without extension; set by call to ``idf_build_executable``
+  - IDF_PATH - ESP-IDF path; set from IDF_PATH environment variable, if not, inferred from the location of ``idf.cmake``
+  - IDF_TARGET - target chip for the build; set from the required target argument for ``idf_build_process``
+  - IDF_VER - ESP-IDF version; set from either a version file or the Git revision of the IDF_PATH repository
+  - INCLUDE_DIRECTORIES - include directories for all component source files
+  - KCONFIGS - list of Kconfig files found in components in build; set by ``idf_build_process``
+  - KCONFIG_PROJBUILDS - list of Kconfig.projbuild diles found in components in build; set by ``idf_build_process``
+  - PROJECT_NAME - name of the project; set from ``idf_build_process`` PROJECT_NAME argument
+  - PROJECT_DIR - directory of the project; set from ``idf_build_process`` PROJECT_DIR argument
+  - PROJECT_VER - version of the project; set from ``idf_build_process`` PROJECT_VER argument
+  - PYTHON - Python interpreter used for the build; set from PYTHON environment variable if available, if not "python" is used
+  - SDKCONFIG - full path to output config file; set from ``idf_build_process`` SDKCONFIG argument
+  - SDKCONFIG_DEFAULTS - full path to config defaults file; set from ``idf_build_process`` SDKCONFIG_DEFAULTS argument
+  - SDKCONFIG_HEADER - full path to C/C++ header file containing component configuration; set by ``idf_build_process``
+  - SDKCONFIG_CMAKE - full path to CMake file containing component configuration; set by ``idf_build_process``
+  - SDKCONFIG_JSON - full path to JSON file containing component configuration; set by ``idf_build_process``
+  - SDKCONFIG_JSON_MENUS - full path to JSON file containing config menus; set by ``idf_build_process``
+
+idf-component-commands
+----------------------
+
+.. code-block:: none
+
+  idf_component_get_property(var component property [GENERATOR_EXPRESSION])
+
+Retrieve a specified *component*'s :ref:`component property<cmake-component-properties>`, *property* and store it in *var* accessible from the current scope. Specifying
+*GENERATOR_EXPRESSION* will retrieve the generator expression string for that property, instead of the actual value, which
+can be used with CMake commands that support generator expressions.
+
+.. code-block:: none
+
+  idf_component_set_property(property val [APPEND])
+
+Set a specified *component*'s :ref:`component property<cmake-component-properties>`, *property* with value *val*. Specifying *APPEND* will append the specified value to the current
+value of the property. If the property does not previously exist or it is currently empty, the specified value becomes 
+the first element/member instead. 
+
+.. _cmake-component-register:
+
+.. code-block:: none
+
+  idf_component_register([[SRCS src1 src2 ...] | [[SRC_DIRS dir1 dir2 ...] [EXCLUDE_SRCS src1 src2 ...]]
+                         [INCLUDE_DIRS dir1 dir2 ...]
+                         [PRIV_INCLUDE_DIRS dir1 dir2 ...]
+                         [REQUIRES component1 component2 ...]
+                         [PRIV_REQUIRES component1 component2 ...]
+                         [LDFRAGMENTS ldfragment1 ldfragment2 ...]
+                         [REQUIRED_IDF_TARGETS target1 target2 ...]
+                         [EMBED_FILES file1 file2 ...]
+                         [EMBED_TXTFILES file1 file2 ...])
+
+Register a component to the build system. Much like the ``project()`` CMake command, this should be called from the component's 
+CMakeLists.txt directly (not through a function or macro) and is recommended to be called before any other command. Here are some
+guidelines on what commands can **not** be called before ``idf_component_register``:
+  
+  - commands that are not valid in CMake script mode
+  - custom commands defined in project_include.cmake
+  - build system API commands except ``idf_build_get_property``; although consider whether the property may not have been set yet
+
+Commands that set and operate on variables are generally okay to call before ``idf_component_register``.
+
+The arguments for ``idf_component_register`` include:
+
+  - SRCS - component source files used for creating a static library for the component; if not specified, component is a treated as a 
+          config-only component and an interface library is created instead.
+  - SRC_DIRS, EXCLUDE_SRCS - used to glob source files (.c, .cpp, .S) by specifying directories, instead of specifying source files manually via SRCS.
+          Note that this is subject to the :ref:`limitations of globbing in CMake<cmake-file-globbing>`. Source files specified in EXCLUDE_SRCS are removed from the globbed files.
+  - INCLUDE_DIRS - paths, relative to the component directory, which will be added to the include search path for all other components which require the current component
+  - PRIV_INCLUDE_DIRS - directory paths, must be relative to the component directory, which will be added to the include search path for this component's source files only
+  - REQUIRES - public component requirements for the component
+  - PRIV_REQUIRES - private component requirements for the component; ignored on config-only components
+  - LDFRAGMENTS - component linker fragment files
+  - REQUIRED_IDF_TARGETS - specify the only target the component supports
+
+The following are used for :ref:`embedding data into the component<cmake_embed_data>`, and is considered as source files
+when determining if a component is config-only. This means that even if the component does not specify source files, a static library is still
+created internally for the component if it specifies either:
+
+  - EMBED_FILES - binary files to be embedded in the component
+  - EMBED_TXTFILES - text files to be embedded in the component
+  
+.. _cmake-component-properties:
+
+idf-component-properties
+------------------------
+
+These are properties that describe a component. Values of component properties can be retrieved by using the build command ``idf_component_get_property``.
+For example, to get the directory of the ``freertos`` component:
+
+.. code-block: cmake
+
+  idf_component_get_property(dir freertos COMPONENT_DIR)
+  message(STATUS "The 'freertos' component directory is: ${dir}")
+
+- COMPONENT_ALIAS - alias for COMPONENT_LIB used for linking the component to external targets; set by ``idf_build_component`` and alias library itself
+                is created by ``idf_component_register``
+- COMPONENT_DIR - component directory; set by ``idf_build_component``
+- COMPONENT_LIB - name for created component static/interface library; set by ``idf_build_component`` and library itself
+                is created by ``idf_component_register``
+- COMPONENT_NAME - name of the component; set by ``idf_build_component`` based on the component directory name
+- COMPONENT_TYPE - type of the component, whether LIBRARY or CONFIG_ONLY. A component is of type LIBRARY if it specifies
+                source files or embeds a file
+- EMBED_FILES - list of files to embed in component; set from ``idf_component_register`` EMBED_FILES argument
+- EMBED_TXTFILES - list of text files to embed in component; set from ``idf_component_register`` EMBED_TXTFILES argument
+- INCLUDE_DIRS - list of component include directories; set from ``idf_component_register`` INCLUDE_DIRS argument
+- KCONFIG - component Kconfig file; set by ``idf_build_component``
+- KCONFIG_PROJBUILD - component Kconfig.projbuild; set by ``idf_build_component``
+- LDFRAGMENTS - list of component linker fragment files; set from ``idf_component_register`` LDFRAGMENTS argument
+- PRIV_INCLUDE_DIRS - list of component private include directories; set from ``idf_component_register`` PRIV_INCLUDE_DIRS on components of type LIBRARY
+- PRIV_REQUIRES - list of private component dependentices; set from ``idf_component_register`` PRIV_REQUIRES argument
+- REQUIRED_IDF_TARGETS - list of targets the component supports; set from ``idf_component_register`` EMBED_TXTFILES argument
+- REQUIRES - list of public component dependencies; set from ``idf_component_register`` REQUIRES argument
+- SRCS - list of component source files; set from SRCS or SRC_DIRS/EXCLUDE_SRCS argument of ``idf_component_register``
 
 .. _cmake-file-globbing:
 
@@ -971,13 +1129,15 @@ File Globbing & Incremental Builds
 
 .. highlight:: cmake
 
-The preferred way to include source files in an ESP-IDF component is to list them manually in COMPONENT_SRCS::
+The preferred way to include source files in an ESP-IDF component is to list them manually via SRCS argument to ``idf_component_register``::
 
-  set(COMPONENT_SRCS library/a.c library/b.c platform/platform.c)
+  idf_component_register(SRCS library/a.c library/b.c platform/platform.c
+                         ...)
 
-This preference reflects the `CMake best practice <https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1/>`_ of manually listing source files. This could, however, be inconvenient when there are lots of source files to add to the build. The ESP-IDF build system provides an alternative way for specifying source files using ``COMPONENT_SRCDIRS``::
+This preference reflects the `CMake best practice <https://gist.github.com/mbinna/c61dbb39bca0e4fb7d1f73b0d66a4fd1/>`_ of manually listing source files. This could, however, be inconvenient when there are lots of source files to add to the build. The ESP-IDF build system provides an alternative way for specifying source files using ``SRC_DIRS``::
 
-  set(COMPONENT_SRCDIRS library platform)
+  idf_component_register(SRC_DIRS library platform
+                         ...)
 
 This uses globbing behind the scenes to find source files in the specified directories. Be aware, however, that if a new source file is added and this method is used, then CMake won't know to automatically re-run and this file won't be added to the build.
 
