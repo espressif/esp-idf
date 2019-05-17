@@ -100,7 +100,9 @@ typedef void (*httpd_free_ctx_fn_t)(void *ctx);
  *
  * @param[in] hd       server instance
  * @param[in] sockfd   session socket file descriptor
- * @return status
+ * @return
+ *  - ESP_OK   : On success
+ *  - Any value other than ESP_OK will signal the server to close the socket immediately
  */
 typedef esp_err_t (*httpd_open_func_t)(httpd_handle_t hd, int sockfd);
 
@@ -201,6 +203,8 @@ typedef struct httpd_config {
      *
      * If a context needs to be maintained between these functions, store it in the session using
      * httpd_sess_set_transport_ctx() and retrieve it later with httpd_sess_get_transport_ctx()
+     *
+     * Returning a value other than ESP_OK will immediately close the new socket.
      */
     httpd_open_func_t open_fn;
 
