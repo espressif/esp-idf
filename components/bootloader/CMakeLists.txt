@@ -1,5 +1,7 @@
+register_component()
+
 # Do not generate flash file when building bootloader or is in early expansion of the build
-if(CMAKE_BUILD_EARLY_EXPANSION OR BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD)
     return()
 endif()
 

@@ -63,12 +63,21 @@ list(APPEND COMPONENT_ADD_LDFRAGMENTS newlib.lf)
 register_component()
 
 if (LIB_PATH)
-    target_link_libraries(${COMPONENT_TARGET} "-L ${LIB_PATH}")
+    target_link_libraries(${COMPONENT_LIB} "-L ${LIB_PATH}")
 endif()
-target_link_libraries(${COMPONENT_TARGET} ${LIBC} ${LIBM})
+
+if(GCC_NOT_5_2_0)
+    # Toolchain libraries require code defined in this component
+    add_library(extra INTERFACE)
+    idf_component_get_property(newlib newlib COMPONENT_LIB)
+    target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} "$<TARGET_FILE:${newlib}>")
+    target_link_libraries(${COMPONENT_LIB} extra)
+else()
+    target_link_libraries(${COMPONENT_LIB} ${LIBC} ${LIBM})
+endif()
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 
 if(EXTRA_LINK_FLAGS)
-    target_link_libraries(${COMPONENT_TARGET} "${EXTRA_LINK_FLAGS}")
+    target_link_libraries(${COMPONENT_LIB} "${EXTRA_LINK_FLAGS}")
 endif()

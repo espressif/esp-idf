@@ -14,10 +14,10 @@ endif()
 
 register_component()
 
-target_compile_definitions(${COMPONENT_TARGET} PUBLIC
+target_compile_definitions(${COMPONENT_LIB} PUBLIC
     -DUNITY_INCLUDE_CONFIG_H
 )
 
 if(GCC_NOT_5_2_0)
-    component_compile_options(-Wno-unused-const-variable)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
 endif()

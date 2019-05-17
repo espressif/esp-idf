@@ -25,19 +25,23 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     # the external ULP project. This is a workaround to the bug https://public.kitware.com/Bug/view.php?id=16137.
     string(REPLACE ";" "|" ulp_s_sources "${ulp_s_sources}")
 
+    idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(python PYTHON)
     externalproject_add(${ULP_APP_NAME}
-        SOURCE_DIR ${IDF_PATH}/components/ulp/cmake
+        SOURCE_DIR ${idf_path}/components/ulp/cmake
         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}
         INSTALL_COMMAND ""
         CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
-                    -DCMAKE_TOOLCHAIN_FILE=${IDF_PATH}/components/ulp/cmake/toolchain-ulp.cmake
+                    -DCMAKE_TOOLCHAIN_FILE=${idf_path}/components/ulp/cmake/toolchain-ulp.cmake
                     -DULP_S_SOURCES=${ulp_s_sources} -DULP_APP_NAME=${ULP_APP_NAME}
-                    -DCOMPONENT_PATH=${COMPONENT_PATH}
+                    -DCOMPONENT_DIR=${COMPONENT_DIR}
                     # Even though this resolves to a ';' separated list, this is fine. This must be special behavior
                     # for generator expressions.
-                    -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
-                    -DIDF_PATH=${IDF_PATH}
-                    -DSDKCONFIG=${SDKCONFIG_HEADER}
+                    -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_LIB},INTERFACE_INCLUDE_DIRECTORIES>
+                    -DIDF_PATH=${idf_path}
+                    -DSDKCONFIG=${sdkconfig_header}
+                    -DPYTHON=${python}
         BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME} --target build
         BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}
@@ -52,8 +56,8 @@ if(NOT CMAKE_BUILD_EARLY_EXPANSION)
 
     add_custom_target(${ULP_APP_NAME}_artifacts DEPENDS ${ULP_APP_NAME})
 
-    add_dependencies(${COMPONENT_TARGET} ${ULP_APP_NAME}_artifacts)
+    add_dependencies(${COMPONENT_LIB} ${ULP_APP_NAME}_artifacts)
 
-    target_linker_script(${COMPONENT_TARGET} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.ld)
-    target_add_binary_data(${COMPONENT_TARGET} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.bin BINARY)
+    target_linker_script(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.ld)
+    target_add_binary_data(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}/${ULP_APP_NAME}.bin BINARY)
 endif()

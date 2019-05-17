@@ -17,33 +17,17 @@ endif()
 
 set(COMPONENTS bootloader esptool_py partition_table soc bootloader_support log spi_flash micro-ecc main efuse)
 set(BOOTLOADER_BUILD 1)
-add_definitions(-DBOOTLOADER_BUILD=1)
-
-set(COMPONENT_REQUIRES_COMMON log esp_rom esp_common xtensa)
-
-if (CONFIG_LEGACY_INCLUDE_COMMON_HEADERS)
-    list(APPEND COMPONENT_REQUIRES_COMMON "soc")
-endif()
-
 include("${IDF_PATH}/tools/cmake/project.cmake")
+set(common_req log esp_rom esp_common xtensa)
+if (CONFIG_LEGACY_INCLUDE_COMMON_HEADERS)
+    list(APPEND common_req soc)
+endif()
+idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
+idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 project(bootloader)
 
-target_linker_script(bootloader.elf
-    "main/${IDF_TARGET}.bootloader.ld"
-    "main/${IDF_TARGET}.bootloader.rom.ld"
-)
-
-# as cmake won't attach linker args to a header-only library, attach
-# linker args directly to the bootloader.elf
-# esp32.rom.newlib-funcs.ld is included to use memset/memcpy.
-set(BOOTLOADER_LINKER_SCRIPTS
-    "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.ld"
-    "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.newlib-funcs.ld"
-    "${IDF_PATH}/components/${IDF_TARGET}/ld/${IDF_TARGET}.peripherals.ld")
-
-target_linker_script(bootloader.elf ${BOOTLOADER_LINKER_SCRIPTS})
-
-target_link_libraries(bootloader.elf gcc)
+idf_build_set_property(COMPILE_DEFINITIONS "-DBOOTLOADER_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 
 set(secure_boot_signing_key ${SECURE_BOOT_SIGNING_KEY})
 

@@ -1,81 +1,84 @@
 # Utilities for supporting linker script generation in the build system
 
-# ldgen_set_variables
-#
-# Create the custom target to attach the fragment files and template files
-# for the build to.
-function(ldgen_set_variables)
-    add_custom_target(ldgen)
-endfunction()
-
-# ldgen_add_fragment_files
+# __ldgen_add_fragment_files
 #
 # Add one or more linker fragment files, and append it to the list of fragment
 # files found so far.
-function(ldgen_add_fragment_files component fragment_files)
+function(__ldgen_add_fragment_files fragment_files)
     spaces2list(fragment_files)
 
     foreach(fragment_file ${fragment_files})
-        get_filename_component(_fragment_file ${fragment_file} ABSOLUTE)
-        list(APPEND _fragment_files ${_fragment_file})
+        get_filename_component(abs_path ${fragment_file} ABSOLUTE)
+        list(APPEND _fragment_files ${abs_path})
     endforeach()
 
-    set_property(TARGET ldgen APPEND PROPERTY FRAGMENT_FILES ${_fragment_files})
+    idf_build_set_property(__LDGEN_FRAGMENT_FILES "${_fragment_files}" APPEND)
 endfunction()
 
-# ldgen_component_add
+# __ldgen_add_component
 #
-# Add component to known libraries for linker script generation
-function(ldgen_component_add component_lib)
-    set_property(TARGET ldgen APPEND PROPERTY OUTPUT_LIBRARIES "$<TARGET_FILE:${component_lib}>")
-    set_property(TARGET ldgen APPEND PROPERTY LIBRARIES ${component_lib})
+# Generate sections info for specified target to be used in linker script generation
+function(__ldgen_add_component component_lib)
+    idf_build_set_property(__LDGEN_LIBRARIES "$<TARGET_FILE:${component_lib}>" APPEND)
+    idf_build_set_property(__LDGEN_DEPENDS ${component_lib} APPEND)
 endfunction()
 
-# ldgen_process_template
+# __ldgen_process_template
 #
 # Passes a linker script template to the linker script generation tool for
 # processing
-function(ldgen_process_template template output)
-    get_property(output_libraries TARGET ldgen PROPERTY OUTPUT_LIBRARIES)
-    file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/ldgen_libraries.in CONTENT "$<JOIN:${output_libraries},\n>")
-    file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/ldgen_libraries INPUT ${CMAKE_BINARY_DIR}/ldgen_libraries.in)
+function(__ldgen_process_template output_var template)
+    idf_build_get_property(idf_target IDF_TARGET)
+    idf_build_get_property(idf_path IDF_PATH)
 
-    get_filename_component(filename "${template}" NAME_WE)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_build_get_property(ldgen_libraries __LDGEN_LIBRARIES GENERATOR_EXPRESSION)
+    file(GENERATE OUTPUT ${build_dir}/ldgen_libraries.in CONTENT $<JOIN:${ldgen_libraries},\n>)
+    file(GENERATE OUTPUT ${build_dir}/ldgen_libraries INPUT ${build_dir}/ldgen_libraries.in)
+
+    get_filename_component(filename "${template}" NAME)
+
+    set(output ${CMAKE_CURRENT_BINARY_DIR}/${filename}.ld)
+    set(${output_var} ${output} PARENT_SCOPE)
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-        "${CMAKE_BINARY_DIR}/ldgen_libraries.in"
-        "${CMAKE_BINARY_DIR}/ldgen_libraries")
+        "${build_dir}/ldgen_libraries.in"
+        "${build_dir}/ldgen_libraries")
+
+    idf_build_get_property(ldgen_fragment_files __LDGEN_FRAGMENT_FILES GENERATOR_EXPRESSION)
+    idf_build_get_property(ldgen_depends __LDGEN_DEPENDS GENERATOR_EXPRESSION)
+    # Create command to invoke the linker script generator tool.
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(root_kconfig __ROOT_KCONFIG)
+    idf_build_get_property(kconfigs KCONFIGS)
+    idf_build_get_property(kconfig_projbuilds KCONFIG_PROJBUILDS)
+
+    idf_build_get_property(python PYTHON)
+
+    string(REPLACE ";" " " kconfigs "${kconfigs}")
+    string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
 
     add_custom_command(
         OUTPUT ${output}
-        COMMAND ${PYTHON} ${IDF_PATH}/tools/ldgen/ldgen.py
-        --config    ${SDKCONFIG}
-        --fragments "$<JOIN:$<TARGET_PROPERTY:ldgen,FRAGMENT_FILES>,\t>"
+        COMMAND ${python} ${idf_path}/tools/ldgen/ldgen.py
+        --config    ${sdkconfig}
+        --fragments "$<JOIN:${ldgen_fragment_files},\t>"
         --input     ${template}
         --output    ${output}
-        --kconfig   ${ROOT_KCONFIG}
-        --env       "COMPONENT_KCONFIGS=${COMPONENT_KCONFIGS}"
-        --env       "COMPONENT_KCONFIGS_PROJBUILD=${COMPONENT_KCONFIGS_PROJBUILD}"
+        --kconfig   ${root_kconfig}
+        --env       "COMPONENT_KCONFIGS=${kconfigs}"
+        --env       "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
         --env       "IDF_CMAKE=y"
-        --env       "IDF_PATH=${IDF_PATH}"
-        --env       "IDF_TARGET=${IDF_TARGET}"
-        --libraries-file ${CMAKE_BINARY_DIR}/ldgen_libraries
+        --env       "IDF_PATH=${idf_path}"
+        --env       "IDF_TARGET=${idf_target}"
+        --libraries-file ${build_dir}/ldgen_libraries
         --objdump   ${CMAKE_OBJDUMP}
-        DEPENDS     ${template} $<TARGET_PROPERTY:ldgen,FRAGMENT_FILES>
-                    $<TARGET_PROPERTY:ldgen,LIBRARIES> ${SDKCONFIG}
+        DEPENDS     ${template} ${ldgen_fragment_files} ${ldgen_depends} ${SDKCONFIG}
     )
 
-    get_filename_component(output_name ${output} NAME)
-    add_custom_target(ldgen_${output_name}_script DEPENDS ${output})
-    add_dependencies(ldgen ldgen_${output_name}_script)
-endfunction()
-
-# ldgen_add_dependencies
-#
-# Add dependency of project executable to ldgen custom target.
-function(ldgen_add_dependencies)
-    if(IDF_PROJECT_EXECUTABLE)
-        add_dependencies(${IDF_PROJECT_EXECUTABLE} ldgen)
-    endif()
+    get_filename_component(_name ${output} NAME)
+    add_custom_target(__ldgen_output_${_name} DEPENDS ${output})
+    add_dependencies(__idf_build_target __ldgen_output_${_name})
+    idf_build_set_property(LINK_DEPENDS ${output} APPEND)
 endfunction()

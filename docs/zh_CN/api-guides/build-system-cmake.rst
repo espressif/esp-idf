@@ -357,9 +357,9 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 
 .. highlight:: cmake
 
-在编译特定组件的源文件时，可以使用 ``component_compile_options`` 命令来传递编译器选项::
+在编译特定组件的源文件时，可以使用 ``target_compile_options`` 命令来传递编译器选项::
 
-    component_compile_options(-Wno-unused-variable)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-variable)
 
 这条命令封装了 CMake 的 `target_compile_options`_ 命令。
 
@@ -628,14 +628,14 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 有些组件的源文件可能并不是由组件本身提供，而必须从另外的文件生成。假设组件需要一个头文件，该文件由 BMP 文件转换后（使用 bmp2h 工具）的二进制数据组成，然后将头文件包含在名为 graphics_lib.c 的文件中::
 
     add_custom_command(OUTPUT logo.h
-        COMMAND bmp2h -i ${COMPONENT_PATH}/logo.bmp -o log.h
-        DEPENDS ${COMPONENT_PATH}/logo.bmp
+        COMMAND bmp2h -i ${COMPONENT_DIR}/logo.bmp -o log.h
+        DEPENDS ${COMPONENT_DIR}/logo.bmp
         VERBATIM)
 
     add_custom_target(logo DEPENDS logo.h)
-    add_dependencies(${COMPONENT_TARGET} logo)
+    add_dependencies(${COMPONENT_LIB} logo)
 
-    set_property(DIRECTORY "${COMPONENT_PATH}" APPEND PROPERTY
+    set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
         ADDITIONAL_MAKE_CLEAN_FILES logo.h)
 
 这个示例改编自 `CMake 的一则 FAQ <cmake faq generated files_>`_，其中还包含了一些同样适用于 ESP-IDF 构建系统的示例。
@@ -644,7 +644,7 @@ CMake 文件可以使用 ``IDF_TARGET`` 变量来获取当前的硬件目标。
 
 .. Note::
 
-   如果需要生成文件作为项目 CMakeLists.txt 的一部分，而不是作为组件 CMakeLists.txt 的一部分，此时需要使用 ``${PROJECT_PATH}`` 替代 ``${COMPONENT_PATH}``，使用 ``${PROJECT_NAME}.elf`` 替代 ``${COMPONENT_TARGET}``。
+   如果需要生成文件作为项目 CMakeLists.txt 的一部分，而不是作为组件 CMakeLists.txt 的一部分，此时需要使用 ``${PROJECT_PATH}`` 替代 ``${COMPONENT_DIR}``，使用 ``${PROJECT_NAME}.elf`` 替代 ``${COMPONENT_LIB}``。
 
 如果某个源文件是从其他组件中生成，且包含 ``logo.h`` 文件，则需要调用 ``add_dependencies``， 在这两个组件之间添加一个依赖项，以确保组件源文件按照正确顺序进行编译。
 
@@ -694,8 +694,8 @@ ESP-IDF 还支持自动生成链接脚本，它允许组件通过链接片段文
 
     # 用于 quirc 的外部构建过程，在源目录中运行并生成 libquirc.a
     externalproject_add(quirc_build
-        PREFIX ${COMPONENT_PATH}
-        SOURCE_DIR ${COMPONENT_PATH}/quirc
+        PREFIX ${COMPONENT_DIR}
+        SOURCE_DIR ${COMPONENT_DIR}/quirc
         CONFIGURE_COMMAND ""
         BUILD_IN_SOURCE 1
         BUILD_COMMAND make CC=${CMAKE_C_COMPILER} libquirc.a
@@ -707,12 +707,12 @@ ESP-IDF 还支持自动生成链接脚本，它允许组件通过链接片段文
     add_dependencies(quirc quirc_build)
 
     set_target_properties(quirc PROPERTIES IMPORTED_LOCATION
-        ${COMPONENT_PATH}/quirc/libquirc.a)
+        ${COMPONENT_DIR}/quirc/libquirc.a)
     set_target_properties(quirc PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-        ${COMPONENT_PATH}/quirc/lib)
+        ${COMPONENT_DIR}/quirc/lib)
 
     set_directory_properties( PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES
-        "${COMPONENT_PATH}/quirc/libquirc.a")
+        "${COMPONENT_DIR}/quirc/libquirc.a")
 
 （上述 CMakeLists.txt 可用于创建名为 ``quirc`` 的组件，该组件使用自己的 Makefile 构建 quirc_ 项目。）
 
