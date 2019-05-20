@@ -443,12 +443,18 @@ macro(idf_build_process target)
         idf_build_set_property(___COMPONENT_REQUIRES_COMMON ${lib} APPEND)
     endforeach()
 
+    # All targets built under this scope is with the ESP-IDF build system
+    set(ESP_PLATFORM 1)
+    idf_build_set_property(COMPILE_DEFINITIONS "-DESP_PLATFORM" APPEND)
+
     __build_process_project_includes()
 
     # Perform component processing (inclusion of project_include.cmake, adding component
     # subdirectories, creating library targets, linking libraries, etc.)
     idf_build_get_property(idf_path IDF_PATH)
     add_subdirectory(${idf_path} ${build_dir}/esp-idf)
+
+    unset(ESP_PLATFORM)
 endmacro()
 
 # idf_build_executable
