@@ -536,6 +536,61 @@ TEST_CASE("Can delete timer from callback", "[esp_timer]")
     vSemaphoreDelete(args.notify_from_timer_cb);
 }
 
+
+typedef struct {
+    SemaphoreHandle_t delete_start;
+    SemaphoreHandle_t delete_done;
+    SemaphoreHandle_t test_done;
+    esp_timer_handle_t timer;
+} timer_delete_test_args_t;
+
+static void timer_delete_task(void* arg)
+{
+    timer_delete_test_args_t* args = (timer_delete_test_args_t*) arg;
+    xSemaphoreTake(args->delete_start, portMAX_DELAY);
+    printf("Deleting the timer\n");
+    esp_timer_delete(args->timer);
+    printf("Timer deleted\n");
+    xSemaphoreGive(args->delete_done);
+    vTaskDelete(NULL);
+}
+
+static void timer_delete_test_callback(void* arg)
+{
+    timer_delete_test_args_t* args = (timer_delete_test_args_t*) arg;
+    printf("Timer callback called\n");
+    xSemaphoreGive(args->delete_start);
+    xSemaphoreTake(args->delete_done, portMAX_DELAY);
+    printf("Callback complete\n");
+    xSemaphoreGive(args->test_done);
+}
+
+TEST_CASE("Can delete timer from a separate task, triggered from callback", "[esp_timer]")
+{
+    timer_delete_test_args_t args = {
+        .delete_start = xSemaphoreCreateBinary(),
+        .delete_done = xSemaphoreCreateBinary(),
+        .test_done = xSemaphoreCreateBinary(),
+    };
+
+    esp_timer_create_args_t timer_args = {
+            .callback = &timer_delete_test_callback,
+            .arg = &args
+    };
+    esp_timer_handle_t timer;
+    TEST_ESP_OK(esp_timer_create(&timer_args, &timer));
+    args.timer = timer;
+
+    xTaskCreate(timer_delete_task, "deleter", 4096, &args, 5, NULL);
+
+    esp_timer_start_once(timer, 100);
+    TEST_ASSERT(xSemaphoreTake(args.test_done, pdMS_TO_TICKS(1000)));
+
+    vSemaphoreDelete(args.delete_done);
+    vSemaphoreDelete(args.delete_start);
+    vSemaphoreDelete(args.test_done);
+}
+
 TEST_CASE("esp_timer_impl_advance moves time base correctly", "[esp_timer]")
 {
     ref_clock_init();
