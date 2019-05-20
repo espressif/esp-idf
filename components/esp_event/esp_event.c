@@ -170,7 +170,7 @@ static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, 
     handler_instance->handler = handler;
     handler_instance->arg = handler_arg;
 
-    if(SLIST_EMPTY(handlers)) {
+    if (SLIST_EMPTY(handlers)) {
         SLIST_INSERT_HEAD(handlers, handler_instance, next);
     }
     else {
@@ -473,16 +473,16 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     return ESP_OK;
 
 on_err:
-    if(loop->queue != NULL) {
+    if (loop->queue != NULL) {
         vQueueDelete(loop->queue);
     }
 
-    if(loop->mutex != NULL) {
+    if (loop->mutex != NULL) {
         vSemaphoreDelete(loop->mutex);
     }
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    if(loop->profiling_mutex != NULL) {
+    if (loop->profiling_mutex != NULL) {
         vSemaphoreDelete(loop->profiling_mutex);
     }
 #endif
@@ -507,7 +507,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
     TickType_t marker = xTaskGetTickCount();
     TickType_t end = 0;
 
-#if( configUSE_16_BIT_TICKS == 1 )
+#if (configUSE_16_BIT_TICKS == 1)
     int32_t remaining_ticks = ticks_to_run;
 #else
     int64_t remaining_ticks = ticks_to_run;
@@ -542,7 +542,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
                     }
 
                     SLIST_FOREACH(id_node, &(base_node->id_nodes), next) {
-                        if(id_node->id == post.id) {
+                        if (id_node->id == post.id) {
                             // Execute id level handlers
                             SLIST_FOREACH(handler, &(id_node->handlers), next) {
                                 handler_execute(loop, handler, post);
