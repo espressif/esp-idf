@@ -91,7 +91,7 @@ function(__build_set_default_build_specifications)
     unset(c_compile_options)
     unset(cxx_compile_options)
 
-    list(APPEND compile_definitions "-DHAVE_CONFIG_H")
+    list(APPEND compile_definitions "-DHAVE_CONFIG_H" "-D_GNU_SOURCE")
 
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"
