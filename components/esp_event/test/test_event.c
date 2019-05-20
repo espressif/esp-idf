@@ -1149,6 +1149,37 @@ TEST_CASE("events are dispatched in the order they are registered", "[event]")
 }
 
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
+TEST_CASE("can properly prepare event data posted to loop", "[event]")
+{
+    TEST_SETUP();
+
+    esp_event_loop_handle_t loop;
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+
+    loop_args.task_name = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create(&loop_args, &loop));
+
+    esp_event_post_instance_t post;
+    esp_event_loop_instance_t* loop_def = (esp_event_loop_instance_t*) loop;
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, portMAX_DELAY));
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(loop_def->queue, &post, portMAX_DELAY));
+    TEST_ASSERT_EQUAL(false, post.data_set);
+    TEST_ASSERT_EQUAL(false, post.data_allocated);
+    TEST_ASSERT_EQUAL(NULL, post.data.ptr);
+
+    int sample = 0;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_isr_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &sample, sizeof(sample), NULL));
+    TEST_ASSERT_EQUAL(pdTRUE, xQueueReceive(loop_def->queue, &post, portMAX_DELAY));
+    TEST_ASSERT_EQUAL(true, post.data_set);
+    TEST_ASSERT_EQUAL(false, post.data_allocated);
+    TEST_ASSERT_EQUAL(false, post.data.val);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
+
+    TEST_TEARDOWN();
+}
+
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
