@@ -147,7 +147,11 @@ function(__build_init idf_path)
     file(GLOB component_dirs ${idf_path}/components/*)
     foreach(component_dir ${component_dirs})
         get_filename_component(component_dir ${component_dir} ABSOLUTE)
-        __component_add(${component_dir} ${prefix})
+        get_filename_component(base_dir ${component_dir} NAME)
+        string(SUBSTRING "${base_dir}" 0 1 first_char)
+        if(NOT first_char STREQUAL ".")
+            __component_add(${component_dir} ${prefix})
+        endif()
     endforeach()
 
     # Set components required by all other components in the build
