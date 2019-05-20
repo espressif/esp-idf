@@ -397,15 +397,4 @@ macro(project project_name)
     idf_build_executable(${project_elf})
 
     __project_info("${test_components}")
-
-    # Make build variables and config variables available after project call (of course the value
-    # of these variables can be accessed via idf_build_get_property or idf_build_get_config)
-    idf_build_get_property(sdkconfig_cmake SDKCONFIG_CMAKE)
-    include(${sdkconfig_cmake})
-
-    idf_build_get_property(build_properties __BUILD_PROPERTIES)
-    foreach(build_property ${build_properties})
-        idf_build_get_property(val ${build_property})
-        set(${build_property} "${val}")
-    endforeach()
 endmacro()
