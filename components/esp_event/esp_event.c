@@ -753,24 +753,17 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     memset((void*)(&post), 0, sizeof(post));
 
     if (event_data != NULL && event_data_size != 0) {
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
-        if(event_data_size > sizeof(post.data.val)) {
-#endif
-            // Make persistent copy of event data on heap.
-            void* event_data_copy = calloc(1, event_data_size);
+        // Make persistent copy of event data on heap.
+        void* event_data_copy = calloc(1, event_data_size);
 
-            if (event_data_copy == NULL) {
-                return ESP_ERR_NO_MEM;
-            }
-
-            memcpy(event_data_copy, event_data, event_data_size);
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
-            post.data.ptr = event_data_copy;
-            post.data_allocated = true;
-        } else {
-            memcpy(&post.data.val, event_data, event_data_size);
-            post.data_allocated = false;
+        if (event_data_copy == NULL) {
+            return ESP_ERR_NO_MEM;
         }
+
+        memcpy(event_data_copy, event_data, event_data_size);
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
+        post.data.ptr = event_data_copy;
+        post.data_allocated = true;
         post.data_set = true;
 #else
         post.data = event_data_copy;
