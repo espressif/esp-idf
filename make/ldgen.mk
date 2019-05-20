@@ -2,17 +2,9 @@
 LDGEN_FRAGMENT_FILES = $(COMPONENT_LDFRAGMENTS)
 LDGEN_LIBRARIES=$(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp)/lib$(libcomp).a)
 
-ON_WINDOWS:=n
-
-ifdef OS
-	ifeq ($(OS),Windows_NT)
-		ON_WINDOWS:=y
-	endif
-endif
-
 # Target to generate linker script generator from fragments presented by each of
 # the components
-ifeq ($(ON_WINDOWS),y)
+ifeq ($(OS),Windows_NT)
 define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen_libraries: $(LDGEN_LIBRARIES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach info,$(LDGEN_LIBRARIES),$(subst \,/,$(shell cygpath -w $(info)))\n)" > $(BUILD_DIR_BASE)/ldgen_libraries
@@ -31,7 +23,7 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_librarie
 		--env           "IDF_CMAKE=n" \
 		--objdump		$(OBJDUMP)
 endef
-else # ON_WINDOWS
+else # Windows_NT
 define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen_libraries: $(LDGEN_LIBRARIES) $(IDF_PATH)/make/ldgen.mk
 	printf "$(foreach library,$(LDGEN_LIBRARIES),$(library)\n)" > $(BUILD_DIR_BASE)/ldgen_libraries
@@ -50,7 +42,7 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen_librarie
 		--env           "IDF_CMAKE=n" \
 		--objdump		$(OBJDUMP)
 endef
-endif # ON_WINDOWS
+endif # Windows_NT
 
 define ldgen_create_commands
 ldgen-clean:
