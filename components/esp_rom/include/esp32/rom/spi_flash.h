@@ -90,7 +90,8 @@ extern "C" {
 #define SPI0_R_QIO_DUMMY_CYCLELEN             3
 #define SPI0_R_QIO_ADDR_BITSLEN               31
 #define SPI0_R_FAST_DUMMY_CYCLELEN            7
-#define SPI0_R_DIO_DUMMY_CYCLELEN             3
+#define SPI0_R_DIO_DUMMY_CYCLELEN             1
+#define SPI0_R_DIO_ADDR_BITSLEN               27
 #define SPI0_R_FAST_ADDR_BITSLEN              23
 #define SPI0_R_SIO_ADDR_BITSLEN               23
 
