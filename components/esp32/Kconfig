@@ -929,24 +929,24 @@ menu "ESP32-specific"
             This option depends on the CONFIG_FREERTOS_UNICORE option because RTC fast memory
             can be accessed only by PRO_CPU core.
 
-config USE_FIXED_STATIC_RAM_SIZE
-	bool "Use fixed static RAM size"
-	default n
-    help
-	    Without this option, the Dram part of the heap starts right after the .bss sections,
-		within the dram0_0 region. As a result, adding or removing some static variables,
-		indirectly decreases or reduces the heap size.
-		With this option, the Dram part of the heap starts right after the dram0_0 region,
-		where its length is set with FIXED_STATIC_RAM_SIZE
+    config ESP32_USE_FIXED_STATIC_RAM_SIZE
+        bool "Use fixed static RAM size"
+        default n
+        help
+            Without this option, the Dram part of the heap starts right after the .bss sections,
+            within the dram0_0 region. As a result, adding or removing some static variables,
+            indirectly decreases or reduces the heap size.
+            With this option, the Dram part of the heap starts right after the dram0_0 region,
+            where its length is set with ESP32_FIXED_STATIC_RAM_SIZE
 
-config FIXED_STATIC_RAM_SIZE
-	hex "Fixed Static RAM size"
-	default 0x1E000
-	range 0 0x2c200
-    depends on USE_FIXED_STATIC_RAM_SIZE
-	help
-	    Ram size dedicated for static variables.
-		Please note that the actual length will be reduced by BT_RESERVE_DRAM if configured.
+    config ESP32_FIXED_STATIC_RAM_SIZE
+        hex "Fixed Static RAM size"
+        default 0x1E000
+        range 0 0x2c200
+        depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
+        help
+            Ram size dedicated for static variables.
+            Please note that the actual length will be reduced by BT_RESERVE_DRAM if configured.
 
 endmenu  # ESP32-Specific
 

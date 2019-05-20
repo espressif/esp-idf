@@ -21,12 +21,12 @@
 #define CONFIG_BT_RESERVE_DRAM 0
 #endif
 
-#if defined(CONFIG_USE_FIXED_STATIC_RAM_SIZE)
+#if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
 
-ASSERT((CONFIG_FIXED_STATIC_RAM_SIZE <= 0x2c200),
+ASSERT((CONFIG_ESP32_FIXED_STATIC_RAM_SIZE <= 0x2c200),
           "Fixed static ram data does not fit.")
 
-#define DRAM0_0_SEG_LEN CONFIG_FIXED_STATIC_RAM_SIZE
+#define DRAM0_0_SEG_LEN CONFIG_ESP32_FIXED_STATIC_RAM_SIZE
 
 #else
 #define DRAM0_0_SEG_LEN 0x2c200
@@ -72,7 +72,7 @@ MEMORY
   /* RTC fast memory (executable). Persists over deep sleep.
    */
   rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
-  
+
   /* RTC fast memory (same block as above), viewed from data bus */
   rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000
 
@@ -88,7 +88,7 @@ MEMORY
                                      len = 0x400000
 }
 
-#if defined(CONFIG_USE_FIXED_STATIC_RAM_SIZE)
+#if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
 /* static data ends at defined address */
 _static_data_end = 0x3FFB0000 + DRAM0_0_SEG_LEN;
 #else
@@ -100,9 +100,9 @@ _heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;
 
 _data_seg_org = ORIGIN(rtc_data_seg);
 
-/* The lines below define location alias for .rtc.data section based on Kconfig option. 
-   When the option is not defined then use slow memory segment 
-   else the data will be placed in fast memory segment */ 
+/* The lines below define location alias for .rtc.data section based on Kconfig option.
+   When the option is not defined then use slow memory segment
+   else the data will be placed in fast memory segment */
 #ifndef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
 REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #else
