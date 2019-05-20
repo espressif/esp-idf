@@ -57,11 +57,12 @@ if((NOT CONFIG_SECURE_BOOT_ENABLED) OR
     idf_build_get_property(idf_target IDF_TARGET)
     externalproject_add(bootloader
         # TODO: support overriding the bootloader in COMPONENT_PATHS
-        SOURCE_DIR "${idf_path}/components/bootloader/subproject"
+        SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
         BINARY_DIR "${BOOTLOADER_BUILD_DIR}"
         CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
                     -DSECURE_BOOT_SIGNING_KEY=${secure_boot_signing_key}
                     -DPYTHON_DEPS_CHECKED=1
+                    -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
         INSTALL_COMMAND ""
         BUILD_ALWAYS 1  # no easy way around this...
         BUILD_BYPRODUCTS ${bootloader_binary_files}
