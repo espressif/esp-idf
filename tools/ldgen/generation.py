@@ -333,34 +333,37 @@ class GenerationModel:
         all_mapping_rules = collections.defaultdict(list)
 
         # Generate rules based on mapping fragments
-        for mapping in self.mappings.values():
-            for (condition, entries) in mapping.entries:
-                condition_true = False
+        for mapping_list in self.mappings.values():
+            for mapping in mapping_list:
+                for (condition, entries) in mapping.entries:
+                    condition_true = False
 
-                # Only non-default condition are evaluated agains sdkconfig model
-                if condition != Mapping.DEFAULT_CONDITION:
-                    try:
-                        condition_true = sdkconfig.evaluate_expression(condition)
-                    except Exception as e:
-                        raise GenerationException(e.message, mapping)
-                else:
-                    condition_true = True
-
-                if condition_true:
-
-                    mapping_rules = list()
-
-                    archive = mapping.archive
-                    for (obj, symbol, scheme_name) in entries:
+                    # Only non-default condition are evaluated agains sdkconfig model
+                    if condition != Mapping.DEFAULT_CONDITION:
                         try:
-                            self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
-                        except KeyError:
-                            message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
-                            raise GenerationException(message, mapping)
+                            condition_true = sdkconfig.evaluate_expression(condition)
+                        except Exception as e:
+                            raise GenerationException(e.message, mapping)
+                    else:
+                        condition_true = True
 
-                    all_mapping_rules[mapping.name] = mapping_rules
+                    if condition_true:
 
-                    break   # Exit on first condition that evaluates to true
+                        mapping_rules = list()
+
+                        archive = mapping.archive
+                        for (obj, symbol, scheme_name) in entries:
+                            try:
+                                self._add_mapping_rules(archive, obj, symbol, scheme_name, scheme_dictionary, mapping_rules)
+                            except KeyError:
+                                message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
+                                raise GenerationException(message, mapping)
+
+                        for mapping_rule in mapping_rules:
+                            if mapping_rule not in all_mapping_rules[mapping.name]:
+                                all_mapping_rules[mapping.name].append(mapping_rule)
+
+                        break   # Exit on first condition that evaluates to true
 
         # Detect rule conflicts
         for mapping_rules in all_mapping_rules.items():
@@ -476,14 +479,23 @@ class GenerationModel:
             else:
                 dict_to_append_to = self.mappings
 
-            # Raise exception when the fragment of the same type is already in the stored fragments
-            if fragment.name in dict_to_append_to.keys():
-                stored = dict_to_append_to[fragment.name].path
-                new = fragment.path
-                message = "Duplicate definition of fragment '%s' found in %s and %s." % (fragment.name, stored, new)
-                raise GenerationException(message)
+            if isinstance(fragment, Mapping):
+                try:
+                    fragment_list = dict_to_append_to[fragment.name]
+                except KeyError:
+                    fragment_list = list()
+                    dict_to_append_to[fragment.name] = fragment_list
 
-            dict_to_append_to[fragment.name] = fragment
+                fragment_list.append(fragment)
+            else:
+                # Raise exception when the fragment of the same type is already in the stored fragments
+                if fragment.name in dict_to_append_to.keys():
+                    stored = dict_to_append_to[fragment.name].path
+                    new = fragment.path
+                    message = "Duplicate definition of fragment '%s' found in %s and %s." % (fragment.name, stored, new)
+                    raise GenerationException(message)
+
+                dict_to_append_to[fragment.name] = fragment
 
 
 class TemplateModel:

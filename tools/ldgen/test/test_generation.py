@@ -64,7 +64,12 @@ class GenerationModelTest(unittest.TestCase):
     def _add_mapping(self, text):
         parser = Mapping.get_fragment_grammar()
         fragment = parser.parseString(text, parseAll=True)
-        self.model.mappings[fragment[0].name] = fragment[0]
+        try:
+            mappings = self.model.mappings[fragment[0].name]
+        except KeyError:
+            mappings = list()
+            self.model.mappings[fragment[0].name] = mappings
+        mappings.append(fragment[0])
 
     def _add_sections(self, text):
         parser = Sections.get_fragment_grammar()
@@ -297,7 +302,6 @@ class GenerationModelTest(unittest.TestCase):
         self._add_mapping(normal)
 
         actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
-
         expected = self._generate_default_rules()
 
         flash_text_default = self._get_default("flash_text", expected)
@@ -1097,6 +1101,58 @@ class GenerationModelTest(unittest.TestCase):
         """
 
         self._add_mapping(generation_with_condition)
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+            expected = self._generate_default_rules()
+
+            flash_text_default = self._get_default("flash_text", expected)
+            flash_rodata_default = self._get_default("flash_rodata", expected)
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self._compare_rules(expected, actual)
+
+    def test_rule_generation_multiple_mapping_definitions(self):
+        generation_with_condition1 = """
+        [mapping]
+        archive: lib.a
+        entries:
+            : PERFORMANCE_LEVEL = 0
+            : PERFORMANCE_LEVEL = 1
+            obj1 (noflash)
+            : PERFORMANCE_LEVEL = 2
+            obj1 (noflash)
+            : PERFORMANCE_LEVEL = 3
+            obj1 (noflash)
+        """
+
+        generation_with_condition2 = """
+        [mapping]
+        archive: lib.a
+        entries:
+            : PERFORMANCE_LEVEL = 1
+            obj1 (noflash) # ignore duplicate definition
+            : PERFORMANCE_LEVEL = 2
+            obj2 (noflash)
+            : PERFORMANCE_LEVEL = 3
+            obj2 (noflash)
+            obj3 (noflash)
+        """
+
+        self._add_mapping(generation_with_condition1)
+        self._add_mapping(generation_with_condition2)
 
         for perf_level in range(0, 4):
             self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
