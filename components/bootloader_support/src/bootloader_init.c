@@ -33,12 +33,10 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
-#include "soc/gpio_reg.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/gpio_periph.h"
 #include "soc/rtc_wdt.h"
 #include "soc/spi_reg.h"
 
@@ -445,6 +443,10 @@ static void uart_console_configure(void)
         const uint32_t rx_idx_list[3] = { U0RXD_IN_IDX, U1RXD_IN_IDX, U2RXD_IN_IDX };
         const uint32_t tx_idx = tx_idx_list[uart_num];
         const uint32_t rx_idx = rx_idx_list[uart_num];
+
+        PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[uart_rx_gpio]);
+        gpio_pad_pullup(uart_rx_gpio);
+
         gpio_matrix_out(uart_tx_gpio, tx_idx, 0, 0);
         gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
     }
