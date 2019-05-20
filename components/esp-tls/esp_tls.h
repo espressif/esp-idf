@@ -56,17 +56,20 @@ typedef struct esp_tls_cfg {
                                                  - where the first '2' is the length of the protocol and
                                                  - the subsequent 'h2' is the protocol name */
  
-    const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer */
+    const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer.
+                                                 This buffer should be NULL terminated */
  
     unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
                                                  pointed to by cacert_pem_buf */
 
-    const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer */
+    const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer
+                                                 This buffer should be NULL terminated */
  
     unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
                                                  clientcert_pem_buf */
 
-    const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer */
+    const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer
+                                                 This buffer should be NULL terminated */
 
     unsigned int clientkey_pem_bytes;       /*!< Size of client key pointed to by
                                                  clientkey_pem_buf */
@@ -84,6 +87,11 @@ typedef struct esp_tls_cfg {
 
     bool use_global_ca_store;               /*!< Use a global ca_store for all the connections in which
                                                  this bool is set. */
+
+    const char *common_name;                /*!< If non-NULL, server certificate CN must match this name.
+                                                 If NULL, server certificate CN must match hostname. */
+
+    bool skip_common_name;                  /*!< Skip any validation of server certificate CN field */
 } esp_tls_cfg_t;
 
 /**
