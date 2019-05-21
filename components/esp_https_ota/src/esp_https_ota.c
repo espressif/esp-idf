@@ -126,14 +126,19 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
 esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
 {
     esp_err_t err;
+
     if (handle == NULL || ota_config == NULL || ota_config->http_config == NULL) {
         ESP_LOGE(TAG, "esp_https_ota_begin: Invalid argument");
+        if (handle) {
+            *handle = NULL;
+        }
         return ESP_ERR_INVALID_ARG;
     }
 
 #if !CONFIG_OTA_ALLOW_HTTP
     if (!ota_config->http_config->cert_pem) {
         ESP_LOGE(TAG, "Server certificate not found in esp_http_client config");
+        *handle = NULL;
         return ESP_ERR_INVALID_ARG;
     }
 #endif
@@ -141,6 +146,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     esp_https_ota_t *https_ota_handle = calloc(1, sizeof(esp_https_ota_t));
     if (!https_ota_handle) {
         ESP_LOGE(TAG, "Couldn't allocate memory to upgrade data buffer");
+        *handle = NULL;
         return ESP_ERR_NO_MEM;
     }
     
@@ -188,6 +194,7 @@ http_cleanup:
     _http_cleanup(https_ota_handle->http_client);
 failure:
     free(https_ota_handle);
+    *handle = NULL;
     return err;
 }
 
@@ -286,9 +293,12 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
             err = esp_ota_end(handle->update_handle);
             /* falls through */
         case ESP_HTTPS_OTA_BEGIN:
-            free(handle->ota_upgrade_buf);
-            _http_cleanup(handle->http_client);
-            free(handle);
+            if (handle->ota_upgrade_buf) {
+                free(handle->ota_upgrade_buf);
+            }
+            if (handle->http_client) {
+                _http_cleanup(handle->http_client);
+            }
             break;
         default:
             ESP_LOGE(TAG, "Invalid ESP HTTPS OTA State");
@@ -301,6 +311,7 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
             ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%d", err);
         }
     }
+    free(handle);
     return err;
 }
 
@@ -341,7 +352,6 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
     }
 
     esp_err_t ota_finish_err = esp_https_ota_finish(https_ota_handle);
-    free(https_ota_handle);
     if (err != ESP_OK) {
         /* If there was an error in esp_https_ota_perform(),
            then it is given more precedence than error in esp_https_ota_finish()
