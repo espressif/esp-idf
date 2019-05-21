@@ -18,7 +18,14 @@ from __future__ import unicode_literals
 from io import open
 import os
 import shutil
-import urllib
+
+try:
+    import urllib.request
+    _urlretrieve = urllib.request.urlretrieve
+except ImportError:
+    # Python 2 fallback
+    import urllib
+    _urlretrieve = urllib.urlretrieve
 
 
 def run_cmd_get_output(cmd):
@@ -58,9 +65,13 @@ def copy_if_modified(src_path, dst_path):
             copy_file_if_modified(src_file_path, dst_file_path)
 
 
-def download_file(from_url, to_path):
-    tmp_file, header = urllib.urlretrieve(from_url)
-    filename = os.path.basename(from_url)
-    with open(to_path + "/" + filename, 'wb') as fobj:
-        with open(tmp_file, 'rb') as tmp:
-            fobj.write(tmp.read())
+def download_file_if_missing(from_url, to_path):
+    filename_with_path = to_path + "/" + os.path.basename(from_url)
+    exists = os.path.isfile(filename_with_path)
+    if exists:
+        print("The file '%s' already exists" % (filename_with_path))
+    else:
+        tmp_file, header = _urlretrieve(from_url)
+        with open(filename_with_path, 'wb') as fobj:
+            with open(tmp_file, 'rb') as tmp:
+                fobj.write(tmp.read())
