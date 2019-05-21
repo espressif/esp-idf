@@ -341,7 +341,6 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config)
     }
 
     esp_err_t ota_finish_err = esp_https_ota_finish(https_ota_handle);
-    free(https_ota_handle);
     if (err != ESP_OK) {
         /* If there was an error in esp_https_ota_perform(),
            then it is given more precedence than error in esp_https_ota_finish()
