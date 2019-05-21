@@ -70,6 +70,7 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config);
  * completion of OTA operation or on failure in subsequent operations.
  * This API supports URL redirection, but if CA cert of URLs differ then it
  * should be appended to `cert_pem` member of `http_config`, which is a part of `ota_config`.
+ * In case of error, this API explicitly sets `handle` to NULL.
  *
  * @param[in]   ota_config       pointer to esp_https_ota_config_t structure
  * @param[out]  handle           pointer to an allocated data of type `esp_https_ota_handle_t`
