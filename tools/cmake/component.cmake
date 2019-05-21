@@ -96,6 +96,36 @@ macro(__component_set_properties)
 endmacro()
 
 #
+# Perform a quick check if given component dir satisfies basic requirements.
+#
+function(__component_dir_quick_check var component_dir)
+    set(res 1)
+    get_filename_component(abs_dir ${component_dir} ABSOLUTE)
+
+    # Check this is really a directory and that a CMakeLists.txt file for this component exists
+    # - warn and skip anything which isn't valid looking (probably cruft)
+    if(NOT IS_DIRECTORY "${abs_dir}")
+        message(STATUS "Unexpected file in components directory: ${abs_dir}")
+        set(res 0)
+    endif()
+
+    get_filename_component(base_dir ${abs_dir} NAME)
+    string(SUBSTRING "${base_dir}" 0 1 first_char)
+
+    if(NOT first_char STREQUAL ".")
+        if(NOT EXISTS "${abs_dir}/CMakeLists.txt")
+            message(STATUS "Component directory ${abs_dir} does not contain a CMakeLists.txt file. "
+                "No component will be added")
+            set(res 0)
+        endif()
+    else()
+        set(res 0) # quietly ignore dot-folders
+    endif()
+
+    set(${var} ${res} PARENT_SCOPE)
+endfunction()
+
+#
 # Add a component to process in the build. The components are keeped tracked of in property
 # __COMPONENT_TARGETS in component target form.
 #
@@ -112,16 +142,8 @@ function(__component_add component_dir prefix)
     get_filename_component(abs_dir ${component_dir} ABSOLUTE)
     get_filename_component(base_dir ${abs_dir} NAME)
 
-    # Check this is really a directory and that a CMakeLists.txt file for this component exists
-    # - warn and skip anything which isn't valid looking (probably cruft)
-    if(NOT IS_DIRECTORY "${abs_dir}")
-        message(WARNING "Unexpected file in components directory: ${abs_dir}")
-        return()
-    endif()
     if(NOT EXISTS "${abs_dir}/CMakeLists.txt")
-        message(WARNING "Component directory ${abs_dir} does not contain a CMakeLists.txt file. "
-            "No component will be added")
-        return()
+        message(FATAL_ERROR "Directory '${component_dir}' does not contain a component.")
     endif()
 
     set(component_name ${base_dir})

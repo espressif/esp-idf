@@ -62,9 +62,6 @@ elseif(CONFIG_STACK_CHECK_ALL)
     list(APPEND compile_options "-fstack-protector-all")
 endif()
 
-# All targets built under this scope is with the ESP-IDF build system
-set(ESP_PLATFORM 1)
-list(APPEND compile_definitions "-DESP_PLATFORM")
 
 idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
 idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
