@@ -10,7 +10,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath('..'))
 from conf_common import *  # noqa: F401, F403 - need to make available everything from common
-from local_util import download_file  # noqa: E402 - need to import from common folder
+from local_util import download_file_if_missing  # noqa: E402 - need to import from common folder
 
 # General information about the project.
 project = u'ESP-IDF Programming Guide'
@@ -22,7 +22,7 @@ language = 'en'
 
 # Download font file that is stored on a separate server to save on esp-idf repository size.
 print("Downloading font file")
-download_file('https://dl.espressif.com/dl/esp-idf/docs/_static/DejaVuSans.ttf', '../_static')
+download_file_if_missing('https://dl.espressif.com/dl/esp-idf/docs/_static/DejaVuSans.ttf', '../_static')
 
 # Set up font for blockdiag, nwdiag, rackdiag and packetdiag
 blockdiag_fontpath = '../_static/DejaVuSans.ttf'
