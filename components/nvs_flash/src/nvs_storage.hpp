@@ -109,6 +109,8 @@ public:
 
     esp_err_t readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize);
 
+    esp_err_t cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize);
+
     esp_err_t eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffset chunkStart = VerOffset::VER_ANY);
 
     void debugDump();
