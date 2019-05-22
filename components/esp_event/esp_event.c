@@ -132,8 +132,18 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_i
 #endif
     // Execute the handler
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-    (*(handler->handler))(handler->arg, post.base, post.id, post.data_allocd ? post.data.ptr : &post.data.val);
-#else 
+    void* data_ptr = NULL;
+
+    if (post.data_set) {
+        if (post.data_allocated) {
+            data_ptr = post.data.ptr;
+        } else {
+            data_ptr = &post.data.val;
+        }
+    }
+
+    (*(handler->handler))(handler->arg, post.base, post.id, data_ptr);
+#else
     (*(handler->handler))(handler->arg, post.base, post.id, post.data);
 #endif
 
@@ -160,7 +170,7 @@ static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, 
     handler_instance->handler = handler;
     handler_instance->arg = handler_arg;
 
-    if(SLIST_EMPTY(handlers)) {
+    if (SLIST_EMPTY(handlers)) {
         SLIST_INSERT_HEAD(handlers, handler_instance, next);
     }
     else {
@@ -380,7 +390,7 @@ static void loop_node_remove_all_handler(esp_event_loop_node_t* loop_node)
 static void inline __attribute__((always_inline)) post_instance_delete(esp_event_post_instance_t* post)
 {
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-    if (post->data_allocd && post->data.ptr) {
+    if (post->data_allocated && post->data.ptr) {
         free(post->data.ptr);
     }
 #else
@@ -463,16 +473,16 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     return ESP_OK;
 
 on_err:
-    if(loop->queue != NULL) {
+    if (loop->queue != NULL) {
         vQueueDelete(loop->queue);
     }
 
-    if(loop->mutex != NULL) {
+    if (loop->mutex != NULL) {
         vSemaphoreDelete(loop->mutex);
     }
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    if(loop->profiling_mutex != NULL) {
+    if (loop->profiling_mutex != NULL) {
         vSemaphoreDelete(loop->profiling_mutex);
     }
 #endif
@@ -497,7 +507,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
     TickType_t marker = xTaskGetTickCount();
     TickType_t end = 0;
 
-#if( configUSE_16_BIT_TICKS == 1 )
+#if (configUSE_16_BIT_TICKS == 1)
     int32_t remaining_ticks = ticks_to_run;
 #else
     int64_t remaining_ticks = ticks_to_run;
@@ -532,7 +542,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
                     }
 
                     SLIST_FOREACH(id_node, &(base_node->id_nodes), next) {
-                        if(id_node->id == post.id) {
+                        if (id_node->id == post.id) {
                             // Execute id level handlers
                             SLIST_FOREACH(handler, &(id_node->handlers), next) {
                                 handler_execute(loop, handler, post);
@@ -740,7 +750,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     esp_event_post_instance_t post;
-    memset((void*)(&(post.data)), 0, sizeof(post.data));
+    memset((void*)(&post), 0, sizeof(post));
 
     if (event_data != NULL && event_data_size != 0) {
         // Make persistent copy of event data on heap.
@@ -753,7 +763,8 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
         memcpy(event_data_copy, event_data, event_data_size);
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
         post.data.ptr = event_data_copy;
-        post.data_allocd = true;
+        post.data_allocated = true;
+        post.data_set = true;
 #else
         post.data = event_data_copy;
 #endif
@@ -816,7 +827,7 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_ba
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     esp_event_post_instance_t post;
-    memset((void*)(&(post.data)), 0, sizeof(post.data));
+    memset((void*)(&post), 0, sizeof(post));
 
     if (event_data_size > sizeof(post.data.val)) {
         return ESP_ERR_INVALID_ARG;
@@ -824,7 +835,8 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_ba
 
     if (event_data != NULL && event_data_size != 0) {
         memcpy((void*)(&(post.data.val)), event_data, event_data_size);
-        post.data_allocd = false;
+        post.data_allocated = false;
+        post.data_set = true;
     }
     post.base = event_base;
     post.id = event_id;
