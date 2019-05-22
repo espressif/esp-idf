@@ -92,6 +92,11 @@
 #define BT_SSP_INCLUDED             TRUE
 #endif /* CONFIG_BT_SSP_ENABLED */
 
+#if CONFIG_BT_HID_DEV_ENABLED
+#define HID_DEV_INCLUDED            TRUE
+#define BTA_HD_INCLUDED             TRUE
+#endif /* CONFIG_BT_HID_DEV_ENABLED */
+
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
 
 #ifndef CLASSIC_BT_INCLUDED
@@ -253,6 +258,10 @@
 
 #ifndef BTA_PAN_INCLUDED
 #define BTA_PAN_INCLUDED FALSE
+#endif
+
+#ifndef BTA_HD_INCLUDED
+#define BTA_HD_INCLUDED FALSE
 #endif
 
 #ifndef BTA_HH_INCLUDED
@@ -1266,7 +1275,11 @@
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
+#if defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)
+#define SDP_MAX_REC_ATTR            25
+#else
 #define SDP_MAX_REC_ATTR            8
+#endif
 #endif
 
 #ifndef SDP_MAX_PAD_LEN
@@ -1743,12 +1756,29 @@ Range: 2 octets
 **
 ******************************************************************************/
 
+/* HID Device Role Included */
+#ifndef HID_DEV_INCLUDED
+#define HID_DEV_INCLUDED FALSE
+#endif
+
+#ifndef HID_DEV_SUBCLASS
+#define HID_DEV_SUBCLASS COD_MINOR_POINTING
+#endif
+
 #ifndef HID_CONTROL_BUF_SIZE
 #define HID_CONTROL_BUF_SIZE            BT_DEFAULT_BUFFER_SIZE
 #endif
 
 #ifndef HID_INTERRUPT_BUF_SIZE
 #define HID_INTERRUPT_BUF_SIZE          BT_DEFAULT_BUFFER_SIZE
+#endif
+
+#ifndef HID_DEV_MTU_SIZE
+#define HID_DEV_MTU_SIZE 64
+#endif
+
+#ifndef HID_DEV_FLUSH_TO
+#define HID_DEV_FLUSH_TO 0xffff
 #endif
 
 /*************************************************************************

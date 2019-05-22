@@ -52,6 +52,14 @@
 #include "pan_api.h"
 #endif
 
+#if (defined(HID_HOST_INCLUDED) && HID_HOST_INCLUDED == TRUE)
+#include "hidh_api.h"
+#endif
+
+#if (defined(HID_DEV_INCLUDED) && HID_DEV_INCLUDED == TRUE)
+#include "stack/hidd_api.h"
+#endif
+
 #if (defined(AVRC_INCLUDED) && AVRC_INCLUDED == TRUE)
 #include "stack/avrc_api.h"
 #endif

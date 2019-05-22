@@ -506,9 +506,9 @@ void btm_set_random_address(BD_ADDR random_bda);
 void btm_ble_set_keep_rfu_in_auth_req(BOOLEAN keep_rfu);
 #endif
 
-/*
+
 #ifdef __cplusplus
 }
 #endif
-*/
+
 #endif

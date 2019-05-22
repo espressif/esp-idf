@@ -408,6 +408,13 @@ menu Bluetooth
         help
             This enables the Secure Simple Pairing. If disable this option, Bluedroid will only support Legacy Pairing
 
+    config BT_HID_DEV_ENABLED
+        bool "HIDD"
+        depends on CLASSIC_BT_ENABLED
+        default n
+        help
+            This enables HID Device support.
+
     config GATTS_ENABLE
         bool "Include GATT server module(GATTS)"
         depends on BLUEDROID_ENABLED && (BTDM_CONTROLLER_MODE_BTDM || BTDM_CONTROLLER_MODE_BLE_ONLY)
@@ -967,6 +974,41 @@ menu Bluetooth
             default 4 if HID_TRACE_LEVEL_EVENT
             default 5 if HID_TRACE_LEVEL_DEBUG
             default 6 if HID_TRACE_LEVEL_VERBOSE
+            default 2
+
+        choice HIDD_INITIAL_TRACE_LEVEL
+            prompt "HIDD layer"
+            default HIDD_TRACE_LEVEL_WARNING
+            depends on BLUEDROID_ENABLED && !BT_STACK_NO_LOG
+            help
+                Define BT trace level for HID Device layer
+
+            config HIDD_TRACE_LEVEL_NONE
+                bool "NONE"
+            config HIDD_TRACE_LEVEL_ERROR
+                bool "ERROR"
+            config HIDD_TRACE_LEVEL_WARNING
+                bool "WARNING"
+            config HIDD_TRACE_LEVEL_API
+                bool "API"
+            config HIDD_TRACE_LEVEL_EVENT
+                bool "EVENT"
+            config HIDD_TRACE_LEVEL_DEBUG
+                bool "DEBUG"
+            config HIDD_TRACE_LEVEL_VERBOSE
+                bool "VERBOSE"
+        endchoice
+
+        config HIDD_INITIAL_TRACE_LEVEL
+            int
+            depends on BLUEDROID_ENABLED
+            default 0 if HIDD_TRACE_LEVEL_NONE
+            default 1 if HIDD_TRACE_LEVEL_ERROR
+            default 2 if HIDD_TRACE_LEVEL_WARNING
+            default 3 if HIDD_TRACE_LEVEL_API
+            default 4 if HIDD_TRACE_LEVEL_EVENT
+            default 5 if HIDD_TRACE_LEVEL_DEBUG
+            default 6 if HIDD_TRACE_LEVEL_VERBOSE
             default 2
 
         choice APPL_INITIAL_TRACE_LEVEL

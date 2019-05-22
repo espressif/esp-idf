@@ -60,6 +60,7 @@ typedef enum {
     BTC_PID_AVRC_CT,
     BTC_PID_AVRC_TG,
     BTC_PID_SPP,
+    BTC_PID_HD,
 #if BTC_HF_CLIENT_INCLUDED
     BTC_PID_HF_CLIENT,
 #endif /* BTC_HF_CLIENT_INCLUDED */
@@ -74,10 +75,18 @@ typedef struct {
 
 typedef void (* btc_arg_deep_copy_t)(btc_msg_t *msg, void *dst, void *src);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg_deep_copy_t copy_func);
 
 int btc_init(void);
 void btc_deinit(void);
 bool btc_check_queue_is_congest(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __BTC_TASK_H__ */

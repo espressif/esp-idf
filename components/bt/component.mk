@@ -33,6 +33,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/bta/hf_client/include         \
                                 bluedroid/bta/dm/include                \
                                 bluedroid/bta/gatt/include              \
+                                bluedroid/bta/hd/include                \
                                 bluedroid/bta/hh/include                \
                                 bluedroid/bta/jv/include                \
                                 bluedroid/bta/sdp/include               \
@@ -59,6 +60,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/stack/gap/include             \
                                 bluedroid/stack/gatt/include            \
                                 bluedroid/stack/hcic/include            \
+                                bluedroid/stack/hid/include             \
                                 bluedroid/stack/l2cap/include           \
                                 bluedroid/stack/sdp/include             \
                                 bluedroid/stack/smp/include             \
@@ -75,6 +77,7 @@ COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api
 
 COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/bta/gatt                    \
+                        bluedroid/bta/hd                      \
                         bluedroid/bta/hh                      \
                         bluedroid/bta/sdp                     \
                         bluedroid/bta/av                      \
@@ -98,6 +101,7 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/btc/profile/std/gatt        \
                         bluedroid/btc/profile/std/a2dp        \
                         bluedroid/btc/profile/std/avrc        \
+                        bluedroid/btc/profile/std/hid         \
                         bluedroid/btc/profile/std/spp         \
                         bluedroid/btc/profile/std/hf_client   \
                         bluedroid/btc/profile                 \
@@ -106,6 +110,7 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/stack/gap                   \
                         bluedroid/stack/gatt                  \
                         bluedroid/stack/hcic                  \
+                        bluedroid/stack/hid                   \
                         bluedroid/stack/include               \
                         bluedroid/stack/l2cap                 \
                         bluedroid/stack/sdp                   \
