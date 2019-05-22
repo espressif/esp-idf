@@ -42,6 +42,11 @@ check_examples_cmake_make:
   script:
     - tools/ci/check_examples_cmake_make.sh
 
+check_examples_rom_header:
+  extends: .check_job_template_with_filter
+  script:
+    - tools/ci/check_examples_rom_header.sh
+
 check_python_style:
   extends: .check_job_template_with_filter
   artifacts:

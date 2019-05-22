@@ -841,6 +841,14 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold);
  */
 esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_threshold);
 
+/**
+  * @brief Wait until UART tx memory empty and the last char send ok (polling mode).
+  *
+  * @param uart_num UART number
+  *
+  */
+void uart_wait_tx_idle_polling(uart_port_t uart_num);
+
 #ifdef __cplusplus
 }
 #endif
