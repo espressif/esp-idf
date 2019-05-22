@@ -263,8 +263,9 @@ class IndentAndNameChecker(BaseChecker):
         common_prefix_len = len(common_prefix)
         if common_prefix_len < self.min_prefix_length:
             raise InputError(self.path_in_idf, line_number,
-                             'Common prefix "{}" length is {} and should be at least {} characters long'
-                             ''.format(common_prefix, common_prefix_len, self.min_prefix_length),
+                             'The common prefix for the config names of the menu ending at this line is "{}". '
+                             'All config names in this menu should start with the same prefix of {} characters '
+                             'or more.'.format(common_prefix, self.min_prefix_length),
                              line)   # no suggested correction for this
         if len(self.prefix_stack) > 0:
             parent_prefix = self.prefix_stack[-1]
