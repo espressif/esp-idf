@@ -122,7 +122,7 @@ class DeprecatedOptions(object):
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
                 header = 'Deprecated options and their replacements'
-                f_o.write('{}\n{}\n\n'.format(header, '-' * len(header)))
+                f_o.write('.. _configuration-deprecated-options:\n\n{}\n{}\n\n'.format(header, '-' * len(header)))
                 for dep_opt in sorted(self.r_dic):
                     new_opt = self.r_dic[dep_opt]
                     if new_opt not in config.syms or (config.syms[new_opt].choice is None and option_was_written(new_opt)):
