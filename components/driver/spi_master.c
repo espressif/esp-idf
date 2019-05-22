@@ -715,7 +715,7 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
     BaseType_t do_yield = pdFALSE;
     spi_host_t *host = (spi_host_t *)arg;
 
-    assert(spi_hal_usr_is_done(&host->hal) == 1);
+    assert(spi_hal_usr_is_done(&host->hal));
 
     /*------------ deal with the in-flight transaction -----------------*/
     if (host->cur_cs != NO_CS) {
