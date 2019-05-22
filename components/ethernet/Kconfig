@@ -1,6 +1,6 @@
 menu Ethernet
 
-    config DMA_RX_BUF_NUM
+    config ETH_DMA_RX_BUF_NUM
         int "Number of DMA RX buffers"
         range 3 20
         default 10
@@ -10,7 +10,7 @@ menu Ethernet
             More buffers will increase throughput.
             If flow ctrl is enabled, make sure this number is larger than 9.
 
-    config DMA_TX_BUF_NUM
+    config ETH_DMA_TX_BUF_NUM
         int "Number of DMA TX buffers"
         range 3 20
         default 10
@@ -19,7 +19,7 @@ menu Ethernet
             These buffers are allocated dynamically.
             More buffers will increase throughput.
 
-    config EMAC_L2_TO_L3_RX_BUF_MODE
+    config ETH_EMAC_L2_TO_L3_RX_BUF_MODE
         bool "Enable received buffers be copied to Layer3 from Layer2"
         default y
         help
@@ -30,7 +30,7 @@ menu Ethernet
             If this option is not selected, IP layer only uses the pointers to the DMA buffers owned by Ethernet MAC.
             When Ethernet MAC doesn't have any available buffers left, it will drop the incoming packets.
 
-    config EMAC_CHECK_LINK_PERIOD_MS
+    config ETH_CHECK_LINK_STATUS_PERIOD_MS
         int "Period (ms) of checking Ethernet linkup status"
         range 1000 5000
         default 2000
@@ -38,14 +38,14 @@ menu Ethernet
             The emac driver uses an internal timer to check the Ethernet linkup status.
             Here you should choose a valid interval time.
 
-    config EMAC_TASK_PRIORITY
+    config ETH_EMAC_TASK_PRIORITY
         int "EMAC_TASK_PRIORITY"
         default 20
         range 3 22
         help
             Priority of Ethernet MAC task.
 
-    config EMAC_TASK_STACK_SIZE
+    config ETH_EMAC_TASK_STACK_SIZE
         int "Stack Size of EMAC Task"
         default 3072
         range 2000 8000

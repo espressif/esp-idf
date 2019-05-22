@@ -15,7 +15,7 @@
 #include "sdkconfig.h"
 #include "esp_system.h"
 
-#if CONFIG_STACK_CHECK
+#if CONFIG_COMPILER_STACK_CHECK
 
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"

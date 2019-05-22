@@ -45,8 +45,8 @@ static size_t actual_published = 0;
 static int qos_test = 0;
 
 
-#if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
-static const uint8_t iot_eclipse_org_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
+#if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN == 1
+static const uint8_t iot_eclipse_org_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
 #else
 extern const uint8_t iot_eclipse_org_pem_start[]   asm("_binary_iot_eclipse_org_pem_start");
 #endif
@@ -62,7 +62,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(mqtt_event_group, CONNECTED_BIT);
-        msg_id = esp_mqtt_client_subscribe(client, CONFIG_SUBSCIBE_TOPIC, qos_test);
+        msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCIBE_TOPIC, qos_test);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         break;
@@ -199,16 +199,16 @@ void app_main()
 
         if (0 == strcmp(transport, "tcp")) {
             ESP_LOGI(TAG, "[TCP transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_TCP_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_TCP_URI);
         } else if (0 == strcmp(transport, "ssl")) {
             ESP_LOGI(TAG, "[SSL transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_SSL_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_SSL_URI);
         } else if (0 == strcmp(transport, "ws")) {
             ESP_LOGI(TAG, "[WS transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_WS_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WS_URI);
         } else if (0 == strcmp(transport, "wss")) {
             ESP_LOGI(TAG, "[WSS transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_WSS_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WSS_URI);
         } else {
             ESP_LOGE(TAG, "Unexpected transport");
             abort();
@@ -219,7 +219,7 @@ void app_main()
         xEventGroupWaitBits(mqtt_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
 
         for (int i = 0; i < expected_published; i++) {
-            int msg_id = esp_mqtt_client_publish(mqtt_client, CONFIG_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0);
+            int msg_id = esp_mqtt_client_publish(mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0);
             ESP_LOGI(TAG, "[%d] Publishing...", msg_id);
         }
     }

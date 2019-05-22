@@ -66,7 +66,7 @@ The blocking call to function waits for event specified in the input parameter a
 
 .. doxygenfunction:: mbc_slave_get_param_info
 
-The function gets information about accessed parameters from modbus controller event queue. The KConfig 'CONFIG_MB_CONTROLLER_NOTIFY_QUEUE_SIZE' key can be used to configure the notification queue size. The timeout parameter allows to specify timeout for waiting notification. The :cpp:type:`mb_param_info_t` structure contain information about accessed parameter.
+The function gets information about accessed parameters from modbus controller event queue. The KConfig 'CONFIG_FMB_CONTROLLER_NOTIFY_QUEUE_SIZE' key can be used to configure the notification queue size. The timeout parameter allows to specify timeout for waiting notification. The :cpp:type:`mb_param_info_t` structure contain information about accessed parameter.
 
 
 Modbus serial master interface API overview

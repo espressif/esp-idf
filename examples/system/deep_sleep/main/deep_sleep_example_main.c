@@ -31,13 +31,13 @@ static RTC_DATA_ATTR struct timeval sleep_enter_time;
 /*
  * Offset (in 32-bit words) in RTC Slow memory where the data is placed
  * by the ULP coprocessor. It can be chosen to be any value greater or equal
- * to ULP program size, and less than the CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
+ * to ULP program size, and less than the CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
  * where 6 is the number of words used by the ULP coprocessor.
  */
 #define ULP_DATA_OFFSET     36
 
-_Static_assert(ULP_DATA_OFFSET < CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
-        "ULP_DATA_OFFSET is set too high, or CONFIG_ULP_COPROC_RESERVE_MEM is not sufficient");
+_Static_assert(ULP_DATA_OFFSET < CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
+        "ULP_DATA_OFFSET is set too high, or CONFIG_ESP32_ULP_COPROC_RESERVE_MEM is not sufficient");
 
 /**
  * @brief Start ULP temperature monitoring program
@@ -242,7 +242,7 @@ static void start_ulp_temperature_monitoring()
     CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP_FORCE);
 
     // Clear the part of RTC_SLOW_MEM reserved for the ULP. Makes debugging easier.
-    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
 
     // The first word of memory (at data offset) is used to store the initial temperature (T0)
     // Zero it out here, then ULP will update it on the first run.

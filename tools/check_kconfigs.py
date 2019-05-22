@@ -23,7 +23,7 @@ import argparse
 from io import open
 
 # regular expression for matching Kconfig files
-RE_KCONFIG = r'^Kconfig(?:\.projbuild)?$'
+RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
 
 # ouput file with suggestions will get this suffix
 OUTPUT_SUFFIX = '.new'
@@ -34,15 +34,16 @@ OUTPUT_SUFFIX = '.new'
 IGNORE_DIRS = (
     # Kconfigs from submodules need to be ignored:
     os.path.join('components', 'mqtt', 'esp-mqtt'),
+    # Test Kconfigs are also ignored
+    os.path.join('tools', 'ldgen', 'test', 'data'),
+    os.path.join('tools', 'kconfig_new', 'test'),
 )
 
 SPACES_PER_INDENT = 4
 
-# TODO decrease the value (after the names have been refactored)
-CONFIG_NAME_MAX_LENGTH = 60
+CONFIG_NAME_MAX_LENGTH = 40
 
-# TODO increase prefix length (after the names have been refactored)
-CONFIG_NAME_MIN_PREFIX_LENGTH = 0
+CONFIG_NAME_MIN_PREFIX_LENGTH = 3
 
 # The checker will not fail if it encounters this string (it can be used for temporarily resolve conflicts)
 RE_NOERROR = re.compile(r'\s+#\s+NOERROR\s+$')

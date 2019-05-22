@@ -74,7 +74,7 @@ void esp_clk_init(void)
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
 
-#ifdef CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+#ifdef CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
     /* Check the bootloader set the XTAL frequency.
 
        Bootloaders pre-v2.1 don't do this.
@@ -85,7 +85,7 @@ void esp_clk_init(void)
         bootloader_clock_configure();
     }
 #else
-    /* If this assertion fails, either upgrade the bootloader or enable CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
+    /* If this assertion fails, either upgrade the bootloader or enable CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
     assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
 #endif
 
@@ -103,11 +103,11 @@ void esp_clk_init(void)
     rtc_wdt_protect_on();
 #endif
 
-#if defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL)
+#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
-#elif defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_OSC)
+#elif defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
-#elif defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256)
+#elif defined(CONFIG_ESP32_RTC_CLK_SRC_INT_8MD256)
     select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
@@ -131,7 +131,7 @@ void esp_clk_init(void)
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     rtc_clk_cpu_freq_set_config(&new_config);
 
@@ -273,13 +273,13 @@ void esp_perip_clk_init(void)
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
     common_perip_clk |= DPORT_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
                         DPORT_UART_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 1
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
                         DPORT_UART1_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 2
+#if CONFIG_ESP_CONSOLE_UART_NUM != 2
                         DPORT_UART2_CLK_EN |
 #endif
                         DPORT_SPI2_CLK_EN |

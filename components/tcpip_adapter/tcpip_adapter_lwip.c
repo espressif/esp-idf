@@ -953,15 +953,15 @@ static esp_err_t tcpip_adapter_start_ip_lost_timer(tcpip_adapter_if_t tcpip_if)
         return ESP_OK;
     }
 
-    if ( netif && (CONFIG_IP_LOST_TIMER_INTERVAL > 0) && !ip4_addr_isany_val(ip_info_old->ip)) {
+    if ( netif && (CONFIG_NETIF_IP_LOST_TIMER_INTERVAL > 0) && !ip4_addr_isany_val(ip_info_old->ip)) {
         esp_ip_lost_timer[tcpip_if].timer_running = true;
-        sys_timeout(CONFIG_IP_LOST_TIMER_INTERVAL*1000, tcpip_adapter_ip_lost_timer, (void*)tcpip_if);
-        ESP_LOGD(TAG, "if%d start ip lost tmr: interval=%d", tcpip_if, CONFIG_IP_LOST_TIMER_INTERVAL);
+        sys_timeout(CONFIG_NETIF_IP_LOST_TIMER_INTERVAL*1000, tcpip_adapter_ip_lost_timer, (void*)tcpip_if);
+        ESP_LOGD(TAG, "if%d start ip lost tmr: interval=%d", tcpip_if, CONFIG_NETIF_IP_LOST_TIMER_INTERVAL);
         return ESP_OK;
     }
 
     ESP_LOGD(TAG, "if%d start ip lost tmr: no need start because netif=%p interval=%d ip=%x", 
-                  tcpip_if, netif, CONFIG_IP_LOST_TIMER_INTERVAL, ip_info_old->ip.addr);
+                  tcpip_if, netif, CONFIG_NETIF_IP_LOST_TIMER_INTERVAL, ip_info_old->ip.addr);
 
     return ESP_OK;
 }

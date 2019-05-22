@@ -117,7 +117,7 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     bzero(raw, sizeof(raw));
 }
 
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
 
 #include "../include_bootloader/bootloader_flash.h"
 #include "esp_flash_encrypt.h"
@@ -172,25 +172,25 @@ static void emulate_secure_version_write(uint32_t secure_version)
 
 uint32_t esp_efuse_read_secure_version()
 {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     uint32_t secure_version;
 
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     secure_version = emulate_secure_version_read();
 #else
     secure_version = REG_READ(EFUSE_BLK_RD_ANTI_ROLLBACK);
-#endif // CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#endif // CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
 
-    return __builtin_popcount(secure_version & ((1ULL << CONFIG_APP_SECURE_VERSION_SIZE_EFUSE_FIELD) - 1));
+    return __builtin_popcount(secure_version & ((1ULL << CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD) - 1));
 #else
     return 0;
 #endif
 }
 
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 static void write_anti_rollback(uint32_t new_bits)
 {
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     emulate_secure_version_write(new_bits);
 #else
     esp_efuse_reset();
@@ -208,12 +208,12 @@ bool esp_efuse_check_secure_version(uint32_t secure_version)
 
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
-    if (CONFIG_APP_SECURE_VERSION_SIZE_EFUSE_FIELD < secure_version) {
-        ESP_LOGE(TAG, "Max secure version is %d. Given %d version can not be written.", CONFIG_APP_SECURE_VERSION_SIZE_EFUSE_FIELD, secure_version);
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    if (CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD < secure_version) {
+        ESP_LOGE(TAG, "Max secure version is %d. Given %d version can not be written.", CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD, secure_version);
         return ESP_ERR_INVALID_ARG;
     }
-#ifndef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifndef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     uint32_t coding_scheme = REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_CODING_SCHEME_M;
     if (coding_scheme != EFUSE_CODING_SCHEME_VAL_NONE) {
         ESP_LOGE(TAG, "Anti rollback is not supported with a 3/4 coding scheme.");

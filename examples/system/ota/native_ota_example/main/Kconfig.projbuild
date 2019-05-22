@@ -1,12 +1,12 @@
 menu "Example Configuration"
 
-    config WIFI_SSID
+    config EXAMPLE_WIFI_SSID
         string "WiFi SSID"
         default "myssid"
         help
             SSID (network name) for the example to connect to.
 
-    config WIFI_PASSWORD
+    config EXAMPLE_WIFI_PASSWORD
         string "WiFi Password"
         default "mypassword"
         help
@@ -14,7 +14,7 @@ menu "Example Configuration"
 
             Can be left blank if the network has no security set.
 
-    config FIRMWARE_UPG_URL
+    config EXAMPLE_FIRMWARE_UPG_URL
         string "HTTP Server URL"
         default "https://192.168.0.3:8070/hello-world.bin"
         help
@@ -22,7 +22,7 @@ menu "Example Configuration"
 
             See example README.md for details.
 
-    config GPIO_DIAGNOSTIC
+    config EXAMPLE_GPIO_DIAGNOSTIC
         int "Number of the GPIO input for diagnostic"
         range 0 39
         default 4

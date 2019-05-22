@@ -192,7 +192,7 @@ class Parser(object):
     def parse_tags(self, sdkconfig_file):
         """
         Some test configs could requires different DUTs.
-        For example, if CONFIG_SPIRAM_SUPPORT is enabled, we need WROVER-Kit to run test.
+        For example, if CONFIG_ESP32_SPIRAM_SUPPORT is enabled, we need WROVER-Kit to run test.
         This method will get tags for runners according to ConfigDependency.yml(maps tags to sdkconfig).
 
         We support to the following syntax::

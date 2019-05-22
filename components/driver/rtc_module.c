@@ -1706,7 +1706,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     }
 
     //disable other peripherals
-#ifdef CONFIG_ADC2_DISABLE_DAC
+#ifdef CONFIG_ADC_DISABLE_DAC
     adc2_dac_disable( channel );
 #endif
     // set controller

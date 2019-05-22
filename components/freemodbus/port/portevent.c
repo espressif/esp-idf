@@ -57,7 +57,7 @@
 static xQueueHandle xQueueHdl;
 
 #define MB_EVENT_QUEUE_SIZE     (1)
-#define MB_EVENT_QUEUE_TIMEOUT  (pdMS_TO_TICKS(CONFIG_MB_EVENT_QUEUE_TIMEOUT))
+#define MB_EVENT_QUEUE_TIMEOUT  (pdMS_TO_TICKS(CONFIG_FMB_EVENT_QUEUE_TIMEOUT))
 
 /* ----------------------- Start implementation -----------------------------*/
 BOOL

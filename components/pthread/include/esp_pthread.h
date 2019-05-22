@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #ifndef PTHREAD_STACK_MIN
-#define PTHREAD_STACK_MIN    CONFIG_PTHREAD_STACK_MIN
+#define PTHREAD_STACK_MIN    CONFIG_ESP32_PTHREAD_STACK_MIN
 #endif
 
 /** pthread configuration structure that influences pthread creation */

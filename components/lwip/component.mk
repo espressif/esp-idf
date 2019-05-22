@@ -25,7 +25,7 @@ COMPONENT_SRCDIRS := \
 	port/esp32/netif \
 	port/esp32/debug
 
-ifdef CONFIG_PPP_SUPPORT
+ifdef CONFIG_LWIP_PPP_SUPPORT
     COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl
 endif
 

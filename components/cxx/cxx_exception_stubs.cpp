@@ -4,7 +4,7 @@
 #include <bits/functexcept.h>
 #include <sdkconfig.h>
 
-#ifndef CONFIG_CXX_EXCEPTIONS
+#ifndef CONFIG_COMPILER_CXX_EXCEPTIONS
 
 const char *FATAL_EXCEPTION = "Fatal C++ exception: ";
 
@@ -81,4 +81,4 @@ extern "C" void __cxa_call_terminate(void) __attribute__((alias("__cxx_fatal_exc
 
 bool std::uncaught_exception() __attribute__((alias("__cxx_fatal_exception_bool")));
 
-#endif // CONFIG_CXX_EXCEPTIONS
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS

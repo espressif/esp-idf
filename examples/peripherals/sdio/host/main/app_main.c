@@ -121,7 +121,7 @@ esp_err_t slave_reset(esp_slave_context_t *context)
     return ret;
 }
 
-#ifdef CONFIG_SDIO_EXAMPLE_OVER_SPI
+#ifdef CONFIG_EXAMPLE_SDIO_OVER_SPI
 static void gpio_d2_set_high()
 {
     gpio_config_t d2_config = {
@@ -139,9 +139,9 @@ esp_err_t slave_init(esp_slave_context_t *context)
 {
     esp_err_t err;
     /* Probe */
-#ifndef CONFIG_SDIO_EXAMPLE_OVER_SPI
+#ifndef CONFIG_EXAMPLE_SDIO_OVER_SPI
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
-#ifdef CONFIG_SDIO_EXAMPLE_4BIT
+#ifdef CONFIG_EXAMPLE_SDIO_4BIT
     ESP_LOGI(TAG, "Probe using SD 4-bit...\n");
     config.flags = SDMMC_HOST_FLAG_4BIT;
 #else
@@ -149,7 +149,7 @@ esp_err_t slave_init(esp_slave_context_t *context)
     config.flags = SDMMC_HOST_FLAG_1BIT;
 #endif
 
-#ifdef CONFIG_SDIO_EXAMPLE_HIGHSPEED
+#ifdef CONFIG_EXAMPLE_SDIO_HIGHSPEED
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 #else
     config.max_freq_khz = SDMMC_FREQ_DEFAULT;

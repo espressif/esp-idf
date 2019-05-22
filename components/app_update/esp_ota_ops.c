@@ -113,7 +113,7 @@ static esp_err_t image_validate(const esp_partition_t *partition, esp_image_load
 
 static esp_ota_img_states_t set_new_state_otadata(void)
 {
-#ifdef CONFIG_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
     ESP_LOGD(TAG, "Monitoring the first boot of the app is enabled.");
     return ESP_OTA_IMG_NEW;
 #else
@@ -144,7 +144,7 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         return ESP_ERR_OTA_PARTITION_CONFLICT;
     }
 
-#ifdef CONFIG_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
     esp_ota_img_states_t ota_state_running_part;
     if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
         if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
@@ -394,7 +394,7 @@ esp_err_t esp_ota_set_boot_partition(const esp_partition_t *partition)
                 return ESP_ERR_NOT_FOUND;
             }
         } else {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
             esp_app_desc_t partition_app_desc;
             esp_err_t err = esp_ota_get_partition_description(partition, &partition_app_desc);
             if (err != ESP_OK) {
@@ -582,7 +582,7 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
     return ESP_OK;
 }
 
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 static esp_err_t esp_ota_set_anti_rollback(void) {
     const esp_app_desc_t *app_desc = esp_ota_get_app_description();
     return esp_efuse_update_secure_version(app_desc->secure_version);
@@ -614,7 +614,7 @@ bool esp_ota_check_rollback_is_possible(void)
     int last_active_ota = (~active_ota)&1;
 
     const esp_partition_t *partition = NULL;
-#ifndef CONFIG_APP_ANTI_ROLLBACK
+#ifndef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     if (valid_otadata[last_active_ota] == false) {
         partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
         if (partition != NULL) {
@@ -630,7 +630,7 @@ bool esp_ota_check_rollback_is_possible(void)
         partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_MIN + slot, NULL);
         if (partition != NULL) {
             if(image_validate(partition, ESP_IMAGE_VERIFY_SILENT) == ESP_OK) {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
                 esp_app_desc_t app_desc;
                 if (esp_ota_get_partition_description(partition, &app_desc) == ESP_OK &&
                     esp_efuse_check_secure_version(app_desc.secure_version) == true) {
@@ -661,7 +661,7 @@ static esp_err_t esp_ota_current_ota_is_workable(bool valid)
             otadata[active_otadata].ota_state = ESP_OTA_IMG_VALID;
             ESP_LOGD(TAG, "OTA[current] partition is marked as VALID");
             esp_err_t err = rewrite_ota_seq(otadata, otadata[active_otadata].ota_seq, active_otadata, otadata_partition);
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
             if (err == ESP_OK) {
                 return esp_ota_set_anti_rollback();
             }

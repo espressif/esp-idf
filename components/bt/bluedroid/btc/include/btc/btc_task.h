@@ -53,7 +53,7 @@ typedef enum {
     BTC_PID_BLUFI,
     BTC_PID_DM_SEC,
     BTC_PID_ALARM,
-#if CONFIG_CLASSIC_BT_ENABLED
+#if CONFIG_BT_CLASSIC_ENABLED
     BTC_PID_GAP_BT,
     BTC_PID_PRF_QUE,
     BTC_PID_A2DP,
@@ -63,7 +63,7 @@ typedef enum {
 #if BTC_HF_CLIENT_INCLUDED
     BTC_PID_HF_CLIENT,
 #endif /* BTC_HF_CLIENT_INCLUDED */
-#endif  /* CONFIG_CLASSIC_BT_ENABLED */
+#endif  /* CONFIG_BT_CLASSIC_ENABLED */
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
 

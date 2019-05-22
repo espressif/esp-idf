@@ -56,30 +56,30 @@ the adv packet will be discarded until the memory is restored. */
 #define BT_HCI_UART_BAUDRATE_DEFAULT                921600
 #endif /* BT_HCI_UART_BAUDRATE_DEFAULT */
 
-#ifdef CONFIG_SCAN_DUPLICATE_TYPE
-#define SCAN_DUPLICATE_TYPE_VALUE  CONFIG_SCAN_DUPLICATE_TYPE
+#ifdef CONFIG_BTDM_SCAN_DUPL_TYPE
+#define SCAN_DUPLICATE_TYPE_VALUE  CONFIG_BTDM_SCAN_DUPL_TYPE
 #else
 #define SCAN_DUPLICATE_TYPE_VALUE  0
 #endif
 
 /* normal adv cache size */
-#ifdef CONFIG_DUPLICATE_SCAN_CACHE_SIZE
-#define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            CONFIG_DUPLICATE_SCAN_CACHE_SIZE
+#ifdef CONFIG_BTDM_SCAN_DUPL_CACHE_SIZE
+#define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            CONFIG_BTDM_SCAN_DUPL_CACHE_SIZE
 #else
 #define NORMAL_SCAN_DUPLICATE_CACHE_SIZE            20
 #endif
 
-#ifndef CONFIG_BLE_MESH_SCAN_DUPLICATE_EN
-#define CONFIG_BLE_MESH_SCAN_DUPLICATE_EN FALSE
+#ifndef CONFIG_BTDM_BLE_MESH_SCAN_DUPL_EN
+#define CONFIG_BTDM_BLE_MESH_SCAN_DUPL_EN FALSE
 #endif
 
 #define SCAN_DUPLICATE_MODE_NORMAL_ADV_ONLY         0
 #define SCAN_DUPLICATE_MODE_NORMAL_ADV_MESH_ADV     1
 
-#if CONFIG_BLE_MESH_SCAN_DUPLICATE_EN
+#if CONFIG_BTDM_BLE_MESH_SCAN_DUPL_EN
     #define SCAN_DUPLICATE_MODE                     SCAN_DUPLICATE_MODE_NORMAL_ADV_MESH_ADV
-    #ifdef CONFIG_MESH_DUPLICATE_SCAN_CACHE_SIZE
-    #define MESH_DUPLICATE_SCAN_CACHE_SIZE          CONFIG_MESH_DUPLICATE_SCAN_CACHE_SIZE
+    #ifdef CONFIG_BTDM_MESH_DUPL_SCAN_CACHE_SIZE
+    #define MESH_DUPLICATE_SCAN_CACHE_SIZE          CONFIG_BTDM_MESH_DUPL_SCAN_CACHE_SIZE
     #else
     #define MESH_DUPLICATE_SCAN_CACHE_SIZE          50
     #endif
@@ -88,9 +88,9 @@ the adv packet will be discarded until the memory is restored. */
     #define MESH_DUPLICATE_SCAN_CACHE_SIZE          0
 #endif
 
-#if defined(CONFIG_BTDM_CONTROLLER_MODE_BLE_ONLY)
+#if defined(CONFIG_BTDM_CTRL_MODE_BLE_ONLY)
 #define BTDM_CONTROLLER_MODE_EFF                    ESP_BT_MODE_BLE
-#elif defined(CONFIG_BTDM_CONTROLLER_MODE_BR_EDR_ONLY)
+#elif defined(CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY)
 #define BTDM_CONTROLLER_MODE_EFF                    ESP_BT_MODE_CLASSIC_BT
 #else
 #define BTDM_CONTROLLER_MODE_EFF                    ESP_BT_MODE_BTDM
@@ -112,9 +112,9 @@ the adv packet will be discarded until the memory is restored. */
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
     .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,                \
     .mode = BTDM_CONTROLLER_MODE_EFF,                                      \
-    .ble_max_conn = CONFIG_BTDM_CONTROLLER_BLE_MAX_CONN_EFF,               \
-    .bt_max_acl_conn = CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN_EFF,     \
-    .bt_max_sync_conn = CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_EFF,   \
+    .ble_max_conn = CONFIG_BTDM_CTRL_BLE_MAX_CONN_EFF,               \
+    .bt_max_acl_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN_EFF,     \
+    .bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF,   \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -408,7 +408,7 @@ esp_err_t esp_bt_mem_release(esp_bt_mode_t mode);
  * There are currently two options for bluetooth modem sleep, one is ORIG mode, and another is EVED Mode. EVED Mode is intended for BLE only.
  *
  * For ORIG mode:
- * Bluetooth modem sleep is enabled in controller start up by default if CONFIG_BTDM_CONTROLLER_MODEM_SLEEP is set and "ORIG mode" is selected. In ORIG modem sleep mode, bluetooth controller will switch off some components and pause to work every now and then, if there is no event to process; and wakeup according to the scheduled interval and resume the work. It can also wakeup earlier upon external request using function "esp_bt_controller_wakeup_request".
+ * Bluetooth modem sleep is enabled in controller start up by default if CONFIG_BTDM_MODEM_SLEEP is set and "ORIG mode" is selected. In ORIG modem sleep mode, bluetooth controller will switch off some components and pause to work every now and then, if there is no event to process; and wakeup according to the scheduled interval and resume the work. It can also wakeup earlier upon external request using function "esp_bt_controller_wakeup_request".
  *
  * @return
  *                  - ESP_OK : success

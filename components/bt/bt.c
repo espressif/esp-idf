@@ -900,15 +900,15 @@ static uint32_t btdm_config_mask_load(void)
 {
     uint32_t mask = 0x0;
 
-#if CONFIG_BTDM_CONTROLLER_HCI_MODE_UART_H4
+#if CONFIG_BTDM_CTRL_HCI_MODE_UART_H4
     mask |= BTDM_CFG_HCI_UART;
 #endif
-#if CONFIG_BTDM_CONTROLLER_PINNED_TO_CORE == 1
+#if CONFIG_BTDM_CTRL_PINNED_TO_CORE == 1
     mask |= BTDM_CFG_CONTROLLER_RUN_APP_CPU;
 #endif
-#if CONFIG_BTDM_CONTROLLER_FULL_SCAN_SUPPORTED
+#if CONFIG_BTDM_CTRL_FULL_SCAN_SUPPORTED
     mask |= BTDM_CFG_BLE_FULL_SCAN_SUPPORTED;
-#endif /* CONFIG_BTDM_CONTROLLER_FULL_SCAN_SUPPORTED */
+#endif /* CONFIG_BTDM_CTRL_FULL_SCAN_SUPPORTED */
     mask |= BTDM_CFG_SCAN_DUPLICATE_OPTIONS;
 
     mask |= BTDM_CFG_SEND_ADV_RESERVED_SIZE;
@@ -1073,7 +1073,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     //overwrite some parameters
-    cfg->bt_max_sync_conn = CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_EFF;
+    cfg->bt_max_sync_conn = CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF;
     cfg->magic  = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL;
 
     if (((cfg->mode & ESP_BT_MODE_BLE) && (cfg->ble_max_conn <= 0 || cfg->ble_max_conn > BTDM_CONTROLLER_BLE_MAX_CONN_LIMIT))

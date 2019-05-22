@@ -86,7 +86,7 @@ xt_highint4:
     movi    a0, PANIC_RSN_CACHEERR
     j 9f
 1:
-#if CONFIG_INT_WDT_CHECK_CPU1
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
     /* Check if the cause is the app cpu failing to tick.*/
     movi    a0, int_wdt_app_cpu_ticked
     l32i    a0, a0, 0

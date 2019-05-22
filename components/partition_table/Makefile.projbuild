@@ -82,7 +82,7 @@ export OTA_DATA_SIZE
 # If anti-rollback option is set then factory partition should not be in Partition Table.
 # In this case, should be used the partition table with two ota app without the factory.
 check_table_contents: partition_table_get_info
-	@echo $(if $(CONFIG_APP_ANTI_ROLLBACK), $(if $(FACTORY_OFFSET), $(error "ERROR: Anti-rollback option is enabled. Partition table should consist of two ota app without factory partition."), ""), "")
+	@echo $(if $(CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK), $(if $(FACTORY_OFFSET), $(error "ERROR: Anti-rollback option is enabled. Partition table should consist of two ota app without factory partition."), ""), "")
 
 PARTITION_TABLE_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)
 ESPTOOL_ALL_FLASH_ARGS += $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_BIN)

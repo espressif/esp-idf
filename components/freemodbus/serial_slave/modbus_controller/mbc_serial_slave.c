@@ -95,7 +95,7 @@ static esp_err_t mbc_serial_slave_start(void)
                          (eMBParity)mbs_opts->mbs_comm.parity);
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack initialization failure, eMBInit() returns (0x%x).", status);
-#ifdef CONFIG_MB_CONTROLLER_SLAVE_ID_SUPPORT
+#ifdef CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
     status = eMBSetSlaveID(MB_SLAVE_ID_SHORT, TRUE, (UCHAR*)mb_slave_id, sizeof(mb_slave_id));
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack set slave ID failure.");
 #endif
