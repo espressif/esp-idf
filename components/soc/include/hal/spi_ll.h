@@ -60,7 +60,7 @@ typedef enum {
  *
  * @param hw Beginning address of the peripheral registers.
  */
-static inline void spi_ll_init(spi_dev_t *hw)
+static inline void spi_ll_master_init(spi_dev_t *hw)
 {
     //Reset DMA
     hw->dma_conf.val |= SPI_LL_RST_MASK;
@@ -70,7 +70,36 @@ static inline void spi_ll_init(spi_dev_t *hw)
     //Reset timing
     hw->ctrl2.val = 0;
 
-    //master use all 64 bytes of the buffer
+    //use all 64 bytes of the buffer
+    hw->user.usr_miso_highpart = 0;
+    hw->user.usr_mosi_highpart = 0;
+
+    //Disable unneeded ints
+    hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
+}
+
+/**
+ * Initialize SPI peripheral (slave).
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_slave_init(spi_dev_t *hw)
+{
+    //Configure slave
+    hw->clock.val = 0;
+    hw->user.val = 0;
+    hw->ctrl.val = 0;
+    hw->slave.wr_rd_buf_en = 1; //no sure if needed
+    hw->user.doutdin = 1; //we only support full duplex
+    hw->user.sio = 0;
+    hw->slave.slave_mode = 1;
+    hw->dma_conf.val |= SPI_LL_RST_MASK;
+    hw->dma_out_link.start = 0;
+    hw->dma_in_link.start = 0;
+    hw->dma_conf.val &= ~SPI_LL_RST_MASK;
+    hw->slave.sync_reset = 1;
+    hw->slave.sync_reset = 0;
+    //use all 64 bytes of the buffer
     hw->user.usr_miso_highpart = 0;
     hw->user.usr_mosi_highpart = 0;
 
@@ -293,6 +322,69 @@ static inline void spi_ll_master_set_mode(spi_dev_t *hw, uint8_t mode)
     } else if (mode == 3) {
         hw->pin.ck_idle_edge = 1;
         hw->user.ck_out_edge = 0;
+    }
+}
+
+/**
+ * Set SPI mode for the peripheral as slave.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param mode SPI mode to work at, 0-3.
+ */
+static inline void spi_ll_slave_set_mode(spi_dev_t *hw, const int mode, bool dma_used)
+{
+    if (mode == 0) {
+        //The timing needs to be fixed to meet the requirements of DMA
+        hw->pin.ck_idle_edge = 1;
+        hw->user.ck_i_edge = 0;
+        hw->ctrl2.miso_delay_mode = 0;
+        hw->ctrl2.miso_delay_num = 0;
+        hw->ctrl2.mosi_delay_mode = 2;
+        hw->ctrl2.mosi_delay_num = 2;
+    } else if (mode == 1) {
+        hw->pin.ck_idle_edge = 1;
+        hw->user.ck_i_edge = 1;
+        hw->ctrl2.miso_delay_mode = 2;
+        hw->ctrl2.miso_delay_num = 0;
+        hw->ctrl2.mosi_delay_mode = 0;
+        hw->ctrl2.mosi_delay_num = 0;
+    } else if (mode == 2) {
+        //The timing needs to be fixed to meet the requirements of DMA
+        hw->pin.ck_idle_edge = 0;
+        hw->user.ck_i_edge = 1;
+        hw->ctrl2.miso_delay_mode = 0;
+        hw->ctrl2.miso_delay_num = 0;
+        hw->ctrl2.mosi_delay_mode = 1;
+        hw->ctrl2.mosi_delay_num = 2;
+    } else if (mode == 3) {
+        hw->pin.ck_idle_edge = 0;
+        hw->user.ck_i_edge = 0;
+        hw->ctrl2.miso_delay_mode = 1;
+        hw->ctrl2.miso_delay_num = 0;
+        hw->ctrl2.mosi_delay_mode = 0;
+        hw->ctrl2.mosi_delay_num = 0;
+    }
+
+    /* Silicon issues exists in mode 0 and 2 with DMA, change clock phase to
+     * avoid dma issue. This will cause slave output to appear at most half a
+     * spi clock before
+     */
+    if (dma_used) {
+        if (mode == 0) {
+            hw->pin.ck_idle_edge = 0;
+            hw->user.ck_i_edge = 1;
+            hw->ctrl2.miso_delay_mode = 0;
+            hw->ctrl2.miso_delay_num = 2;
+            hw->ctrl2.mosi_delay_mode = 0;
+            hw->ctrl2.mosi_delay_num = 3;
+        } else if (mode == 2) {
+            hw->pin.ck_idle_edge = 1;
+            hw->user.ck_i_edge = 0;
+            hw->ctrl2.miso_delay_mode = 0;
+            hw->ctrl2.miso_delay_num = 2;
+            hw->ctrl2.mosi_delay_mode = 0;
+            hw->ctrl2.mosi_delay_num = 3;
+        }
     }
 }
 
@@ -587,7 +679,7 @@ static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
  * Configs: data
  *----------------------------------------------------------------------------*/
 /**
- * Set the input length.
+ * Set the input length (master).
  *
  * @param hw Beginning address of the peripheral registers.
  * @param bitlen input length, in bits.
@@ -598,7 +690,7 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
 }
 
 /**
- * Set the output length.
+ * Set the output length (master).
  *
  * @param hw Beginning address of the peripheral registers.
  * @param bitlen output length, in bits.
@@ -606,6 +698,28 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
 static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
 {
     hw->mosi_dlen.usr_mosi_dbitlen = bitlen - 1;
+}
+
+/**
+ * Set the maximum input length (slave).
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param bitlen input length, in bits.
+ */
+static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
+{
+    hw->slv_wrbuf_dlen.bit_len = bitlen - 1;
+}
+
+/**
+ * Set the maximum output length (slave).
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param bitlen output length, in bits.
+ */
+static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
+{
+    hw->slv_rdbuf_dlen.bit_len = bitlen - 1;
 }
 
 /**
@@ -720,6 +834,29 @@ static inline void spi_ll_enable_miso(spi_dev_t *hw, int enable)
 static inline void spi_ll_enable_mosi(spi_dev_t *hw, int enable)
 {
     hw->user.usr_mosi = enable;
+}
+
+/**
+ * Reset the slave peripheral before next transaction.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+static inline void spi_ll_slave_reset(spi_dev_t *hw)
+{
+    hw->slave.sync_reset = 1;
+    hw->slave.sync_reset = 0;
+}
+
+/**
+ * Get the received bit length of the slave.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ *
+ * @return Received bits of the slave.
+ */
+static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
+{
+    return hw->slv_rd_bit.slv_rdata_bit;
 }
 
 

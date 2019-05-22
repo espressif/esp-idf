@@ -29,7 +29,8 @@ void spi_hal_init(spi_hal_context_t *hal, int host_id)
     memset(hal, 0, sizeof(spi_hal_context_t));
     spi_dev_t *hw = spi_periph_signal[host_id].hw;
     hal->hw = hw;
-    spi_ll_init(hw);
+    spi_ll_master_init(hw);
+
     //Force a transaction done interrupt. This interrupt won't fire yet because
     //we initialized the SPI interrupt as disabled. This way, we can just
     //enable the SPI interrupt and the interrupt handler will kick in, handling

@@ -18,7 +18,7 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The HAL layer for SPI (common part)
+// The HAL layer for SPI master (common part)
 
 // SPI HAL usages:
 // 1. initialize the bus
@@ -53,7 +53,9 @@ typedef struct {
  * Context that should be maintained by both the driver and the HAL.
  */
 typedef struct {
-    /* configured by driver at initialization */
+    /* configured by driver at initialization, don't touch */
+    spi_dev_t *hw;        ///< Beginning address of the peripheral registers.
+    /* should be configured by driver at initialization */
     lldesc_t *dmadesc_tx; /**< Array of DMA descriptor used by the TX DMA.
                            *   The amount should be larger than dmadesc_n. The driver should ensure that
                            *   the data to be sent is shorter than the descriptors can hold.
@@ -102,8 +104,6 @@ typedef struct {
     uint8_t *rcv_buffer;    ///< Buffer to hold the receive data.
     spi_ll_io_mode_t io_mode;   ///< IO mode of the master
 
-    /* auto generated at initialization, don't touch */
-    spi_dev_t *hw;          ///< Beginning address of the peripheral registers.
 } spi_hal_context_t;
 
 /**
