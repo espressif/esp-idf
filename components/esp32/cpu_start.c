@@ -332,7 +332,7 @@ void start_cpu0_default(void)
     intr_matrix_clear();
 
 #ifndef CONFIG_CONSOLE_UART_NONE
-#ifdef CONFIG_PM_ENABLE
+#if defined(CONFIG_PM_ENABLE) && CONFIG_CONSOLE_UART_BAUDRATE <= REF_CLK_FREQ
     const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
