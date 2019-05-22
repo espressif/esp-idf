@@ -165,7 +165,7 @@ static void check_button(void)
 
 static void mdns_example_task(void *pvParameters)
 {
-#if CONFIG_RESOLVE_TEST_SERVICES == 1
+#if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
     /* Send initial queries that are started by CI tester */
     query_mdns_host("tinytester");
 #endif

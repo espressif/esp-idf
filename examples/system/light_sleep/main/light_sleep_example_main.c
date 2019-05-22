@@ -57,7 +57,7 @@ void app_main()
         /* To make sure the complete line is printed before entering sleep mode,
          * need to wait until UART TX FIFO is empty:
          */
-        uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+        uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
         /* Get timestamp before entering sleep */
         int64_t t_before_us = esp_timer_get_time();

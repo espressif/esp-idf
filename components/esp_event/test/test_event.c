@@ -42,7 +42,7 @@ static const char* TAG = "test_event";
 
 #define TEST_TEARDOWN() \
         test_teardown(); \
-        vTaskDelay(pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)); \
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)); \
         TEST_ASSERT_EQUAL(free_mem_before, heap_caps_get_free_size(MALLOC_CAP_DEFAULT));
 
 typedef struct {
@@ -118,7 +118,7 @@ static BaseType_t test_event_get_core()
 static esp_event_loop_args_t test_event_get_default_loop_args()
 {
     esp_event_loop_args_t loop_config = {
-        .queue_size = CONFIG_SYSTEM_EVENT_QUEUE_SIZE,
+        .queue_size = CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE,
         .task_name = "loop",
         .task_priority = s_test_priority,
         .task_stack_size = 2048,
@@ -276,7 +276,7 @@ static void test_teardown()
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define TIMER_INTERVAL0_SEC   (2.0) // sample test interval for the first timer
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     SemaphoreHandle_t *sem = (SemaphoreHandle_t*) event_handler_arg;
@@ -287,7 +287,7 @@ static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t
 }
 #endif
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 void IRAM_ATTR test_event_on_timer_alarm(void* para)
 {
     /* Retrieve the interrupt status and the counter value
@@ -313,7 +313,7 @@ void IRAM_ATTR test_event_on_timer_alarm(void* para)
         portYIELD_FROM_ISR();
     }
 }
-#endif //CONFIG_POST_EVENTS_FROM_ISR
+#endif //CONFIG_ESP_EVENT_POST_FROM_ISR
 
 TEST_CASE("can create and delete event loops", "[event]")
 {
@@ -850,17 +850,17 @@ static void performance_test(bool dedicated_task)
 
     TEST_TEARDOWN();
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     ESP_LOGI(TAG, "events dispatched/second with profiling enabled: %d", average);
     // Enabling profiling will slow down event dispatch, so the set threshold
     // is not valid when it is enabled.
 #else
-#ifndef CONFIG_SPIRAM_SUPPORT
+#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH, "%d", average);
 #else
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH_PSRAM, "%d", average);
-#endif // CONFIG_SPIRAM_SUPPORT
-#endif // CONFIG_EVENT_LOOP_PROFILING
+#endif // CONFIG_ESP32_SPIRAM_SUPPORT
+#endif // CONFIG_ESP_EVENT_LOOP_PROFILING
 }
 
 TEST_CASE("performance test - dedicated task", "[event]")
@@ -912,11 +912,11 @@ TEST_CASE("can post to loop from handler - dedicated task", "[event]")
     }
 
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_w_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
+                         pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
 
     xSemaphoreGive(arg.mutex);
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop_w_task));
 
@@ -964,15 +964,15 @@ TEST_CASE("can post to loop from handler - no dedicated task", "[event]")
 
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV1, &loop_wo_task, sizeof(&loop_wo_task), portMAX_DELAY));
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
 
     // For loop without tasks, posting is more restrictive. Posting should wait until execution of handler finishes
     TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop_wo_task, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0,
-                         pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
+                         pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER)));
 
     xSemaphoreGive(arg.mutex);
 
-    vTaskDelay(pdMS_TO_TICKS(CONFIG_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
+    vTaskDelay(pdMS_TO_TICKS(CONFIG_ESP_INT_WDT_TIMEOUT_MS * TEST_CONFIG_WAIT_MULTIPLIER));
 
     vTaskDelete(mtask);
 
@@ -1148,7 +1148,7 @@ TEST_CASE("events are dispatched in the order they are registered", "[event]")
     TEST_TEARDOWN();
 }
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
@@ -1186,7 +1186,7 @@ TEST_CASE("can post events from interrupt handler", "[event]")
 }
 #endif
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 TEST_CASE("can dump event loop profile", "[event]")
 {
     /* this test aims to verify that dumping event loop statistics succeed */

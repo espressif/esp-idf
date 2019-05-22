@@ -34,8 +34,8 @@ const __attribute__((section(".rodata_desc"))) esp_app_desc_t esp_app_desc = {
 #endif
     .idf_ver = IDF_VER,
 
-#ifdef CONFIG_APP_SECURE_VERSION
-    .secure_version = CONFIG_APP_SECURE_VERSION,
+#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
+    .secure_version = CONFIG_BOOTLOADER_APP_SECURE_VERSION,
 #else
     .secure_version = 0,
 #endif

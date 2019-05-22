@@ -21,7 +21,7 @@
 
 #include "app_prov.h"
 
-#define EXAMPLE_AP_RECONN_ATTEMPTS  CONFIG_AP_RECONN_ATTEMPTS
+#define EXAMPLE_AP_RECONN_ATTEMPTS  CONFIG_EXAMPLE_AP_RECONN_ATTEMPTS
 
 static const char *TAG = "app";
 
@@ -65,23 +65,23 @@ static void start_softap_provisioning()
     /* Proof of possession */
     const protocomm_security_pop_t *pop = NULL;
 
-#ifdef CONFIG_USE_SEC_1
+#ifdef CONFIG_EXAMPLE_USE_SEC_1
     security = 1;
 #endif
 
     /* Having proof of possession is optional */
-#ifdef CONFIG_USE_POP
+#ifdef CONFIG_EXAMPLE_USE_POP
     const static protocomm_security_pop_t app_pop = {
-        .data = (uint8_t *) CONFIG_POP,
-        .len = (sizeof(CONFIG_POP)-1)
+        .data = (uint8_t *) CONFIG_EXAMPLE_POP,
+        .len = (sizeof(CONFIG_EXAMPLE_POP)-1)
     };
     pop = &app_pop;
 #endif
 
         const char *ssid = NULL;
 
-#ifdef CONFIG_SOFTAP_SSID
-        ssid = CONFIG_SOFTAP_SSID;
+#ifdef CONFIG_EXAMPLE_SSID
+        ssid = CONFIG_EXAMPLE_SSID;
 #else
         uint8_t eth_mac[6];
         esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
@@ -94,7 +94,7 @@ static void start_softap_provisioning()
 #endif
 
     ESP_ERROR_CHECK(app_prov_start_softap_provisioning(
-        ssid, CONFIG_SOFTAP_PASS, security, pop));
+        ssid, CONFIG_EXAMPLE_PASS, security, pop));
 }
 
 void app_main()

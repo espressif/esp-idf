@@ -46,21 +46,31 @@ class DeprecatedOptions(object):
     _RE_DEP_OP_BEGIN = re.compile(_DEP_OP_BEGIN)
     _RE_DEP_OP_END = re.compile(_DEP_OP_END)
 
-    def __init__(self, config_prefix, path_rename_files):
+    def __init__(self, config_prefix, path_rename_files, ignore_dirs=()):
         self.config_prefix = config_prefix
         # r_dic maps deprecated options to new options; rev_r_dic maps in the opposite direction
-        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files)
+        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files, ignore_dirs)
 
         # note the '=' at the end of regex for not getting partial match of configs
         self._RE_CONFIG = re.compile(r'{}(\w+)='.format(self.config_prefix))
 
-    def _parse_replacements(self, repl_dir):
+    def _parse_replacements(self, repl_dir, ignore_dirs):
         rep_dic = {}
         rev_rep_dic = {}
+
+        def remove_config_prefix(string):
+            if string.startswith(self.config_prefix):
+                return string[len(self.config_prefix):]
+            raise RuntimeError('Error in {} (line {}): Config {} is not prefixed with {}'
+                               ''.format(rep_path, line_number, string, self.config_prefix))
 
         for root, dirnames, filenames in os.walk(repl_dir):
             for filename in fnmatch.filter(filenames, self._REN_FILE):
                 rep_path = os.path.join(root, filename)
+
+                if rep_path.startswith(ignore_dirs):
+                    print('Ignoring: {}'.format(rep_path))
+                    continue
 
                 with open(rep_path) as f_rep:
                     for line_number, line in enumerate(f_rep, start=1):
@@ -75,7 +85,8 @@ class DeprecatedOptions(object):
                                                'replacement {} is defined'.format(rep_path, line_number,
                                                                                   rep_dic[sp_line[0]], sp_line[0],
                                                                                   sp_line[1]))
-                        (dep_opt, new_opt) = (x.lstrip(self.config_prefix) for x in sp_line)
+
+                        (dep_opt, new_opt) = (remove_config_prefix(x) for x in sp_line)
                         rep_dic[dep_opt] = new_opt
                         rev_rep_dic[new_opt] = dep_opt
         return rep_dic, rev_rep_dic
@@ -104,13 +115,31 @@ class DeprecatedOptions(object):
                 f_out.write(line)
 
     def append_doc(self, config, path_output):
+
+        def option_was_written(opt):
+            return any(gen_kconfig_doc.node_should_write(node) for node in config.syms[opt].nodes)
+
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
                 header = 'Deprecated options and their replacements'
                 f_o.write('{}\n{}\n\n'.format(header, '-' * len(header)))
-                for key in sorted(self.r_dic):
-                    f_o.write('- {}{}: :ref:`{}{}`\n'.format(config.config_prefix, key,
-                                                             config.config_prefix, self.r_dic[key]))
+                for dep_opt in sorted(self.r_dic):
+                    new_opt = self.r_dic[dep_opt]
+                    if new_opt not in config.syms or (config.syms[new_opt].choice is None and option_was_written(new_opt)):
+                        # everything except config for a choice (no link reference for those in the docs)
+                        f_o.write('- {}{} (:ref:`{}{}`)\n'.format(config.config_prefix, dep_opt,
+                                                                  config.config_prefix, new_opt))
+
+                        if new_opt in config.named_choices:
+                            # here are printed config options which were filtered out
+                            syms = config.named_choices[new_opt].syms
+                            for sym in syms:
+                                if sym.name in self.rev_r_dic:
+                                    # only if the symbol has been renamed
+                                    dep_name = self.rev_r_dic[sym.name]
+
+                                    # config options doesn't have references
+                                    f_o.write('    - {}{}\n'.format(config.config_prefix, dep_name))
 
     def append_config(self, config, path_output):
         tmp_list = []
@@ -197,7 +226,10 @@ def main():
                 raise RuntimeError("Defaults file not found: %s" % name)
             config.load_config(name, replace=False)
 
-    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
+    # don't collect rename options from examples because those are separate projects and no need to "stay compatible"
+    # with example projects
+    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"],
+                                           ignore_dirs=(os.path.join(os.environ["IDF_PATH"], 'examples')))
 
     # If config file previously exists, load it
     if args.config and os.path.exists(args.config):

@@ -55,7 +55,7 @@ esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id,
 }
 
 
-#if CONFIG_POST_EVENTS_FROM_ISR
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
 esp_err_t esp_event_isr_post(esp_event_base_t event_base, int32_t event_id,
         void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
 {
@@ -76,7 +76,7 @@ esp_err_t esp_event_loop_create_default()
     }
 
     esp_event_loop_args_t loop_args = {
-        .queue_size = CONFIG_SYSTEM_EVENT_QUEUE_SIZE,
+        .queue_size = CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE,
         .task_name = "sys_evt",
         .task_stack_size = ESP_TASKD_EVENT_STACK,
         .task_priority = ESP_TASKD_EVENT_PRIO,

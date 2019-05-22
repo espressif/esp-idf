@@ -871,7 +871,7 @@ typedef struct {
 #endif  ///SMP_INCLUDED == TRUE
 #if SMP_INCLUDED == TRUE || CLASSIC_BT_INCLUDED == TRUE
     tBTM_SEC_SERV_REC        sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
-#endif // SMP_INCLUDED == TRUE || CLASSIC_BT_ENABLED == TRUE
+#endif // SMP_INCLUDED == TRUE || BT_CLASSIC_ENABLED == TRUE
     tBTM_SEC_DEV_REC         sec_dev_rec[BTM_SEC_MAX_DEVICE_RECORDS];
     tBTM_SEC_SERV_REC       *p_out_serv;
     tBTM_MKEY_CALLBACK      *mkey_cback;

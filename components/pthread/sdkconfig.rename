@@ -1,0 +1,4 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_PTHREAD_STACK_MIN    CONFIG_ESP32_PTHREAD_STACK_MIN

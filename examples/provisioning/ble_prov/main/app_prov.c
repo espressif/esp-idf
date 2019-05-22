@@ -253,7 +253,7 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
 {
     *provisioned = false;
 
-#ifdef CONFIG_RESET_PROVISIONED
+#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
     nvs_flash_erase();
 #endif
 

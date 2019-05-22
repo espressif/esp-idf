@@ -89,7 +89,7 @@ Static Alocation
 ^^^^^^^^^^^^^^^^^
 
 This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The 
-:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
+:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
 in order for static allocation functions to be available. Once enabled, the 
 following functions can be called...
 
@@ -494,7 +494,7 @@ occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 number of Thread Local Storage Pointers each task will have in ESP-IDF 
 FreeRTOS.
 
-:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` will enable the backported
+:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` will enable the backported
 functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
     
 :ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in

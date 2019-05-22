@@ -48,13 +48,13 @@
 
 // Extra time it takes to enter and exit light sleep and deep sleep
 // For deep sleep, this is until the wake stub runs (not the app).
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
 #define LIGHT_SLEEP_TIME_OVERHEAD_US (650 + 30 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
 #define DEEP_SLEEP_TIME_OVERHEAD_US (650 + 100 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
 #else
 #define LIGHT_SLEEP_TIME_OVERHEAD_US (250 + 30 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
 #define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
-#endif // CONFIG_ESP32_RTC_CLOCK_SOURCE
+#endif // CONFIG_ESP32_RTC_CLK_SRC
 
 // Minimal amount of time we can sleep for
 #define LIGHT_SLEEP_MIN_TIME_US 200
@@ -305,7 +305,7 @@ esp_err_t esp_light_sleep_start()
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US
                                           + CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY;
 
-#ifndef CONFIG_SPIRAM_SUPPORT
+#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
     const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
             flash_enable_time_us + LIGHT_SLEEP_TIME_OVERHEAD_US + LIGHT_SLEEP_MIN_TIME_US);
 
@@ -313,7 +313,7 @@ esp_err_t esp_light_sleep_start()
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
         s_config.sleep_time_adjustment += flash_enable_time_us;
     }
-#endif //CONFIG_SPIRAM_SUPPORT
+#endif //CONFIG_ESP32_SPIRAM_SUPPORT
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -390,7 +390,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
-#ifdef CONFIG_ULP_COPROC_ENABLED
+#ifdef CONFIG_ESP32_ULP_COPROC_ENABLED
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
@@ -404,10 +404,10 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup()
 {
-#ifdef CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     return ESP_ERR_NOT_SUPPORTED;
 #endif
-#ifdef CONFIG_ULP_COPROC_ENABLED
+#ifdef CONFIG_ESP32_ULP_COPROC_ENABLED
     if(s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
@@ -440,7 +440,7 @@ static void timer_wakeup_prepare()
 
 esp_err_t esp_sleep_enable_touchpad_wakeup()
 {
-#ifdef CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT
+#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     return ESP_ERR_NOT_SUPPORTED;
 #endif
     if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN)) {
@@ -705,7 +705,7 @@ static uint32_t get_power_down_flags()
 
     if ((s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) == 0) {
     // If enabled EXT1 only and enable the additional current by touch, should be keep RTC_PERIPH power on.
-#if ((defined CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL) && (defined CONFIG_ESP32_RTC_EXTERNAL_CRYSTAL_ADDITIONAL_CURRENT))
+#if ((defined CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS) && (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT))
     pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
 #endif
     }

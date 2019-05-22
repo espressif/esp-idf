@@ -18,9 +18,9 @@
 // Enabling exceptions only when they are enabled in menuconfig
 //
 # include <sdkconfig.h>
-# ifndef CONFIG_CXX_EXCEPTIONS
+# ifndef CONFIG_COMPILER_CXX_EXCEPTIONS
 #  define ASIO_NO_EXCEPTIONS
-# endif   // CONFIG_CXX_EXCEPTIONS
+# endif   // CONFIG_COMPILER_CXX_EXCEPTIONS
 
 //
 // LWIP compatifility inet and address macros/functions

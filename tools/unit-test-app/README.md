@@ -68,7 +68,7 @@ Tests marked as `[leaks]` or `[leaks=xxx]` reset the device after completion (or
 
 `TagDefinition.yml` defines how we should parse the description. In `TagDefinition.yml`, we declare the tags we are interested in, their default value and omitted value. Parser will parse the properities of test cases according to this file, and add them as test case attributes.
 
-We will build unit-test-app with different sdkconfigs. Some config items requires specific board to run. For example, if `CONFIG_SPIRAM_SUPPORT` is enabled, then unit test app must run on board supports PSRAM. `ConfigDependency.yml` is used to define the mapping between sdkconfig items and tags. The tags will be saved as case attributes, used to select jobs and runners. In the previous example, `psram` tag is generated, will only select jobs and runners also contains `psram` tag.
+We will build unit-test-app with different sdkconfigs. Some config items requires specific board to run. For example, if `CONFIG_ESP32_SPIRAM_SUPPORT` is enabled, then unit test app must run on board supports PSRAM. `ConfigDependency.yml` is used to define the mapping between sdkconfig items and tags. The tags will be saved as case attributes, used to select jobs and runners. In the previous example, `psram` tag is generated, will only select jobs and runners also contains `psram` tag.
 
 ### Assign Test Stage:
 

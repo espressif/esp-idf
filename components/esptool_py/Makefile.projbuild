@@ -81,7 +81,7 @@ erase_flash: | check_python_dependencies
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
 
-MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
+MONITORBAUD ?= $(CONFIG_ESPTOOLPY_MONITOR_BAUD)
 
 MONITOR_PYTHON := $(PYTHON)
 

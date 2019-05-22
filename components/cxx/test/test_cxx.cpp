@@ -196,7 +196,7 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
-#ifdef CONFIG_CXX_EXCEPTIONS
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
 TEST_CASE("c++ exceptions work", "[cxx]")
 {
@@ -259,7 +259,7 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
         thrown_value = e;
         printf("Got exception %d\n", thrown_value);
     }
-#if CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0
+#if CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0
     // free all memory
     while (pprev) {
         p = (void **)(*pprev);
@@ -274,7 +274,7 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
 #endif
 }
 
-#else // !CONFIG_CXX_EXCEPTIONS
+#else // !CONFIG_COMPILER_CXX_EXCEPTIONS
 
 TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
 {

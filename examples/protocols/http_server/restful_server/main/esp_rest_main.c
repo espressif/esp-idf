@@ -30,7 +30,7 @@ esp_err_t start_rest_server(const char *base_path);
 static void initialise_mdns(void)
 {
     mdns_init();
-    mdns_hostname_set(CONFIG_MDNS_HOST_NAME);
+    mdns_hostname_set(CONFIG_EXAMPLE_MDNS_HOST_NAME);
     mdns_instance_name_set(MDNS_INSTANCE);
 
     mdns_txt_item_t serviceTxtData[] = {
@@ -42,10 +42,10 @@ static void initialise_mdns(void)
                                      sizeof(serviceTxtData) / sizeof(serviceTxtData[0])));
 }
 
-#if CONFIG_WEB_DEPLOY_SEMIHOST
+#if CONFIG_EXAMPLE_WEB_DEPLOY_SEMIHOST
 esp_err_t init_fs(void)
 {
-    esp_err_t ret = esp_vfs_semihost_register(CONFIG_WEB_MOUNT_POINT, CONFIG_HOST_PATH_TO_MOUNT);
+    esp_err_t ret = esp_vfs_semihost_register(CONFIG_EXAMPLE_WEB_MOUNT_POINT, CONFIG_EXAMPLE_HOST_PATH_TO_MOUNT);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to register semihost driver (%s)!", esp_err_to_name(ret));
         return ESP_FAIL;
@@ -54,7 +54,7 @@ esp_err_t init_fs(void)
 }
 #endif
 
-#if CONFIG_WEB_DEPLOY_SD
+#if CONFIG_EXAMPLE_WEB_DEPLOY_SD
 esp_err_t init_fs(void)
 {
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
@@ -73,7 +73,7 @@ esp_err_t init_fs(void)
     };
 
     sdmmc_card_t *card;
-    esp_err_t ret = esp_vfs_fat_sdmmc_mount(CONFIG_WEB_MOUNT_POINT, &host, &slot_config, &mount_config, &card);
+    esp_err_t ret = esp_vfs_fat_sdmmc_mount(CONFIG_EXAMPLE_WEB_MOUNT_POINT, &host, &slot_config, &mount_config, &card);
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE(TAG, "Failed to mount filesystem.");
@@ -88,11 +88,11 @@ esp_err_t init_fs(void)
 }
 #endif
 
-#if CONFIG_WEB_DEPLOY_SF
+#if CONFIG_EXAMPLE_WEB_DEPLOY_SF
 esp_err_t init_fs(void)
 {
     esp_vfs_spiffs_conf_t conf = {
-        .base_path = CONFIG_WEB_MOUNT_POINT,
+        .base_path = CONFIG_EXAMPLE_WEB_MOUNT_POINT,
         .partition_label = NULL,
         .max_files = 5,
         .format_if_mount_failed = false
@@ -130,5 +130,5 @@ void app_main()
 
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(init_fs());
-    ESP_ERROR_CHECK(start_rest_server(CONFIG_WEB_MOUNT_POINT));
+    ESP_ERROR_CHECK(start_rest_server(CONFIG_EXAMPLE_WEB_MOUNT_POINT));
 }

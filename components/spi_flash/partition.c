@@ -243,7 +243,7 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
     if (!partition->encrypted) {
         return spi_flash_read(partition->address + src_offset, dst, size);
     } else {
-#if CONFIG_FLASH_ENCRYPTION_ENABLED
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
         /* Encrypted partitions need to be read via a cache mapping */
         const void *buf;
         spi_flash_mmap_handle_t handle;
@@ -259,7 +259,7 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
         return ESP_OK;
 #else
         return ESP_ERR_NOT_SUPPORTED;
-#endif // CONFIG_FLASH_ENCRYPTION_ENABLED
+#endif // CONFIG_SECURE_FLASH_ENC_ENABLED
     }
 }
 
@@ -277,11 +277,11 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
     if (!partition->encrypted) {
         return spi_flash_write(dst_offset, src, size);
     } else {
-#if CONFIG_FLASH_ENCRYPTION_ENABLED
+#if CONFIG_SECURE_FLASH_ENC_ENABLED
         return spi_flash_write_encrypted(dst_offset, src, size);
 #else
         return ESP_ERR_NOT_SUPPORTED;
-#endif // CONFIG_FLASH_ENCRYPTION_ENABLED
+#endif // CONFIG_SECURE_FLASH_ENC_ENABLED
     }
 }
 

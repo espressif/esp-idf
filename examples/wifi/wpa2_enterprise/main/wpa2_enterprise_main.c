@@ -38,12 +38,12 @@
    You can choose EAP method via 'make menuconfig' according to the
    configuration of AP.
 */
-#define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
-#define EXAMPLE_EAP_METHOD CONFIG_EAP_METHOD
+#define EXAMPLE_WIFI_SSID CONFIG_EXAMPLE_WIFI_SSID
+#define EXAMPLE_EAP_METHOD CONFIG_EXAMPLE_EAP_METHOD
 
-#define EXAMPLE_EAP_ID CONFIG_EAP_ID
-#define EXAMPLE_EAP_USERNAME CONFIG_EAP_USERNAME
-#define EXAMPLE_EAP_PASSWORD CONFIG_EAP_PASSWORD
+#define EXAMPLE_EAP_ID CONFIG_EXAMPLE_EAP_ID
+#define EXAMPLE_EAP_USERNAME CONFIG_EXAMPLE_EAP_USERNAME
+#define EXAMPLE_EAP_PASSWORD CONFIG_EXAMPLE_EAP_PASSWORD
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;

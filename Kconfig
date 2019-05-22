@@ -4,6 +4,12 @@
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
+    # Hidden option to support checking for this specific target in C code and Kconfig files
+    config IDF_TARGET_ESP32
+        bool
+        default "y" if IDF_TARGET="esp32"
+        default "n"
+
     config IDF_CMAKE
         bool
         option env="IDF_CMAKE"
@@ -60,9 +66,9 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     menu "Compiler options"
 
-        choice OPTIMIZATION_COMPILER
+        choice COMPILER_OPTIMIZATION
             prompt "Optimization Level"
-            default OPTIMIZATION_LEVEL_DEBUG
+            default COMPILER_OPTIMIZATION_LEVEL_DEBUG
             help
                 This option sets compiler optimization level (gcc -O argument).
 
@@ -76,15 +82,15 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
                 custom optimization levels may be unsupported.
 
-            config OPTIMIZATION_LEVEL_DEBUG
+            config COMPILER_OPTIMIZATION_LEVEL_DEBUG
                 bool "Debug (-Og)"
-            config OPTIMIZATION_LEVEL_RELEASE
+            config COMPILER_OPTIMIZATION_LEVEL_RELEASE
                 bool "Release (-Os)"
         endchoice
 
-        choice OPTIMIZATION_ASSERTION_LEVEL
+        choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             prompt "Assertion level"
-            default OPTIMIZATION_ASSERTIONS_ENABLED
+            default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
             help
                 Assertions can be:
 
@@ -96,20 +102,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 - Disabled entirely (not recommended for most configurations.) -DNDEBUG is added
                   to CPPFLAGS in this case.
 
-            config OPTIMIZATION_ASSERTIONS_ENABLED
+            config COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
                 prompt "Enabled"
                 bool
                 help
                     Enable assertions. Assertion content and line number will be printed on failure.
 
-            config OPTIMIZATION_ASSERTIONS_SILENT
+            config COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
                 prompt "Silent (saves code size)"
                 bool
                 help
                     Enable silent assertions. Failed assertions will abort(), user needs to
                     use the aborting address to find the line number with the failed assertion.
 
-            config OPTIMIZATION_ASSERTIONS_DISABLED
+            config COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
                 prompt "Disabled (sets -DNDEBUG)"
                 bool
                 help
@@ -117,7 +123,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
-        menuconfig CXX_EXCEPTIONS
+        menuconfig COMPILER_CXX_EXCEPTIONS
             bool "Enable C++ exceptions"
             default n
             help
@@ -129,17 +135,17 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Enabling this option currently adds an additional ~500 bytes of heap overhead
                 when an exception is thrown in user code for the first time.
 
-        config CXX_EXCEPTIONS_EMG_POOL_SIZE
+        config COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE
             int "Emergency Pool Size"
             default 0
-            depends on CXX_EXCEPTIONS
+            depends on COMPILER_CXX_EXCEPTIONS
             help
                 Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
                 memory for thrown exceptions when there is not enough memory on the heap.
 
-        choice STACK_CHECK_MODE
+        choice COMPILER_STACK_CHECK_MODE
             prompt "Stack smashing protection mode"
-            default STACK_CHECK_NONE
+            default COMPILER_STACK_CHECK_MODE_NONE
             help
                 Stack smashing protection mode. Emit extra code to check for buffer overflows, such as stack
                 smashing attacks. This is done by adding a guard variable to functions with vulnerable objects.
@@ -162,23 +168,23 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 - coverage: NORMAL < STRONG < OVERALL
 
 
-            config STACK_CHECK_NONE
+            config COMPILER_STACK_CHECK_MODE_NONE
                 bool "None"
-            config STACK_CHECK_NORM
+            config COMPILER_STACK_CHECK_MODE_NORM
                 bool "Normal"
-            config STACK_CHECK_STRONG
+            config COMPILER_STACK_CHECK_MODE_STRONG
                 bool "Strong"
-            config STACK_CHECK_ALL
+            config COMPILER_STACK_CHECK_MODE_ALL
                 bool "Overall"
         endchoice
 
-        config STACK_CHECK
+        config COMPILER_STACK_CHECK
             bool
-            default !STACK_CHECK_NONE
+            default !COMPILER_STACK_CHECK_MODE_NONE
             help
                 Stack smashing protection.
 
-        config WARN_WRITE_STRINGS
+        config COMPILER_WARN_WRITE_STRINGS
             bool "Enable -Wwrite-strings warning flag"
             default "n"
             help
@@ -192,7 +198,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 For C++, this warns about the deprecated conversion from string
                 literals to ``char *``.
 
-        config DISABLE_GCC8_WARNINGS
+        config COMPILER_DISABLE_GCC8_WARNINGS
             bool "Disable new warnings introduced in GCC 6 - 8"
             default "n"
             help

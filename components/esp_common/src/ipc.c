@@ -92,7 +92,7 @@ static void esp_ipc_init()
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         snprintf(task_name, sizeof(task_name), "ipc%d", i);
         s_ipc_sem[i] = xSemaphoreCreateBinary();
-        portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_name, CONFIG_IPC_TASK_STACK_SIZE, (void*) i,
+        portBASE_TYPE res = xTaskCreatePinnedToCore(ipc_task, task_name, CONFIG_ESP_IPC_TASK_STACK_SIZE, (void*) i,
                                                     configMAX_PRIORITIES - 1, NULL, i);
         assert(res == pdTRUE);
     }

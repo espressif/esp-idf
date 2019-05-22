@@ -169,7 +169,7 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs)
                 break;
             case PART_SUBTYPE_DATA_EFUSE_EM:
                 partition_usage = "efuse";
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
                 esp_efuse_init(partition->pos.offset, partition->pos.size);
 #endif
                 break;
@@ -243,7 +243,7 @@ static esp_err_t write_otadata(esp_ota_select_entry_t *otadata, uint32_t offset,
 
 static bool check_anti_rollback(const esp_partition_pos_t *partition)
 {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     esp_app_desc_t app_desc;
     esp_err_t err = bootloader_common_get_partition_description(partition, &app_desc);
     return err == ESP_OK && esp_efuse_check_secure_version(app_desc.secure_version) == true;
@@ -252,7 +252,7 @@ static bool check_anti_rollback(const esp_partition_pos_t *partition)
 #endif
 }
 
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 static void update_anti_rollback(const esp_partition_pos_t *partition)
 {
     esp_app_desc_t app_desc;
@@ -306,7 +306,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
     ESP_LOGD(TAG, "otadata[0]: sequence values 0x%08x", otadata[0].ota_seq);
     ESP_LOGD(TAG, "otadata[1]: sequence values 0x%08x", otadata[1].ota_seq);
 
-#ifdef CONFIG_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
     bool write_encrypted = esp_flash_encryption_enabled();
     for (int i = 0; i < 2; ++i) {
         if (otadata[i].ota_state == ESP_OTA_IMG_PENDING_VERIFY) {
@@ -317,7 +317,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
     }
 #endif
 
-#ifndef CONFIG_APP_ANTI_ROLLBACK
+#ifndef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     if ((bootloader_common_ota_select_invalid(&otadata[0]) &&
          bootloader_common_ota_select_invalid(&otadata[1])) ||
          bs->app_count == 0) {
@@ -341,7 +341,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
 #else
     ESP_LOGI(TAG, "Enabled a check secure version of app for anti rollback");
     ESP_LOGI(TAG, "Secure version (from eFuse) = %d", esp_efuse_read_secure_version());
-    // When CONFIG_APP_ANTI_ROLLBACK is enabled factory partition should not be in partition table, only two ota_app are there.
+    // When CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK is enabled factory partition should not be in partition table, only two ota_app are there.
     if ((otadata[0].ota_seq == UINT32_MAX || otadata[0].crc != bootloader_common_ota_select_crc(&otadata[0])) &&
         (otadata[1].ota_seq == UINT32_MAX || otadata[1].crc != bootloader_common_ota_select_crc(&otadata[1]))) {
         ESP_LOGI(TAG, "otadata[0..1] in initial state");
@@ -356,19 +356,19 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
             uint32_t ota_seq = otadata[active_otadata].ota_seq - 1; // Raw OTA sequence number. May be more than # of OTA slots
             boot_index = ota_seq % bs->app_count; // Actual OTA partition selection
             ESP_LOGD(TAG, "Mapping seq %d -> OTA slot %d", ota_seq, boot_index);
-#ifdef CONFIG_APP_ROLLBACK_ENABLE
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
             if (otadata[active_otadata].ota_state == ESP_OTA_IMG_NEW) {
                 ESP_LOGD(TAG, "otadata[%d] is selected as new and marked PENDING_VERIFY state", active_otadata);
                 otadata[active_otadata].ota_state = ESP_OTA_IMG_PENDING_VERIFY;
                 write_otadata(&otadata[active_otadata], bs->ota_info.offset + FLASH_SECTOR_SIZE * active_otadata, write_encrypted);
             }
-#endif // CONFIG_APP_ROLLBACK_ENABLE
+#endif // CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
 
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
             if(otadata[active_otadata].ota_state == ESP_OTA_IMG_VALID) {
                 update_anti_rollback(&bs->ota[boot_index]);
             }
-#endif // CONFIG_APP_ANTI_ROLLBACK
+#endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 
         } else if (bs->factory.offset != 0) {
             ESP_LOGE(TAG, "ota data partition invalid, falling back to factory");
@@ -414,7 +414,7 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
         bool write_encrypted = esp_flash_encryption_enabled();
         write_otadata(&otadata, bs->ota_info.offset + FLASH_SECTOR_SIZE * 0, write_encrypted);
         ESP_LOGI(TAG, "Set actual ota_seq=%d in otadata[0]", otadata.ota_seq);
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
         update_anti_rollback(&bs->ota[index]);
 #endif
     }
@@ -521,7 +521,7 @@ static void load_image(const esp_image_metadata_t* image_data)
      * then Step 6 enables secure boot.
      */
 
-#if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_FLASH_ENCRYPTION_ENABLED)
+#if defined(CONFIG_SECURE_BOOT_ENABLED) || defined(CONFIG_SECURE_FLASH_ENC_ENABLED)
     esp_err_t err;
 #endif
 
@@ -537,7 +537,7 @@ static void load_image(const esp_image_metadata_t* image_data)
     }
 #endif
 
-#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     /* Steps 3, 4 & 5 (see above for full description):
      *   3) Generate flash encryption EFUSE key
      *   4) Encrypt flash contents
@@ -566,7 +566,7 @@ static void load_image(const esp_image_metadata_t* image_data)
     }
 #endif
 
-#ifdef CONFIG_FLASH_ENCRYPTION_ENABLED
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
     if (!flash_encryption_enabled && esp_flash_encryption_enabled()) {
         /* Flash encryption was just enabled for the first time,
            so issue a system reset to ensure flash encryption

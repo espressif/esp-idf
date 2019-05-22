@@ -25,7 +25,7 @@ endif
 endif
 
 
-ifdef CONFIG_BLUEDROID_ENABLED
+ifdef CONFIG_BT_BLUEDROID_ENABLED
 
 COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/bta/ar/include                \

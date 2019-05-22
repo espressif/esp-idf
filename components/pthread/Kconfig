@@ -13,7 +13,7 @@ menu "PThreads"
         help
             Stack size used to create new tasks with default pthread parameters.
 
-    config PTHREAD_STACK_MIN
+    config ESP32_PTHREAD_STACK_MIN
         int "Minimum allowed pthread stack size"
         default 768
         help

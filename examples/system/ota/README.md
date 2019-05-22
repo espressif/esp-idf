@@ -117,8 +117,8 @@ When the example starts up, it will print "Starting OTA example..." then:
 
 ## Support the rollback
 
-This feature allows you to roll back to the previous firmware if the app is not operable. Option :ref:`CONFIG_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the``Over The Air Updates (OTA)`` article). 
-For ``native_ota_example``, added a bit of code to demonstrate how a rollback works. To use it, you need enable the :ref:`CONFIG_APP_ROLLBACK_ENABLE` option in Kconfig and under the "Example Configuration" submenu to set "Number of the GPIO input for diagnostic" to manage the rollback process.
+This feature allows you to roll back to the previous firmware if the app is not operable. Option :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the``Over The Air Updates (OTA)`` article). 
+For ``native_ota_example``, added a bit of code to demonstrate how a rollback works. To use it, you need enable the :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option in Kconfig and under the "Example Configuration" submenu to set "Number of the GPIO input for diagnostic" to manage the rollback process.
 
 To trigger a rollback, this GPIO must be pulled low while the message `Diagnostics (5 sec)...` which will be on first boot.
 If GPIO is not pulled low then the operable of the app will be confirmed.
