@@ -58,6 +58,7 @@ function run_tests()
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
     PARTITION_BIN="partition_table/partition-table.bin"
+    BUILD_ARTIFACTS="project_description.json flasher_args.json config/kconfig_menus.json config/sdkconfig.json"
     IDF_COMPONENT_PREFIX="__idf"
 
     print_status "Initial clean build"
@@ -65,7 +66,7 @@ function run_tests()
     idf.py build || exit $?
 
     # check all the expected build artifacts from the clean build
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} ${BUILD_ARTIFACTS}
 
     print_status "Updating component source file rebuilds component"
     # touch a file & do a build
