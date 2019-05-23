@@ -9,15 +9,6 @@ unset(compile_definitions)
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
 
-# Temporary trick to support both gcc5 and gcc8 builds
-if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
-    set(GCC_NOT_5_2_0 0 CACHE STRING "GCC is 5.2.0 version")
-else()
-    set(GCC_NOT_5_2_0 1 CACHE STRING "GCC is not 5.2.0 version")
-endif()
-
-list(APPEND compile_definitions "-DGCC_NOT_5_2_0=${GCC_NOT_5_2_0}")
-
 if(CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE)
     list(APPEND compile_options "-Os")
 else()
