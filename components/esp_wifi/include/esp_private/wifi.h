@@ -307,6 +307,18 @@ esp_err_t esp_wifi_internal_set_log_mod(wifi_log_module_t module, uint32_t submo
   */
 esp_err_t esp_wifi_internal_get_log(wifi_log_level_t *log_level, uint32_t *log_mod);
 
+/**
+  * @brief     A general API to set/get WiFi internal configuration, it's for debug only
+  *
+  * @param     cmd : ioctl command type
+  * @param     cfg : configuration for the command
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_internal_ioctl(int cmd, wifi_ioctl_config_t *cfg);
+
 #ifdef __cplusplus
 }
 #endif
