@@ -111,6 +111,7 @@ struct esp_http_client {
     http_event_handle_cb        event_handler;
     int                         timeout_ms;
     int                         buffer_size;
+    int                         buffer_size_tx;
     bool                        disable_auto_redirect;
     esp_http_client_event_t     event;
     int                         data_written_index;
@@ -313,10 +314,15 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     client->max_redirection_count = config->max_redirection_count;
     client->user_data = config->user_data;
     client->buffer_size = config->buffer_size;
+    client->buffer_size_tx = config->buffer_size_tx;
     client->disable_auto_redirect = config->disable_auto_redirect;
 
     if (config->buffer_size == 0) {
         client->buffer_size = DEFAULT_HTTP_BUF_SIZE;
+    }
+
+    if (config->buffer_size_tx == 0) {
+      client->buffer_size_tx = DEFAULT_HTTP_BUF_SIZE;
     }
 
     if (client->max_redirection_count == 0) {
@@ -513,7 +519,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         goto error;
     }
     _success = (
-                   (client->request->buffer->data  = malloc(client->buffer_size))  &&
+                   (client->request->buffer->data  = malloc(client->buffer_size_tx))  &&
                    (client->response->buffer->data = malloc(client->buffer_size))
                );
 
@@ -989,26 +995,26 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
     const char *method = HTTP_METHOD_MAPPING[client->connection_info.method];
 
     int first_line_len = snprintf(client->request->buffer->data,
-                                  client->buffer_size, "%s %s",
+                                  client->buffer_size_tx, "%s %s",
                                   method,
                                   client->connection_info.path);
-    if (first_line_len >= client->buffer_size) {
+    if (first_line_len >= client->buffer_size_tx) {
         ESP_LOGE(TAG, "Out of buffer");
         return -1;
     }
 
     if (client->connection_info.query) {
         first_line_len += snprintf(client->request->buffer->data + first_line_len,
-                                   client->buffer_size - first_line_len, "?%s", client->connection_info.query);
-        if (first_line_len >= client->buffer_size) {
+                                   client->buffer_size_tx - first_line_len, "?%s", client->connection_info.query);
+        if (first_line_len >= client->buffer_size_tx) {
             ESP_LOGE(TAG, "Out of buffer");
             return -1;
 
         }
     }
     first_line_len += snprintf(client->request->buffer->data + first_line_len,
-                               client->buffer_size - first_line_len, " %s\r\n", DEFAULT_HTTP_PROTOCOL);
-    if (first_line_len >= client->buffer_size) {
+                               client->buffer_size_tx - first_line_len, " %s\r\n", DEFAULT_HTTP_PROTOCOL);
+    if (first_line_len >= client->buffer_size_tx) {
         ESP_LOGE(TAG, "Out of buffer");
         return -1;
     }
@@ -1043,7 +1049,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
         }
     }
 
-    int wlen = client->buffer_size - first_line_len;
+    int wlen = client->buffer_size_tx - first_line_len;
     while ((client->header_index = http_header_generate_string(client->request->headers, client->header_index, client->request->buffer->data + first_line_len, &wlen))) {
         if (wlen <= 0) {
             break;
@@ -1067,7 +1073,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
             client->data_write_left -= wret;
             client->data_written_index += wret;
         }
-        wlen = client->buffer_size;
+        wlen = client->buffer_size_tx;
     }
 
     client->data_written_index = 0;
