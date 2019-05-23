@@ -212,8 +212,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     add_custom_target(confserver
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS=${kconfigs}"
-        "COMPONENT_KCONFIGS_PROJBUILD=${kconfigs_projbuild}"
-        ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py --kconfig ${IDF_PATH}/Kconfig --config ${SDKCONFIG}
+        "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
+        ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py --kconfig ${IDF_PATH}/Kconfig --config ${sdkconfig}
         VERBATIM
         USES_TERMINAL)
 endfunction()

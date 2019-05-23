@@ -404,6 +404,9 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     git checkout -- sdkconfig.rename Kconfig
     popd
 
+    print_status "Confserver can be invoked by idf.py"
+    echo '{"version": 1}' | idf.py confserver || failure "Couldn't load confserver"
+
     print_status "Check ccache is used to build when present"
     touch ccache && chmod +x ccache  # make sure that ccache is present for this test
     (export PATH=$PWD:$PATH && idf.py reconfigure | grep "ccache will be used for faster builds") || failure "ccache should be used when present"
