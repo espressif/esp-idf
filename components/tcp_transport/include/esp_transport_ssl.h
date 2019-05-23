@@ -16,6 +16,7 @@
 #define _ESP_TRANSPORT_SSL_H_
 
 #include "esp_transport.h"
+#include "esp_tls.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,6 +111,20 @@ void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const c
  * @param      t     ssl transport
  */
 void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t);
+
+/**
+ * @brief      Set PSK key and hint for PSK server/client verification in esp-tls component.
+ *             Important notes:
+ *             - This function stores the pointer to data, rather than making a copy.
+ *             So this data must remain valid until after the connection is cleaned up
+ *             - ESP_TLS_PSK_VERIFICATION config option must be enabled in menuconfig
+ *             - certificate verification takes priority so it must not be configured
+ *             to enable PSK method.
+ *
+ * @param      t             ssl transport
+ * @param[in]  psk_hint_key  psk key and hint structure defined in esp_tls.h
+ */
+void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key);
 
 #ifdef __cplusplus
 }
