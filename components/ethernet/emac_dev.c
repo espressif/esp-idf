@@ -99,3 +99,13 @@ void emac_mac_init(void)
     REG_CLR_BIT(EMAC_GMACCONFIG_REG, EMAC_EMACFESPEED);
     REG_SET_BIT(EMAC_GMACFF_REG, EMAC_PAM);
 }
+
+void emac_enable_promiscuous(void)
+{
+    REG_SET_BIT(EMAC_GMACFF_REG, EMAC_PMODE);
+}
+
+void emac_disable_promiscuous(void)
+{
+    REG_CLR_BIT(EMAC_GMACFF_REG, EMAC_PMODE);
+}

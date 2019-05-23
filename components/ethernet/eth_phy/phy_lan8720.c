@@ -114,7 +114,8 @@ const eth_config_t phy_lan8720_default_ethernet_config = {
     .phy_get_speed_mode = phy_lan8720_get_speed_mode,
     .phy_get_duplex_mode = phy_lan8720_get_duplex_mode,
     .phy_get_partner_pause_enable = phy_mii_get_partner_pause_enable,
-    .reset_timeout_ms = 1000
+    .reset_timeout_ms = 1000,
+    .promiscuous_enable = false,
 };
 
 void phy_lan8720_dump_registers()
