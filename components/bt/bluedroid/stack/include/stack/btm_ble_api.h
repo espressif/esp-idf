@@ -2099,6 +2099,19 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length);
 *******************************************************************************/
 
 tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type, BD_ADDR device_info, tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK update_exceptional_list_cmp_cb);
+
+/*******************************************************************************
+**
+** Function         BTM_GetCurrentConnParams
+**
+** Description      This function is called to read the current connection parameters 
+**                  of the device 
+**
+** Returns          TRUE or FALSE
+**
+*******************************************************************************/
+
+BOOLEAN BTM_GetCurrentConnParams(BD_ADDR bda, uint16_t *interval, uint16_t *latency, uint16_t *timeout);
 /*
 #ifdef __cplusplus
 }

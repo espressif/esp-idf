@@ -35,6 +35,7 @@
 #include "stack/btm_ble_api.h"
 #include <string.h>
 #include "osi/allocator.h"
+#include "l2c_int.h"
 
 static void bta_gatts_nv_save_cback(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 static BOOLEAN bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -965,7 +966,7 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                                   BOOLEAN connected, tGATT_DISCONN_REASON reason,
                                   tGATT_TRANSPORT transport)
 {
-    tBTA_GATTS      cb_data;
+    tBTA_GATTS      cb_data = {0};
     UINT8           evt = connected ? BTA_GATTS_CONNECT_EVT : BTA_GATTS_DISCONNECT_EVT;
     tBTA_GATTS_RCB  *p_reg;
 
@@ -993,7 +994,16 @@ static void bta_gatts_conn_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn_id,
                 bta_sys_conn_close( BTA_ID_GATTS , BTA_ALL_APP_ID, bda);
             }
         }
-
+        if(evt == BTA_GATTS_CONNECT_EVT) {
+            tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
+            if(p_lcb != NULL) {
+                cb_data.conn.conn_params.interval = p_lcb->current_used_conn_interval;
+                cb_data.conn.conn_params.latency = p_lcb->current_used_conn_latency;
+                cb_data.conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
+            }else {
+                APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
+            }
+        }
         cb_data.conn.conn_id = conn_id;
         cb_data.conn.server_if = gatt_if;
         cb_data.conn.reason = reason;

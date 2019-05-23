@@ -2732,4 +2732,35 @@ void btm_ble_set_keep_rfu_in_auth_req(BOOLEAN keep_rfu)
 
 #endif /* BTM_BLE_CONFORMANCE_TESTING */
 
+/*******************************************************************************
+**
+** Function         btm_get_current_conn_params
+**
+** Description      This function is called to get current connection parameters
+**                  information of the device           
+**
+** Returns          TRUE if the information is geted, else FALSE
+**
+*******************************************************************************/
+
+BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *latency, UINT16 *timeout)
+{
+    if( (interval == NULL) || (latency == NULL) || (timeout == NULL) ) {
+        BTM_TRACE_ERROR("%s invalid parameters ", __func__);
+        return FALSE;
+    }
+
+    tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
+    if(p_lcb != NULL) {
+         (*interval) = p_lcb->current_used_conn_interval;
+         (*latency) = p_lcb->current_used_conn_latency;
+         (*timeout) = p_lcb->current_used_conn_timeout;
+        return TRUE;
+    }
+    BTM_TRACE_WARNING("%s Device is not connected", __func__);
+    
+    return FALSE;
+}
+
+
 #endif /* BLE_INCLUDED */
