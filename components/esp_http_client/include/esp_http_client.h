@@ -116,7 +116,8 @@ typedef struct {
     int                         max_redirection_count;    /*!< Max redirection number, using default value if zero*/
     http_event_handle_cb        event_handler;             /*!< HTTP Event Handle */
     esp_http_client_transport_t transport_type;           /*!< HTTP transport type, see `esp_http_client_transport_t` */
-    int                         buffer_size;              /*!< HTTP buffer size (both send and receive) */
+    int                         buffer_size;              /*!< HTTP receive buffer size */
+    int                         buffer_size_tx;           /*!< HTTP transmit buffer size */
     void                        *user_data;               /*!< HTTP user_data context */
     bool                        is_async;                 /*!< Set asynchronous mode, only supported with HTTPS for now */
     bool                        use_global_ca_store;      /*!< Use a global ca_store for all the connections in which this bool is set. */
@@ -427,7 +428,7 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  *
  * @param[in]  client  The esp_http_client handle
  *
- * @return      
+ * @return
  *     - ESP_OK
  *     - ESP_FAIL
  */
