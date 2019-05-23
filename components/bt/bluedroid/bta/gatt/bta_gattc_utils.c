@@ -738,7 +738,7 @@ void bta_gattc_send_open_cback( tBTA_GATTC_RCB *p_clreg, tBTA_GATT_STATUS status
 ** Returns
 **
 *******************************************************************************/
-void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remote_bda, UINT16 conn_id)
+void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remote_bda, UINT16 conn_id, tBTA_GATT_CONN_PARAMS conn_params)
 {
     tBTA_GATTC      cb_data;
 
@@ -747,6 +747,9 @@ void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remote_bda, 
 
         cb_data.connect.client_if = p_clreg->client_if;
         cb_data.connect.conn_id = conn_id;
+        cb_data.connect.conn_params.interval = conn_params.interval;
+        cb_data.connect.conn_params.latency = conn_params.latency;
+        cb_data.connect.conn_params.timeout = conn_params.timeout;
         bdcpy(cb_data.connect.remote_bda, remote_bda);
 
         (*p_clreg->p_cback)(BTA_GATTC_CONNECT_EVT, &cb_data);

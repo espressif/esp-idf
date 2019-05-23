@@ -377,6 +377,15 @@ typedef struct {
                                                         advertising reports for each packet received */
 } esp_ble_scan_params_t;
 
+/// connection parameters information 
+typedef struct {
+    uint16_t             interval;                  /*!< connection interval */
+    uint16_t             latency;                   /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
+    uint16_t             timeout;                   /*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
+                                                      Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec
+                                                      Time Range: 100 msec to 32 seconds */
+} esp_gap_conn_params_t;
+
 /// Connection update parameters
 typedef struct {
     esp_bd_addr_t bda;                              /*!< Bluetooth device address */
@@ -1232,6 +1241,19 @@ esp_err_t esp_ble_oob_req_reply(esp_bd_addr_t bd_addr, uint8_t *TK, uint8_t len)
 *
 */
 esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device);
+
+/**
+* @brief           This function is called to read the connection
+*                  parameters information of the device
+*
+* @param[in]       bd_addr: BD address of the peer device.
+* @param[out]      conn_params: the connection parameters information
+*
+* @return          - ESP_OK : success
+*                  - other  : failed
+*
+*/
+esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_params_t *conn_params);
 
 #ifdef __cplusplus
 }

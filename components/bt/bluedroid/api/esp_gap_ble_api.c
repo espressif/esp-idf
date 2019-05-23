@@ -706,6 +706,17 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_params_t *conn_params)
+{
+    if(!bd_addr || !conn_params) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(BTM_GetCurrentConnParams(bd_addr, &conn_params->interval, &conn_params->latency, &conn_params->timeout)) {
+        return ESP_OK;
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
 
 
 
