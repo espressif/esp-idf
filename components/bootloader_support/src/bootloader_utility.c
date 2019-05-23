@@ -560,9 +560,10 @@ static void load_image(const esp_image_metadata_t* image_data)
     err = esp_secure_boot_permanently_enable();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "FAILED TO ENABLE SECURE BOOT (%d).", err);
-        /* Allow booting to continue, as the failure is probably
-           due to user-configured EFUSEs for testing...
+        /* Panic here as secure boot is not properly enabled
+           due to one of the reasons in above function
         */
+        abort();
     }
 #endif
 

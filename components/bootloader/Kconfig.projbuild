@@ -505,16 +505,5 @@ menu "Security features"
 
                 Only set this option in testing environments.
 
-        config SECURE_BOOT_TEST_MODE
-            bool "Secure boot test mode: don't permanently set any eFuses"
-            depends on SECURE_BOOT_INSECURE
-            default N
-            help
-                If this option is set, all permanent secure boot changes (via eFuse) are disabled.
-
-                Log output will state changes which would be applied, but they will not be.
-
-                This option is for testing purposes only - it completely disables secure boot protection.
-
     endmenu  # Potentially Insecure
 endmenu  # Security features
