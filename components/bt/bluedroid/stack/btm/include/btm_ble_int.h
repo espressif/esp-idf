@@ -505,6 +505,8 @@ void btm_set_random_address(BD_ADDR random_bda);
 void btm_ble_set_keep_rfu_in_auth_req(BOOLEAN keep_rfu);
 #endif
 
+BOOLEAN btm_get_current_conn_params(BD_ADDR bda, UINT16 *interval, UINT16 *latency, UINT16 *timeout);
+
 /*
 #ifdef __cplusplus
 }

@@ -730,6 +730,17 @@ esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize)
     }
     return ESP_FAIL;
 }
+esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_params_t *conn_params)
+{
+    if(!bd_addr || !conn_params) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if(BTM_GetCurrentConnParams(bd_addr, &conn_params->interval, &conn_params->latency, &conn_params->timeout)) {
+        return ESP_OK;
+    }
+    return ESP_ERR_NOT_FOUND;
+}
+
 
 
 

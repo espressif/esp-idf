@@ -395,6 +395,17 @@ typedef enum {
     ESP_GATT_WRITE_TYPE_RSP,                                /*!< Gatt write attribute need remote response */
 } esp_gatt_write_type_t;
 
+/**
+  * @brief Connection parameters information
+  */
+typedef struct {
+    uint16_t             interval;                         /*!< connection interval */
+    uint16_t             latency;                          /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
+    uint16_t             timeout;                          /*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
+                                                                Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec
+                                                                Time Range: 100 msec to 32 seconds */
+} esp_gatt_conn_params_t;
+
 #define ESP_GATT_IF_NONE    0xff                            /*!< If callback report gattc_if/gatts_if as this macro, means this event is not correspond to any app */
 
 typedef uint8_t    esp_gatt_if_t;                           /*!< Gatt interface type, different application on GATT client use different gatt_if */

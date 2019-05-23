@@ -200,6 +200,12 @@ typedef struct {
     UINT8               name_spc;   /* The name space of the description */
 } tBTA_GATT_CHAR_PRES;
 
+typedef struct {
+    UINT16             interval;
+    UINT16             latency;
+    UINT16             timeout;
+} tBTA_GATT_CONN_PARAMS;
+
 #define BTA_GATT_CLT_CONFIG_NONE               GATT_CLT_CONFIG_NONE         /* 0x0000    */
 #define BTA_GATT_CLT_CONFIG_NOTIFICATION       GATT_CLT_CONFIG_NOTIFICATION /* 0x0001 */
 #define BTA_GATT_CLT_CONFIG_INDICATION         GATT_CLT_CONFIG_INDICATION   /* 0x0002 */
@@ -397,6 +403,7 @@ typedef struct {
     UINT16              conn_id;
     tBTA_GATTC_IF       client_if;
     BD_ADDR             remote_bda;
+    tBTA_GATT_CONN_PARAMS conn_params;
 } tBTA_GATTC_CONNECT;
 
 typedef struct {
@@ -606,6 +613,7 @@ typedef struct {
     UINT16              conn_id;
     tBTA_GATT_REASON    reason; /* report disconnect reason */
     tBTA_GATT_TRANSPORT transport;
+    tBTA_GATT_CONN_PARAMS conn_params;
 } tBTA_GATTS_CONN;
 
 typedef struct {
