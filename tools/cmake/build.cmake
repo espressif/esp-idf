@@ -365,12 +365,6 @@ macro(idf_build_process target)
     # Check for required Python modules
     __build_check_python()
 
-    # Generate config values in different formats
-    idf_build_get_property(sdkconfig SDKCONFIG)
-    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
-    __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
-    __build_import_configs()
-
     # Write the partial build properties to a temporary file.
     # The path to this generated file is set to a short-lived build
     # property BUILD_PROPERTIES_FILE.
@@ -416,6 +410,7 @@ macro(idf_build_process target)
     idf_build_unset_property(BUILD_PROPERTIES_FILE)
     file(REMOVE ${build_properties_file})
 
+
     # Finally, do component expansion. In this case it simply means getting a final list
     # of build component targets given the requirements set by each component.
     if(__COMPONENTS)
@@ -441,6 +436,12 @@ macro(idf_build_process target)
         __component_get_property(lib ${component_target} COMPONENT_LIB)
         idf_build_set_property(___COMPONENT_REQUIRES_COMMON ${lib} APPEND)
     endforeach()
+
+    # Generate config values in different formats
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
+    __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+    __build_import_configs()
 
     # Temporary trick to support both gcc5 and gcc8 builds
     if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
