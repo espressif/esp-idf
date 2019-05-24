@@ -73,6 +73,10 @@ variables:
   echo "Cleaning up $CUSTOM_TOOLCHAIN_PATH"
   rm -rf "$CUSTOM_TOOLCHAIN_PATH"
 
+.setup_tools: &setup_tools |
+  tools/idf_tools.py install &&
+  eval "$(tools/idf_tools.py export)"
+
 before_script:
   - source tools/ci/setup_python.sh
   - *git_clean_stale_submodules
@@ -90,6 +94,8 @@ before_script:
   #
   # (the same regular expressions are used to set these are used in 'only:' sections below
   - source tools/ci/configure_ci_environment.sh
+
+  - *setup_tools
 
   - *setup_custom_toolchain
 
@@ -605,7 +611,7 @@ test_idf_tools:
   <<: *host_test_template
   script:
     # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
-    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/opt/espressif${CUSTOM_TOOLCHAIN_PATH:+\|${CUSTOM_TOOLCHAIN_PATH}}" | tr "\n" ":"); echo ${p%:})
+    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif${CUSTOM_TOOLCHAIN_PATH:+\|${CUSTOM_TOOLCHAIN_PATH}}" | tr "\n" ":"); echo ${p%:})
     - cd ${IDF_PATH}/tools/test_idf_tools
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
 
