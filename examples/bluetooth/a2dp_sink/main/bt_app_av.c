@@ -70,6 +70,16 @@ void bt_app_a2d_cb(esp_a2d_cb_event_t event, esp_a2d_cb_param_t *param)
 void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
 {
     size_t bytes_written;
+
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+    uint16_t *dt = (uint16_t*)data;
+    uint32_t count = len / 2;
+    while (count-- > 0) {
+        *dt += 0x8000U;
+        dt++;
+    }
+#endif
+
     i2s_write(0, data, len, &bytes_written, portMAX_DELAY);
     if (++s_pkt_cnt % 100 == 0) {
         ESP_LOGI(BT_AV_TAG, "Audio packet count %u", s_pkt_cnt);
