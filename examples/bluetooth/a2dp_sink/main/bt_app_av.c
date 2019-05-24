@@ -75,7 +75,15 @@ void bt_app_a2d_data_cb(const uint8_t *data, uint32_t len)
     uint16_t *dt = (uint16_t*)data;
     uint32_t count = len / 2;
     while (count-- > 0) {
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC_DITHER
+        static int16_t old_rnd = 0;
+        const int16_t rnd = (esp_random() & 0x00ff) - 0x80;
+        const int16_t dither = rnd - old_rnd;
+        old_rnd = rnd;
+        *dt += 0x8000U + dither;
+#else
         *dt += 0x8000U;
+#endif
         dt++;
     }
 #endif
