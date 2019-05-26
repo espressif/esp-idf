@@ -9,7 +9,7 @@ What You Need
 -------------
 
 * ESP-WROVER-KIT V2 board
-* USB 2.0 A to Micro B Cable
+* USB 2.0 cable（A to Micro-B）
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -114,7 +114,7 @@ RGB                 Red, green and blue (RGB) light emitting diodes (LEDs), can 
 
 I/O                 All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
-Micro SD Card       Micro SD card slot for data storage: when ESP32 enters the download mode, GPIO2 cannot be held high. However, a pull-up resistor is required on GPIO2 to enable the Micro SD Card. By default, GPIO2 and the pull-up resistor R153 are disconnected. To enable the SD Card, use jumpers on JP1 as shown in Section `Setup Options`_.
+MicroSD Card        MicroSD card slot for data storage: when ESP32 enters the download mode, GPIO2 cannot be held high. However, a pull-up resistor is required on GPIO2 to enable the MicroSD Card. By default, GPIO2 and the pull-up resistor R153 are disconnected. To enable the SD Card, use jumpers on JP1 as shown in Section `Setup Options`_.
 
 LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v2-board-back-cmake`.
 ==================  =================================================================================================================================
@@ -130,7 +130,7 @@ There are five jumper blocks available to set up the board functionality. The mo
 =======  ================  =========================================================
 Header   Jumper Setting    Description of Functionality
 =======  ================  =========================================================
-JP1      |jp1-sd_io2|      Enable pull up for the Micro SD Card
+JP1      |jp1-sd_io2|      Enable pull up for the MicroSD Card
 JP1      |jp1-both|        Assert GPIO2 low during each download (by jumping it to GPIO0)
 JP7      |jp7-ext_5v|      Power ESP-WROVER-KIT via an external power supply
 JP7      |jp7-usb_5v|      Power ESP-WROVER-KIT via USB

@@ -9,7 +9,7 @@ What You Need
 -------------
 
 * :ref:`ESP-WROVER-KIT V4.1 board <get-started-esp-wrover-kit-v4.1-board-front-cmake>`
-* USB 2.0 A to Micro B Cable
+* USB 2.0 cable（A to Micro-B）
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -87,7 +87,7 @@ FT2232              The FT2232 chip serves as a multi-protocol USB-to-serial bri
 
 0R                  Zero-ohm resistor intended as a placeholder for a current shunt, can be desoldered or replaced with a current shunt to facilitate the measurement of ESP32's current consumption in different modes.
 
-ESP32-WROVER        This EPS32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
+ESP32-WROVER-B      This EPS32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
 
 Diagnostic LEDs     Four red LEDs connected to the GPIO pins of FT2232. Intended for future use.
 
@@ -121,9 +121,9 @@ RGB LED             Red, green and blue (RGB) light emitting diodes (LEDs), can 
 
 I/O Connector       All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
-Micro SD Card Slot  Useful for developing applications that access Micro SD card for data storage and retrieval.
+MicroSD Card Slot   Useful for developing applications that access MicroSD card for data storage and retrieval.
 
-LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v4.1-board-back`.
+LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v4.1-board-back-cmake`.
 ==================  =================================================================================================================================
 
 
@@ -358,7 +358,7 @@ Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents
