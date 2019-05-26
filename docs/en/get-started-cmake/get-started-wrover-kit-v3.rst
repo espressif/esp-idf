@@ -9,7 +9,7 @@ What You Need
 -------------
 
 * :ref:`ESP-WROVER-KIT V3 board <get-started-esp-wrover-kit-v3-board-front-cmake>`
-* USB 2.0 A to Micro B Cable
+* USB 2.0 cable（A to Micro-B）
 * Computer running Windows, Linux, or macOS
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
@@ -116,7 +116,7 @@ RGB LED             Red, green and blue (RGB) light emitting diodes (LEDs), can 
 
 I/O                 All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
-Micro SD Card Slot  Useful for developing applications that access Micro SD card for data storage and retrieval.
+MicroSD Card Slot   Useful for developing applications that access MicroSD card for data storage and retrieval.
 
 LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v3-board-back-cmake`.
 ==================  =================================================================================================================================
