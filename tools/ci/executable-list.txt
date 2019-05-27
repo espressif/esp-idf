@@ -22,6 +22,7 @@ examples/build_system/cmake/idf_as_lib/build.sh
 examples/build_system/cmake/idf_as_lib/run-esp32.sh
 examples/build_system/cmake/idf_as_lib/run.sh
 examples/storage/parttool/parttool_example.py
+examples/storage/parttool/parttool_example.sh
 examples/system/ota/otatool/otatool_example.py
 tools/check_kconfigs.py
 tools/check_python_dependencies.py
