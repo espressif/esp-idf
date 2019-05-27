@@ -1,4 +1,5 @@
-set(SOC_SRCS    "rtc_clk.c"
+set(SOC_SRCS    "cpu_util.c"
+                "rtc_clk.c"
                 "rtc_init.c"
                 "rtc_pm.c"
                 "rtc_sleep.c"

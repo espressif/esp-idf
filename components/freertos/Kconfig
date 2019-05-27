@@ -3,6 +3,7 @@ menu "FreeRTOS"
     # This is actually also handled in the ESP32 startup code, not only in FreeRTOS.
     config FREERTOS_UNICORE
         bool "Run FreeRTOS only on first core"
+        default y if IDF_TARGET_ESP32S2BETA
         default n
         help
             This version of FreeRTOS normally takes control of all cores of
@@ -13,6 +14,7 @@ menu "FreeRTOS"
             # This invisible config value sets the value of tskNO_AFFINITY in task.h.
             # Intended to be used as a constant from other Kconfig files.
             # Value is (32-bit) INT_MAX.
+
     config FREERTOS_NO_AFFINITY
         hex
         default 0x7FFFFFFF

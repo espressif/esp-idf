@@ -15,7 +15,9 @@ if(BOOTLOADER_BUILD)
                                "src/${IDF_TARGET}/bootloader_sha.c"
                                "src/${IDF_TARGET}/flash_encrypt.c"
                                "src/${IDF_TARGET}/secure_boot_signatures.c"
-                               "src/${IDF_TARGET}/secure_boot.c")
+                               "src/${IDF_TARGET}/secure_boot.c"
+                               "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
+                               "src/${IDF_TARGET}/bootloader_clock_${IDF_TARGET}.c")
 
     if(CONFIG_SECURE_SIGNED_APPS)
         get_filename_component(secure_boot_verification_key

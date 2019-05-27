@@ -164,7 +164,7 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
     bool r;
     r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
 #if CONFIG_ESP32_SPIRAM_SUPPORT && CONFIG_SPIRAM_SIZE
-// ToDo: Use SOC_EXTRAM_DATA_HIGH if CONFIG_SPIRAM_SIZE is -1 (ie max possible SPIRAM size)
+    // ToDo: Use SOC_EXTRAM_DATA_HIGH if CONFIG_SPIRAM_SIZE is -1 (ie max possible SPIRAM size)
     r |= (ip >= SOC_EXTRAM_DATA_LOW && ip < (SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE));
 #endif
     return r;
@@ -183,7 +183,7 @@ inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
 }
 
 inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
-#ifndef CONFIG_FREERTOS_UNICORE
+#if !CONFIG_FREERTOS_UNICORE || CONFIG_IDF_TARGET_ESP32S2BETA
     return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
 #else
     return ((intptr_t)p >= SOC_CACHE_APP_LOW && (intptr_t)p < SOC_IRAM_HIGH);

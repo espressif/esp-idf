@@ -4,6 +4,9 @@ if(BOOTLOADER_BUILD AND CONFIG_IDF_TARGET_ESP32S2BETA)
     set(COMPONENT_REQUIRES ${IDF_COMPONENTS} soc) #unfortunately rom/uart uses SOC registers directly
     set(COMPONENT_SRCS )
     register_component()
+    idf_build_get_property(target IDF_TARGET)
+    set(scripts "ld/esp32s2beta.peripherals.ld")
+    target_linker_script(${COMPONENT_LIB} "${scripts}")
 elseif(CONFIG_IDF_TARGET_ESP32S2BETA)
     # Regular app build
 

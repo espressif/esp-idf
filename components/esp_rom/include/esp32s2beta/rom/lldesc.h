@@ -17,7 +17,7 @@
 
 #include <stdint.h>
 
-#include "queue.h"
+#include "sys/queue.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,8 +53,8 @@ extern "C" {
 #endif /* !ESP_MAC_5 */
 /*
  *  SLC2 DMA Desc struct, aka lldesc_t
- * 
- * -------------------------------------------------------------- 
+ *
+ * --------------------------------------------------------------
  * | own | EoF | sub_sof | 5'b0   | length [11:0] | size [11:0] |
  * --------------------------------------------------------------
  * |            buf_ptr [31:0]                                  |
@@ -139,12 +139,12 @@ static inline uint32_t lldesc_get_chain_length(lldesc_t *head)
 {
     lldesc_t *ds = head;
     uint32_t len = 0;
-    
+
     while (ds) {
         len += ds->length;
         ds = STAILQ_NEXT(ds, qe);
     }
-    
+
     return len;
 }
 

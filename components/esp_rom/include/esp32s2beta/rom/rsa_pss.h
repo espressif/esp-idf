@@ -16,7 +16,6 @@
 #define _ROM_RSA_PSS_H_
 
 #include <stdint.h>
-#include "rom/rsa_pss.h"
 
 #define ETS_SIG_LEN 384 /* Bytes */
 #define ETS_DIGEST_LEN 32 /* SHA-256, bytes */

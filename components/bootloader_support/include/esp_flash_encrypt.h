@@ -21,6 +21,7 @@
 #include "esp_spi_flash.h"
 #endif
 #include "soc/efuse_periph.h"
+#include "sdkconfig.h"
 
 /**
  * @file esp_partition.h
@@ -35,11 +36,17 @@
  *
  * @return true if flash encryption is enabled.
  */
-static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void) {
-    uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void)
+{
+    uint32_t flash_crypt_cnt;
+#if CONFIG_IDF_TARGET_ESP32
+    flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+#endif
     /* __builtin_parity is in flash, so we calculate parity inline */
     bool enabled = false;
-    while(flash_crypt_cnt) {
+    while (flash_crypt_cnt) {
         if (flash_crypt_cnt & 1) {
             enabled = !enabled;
         }
@@ -110,7 +117,7 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  * is enabled but secure boot is not used. This should protect against
  * serial re-flashing of an unauthorised code in absence of secure boot.
  *
- * @return 
+ * @return
  */
 void esp_flash_write_protect_crypt_cnt();
 

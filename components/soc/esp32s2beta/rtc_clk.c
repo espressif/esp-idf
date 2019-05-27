@@ -16,10 +16,10 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
-#include "rom/ets_sys.h"
-#include "rom/rtc.h"
-#include "rom/uart.h"
-#include "rom/gpio.h"
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/rom/rtc.h"
+#include "esp32s2beta/rom/uart.h"
+#include "esp32s2beta/rom/gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
@@ -201,8 +201,8 @@ void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M);
         REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, RTC_CNTL_CK8M_WAIT_DEFAULT);
     }
-    /* d256 should be independent configured with 8M 
-     * Maybe we can split this function into 8m and dmd256 
+    /* d256 should be independent configured with 8M
+     * Maybe we can split this function into 8m and dmd256
      */
     if (d256_en) {
         CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV);
@@ -226,7 +226,7 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
     REG_SET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD, enable ? 0 : 1);
     REG_SET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PU, enable ? 1 : 0);
 
-    /* BIAS I2C not exist any more, but not sure how to get the same effect yet... 
+    /* BIAS I2C not exist any more, but not sure how to get the same effect yet...
      * if (!enable &&
      *   REG_GET_FIELD(SYSCON_SYSCLK_CONF_REG, SYSCON_SOC_CLK_SEL) != SYSCON_SOC_CLK_SEL_PLL) {
      *   REG_SET_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PD);
@@ -236,7 +236,7 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
      */
 
     if (enable) {
-        /* no need to differentiate ECO chip any more 
+        /* no need to differentiate ECO chip any more
         uint8_t sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV1;
         uint32_t is_rev0 = (GET_PERI_REG_BITS2(EFUSE_BLK0_RDATA3_REG, 1, 15) == 0);
         if (is_rev0) {
@@ -427,7 +427,7 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
         ets_delay_us(1);
     }
     */
-    ets_delay_us(50000); 
+    ets_delay_us(50000);
 }
 
 /**
@@ -458,9 +458,9 @@ static void rtc_clk_cpu_freq_to_pll(rtc_cpu_freq_t cpu_freq)
 {
     int freq = 0;
     if ((s_cur_pll == RTC_PLL_NONE) || ((s_cur_pll == RTC_PLL_320M) && (cpu_freq == RTC_CPU_FREQ_240M))) {
-        /* 
+        /*
          * if switch from non-pll or switch from PLL 320M to 480M
-         * need to switch PLLs, fall back to full implementation 
+         * need to switch PLLs, fall back to full implementation
          */
         rtc_clk_cpu_freq_set(cpu_freq);
         return;
@@ -528,7 +528,6 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     /* may need equivalent function
     uint32_t apll_fpd = REG_GET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD);
 
-    
      * if (apll_fpd) {
      *   SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PD);
      * }
@@ -556,16 +555,16 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
             rtc_clk_bbpll_set(xtal_freq, RTC_PLL_480M);
             s_cur_pll = RTC_PLL_480M;
         }
-        
+
         if ((cpu_freq == RTC_CPU_FREQ_80M) || (cpu_freq == RTC_CPU_320M_80M)) {
             DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
-            ets_update_cpu_frequency(80);          
+            ets_update_cpu_frequency(80);
         } else if ((cpu_freq == RTC_CPU_FREQ_160M) || (cpu_freq == RTC_CPU_320M_160M)) {
             DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 1);
             ets_update_cpu_frequency(160);
         } else if (cpu_freq == RTC_CPU_FREQ_240M) {
             DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 2);
-            ets_update_cpu_frequency(240);     
+            ets_update_cpu_frequency(240);
         }
         REG_SET_FIELD(SYSCON_SYSCLK_CONF_REG, SYSCON_SOC_CLK_SEL, SYSCON_SOC_CLK_SEL_PLL);
         //rtc_clk_wait_for_slow_cycle();
@@ -752,7 +751,6 @@ void rtc_clk_8m_divider_set(uint32_t div)
 void rtc_clk_init(rtc_clk_config_t cfg)
 {
     rtc_cpu_freq_t cpu_source_before = rtc_clk_cpu_freq_get();
-    
     /* If we get a TG WDT system reset while running at 240MHz,
      * DPORT_CPUPERIOD_SEL register will be reset to 0 resulting in 120MHz
      * APB and CPU frequencies after reset. This will cause issues with XTAL
@@ -816,8 +814,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_apb_freq_update(xtal_freq * MHZ);
     /* Set CPU frequency */
     rtc_clk_cpu_freq_set(cfg.cpu_freq);
-    
-    /* Re-calculate the ccount to make time calculation correct. */    
+
+    /* Re-calculate the ccount to make time calculation correct. */
     uint32_t freq_before = rtc_clk_cpu_freq_value(cpu_source_before) / MHZ;
     uint32_t freq_after = rtc_clk_cpu_freq_value(cfg.cpu_freq) / MHZ;
     XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
