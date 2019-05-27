@@ -9,6 +9,7 @@ function(__kconfig_init)
         else()
             unset(WINPTY CACHE)  # in case previous CMake run was in a tty and this one is not
         endif()
+        unset(MCONF CACHE)  # needed when MSYS and CMD is intermixed (cache could contain an incompatible path)
         find_program(MCONF mconf-idf)
 
         # Fall back to the old binary which was called 'mconf' not 'mconf-idf'
@@ -30,7 +31,7 @@ function(__kconfig_init)
                     "Consult the setup docs for ESP-IDF on Windows.")
             endif()
         elseif(WINPTY)
-            set(MCONF "${WINPTY}" "${MCONF}")
+            set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
         endif()
     endif()
 
@@ -201,7 +202,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${sdkconfig}"
         ${mconf} ${root_kconfig}
-        VERBATIM
+        # VERBATIM cannot be used here because it cannot handle ${mconf}="winpty mconf-idf" and the escaping must be
+        # done manually
         USES_TERMINAL
         # additional run of confgen esures that the deprecated options will be inserted into sdkconfig (for backward
         # compatibility)
