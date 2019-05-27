@@ -495,6 +495,14 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     } else if (config->cert_pem) {
         esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
     }
+
+    if (config->client_cert_pem) {
+        esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+    }
+
+    if (config->client_key_pem) {
+        esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+    }
 #endif
 
     if (_set_config(client, config) != ESP_OK) {

@@ -105,7 +105,9 @@ typedef struct {
     esp_http_client_auth_type_t auth_type;           /*!< Http authentication type, see `esp_http_client_auth_type_t` */
     const char                  *path;               /*!< HTTP Path, if not set, default is `/` */
     const char                  *query;              /*!< HTTP query */
-    const char                  *cert_pem;           /*!< SSL Certification, PEM format as string, if the client requires to verify server */
+    const char                  *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
+    const char                  *client_cert_pem;    /*!< SSL client certification, PEM format as string, if the server requires to verify client */
+    const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
     bool                        disable_auto_redirect;    /*!< Disable HTTP automatic redirects */
