@@ -33,10 +33,8 @@ if(NOT BOOTLOADER_BUILD)
         idf_build_get_property(idf_path IDF_PATH)
         idf_build_get_property(python PYTHON)
         add_custom_command(OUTPUT ${blank_otadata_file}
-            COMMAND ${python} ${idf_path}/components/partition_table/parttool.py
-            --partition-type data --partition-subtype ota -q
-            --partition-table-file ${PARTITION_CSV_PATH} generate_blank_partition_file
-            --output ${blank_otadata_file})
+            COMMAND ${python} ${idf_path}/components/partition_table/gen_empty_partition.py
+            ${otadata_size} ${blank_otadata_file})
 
         add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
         add_dependencies(app blank_ota_data)
