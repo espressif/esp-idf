@@ -19,7 +19,6 @@
 #include "esp_log.h"
 #include "esp32/rom/crc.h"
 #include "esp32/rom/gpio.h"
-#include "esp_secure_boot.h"
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"

@@ -130,6 +130,9 @@ endfunction()
 # Automatically adds a -L search path for the containing directory (if found),
 # and then adds -T with the filename only. This allows INCLUDE directives to be
 # used to include other linker scripts in the same directory.
+#
+# TODO: currently multiple linker scripts must be supplied as a single list for "scriptfiles"
+# arg, cannot be supplied as list of args
 function(target_linker_script target scriptfiles)
     cmake_parse_arguments(_ "PROCESS" "" "" ${ARGN})
     foreach(scriptfile ${scriptfiles})

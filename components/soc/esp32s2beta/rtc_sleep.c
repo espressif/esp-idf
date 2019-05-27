@@ -25,7 +25,7 @@
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
-#include "rom/ets_sys.h"
+#include "esp32s2beta/rom/ets_sys.h"
 
 #define MHZ (1000000)
 
@@ -55,7 +55,7 @@ void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
 
 void rtc_sleep_init(rtc_sleep_config_t cfg)
 {
-    /* Already defined in rtc init 
+    /* Already defined in rtc init
     // set 5 PWC state machine times to fit in main state machine time
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, RTC_CNTL_PLL_BUF_WAIT_SLP);
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_XTL_BUF_WAIT, RTC_CNTL_XTL_BUF_WAIT_SLP);
@@ -68,7 +68,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         rtc_sleep_pd(pd_cfg);
     }
 
-    /* This option seems to be unneccessary 
+    /* This option seems to be unneccessary
     if (cfg.rtc_mem_inf_fpu) {
         SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_MEM_FORCE_PU);
     } else {
@@ -120,10 +120,10 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         /* redundant ? People may not want to touch such registers after init
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG,
                 RTC_CNTL_DG_PAD_FORCE_ISO | RTC_CNTL_DG_PAD_FORCE_NOISO);
-        
+
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG,
                 RTC_CNTL_DG_WRAP_FORCE_PU | RTC_CNTL_DG_WRAP_FORCE_PD);
-        
+
 #ifdef CONFIG_CHIP_IS_ESP32
         CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_FORCE_NOSLEEP);
 #endif

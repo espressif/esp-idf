@@ -1,9 +1,11 @@
 if(BOOTLOADER_BUILD)
-    # Bootloader needs SPIUnlock from this file, but doesn't
-    # need other parts of this component
-    set(COMPONENT_SRCS "spi_flash_rom_patch.c")
-    set(COMPONENT_PRIV_REQUIRES bootloader_support soc)
-else()
+    if (CONFIG_IDF_TARGET_ESP32)
+        # ESP32 Bootloader needs SPIUnlock from this file, but doesn't
+        # need other parts of this component
+        set(COMPONENT_SRCS "spi_flash_rom_patch.c")
+        set(COMPONENT_PRIV_REQUIRES bootloader_support soc)
+    endif()
+else()  # not BOOTLOADER_BUILD
     set(COMPONENT_SRCS "cache_utils.c"
                    "flash_mmap.c"
                    "flash_ops.c"

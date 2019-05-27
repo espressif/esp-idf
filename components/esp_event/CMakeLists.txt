@@ -8,8 +8,9 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS "private_include")
 
 set(COMPONENT_REQUIRES log tcpip_adapter)
-set(COMPONENT_PRIV_REQUIRES ethernet)
-set(COMPONENT_REQUIRES log tcpip_adapter ethernet)
+if(CONFIG_IDF_TARGET_ESP32)
+    set(COMPONENT_PRIV_REQUIRES ethernet)
+endif()
 
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 

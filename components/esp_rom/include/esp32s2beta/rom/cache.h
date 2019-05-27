@@ -15,6 +15,7 @@
 #ifndef _ROM_CACHE_H_
 #define _ROM_CACHE_H_
 
+#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

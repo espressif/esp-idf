@@ -29,7 +29,7 @@
 #include "esp32s2beta/rom/spi_flash.h"
 #endif
 
-static const char* TAG = "boot";
+static const char *TAG = "boot";
 
 static int select_partition_number (bootloader_state_t *bs);
 static int selected_boot_partition(const bootloader_state_t *bs);
@@ -95,7 +95,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
             return bootloader_utility_get_selected_boot_partition(bs);
         }
 #endif
-       // TEST firmware.
+        // TEST firmware.
 #ifdef CONFIG_BOOTLOADER_APP_TEST
         if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
             ESP_LOGI(TAG, "Detect a boot condition of the test firmware");

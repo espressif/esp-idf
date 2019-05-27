@@ -1,5 +1,3 @@
-require_idf_targets(esp32)
-
 set(COMPONENT_SRCS "emac_dev.c"
                    "emac_main.c"
                    "eth_phy/phy_common.c"

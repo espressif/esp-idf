@@ -340,7 +340,6 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: reserved at runtime.");
         return false;
     }
-
     //Ints can't be both shared and non-shared.
     assert(!((vd->flags&VECDESC_FL_SHARED)&&(vd->flags&VECDESC_FL_NONSHARED)));
     //check if interrupt already is in use by a non-shared interrupt
@@ -368,7 +367,6 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: already allocated");
         return false;
     }
-
     return true;
 }
 
@@ -384,7 +382,6 @@ static int get_available_int(int flags, int cpu, int force, int source)
     //Default vector desc, for vectors not in the linked list
     vector_desc_t empty_vect_desc;
     memset(&empty_vect_desc, 0, sizeof(vector_desc_t));
-
 
     //Level defaults to any low/med interrupt
     if (!(flags&ESP_INTR_FLAG_LEVELMASK)) flags|=ESP_INTR_FLAG_LOWMED;
@@ -433,12 +430,10 @@ static int get_available_int(int flags, int cpu, int force, int source)
         ALCHLOG("Int %d reserved %d level %d %s hasIsr %d",
             x, int_desc[x].cpuflags[cpu]==INTDESC_RESVD, int_desc[x].level,
             int_desc[x].type==INTTP_LEVEL?"LEVEL":"EDGE", int_has_handler(x, cpu));
-
         if ( !is_vect_desc_usable(vd, flags, cpu, force) ) continue;
 
         if (flags&ESP_INTR_FLAG_SHARED) {
             //We're allocating a shared int.
-
             //See if int already is used as a shared interrupt.
             if (vd->flags&VECDESC_FL_SHARED) {
                 //We can use this already-marked-as-shared interrupt. Count the already attached isrs in order to see

@@ -16,7 +16,7 @@
 #define _ROM_SECURE_BOOT_H_
 
 #include <stdint.h>
-#include "rom/rsa_pss.h"
+#include "rsa_pss.h"
 
 #ifdef __cplusplus
 extern "C" {

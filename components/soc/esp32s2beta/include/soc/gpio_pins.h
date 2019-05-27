@@ -1,9 +1,9 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,14 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef _GPIO_PINS_H
+#define _GPIO_PINS_H
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-/** @brief Configure clocks for early boot
- *
- * Called by bootloader, or by the app if the bootloader version is old (pre v2.1).
- */
-void bootloader_clock_configure(void);
+#define GPIO_PIN_COUNT                  48
 
-/** @brief Return the rated maximum frequency of this chip
- */
-int bootloader_clock_get_rated_freq_mhz(void);
+#ifdef __cplusplus
+}
+#endif
+
+#endif // _GPIO_PINS_H

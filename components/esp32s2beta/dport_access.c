@@ -116,7 +116,6 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
 {
 #ifndef CONFIG_FREERTOS_UNICORE
     int cpu_id = xPortGetCoreID();
-
     if (dport_core_state[0] == DPORT_CORE_STATE_IDLE
             || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
         return;

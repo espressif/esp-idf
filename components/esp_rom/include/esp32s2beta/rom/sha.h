@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "rom/ets_sys.h"
+#include "ets_sys.h"
 
 #ifdef __cplusplus
 extern "C" {

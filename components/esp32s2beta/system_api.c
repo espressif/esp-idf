@@ -200,7 +200,6 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         ESP_LOGW(TAG, "incorrect mac type");
         break;
     }
-
     return ESP_OK;
 }
 
@@ -366,4 +365,3 @@ void esp_chip_info(esp_chip_info_t* out_info)
     out_info->features = CHIP_FEATURE_WIFI_BGN;
 
     // FIXME: other features?
-}

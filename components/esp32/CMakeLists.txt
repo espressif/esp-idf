@@ -1,11 +1,11 @@
-require_idf_targets(esp32)
+# require_idf_targets(esp32)
 
-if(BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD AND CONFIG_IDF_TARGET_ESP32)
     # For bootloader, all we need from esp32 is headers
     set(COMPONENT_ADD_INCLUDEDIRS include)
     register_component()
     target_linker_script(${COMPONENT_LIB} "ld/esp32.peripherals.ld")
-else()
+elseif(CONFIG_IDF_TARGET_ESP32)
     # Regular app build
 
     set(COMPONENT_SRCS "brownout.c"
