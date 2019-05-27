@@ -39,7 +39,7 @@ function(partition_table_get_partition_info result get_part_info_args part_info)
         ${idf_path}/components/partition_table/parttool.py -q
         --partition-table-offset ${PARTITION_TABLE_OFFSET}
         --partition-table-file ${PARTITION_CSV_PATH}
-        ${get_part_info_args} get_partition_info --info ${part_info}
+        get_partition_info ${get_part_info_args} --info ${part_info}
         OUTPUT_VARIABLE info
         RESULT_VARIABLE exit_code
         OUTPUT_STRIP_TRAILING_WHITESPACE)
