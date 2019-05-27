@@ -137,7 +137,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     set(sdkconfig_cmake ${config_dir}/sdkconfig.cmake)
     set(sdkconfig_header ${config_dir}/sdkconfig.h)
     set(sdkconfig_json ${config_dir}/sdkconfig.json)
-    set(sdkconfig_json_menus ${config_dir}/${kconfig_menus}.json)
+    set(sdkconfig_json_menus ${config_dir}/kconfig_menus.json)
 
     idf_build_get_property(output_sdkconfig __OUTPUT_SDKCONFIG)
     if(output_sdkconfig)

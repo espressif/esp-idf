@@ -91,7 +91,7 @@ function(__build_set_default_build_specifications)
     unset(c_compile_options)
     unset(cxx_compile_options)
 
-    list(APPEND compile_definitions "-DHAVE_CONFIG_H" "-D_GNU_SOURCE")
+    list(APPEND compile_definitions "-D_GNU_SOURCE")
 
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"
@@ -441,6 +441,14 @@ macro(idf_build_process target)
         __component_get_property(lib ${component_target} COMPONENT_LIB)
         idf_build_set_property(___COMPONENT_REQUIRES_COMMON ${lib} APPEND)
     endforeach()
+
+    # Temporary trick to support both gcc5 and gcc8 builds
+    if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
+        set(GCC_NOT_5_2_0 0 CACHE STRING "GCC is 5.2.0 version")
+    else()
+        set(GCC_NOT_5_2_0 1 CACHE STRING "GCC is not 5.2.0 version")
+    endif()
+    idf_build_set_property(COMPILE_DEFINITIONS "-DGCC_NOT_5_2_0" APPEND)
 
     # All targets built under this scope is with the ESP-IDF build system
     set(ESP_PLATFORM 1)
