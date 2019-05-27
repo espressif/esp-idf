@@ -29,27 +29,22 @@ To compile ULP code as part of a component, the following steps must be taken:
 
 .. note: This directory should not be added to the ``COMPONENT_SRCDIRS`` environment variable. The logic behind this is that the ESP-IDF build system will compile files found in ``COMPONENT_SRCDIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``COMPONENT_SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
 
-2. Modify component CMakeLists.txt, appending the necessary ULP CMake definitions. As an example::
+2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 
-    set(ULP_APP_NAME ulp_${COMPONENT_NAME})
-    set(ULP_S_SOURCES ulp/ulp_assembly_source_file.S)
-    set(ULP_EXP_DEP_SRCS "ulp_c_source_file.c")
-    include(${IDF_PATH}/components/ulp/component_ulp_common.cmake)
+    ...
+    register_component()
 
-   Here is each line explained:
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_s_sources ulp/ulp_assembly_source_file.S)
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
 
-   set(ULP_APP_NAME ulp_${COMPONENT_NAME})
-    Sets the name of the generated ULP application, without an extension. This name is used for build products of the ULP application: ELF file, map file, binary file, generated header file, and generated linker export file.
+    ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
 
-   set(ULP_S_SOURCES "ulp/ulp_assembly_source_file_1.S ulp/ulp_assembly_source_file_2.S")
-    Sets list of assembly files to be passed to the ULP assembler. The list should be space-delimited and the paths can either be absolute or relative to component CMakeLists.txt.
-
-   set(ULP_EXP_DEP_SRCS "ulp_c_source_file_1.c ulp_c_source_file_2.c")
-    Sets list of source files names within the component which include the generated header file. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See section below explaining the concept of generated header files for ULP applications.
-    The list should be space-delimited and the paths can either be absolute or relative to component CMakeLists.txt.
-
-   include(${IDF_PATH}/components/ulp/component_ulp_common.cmake)
-    Includes common definitions of ULP build steps. Configures build for ULP object files, ELF file, binary file, etc using the ULP toolchain.
+ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used other generated artifacts 
+ such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP assembly source files. 
+ Finally, the third argument specifies the list of component source files which include the header file to be generated. 
+ This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. 
+ See section below explaining the concept of generated header files for ULP applications. 
 
 3. Build the application as usual (e.g. `idf.py app`)
 
