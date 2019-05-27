@@ -24,3 +24,5 @@ set(COMPONENT_SRCS "nghttp2/lib/nghttp2_buf.c"
                    "port/http_parser.c")
 
 register_component()
+
+target_compile_definitions(${COMPONENT_LIB} PUBLIC "-DHAVE_CONFIG_H")
