@@ -64,7 +64,15 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        if sys.platform == "win32" and os.environ.get("MSYSTEM", None) == "MINGW32" and "/mingw32/bin/python" in sys.executable:
+        if os.environ.get('IDF_PYTHON_ENV_PATH'):
+            # We are running inside a private virtual environment under IDF_TOOLS_PATH,
+            # ask the user to run install.bat again.
+            if sys.platform == "win32" and not os.environ.get("MSYSTEM"):
+                install_script = 'install.bat'
+            else:
+                install_script = 'install.sh'
+            print('To install the missing packages, please run "%s"' % os.path.join(idf_path, install_script))
+        elif sys.platform == "win32" and os.environ.get("MSYSTEM", None) == "MINGW32" and "/mingw32/bin/python" in sys.executable:
             print("The recommended way to install a packages is via \"pacman\". Please run \"pacman -Ss <package_name>\" for"
                   " searching the package database and if found then "
                   "\"pacman -S mingw-w64-i686-python{}-<package_name>\" for installing it.".format(sys.version_info[0],))
