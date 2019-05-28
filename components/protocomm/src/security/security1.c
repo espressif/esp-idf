@@ -198,7 +198,7 @@ static esp_err_t handle_session_command0(uint32_t session_id,
     mbedtls_ecdh_context     *ctx_server = malloc(sizeof(mbedtls_ecdh_context));
     mbedtls_entropy_context  *entropy    = malloc(sizeof(mbedtls_entropy_context));
     mbedtls_ctr_drbg_context *ctr_drbg   = malloc(sizeof(mbedtls_ctr_drbg_context));
-    if (!ctx_server || !ctx_server || !ctr_drbg) {
+    if (!ctx_server || !entropy || !ctr_drbg) {
         ESP_LOGE(TAG, "Failed to allocate memory for mbedtls context");
         free(ctx_server);
         free(entropy);
