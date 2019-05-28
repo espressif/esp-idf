@@ -15,3 +15,8 @@ python:
   version: 2.7
   install:
     - requirements: docs/requirements.txt
+
+# We need to list all the submodules included in documenation build by DOxygen
+submodules: 
+  include:
+    - components/mqtt/esp-mqtt
