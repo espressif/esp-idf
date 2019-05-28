@@ -51,6 +51,10 @@ PYTHON = sys.executable
 # you have to pass env=os.environ explicitly anywhere that we create a process
 os.environ["PYTHON"] = sys.executable
 
+# Name of the program, normally 'idf.py'.
+# Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
+PROG = os.getenv('IDF_PY_PROGRAM_NAME', sys.argv[0])
+
 # Make flavors, across the various kinds of Windows environments & POSIX...
 if "MSYSTEM" in os.environ:  # MSYS
     MAKE_CMD = "make"
@@ -105,15 +109,15 @@ def check_environment():
     (cmake will check a lot of other things)
     """
     if not executable_exists(["cmake", "--version"]):
-        raise FatalError("'cmake' must be available on the PATH to use idf.py")
+        raise FatalError("'cmake' must be available on the PATH to use %s" % PROG)
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
     detected_idf_path = _realpath(os.path.join(os.path.dirname(__file__), ".."))
     if "IDF_PATH" in os.environ:
         set_idf_path = _realpath(os.environ["IDF_PATH"])
         if set_idf_path != detected_idf_path:
-            print("WARNING: IDF_PATH environment variable is set to %s but idf.py path indicates IDF directory %s. "
+            print("WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
                   "Using the environment variable directory, but results may be unexpected..."
-                  % (set_idf_path, detected_idf_path))
+                  % (set_idf_path, PROG, detected_idf_path))
     else:
         print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
@@ -143,7 +147,7 @@ def detect_cmake_generator():
     for (generator, _, version_check, _) in GENERATORS:
         if executable_exists(version_check):
             return generator
-    raise FatalError("To use idf.py, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
+    raise FatalError("To use %s, either the 'ninja' or 'GNU make' build tool must be available in the PATH" % PROG)
 
 
 def _ensure_build_directory(args, always_run_cmake=False):
@@ -160,9 +164,9 @@ def _ensure_build_directory(args, always_run_cmake=False):
     # Verify the project directory
     if not os.path.isdir(project_dir):
         if not os.path.exists(project_dir):
-            raise FatalError("Project directory %s does not exist")
+            raise FatalError("Project directory %s does not exist" % project_dir)
         else:
-            raise FatalError("%s must be a project directory")
+            raise FatalError("%s must be a project directory" % project_dir)
     if not os.path.exists(os.path.join(project_dir, "CMakeLists.txt")):
         raise FatalError("CMakeLists.txt not found in project directory %s" % project_dir)
 
@@ -201,14 +205,14 @@ def _ensure_build_directory(args, always_run_cmake=False):
     if args.generator is None:
         args.generator = generator  # reuse the previously configured generator, if none was given
     if generator != args.generator:
-        raise FatalError("Build is configured for generator '%s' not '%s'. Run 'idf.py fullclean' to start again."
-                         % (generator, args.generator))
+        raise FatalError("Build is configured for generator '%s' not '%s'. Run '%s fullclean' to start again."
+                         % (generator, args.generator, PROG))
 
     try:
         home_dir = cache["CMAKE_HOME_DIRECTORY"]
         if _realpath(home_dir) != _realpath(project_dir):
-            raise FatalError("Build directory '%s' configured for project '%s' not '%s'. Run 'idf.py fullclean' to start again."
-                             % (build_dir, _realpath(home_dir), _realpath(project_dir)))
+            raise FatalError("Build directory '%s' configured for project '%s' not '%s'. Run '%s fullclean' to start again."
+                             % (build_dir, _realpath(home_dir), _realpath(project_dir), PROG))
     except KeyError:
         pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
 
@@ -310,7 +314,7 @@ def monitor(action, args):
     if not os.path.exists(elf_file):
         raise FatalError("ELF file '%s' not found. You need to build & flash the project before running 'monitor', "
                          "and the binary on the device must match the one in the build directory exactly. "
-                         "Try 'idf.py flash monitor'." % elf_file)
+                         "Try '%s flash monitor'." % (elf_file, PROG))
     idf_monitor = os.path.join(os.environ["IDF_PATH"], "tools/idf_monitor.py")
     monitor_args = [PYTHON, idf_monitor]
     if args.port is not None:
@@ -440,7 +444,7 @@ def print_closing_message(args):
             args.baud,
             flasher_args["extra_esptool_args"]["after"],
             cmd.strip()))
-        print("or run 'idf.py -p %s %s'" % (args.port or "(PORT)", key + "-flash" if key != "project" else "flash",))
+        print("or run '%s -p %s %s'" % (PROG, args.port or "(PORT)", key + "-flash" if key != "project" else "flash",))
 
     if "all" in args.actions or "build" in args.actions:
         print_flashing_message("Project", "project")
@@ -543,7 +547,7 @@ def main():
     except NameError:
         pass
 
-    parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
+    parser = argparse.ArgumentParser(prog=PROG, description='ESP-IDF build management tool')
     parser.add_argument('-p', '--port', help="Serial port",
                         default=os.environ.get('ESPPORT', None))
     parser.add_argument('-b', '--baud', help="Baud rate",

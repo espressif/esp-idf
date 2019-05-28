@@ -2,9 +2,16 @@
 # This script finds executable files in the repository, excluding some directories,
 # then prints the list of all files which are not in executable-list.txt.
 # Returns with error if this list is non-empty.
+# Also checks if executable-list.txt is sorted and has no duplicates.
+
+set -o errexit # Exit if command failed.
+set -o pipefail # Exit if pipe failed.
+set -o nounset # Exit if variable not set.
+
 
 cd $IDF_PATH
 
+in_list=tools/ci/executable-list.txt
 tmp_list=$(mktemp)
 out_list=$(mktemp)
 
@@ -27,7 +34,7 @@ find . -type d \( \
     | sed "s|^\./||" > $tmp_list
 
 # this looks for lines present in tmp_list but not in executable-list.txt
-comm -13 <(cat tools/ci/executable-list.txt | sed -n "/^#/!p" | sort) <(sort $tmp_list) > $out_list
+comm -13 <(cat $in_list | sed -n "/^#/!p" | sort) <(sort $tmp_list) > $out_list
 
 ret=0
 if [ -s $out_list ]; then
@@ -41,6 +48,17 @@ if [ -s $out_list ]; then
     echo "On Windows, use 'git update-index --chmod=-x filename' instead."
     echo ""
 fi
+
+if ! diff <(cat $in_list | sed -n "/^#/!p" | sort | uniq) $in_list; then
+    echo "$in_list is not sorted or has duplicate entries"
+    ret=2
+fi
+
+for filename in $(cat $in_list | sed -n "/^#/!p"); do
+    if [ ! -f "$filename" ]; then
+        echo "Warning: file '$filename' is present in '$in_list', but does not exist"
+    fi
+done
 
 rm $tmp_list
 rm $out_list

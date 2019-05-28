@@ -601,6 +601,14 @@ test_idf_size:
     - cd ${IDF_PATH}/tools/test_idf_size
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
 
+test_idf_tools:
+  <<: *host_test_template
+  script:
+    # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
+    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/opt/espressif${CUSTOM_TOOLCHAIN_PATH:+\|${CUSTOM_TOOLCHAIN_PATH}}" | tr "\n" ":"); echo ${p%:})
+    - cd ${IDF_PATH}/tools/test_idf_tools
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
+
 test_esp_err_to_name_on_host:
   <<: *host_test_template
   artifacts:
