@@ -454,8 +454,6 @@ The order of components in the ``BUILD_COMPONENTS`` variable determines other or
 
 - Order that :ref:`project_include.cmake` files are included into the project.
 - Order that the list of header paths is generated for compilation (via ``-I`` argument). (Note that for a given component's source files, only that component's dependency's header paths are passed to the compiler.)
-- Order that component object archives are passed to the linker (note that the build system also passes ``--start-group`` and ``--end-group`` to the linker to allow cycles in linker dependencies, however the basic order is determined by ``BUILD_COMPONENTS``.
-
 
 Build Process Internals
 =======================
