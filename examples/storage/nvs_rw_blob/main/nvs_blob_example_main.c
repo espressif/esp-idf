@@ -27,7 +27,7 @@
  */
 esp_err_t save_restart_counter(void)
 {
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     esp_err_t err;
 
     // Open
@@ -64,7 +64,7 @@ esp_err_t save_restart_counter(void)
  */
 esp_err_t save_run_time(void)
 {
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     esp_err_t err;
 
     // Open
@@ -110,7 +110,7 @@ esp_err_t save_run_time(void)
  */
 esp_err_t print_what_saved(void)
 {
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     esp_err_t err;
 
     // Open

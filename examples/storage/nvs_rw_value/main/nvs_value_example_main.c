@@ -31,7 +31,7 @@ void app_main()
     // Open
     printf("\n");
     printf("Opening Non-Volatile Storage (NVS) handle... ");
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));

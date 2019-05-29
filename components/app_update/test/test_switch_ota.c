@@ -387,7 +387,7 @@ static void test_flow4(void)
     boot_count++;
     ESP_LOGI(TAG, "boot count %d", boot_count);
     const esp_partition_t *cur_app = get_running_firmware();
-    nvs_handle handle = 0;
+    nvs_handle_t handle = 0;
     int boot_count_nvs = 0;
     switch (boot_count) {
         case 2:

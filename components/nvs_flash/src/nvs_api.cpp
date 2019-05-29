@@ -55,7 +55,7 @@ public:
     {
     }
 
-    nvs_handle mHandle;
+    nvs_handle_t mHandle;
     uint8_t mReadOnly;
     uint8_t mNsIndex;
     nvs::Storage* mStoragePtr;
@@ -253,7 +253,7 @@ extern "C" esp_err_t nvs_flash_deinit(void)
     return nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
 }
 
-static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)
+static esp_err_t nvs_find_ns_handle(nvs_handle_t handle, HandleEntry& entry)
 {
     auto it = find_if(begin(s_nvs_handles), end(s_nvs_handles), [=](HandleEntry& e) -> bool {
         return e.mHandle == handle;
@@ -265,7 +265,7 @@ static esp_err_t nvs_find_ns_handle(nvs_handle handle, HandleEntry& entry)
     return ESP_OK;
 }
 
-extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_open_mode open_mode, nvs_handle *out_handle)
+extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s %d", __func__, name, open_mode);
@@ -290,7 +290,7 @@ extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* 
     return ESP_OK;
 }
 
-extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle)
+extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle)
 {
     if (s_nvs_storage_list.size() == 0) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
@@ -299,7 +299,7 @@ extern "C" esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_han
     return nvs_open_from_partition(NVS_DEFAULT_PART_NAME, name, open_mode, out_handle);
 }
 
-extern "C" void nvs_close(nvs_handle handle)
+extern "C" void nvs_close(nvs_handle_t handle)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %d", __func__, handle);
@@ -313,7 +313,7 @@ extern "C" void nvs_close(nvs_handle handle)
     delete static_cast<HandleEntry*>(it);
 }
 
-extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)
+extern "C" esp_err_t nvs_erase_key(nvs_handle_t handle, const char* key)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s\r\n", __func__, key);
@@ -328,7 +328,7 @@ extern "C" esp_err_t nvs_erase_key(nvs_handle handle, const char* key)
     return entry.mStoragePtr->eraseItem(entry.mNsIndex, key);
 }
 
-extern "C" esp_err_t nvs_erase_all(nvs_handle handle)
+extern "C" esp_err_t nvs_erase_all(nvs_handle_t handle)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s\r\n", __func__);
@@ -344,7 +344,7 @@ extern "C" esp_err_t nvs_erase_all(nvs_handle handle)
 }
 
 template<typename T>
-static esp_err_t nvs_set(nvs_handle handle, const char* key, T value)
+static esp_err_t nvs_set(nvs_handle_t handle, const char* key, T value)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s %d %d", __func__, key, sizeof(T), (uint32_t) value);
@@ -359,47 +359,47 @@ static esp_err_t nvs_set(nvs_handle handle, const char* key, T value)
     return entry.mStoragePtr->writeItem(entry.mNsIndex, key, value);
 }
 
-extern "C" esp_err_t nvs_set_i8  (nvs_handle handle, const char* key, int8_t value)
+extern "C" esp_err_t nvs_set_i8  (nvs_handle_t handle, const char* key, int8_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_u8  (nvs_handle handle, const char* key, uint8_t value)
+extern "C" esp_err_t nvs_set_u8  (nvs_handle_t handle, const char* key, uint8_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_i16 (nvs_handle handle, const char* key, int16_t value)
+extern "C" esp_err_t nvs_set_i16 (nvs_handle_t handle, const char* key, int16_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_u16 (nvs_handle handle, const char* key, uint16_t value)
+extern "C" esp_err_t nvs_set_u16 (nvs_handle_t handle, const char* key, uint16_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_i32 (nvs_handle handle, const char* key, int32_t value)
+extern "C" esp_err_t nvs_set_i32 (nvs_handle_t handle, const char* key, int32_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_u32 (nvs_handle handle, const char* key, uint32_t value)
+extern "C" esp_err_t nvs_set_u32 (nvs_handle_t handle, const char* key, uint32_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_i64 (nvs_handle handle, const char* key, int64_t value)
+extern "C" esp_err_t nvs_set_i64 (nvs_handle_t handle, const char* key, int64_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_set_u64 (nvs_handle handle, const char* key, uint64_t value)
+extern "C" esp_err_t nvs_set_u64 (nvs_handle_t handle, const char* key, uint64_t value)
 {
     return nvs_set(handle, key, value);
 }
 
-extern "C" esp_err_t nvs_commit(nvs_handle handle)
+extern "C" esp_err_t nvs_commit(nvs_handle_t handle)
 {
     Lock lock;
     // no-op for now, to be used when intermediate cache is added
@@ -407,7 +407,7 @@ extern "C" esp_err_t nvs_commit(nvs_handle handle)
     return nvs_find_ns_handle(handle, entry);
 }
 
-extern "C" esp_err_t nvs_set_str(nvs_handle handle, const char* key, const char* value)
+extern "C" esp_err_t nvs_set_str(nvs_handle_t handle, const char* key, const char* value)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s %s", __func__, key, value);
@@ -419,7 +419,7 @@ extern "C" esp_err_t nvs_set_str(nvs_handle handle, const char* key, const char*
     return entry.mStoragePtr->writeItem(entry.mNsIndex, nvs::ItemType::SZ, key, value, strlen(value) + 1);
 }
 
-extern "C" esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length)
+extern "C" esp_err_t nvs_set_blob(nvs_handle_t handle, const char* key, const void* value, size_t length)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s %d", __func__, key, length);
@@ -433,7 +433,7 @@ extern "C" esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void
 
 
 template<typename T>
-static esp_err_t nvs_get(nvs_handle handle, const char* key, T* out_value)
+static esp_err_t nvs_get(nvs_handle_t handle, const char* key, T* out_value)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s %d", __func__, key, sizeof(T));
@@ -445,47 +445,47 @@ static esp_err_t nvs_get(nvs_handle handle, const char* key, T* out_value)
     return entry.mStoragePtr->readItem(entry.mNsIndex, key, *out_value);
 }
 
-extern "C" esp_err_t nvs_get_i8  (nvs_handle handle, const char* key, int8_t* out_value)
+extern "C" esp_err_t nvs_get_i8  (nvs_handle_t handle, const char* key, int8_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_u8  (nvs_handle handle, const char* key, uint8_t* out_value)
+extern "C" esp_err_t nvs_get_u8  (nvs_handle_t handle, const char* key, uint8_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_i16 (nvs_handle handle, const char* key, int16_t* out_value)
+extern "C" esp_err_t nvs_get_i16 (nvs_handle_t handle, const char* key, int16_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_u16 (nvs_handle handle, const char* key, uint16_t* out_value)
+extern "C" esp_err_t nvs_get_u16 (nvs_handle_t handle, const char* key, uint16_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_i32 (nvs_handle handle, const char* key, int32_t* out_value)
+extern "C" esp_err_t nvs_get_i32 (nvs_handle_t handle, const char* key, int32_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value)
+extern "C" esp_err_t nvs_get_u32 (nvs_handle_t handle, const char* key, uint32_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_i64 (nvs_handle handle, const char* key, int64_t* out_value)
+extern "C" esp_err_t nvs_get_i64 (nvs_handle_t handle, const char* key, int64_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-extern "C" esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* out_value)
+extern "C" esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value)
 {
     return nvs_get(handle, key, out_value);
 }
 
-static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, const char* key, void* out_value, size_t* length)
+static esp_err_t nvs_get_str_or_blob(nvs_handle_t handle, nvs::ItemType type, const char* key, void* out_value, size_t* length)
 {
     Lock lock;
     ESP_LOGD(TAG, "%s %s", __func__, key);
@@ -515,12 +515,12 @@ static esp_err_t nvs_get_str_or_blob(nvs_handle handle, nvs::ItemType type, cons
     return entry.mStoragePtr->readItem(entry.mNsIndex, type, key, out_value, dataSize);
 }
 
-extern "C" esp_err_t nvs_get_str(nvs_handle handle, const char* key, char* out_value, size_t* length)
+extern "C" esp_err_t nvs_get_str(nvs_handle_t handle, const char* key, char* out_value, size_t* length)
 {
     return nvs_get_str_or_blob(handle, nvs::ItemType::SZ, key, out_value, length);
 }
 
-extern "C" esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size_t* length)
+extern "C" esp_err_t nvs_get_blob(nvs_handle_t handle, const char* key, void* out_value, size_t* length)
 {
     return nvs_get_str_or_blob(handle, nvs::ItemType::BLOB, key, out_value, length);
 }
@@ -550,7 +550,7 @@ extern "C" esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats
     return pStorage->fillStats(*nvs_stats);
 }
 
-extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle handle, size_t* used_entries)
+extern "C" esp_err_t nvs_get_used_entry_count(nvs_handle_t handle, size_t* used_entries)
 {
     Lock lock;
     if(used_entries == NULL){

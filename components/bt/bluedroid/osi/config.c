@@ -48,7 +48,7 @@ struct config_t {
 // Empty definition; this type is aliased to list_node_t.
 struct config_section_iter_t {};
 
-static void config_parse(nvs_handle fp, config_t *config);
+static void config_parse(nvs_handle_t fp, config_t *config);
 
 static section_t *section_new(const char *name);
 static void section_free(void *ptr);
@@ -89,7 +89,7 @@ config_t *config_new(const char *filename)
     }
 
     esp_err_t err;
-    nvs_handle fp;
+    nvs_handle_t fp;
     err = nvs_open(filename, NVS_READWRITE, &fp);
     if (err != ESP_OK) {
         if (err == ESP_ERR_NVS_NOT_INITIALIZED) {
@@ -331,7 +331,7 @@ static int get_config_size(const config_t *config)
     return total_size;
 }
 
-static int get_config_size_from_flash(nvs_handle fp)
+static int get_config_size_from_flash(nvs_handle_t fp)
 {
     assert(fp != 0);
 
@@ -384,7 +384,7 @@ bool config_save(const config_t *config, const char *filename)
 
     esp_err_t err;
     int err_code = 0;
-    nvs_handle fp;
+    nvs_handle_t fp;
     char *line = osi_calloc(1024);
     const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
     char *keyname = osi_calloc(keyname_bufsz);
@@ -507,7 +507,7 @@ static char *trim(char *str)
     return str;
 }
 
-static void config_parse(nvs_handle fp, config_t *config)
+static void config_parse(nvs_handle_t fp, config_t *config)
 {
     assert(fp != 0);
     assert(config != NULL);

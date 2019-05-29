@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -26,7 +27,12 @@ extern "C" {
 /**
  * Opaque pointer type representing non-volatile storage handle
  */
-typedef uint32_t nvs_handle;
+typedef uint32_t nvs_handle_t;
+
+/*
+ * Pre-IDF V4.0 uses nvs_handle, so leaving the original typedef here for compatibility.
+ */
+typedef nvs_handle_t nvs_handle IDF_DEPRECATED("Replace with nvs_handle_t");
 
 #define ESP_ERR_NVS_BASE                    0x1100                     /*!< Starting number of error codes */
 #define ESP_ERR_NVS_NOT_INITIALIZED         (ESP_ERR_NVS_BASE + 0x01)  /*!< The storage driver is not initialized */
@@ -57,14 +63,19 @@ typedef uint32_t nvs_handle;
 #define ESP_ERR_NVS_CONTENT_DIFFERS         (ESP_ERR_NVS_BASE + 0x18)  /*!< Internal error; never returned by nvs API functions.  NVS key is different in comparison */
 
 #define NVS_DEFAULT_PART_NAME           "nvs"   /*!< Default partition name of the NVS partition in the partition table */
+
 /**
  * @brief Mode of opening the non-volatile storage
- *
  */
 typedef enum {
 	NVS_READONLY,  /*!< Read only */
 	NVS_READWRITE  /*!< Read and write */
-} nvs_open_mode;
+} nvs_open_mode_t;
+
+/*
+ * Pre-IDF V4.0 uses nvs_open_mode, so leaving the original typedef here for compatibility.
+ */
+typedef nvs_open_mode_t nvs_open_mode IDF_DEPRECATED("Replace with nvs_open_mode_t");
 
 typedef enum {
     NVS_TYPE_U8    = 0x01,
@@ -107,7 +118,7 @@ typedef enum {
  *             - ESP_ERR_NVS_INVALID_NAME if namespace name doesn't satisfy constraints
  *             - other error codes from the underlying storage driver
  */
-esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_handle);
+esp_err_t nvs_open(const char* name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle);
 
 /**
  * @brief      Open non-volatile storage with a given namespace from specified partition
@@ -135,7 +146,7 @@ esp_err_t nvs_open(const char* name, nvs_open_mode open_mode, nvs_handle *out_ha
  *             - ESP_ERR_NVS_INVALID_NAME if namespace name doesn't satisfy constraints
  *             - other error codes from the underlying storage driver
  */
-esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_open_mode open_mode, nvs_handle *out_handle);
+esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_open_mode_t open_mode, nvs_handle_t *out_handle);
 
 /**@{*/
 /**
@@ -166,15 +177,15 @@ esp_err_t nvs_open_from_partition(const char *part_name, const char* name, nvs_o
  *               flash operation doesn't fail again.
  *             - ESP_ERR_NVS_VALUE_TOO_LONG if the string value is too long
  */
-esp_err_t nvs_set_i8  (nvs_handle handle, const char* key, int8_t value);
-esp_err_t nvs_set_u8  (nvs_handle handle, const char* key, uint8_t value);
-esp_err_t nvs_set_i16 (nvs_handle handle, const char* key, int16_t value);
-esp_err_t nvs_set_u16 (nvs_handle handle, const char* key, uint16_t value);
-esp_err_t nvs_set_i32 (nvs_handle handle, const char* key, int32_t value);
-esp_err_t nvs_set_u32 (nvs_handle handle, const char* key, uint32_t value);
-esp_err_t nvs_set_i64 (nvs_handle handle, const char* key, int64_t value);
-esp_err_t nvs_set_u64 (nvs_handle handle, const char* key, uint64_t value);
-esp_err_t nvs_set_str (nvs_handle handle, const char* key, const char* value);
+esp_err_t nvs_set_i8  (nvs_handle_t handle, const char* key, int8_t value);
+esp_err_t nvs_set_u8  (nvs_handle_t handle, const char* key, uint8_t value);
+esp_err_t nvs_set_i16 (nvs_handle_t handle, const char* key, int16_t value);
+esp_err_t nvs_set_u16 (nvs_handle_t handle, const char* key, uint16_t value);
+esp_err_t nvs_set_i32 (nvs_handle_t handle, const char* key, int32_t value);
+esp_err_t nvs_set_u32 (nvs_handle_t handle, const char* key, uint32_t value);
+esp_err_t nvs_set_i64 (nvs_handle_t handle, const char* key, int64_t value);
+esp_err_t nvs_set_u64 (nvs_handle_t handle, const char* key, uint64_t value);
+esp_err_t nvs_set_str (nvs_handle_t handle, const char* key, const char* value);
 /**@}*/ 
 
 /**
@@ -204,7 +215,7 @@ esp_err_t nvs_set_str (nvs_handle handle, const char* key, const char* value);
  *               flash operation doesn't fail again.
  *             - ESP_ERR_NVS_VALUE_TOO_LONG if the value is too long
  */
-esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, size_t length);
+esp_err_t nvs_set_blob(nvs_handle_t handle, const char* key, const void* value, size_t length);
 
 /**@{*/
 /**
@@ -244,14 +255,14 @@ esp_err_t nvs_set_blob(nvs_handle handle, const char* key, const void* value, si
  *             - ESP_ERR_NVS_INVALID_NAME if key name doesn't satisfy constraints
  *             - ESP_ERR_NVS_INVALID_LENGTH if length is not sufficient to store data
  */
-esp_err_t nvs_get_i8  (nvs_handle handle, const char* key, int8_t* out_value);
-esp_err_t nvs_get_u8  (nvs_handle handle, const char* key, uint8_t* out_value);
-esp_err_t nvs_get_i16 (nvs_handle handle, const char* key, int16_t* out_value);
-esp_err_t nvs_get_u16 (nvs_handle handle, const char* key, uint16_t* out_value);
-esp_err_t nvs_get_i32 (nvs_handle handle, const char* key, int32_t* out_value);
-esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value);
-esp_err_t nvs_get_i64 (nvs_handle handle, const char* key, int64_t* out_value);
-esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* out_value);
+esp_err_t nvs_get_i8  (nvs_handle_t handle, const char* key, int8_t* out_value);
+esp_err_t nvs_get_u8  (nvs_handle_t handle, const char* key, uint8_t* out_value);
+esp_err_t nvs_get_i16 (nvs_handle_t handle, const char* key, int16_t* out_value);
+esp_err_t nvs_get_u16 (nvs_handle_t handle, const char* key, uint16_t* out_value);
+esp_err_t nvs_get_i32 (nvs_handle_t handle, const char* key, int32_t* out_value);
+esp_err_t nvs_get_u32 (nvs_handle_t handle, const char* key, uint32_t* out_value);
+esp_err_t nvs_get_i64 (nvs_handle_t handle, const char* key, int64_t* out_value);
+esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value);
 /**@}*/ 
 
 /**
@@ -311,8 +322,8 @@ esp_err_t nvs_get_u64 (nvs_handle handle, const char* key, uint64_t* out_value);
  *             - ESP_ERR_NVS_INVALID_LENGTH if length is not sufficient to store data
  */
 /**@{*/
-esp_err_t nvs_get_str (nvs_handle handle, const char* key, char* out_value, size_t* length);
-esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size_t* length);
+esp_err_t nvs_get_str (nvs_handle_t handle, const char* key, char* out_value, size_t* length);
+esp_err_t nvs_get_blob(nvs_handle_t handle, const char* key, void* out_value, size_t* length);
 /**@}*/
 
 /**
@@ -334,7 +345,7 @@ esp_err_t nvs_get_blob(nvs_handle handle, const char* key, void* out_value, size
  *              - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
  *              - other error codes from the underlying storage driver
  */
-esp_err_t nvs_erase_key(nvs_handle handle, const char* key);
+esp_err_t nvs_erase_key(nvs_handle_t handle, const char* key);
 
 /**
  * @brief      Erase all key-value pairs in a namespace
@@ -350,7 +361,7 @@ esp_err_t nvs_erase_key(nvs_handle handle, const char* key);
  *              - ESP_ERR_NVS_READ_ONLY if handle was opened as read only
  *              - other error codes from the underlying storage driver
  */
-esp_err_t nvs_erase_all(nvs_handle handle);
+esp_err_t nvs_erase_all(nvs_handle_t handle);
 
 /**
  * @brief      Write any pending changes to non-volatile storage
@@ -367,7 +378,7 @@ esp_err_t nvs_erase_all(nvs_handle handle);
  *             - ESP_ERR_NVS_INVALID_HANDLE if handle has been closed or is NULL
  *             - other error codes from the underlying storage driver
  */
-esp_err_t nvs_commit(nvs_handle handle);
+esp_err_t nvs_commit(nvs_handle_t handle);
 
 /**
  * @brief      Close the storage handle and free any allocated resources
@@ -380,7 +391,7 @@ esp_err_t nvs_commit(nvs_handle handle);
  *
  * @param[in]  handle  Storage handle to close
  */
-void nvs_close(nvs_handle handle);
+void nvs_close(nvs_handle_t handle);
 
 /**
  * @note Info about storage space NVS.
@@ -436,7 +447,7 @@ esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats);
  *
  * \code{c}
  * // Example of nvs_get_used_entry_count() to get amount of all key-value pairs in one namespace:
- * nvs_handle handle;
+ * nvs_handle_t handle;
  * nvs_open("namespace1", NVS_READWRITE, &handle);
  * ...
  * size_t used_entries;
@@ -463,7 +474,7 @@ esp_err_t nvs_get_stats(const char* part_name, nvs_stats_t* nvs_stats);
  *             - Other error codes from the underlying storage driver.
  *               Return param used_entries will be filled 0.
  */
-esp_err_t nvs_get_used_entry_count(nvs_handle handle, size_t* used_entries);
+esp_err_t nvs_get_used_entry_count(nvs_handle_t handle, size_t* used_entries);
 
 #ifdef __cplusplus
 } // extern "C"
