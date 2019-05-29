@@ -4,136 +4,135 @@ Power Management
 Overview
 --------
 
-Power management algorithm included in ESP-IDF can adjust APB frequency, CPU frequency, and put the chip into light sleep mode to run the application
-at smallest possible power consumption, given the requirements of application components.
+Power management algorithm included in ESP-IDF can adjust the advanced peripheral bus (APB) frequency, CPU frequency, and put the chip into light sleep mode to run an application at smallest possible power consumption, given the requirements of application components.
 
 Application components can express their requirements by creating and acquiring power management locks.
 
-For instance, a driver for a peripheral clocked from APB can request the APB frequency to be set to 80 MHz, for the duration while the peripheral is used. Another example is that the RTOS will request the CPU to run at the highest configured frequency while there are tasks ready to run. Yet another example is a peripheral driver which needs interrupts to be enabled. Such driver can request light sleep to be disabled.
+For example:
 
-Naturally, requesting higher APB or CPU frequency or disabling light sleep causes higher current consumption. Components should try to limit usage of power management locks to the shortest amount of time possible.
+- Driver for a peripheral clocked from APB can request the APB frequency to be set to 80 MHz while the peripheral is used.
+- RTOS can request the CPU to run at the highest configured frequency while there are tasks ready to run.
+- A peripheral driver may need interrupts to be enabled, which means it will have to request disabling light sleep.
+
+Since requesting higher APB or CPU frequencies or disabling light sleep causes higher current consumption, please keep the usage of power management locks by components to a minimum.
 
 Configuration
 -------------
 
-Power management can be enabled at compile time, using :ref:`CONFIG_PM_ENABLE` option.
+Power management can be enabled at compile time, using the option :ref:`CONFIG_PM_ENABLE`.
 
-Enabling power management features comes at the cost of increased interrupt latency. Extra latency depends on a number of factors, among which are CPU frequency, single/dual core mode, whether frequency switch needs to be performed or not. Minimal extra latency is 0.2us (when CPU frequency is 240MHz, and frequency scaling is not enabled), maximum extra latency is 40us (when frequency scaling is enabled, and a switch from 40MHz to 80MHz is performed on interrupt entry).
+Enabling power management features comes at the cost of increased interrupt latency. Extra latency depends on a number of factors, such as the CPU frequency, single/dual core mode, whether or not frequency switch needs to be done. Minimum extra latency is 0.2 us (when the CPU frequency is 240 MHz and frequency scaling is not enabled). Maximum extra latency is 40 us (when frequency scaling is enabled, and a switch from 40 MHz to 80 MHz is performed on interrupt entry).
 
-Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in the application by calling :cpp:func:`esp_pm_configure` function. Its argument is a structure defining frequency scaling settings, cpp:class:`esp_pm_config_esp32_t`. In this structure, 3 fields need to be initialized:
+Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an application by calling the function :cpp:func:`esp_pm_configure`. Its argument is a structure defining the frequency scaling settings, :cpp:class:`esp_pm_config_esp32_t`. In this structure, three fields need to be initialized:
 
-* ``max_freq_mhz`` - Maximal CPU frequency, in MHZ (i.e. frequency used when ``ESP_PM_CPU_FREQ_MAX`` lock is taken). This will usually be set to :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`.
+- ``max_freq_mhz``: Maximum CPU frequency in MHz, i.e., the frequency used when the ``ESP_PM_CPU_FREQ_MAX`` lock is acquired. This field will usually be set to :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`.
+- ``min_freq_mhz``: Minimum CPU frequency in MHz, i.e., the frequency used when only the ``ESP_PM_APB_FREQ_MAX`` lock is acquired. This field can be set to the XTAL frequency value, or the XTAL frequency divided by an integer. Note that 10 MHz is the lowest frequency at which the default REF_TICK clock of 1 MHz can be generated.
+- ``light_sleep_enable``: Whether the system should automatically enter light sleep when no locks are acquired (``true``/``false``).
 
-* ``min_freq_mhz`` — Minimal CPU frequency, in MHz (i.e. frequency used when only ``ESP_PM_APB_FREQ_MAX`` locks are taken). This can be set to XTAL frequency, or XTAL frequency divided by integer. Note that 10MHz is the lowest frequency at which the default REF_TICK clock of 1MHz can be generated.
-
-* ``light_sleep_enable`` — Whether system should automatically enter light sleep when no locks are taken (``true``/``false``).
-
-.. note::
-
-  Automatic light sleep is based on FreeRTOS Tickless Idle functionality. :cpp:func:`esp_pm_configure` will return an `ESP_ERR_NOT_SUPPORTED` error if :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE` option is not enabled in menuconfig, but automatic light sleep is requested.
+Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
 
 .. note::
 
-  In light sleep, peripherals are clock gated, and interrupts (from GPIOs and internal peripherals) will not be generated. Wakeup source described in :doc:`Sleep Modes <sleep_modes>` documentation can be used to wake from light sleep state. For example, EXT0 and EXT1 wakeup source can be used to wake up from a GPIO.
+  Automatic light sleep is based on FreeRTOS Tickless Idle functionality. If automatic light sleep is requested while the option :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE` is not enabled in menuconfig, :cpp:func:`esp_pm_configure` will return the error `ESP_ERR_NOT_SUPPORTED`.
 
-Alternatively, :ref:`CONFIG_PM_DFS_INIT_AUTO` option can be enabled in menuconfig.  If enabled, maximal CPU frequency is determined by :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` setting, and minimal CPU frequency is set to the XTAL frequency.
+.. note::
+
+  In light sleep, peripherals are clock gated, and interrupts (from GPIOs and internal peripherals) will not be generated. A wakeup source described in the :doc:`sleep_modes` documentation can be used to trigger wakeup from the light sleep state. For example, the EXT0 and EXT1 wakeup sources can be used to wake up the chip via a GPIO.
 
 
 Power Management Locks
 ----------------------
 
-As mentioned in the overview, applications can acquire/release locks to control the power management algorithm. When application takes a lock, power management algorithm operation is restricted in a way described below, for each lock. When the lock is released, such restriction is removed.
+Applications have the ability to acquire/release locks in order to control the power management algorithm. When an application acquires a lock, the power management algorithm operation is restricted in a way described below. When the lock is released, such restrictions are removed.
 
-Different parts of the application can take the same lock. In this case, the lock must be released the same number of times as it was acquired, in order for power managment algorithm to resume.
+Power management locks have acquire/release counters. If the lock has been acquired a number of times, it needs to be released the same number of times to remove associated restrictions.
 
-In ESP32, three types of locks are supported:
+ESP32 supports three types of locks described in the table below.
 
-``ESP_PM_CPU_FREQ_MAX``
-  Requests CPU frequency to be at the maximal value set via :cpp:func:`esp_pm_configure`. For ESP32, this value can be set to 80, 160, or 240MHz.
+============================  ======================================================
+Lock                          Description
+============================  ======================================================
+``ESP_PM_CPU_FREQ_MAX``       Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For ESP32, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
 
-``ESP_PM_APB_FREQ_MAX``
-  Requests APB frequency to be at the maximal supported value. For ESP32, this is 80 MHz.
+``ESP_PM_APB_FREQ_MAX``       Requests the APB frequency to be at the maximum supported value. For ESP32, this is 80 MHz.
 
-``ESP_PM_NO_LIGHT_SLEEP``
-  Prevents automatic light sleep from being used.
+``ESP_PM_NO_LIGHT_SLEEP``     Disables automatic switching to light sleep.
+============================  ======================================================
 
 
-Power Management Algorithm for the ESP32
-----------------------------------------
+ESP32 Power Management Algorithm
+--------------------------------
 
-When dynamic frequency scaling is enabled, CPU frequency will be switched as follows:
+The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`.
 
-- If maximal CPU frequency (set using :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`) is 240 MHz:
 
-  1. When ``ESP_PM_CPU_FREQ_MAX`` or ``ESP_PM_APB_FREQ_MAX``  locks are acquired, CPU frequency will be 240 MHz, and APB frequency will be 80 MHz.
++---------------+---------------------------------------+-------------------------------------+
+| Max CPU       |            Lock Acquisition           | CPU and APB Frequncies              |
+| Frequency Set |                                       |                                     |
++---------------+---------------------------------------+-------------------------------------+
+|      240      | | Any of ``ESP_PM_CPU_FREQ_MAX``      |                                     |
+|               | | or ``ESP_PM_APB_FREQ_MAX`` acquired | | CPU: 240 MHz                      |
+|               |                                       | | APB: 80 MHz                       |
++               +---------------------------------------+-------------------------------------+
+|               |                  None                 | Min values for both frequencies set |
+|               |                                       | with :cpp:func:`esp_pm_configure`   |
++---------------+---------------------------------------+-------------------------------------+
+|      160      | ``ESP_PM_CPU_FREQ_MAX`` acquired      | | CPU: 160 MHz                      |
+|               |                                       | | APB: 80 MHz                       |
++               +---------------------------------------+-------------------------------------+
+|               | ``ESP_PM_CPU_FREQ_MAX`` acquired,     | | CPU: 80 MHz                       |
+|               | ``ESP_PM_APB_FREQ_MAX`` not acquired  | | APB: 80 MHz                       |
++               +---------------------------------------+-------------------------------------+
+|               |                  None                 | Min values for both frequencies set |
+|               |                                       | with :cpp:func:`esp_pm_configure`   |
++---------------+---------------------------------------+-------------------------------------+
+|       80      | | Any of ``ESP_PM_CPU_FREQ_MAX``      | | CPU: 80 MHz                       |
+|               | | or ``ESP_PM_APB_FREQ_MAX`` acquired | | APB: 80 MHz                       |
++               +---------------------------------------+-------------------------------------+
+|               |                  None                 | Min values for both frequencies set |
+|               |                                       | with :cpp:func:`esp_pm_configure`   |
++---------------+---------------------------------------+-------------------------------------+
 
-  2. Otherwise, frequency will be switched to the minimal value set using :cpp:func:`esp_pm_configure`.
 
-- If maximal CPU frequency is 160 MHz:
+If none of the locks are acquired, and light sleep is enabled in a call to :cpp:func:`esp_pm_configure`, the system will go into light sleep mode. The duration of light sleep will be determined by:
 
-  1. When ``ESP_PM_CPU_FREQ_MAX`` is acquired, CPU frequency is set to 160 MHz, and APB frequency to 80 MHz.
+- FreeRTOS tasks blocked with finite timeouts
+- Timers registered with :doc:`High resolution timer <esp_timer>` APIs
 
-  2. When ``ESP_PM_CPU_FREQ_MAX`` is not acquired, but ``ESP_PM_APB_FREQ_MAX`` is, CPU and APB frequencies are set to 80 MHz.
-
-  3. Otherwise, frequency will be switched to the minimal value set using :cpp:func:`esp_pm_configure`.
-
-- If maximal CPU frequency is 80 MHz:
-
-  1. When ``ESP_PM_CPU_FREQ_MAX`` or ``ESP_PM_APB_FREQ_MAX``  locks are acquired, CPU and APB frequencies will be 80 MHz.
-
-  2. Otherwise, frequency will be switched to the minimal value set using :cpp:func:`esp_pm_configure`.
-
-- When none of the locks are aquired, and light sleep is enabled in a call to :cpp:func:`esp_pm_configure`, the system will go into light sleep mode. The duration of light sleep will be determined by:
-
-  - FreeRTOS tasks blocked with finite timeouts
-  - Timers registered with :doc:`High resolution timer <esp_timer>` APIs
-
-  Light sleep will duration will be chosen to wake up before the nearest event (task being unblocked, or timer elapses).
+Light sleep duration will be chosen to wake up the chip before the nearest event (task being unblocked, or timer elapses).
 
 
 Dynamic Frequency Scaling and Peripheral Drivers
 ------------------------------------------------
 
-When DFS is enabled, APB frequency can be changed several times within a single RTOS tick. Some peripherals can work normally even when APB frequency changes; some can not.
+When DFS is enabled, the APB frequency can be changed multiple times within a single RTOS tick. The APB frequency change does not affect the work of some peripherals, while other peripherals may have issues. For example, Timer Group peripheral timers will keep counting, however, the speed at which they count will change proportionally to the APB frequency.
 
-The following peripherals can work even when APB frequency is changing:
+The following peripherals work normally even when the APB frequency is changing:
 
-- UART: if REF_TICK is used as clock source (see `use_ref_tick` member of `uart_config_t`).
+- **UART**: if REF_TICK is used as a clock source. See `use_ref_tick` member of :cpp:class:`uart_config_t`.
+- **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
+- **RMT**: if REF_TICK is used as a clock source. Although the driver does not support REF_TICK, this feature can be enabled by clearing the ``RMT_REF_ALWAYS_ON_CHx`` bit for the respective channel.
 
-- LEDC: if REF_TICK is used as clock source (see :cpp:func:`ledc_timer_config` function).
-
-- RMT: if REF_TICK is used as clock source. Currently the driver does not support REF_TICK, but it can be enabled by clearing ``RMT_REF_ALWAYS_ON_CHx`` bit for the respective channel.
-
-Currently, the following peripheral drivers are aware of DFS and will use ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
+Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
 - SPI master
-
 - I2C
-
-- I2S (If APLL clock is used then it will use ``ESP_PM_NO_LIGHT_SLEEP`` lock)
-
+- I2S (If the APLL clock is used, then it will use the ``ESP_PM_NO_LIGHT_SLEEP`` lock)
 - SDMMC
 
-The following drivers will hold ``ESP_PM_APB_FREQ_MAX`` lock while the driver is enabled:
+The following drivers will hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is enabled:
 
-- SPI slave — between calls to :cpp:func:`spi_slave_initialize` and :cpp:func:`spi_slave_free`.
+- **SPI slave**: between calls to :cpp:func:`spi_slave_initialize` and :cpp:func:`spi_slave_free`.
+- **Ethernet**: between calls to :cpp:func:`esp_eth_enable` and :cpp:func:`esp_eth_disable`.
+- **WiFi**: between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, the lock will be released for the periods of time when radio is disabled.
+- **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held.
+- **CAN**: between calls to :cpp:func:`can_driver_install` and :cpp:func:`can_driver_uninstall`.
 
-- Ethernet — between calls to :cpp:func:`esp_eth_enable` and :cpp:func:`esp_eth_disable`.
-
-- WiFi — between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, lock will be released for thte periods of time when radio is disabled.
-
-- Bluetooth — between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`.
-
-- CAN - between calls to :cpp:func:`can_driver_install` and :cpp:func:`can_driver_uninstall`
-
-The following peripheral drivers are not aware of DFS yet. Applications need to acquire/release locks when necessary:
+The following peripheral drivers are not aware of DFS yet. Applications need to acquire/release locks themselves, when necessary:
 
 - MCPWM
-
 - PCNT
-
 - Sigma-delta
-
 - Timer group
 
 
