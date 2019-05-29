@@ -2,6 +2,8 @@
 IDF Monitor
 ***********
 
+:link_to_translation:`zh_CN:[中文]`
+
 The IDF monitor tool is mainly a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
 
 This tool can be launched by invoking in IDF the following target:
