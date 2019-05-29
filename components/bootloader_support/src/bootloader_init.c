@@ -441,6 +441,7 @@ static void uart_console_configure(void)
         // (arrays should be optimized away by the compiler)
         const uint32_t tx_idx_list[3] = { U0TXD_OUT_IDX, U1TXD_OUT_IDX, U2TXD_OUT_IDX };
         const uint32_t rx_idx_list[3] = { U0RXD_IN_IDX, U1RXD_IN_IDX, U2RXD_IN_IDX };
+        const uint32_t uart_reset[3] = { DPORT_UART_RST, DPORT_UART1_RST, DPORT_UART2_RST };
         const uint32_t tx_idx = tx_idx_list[uart_num];
         const uint32_t rx_idx = rx_idx_list[uart_num];
 
@@ -449,6 +450,9 @@ static void uart_console_configure(void)
 
         gpio_matrix_out(uart_tx_gpio, tx_idx, 0, 0);
         gpio_matrix_in(uart_rx_gpio, rx_idx, 0);
+
+        DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, uart_reset[uart_num]);
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, uart_reset[uart_num]);
     }
 #endif // CONFIG_ESP_CONSOLE_UART_CUSTOM
 
