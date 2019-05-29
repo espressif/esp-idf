@@ -111,3 +111,9 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     }
     return boot_index;
 }
+
+// Return global reent struct if any newlib functions are linked to bootloader
+struct _reent* __getreent() {
+    return _GLOBAL_REENT;
+}
+

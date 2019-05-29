@@ -12,16 +12,7 @@ set(COMPONENT_SRCS "heap.c"
                    "utime.c")
 set(COMPONENT_ADD_INCLUDEDIRS platform_include)
 
-
 if(GCC_NOT_5_2_0)
-    if(CONFIG_NEWLIB_NANO_FORMAT)
-        set(LIBC c_nano)
-    else()
-        set(LIBC c)
-    endif()
-
-    set(LIBM m)
-
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
         set(COMPONENT_ADD_LDFRAGMENTS esp32-spiram-rom-functions-c.lf)
     endif()
@@ -31,7 +22,7 @@ if(GCC_NOT_5_2_0)
     set(EXTRA_LINK_FLAGS "-u newlib_include_locks_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_heap_impl")
     list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_syscalls_impl")
-
+    list(APPEND EXTRA_LINK_FLAGS "-u newlib_include_pthread_impl")
 else()
     # Remove this section when GCC 5.2.0 is no longer supported
     # 'include' and 'lib' directories should also be removed.
@@ -40,21 +31,10 @@ else()
     set(LIB_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
     if(CONFIG_SPIRAM_CACHE_WORKAROUND)
-        set(LIBC c-psram-workaround)
-        set(LIBM m-psram-workaround)
-
         set(COMPONENT_ADD_LDFRAGMENTS esp32-spiram-rom-functions-psram-workaround.lf)
-    else()
-
-        if(CONFIG_NEWLIB_NANO_FORMAT)
-            set(LIBC c_nano)
-        else()
-            set(LIBC c)
-        endif()
-
-        set(LIBM m)
     endif()
 endif()
+
 set(COMPONENT_REQUIRES vfs)  # for sys/ioctl.h
 set(COMPONENT_PRIV_REQUIRES soc)
 
@@ -70,10 +50,10 @@ if(GCC_NOT_5_2_0)
     # Toolchain libraries require code defined in this component
     add_library(extra INTERFACE)
     idf_component_get_property(newlib newlib COMPONENT_LIB)
-    target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} "$<TARGET_FILE:${newlib}>")
+    target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} gcc "$<TARGET_FILE:${newlib}>")
     target_link_libraries(${COMPONENT_LIB} extra)
 else()
-    target_link_libraries(${COMPONENT_LIB} ${LIBC} ${LIBM})
+    target_link_libraries(${COMPONENT_LIB} ${LIBC} ${LIBM} gcc)
 endif()
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
