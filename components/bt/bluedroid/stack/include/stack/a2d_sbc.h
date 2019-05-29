@@ -94,26 +94,6 @@ extern "C"
 #endif
 /******************************************************************************
 **
-** Function         A2D_SbcChkFrInit
-**
-** Description      check if need to init the descramble control block.
-**
-** Returns          nothing.
-******************************************************************************/
-extern void A2D_SbcChkFrInit(UINT8 *p_pkt);
-
-/******************************************************************************
-**
-** Function         A2D_SbcDescramble
-**
-** Description      descramble the packet.
-**
-** Returns          nothing.
-******************************************************************************/
-extern void A2D_SbcDescramble(UINT8 *p_pkt, UINT16 len);
-
-/******************************************************************************
-**
 ** Function         A2D_BldSbcInfo
 **
 ** Description      This function is called by an application to build

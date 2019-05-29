@@ -320,6 +320,10 @@ typedef UINT8 *BTM_BD_NAME_PTR;                        /* Pointer to Device name
 */
 typedef tBTM_SEC_CBACK tBTM_SEC_CALLBACK;
 
+#define BTM_DATA_HANDLE_MASK 0x0FFF
+
+#define BTMD_GET_HANDLE(u16) (UINT16)((u16) & BTM_DATA_HANDLE_MASK)
+
 typedef void (tBTM_SCO_IND_CBACK) (UINT16 sco_inx) ;
 
 /* MACROs to convert from SCO packet types mask to ESCO and back */

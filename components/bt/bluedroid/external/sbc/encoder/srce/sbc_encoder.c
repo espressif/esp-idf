@@ -31,84 +31,6 @@
 
 SINT16 EncMaxShiftCounter;
 
-/*************************************************************************************************
- * SBC encoder scramble code
- * Purpose: to tie the SBC code with BTE/mobile stack code,
- *          especially for the case when the SBC is ported into a third-party Multimedia chip
- *
- * Algorithm:
- *  init process: all counters reset to 0,
- *                calculate base_index: (6 + s16NumOfChannels*s16NumOfSubBands/2)
- *    scramble side:    the init process happens every time SBC_Encoder_Init() is called.
- *    descramble side:  it would be nice to know if he "init" process has happened.
- *                      alter the SBC SYNC word 0x9C (1001 1100) to 0x8C (1000 1100).
- *
- *  scramble process:
- *    The CRC byte:
- *    Every SBC frame has a frame header.
- *    The 1st byte is the sync word and the following 2 bytes are about the stream format.
- *    They are supposed to be "constant" within a "song"
- *    The 4th byte is the CRC byte. The CRC byte is bound to be random.
- *    Derive 2 items from the CRC byte; one is the "use" bit, the other is the "index".
- *
- *    SBC keeps 2 sets of "use" & "index"; derived the current and the previous frame.
- *
- *    The "use" bit is any bit in SBC_PRTC_USE_MASK is set.
- *    If set, SBC uses the "index" from the current frame.
- *    If not set, SBC uses the "index" from the previous frame or 0.
- *
- *    index = (CRC & 0x3) + ((CRC & 0x30) >> 2) // 8 is the max index
- *
- *    if(index > 0)
- *    {
- *        p = &u8frame[base_index];
- *        if((index&1)&&(u16PacketLength > (base_index+index*2)))
- *        {
- *            // odd index: swap 2 bytes
- *            tmp = p[index];
- *            p[index] = p[index*2];
- *            p[index*2] = tmp;
- *        }
- *        else
- *        {
- *            // even index: shift by 3
- *            tmp = (p[index] >> 5) + (p[index] << 3);
- *            p[index] = tmp;
- *        }
- *    }
- *    //else index is 0. The frame stays unaltered
- *
- */
-
-#define SBC_PRTC_CRC_IDX        3
-#define SBC_PRTC_USE_MASK       0x64
-#define SBC_PRTC_SYNC_MASK      0x10
-#define SBC_PRTC_CIDX           0
-#define SBC_PRTC_LIDX           1
-typedef struct {
-    UINT8   use;
-    UINT8   idx;
-} tSBC_FR_CB;
-
-typedef struct {
-    tSBC_FR_CB      fr[2];
-    UINT8           init;
-    UINT8           index;
-    UINT8           base;
-} tSBC_PRTC_CB;
-tSBC_PRTC_CB sbc_prtc_cb;
-
-#define SBC_PRTC_IDX(sc) (((sc) & 0x3) + (((sc) & 0x30) >> 2))
-#define SBC_PRTC_CHK_INIT(ar) {if(sbc_prtc_cb.init == 0){sbc_prtc_cb.init=1; ar[0] &= ~SBC_PRTC_SYNC_MASK;}}
-#define SBC_PRTC_C2L() {p_last=&sbc_prtc_cb.fr[SBC_PRTC_LIDX]; p_cur=&sbc_prtc_cb.fr[SBC_PRTC_CIDX]; \
-                        p_last->idx = p_cur->idx; p_last->use = p_cur->use;}
-#define SBC_PRTC_GETC(ar) {p_cur->use = ar[SBC_PRTC_CRC_IDX] & SBC_PRTC_USE_MASK; \
-                           p_cur->idx = SBC_PRTC_IDX(ar[SBC_PRTC_CRC_IDX]);}
-#define SBC_PRTC_CHK_CRC(ar) {SBC_PRTC_C2L();SBC_PRTC_GETC(ar);sbc_prtc_cb.index = (p_cur->use)?SBC_PRTC_CIDX:SBC_PRTC_LIDX;}
-#define SBC_PRTC_SCRMB(ar) {idx = sbc_prtc_cb.fr[sbc_prtc_cb.index].idx; \
-    if(idx > 0){if((idx&1)&&(pstrEncParams->u16PacketLength > (sbc_prtc_cb.base+(idx<<1)))) {tmp2=idx<<1; tmp=ar[idx];ar[idx]=ar[tmp2];ar[tmp2]=tmp;} \
-                else{tmp2=ar[idx]; tmp=(tmp2>>5)+(tmp2<<3);ar[idx]=(UINT8)tmp;}}}
-
 #if (SBC_JOINT_STE_INCLUDED == TRUE)
 SINT32   s32LRDiff[SBC_MAX_NUM_OF_BLOCKS]    = {0};
 SINT32   s32LRSum[SBC_MAX_NUM_OF_BLOCKS]     = {0};
@@ -130,9 +52,6 @@ void SBC_Encoder(SBC_ENC_PARAMS *pstrEncParams)
     UINT32 u32CountSum, u32CountDiff;
     SINT32 *pSum, *pDiff;
 #endif
-    UINT8  *pu8;
-    tSBC_FR_CB  *p_cur, *p_last;
-    UINT32       idx, tmp, tmp2;
     register SINT32  s32NumOfSubBands = pstrEncParams->s16NumOfSubBands;
 
     pstrEncParams->pu8NextPacket = pstrEncParams->pu8Packet;
@@ -263,22 +182,8 @@ void SBC_Encoder(SBC_ENC_PARAMS *pstrEncParams)
             sbc_enc_bit_alloc_mono(pstrEncParams);
         }
 
-        /* save the beginning of the frame. pu8NextPacket is modified in EncPacking() */
-        pu8 = pstrEncParams->pu8NextPacket;
         /* Quantize the encoded audio */
         EncPacking(pstrEncParams);
-
-        /* scramble the code */
-        SBC_PRTC_CHK_INIT(pu8);
-        SBC_PRTC_CHK_CRC(pu8);
-#if 0
-        if (pstrEncParams->u16PacketLength > ((sbc_prtc_cb.fr[sbc_prtc_cb.index].idx * 2) + sbc_prtc_cb.base)) {
-            printf("len: %d, idx: %d\n", pstrEncParams->u16PacketLength, sbc_prtc_cb.fr[sbc_prtc_cb.index].idx);
-        } else {
-            printf("len: %d, idx: %d!!!!\n", pstrEncParams->u16PacketLength, sbc_prtc_cb.fr[sbc_prtc_cb.index].idx);
-        }
-#endif
-        SBC_PRTC_SCRMB((&pu8[sbc_prtc_cb.base]));
     } while (--(pstrEncParams->u8NumPacketToEncode));
 
     pstrEncParams->u8NumPacketToEncode = 1; /* default is one for retrocompatibility purpose */
@@ -300,82 +205,110 @@ void SBC_Encoder_Init(SBC_ENC_PARAMS *pstrEncParams)
 
     pstrEncParams->u8NumPacketToEncode = 1; /* default is one for retrocompatibility purpose */
 
-    /* Required number of channels */
-    if (pstrEncParams->s16ChannelMode == SBC_MONO) {
-        pstrEncParams->s16NumOfChannels = 1;
-    } else {
-        pstrEncParams->s16NumOfChannels = 2;
-    }
-
-    /* Bit pool calculation */
-    if (pstrEncParams->s16SamplingFreq == SBC_sf16000) {
-        s16SamplingFreq = 16000;
-    } else if (pstrEncParams->s16SamplingFreq == SBC_sf32000) {
-        s16SamplingFreq = 32000;
-    } else if (pstrEncParams->s16SamplingFreq == SBC_sf44100) {
-        s16SamplingFreq = 44100;
-    } else {
-        s16SamplingFreq = 48000;
-    }
-
-    if ( (pstrEncParams->s16ChannelMode == SBC_JOINT_STEREO)
-            ||  (pstrEncParams->s16ChannelMode == SBC_STEREO) ) {
-        s16Bitpool = (SINT16)( (pstrEncParams->u16BitRate *
-                                pstrEncParams->s16NumOfSubBands * 1000 / s16SamplingFreq)
-                               - ( (32 + (4 * pstrEncParams->s16NumOfSubBands *
-                                          pstrEncParams->s16NumOfChannels)
-                                    + ( (pstrEncParams->s16ChannelMode - 2) *
-                                        pstrEncParams->s16NumOfSubBands )   )
-                                   / pstrEncParams->s16NumOfBlocks) );
-
-        s16FrameLen = 4 + (4 * pstrEncParams->s16NumOfSubBands *
-                           pstrEncParams->s16NumOfChannels) / 8
-                      + ( ((pstrEncParams->s16ChannelMode - 2) *
-                           pstrEncParams->s16NumOfSubBands)
-                          + (pstrEncParams->s16NumOfBlocks * s16Bitpool) ) / 8;
-
-        s16BitRate = (8 * s16FrameLen * s16SamplingFreq)
-                     / (pstrEncParams->s16NumOfSubBands *
-                        pstrEncParams->s16NumOfBlocks * 1000);
-
-        if (s16BitRate > pstrEncParams->u16BitRate) {
-            s16Bitpool--;
-        }
-
-        if (pstrEncParams->s16NumOfSubBands == 8) {
-            pstrEncParams->s16BitPool = (s16Bitpool > 255) ? 255 : s16Bitpool;
+    if (pstrEncParams->sbc_mode != SBC_MODE_MSBC) {
+        /* Required number of channels */
+        if (pstrEncParams->s16ChannelMode == SBC_MONO) {
+            pstrEncParams->s16NumOfChannels = 1;
         } else {
-            pstrEncParams->s16BitPool = (s16Bitpool > 128) ? 128 : s16Bitpool;
+            pstrEncParams->s16NumOfChannels = 2;
         }
+
+        /* Bit pool calculation */
+        if (pstrEncParams->s16SamplingFreq == SBC_sf16000) {
+            s16SamplingFreq = 16000;
+        } else if (pstrEncParams->s16SamplingFreq == SBC_sf32000) {
+            s16SamplingFreq = 32000;
+        } else if (pstrEncParams->s16SamplingFreq == SBC_sf44100) {
+            s16SamplingFreq = 44100;
+        } else {
+            s16SamplingFreq = 48000;
+        }
+
+        if ( (pstrEncParams->s16ChannelMode == SBC_JOINT_STEREO)
+             ||  (pstrEncParams->s16ChannelMode == SBC_STEREO) ) {
+            s16Bitpool = (SINT16)( (pstrEncParams->u16BitRate *
+                                    pstrEncParams->s16NumOfSubBands * 1000 / s16SamplingFreq)
+                                   - ( (32 + (4 * pstrEncParams->s16NumOfSubBands *
+                                              pstrEncParams->s16NumOfChannels)
+                                        + ( (pstrEncParams->s16ChannelMode - 2) *
+                                            pstrEncParams->s16NumOfSubBands )   )
+                                       / pstrEncParams->s16NumOfBlocks) );
+
+            s16FrameLen = 4 + (4 * pstrEncParams->s16NumOfSubBands *
+                               pstrEncParams->s16NumOfChannels) / 8
+                + ( ((pstrEncParams->s16ChannelMode - 2) *
+                     pstrEncParams->s16NumOfSubBands)
+                    + (pstrEncParams->s16NumOfBlocks * s16Bitpool) ) / 8;
+
+            s16BitRate = (8 * s16FrameLen * s16SamplingFreq)
+                / (pstrEncParams->s16NumOfSubBands *
+                   pstrEncParams->s16NumOfBlocks * 1000);
+
+            if (s16BitRate > pstrEncParams->u16BitRate) {
+                s16Bitpool--;
+            }
+
+            if (pstrEncParams->s16NumOfSubBands == 8) {
+                pstrEncParams->s16BitPool = (s16Bitpool > 255) ? 255 : s16Bitpool;
+            } else {
+                pstrEncParams->s16BitPool = (s16Bitpool > 128) ? 128 : s16Bitpool;
+            }
+        } else {
+            s16Bitpool = (SINT16)( ((pstrEncParams->s16NumOfSubBands *
+                                     pstrEncParams->u16BitRate * 1000)
+                                    / (s16SamplingFreq * pstrEncParams->s16NumOfChannels))
+                                   - ( ( (32 / pstrEncParams->s16NumOfChannels) +
+                                         (4 * pstrEncParams->s16NumOfSubBands) )
+                                       /   pstrEncParams->s16NumOfBlocks ) );
+
+            pstrEncParams->s16BitPool = (s16Bitpool >
+                                         (16 * pstrEncParams->s16NumOfSubBands))
+                ? (16 * pstrEncParams->s16NumOfSubBands) : s16Bitpool;
+        }
+
+        if (pstrEncParams->s16BitPool < 0) {
+            pstrEncParams->s16BitPool = 0;
+        }
+        /* sampling freq */
+        HeaderParams = ((pstrEncParams->s16SamplingFreq & 3) << 6);
+
+        /* number of blocks*/
+        HeaderParams |= (((pstrEncParams->s16NumOfBlocks - 4) & 12) << 2);
+
+        /* channel mode: mono, dual...*/
+        HeaderParams |= ((pstrEncParams->s16ChannelMode & 3) << 2);
+
+        /* Loudness or SNR */
+        HeaderParams |= ((pstrEncParams->s16AllocationMethod & 1) << 1);
+        HeaderParams |= ((pstrEncParams->s16NumOfSubBands >> 3) & 1);  /*4 or 8*/
+
+        pstrEncParams->FrameHeader = HeaderParams;
     } else {
-        s16Bitpool = (SINT16)( ((pstrEncParams->s16NumOfSubBands *
-                                 pstrEncParams->u16BitRate * 1000)
-                                / (s16SamplingFreq * pstrEncParams->s16NumOfChannels))
-                               - ( ( (32 / pstrEncParams->s16NumOfChannels) +
-                                     (4 * pstrEncParams->s16NumOfSubBands) )
-                                   /   pstrEncParams->s16NumOfBlocks ) );
+        // mSBC
 
-        pstrEncParams->s16BitPool = (s16Bitpool >
-                                     (16 * pstrEncParams->s16NumOfSubBands))
-                                    ? (16 * pstrEncParams->s16NumOfSubBands) : s16Bitpool;
+        // Use mSBC encoding parameters to reset the control field
+        /* Required number of channels: 1 */
+        pstrEncParams->s16ChannelMode = SBC_MONO;
+        pstrEncParams->s16NumOfChannels = 1;
+
+        /* Required Sampling frequency : 16KHz */
+        pstrEncParams->s16SamplingFreq = SBC_sf16000;
+
+        /* Bit pool value: 26 */
+        pstrEncParams->s16BitPool = 26;
+
+        /* number of subbands: 8 */
+        pstrEncParams->s16NumOfSubBands = 8;
+
+        /* number of blocks: 15 */
+        pstrEncParams->s16NumOfBlocks = 15;
+
+        /* allocation method: loudness */
+        pstrEncParams->s16AllocationMethod = SBC_LOUDNESS;
+
+        /* set the header paramers, unused for mSBC */
+        pstrEncParams->FrameHeader = 0;
     }
-
-    if (pstrEncParams->s16BitPool < 0) {
-        pstrEncParams->s16BitPool = 0;
-    }
-    /* sampling freq */
-    HeaderParams = ((pstrEncParams->s16SamplingFreq & 3) << 6);
-
-    /* number of blocks*/
-    HeaderParams |= (((pstrEncParams->s16NumOfBlocks - 4) & 12) << 2);
-
-    /* channel mode: mono, dual...*/
-    HeaderParams |= ((pstrEncParams->s16ChannelMode & 3) << 2);
-
-    /* Loudness or SNR */
-    HeaderParams |= ((pstrEncParams->s16AllocationMethod & 1) << 1);
-    HeaderParams |= ((pstrEncParams->s16NumOfSubBands >> 3) & 1);  /*4 or 8*/
-    pstrEncParams->FrameHeader = HeaderParams;
 
     if (pstrEncParams->s16NumOfSubBands == 4) {
         if (pstrEncParams->s16NumOfChannels == 1) {
@@ -395,9 +328,6 @@ void SBC_Encoder_Init(SBC_ENC_PARAMS *pstrEncParams)
                      pstrEncParams->u16BitRate, pstrEncParams->s16BitPool);
 
     SbcAnalysisInit();
-
-    memset(&sbc_prtc_cb, 0, sizeof(tSBC_PRTC_CB));
-    sbc_prtc_cb.base = 6 + pstrEncParams->s16NumOfChannels * pstrEncParams->s16NumOfSubBands / 2;
 }
 
 #endif /* #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE) */
