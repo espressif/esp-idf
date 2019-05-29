@@ -88,4 +88,13 @@ else()
         cpu_start.c
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
+
+    if(CONFIG_SPIRAM_CACHE_WORKAROUND)
+        # Note: Adding as a PUBLIC compile option here causes this option to propagate to all components that depend on esp32.
+        #
+        # To handle some corner cases, the same flag is set in project_include.cmake
+        target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
+        # also, make sure we link with this option so correct toolchain libs are pulled in
+        target_link_libraries(${COMPONENT_LIB} -mfix-esp32-psram-cache-issue)
+    endif()
 endif()
