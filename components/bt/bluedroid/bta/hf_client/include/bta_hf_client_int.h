@@ -157,6 +157,13 @@ typedef struct {
     tBTM_SCO_CODEC_TYPE negotiated_codec; /* negotiated codec */
     TIMER_LIST_ENT      colli_timer;    /* Collision timer */
     BOOLEAN             colli_tmr_on;   /* TRUE if collision timer is active */
+
+    UINT16              in_pkt_len;
+    UINT16              out_pkt_len;
+    UINT8               link_type;      /* BTM_LINK_TYPE_SCO or BTM_LINK_TYPE_ESCO */
+    UINT8               tx_interval;
+    UINT8               retrans_window;
+    UINT8               air_mode;
 } tBTA_HF_CLIENT_SCB;
 
 /* sco states */

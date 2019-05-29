@@ -47,7 +47,8 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_UINT32 decoderDataBytes,
                                        OI_BYTE maxChannels,
                                        OI_BYTE pcmStride,
-                                       OI_BOOL enhanced)
+                                       OI_BOOL enhanced,
+                                       OI_BOOL msbc_enable)
 {
     OI_UINT i;
     OI_STATUS status;
@@ -65,6 +66,12 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
     }
 #endif
 
+    if (msbc_enable) {
+        context->sbc_mode = OI_SBC_MODE_MSBC;
+    } else {
+        context->sbc_mode = OI_SBC_MODE_STD;
+    }
+
     status = OI_CODEC_SBC_Alloc(&context->common, decoderData, decoderDataBytes, maxChannels, pcmStride);
 
     if (!OI_SUCCESS(status)) {
@@ -81,9 +88,6 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
     return OI_OK;
 }
 
-
-
-
 /**
  * Read the SBC header up to but not including the joint stereo mask.  The syncword has already been
  * examined, and the enhanced mode flag set, by FindSyncword.
@@ -94,7 +98,33 @@ INLINE void OI_SBC_ReadHeader(OI_CODEC_SBC_COMMON_CONTEXT *common, const OI_BYTE
     OI_UINT8 d1;
 
 
-    OI_ASSERT(data[0] == OI_SBC_SYNCWORD || data[0] == OI_SBC_ENHANCED_SYNCWORD);
+    OI_ASSERT(data[0] == OI_SBC_SYNCWORD || data[0] == OI_SBC_ENHANCED_SYNCWORD
+                || data[0] == OI_mSBC_SYNCWORD);
+
+    /**
+     * For mSBC, just set those parameters
+     */
+    if (data[0] == OI_mSBC_SYNCWORD){
+        frame->freqIndex = 0;
+        frame->frequency = 16000;
+
+        frame->blocks = 4;
+        frame->nrof_blocks = 15;
+
+        frame->mode = 0;
+        frame->nrof_channels = 1;
+
+        frame->alloc = SBC_LOUDNESS;
+
+        frame->subbands = 1;
+        frame->nrof_subbands = 8;
+
+        frame->cachedInfo = 0;
+
+        frame->bitpool = 26;
+        frame->crc = data[3];
+        return;
+    }
 
     /* Avoid filling out all these strucutures if we already remember the values
      * from last time. Just in case we get a stream corresponding to data[1] ==

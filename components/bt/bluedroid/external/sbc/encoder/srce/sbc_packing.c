@@ -84,10 +84,17 @@ void EncPacking(SBC_ENC_PARAMS *pstrEncParams)
 #endif
 
     pu8PacketPtr    = pstrEncParams->pu8NextPacket;    /*Initialize the ptr*/
-    *pu8PacketPtr++ = (UINT8)0x9C;  /*Sync word*/
-    *pu8PacketPtr++ = (UINT8)(pstrEncParams->FrameHeader);
+    if (pstrEncParams->sbc_mode != SBC_MODE_MSBC) {
+        *pu8PacketPtr++ = (UINT8)SBC_SYNC_WORD_STD;  /*Sync word*/
+        *pu8PacketPtr++ = (UINT8)(pstrEncParams->FrameHeader);
 
-    *pu8PacketPtr = (UINT8)(pstrEncParams->s16BitPool & 0x00FF);
+        *pu8PacketPtr = (UINT8)(pstrEncParams->s16BitPool & 0x00FF);
+    } else {
+        *pu8PacketPtr++ = (UINT8)SBC_SYNC_WORD_MSBC; /*Sync word*/
+        // two reserved bytes
+        *pu8PacketPtr++ = 0;
+        *pu8PacketPtr = 0;
+    }
     pu8PacketPtr += 2;  /*skip for CRC*/
 
     /*here it indicate if it is byte boundary or nibble boundary*/

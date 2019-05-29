@@ -45,6 +45,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/utils/include                 \
                                 bluedroid/external/sbc/decoder/include  \
                                 bluedroid/external/sbc/encoder/include  \
+                                bluedroid/external/sbc/plc/include      \
                                 bluedroid/btc/core/include              \
                                 bluedroid/btc/profile/esp/blufi/include \
                                 bluedroid/btc/profile/esp/include       \
@@ -92,6 +93,7 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/osi                         \
                         bluedroid/external/sbc/decoder/srce   \
                         bluedroid/external/sbc/encoder/srce   \
+                        bluedroid/external/sbc/plc            \
                         bluedroid/btc/core                    \
                         bluedroid/btc/profile/esp/blufi       \
                         bluedroid/btc/profile/std/gap         \
