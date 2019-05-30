@@ -61,7 +61,8 @@ menu Wi-Fi
 
     config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
         int "Max number of WiFi dynamic RX buffers"
-        range 0 128
+        range 0 128 if !LWIP_WND_SCALE
+        range 0 1024 if LWIP_WND_SCALE
         default 32
         help
             Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers will be allocated
