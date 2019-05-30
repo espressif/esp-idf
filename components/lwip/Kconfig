@@ -148,7 +148,8 @@ menu "LWIP"
     config TCPIP_RECVMBOX_SIZE
         int "TCPIP task receive mail box size"
         default 32
-        range 6 64
+        range 6 64 if !LWIP_WND_SCALE
+        range 6 1024 if LWIP_WND_SCALE
         help
             Set TCPIP task receive mail box size. Generally bigger value means higher throughput
             but more memory. The value should be bigger than UDP/TCP mail box size.
@@ -339,7 +340,8 @@ menu "LWIP"
         config TCP_RECVMBOX_SIZE
             int "Default TCP receive mail box size"
             default 6
-            range 6 64
+            range 6 64 if !LWIP_WND_SCALE
+            range 6 1024 if LWIP_WND_SCALE
             help
                 Set TCP receive mail box size. Generally bigger value means higher throughput
                 but more memory. The recommended value is: TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if
@@ -398,6 +400,21 @@ menu "LWIP"
                 bool "Disabled"
 
         endchoice
+
+        config LWIP_WND_SCALE
+            bool "Support TCP window scale"
+            depends on WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+            default n
+            help
+                Enable this feature to support TCP window scaling.
+
+        config TCP_RCV_SCALE
+            int "Set TCP receiving window scaling factor"
+            depends on LWIP_WND_SCALE
+            range 0 14
+            default 0
+            help
+                Enable this feature to support TCP window scaling.
 
     endmenu # TCP
 
