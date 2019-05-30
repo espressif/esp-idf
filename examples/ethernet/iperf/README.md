@@ -16,7 +16,7 @@ This example is based on esp-idf's console component. For more information about
    * Debian/Ubuntu: `sudo apt-get install iperf` 
    * macOS: `brew install iperf`(if using Homebrew) or `sudo port install iperf`(if using MacPorts)
    * Windows(MSYS2): Downloads binaries from [here]( https://iperf.fr/iperf-download.php#windows)
-2. Initialise Ethernet on ESP32, run `ethernet start`
+2. Initialize Ethernet on ESP32, run `ethernet start`
 3. Get ip information(optional), run `ethernet info`
 
 ### Configure the project
@@ -25,15 +25,12 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
 
 * Check whether or not to store the history command into flash under `Store command history in flash` option
 
-* Set PHY address under `PHY address` option, this address depends on the hardware and the PHY configuration. Consult the documentation/datasheet for the PHY hardware you have.
-
-  - Address 31 (default) for Espressif's Ethernet board with TLK110 PHY by default
-  - Address 1 for the common Waveshare LAN8720 PHY breakout
-  - Address 0 for other LAN8720 breakouts
+* Set PHY address under `Ethernet PHY address` option, this address depends on the hardware and the PHY configuration. Consult the documentation/datasheet for the PHY hardware you have.
+  - Address 1 for the common Waveshare LAN8720 PHY breakout and official ESP32-Ethernet-Kit board
 
 * Check whether or not to control PHY's power (if true, you need also to set PHY Power GPIO number later)
 
-* Set SMI MDC/MDIO GPIO number according to board schemetic, default these two GPIOs are set as below:
+* Set SMI MDC/MDIO GPIO number according to board schematic, default these two GPIOs are set as below:
 
   | Default Example GPIO | RMII Signal | Notes         |
   | -------------------- | ----------- | ------------- |
@@ -45,6 +42,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
   | Mode     | GPIO Pin | Signal name  | Notes                                                        |
   | -------- | -------- | ------------ | ------------------------------------------------------------ |
   | external | GPIO0    | EMAC_TX_CLK  | Input of 50MHz PHY clock                                     |
+  | internal | GPIO0    | CLK_OUT1     | Output of 50MHz APLL clock                                   |
   | internal | GPIO16   | EMAC_CLK_OUT | Output of 50MHz APLL clock                                   |
   | internal | GPIO17   | EMAC_CLK_180 | Inverted output of 50MHz APLL clock (suitable for long clock trace) |
 
@@ -154,11 +152,11 @@ I (2534456) iperf: want recv=16384
 
 ## Troubleshooting
 
-- If the PHY address is incorrect then the EMAC will still be initialised, but all attempts to read/write configuration registers in the PHY's register will fail, for example, waiting for auto-negotiation done.
+- If the PHY address is incorrect then the EMAC will still be initialized, but all attempts to read/write configuration registers in the PHY's register will fail, for example, waiting for auto-negotiation done.
 
 - Check PHY Clock
 
-  > The ESP32's MAC and the External PHY device need a common 50MHz reference clock. This clock can either be provided externally by a crystal oscillator (e.g. crystal connected to the PHY or a seperate crystal oscillator) or internally by generating from EPS32's APLL. The signal integrity of this clock is strict, so it is highly recommended to add a 33Ω resistor in series to reduce ringing.
+  > The ESP32's MAC and the External PHY device need a common 50MHz reference clock. This clock can either be provided externally by a crystal oscillator (e.g. crystal connected to the PHY or a separate crystal oscillator) or internally by generating from EPS32's APLL. The signal integrity of this clock is strict, so it is highly recommended to add a 33Ω resistor in series to reduce ringing.
 
 - Check GPIO connections, the RMII PHY wiring is fixed which can not be changed through either IOMUX or GPIO Matrix. They're described as below:
 
@@ -173,4 +171,4 @@ I (2534456) iperf: want recv=16384
 
 - Check GPIO0
 
-  > GPIO0 is a strapping pin for entering UART flashing mode on reset, care must be taken when using this pin as `EMAC_TX_CLK`. If the clock output from the PHY is oscillating during reset, the ESP32 may randomly enter UART flashing mode. One solution is to use an additional GPIO as a "power pin", which either powers the PHY on/off or enables/disables the PHY's own oscillator. This prevents the clock signal from being active during a system reset. For this configuration to work, `GPIO0` also needs a pullup resistor and the "power pin" GPIO will need a pullup/pulldown resistor - as appropriate in order to keep the PHY clock disabled when the ESP32 is in reset. See the example source code to see how the "power pin" GPIO can be managed in software. The example defaults to using `GPIO17` for this function, but it can be overriden. On Espressif's Ethernet development board, `GPIO17` is the power pin used to enable/disable the PHY oscillator.
+  > GPIO0 is a strapping pin for entering UART flashing mode on reset, care must be taken when using this pin as `EMAC_TX_CLK`. If the clock output from the PHY is oscillating during reset, the ESP32 may randomly enter UART flashing mode. One solution is to use an additional GPIO as a "power pin", which either powers the PHY on/off or enables/disables the PHY's own oscillator. This prevents the clock signal from being active during a system reset. For this configuration to work, `GPIO0` also needs a pullup resistor and the "power pin" GPIO will need a pullup/pulldown resistor - as appropriate in order to keep the PHY clock disabled when the ESP32 is in reset. See the example source code to see how the "power pin" GPIO can be managed in software. 
