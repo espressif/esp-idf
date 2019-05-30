@@ -80,10 +80,7 @@ before_script:
   - if [ "${LOCAL_GITLAB_SSH_SERVER:-}" ]; then SRV=${LOCAL_GITLAB_SSH_SERVER##*@};SRV=${SRV%%:*};printf "Host %s\n\tStrictHostKeyChecking no\n" "${SRV}" >> ~/.ssh/config; fi
   # Download and install tools, if needed
   - *setup_tools_unless_target_test
-
-  # Set IS_PRIVATE or IS_PUBLIC depending on if our branch is public or not
-  #
-  # (the same regular expressions are used to set these are used in 'only:' sections below
+  # Set some options and environment for CI
   - source tools/ci/configure_ci_environment.sh
 
   # fetch the submodules (& if necessary re-fetch repo) from gitlab
