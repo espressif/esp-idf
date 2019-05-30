@@ -246,6 +246,41 @@ EOF
         || failure "Custom bootloader source files should be built instead of the original's"
     rm -rf components
 
+    print_status "Empty directory not treated as a component"
+    clean_build_dir
+    mkdir -p components/esp32 && idf.py reconfigure
+    ! grep "$PWD/components/esp32"  $PWD/build/project_description.json || failure "Failed to build with empty esp32 directory in components"
+    rm -rf components
+
+    print_status "If a component directory is added to COMPONENT_DIRS, its subdirectories are not added"
+    clean_build_dir
+    mkdir -p main/test
+    echo "register_component()" > main/test/CMakeLists.txt
+    idf.py reconfigure
+    ! grep "$PWD/main/test" $PWD/build/project_description.json || failure "COMPONENT_DIRS has added component subdirectory to the build"
+    grep "$PWD/main" $PWD/build/project_description.json || failure "COMPONENT_DIRS parent component directory should be included in the build"
+    rm -rf main/test
+
+    print_status "If a component directory is added to COMPONENT_DIRS, its sibling directories are not added"
+    clean_build_dir
+    mkdir -p mycomponents/mycomponent 
+    echo "register_component()" > mycomponents/mycomponent/CMakeLists.txt
+    # first test by adding single component directory to EXTRA_COMPONENT_DIRS
+    mkdir -p mycomponents/esp32
+    echo "register_component()" > mycomponents/esp32/CMakeLists.txt
+    (export EXTRA_COMPONENT_DIRS=$PWD/mycomponents/mycomponent && idf.py reconfigure)
+    ! grep "$PWD/mycomponents/esp32" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
+    grep "$PWD/mycomponents/mycomponent" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS valid sibling directory should be in the build"
+    rm -rf mycomponents/esp32
+    # now the same thing, but add a components directory
+    mkdir -p esp32
+    echo "register_component()" > esp32/CMakeLists.txt
+    (export EXTRA_COMPONENT_DIRS=$PWD/mycomponents/mycomponent && idf.py reconfigure)
+    ! grep "$PWD/esp32" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
+    grep "$PWD/mycomponents/mycomponent" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS valid sibling directory should be in the build"
+    rm -rf esp32
+    rm -rf mycomponents
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
