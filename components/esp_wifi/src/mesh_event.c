@@ -19,7 +19,7 @@
 /* mesh event callback handler */
 mesh_event_cb_t g_mesh_event_cb = NULL;
 
-void esp_event_mesh_hook(system_event_t* event)
+esp_err_t esp_event_mesh_hook(system_event_t *event)
 {
     if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_LOST_IP) {
         if (g_mesh_event_cb) {
@@ -33,4 +33,5 @@ void esp_event_mesh_hook(system_event_t* event)
             g_mesh_event_cb(mevent);
         }
     }
+    return ESP_OK;
 }
