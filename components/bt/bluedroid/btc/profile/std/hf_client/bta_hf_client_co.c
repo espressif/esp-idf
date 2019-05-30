@@ -212,30 +212,29 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_si
 
 #endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
 
-    bta_hf_dec_init();
-    bta_hf_enc_init();
+        bta_hf_dec_init();
+        bta_hf_enc_init();
 
-    return;
-
-error_exit:;
-#if (HFP_DYNAMIC_MEMORY == TRUE)
-        if (bta_hf_client_co_cb_ptr) {
-            osi_free(bta_hf_client_co_cb_ptr);
-            bta_hf_client_co_cb_ptr = NULL;
-        }
-
-#if (PLC_INCLUDED == TRUE)
-        if (bta_hf_ct_plc_ptr) {
-            osi_free(bta_hf_ct_plc_ptr);
-            bta_hf_ct_plc_ptr = NULL;
-        }
-#endif  ///(PLC_INCLUDED == TRUE)
-
-#endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
+        return;
     } else {
+        return;
         // Nothing to do
     }
 
+#if (HFP_DYNAMIC_MEMORY == TRUE)
+error_exit:;
+    if (bta_hf_client_co_cb_ptr) {
+        osi_free(bta_hf_client_co_cb_ptr);
+        bta_hf_client_co_cb_ptr = NULL;
+    }
+
+#if (PLC_INCLUDED == TRUE)
+    if (bta_hf_ct_plc_ptr) {
+        osi_free(bta_hf_ct_plc_ptr);
+        bta_hf_ct_plc_ptr = NULL;
+    }
+#endif  ///(PLC_INCLUDED == TRUE)
+#endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
     return;
 }
 
