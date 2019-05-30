@@ -488,6 +488,17 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     print_status "Can set -D twice: globally and for subcommand, only if values are the same"
     idf.py -DAAA=BBB -DCCC=EEE build -DAAA=BBB -DCCC=EEE || failure "It should be allowed to set -D twice (globally and for subcommand) if values are the same"
 
+    print_status "Fail on build time works"
+    clean_build_dir
+    cp CMakeLists.txt CMakeLists.txt.bak
+    printf "\nif(NOT EXISTS \"\${CMAKE_CURRENT_LIST_DIR}/hello.txt\") \nfail_at_build_time(test_file \"hello.txt does not exists\") \nendif()" >> CMakeLists.txt
+    ! idf.py build || failure "Build should fail if requirements are not satisfied"
+    touch hello.txt
+    idf.py build || failure "Build succeeds once requirements are satisfied"
+    rm -rf hello.txt CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
+    rm -rf CMakeLists.txt.bak
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
