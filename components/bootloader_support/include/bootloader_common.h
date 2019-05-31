@@ -136,3 +136,8 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
  *  - ESP_FAIL:              mapping is fail.
  */
 esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
+
+/**
+ * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
+ */
+void bootloader_common_vddsdio_configure();
