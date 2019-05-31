@@ -195,7 +195,7 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t
             id_node = (esp_event_id_node_t*) calloc(1, sizeof(*id_node));
 
             if (!id_node) {
-                ESP_LOGI(TAG, "alloc for new id node failed");
+                ESP_LOGE(TAG, "alloc for new id node failed");
                 return ESP_ERR_NO_MEM;
             }
 
@@ -212,6 +212,8 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t
                 else {
                     SLIST_INSERT_AFTER(last_id_node, id_node, next);
                 }
+            } else {
+                free(id_node);
             }
 
             return err;
@@ -263,6 +265,8 @@ static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node, esp_eve
                 else {
                     SLIST_INSERT_AFTER(last_base_node, base_node, next);
                 }
+            } else {
+                free(base_node);
             }
 
             return err;
@@ -413,7 +417,7 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     loop = calloc(1, sizeof(*loop));
     if (loop == NULL) {
         ESP_LOGE(TAG, "alloc for event loop failed");
-        goto on_err;
+        return err;
     }
 
     loop->queue = xQueueCreate(event_loop_args->queue_size , sizeof(esp_event_post_instance_t));
@@ -688,6 +692,8 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop, es
             else {
                 SLIST_INSERT_AFTER(last_loop_node, loop_node, next);
             }
+        } else {
+            free(loop_node);
         }
     }
     else {
