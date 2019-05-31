@@ -131,13 +131,14 @@ endfunction()
 # and then adds -T with the filename only. This allows INCLUDE directives to be
 # used to include other linker scripts in the same directory.
 function(target_linker_script target scriptfiles)
-    cmake_parse_arguments(_ "PROCESS" "" "" ${ARGN})
+    cmake_parse_arguments(_ "" "PROCESS" "" ${ARGN})
     foreach(scriptfile ${scriptfiles})
         get_filename_component(abs_script "${scriptfile}" ABSOLUTE)
         message(STATUS "Adding linker script ${abs_script}")
 
         if(__PROCESS)
-            __ldgen_process_template(output ${abs_script})
+            get_filename_component(output "${__PROCESS}" ABSOLUTE)
+            __ldgen_process_template(${abs_script} ${output})
             set(abs_script ${output})
         endif()
 
