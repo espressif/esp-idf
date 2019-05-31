@@ -980,25 +980,30 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
     RTC_MODULE_CHECK(filter_period_ms >= portTICK_PERIOD_MS, "Touch pad filter period error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
 
-    esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter == NULL) {
         s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
         if (s_touch_pad_filter == NULL) {
-            ret = ESP_ERR_NO_MEM;
+            goto err_no_mem;
         }
     }
     if (s_touch_pad_filter->timer == NULL) {
         s_touch_pad_filter->timer = xTimerCreate("filter_tmr", filter_period_ms / portTICK_PERIOD_MS, pdFALSE,
         NULL, touch_pad_filter_cb);
         if (s_touch_pad_filter->timer == NULL) {
-            ret = ESP_ERR_NO_MEM;
+            free(s_touch_pad_filter);
+            s_touch_pad_filter = NULL;
+            goto err_no_mem;
         }
         s_touch_pad_filter->period = filter_period_ms;
     }
     xSemaphoreGive(rtc_touch_mux);
     touch_pad_filter_cb(NULL);
-    return ret;
+    return ESP_OK;
+
+err_no_mem:
+    xSemaphoreGive(rtc_touch_mux);
+    return ESP_ERR_NO_MEM;
 }
 
 esp_err_t touch_pad_filter_stop()
