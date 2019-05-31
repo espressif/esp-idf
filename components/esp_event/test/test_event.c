@@ -130,6 +130,9 @@ static esp_event_loop_args_t test_event_get_default_loop_args()
 
 static void test_event_simple_handler(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
+    if (!event_handler_arg) {
+        return;
+    }
     simple_arg_t* arg = (simple_arg_t*) event_handler_arg;
     xSemaphoreTake(arg->mutex, portMAX_DELAY);
 
@@ -391,7 +394,13 @@ TEST_CASE("can register/unregister handlers for all events/all events for a spec
     loop_args.task_name = NULL;
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create(&loop_args, &loop));
 
+    /* Register the handler twice to the same base and id but with a different argument (expects to return ESP_OK and log a warning)
+     * This aims to verify: 1) Handler's argument to be updated
+     *                      2) Registration not to leak memory
+     */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, test_event_simple_handler, NULL));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, test_event_simple_handler, &arg));
+
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, ESP_EVENT_ANY_ID, test_event_simple_handler, &arg));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_handler_register_with(loop, ESP_EVENT_ANY_BASE, TEST_EVENT_BASE1_EV1, test_event_simple_handler, &arg));
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_event_simple_handler, &arg));
