@@ -180,6 +180,7 @@ static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, 
             if (handler == it->handler) {
                 it->arg = handler_arg;
                 ESP_LOGW(TAG, "handler already registered, overwriting");
+                free(handler_instance);
                 return ESP_OK;
             }
             last = it;
