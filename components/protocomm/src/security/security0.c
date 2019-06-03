@@ -65,7 +65,9 @@ static void sec0_session_setup_cleanup(uint32_t session_id, SessionData *resp)
     return;
 }
 
-static esp_err_t sec0_req_handler(const protocomm_security_pop_t *pop, uint32_t session_id,
+static esp_err_t sec0_req_handler(protocomm_security_handle_t handle,
+                                  const protocomm_security_pop_t *pop,
+                                  uint32_t session_id,
                                   const uint8_t *inbuf, ssize_t inlen,
                                   uint8_t **outbuf, ssize_t *outlen,
                                   void *priv_data)

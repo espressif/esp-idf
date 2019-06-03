@@ -61,9 +61,12 @@ struct protocomm {
      * internally when protocomm_remove_endpoint() is invoked. */
     int (*remove_endpoint)(const char *ep_name);
 
-    /* Pointer to security layer instance to be used internally for
+    /* Pointer to security layer to be used internally for
      * establishing secure sessions */
     const protocomm_security_t *sec;
+
+    /* Handle to the security layer instance */
+    protocomm_security_handle_t sec_inst;
 
     /* Pointer to proof of possession object */
     protocomm_security_pop_t *pop;

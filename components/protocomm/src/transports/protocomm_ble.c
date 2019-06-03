@@ -281,7 +281,8 @@ static void transport_simple_ble_disconnect(esp_gatts_cb_event_t event, esp_gatt
     ESP_LOGD(TAG, "Inside disconnect w/ session - %d", param->disconnect.conn_id);
     if (protoble_internal->pc_ble->sec &&
         protoble_internal->pc_ble->sec->close_transport_session) {
-        ret = protoble_internal->pc_ble->sec->close_transport_session(param->disconnect.conn_id);
+        ret = protoble_internal->pc_ble->sec->close_transport_session(protoble_internal->pc_ble->sec_inst,
+                                                                      param->disconnect.conn_id);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error closing the session after disconnect");
         }
@@ -295,7 +296,8 @@ static void transport_simple_ble_connect(esp_gatts_cb_event_t event, esp_gatt_if
     ESP_LOGD(TAG, "Inside BLE connect w/ conn_id - %d", param->connect.conn_id);
     if (protoble_internal->pc_ble->sec &&
         protoble_internal->pc_ble->sec->new_transport_session) {
-        ret = protoble_internal->pc_ble->sec->new_transport_session(param->connect.conn_id);
+        ret = protoble_internal->pc_ble->sec->new_transport_session(protoble_internal->pc_ble->sec_inst,
+                                                                    param->connect.conn_id);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error creating the session");
         }
