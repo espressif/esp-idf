@@ -46,6 +46,7 @@
 #define BTA_BUSY                3
 #define BTA_NO_RESOURCES        4
 #define BTA_WRONG_MODE          5
+#define BTA_EIR_TOO_LARGE       6
 
 typedef UINT8 tBTA_STATUS;
 
@@ -295,21 +296,31 @@ typedef struct {
 #endif
 } tBTA_DM_INQ;
 
+/* Config EIR callback */
+typedef void (tBTA_DM_CONFIG_EIR_CBACK) (tBTA_STATUS status, UINT8 eir_type_num, UINT8 *eir_type);
+
 typedef struct {
+    BOOLEAN bta_dm_eir_fec_required;        /* FEC required */
     UINT8   bta_dm_eir_min_name_len;        /* minimum length of local name when it is shortened */
+
+    BOOLEAN bta_dm_eir_included_uuid;       /* Included UUIDs or not */
 #if (BTA_EIR_CANNED_UUID_LIST == TRUE)
     UINT8   bta_dm_eir_uuid16_len;          /* length of 16-bit UUIDs */
     UINT8  *bta_dm_eir_uuid16;              /* 16-bit UUIDs */
 #else
-    UINT32  uuid_mask[BTM_EIR_SERVICE_ARRAY_SIZE]; /* mask of UUID list in EIR */
+    UINT32  uuid_mask[BTM_EIR_SERVICE_ARRAY_SIZE];      /* mask of UUID list in EIR */
 #endif
-    INT8   *bta_dm_eir_inq_tx_power;        /* Inquiry TX power         */
-    UINT8   bta_dm_eir_flag_len;            /* length of flags in bytes */
-    UINT8  *bta_dm_eir_flags;               /* flags for EIR */
+
+    BOOLEAN bta_dm_eir_included_tx_power;   /* Included inquiry TX power or not */
+    INT8    bta_dm_eir_inq_tx_power;        /* Inquiry TX power */
+
+    UINT8   bta_dm_eir_flags;               /* flags for EIR */
     UINT8   bta_dm_eir_manufac_spec_len;    /* length of manufacturer specific in bytes */
     UINT8  *bta_dm_eir_manufac_spec;        /* manufacturer specific */
-    UINT8   bta_dm_eir_additional_len;      /* length of additional data in bytes */
-    UINT8  *bta_dm_eir_additional;          /* additional data */
+    UINT8   bta_dm_eir_url_len;             /* length of URL in bytes */
+    UINT8  *bta_dm_eir_url;                 /* URL data */
+
+    tBTA_DM_CONFIG_EIR_CBACK    *config_eir_callback;   /* callback */
 } tBTA_DM_EIR_CONF;
 
 #if BLE_INCLUDED == TRUE
@@ -1450,6 +1461,18 @@ extern void BTA_DisableTestMode(void);
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(const char *p_name);
 
+/*******************************************************************************
+**
+** Function         BTA_DmConfigEir
+**
+** Description      This function config EIR data of the local device.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config);
+
 extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
@@ -2292,8 +2315,8 @@ extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_l
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, 
-                                                BD_ADDR device_info, 
+extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
+                                                BD_ADDR device_info,
                                                 tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK p_update_duplicate_exceptional_list_cback);
 
 /*******************************************************************************

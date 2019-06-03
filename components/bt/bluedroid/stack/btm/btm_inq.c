@@ -2387,16 +2387,17 @@ void btm_read_linq_tx_power_complete(UINT8 *p)
 **
 ** Parameters       p_buff - allocated HCI command buffer including extended
 **                           inquriry response
+**                  fec_required - FEC is required or not
 **
 ** Returns          BTM_SUCCESS  - if successful
 **                  BTM_MODE_UNSUPPORTED - if local device cannot support it
 **
 *******************************************************************************/
-tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff )
+tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff, BOOLEAN fec_required)
 {
     if (controller_get_interface()->supports_extended_inquiry_response()) {
         BTM_TRACE_API("Write Extended Inquiry Response to controller\n");
-        btsnd_hcic_write_ext_inquiry_response (p_buff, BTM_EIR_DEFAULT_FEC_REQUIRED);
+        btsnd_hcic_write_ext_inquiry_response (p_buff, fec_required);
         return BTM_SUCCESS;
     } else {
         osi_free(p_buff);

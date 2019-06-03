@@ -32,6 +32,7 @@
 #endif  ///BTA_AV_INCLUDED == TRUE
 #include "common/bt_defs.h"
 #include "stack/btm_api.h"
+#include "bta/bta_api.h"
 
 /************************************************************************************
 **  Constants & Macros
@@ -238,6 +239,39 @@ esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
             break;
         case BTM_SET_PRIVACY_FAIL:
             esp_status = ESP_BT_STATUS_FAIL;
+            break;
+        default:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+    }
+
+    return esp_status;
+}
+
+esp_bt_status_t btc_bta_status_to_esp_status (uint8_t bta_status)
+{
+    esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
+    switch(bta_status){
+        case BTA_SUCCESS:
+            esp_status = ESP_BT_STATUS_SUCCESS;
+            break;
+        case BTA_FAILURE:
+            esp_status = ESP_BT_STATUS_FAIL;
+            break;
+        case BTA_PENDING:
+            esp_status = ESP_BT_STATUS_PENDING;
+            break;
+        case BTA_BUSY:
+            esp_status = ESP_BT_STATUS_BUSY;
+            break;
+        case BTA_NO_RESOURCES:
+            esp_status = ESP_BT_STATUS_NOMEM;
+            break;
+        case BTA_WRONG_MODE:
+            esp_status = ESP_BT_STATUS_NOT_READY;
+            break;
+        case BTA_EIR_TOO_LARGE:
+            esp_status = ESP_BT_STATUS_EIR_TOO_LARGE;
             break;
         default:
             esp_status = ESP_BT_STATUS_FAIL;
