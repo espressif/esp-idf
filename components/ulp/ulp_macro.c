@@ -38,6 +38,7 @@ typedef struct {
 
 #define RELOC_TYPE_LABEL   0
 #define RELOC_TYPE_BRANCH  1
+#define RELOC_TYPE_LABELPC 2
 
 /* This record means: there is a label at address
  * insn_addr, with number label_num.
@@ -57,6 +58,16 @@ typedef struct {
     .addr = insn_addr, \
     .unused = 0, \
     .type = RELOC_TYPE_BRANCH }
+
+/* This record means: there is a move instruction at insn_addr,
+ * imm needs to be changed to the program counter of the instruction
+ * at label label_num.
+ */
+#define RELOC_INFO_LABELPC(label_num, insn_addr) (reloc_info_t) { \
+    .label = label_num, \
+    .addr = insn_addr, \
+    .unused = 0, \
+    .type = RELOC_TYPE_LABELPC }
 
 /* Comparison function used to sort the relocations array */
 static int reloc_sort_func(const void* p_lhs, const void* p_rhs)
@@ -110,45 +121,61 @@ static int reloc_sort_func(const void* p_lhs, const void* p_rhs)
  *    For each label number, label entry comes first
  *    because the array was sorted at the previous step.
  *    Label address is recorded, and all subsequent
- *    "branch" entries which point to the same label number
- *    are processed. For each branch entry, correct offset
- *    or absolute address is calculated, depending on branch
- *    type, and written into the appropriate field of
- *    the instruction.
+ *    entries which point to the same label number
+ *    are processed. For each entry, correct offset
+ *    or absolute address is calculated, depending on 
+ *    type and subtype, and written into the appropriate 
+ *    field of the instruction.
  *
  */
 
 static esp_err_t do_single_reloc(ulp_insn_t* program, uint32_t load_addr,
-        reloc_info_t label_info, reloc_info_t branch_info)
+        reloc_info_t label_info, reloc_info_t the_reloc)
 {
-    size_t insn_offset = branch_info.addr - load_addr;
+    size_t insn_offset = the_reloc.addr - load_addr;
     ulp_insn_t* insn = &program[insn_offset];
-    // B and BX have the same layout of opcode/sub_opcode fields,
-    // and share the same opcode
-    assert(insn->b.opcode == OPCODE_BRANCH
-            && "branch macro was applied to a non-branch instruction");
-    switch (insn->b.sub_opcode) {
-        case SUB_OPCODE_B: {
-            int32_t offset = ((int32_t) label_info.addr) - ((int32_t) branch_info.addr);
-            uint32_t abs_offset = abs(offset);
-            uint32_t sign = (offset >= 0) ? 0 : 1;
-            if (abs_offset > 127) {
-                ESP_LOGW(TAG, "target out of range: branch from %x to %x",
-                        branch_info.addr, label_info.addr);
-                return ESP_ERR_ULP_BRANCH_OUT_OF_RANGE;
+
+    switch (the_reloc.type) {
+        case RELOC_TYPE_BRANCH: {
+            // B, BS and BX have the same layout of opcode/sub_opcode fields,
+            // and share the same opcode. B and BS also have the same layout of
+            // offset and sign fields.
+            assert(insn->b.opcode == OPCODE_BRANCH
+                    && "branch macro was applied to a non-branch instruction");
+            switch (insn->b.sub_opcode) {
+                case SUB_OPCODE_B:
+                case SUB_OPCODE_BS:{
+                    int32_t offset = ((int32_t) label_info.addr) - ((int32_t) the_reloc.addr);
+                    uint32_t abs_offset = abs(offset);
+                    uint32_t sign = (offset >= 0) ? 0 : 1;
+                    if (abs_offset > 127) {
+                        ESP_LOGW(TAG, "target out of range: branch from %x to %x",
+                                the_reloc.addr, label_info.addr);
+                        return ESP_ERR_ULP_BRANCH_OUT_OF_RANGE;
+                    }
+                    insn->b.offset = abs_offset; //== insn->bs.offset = abs_offset;
+                    insn->b.sign = sign;         //== insn->bs.sign = sign;
+                    break;
+                }
+                case SUB_OPCODE_BX:{
+                    assert(insn->bx.reg == 0 &&
+                            "relocation applied to a jump with offset in register");
+                    insn->bx.addr = label_info.addr;
+                    break;
+                }
+                default:
+                    assert(false && "unexpected branch sub-opcode");
             }
-            insn->b.offset = abs_offset;
-            insn->b.sign = sign;
             break;
         }
-        case SUB_OPCODE_BX: {
-            assert(insn->bx.reg == 0 &&
-                    "relocation applied to a jump with offset in register");
-            insn->bx.addr = label_info.addr;
+        case RELOC_TYPE_LABELPC: {
+            assert((insn->alu_imm.opcode == OPCODE_ALU && insn->alu_imm.sub_opcode == SUB_OPCODE_ALU_IMM && insn->alu_imm.sel == ALU_SEL_MOV)
+                        && "pc macro was applied to an incompatible instruction");
+            insn->alu_imm.imm = label_info.addr;
             break;
         }
         default:
-            assert(false && "unexpected sub-opcode");
+            assert(false && "unknown reloc type");
     }
     return ESP_OK;
 }
@@ -199,13 +226,17 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
     while (read_ptr < end) {
         ulp_insn_t r_insn = *read_ptr;
         if (r_insn.macro.opcode == OPCODE_MACRO) {
-            switch(r_insn.macro.sub_opcode) {
+            switch (r_insn.macro.sub_opcode) {
                 case SUB_OPCODE_MACRO_LABEL:
                     *cur_reloc = RELOC_INFO_LABEL(r_insn.macro.label,
                             cur_insn_addr);
                     break;
                 case SUB_OPCODE_MACRO_BRANCH:
                     *cur_reloc = RELOC_INFO_BRANCH(r_insn.macro.label,
+                            cur_insn_addr);
+                    break;
+                case SUB_OPCODE_MACRO_LABELPC:
+                    *cur_reloc = RELOC_INFO_LABELPC(r_insn.macro.label,
                             cur_insn_addr);
                     break;
                 default:
