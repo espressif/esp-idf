@@ -384,7 +384,7 @@ Command usage examples:
 
 .. highlight:: none
 
-1.  Collect SystemView tracing data to files "pro-cpu.SVDat" and "pro-cpu.SVDat". The files will be saved in "openocd-esp32" directory.
+1.  Collect SystemView tracing data to files "pro-cpu.SVDat" and "app-cpu.SVDat". The files will be saved in "openocd-esp32" directory.
 
     ::
 

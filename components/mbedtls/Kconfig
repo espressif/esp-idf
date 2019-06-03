@@ -330,13 +330,20 @@ menu "mbedTLS"
         help
             Disabling this option will save some code size if it is not needed.
 
-    config MBEDTLS_SSL_SESSION_TICKETS
-        bool "TLS: Support RFC 5077 SSL session tickets"
+    config MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+        bool "TLS: Client Support for RFC 5077 SSL session tickets"
         default y
         depends on MBEDTLS_TLS_ENABLED
         help
-            Support RFC 5077 session tickets. See mbedTLS documentation for more details.
+            Client support for RFC 5077 session tickets. See mbedTLS documentation for more details.
+            Disabling this option will save some code size.
 
+    config MBEDTLS_SERVER_SSL_SESSION_TICKETS
+        bool "TLS: Server Support for RFC 5077 SSL session tickets"
+        default y
+        depends on MBEDTLS_TLS_ENABLED
+        help
+            Server support for RFC 5077 session tickets. See mbedTLS documentation for more details.
             Disabling this option will save some code size.
 
     menu "Symmetric Ciphers"

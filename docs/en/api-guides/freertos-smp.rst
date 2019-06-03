@@ -291,7 +291,7 @@ resumed. Scheduler suspension in vanilla FreeRTOS is a common protection method
 against simultaneous access of data shared between tasks, whilst still allowing 
 ISRs to be serviced.
 
-In ESP-IDF FreeRTOS, :cpp:func:`xTaskResumeAll` will only prevent calls of 
+In ESP-IDF FreeRTOS, :cpp:func:`xTaskSuspendAll` will only prevent calls of
 ``vTaskSwitchContext()`` from switching contexts on the core that called for the
 suspension. Hence if **PRO_CPU** calls :cpp:func:`vTaskSuspendAll`, **APP_CPU** will 
 still be able to switch contexts. If data is shared between tasks that are 

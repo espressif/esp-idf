@@ -21,7 +21,7 @@ To compile with ESP-IDF you need to get the following packages:
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools cmake ninja ccache
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pip python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools cmake ninja ccache
 
 .. note::
     CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, enabling of a "backports" repository, or installing of a "cmake3" package rather than "cmake".

@@ -1308,7 +1308,7 @@
  *
  * Comment this macro to disable support for SSL session tickets
  */
-#ifdef CONFIG_MBEDTLS_SSL_SESSION_TICKETS
+#ifdef CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
 #define MBEDTLS_SSL_SESSION_TICKETS
 #endif
 
@@ -2340,7 +2340,9 @@
  *
  * Requires: MBEDTLS_CIPHER_C
  */
+#ifdef CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS
 #define MBEDTLS_SSL_TICKET_C
+#endif
 
 /**
  * \def MBEDTLS_SSL_CLI_C
