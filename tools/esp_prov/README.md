@@ -13,12 +13,12 @@ python esp_prov.py --transport < mode of provisioning : softap \ ble \ console >
 
 Usage of `esp-prov` assumes that the provisioning app has specific protocomm endpoints active. These endpoints are active in the provisioning examples and accept specific protobuf data structures:
 
-| Endpoint Name | URI (HTTP server on ip:port) | UUID (BLE)                           | Description                                               |
-|---------------|------------------------------|--------------------------------------|-----------------------------------------------------------|
-| prov-session  | http://ip:port/prov-session  | 0000ff51-0000-1000-8000-00805f9b34fb | Security endpoint used for session establishment          |
-| prov-config   | http://ip:port/prov-config   | 0000ff52-0000-1000-8000-00805f9b34fb | Endpoint used for configuring Wi-Fi credentials on device |
-| proto-ver     | http://ip:port/proto-ver     | 0000ff53-0000-1000-8000-00805f9b34fb | Version endpoint for checking protocol compatibility      |
-| custom-config | http://ip:port/custom-config | NA                                   | Optional endpoint for configuring custom credentials      |
+| Endpoint Name | URI (HTTP server on ip:port) | Description                                               |
+|---------------|------------------------------|-----------------------------------------------------------|
+| prov-session  | http://ip:port/prov-session  | Security endpoint used for session establishment          |
+| prov-config   | http://ip:port/prov-config   | Endpoint used for configuring Wi-Fi credentials on device |
+| proto-ver     | http://ip:port/proto-ver     | Version endpoint for checking protocol compatibility      |
+| custom-config | http://ip:port/custom-config | Optional endpoint for configuring custom credentials      |
 
 # PARAMETERS
 
