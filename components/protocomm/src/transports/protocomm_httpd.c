@@ -50,9 +50,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
             if (pc_httpd->sec && pc_httpd->sec->close_transport_session) {
                 ret = pc_httpd->sec->close_transport_session(session_id);
                 if (ret != ESP_OK) {
-                    ESP_LOGE(TAG, "Failed to close session with ID: %d", session_id);
-                    ret = ESP_FAIL;
-                    goto out;
+                    ESP_LOGW(TAG, "Error closing session with ID: %d", session_id);
                 }
             }
             session_id = PROTOCOMM_NO_SESSION_ID;
@@ -241,6 +239,7 @@ esp_err_t protocomm_httpd_start(protocomm_t *pc, const protocomm_httpd_config_t 
     pc->add_endpoint    = protocomm_httpd_add_endpoint;
     pc->remove_endpoint = protocomm_httpd_remove_endpoint;
     pc_httpd = pc;
+    session_id = PROTOCOMM_NO_SESSION_ID;
     return ESP_OK;
 }
 
@@ -256,6 +255,7 @@ esp_err_t protocomm_httpd_stop(protocomm_t *pc)
         }
         pc_httpd->priv = NULL;
         pc_httpd = NULL;
+        session_id = PROTOCOMM_NO_SESSION_ID;
         return ESP_OK;
     }
     return ESP_ERR_INVALID_ARG;
