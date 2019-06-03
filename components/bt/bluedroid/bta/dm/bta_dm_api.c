@@ -183,6 +183,48 @@ void BTA_DmSetDeviceName(const char *p_name)
 
 }
 
+void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
+{
+    tBTA_DM_API_CONFIG_EIR    *p_msg;
+
+    UINT8 eir_manufac_spec_len = eir_config->bta_dm_eir_manufac_spec_len;
+    UINT8 eir_url_len = eir_config->bta_dm_eir_url_len;
+
+    if (eir_manufac_spec_len > HCI_EXT_INQ_RESPONSE_LEN) {
+        APPL_TRACE_WARNING ("%s: Manufacturer data is too long(%d), cut it to %d\n",
+                            __func__, eir_manufac_spec_len, HCI_EXT_INQ_RESPONSE_LEN);
+        eir_manufac_spec_len = HCI_EXT_INQ_RESPONSE_LEN;
+    }
+    if (eir_url_len > HCI_EXT_INQ_RESPONSE_LEN) {
+        APPL_TRACE_WARNING ("%s: URL is too long(%d), cut it to %d\n",
+                            __func__, eir_url_len, HCI_EXT_INQ_RESPONSE_LEN);
+        eir_url_len = HCI_EXT_INQ_RESPONSE_LEN;
+    }
+
+    if ((p_msg = (tBTA_DM_API_CONFIG_EIR *) osi_malloc(sizeof(tBTA_DM_API_CONFIG_EIR) + eir_manufac_spec_len + eir_url_len)) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CONFIG_EIR_EVT;
+
+        p_msg->eir_fec_required = eir_config->bta_dm_eir_fec_required;
+        p_msg->eir_included_tx_power = eir_config->bta_dm_eir_included_tx_power;
+        p_msg->eir_included_uuid = eir_config->bta_dm_eir_included_uuid;
+        p_msg->eir_flags = eir_config->bta_dm_eir_flags;
+        p_msg->eir_manufac_spec_len = eir_manufac_spec_len;
+        p_msg->eir_manufac_spec = p_msg->data;
+        p_msg->eir_url_len = eir_url_len;
+        p_msg->eir_url = p_msg->data + eir_manufac_spec_len;
+
+        if (eir_manufac_spec_len > 0) {
+            memcpy(p_msg->eir_manufac_spec, eir_config->bta_dm_eir_manufac_spec, eir_manufac_spec_len);
+        }
+
+        if (eir_url_len > 0) {
+            memcpy(p_msg->eir_url, eir_config->bta_dm_eir_url, eir_url_len);
+        }
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;

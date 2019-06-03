@@ -126,6 +126,7 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/btc/profile/std/avrc/bta_avrc_co.c"
                    "bluedroid/btc/profile/std/gap/btc_gap_ble.c"
                    "bluedroid/btc/profile/std/gap/btc_gap_bt.c"
+                   "bluedroid/btc/profile/std/gap/bta_gap_bt_co.c"
                    "bluedroid/btc/profile/std/gatt/btc_gatt_common.c"
                    "bluedroid/btc/profile/std/gatt/btc_gatt_util.c"
                    "bluedroid/btc/profile/std/gatt/btc_gattc.c"

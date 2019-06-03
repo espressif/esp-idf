@@ -131,7 +131,7 @@ static void bta_dm_observe_discard_cb (uint32_t num_dis);
 static void bta_dm_delay_role_switch_cback(TIMER_LIST_ENT *p_tle);
 extern void sdpu_uuid16_to_uuid128(UINT16 uuid16, UINT8 *p_uuid128);
 static void bta_dm_disable_timer_cback(TIMER_LIST_ENT *p_tle);
-
+extern int bredr_txpwr_get(int *min_power_level, int *max_power_level);
 
 const UINT16 bta_service_id_to_uuid_lkup_tbl [BTA_MAX_SERVICE_ID] = {
     UUID_SERVCLASS_PNP_INFORMATION,         /* Reserved */
@@ -326,6 +326,58 @@ void bta_dm_deinit_cb(void)
 }
 
 /*******************************************************************************
+ *
+ * Function         bta_dm_eir_cfg_init
+ *
+ * Description      Initializes the p_bta_dm_eir_cfg
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_dm_eir_cfg_init(void)
+{
+    p_bta_dm_eir_cfg->bta_dm_eir_fec_required = BTM_EIR_DEFAULT_FEC_REQUIRED;
+    p_bta_dm_eir_cfg->bta_dm_eir_min_name_len = 50;
+
+    p_bta_dm_eir_cfg->bta_dm_eir_included_uuid = TRUE;
+    p_bta_dm_eir_cfg->bta_dm_eir_included_tx_power = FALSE;
+    p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power = 3;
+    p_bta_dm_eir_cfg->bta_dm_eir_flags = 0;
+
+    p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len = 0;
+    p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = NULL;
+
+    p_bta_dm_eir_cfg->bta_dm_eir_url_len = 0;
+    p_bta_dm_eir_cfg->bta_dm_eir_url = NULL;
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_eir_cfg_deinit
+ *
+ * Description      De-initializes the p_bta_dm_eir_cfg
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_dm_eir_cfg_deinit(void)
+{
+    p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len = 0;
+    if (p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec) {
+        osi_free(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec);
+        p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = NULL;
+    }
+
+    p_bta_dm_eir_cfg->bta_dm_eir_url_len = 0;
+    if (p_bta_dm_eir_cfg->bta_dm_eir_url) {
+        osi_free(p_bta_dm_eir_cfg->bta_dm_eir_url);
+        p_bta_dm_eir_cfg->bta_dm_eir_url = NULL;
+    }
+}
+
+/*******************************************************************************
 **
 ** Function         bta_dm_sys_hw_cback
 **
@@ -363,6 +415,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         /* reinitialize the control block */
         bta_dm_deinit_cb();
 
+        /* reinitialize the Extended Inquiry Response */
+        bta_dm_eir_cfg_deinit();
+
         bta_sys_free_timer(&bta_dm_search_cb.search_timer);
 #if ((defined BLE_INCLUDED) && (BLE_INCLUDED == TRUE))
 #if ((defined BTA_GATT_INCLUDED) && (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
@@ -390,6 +445,9 @@ static void bta_dm_sys_hw_cback( tBTA_SYS_HW_EVT status )
         temp_cback = bta_dm_cb.p_sec_cback;
         /* make sure the control block is properly initialized */
         bta_dm_init_cb();
+
+        /* make sure the Extended Inquiry Response is properly initialized */
+        bta_dm_eir_cfg_init();
 
         /* and retrieve the callback */
         bta_dm_cb.p_sec_cback = temp_cback;
@@ -588,9 +646,52 @@ static void bta_dm_disable_timer_cback (TIMER_LIST_ENT *p_tle)
 *******************************************************************************/
 void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 {
-
     BTM_SetLocalDeviceName((char *)p_data->set_name.name);
+#if CLASSIC_BT_INCLUDED
     bta_dm_set_eir ((char *)p_data->set_name.name);
+#endif /// CLASSIC_BT_INCLUDED
+}
+
+void bta_dm_config_eir (tBTA_DM_MSG *p_data)
+{
+    tBTA_DM_API_CONFIG_EIR *config_eir = &p_data->config_eir;
+
+    p_bta_dm_eir_cfg->bta_dm_eir_fec_required = config_eir->eir_fec_required;
+    p_bta_dm_eir_cfg->bta_dm_eir_included_uuid = config_eir->eir_included_uuid;
+    p_bta_dm_eir_cfg->bta_dm_eir_included_tx_power = config_eir->eir_included_tx_power;
+    p_bta_dm_eir_cfg->bta_dm_eir_flags = config_eir->eir_flags;
+    p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len = config_eir->eir_manufac_spec_len;
+    p_bta_dm_eir_cfg->bta_dm_eir_url_len = config_eir->eir_url_len;
+
+    if (p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec) {
+        osi_free(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec);
+        p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = NULL;
+    }
+    if (config_eir->eir_manufac_spec) {
+        p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = osi_malloc(config_eir->eir_manufac_spec_len);
+        if (p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec) {
+            memcpy(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec, config_eir->eir_manufac_spec, config_eir->eir_manufac_spec_len);
+        } else {
+            APPL_TRACE_ERROR("%s, malloc failed.", __func__);
+            p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len = 0;
+        }
+    }
+
+    if (p_bta_dm_eir_cfg->bta_dm_eir_url) {
+        osi_free(p_bta_dm_eir_cfg->bta_dm_eir_url);
+        p_bta_dm_eir_cfg->bta_dm_eir_url = NULL;
+    }
+    if (config_eir->eir_url) {
+        p_bta_dm_eir_cfg->bta_dm_eir_url = osi_malloc(config_eir->eir_url_len);
+        if (p_bta_dm_eir_cfg->bta_dm_eir_url == NULL) {
+            memcpy(p_bta_dm_eir_cfg->bta_dm_eir_url, config_eir->eir_url, config_eir->eir_url_len);
+        } else {
+            APPL_TRACE_ERROR("%s, malloc failed.", __func__);
+            p_bta_dm_eir_cfg->bta_dm_eir_url_len = 0;
+        }
+    }
+
+    bta_dm_set_eir(NULL);
 }
 
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
@@ -3719,23 +3820,37 @@ static void bta_dm_set_eir (char *local_name)
     UINT8    custom_uuid_idx;
 #endif  // BTA_EIR_SERVER_NUM_CUSTOM_UUID
 #endif  // BTA_EIR_CANNED_UUID_LIST
-#if (BTM_EIR_DEFAULT_FEC_REQUIRED == FALSE)
-    UINT8    free_eir_length = HCI_EXT_INQ_RESPONSE_LEN;
-#else  // BTM_EIR_DEFAULT_FEC_REQUIRED
-    UINT8    free_eir_length = HCI_DM5_PACKET_SIZE;
-#endif  // BTM_EIR_DEFAULT_FEC_REQUIRED
+
+    UINT8    free_eir_length;
+    if (p_bta_dm_eir_cfg->bta_dm_eir_fec_required) {
+        free_eir_length = HCI_DM5_PACKET_SIZE;
+    } else {
+        free_eir_length = HCI_EXT_INQ_RESPONSE_LEN;
+    }
+
     UINT8    num_uuid;
     UINT8    data_type;
     UINT8    local_name_len;
 
+    UINT8    eir_type[BTM_EIR_TYPE_MAX_NUM];
+    UINT8    eir_type_num = 0;
+
+    tBTA_STATUS status = BTA_SUCCESS;
+
     /* wait until complete to disable */
     if (bta_dm_cb.disable_timer.in_use) {
+        if (p_bta_dm_eir_cfg->config_eir_callback) {
+            p_bta_dm_eir_cfg->config_eir_callback(BTA_WRONG_MODE, eir_type_num , eir_type);
+        }
         return;
     }
 
 #if ( BTA_EIR_CANNED_UUID_LIST != TRUE )
     /* wait until App is ready */
     if (bta_dm_cb.app_ready_timer.in_use) {
+        if (p_bta_dm_eir_cfg->config_eir_callback) {
+            p_bta_dm_eir_cfg->config_eir_callback(BTA_WRONG_MODE, eir_type_num , eir_type);
+        }
         return;
     }
 
@@ -3750,6 +3865,9 @@ static void bta_dm_set_eir (char *local_name)
     /* Allocate a buffer to hold HCI command */
     if ((p_buf = (BT_HDR *)osi_malloc(BTM_CMD_BUF_SIZE)) == NULL) {
         APPL_TRACE_ERROR("bta_dm_set_eir couldn't allocate buffer");
+        if (p_bta_dm_eir_cfg->config_eir_callback) {
+            p_bta_dm_eir_cfg->config_eir_callback(BTA_NO_RESOURCES, eir_type_num , eir_type);
+        }
         return;
     }
     p = (UINT8 *)p_buf + BTM_HCI_EIR_OFFSET;
@@ -3790,6 +3908,7 @@ static void bta_dm_set_eir (char *local_name)
 
     UINT8_TO_STREAM(p, local_name_len + 1);
     UINT8_TO_STREAM(p, data_type);
+    eir_type[eir_type_num++] = data_type;
 
     if (local_name != NULL) {
         memcpy(p, local_name, local_name_len);
@@ -3797,164 +3916,218 @@ static void bta_dm_set_eir (char *local_name)
     }
     free_eir_length -= local_name_len + 2;
 
+    /* if UUIDs are provided in configuration */
+    if (p_bta_dm_eir_cfg->bta_dm_eir_included_uuid) {
 #if (BTA_EIR_CANNED_UUID_LIST == TRUE)
-    /* if UUID list is provided as static data in configuration */
-    if (( p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len > 0 )
-            && (p_bta_dm_eir_cfg->bta_dm_eir_uuid16)) {
-        if ( free_eir_length > LEN_UUID_16 + 2) {
-            free_eir_length -= 2;
+        /* if UUID list is provided as static data in configuration */
+        if (( p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len > 0 )
+                && (p_bta_dm_eir_cfg->bta_dm_eir_uuid16)) {
+            if ( free_eir_length > LEN_UUID_16 + 2) {
+                free_eir_length -= 2;
 
-            if ( free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len) {
-                num_uuid = p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len / LEN_UUID_16;
-                data_type = BTM_EIR_COMPLETE_16BITS_UUID_TYPE;
-            } else { /* not enough room for all UUIDs */
-                APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
-                num_uuid = free_eir_length / LEN_UUID_16;
-                data_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
+                if ( free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len) {
+                    num_uuid = p_bta_dm_eir_cfg->bta_dm_eir_uuid16_len / LEN_UUID_16;
+                    data_type = BTM_EIR_COMPLETE_16BITS_UUID_TYPE;
+                } else { /* not enough room for all UUIDs */
+                    APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
+                    num_uuid = free_eir_length / LEN_UUID_16;
+                    data_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
+                }
+                UINT8_TO_STREAM(p, num_uuid * LEN_UUID_16 + 1);
+                UINT8_TO_STREAM(p, data_type);
+                eir_type[eir_type_num++] = data_type;
+                memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_uuid16, num_uuid * LEN_UUID_16 );
+                p += num_uuid * LEN_UUID_16;
+                free_eir_length -= num_uuid * LEN_UUID_16;
+            } else {
+                status = BTA_EIR_TOO_LARGE;
             }
-            UINT8_TO_STREAM(p, num_uuid * LEN_UUID_16 + 1);
-            UINT8_TO_STREAM(p, data_type);
-            memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_uuid16, num_uuid * LEN_UUID_16 );
-            p += num_uuid * LEN_UUID_16;
-            free_eir_length -= num_uuid * LEN_UUID_16;
         }
-    }
 #else /* (BTA_EIR_CANNED_UUID_LIST == TRUE) */
-    /* if UUID list is dynamic */
-    if ( free_eir_length >= 2) {
-        p_length = p++;
-        p_type   = p++;
-        num_uuid = 0;
+        /* if UUID list is dynamic */
+        if ( free_eir_length >= 2) {
+            p_length = p++;
+            p_type   = p++;
+            num_uuid = 0;
 
-        max_num_uuid = (free_eir_length - 2) / LEN_UUID_16;
-        data_type = BTM_GetEirSupportedServices( bta_dm_cb.eir_uuid, &p, max_num_uuid, &num_uuid );
+            max_num_uuid = (free_eir_length - 2) / LEN_UUID_16;
+            data_type = BTM_GetEirSupportedServices( bta_dm_cb.eir_uuid, &p, max_num_uuid, &num_uuid );
 
-        if ( data_type == BTM_EIR_MORE_16BITS_UUID_TYPE ) {
-            APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
-        }
+            if ( data_type == BTM_EIR_MORE_16BITS_UUID_TYPE ) {
+                APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
+            }
 #if (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0)
-        else {
+            else {
+                for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
+                    if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_16) {
+                        if ( num_uuid < max_num_uuid ) {
+                            UINT16_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid16);
+                            num_uuid++;
+                        } else {
+                            data_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
+                            APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
+                            break;
+                        }
+                    }
+                }
+            }
+#endif /* (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0) */
+
+            UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_16 + 1);
+            UINT8_TO_STREAM(p_type, data_type);
+            eir_type[eir_type_num++] = data_type;
+            free_eir_length -= num_uuid * LEN_UUID_16 + 2;
+        } else {
+            status = BTA_EIR_TOO_LARGE;
+        }
+#endif /* (BTA_EIR_CANNED_UUID_LIST == TRUE) */
+
+#if ( BTA_EIR_CANNED_UUID_LIST != TRUE )&&(BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0)
+        /* Adding 32-bit UUID list */
+        if ( free_eir_length >= 2) {
+            p_length = p++;
+            p_type   = p++;
+            num_uuid = 0;
+            data_type = BTM_EIR_COMPLETE_32BITS_UUID_TYPE;
+
+            max_num_uuid = (free_eir_length - 2) / LEN_UUID_32;
+
             for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
-                if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_16) {
+                if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_32) {
                     if ( num_uuid < max_num_uuid ) {
-                        UINT16_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid16);
+                        UINT32_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid32);
                         num_uuid++;
                     } else {
-                        data_type = BTM_EIR_MORE_16BITS_UUID_TYPE;
-                        APPL_TRACE_WARNING("BTA EIR: UUID 16-bit list is truncated");
+                        data_type = BTM_EIR_MORE_32BITS_UUID_TYPE;
+                        APPL_TRACE_WARNING("BTA EIR: UUID 32-bit list is truncated");
                         break;
                     }
                 }
             }
+
+            UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_32 + 1);
+            UINT8_TO_STREAM(p_type, data_type);
+            eir_type[eir_type_num++] = data_type;
+            free_eir_length -= num_uuid * LEN_UUID_32 + 2;
+        } else {
+            status = BTA_EIR_TOO_LARGE;
         }
-#endif /* (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0) */
 
-        UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_16 + 1);
-        UINT8_TO_STREAM(p_type, data_type);
-        free_eir_length -= num_uuid * LEN_UUID_16 + 2;
-    }
-#endif /* (BTA_EIR_CANNED_UUID_LIST == TRUE) */
+        /* Adding 128-bit UUID list */
+        if ( free_eir_length >= 2) {
+            p_length = p++;
+            p_type   = p++;
+            num_uuid = 0;
+            data_type = BTM_EIR_COMPLETE_128BITS_UUID_TYPE;
 
-#if ( BTA_EIR_CANNED_UUID_LIST != TRUE )&&(BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0)
-    /* Adding 32-bit UUID list */
-    if ( free_eir_length >= 2) {
-        p_length = p++;
-        p_type   = p++;
-        num_uuid = 0;
-        data_type = BTM_EIR_COMPLETE_32BITS_UUID_TYPE;
+            max_num_uuid = (free_eir_length - 2) / LEN_UUID_128;
 
-        max_num_uuid = (free_eir_length - 2) / LEN_UUID_32;
-
-        for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
-            if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_32) {
-                if ( num_uuid < max_num_uuid ) {
-                    UINT32_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid32);
-                    num_uuid++;
-                } else {
-                    data_type = BTM_EIR_MORE_32BITS_UUID_TYPE;
-                    APPL_TRACE_WARNING("BTA EIR: UUID 32-bit list is truncated");
-                    break;
+            for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
+                if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_128) {
+                    if ( num_uuid < max_num_uuid ) {
+                        ARRAY16_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid128);
+                        num_uuid++;
+                    } else {
+                        data_type = BTM_EIR_MORE_128BITS_UUID_TYPE;
+                        APPL_TRACE_WARNING("BTA EIR: UUID 128-bit list is truncated");
+                        break;
+                    }
                 }
             }
+
+            UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_128 + 1);
+            UINT8_TO_STREAM(p_type, data_type);
+            eir_type[eir_type_num++] = data_type;
+            free_eir_length -= num_uuid * LEN_UUID_128 + 2;
         }
-
-        UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_32 + 1);
-        UINT8_TO_STREAM(p_type, data_type);
-        free_eir_length -= num_uuid * LEN_UUID_32 + 2;
-    }
-
-    /* Adding 128-bit UUID list */
-    if ( free_eir_length >= 2) {
-        p_length = p++;
-        p_type   = p++;
-        num_uuid = 0;
-        data_type = BTM_EIR_COMPLETE_128BITS_UUID_TYPE;
-
-        max_num_uuid = (free_eir_length - 2) / LEN_UUID_128;
-
-        for (custom_uuid_idx = 0; custom_uuid_idx < BTA_EIR_SERVER_NUM_CUSTOM_UUID; custom_uuid_idx++) {
-            if (bta_dm_cb.custom_uuid[custom_uuid_idx].len == LEN_UUID_128) {
-                if ( num_uuid < max_num_uuid ) {
-                    ARRAY16_TO_STREAM(p, bta_dm_cb.custom_uuid[custom_uuid_idx].uu.uuid128);
-                    num_uuid++;
-                } else {
-                    data_type = BTM_EIR_MORE_128BITS_UUID_TYPE;
-                    APPL_TRACE_WARNING("BTA EIR: UUID 128-bit list is truncated");
-                    break;
-                }
-            }
+         else {
+            status = BTA_EIR_TOO_LARGE;
         }
-
-        UINT8_TO_STREAM(p_length, num_uuid * LEN_UUID_128 + 1);
-        UINT8_TO_STREAM(p_type, data_type);
-        free_eir_length -= num_uuid * LEN_UUID_128 + 2;
-    }
 #endif /* ( BTA_EIR_CANNED_UUID_LIST != TRUE )&&(BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0) */
+    }
 
     /* if Flags are provided in configuration */
-    if (( p_bta_dm_eir_cfg->bta_dm_eir_flag_len > 0 )
-            && ( p_bta_dm_eir_cfg->bta_dm_eir_flags )
-            && ( free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_flag_len + 2 )) {
-        UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_flag_len + 1);
-        UINT8_TO_STREAM(p, BTM_EIR_FLAGS_TYPE);
-        memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_flags,
-               p_bta_dm_eir_cfg->bta_dm_eir_flag_len);
-        p += p_bta_dm_eir_cfg->bta_dm_eir_flag_len;
-        free_eir_length -= p_bta_dm_eir_cfg->bta_dm_eir_flag_len + 2;
+    if ( p_bta_dm_eir_cfg->bta_dm_eir_flags != 0 ) {
+        if ( free_eir_length >= 3 ) {
+            UINT8_TO_STREAM(p, 2);
+            UINT8_TO_STREAM(p, BTM_EIR_FLAGS_TYPE);
+            eir_type[eir_type_num++] = BTM_EIR_FLAGS_TYPE;
+            UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_flags);
+            free_eir_length -= 3;
+        } else {
+            status = BTA_EIR_TOO_LARGE;
+        }
     }
 
     /* if Manufacturer Specific are provided in configuration */
     if (( p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len > 0 )
-            && ( p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec )
-            && ( free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 2 )) {
-        p_length = p;
+            && ( p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec )) {
+        if ( free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 2) {
+            p_length = p;
 
-        UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 1);
-        UINT8_TO_STREAM(p, BTM_EIR_MANUFACTURER_SPECIFIC_TYPE);
-        memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec,
+            UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 1);
+            UINT8_TO_STREAM(p, BTM_EIR_MANUFACTURER_SPECIFIC_TYPE);
+            eir_type[eir_type_num++] = BTM_EIR_MANUFACTURER_SPECIFIC_TYPE;
+            memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec,
                p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len);
-        p += p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len;
-        free_eir_length -= p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 2;
-
+            p += p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len;
+            free_eir_length -= p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 2;
+        } else {
+            status = BTA_EIR_TOO_LARGE;
+        }
     } else {
         p_length = NULL;
     }
 
     /* if Inquiry Tx Resp Power compiled */
-    if ((p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power) &&
-            (free_eir_length >= 3)) {
-        UINT8_TO_STREAM(p, 2);      /* Length field */
-        UINT8_TO_STREAM(p, BTM_EIR_TX_POWER_LEVEL_TYPE);
-        UINT8_TO_STREAM(p, *(p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power));
-        free_eir_length -= 3;
+    if (p_bta_dm_eir_cfg->bta_dm_eir_included_tx_power) {
+        if (free_eir_length >= 3) {
+            int min_power_level, max_power_level;
+            if (bredr_txpwr_get(&min_power_level, &max_power_level) == 0) {
+                INT8 btm_tx_power[BTM_TX_POWER_LEVEL_MAX + 1] = BTM_TX_POWER;
+                p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power = btm_tx_power[max_power_level];
+                UINT8_TO_STREAM(p, 2);      /* Length field */
+                UINT8_TO_STREAM(p, BTM_EIR_TX_POWER_LEVEL_TYPE);
+                eir_type[eir_type_num++] = BTM_EIR_TX_POWER_LEVEL_TYPE;
+                UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_inq_tx_power);
+            free_eir_length -= 3;
+            }
+        } else {
+            status = BTA_EIR_TOO_LARGE;
+        }
+    }
+
+    /* if URL are provided in configuration */
+    if (( p_bta_dm_eir_cfg->bta_dm_eir_url_len > 0 )
+            && ( p_bta_dm_eir_cfg->bta_dm_eir_url )) {
+        if ( free_eir_length >= p_bta_dm_eir_cfg->bta_dm_eir_url_len + 2 ) {
+            UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_url_len + 1);
+            UINT8_TO_STREAM(p, BTM_EIR_URL_TYPE);
+            eir_type[eir_type_num++] = BTM_EIR_URL_TYPE;
+            memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_url,
+               p_bta_dm_eir_cfg->bta_dm_eir_url_len);
+            p += p_bta_dm_eir_cfg->bta_dm_eir_url_len;
+            free_eir_length -= p_bta_dm_eir_cfg->bta_dm_eir_url_len + 2;
+        } else {
+            status = BTA_EIR_TOO_LARGE;
+        }
     }
 
     if ( free_eir_length ) {
         UINT8_TO_STREAM(p, 0);    /* terminator of significant part */
     }
 
-    BTM_WriteEIR( p_buf );
+    tBTM_STATUS btm_status = BTM_WriteEIR( p_buf, p_bta_dm_eir_cfg->bta_dm_eir_fec_required );
 
+    if ( btm_status == BTM_MODE_UNSUPPORTED) {
+        status = BTA_WRONG_MODE;
+    } else if (btm_status != BTM_SUCCESS) {
+        status = BTA_FAILURE;
+    }
+
+    if (p_bta_dm_eir_cfg->config_eir_callback) {
+        p_bta_dm_eir_cfg->config_eir_callback(status, eir_type_num, eir_type);
+    }
 }
 
 /*******************************************************************************
