@@ -386,7 +386,7 @@ bool config_save(const config_t *config, const char *filename)
     int err_code = 0;
     nvs_handle_t fp;
     char *line = osi_calloc(1024);
-    const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
+    const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 10 + 1; // including log10(sizeof(i))
     char *keyname = osi_calloc(keyname_bufsz);
     int config_size = get_config_size(config);
     char *buf = osi_calloc(config_size + 100);
