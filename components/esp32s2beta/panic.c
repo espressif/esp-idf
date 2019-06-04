@@ -62,7 +62,7 @@
   Note: The linker script will put everything in this file in IRAM/DRAM, so it also works with flash cache disabled.
 */
 
-#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+#if !CONFIG_ESP32S2_PANIC_SILENT_REBOOT
 //printf may be broken, so we fix our own printing fns...
 static void panicPutChar(char c)
 {
@@ -145,7 +145,7 @@ static __attribute__((noreturn)) inline void invoke_abort()
 
 void abort()
 {
-#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+#if !CONFIG_ESP32S2_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
     invoke_abort();
@@ -557,7 +557,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     reconfigureAllWdts();
 #endif
 
-#if CONFIG_ESP32_PANIC_GDBSTUB
+#if CONFIG_ESP32S2_PANIC_GDBSTUB
     disableAllWdts();
     esp_panic_wdt_stop();
     panicPutStr("Entering gdb stub now.\r\n");
@@ -593,8 +593,8 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     disableAllWdts();
     panicPutStr("CPU halted.\r\n");
     while (1);
-#endif /* CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT */
-#endif /* CONFIG_ESP32_PANIC_GDBSTUB */
+#endif /* CONFIG_ESP32S2_PANIC_PRINT_REBOOT || CONFIG_ESP32S2_PANIC_SILENT_REBOOT */
+#endif /* CONFIG_ESP32S2_PANIC_GDBSTUB */
 }
 
 

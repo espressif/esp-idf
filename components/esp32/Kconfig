@@ -1,4 +1,8 @@
 menu "ESP32-specific"
+     # TODO: this component simply shouldn't be included
+     # in the build at the CMake level, but this is currently
+     # not working so we just hide all items here
+     visible if CONFIG_IDF_TARGET_ESP32
 
     choice ESP32_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
@@ -446,8 +450,6 @@ menu "ESP32-specific"
             e.g. GCOV data dump.
 
     config ESP32_BROWNOUT_DET
-        #The brownout detector code is disabled (by making it depend on a nonexisting symbol) because the current
-        #revision of ESP32 silicon has a bug in the brown-out detector, rendering it unusable for resetting the CPU.
         bool "Hardware brownout detect & reset"
         default y
         help

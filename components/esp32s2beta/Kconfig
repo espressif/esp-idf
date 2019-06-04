@@ -1,117 +1,117 @@
 menu "ESP32S2-specific"
 
-    choice ESP32_DEFAULT_CPU_FREQ_MHZ
+    choice ESP32S2_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
-        default ESP32_DEFAULT_CPU_FREQ_160
+        default ESP32S2_DEFAULT_CPU_FREQ_160
         help
             CPU frequency to be set on application startup.
 
-        config ESP32_DEFAULT_CPU_FREQ_80
+        config ESP32S2_DEFAULT_CPU_FREQ_80
             bool "80 MHz"
-        config ESP32_DEFAULT_CPU_FREQ_160
+        config ESP32S2_DEFAULT_CPU_FREQ_160
             bool "160 MHz"
-        config ESP32_DEFAULT_CPU_FREQ_240
+        config ESP32S2_DEFAULT_CPU_FREQ_240
             bool "240 MHz"
     endchoice
 
-    config ESP32_DEFAULT_CPU_FREQ_MHZ
+    config ESP32S2_DEFAULT_CPU_FREQ_MHZ
         int
-        default 80 if ESP32_DEFAULT_CPU_FREQ_80
-        default 160 if ESP32_DEFAULT_CPU_FREQ_160
-        default 240 if ESP32_DEFAULT_CPU_FREQ_240
+        default 80 if ESP32S2_DEFAULT_CPU_FREQ_80
+        default 160 if ESP32S2_DEFAULT_CPU_FREQ_160
+        default 240 if ESP32S2_DEFAULT_CPU_FREQ_240
 
     menu "Cache config"
 
-        choice INSTRUCTION_CACHE_SIZE
+        choice ESP32S2_INSTRUCTION_CACHE_SIZE
             prompt "Instruction cache size"
-            default INSTRUCTION_CACHE_8KB
+            default ESP32S2_INSTRUCTION_CACHE_8KB
             help
                 Instruction cache size to be set on application startup.
                 If you use 8KB instruction cache rather than 16KB instruction cache, the other 8KB will be added to the heap.
 
-            config INSTRUCTION_CACHE_8KB
+            config ESP32S2_INSTRUCTION_CACHE_8KB
                 bool "8KB"
-            config INSTRUCTION_CACHE_16KB
+            config ESP32S2_INSTRUCTION_CACHE_16KB
                 bool "16KB"
         endchoice
 
-        choice INSTRUCTION_CACHE_ASSOCIATED_WAYS
+        choice ESP32S2_INSTRUCTION_CACHE_ASSOCIATED_WAYS
             prompt "Instruction cache associated ways"
-            default INSTRUCTION_CACHE_8WAYS
+            default ESP32S2_INSTRUCTION_CACHE_8WAYS
             help
                 Instruction cache associated ways to be set on application startup.
 
-            config INSTRUCTION_CACHE_4WAYS
+            config ESP32S2_INSTRUCTION_CACHE_4WAYS
                 bool "4 ways"
-            config INSTRUCTION_CACHE_8WAYS
+            config ESP32S2_INSTRUCTION_CACHE_8WAYS
                 bool "8 ways"
         endchoice
 
-        choice INSTRUCTION_CACHE_LINE_SIZE
+        choice ESP32S2_INSTRUCTION_CACHE_LINE_SIZE
             prompt "Instruction cache line size"
-            default INSTRUCTION_CACHE_LINE_32B
+            default ESP32S2_INSTRUCTION_CACHE_LINE_32B
             help
                 Instruction cache line size to be set on application startup.
 
-            config INSTRUCTION_CACHE_LINE_16B
+            config ESP32S2_INSTRUCTION_CACHE_LINE_16B
                 bool "16 Bytes"
-            config INSTRUCTION_CACHE_LINE_32B
+            config ESP32S2_INSTRUCTION_CACHE_LINE_32B
                 bool "32 Bytes"
-            config INSTRUCTION_CACHE_LINE_64B
+            config ESP32S2_INSTRUCTION_CACHE_LINE_64B
                 bool "64 Bytes"
         endchoice
 
-        choice DATA_CACHE_SIZE
+        choice ESP32S2_DATA_CACHE_SIZE
             prompt "Data cache size"
-            default DATA_CACHE_8KB
+            default ESP32S2_DATA_CACHE_8KB
             help
                 Data cache size to be set on application startup.
                 If you use 8KB data cache rather than 16KB data cache, the other 8KB will be added to the heap.
 
-            config DATA_CACHE_0KB
-                depends on !SPIRAM_SUPPORT
+            config ESP32S2_DATA_CACHE_0KB
+                depends on !ESP32S2_SPIRAM_SUPPORT
                 bool "0KB"
-            config DATA_CACHE_8KB
+            config ESP32S2_DATA_CACHE_8KB
                 bool "8KB"
-            config DATA_CACHE_16KB
+            config ESP32S2_DATA_CACHE_16KB
                 bool "16KB"
         endchoice
 
-        choice DATA_CACHE_ASSOCIATED_WAYS
+        choice ESP32S2_DATA_CACHE_ASSOCIATED_WAYS
             prompt "Data cache associated ways"
-            default DATA_CACHE_8WAYS
+            default ESP32S2_DATA_CACHE_8WAYS
             help
                 Data cache associated ways to be set on application startup.
 
-            config DATA_CACHE_4WAYS
+            config ESP32S2_DATA_CACHE_4WAYS
                 bool "4 ways"
-            config DATA_CACHE_8WAYS
+            config ESP32S2_DATA_CACHE_8WAYS
                 bool "8 ways"
         endchoice
 
-        choice DATA_CACHE_LINE_SIZE
+        choice ESP32S2_DATA_CACHE_LINE_SIZE
             prompt "Data cache line size"
-            default DATA_CACHE_LINE_32B
+            default ESP32S2_DATA_CACHE_LINE_32B
             help
                 Data cache line size to be set on application startup.
 
-            config DATA_CACHE_LINE_16B
+            config ESP32S2_DATA_CACHE_LINE_16B
                 bool "16 Bytes"
-            config DATA_CACHE_LINE_32B
+            config ESP32S2_DATA_CACHE_LINE_32B
                 bool "32 Bytes"
-            config DATA_CACHE_LINE_64B
+            config ESP32S2_DATA_CACHE_LINE_64B
                 bool "64 Bytes"
         endchoice
 
-        config RODATA_USE_DATA_CACHE
-            depends on DATA_CACHE_8KB || DATA_CACHE_16KB
+        config ESP32S2_RODATA_USE_DATA_CACHE
+            depends on ESP32S2_DATA_CACHE_8KB || ESP32S2_DATA_CACHE_16KB
             bool "Use data cache rather than instruction cache to access read only data"
             default "n"
             help
                 If enabled, CPU will access rodata through data cache, which will reduce the overload
                 of instruction cache, however will increase the overload of data cache.
 
-        config ENABLE_INSTRUCTION_CACHE_WRAP
+        config ESP32S2_INSTRUCTION_CACHE_WRAP
             bool "Enable instruction cache wrap"
             default "n"
             help
@@ -119,7 +119,7 @@ menu "ESP32S2-specific"
                 The wrap length equals to INSTRUCTION_CACHE_LINE_SIZE.
                 However, it depends on complex conditions.
 
-        config ENABLE_DATA_CACHE_WRAP
+        config ESP32S2_DATA_CACHE_WRAP
             bool "Enable data cache wrap"
             default "n"
             help
@@ -127,9 +127,9 @@ menu "ESP32S2-specific"
                 The wrap length equals to DATA_CACHE_LINE_SIZE.
                 However, it depends on complex conditions.
 
-    endmenu
+    endmenu  # Cache config
 
-    config SPIRAM_SUPPORT
+    config ESP32S2_SPIRAM_SUPPORT
         bool "Support for external, SPI-connected RAM"
         default "n"
         help
@@ -137,7 +137,7 @@ menu "ESP32S2-specific"
             main SPI flash chip.
 
     menu "SPI RAM config"
-        depends on SPIRAM_SUPPORT
+        depends on ESP32S2_SPIRAM_SUPPORT
 
         config SPIRAM_BOOT_INIT
             bool "Initialize SPI RAM when booting the ESP32"
@@ -195,21 +195,21 @@ menu "ESP32S2-specific"
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
 
-        config INSTRUCTION_USE_SPIRAM
+        config SPIRAM_FETCH_INSTRUCTIONS
             bool "Cache fetch instructions from SPI RAM"
             default n
             help
                 If enabled, instruction in flash will be copied into SPIRAM.
                 If you also enable RODATA_USE_SPIRAM option, you can run the instruction when you are erasing or programming the flash.
 
-        config RODATA_USE_SPIRAM
+        config SPIRAM_RODATA
             bool "Cache load read only data from SPI RAM"
             default n
             help
                 If enabled, radata in flash will be copied into SPIRAM.
                 If you also enable INSTRUCTION_USE_SPIRAM option, you can run the instruction when you erasing or programming the flash.
 
-        config USE_AHB_DBUS3_ACCESS_SPIRAM
+        config SPIRAM_USE_AHB_DBUS3
             bool "Enable AHB DBUS3 to access SPIRAM"
             default n
             help
@@ -315,86 +315,30 @@ menu "ESP32S2-specific"
 
     endmenu
 
-    config MEMMAP_TRACEMEM
+    config ESP32S2_MEMMAP_TRACEMEM
         bool
         default "n"
 
-    config MEMMAP_TRACEMEM_TWOBANKS
-        bool
-        default "n"
-
-    config ESP32_TRAX
+    config ESP32S2_TRAX
         bool "Use TRAX tracing feature"
         default "n"
-        select MEMMAP_TRACEMEM
+        select ESP32S2_MEMMAP_TRACEMEM
         help
-            The ESP32 contains a feature which allows you to trace the execution path the processor
+            The ESP32S2 contains a feature which allows you to trace the execution path the processor
             has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
             of memory that can't be used for general purposes anymore. Disable this if you do not know
             what this is.
 
-    config ESP32_TRAX_TWOBANKS
-        bool "Reserve memory for tracing both pro as well as app cpu execution"
-        default "n"
-        depends on ESP32_TRAX && !FREERTOS_UNICORE
-        select MEMMAP_TRACEMEM_TWOBANKS
-        help
-            The ESP32 contains a feature which allows you to trace the execution path the processor
-            has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
-            of memory that can't be used for general purposes anymore. Disable this if you do not know
-            what this is.
-
-            # Memory to reverse for trace, used in linker script
-    config TRACEMEM_RESERVE_DRAM
+    # Memory to reverse for trace, used in linker script
+    config ESP32S2_TRACEMEM_RESERVE_DRAM
         hex
-        default 0x8000 if MEMMAP_TRACEMEM && MEMMAP_TRACEMEM_TWOBANKS
-        default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
+        default 0x4000 if ESP32S2_MEMMAP_TRACEMEM
         default 0x0
 
-    choice ESP32_COREDUMP_TO_FLASH_OR_UART
-        prompt "Core dump destination"
-        default ESP32_ENABLE_COREDUMP_TO_NONE
-        help
-            Select place to store core dump: flash, uart or none (to disable core dumps generation).
 
-            If core dump is configured to be stored in flash and custom partition table is used add
-            corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions
-            in the components/partition_table directory.
-
-        config ESP32_ENABLE_COREDUMP_TO_FLASH
-            bool "Flash"
-            select ESP32_ENABLE_COREDUMP
-        config ESP32_ENABLE_COREDUMP_TO_UART
-            bool "UART"
-            select ESP32_ENABLE_COREDUMP
-        config ESP32_ENABLE_COREDUMP_TO_NONE
-            bool "None"
-    endchoice
-
-    config ESP32_ENABLE_COREDUMP
-        bool
-        default F
-        help
-            Enables/disable core dump module.
-
-    config ESP32_CORE_DUMP_UART_DELAY
-        int "Core dump print to UART delay"
-        depends on ESP32_ENABLE_COREDUMP_TO_UART
-        default 0
-        help
-            Config delay (in ms) before printing core dump to UART.
-            Delay can be interrupted by pressing Enter key.
-
-    config ESP32_CORE_DUMP_LOG_LEVEL
-        int "Core dump module logging level"
-        depends on ESP32_ENABLE_COREDUMP
-        default 1
-        help
-            Config core dump module logging level (0-5).
-
-    choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
+    choice ESP32S2_UNIVERSAL_MAC_ADDRESSES
         bool "Number of universally administered (by IEEE) MAC address"
-        default FOUR_UNIVERSAL_MAC_ADDRESS
+        default ESP32S2_UNIVERSAL_MAC_ADDRESSES_FOUR
         help
             Configure the number of universally administered (by IEEE) MAC addresses.
             During initialisation, MAC addresses for each network interface are generated or derived from a
@@ -411,338 +355,68 @@ menu "ESP32S2-specific"
             a custom universal MAC address range, the correct setting will depend on the allocation of MAC
             addresses in this range (either 2 or 4 per device.)
 
-        config TWO_UNIVERSAL_MAC_ADDRESS
+        config ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
             bool "Two"
-        config FOUR_UNIVERSAL_MAC_ADDRESS
+        config ESP32S2_UNIVERSAL_MAC_ADDRESSES_FOUR
             bool "Four"
     endchoice
 
-    config NUMBER_OF_UNIVERSAL_MAC_ADDRESS
+    config ESP32S2_UNIVERSAL_MAC_ADDRESSES
         int
-        default 2 if TWO_UNIVERSAL_MAC_ADDRESS
-        default 4 if FOUR_UNIVERSAL_MAC_ADDRESS
+        default 2 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
+        default 4 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_FOUR
 
-    config SYSTEM_EVENT_QUEUE_SIZE
-        int "System event queue size"
-        default 32
-        help
-            Config system event queue size in different application.
-
-    config SYSTEM_EVENT_TASK_STACK_SIZE
-        int "Event loop task stack size"
-        default 2304
-        help
-            Config system event task stack size in different application.
-
-    config MAIN_TASK_STACK_SIZE
-        int "Main task stack size"
-        default 3584
-        help
-            Configure the "main task" stack size. This is the stack of the task
-            which calls app_main(). If app_main() returns then this task is deleted
-            and its stack memory is freed.
-
-    config IPC_TASK_STACK_SIZE
-        int "Inter-Processor Call (IPC) task stack size"
-        default 1024
-        range 512 65536 if !ESP32_APPTRACE_ENABLE
-        range 2048 65536 if ESP32_APPTRACE_ENABLE
-        help
-            Configure the IPC tasks stack size. One IPC task runs on each core
-            (in dual core mode), and allows for cross-core function calls.
-
-            See IPC documentation for more details.
-
-            The default stack size should be enough for most common use cases.
-            It can be shrunk if you are sure that you do not use any custom
-            IPC functionality.
-
-    config TIMER_TASK_STACK_SIZE
-        int "High-resolution timer task stack size"
-        default 3584
-        range 2048 65536
-        help
-            Configure the stack size of esp_timer/ets_timer task. This task is used
-            to dispatch callbacks of timers created using ets_timer and esp_timer
-            APIs. If you are seing stack overflow errors in timer task, increase
-            this value.
-
-            Note that this is not the same as FreeRTOS timer task. To configure
-            FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
-            in "FreeRTOS" menu.
-
-    choice NEWLIB_STDOUT_LINE_ENDING
-        prompt "Line ending for UART output"
-        default NEWLIB_STDOUT_LINE_ENDING_CRLF
-        help
-            This option allows configuring the desired line endings sent to UART
-            when a newline ('\n', LF) appears on stdout.
-            Three options are possible:
-
-            CRLF: whenever LF is encountered, prepend it with CR
-
-            LF: no modification is applied, stdout is sent as is
-
-            CR: each occurence of LF is replaced with CR
-
-            This option doesn't affect behavior of the UART driver (drivers/uart.h).
-
-        config NEWLIB_STDOUT_LINE_ENDING_CRLF
-            bool "CRLF"
-        config NEWLIB_STDOUT_LINE_ENDING_LF
-            bool "LF"
-        config NEWLIB_STDOUT_LINE_ENDING_CR
-            bool "CR"
-    endchoice
-
-    choice NEWLIB_STDIN_LINE_ENDING
-        prompt "Line ending for UART input"
-        default NEWLIB_STDIN_LINE_ENDING_CR
-        help
-            This option allows configuring which input sequence on UART produces
-            a newline ('\n', LF) on stdin.
-            Three options are possible:
-
-            CRLF: CRLF is converted to LF
-
-            LF: no modification is applied, input is sent to stdin as is
-
-            CR: each occurence of CR is replaced with LF
-
-            This option doesn't affect behavior of the UART driver (drivers/uart.h).
-
-        config NEWLIB_STDIN_LINE_ENDING_CRLF
-            bool "CRLF"
-        config NEWLIB_STDIN_LINE_ENDING_LF
-            bool "LF"
-        config NEWLIB_STDIN_LINE_ENDING_CR
-            bool "CR"
-    endchoice
-
-    config NEWLIB_NANO_FORMAT
-        bool "Enable 'nano' formatting options for printf/scanf family"
-        default n
-        help
-            ESP32 ROM contains parts of newlib C library, including printf/scanf family
-            of functions. These functions have been compiled with so-called "nano"
-            formatting option. This option doesn't support 64-bit integer formats and C99
-            features, such as positional arguments.
-
-            For more details about "nano" formatting option, please see newlib readme file,
-            search for '--enable-newlib-nano-formatted-io':
-            https://sourceware.org/newlib/README
-
-            If this option is enabled, build system will use functions available in
-            ROM, reducing the application binary size. Functions available in ROM run
-            faster than functions which run from flash. Functions available in ROM can
-            also run when flash instruction cache is disabled.
-
-            If you need 64-bit integer formatting support or C99 features, keep this
-            option disabled.
-
-    choice CONSOLE_UART
-        prompt "UART for console output"
-        default CONSOLE_UART_DEFAULT
-        help
-            Select whether to use UART for console output (through stdout and stderr).
-
-            - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
-            - If "Custom" is selected, UART0 or UART1 can be chosen,
-              and any pins can be selected.
-            - If "None" is selected, there will be no console output on any UART, except
-              for initial output from ROM bootloader. This output can be further suppressed by
-              bootstrapping GPIO13 pin to low logic level.
-
-        config CONSOLE_UART_DEFAULT
-            bool "Default: UART0, TX=GPIO1, RX=GPIO3"
-        config CONSOLE_UART_CUSTOM
-            bool "Custom"
-        config CONSOLE_UART_NONE
-            bool "None"
-    endchoice
-
-    choice CONSOLE_UART_NUM
-        prompt "UART peripheral to use for console output (0-1)"
-        depends on CONSOLE_UART_CUSTOM
-        default CONSOLE_UART_CUSTOM_NUM_0
-        help
-            Due of a ROM bug, UART2 is not supported for console output
-            via ets_printf.
-
-        config CONSOLE_UART_CUSTOM_NUM_0
-            bool "UART0"
-        config CONSOLE_UART_CUSTOM_NUM_1
-            bool "UART1"
-    endchoice
-
-    config CONSOLE_UART_NUM
-        int
-        default 0 if CONSOLE_UART_DEFAULT || CONSOLE_UART_NONE
-        default 0 if CONSOLE_UART_CUSTOM_NUM_0
-        default 1 if CONSOLE_UART_CUSTOM_NUM_1
-
-    config CONSOLE_UART_TX_GPIO
-        int "UART TX on GPIO#"
-        depends on CONSOLE_UART_CUSTOM
-        range 0 33
-        default 19
-
-    config CONSOLE_UART_RX_GPIO
-        int "UART RX on GPIO#"
-        depends on CONSOLE_UART_CUSTOM
-        range 0 39
-        default 21
-
-    config CONSOLE_UART_BAUDRATE
-        int "UART console baud rate"
-        depends on !CONSOLE_UART_NONE
-        default 115200
-        range 1200 4000000
-
-    config ULP_COPROC_ENABLED
-        bool "Enable Ultra Low Power (ULP) Coprocessor"
-        default "n"
-        help
-            Set to 'y' if you plan to load a firmware for the coprocessor.
-
-            If this option is enabled, further coprocessor configuration will appear in the Components menu.
-
-    config ULP_COPROC_RESERVE_MEM
-        int
-        prompt "RTC slow memory reserved for coprocessor" if ULP_COPROC_ENABLED
-        default 512 if ULP_COPROC_ENABLED
-        range 32 8192 if ULP_COPROC_ENABLED
-        default 0 if !ULP_COPROC_ENABLED
-        range 0 0 if !ULP_COPROC_ENABLED
-        help
-            Bytes of memory to reserve for ULP coprocessor firmware & data.
-
-            Data is reserved at the beginning of RTC slow memory.
-
-    choice ESP32_PANIC
+    choice ESP32S2__PANIC
         prompt "Panic handler behaviour"
-        default ESP32_PANIC_PRINT_REBOOT
+        default ESP32S2_PANIC_PRINT_REBOOT
         help
             If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is
             invoked. Configure the panic handlers action here.
 
-        config ESP32_PANIC_PRINT_HALT
+        config ESP32S2_PANIC_PRINT_HALT
             bool "Print registers and halt"
             help
                 Outputs the relevant registers over the serial port and halt the
                 processor. Needs a manual reset to restart.
 
-        config ESP32_PANIC_PRINT_REBOOT
+        config ESP32S2_PANIC_PRINT_REBOOT
             bool "Print registers and reboot"
             help
                 Outputs the relevant registers over the serial port and immediately
                 reset the processor.
 
-        config ESP32_PANIC_SILENT_REBOOT
+        config ESP32S2_PANIC_SILENT_REBOOT
             bool "Silent reboot"
             help
                 Just resets the processor without outputting anything
 
-        config ESP32_PANIC_GDBSTUB
+        config ESP32S2_PANIC_GDBSTUB
             bool "Invoke GDBStub"
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.
     endchoice
 
-    config ESP32_DEBUG_OCDAWARE
+    config ESP32S2_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y
         help
             The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
             instead of panicking, have the debugger stop on the offending instruction.
 
-    config ESP32_DEBUG_STUBS_ENABLE
+    config ESP32S2_DEBUG_STUBS_ENABLE
         bool "OpenOCD debug stubs"
         default OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32_TRAX
+        depends on !ESP32S2_TRAX
         help
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
             e.g. GCOV data dump.
 
-    config INT_WDT
-        bool "Interrupt watchdog"
-        default y
-        help
-            This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
-            either because a task turned off interrupts and did not turn them on for a long time, or because an
-            interrupt handler did not return. It will try to invoke the panic handler first and failing that
-            reset the SoC.
-
-    config INT_WDT_TIMEOUT_MS
-        int "Interrupt watchdog timeout (ms)"
-        depends on INT_WDT
-        default 300 if !SPIRAM_SUPPORT
-        default 800 if SPIRAM_SUPPORT
-        range 10 10000
-        help
-            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
-
-    config INT_WDT_CHECK_CPU1
-        bool "Also watch CPU1 tick interrupt"
-        depends on INT_WDT && !FREERTOS_UNICORE
-        default y
-        help
-            Also detect if interrupts on CPU 1 are disabled for too long.
-
-    config TASK_WDT
-        bool "Initialize Task Watchdog Timer on startup"
-        default y
-        help
-            The Task Watchdog Timer can be used to make sure individual tasks are still
-            running. Enabling this option will cause the Task Watchdog Timer to be
-            initialized automatically at startup. The Task Watchdog timer can be
-            initialized after startup as well (see Task Watchdog Timer API Reference)
-
-    config TASK_WDT_PANIC
-        bool "Invoke panic handler on Task Watchdog timeout"
-        depends on TASK_WDT
-        default n
-        help
-            If this option is enabled, the Task Watchdog Timer will be configured to
-            trigger the panic handler when it times out. This can also be configured
-            at run time (see Task Watchdog Timer API Reference)
-
-    config TASK_WDT_TIMEOUT_S
-        int "Task Watchdog timeout period (seconds)"
-        depends on TASK_WDT
-        range 1 60
-        default 5
-        help
-            Timeout period configuration for the Task Watchdog Timer in seconds.
-            This is also configurable at run time (see Task Watchdog Timer API Reference)
-
-    config TASK_WDT_CHECK_IDLE_TASK_CPU0
-        bool "Watch CPU0 Idle Task"
-        depends on TASK_WDT
-        default y
-        help
-            If this option is enabled, the Task Watchdog Timer will watch the CPU0
-            Idle Task. Having the Task Watchdog watch the Idle Task allows for detection
-            of CPU starvation as the Idle Task not being called is usually a symptom of
-            CPU starvation. Starvation of the Idle Task is detrimental as FreeRTOS household
-            tasks depend on the Idle Task getting some runtime every now and then.
-
-    config TASK_WDT_CHECK_IDLE_TASK_CPU1
-        bool "Watch CPU1 Idle Task"
-        depends on TASK_WDT && !FREERTOS_UNICORE
-        default y
-        help
-            If this option is enabled, the Task Wtachdog Timer will wach the CPU1
-            Idle Task.
-
-    config BROWNOUT_DET
-        #The brownout detector code is disabled (by making it depend on a nonexisting symbol) because the current
-        #revision of ESP32 silicon has a bug in the brown-out detector, rendering it unusable for resetting the CPU.
+    config ESP32S2_BROWNOUT_DET
         bool "Hardware brownout detect & reset"
         default y
         help
-            The ESP32 has a built-in brownout detector which can detect if the voltage is lower than
+            The ESP32S2 has a built-in brownout detector which can detect if the voltage is lower than
             a specific value. If this happens, it will reset the chip in order to prevent unintended
             behaviour.
 
@@ -757,43 +431,43 @@ menu "ESP32S2-specific"
 
             #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
             #of the brownout threshold levels.
-        config BROWNOUT_DET_LVL_SEL_0
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_0
             bool "2.43V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_1
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_1
             bool "2.48V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_2
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_2
             bool "2.58V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_3
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_3
             bool "2.62V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_4
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_4
             bool "2.67V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_5
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_5
             bool "2.70V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_6
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_6
             bool "2.77V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_7
+        config ESP32S2_BROWNOUT_DET_LVL_SEL_7
             bool "2.80V +/- 0.05"
     endchoice
 
-    config BROWNOUT_DET_LVL
+    config ESP32S2_BROWNOUT_DET_LVL
         int
-        default 0 if BROWNOUT_DET_LVL_SEL_0
-        default 1 if BROWNOUT_DET_LVL_SEL_1
-        default 2 if BROWNOUT_DET_LVL_SEL_2
-        default 3 if BROWNOUT_DET_LVL_SEL_3
-        default 4 if BROWNOUT_DET_LVL_SEL_4
-        default 5 if BROWNOUT_DET_LVL_SEL_5
-        default 6 if BROWNOUT_DET_LVL_SEL_6
-        default 7 if BROWNOUT_DET_LVL_SEL_7
+        default 0 if ESP32S2_BROWNOUT_DET_LVL_SEL_0
+        default 1 if ESP32S2_BROWNOUT_DET_LVL_SEL_1
+        default 2 if ESP32S2_BROWNOUT_DET_LVL_SEL_2
+        default 3 if ESP32S2_BROWNOUT_DET_LVL_SEL_3
+        default 4 if ESP32S2_BROWNOUT_DET_LVL_SEL_4
+        default 5 if ESP32S2_BROWNOUT_DET_LVL_SEL_5
+        default 6 if ESP32S2_BROWNOUT_DET_LVL_SEL_6
+        default 7 if ESP32S2_BROWNOUT_DET_LVL_SEL_7
 
 
         # Note about the use of "FRC1" name: currently FRC1 timer is not used for
         # high resolution timekeeping anymore. Instead the esp_timer API, implemented
         # using FRC2 timer, is used.
         # FRC1 name in the option name is kept for compatibility.
-    choice ESP32_TIME_SYSCALL
+    choice ESP32S2__TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
-        default ESP32_TIME_SYSCALL_USE_RTC_FRC1
+        default ESP32S2_TIME_SYSCALL_USE_RTC_FRC1
         help
             This setting defines which hardware timers are used to
             implement 'gettimeofday' and 'time' functions in C library.
@@ -813,32 +487,32 @@ menu "ESP32S2-specific"
             - When RTC is used for timekeeping, two RTC_STORE registers are
               used to keep time in deep sleep mode.
 
-        config ESP32_TIME_SYSCALL_USE_RTC_FRC1
+        config ESP32S2_TIME_SYSCALL_USE_RTC_FRC1
             bool "RTC and high-resolution timer"
-        config ESP32_TIME_SYSCALL_USE_RTC
+        config ESP32S2_TIME_SYSCALL_USE_RTC
             bool "RTC"
-        config ESP32_TIME_SYSCALL_USE_FRC1
+        config ESP32S2_TIME_SYSCALL_USE_FRC1
             bool "High-resolution timer"
-        config ESP32_TIME_SYSCALL_USE_NONE
+        config ESP32S2_TIME_SYSCALL_USE_NONE
             bool "None"
     endchoice
 
-    choice ESP32_RTC_CLOCK_SOURCE
+    choice ESP32S2_RTC_CLK_SRC
         prompt "RTC clock source"
-        default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+        default ESP32S2_RTC_CLK_SRC_INT_RC
         help
             Choose which clock is used as RTC clock source.
 
-        config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+        config ESP32S2_RTC_CLK_SRC_INT_RC
             bool "Internal 150kHz RC oscillator"
-        config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+        config ESP32S2_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
     endchoice
 
-    config ESP32_RTC_CLK_CAL_CYCLES
+    config ESP32S2__RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
-        default 1024 if ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+        default 3000 if ESP32S2_RTC_CLK_SRC_EXT_CRYS
+        default 1024 if ESP32S2_RTC_CLK_SRC_INT_RC
         range 0 125000
         help
             When the startup code initializes RTC_SLOW_CLK, it can perform
@@ -856,44 +530,9 @@ menu "ESP32S2-specific"
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.
 
-    config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
-        int "Bootstrap cycles for external 32kHz crystal"
-        depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
-        default 5
-        range 0 32768
-        help
-            To reduce the startup time of an external RTC crystal,
-            we bootstrap it with a 32kHz square wave for a fixed number of cycles.
-            Setting 0 will disable bootstrapping (if disabled, the crystal may take
-            longer to start up or fail to oscillate under some conditions).
-
-            If this value is too high, a faulty crystal may initially start and then fail.
-            If this value is too low, an otherwise good crystal may not start.
-
-            To accurately determine if the crystal has started,
-            set a larger "Number of cycles for RTC_SLOW_CLK calibration" (about 3000).
-
-    config ESP32_DEEP_SLEEP_WAKEUP_DELAY
-        int "Extra delay in deep sleep wake stub (in us)"
-        default 2000
-        range 0 5000
-        help
-            When ESP32 exits deep sleep, the CPU and the flash chip are powered on
-            at the same time. CPU will run deep sleep stub first, and then
-            proceed to load code from flash. Some flash chips need sufficient
-            time to pass between power on and first read operation. By default,
-            without any extra delay, this time is approximately 900us, although
-            some flash chip types need more than that.
-
-            By default extra delay is set to 2000us. When optimizing startup time
-            for applications which require it, this value may be reduced.
-
-            If you are seeing "flash read err, 1000" message printed to the
-            console after deep sleep reset, try increasing this value.
-
-    choice ESP32_XTAL_FREQ_SEL
+    choice ESP32S2_XTAL_FREQ_SEL
         prompt "Main XTAL frequency"
-        default ESP32_XTAL_FREQ_40
+        default ESP32S2_XTAL_FREQ_40
         help
             ESP32 currently supports the following XTAL frequencies:
 
@@ -906,22 +545,22 @@ menu "ESP32S2-specific"
             to use automatic XTAL frequency detection in applications which need
             to work at high ambient temperatures and use high-temperature
             qualified chips and modules.
-        config ESP32_XTAL_FREQ_40
+        config ESP32S2_XTAL_FREQ_40
             bool "40 MHz"
-        config ESP32_XTAL_FREQ_26
+        config ESP32S2_XTAL_FREQ_26
             bool "26 MHz"
-        config ESP32_XTAL_FREQ_AUTO
+        config ESP32S2_XTAL_FREQ_AUTO
             bool "Autodetect"
     endchoice
 
     # Keep these values in sync with rtc_xtal_freq_t enum in soc/rtc.h
-    config ESP32_XTAL_FREQ
+    config ESP32S2_XTAL_FREQ
         int
-        default 0 if ESP32_XTAL_FREQ_AUTO
-        default 40 if ESP32_XTAL_FREQ_40
-        default 26 if ESP32_XTAL_FREQ_26
+        default 0 if ESP32S2_XTAL_FREQ_AUTO
+        default 40 if ESP32S2_XTAL_FREQ_40
+        default 26 if ESP32S2_XTAL_FREQ_26
 
-    config DISABLE_BASIC_ROM_CONSOLE
+    config ESP32S2_DISABLE_BASIC_ROM_CONSOLE
         bool "Permanently disable BASIC ROM Console"
         default n
         help
@@ -933,50 +572,13 @@ menu "ESP32S2-specific"
 
             (Enabling secure boot also disables the BASIC ROM Console by default.)
 
-    config NO_BLOBS
+    config ESP32S2_NO_BLOBS
         bool "No Binary Blobs"
         depends on !BT_ENABLED
         default n
         help
             If enabled, this disables the linking of binary libraries in the application build. Note
             that after enabling this Wi-Fi/Bluetooth will not work.
-
-    config ESP_TIMER_PROFILING
-        bool "Enable esp_timer profiling features"
-        default n
-        help
-            If enabled, esp_timer_dump will dump information such as number of times
-            the timer was started, number of times the timer has triggered, and the
-            total time it took for the callback to run.
-            This option has some effect on timer performance and the amount of memory
-            used for timer storage, and should only be used for debugging/testing
-            purposes.
-
-    config COMPATIBLE_PRE_V2_1_BOOTLOADERS
-        bool "App compatible with bootloaders before IDF v2.1"
-        default n
-        help
-            Bootloaders before IDF v2.1 did less initialisation of the
-            system clock. This setting needs to be enabled to build an app
-            which can be booted by these older bootloaders.
-
-            If this setting is enabled, the app can be booted by any bootloader
-            from IDF v1.0 up to the current version.
-
-            If this setting is disabled, the app can only be booted by bootloaders
-            from IDF v2.1 or newer.
-
-            Enabling this setting adds approximately 1KB to the app's IRAM usage.
-
-    config ESP_ERR_TO_NAME_LOOKUP
-        bool "Enable lookup of error code strings"
-        default "y"
-        help
-            Functions esp_err_to_name() and esp_err_to_name_r() return string
-            representations of error codes from a pre-generated lookup table.
-            This option can be used to turn off the use of the look-up table in
-            order to save memory but this comes at the price of sacrificing
-            distinguishable (meaningful) output string representations.
 
 endmenu  # ESP32S2-Specific
 
@@ -998,14 +600,14 @@ menu "Power Management"
         default n
         help
             If enabled, startup code configures dynamic frequency scaling.
-            Max CPU frequency is set to CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ setting,
+            Max CPU frequency is set to CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ setting,
             min frequency is set to XTAL frequency.
             If disabled, DFS will not be active until the application
             configures it using esp_pm_configure function.
 
     config PM_USE_RTC_TIMER_REF
         bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
-        depends on PM_ENABLE && (ESP32_TIME_SYSCALL_USE_RTC || ESP32_TIME_SYSCALL_USE_RTC_FRC1)
+        depends on PM_ENABLE && (ESP32S2_TIME_SYSCALL_USE_RTC || ESP32S2_TIME_SYSCALL_USE_RTC_FRC1)
         default n
         help
             When APB clock frequency changes, high-resolution timer (esp_timer)
