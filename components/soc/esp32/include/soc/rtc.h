@@ -17,6 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "soc/soc.h"
+#include "soc/rtc_periph.h"
 
 #ifdef __cplusplus
 extern "C" {

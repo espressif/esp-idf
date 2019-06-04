@@ -11,7 +11,6 @@
 #include "esp32/rom/lldesc.h"
 #include "sys/queue.h"
 #include "soc/soc.h"
-#include "soc/sdio_slave_periph.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "sdkconfig.h"

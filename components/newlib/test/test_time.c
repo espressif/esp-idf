@@ -4,7 +4,6 @@
 #include "driver/adc.h"
 #include <time.h>
 #include <sys/time.h>
-#include "soc/rtc_cntl_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

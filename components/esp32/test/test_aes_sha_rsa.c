@@ -13,7 +13,7 @@
 #include "test_utils.h"
 #include "esp32/rom/uart.h"
 #include "esp32/rom/sha.h"
-#include "soc/uart_reg.h"
+#include "soc/uart_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "esp_log.h"

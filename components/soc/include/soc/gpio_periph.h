@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_GPIO_PERIPH_H
-#define _SOC_GPIO_PERIPH_H
+#pragma once
 #include "stdint.h"
 #include "soc/gpio_pins.h"
 #include "soc/io_mux_reg.h"
@@ -31,5 +30,3 @@ extern const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT];
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _SOC_GPIO_PERIPH_H

@@ -19,12 +19,8 @@
 #include "esp32/rom/gpio.h"
 
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/gpio_reg.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/emac_reg_v2.h"
-#include "soc/emac_ex_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/gpio_periph.h"
 
 #include "esp_log.h"
 #include "driver/gpio.h"

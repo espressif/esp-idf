@@ -29,7 +29,6 @@
 #include "esp_timer.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/frc_timer_reg.h"
 #include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"

@@ -16,12 +16,10 @@
 #define _DRIVER_I2S_H_
 #include "esp_err.h"
 #include <esp_types.h>
-#include "soc/gpio_reg.h"
 #include "soc/soc.h"
-#include "soc/i2s_struct.h"
-#include "soc/i2s_reg.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/io_mux_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2s_periph.h"
+#include "soc/rtc_periph.h"
 #include "esp32/rom/gpio.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"

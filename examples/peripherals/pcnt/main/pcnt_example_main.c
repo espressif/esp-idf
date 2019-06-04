@@ -20,7 +20,6 @@
 #include "driver/pcnt.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "soc/gpio_sig_map.h"
 
 /**
  * TEST CODE BRIEF

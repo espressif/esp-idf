@@ -14,12 +14,9 @@
 #include "freertos/xtensa_api.h"
 #include "unity.h"
 
-#include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/gpio_reg.h"
-#include "soc/i2s_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2s_periph.h"
 
 
 #define DPORT_I2S0_CLK_EN   (BIT(4))

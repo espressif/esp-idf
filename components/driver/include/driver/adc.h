@@ -23,7 +23,7 @@ extern "C" {
 #include <stdbool.h>
 #include "esp_err.h"
 #include "driver/gpio.h"
-#include "soc/adc_channel.h"
+#include "soc/adc_periph.h"
 
 typedef enum {
     ADC_ATTEN_DB_0   = 0,  /*!<The input voltage of ADC will be reduced to about 1/1 */

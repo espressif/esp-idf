@@ -13,7 +13,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "driver/periph_ctrl.h"
-#include "soc/rmt_reg.h"
+#include "soc/rmt_periph.h"
 
 static const char* TAG = "RMT";
 

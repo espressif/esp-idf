@@ -13,15 +13,13 @@
 // limitations under the License.
 #include <esp_types.h>
 #include "esp_err.h"
-#include "esp_intr_alloc.h"
-#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "soc/soc.h"
-#include "esp_log.h"
 #include "soc/gpio_periph.h"
+#include "esp_log.h"
 
 static const char* GPIO_TAG = "gpio";
 #define GPIO_CHECK(a, str, ret_val) \

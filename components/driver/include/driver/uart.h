@@ -20,8 +20,7 @@
 extern "C" {
 #endif
 
-#include "soc/uart_reg.h"
-#include "soc/uart_struct.h"
+#include "soc/uart_periph.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
@@ -32,7 +31,6 @@ extern "C" {
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include <esp_types.h>
-#include "soc/uart_channel.h"
 
 #define UART_FIFO_LEN           (128)        /*!< Length of the hardware FIFO buffers */
 #define UART_INTR_MASK          0x1ff        /*!< Mask of all UART interrupts */

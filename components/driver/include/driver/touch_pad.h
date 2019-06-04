@@ -17,10 +17,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "soc/touch_channel.h"
+#include "soc/touch_periph.h"
 
 typedef enum {
     TOUCH_PAD_NUM0 = 0, /*!< Touch pad channel 0 is GPIO4 */

@@ -15,7 +15,7 @@
 
 #ifndef _PSRAM_H
 #define _PSRAM_H
-#include "soc/spi_reg.h"
+#include "soc/spi_periph.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
 

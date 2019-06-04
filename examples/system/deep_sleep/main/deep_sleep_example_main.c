@@ -20,8 +20,7 @@
 #include "driver/touch_pad.h"
 #include "driver/adc.h"
 #include "driver/rtc_io.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/sens_periph.h"
 #include "soc/rtc.h"
 
 static RTC_DATA_ATTR struct timeval sleep_enter_time;
