@@ -21,7 +21,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
-static const char* TAG = "tcpip_adapter";
+static const char *TAG = "tcpip_adapter";
 
 #define API_CALL_CHECK(info, api_call, ret) \
 do{\
@@ -34,21 +34,21 @@ do{\
 
 typedef esp_err_t (*system_event_handler_t)(system_event_t *e);
 
-static void handle_ap_start(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_ap_stop(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_sta_start(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_sta_stop(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_sta_connected(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_sta_disconnected(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_sta_got_ip(void* arg, esp_event_base_t base, int32_t event_id, void* data);
+static void handle_ap_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_ap_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_sta_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 
-static void handle_eth_start(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_eth_stop(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_eth_connected(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_eth_disconnected(void* arg, esp_event_base_t base, int32_t event_id, void* data);
-static void handle_eth_got_ip(void* arg, esp_event_base_t base, int32_t event_id, void* data);
+static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_eth_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
+static void handle_eth_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 
-static void handle_eth_start(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_ip_info_t eth_ip;
     uint8_t eth_mac[6];
@@ -58,12 +58,12 @@ static void handle_eth_start(void* arg, esp_event_base_t base, int32_t event_id,
     tcpip_adapter_eth_start(eth_mac, &eth_ip);
 }
 
-static void handle_eth_stop(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_ETH);
 }
 
-static void handle_eth_connected(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_dhcp_status_t status;
 
@@ -92,32 +92,32 @@ static void handle_eth_connected(void* arg, esp_event_base_t base, int32_t event
     }
 }
 
-static void handle_eth_disconnected(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_eth_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_down(TCPIP_ADAPTER_IF_ETH);
 }
 
-static void handle_sta_got_ip(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
 
-    const ip_event_got_ip_t* event= (const ip_event_got_ip_t*) data;
+    const ip_event_got_ip_t *event = (const ip_event_got_ip_t *) data;
     ESP_LOGI(TAG, "sta ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
-           IP2STR(&event->ip_info.ip),
-           IP2STR(&event->ip_info.netmask),
-           IP2STR(&event->ip_info.gw));
+             IP2STR(&event->ip_info.ip),
+             IP2STR(&event->ip_info.netmask),
+             IP2STR(&event->ip_info.gw));
 }
 
-static void handle_eth_got_ip(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_eth_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    const ip_event_got_ip_t* event= (const ip_event_got_ip_t*) data;
+    const ip_event_got_ip_t *event = (const ip_event_got_ip_t *) data;
     ESP_LOGI(TAG, "eth ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
-           IP2STR(&event->ip_info.ip),
-           IP2STR(&event->ip_info.netmask),
-           IP2STR(&event->ip_info.gw));
+             IP2STR(&event->ip_info.ip),
+             IP2STR(&event->ip_info.netmask),
+             IP2STR(&event->ip_info.gw));
 }
 
-static void handle_ap_start(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_ap_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_ip_info_t ap_ip;
     uint8_t ap_mac[6];
@@ -129,14 +129,14 @@ static void handle_ap_start(void* arg, esp_event_base_t base, int32_t event_id, 
     tcpip_adapter_ap_start(ap_mac, &ap_ip);
 }
 
-static void handle_ap_stop(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_ap_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL), ESP_OK);
 
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_AP);
 }
 
-static void handle_sta_start(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_sta_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_ip_info_t sta_ip;
     uint8_t sta_mac[6];
@@ -146,12 +146,12 @@ static void handle_sta_start(void* arg, esp_event_base_t base, int32_t event_id,
     tcpip_adapter_sta_start(sta_mac, &sta_ip);
 }
 
-static void handle_sta_stop(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_stop(TCPIP_ADAPTER_IF_STA);
 }
 
-static void handle_sta_connected(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_dhcp_status_t status;
 
@@ -191,7 +191,7 @@ static void handle_sta_connected(void* arg, esp_event_base_t base, int32_t event
     }
 }
 
-static void handle_sta_disconnected(void* arg, esp_event_base_t base, int32_t event_id, void* data)
+static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_down(TCPIP_ADAPTER_IF_STA);
     API_CALL_CHECK("esp_wifi_internal_reg_rxcb", esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, NULL), ESP_OK);
@@ -236,11 +236,6 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers()
         goto fail;
     }
 
-    err = esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, handle_eth_got_ip, NULL);
-    if (err != ESP_OK) {
-        goto fail;
-    }
-
     err = esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
         goto fail;
@@ -262,7 +257,6 @@ esp_err_t tcpip_adapter_clear_default_wifi_handlers()
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_START, handle_ap_start);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_AP_STOP, handle_ap_stop);
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, handle_sta_got_ip);
-    esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, handle_eth_got_ip);
     esp_unregister_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
 
     return ESP_OK;
@@ -291,6 +285,11 @@ esp_err_t tcpip_adapter_set_default_eth_handlers()
         goto fail;
     }
 
+    err = esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, handle_eth_got_ip, NULL);
+    if (err != ESP_OK) {
+        goto fail;
+    }
+
     return ESP_OK;
 
 fail:
@@ -304,6 +303,6 @@ esp_err_t tcpip_adapter_clear_default_eth_handlers()
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_STOP, handle_eth_stop);
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_CONNECTED, handle_eth_connected);
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, handle_eth_disconnected);
-
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, handle_eth_got_ip);
     return ESP_OK;
 }
