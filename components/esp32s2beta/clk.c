@@ -39,7 +39,7 @@
  * Larger values increase startup delay. Smaller values may cause false positive
  * detection (i.e. oscillator runs for a few cycles and then stops).
  */
-#define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32_RTC_CLK_CAL_CYCLES
+#define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32S2_RTC_CLK_CAL_CYCLES
 
 #define MHZ (1000000)
 
@@ -59,30 +59,17 @@ void esp_clk_init(void)
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
 
-#ifdef CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS
-    /* Check the bootloader set the XTAL frequency.
-
-       Bootloaders pre-v2.1 don't do this.
-    */
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-        ESP_EARLY_LOGW(TAG, "RTC domain not initialised by bootloader");
-        bootloader_clock_configure();
-    }
-#else
-    /* If this assertion fails, either upgrade the bootloader or enable CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
     assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
-#endif
 
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#ifdef CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
     select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
 #endif
 
-    uint32_t freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ;
+    uint32_t freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
     rtc_cpu_freq_t freq = RTC_CPU_FREQ_80M;
     switch(freq_mhz) {
         case 240:
@@ -108,7 +95,7 @@ void esp_clk_init(void)
     rtc_clk_cpu_freq_set(freq);
 
     // Re calculate the ccount to make time calculation correct.
-    uint32_t freq_after = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ;
+    uint32_t freq_after = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
     XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
 }
 

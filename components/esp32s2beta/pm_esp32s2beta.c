@@ -582,7 +582,7 @@ void esp_pm_impl_init()
      * This will be modified later by a call to esp_pm_configure.
      */
     rtc_cpu_freq_t default_freq;
-    if (!rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &default_freq)) {
+    if (!rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ, &default_freq)) {
         assert(false && "unsupported frequency");
     }
     for (size_t i = 0; i < PM_MODE_COUNT; ++i) {

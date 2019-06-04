@@ -47,13 +47,13 @@
 
 // Extra time it takes to enter and exit light sleep and deep sleep
 // For deep sleep, this is until the wake stub runs (not the app).
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (650 + 30 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (650 + 100 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
+#ifdef CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
+#define LIGHT_SLEEP_TIME_OVERHEAD_US (650 + 30 * 240 / CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
+#define DEEP_SLEEP_TIME_OVERHEAD_US (650 + 100 * 240 / CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
 #else
-#define LIGHT_SLEEP_TIME_OVERHEAD_US (250 + 30 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
-#define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ)
-#endif // CONFIG_ESP32_RTC_CLOCK_SOURCE
+#define LIGHT_SLEEP_TIME_OVERHEAD_US (250 + 30 * 240 / CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
+#define DEEP_SLEEP_TIME_OVERHEAD_US (250 + 100 * 240 / CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ)
+#endif // CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
 
 // Minimal amount of time we can sleep for
 #define LIGHT_SLEEP_MIN_TIME_US 200
@@ -123,15 +123,6 @@ void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
     /* Clear MMU for CPU 0 */
     _DPORT_REG_SET_BIT(DPORT_PRO_CACHE_IA_INT_EN_REG, DPORT_PRO_CACHE_INT_CLR);
     _DPORT_REG_SET_BIT(DPORT_PRO_CACHE_IA_INT_EN_REG, DPORT_PRO_CACHE_DBG_EN);
-
-#if CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY > 0
-    // ROM code has not started yet, so we need to set delay factor
-    // used by ets_delay_us first.
-    ets_update_cpu_frequency(ets_get_xtal_freq() / 1000000);
-    // This delay is configured in menuconfig, it can be used to give
-    // the flash chip some time to become ready.
-    ets_delay_us(CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY);
-#endif
 }
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
@@ -299,10 +290,9 @@ esp_err_t esp_light_sleep_start()
 
     // Decide if VDD_SDIO needs to be powered down;
     // If it needs to be powered down, adjust sleep time.
-    const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US
-                                          + CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY;
+    const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US;
 
-#ifndef CONFIG_SPIRAM_SUPPORT
+#ifndef CONFIG_ESP32S2_SPIRAM_SUPPORT
     const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
             flash_enable_time_us + LIGHT_SLEEP_TIME_OVERHEAD_US + LIGHT_SLEEP_MIN_TIME_US);
 
@@ -310,7 +300,7 @@ esp_err_t esp_light_sleep_start()
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
         s_config.sleep_time_adjustment += flash_enable_time_us;
     }
-#endif //CONFIG_SPIRAM_SUPPORT
+#endif //CONFIG_ESP32S2_SPIRAM_SUPPORT
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -370,11 +360,6 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
     }
-#ifdef CONFIG_ULP_COPROC_ENABLED
-    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
-        s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
-    }
-#endif
     else {
         ESP_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
         return ESP_ERR_INVALID_STATE;
@@ -384,16 +369,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup()
 {
-#ifdef CONFIG_ULP_COPROC_ENABLED
-    if(s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
-        ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
-        return ESP_ERR_INVALID_STATE;
-    }
-    s_config.wakeup_triggers |= RTC_ULP_TRIG_EN;
-    return ESP_OK;
-#else
-    return ESP_ERR_INVALID_STATE;
-#endif
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)

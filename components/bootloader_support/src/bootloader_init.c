@@ -172,12 +172,14 @@ static esp_err_t bootloader_main()
     }
     flash_gpio_configure(&fhdr);
 
+#ifdef CONFIG_IDF_TARGET_ESP32
     int rated_freq = bootloader_clock_get_rated_freq_mhz();
     if (rated_freq < CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ) {
         ESP_LOGE(TAG, "Chip CPU frequency rated for %dMHz, configured for %dMHz. Modify CPU frequency in menuconfig",
                  rated_freq, CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
         return ESP_FAIL;
     }
+#endif
 
     bootloader_clock_configure();
     uart_console_configure();
@@ -675,7 +677,7 @@ void __assert_func(const char *file, int line, const char *func, const char *exp
 
 void abort()
 {
-#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+#if !(CONFIG_ESP32_PANIC_SILENT_REBOOT || CONFIG_ESP32S2_PANIC_SILENT_REBOOT)
     ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
 #endif
     if (esp_cpu_in_ocd_debug_mode()) {

@@ -156,14 +156,14 @@ extern void esp_config_instruction_cache_mode(void);
     esp_config_instruction_cache_mode();
 
     /* copy MMU table from ICache to DCache, so we can use DCache to access rodata later. */
-#if CONFIG_RODATA_USE_DATA_CACHE
+#if CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
     MMU_Drom0_I2D_Copy();
 #endif
 
     /* If we need use SPIRAM, we should use data cache, or if we want to access rodata, we also should use data cache.
        Configure the mode of data : cache size, cache associated ways, cache line size.
        Enable data cache, so if we don't use SPIRAM, it just works. */
-#if CONFIG_SPIRAM_BOOT_INIT || CONFIG_RODATA_USE_DATA_CACHE
+#if CONFIG_SPIRAM_BOOT_INIT || CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
 extern void esp_config_data_cache_mode(void);
     esp_config_data_cache_mode();
     Cache_Enable_DCache(0);
@@ -186,7 +186,7 @@ extern void esp_config_data_cache_mode(void);
 #endif
 
     /* Start to use data cache to access rodata. */
-#if CONFIG_RODATA_USE_DATA_CACHE
+#if CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
 extern void esp_switch_rodata_to_dcache(void);
     esp_switch_rodata_to_dcache();
 #endif
@@ -229,21 +229,21 @@ extern void esp_switch_rodata_to_dcache(void);
     }
 #endif
 
-#if CONFIG_INSTRUCTION_USE_SPIRAM
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 extern void esp_spiram_enable_instruction_access(void);
     esp_spiram_enable_instruction_access();
 #endif
-#if CONFIG_RODATA_USE_SPIRAM
+#if SPIRAM_RODATA
 extern void esp_spiram_enable_rodata_access(void);
     esp_spiram_enable_rodata_access();
 #endif
 
-#if CONFIG_ENABLE_INSTRUCTION_CACHE_WRAP || CONFIG_ENABLE_DATA_CACHE_WRAP
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S2_DATA_CACHE_WRAP
 uint32_t icache_wrap_enable = 0,dcache_wrap_enable = 0;
-#if CONFIG_ENABLE_INSTRUCTION_CACHE_WRAP
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP
     icache_wrap_enable = 1;
 #endif
-#if CONFIG_ENABLE_DATA_CACHE_WRAP
+#if CONFIG_ESP32S2_DATA_CACHE_WRAP
     dcache_wrap_enable = 1;
 #endif
 extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
@@ -334,12 +334,8 @@ void start_cpu0_default(void)
     }
 
 //Enable trace memory and immediately start trace.
-#if CONFIG_ESP32_TRAX
-#if CONFIG_ESP32_TRAX_TWOBANKS
-    trax_enable(TRAX_ENA_PRO_APP);
-#else
+#if CONFIG_ESP32S2_TRAX
     trax_enable(TRAX_ENA_PRO);
-#endif
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
     esp_clk_init();
@@ -357,10 +353,10 @@ void start_cpu0_default(void)
     uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #endif // CONFIG_CONSOLE_UART_NONE
 
-#if CONFIG_BROWNOUT_DET
+#if CONFIG_ESP32S2_BROWNOUT_DET
     esp_brownout_init();
 #endif
-#if CONFIG_DISABLE_BASIC_ROM_CONSOLE
+#if CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
     esp_efuse_disable_basic_rom_console();
 #endif
     rtc_gpio_force_hold_dis_all();
@@ -385,14 +381,14 @@ void start_cpu0_default(void)
 #if CONFIG_SYSVIEW_ENABLE
     SEGGER_SYSVIEW_Conf();
 #endif
-#if CONFIG_ESP32_DEBUG_STUBS_ENABLE
+#if CONFIG_ESP32S2_DEBUG_STUBS_ENABLE
     esp_dbg_stubs_init();
 #endif
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
 
     do_global_ctors();
-#if CONFIG_INT_WDT
+#if CONFIG_ESP_INT_WDT
     //esp_int_wdt_init();
     //Initialize the interrupt watch dog for CPU0.
     //esp_int_wdt_cpu_init();
@@ -409,7 +405,7 @@ void start_cpu0_default(void)
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO
     rtc_cpu_freq_t max_freq;
-    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ, &max_freq);
+    rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ, &max_freq);
     esp_pm_config_esp32_t cfg = {
             .max_cpu_freq = max_freq,
             .min_cpu_freq = RTC_CPU_FREQ_XTAL
@@ -464,13 +460,13 @@ void start_cpu1_default(void)
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 size_t __cxx_eh_arena_size_get()
 {
-    return CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE;
+    return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
 }
 #endif
 
 static void do_global_ctors(void)
 {
-#ifdef CONFIG_CXX_EXCEPTIONS
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
 #endif
@@ -496,25 +492,18 @@ static void main_task(void* args)
     heap_caps_enable_nonos_stack_heaps();
 
     //Initialize task wdt if configured to do so
-#ifdef CONFIG_TASK_WDT_PANIC
-    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, true))
-#elif CONFIG_TASK_WDT
-    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_TASK_WDT_TIMEOUT_S, false))
+#ifdef CONFIG_ESP_TASK_WDT_PANIC
+    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true))
+#elif CONFIG_ESP_TASK_WDT
+    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false))
 #endif
 
     //Add IDLE 0 to task wdt
-#if 0
-#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
+#if 0 // TODO: re-enable task WDT
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
     if(idle_0 != NULL){
         ESP_ERROR_CHECK(esp_task_wdt_add(idle_0))
-    }
-#endif
-    //Add IDLE 1 to task wdt
-#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1))
     }
 #endif
 #endif
