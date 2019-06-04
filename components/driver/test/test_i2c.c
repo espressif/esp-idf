@@ -506,3 +506,67 @@ static void i2c_slave_repeat_read()
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);
+
+static volatile bool exit_flag;
+static bool test_read_func;
+
+static void test_task(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+
+    uint8_t *data = (uint8_t *) malloc(DATA_LENGTH);
+    i2c_config_t conf_slave = i2c_slave_init();
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+    TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
+                                   I2C_SLAVE_RX_BUF_LEN,
+                                   I2C_SLAVE_TX_BUF_LEN, 0));
+    while (exit_flag == false) {
+        if (test_read_func) {
+            i2c_slave_read_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
+        } else {
+            i2c_slave_write_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
+        }
+    }
+
+    free(data);
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test i2c_slave_read_buffer is not blocked when ticks_to_wait=0", "[i2c]")
+{
+    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    exit_flag = false;
+
+    test_read_func = true;
+    xTaskCreate(test_task, "tsk1", 2048, &exit_sema, 5, NULL);
+
+    printf("Waiting for 5 sec\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    exit_flag = true;
+    if (xSemaphoreTake(exit_sema, 1000 / portTICK_PERIOD_MS) == pdTRUE) {
+        vSemaphoreDelete(exit_sema);
+    } else {
+        TEST_FAIL_MESSAGE("i2c_slave_read_buffer is blocked");
+    }
+    TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
+}
+
+TEST_CASE("test i2c_slave_write_buffer is not blocked when ticks_to_wait=0", "[i2c]")
+{
+    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    exit_flag = false;
+
+    test_read_func = false;
+    xTaskCreate(test_task, "tsk1", 2048, &exit_sema, 5, NULL);
+
+    printf("Waiting for 5 sec\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    exit_flag = true;
+    if (xSemaphoreTake(exit_sema, 1000 / portTICK_PERIOD_MS) == pdTRUE) {
+        vSemaphoreDelete(exit_sema);
+    } else {
+        TEST_FAIL_MESSAGE("i2c_slave_write_buffer is blocked");
+    }
+    TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
+}
