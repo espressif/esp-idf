@@ -42,10 +42,16 @@ if(NOT BOOTLOADER_BUILD)
         set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
 
         add_custom_target(read_otadata DEPENDS "${PARTITION_CSV_PATH}"
-                        COMMAND ${otatool_py} --partition-table-file ${PARTITION_CSV_PATH} read_otadata)
+                        COMMAND ${otatool_py} 
+                        --partition-table-file ${PARTITION_CSV_PATH} 
+                        --partition-table-offset ${PARTITION_TABLE_OFFSET}
+                        read_otadata)
 
         add_custom_target(erase_otadata DEPENDS "${PARTITION_CSV_PATH}"
-                        COMMAND ${otatool_py} --partition-table-file ${PARTITION_CSV_PATH} erase_otadata)
+                        COMMAND ${otatool_py}
+                        --partition-table-file ${PARTITION_CSV_PATH}
+                        --partition-table-offset ${PARTITION_TABLE_OFFSET}
+                        erase_otadata)
 
         esptool_py_flash_project_args(otadata ${otadata_offset} "${blank_otadata_file}" FLASH_IN_PROJECT)
     endif()
