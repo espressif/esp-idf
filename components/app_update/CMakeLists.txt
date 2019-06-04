@@ -8,7 +8,7 @@ register_component()
 
 # esp_app_desc structure is added as an undefined symbol because otherwise the
 # linker will ignore this structure as it has no other files depending on it.
-target_link_libraries(${COMPONENT_LIB} "-u esp_app_desc")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u esp_app_desc")
 
 # cut PROJECT_VER and PROJECT_NAME to required 32 characters.
 idf_build_get_property(project_ver PROJECT_VER)

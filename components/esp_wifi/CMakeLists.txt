@@ -16,14 +16,14 @@ if(NOT CONFIG_ESP32_NO_BLOBS)
 endif()
 
 register_component()
-target_link_libraries(${COMPONENT_LIB} "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}")
+target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}")
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
     set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
     foreach(blob ${blobs})
         add_library(${blob} STATIC IMPORTED)
         set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}/lib${blob}.a)
-        target_link_libraries(${COMPONENT_LIB} ${blob})
+        target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
 
         foreach(_blob ${blobs})
             if(NOT _blob STREQUAL ${blob})

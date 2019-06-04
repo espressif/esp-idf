@@ -42,8 +42,8 @@ list(APPEND COMPONENT_ADD_LDFRAGMENTS newlib.lf)
 
 register_component()
 
-if (LIB_PATH)
-    target_link_libraries(${COMPONENT_LIB} "-L ${LIB_PATH}")
+if(LIB_PATH)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-L ${LIB_PATH}")
 endif()
 
 if(GCC_NOT_5_2_0)
@@ -51,13 +51,13 @@ if(GCC_NOT_5_2_0)
     add_library(extra INTERFACE)
     idf_component_get_property(newlib newlib COMPONENT_LIB)
     target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} gcc "$<TARGET_FILE:${newlib}>")
-    target_link_libraries(${COMPONENT_LIB} extra)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC extra)
 else()
-    target_link_libraries(${COMPONENT_LIB} ${LIBC} ${LIBM} gcc)
+    target_link_libraries(${COMPONENT_LIB} PUBLIC ${LIBC} ${LIBM} gcc)
 endif()
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 
 if(EXTRA_LINK_FLAGS)
-    target_link_libraries(${COMPONENT_LIB} "${EXTRA_LINK_FLAGS}")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
 endif()
