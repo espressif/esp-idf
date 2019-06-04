@@ -53,6 +53,29 @@ config BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN
         BR/EDR Synchronize maximum connections of bluetooth controller.
         Each connection uses 2KB static DRAM whenever the BT controller is enabled.
 
+choice BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH
+    prompt "BR/EDR Sync(SCO/eSCO) default data path"
+    depends on BTDM_CONTROLLER_MODE_BR_EDR_ONLY || BTDM_CONTROLLER_MODE_BTDM
+    default BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
+    help
+        SCO data path, i.e. HCI or PCM.
+        SCO data can be sent/received through HCI synchronous packets, or the data
+        can be routed to on-chip PCM module on ESP32. PCM input/output signals can
+        be "matrixed" to GPIOs. The default data path can also be set using API
+        "esp_bredr_sco_datapath_set"
+
+    config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_HCI
+        bool "HCI"
+    config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
+        bool "PCM"
+endchoice
+
+config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF
+    int
+    default 0 if BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_HCI
+    default 1 if BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
+    default 0
+
 config BTDM_CONTROLLER_BLE_MAX_CONN_EFF
     int
     default BTDM_CONTROLLER_BLE_MAX_CONN if BTDM_CONTROLLER_MODE_BLE_ONLY || BTDM_CONTROLLER_MODE_BTDM
@@ -170,7 +193,6 @@ config BTDM_LPCLK_SEL_EXT_32K_XTAL
     bool "External 32kHz crystal"
     depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
 endchoice
-
 endmenu
 
 config BLE_SCAN_DUPLICATE
@@ -185,16 +207,16 @@ choice SCAN_DUPLICATE_TYPE
     default SCAN_DUPLICATE_BY_DEVICE_ADDR
     depends on BLE_SCAN_DUPLICATE
     help
-        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use advertiser address 
-        filtering. The adv packet of the same address is only allowed to be reported once. Another way is "Scan Duplicate 
-        By Device Address And Advertising Data". This way is to use advertising data and device address filtering. All 
-        different adv packets with the same address are allowed to be reported. The last way is "Scan Duplicate By Advertising 
+        Scan duplicate have three ways. one is "Scan Duplicate By Device Address", This way is to use advertiser address
+        filtering. The adv packet of the same address is only allowed to be reported once. Another way is "Scan Duplicate
+        By Device Address And Advertising Data". This way is to use advertising data and device address filtering. All
+        different adv packets with the same address are allowed to be reported. The last way is "Scan Duplicate By Advertising
         Data". This way is to use advertising data filtering. All same advertising data only allow to be reported once even though
         they are from different devices.
 
 config SCAN_DUPLICATE_BY_DEVICE_ADDR
     bool "Scan Duplicate By Device Address"
-    help 
+    help
         This way is to use advertiser address filtering. The adv packet of the same address is only allowed to be reported once
 
 config SCAN_DUPLICATE_BY_ADV_DATA
@@ -206,7 +228,7 @@ config SCAN_DUPLICATE_BY_ADV_DATA
 config SCAN_DUPLICATE_BY_ADV_DATA_AND_DEVICE_ADDR
     bool "Scan Duplicate By Device Address And Advertising Data"
     help
-    This way is to use advertising data and device address filtering. All different adv packets with the same address are 
+    This way is to use advertising data and device address filtering. All different adv packets with the same address are
     allowed to be reported.
 endchoice
 
@@ -369,15 +391,15 @@ endchoice
 choice HFP_AUDIO_DATA_PATH
     prompt "audio(SCO) data path"
     depends on HFP_ENABLE
+    help
+        SCO data path, i.e. HCI or PCM. This option is set using API
+        "esp_bredr_sco_datapath_set" in Bluetooth host. Default SCO data
+        path can also be set in Bluetooth Controller.
 
 config HFP_AUDIO_DATA_PATH_PCM
     bool "PCM"
-    help
-        This enables the Serial Port Profile
 config HFP_AUDIO_DATA_PATH_HCI
     bool "HCI"
-    help
-        This enables the Serial Port Profile
 endchoice
 
 config GATTS_ENABLE
