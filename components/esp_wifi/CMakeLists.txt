@@ -8,8 +8,7 @@ set(COMPONENT_SRCS
     "src/wifi_init.c")
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS)
-set(COMPONENT_REQUIRES wpa_supplicant smartconfig_ack)
-set(COMPONENT_PRIV_REQUIRES "nvs_flash")
+set(COMPONENT_PRIV_REQUIRES wpa_supplicant nvs_flash)
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
     set(COMPONENT_ADD_LDFRAGMENTS "linker.lf")

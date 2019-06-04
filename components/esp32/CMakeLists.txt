@@ -34,12 +34,12 @@ else()
                    "task_wdt.c")
     set(COMPONENT_ADD_INCLUDEDIRS "include")
 
-    set(COMPONENT_REQUIRES app_update driver esp_event efuse pthread soc) #unfortunately rom/uart uses SOC registers directly
+    set(COMPONENT_REQUIRES driver esp_event efuse soc) #unfortunately rom/uart uses SOC registers directly
 
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(COMPONENT_PRIV_REQUIRES
-        app_trace app_update bootloader_support log mbedtls nvs_flash
+        app_trace app_update bootloader_support log mbedtls nvs_flash pthread
         smartconfig_ack spi_flash vfs wpa_supplicant espcoredump esp_common esp_wifi)
 
     set(COMPONENT_ADD_LDFRAGMENTS linker.lf ld/esp32_fragments.lf)
