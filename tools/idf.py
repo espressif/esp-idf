@@ -1113,7 +1113,7 @@ if __name__ == "__main__":
         WINPTY_VAR = "WINPTY"
         WINPTY_EXE = "winpty"
         if ("MSYSTEM" in os.environ) and (
-            not os.environ["_"].endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ
+            not os.environ.get("_", "").endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ
         ):
             os.environ[WINPTY_VAR] = "1"  # the value is of no interest to us
             # idf.py calls itself with "winpty" and WINPTY global variable set
