@@ -295,6 +295,6 @@ if(CONFIG_BT_ENABLED)
         target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
     endif()
 
-    target_link_libraries(${COMPONENT_LIB} "-L${CMAKE_CURRENT_LIST_DIR}/lib")
-    target_link_libraries(${COMPONENT_LIB} btdm_app)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/lib")
+    target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
 endif()

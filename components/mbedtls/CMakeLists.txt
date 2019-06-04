@@ -94,4 +94,4 @@ foreach(target ${mbedtls_targets})
 endforeach()
 
 # Link mbedtls libraries to component library
-target_link_libraries(${COMPONENT_LIB} ${mbedtls_targets})
+target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})

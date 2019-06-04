@@ -2,9 +2,9 @@ set(COMPONENT_SRCS "cxx_exception_stubs.cpp"
                    "cxx_guards.cpp")
 register_component()
 
-target_link_libraries(${COMPONENT_LIB} stdc++ gcc)
-target_link_libraries(${COMPONENT_LIB} "-u __cxa_guard_dummy")
+target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++ gcc)
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxa_guard_dummy")
 
 if(NOT CONFIG_COMPILER_CXX_EXCEPTIONS)
-    target_link_libraries(${COMPONENT_LIB} "-u __cxx_fatal_exception")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxx_fatal_exception")
 endif()

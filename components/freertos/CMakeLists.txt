@@ -25,7 +25,7 @@ set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 
 register_component()
 
-target_link_libraries(${COMPONENT_LIB} "-Wl,--undefined=uxTopUsedPriority")
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority")
 
 set_source_files_properties(
     tasks.c

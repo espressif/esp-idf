@@ -436,29 +436,8 @@ endmacro()
 # generating additional binary files, generating files related to flashing, etc.)
 function(idf_build_executable elf)
     # Propagate link dependencies from component library targets to the executable
-    idf_build_get_property(build_components BUILD_COMPONENTS)
-    foreach(build_component ${build_components})
-        get_target_property(type ${build_component} TYPE)
-        if(type STREQUAL "INTERFACE_LIBRARY")
-            get_target_property(iface_link_depends ${build_component} INTERFACE_LINK_DEPENDS)
-        else()
-            get_target_property(link_depends ${build_component} LINK_DEPENDS)
-            get_target_property(iface_link_depends ${build_component} INTERFACE_LINK_DEPENDS)
-        endif()
-        if(iface_link_depends)
-            list(APPEND _link_depends ${iface_link_depends})
-        endif()
-        if(link_depends)
-            list(APPEND _link_depends ${link_depends})
-        endif()
-    endforeach()
-
-    idf_build_get_property(link_depends LINK_DEPENDS)
-    if(link_depends)
-        list(APPEND _link_depends ${link_depends})
-    endif()
-
-    set_property(TARGET ${elf} APPEND PROPERTY LINK_DEPENDS "${_link_depends}")
+    idf_build_get_property(link_depends __LINK_DEPENDS)
+    set_property(TARGET ${elf} APPEND PROPERTY LINK_DEPENDS "${link_depends}")
 
     # Set the EXECUTABLE_NAME and EXECUTABLE properties since there are generator expression
     # from components that depend on it

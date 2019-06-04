@@ -7,4 +7,4 @@ set(COMPONENT_PRIV_REQUIRES soc)
 
 register_component()
 
-target_link_libraries(${COMPONENT_LIB} "${CMAKE_CURRENT_SOURCE_DIR}/${IDF_TARGET}/libhal.a")
+target_link_libraries(${COMPONENT_LIB} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/${IDF_TARGET}/libhal.a")

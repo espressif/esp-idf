@@ -288,6 +288,39 @@ macro(__component_check_target)
     endif()
 endmacro()
 
+# __component_set_dependencies, __component_set_all_dependencies
+#
+#  Links public and private requirements for the currently processed component
+macro(__component_set_dependencies reqs type)
+    foreach(req ${reqs})
+        if(req IN_LIST build_component_targets)
+            __component_get_property(req_lib ${req} COMPONENT_LIB)
+            target_link_libraries(${component_lib} ${type} ${req_lib})
+        endif()
+    endforeach()
+endmacro()
+
+macro(__component_set_all_dependencies)
+    __component_get_property(type ${component_target} COMPONENT_TYPE)
+    idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
+
+    if(NOT type STREQUAL CONFIG_ONLY)
+        __component_get_property(reqs ${component_target} __REQUIRES)
+        __component_set_dependencies("${reqs}" PUBLIC)
+
+        __component_get_property(priv_reqs ${component_target} __PRIV_REQUIRES)
+        __component_set_dependencies("${priv_reqs}" PRIVATE)
+    else()
+        __component_get_property(reqs ${component_target} __REQUIRES)
+        foreach(req ${reqs})
+            if(req IN_LIST build_component_targets)
+                __component_get_property(req_lib ${req} COMPONENT_LIB)
+                target_link_libraries(${component_lib} INTERFACE ${req_lib})
+            endif()
+        endforeach()
+    endif()
+endmacro()
+
 # idf_component_get_property
 #
 # @brief Retrieve the value of the specified component property
@@ -330,6 +363,7 @@ function(idf_component_set_property component property val)
         __component_set_property(${component_target} ${property} "${val}")
     endif()
 endfunction()
+
 
 # idf_component_register
 #
@@ -430,6 +464,9 @@ function(idf_component_register)
     if(__LDFRAGMENTS)
         __ldgen_add_fragment_files("${__LDFRAGMENTS}")
     endif()
+
+    # Set dependencies
+    __component_set_all_dependencies()
 
     # Add the component to built components
     idf_build_set_property(__BUILD_COMPONENTS ${component_lib} APPEND)
