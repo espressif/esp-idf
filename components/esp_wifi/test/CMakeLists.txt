@@ -5,24 +5,19 @@ set(COMPONENT_REQUIRES unity test_utils nvs_flash ulp esp_common)
 
 register_component()
 
-idf_build_get_property(idf_path IDF_PATH)
+idf_component_get_property(esp_wifi_dir esp_wifi COMPONENT_DIR)
+
 # Calculate MD5 value of header file esp_wifi_os_adapter.h
-execute_process(COMMAND md5sum ${idf_path}/components/esp_wifi/include/esp_wifi_os_adapter.h
-                COMMAND cut -c 1-7
-                OUTPUT_VARIABLE WIFI_OS_ADAPTER_MD5
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+file(MD5 ${esp_wifi_dir}/include/esp_private/wifi_os_adapter.h WIFI_OS_ADAPTER_MD5)
+string(SUBSTRING "${WIFI_OS_ADAPTER_MD5}" 0 7 WIFI_OS_ADAPTER_MD5)
 
 # Calculate MD5 value of header file esp_wifi_crypto_types.h
-execute_process(COMMAND md5sum ${idf_path}/components/esp_wifi/include/esp_wifi_crypto_types.h
-                COMMAND cut -c 1-7
-                OUTPUT_VARIABLE WIFI_CRYPTO_MD5
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+file(MD5 ${esp_wifi_dir}/include/esp_wifi_crypto_types.h WIFI_CRYPTO_MD5)
+string(SUBSTRING "${WIFI_CRYPTO_MD5}" 0 7 WIFI_CRYPTO_MD5)
 
 # Calculate MD5 value of header file esp_coexist_adapter.h
-execute_process(COMMAND md5sum ${idf_path}/components/esp_wifi/include/esp_coexist_adapter.h
-                COMMAND cut -c 1-7
-                OUTPUT_VARIABLE COEX_ADAPTER_MD5
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+file(MD5 ${esp_wifi_dir}/include/esp_coexist_adapter.h COEX_ADAPTER_MD5)
+string(SUBSTRING "${COEX_ADAPTER_MD5}" 0 7 COEX_ADAPTER_MD5)
 
 add_definitions(-DWIFI_OS_ADAPTER_MD5=\"${WIFI_OS_ADAPTER_MD5}\")
 add_definitions(-DWIFI_CRYPTO_MD5=\"${WIFI_CRYPTO_MD5}\")
