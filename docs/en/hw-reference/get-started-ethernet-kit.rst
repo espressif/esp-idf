@@ -1,6 +1,8 @@
 ESP32-Ethernet-Kit V1.0 Getting Started Guide
 =============================================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This guide shows how to get started with the ESP32-Ethernet-Kit development board and also provides information about its functionality and configuration options.
 
 The :ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-b-v1.0>` is an Ethernet-to-Wi-Fi development board that enables Ethernet devices to be interconnected over Wi-Fi. At the same time, to provide more flexible power supply options, the ESP32-Ethernet-Kit also supports power over Ethernet (PoE).
