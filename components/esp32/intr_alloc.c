@@ -28,7 +28,6 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
-#include "esp_intr_alloc.h"
 #include "esp_ipc.h"
 #include <limits.h>
 #include <assert.h>

@@ -2,7 +2,7 @@
 #include "esp_system.h"
 #include "esp_task_wdt.h"
 #include "esp_attr.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "driver/timer.h"
 #include "esp32/rom/rtc.h"
 #include "esp_sleep.h"

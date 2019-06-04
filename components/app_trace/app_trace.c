@@ -160,8 +160,7 @@
 #include "soc/dport_reg.h"
 #include "eri.h"
 #include "trax.h"
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
+#include "soc/timer_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_app_trace.h"
 

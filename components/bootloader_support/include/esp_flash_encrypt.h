@@ -20,7 +20,7 @@
 #ifndef BOOTLOADER_BUILD
 #include "esp_spi_flash.h"
 #endif
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 
 /**
  * @file esp_partition.h

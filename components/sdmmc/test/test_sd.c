@@ -20,7 +20,6 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "driver/sdmmc_defs.h"
-#include "soc/gpio_reg.h"
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"

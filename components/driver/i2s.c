@@ -19,12 +19,9 @@
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 
-#include "soc/dport_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/rtc_periph.h"
 #include "soc/rtc.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 #include "esp32/rom/lldesc.h"
 
 #include "driver/gpio.h"

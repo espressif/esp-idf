@@ -15,8 +15,7 @@
 #include <stdint.h>
 #include "esp32/rom/ets_sys.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/timer_group_reg.h"
+#include "soc/timer_periph.h"
 #include "soc_log.h"
 
 #define MHZ (1000000)

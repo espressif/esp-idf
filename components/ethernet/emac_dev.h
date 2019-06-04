@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 #include "esp_types.h"
-#include "soc/emac_reg_v2.h"
+#include "soc/emac_periph.h"
 
 #define EMAC_INTR_ENABLE_BIT (EMAC_DMAIN_TIE | EMAC_DMAIN_RIE | EMAC_DMAIN_RBUE | EMAC_DMAIN_NISE)
 

@@ -22,10 +22,8 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/secure_boot.h"
 
-#include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/efuse_reg.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/efuse_periph.h"
+#include "soc/rtc_periph.h"
 
 #include "sdkconfig.h"
 

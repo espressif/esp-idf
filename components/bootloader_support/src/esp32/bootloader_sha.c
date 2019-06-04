@@ -17,8 +17,7 @@
 #include <assert.h>
 #include <sys/param.h>
 #include "esp32/rom/sha.h"
-#include "soc/dport_reg.h"
-#include "soc/hwcrypto_reg.h"
+#include "soc/hwcrypto_periph.h"
 #include "esp32/rom/ets_sys.h" // TO REMOVE
 
 static uint32_t words_hashed;

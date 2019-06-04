@@ -17,13 +17,13 @@
 #include "freertos/queue.h"
 
 #include "soc/sdmmc_periph.h"
+#include "soc/sdio_slave_periph.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_slave.h"
 #include "sdkconfig.h"
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
-#include "soc/sdio_slave_pins.h"
 
 /*
  * For SDIO master-slave board, we have 3 pins controlling power of 3 different

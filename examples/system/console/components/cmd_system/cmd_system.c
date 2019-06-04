@@ -20,7 +20,6 @@
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/rtc_cntl_reg.h"
 #include "esp32/rom/uart.h"
 #include "cmd_system.h"
 #include "sdkconfig.h"

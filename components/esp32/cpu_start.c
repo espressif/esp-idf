@@ -26,11 +26,10 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/timer_group_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/timer_periph.h"
 #include "soc/rtc_wdt.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 
 #include "driver/rtc_io.h"
 
@@ -48,7 +47,6 @@
 #include "esp_event.h"
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
-#include "esp32/dport_access.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"

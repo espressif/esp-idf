@@ -16,7 +16,6 @@
 #include "unity.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
-#include "soc/dport_reg.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "soc/spi_periph.h"

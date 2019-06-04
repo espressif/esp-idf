@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <string.h>
-#include "soc/uart_reg.h"
-#include "soc/io_mux_reg.h"
+#include "soc/uart_periph.h"
+#include "soc/gpio_periph.h"
 #include "driver/gpio.h"
 #include "esp32/clk.h"
 #include "esp_core_dump_priv.h"

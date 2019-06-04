@@ -15,13 +15,10 @@
 
 #include <string.h>
 #include "driver/spi_master.h"
-#include "soc/dport_reg.h"
 #include "soc/spi_periph.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
-#include "esp_intr_alloc.h"
-#include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "soc/soc.h"

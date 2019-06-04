@@ -12,8 +12,8 @@
 #include "esp_log.h"
 
 #include "driver/touch_pad.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
 
 static const char* TAG = "Touch pad";
 #define TOUCH_THRESH_NO_USE   (0)

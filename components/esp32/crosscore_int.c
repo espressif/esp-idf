@@ -17,15 +17,14 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "esp_intr_alloc.h"
 
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/uart.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/rtc_periph.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

@@ -13,9 +13,7 @@
 #include "driver/timer.h"
 #include "driver/rtc_io.h"
 #include "esp32/ulp.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_gpio_channel.h"
+#include "soc/rtc_periph.h"
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
 {

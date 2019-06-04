@@ -11,9 +11,8 @@
 #include "driver/i2c.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/i2c_struct.h"
-#include "soc/i2c_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2c_periph.h"
 #include "esp_system.h"
 #include "driver/pcnt.h"
 

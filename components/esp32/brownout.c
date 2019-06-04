@@ -19,7 +19,7 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/cpu.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_private/system_internal.h"
 #include "driver/rtc_cntl.h"

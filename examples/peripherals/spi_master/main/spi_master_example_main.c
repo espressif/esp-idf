@@ -13,7 +13,6 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "driver/spi_master.h"
-#include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 
 #include "pretty_effect.h"
