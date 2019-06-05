@@ -97,7 +97,7 @@ When type is "app", the subtype field can be specified as factory (0), ota_0 (0x
   - OTA never updates the factory partition.
   - If you want to conserve flash usage in an OTA project, you can remove the factory partition and use ota_0 instead.
 - ota_0 (0x10) ... ota_15 (0x1F) are the OTA app slots. Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details, which then use the OTA data partition to configure which app slot the bootloader should boot. If using OTA, an application should have at least two OTA application slots (ota_0 & ota_1). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
-- test (0x2) is a reserved subtype for factory test procedures. It is not currently supported by the esp-idf bootloader.
+- test (0x2) is a reserved subtype for factory test procedures. It will be used as the fallback boot partition if no other valid app partition is found. It is also possible to configure the bootloader to read a GPIO input during each boot, and boot this partition if the GPIO is held low, see :ref:`bootloader_boot_from_test_firmware`.
 
 Data Subtypes
 ~~~~~~~~~~~~~
