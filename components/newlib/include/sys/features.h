@@ -2,7 +2,6 @@
  *  Written by Joel Sherrill <joel@OARcorp.com>.
  *
  *  COPYRIGHT (c) 1989-2000.
- *
  *  On-Line Applications Research Corporation (OAR).
  *
  *  Permission to use, copy, modify, and distribute this software for any
