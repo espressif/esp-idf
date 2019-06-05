@@ -95,8 +95,6 @@ To decode each address, IDF Monitor runs the following command in the background
 
   xtensa-esp32-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
-.. note:: Due to a bug in addr2line, line numbers may be incorrect for some source files. However, the function name is always correct.
-
 
 Launching GDB with GDBStub
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
