@@ -53,6 +53,31 @@ menu Bluetooth
                 BR/EDR Synchronize maximum connections of bluetooth controller.
                 Each connection uses 2KB static DRAM whenever the BT controller is enabled.
 
+
+
+        choice BTDM_CTRL_BR_EDR_SCO_DATA_PATH
+            prompt "BR/EDR Sync(SCO/eSCO) default data path"
+            depends on BTDM_CTRL_MODE_BR_EDR_ONLY || BTDM_CTRL_MODE_BTDM
+            default BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+            help
+                SCO data path, i.e. HCI or PCM.
+                SCO data can be sent/received through HCI synchronous packets, or the data
+                can be routed to on-chip PCM module on ESP32. PCM input/output signals can
+                be "matrixed" to GPIOs. The default data path can also be set using API
+                "esp_bredr_sco_datapath_set"
+
+            config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+                bool "HCI"
+            config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+                bool "PCM"
+        endchoice
+
+        config BTDM_CTRL_BR_EDR_SCO_DATA_PATH_EFF
+            int
+            default 0 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
+            default 1 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
+            default 0
+
         config BTDM_CTRL_BLE_MAX_CONN_EFF
             int
             default BTDM_CTRL_BLE_MAX_CONN if BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
@@ -432,15 +457,15 @@ menu Bluetooth
     choice BT_HFP_AUDIO_DATA_PATH
         prompt "audio(SCO) data path"
         depends on BT_HFP_ENABLE
+        help
+            SCO data path, i.e. HCI or PCM. This option is set using API
+            "esp_bredr_sco_datapath_set" in Bluetooth host. Default SCO data
+            path can also be set in Bluetooth Controller.
 
         config BT_HFP_AUDIO_DATA_PATH_PCM
             bool "PCM"
-            help
-                This enables the Serial Port Profile
         config BT_HFP_AUDIO_DATA_PATH_HCI
             bool "HCI"
-            help
-                This enables the Serial Port Profile
     endchoice
 
     config BT_SSP_ENABLED
