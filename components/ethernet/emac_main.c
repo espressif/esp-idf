@@ -1113,7 +1113,7 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
     periph_module_enable(PERIPH_EMAC_MODULE);
 
     if (emac_config.clock_mode != ETH_CLOCK_GPIO0_IN) {
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
         if (esp_spiram_is_initialized()) {
             ESP_LOGE(TAG, "GPIO16 and GPIO17 has been occupied by PSRAM, Only ETH_CLOCK_GPIO_IN is supported!");
             ret = ESP_FAIL;

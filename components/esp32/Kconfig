@@ -24,50 +24,18 @@ menu "ESP32-specific"
         default 160 if ESP32_DEFAULT_CPU_FREQ_160
         default 240 if ESP32_DEFAULT_CPU_FREQ_240
 
+    # Note: to support SPIRAM across multiple chips, check CONFIG_SPIRAM
+    # instead
     config ESP32_SPIRAM_SUPPORT
         bool "Support for external, SPI-connected RAM"
         default "n"
+        select SPIRAM
         help
             This enables support for an external SPI RAM chip, connected in parallel with the
             main SPI flash chip.
 
     menu "SPI RAM config"
         depends on ESP32_SPIRAM_SUPPORT
-
-        config SPIRAM_BOOT_INIT
-            bool "Initialize SPI RAM when booting the ESP32"
-            default "y"
-            help
-                If this is enabled, the SPI RAM will be enabled during initial boot. Unless you
-                have specific requirements, you'll want to leave this enabled so memory allocated
-                during boot-up can also be placed in SPI RAM.
-
-        config SPIRAM_IGNORE_NOTFOUND
-            bool "Ignore PSRAM when not found"
-            default "n"
-            depends on SPIRAM_BOOT_INIT && !SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-            help
-                Normally, if psram initialization is enabled during compile time but not found at runtime, it
-                is seen as an error making the ESP32 panic. If this is enabled, the ESP32 will keep on
-                running but will not add the (non-existing) RAM to any allocator.
-
-        choice SPIRAM_USE
-            prompt "SPI RAM access method"
-            default SPIRAM_USE_MALLOC
-            help
-                The SPI RAM can be accessed in multiple methods: by just having it available as an unmanaged
-                memory region in the ESP32 memory map, by integrating it in the ESP32s heap as 'special' memory
-                needing heap_caps_malloc to allocate, or by fully integrating it making malloc() also able to
-                return SPI RAM pointers.
-
-            config SPIRAM_USE_MEMMAP
-                bool "Integrate RAM into ESP32 memory map"
-            config SPIRAM_USE_CAPS_ALLOC
-                bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
-            config SPIRAM_USE_MALLOC
-                bool "Make RAM allocatable using malloc() as well"
-                select FREERTOS_SUPPORT_STATIC_ALLOCATION
-        endchoice
 
         choice SPIRAM_TYPE
             prompt "Type of SPI RAM chip in use"
@@ -115,14 +83,6 @@ menu "ESP32-specific"
                 bool "80MHz clock speed"
         endchoice
 
-        config SPIRAM_MEMTEST
-            bool "Run memory test on SPI RAM initialization"
-            default "y"
-            depends on SPIRAM_BOOT_INIT
-            help
-                Runs a rudimentary memory test on initialization. Aborts when memory test fails. Disable this for
-                slightly faster startop.
-
         config SPIRAM_CACHE_WORKAROUND
             bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
             depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
@@ -135,6 +95,9 @@ menu "ESP32-specific"
 
                 This will also not use any bits of newlib that are located in ROM, opting for a version that is
                 compiled with the workaround and located in flash instead.
+
+        # insert non-chip-specific items here
+        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
 
         config SPIRAM_BANKSWITCH_ENABLE
             bool "Enable bank switching for >4MiB external RAM"
@@ -173,35 +136,6 @@ menu "ESP32-specific"
                 from the non-preferred region instead, so malloc() will not suddenly fail when either internal or
                 external memory is full.
 
-        config SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-            bool "Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, allocate internal memory"
-            depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
-            default "n"
-            help
-                Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, try to allocate internal
-                memory then.
-
-        config SPIRAM_MALLOC_RESERVE_INTERNAL
-            int "Reserve this amount of bytes for data that specifically needs to be in DMA or internal memory"
-            depends on SPIRAM_USE_MALLOC
-            default 32768
-            range 0 262144
-            help
-                Because the external/internal RAM allocation strategy is not always perfect, it sometimes may happen
-                that the internal memory is entirely filled up. This causes allocations that are specifically done in
-                internal memory, for example the stack for new tasks or memory to service DMA or have memory that's
-                also available when SPI cache is down, to fail. This option reserves a pool specifically for requests
-                like that; the memory in this pool is not given out when a normal malloc() is called.
-
-                Set this to 0 to disable this feature.
-
-                Note that because FreeRTOS stacks are forced to internal memory, they will also use this memory pool;
-                be sure to keep this in mind when adjusting this value.
-
-                Note also that the DMA reserved pool may not be one single contiguous memory region, depending on the
-                configured size and the static memory usage of the app.
-
-
         config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
             bool "Allow external memory as an argument to xTaskCreateStatic"
             default n
@@ -213,15 +147,6 @@ menu "ESP32-specific"
                 the memory passed to it is in internal memory. If you have a task that needs a large amount of stack
                 and does not call on ROM code in any way (no direct calls, but also no Bluetooth/WiFi), you can try to
                 disable this and use xTaskCreateStatic to create the tasks stack in external memory.
-
-        config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-            bool "Allow .bss segment placed in external memory"
-            default n
-            depends on ESP32_SPIRAM_SUPPORT
-            help
-                If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed in
-                PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
-                to external memory defaultly.
 
         choice SPIRAM_OCCUPY_SPI_HOST
             prompt "SPI host to use for 32MBit PSRAM"

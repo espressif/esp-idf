@@ -263,10 +263,8 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
        entire cache.
     */
     if (need_flush) {
-#if CONFIG_ESP32_SPIRAM_SUPPORT
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_SPIRAM
         esp_spiram_writeback_cache();
-#endif
 #endif
 #if CONFIG_IDF_TARGET_ESP32
         Cache_Flush(0);
@@ -473,14 +471,12 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
         }
 
         if (is_page_mapped_in_cache(page)) {
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
             esp_spiram_writeback_cache();
 #endif
             Cache_Flush(0);
 #ifndef CONFIG_FREERTOS_UNICORE
             Cache_Flush(1);
-#endif
 #endif
             return true;
         }

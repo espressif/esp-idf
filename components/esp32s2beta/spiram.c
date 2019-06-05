@@ -44,7 +44,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #endif
 #endif
 
-#if CONFIG_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
 
 static const char* TAG = "spiram";
 

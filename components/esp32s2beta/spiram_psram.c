@@ -37,7 +37,7 @@
 #include "driver/spi_common.h"
 #include "driver/periph_ctrl.h"
 
-#if CONFIG_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
 #include "soc/rtc.h"
 
 //Commands for PSRAM chip
@@ -900,4 +900,4 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
         SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, 1, SPI_MEM_CS_HOLD_TIME_S);
     }
 }
-#endif // CONFIG_SPIRAM_SUPPORT
+#endif // CONFIG_SPIRAM
