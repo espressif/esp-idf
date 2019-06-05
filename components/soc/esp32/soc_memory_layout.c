@@ -60,7 +60,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "PID5DRAM", { MALLOC_CAP_PID5|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
     { "PID6DRAM", { MALLOC_CAP_PID6|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
     { "PID7DRAM", { MALLOC_CAP_PID7|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifdef CONFIG_SPIRAM
     //Type 15: SPI SRAM data
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
 #endif
@@ -75,7 +75,7 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, CONFIG_SPIRAM_SIZE, 15, 0}, //SPI SRAM, if available
 #endif
     { 0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
@@ -166,7 +166,7 @@ SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace me
 #endif
 #endif
 
-#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifdef CONFIG_SPIRAM
 SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE, spi_ram); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #endif
 

@@ -1,0 +1,99 @@
+# Common (non-chip-specific) SPIRAM options
+#
+# sourced into the "SPIRAM config" submenu for ESP32 or ESP32S2
+
+# invisible option selected by ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT
+config SPIRAM
+    bool
+
+config SPIRAM_BOOT_INIT
+    bool "Initialize SPI RAM during startup"
+    default "y"
+    help
+        If this is enabled, the SPI RAM will be enabled during initial boot. Unless you
+        have specific requirements, you'll want to leave this enabled so memory allocated
+        during boot-up can also be placed in SPI RAM.
+
+config SPIRAM_IGNORE_NOTFOUND
+    bool "Ignore PSRAM when not found"
+    default "n"
+    depends on SPIRAM_BOOT_INIT && !SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    help
+        Normally, if psram initialization is enabled during compile time but not found at runtime, it
+        is seen as an error making the CPU panic. If this is enabled, booting will complete
+        but no PSRAM will be available.
+
+choice SPIRAM_USE
+    prompt "SPI RAM access method"
+    default SPIRAM_USE_MALLOC
+    help
+        The SPI RAM can be accessed in multiple methods: by just having it available as an unmanaged
+        memory region in the CPU's memory map, by integrating it in the heap as 'special' memory
+        needing heap_caps_malloc to allocate, or by fully integrating it making malloc() also able to
+        return SPI RAM pointers.
+
+    config SPIRAM_USE_MEMMAP
+        bool "Integrate RAM into memory map"
+    config SPIRAM_USE_CAPS_ALLOC
+        bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
+    config SPIRAM_USE_MALLOC
+        bool "Make RAM allocatable using malloc() as well"
+        select FREERTOS_SUPPORT_STATIC_ALLOCATION
+endchoice
+
+config SPIRAM_MEMTEST
+    bool "Run memory test on SPI RAM initialization"
+    default "y"
+    depends on SPIRAM_BOOT_INIT
+    help
+        Runs a rudimentary memory test on initialization. Aborts when memory test fails. Disable this for
+        slightly faster startup.
+
+config SPIRAM_MALLOC_ALWAYSINTERNAL
+    int "Maximum malloc() size, in bytes, to always put in internal memory"
+    depends on SPIRAM_USE_MALLOC
+    default 16384
+    range 0 131072
+    help
+        If malloc() is capable of also allocating SPI-connected ram, its allocation strategy will prefer to
+        allocate chunks less than this size in internal memory, while allocations larger than this will be
+        done from external RAM. If allocation from the preferred region fails, an attempt is made to allocate
+        from the non-preferred region instead, so malloc() will not suddenly fail when either internal or
+        external memory is full.
+
+config SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+    bool "Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, allocate internal memory"
+    depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    default "n"
+    help
+        Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, try to allocate internal
+        memory then.
+
+config SPIRAM_MALLOC_RESERVE_INTERNAL
+    int "Reserve this amount of bytes for data that specifically needs to be in DMA or internal memory"
+    depends on SPIRAM_USE_MALLOC
+    default 32768
+    range 0 262144
+    help
+        Because the external/internal RAM allocation strategy is not always perfect, it sometimes may happen
+        that the internal memory is entirely filled up. This causes allocations that are specifically done in
+        internal memory, for example the stack for new tasks or memory to service DMA or have memory that's
+        also available when SPI cache is down, to fail. This option reserves a pool specifically for requests
+        like that; the memory in this pool is not given out when a normal malloc() is called.
+
+        Set this to 0 to disable this feature.
+
+        Note that because FreeRTOS stacks are forced to internal memory, they will also use this memory pool;
+        be sure to keep this in mind when adjusting this value.
+
+        Note also that the DMA reserved pool may not be one single contiguous memory region, depending on the
+        configured size and the static memory usage of the app.
+
+config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    bool "Allow .bss segment placed in external memory"
+    default n
+    depends on SPIRAM
+    help
+        If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed in
+        PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
+        to external memory defaultly.

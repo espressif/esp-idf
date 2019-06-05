@@ -863,11 +863,11 @@ static void performance_test(bool dedicated_task)
     // Enabling profiling will slow down event dispatch, so the set threshold
     // is not valid when it is enabled.
 #else
-#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH, "%d", average);
 #else
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH_PSRAM, "%d", average);
-#endif // CONFIG_ESP32_SPIRAM_SUPPORT
+#endif // CONFIG_SPIRAM
 #endif // CONFIG_ESP_EVENT_LOOP_PROFILING
 }
 
