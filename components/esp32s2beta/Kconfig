@@ -200,14 +200,14 @@ menu "ESP32S2-specific"
             default n
             help
                 If enabled, instruction in flash will be copied into SPIRAM.
-                If you also enable RODATA_USE_SPIRAM option, you can run the instruction when you are erasing or programming the flash.
+                If you also enable SPIRAM_RODATA option, you can run the instruction when you are erasing or programming the flash.
 
         config SPIRAM_RODATA
             bool "Cache load read only data from SPI RAM"
             default n
             help
                 If enabled, radata in flash will be copied into SPIRAM.
-                If you also enable INSTRUCTION_USE_SPIRAM option, you can run the instruction when you erasing or programming the flash.
+                If you also enable SPIRAM_FETCH_INSTRUCTIONS option, you can run the instruction when you erasing or programming the flash.
 
         config SPIRAM_USE_AHB_DBUS3
             bool "Enable AHB DBUS3 to access SPIRAM"
@@ -273,7 +273,7 @@ menu "ESP32S2-specific"
                 from the non-preferred region instead, so malloc() will not suddenly fail when either internal or
                 external memory is full.
 
-        config WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+        config SPIRAM_TRY_ALLOCATE_WIFI_LWIP
             bool "Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, allocate internal memory"
             depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
             default "n"
@@ -366,7 +366,7 @@ menu "ESP32S2-specific"
         default 2 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
         default 4 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_FOUR
 
-    choice ESP32S2__PANIC
+    choice ESP32S2_PANIC
         prompt "Panic handler behaviour"
         default ESP32S2_PANIC_PRINT_REBOOT
         help
@@ -406,7 +406,7 @@ menu "ESP32S2-specific"
 
     config ESP32S2_DEBUG_STUBS_ENABLE
         bool "OpenOCD debug stubs"
-        default OPTIMIZATION_LEVEL_DEBUG
+        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
         depends on !ESP32S2_TRAX
         help
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
@@ -420,10 +420,10 @@ menu "ESP32S2-specific"
             a specific value. If this happens, it will reset the chip in order to prevent unintended
             behaviour.
 
-    choice BROWNOUT_DET_LVL_SEL
+    choice ESP32S2_BROWNOUT_DET_LVL_SEL
         prompt "Brownout voltage level"
-        depends on BROWNOUT_DET
-        default BROWNOUT_DET_LVL_SEL_25
+        depends on ESP32S2_BROWNOUT_DET
+        default ESP32S2_BROWNOUT_DET_LVL_SEL_25
         help
             The brownout detector will reset the chip when the supply voltage is approximately
             below this level. Note that there may be some variation of brownout voltage level
