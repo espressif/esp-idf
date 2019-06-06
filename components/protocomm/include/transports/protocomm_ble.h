@@ -14,6 +14,8 @@
 
 #pragma once
 
+#include <esp_gap_ble_api.h>
+
 #include <protocomm.h>
 
 #ifdef __cplusplus
@@ -22,8 +24,9 @@ extern "C" {
 
 /**
  * BLE device name cannot be larger than this value
+ * 31 bytes (max scan response size) - 1 byte (length) - 1 byte (type) = 29 bytes
  */
-#define MAX_BLE_DEVNAME_LEN 13
+#define MAX_BLE_DEVNAME_LEN   (ESP_BLE_SCAN_RSP_DATA_LEN_MAX - 2)
 
 /**
  * @brief   This structure maps handler required by protocomm layer to
@@ -51,8 +54,16 @@ typedef struct {
      * BLE device name being broadcast at the time of provisioning
      */
     char         device_name[MAX_BLE_DEVNAME_LEN];
-    uint8_t      service_uuid[16];  /*!< SSID of the provisioning service */
-    ssize_t      nu_lookup_count;   /*!< Number of entries in the Name-UUID lookup table */
+
+    /**
+     * 128 bit UUID of the provisioning service
+     */
+    uint8_t      service_uuid[ESP_UUID_LEN_128];
+
+    /**
+     * Number of entries in the Name-UUID lookup table
+     */
+    ssize_t      nu_lookup_count;
 
     /**
      * Pointer to the Name-UUID lookup table

@@ -32,11 +32,16 @@ typedef void (simple_ble_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t p_gatts
 typedef struct {
     /** Name to be displayed to devices scanning for ESP32 */
     const char *device_name;
-    /** Advertising data content, according to "Supplement to the Bluetooth Core Specification" */
-    esp_ble_adv_data_t adv_data;
+    /** Raw advertisement data */
+    uint8_t *raw_adv_data_p;
+    uint8_t raw_adv_data_len;
+    /** Raw scan response data */
+    uint8_t *raw_scan_rsp_data_p;
+    uint8_t raw_scan_rsp_data_len;
     /** Parameters to configure the nature of advertising */
     esp_ble_adv_params_t adv_params;
-    /** Descriptor table which consists the configuration required by services and characteristics */
+    /** Descriptor table which consists of the configuration
+     * required by services and characteristics */
     esp_gatts_attr_db_t *gatt_db;
     /** Number of entries in the gatt_db descriptor table */
     ssize_t gatt_db_count;
@@ -94,14 +99,15 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg);
  */
 esp_err_t simple_ble_stop();
 
-/** Convert handle to UUID of characteristic
+/** Convert handle to 128 bit UUID of characteristic
  *
  * This function can be easily used to get the corresponding
  * UUID for a characteristic that has been created, and the one for
  * which we only have the handle for.
  *
- * @return uuid the UUID of the handle, -1 in case of invalid handle
+ * @return Pointer to UUID of the characteristic
+ *         NULL in case of invalid handle
  */
-uint16_t simple_ble_get_uuid(uint16_t handle);
+const uint8_t *simple_ble_get_uuid128(uint16_t handle);
 
 #endif /* _SIMPLE_BLE_ */
