@@ -642,6 +642,9 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WD");
         psram_io.psram_clk_io = D0WD_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WD_PSRAM_CS_IO;
+    } else {
+        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
+        abort();
     }
 
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
