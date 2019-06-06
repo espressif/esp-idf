@@ -74,8 +74,7 @@ variables:
   rm -rf "$CUSTOM_TOOLCHAIN_PATH"
 
 .setup_tools: &setup_tools |
-  tools/idf_tools.py install &&
-  eval "$(tools/idf_tools.py export)"
+  tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
 
 before_script:
   - source tools/ci/setup_python.sh

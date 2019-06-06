@@ -128,6 +128,7 @@ EXPORT_KEY_VALUE = 'key-value'
 
 
 global_quiet = False
+global_non_interactive = False
 global_idf_path = None
 global_idf_tools_path = None
 global_tools_json = None
@@ -521,7 +522,7 @@ class IDFTool(object):
         for retry in range(DOWNLOAD_RETRY_COUNT):
             local_temp_path = local_path + '.tmp'
             info('Downloading {} to {}'.format(archive_name, local_temp_path))
-            urlretrieve(url, local_temp_path, report_progress)
+            urlretrieve(url, local_temp_path, report_progress if not global_non_interactive else None)
             sys.stdout.write("\rDone\n")
             sys.stdout.flush()
             if not self.check_download_file(download_obj, local_temp_path):
@@ -1150,6 +1151,7 @@ def main(argv):
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--quiet', help='Don\'t output diagnostic messages to stdout/stderr', action='store_true')
+    parser.add_argument('--non-interactive', help='Don\'t output interactive messages and questions', action='store_true')
     parser.add_argument('--tools-json', help='Path to the tools.json file to use')
     parser.add_argument('--idf-path', help='ESP-IDF path to use')
 
@@ -1203,6 +1205,10 @@ def main(argv):
     if args.quiet:
         global global_quiet
         global_quiet = True
+
+    if args.non_interactive:
+        global global_non_interactive
+        global_non_interactive = True
 
     global global_idf_path
     global_idf_path = os.environ.get('IDF_PATH')
