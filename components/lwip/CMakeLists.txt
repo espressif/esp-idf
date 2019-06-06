@@ -87,6 +87,7 @@ set(COMPONENT_SRCS "apps/dhcpserver/dhcpserver.c"
                    "port/esp32/freertos/sys_arch.c"
                    "port/esp32/netif/dhcp_state.c"
                    "port/esp32/netif/ethernetif.c"
+                   "port/esp32/netif/nettestif.c"
                    "port/esp32/netif/wlanif.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
