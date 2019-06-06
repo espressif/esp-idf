@@ -45,10 +45,10 @@
 #include "port.h"
 
 /* ----------------------- Modbus includes ----------------------------------*/
+#include "sdkconfig.h"
 #include "mb.h"
 #include "mbport.h"
 #include "driver/timer.h"
-#include "sdkconfig.h"
 #include "port_serial_slave.h"
 
 #ifdef CONFIG_FMB_TIMER_PORT_ENABLED
@@ -71,9 +71,17 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
     // Retrieve the interrupt status and the counter value
     // from the timer that reported the interrupt
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st_timers.val;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st.val;
+#endif
     if (intr_status & BIT(usTimerIndex)) {
+#if CONFIG_IDF_TARGET_ESP32
         MB_TG[usTimerGroupIndex]->int_clr_timers.val |= BIT(usTimerIndex);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        MB_TG[usTimerGroupIndex]->int_clr.val |= BIT(usTimerIndex);
+#endif
         (void)pxMBPortCBTimerExpired(); // Timer callback function
         MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].config.alarm_en = TIMER_ALARM_EN;
     }

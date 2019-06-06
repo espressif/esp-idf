@@ -22,7 +22,9 @@ if(NOT CONFIG_ESP32_NO_BLOBS)
     set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
     foreach(blob ${blobs})
         add_library(${blob} STATIC IMPORTED)
-        set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}/lib${blob}.a)
+        # set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${IDF_TARGET}/lib${blob}.a)
+        # ToDo: add lib_esp32s2beta in esp_wifi component
+        set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_esp32/lib${blob}.a)
         target_link_libraries(${COMPONENT_LIB} ${blob})
 
         foreach(_blob ${blobs})

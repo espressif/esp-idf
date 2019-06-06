@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -174,10 +175,10 @@ void set_rtc_memory_crc(void);
 /**
   * @brief Fetch entry from RTC memory and RTC STORE reg
   *
-  * @param uint32_t * entry_addr : the address to save entry 
+  * @param uint32_t * entry_addr : the address to save entry
   *
   * @param RESET_REASON reset_reason : reset reason this time
-  * 
+  *
   * @return None
   */
 void rtc_boot_control(uint32_t * entry_addr, RESET_REASON reset_reason);

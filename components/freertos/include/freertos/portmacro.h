@@ -349,12 +349,14 @@ static inline unsigned portENTER_CRITICAL_NESTED() {
  * ESP32 (portMUX assertions would fail).
  */
 static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
+#ifndef CONFIG_FREERTOS_UNICORE
     __asm__ __volatile__ (
         "WSR 	    %2,SCOMPARE1 \n"
         "S32C1I     %0, %1, 0	 \n"
         :"=r"(*set)
         :"r"(addr), "r"(compare), "0"(*set)
         );
+#endif
 }
 
 

@@ -278,7 +278,9 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     if (speed_mode == LEDC_HIGH_SPEED_MODE) {
+#if CONFIG_IDF_TARGET_ESP32
         gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
+#endif
     } else {
         gpio_matrix_out(gpio_num, LEDC_LS_SIG_OUT0_IDX + ledc_channel, 0, 0);
     }
@@ -318,7 +320,9 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     if (speed_mode == LEDC_HIGH_SPEED_MODE) {
+#if CONFIG_IDF_TARGET_ESP32
         gpio_matrix_out(gpio_num, LEDC_HS_SIG_OUT0_IDX + ledc_channel, 0, 0);
+#endif
     } else {
         gpio_matrix_out(gpio_num, LEDC_LS_SIG_OUT0_IDX + ledc_channel, 0, 0);
     }

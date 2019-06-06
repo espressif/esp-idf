@@ -33,10 +33,28 @@ extern "C" {
 
 #define SPI_FLASH_MMU_PAGE_SIZE 0x10000 /**< Flash cache MMU mapping page size */
 
+typedef enum {
+    FLASH_WRAP_MODE_8B = 0,
+    FLASH_WRAP_MODE_16B = 2,
+    FLASH_WRAP_MODE_32B = 4,
+    FLASH_WRAP_MODE_64B = 6,
+    FLASH_WRAP_MODE_DISABLE = 1
+} spi_flash_wrap_mode_t;
+
+/**
+ * @brief set wrap mode of flash
+ *
+ * @param spi_flash_wrap_mode_t mode: wrap mode support disable, 16 32, 64 byte
+ *
+ * @return esp_err_t : ESP_OK for successful.
+ *
+ */
+esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode);
+
 /**
  * @brief  Initialize SPI flash access driver
  *
- *  This function must be called exactly once, before any other 
+ *  This function must be called exactly once, before any other
  *  spi_flash_* functions are called.
  *  Currently this function is called from startup code. There is
  *  no need to call it from application code.

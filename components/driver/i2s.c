@@ -34,6 +34,9 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 
 static const char* I2S_TAG = "I2S";
 
@@ -453,12 +456,20 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         I2S[i2s_num]->clkm_conf.clkm_div_a = 1;
         I2S[i2s_num]->sample_rate_conf.tx_bck_div_num = m_scale;
         I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = m_scale;
+#if CONFIG_IDF_TARGET_ESP32
         I2S[i2s_num]->clkm_conf.clka_en = 1;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        I2S[i2s_num]->clkm_conf.clk_sel = 1;
+#endif
         double fi2s_rate = i2s_apll_get_fi2s(bits, sdm0, sdm1, sdm2, odir);
         ESP_LOGI(I2S_TAG, "APLL: Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK_M: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
             rate, fi2s_rate/bits/channel/m_scale, bits, 1, m_scale, fi2s_rate, fi2s_rate/8, 1, 0);
     } else {
+#if CONFIG_IDF_TARGET_ESP32
         I2S[i2s_num]->clkm_conf.clka_en = 0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        I2S[i2s_num]->clkm_conf.clk_sel = 2;
+#endif
         I2S[i2s_num]->clkm_conf.clkm_div_a = 63;
         I2S[i2s_num]->clkm_conf.clkm_div_b = clkmDecimals;
         I2S[i2s_num]->clkm_conf.clkm_div_num = clkmInteger;
@@ -1378,3 +1389,4 @@ int i2s_pop_sample(i2s_port_t i2s_num, void *sample, TickType_t ticks_to_wait)
         return bytes_pop;
     }
 }
+#endif

@@ -24,7 +24,6 @@
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
-#include "esp32/rom/ets_sys.h"
 #include "soc/frc_timer_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -33,6 +32,11 @@
 #include "sdkconfig.h"
 #include "esp_timer.h"
 #include "esp_private/esp_timer_impl.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 /* We abuse 'timer_arg' field of ETSTimer structure to hold a pointer to esp_timer */
 #define ESP_TIMER(p_ets_timer) ((esp_timer_handle_t) (p_ets_timer)->timer_arg)

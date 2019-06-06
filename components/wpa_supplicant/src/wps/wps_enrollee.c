@@ -5,8 +5,11 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include "wpa/includes.h"
 
 #include "wpa/common.h"

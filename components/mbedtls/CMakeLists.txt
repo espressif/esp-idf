@@ -1,3 +1,5 @@
+idf_build_get_property(idf_target IDF_TARGET)
+
 set(COMPONENT_ADD_INCLUDEDIRS "port/include" "mbedtls/include")
 set(COMPONENT_SRCS "mbedtls.c")
 set(COMPONENT_REQUIRES lwip)
@@ -79,16 +81,16 @@ set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
 # Add port files to mbedtls targets
-target_sources(mbedtls PRIVATE "${COMPONENT_DIR}/port/esp_bignum.c"
-                                "${COMPONENT_DIR}/port/esp_hardware.c"
+target_sources(mbedtls PRIVATE  "${COMPONENT_DIR}/port/esp_hardware.c"
                                 "${COMPONENT_PATH}/port/esp_sha.c"
                                 "${COMPONENT_DIR}/port/esp_sha1.c"
                                 "${COMPONENT_DIR}/port/esp_sha256.c"
                                 "${COMPONENT_DIR}/port/esp_sha512.c"
                                 "${COMPONENT_DIR}/port/mbedtls_debug.c"
                                 "${COMPONENT_DIR}/port/net_sockets.c"
-                                "${COMPONENT_DIR}/port/esp32/aes.c"
-                                "${COMPONENT_DIR}/port/esp32/sha.c")
+                                "${COMPONENT_DIR}/port/${idf_target}/aes.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/sha.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/esp_bignum.c")
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c")
 
 foreach(target ${mbedtls_targets})

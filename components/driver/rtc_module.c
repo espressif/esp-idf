@@ -15,12 +15,12 @@
 #include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp_log.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/syscon_periph.h"
 #include "soc/rtc.h"
+#include "soc/periph_defs.h"
 #include "rtc_io.h"
 #include "touch_pad.h"
 #include "adc.h"
@@ -34,6 +34,12 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "adc1_i2s_private.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -83,14 +89,14 @@ portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static SemaphoreHandle_t rtc_touch_mux = NULL;
 /*
 In ADC2, there're two locks used for different cases:
-1. lock shared with app and WIFI: 
-   when wifi using the ADC2, we assume it will never stop, 
+1. lock shared with app and WIFI:
+   when wifi using the ADC2, we assume it will never stop,
    so app checks the lock and returns immediately if failed.
 
-2. lock shared between tasks: 
-   when several tasks sharing the ADC2, we want to guarantee 
+2. lock shared between tasks:
+   when several tasks sharing the ADC2, we want to guarantee
    all the requests will be handled.
-   Since conversions are short (about 31us), app returns the lock very soon, 
+   Since conversions are short (about 31us), app returns the lock very soon,
    we use a spinlock to stand there waiting to do conversions one by one.
 
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
@@ -373,7 +379,9 @@ void rtc_gpio_force_hold_dis_all()
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
         const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio];
         if (desc->hold_force != 0) {
+#if CONFIG_IDF_TARGET_ESP32
             REG_CLR_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
+#endif
         }
     }
 }
@@ -432,13 +440,21 @@ inline static touch_pad_t touch_pad_num_wrap(touch_pad_t touch_num)
 esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+#else
+    return ESP_FAIL;
+#endif
 }
 
 esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+#else
+    return ESP_FAIL;
+#endif
 }
 
 esp_err_t touch_pad_isr_deregister(intr_handler_t fn, void *arg)
@@ -566,7 +582,7 @@ esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, t
             ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(((atten < TOUCH_HVOLT_ATTEN_MAX) && (refh >= (int )TOUCH_HVOLT_ATTEN_KEEP)), "touch atten error",
             ESP_ERR_INVALID_ARG);
-
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL(&rtc_spinlock);
     if (refh > TOUCH_HVOLT_KEEP) {
         RTCIO.touch_cfg.drefh = refh;
@@ -578,11 +594,13 @@ esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, t
         RTCIO.touch_cfg.drange = atten;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl, touch_volt_atten_t *atten)
 {
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL(&rtc_spinlock);
     if (refh) {
         *refh = RTCIO.touch_cfg.drefh;
@@ -594,6 +612,7 @@ esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl,
         *atten = RTCIO.touch_cfg.drange;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
@@ -601,7 +620,7 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 {
     RTC_MODULE_CHECK((slope < TOUCH_PAD_SLOPE_MAX), "touch slope error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK((opt < TOUCH_PAD_TIE_OPT_MAX), "touch opt error", ESP_ERR_INVALID_ARG);
-    
+
     touch_pad_t touch_pad_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
     RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
@@ -613,7 +632,7 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope, touch_tie_opt_t *opt)
 {
     RTC_MODULE_CHECK((touch_num < TOUCH_PAD_MAX), "touch IO error", ESP_ERR_INVALID_ARG);
-    
+
     touch_pad_t touch_pad_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
     if(opt) {
@@ -1152,7 +1171,7 @@ void adc_power_on()
 #ifndef CONFIG_ADC_FORCE_XPD_FSM
     //Set the power always on to increase precision.
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
-#else    
+#else
     //Use the FSM to turn off the power while not used to save power.
     if (SENS.sar_meas_wait2.force_xpd_sar & SENS_FORCE_XPD_SAR_SW_M) {
         SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
@@ -1266,12 +1285,12 @@ static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
                 break;
             default:
                 ESP_LOGE(TAG, "adc1 selects invalid controller");
-                break;            
+                break;
         }
     } else if ( unit == ADC_UNIT_2) {
         switch( ctrl ) {
             case ADC_CTRL_RTC:
-                SENS.sar_meas_start2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor 
+                SENS.sar_meas_start2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor
                 SENS.sar_meas_start2.sar2_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
                 SENS.sar_read_ctrl2.sar2_dig_force = false;     //RTC controller controls the ADC, not digital controller
                 SENS.sar_read_ctrl2.sar2_pwdet_force = false;   //RTC controller controls the ADC, not PWDET
@@ -1301,7 +1320,7 @@ static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
                 break;
             default:
                 ESP_LOGE(TAG, "adc2 selects invalid controller");
-                break;            
+                break;
         }
     } else {
       ESP_LOGE(TAG, "invalid adc unit");
@@ -1321,12 +1340,12 @@ static int adc_convert( adc_unit_t unit, int channel)
         while (SENS.sar_meas_start1.meas1_done_sar == 0);
         adc_value = SENS.sar_meas_start1.meas1_data_sar;
     } else if ( unit == ADC_UNIT_2 ) {
-        SENS.sar_meas_start2.sar2_en_pad = (1 << channel); //only one channel is selected.    
-        
+        SENS.sar_meas_start2.sar2_en_pad = (1 << channel); //only one channel is selected.
+
         SENS.sar_meas_start2.meas2_start_sar = 0; //start force 0
         SENS.sar_meas_start2.meas2_start_sar = 1; //start force 1
         while (SENS.sar_meas_start2.meas2_done_sar == 0) {}; //read done
-        adc_value = SENS.sar_meas_start2.meas2_data_sar;    
+        adc_value = SENS.sar_meas_start2.meas2_data_sar;
     } else {
         ESP_LOGE(TAG, "invalid adc unit");
         return ESP_ERR_INVALID_ARG;
@@ -1479,7 +1498,7 @@ static inline void adc1_fsm_disable()
     SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
     SENS.sar_meas_wait1.sar_amp_wait1 = 1;
     SENS.sar_meas_wait1.sar_amp_wait2 = 1;
-    SENS.sar_meas_wait2.sar_amp_wait3 = 1;    
+    SENS.sar_meas_wait2.sar_amp_wait3 = 1;
 }
 
 esp_err_t adc1_i2s_mode_acquire()
@@ -1530,7 +1549,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc1_adc_mode_acquire();
     adc_power_on();
 
-    portENTER_CRITICAL(&rtc_spinlock);    
+    portENTER_CRITICAL(&rtc_spinlock);
     //disable other peripherals
     adc1_hall_enable(false);
     adc1_fsm_disable(); //currently the LNA is not open, close it by default
@@ -1652,7 +1671,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     }
     SENS.sar_atten2 = ( SENS.sar_atten2 & ~(3<<(channel*2)) ) | ((atten&3) << (channel*2));
     _lock_release( &adc2_wifi_lock );
-    
+
     portEXIT_CRITICAL( &adc2_spinlock );
     return ESP_OK;
 }
@@ -1682,7 +1701,7 @@ static inline void adc2_dac_disable( adc2_channel_t channel)
 }
 
 //registers in critical section with adc1:
-//SENS_SAR_START_FORCE_REG, 
+//SENS_SAR_START_FORCE_REG,
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* raw_out)
 {
     uint16_t adc_value = 0;
@@ -1692,7 +1711,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     adc_power_on();
 
     //avoid collision with other tasks
-    portENTER_CRITICAL(&adc2_spinlock); 
+    portENTER_CRITICAL(&adc2_spinlock);
     //lazy initialization
     //try the lock, return if failed (wifi using).
     if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
@@ -1895,7 +1914,9 @@ esp_err_t dac_i2s_disable()
 
 static inline void adc1_hall_enable(bool enable)
 {
-    RTCIO.hall_sens.xpd_hall = enable;        
+#if CONFIG_IDF_TARGET_ESP32
+    RTCIO.hall_sens.xpd_hall = enable;
+#endif
 }
 
 static int hall_sensor_get_value()    //hall sensor without LNA
@@ -1904,14 +1925,15 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     int Sens_Vn0;
     int Sens_Vp1;
     int Sens_Vn1;
-    int hall_value;
-    
+    int hall_value = 0;
+
     adc_power_on();
 
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL(&rtc_spinlock);
     //disable other peripherals
-    adc1_fsm_disable();//currently the LNA is not open, close it by default    
-    adc1_hall_enable(true);   
+    adc1_fsm_disable();//currently the LNA is not open, close it by default
+    adc1_hall_enable(true);
     // set controller
     adc_set_controller( ADC_UNIT_1, ADC_CTRL_RTC );
     // convert for 4 times with different phase and outputs
@@ -1923,7 +1945,7 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     Sens_Vn1 = adc_convert( ADC_UNIT_1, ADC1_CHANNEL_3 );
     portEXIT_CRITICAL(&rtc_spinlock);
     hall_value = (Sens_Vp1 - Sens_Vp0) - (Sens_Vn1 - Sens_Vn0);
-
+#endif
     return hall_value;
 }
 

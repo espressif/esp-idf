@@ -23,7 +23,7 @@ else()
 
     register_component()
 
-    if (CONFIG_IDF_TARGET_ESP32)
+    if (IDF_TARGET STREQUAL "esp32")
         set(scripts
             "esp32/ld/esp32.rom.ld"
             "esp32/ld/esp32.rom.libgcc.ld"
@@ -48,14 +48,12 @@ else()
             target_linker_script(${COMPONENT_LIB} "esp32/ld/esp32.rom.spiflash.ld")
         endif()
 
-    elseif(CONFIG_IDF_TARGET_ESP32S2BETA)
-        target_linker_script(${COMPONENT_LIB}
-                            "esp32s2beta/ld/esp32s2beta.rom.ld"
-                            "esp32s2beta/ld/esp32s2beta.rom.nanofmt.ld"
-                            "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld"
-                            "esp32s2beta/ld/esp32s2beta.rom.spiram_incompatible_fns.ld"
-                            "esp32s2beta/ld/esp32s2beta.spiram.rom-functions-dram.ld"
-                            "esp32s2beta/ld/esp32s2beta.spiram.rom-functions-iram.ld")
+    elseif(IDF_TARGET STREQUAL "esp32s2beta")
+        set(scripts "esp32s2beta/ld/esp32s2beta.rom.ld"
+                    "esp32s2beta/ld/esp32s2beta.rom.nanofmt.ld"
+                    "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld"
+                    "esp32s2beta/ld/esp32s2beta.rom.spiram_incompatible_fns.ld")
+        target_linker_script(${COMPONENT_LIB} "${scripts}")
     endif()
 
 endif()

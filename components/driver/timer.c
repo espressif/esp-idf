@@ -19,6 +19,7 @@
 #include "freertos/xtensa_api.h"
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
+#include "sdkconfig.h"
 
 static const char* TIMER_TAG = "timer_group";
 #define TIMER_CHECK(a, str, ret_val) \
@@ -47,7 +48,11 @@ esp_err_t timer_get_counter_value(timer_group_t group_num, timer_idx_t timer_num
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_val != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL_SAFE(&timer_spinlock[group_num]);
+#if CONFIG_IDF_TARGET_ESP32
     TG[group_num]->hw_timer[timer_num].update = 1;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->hw_timer[timer_num].update.update = 1;
+#endif
     *timer_val = ((uint64_t) TG[group_num]->hw_timer[timer_num].cnt_high << 32)
         | (TG[group_num]->hw_timer[timer_num].cnt_low);
     portEXIT_CRITICAL_SAFE(&timer_spinlock[group_num]);
@@ -171,7 +176,7 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
     return ESP_OK;
 }
 
-esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, 
+esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
     void (*fn)(void*), void * arg, int intr_alloc_flags, timer_isr_handle_t *handle)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
@@ -222,7 +227,11 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     //but software reset does not clear interrupt status. This is not safe for application when enable the interrupt of timer_group.
     //we need to disable the interrupt and clear the interrupt status here.
     TG[group_num]->int_ena.val &= (~BIT(timer_num));
+#if CONFIG_IDF_TARGET_ESP32
     TG[group_num]->int_clr_timers.val = BIT(timer_num);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->int_clr.val = BIT(timer_num);
+#endif
     TG[group_num]->hw_timer[timer_num].config.autoreload = config->auto_reload;
     TG[group_num]->hw_timer[timer_num].config.divider = (uint16_t) config->divider;
     TG[group_num]->hw_timer[timer_num].config.enable = config->counter_en;

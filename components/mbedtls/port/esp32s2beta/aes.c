@@ -27,7 +27,7 @@
  */
 #include <string.h>
 #include "mbedtls/aes.h"
-#include "hwcrypto/aes.h"
+#include "esp32s2beta/aes.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
 #include <sys/lock.h>

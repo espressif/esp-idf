@@ -15,19 +15,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#include "esp32s2beta/ulp.h"
+#endif
 
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 
-#include "sdkconfig.h"
+
 
 typedef struct {
     uint32_t magic;
@@ -112,7 +117,7 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     }
     uint64_t period_us_64 = period_us;
     uint64_t period_cycles = (period_us_64 << RTC_CLK_CAL_FRACT) / esp_clk_slowclk_cal_get();
-    uint64_t min_sleep_period_cycles = ULP_FSM_PREPARE_SLEEP_CYCLES 
+    uint64_t min_sleep_period_cycles = ULP_FSM_PREPARE_SLEEP_CYCLES
                                     + ULP_FSM_WAKEUP_SLEEP_CYCLES
                                     + REG_GET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT);
     if (period_cycles < min_sleep_period_cycles) {

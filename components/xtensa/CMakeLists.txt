@@ -1,5 +1,8 @@
 if(NOT BOOTLOADER_BUILD)
-    set(COMPONENT_SRCS "eri.c" "trax.c")
+    set(COMPONENT_SRCS "eri.c")
+    if(IDF_TARGET STREQUAL "esp32")
+        list(APPEND COMPONENT_SRCS "trax.c")
+    endif()
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include" "${IDF_TARGET}/include")

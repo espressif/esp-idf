@@ -25,6 +25,7 @@
 #include "esp32s2beta/rom/cache.h"
 #include "esp32s2beta/rom/rtc.h"
 #include "esp32s2beta/rom/uart.h"
+#include "esp32s2beta/rom/ets_sys.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"

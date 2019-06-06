@@ -40,6 +40,7 @@
 #include "mb_m.h"
 #include "mbport.h"
 #include "port_serial_master.h"
+#include "sdkconfig.h"
 
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_TICK_TIME_US         (50)    // 50uS = one tick for timer
@@ -69,10 +70,22 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
     // Retrieve the interrupt status and the counter value
     // from the timer that reported the interrupt
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st_timers.val;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st.val;
+#endif
     if (intr_status & BIT(usTimerIndex)) {
+#if CONFIG_IDF_TARGET_ESP32
         MB_TG[usTimerGroupIndex]->int_clr_timers.val |= BIT(usTimerIndex);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        MB_TG[usTimerGroupIndex]->int_clr.val |= BIT(usTimerIndex);
+#endif
+#if CONFIG_IDF_TARGET_ESP32
         MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].update = 1;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].update.update = 1;
+#endif
         (void)pxMBMasterPortCBTimerExpired(); // Timer expired callback function
         // Enable alarm
         MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].config.alarm_en = TIMER_ALARM_EN;

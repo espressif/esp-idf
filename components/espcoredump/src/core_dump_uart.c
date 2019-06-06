@@ -15,8 +15,12 @@
 #include "soc/uart_periph.h"
 #include "soc/gpio_periph.h"
 #include "driver/gpio.h"
-#include "esp32/clk.h"
 #include "esp_core_dump_priv.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#endif
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
 

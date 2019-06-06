@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ROM_ETS_SYS_H_
-#define _ROM_ETS_SYS_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -608,5 +607,3 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_ETS_SYS_H_ */

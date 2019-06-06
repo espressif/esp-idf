@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_EFUSE_MANAGER_H_
-#define _ESP_EFUSE_MANAGER_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -358,5 +357,3 @@ void esp_efuse_init(uint32_t offset, uint32_t size);
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _ESP_EFUSE_MANAGER_H_

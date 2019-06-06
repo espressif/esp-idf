@@ -10,12 +10,14 @@ else()  # not BOOTLOADER_BUILD
                    "flash_mmap.c"
                    "flash_ops.c"
                    "partition.c"
-                   "spi_flash_rom_patch.c")
+                   "spi_flash_rom_patch.c"
+                   "${IDF_TARGET}/flash_ops_${IDF_TARGET}.c")
     set(COMPONENT_REQUIRES app_update)
     set(COMPONENT_PRIV_REQUIRES bootloader_support soc)
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS include)
+set(COMPONENT_PRIV_INCLUDEDIRS ".")
 set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 
 register_component()

@@ -15,7 +15,7 @@
 #ifndef WPA_H
 #define WPA_H
 
-#include "esp32/rom/ets_sys.h"
+// #include "esp32/rom/ets_sys.h"
 #include "common.h"
 #include "wpa/defs.h"
 #include "wpa/wpa_common.h"
@@ -95,7 +95,7 @@ struct wpa_sm {
     void (*wpa_deauthenticate)(u8 reason_code);
     void (*wpa_neg_complete)();
     struct wpa_gtk_data gd; //used for calllback save param
-    u16 key_info; 	//used for txcallback param    
+    u16 key_info; 	//used for txcallback param
 };
 
 struct l2_ethhdr {
@@ -169,7 +169,7 @@ struct l2_ethhdr {
  * handler if send_eapol() is used.
  */
 
-#define KEYENTRY_TABLE_MAP(key_entry_valid)  ((key_entry_valid)%5) 
+#define KEYENTRY_TABLE_MAP(key_entry_valid)  ((key_entry_valid)%5)
 
 void wpa_sm_set_state(enum wpa_states state);
 

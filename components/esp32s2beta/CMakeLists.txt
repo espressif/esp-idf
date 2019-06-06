@@ -46,12 +46,14 @@ elseif(CONFIG_IDF_TARGET_ESP32S2BETA)
 
     target_linker_script(${COMPONENT_LIB} "${CMAKE_CURRENT_BINARY_DIR}/esp32s2beta_out.ld")
 
+    # Rely on user code to define app_main
+    target_link_libraries(${COMPONENT_LIB} "-u app_main")
+
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
     target_linker_script(${COMPONENT_LIB} "${CMAKE_CURRENT_LIST_DIR}/ld/esp32s2beta.project.ld.in" PROCESS)
 
     target_linker_script(${COMPONENT_LIB} "ld/esp32s2beta.peripherals.ld")
-
     target_link_libraries(${COMPONENT_LIB} gcc)
     target_link_libraries(${COMPONENT_LIB} "-u call_user_start_cpu0")
 
@@ -79,6 +81,4 @@ elseif(CONFIG_IDF_TARGET_ESP32S2BETA)
         cpu_start.c
         PROPERTIES COMPILE_FLAGS
         -fno-stack-protector)
-else()
-    register_config_only_component()
 endif()

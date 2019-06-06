@@ -25,7 +25,7 @@
 #include "sdmmc_private.h"
 #include "freertos/semphr.h"
 #include "soc/sdmmc_periph.h"
-
+#if CONFIG_IDF_TARGET_ESP32
 #define SDMMC_EVENT_QUEUE_LENGTH 32
 
 
@@ -635,3 +635,4 @@ esp_err_t sdmmc_host_pullup_en(int slot, int width)
     }
     return ESP_OK;
 }
+#endif

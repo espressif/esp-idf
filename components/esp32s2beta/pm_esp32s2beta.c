@@ -34,7 +34,7 @@
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_impl.h"
-#include "esp32/pm.h"
+#include "esp32s2beta/pm.h"
 
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work
  * for the purpose of detecting a deadlock.
@@ -447,6 +447,24 @@ void esp_pm_impl_idle_hook()
     }
     portEXIT_CRITICAL_NESTED(state);
     ESP_PM_TRACE_ENTER(IDLE, core_id);
+}
+
+void esp_pm_impl_waiti()
+{
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+    int core_id = xPortGetCoreID();
+    if (s_skipped_light_sleep[core_id]) {
+        asm("waiti 0");
+        /* Interrupt took the CPU out of waiti and s_rtos_lock_handle[core_id]
+         * is now taken. However since we are back to idle task, we can release
+         * the lock so that vApplicationSleep can attempt to enter light sleep.
+         */
+        esp_pm_impl_idle_hook();
+        s_skipped_light_sleep[core_id] = false;
+    }
+#else
+    asm("waiti 0");
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 }
 
 void IRAM_ATTR esp_pm_impl_isr_hook()

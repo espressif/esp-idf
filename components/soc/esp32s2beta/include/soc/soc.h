@@ -57,6 +57,8 @@
 
 #define PRO_CPU_NUM (0)
 
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
+
 #define DR_REG_SYSTEM_BASE                      0x3f4c0000
 #define DR_REG_SENSITIVE_BASE                   0x3f4c1000
 #define DR_REG_INTERRUPT_BASE                   0x3f4c2000
@@ -123,7 +125,7 @@
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
-#define ETS_CACHED_ADDR(addr) (addr) 
+#define ETS_CACHED_ADDR(addr) (addr)
 
 #ifndef __ASSEMBLER__
 #define BIT(nr)                 (1UL << (nr))
