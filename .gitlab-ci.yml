@@ -1084,6 +1084,23 @@ test_weekend_mqtt:
     ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/config.yml"
 
+test_weekend_network:
+  <<: *example_test_template
+  stage: target_test
+  image: $CI_DOCKER_REGISTRY/rpi-net-suite$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - ESP32
+    - Example_WIFI
+  only:
+    variables:
+      - $BOT_LABEL_WEEKEND_TEST
+  variables:
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/config.yml"
+
 .test_template: &test_template
   stage: target_test
   when: on_success
