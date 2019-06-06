@@ -21,9 +21,9 @@
 #define I2S_NUM         (0)
 #define WAVE_FREQ_HZ    (100)
 #define PI              (3.14159265)
-#define I2S_BCK_IO      (GPIO_NUM_26)
-#define I2S_WS_IO       (GPIO_NUM_25)
-#define I2S_DO_IO       (GPIO_NUM_22)
+#define I2S_BCK_IO      (GPIO_NUM_13)
+#define I2S_WS_IO       (GPIO_NUM_15)
+#define I2S_DO_IO       (GPIO_NUM_21)
 #define I2S_DI_IO       (-1)
 
 #define SAMPLE_PER_CYCLE (SAMPLE_RATE/WAVE_FREQ_HZ)
