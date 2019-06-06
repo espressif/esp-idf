@@ -12,7 +12,8 @@ set(SOC_SRCS "cpu_util.c"
     "sdmmc_periph.c"
     "soc_memory_layout.c"
     "spi_periph.c"
-    "ledc_periph.c")
+    "ledc_periph.c"
+    "i2s_periph.c")
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     set_source_files_properties("esp32/rtc_clk.c" PROPERTIES
