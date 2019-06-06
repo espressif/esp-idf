@@ -63,6 +63,9 @@ static void tcp_server_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Socket created");
 
+        int flag = 1;
+        setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+
         int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err != 0) {
             ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
@@ -123,6 +126,7 @@ static void tcp_server_task(void *pvParameters)
             ESP_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
+            close(listen_sock);
         }
     }
     vTaskDelete(NULL);
