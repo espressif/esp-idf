@@ -614,7 +614,7 @@ psram_size_t psram_get_size()
  */
 esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   //psram init
 {
-    psram_io_t psram_io;
+    psram_io_t psram_io={0};
     uint32_t chip_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
     uint32_t pkg_ver = chip_ver & 0x7;
     if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5) {
@@ -640,6 +640,9 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WD");
         psram_io.psram_clk_io = D0WD_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WD_PSRAM_CS_IO;
+    } else {
+        ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
+        abort();
     }
 
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
