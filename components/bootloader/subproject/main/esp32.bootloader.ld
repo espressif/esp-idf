@@ -149,7 +149,6 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _heap_start = ABSOLUTE(.);
   } >dram_seg
 
   .iram.text :
