@@ -62,14 +62,51 @@ extern "C"
 #define SPI_SWAP_DATA_RX(data, len) (__builtin_bswap32(data)>>(32-len))
 
 /**
+ * Transform unsigned integer of length <= 32 bits to the format which can be
+ * sent by the SPI driver directly.
+ *
+ * E.g. to send 9 bits of data, you can:
+ *
+ *      uint16_t data = SPI_SWAP_DATA_TX(0x145, 9);
+ *
+ * Then points tx_buffer to ``&data``.
+ *
+ * @param data Data to be sent, can be uint8_t, uint16_t or uint32_t. @param
+ *  len Length of data to be sent, since the SPI peripheral sends from the MSB,
+ *  this helps to shift the data to the MSB.
+ */
+#define SPI_SWAP_DATA_TX(data, len) __builtin_bswap32((uint32_t)data<<(32-len))
+
+/**
+ * Transform received data of length <= 32 bits to the format of an unsigned integer.
+ *
+ * E.g. to transform the data of 15 bits placed in a 4-byte array to integer:
+ *
+ *      uint16_t data = SPI_SWAP_DATA_RX(*(uint32_t*)t->rx_data, 15);
+ *
+ * @param data Data to be rearranged, can be uint8_t, uint16_t or uint32_t.
+ * @param len Length of data received, since the SPI peripheral writes from
+ *      the MSB, this helps to shift the data to the LSB.
+ */
+#define SPI_SWAP_DATA_RX(data, len) (__builtin_bswap32(data)>>(32-len))
+
+/**
  * @brief Enum with the three SPI peripherals that are software-accessible in it
  */
+#if CONFIG_IDF_TARGET_ESP32
 typedef enum {
     SPI_HOST=0,                     ///< SPI1, SPI
     HSPI_HOST=1,                    ///< SPI2, HSPI
     VSPI_HOST=2                     ///< SPI3, VSPI
 } spi_host_device_t;
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+typedef enum {
+    SPI_HOST=0,                     ///< SPI1, SPI
+    FSPI_HOST=1,                    ///< SPI2, FSPI
+    HSPI_HOST=2,                    ///< SPI3, HSPI
+    VSPI_HOST=3                     ///< SPI4, VSPI
+} spi_host_device_t;
+#endif
 /**
  * @brief This is a configuration structure for a SPI bus.
  *
@@ -85,6 +122,9 @@ typedef struct {
     int sclk_io_num;                ///< GPIO pin for Spi CLocK signal, or -1 if not used.
     int quadwp_io_num;              ///< GPIO pin for WP (Write Protect) signal which is used as D2 in 4-bit communication modes, or -1 if not used.
     int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    int spicd_io_num;               ///< CD GPIO pin for this device, or -1 if not used
+#endif
     int max_transfer_sz;            ///< Maximum transfer size, in bytes. Defaults to 4094 if 0.
     uint32_t flags;                 ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     int intr_flags;    /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see

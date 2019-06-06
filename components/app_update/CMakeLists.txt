@@ -3,6 +3,7 @@ set(COMPONENT_SRCS "esp_ota_ops.c"
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 
 set(COMPONENT_REQUIRES spi_flash partition_table bootloader_support)
+set(COMPONENT_PRIV_REQUIRES)
 
 register_component()
 

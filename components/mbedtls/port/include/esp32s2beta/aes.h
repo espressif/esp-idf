@@ -25,7 +25,7 @@
 #define ESP_AES_H
 
 #include "esp_types.h"
-#include "rom/aes.h"
+#include "esp32s2beta/rom/aes.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,9 +11,12 @@ endif()
 list(APPEND COMPONENT_ADD_INCLUDEDIRS include)
 if(NOT BOOTLOADER_BUILD)
     list(APPEND COMPONENT_SRCS "src/memory_layout_utils.c"
-                               "src/lldesc.c src/hal/spi_hal.c"
-                               "src/hal/spi_hal_iram.c"
+                               "src/lldesc.c"
                                "src/soc_include_legacy_warn.c")
+
+    if(IDF_TARGET STREQUAL "esp32")
+        list(APPEND COMPONENT_SRCS "src/hal/spi_hal.c" "src/hal/spi_hal_iram.c")
+    endif()
 
     set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 endif()

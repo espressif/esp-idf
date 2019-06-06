@@ -30,11 +30,16 @@ that are implemented in C.
 
 
 #ifdef XT_BOARD
-#include    <xtensa/xtbsp.h>
+#include "xtensa/xtbsp.h"
 #endif
 
-#include    "xtensa_rtos.h"
-#include    "esp32/clk.h"
+#include "xtensa_rtos.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#endif
 
 #ifdef XT_RTOS_TIMER_INT
 

@@ -19,8 +19,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ROM_AES_H_
-#define _ROM_AES_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -61,5 +60,3 @@ void ets_aes_block(const void *input, void *output);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_AES_H_ */

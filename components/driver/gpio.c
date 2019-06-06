@@ -212,7 +212,11 @@ esp_err_t gpio_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull)
 esp_err_t gpio_set_direction(gpio_num_t gpio_num, gpio_mode_t mode)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     if (gpio_num >= 34 && (mode & GPIO_MODE_DEF_OUTPUT)) {
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (gpio_num >= 46 && (mode & GPIO_MODE_DEF_OUTPUT)) {
+#endif
         ESP_LOGE(GPIO_TAG, "io_num=%d can only be input", gpio_num);
         return ESP_ERR_INVALID_ARG;
     }
@@ -516,7 +520,11 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num)
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         r = rtc_gpio_hold_en(gpio_num);
     } else if (GPIO_HOLD_MASK[gpio_num]) {
+#if CONFIG_IDF_TARGET_ESP32
         SET_PERI_REG_MASK(RTC_IO_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
+#endif
     } else {
         r = ESP_ERR_NOT_SUPPORTED;
     }
@@ -530,7 +538,11 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         r = rtc_gpio_hold_dis(gpio_num);
     } else if (GPIO_HOLD_MASK[gpio_num]) {
+#if CONFIG_IDF_TARGET_ESP32
         CLEAR_PERI_REG_MASK(RTC_IO_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
+#endif
     } else {
         r = ESP_ERR_NOT_SUPPORTED;
     }

@@ -8,7 +8,7 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS "private_include")
 
 set(COMPONENT_REQUIRES log tcpip_adapter)
-if(CONFIG_IDF_TARGET_ESP32)
+if(IDF_TARGET STREQUAL "esp32")
     set(COMPONENT_PRIV_REQUIRES ethernet)
 endif()
 

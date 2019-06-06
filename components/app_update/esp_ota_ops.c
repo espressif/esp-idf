@@ -39,10 +39,12 @@
 #include "bootloader_common.h"
 #include "sys/param.h"
 #include "esp_system.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp_efuse.h"
+#endif
 
 
-#define SUB_TYPE_ID(i) (i & 0x0F) 
+#define SUB_TYPE_ID(i) (i & 0x0F)
 
 typedef struct ota_ops_entry_ {
     uint32_t handle;

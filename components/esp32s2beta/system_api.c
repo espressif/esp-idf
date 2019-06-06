@@ -365,3 +365,4 @@ void esp_chip_info(esp_chip_info_t* out_info)
     out_info->features = CHIP_FEATURE_WIFI_BGN;
 
     // FIXME: other features?
+}

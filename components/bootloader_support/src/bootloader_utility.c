@@ -64,7 +64,7 @@
 #include "bootloader_utility.h"
 #include "bootloader_sha.h"
 
-#ifndef BOOTLOADER_BUILD // TODO: efuse component on esp32s2beta
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp_efuse.h"
 #endif
 

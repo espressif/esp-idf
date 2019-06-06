@@ -24,11 +24,10 @@
 #include "freertos/task.h"
 #include <esp_types.h>
 #include "esp_err.h"
-//#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
-#include "esp_intr_alloc.h"
+#include "soc/soc.h"
 #include <limits.h>
 #include <assert.h>
 

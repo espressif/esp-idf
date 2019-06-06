@@ -17,7 +17,6 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "esp32/clk.h"
 #include "malloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -28,6 +27,12 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#endif
 
 #define XOFF (char)0x13
 #define XON (char)0x11
@@ -79,7 +84,7 @@ typedef struct {
     intr_handle_t intr_handle;          /*!< UART interrupt handle*/
     uart_mode_t uart_mode;              /*!< UART controller actual mode set by uart_set_mode() */
     bool coll_det_flg;                  /*!< UART collision detection flag */
-    
+
     //rx parameters
     int rx_buffered_len;                  /*!< UART cached data length */
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
@@ -298,9 +303,15 @@ static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
     //See description about UART_TXFIFO_RST and UART_RXFIFO_RST in <<esp32_technical_reference_manual>> v2.6 or later.
 
     // we read the data out and make `fifo_len == 0 && rd_addr == wr_addr`.
+#if CONFIG_IDF_TARGET_ESP32
     while(UART[uart_num]->status.rxfifo_cnt != 0 || (UART[uart_num]->mem_rx_status.wr_addr != UART[uart_num]->mem_rx_status.rd_addr)) {
         READ_PERI_REG(UART_FIFO_REG(uart_num));
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    while(UART[uart_num]->status.rxfifo_cnt != 0 || (UART[uart_num]->mem_rx_status.rx_waddr != UART[uart_num]->mem_rx_status.apb_rx_raddr)) {
+        READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
+    }
+#endif
     return ESP_OK;
 }
 
@@ -577,12 +588,14 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
             rts_sig = U1RTS_OUT_IDX;
             cts_sig = U1CTS_IN_IDX;
             break;
+#if CONFIG_IDF_TARGET_ESP32
         case UART_NUM_2:
             tx_sig = U2TXD_OUT_IDX;
             rx_sig = U2RXD_IN_IDX;
             rts_sig = U2RTS_OUT_IDX;
             cts_sig = U2CTS_IN_IDX;
             break;
+#endif
         case UART_NUM_MAX:
             default:
             tx_sig = U0TXD_OUT_IDX;
@@ -657,7 +670,11 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     } else if(uart_num == UART_NUM_1) {
         periph_module_enable(PERIPH_UART1_MODULE);
     } else if(uart_num == UART_NUM_2) {
+#if CONFIG_IDF_TARGET_ESP32
         periph_module_enable(PERIPH_UART2_MODULE);
+#else
+        return ESP_FAIL;
+#endif
     }
     r = uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
     if (r != ESP_OK) return r;
@@ -861,7 +878,11 @@ static void uart_rx_intr_handler_default(void *param)
             if (p_uart->rx_buffer_full_flg == false) {
                 //We have to read out all data in RX FIFO to clear the interrupt signal
                 while (buf_idx < rx_fifo_len) {
+#if CONFIG_IDF_TARGET_ESP32
                     p_uart->rx_data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+                    p_uart->rx_data_buf[buf_idx++] = READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
+#endif
                 }
                 uint8_t pat_chr = uart_reg->at_cmd_char.data;
                 int pat_num = uart_reg->at_cmd_char.char_num;
@@ -997,13 +1018,13 @@ static void uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_reset_rx_fifo(uart_num);
             // Set collision detection flag
-            p_uart_obj[uart_num]->coll_det_flg = true; 
+            p_uart_obj[uart_num]->coll_det_flg = true;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_event.type = UART_EVENT_MAX;
         } else if(uart_intr_status & UART_TX_DONE_INT_ST_M) {
             uart_disable_intr_mask_from_isr(uart_num, UART_TX_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);
-            // If RS485 half duplex mode is enable then reset FIFO and 
+            // If RS485 half duplex mode is enable then reset FIFO and
             // reset RTS pin to start receiver driver
             if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -1461,7 +1482,11 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
        } else if(uart_num == UART_NUM_1) {
            periph_module_disable(PERIPH_UART1_MODULE);
        } else if(uart_num == UART_NUM_2) {
-           periph_module_disable(PERIPH_UART2_MODULE);
+#if CONFIG_IDF_TARGET_ESP32
+            periph_module_disable(PERIPH_UART2_MODULE);
+#else
+            return ESP_FAIL;
+#endif
        }
     }
     return ESP_OK;
@@ -1479,11 +1504,11 @@ portMUX_TYPE *uart_get_selectlock()
     return &uart_selectlock;
 }
 // Set UART mode
-esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode) 
+esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_ERR_INVALID_STATE);
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
-    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL) 
+    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL)
             || (mode == UART_MODE_RS485_HALF_DUPLEX)) {
         UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1),
                 "disable hw flowctrl before using RS485 mode", ESP_ERR_INVALID_ARG);
@@ -1538,13 +1563,13 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     return ESP_OK;
 }
 
-esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh) 
+esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_ERR_INVALID_ARG);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    // The tout_thresh = 1, defines TOUT interrupt timeout equal to  
-    // transmission time of one symbol (~11 bit) on current baudrate  
+    // The tout_thresh = 1, defines TOUT interrupt timeout equal to
+    // transmission time of one symbol (~11 bit) on current baudrate
     if (tout_thresh > 0) {
         UART[uart_num]->conf1.rx_tout_thrhd = (tout_thresh & UART_RX_TOUT_THRHD_V);
         UART[uart_num]->conf1.rx_tout_en = 1;
@@ -1559,8 +1584,8 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_ERR_INVALID_ARG);
-    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX) 
-                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)), 
+    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)
+                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)),
                     "wrong mode", ESP_ERR_INVALID_ARG);
     *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
     return ESP_OK;

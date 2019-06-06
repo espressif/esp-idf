@@ -13,13 +13,14 @@
 // limitations under the License.
 
 #include <string.h>
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include <hal/spi_ll.h>
 #include <hal/spi_slave_hal.h>
 #include <soc/lldesc.h>
 #include "driver/spi_common.h"
 #include "driver/spi_slave.h"
 #include "soc/spi_periph.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -34,7 +35,7 @@
 #include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
-
+#include "esp32/rom/ets_sys.h"
 static const char *SPI_TAG = "spi_slave";
 #define SPI_CHECK(a, str, ret_val) \
     if (!(a)) { \
@@ -392,4 +393,4 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     if (do_yield) portYIELD_FROM_ISR();
 }
 
-
+#endif

@@ -15,7 +15,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_app_trace_util.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////// TIMEOUT /////////////////////////////////////

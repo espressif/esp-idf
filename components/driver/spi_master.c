@@ -122,7 +122,6 @@ We have two bits to control the interrupt:
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
 #include "soc/spi_periph.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
@@ -139,8 +138,12 @@ We have two bits to control the interrupt:
 #include "esp_heap_caps.h"
 #include "stdatomic.h"
 #include "sdkconfig.h"
-
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
 #include "hal/spi_hal.h"
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#include "cas.h"
+#endif
 
 typedef struct spi_device_t spi_device_t;
 
@@ -183,6 +186,9 @@ typedef struct {
     int dma_chan;
     int max_transfer_sz;
     spi_bus_config_t bus_cfg;
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    int id;
+#endif
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -199,7 +205,7 @@ struct spi_device_t {
     bool        waiting;                //the device is waiting for the exclusive control of the bus
 };
 
-static spi_host_t *spihost[3];
+static spi_host_t *spihost[SPI_PERIPH_NUM];
 
 
 static const char *SPI_TAG = "spi_master";
@@ -245,6 +251,10 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     }
     memset(spihost[host], 0, sizeof(spi_host_t));
     memcpy( &spihost[host]->bus_cfg, bus_config, sizeof(spi_bus_config_t));
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    spihost[host]->id = host;
+#endif
 #ifdef CONFIG_PM_ENABLE
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
             &spihost[host]->pm_lock);
@@ -259,7 +269,13 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         ret = err;
         goto cleanup;
     }
-
+#if CONFIG_IDF_TARGET_ESP32
+    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (host==VSPI_HOST) {
+        DPORT_SET_PERI_REG_BITS(DPORT_SPI_SHARED_DMA_SEL_REG, DPORT_SPI_SHARED_DMA_SEL_M, 1, DPORT_SPI_SHARED_DMA_SEL_S);
+    }
+#endif
     int dma_desc_ct=0;
     spihost[host]->dma_chan=dma_chan;
     if (dma_chan == 0) {
@@ -1084,4 +1100,4 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_transmit(spi_device_handle_t ha
     return ESP_OK;
 }
 
-
+#endif

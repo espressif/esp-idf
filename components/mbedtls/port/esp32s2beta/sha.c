@@ -31,8 +31,8 @@
 #include <byteswap.h>
 #include <assert.h>
 
-#include "hwcrypto/sha.h"
-#include "rom/ets_sys.h"
+#include "esp32s2beta/sha.h"
+#include "esp32s2beta/rom/ets_sys.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
 

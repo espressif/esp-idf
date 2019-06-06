@@ -78,8 +78,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
 all the API functions to use the MPU wrappers.  That should only be done when

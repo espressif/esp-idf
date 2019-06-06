@@ -317,7 +317,11 @@ esp_err_t rmt_get_idle_level(rmt_channel_t channel, bool* idle_out_en, rmt_idle_
 esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t* status)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     *status = RMT.status_ch[channel];
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    *status = RMT.status_ch[channel].val;
+#endif
     return ESP_OK;
 }
 

@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 #include <string.h>
-
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 
@@ -22,6 +22,10 @@
 #include "esp32s2beta/rom/uart.h"
 #include "esp32s2beta/rom/rtc.h"
 #include "esp32s2beta/rom/cache.h"
+#include "esp32s2beta/dport_access.h"
+#include "esp32s2beta/brownout.h"
+#include "esp32s2beta/cache_err_int.h"
+#include "esp32s2beta/spiram.h"
 
 #include "soc/cpu.h"
 #include "soc/rtc.h"
@@ -40,36 +44,33 @@
 #include "freertos/portmacro.h"
 
 #include "esp_heap_caps_init.h"
-#include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_spi_flash.h"
 #include "esp_ipc.h"
-#include "esp32s2beta/dport_access.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_log.h"
 #include "esp_vfs_dev.h"
 #include "esp_newlib.h"
-#include "esp32s2beta/brownout.h"
 #include "esp_int_wdt.h"
 #include "esp_task.h"
 #include "esp_task_wdt.h"
 #include "esp_phy_init.h"
-#include "esp32s2beta/cache_err_int.h"
 #include "esp_coexist_internal.h"
 #include "esp_debug_helpers.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
-#include "esp_efuse.h"
-#include "esp32s2beta/spiram.h"
 #include "esp_clk_internal.h"
 #include "esp_timer.h"
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "trax.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp_efuse.h"
+#endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -137,7 +138,9 @@ void IRAM_ATTR call_start_cpu0()
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
-        esp_panic_wdt_stop();
+#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
+        rtc_wdt_disable();
+#endif
     }
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
@@ -396,7 +399,6 @@ void start_cpu0_default(void)
 #endif
     //esp_cache_err_int_init();
     esp_crosscore_int_init();
-    esp_ipc_init();
 #ifndef CONFIG_FREERTOS_UNICORE
     esp_dport_access_int_init();
 #endif
@@ -459,7 +461,7 @@ void start_cpu1_default(void)
 }
 #endif //!CONFIG_FREERTOS_UNICORE
 
-#ifdef CONFIG_CXX_EXCEPTIONS
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 size_t __cxx_eh_arena_size_get()
 {
     return CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE;

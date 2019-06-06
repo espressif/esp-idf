@@ -24,6 +24,8 @@
 #include "esp32s2beta/rom/ets_sys.h"
 #include "esp32s2beta/rom/uart.h"
 #include "esp32s2beta/rom/rtc.h"
+#include "soc/system_reg.h"
+#include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
