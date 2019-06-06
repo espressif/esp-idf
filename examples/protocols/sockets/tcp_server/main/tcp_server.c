@@ -64,7 +64,10 @@ static void tcp_server_task(void *pvParameters)
         ESP_LOGI(TAG, "Socket created");
 
         int flag = 1;
-        setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+        if (setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag)) < 0) {
+            ESP_LOGE(TAG, "Unable to set socket option: errno %d", errno);
+            break;
+        }
 
         int err = bind(listen_sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err != 0) {
