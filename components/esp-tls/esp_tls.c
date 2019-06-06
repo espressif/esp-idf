@@ -327,7 +327,7 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
     mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
 
 #ifdef CONFIG_MBEDTLS_DEBUG
-    mbedtls_esp_enable_debug_log(&tls->conf, 4);
+    mbedtls_esp_enable_debug_log(&tls->conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
     if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {

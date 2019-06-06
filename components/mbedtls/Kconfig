@@ -92,6 +92,30 @@ menu "mbedTLS"
             at runtime in order to enable mbedTLS debug output via the ESP
             log mechanism.
 
+    choice MBEDTLS_DEBUG_LEVEL
+        bool "Set mbedTLS debugging level"
+        depends on MBEDTLS_DEBUG
+        default MBEDTLS_DEBUG_LEVEL_VERBOSE
+        help
+            Set mbedTLS debugging level
+
+        config MBEDTLS_DEBUG_LEVEL_WARN
+            bool "Warning"
+        config MBEDTLS_DEBUG_LEVEL_INFO
+            bool "Info"
+        config MBEDTLS_DEBUG_LEVEL_DEBUG
+            bool "Debug"
+        config MBEDTLS_DEBUG_LEVEL_VERBOSE
+            bool "Verbose"
+    endchoice
+
+    config MBEDTLS_DEBUG_LEVEL
+        int
+        default 1 if MBEDTLS_DEBUG_LEVEL_WARN
+        default 2 if MBEDTLS_DEBUG_LEVEL_INFO
+        default 3 if MBEDTLS_DEBUG_LEVEL_DEBUG
+        default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
+
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
         default y
