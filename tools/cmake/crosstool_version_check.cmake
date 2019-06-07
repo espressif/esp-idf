@@ -12,11 +12,11 @@ endfunction()
 
 function(crosstool_version_check expected_ctng_version)
     execute_process(
-        COMMAND ${CMAKE_C_COMPILER} -v
-        ERROR_VARIABLE toolchain_stderr
-        OUTPUT_QUIET)
+        COMMAND ${CMAKE_C_COMPILER} --version
+        OUTPUT_VARIABLE toolchain_version
+        ERROR_QUIET)
 
-    string(REGEX MATCH "crosstool-ng-[0-9a-g\\.-]+" ctng_version "${toolchain_stderr}")
+    string(REGEX REPLACE ".*(crosstool-NG ([^\)]+)).*\n" "\\2" ctng_version "${toolchain_version}")
     # We use FIND to match version instead of STREQUAL because some toolchains are built
     # with longer git hash strings than others. This will match any version which starts with
     # the expected version string.
