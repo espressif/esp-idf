@@ -17,8 +17,16 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
 #include "esp32/rom/crc.h"
 #include "esp32/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/crc.h"
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/rom/gpio.h"
+#endif
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
 #include "bootloader_common.h"
