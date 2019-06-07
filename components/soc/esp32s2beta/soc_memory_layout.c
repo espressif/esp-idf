@@ -67,7 +67,7 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32S2_SPIRAM_SUPPORT
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW, 4, 0}, //SPI SRAM, if available
 #if CONFIG_USE_AHB_DBUS3_ACCESS_SPIRAM
     { SOC_SLOW_EXTRAM_DATA_LOW, SOC_SLOW_EXTRAM_DATA_HIGH - SOC_SLOW_EXTRAM_DATA_LOW, 5, 0}, //SPI SRAM, if available

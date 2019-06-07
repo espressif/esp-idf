@@ -57,7 +57,7 @@
 
 #define PRO_CPU_NUM (0)
 
-#define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
 #define DR_REG_SYSTEM_BASE                      0x3f4c0000
 #define DR_REG_SENSITIVE_BASE                   0x3f4c1000
