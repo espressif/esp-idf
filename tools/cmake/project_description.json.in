@@ -7,8 +7,10 @@
     "app_elf":            "${PROJECT_EXECUTABLE}",
     "app_bin":            "${PROJECT_BIN}",
     "git_revision":       "${IDF_VER}",
+    "target":             "${CONFIG_IDF_TARGET}",
     "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
-    "monitor_baud" : "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
+    "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
+    "monitor_toolprefix": "${CONFIG_SDK_TOOLPREFIX}",
     "config_environment" : {
         "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
         "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
