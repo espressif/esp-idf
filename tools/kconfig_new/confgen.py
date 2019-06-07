@@ -167,7 +167,8 @@ class DeprecatedOptions(object):
                 f_o.write('\n/* List of deprecated options */\n')
                 for dep_opt in sorted(self.r_dic):
                     new_opt = self.r_dic[dep_opt]
-                    f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
+                    f_o.write('#ifdef {}{}\n#define {}{} {}{}\n#endif\n\n'.format(self.config_prefix, new_opt,
+                                                                                  self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
 def main():
