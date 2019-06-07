@@ -358,6 +358,7 @@ def monitor(action, ctx, args):
     if args.port is not None:
         monitor_args += ["-p", args.port]
     monitor_args += ["-b", project_desc["monitor_baud"]]
+    monitor_args += ["--toolchain-prefix", project_desc["monitor_toolprefix"]]
     monitor_args += [elf_file]
 
     idf_py = [PYTHON] + get_commandline_options(ctx)  # commands to re-run idf.py
