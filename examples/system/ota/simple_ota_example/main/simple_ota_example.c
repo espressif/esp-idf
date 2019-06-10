@@ -20,6 +20,12 @@
 
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "string.h"
+
+#ifdef CONFIG_FIRMWARE_UPGRADE_URL_FROM_STDIN
+#include "esp_vfs_dev.h"
+#include "driver/uart.h"
+#endif
 
 static const char *TAG = "simple_ota_example";
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
@@ -33,6 +39,26 @@ static EventGroupHandle_t wifi_event_group;
    to the AP with an IP? */
 const int CONNECTED_BIT = BIT0;
 
+#define OTA_URL_SIZE 256 
+
+#ifdef CONFIG_FIRMWARE_UPGRADE_URL_FROM_STDIN
+
+static esp_err_t example_configure_stdin_stdout(void)
+{
+    // Initialize VFS & UART so we can use std::cout/cin
+    setvbuf(stdin, NULL, _IONBF, 0);
+    setvbuf(stdout, NULL, _IONBF, 0);
+    /* Install UART driver for interrupt-driven reads and writes */
+    ESP_ERROR_CHECK( uart_driver_install( (uart_port_t)CONFIG_CONSOLE_UART_NUM,
+            256, 0, 0, NULL, 0) );
+    /* Tell VFS to use UART driver */
+    esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    /* Move the caret to the beginning of the next line on '\n' */
+    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    return ESP_OK;
+}
+#endif
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     switch(evt->event_id) {
@@ -104,13 +130,12 @@ static void initialise_wifi(void)
 
 void simple_ota_example_task(void * pvParameter)
 {
-    ESP_LOGI(TAG, "Starting OTA example");
-
     /* Wait for the callback to set the CONNECTED_BIT in the
        event group.
     */
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
                         false, true, portMAX_DELAY);
+    ESP_LOGI(TAG, "Starting OTA example");
     ESP_LOGI(TAG, "Connected to WiFi network! Attempting to connect to server...");
     
     esp_http_client_config_t config = {
@@ -118,6 +143,21 @@ void simple_ota_example_task(void * pvParameter)
         .cert_pem = (char *)server_cert_pem_start,
         .event_handler = _http_event_handler,
     };
+
+#ifdef CONFIG_FIRMWARE_UPGRADE_URL_FROM_STDIN
+    char url_buf[OTA_URL_SIZE];
+    if (strcmp(config.url, "FROM_STDIN") == 0) {
+        example_configure_stdin_stdout();
+        fgets(url_buf, OTA_URL_SIZE, stdin);
+        int len = strlen(url_buf);
+        url_buf[len - 1] = '\0';
+        config.url = url_buf;
+    } else {
+        ESP_LOGE(TAG, "Configuration mismatch: wrong firmware upgrade image url");
+        abort();
+    }
+#endif
+
     esp_err_t ret = esp_https_ota(&config);
     if (ret == ESP_OK) {
         esp_restart();
