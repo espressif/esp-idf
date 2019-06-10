@@ -172,7 +172,7 @@ esp_err_t start_rest_server(const char *base_path)
     REST_CHECK(base_path, "wrong base path", err);
     rest_server_context_t *rest_context = calloc(1, sizeof(rest_server_context_t));
     REST_CHECK(rest_context, "No memory for rest context", err);
-    strncpy(rest_context->base_path, base_path, ESP_VFS_PATH_MAX);
+    strlcpy(rest_context->base_path, base_path, sizeof(rest_context->base_path));
 
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
