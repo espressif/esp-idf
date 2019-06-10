@@ -264,6 +264,26 @@ menu "ESP32S2-specific"
         default 2 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_TWO
         default 4 if ESP32S2_UNIVERSAL_MAC_ADDRESSES_FOUR
 
+    config ESP32S2_ULP_COPROC_ENABLED
+        bool "Enable Ultra Low Power (ULP) Coprocessor"
+        default "n"
+        help
+            Set to 'y' if you plan to load a firmware for the coprocessor.
+
+            If this option is enabled, further coprocessor configuration will appear in the Components menu.
+
+    config ESP32S2_ULP_COPROC_RESERVE_MEM
+        int
+        prompt "RTC slow memory reserved for coprocessor" if ESP32S2_ULP_COPROC_ENABLED
+        default 512 if ESP32S2_ULP_COPROC_ENABLED
+        range 32 8192 if ESP32S2_ULP_COPROC_ENABLED
+        default 0 if !ESP32S2_ULP_COPROC_ENABLED
+        range 0 0 if !ESP32S2_ULP_COPROC_ENABLED
+        help
+            Bytes of memory to reserve for ULP coprocessor firmware & data.
+
+            Data is reserved at the beginning of RTC slow memory.
+
     choice ESP32S2_PANIC
         prompt "Panic handler behaviour"
         default ESP32S2_PANIC_PRINT_REBOOT
@@ -363,7 +383,7 @@ menu "ESP32S2-specific"
         # high resolution timekeeping anymore. Instead the esp_timer API, implemented
         # using FRC2 timer, is used.
         # FRC1 name in the option name is kept for compatibility.
-    choice ESP32S2__TIME_SYSCALL
+    choice ESP32S2_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
         default ESP32S2_TIME_SYSCALL_USE_RTC_FRC1
         help
@@ -407,7 +427,7 @@ menu "ESP32S2-specific"
             bool "External 32kHz crystal"
     endchoice
 
-    config ESP32S2__RTC_CLK_CAL_CYCLES
+    config ESP32S2_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
         default 3000 if ESP32S2_RTC_CLK_SRC_EXT_CRYS
         default 1024 if ESP32S2_RTC_CLK_SRC_INT_RC

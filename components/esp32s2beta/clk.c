@@ -78,17 +78,18 @@ void esp_clk_init(void)
         case 160:
             freq = RTC_CPU_FREQ_160M;
             break;
+        case 80:
+            freq = RTC_CPU_FREQ_80M;
+            break;
         default:
             freq_mhz = 80;
-            /* no break */
-        case 80:
             freq = RTC_CPU_FREQ_80M;
             break;
     }
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     uint32_t freq_before = rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ ;
 
@@ -211,10 +212,10 @@ void esp_perip_clk_init(void)
     else {
         common_perip_clk = DPORT_WDG_CLK_EN |
                               DPORT_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
                               DPORT_UART_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 1
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
                               DPORT_UART1_CLK_EN |
 #endif
                               DPORT_USB_CLK_EN |
@@ -251,10 +252,10 @@ void esp_perip_clk_init(void)
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
     common_perip_clk |= DPORT_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
                         DPORT_UART_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 1
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
                         DPORT_UART1_CLK_EN |
 #endif
                         DPORT_USB_CLK_EN |

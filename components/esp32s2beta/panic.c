@@ -66,8 +66,8 @@
 //printf may be broken, so we fix our own printing fns...
 static void panicPutChar(char c)
 {
-    while (((READ_PERI_REG(UART_STATUS_REG(CONFIG_CONSOLE_UART_NUM)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
-    WRITE_PERI_REG(UART_FIFO_AHB_REG(CONFIG_CONSOLE_UART_NUM), c);
+    while (((READ_PERI_REG(UART_STATUS_REG(CONFIG_ESP_CONSOLE_UART_NUM)) >> UART_TXFIFO_CNT_S)&UART_TXFIFO_CNT) >= 126) ;
+    WRITE_PERI_REG(UART_FIFO_AHB_REG(CONFIG_ESP_CONSOLE_UART_NUM), c);
 }
 
 static void panicPutStr(const char *c)
@@ -411,7 +411,7 @@ static void esp_panic_dig_reset() __attribute__((noreturn));
 static void esp_panic_dig_reset()
 {
     // make sure all the panic handler output is sent from UART FIFO
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
     // reset the digital part
@@ -573,7 +573,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
         esp_core_dump_to_flash(frame);
 #endif
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32_PANIC_SILENT_REBOOT
+#if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32S2_PANIC_SILENT_REBOOT
         esp_core_dump_to_uart(frame);
 #endif
         s_dumping_core = false;
@@ -581,7 +581,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     }
 #endif /* CONFIG_ESP32_ENABLE_COREDUMP */
     esp_panic_wdt_stop();
-#if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
+#if CONFIG_ESP32S2_PANIC_PRINT_REBOOT || CONFIG_ESP32S2_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
     if (frame->exccause != PANIC_RSN_CACHEERR) {
         esp_restart_noos();

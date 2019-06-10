@@ -1921,15 +1921,15 @@ static inline void adc1_hall_enable(bool enable)
 
 static int hall_sensor_get_value()    //hall sensor without LNA
 {
-    int Sens_Vp0;
-    int Sens_Vn0;
-    int Sens_Vp1;
-    int Sens_Vn1;
     int hall_value = 0;
 
     adc_power_on();
 
 #if CONFIG_IDF_TARGET_ESP32
+    int Sens_Vp0;
+    int Sens_Vn0;
+    int Sens_Vp1;
+    int Sens_Vn1;
     portENTER_CRITICAL(&rtc_spinlock);
     //disable other peripherals
     adc1_fsm_disable();//currently the LNA is not open, close it by default

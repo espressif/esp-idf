@@ -287,7 +287,7 @@ void IRAM_ATTR call_start_cpu1()
 #else // CONFIG_CONSOLE_UART_NONE
     uartAttach();
     ets_install_uart_printf();
-    uart_tx_switch(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_switch(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
 
     wdt_reset_cpu1_info_enable();
@@ -346,11 +346,11 @@ void start_cpu0_default(void)
 #ifdef CONFIG_PM_ENABLE
     const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
-    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
 #else
     const int uart_clk_freq = APB_CLK_FREQ;
 #endif // CONFIG_PM_DFS_ENABLE
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
 #endif // CONFIG_CONSOLE_UART_NONE
 
 #if CONFIG_ESP32S2_BROWNOUT_DET
@@ -363,7 +363,7 @@ void start_cpu0_default(void)
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
 #ifndef CONFIG_CONSOLE_UART_NONE
-    const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_CONSOLE_UART_NUM);
+    const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
     _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
@@ -434,14 +434,14 @@ void start_cpu1_default(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if CONFIG_ESP32S2_TRAX_TWOBANKS
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
 #if CONFIG_ESP32_APPTRACE_ENABLE
     esp_err_t err = esp_apptrace_init();
     assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
 #endif
-#if CONFIG_INT_WDT
+#if CONFIG_ESP_INT_WDT
     //Initialize the interrupt watch dog for CPU1.
     //esp_int_wdt_cpu_init();
 #endif

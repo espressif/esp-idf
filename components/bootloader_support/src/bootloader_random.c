@@ -34,7 +34,9 @@ void bootloader_fill_random(void *buffer, size_t length)
 {
     uint8_t *buffer_bytes = (uint8_t *)buffer;
     uint32_t random;
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t start, now;
+#endif
 
     assert(buffer != NULL);
 

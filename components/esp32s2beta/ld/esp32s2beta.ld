@@ -66,11 +66,13 @@ MEMORY
 
      Start of RTC slow memory is reserved for ULP co-processor code + data, if enabled.
   */
-  rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                     len = 0x1000 - CONFIG_ULP_COPROC_RESERVE_MEM
+  rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM,
+                                     len = 0x1000 - CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM
 }
 
 _static_data_end = _bss_end;
 
 /* Heap ends at top of dram0_0_seg */
-_heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;
+_heap_end = 0x40000000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM;
+
+_data_seg_org = ORIGIN(rtc_data_seg);

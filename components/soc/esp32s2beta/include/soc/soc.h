@@ -12,48 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP32_SOC_H_
-#define _ESP32_SOC_H_
+#pragma once
 
 #ifndef __ASSEMBLER__
 #include <stdint.h>
 #include "esp_assert.h"
 #endif
 
-//Register Bits{{
-#define BIT31   0x80000000
-#define BIT30   0x40000000
-#define BIT29   0x20000000
-#define BIT28   0x10000000
-#define BIT27   0x08000000
-#define BIT26   0x04000000
-#define BIT25   0x02000000
-#define BIT24   0x01000000
-#define BIT23   0x00800000
-#define BIT22   0x00400000
-#define BIT21   0x00200000
-#define BIT20   0x00100000
-#define BIT19   0x00080000
-#define BIT18   0x00040000
-#define BIT17   0x00020000
-#define BIT16   0x00010000
-#define BIT15   0x00008000
-#define BIT14   0x00004000
-#define BIT13   0x00002000
-#define BIT12   0x00001000
-#define BIT11   0x00000800
-#define BIT10   0x00000400
-#define BIT9     0x00000200
-#define BIT8     0x00000100
-#define BIT7     0x00000080
-#define BIT6     0x00000040
-#define BIT5     0x00000020
-#define BIT4     0x00000010
-#define BIT3     0x00000008
-#define BIT2     0x00000004
-#define BIT1     0x00000002
-#define BIT0     0x00000001
-//}}
+#include <esp_bit_defs.h>
 
 #define PRO_CPU_NUM (0)
 
@@ -126,12 +92,6 @@
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr)
-
-#ifndef __ASSEMBLER__
-#define BIT(nr)                 (1UL << (nr))
-#else
-#define BIT(nr)                 (1 << (nr))
-#endif
 
 #ifndef __ASSEMBLER__
 
@@ -373,5 +333,3 @@
 
 //Invalid interrupt for number interrupt matrix
 #define ETS_INVALID_INUM                        6
-
-#endif /* _ESP32_SOC_H_ */

@@ -21,7 +21,7 @@
 #include "esp_private/dbg_stubs.h"
 #include "esp_attr.h"
 
-#if CONFIG_ESP32_DEBUG_STUBS_ENABLE
+#if CONFIG_ESP32_DEBUG_STUBS_ENABLE || CONFIG_ESP32S2_DEBUG_STUBS_ENABLE
 /*
     Debug stubs is actually a table of 4-byte entries. Every entry is equal to zero or must contain meaningfull data.
     The first entry is a service one and has the followinf format:

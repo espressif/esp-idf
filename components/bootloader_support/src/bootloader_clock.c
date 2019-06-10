@@ -44,7 +44,7 @@ void bootloader_clock_configure()
 #endif
 
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
     clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
