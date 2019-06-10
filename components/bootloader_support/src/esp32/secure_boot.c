@@ -97,11 +97,7 @@ static bool secure_boot_generate(uint32_t image_len){
 /* Burn values written to the efuse write registers */
 static inline void burn_efuses()
 {
-#ifdef CONFIG_SECURE_BOOT_TEST_MODE
-    ESP_LOGE(TAG, "SECURE BOOT TEST MODE. Not really burning any efuses! NOT SECURE");
-#else
     esp_efuse_burn_new_values();
-#endif
 }
 
 esp_err_t esp_secure_boot_generate_digest(void)
@@ -183,7 +179,6 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         efuse_key_write_protected = true;
     }
 
-#ifndef CONFIG_SECURE_BOOT_TEST_MODE
     if (!efuse_key_read_protected) {
         ESP_LOGE(TAG, "Pre-loaded key is not read protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
@@ -192,7 +187,6 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         ESP_LOGE(TAG, "Pre-loaded key is not write protected. Refusing to blow secure boot efuse.");
         return ESP_ERR_INVALID_STATE;
     }
-#endif
 
     ESP_LOGI(TAG, "blowing secure boot efuse...");
     ESP_LOGD(TAG, "before updating, EFUSE_BLK0_RDATA6 %x", REG_READ(EFUSE_BLK0_RDATA6_REG));
@@ -221,11 +215,7 @@ esp_err_t esp_secure_boot_permanently_enable(void)
         ESP_LOGI(TAG, "secure boot is now enabled for bootloader image");
         return ESP_OK;
     } else {
-#ifdef CONFIG_SECURE_BOOT_TEST_MODE
-        ESP_LOGE(TAG, "secure boot not enabled due to test mode");
-#else
         ESP_LOGE(TAG, "secure boot not enabled for bootloader image, EFUSE_RD_ABS_DONE_0 is probably write protected!");
-#endif
         return ESP_ERR_INVALID_STATE;
     }
 }
