@@ -445,14 +445,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     # first test by adding single component directory to EXTRA_COMPONENT_DIRS
     mkdir -p mycomponents/esp32
     echo "idf_component_register()" > mycomponents/esp32/CMakeLists.txt
-    idf.py reconfigure -DEXTRA_COMPONENT_DIRS=$PWD/mycomponents/mycomponent 
+    idf.py -DEXTRA_COMPONENT_DIRS=$PWD/mycomponents/mycomponent reconfigure
     ! grep "$PWD/mycomponents/esp32" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
     grep "$PWD/mycomponents/mycomponent" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS valid sibling directory should be in the build"
     rm -rf mycomponents/esp32
     # now the same thing, but add a components directory
     mkdir -p esp32
     echo "idf_component_register()" > esp32/CMakeLists.txt
-    idf.py reconfigure -DEXTRA_COMPONENT_DIRS=$PWD/mycomponents 
+    idf.py -DEXTRA_COMPONENT_DIRS=$PWD/mycomponents reconfigure
     ! grep "$PWD/esp32" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
     grep "$PWD/mycomponents/mycomponent" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS valid sibling directory should be in the build"
     rm -rf esp32
