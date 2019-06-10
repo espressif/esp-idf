@@ -13,10 +13,6 @@
 // limitations under the License.
 
 #pragma once
-<<<<<<< a7ae5416fbc96f364c1047b2de9ba426677e258b
-#include "soc/can_struct.h"
-=======
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/can_struct.h"
 #endif
->>>>>>> build and link hello-world for esp32s2beta

@@ -70,5 +70,7 @@ MEMORY
                                      len = 0x1000 - CONFIG_ULP_COPROC_RESERVE_MEM
 }
 
+_static_data_end = _bss_end;
+
 /* Heap ends at top of dram0_0_seg */
 _heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;
