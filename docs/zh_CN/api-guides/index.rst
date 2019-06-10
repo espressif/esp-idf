@@ -22,7 +22,7 @@ API 指南
    分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
-   ULP Coprocessor (CMake) <ulp-cmake>
+   ULP 协处理器 (CMake) <ulp-cmake>
    单元测试 <unit-tests>
    单元测试 (CMake) <unit-tests-cmake>
    应用层跟踪 <app_trace>
