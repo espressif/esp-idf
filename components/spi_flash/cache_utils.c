@@ -345,7 +345,7 @@ IRAM_ATTR void esp_config_instruction_cache_mode(void)
     cache_ways_t cache_ways;
     cache_line_size_t cache_line_size;
 
-#if CONFIG_INSTRUCTION_CACHE_8KB
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -377,8 +377,8 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
     cache_ways_t cache_ways;
     cache_line_size_t cache_line_size;
 
-#if CONFIG_INSTRUCTION_CACHE_8KB
-#if CONFIG_DATA_CACHE_8KB
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -386,7 +386,7 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
     cache_size = CACHE_SIZE_16KB;
 #endif
 #else
-#if CONFIG_DATA_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_8KB
     Cache_Allocate_SRAM(CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH, CACHE_MEMORY_DCACHE_LOW, CACHE_MEMORY_INVALID);
     cache_size = CACHE_SIZE_8KB;
 #else
@@ -395,14 +395,14 @@ IRAM_ATTR void esp_config_data_cache_mode(void)
 #endif
 #endif
 
-#if CONFIG_DATA_CACHE_4WAYS
+#if CONFIG_ESP32S2_DATA_CACHE_4WAYS
     cache_ways = CACHE_4WAYS_ASSOC;
 #else
     cache_ways = CACHE_8WAYS_ASSOC;
 #endif
-#if CONFIG_DATA_CACHE_LINE_16B
+#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B
     cache_line_size = CACHE_LINE_SIZE_16B;
-#elif CONFIG_DATA_CACHE_LINE_32B
+#elif CONFIG_ESP32S2_DATA_CACHE_LINE_32B
     cache_line_size = CACHE_LINE_SIZE_32B;
 #else
     cache_line_size = CACHE_LINE_SIZE_64B;

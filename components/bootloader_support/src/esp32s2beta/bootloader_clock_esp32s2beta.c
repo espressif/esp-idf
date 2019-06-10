@@ -3,9 +3,7 @@
 
 int bootloader_clock_get_rated_freq_mhz()
 {
-#ifndef CONFIG_HARDWARE_IS_FPGA
-    #warning "FIXME this needs to be filled in for real hardware"
-#endif
+    #warning "TODO: bootloader_clock_get_rated_freq_mhz implementation in esp32s2"
     return 999;
 }
 

@@ -83,8 +83,8 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 {
     uint32_t mac_low;
     uint32_t mac_high;
-    uint8_t efuse_crc;
-    uint8_t calc_crc;
+    // uint8_t efuse_crc;
+    // uint8_t calc_crc;
 
 //   mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
 //    mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);

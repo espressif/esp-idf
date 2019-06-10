@@ -12,8 +12,3 @@ set(COMPONENT_REQUIRES spi_flash)
 set(COMPONENT_PRIV_REQUIRES bootloader_support)
 
 register_component()
-
-set_source_files_properties(
-    "spiffs/src/spiffs_nucleus.c"
-    PROPERTIES COMPILE_FLAGS
-    -Wno-tautological-compare)

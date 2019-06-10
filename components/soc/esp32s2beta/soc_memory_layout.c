@@ -73,22 +73,22 @@ const soc_memory_region_t soc_memory_regions[] = {
     { SOC_SLOW_EXTRAM_DATA_LOW, SOC_SLOW_EXTRAM_DATA_HIGH - SOC_SLOW_EXTRAM_DATA_LOW, 5, 0}, //SPI SRAM, if available
 #endif
 #endif
-#if CONFIG_INSTRUCTION_CACHE_8KB
-#if CONFIG_DATA_CACHE_0KB
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
+#if CONFIG_ESP32S2_DATA_CACHE_0KB
     { 0x3FFB2000, 0x2000, 0, 0x400B2000}, //Block 1, can be use as I/D cache memory
     { 0x3FFB4000, 0x2000, 0, 0x400B4000}, //Block 2, can be use as D cache memory
     { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
-#elif CONFIG_DATA_CACHE_8KB
+#elif CONFIG_ESP32S2_DATA_CACHE_8KB
     { 0x3FFB4000, 0x2000, 0, 0x400B4000}, //Block 2, can be use as D cache memory
     { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
 #else
     { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
 #endif
 #else
-#if CONFIG_DATA_CACHE_0KB
+#if CONFIG_ESP32S2_DATA_CACHE_0KB
     { 0x3FFB4000, 0x2000, 0, 0x400B4000}, //Block 2, can be use as D cache memory
     { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
-#elif CONFIG_DATA_CACHE_8KB
+#elif CONFIG_ESP32S2_DATA_CACHE_8KB
     { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
 #endif
 #endif
@@ -127,8 +127,8 @@ const soc_reserved_region_t soc_reserved_regions[] = {
 
     { 0x3fff8000, (intptr_t)&_data_start_xtos}, //ROM data region
 
-#if CONFIG_MEMMAP_TRACEMEM
-#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
+#if CONFIG_ESP32S2_MEMMAP_TRACEMEM
+#if CONFIG_ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
     { 0x3fff8000, 0x40000000 }, //Reserve trace mem region
 #else
     { 0x3fff8000, 0x3fffc000 }, //Reserve trace mem region

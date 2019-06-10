@@ -83,7 +83,6 @@ static const char *TAG = "boot";
 static esp_err_t bootloader_main();
 static void print_flash_info(const esp_image_header_t *pfhdr);
 static void update_flash_config(const esp_image_header_t *pfhdr);
-static void vddsdio_configure();
 static void flash_gpio_configure(const esp_image_header_t *pfhdr);
 static void uart_console_configure(void);
 static void wdt_reset_check(void);
@@ -97,10 +96,10 @@ esp_err_t bootloader_init()
     /* Sanity check that static RAM is after the stack */
 #ifndef NDEBUG
     {
-        int *sp = get_sp();
         assert(&_bss_start <= &_bss_end);
         assert(&_data_start <= &_data_end);
 #if CONFIG_IDF_TARGET_ESP32
+        int *sp = get_sp();
         assert(sp < &_bss_start);
         assert(sp < &_data_start);
 #endif
@@ -357,21 +356,6 @@ static void print_flash_info(const esp_image_header_t *phdr)
     }
     ESP_LOGI(TAG, "SPI Flash Size : %s", str );
 #endif
-}
-
-static void vddsdio_configure()
-{
-#if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
-    rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
-    if (cfg.enable == 1 && cfg.tieh == RTC_VDDSDIO_TIEH_1_8V) {    // VDDSDIO regulator is enabled @ 1.8V
-        cfg.drefh = 3;
-        cfg.drefm = 3;
-        cfg.drefl = 3;
-        cfg.force = 1;
-        rtc_vddsdio_set_config(cfg);
-        ets_delay_us(10); // wait for regulator to become stable
-    }
-#endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
 }
 
 #if CONFIG_IDF_TARGET_ESP32

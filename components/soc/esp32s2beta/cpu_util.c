@@ -52,7 +52,7 @@ void IRAM_ATTR esp_cpu_reset(int cpu_id)
 
 bool IRAM_ATTR esp_cpu_in_ocd_debug_mode()
 {
-#if CONFIG_ESP32_DEBUG_OCDAWARE
+#if CONFIG_ESP32S2_DEBUG_OCDAWARE
     int dcr;
     int reg=0x10200C; //DSRSET register
     asm("rer %0,%1":"=r"(dcr):"r"(reg));
