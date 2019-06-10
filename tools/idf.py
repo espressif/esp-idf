@@ -599,6 +599,13 @@ def init_cli():
 
                 self.callback = wrapped_callback
 
+    class Argument(click.Argument):
+        """Positional argument"""
+
+        def __init__(self, **kwargs):
+            names = kwargs.pop("names")
+            super(Argument, self).__init__(names, **kwargs)
+
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
 
@@ -630,7 +637,11 @@ def init_cli():
 
                 # Actions
                 for name, action in action_list.get("actions", {}).items():
+                    arguments = action.pop("arguments", [])
                     options = action.pop("options", [])
+
+                    if arguments is None:
+                        arguments = []
 
                     if options is None:
                         options = []
@@ -638,6 +649,9 @@ def init_cli():
                     self._actions[name] = Action(name=name, **action)
                     for alias in [name] + action.get("aliases", []):
                         self.commands_with_aliases[alias] = name
+
+                    for argument_args in arguments:
+                        self._actions[name].params.append(Argument(**argument_args))
 
                     for option_args in options:
                         option_args["param_decls"] = option_args.pop("names")
