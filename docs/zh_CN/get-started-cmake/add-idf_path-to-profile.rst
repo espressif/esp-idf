@@ -29,10 +29,10 @@ Windows 操作系统
 
 你可以为本台电脑上的“所有用户”或“当前用户”设置环境变量，这取决于其他用户是否也需要使用 ESP-IDF。
 
-- 点击 ``New...``（新建...） 添加名为 ``IDF_PATH`` 的新系统变量，具体设置为包含 ESP-IDF 的目录，例如，``C:\Users\user-name\esp\esp-idf``。
+- 点击 ``New...`` （新建...） 添加名为 ``IDF_PATH`` 的新系统变量，具体设置为包含 ESP-IDF 的目录，例如，``C:\Users\user-name\esp\esp-idf``。
 - 找到 ``Path`` 环境变量，双击进行编辑。在末尾添加 ``;%IDF_PATH%\tools``，这样你就可以通过 Windows 命令窗口运行 ``idf.py`` 等其他工具了。
 
-如果你在安装 ESP32 开发的软件时，从 :ref:`get-started-setup-path-cmake` 小节跳到了这里，请返回 :ref:`get-started-start-project-cmake` 小节开始阅读。
+如果你在安装 ESP32 硬件开发的软件环境时，从 :ref:`get-started-setup-path-cmake` 小节跳到了这里，请返回 :ref:`get-started-start-project-cmake` 小节开始阅读。
 
 
 .. _add-idf_path-to-profile-linux-macos-cmake:
@@ -40,7 +40,7 @@ Windows 操作系统
 Linux 和 MacOS 操作系统
 ------------------------------------
 
-要设置 ``IDF_PATH``，并在 PATH 中添加 ``idf.py``，请将以下两行代码增加至你的 ``~/.profile`` 文件中::
+要设置 ``IDF_PATH``，并在 PATH 中添加 ``idf.py``，请将以下两行代码添加至你的 ``~/.profile`` 文件中::
 
     export IDF_PATH=~/esp/esp-idf
     export PATH="$IDF_PATH/tools:$PATH"
@@ -53,7 +53,7 @@ Linux 和 MacOS 操作系统
 
 .. note::
 
-    并非所有 shell 都使用 ``.profile``，但是如果同时存在 ``/bin/bash`` 和 ``.bash_profile``，请更新此配置文件。如果存在 ``zsh``，更新 ``.zprofile``。其他 shell 可能使用其他配置文件（详询有关 shell 的文档）。
+    并非所有 shell 都使用 ``.profile``，但是如果同时存在 ``/bin/bash`` 和 ``.bash_profile``，请更新此配置文件。如果存在 ``zsh``，请更新 ``.zprofile``。其他 shell 可能使用其他配置文件（详询有关 shell 的文档）。
 
 运行以下命令来检查 ``IDF_PATH`` 设置是否正确::
 
@@ -67,9 +67,9 @@ Linux 和 MacOS 操作系统
 
 这里，应打印出类似 ``${IDF_PATH}/tools/idf.py`` 的路径。
 
-如果你不想进行有关 ``IDF_PATH`` 或 ``PATH`` 的修改设置，你可以在每次重启或退出后在终端中手动输入::
+如果不想修改 ``IDF_PATH`` 或 ``PATH``，你可以在每次重启或退出后在终端中手动输入::
 
     export IDF_PATH=~/esp/esp-idf
     export PATH="$IDF_PATH/tools:$PATH"
 
-如果你在安装 ESP32 开发的软件时，从 :ref:`get-started-setup-path-cmake` 小节跳到了这里，请返回 :ref:`get-started-start-project-cmake` 小节开始阅读。
+如果你在安装 ESP32 硬件开发的软件环境时，从 :ref:`get-started-setup-path-cmake` 小节跳到了这里，请返回 :ref:`get-started-start-project-cmake` 小节开始阅读。

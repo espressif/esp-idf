@@ -16,6 +16,8 @@ MacPorts_ 需要安装完整的 XCode 软件，而 homebrew_ 只需要安装 XCo
     .. _homebrew: https://brew.sh/
     .. _MacPorts: https://www.macports.org/install.php
 
+请参考 :ref:`工具链自定义设置 <get-started-customized-setup>` 章节，查看在哪些情景下需要从头开始设置工具链。
+
 准备工作
 ============================
 
@@ -25,7 +27,7 @@ MacPorts_ 需要安装完整的 XCode 软件，而 homebrew_ 只需要安装 XCo
 
 - 安装 pyserial::
 
-    sudo pip install pyserial
+    pip install --user pyserial
 
 - 安装 CMake 和 Ninja 编译工具：
 
