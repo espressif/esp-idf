@@ -44,7 +44,7 @@ Python 安装的“自定义”那一步提供了一份选项列表，最后一�
 
 Python 安装完成后，打开 Windows 开始菜单下的 Command Prompt，并运行以下命令::
 
-  pip install pyserial
+  pip install --user pyserial
 
 适用于 IDF 的 MConf
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -56,9 +56,11 @@ Python 安装完成后，打开 Windows 开始菜单下的 Command Prompt，并�
 工具链设置
 ===============
 
-从 dl.espressif.com 下载预编译的 Windows 平台工具链：
+.. include:: /_build/inc/download-links.inc
 
-https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
+下载预编译的 Windows 平台工具链：
+
+|download_link_win32|
 
 解压压缩包文件到 ``C:\Program Files`` （或其他地址）。压缩包文件包含 ``xtensa-esp32-elf`` 目录。
 

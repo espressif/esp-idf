@@ -86,7 +86,7 @@ ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 电源选项
 --------
 
-开发板可任一选用以下三种供电方式：
+开发板可从以下三种供电方式中任选其一：
 
 * Micro USB 供电（默认）
 * 5V / GND 管脚供电
@@ -121,7 +121,7 @@ C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
 
 ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 
-之后，请前往 之后，请前往 :doc:`index` 的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+之后，请前往 :doc:`index` 的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 开发板尺寸

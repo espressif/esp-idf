@@ -17,7 +17,7 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
 - 安装 pyserial::
 
-    sudo pip install pyserial
+    pip install --user pyserial
 
 - 安装 CMake 和 Ninja 编译工具：
 
@@ -29,9 +29,9 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
       sudo port install cmake ninja
 
-  - 若以上均不适用，访问 CMake_ 和 Ninja_ 主页，查询有关 Mac OS 平台的下载安装问题。 
+  - 若以上均不适用，请访问 CMake_ 和 Ninja_ 主页，查询有关 Mac OS 平台的下载安装问题。 
 
-- 强烈建议同时安装 ccache_ 以达到更快的编写速度。如有 HomeBrew_，可通过 MacPorts_ 上的 ``brew install ccache`` 或 ``sudo port install ccache`` 完成安装。
+- 强烈建议同时安装 ccache_ 以达到更快的编译速度。如有 HomeBrew_，可通过 MacPorts_ 上的 ``brew install ccache`` 或 ``sudo port install ccache`` 完成安装。
 
 .. note::
 
@@ -62,7 +62,7 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
     export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH
 
-此外，你可以为以上命令增加一个别名。这样，你就可以仅在有需要时获取工具链。具体方式是在 ``~/.profile`` 文件中增加下方命令：::
+此外，你可以为以上命令增加一个别名。这样，你就可以仅在有需要时获取工具链。具体方式是在 ``~/.profile`` 文件中增加下方命令::
 
     alias get_esp32="export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH"
 
@@ -70,7 +70,7 @@ ESP-IDF 将使用 Mac OS 上默认安装的 Python 版本。
 
 注意，这里需要退出并重新登陆，``.profile`` 更改才会生效。
 
-此外，你可以使用以下命令，验证 ``PATH`` 是否设置正确：::
+此外，你可以使用以下命令，验证 ``PATH`` 是否设置正确::
 
         printenv PATH
 
