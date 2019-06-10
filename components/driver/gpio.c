@@ -18,6 +18,8 @@
 #include "driver/gpio.h"
 #include "driver/rtc_io.h"
 #include "soc/soc.h"
+#include "soc/periph_defs.h"
+#include "soc/rtc_cntl_reg.h"
 #include "soc/gpio_periph.h"
 #include "esp_log.h"
 
