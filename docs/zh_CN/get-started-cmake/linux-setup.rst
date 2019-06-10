@@ -13,15 +13,15 @@ Linux 平台工具链的标准设置 (CMake)
 
 - CentOS 7::
 
-    sudo yum install git wget ncurses-devel flex bison gperf python pyserial cmake ninja-build ccache python-pyelftools
+    sudo yum install git wget ncurses-devel flex bison gperf python pyserial python-pyelftools cmake ninja-build ccache
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing cmake ninja-build ccache python-pyelftools
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools cmake ninja-build ccache
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing cmake ninja ccache python2-pyelftools
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools cmake ninja ccache
 
 .. note::
     使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早版本的 Linux 可能需要升级才能向后移植仓库，或安装 "cmake3" 软件包，而不是安装 "cmake"。
@@ -69,7 +69,7 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
         如果将 ``/bin/bash`` 设置为登录 shell，且同时存在  ``.bash_profile`` 和 ``.profile``，则更新 ``.bash_profile``。
 
-3.  退出并重新登录以使 ``.profile`` 更改生效。运行以下命令来检查 ``PATH`` 设置是否正确：::
+3.  退出并重新登录以使 ``.profile`` 更改生效。运行以下命令来检查 ``PATH`` 设置是否正确::
 
         printenv PATH
 

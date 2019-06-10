@@ -24,7 +24,7 @@ ESP-IDF 工具安装器
 
 安装 ESP-IDF 必备工具最简易的方式是下载 ESP-IDF 工具安装器，地址如下：
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-1.1.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe
 
 安装器会自动安装 ESP32 Xtensa gcc 工具链，Ninja_ 编译工具，以及名为 mconf-idf_ 的配置工具。此外，如果你的电脑还未安装有关 CMake_ 和 Python_ 2.7 的安装器，它还可以下载和运行与之对应的安装器。
 
@@ -37,16 +37,16 @@ https://dl.espressif.com/dl/esp-idf-tools-setup-1.1.exe
 
 ESP-IDF 工具安装器并不会安装 Git，因为快速入门指南默认你将以命令行的模式使用它。你可以通过 `Git For Windows`_ 下载和安装 Windows 平台的命令行 Git 工具（包括 "Git Bash" 终端）。
 
-如果你想使用其他图形化 Git 客户端，如 `Github Desktop`， 你可以自行安装，并在快速入门中阐释相应 Git 命令，以使用你所选的 Git 客户端。
+如果你想使用其他图形化 Git 客户端，如 `Github Desktop`， 你可以自行安装，但需要对本《入门指南》中相应的 Git 命令进行转换，以便用于你所选的 Git 客户端。
 
 使用终端
 ================
 
-在快速入门指南接下来的步骤说明中，我们将使用终端命令提示符进行有关操作。你也可以使用任何其他形式的命令提示符：
+在本《入门指南》接下来的步骤说明中，我们将使用终端命令提示符进行有关操作。你也可以使用任何其他形式的命令提示符：
 
-- 比如，Windows 开始菜单下内置的 Command Prompt。本文档中的所有 Windows 命令行指示均为 Windows Command Prompt 中所使用的 "batch" 命令。
+- 比如，Windows 开始菜单下内置的命令提示符。本文档中的所有 Windows 命令行指令均为 Windows 命令提示符中所使用的 "batch" 命令。
 - 你还可以使用 `Git for Windows`_ 中的 "Git Bash" 终端，其所使用的 "bash" 命令提示符语法与 Mac OS 或 Linux 的既定语法相同。安装此终端后，你可以在开始菜单下找到命令提示符窗口。
-- 如果你已安装 MSYS2_（通过 ESP-IDF 之前版本），你还可以使用 MSYS 终端。
+- 如果你已安装 MSYS2_ （通过 ESP-IDF 之前版本），你还可以使用 MSYS 终端。
 
 后续步骤
 ==========
