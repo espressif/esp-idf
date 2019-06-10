@@ -1,8 +1,13 @@
 menu "Example Configuration"
 
-    config EXAMPLE_FIRMWARE_UPGRADE_URL
-        string "Firmware Upgrade URL"
-        default "https://192.168.2.106:8070/hello-world.bin"
+    config FIRMWARE_UPGRADE_URL
+        string "firmware upgrade url endpoint"
+        default "https://192.168.0.3:8070/hello-world.bin"
         help
-            URL of server which hosts the firmware image.
+            URL of server which hosts the firmware
+            image.
+
+    config FIRMWARE_UPGRADE_URL_FROM_STDIN
+        bool
+        default y if FIRMWARE_UPGRADE_URL = "FROM_STDIN"
 endmenu
