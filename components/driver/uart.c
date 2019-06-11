@@ -1038,20 +1038,25 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
     BaseType_t res;
-    portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
+    portTickType ticks_start = xTaskGetTickCount();
     //Take tx_mux
     res = xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)ticks_to_wait);
     if(res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
-    ticks_to_wait = ticks_end - xTaskGetTickCount();
     xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, 0);
-    ticks_to_wait = ticks_end - xTaskGetTickCount();
     if(UART[uart_num]->status.txfifo_cnt == 0) {
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
     uart_enable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
+
+    TickType_t ticks_end = xTaskGetTickCount();
+    if (ticks_end - ticks_start > ticks_to_wait) {
+        ticks_to_wait = 0;
+    } else {
+        ticks_to_wait = ticks_to_wait - (ticks_end - ticks_start);
+    }
     //take 2nd tx_done_sem, wait given from ISR
     res = xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, (portTickType)ticks_to_wait);
     if(res == pdFALSE) {
