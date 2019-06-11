@@ -688,4 +688,66 @@ extern "C" esp_err_t nvs_flash_read_security_cfg(const esp_partition_t* partitio
 
     return ESP_OK;
 }
+
 #endif
+
+static nvs_iterator_t create_iterator(nvs::Storage *storage, nvs_type_t type)
+{
+    nvs_iterator_t it = (nvs_iterator_t)calloc(1, sizeof(nvs_opaque_iterator_t));
+    if (it == NULL) {
+        return NULL;
+    }
+
+    it->storage = storage;
+    it->type = type;
+
+    return it;
+}
+
+extern "C" nvs_iterator_t nvs_entry_find(const char *part_name, const char *namespace_name, nvs_type_t type)
+{
+    Lock lock;
+    nvs::Storage *pStorage;
+
+    pStorage = lookup_storage_from_name(part_name);
+    if (pStorage == NULL) {
+        return NULL;
+    }
+
+    nvs_iterator_t it = create_iterator(pStorage, type);
+    if (it == NULL) {
+        return NULL;
+    }
+
+    bool entryFound = pStorage->findEntry(it, namespace_name);
+    if (!entryFound) {
+        free(it);
+        return NULL;
+    }
+
+    return it;
+}
+
+extern "C" nvs_iterator_t nvs_entry_next(nvs_iterator_t it)
+{
+    Lock lock;
+    assert(it);
+
+    bool entryFound = it->storage->nextEntry(it);
+    if (!entryFound) {
+        free(it);
+        return NULL;
+    }
+
+    return it;
+}
+
+extern "C" void nvs_entry_info(nvs_iterator_t it, nvs_entry_info_t *out_info)
+{
+    *out_info = it->entry_info;
+}
+
+extern "C" void nvs_release_iterator(nvs_iterator_t it)
+{
+    free(it);
+}

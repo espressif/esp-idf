@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <string.h>
+#include <string>
 
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
@@ -608,6 +609,168 @@ TEST_CASE("nvs api tests", "[nvs]")
     nvs_close(handle_1);
     nvs_close(handle_2);
 }
+
+
+TEST_CASE("nvs iterators tests", "[nvs]")
+{
+    SpiFlashEmulator emu(5);
+
+    const uint32_t NVS_FLASH_SECTOR = 0;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 5;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    for (uint16_t i = NVS_FLASH_SECTOR; i < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
+        spi_flash_erase_sector(i);
+    }
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    nvs_iterator_t it;
+    nvs_entry_info_t info;
+    nvs_handle handle_1;
+    nvs_handle handle_2;
+    const  uint32_t blob = 0x11223344;
+    const char *name_1 = "namespace1";
+    const char *name_2 = "namespace2";
+    TEST_ESP_OK(nvs_open(name_1, NVS_READWRITE, &handle_1));
+    TEST_ESP_OK(nvs_open(name_2, NVS_READWRITE, &handle_2));
+
+    TEST_ESP_OK(nvs_set_i8(handle_1, "value1", -11));
+    TEST_ESP_OK(nvs_set_u8(handle_1, "value2", 11));
+    TEST_ESP_OK(nvs_set_i16(handle_1, "value3", 1234));
+    TEST_ESP_OK(nvs_set_u16(handle_1, "value4", -1234));
+    TEST_ESP_OK(nvs_set_i32(handle_1, "value5", -222));
+    TEST_ESP_OK(nvs_set_i32(handle_1, "value6", -222));
+    TEST_ESP_OK(nvs_set_i32(handle_1, "value7", -222));
+    TEST_ESP_OK(nvs_set_u32(handle_1, "value8", 222));
+    TEST_ESP_OK(nvs_set_u32(handle_1, "value9", 222));
+    TEST_ESP_OK(nvs_set_str(handle_1, "value10", "foo"));
+    TEST_ESP_OK(nvs_set_blob(handle_1, "value11", &blob, sizeof(blob)));
+    TEST_ESP_OK(nvs_set_i32(handle_2, "value1", -111));
+    TEST_ESP_OK(nvs_set_i32(handle_2, "value2", -111));
+    TEST_ESP_OK(nvs_set_i64(handle_2, "value3", -555));
+    TEST_ESP_OK(nvs_set_u64(handle_2, "value4", 555));
+
+    auto entry_count = [](const char *part, const char *name, nvs_type_t type)-> int {
+        int count;
+        nvs_iterator_t it = nvs_entry_find(part, name, type);
+        for (count = 0; it != nullptr; count++) {
+            it = nvs_entry_next(it);
+        }
+        return count;
+    };
+
+   SECTION("Number of entries found for specified namespace and type is correct")
+   {
+        CHECK(nvs_entry_find("", NULL, NVS_TYPE_ANY) == NULL);
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_ANY) == 15);
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY) == 11);
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32) == 3);
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_I32) == 5);
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_U64) == 1);
+   }
+
+   SECTION("New entry is not created when existing key-value pair is set")
+   {
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_2, NVS_TYPE_ANY) == 4);
+        TEST_ESP_OK(nvs_set_i32(handle_2, "value1", -222));
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_2, NVS_TYPE_ANY) == 4);
+   }
+
+    SECTION("Number of entries found decrease when entry is erased")
+    {
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, NULL, NVS_TYPE_U64) == 1);
+        TEST_ESP_OK(nvs_erase_key(handle_2, "value4"));
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, "", NVS_TYPE_U64) == 0);
+    }
+
+    SECTION("All fields of nvs_entry_info_t structure are correct")
+    {
+        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_I32);
+        CHECK(it != nullptr);
+        string key = "value5";
+        do {
+            nvs_entry_info(it, &info);
+
+            CHECK(string(name_1) == info.namespace_name);
+            CHECK(key == info.key);
+            CHECK(info.type == NVS_TYPE_I32);
+
+            it = nvs_entry_next(it);
+            key[5]++;
+        } while (it != NULL);
+        nvs_release_iterator(it);
+    }
+
+    SECTION("Entry info is not affected by subsequent erase")
+    {
+        nvs_entry_info_t info_after_erase;
+
+        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY);
+        nvs_entry_info(it, &info);
+        TEST_ESP_OK(nvs_erase_key(handle_1, "value1"));
+        nvs_entry_info(it, &info_after_erase);
+        CHECK(memcmp(&info, &info_after_erase, sizeof(info)) == 0);
+        nvs_release_iterator(it);
+    }
+
+    SECTION("Entry info is not affected by subsequent set")
+    {
+        nvs_entry_info_t info_after_set;
+
+        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_1, NVS_TYPE_ANY);
+        nvs_entry_info(it, &info);
+        TEST_ESP_OK(nvs_set_u8(handle_1, info.key, 44));
+        nvs_entry_info(it, &info_after_set);
+        CHECK(memcmp(&info, &info_after_set, sizeof(info)) == 0);
+        nvs_release_iterator(it);
+    }
+
+
+    SECTION("Iterating over multiple pages works correctly")
+    {
+        nvs_handle handle_3;
+        const char *name_3 = "namespace3";
+        const int entries_created = 250;
+
+        TEST_ESP_OK(nvs_open(name_3, NVS_READWRITE, &handle_3));
+        for  (size_t i = 0; i < entries_created; i++) {
+            TEST_ESP_OK(nvs_set_u8(handle_3, to_string(i).c_str(), 123));
+        }
+
+        int entries_found = 0;
+        it = nvs_entry_find(NVS_DEFAULT_PART_NAME, name_3, NVS_TYPE_ANY);
+        while(it != nullptr) {
+            entries_found++;
+            it = nvs_entry_next(it);
+        }
+        CHECK(entries_created == entries_found);
+
+        nvs_release_iterator(it);
+        nvs_close(handle_3);
+    }
+
+    SECTION("Iterating over multi-page blob works correctly")
+    {
+        nvs_handle handle_3;
+        const char *name_3 = "namespace3";
+        const uint8_t multipage_blob[4096 * 2] = { 0 };
+        const int NUMBER_OF_ENTRIES_PER_PAGE = 125;
+        size_t occupied_entries;
+
+        TEST_ESP_OK(nvs_open(name_3, NVS_READWRITE, &handle_3));
+        nvs_set_blob(handle_3, "blob", multipage_blob, sizeof(multipage_blob));
+        TEST_ESP_OK(nvs_get_used_entry_count(handle_3, &occupied_entries));
+        CHECK(occupied_entries > NUMBER_OF_ENTRIES_PER_PAGE *  2);
+
+        CHECK(entry_count(NVS_DEFAULT_PART_NAME, name_3, NVS_TYPE_BLOB) == 1);
+
+        nvs_close(handle_3);
+    }
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+}
+
 
 TEST_CASE("wifi test", "[nvs]")
 {
