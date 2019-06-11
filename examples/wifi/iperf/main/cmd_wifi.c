@@ -129,7 +129,7 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
 
     strlcpy((char*) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strncpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strlcpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     if (bits & CONNECTED_BIT) {
@@ -206,14 +206,14 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
     };
 
     reconnect = false;
-    strncpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    strlcpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
     if (pass) {
         if (strlen(pass) != 0 && strlen(pass) < 8) {
             reconnect = true;
             ESP_LOGE(TAG, "password less than 8");
             return false;
         }
-        strncpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
+        strlcpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
     }
 
     if (strlen(pass) == 0) {
