@@ -264,10 +264,10 @@ def set_repeat_value(total_keys_repeat, keys, csv_file, target_filename):
                 if key_val_new[0][0] == key_repeated[0]:
                     val = key_val_pair[0][1]
                     row[index] = val
-                    csv_file_writer.writerow(row)
                     del key_repeated[0]
                 del key_val_new[0]
                 del key_val_pair[0]
+            csv_file_writer.writerow(row)
 
     return target_filename
 
