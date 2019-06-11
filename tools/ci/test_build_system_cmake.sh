@@ -250,6 +250,14 @@ EOF
     export PATH="$OLDPATH"
     rm ./python
 
+    print_status "Custom bootloader overrides original"
+    clean_build_dir
+    (mkdir components && cd components && cp -r $IDF_PATH/components/bootloader .)
+    idf.py build
+    grep "$PWD/components/bootloader/subproject/main/bootloader_start.c" build/bootloader/compile_commands.json \
+        || failure "Custom bootloader source files should be built instead of the original's"
+    rm -rf components
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
