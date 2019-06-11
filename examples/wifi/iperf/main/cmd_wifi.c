@@ -53,7 +53,7 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
 
-static void scan_done_handler(void* arg, esp_event_base_t event_base, 
+static void scan_done_handler(void* arg, esp_event_base_t event_base,
                               int32_t event_id, void* event_data)
 {
     uint16_t sta_number = 0;
@@ -76,14 +76,14 @@ static void scan_done_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "sta scan done");
 }
 
-static void got_ip_handler(void* arg, esp_event_base_t event_base, 
+static void got_ip_handler(void* arg, esp_event_base_t event_base,
                            int32_t event_id, void* event_data)
 {
     xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
     xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 }
 
-static void disconnect_handler(void* arg, esp_event_base_t event_base, 
+static void disconnect_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data)
 {
     if (reconnect) {
@@ -128,7 +128,7 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
 
     strlcpy((char*) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strncpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strlcpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     if (bits & CONNECTED_BIT) {
@@ -205,14 +205,14 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
     };
 
     reconnect = false;
-    strncpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    strlcpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
     if (pass) {
         if (strlen(pass) != 0 && strlen(pass) < 8) {
             reconnect = true;
             ESP_LOGE(TAG, "password less than 8");
             return false;
         }
-        strncpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
+        strlcpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
     }
 
     if (strlen(pass) == 0) {
