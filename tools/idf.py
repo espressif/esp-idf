@@ -327,6 +327,26 @@ def reconfigure(action, args):
     _ensure_build_directory(args, True)
 
 
+def _delete_windows_symlinks(directory):
+    """
+    It deletes symlinks recursively on Windows. It is useful for Python 2 which doesn't detect symlinks on Windows.
+    """
+    deleted_paths = []
+    if os.name == 'nt':
+        import ctypes
+        for root, dirnames, filenames in os.walk(directory):
+            for d in dirnames:
+                full_path = os.path.join(root, d)
+                try:
+                    full_path = full_path.decode('utf-8')
+                except Exception:
+                    pass
+                if ctypes.windll.kernel32.GetFileAttributesW(full_path) & 0x0400:
+                    os.rmdir(full_path)
+                    deleted_paths.append(full_path)
+    return deleted_paths
+
+
 def fullclean(action, args):
     build_dir = args.build_dir
     if not os.path.isdir(build_dir):
@@ -345,8 +365,16 @@ def fullclean(action, args):
         if os.path.exists(red):
             raise FatalError("Refusing to automatically delete files in directory containing '%s'. Delete files manually if you're sure." % red)
     # OK, delete everything in the build directory...
+    # Note: Python 2.7 doesn't detect symlinks on Windows (it is supported form 3.2). Tools promising to not
+    # follow symlinks will actually follow them. Deleting the build directory with symlinks deletes also items
+    # outside of this directory.
+    deleted_symlinks = _delete_windows_symlinks(build_dir)
+    if args.verbose and len(deleted_symlinks) > 1:
+        print('The following symlinks were identified and removed:\n%s' % "\n".join(deleted_symlinks))
     for f in os.listdir(build_dir):  # TODO: once we are Python 3 only, this can be os.scandir()
         f = os.path.join(build_dir, f)
+        if args.verbose:
+            print('Removing: %s' % f)
         if os.path.isdir(f):
             shutil.rmtree(f)
         else:
