@@ -69,14 +69,12 @@ menu "SPI Flash driver"
             ROM functions. These functions should not be called directly from IDF
             applications.
 
-            config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS
-                bool "Aborts"
-            config SPI_FLASH_WRITING_DANGEROUS_REGIONS_FAILS
-                bool "Fails"
-            config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
-                bool "Allowed"
+        config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS
+            bool "Aborts"
+        config SPI_FLASH_WRITING_DANGEROUS_REGIONS_FAILS
+            bool "Fails"
+        config SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+            bool "Allowed"
     endchoice
 
 endmenu
-
-
