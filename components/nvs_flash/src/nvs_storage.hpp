@@ -121,6 +121,10 @@ public:
 
     esp_err_t calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries);
 
+    bool findEntry(nvs_opaque_iterator_t*, const char* name);
+
+    bool nextEntry(nvs_opaque_iterator_t* it);
+
 protected:
 
     Page& getCurrentPage()
@@ -134,6 +138,7 @@ protected:
 
     void eraseOrphanDataBlobs(TBlobIndexList&);
 
+    void fillEntryInfo(Item &item, nvs_entry_info_t &info);
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
@@ -148,6 +153,14 @@ protected:
 
 } // namespace nvs
 
-
+struct nvs_opaque_iterator_t
+{
+    nvs_type_t type;
+    uint8_t nsIndex;
+    size_t entryIndex;
+    nvs::Storage *storage;
+    intrusive_list<nvs::Page>::iterator page;
+    nvs_entry_info_t entry_info;
+};
 
 #endif /* nvs_storage_hpp */
