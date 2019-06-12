@@ -76,11 +76,6 @@
 all the API functions to use the MPU wrappers.  That should only be done when
 task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/ets_sys.h"
-#endif
 #include "esp_newlib.h"
 #include "esp_debug_helpers.h"
 
