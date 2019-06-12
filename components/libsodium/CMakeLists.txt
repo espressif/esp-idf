@@ -126,7 +126,7 @@ endif()
 set(COMPONENT_ADD_INCLUDEDIRS ${SRC}/include port_include)
 set(COMPONENT_PRIV_INCLUDEDIRS ${SRC}/include/sodium port_include/sodium port)
 
-set(COMPONENT_REQUIRES mbedtls vfs)
+set(COMPONENT_REQUIRES mbedtls)
 register_component()
 
 target_compile_definitions(${COMPONENT_LIB} PRIVATE 

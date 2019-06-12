@@ -19,6 +19,8 @@ import argparse
 import sys
 import tempfile
 import subprocess
+import os
+import errno
 
 from fragments import FragmentFile
 from sdkconfig import SDKConfig
@@ -111,6 +113,14 @@ def main():
         with tempfile.TemporaryFile("w+") as output:
             script_model.write(output)
             output.seek(0)
+
+            if not os.path.exists(os.path.dirname(output_path)):
+                try:
+                    os.makedirs(os.path.dirname(output_path))
+                except OSError as exc:
+                    if exc.errno != errno.EEXIST:
+                        raise
+
             with open(output_path, "w") as f:  # only create output file after generation has suceeded
                 f.write(output.read())
     except LdGenFailure as e:

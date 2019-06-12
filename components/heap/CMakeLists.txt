@@ -32,7 +32,7 @@ if(CONFIG_HEAP_TRACING)
         heap_caps_realloc_default)
 
     foreach(wrap ${WRAP_FUNCTIONS})
-        target_link_libraries(${COMPONENT_LIB} "-Wl,--wrap=${wrap}")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
     endforeach()
 
 endif()
