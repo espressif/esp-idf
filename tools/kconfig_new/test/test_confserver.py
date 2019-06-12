@@ -51,7 +51,7 @@ def main():
 
         cmdline = "../confserver.py --kconfig Kconfig --config %s" % temp_sdkconfig_path
         print("Running: %s" % cmdline)
-        p = pexpect.spawn(cmdline, timeout=0.5)
+        p = pexpect.spawn(cmdline, timeout=2)
         p.logfile = args.logfile
         p.setecho(False)
 
