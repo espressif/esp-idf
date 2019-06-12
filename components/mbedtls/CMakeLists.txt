@@ -2,8 +2,6 @@ set(COMPONENT_ADD_INCLUDEDIRS "port/include" "mbedtls/include")
 set(COMPONENT_SRCS "mbedtls.c")
 set(COMPONENT_REQUIRES lwip)
 
-set(MBEDTLS_PRIV_REQUIRES ${IDF_COMPONENT_REQUIRES_COMMON} soc)
-
 register_component()
 
 # Only build mbedtls libraries
@@ -96,9 +94,4 @@ foreach(target ${mbedtls_targets})
 endforeach()
 
 # Link mbedtls libraries to component library
-target_link_libraries(${COMPONENT_LIB} ${mbedtls_targets})
-
-# Catch usage of deprecated mbedTLS functions when building tests
-if(mbedtls_test IN_LIST BUILD_TEST_COMPONENTS)
-    add_definitions(-DMBEDTLS_DEPRECATED_WARNING)
-endif()
+target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})

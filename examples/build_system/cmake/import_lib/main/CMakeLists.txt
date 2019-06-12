@@ -23,4 +23,4 @@ endfunction()
 add_subdirectory(lib/tinyxml2)
 
 # Link tinyxml2 to main component
-target_link_libraries(${COMPONENT_LIB} tinyxml2)
+target_link_libraries(${COMPONENT_LIB} PUBLIC tinyxml2)

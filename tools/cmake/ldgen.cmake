@@ -27,7 +27,7 @@ endfunction()
 #
 # Passes a linker script template to the linker script generation tool for
 # processing
-function(__ldgen_process_template output_var template)
+function(__ldgen_process_template template output)
     idf_build_get_property(idf_target IDF_TARGET)
     idf_build_get_property(idf_path IDF_PATH)
 
@@ -35,11 +35,6 @@ function(__ldgen_process_template output_var template)
     idf_build_get_property(ldgen_libraries __LDGEN_LIBRARIES GENERATOR_EXPRESSION)
     file(GENERATE OUTPUT ${build_dir}/ldgen_libraries.in CONTENT $<JOIN:${ldgen_libraries},\n>)
     file(GENERATE OUTPUT ${build_dir}/ldgen_libraries INPUT ${build_dir}/ldgen_libraries.in)
-
-    get_filename_component(filename "${template}" NAME)
-
-    set(output ${CMAKE_CURRENT_BINARY_DIR}/${filename}.ld)
-    set(${output_var} ${output} PARENT_SCOPE)
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
@@ -80,5 +75,5 @@ function(__ldgen_process_template output_var template)
     get_filename_component(_name ${output} NAME)
     add_custom_target(__ldgen_output_${_name} DEPENDS ${output})
     add_dependencies(__idf_build_target __ldgen_output_${_name})
-    idf_build_set_property(LINK_DEPENDS ${output} APPEND)
+    idf_build_set_property(__LINK_DEPENDS ${output} APPEND)
 endfunction()
