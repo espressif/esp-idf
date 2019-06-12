@@ -3,6 +3,7 @@
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example connects to the broker test.mosquitto.org using ssl transport with client certificate and as a demonstration subscribes/unsubscribes and send a message on certain topic.
+(Please note that the public broker is maintained by the community so may not be always available, for details please visit http://test.mosquitto.org)
 
 It uses ESP-MQTT library which implements mqtt client to connect to mqtt broker.
 
