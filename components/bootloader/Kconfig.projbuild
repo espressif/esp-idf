@@ -426,4 +426,22 @@ config SECURE_BOOT_TEST_MODE
 
 
 endmenu  # Potentially Insecure
+
+    config FLASH_ENCRYPTION_DISABLE_PLAINTEXT
+        bool "Disable serial reflashing of plaintext firmware"
+        depends on FLASH_ENCRYPTION_ENABLED
+        default y if SECURE_BOOT_ENABLED
+        default n if !SECURE_BOOT_ENABLED
+        help
+            If this option is enabled, flash encryption is permanently enabled after first boot by write-protecting
+            the FLASH_CRYPT_CNT efuse. This is the recommended configuration for a secure production system.
+
+            If this option is disabled, FLASH_CRYPT_CNT is left writeable and up to 4 plaintext re-flashes are allowed.
+            An attacker with physical access will be able to read out encrypted flash contents until all plaintext
+            re-flashes have been used up.
+
+            If this option is disabled and hardware Secure Boot is enabled, Secure Boot must be configured in
+            Reflashable mode so that a new Secure Boot digest can be flashed at the same time as plaintext firmware.
+            This combination is not secure and should not be used for a production system.
+
 endmenu  # Security features
