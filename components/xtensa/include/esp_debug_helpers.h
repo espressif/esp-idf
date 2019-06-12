@@ -6,6 +6,7 @@ extern "C" {
 
 #ifndef __ASSEMBLER__
 
+#include <stdbool.h>
 #include "esp_err.h"
 
 #define ESP_WATCHPOINT_LOAD 0x40000000
