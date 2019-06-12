@@ -121,28 +121,20 @@ extern int _data_start_xtos;
 
    These are removed from the soc_memory_regions array when heaps are created.
  */
-const soc_reserved_region_t soc_reserved_regions[] = {
-//    { 0x40070000, 0x40078000 }, //CPU0 cache region
-//    { 0x40078000, 0x40080000 }, //CPU1 cache region
+// DRAM counterpart of the of the region reserved for IRAM in the linker script
+SOC_RESERVE_MEMORY_REGION(0x3ffb8000, 0x3FFD0000, dram_mapped_to_iram);
 
-    { 0x3fff8000, (intptr_t)&_data_start_xtos}, //ROM data region
+//ROM data region
+SOC_RESERVE_MEMORY_REGION(0x3fff8000, (intptr_t)&_data_start_xtos, rom_data_region);
 
-#if CONFIG_ESP32S2_MEMMAP_TRACEMEM
-#if CONFIG_ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
-    { 0x3fff8000, 0x40000000 }, //Reserve trace mem region
-#else
-    { 0x3fff8000, 0x3fffc000 }, //Reserve trace mem region
-#endif
-#endif
+#warning "soc_memory_layout: trace memory regions not handled"
 
 #ifdef CONFIG_SPIRAM
-    { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH}, //SPI RAM gets added later if needed, in spiram.c; reserve it for now
+SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #if CONFIG_USE_AHB_DBUS3_ACCESS_SPIRAM
-    { SOC_SLOW_EXTRAM_DATA_LOW, SOC_SLOW_EXTRAM_DATA_HIGH}, //SPI RAM(Slow) gets added later if needed, in spiram.c; reserve it for now
+SOC_RESERVE_MEMORY_REGION( SOC_SLOW_EXTRAM_DATA_LOW, SOC_SLOW_EXTRAM_DATA_HIGH, extram_slow_data_region); //SPI RAM(Slow) gets added later if needed, in spiram.c; reserve it for now
 #endif
 #endif
-};
 
-const size_t soc_reserved_region_count = sizeof(soc_reserved_regions)/sizeof(soc_reserved_region_t);
 
 #endif
