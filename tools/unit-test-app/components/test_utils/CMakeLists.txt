@@ -1,4 +1,4 @@
-set(COMPONENT_SRCS "ref_clock.c"
+set(COMPONENT_SRCS "ref_clock_${CONFIG_IDF_TARGET}.c"
                    "test_runner.c"
                    "test_utils.c")
 set(COMPONENT_ADD_INCLUDEDIRS include)
