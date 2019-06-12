@@ -201,9 +201,15 @@ function(fail_at_build_time target_name message_line0)
     foreach(message_line ${ARGN})
         set(message_lines ${message_lines} COMMAND ${CMAKE_COMMAND} -E echo "${message_line}")
     endforeach()
+    # Generate a timestamp file that gets included. When deleted on build, this forces CMake
+    # to rerun.
+    string(RANDOM filename)
+    set(filename "${CMAKE_CURRENT_BINARY_DIR}/${filename}.cmake")
+    file(WRITE "${filename}" "")
+    include("${filename}")
     add_custom_target(${target_name} ALL
         ${message_lines}
-        COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/CMakeCache.txt"
+        COMMAND ${CMAKE_COMMAND} -E remove "${filename}"
         COMMAND ${CMAKE_COMMAND} -P ${idf_path}/tools/cmake/scripts/fail.cmake
         VERBATIM)
 endfunction()
