@@ -544,8 +544,11 @@ def init_cli():
             self.action_args = action_args
             self.aliases = aliases
 
-        def run(self, context, global_args):
-            self.callback(self.name, context, global_args, **self.action_args)
+        def run(self, context, global_args, action_args=None):
+            if action_args is None:
+                action_args = self.action_args
+
+            self.callback(self.name, context, global_args, **action_args)
 
     class Action(click.Command):
         def __init__(
@@ -606,6 +609,50 @@ def init_cli():
             names = kwargs.pop("names")
             super(Argument, self).__init__(names, **kwargs)
 
+    class Scope(object):
+        """
+            Scope for sub-command option.
+            possible values:
+            - default - only available on defined level (global/action)
+            - global - When defined for action, also available as global
+            - shared - Opposite to 'global': when defined in global scope, also available for all actions
+        """
+
+        SCOPES = ("default", "global", "shared")
+
+        def __init__(self, scope=None):
+            if scope is None:
+                self._scope = "default"
+            elif isinstance(scope, str) and scope in self.SCOPES:
+                self._scope = scope
+            elif isinstance(scope, Scope):
+                self._scope = str(scope)
+            else:
+                raise FatalError("Unknown scope for option: %s" % scope)
+
+        @property
+        def is_global(self):
+            return self._scope == "global"
+
+        @property
+        def is_shared(self):
+            return self._scope == "shared"
+
+        def __str__(self):
+            return self._scope
+
+    class Option(click.Option):
+        """Option that knows whether it should be global"""
+
+        def __init__(self, scope=None, **kwargs):
+            kwargs["param_decls"] = kwargs.pop("names")
+            super(Option, self).__init__(**kwargs)
+
+            self.scope = Scope(scope)
+
+            if self.scope.is_global:
+                self.help += " This option can be used at most once either globally, or for one subcommand."
+
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
 
@@ -624,17 +671,24 @@ def init_cli():
             if action_lists is None:
                 action_lists = []
 
+            shared_options = []
+
             for action_list in action_lists:
                 # Global options
                 for option_args in action_list.get("global_options", []):
-                    option_args["param_decls"] = option_args.pop("names")
-                    self.params.append(click.Option(**option_args))
+                    option = Option(**option_args)
+                    self.params.append(option)
 
+                    if option.scope.is_shared:
+                        shared_options.append(option)
+
+            for action_list in action_lists:
                 # Global options validators
                 self.global_action_callbacks.extend(
                     action_list.get("global_action_callbacks", [])
                 )
 
+            for action_list in action_lists:
                 # Actions
                 for name, action in action_list.get("actions", {}).items():
                     arguments = action.pop("arguments", [])
@@ -653,9 +707,24 @@ def init_cli():
                     for argument_args in arguments:
                         self._actions[name].params.append(Argument(**argument_args))
 
+                    # Add all shared options
+                    for option in shared_options:
+                        self._actions[name].params.append(option)
+
                     for option_args in options:
-                        option_args["param_decls"] = option_args.pop("names")
-                        self._actions[name].params.append(click.Option(**option_args))
+                        option = Option(**option_args)
+
+                        if option.scope.is_shared:
+                            raise FatalError(
+                                '"%s" is defined for action "%s". '
+                                ' "shared" options can be declared only on global level' % (option.name, name)
+                            )
+
+                        # Promote options to global if see for the first time
+                        if option.scope.is_global and option.name not in [o.name for o in self.params]:
+                            self.params.append(option)
+
+                        self._actions[name].params.append(option)
 
         def list_commands(self, ctx):
             return sorted(self._actions)
@@ -736,10 +805,26 @@ def init_cli():
 
         def execute_tasks(self, tasks, **kwargs):
             ctx = click.get_current_context()
-
-            # Validate global arguments
             global_args = PropertyDict(ctx.params)
 
+            # Set propagated global options
+            for task in tasks:
+                for key in list(task.action_args):
+                    option = next((o for o in ctx.command.params if o.name == key), None)
+                    if option and (option.scope.is_global or option.scope.is_shared):
+                        local_value = task.action_args.pop(key)
+                        global_value = global_args[key]
+                        default = () if option.multiple else option.default
+
+                        if global_value != default and local_value != default and global_value != local_value:
+                            raise FatalError(
+                                'Option "%s" provided for "%s" is already defined to a different value. '
+                                "This option can appear at most once in the command line." % (key, task.name)
+                            )
+                        if local_value != default:
+                            global_args[key] = local_value
+
+            # Validate global arguments
             for action_callback in ctx.command.global_action_callbacks:
                 action_callback(ctx, global_args, tasks)
 
@@ -766,6 +851,13 @@ def init_cli():
                             % (task.name, dep)
                         )
                         dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
+
+                        # Remove global options from dependent tasks
+                        for key in list(dep_task.action_args):
+                            option = next((o for o in ctx.command.params if o.name == key), None)
+                            if option and (option.scope.is_global or option.scope.is_shared):
+                                dep_task.action_args.pop(key)
+
                         tasks.insert(0, dep_task)
                         ready_to_run = False
 
@@ -784,7 +876,7 @@ def init_cli():
                         )
                     else:
                         print("Executing action: %s" % name_with_aliases)
-                        task.run(ctx, global_args)
+                        task.run(ctx, global_args, **task.action_args)
 
                     completed_tasks.add(task.name)
 
@@ -832,36 +924,40 @@ def init_cli():
         args.build_dir = _realpath(args.build_dir)
 
     # Possible keys for action dict are: global_options, actions and global_action_callbacks
+    global_options = [
+        {
+            "names": ["-D", "--define-cache-entry"],
+            "help": "Create a cmake cache entry.",
+            "scope": "global",
+            "multiple": True,
+        }
+    ]
+
     root_options = {
         "global_options": [
             {
                 "names": ["-C", "--project-dir"],
-                "help": "Project directory",
+                "help": "Project directory.",
                 "type": click.Path(),
                 "default": os.getcwd(),
             },
             {
                 "names": ["-B", "--build-dir"],
-                "help": "Build directory",
+                "help": "Build directory.",
                 "type": click.Path(),
                 "default": None,
             },
             {
                 "names": ["-n", "--no-warnings"],
-                "help": "Disable Cmake warnings",
+                "help": "Disable Cmake warnings.",
                 "is_flag": True,
                 "default": False,
             },
             {
                 "names": ["-v", "--verbose"],
-                "help": "Verbose build output",
+                "help": "Verbose build output.",
                 "is_flag": True,
                 "default": False,
-            },
-            {
-                "names": ["-D", "--define-cache-entry"],
-                "help": "Create a cmake cache entry",
-                "multiple": True,
             },
             {
                 "names": ["--no-ccache"],
@@ -871,7 +967,7 @@ def init_cli():
             },
             {
                 "names": ["-G", "--generator"],
-                "help": "CMake generator",
+                "help": "CMake generator.",
                 "type": click.Choice(GENERATOR_CMDS.keys()),
             },
         ],
@@ -890,6 +986,7 @@ def init_cli():
                 + "2. Run CMake as necessary to configure the project and generate build files for the main build tool.\n\n"
                 + "3. Run the main build tool (Ninja or GNU Make). By default, the build tool is automatically detected "
                 + "but it can be explicitly set by passing the -G option to idf.py.\n\n",
+                "options": global_options,
                 "order_dependencies": [
                     "reconfigure",
                     "menuconfig",
@@ -900,59 +997,75 @@ def init_cli():
             "menuconfig": {
                 "callback": build_target,
                 "help": 'Run "menuconfig" project configuration tool.',
+                "options": global_options,
             },
             "confserver": {
                 "callback": build_target,
                 "help": "Run JSON configuration server.",
+                "options": global_options,
             },
             "size": {
                 "callback": build_target,
                 "help": "Print basic size information about the app.",
+                "options": global_options,
                 "dependencies": ["app"],
             },
             "size-components": {
                 "callback": build_target,
                 "help": "Print per-component size information.",
+                "options": global_options,
                 "dependencies": ["app"],
             },
             "size-files": {
                 "callback": build_target,
                 "help": "Print per-source-file size information.",
+                "options": global_options,
                 "dependencies": ["app"],
             },
-            "bootloader": {"callback": build_target, "help": "Build only bootloader."},
+            "bootloader": {
+                "callback": build_target,
+                "help": "Build only bootloader.",
+                "options": global_options,
+            },
             "app": {
                 "callback": build_target,
                 "help": "Build only the app.",
                 "order_dependencies": ["clean", "fullclean", "reconfigure"],
+                "options": global_options,
             },
             "efuse_common_table": {
                 "callback": build_target,
                 "help": "Genereate C-source for IDF's eFuse fields.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "efuse_custom_table": {
                 "callback": build_target,
                 "help": "Genereate C-source for user's eFuse fields.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "show_efuse_table": {
                 "callback": build_target,
                 "help": "Print eFuse table.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "partition_table": {
                 "callback": build_target,
                 "help": "Build only partition table.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "erase_otadata": {
                 "callback": build_target,
                 "help": "Erase otadata partition.",
+                "options": global_options,
             },
             "read_otadata": {
                 "callback": build_target,
                 "help": "Read otadata partition.",
+                "options": global_options,
             },
         }
     }
@@ -966,6 +1079,7 @@ def init_cli():
                 + "but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. "
                 + "For example, \"idf.py -DNAME='VALUE' reconfigure\" "
                 + 'can be used to set variable "NAME" in CMake cache to value "VALUE".',
+                "options": global_options,
                 "order_dependencies": ["menuconfig"],
             },
             "clean": {
@@ -986,36 +1100,41 @@ def init_cli():
         }
     }
 
+    baud_rate = {
+        "names": ["-b", "--baud"],
+        "help": "Baud rate.",
+        "scope": "global",
+        "envvar": "ESPBAUD",
+        "default": 460800,
+    }
+
+    port = {
+        "names": ["-p", "--port"],
+        "help": "Serial port.",
+        "scope": "global",
+        "envvar": "ESPPORT",
+        "default": None,
+    }
+
     serial_actions = {
-        "global_options": [
-            {
-                "names": ["-p", "--port"],
-                "help": "Serial port",
-                "envvar": "ESPPORT",
-                "default": None,
-            },
-            {
-                "names": ["-b", "--baud"],
-                "help": "Baud rate",
-                "envvar": "ESPBAUD",
-                "default": 460800,
-            },
-        ],
         "actions": {
             "flash": {
                 "callback": flash,
                 "help": "Flash the project.",
+                "options": global_options + [baud_rate, port],
                 "dependencies": ["all"],
                 "order_dependencies": ["erase_flash"],
             },
             "erase_flash": {
                 "callback": erase_flash,
                 "help": "Erase entire flash chip.",
+                "options": [baud_rate, port],
             },
             "monitor": {
                 "callback": monitor,
                 "help": "Display serial output.",
                 "options": [
+                    port,
                     {
                         "names": ["--print-filter", "--print_filter"],
                         "help": (
@@ -1041,18 +1160,21 @@ def init_cli():
             "partition_table-flash": {
                 "callback": flash,
                 "help": "Flash partition table only.",
+                "options": [baud_rate, port],
                 "dependencies": ["partition_table"],
                 "order_dependencies": ["erase_flash"],
             },
             "bootloader-flash": {
                 "callback": flash,
                 "help": "Flash bootloader only.",
+                "options": [baud_rate, port],
                 "dependencies": ["bootloader"],
                 "order_dependencies": ["erase_flash"],
             },
             "app-flash": {
                 "callback": flash,
                 "help": "Flash the app only.",
+                "options": [baud_rate, port],
                 "dependencies": ["app"],
                 "order_dependencies": ["erase_flash"],
             },
@@ -1141,7 +1263,7 @@ def _find_usable_locale():
                 usable_locales.append(locale)
 
     if not usable_locales:
-        FatalError(
+        raise FatalError(
             "Support for Unicode filenames is required, but no suitable UTF-8 locale was found on your system."
             " Please refer to the manual for your operating system for details on locale reconfiguration."
         )
