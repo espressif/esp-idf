@@ -37,7 +37,8 @@ we add more types of external RAM memory, this can be made into a more intellige
 #if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #else
-#if 0 /* TODO: no even/odd mode for ESP32S2 PSRAM? */
+#warning "spiram.c: TODO: no even/odd mode for ESP32S2 PSRAM?"
+#if 0
 #define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
 #else
 #define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH

@@ -499,7 +499,8 @@ static void main_task(void* args)
 #endif
 
     //Add IDLE 0 to task wdt
-#if 0 // TODO: re-enable task WDT
+#warning "cpu_start.c: TODO: re-enable task WDT"
+#if 0
 #ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
     if(idle_0 != NULL){

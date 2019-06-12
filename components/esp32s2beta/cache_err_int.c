@@ -51,6 +51,8 @@ void esp_cache_err_int_init()
     // For this reason, panic handler backtrace will not be correct if the
     // interrupt is connected to PRO CPU and invalid access happens on the APP
     // CPU.
+
+#warning "TODO: implement cache error access interrupt for esp32s2beta"
 #if 0
     DPORT_SET_PERI_REG_MASK(DPORT_PRO_CACHE_IA_INT_EN_REG,
         DPORT_CACHE_IA_INT_PRO_DRAM1 |
