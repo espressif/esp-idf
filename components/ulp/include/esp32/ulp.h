@@ -56,8 +56,8 @@ extern "C" {
 #define RD_REG_PERIPH_RTC_I2C  3    /*!< Identifier of RTC_I2C peripheral for RD_REG and WR_REG instructions */
 
 #define OPCODE_I2C 3            /*!< Instruction: read/write I2C */
-#define OPCODE_I2C_RD 0         /*!< I2C read */
-#define OPCODE_I2C_WR 1         /*!< I2C write */
+#define SUB_OPCODE_I2C_RD 0     /*!< I2C read */
+#define SUB_OPCODE_I2C_WR 1     /*!< I2C write */
 
 #define OPCODE_DELAY 4          /*!< Instruction: delay (nop) for a given number of cycles */
 
@@ -69,7 +69,7 @@ extern "C" {
 #define OPCODE_ALU 7            /*!< Arithmetic instructions */
 #define SUB_OPCODE_ALU_REG 0    /*!< Arithmetic instruction, both source values are in register */
 #define SUB_OPCODE_ALU_IMM 1    /*!< Arithmetic instruction, one source value is an immediate */
-#define SUB_OPCODE_ALU_CNT 2    /*!< Arithmetic instruction between counter register and an immediate */
+#define SUB_OPCODE_ALU_CNT 2    /*!< Arithmetic instruction, stage counter and an immediate */
 #define ALU_SEL_ADD 0           /*!< Addition */
 #define ALU_SEL_SUB 1           /*!< Subtraction */
 #define ALU_SEL_AND 2           /*!< Logical AND */
@@ -77,25 +77,23 @@ extern "C" {
 #define ALU_SEL_MOV 4           /*!< Copy value (immediate to destination register or source register to destination register */
 #define ALU_SEL_LSH 5           /*!< Shift left by given number of bits */
 #define ALU_SEL_RSH 6           /*!< Shift right by given number of bits */
-#define ALU_SEL_SINC  0         /*!< Increment counter register */
-#define ALU_SEL_SDEC  1         /*!< Decrement counter register */
-#define ALU_SEL_SRST  2         /*!< Reset counter register */
+#define ALU_SEL_SINC  0         /*!< Increment the stage counter */
+#define ALU_SEL_SDEC  1         /*!< Decrement the stage counter */
+#define ALU_SEL_SRST  2         /*!< Reset the stage counter */
 
 #define OPCODE_BRANCH 8         /*!< Branch instructions */
 #define SUB_OPCODE_BX  0        /*!< Branch to absolute PC (immediate or in register) */
-#define SUB_OPCODE_BR  1        /*!< Branch to relative PC */
-#define SUB_OPCODE_BS  2        /*!< Branch to relative PC */
+#define SUB_OPCODE_BR  1        /*!< Branch to relative PC, conditional on R0 */
+#define SUB_OPCODE_BS  2        /*!< Branch to relative PC, conditional on the stage counter */
 #define BX_JUMP_TYPE_DIRECT 0   /*!< Unconditional jump */
 #define BX_JUMP_TYPE_ZERO 1     /*!< Branch if last ALU result is zero */
 #define BX_JUMP_TYPE_OVF 2      /*!< Branch if last ALU operation caused and overflow */
 #define SUB_OPCODE_B  1         /*!< Branch to a relative offset */
 #define B_CMP_L 0               /*!< Branch if R0 is less than an immediate */
 #define B_CMP_GE 1              /*!< Branch if R0 is greater than or equal to an immediate */
-#define JUMPS_LT 0              /*!< Branch if counter register < */
-#define JUMPS_GE 1              /*!< Branch if counter register >= */
-#define JUMPS_LE 2              /*!< Branch if counter register <= */
-// #define JUMPS_EQ 3              /*!< Branch if counter register == */
-// #define JUMPS_GT 4              /*!< Branch if counter register > */
+#define JUMPS_LT 0              /*!< Branch if the stage counter < */
+#define JUMPS_GE 1              /*!< Branch if the stage counter >= */
+#define JUMPS_LE 2              /*!< Branch if the stage counter <= */
 
 #define OPCODE_END 9            /*!< Stop executing the program */
 #define SUB_OPCODE_END 0        /*!< Stop executing the program and optionally wake up the chip */
@@ -196,7 +194,7 @@ typedef union {
         uint32_t sign : 1;          /*!< Sign of target PC offset: 0: positive, 1: negative */
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_BS) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
-    } bs;                           /*!< Format of BRANCH instruction (relative address, conditional on counter register) */
+    } bs;                           /*!< Format of BRANCH instruction (relative address, conditional on the stage counter) */
 
     struct {
         uint32_t dreg : 2;          /*!< Destination register */
@@ -215,7 +213,7 @@ typedef union {
         uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_Sxxx */
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_CNT) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
-    } alu_reg_s;                    /*!< Format of ALU instruction (counter register and an immediate) */
+    } alu_reg_s;                    /*!< Format of ALU instruction (stage counter and an immediate) */
 
     struct {
         uint32_t dreg : 2;          /*!< Destination register */
@@ -896,7 +894,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_BXFI(0)
 
 /**
- * Increment stage count register by immediate value
+ * Increment the stage counter by immediate value
  */
 #define I_STAGE_INC(imm_) { .alu_reg_s = { \
     .unused1 = 0, \
@@ -907,7 +905,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .opcode = OPCODE_ALU } }
 
 /**
- * Decrement stage count register by immediate value
+ * Decrement the stage counter by immediate value
  */
 #define I_STAGE_DEC(imm_) { .alu_reg_s = { \
     .unused1 = 0, \
@@ -918,7 +916,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .opcode = OPCODE_ALU } }
 
 /**
- * Reset stage count register
+ * Reset the stage counter
  */
 #define I_STAGE_RST() { .alu_reg_s = { \
     .unused1 = 0, \
@@ -929,7 +927,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .opcode = OPCODE_ALU } }
 
 /**
- * Macro: branch to label if counter register is less than immediate value
+ * Macro: branch to label if the stage counter is less than immediate value
  *
  * This macro generates two ulp_insn_t values separated by a comma, and should
  * be used when defining contents of ulp_insn_t arrays. First value is not a
@@ -941,7 +939,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_JUMPS(0, imm_value, JUMPS_LT)
 
 /**
- * Macro: branch to label if counter register is greater than or equal to immediate value
+ * Macro: branch to label if the stage counter is greater than or equal to immediate value
  *
  * This macro generates two ulp_insn_t values separated by a comma, and should
  * be used when defining contents of ulp_insn_t arrays. First value is not a
@@ -953,7 +951,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_JUMPS(0, imm_value, JUMPS_GE)
 
 /**
- * Macro: branch to label if counter register is less than or equal to immediate value
+ * Macro: branch to label if the stage counter is less than or equal to immediate value
  *
  * This macro generates two ulp_insn_t values separated by a comma, and should
  * be used when defining contents of ulp_insn_t arrays. First value is not a
@@ -965,7 +963,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_JUMPS(0, imm_value, JUMPS_LE)
 
 /**
- * Macro: branch to label if counter register is equal to immediate value.
+ * Macro: branch to label if the stage counter is equal to immediate value.
  *  Implemented using two JUMPS instructions:
  *      JUMPS next, imm_value, LT
  *      JUMPS label_num, imm_value, LE
@@ -981,7 +979,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_JUMPS(0, imm_value, JUMPS_LE)
 
 /**
- * Macro: branch to label if counter register is greater than immediate value.
+ * Macro: branch to label if the stage counter is greater than immediate value.
  *  Implemented using two instructions:
  *      JUMPS next, imm_value, LE
  *      JUMPS label_num, imm_value, GE
@@ -997,10 +995,10 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     I_JUMPS(0, imm_value, JUMPS_GE)
 
 /**
- *  Branch relative if (counter [comp_type] [imm_value]) evaluates to true.
+ *  Branch relative if (stage counter [comp_type] [imm_value]) evaluates to true.
  *
  *  pc_offset is expressed in words, and can be from -127 to 127
- *  imm_value is an 8-bit value to compare counter against
+ *  imm_value is an 8-bit value to compare the stage counter against
  *  comp_type is the type of comparison to perform: JUMPS_LT (<), JUMPS_GE (>=) or JUMPS_LE (<=)
  */
 #define I_JUMPS(pc_offset, imm_value, comp_type) { .bs = { \
@@ -1035,14 +1033,14 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * 
  * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
  */
-#define I_I2C_READ(slave_sel, sub_addr) I_I2C_RW(sub_addr, 0, 0, 0, slave_sel, OPCODE_I2C_RD)
+#define I_I2C_READ(slave_sel, sub_addr) I_I2C_RW(sub_addr, 0, 0, 0, slave_sel, SUB_OPCODE_I2C_RD)
 
 /**
  * Write a byte to the sub address of an I2C slave.
  * 
  * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel.
  */
-#define I_I2C_WRITE(slave_sel, sub_addr, val) I_I2C_RW(sub_addr, val, 0, 7, slave_sel, OPCODE_I2C_WR)
+#define I_I2C_WRITE(slave_sel, sub_addr, val) I_I2C_RW(sub_addr, val, 0, 7, slave_sel, SUB_OPCODE_I2C_WR)
 
 #define RTC_SLOW_MEM ((uint32_t*) 0x50000000)       /*!< RTC slow memory, 8k size */
 
