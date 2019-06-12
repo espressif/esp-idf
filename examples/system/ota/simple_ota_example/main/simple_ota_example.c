@@ -158,6 +158,10 @@ void simple_ota_example_task(void * pvParameter)
     }
 #endif
 
+#ifdef CONFIG_SKIP_COMMON_NAME_CHECK
+    config.skip_cert_common_name_check = true;
+#endif
+
     esp_err_t ret = esp_https_ota(&config);
     if (ret == ESP_OK) {
         esp_restart();
