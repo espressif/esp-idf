@@ -98,6 +98,13 @@ struct eap_method {
 #define BLOB_NAME_LEN		3
 #define BLOB_NUM		3
 
+enum SIG_WPA2 {
+    SIG_WPA2_START = 0,
+    SIG_WPA2_RX,
+    SIG_WPA2_TASK_DEL,
+    SIG_WPA2_MAX,
+};
+
 /**
  * struct eap_sm - EAP state machine data
  */
@@ -114,8 +121,7 @@ struct eap_sm {
 	u8 current_identifier;
 	u8 ownaddr[ETH_ALEN];
 #ifdef USE_WPA2_TASK
-#define SIG_WPA2_NUM 2
-    	u8 wpa2_sig_cnt[SIG_WPA2_NUM];
+    	u8 wpa2_sig_cnt[SIG_WPA2_MAX];
 #endif
 	u8 finish_state;
 
