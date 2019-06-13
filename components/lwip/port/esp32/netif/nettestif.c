@@ -39,7 +39,7 @@ err_t nettestif_init(struct netif *netif)
 
   g_last_netif = netif;
 
-  netif->hostname = "espressif";
+  netif->hostname = CONFIG_LWIP_LOCAL_HOSTNAME;
 
   /*
    * Initialize the snmp variables and counters inside the struct netif.
