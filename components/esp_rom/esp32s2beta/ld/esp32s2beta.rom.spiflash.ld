@@ -1,28 +1,25 @@
 /*
-	Address table for SPI driver functions in ESP32 ROM.
-	These functions are only linked from ROM when SPI_FLASH_ROM_DRIVER_PATCH is not set in configuration.
+	SPI flash driver function, compatibility names.
 */
 
-/*
-PROVIDE ( esp_rom_spiflash_write_encrypted = 0x4000ae24 );
-PROVIDE ( esp_rom_spiflash_erase_area = 0x4000b0a0 );
-PROVIDE ( esp_rom_spiflash_erase_block = 0x4000ac20 );
-PROVIDE ( esp_rom_spiflash_erase_chip = 0x4000ac00 );
-PROVIDE ( esp_rom_spiflash_erase_sector = 0x4000ac80 );
-PROVIDE ( esp_rom_spiflash_lock = 0x4000aa30 );
-PROVIDE ( esp_rom_spiflash_read = 0x4000ae84 );
-*/
-/* SPIMasterReadModeCnfig */
-/*
-PROVIDE ( esp_rom_spiflash_config_readmode = 0x4000ab2c );
-PROVIDE ( esp_rom_spiflash_read_status = 0x40009db8 );
-PROVIDE ( esp_rom_spiflash_read_statushigh = 0x40009ffc );
-PROVIDE ( esp_rom_spiflash_write = 0x4000ace0 );
-PROVIDE ( esp_rom_spiflash_enable_write = 0x4000a2b8 );
-PROVIDE ( esp_rom_spiflash_write_status = 0x4000a01c );
-*/
 
-/* always using patched versions of these functions 
-PROVIDE ( esp_rom_spiflash_wait_idle = 0x40009e64 );
-PROVIDE ( esp_rom_spiflash_unlock = 0x400????? );
-*/
+PROVIDE ( cache_ibus_mmu_set_rom = cache_ibus_mmu_set );
+PROVIDE ( Cache_Read_Disable_rom = Cache_Read_Disable );
+PROVIDE ( Cache_Read_Enable_rom = Cache_Read_Enable );
+PROVIDE ( cache_dbus_mmu_set_rom = cache_dbus_mmu_set );
+PROVIDE ( g_rom_spiflash_dummy_len_plus = dummy_len_plus);
+PROVIDE ( g_ticks_per_us_pro = g_ticks_per_us );
+PROVIDE ( g_rom_flashchip = SPI_flashchip_data );
+PROVIDE ( g_rom_spiflash_chip = SPI_flashchip_data );
+PROVIDE ( esp_rom_spiflash_config_param = SPIParamCfg );
+PROVIDE ( esp_rom_spiflash_read = SPIRead );
+PROVIDE ( esp_rom_spiflash_read_status = SPI_read_status );
+PROVIDE ( esp_rom_spiflash_read_statushigh = SPI_read_status_high );
+PROVIDE ( esp_rom_spiflash_read_user_cmd = SPI_user_command_read );
+PROVIDE ( esp_rom_spiflash_write = SPIWrite );
+PROVIDE ( esp_rom_spiflash_write_encrypted_disable = SPI_Write_Encrypt_Disable );
+PROVIDE ( esp_rom_spiflash_write_encrypted_enable = SPI_Write_Encrypt_Enable );
+PROVIDE ( esp_rom_spiflash_config_clk = SPIClkConfig );
+PROVIDE ( esp_rom_spiflash_select_qio_pins = SelectSpiQIO );
+PROVIDE ( esp_rom_spiflash_unlock = SPIUnlock );
+PROVIDE ( esp_rom_spiflash_erase_sector = SPIEraseSector );
