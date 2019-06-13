@@ -151,23 +151,14 @@ typedef volatile struct {
         };
         uint32_t val;
     } pin[54];
+    uint32_t status_next;                             /**/
     union {
         struct {
-            uint32_t rtc_max:     10;
-            uint32_t reserved10:  21;
-            uint32_t start:        1;
+            uint32_t intr_st_next:         22;
+            uint32_t reserved22:           10;
         };
         uint32_t val;
-    } cali_conf;
-    union {
-        struct {
-            uint32_t value_sync2:     20;
-            uint32_t reserved20:      10;
-            uint32_t rdy_real:         1;
-            uint32_t rdy_sync2:        1;
-        };
-        uint32_t val;
-    } cali_data;
+    } status_next1;
     union {
         struct {
             uint32_t func_sel:         6;
@@ -187,6 +178,71 @@ typedef volatile struct {
         };
         uint32_t val;
     } func_out_sel_cfg[54];
+    union {
+        struct {
+            uint32_t clk_en:     1;
+            uint32_t reserved1: 31;
+        };
+        uint32_t val;
+    } clock_gate;
+    uint32_t reserved_630;
+    uint32_t reserved_634;
+    uint32_t reserved_638;
+    uint32_t reserved_63c;
+    uint32_t reserved_640;
+    uint32_t reserved_644;
+    uint32_t reserved_648;
+    uint32_t reserved_64c;
+    uint32_t reserved_650;
+    uint32_t reserved_654;
+    uint32_t reserved_658;
+    uint32_t reserved_65c;
+    uint32_t reserved_660;
+    uint32_t reserved_664;
+    uint32_t reserved_668;
+    uint32_t reserved_66c;
+    uint32_t reserved_670;
+    uint32_t reserved_674;
+    uint32_t reserved_678;
+    uint32_t reserved_67c;
+    uint32_t reserved_680;
+    uint32_t reserved_684;
+    uint32_t reserved_688;
+    uint32_t reserved_68c;
+    uint32_t reserved_690;
+    uint32_t reserved_694;
+    uint32_t reserved_698;
+    uint32_t reserved_69c;
+    uint32_t reserved_6a0;
+    uint32_t reserved_6a4;
+    uint32_t reserved_6a8;
+    uint32_t reserved_6ac;
+    uint32_t reserved_6b0;
+    uint32_t reserved_6b4;
+    uint32_t reserved_6b8;
+    uint32_t reserved_6bc;
+    uint32_t reserved_6c0;
+    uint32_t reserved_6c4;
+    uint32_t reserved_6c8;
+    uint32_t reserved_6cc;
+    uint32_t reserved_6d0;
+    uint32_t reserved_6d4;
+    uint32_t reserved_6d8;
+    uint32_t reserved_6dc;
+    uint32_t reserved_6e0;
+    uint32_t reserved_6e4;
+    uint32_t reserved_6e8;
+    uint32_t reserved_6ec;
+    uint32_t reserved_6f0;
+    uint32_t reserved_6f4;
+    uint32_t reserved_6f8;
+    union {
+        struct {
+            uint32_t date:      28;
+            uint32_t reserved28: 4;
+        };
+        uint32_t val;
+    } date;
 } gpio_dev_t;
 extern gpio_dev_t GPIO;
 #ifdef __cplusplus
