@@ -38,6 +38,7 @@ if(NOT __idf_env_set)
     include(utilities)
     include(targets)
     include(ldgen)
+    include(version)
 
     __build_init("${idf_path}")
 

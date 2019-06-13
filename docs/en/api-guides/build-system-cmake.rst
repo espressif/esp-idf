@@ -350,6 +350,7 @@ from the component CMakeLists.txt:
 - ``PROJECT_DIR``: Absolute path of the project directory containing the project CMakeLists. Same as the ``CMAKE_SOURCE_DIR`` variable.
 - ``COMPONENTS``: Names of all components that are included in this build, formatted as a semicolon-delimited CMake list.
 - ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
+- ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: Components of ESP-IDF version, to be used in conditional expressions. Note that this information is less precise than that provided by ``IDF_VER`` variable. ``v4.0-dev-*``, ``v4.0-beta1``, ``v4.0-rc1`` and ``v4.0`` will all have the same values of ``IDF_VERSION_*`` variables, but different ``IDF_VER`` values.
 - ``IDF_TARGET``: Name of the target for which the project is being built.
 - ``PROJECT_VER``: Project version.
 
