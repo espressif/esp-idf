@@ -17,8 +17,7 @@ endif
 
 $(BLANK_OTA_DATA_FILE): partition_table_get_info $(PARTITION_TABLE_CSV_PATH) | check_python_dependencies
 	$(shell if [ "$(OTA_DATA_OFFSET)" != "" ] && [ "$(OTA_DATA_SIZE)" != "" ]; then \
-				$(PARTTOOL_PY) --partition-type data --partition-subtype ota --partition-table-file $(PARTITION_TABLE_CSV_PATH) \
-								-q generate_blank_partition_file --output $(BLANK_OTA_DATA_FILE); \
+				$(PYTHON) $(IDF_PATH)/components/partition_table/gen_empty_partition.py $(OTA_DATA_SIZE) $(BLANK_OTA_DATA_FILE); \
 			fi; )
 	$(eval BLANK_OTA_DATA_FILE = $(shell if [ "$(OTA_DATA_OFFSET)" != "" ] && [ "$(OTA_DATA_SIZE)" != "" ]; then \
 			echo $(BLANK_OTA_DATA_FILE); else echo " "; fi) )
@@ -30,10 +29,14 @@ blank_ota_data: $(BLANK_OTA_DATA_FILE)
 ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
 
 erase_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) erase_otadata
+	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \
+	--partition-table-offset $(PARTITION_TABLE_OFFSET) \
+	erase_otadata
 
 read_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
-	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) read_otadata
+	$(OTATOOL_PY) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \ 
+	--partition-table-offset $(partition_table_offset) \ 
+	read_otadata
 
 erase_ota: erase_otadata
 	@echo "WARNING: erase_ota is deprecated. Use erase_otadata instead."
