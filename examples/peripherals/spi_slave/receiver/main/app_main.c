@@ -109,8 +109,8 @@ void app_main()
     ret=spi_slave_initialize(HSPI_HOST, &buscfg, &slvcfg, 1);
     assert(ret==ESP_OK);
 
-    char sendbuf[129]="";
-    char recvbuf[129]="";
+    WORD_ALIGNED_ATTR char sendbuf[129]="";
+    WORD_ALIGNED_ATTR char recvbuf[129]="";
     memset(recvbuf, 0, 33);
     spi_slave_transaction_t t;
     memset(&t, 0, sizeof(t));
