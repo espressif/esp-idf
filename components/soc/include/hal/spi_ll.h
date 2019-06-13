@@ -18,11 +18,11 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for SPI register operations
+// The LL layer for ESP32 SPI register operations
 
 #pragma once
 
-#include "hal_defs.h"
+#include "hal/hal_defs.h"
 #include "soc/spi_periph.h"
 #include "esp32/rom/lldesc.h"
 #include <string.h>

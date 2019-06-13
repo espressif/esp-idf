@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
-#include "soc/spi_pins.h"
+#include "soc/spi_caps.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/gpio_sig_map.h"
@@ -68,11 +68,11 @@ typedef struct {
     const uint8_t irq;              //irq source for interrupt mux
     const uint8_t irq_dma;          //dma irq source for interrupt mux
     const periph_module_t module;   //peripheral module, for enabling clock etc
+    const int func;             //function number for IOMUX
     spi_dev_t *hw;              //Pointer to the hardware registers
-    const int func;
 } spi_signal_conn_t;
 
-extern const spi_signal_conn_t spi_periph_signal[SPI_PERIPH_NUM];
+extern const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM];
 
 #ifdef __cplusplus
 }

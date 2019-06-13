@@ -21,6 +21,7 @@
 #include "esp_err.h"
 #include "esp32/rom/lldesc.h"
 #include "soc/spi_periph.h"
+#include "hal/spi_types.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -90,23 +91,6 @@ extern "C"
  */
 #define SPI_SWAP_DATA_RX(data, len) (__builtin_bswap32(data)>>(32-len))
 
-/**
- * @brief Enum with the three SPI peripherals that are software-accessible in it
- */
-#if CONFIG_IDF_TARGET_ESP32
-typedef enum {
-    SPI_HOST=0,                     ///< SPI1, SPI
-    HSPI_HOST=1,                    ///< SPI2, HSPI
-    VSPI_HOST=2                     ///< SPI3, VSPI
-} spi_host_device_t;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-typedef enum {
-    SPI_HOST=0,                     ///< SPI1, SPI
-    FSPI_HOST=1,                    ///< SPI2, FSPI
-    HSPI_HOST=2,                    ///< SPI3, HSPI
-    VSPI_HOST=3                     ///< SPI4, VSPI
-} spi_host_device_t;
-#endif
 /**
  * @brief This is a configuration structure for a SPI bus.
  *
@@ -207,13 +191,16 @@ bool spicommon_dma_chan_free(int dma_chan);
 
 #define SPICOMMON_BUSFLAG_SLAVE         0          ///< Initialize I/O in slave mode
 #define SPICOMMON_BUSFLAG_MASTER        (1<<0)     ///< Initialize I/O in master mode
-#define SPICOMMON_BUSFLAG_NATIVE_PINS   (1<<1)     ///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
+#define SPICOMMON_BUSFLAG_IOMUX_PINS    (1<<1)     ///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
 #define SPICOMMON_BUSFLAG_SCLK          (1<<2)     ///< Check existing of SCLK pin. Or indicates CLK line initialized.
 #define SPICOMMON_BUSFLAG_MISO          (1<<3)     ///< Check existing of MISO pin. Or indicates MISO line initialized.
 #define SPICOMMON_BUSFLAG_MOSI          (1<<4)     ///< Check existing of MOSI pin. Or indicates CLK line initialized.
 #define SPICOMMON_BUSFLAG_DUAL          (1<<5)     ///< Check MOSI and MISO pins can output. Or indicates bus able to work under DIO mode.
 #define SPICOMMON_BUSFLAG_WPHD          (1<<6)     ///< Check existing of WP and HD pins. Or indicates WP & HD pins initialized.
 #define SPICOMMON_BUSFLAG_QUAD          (SPICOMMON_BUSFLAG_DUAL|SPICOMMON_BUSFLAG_WPHD)     ///< Check existing of MOSI/MISO/WP/HD pins as output. Or indicates bus able to work under QIO mode.
+
+#define SPICOMMON_BUSFLAG_NATIVE_PINS   SPICOMMON_BUSFLAG_IOMUX_PINS
+
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins
@@ -228,7 +215,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  * @param flags Combination of SPICOMMON_BUSFLAG_* flags, set to ensure the pins set are capable with some functions:
  *              - ``SPICOMMON_BUSFLAG_MASTER``: Initialize I/O in master mode
  *              - ``SPICOMMON_BUSFLAG_SLAVE``: Initialize I/O in slave mode
- *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: Pins set should match the iomux pins of the controller.
+ *              - ``SPICOMMON_BUSFLAG_IOMUX_PINS``: Pins set should match the iomux pins of the controller.
  *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``:
  *                  Make sure SCLK/MISO/MOSI is/are set to a valid GPIO. Also check output capability according to the mode.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: Make sure both MISO and MOSI are output capable so that DIO mode is capable.
@@ -236,7 +223,7 @@ bool spicommon_dma_chan_free(int dma_chan);
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
  * @param[out] flags_o A SPICOMMON_BUSFLAG_* flag combination of bus abilities will be written to this address.
  *              Leave to NULL if not needed.
- *              - ``SPICOMMON_BUSFLAG_NATIVE_PINS``: The bus is connected to iomux pins.
+ *              - ``SPICOMMON_BUSFLAG_IOMUX_PINS``: The bus is connected to iomux pins.
  *              - ``SPICOMMON_BUSFLAG_SCLK``, ``SPICOMMON_BUSFLAG_MISO``, ``SPICOMMON_BUSFLAG_MOSI``: The bus has
  *                  CLK/MISO/MOSI connected.
  *              - ``SPICOMMON_BUSFLAG_DUAL``: The bus is capable with DIO mode.
@@ -333,6 +320,15 @@ spi_dev_t *spicommon_hw_for_host(spi_host_device_t host);
  * @return The hosts IRQ source
  */
 int spicommon_irqsource_for_host(spi_host_device_t host);
+
+/**
+ * @brief Get the IRQ source for a specific SPI DMA
+ *
+ * @param host The SPI host
+ *
+ * @return The hosts IRQ source
+ */
+int spicommon_irqdma_source_for_host(spi_host_device_t host);
 
 /**
  * Callback, to be called when a DMA engine reset is completed
