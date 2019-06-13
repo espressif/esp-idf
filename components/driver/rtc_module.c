@@ -109,6 +109,7 @@ portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
 //prevent ADC1 being used by I2S dma and other tasks at the same time.
 static _lock_t adc1_i2s_lock;
 
+#if CONFIG_IDF_TARGET_ESP32
 typedef struct {
     TimerHandle_t timer;
     uint16_t filtered_val[TOUCH_PAD_MAX];
@@ -121,6 +122,7 @@ static touch_pad_filter_t *s_touch_pad_filter = NULL;
 // check if touch pad be inited.
 static uint16_t s_touch_pad_init_bit = 0x0000;
 static filter_cb_t s_filter_cb = NULL;
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32S2BETA
 typedef volatile struct {
@@ -497,6 +499,11 @@ esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].hold);
     portEXIT_CRITICAL(&rtc_spinlock);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.pad_hold.val |= BIT(gpio_num);
+    portEXIT_CRITICAL(&rtc_spinlock);
 #endif
     return ESP_OK;
 }
@@ -510,6 +517,11 @@ esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
     }
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].hold);
+    portEXIT_CRITICAL(&rtc_spinlock);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.pad_hold.val &= ~(BIT(gpio_num));
     portEXIT_CRITICAL(&rtc_spinlock);
 #endif
     return ESP_OK;
@@ -602,7 +614,7 @@ esp_err_t rtc_gpio_force_hold_all()
     return ESP_OK;
 }
 #endif
-
+#if CONFIG_IDF_TARGET_ESP32
 /*---------------------------------------------------------------
                     Touch Pad
 ---------------------------------------------------------------*/
@@ -1248,10 +1260,24 @@ esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num)
     *pad_num = touch_pad_num_wrap((touch_pad_t)(__builtin_ffs(touch_mask) - 1));
     return ESP_OK;
 }
-
+#endif
 /*---------------------------------------------------------------
                     ADC Common
 ---------------------------------------------------------------*/
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#define SENS_FORCE_XPD_AMP_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_AMP_PD  2 // Force power down
+#define SENS_FORCE_XPD_AMP_PU  3 // Force power up
+
+#define SENS_SAR1_ATTEN_VAL_MASK   0x3
+#define SENS_SAR2_ATTEN_VAL_MASK   0x3
+
+#define SENS_FORCE_XPD_SAR_SW_M (BIT(1))
+#define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_SAR_PD  2 // Force power down
+#define SENS_FORCE_XPD_SAR_PU  3 // Force power up
+#endif
+
 static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait, int sample_cycle)
 {
     portENTER_CRITICAL(&rtc_spinlock);
@@ -1345,13 +1371,18 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
 void adc_power_always_on()
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
 void adc_power_on()
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     //The power FSM controlled mode saves more power, while the ADC noise may get increased.
 #ifndef CONFIG_ADC_FORCE_XPD_FSM
     //Set the power always on to increase precision.
@@ -1364,15 +1395,34 @@ void adc_power_on()
         SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
     }
 #endif
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //The power FSM controlled mode saves more power, while the ADC noise may get increased.
+#ifndef CONFIG_ADC_FORCE_XPD_FSM
+    //Set the power always on to increase precision.
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#else    
+    //Use the FSM to turn off the power while not used to save power.
+    if (SENS.sar_power_xpd_sar.force_xpd_sar & SENS_FORCE_XPD_SAR_SW_M) {
+        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+    } else {
+        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
+    }
+#endif
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
 void adc_power_off()
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     //Bit1  0:Fsm  1: SW mode
     //Bit0  0:SW mode power down  1: SW mode power on
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
+#endif
+
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
@@ -1413,6 +1463,7 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     if (adc_unit & ADC_UNIT_1) {
         // Enable ADC data invert
         SENS.sar_read_ctrl.sar1_data_inv = inv_en;
@@ -1421,6 +1472,16 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
         // Enable ADC data invert
         SENS.sar_read_ctrl2.sar2_data_inv = inv_en;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (adc_unit & ADC_UNIT_1) {
+        // Enable ADC data invert
+        SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        // Enable ADC data invert
+        SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;
+    }
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -1430,6 +1491,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
     ADC_CHECK_UNIT(adc_unit);
     RTC_MODULE_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     if (adc_unit & ADC_UNIT_1) {
         SENS.sar_start_force.sar1_bit_width = bits;
         SENS.sar_read_ctrl.sar1_sample_bit = bits;
@@ -1438,6 +1500,16 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
         SENS.sar_start_force.sar2_bit_width = bits;
         SENS.sar_read_ctrl2.sar2_sample_bit = bits;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (adc_unit & ADC_UNIT_1) {
+        SENS.sar_meas1_ctrl1.sar1_bit_width = bits;
+        SENS.sar_reader1_ctrl.sar1_sample_bit = bits;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        SENS.sar_meas2_ctrl1.sar2_bit_width = bits;
+        SENS.sar_reader2_ctrl.sar2_sample_bit = bits;
+    }
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -1445,6 +1517,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
 // this function should be called in the critical section
 static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
 {
+#if CONFIG_IDF_TARGET_ESP32
     if ( unit == ADC_UNIT_1 ) {
         switch( ctrl ) {
             case ADC_CTRL_RTC:
@@ -1505,18 +1578,87 @@ static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
                 break;
             default:
                 ESP_LOGE(TAG, "adc2 selects invalid controller");
-                break;
+                break;            
         }
     } else {
       ESP_LOGE(TAG, "invalid adc unit");
       assert(0);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if ( unit == ADC_UNIT_1 ) {
+        switch( ctrl ) {
+            case ADC_CTRL_RTC:
+                SENS.sar_meas1_mux.sar1_dig_force = false;      //RTC controller controls the ADC, not digital controller
+                SENS.sar_meas1_ctrl2.meas1_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor
+                SENS.sar_meas1_ctrl2.sar1_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
+                SENS.sar_hall_ctrl.xpd_hall_force = true;     // RTC controller controls the hall sensor power,not ulp coprocessor
+                SENS.sar_hall_ctrl.hall_phase_force = true;   // RTC controller controls the hall sensor phase,not ulp coprocessor
+                break;
+            case ADC_CTRL_ULP:
+                SENS.sar_meas1_mux.sar1_dig_force = false;
+                SENS.sar_meas1_ctrl2.meas1_start_force = false;
+                SENS.sar_meas1_ctrl2.sar1_en_pad_force = false;
+                SENS.sar_hall_ctrl.xpd_hall_force = false;
+                SENS.sar_hall_ctrl.hall_phase_force = false;
+                break;
+            case ADC_CTRL_DIG:
+                SENS.sar_meas1_mux.sar1_dig_force = true;
+                SENS.sar_meas1_ctrl2.meas1_start_force = true;
+                SENS.sar_meas1_ctrl2.sar1_en_pad_force = true;
+                SENS.sar_hall_ctrl.xpd_hall_force = true;
+                SENS.sar_hall_ctrl.hall_phase_force = true;
+                break;
+            default:
+                ESP_LOGE(TAG, "adc1 selects invalid controller");
+                break;            
+        }
+    } else if ( unit == ADC_UNIT_2) {
+        switch( ctrl ) {
+            case ADC_CTRL_RTC:
+                SENS.sar_meas2_ctrl2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor 
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
+                // SENS.sar_read_ctrl2.sar2_dig_force = false;     //RTC controller controls the ADC, not digital controller
+                // SENS.sar_read_ctrl2.sar2_pwdet_force = false;   //RTC controller controls the ADC, not PWDET
+                SYSCON.saradc_ctrl.sar2_mux = true;             //RTC controller controls the ADC, not PWDET
+                break;
+            case ADC_CTRL_ULP:
+                SENS.sar_meas2_ctrl2.meas2_start_force = false;
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = false;
+                // SENS.sar_read_ctrl2.sar2_dig_force = false;
+                // SENS.sar_read_ctrl2.sar2_pwdet_force = false;
+                SYSCON.saradc_ctrl.sar2_mux = true;
+                break;
+            case ADC_CTRL_DIG:
+                SENS.sar_meas2_ctrl2.meas2_start_force = true;
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;
+                // SENS.sar_read_ctrl2.sar2_dig_force = true;
+                // SENS.sar_read_ctrl2.sar2_pwdet_force = false;
+                SYSCON.saradc_ctrl.sar2_mux = true;
+                break;
+            case ADC2_CTRL_PWDET:
+                //currently only used by Wi-Fi
+                SENS.sar_meas2_ctrl2.meas2_start_force = true;
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;
+                // SENS.sar_read_ctrl2.sar2_dig_force = false;
+                // SENS.sar_read_ctrl2.sar2_pwdet_force = true;
+                SYSCON.saradc_ctrl.sar2_mux = false;
+                break;
+            default:
+                ESP_LOGE(TAG, "adc2 selects invalid controller");
+                break;            
+        }
+    } else {
+      ESP_LOGE(TAG, "invalid adc unit");
+      assert(0);
+    }
+#endif
 }
 
 // this function should be called in the critical section
 static int adc_convert( adc_unit_t unit, int channel)
 {
-    uint16_t adc_value;
+    uint16_t adc_value = 0;
+#if CONFIG_IDF_TARGET_ESP32
     if ( unit == ADC_UNIT_1 ) {
         SENS.sar_meas_start1.sar1_en_pad = (1 << channel); //only one channel is selected.
         while (SENS.sar_slave_addr1.meas_status != 0);
@@ -1535,6 +1677,26 @@ static int adc_convert( adc_unit_t unit, int channel)
         ESP_LOGE(TAG, "invalid adc unit");
         return ESP_ERR_INVALID_ARG;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+     if ( unit == ADC_UNIT_1 ) {
+        SENS.sar_meas1_ctrl2.sar1_en_pad = (1 << channel); //only one channel is selected.
+        while (SENS.sar_slave_addr1.meas_status != 0);
+        SENS.sar_meas1_ctrl2.meas1_start_sar = 0;
+        SENS.sar_meas1_ctrl2.meas1_start_sar = 1;
+        while (SENS.sar_meas1_ctrl2.meas1_done_sar == 0);
+        adc_value = SENS.sar_meas1_ctrl2.meas1_data_sar;
+    } else if ( unit == ADC_UNIT_2 ) {
+        SENS.sar_meas2_ctrl2.sar2_en_pad = (1 << channel); //only one channel is selected.    
+        
+        SENS.sar_meas2_ctrl2.meas2_start_sar = 0; //start force 0
+        SENS.sar_meas2_ctrl2.meas2_start_sar = 1; //start force 1
+        while (SENS.sar_meas2_ctrl2.meas2_done_sar == 0) {}; //read done
+        adc_value = SENS.sar_meas2_ctrl2.meas2_data_sar;    
+    } else {
+        ESP_LOGE(TAG, "invalid adc unit");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
     return adc_value;
 }
 
@@ -1675,6 +1837,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 
 static inline void adc1_fsm_disable()
 {
+#if CONFIG_IDF_TARGET_ESP32
     //channel is set in the  convert function
     SENS.sar_meas_wait2.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
     //disable FSM, it's only used by the LNA.
@@ -1683,7 +1846,18 @@ static inline void adc1_fsm_disable()
     SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
     SENS.sar_meas_wait1.sar_amp_wait1 = 1;
     SENS.sar_meas_wait1.sar_amp_wait2 = 1;
-    SENS.sar_meas_wait2.sar_amp_wait3 = 1;
+    SENS.sar_meas_wait2.sar_amp_wait3 = 1;    
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //channel is set in the  convert function
+    SENS.sar_meas1_ctrl1.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
+    //disable FSM, it's only used by the LNA.
+    SENS.sar_amp_ctrl3.amp_rst_fb_fsm = 0;
+    SENS.sar_amp_ctrl3.amp_short_ref_fsm = 0;
+    SENS.sar_amp_ctrl3.amp_short_ref_gnd_fsm = 0;
+    SENS.sar_amp_ctrl1.sar_amp_wait1 = 1;
+    SENS.sar_amp_ctrl1.sar_amp_wait2 = 1;
+    SENS.sar_amp_ctrl2.sar_amp_wait3 = 1;
+#endif
 }
 
 esp_err_t adc1_i2s_mode_acquire()
@@ -1693,9 +1867,15 @@ esp_err_t adc1_i2s_mode_acquire()
     _lock_acquire( &adc1_i2s_lock );
     ESP_LOGD( RTC_MODULE_TAG, "i2s mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
     //switch SARADC into DIG channel
     SENS.sar_read_ctrl.sar1_dig_force = 1;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+    //switch SARADC into DIG channel
+    SENS.sar_meas1_mux.sar1_dig_force = 1;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -1705,13 +1885,18 @@ esp_err_t adc1_adc_mode_acquire()
     //lazy initialization
     //for adc1, block until acquire the lock
     _lock_acquire( &adc1_i2s_lock );
+    ESP_LOGD( RTC_MODULE_TAG, "adc mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
     // for now the WiFi would use ADC2 and set xpd_sar force on.
     // so we can not reset xpd_sar to fsm mode directly.
     // We should handle this after the synchronization mechanism is established.
 
     //switch SARADC into RTC channel
+#if CONFIG_IDF_TARGET_ESP32
     SENS.sar_read_ctrl.sar1_dig_force = 0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_meas1_mux.sar1_dig_force = 0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -1864,6 +2049,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 static inline void adc2_config_width(adc_bits_width_t width_bit)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     //sar_start_force shared with ADC1
     SENS.sar_start_force.sar2_bit_width = width_bit;
     //cct set to the same value with PHY
@@ -1874,15 +2060,34 @@ static inline void adc2_config_width(adc_bits_width_t width_bit)
     SENS.sar_read_ctrl2.sar2_data_inv = 1;
     //Set The adc sample width,invert adc value,must digital sar2_bit_width[1:0]=3
     SENS.sar_read_ctrl2.sar2_sample_bit = width_bit;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //sar_start_force shared with ADC1
+    SENS.sar_meas2_ctrl1.sar2_bit_width = width_bit;
+    //cct set to the same value with PHY
+    SENS.sar_meas2_mux.sar2_pwdet_cct = 4;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    //Invert the adc value,the Output value is invert
+    SENS.sar_reader2_ctrl.sar2_data_inv = 1;
+    //Set The adc sample width,invert adc value,must digital sar2_bit_width[1:0]=3
+    SENS.sar_reader2_ctrl.sar2_sample_bit = width_bit;
+#endif
 }
 
 static inline void adc2_dac_disable( adc2_channel_t channel)
 {
+#if CONFIG_IDF_TARGET_ESP32
     if ( channel == ADC2_CHANNEL_8 ) { // the same as DAC channel 1
         dac_output_set_enable( DAC_CHANNEL_1, false );
     } else if ( channel == ADC2_CHANNEL_9 ) {
         dac_output_set_enable( DAC_CHANNEL_2, false );
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if ( channel == ADC2_CHANNEL_6 ) { // the same as DAC channel 1
+        dac_output_set_enable( DAC_CHANNEL_1, false );
+    } else if ( channel == ADC2_CHANNEL_7 ) {
+        dac_output_set_enable( DAC_CHANNEL_2, false );
+    }
+#endif
 }
 
 //registers in critical section with adc1:
@@ -1926,7 +2131,6 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 {
 #if CONFIG_IDF_TARGET_ESP32
     int channel;
-
     if(gpio == GPIO_NUM_25){
         channel = 8;    //Channel 8 bit
     }else if (gpio == GPIO_NUM_26){

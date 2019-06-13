@@ -32,6 +32,13 @@ typedef enum {
     TOUCH_PAD_NUM7,     /*!< Touch pad channel 7 is GPIO27*/
     TOUCH_PAD_NUM8,     /*!< Touch pad channel 8 is GPIO33*/
     TOUCH_PAD_NUM9,     /*!< Touch pad channel 9 is GPIO32*/
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    TOUCH_PAD_NUM10,     /*!< Touch pad channel 6 is */
+    TOUCH_PAD_NUM11,     /*!< Touch pad channel 7 is */
+    TOUCH_PAD_NUM12,     /*!< Touch pad channel 8 is */
+    TOUCH_PAD_NUM13,     /*!< Touch pad channel 9 is */
+    TOUCH_PAD_NUM14,     /*!< Touch pad channel 9 is */
+#endif
     TOUCH_PAD_MAX,
 } touch_pad_t;
 
@@ -98,8 +105,103 @@ typedef enum {
     TOUCH_FSM_MODE_MAX,
 } touch_fsm_mode_t;
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+typedef enum {
+    TOUCH_PAD_INTR_DONE = 0,    //each channel measure done.
+    TOUCH_PAD_INTR_ACTIVE = 1,
+    TOUCH_PAD_INTR_INACTIVE = 2,
+    TOUCH_PAD_INTR_ALL,
+    TOUCH_PAD_INTR_MAX
+} touch_pad_intr_type_t;
+
+typedef enum {
+    TOUCH_PAD_INTR_MASK_DONE = BIT(0),  //each channel measure done.
+    TOUCH_PAD_INTR_MASK_ACTIVE = BIT(1),
+    TOUCH_PAD_INTR_MASK_INACTIVE = BIT(2),
+    TOUCH_PAD_INTR_MASK_ALL = BIT(2)|BIT(1)|BIT(0),
+    TOUCH_PAD_INTR_MASK_MAX
+}touch_pad_intr_mask_t;
+
+typedef enum {
+    TOUCH_PAD_DENOISE_BIT12 = 0,
+    TOUCH_PAD_DENOISE_BIT10 = 1,
+    TOUCH_PAD_DENOISE_BIT8 = 2,
+    TOUCH_PAD_DENOISE_BIT4 = 3,
+    TOUCH_PAD_DENOISE_MAX
+} touch_pad_denoise_grade_t;
+
+typedef enum {
+    TOUCH_PAD_DENOISE_CAP_L0 = 0,   // 0pf
+    TOUCH_PAD_DENOISE_CAP_L1 = 4,   // 1.4pf
+    TOUCH_PAD_DENOISE_CAP_L2 = 2,   // 2.8pf
+    TOUCH_PAD_DENOISE_CAP_L3 = 6,   // 4.2pf
+    TOUCH_PAD_DENOISE_CAP_L4 = 1,   // 5.6pf
+    TOUCH_PAD_DENOISE_CAP_L5 = 5,   // 7.0pf
+    TOUCH_PAD_DENOISE_CAP_L6 = 3,   // 8.4pf
+    TOUCH_PAD_DENOISE_CAP_L7 = 7,   // 9.8pf
+    TOUCH_PAD_DENOISE_CAP_MAX
+} touch_pad_denoise_cap_t;
+
+typedef struct touch_pad_denoise {
+    touch_pad_denoise_grade_t grade;
+    touch_pad_denoise_cap_t cap_level;
+} touch_pad_denoise_t;
+
+typedef enum {
+    TOUCH_PAD_SHIELD_DRV_L0 = 0,   // 40pf
+    TOUCH_PAD_SHIELD_DRV_L1,       // 80pf
+    TOUCH_PAD_SHIELD_DRV_L2,       // 120pf
+    TOUCH_PAD_SHIELD_DRV_L3,       // 160pf
+    TOUCH_PAD_SHIELD_DRV_L4,       // 200pf
+    TOUCH_PAD_SHIELD_DRV_L5,       // 240pf
+    TOUCH_PAD_SHIELD_DRV_L6,       // 280pf
+    TOUCH_PAD_SHIELD_DRV_L7,       // 320pf
+    TOUCH_PAD_SHIELD_DRV_MAX
+} touch_pad_shield_driver_t;
+
+typedef struct touch_pad_waterproof {
+    touch_pad_t guard_ring_pad;
+    touch_pad_shield_driver_t shield_driver;
+} touch_pad_waterproof_t;
+
+typedef struct touch_pad_approach {
+    touch_pad_t select_pad0;
+    touch_pad_t select_pad1;
+    touch_pad_t select_pad2;
+    uint8_t means_num;
+} touch_pad_approach_t;
+
+typedef enum {
+    TOUCH_PAD_CONN_HIGHZ = 0,
+    TOUCH_PAD_CONN_GND = 1,
+    TOUCH_PAD_CONN_MAX
+} touch_pad_conn_type_t;
+
+typedef enum {
+    TOUCH_PAD_FILTER_IIR_2 = 0,
+    TOUCH_PAD_FILTER_IIR_4,
+    TOUCH_PAD_FILTER_IIR_8,
+    TOUCH_PAD_FILTER_JITTER,
+    TOUCH_PAD_FILTER_MAX
+} touch_filter_mode_t;
+
+typedef struct touch_filter_config {
+    touch_filter_mode_t mode;
+    uint8_t debounce_cnt;   //0 ~ 7.
+    uint8_t hysteresis_thr; //0 ~ 3. 0: 1/8;  1: 3/32;  2: 1/16;  3: 1/32;
+    uint8_t noise_thr;      //0 ~ 3. 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8;
+    uint8_t noise_neg_thr;  //0 ~ 3. 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8;
+    uint8_t neg_noise_limit;//0 ~ 15.
+    uint8_t jitter_step;    //0 ~ 15.
+} touch_filter_config_t;
+
+#define TOUCH_PAD_THRESHOLD_MAX 0x1FFFFF//0x3FFFFF
+
+#endif
 
 typedef intr_handle_t touch_isr_handle_t;
+
+#if CONFIG_IDF_TARGET_ESP32
 
 #define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0x1000)  /*!<The timer frequency is RTC_SLOW_CLK (can be 150k or 32k depending on the options), max value is 0xffff */
 #define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (0x7fff)  /*!<The timer frequency is 8Mhz, the max value is 0x7fff */
@@ -109,6 +211,19 @@ typedef intr_handle_t touch_isr_handle_t;
 #define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
 #define TOUCH_PAD_BIT_MASK_MAX          (0x3ff)
 
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+
+#define TOUCH_PAD_SLEEP_CYCLE_DEFAULT   (0xf)  /*!<The timer frequency is RTC_SLOW_CLK (can be 150k or 32k depending on the options), max value is 0xffff */
+#define TOUCH_PAD_MEASURE_CYCLE_DEFAULT (300)  /*!<The timer frequency is 8Mhz, the max value is 0x7fff */
+#define TOUCH_PAD_MEASURE_WAIT_DEFAULT  (0xFF)    /*!<The timer frequency is 8Mhz, the max value is 0xff */
+#define TOUCH_FSM_MODE_DEFAULT          (TOUCH_FSM_MODE_SW)  /*!<The touch FSM my be started by the software or timer */
+#define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)   /*!<Interrupts can be triggered if sensor value gets below or above threshold */
+#define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
+#define TOUCH_PAD_BIT_MASK_MAX          (0x7fff)  /* 15 bits */
+
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Initialize touch module.
  * @note  The default FSM mode is 'TOUCH_FSM_MODE_SW'. If you want to use interrupt trigger mode,
@@ -558,6 +673,69 @@ esp_err_t touch_pad_filter_delete();
  *      - ESP_FAIL get status err
  */
 esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num);
+
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_cycle);
+esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_cycle);
+esp_err_t touch_pad_set_inactive_connect(touch_pad_conn_type_t type);
+esp_err_t touch_pad_get_inactive_connect(touch_pad_conn_type_t *type);
+esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, touch_volt_atten_t atten);
+esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl, touch_volt_atten_t *atten);
+esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope);
+esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope);
+esp_err_t touch_pad_io_init(touch_pad_t touch_num);
+esp_err_t touch_pad_fsm_start(touch_fsm_mode_t mode);
+esp_err_t touch_pad_fsm_stop();
+esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
+esp_err_t touch_pad_sw_start(touch_pad_t *current_scan);
+uint8_t touch_pad_means_is_done();
+esp_err_t touch_pad_set_thresh(touch_pad_t touch_num, uint32_t threshold);
+esp_err_t touch_pad_get_thresh(touch_pad_t touch_num, uint32_t *threshold);
+esp_err_t touch_pad_set_group_mask(uint16_t enable_mask);
+esp_err_t touch_pad_get_group_mask(uint16_t *enable_mask);
+esp_err_t touch_pad_clear_group_mask(uint16_t enable_mask);
+uint32_t  touch_pad_get_status();
+esp_err_t touch_pad_clear_status();
+uint32_t  touch_pad_get_int_status();
+uint32_t  touch_pad_get_scan_curr();
+esp_err_t touch_pad_intr_enable(touch_pad_intr_type_t type);
+esp_err_t touch_pad_intr_disable(touch_pad_intr_type_t type);
+uint32_t  touch_pad_intr_get_mask();
+esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg, touch_pad_intr_mask_t intr_mask);
+esp_err_t touch_pad_config(touch_pad_t touch_num);
+esp_err_t touch_pad_init();
+esp_err_t touch_pad_read_raw(touch_pad_t touch_num, uint32_t *raw_data);
+esp_err_t touch_pad_read_baseline(touch_pad_t touch_num, uint32_t *basedata);
+esp_err_t touch_pad_filter_baseline_read(touch_pad_t touch_num, uint32_t *basedata);
+esp_err_t touch_pad_filter_baseline_reset(touch_pad_t touch_num);
+esp_err_t touch_pad_read_debounce(touch_pad_t touch_num, uint32_t *debounce);
+esp_err_t touch_pad_read_thresh(touch_pad_t touch_num, uint32_t *thresh_out);
+esp_err_t touch_pad_filter_set_config(touch_filter_config_t filter_info);
+esp_err_t touch_pad_filter_get_config(touch_filter_config_t *filter_info);
+esp_err_t touch_pad_filter_start();
+esp_err_t touch_pad_filter_stop();
+esp_err_t touch_pad_denoise_enable();
+esp_err_t touch_pad_denoise_disable();
+esp_err_t touch_pad_denoise_set_config(touch_pad_denoise_t denoise);
+esp_err_t touch_pad_denoise_get_config(touch_pad_denoise_t *denoise);
+esp_err_t touch_pad_denoise_data_get(uint32_t *data);
+esp_err_t touch_pad_waterproof_set_config(touch_pad_waterproof_t waterproof);
+esp_err_t touch_pad_waterproof_get_config(touch_pad_waterproof_t *waterproof);
+esp_err_t touch_pad_waterproof_enable();
+esp_err_t touch_pad_waterproof_disable();
+esp_err_t touch_pad_approach_set_config(touch_pad_approach_t approach);
+esp_err_t touch_pad_approach_get_config(touch_pad_approach_t *approach);
+esp_err_t touch_pad_approach_disable();
+uint32_t touch_pad_approach_get_cnt(uint8_t pad);
+esp_err_t touch_pad_reset();
+void touch_pad_fake_trigger(touch_pad_t pad_num);
+
+/** sleep pad **/
+esp_err_t touch_pad_sleep_pad_config(touch_pad_t pad, uint32_t sleep_thr, uint8_t is_approach);
+void touch_sleep_baseline_get(uint32_t *baseline);
+void touch_sleep_debounce_get(uint32_t *debounce);
+void touch_sleep_approach_cnt_get(uint32_t *approach_cnt);
+#endif
 
 #ifdef __cplusplus
 }

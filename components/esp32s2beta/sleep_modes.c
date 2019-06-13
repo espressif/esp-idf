@@ -406,7 +406,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status()
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TOUCHPAD) {
         return TOUCH_PAD_MAX;
     }
-    uint32_t touch_mask = REG_GET_FIELD(SENS_SAR_TOUCH_CTRL2_REG, SENS_TOUCH_MEAS_EN);
+    uint32_t touch_mask = REG_GET_FIELD(RTC_CNTL_TOUCH_CTRL1_REG, RTC_CNTL_TOUCH_MEAS_NUM);
     assert(touch_mask != 0 && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
     return (touch_pad_t) (__builtin_ffs(touch_mask) - 1);
 }
