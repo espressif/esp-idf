@@ -1016,7 +1016,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * 
  *  Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
  *  For read operations, 8 bits of read result is stored into R0 register.
- *  For write operations, bits outside of val[high_bit:low_bit] are masked.
+ *  For write operations, val will be written to sub_addr at [high_bit:low_bit]. Bits outside of this range are masked.
  */
 #define I_I2C_RW(sub_addr, val, low_bit, high_bit, slave_sel, rw_bit) { .i2c = {\
         .i2c_addr = sub_addr, \
