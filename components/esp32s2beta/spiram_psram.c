@@ -570,6 +570,7 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spi_num, psram_cache_mode_t mode)
 {
     uint8_t k;
     SET_PERI_REG_MASK(SPI_MEM_USER_REG(spi_num), SPI_MEM_CS_SETUP);
+#warning "psram_spi_init: part of configuration missing for esp32s2beta"
 #if 0
     // SPI_CPOL & SPI_CPHA
     CLEAR_PERI_REG_MASK(SPI_MEM_MISC_REG(spi_num), SPI_MEM_CK_IDLE_EDGE);
@@ -627,6 +628,9 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     gpio_matrix_in(PSRAM_SPIWP_IO, SPIWP_IN_IDX, 0);
     gpio_matrix_out(PSRAM_SPIHD_IO, SPIHD_OUT_IDX, 0, 0);
     gpio_matrix_in(PSRAM_SPIHD_IO, SPIHD_IN_IDX, 0);
+
+#warning "psram_gpio_config: parts not implemented for esp32s2beta"
+
     switch (mode) {
         case PSRAM_CACHE_F80M_S40M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
@@ -713,6 +717,8 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     s_psram_mode = mode;
 
     periph_module_enable(PERIPH_SPI_MODULE);
+
+#warning "psram_enable: some code disabled for esp32s2beta"
 #if 0
     WRITE_PERI_REG(SPI_MEM_EXT3_REG(0), 0x1);
     CLEAR_PERI_REG_MASK(SPI_MEM_USER_REG(PSRAM_SPI_1), SPI_MEM_USR_PREP_HOLD_M);

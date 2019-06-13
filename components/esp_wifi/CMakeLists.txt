@@ -16,6 +16,11 @@ if (CONFIG_ESP32_NO_BLOBS OR CONFIG_ESP32S2_NO_BLOBS)
     set(link_binary_libs 0)
 endif()
 
+if (CONFIG_IDF_TARGET_ESP32S2BETA)
+    message(WARNING "No Wi-Fi libraries yet for esp32s2beta")
+    set(link_binary_libs 0)
+endif()
+
 if(link_binary_libs)
     set(COMPONENT_ADD_LDFRAGMENTS "linker.lf")
 endif()

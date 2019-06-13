@@ -289,6 +289,9 @@ static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t
 }
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#warning "test_event_on_timer_alarm not ported to esp32s2beta"
+#else
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
 void IRAM_ATTR test_event_on_timer_alarm(void* para)
 {
@@ -316,6 +319,7 @@ void IRAM_ATTR test_event_on_timer_alarm(void* para)
     }
 }
 #endif //CONFIG_ESP_EVENT_POST_FROM_ISR
+#endif //CONFIG_IDF_TARGET_ESP32S2BETA
 
 TEST_CASE("can create and delete event loops", "[event]")
 {
@@ -1188,6 +1192,9 @@ TEST_CASE("can properly prepare event data posted to loop", "[event]")
     TEST_TEARDOWN();
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#warning "can post events from interrupt handler not ported to esp32s2beta"
+#else
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
@@ -1223,7 +1230,8 @@ TEST_CASE("can post events from interrupt handler", "[event]")
 
     TEST_TEARDOWN();
 }
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32S2BETA
+#endif // CONFIG_ESP_EVENT_POST_FROM_ISR
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 TEST_CASE("can dump event loop profile", "[event]")
@@ -1277,4 +1285,4 @@ TEST_CASE("can dump event loop profile", "[event]")
 
     TEST_TEARDOWN();
 }
-#endif
+#endif // CONFIG_ESP_EVENT_LOOP_PROFILING

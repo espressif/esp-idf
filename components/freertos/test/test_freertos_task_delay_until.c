@@ -27,6 +27,10 @@
 
 static SemaphoreHandle_t task_delete_semphr;
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#warning "Test not ported to esp32s2beta"
+#else
+
 static void delaying_task(void* arg)
 {
     uint64_t ref_prev, ref_current;
@@ -72,3 +76,5 @@ TEST_CASE("Test vTaskDelayUntil", "[freertos]")
     vSemaphoreDelete(task_delete_semphr);
     ref_clock_deinit();
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32S2BETA

@@ -35,8 +35,6 @@
 #include "soc/pcnt_periph.h"
 #include "soc/gpio_periph.h"
 #include "soc/dport_reg.h"
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"

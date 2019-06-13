@@ -36,7 +36,6 @@
 #include "esp_pm.h"
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32
 
 static const char* I2S_TAG = "I2S";
 
@@ -1389,4 +1388,3 @@ int i2s_pop_sample(i2s_port_t i2s_num, void *sample, TickType_t ticks_to_wait)
         return bytes_pop;
     }
 }
-#endif

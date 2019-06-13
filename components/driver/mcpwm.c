@@ -25,7 +25,6 @@
 #include "driver/periph_ctrl.h"
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32
 
 static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1};
 static const char *MCPWM_TAG = "MCPWM";
@@ -730,4 +729,3 @@ esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *a
     ret = esp_intr_alloc((ETS_PWM0_INTR_SOURCE + mcpwm_num), intr_alloc_flags, fn, arg, handle);
     return ret;
 }
-#endif
