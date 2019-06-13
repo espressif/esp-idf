@@ -1,0 +1,4 @@
+[mapping:esp_gdbstub]
+archive: libesp_gdbstub.a
+entries:
+    * (noflash)
