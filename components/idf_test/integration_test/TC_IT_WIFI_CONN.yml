@@ -13,13 +13,13 @@ test cases:
   - ''
   - - SSC SSC1 ap -S -s <target_ssid> -t 0
     - - R SSC1 C +SAP:OK
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+  - - SSC SSC2 sta -C -s <target_ssid>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 2
     - - R SSC1 C +SAP:OK
   - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
-  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum>
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 3
     - - R SSC1 C +SAP:OK
   - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
@@ -29,6 +29,8 @@ test cases:
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 1
     - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -D
+    - - R SSC2 C +QAP:OK
   - - SSC SSC2 sta -S
     - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 5
@@ -69,16 +71,18 @@ test cases:
   - ''
   - - SSC SSC1 ap -S -s <target_ssid> -t 0 -n 1
     - - R SSC1 C +SAP:OK
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+  - - SSC SSC2 sta -C -s <target_ssid>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -t 0 -n 13
     - - R SSC1 C +SAP:OK
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+  - - SSC SSC2 sta -C -s <target_ssid>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -n 15
     - - R SSC1 C +SAP:OK
-  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+  - - SSC SSC2 sta -C -s <target_ssid>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC2 sta -D
+    - - R SSC2 C +QAP:OK
   - - SSC SSC2 sta -S
     - - R SSC2 RE "\+SCAN:%%s,.+,\d+,1"%%(<target_ssid>)
   execution time: 0.0
@@ -937,43 +941,6 @@ test cases:
   test point 1: basic function
   test point 2: beacon delay
   version: v1 (2016-8-15)
-- CI ready: 'Yes'
-  ID: WIFI_CONN_1101
-  SDK: ESP32_IDF
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 ram -Q
-    - - R SSC1 A <FREg>:\+FREEHEAP:(\d+)\r\n
-  - - SSC SSC1 op -W -a start
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 op -W -a stop
-    - - R SSC1 C +MODE:OK
-  - - SSC SSC1 ram -Q
-    - - R SSC1 P <FREg>
-  execution time: 0
-  expected result: |
-    1. get current heap size
-    2.OK
-    3.OK
-    4.heap size unchanged
-  initial condition: WIFISTO
-  level: Integration
-  module: WIFI MAC
-  steps: |
-    1. check heap size
-    2. wifi start
-    3. wifi stop
-    4. check heap size
-  sub module: WIFI Connect
-  summary: wifi start and stop, heap size unchanged
-  test environment: SSC_T1_4
-  test point 1: basic function
-  test point 2: wifi start and stop, heap size unchanged
-  version: v1 (2016-12-31)
 - CI ready: 'Yes'
   ID: WIFI_CONN_1201
   SDK: ESP32_IDF
