@@ -176,6 +176,7 @@ ESP-IDF 搜索组件时，会按照 ``COMPONENT_DIRS`` 指定的顺序依次进�
 -  ``CC``，``LD``，``AR``，``OBJCOPY``： gcc xtensa 交叉编译工具链中每个工具的完整路径。
 -  ``HOSTCC``，``HOSTLD``，``HOSTAR``： 主机本地工具链中每个工具的全名。
 -  ``IDF_VER``： ESP-IDF 的版本号，可以通过检索 ``$(IDF_PATH)/version.txt`` 文件（假如存在的话）或者使用 git 命令 ``git describe`` 来获取。这里推荐的格式是在一行中指定主 IDF 的发布版本号，例如标记为 ``v2.0`` 的发布版本或者是标记任意一次提交记录的 ``v2.0-275-g0efaa4f``。应用程序可以通过调用 :cpp:func:`esp_get_idf_version` 函数来使用该变量。
+-  ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: ESP-IDF 的组件版本，可用于条件表达式。请注意这些信息的精确度不如 ``IDF_VER`` 变量，版本号 ``v4.0-dev-*``， ``v4.0-beta1``， ``v4.0-rc1`` 和 ``v4.0`` 对应的 ``IDF_VERSION_*`` 变量值是相同的，但是 ``IDF_VER`` 的值是不同的。
 
 如果您在 ``component.mk`` 文件中修改这些变量，这并不会影响其它组件的构建，但可能会使您的组件变得难以构建或调试。
 
