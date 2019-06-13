@@ -169,4 +169,100 @@ A manual flashing command is also printed as part of ``make partition_table``.
 
 Note that updating the partition table doesn't erase data that may have been stored according to the old partition table. You can use ``make erase_flash`` (or ``esptool.py erase_flash``) to erase the entire flash contents.
 
+Partition Tool (parttool.py)
+----------------------------
+
+The component `partition_table` provides a tool :component_file:`parttool.py<partition_table/parttool.py>` for performing partition-related operations on a target device. The following operations can be performed using the tool:
+
+  - reading a partition and saving the contents to a file (read_partition)
+  - writing the contents of a file to a partition (write_partition)
+  - erasing a partition (erase_partition)
+  - retrieving info such as offset and size of a given partition (get_partition_info)
+
+The tool can either be imported and used from another Python script or invoked from shell script for users wanting to perform operation programmatically. This is facilitated by the tool's Python API
+and command-line interface, respectively.
+
+Python API
+~~~~~~~~~~~
+
+Before anything else, make sure that the `parttool` module is imported.
+
+.. code-block:: python
+
+  import sys
+  import os
+
+  idf_path = os.environ["IDF_PATH"]  # get value of IDF_PATH from environment
+  parttool_dir = os.path.join(idf_path, "components", "partition_table")  # parttool.py lives in $IDF_PATH/components/partition_table
+
+  sys.path.append(parttool_dir)  # this enables Python to find parttool module
+  from parttool import *  # import all names inside parttool module
+
+The starting point for using the tool's Python API to do is create a `ParttoolTarget` object:
+
+.. code-block:: python
+
+  # Create a partool.py target device connected on serial port /dev/ttyUSB1
+  target = ParttoolTarget("/dev/ttyUSB1")
+
+The created object can now be used to perform operations on the target device:
+
+.. code-block:: python
+
+  # Erase partition with name 'storage'
+  target.erase_partition(PartitionName("storage"))
+
+  # Read partition with type 'data' and subtype 'spiffs' and save to file 'spiffs.bin'
+  target.read_partition(PartitionType("data", "spiffs"), "spiffs.bin")
+
+  # Write to partition 'factory' the contents of a file named 'factory.bin'
+  target.write_partition(PartitionName("factory"), "factory.bin")
+
+  # Print the size of default boot partition
+  storage = target.get_partition_info(PARTITION_BOOT_DEFAULT)
+  print(storage.size)
+
+The partition to operate on is specified using `PartitionName` or `PartitionType` or PARTITION_BOOT_DEFAULT. As the name implies, these can be used to refer
+to partitions of a particular name, type-subtype combination, or the default boot partition.
+
+More information on the Python API is available in the docstrings for the tool.
+
+Command-line Interface
+~~~~~~~~~~~~~~~~~~~~~~
+
+The command-line interface of `parttool.py` has the following structure:
+
+.. code-block:: bash
+
+  parttool.py [command-args] [subcommand] [subcommand-args]
+
+  - command-args - These are arguments that are needed for executing the main command (parttool.py), mostly pertaining to the target device
+  - subcommand - This is the operation to be performed
+  - subcommand-args - These are arguments that are specific to the chosen operation
+
+.. code-block:: bash
+
+  # Erase partition with name 'storage'
+  parttool.py --port "/dev/ttyUSB1" erase_partition --partition-name=storage
+
+  # Read partition with type 'data' and subtype 'spiffs' and save to file 'spiffs.bin'
+  parttool.py --port "/dev/ttyUSB1" read_partition --partition-type=data --partition-subtype=spiffs "spiffs.bin"
+
+  # Write to partition 'factory' the contents of a file named 'factory.bin'
+  parttool.py --port "/dev/ttyUSB1" write_partition --partition-name=factory "factory.bin"
+
+  # Print the size of default boot partition
+  parttool.py --port "/dev/ttyUSB1" get_partition_info --partition-boot-default --info size
+
+More information can be obtained by specifying `--help` as argument:
+
+.. code-block:: bash
+
+  # Display possible subcommands and show main command argument descriptions
+  parttool.py --help
+
+  # Show descriptions for specific subcommand arguments
+  parttool.py [subcommand] --help
+
+
 .. _secure boot: security/secure-boot.rst

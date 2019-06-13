@@ -33,10 +33,8 @@ if(NOT BOOTLOADER_BUILD)
         idf_build_get_property(idf_path IDF_PATH)
         idf_build_get_property(python PYTHON)
         add_custom_command(OUTPUT ${blank_otadata_file}
-            COMMAND ${python} ${idf_path}/components/partition_table/parttool.py
-            --partition-type data --partition-subtype ota -q
-            --partition-table-file ${PARTITION_CSV_PATH} generate_blank_partition_file
-            --output ${blank_otadata_file})
+            COMMAND ${python} ${idf_path}/components/partition_table/gen_empty_partition.py
+            ${otadata_size} ${blank_otadata_file})
 
         add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
         add_dependencies(app blank_ota_data)
@@ -44,10 +42,16 @@ if(NOT BOOTLOADER_BUILD)
         set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
 
         add_custom_target(read_otadata DEPENDS "${PARTITION_CSV_PATH}"
-                        COMMAND ${otatool_py} --partition-table-file ${PARTITION_CSV_PATH} read_otadata)
+                        COMMAND ${otatool_py} 
+                        --partition-table-file ${PARTITION_CSV_PATH} 
+                        --partition-table-offset ${PARTITION_TABLE_OFFSET}
+                        read_otadata)
 
         add_custom_target(erase_otadata DEPENDS "${PARTITION_CSV_PATH}"
-                        COMMAND ${otatool_py} --partition-table-file ${PARTITION_CSV_PATH} erase_otadata)
+                        COMMAND ${otatool_py}
+                        --partition-table-file ${PARTITION_CSV_PATH}
+                        --partition-table-offset ${PARTITION_TABLE_OFFSET}
+                        erase_otadata)
 
         esptool_py_flash_project_args(otadata ${otadata_offset} "${blank_otadata_file}" FLASH_IN_PROJECT)
     endif()
