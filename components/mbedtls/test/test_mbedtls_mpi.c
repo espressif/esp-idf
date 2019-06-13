@@ -140,12 +140,6 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
     //mbedtls_mpi_printf("M", &M);
 
     /* Z = (X ^ Y) mod M */
-<<<<<<< HEAD
-    TEST_ASSERT_FALSE(mbedtls_mpi_exp_mod(&Z, &X, &Y, &M, NULL));
-
-    mbedtls_mpi_write_string(&Z, 16, z_buf, sizeof(z_buf)-1, &z_buf_len);
-    TEST_ASSERT_EQUAL_STRING_MESSAGE(z_str, z_buf, "mbedtls_mpi_exp_mod incorrect");
-=======
     if (ret_error != mbedtls_mpi_exp_mod(&Z, &X, &Y, &M, NULL)) {
         fail = true;
     }
@@ -169,7 +163,6 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
         printf(" PASS\n");
     }
     return fail;
->>>>>>> mbedtls: Add UTs for modexp
 }
 
 TEST_CASE("test MPI modexp", "[bignum]")

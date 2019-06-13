@@ -419,7 +419,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
         Z->s = -1;
         MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(Z, M, Z));
     } else {
-        Z->s = 1;
+        Z->s = 1; 
     }
 
  cleanup:
