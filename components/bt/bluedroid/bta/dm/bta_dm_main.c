@@ -56,6 +56,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_enable,                          /* BTA_DM_API_ENABLE_EVT */
     bta_dm_disable,                         /* BTA_DM_API_DISABLE_EVT */
     bta_dm_set_dev_name,                    /* BTA_DM_API_SET_NAME_EVT */
+    bta_dm_config_eir,                      /* BTA_DM_API_CONFIG_EIR_EVT */
     bta_dm_set_visibility,                  /* BTA_DM_API_SET_VISIBILITY_EVT */
     bta_dm_acl_change,                      /* BTA_DM_ACL_CHANGE_EVT */
     bta_dm_add_device,                      /* BTA_DM_API_ADD_DEVICE_EVT */

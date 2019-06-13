@@ -88,6 +88,7 @@ typedef enum {
     BT_STATUS_PARAM_OUT_OF_RANGE,
     BT_STATUS_TIMEOUT,
     BT_STATUS_MEMORY_FULL,
+    BT_STATUS_EIR_TOO_LARGE,
 } bt_status_t;
 
 #ifndef CPU_LITTLE_ENDIAN

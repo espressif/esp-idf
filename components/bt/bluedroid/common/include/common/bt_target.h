@@ -1073,6 +1073,14 @@
 #define BTM_BLE_ADV_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
 #endif
 
+#ifndef BTM_TX_POWER
+#define BTM_TX_POWER {-12, -9, -6, -3, 0, 3, 6, 9}
+#endif
+
+#ifndef BTM_TX_POWER_LEVEL_MAX
+#define BTM_TX_POWER_LEVEL_MAX 7
+#endif
+
 
 #ifndef BLE_BATCH_SCAN_INCLUDED
 #define BLE_BATCH_SCAN_INCLUDED  TRUE
