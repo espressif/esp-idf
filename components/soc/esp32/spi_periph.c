@@ -14,6 +14,8 @@
 
 #include "soc/spi_periph.h"
 
+#define FUNC_SPI    1   //all pins of SPI1, HSPI and VSPI shares this function number
+
 /*
  Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc
 */
@@ -40,6 +42,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI1_INTR_SOURCE,
         .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
         .module = PERIPH_SPI_MODULE,
+        .func = FUNC_SPI,
         .hw = &SPI1
     }, {
         .spiclk_out = HSPICLK_OUT_IDX,
@@ -63,6 +66,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI2_INTR_SOURCE,
         .irq_dma = ETS_SPI2_DMA_INTR_SOURCE,
         .module = PERIPH_HSPI_MODULE,
+        .func = FUNC_SPI,
         .hw = &SPI2
     }, {
         .spiclk_out = VSPICLK_OUT_IDX,
@@ -86,6 +90,7 @@ const spi_signal_conn_t spi_periph_signal[3] = {
         .irq = ETS_SPI3_INTR_SOURCE,
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
         .module = PERIPH_VSPI_MODULE,
+        .func = FUNC_SPI,
         .hw = &SPI3
     }
 };

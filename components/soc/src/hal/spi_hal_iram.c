@@ -21,7 +21,9 @@ void spi_hal_setup_device(const spi_hal_context_t *hal)
 {
     //Configure clock settings
     spi_dev_t *hw = hal->hw;
+#ifdef SOC_SPI_SUPPORT_AS_CS
     spi_ll_master_set_cksel(hw, hal->cs_pin_id, hal->as_cs);
+#endif
     spi_ll_master_set_pos_cs(hw, hal->cs_pin_id, hal->positive_cs);
     spi_ll_master_set_clock_by_reg(hw, &hal->timing_conf->clock_reg);
     //Configure bit order
