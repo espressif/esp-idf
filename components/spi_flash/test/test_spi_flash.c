@@ -106,6 +106,10 @@ typedef struct {
     size_t repeat_count;
 } block_task_arg_t;
 
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define int_clr_timers int_clr
+#endif
+
 static void IRAM_ATTR timer_isr(void* varg) {
     block_task_arg_t* arg = (block_task_arg_t*) varg;
     TIMERG0.int_clr_timers.t0 = 1;
