@@ -166,48 +166,6 @@ static rtc_gpio_info_t* rtc_gpio[RTC_GPIO_NUMBER] = {
 };
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-typedef volatile struct {
-    uint32_t reserved0:         13;
-    uint32_t fun_ie:             1;             /*input enable in work mode*/
-    uint32_t slp_oe:             1;             /*output enable in sleep mode*/
-    uint32_t slp_ie:             1;             /*input enable in sleep mode*/
-    uint32_t slp_sel:            1;             /*1: enable sleep mode during sleep 0: no sleep mode*/
-    uint32_t fun_sel:            2;             /*function sel*/
-    uint32_t mux_sel:            1;             /*1: use RTC GPIO 0: use digital GPIO*/
-    uint32_t reserved20:         7;
-    uint32_t rue:                1;             /*RUE*/
-    uint32_t rde:                1;             /*RDE*/
-    uint32_t drv:                2;             /*DRV*/
-    uint32_t reserved31:         1;
-} rtc_gpio_info_t;
-
-static rtc_gpio_info_t* rtc_gpio[RTC_GPIO_NUMBER] = {
-    &RTCIO.touch_pad[0].val,
-    &RTCIO.touch_pad[1].val,
-    &RTCIO.touch_pad[2].val,
-    &RTCIO.touch_pad[3].val,
-    &RTCIO.touch_pad[4].val,
-    &RTCIO.touch_pad[5].val,
-    &RTCIO.touch_pad[6].val,
-    &RTCIO.touch_pad[7].val,
-    &RTCIO.touch_pad[8].val,
-    &RTCIO.touch_pad[9].val,
-    &RTCIO.touch_pad[10].val,
-    &RTCIO.touch_pad[11].val,
-    &RTCIO.touch_pad[12].val,
-    &RTCIO.touch_pad[13].val,
-    &RTCIO.touch_pad[14].val,
-    &RTCIO.xtal_32p_pad.val,
-    &RTCIO.xtal_32n_pad.val,
-    &RTCIO.pad_dac[0].val,
-    &RTCIO.pad_dac[1].val,
-    &RTCIO.rtc_pad19.val,
-    &RTCIO.rtc_pad20.val,
-    &RTCIO.rtc_pad21.val
-};
-#endif
-
 typedef enum {
     ADC_CTRL_RTC = 0,
     ADC_CTRL_ULP = 1,
