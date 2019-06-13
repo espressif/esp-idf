@@ -15,7 +15,6 @@
 #include "driver/adc.h"
 #include "driver/dac.h"
 #include "esp_system.h"
-#include "esp_adc_cal.h"
 
 #define DAC_EXAMPLE_CHANNEL     CONFIG_EXAMPLE_DAC_CHANNEL
 #define ADC2_EXAMPLE_CHANNEL    CONFIG_EXAMPLE_ADC2_CHANNEL
