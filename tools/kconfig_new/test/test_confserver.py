@@ -56,9 +56,7 @@ def main():
 
         cmdline = "../confserver.py --kconfig Kconfig --config %s" % temp_sdkconfig_path
         print("Running: %s" % cmdline)
-        p = pexpect.spawn(cmdline, timeout=0.5)
-        p.logfile = args.logfile
-        p.setecho(False)
+        p = pexpect.spawn(cmdline, timeout=30, logfile=args.logfile, echo=False, use_poll=True, maxread=1)
 
         def expect_json():
             # run p.expect() to expect a json object back, and return it as parsed JSON
