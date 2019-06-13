@@ -73,13 +73,13 @@ typedef struct {
 #endif
 } spi_slave_t;
 
-static spi_slave_t *spihost[3];
+static spi_slave_t *spihost[SOC_SPI_PERIPH_NUM];
 
 static void IRAM_ATTR spi_intr(void *arg);
 
 static inline bool bus_is_iomux(spi_slave_t *host)
 {
-    return host->flags&SPICOMMON_BUSFLAG_NATIVE_PINS;
+    return host->flags&SPICOMMON_BUSFLAG_IOMUX_PINS;
 }
 
 static void freeze_cs(spi_slave_t *host)
@@ -150,7 +150,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         spihost[host]->max_transfer_sz = dma_desc_ct * SPI_MAX_DMA_LEN;
     } else {
         //We're limited to non-DMA transfers: the SPI work registers can hold 64 bytes at most.
-        spihost[host]->max_transfer_sz = 16 * 4;
+        spihost[host]->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     }
 #ifdef CONFIG_PM_ENABLE
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_slave",
