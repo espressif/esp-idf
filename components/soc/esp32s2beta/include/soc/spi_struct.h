@@ -173,20 +173,20 @@ typedef volatile struct {
     } misc;
     union {
         struct {
-            uint32_t reserved0:  4;                       /*reserved*/
-            uint32_t trans_done: 1;                       /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
-            uint32_t rd_buf_inten:     1;                   /*The interrupt enable bit for the completion of read-buffer operation in the slave mode.*/
-            uint32_t wr_buf_inten:     1;                   /*The interrupt enable bit for the completion of write-buffer operation in the slave mode.*/
-            uint32_t rd_dma_inten:     1;                   /*The interrupt enable bit for the completion of read-status operation in the slave mode.*/
-            uint32_t wr_dma_inten:     1;                   /*The interrupt enable bit for the completion of write-status operation in the slave mode.*/
-            uint32_t trans_inten:      1;                   /*The interrupt enable bit for the completion of any operation in both the master mode and the slave mode.*/
-            uint32_t reserved10:13;                       /*reserved*/
-            uint32_t trans_cnt:  4;                       /*The operations counter in both the master mode and the slave mode.*/
-            uint32_t reserved27: 1;                       /*reserved*/
-            uint32_t reserved28: 1;                       /*reserved*/
-            uint32_t reserved29: 1;                       /*reserved*/
-            uint32_t slave_mode: 1;                       /*Set SPI work mode. 1: slave mode 0: master mode.*/
-            uint32_t sync_reset: 1;                       /*Software reset enable  reset the spi clock line cs line and data lines.*/
+            uint32_t reserved0:          4;               /*reserved*/
+            uint32_t trans_done:         1;               /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
+            uint32_t int_rd_buf_done_en: 1;               /*spi_slv_rd_buf Interrupt enable. 1: enable 0: disable*/
+            uint32_t int_wr_buf_done_en: 1;               /*spi_slv_wr_buf Interrupt enable. 1: enable 0: disable*/
+            uint32_t int_rd_dma_done_en: 1;               /*spi_slv_rd_dma Interrupt enable. 1: enable 0: disable*/
+            uint32_t int_wr_dma_done_en: 1;               /*spi_slv_wr_dma Interrupt enable. 1: enable 0: disable*/
+            uint32_t int_trans_done_en:  1;               /*spi_trans_done Interrupt enable. 1: enable 0: disable*/
+            uint32_t reserved10:        13;               /*reserved*/
+            uint32_t trans_cnt:          4;               /*The operations counter in both the master mode and the slave mode.*/
+            uint32_t reserved27:         1;               /*reserved*/
+            uint32_t reserved28:         1;               /*reserved*/
+            uint32_t reserved29:         1;               /*reserved*/
+            uint32_t slave_mode:         1;               /*Set SPI work mode. 1: slave mode 0: master mode.*/
+            uint32_t sync_reset:         1;               /*Software reset enable  reset the spi clock line cs line and data lines.*/
         };
         uint32_t val;
     } slave;
@@ -254,23 +254,28 @@ typedef volatile struct {
     } hold;
     union {
         struct {
-            uint32_t reserved0:         2;                /*reserved*/
-            uint32_t in_rst:            1;                /*The bit is used to reset in dma fsm and in data fifo pointer.*/
-            uint32_t out_rst:           1;                /*The bit is used to reset out dma fsm and out data fifo pointer.*/
-            uint32_t ahbm_fifo_rst:     1;                /*Reset spi dma ahb master fifo pointer.*/
-            uint32_t ahbm_rst:          1;                /*Reset spi dma ahb master.*/
-            uint32_t in_loop_test:      1;                /*Set bit to test in link.*/
-            uint32_t out_loop_test:     1;                /*Set bit to test out link.*/
-            uint32_t out_auto_wrback:   1;                /*when the bit is set  DMA continue to use the next inlink node when the length of inlink is 0.*/
-            uint32_t out_eof_mode:      1;                /*out eof flag generation mode . 1: when dma pop all data from fifo  0:when ahb push all data to fifo.*/
-            uint32_t outdscr_burst_en:  1;                /*read descriptor use burst mode when read data for memory.*/
-            uint32_t indscr_burst_en:   1;                /*read descriptor use burst mode when write data to memory.*/
-            uint32_t out_data_burst_en: 1;                /*spi dma read data from memory in burst mode.*/
-            uint32_t mem_trans_en:      1;
-            uint32_t dma_rx_stop:       1;                /*spi dma read data stop  when in continue tx/rx mode.*/
-            uint32_t dma_tx_stop:       1;                /*spi dma write data stop when in continue tx/rx mode.*/
-            uint32_t dma_continue:      1;                /*spi dma continue tx/rx data.*/
-            uint32_t reserved17:       15;                /*reserved*/
+            uint32_t reserved0:             2;            /*reserved*/
+            uint32_t in_rst:                1;            /*The bit is used to reset in dma fsm and in data fifo pointer.*/
+            uint32_t out_rst:               1;            /*The bit is used to reset out dma fsm and out data fifo pointer.*/
+            uint32_t ahbm_fifo_rst:         1;            /*Reset spi dma ahb master fifo pointer.*/
+            uint32_t ahbm_rst:              1;            /*Reset spi dma ahb master.*/
+            uint32_t in_loop_test:          1;            /*Set bit to test in link.*/
+            uint32_t out_loop_test:         1;            /*Set bit to test out link.*/
+            uint32_t out_auto_wrback:       1;            /*when the bit is set  DMA continue to use the next inlink node when the length of inlink is 0.*/
+            uint32_t out_eof_mode:          1;            /*out eof flag generation mode . 1: when dma pop all data from fifo  0:when ahb push all data to fifo.*/
+            uint32_t outdscr_burst_en:      1;            /*read descriptor use burst mode when read data for memory.*/
+            uint32_t indscr_burst_en:       1;            /*read descriptor use burst mode when write data to memory.*/
+            uint32_t out_data_burst_en:     1;            /*spi dma read data from memory in burst mode.*/
+            uint32_t mem_trans_en:          1;
+            uint32_t dma_rx_stop:           1;            /*spi dma read data stop  when in continue tx/rx mode.*/
+            uint32_t dma_tx_stop:           1;            /*spi dma write data stop when in continue tx/rx mode.*/
+            uint32_t dma_continue:          1;            /*spi dma continue tx/rx data.*/
+            uint32_t continue_pop_data_clr: 1;            /*Disable spi slave dma to pop data continuously in next transmission in dma half duplex slave mode. 1: disable continue transmit.   0: enable continue transmit.*/
+            uint32_t slv_rx_seg_trans_en:   1;           /*enable DMA segment transfer in slave mode*/
+            uint32_t reserved19:           3;            /*reserved*/
+            uint32_t infifo_full_clr:        1;
+            uint32_t outfifo_empty_clr:      1;
+            uint32_t reserved24:          8;
         };
         uint32_t val;
     } dma_conf;

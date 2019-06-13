@@ -15,10 +15,8 @@
 
 #include <string.h>
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
 #include "driver/spi_master.h"
 #include "soc/spi_periph.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -32,9 +30,6 @@
 #include "driver/spi_common.h"
 #include "stdatomic.h"
 #include "hal/spi_hal.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#include "cas.h"
-#endif
 
 static const char *SPI_TAG = "spi";
 
@@ -60,6 +55,9 @@ typedef struct spi_device_t spi_device_t;
 
 //Periph 1 is 'claimed' by SPI flash code.
 static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false),
+#if SOC_SPI_PERIPH_NUM >= 4
+        ATOMIC_VAR_INIT(false),
+#endif
 };
 static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
 static uint8_t spi_dma_chan_enabled = 0;
@@ -112,7 +110,20 @@ spi_dev_t *spicommon_hw_for_host(spi_host_device_t host)
 
 static inline uint32_t get_dma_periph(int dma_chan)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    if (dma_chan==1) {
+        return PERIPH_SPI2_DMA_MODULE;
+    } else if (dma_chan==2) {
+        return PERIPH_SPI3_DMA_MODULE;
+    } else if (dma_chan==3) {
+        return PERIPH_SPI_SHARED_DMA_MODULE;
+    } else {
+        abort();
+        return -1;
+    }
+#elif defined(CONFIG_IDF_TARGET_ESP32)
     return PERIPH_SPI_DMA_MODULE;
+#endif
 }
 
 bool spicommon_dma_chan_claim (int dma_chan)
@@ -367,21 +378,12 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-        if (bus_config->spicd_io_num >= 0) {
-            gpio_set_direction(bus_config->spicd_io_num, GPIO_MODE_INPUT_OUTPUT);
-            gpio_matrix_out(bus_config->spicd_io_num, spi_periph_signal[host].spicd_out, false, false);
-            gpio_matrix_in(bus_config->spicd_io_num, spi_periph_signal[host].spicd_in, false);
-            PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->spicd_io_num]);
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spicd_io_num], FUNC_GPIO);
-        }
-#endif
     }
 
     //Select DMA channel.
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
     DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
     if (dma_chan==VSPI_HOST) {
         DPORT_SET_PERI_REG_MASK(DPORT_SPI_DMA_CHAN_SEL_REG, DPORT_SPI_SHARED_DMA_SEL_M);
     }
@@ -452,9 +454,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
             gpio_set_direction(cs_io_num, GPIO_MODE_INPUT);
         }
         if (cs_num == 0) gpio_matrix_in(cs_io_num, spi_periph_signal[host].spics_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[cs_io_num]);
-#endif
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
     }
 }
@@ -483,13 +483,13 @@ void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const 
 /*
 Code for workaround for DMA issue in ESP32 v0/v1 silicon
 */
-
-
+#if CONFIG_IDF_TARGET_ESP32
 static volatile int dmaworkaround_channels_busy[2] = {0, 0};
 static dmaworkaround_cb_t dmaworkaround_cb;
 static void *dmaworkaround_cb_arg;
 static portMUX_TYPE dmaworkaround_mux = portMUX_INITIALIZER_UNLOCKED;
 static int dmaworkaround_waiting_for_chan = 0;
+#endif
 
 bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
 {
@@ -510,14 +510,19 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     }
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
     return ret;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#else
+    //no need to reset
     return true;
 #endif
 }
 
 bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress()
 {
+#if CONFIG_IDF_TARGET_ESP32
     return (dmaworkaround_waiting_for_chan != 0);
+#else
+    return false;
+#endif
 }
 
 void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
@@ -539,9 +544,9 @@ void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
 
 void IRAM_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
 {
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan-1] = 1;
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
-}
-
 #endif
+}

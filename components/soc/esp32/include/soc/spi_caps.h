@@ -1,9 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SPI_CAPS_H_
-#define _SOC_SPI_CAPS_H_
+#pragma once
 
 #define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    2
@@ -47,5 +46,6 @@
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
 #define SOC_SPI_SUPPORT_AS_CS   1   //Support to toggle the CS while the clock toggles
-
-#endif /* _SOC_SPI_CAPS_H_ */
+//#define SOC_SPI_SUPPORT_DDRCLK
+//#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
+//#define SOC_SPI_SUPPORT_CD_SIG
