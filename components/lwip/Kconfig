@@ -1,5 +1,11 @@
 menu "LWIP"
 
+    config LWIP_LOCAL_HOSTNAME
+        string "Local netif hostname"
+        default 'espressif'
+        help
+            The name this device will report to other devices on the network
+            
     config LWIP_L2_TO_L3_COPY
         bool "Enable copy between Layer2 and Layer3 packets"
         default n
