@@ -14,7 +14,6 @@
 
 #include <string.h>
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
 #include <hal/spi_ll.h>
 #include <hal/spi_slave_hal.h>
 #include <soc/lldesc.h>
@@ -32,10 +31,9 @@
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "soc/soc_memory_layout.h"
-#include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
-#include "esp32/rom/ets_sys.h"
+
 static const char *SPI_TAG = "spi_slave";
 #define SPI_CHECK(a, str, ret_val) \
     if (!(a)) { \
@@ -105,7 +103,11 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     esp_err_t err;
     //We only support HSPI/VSPI, period.
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
+#if defined(CONFIG_IDF_TARGET_ESP32)
     SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
+    SPI_CHECK( dma_chan == 0 || dma_chan == host, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM)==0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
@@ -393,4 +395,3 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     if (do_yield) portYIELD_FROM_ISR();
 }
 
-#endif

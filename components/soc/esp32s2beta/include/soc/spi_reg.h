@@ -493,7 +493,7 @@ extern "C" {
 #define SPI_SLAVE_CS_POL_V  0x1
 #define SPI_SLAVE_CS_POL_S  23
 /* SPI_MASTER_CS_POL : R/W ;bitpos:[8:6] ;default: 3'b0 ; */
-/*description: In the master mode the bits are the polarity of spi cs line 
+/*description: In the master mode the bits are the polarity of spi cs line
  the value is equivalent to spi_cs ^ spi_master_cs_pol.*/
 #define SPI_MASTER_CS_POL  0x00000007
 #define SPI_MASTER_CS_POL_M  ((SPI_MASTER_CS_POL_V)<<(SPI_MASTER_CS_POL_S))
@@ -543,12 +543,36 @@ extern "C" {
 #define SPI_TRANS_CNT_M  ((SPI_TRANS_CNT_V)<<(SPI_TRANS_CNT_S))
 #define SPI_TRANS_CNT_V  0xF
 #define SPI_TRANS_CNT_S  23
-/* SPI_INT_EN : R/W ;bitpos:[9:5] ;default: 5'b1_1111 ; */
-/*description: Interrupt enable bits for the below 5 sources*/
-#define SPI_INT_EN  0x0000001F
-#define SPI_INT_EN_M  ((SPI_INT_EN_V)<<(SPI_INT_EN_S))
-#define SPI_INT_EN_V  0x1F
-#define SPI_INT_EN_S  5
+/* SPI_INT_TRANS_DONE_EN : R/W ;bitpos:[9] ;default: 1'b1 ; */
+/*description: spi_trans_done Interrupt enable. 1: enable 0: disable*/
+#define SPI_INT_TRANS_DONE_EN  (BIT(9))
+#define SPI_INT_TRANS_DONE_EN_M  (BIT(9))
+#define SPI_INT_TRANS_DONE_EN_V  0x1
+#define SPI_INT_TRANS_DONE_EN_S  9
+/* SPI_INT_WR_DMA_DONE_EN : R/W ;bitpos:[8] ;default: 1'b0 ; */
+/*description: spi_slv_wr_dma Interrupt enable. 1: enable 0: disable*/
+#define SPI_INT_WR_DMA_DONE_EN  (BIT(8))
+#define SPI_INT_WR_DMA_DONE_EN_M  (BIT(8))
+#define SPI_INT_WR_DMA_DONE_EN_V  0x1
+#define SPI_INT_WR_DMA_DONE_EN_S  8
+/* SPI_INT_RD_DMA_DONE_EN : R/W ;bitpos:[7] ;default: 1'b0 ; */
+/*description: spi_slv_rd_dma Interrupt enable. 1: enable 0: disable*/
+#define SPI_INT_RD_DMA_DONE_EN  (BIT(7))
+#define SPI_INT_RD_DMA_DONE_EN_M  (BIT(7))
+#define SPI_INT_RD_DMA_DONE_EN_V  0x1
+#define SPI_INT_RD_DMA_DONE_EN_S  7
+/* SPI_INT_WR_BUF_DONE_EN : R/W ;bitpos:[6] ;default: 1'b0 ; */
+/*description: spi_slv_wr_buf Interrupt enable. 1: enable 0: disable*/
+#define SPI_INT_WR_BUF_DONE_EN  (BIT(6))
+#define SPI_INT_WR_BUF_DONE_EN_M  (BIT(6))
+#define SPI_INT_WR_BUF_DONE_EN_V  0x1
+#define SPI_INT_WR_BUF_DONE_EN_S  6
+/* SPI_INT_RD_BUF_DONE_EN : R/W ;bitpos:[5] ;default: 1'b0 ; */
+/*description: spi_slv_rd_buf Interrupt enable. 1: enable 0: disable*/
+#define SPI_INT_RD_BUF_DONE_EN  (BIT(5))
+#define SPI_INT_RD_BUF_DONE_EN_M  (BIT(5))
+#define SPI_INT_RD_BUF_DONE_EN_V  0x1
+#define SPI_INT_RD_BUF_DONE_EN_S  5
 /* SPI_TRANS_DONE : R/W ;bitpos:[4] ;default: 1'b0 ; */
 /*description: The interrupt raw bit for the completion of any operation in
  both the master mode and the slave mode.*/
@@ -693,6 +717,13 @@ extern "C" {
 #define SPI_INT_HOLD_ENA_S  0
 
 #define SPI_DMA_CONF_REG(i)          (REG_SPI_BASE(i) + 0x058)
+/* SPI_CONTINUE_POP_DATA_CLR : R/W ;bitpos:[17] ;default: 1'b0 ; */
+/*description: Disable spi slave dma to pop data continuously in next transmission
+ in dma half duplex slave mode. 1: disable continue transmit.   0: enable continue transmit.*/
+#define SPI_CONTINUE_POP_DATA_CLR  (BIT(17))
+#define SPI_CONTINUE_POP_DATA_CLR_M  (BIT(17))
+#define SPI_CONTINUE_POP_DATA_CLR_V  0x1
+#define SPI_CONTINUE_POP_DATA_CLR_S  17
 /* SPI_DMA_CONTINUE : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: spi dma continue tx/rx data.*/
 #define SPI_DMA_CONTINUE  (BIT(16))
@@ -1628,7 +1659,7 @@ extern "C" {
 #define SPI_SOP_ITL_S  0
 
 #define SPI_DATE_REG(i)          (REG_SPI_BASE(i) + 0x3FC)
-/* SPI_DATE : RW ;bitpos:[27:0] ;default: 32'h1809190 ; */
+/* SPI_DATE : RW ;bitpos:[27:0] ;default: 32'h1810100 ; */
 /*description: SPI register version.*/
 #define SPI_DATE  0x0FFFFFFF
 #define SPI_DATE_M  ((SPI_DATE_V)<<(SPI_DATE_S))

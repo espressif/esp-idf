@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "esp32/rom/lldesc.h"
+#include "soc/lldesc.h"
 #include "soc/spi_periph.h"
 #include "hal/spi_types.h"
 #include "sdkconfig.h"
@@ -106,9 +106,6 @@ typedef struct {
     int sclk_io_num;                ///< GPIO pin for Spi CLocK signal, or -1 if not used.
     int quadwp_io_num;              ///< GPIO pin for WP (Write Protect) signal which is used as D2 in 4-bit communication modes, or -1 if not used.
     int quadhd_io_num;              ///< GPIO pin for HD (HolD) signal which is used as D3 in 4-bit communication modes, or -1 if not used.
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-    int spicd_io_num;               ///< CD GPIO pin for this device, or -1 if not used
-#endif
     int max_transfer_sz;            ///< Maximum transfer size, in bytes. Defaults to 4094 if 0.
     uint32_t flags;                 ///< Abilities of bus to be checked by the driver. Or-ed value of ``SPICOMMON_BUSFLAG_*`` flags.
     int intr_flags;    /**< Interrupt flag for the bus to set the priority, and IRAM attribute, see
