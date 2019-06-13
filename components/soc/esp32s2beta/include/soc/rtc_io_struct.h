@@ -98,18 +98,7 @@ typedef volatile struct {
             uint32_t reserved11:                 21;
         };
         uint32_t val;
-    } pin[21];
-    union {
-        struct {
-            uint32_t reserved0:                    2;
-            uint32_t rtc_gpio_pin21_pad_driver:    1;   /*if set to 0: normal output  if set to 1: open drain*/
-            uint32_t reserved3:                    4;
-            uint32_t rtc_gpio_pin21_int_type:      3;   /*if set to 0: GPIO interrupt disable   if set to 1: rising edge trigger   if set to 2: falling edge trigger  if set to 3: any edge trigger  if set to 4: low level trigger   if set to 5: high level trigger*/
-            uint32_t rtc_gpio_pin21_wakeup_enable: 1;   /*RTC GPIO wakeup enable bit*/
-            uint32_t reserved11:                  21;
-        };
-        uint32_t val;
-    } pin21;
+    } pin[22];
     union {
         struct {
             uint32_t sel0:                    5;

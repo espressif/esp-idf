@@ -57,6 +57,23 @@ typedef struct {
  */
 extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
 
+typedef volatile struct {
+    uint32_t reserved0:         13;
+    uint32_t fun_ie:             1;             /*input enable in work mode*/
+    uint32_t slp_oe:             1;             /*output enable in sleep mode*/
+    uint32_t slp_ie:             1;             /*input enable in sleep mode*/
+    uint32_t slp_sel:            1;             /*1: enable sleep mode during sleep 0: no sleep mode*/
+    uint32_t fun_sel:            2;             /*function sel*/
+    uint32_t mux_sel:            1;             /*1: use RTC GPIO 0: use digital GPIO*/
+    uint32_t reserved20:         7;
+    uint32_t rue:                1;             /*RUE*/
+    uint32_t rde:                1;             /*RDE*/
+    uint32_t drv:                2;             /*DRV*/
+    uint32_t reserved31:         1;
+} rtc_gpio_info_t;
+
+extern rtc_gpio_info_t* rtc_gpio_reg[RTC_GPIO_NUMBER];
+
 #ifdef __cplusplus
 }
 #endif

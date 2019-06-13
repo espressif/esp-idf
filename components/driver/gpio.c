@@ -42,44 +42,60 @@ static portMUX_TYPE gpio_spinlock = portMUX_INITIALIZER_UNLOCKED;
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pullup_en(gpio_num);
     } else {
         REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
+#endif
     return ESP_OK;
 }
 
 esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pullup_dis(gpio_num);
     } else {
         REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PU);
+#endif
     return ESP_OK;
 }
 
 esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pulldown_en(gpio_num);
     } else {
         REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    REG_SET_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
+#endif
     return ESP_OK;
 }
 
 esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_pulldown_dis(gpio_num);
     } else {
         REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    REG_CLR_BIT(GPIO_PIN_MUX_REG[gpio_num], FUN_PD);
+#endif
     return ESP_OK;
 }
 
@@ -104,11 +120,17 @@ static esp_err_t gpio_intr_enable_on_core (gpio_num_t gpio_num, uint32_t core_id
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_intr_status_clr(gpio_num);
+#if CONFIG_IDF_TARGET_ESP32
     if (core_id == 0) {
         GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
     } else {
         GPIO.pin[gpio_num].int_ena = GPIO_APP_CPU_INTR_ENA;     //enable pro cpu intr
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (core_id == 0) {
+        GPIO.pin[gpio_num].int_ena = GPIO_PRO_CPU_INTR_ENA;     //enable pro cpu intr
+    }
+#endif
     return ESP_OK;
 }
 
@@ -255,6 +277,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
         ESP_LOGE(GPIO_TAG, "GPIO_PIN mask error ");
         return ESP_ERR_INVALID_ARG;
     }
+#if CONFIG_IDF_TARGET_ESP32
     if ((pGPIOConfig->mode) & (GPIO_MODE_DEF_OUTPUT)) {
         //GPIO 34/35/36/37/38/39 can only be used as input mode;
         if ((gpio_pin_mask & ( GPIO_SEL_34 | GPIO_SEL_35 | GPIO_SEL_36 | GPIO_SEL_37 | GPIO_SEL_38 | GPIO_SEL_39))) {
@@ -262,6 +285,12 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
             return ESP_ERR_INVALID_ARG;
         }
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if ( (pGPIOConfig->mode & GPIO_MODE_DEF_OUTPUT) && (gpio_pin_mask & GPIO_SEL_46) ) {
+        ESP_LOGE(GPIO_TAG, "GPIO46 can only be used as input mode");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
     do {
         io_reg = GPIO_PIN_MUX_REG[io_num];
         if (((gpio_pin_mask >> io_num) & BIT(0))) {
@@ -456,12 +485,15 @@ esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t streng
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     GPIO_CHECK(strength < GPIO_DRIVE_CAP_MAX, "GPIO drive capability error", ESP_ERR_INVALID_ARG);
-
+#if CONFIG_IDF_TARGET_ESP32
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         rtc_gpio_set_drive_capability(gpio_num, strength);
     } else {
         SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, strength, FUN_DRV_S);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SET_PERI_REG_BITS(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, strength, FUN_DRV_S);
+#endif
     return ESP_OK;
 }
 
@@ -469,15 +501,19 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* stren
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     GPIO_CHECK(strength != NULL, "GPIO drive capability pointer error", ESP_ERR_INVALID_ARG);
-
+#if CONFIG_IDF_TARGET_ESP32
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         return rtc_gpio_get_drive_capability(gpio_num, strength);
     } else {
         *strength = GET_PERI_REG_BITS2(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, FUN_DRV_S);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    *strength = GET_PERI_REG_BITS2(GPIO_PIN_MUX_REG[gpio_num], FUN_DRV_V, FUN_DRV_S);
+#endif
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 static const uint32_t GPIO_HOLD_MASK[34] = {
     0,
     GPIO_SEL_1,
@@ -514,6 +550,7 @@ static const uint32_t GPIO_HOLD_MASK[34] = {
     0,
     0,
 };
+#endif
 
 esp_err_t gpio_hold_en(gpio_num_t gpio_num)
 {
@@ -521,15 +558,17 @@ esp_err_t gpio_hold_en(gpio_num_t gpio_num)
     esp_err_t r = ESP_OK;
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         r = rtc_gpio_hold_en(gpio_num);
-    } else if (GPIO_HOLD_MASK[gpio_num]) {
 #if CONFIG_IDF_TARGET_ESP32
+    } else if (GPIO_HOLD_MASK[gpio_num]) {
         SET_PERI_REG_MASK(RTC_IO_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-        SET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
-#endif
     } else {
         r = ESP_ERR_NOT_SUPPORTED;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    } else {
+        SET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, BIT(gpio_num - RTC_GPIO_NUMBER));
+    }
+#endif
     return r == ESP_OK ? ESP_OK : ESP_ERR_NOT_SUPPORTED;
 }
 
@@ -539,15 +578,17 @@ esp_err_t gpio_hold_dis(gpio_num_t gpio_num)
     esp_err_t r = ESP_OK;
     if (RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
         r = rtc_gpio_hold_dis(gpio_num);
-    } else if (GPIO_HOLD_MASK[gpio_num]) {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 
+    }else if (GPIO_HOLD_MASK[gpio_num]) {
         CLEAR_PERI_REG_MASK(RTC_IO_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
-#endif
     } else {
         r = ESP_ERR_NOT_SUPPORTED;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    } else {
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, BIT(gpio_num - RTC_GPIO_NUMBER));
+    }
+#endif
     return r == ESP_OK ? ESP_OK : ESP_ERR_NOT_SUPPORTED;
 }
 
@@ -561,9 +602,34 @@ void gpio_deep_sleep_hold_en(void)
 void gpio_deep_sleep_hold_dis(void)
 {
     portENTER_CRITICAL(&gpio_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+#endif
     portEXIT_CRITICAL(&gpio_spinlock);
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+
+esp_err_t gpio_force_hold_all()
+{
+    rtc_gpio_force_hold_all();
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
+    return ESP_OK;
+}
+
+esp_err_t gpio_force_unhold_all()
+{
+    rtc_gpio_force_hold_dis_all();
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+    return ESP_OK;
+}
+
+#endif
 
 void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
 {

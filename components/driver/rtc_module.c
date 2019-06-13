@@ -142,10 +142,15 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 {
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, (rtc_gpio_desc[gpio_num].mux));
     //0:RTC FUNCIOTN 1,2,3:Reserved
     SET_PERI_REG_BITS(rtc_gpio_desc[gpio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, 0x0, rtc_gpio_desc[gpio_num].func);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->mux_sel = 0x1;
+    rtc_gpio_reg[gpio_num]->fun_sel = 0x0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -156,7 +161,11 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     //Select Gpio as Digital Gpio
+#if CONFIG_IDF_TARGET_ESP32
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, (rtc_gpio_desc[gpio_num].mux));
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->mux_sel = 0x0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -167,8 +176,6 @@ static esp_err_t rtc_gpio_output_enable(gpio_num_t gpio_num)
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_num != -1, "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
-    CLEAR_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
-
     return ESP_OK;
 }
 
@@ -176,7 +183,6 @@ static esp_err_t rtc_gpio_output_disable(gpio_num_t gpio_num)
 {
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_num != -1, "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
-    CLEAR_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
     SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << ( rtc_gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
 
     return ESP_OK;
@@ -186,7 +192,11 @@ static esp_err_t rtc_gpio_input_enable(gpio_num_t gpio_num)
 {
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].ie);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->fun_ie = 1;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -196,11 +206,40 @@ static esp_err_t rtc_gpio_input_disable(gpio_num_t gpio_num)
 {
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].ie);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->fun_ie = 0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t rtc_gpio_sleep_output_enable(gpio_num_t gpio_num, bool output)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    rtc_gpio_reg[gpio_num]->slp_sel = 1;
+    rtc_gpio_reg[gpio_num]->slp_oe = output;
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_sleep_input_enable(gpio_num_t gpio_num, bool input)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    rtc_gpio_reg[gpio_num]->slp_sel = 1;
+    rtc_gpio_reg[gpio_num]->slp_ie = input;
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_sleep_mode_disable(gpio_num_t gpio_num)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    rtc_gpio_reg[gpio_num]->slp_sel = 0;
+    return ESP_OK;
+}
+#endif
 
 esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
@@ -219,6 +258,7 @@ esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 uint32_t rtc_gpio_get_level(gpio_num_t gpio_num)
 {
     uint32_t level = 0;
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
@@ -226,6 +266,13 @@ uint32_t rtc_gpio_get_level(gpio_num_t gpio_num)
     level = READ_PERI_REG(RTC_GPIO_IN_REG);
     portEXIT_CRITICAL(&rtc_spinlock);
     return ((level >> (RTC_GPIO_IN_NEXT_S + rtc_gpio_num)) & 0x01);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    level = RTCIO.in_val.in;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ((level >> gpio_num) & 0x1);
+#endif
 }
 
 esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength)
@@ -235,7 +282,11 @@ esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t st
     RTC_MODULE_CHECK(strength < GPIO_DRIVE_CAP_MAX, "GPIO drive capability error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_BITS(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].drv_v, strength, rtc_gpio_desc[gpio_num].drv_s);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->drv = strength;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -245,8 +296,11 @@ esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* s
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Output pad only", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(strength != NULL, "GPIO drive pointer error", ESP_ERR_INVALID_ARG);
-
+#if CONFIG_IDF_TARGET_ESP32
     *strength = GET_PERI_REG_BITS2(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].drv_v, rtc_gpio_desc[gpio_num].drv_s);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    *strength = rtc_gpio_reg[gpio_num]->drv;
+#endif
     return ESP_OK;
 }
 
@@ -278,21 +332,45 @@ esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode)
 
 esp_err_t rtc_gpio_pullup_en(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if (rtc_gpio_desc[gpio_num].pullup == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-
+#endif
     //this is a rtc pad
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pullup);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->rue = 0x1;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t rtc_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCIO.pin[gpio_num].pad_driver = mode;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_get_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t *mode)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    *mode = RTCIO.pin[gpio_num].pad_driver;
+    return ESP_OK;
+}
+#endif
+
 esp_err_t rtc_gpio_pulldown_en(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if (rtc_gpio_desc[gpio_num].pulldown == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -302,12 +380,17 @@ esp_err_t rtc_gpio_pulldown_en(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pulldown);
     portEXIT_CRITICAL(&rtc_spinlock);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    rtc_gpio_reg[gpio_num]->rde = 0x1;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if ( rtc_gpio_desc[gpio_num].pullup == 0 ) {
         return ESP_ERR_INVALID_ARG;
@@ -317,12 +400,17 @@ esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pullup);
     portEXIT_CRITICAL(&rtc_spinlock);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    rtc_gpio_reg[gpio_num]->rue = 0x0;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if (rtc_gpio_desc[gpio_num].pulldown == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -332,12 +420,17 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pulldown);
     portEXIT_CRITICAL(&rtc_spinlock);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    rtc_gpio_reg[gpio_num]->rde = 0x0;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     // check if an RTC IO
     if (rtc_gpio_desc[gpio_num].pullup == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -345,11 +438,13 @@ esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].hold);
     portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     // check if an RTC IO
     if (rtc_gpio_desc[gpio_num].pullup == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -357,6 +452,7 @@ esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].hold);
     portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
@@ -376,18 +472,23 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
 
 void rtc_gpio_force_hold_dis_all()
 {
+#if CONFIG_IDF_TARGET_ESP32
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
         const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio];
         if (desc->hold_force != 0) {
-#if CONFIG_IDF_TARGET_ESP32
             REG_CLR_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
-#endif
         }
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.rtc_pwc.rtc_pad_force_hold = 0;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
 }
 
 esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_num = rtc_gpio_desc[gpio_num].rtc_num;
     if (rtc_num < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -400,11 +501,21 @@ esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     /* each pin has its own register, spinlock not needed */
     REG_SET_BIT(reg, RTC_GPIO_PIN0_WAKEUP_ENABLE);
     REG_SET_FIELD(reg, RTC_GPIO_PIN0_INT_TYPE, intr_type);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    if (( intr_type != GPIO_INTR_LOW_LEVEL ) && ( intr_type != GPIO_INTR_HIGH_LEVEL )) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* each pin has its own register, spinlock not needed */
+    RTCIO.pin[gpio_num].wakeup_enable = 1;
+    RTCIO.pin[gpio_num].int_type = intr_type;
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_num = rtc_gpio_desc[gpio_num].rtc_num;
     if (rtc_num < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -414,9 +525,24 @@ esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
     /* each pin has its own register, spinlock not needed */
     REG_CLR_BIT(reg, RTC_GPIO_PIN0_WAKEUP_ENABLE);
     REG_SET_FIELD(reg, RTC_GPIO_PIN0_INT_TYPE, 0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    /* each pin has its own register, spinlock not needed */
+    RTCIO.pin[gpio_num].wakeup_enable = 0;
+    RTCIO.pin[gpio_num].int_type = 0;
+#endif
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t rtc_gpio_force_hold_all()
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.rtc_pwc.rtc_pad_force_hold = 1;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+#endif
 
 /*---------------------------------------------------------------
                     Touch Pad
@@ -1739,7 +1865,9 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
 
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int channel;
+
     if(gpio == GPIO_NUM_25){
         channel = 8;    //Channel 8 bit
     }else if (gpio == GPIO_NUM_26){
@@ -1770,7 +1898,7 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
     SENS.sar_meas_start2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
     //set en_pad for channels 7,8,9 (bits 0x380)
     SENS.sar_meas_start2.sar2_en_pad = 1<<channel;
-
+#endif
     return ESP_OK;
 }
 
