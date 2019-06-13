@@ -540,7 +540,10 @@ typedef UINT8 tBTM_EIR_SEARCH_RESULT;
 #define BTM_EIR_SHORTENED_LOCAL_NAME_TYPE   HCI_EIR_SHORTENED_LOCAL_NAME_TYPE   /* 0x08 */
 #define BTM_EIR_COMPLETE_LOCAL_NAME_TYPE    HCI_EIR_COMPLETE_LOCAL_NAME_TYPE    /* 0x09 */
 #define BTM_EIR_TX_POWER_LEVEL_TYPE         HCI_EIR_TX_POWER_LEVEL_TYPE         /* 0x0A */
+#define BTM_EIR_URL_TYPE                    HCI_EIR_URL_TYPE                    /* 0x24 */
 #define BTM_EIR_MANUFACTURER_SPECIFIC_TYPE  HCI_EIR_MANUFACTURER_SPECIFIC_TYPE  /* 0xFF */
+
+#define BTM_EIR_TYPE_MAX_NUM                12                                  /* Max EIR types */
 
 /* the following EIR tags are defined to OOB, not regular EIR data */
 #define BTM_EIR_OOB_BD_ADDR_TYPE            HCI_EIR_OOB_BD_ADDR_TYPE    /* 6 bytes */
@@ -3867,13 +3870,14 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(BD_ADDR bd_addr, tBTM_CMPL_CB *p_cb);
 **
 ** Parameters       p_buff - allocated HCI command buffer including extended
 **                           inquriry response
+**                  fec_required - FEC is required or not
 **
 ** Returns          BTM_SUCCESS  - if successful
 **                  BTM_MODE_UNSUPPORTED - if local device cannot support it
 **
 *******************************************************************************/
 //extern
-tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff );
+tBTM_STATUS BTM_WriteEIR( BT_HDR *p_buff, BOOLEAN fec_required);
 
 /*******************************************************************************
 **

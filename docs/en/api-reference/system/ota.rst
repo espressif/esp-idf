@@ -199,6 +199,104 @@ Secure OTA Updates Without Secure boot
 
 The verification of signed OTA updates can be performed even without enabling hardware secure boot. For doing so, refer :ref:`signed-app-verify`
 
+
+OTA Tool (otatool.py)
+---------------------
+
+The component `app_update` provides a tool :component_file:`otatool.py<app_update/otatool.py>` for performing OTA partition-related operations on a target device. The following operations can be performed using the tool:
+
+  - read contents of otadata partition (read_otadata)
+  - erase otadata partition, effectively resetting device to factory app (erase_otadata)
+  - switch OTA partitions (switch_ota_partition)
+  - erasing OTA partition (erase_ota_partition)
+  - write to OTA partition (write_ota_partition)
+  - read contents of OTA partition (read_ota_partition)
+
+The tool can either be imported and used from another Python script or invoked from shell script for users wanting to perform operation programmatically. This is facilitated by the tool's Python API
+and command-line interface, respectively.
+
+Python API
+^^^^^^^^^^
+
+Before anything else, make sure that the `otatool` module is imported.
+
+.. code-block:: python
+
+  import sys
+  import os
+
+  idf_path = os.environ["IDF_PATH"]  # get value of IDF_PATH from environment
+  otatool_dir = os.path.join(idf_path, "components", "app_update")  # otatool.py lives in $IDF_PATH/components/app_update
+
+  sys.path.append(otatool_dir)  # this enables Python to find otatool module
+  from otatool import *  # import all names inside otatool module
+
+The starting point for using the tool's Python API to do is create a `OtatoolTarget` object:
+
+.. code-block:: python
+
+  # Create a partool.py target device connected on serial port /dev/ttyUSB1
+  target = OtatoolTarget("/dev/ttyUSB1")
+
+The created object can now be used to perform operations on the target device:
+
+.. code-block:: python
+
+  # Erase otadata, reseting the device to factory app
+  target.erase_otadata()
+
+  # Erase contents of OTA app slot 0
+  target.erase_ota_partition(0)
+
+  # Switch boot partition to that of app slot 1
+  target.switch_ota_partition(1)
+
+  # Read OTA partition 'ota_3' and save contents to a file named 'ota_3.bin'
+  target.read_ota_partition("ota_3", "ota_3.bin")
+
+The OTA partition to operate on is specified using either the app slot number or the partition name.
+
+More information on the Python API is available in the docstrings for the tool.
+
+Command-line Interface
+^^^^^^^^^^^^^^^^^^^^^^
+
+The command-line interface of `otatool.py` has the following structure:
+
+.. code-block:: bash
+
+  otatool.py [command-args] [subcommand] [subcommand-args]
+
+  - command-args - these are arguments that are needed for executing the main command (parttool.py), mostly pertaining to the target device
+  - subcommand - this is the operation to be performed 
+  - subcommand-args - these are arguments that are specific to the chosen operation
+
+.. code-block:: bash
+
+  # Erase otadata, resetting the device to factory app
+  otatool.py --port "/dev/ttyUSB1" erase_otadata 
+
+  # Erase contents of OTA app slot 0
+  otatool.py --port "/dev/ttyUSB1" erase_ota_partition --slot 0
+
+  # Switch boot partition to that of app slot 1
+  otatool.py --port "/dev/ttyUSB1" switch_ota_partition --slot 1
+
+  # Read OTA partition 'ota_3' and save contents to a file named 'ota_3.bin'
+  otatool.py --port "/dev/ttyUSB1" read_ota_partition --name=ota_3
+
+
+More information can be obtained by specifying `--help` as argument:
+
+.. code-block:: bash
+
+  # Display possible subcommands and show main command argument descriptions
+  otatool.py --help
+
+  # Show descriptions for specific subcommand arguments
+  otatool.py [subcommand] --help
+
+
 See also
 --------
 

@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,24 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
 
-#include <stddef.h>
-
-/**
- * @brief Check if half-open intervals overlap
+/******************************************************************************
  *
- * @param start1  interval 1 start
- * @param end1    interval 1 end
- * @param start2  interval 2 start
- * @param end2    interval 2 end
- * @return true iff [start1; end1) overlaps [start2; end2)
- */
-static inline bool bootloader_util_regions_overlap(
-        const intptr_t start1, const intptr_t end1,
-        const intptr_t start2, const intptr_t end2)
-{
-    assert(end1>start1);
-    assert(end2>start2);
-    return (end1 > start2 && end2 > start1);
-}
+ *  This is the interface file for BT GAP call-out functions.
+ *
+ ******************************************************************************/
+#ifndef BTA_GAP_BT_CO_H
+#define BTA_GAP_BT_CO_H
+
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+
+extern void btc_gap_bt_config_eir_cmpl_callback (uint8_t status, uint8_t eir_type_num, uint8_t *eir_type);
+
+#endif /// (BTC_GAP_BT_INCLUDED == TRUE)
+#endif /// BTA_GAP_BT_CO_H

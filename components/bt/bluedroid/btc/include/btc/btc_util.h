@@ -46,5 +46,6 @@ void uuid_to_string_legacy(bt_uuid_t *p_uuid, char *str);
 
 esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status);
 esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status);
+esp_bt_status_t btc_bta_status_to_esp_status (uint8_t bta_status);
 
 #endif /*  __BTC_UTIL_H__ */

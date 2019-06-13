@@ -29,6 +29,7 @@
 #include "bta/bta_api.h"
 #include "bta_dm_int.h"
 #include "bta/bta_jv_api.h"
+#include "bta/bta_gap_bt_co.h"
 
 #ifndef BTA_DM_LINK_POLICY_SETTINGS
 #define BTA_DM_LINK_POLICY_SETTINGS    (HCI_ENABLE_MASTER_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)
@@ -411,10 +412,12 @@ const UINT8 bta_dm_eir_uuid16_list[] = {    0x08, 0x11, /* Headset */
 #endif  // BTA_EIR_CANNED_UUID_LIST
 
 /* Extended Inquiry Response */
-const tBTA_DM_EIR_CONF bta_dm_eir_cfg = {
+tBTA_DM_EIR_CONF bta_dm_eir_cfg = {
+    BTM_EIR_DEFAULT_FEC_REQUIRED, /* FEC required */
     50,    /* minimum length of local name when it is shortened */
     /* if length of local name is longer than this and EIR has not enough */
     /* room for all UUID list then local name is shortened to this length */
+    TRUE, /* Included UUIDs */
 #if (BTA_EIR_CANNED_UUID_LIST == TRUE)
     8,
     (UINT8 *)bta_dm_eir_uuid16_list,
@@ -425,12 +428,17 @@ const tBTA_DM_EIR_CONF bta_dm_eir_cfg = {
         /* BTM_EIR_UUID_LKUP_TBL can be overrided */
     },
 #endif  // BTA_EIR_CANNED_UUID_LIST
-    NULL,   /* Inquiry TX power         */
-    0,      /* length of flags in bytes */
-    NULL,   /* flags for EIR */
+    FALSE,  /* Not included TX power*/
+    3,      /* Inquiry TX power         */
+    0,      /* flags for EIR */
     0,      /* length of manufacturer specific in bytes */
     NULL,   /* manufacturer specific */
-    0,      /* length of additional data in bytes */
-    NULL    /* additional data */
+    0,      /* length of URL in bytes */
+    NULL,   /* URL */
+#if (BTC_GAP_BT_INCLUDED == TRUE)
+    (tBTA_DM_CONFIG_EIR_CBACK *)btc_gap_bt_config_eir_cmpl_callback    /* callback */
+#else
+    NULL
+#endif /* #if (BTC_GAP_BT_INCLUDED == TRUE) */
 };
 tBTA_DM_EIR_CONF *p_bta_dm_eir_cfg = (tBTA_DM_EIR_CONF *) &bta_dm_eir_cfg;

@@ -33,6 +33,16 @@ menu "LWIP"
 
             If this feature is disabled, all lwip functions will be put into FLASH.
 
+    config LWIP_TIMERS_ONDEMAND
+        bool "Enable LWIP Timers on demand"
+        default y
+        help
+            If this feature is enabled, IGMP and MLD6 timers will be activated only
+            when joining groups or receiving QUERY packets.
+
+            This feature will reduce the power consumption for applications which do not
+            use IGMP and MLD6.
+
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
         range 1 16
