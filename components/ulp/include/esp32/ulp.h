@@ -263,8 +263,8 @@ typedef union {
     struct {
         uint32_t i2c_addr : 8;      /*!< I2C slave address */
         uint32_t data : 8;          /*!< 8 bits of data for write operation */
-        uint32_t low_bits : 3;      /*!< number of low bits to mask for write operation */
-        uint32_t high_bits : 3;     /*!< number of high bits to mask for write operation */
+        uint32_t low_bits : 3;      /*!< low bit of range for write operation (lower bits are masked) */
+        uint32_t high_bits : 3;     /*!< high bit of range for write operation (higher bits are masked) */
         uint32_t i2c_sel : 4;       /*!< index of slave address register [7:0] */
         uint32_t unused : 1;        /*!< Unused */
         uint32_t rw : 1;            /*!< Write (1) or read (0) */
@@ -1016,7 +1016,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * 
  *  Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
  *  For read operations, 8 bits of read result is stored into R0 register.
- *  For write operations, bits outside range [high_bit:low_bit] of val are masked.
+ *  For write operations, bits outside of val[high_bit:low_bit] are masked.
  */
 #define I_I2C_RW(sub_addr, val, low_bit, high_bit, slave_sel, rw_bit) { .i2c = {\
         .i2c_addr = sub_addr, \
