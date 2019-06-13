@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SPI_PINS_H_
-#define _SOC_SPI_PINS_H_
+#ifndef _SOC_SPI_CAPS_H_
+#define _SOC_SPI_CAPS_H_
+
+#define SOC_SPI_PERIPH_NUM      3
+#define SOC_SPI_DMA_CHAN_NUM    2
 
 #define SPI_IOMUX_PIN_NUM_MISO  7
 #define SPI_IOMUX_PIN_NUM_MOSI  8
@@ -44,4 +47,8 @@
 #define VSPI_IOMUX_PIN_NUM_WP   22
 #define VSPI_IOMUX_PIN_NUM_HD   21
 
-#endif /* _SOC_SPI_PINS_H_ */
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
+
+#define SOC_SPI_SUPPORT_AS_CS   1   //Support to toggle the CS while the clock toggles
+
+#endif /* _SOC_SPI_CAPS_H_ */

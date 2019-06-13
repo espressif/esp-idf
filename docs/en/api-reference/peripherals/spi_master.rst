@@ -538,6 +538,7 @@ Display graphics on the 320x240 LCD of WROVER-Kits: :example:`peripherals/spi_ma
 API Reference - SPI Common
 --------------------------
 
+.. include:: /_build/inc/spi_types.inc
 .. include:: /_build/inc/spi_common.inc
 
 
