@@ -300,7 +300,7 @@ menu "ESP32-specific"
 
         config SPIRAM_SPIWP_SD3_PIN
             int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
-            depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
+            depends on FLASHMODE_DIO || FLASHMODE_DOUT
             range 0 33
             default 7
             help
