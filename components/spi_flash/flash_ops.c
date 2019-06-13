@@ -77,7 +77,7 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_default_ops = {
     .end                    = spi_flash_enable_interrupts_caches_and_other_cpu,
     .op_lock                = spi_flash_op_lock,
     .op_unlock              = spi_flash_op_unlock,
-#if !CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
     .is_safe_write_address  = is_safe_write_address
 #endif
 };
@@ -87,14 +87,14 @@ const DRAM_ATTR spi_flash_guard_funcs_t g_flash_guard_no_os_ops = {
     .end                    = spi_flash_enable_interrupts_caches_no_os,
     .op_lock                = 0,
     .op_unlock              = 0,
-#if !CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
     .is_safe_write_address  = 0
 #endif
 };
 
 static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 
-#ifdef CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS
+#ifdef CONFIG_SPI_FLASH_DANGEROUS_WRITE_ABORTS
 #define UNSAFE_WRITE_ADDRESS abort()
 #else
 #define UNSAFE_WRITE_ADDRESS return false
@@ -104,7 +104,7 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 /* CHECK_WRITE_ADDRESS macro to fail writes which land in the
    bootloader, partition table, or running application region.
 */
-#if CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE)
 #else /* FAILS or ABORTS */
 #define CHECK_WRITE_ADDRESS(ADDR, SIZE) do {                            \
@@ -112,7 +112,7 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
             return ESP_ERR_INVALID_ARG;                                 \
         }                                                               \
     } while(0)
-#endif // CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+#endif // CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
 
 static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t size)
 {
