@@ -81,6 +81,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 {
+#warning "esp_efuse_mac_get_default: not implemented for esp32s2beta"
     uint32_t mac_low;
     uint32_t mac_high;
     // uint8_t efuse_crc;

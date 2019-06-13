@@ -40,6 +40,8 @@
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[ portNUM_PROCESSORS ];
 
+#warning "crosscore_int: TODO: simplify for esp32s2beta"
+
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
 the ISR will cause it to switch _away_ from it. portYIELD_FROM_ISR will probably just schedule the task again, but have to check that.

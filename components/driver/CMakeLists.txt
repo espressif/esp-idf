@@ -1,16 +1,11 @@
 set(COMPONENT_SRCS "can.c"
                    "gpio.c"
                    "i2c.c"
-                   "i2s.c"
                    "ledc.c"
-                   "mcpwm.c"
                    "pcnt.c"
                    "periph_ctrl.c"
                    "rmt.c"
                    "rtc_module.c"
-                   "sdio_slave.c"
-                   "sdmmc_host.c"
-                   "sdmmc_transaction.c"
                    "sdspi_crc.c"
                    "sdspi_host.c"
                    "sdspi_transaction.c"
@@ -20,6 +15,16 @@ set(COMPONENT_SRCS "can.c"
                    "spi_slave.c"
                    "timer.c"
                    "uart.c")
+
+if(CONFIG_IDF_TARGET_ESP32)
+    # SDMMC and MCPWM are in ESP32 only, I2S not ported yet.
+    list(APPEND COMPONENT_SRCS "i2s.c"
+                               "mcpwm.c"
+                               "sdio_slave.c"
+                               "sdmmc_host.c"
+                               "sdmmc_transaction.c")
+endif()
+
 set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS "include/driver")
 set(COMPONENT_REQUIRES esp_ringbuf soc) #cannot totally hide soc headers, since there are a lot arguments in the driver are chip-dependent

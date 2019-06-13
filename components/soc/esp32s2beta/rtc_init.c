@@ -195,6 +195,7 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config()
         result.tieh = (sdio_conf_reg & RTC_CNTL_SDIO_TIEH_M) >> RTC_CNTL_SDIO_TIEH_S;
         return result;
     }
+#warning "rtc_vddsdio_get_config: efuse part not implemented for esp32s2beta"
 #if 0
     uint32_t efuse_reg = REG_READ(EFUSE_BLK0_RDATA4_REG);
     if (efuse_reg & EFUSE_RD_SDIO_FORCE) {
