@@ -127,24 +127,6 @@ menu "Common ESP-related"
         range 1200 4000000
 
 
-    config ESP_GDBSTUB_SUPPORT_TASKS
-        bool "GDBStub: enable listing FreeRTOS tasks"
-        default y
-        depends on ESP32_PANIC_GDBSTUB
-        help
-            If enabled, GDBStub can supply the list of FreeRTOS tasks to GDB.
-            Thread list can be queried from GDB using 'info threads' command.
-            Note that if GDB task lists were corrupted, this feature may not work.
-            If GDBStub fails, try disabling this feature.
-
-    config ESP_GDBSTUB_MAX_TASKS
-        int "GDBStub: maximum number of tasks supported"
-        default 32
-        depends on ESP_GDBSTUB_SUPPORT_TASKS
-        help
-            Set the number of tasks which GDB Stub will support.
-
-
     config ESP_INT_WDT
         bool "Interrupt watchdog"
         default y

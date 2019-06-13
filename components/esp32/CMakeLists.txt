@@ -19,7 +19,6 @@ elseif(CONFIG_IDF_TARGET_ESP32)
                    "esp_adapter.c"
                    "esp_timer_esp32.c"
                    "esp_himem.c"
-                   "gdbstub.c"
                    "hw_random.c"
                    "int_wdt.c"
                    "intr_alloc.c"
