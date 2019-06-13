@@ -446,6 +446,7 @@ typedef struct {
 #define BT_EIR_OOB_COD_TYPE                 0x0D
 #define BT_EIR_OOB_SSP_HASH_C_TYPE          0x0E
 #define BT_EIR_OOB_SSP_RAND_R_TYPE          0x0F
+#define BT_EIR_URL_TYPE                     0x24
 #define BT_EIR_MANUFACTURER_SPECIFIC_TYPE   0xFF
 
 #define BT_OOB_COD_SIZE            3

@@ -52,6 +52,7 @@ enum {
     BTA_DM_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_DM),
     BTA_DM_API_DISABLE_EVT,
     BTA_DM_API_SET_NAME_EVT,
+    BTA_DM_API_CONFIG_EIR_EVT,
     BTA_DM_API_SET_VISIBILITY_EVT,
 
     BTA_DM_ACL_CHANGE_EVT,
@@ -187,6 +188,20 @@ typedef struct {
     BT_HDR              hdr;
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
 } tBTA_DM_API_SET_NAME;
+
+/* data type for BTA_DM_API_CONFIG_EIR_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    BOOLEAN             eir_fec_required;
+    BOOLEAN             eir_included_tx_power;
+    BOOLEAN             eir_included_uuid;
+    UINT8               eir_flags;
+    UINT8               eir_manufac_spec_len;
+    UINT8               *eir_manufac_spec;
+    UINT8               eir_url_len;
+    UINT8               *eir_url;
+    UINT8               data[];
+}tBTA_DM_API_CONFIG_EIR;
 
 typedef struct {
     BT_HDR    hdr;
@@ -478,7 +493,7 @@ typedef struct {
 
 typedef struct {
     BT_HDR                  hdr;
-    BOOLEAN                 add;      
+    BOOLEAN                 add;
     UINT32                  static_passkey;
 } tBTA_DM_API_SET_DEFAULT_PASSKEY;
 
@@ -784,6 +799,7 @@ typedef union {
     tBTA_DM_API_ENABLE  enable;
 
     tBTA_DM_API_SET_NAME set_name;
+    tBTA_DM_API_CONFIG_EIR config_eir;
 
     tBTA_DM_API_UPDATE_WHITE_LIST white_list;
     tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
@@ -1185,7 +1201,7 @@ extern tBTA_DM_SSR_SPEC *p_bta_dm_ssr_spec;
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
 /* update dynamic BRCM Aware EIR data */
-extern const tBTA_DM_EIR_CONF bta_dm_eir_cfg;
+extern tBTA_DM_EIR_CONF bta_dm_eir_cfg;
 extern tBTA_DM_EIR_CONF *p_bta_dm_eir_cfg;
 
 /* DM control block */
@@ -1222,6 +1238,7 @@ extern void bta_dm_search_sm_disable( void );
 extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
+extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data);

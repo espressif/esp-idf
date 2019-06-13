@@ -144,6 +144,38 @@ uint8_t *esp_bt_gap_resolve_eir_data(uint8_t *eir, esp_bt_eir_type_t type, uint8
     return BTM_CheckEirData(eir, type, length);
 }
 
+esp_err_t esp_bt_gap_config_eir_data(esp_bt_eir_data_t *eir_data)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (eir_data == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (eir_data->manufacturer_len > ESP_BT_EIR_MAX_LEN
+        || eir_data->url_len > ESP_BT_EIR_MAX_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if ((eir_data->manufacturer_len > 0 && eir_data->p_manufacturer_data == NULL)
+        || (eir_data->url_len > 0 && eir_data->p_url == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_CONFIG_EIR;
+
+    memcpy(&arg.config_eir, eir_data, sizeof(esp_bt_eir_data_t));
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), btc_gap_bt_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_bt_gap_set_cod(esp_bt_cod_t cod, esp_bt_cod_mode_t mode)
 {
     btc_msg_t msg;
