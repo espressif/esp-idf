@@ -42,13 +42,15 @@ Partition table.::
 	ota_0,    0,    ota_0,   ,         512K
 	ota_1,    0,    ota_1,   ,         512K
 
+.. _bootloader_boot_from_test_firmware:
+
 Boot from TEST firmware
 ------------------------
 The user can write a special firmware for testing in production, and run it as needed. The partition table also needs a dedicated partition for this testing firmware (See `partition table`). 
 To trigger a test app you need to set :ref:`CONFIG_BOOTLOADER_APP_TEST`. 
 
-:ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - number of the GPIO input to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset. 
-After the GPIO input is deactivated and the device reboots, the old application will boot (factory or any OTA slot). 
+:ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - GPIO number to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset. 
+After the GPIO input is deactivated and the device reboots, the normally configured application will boot (factory or any OTA slot). 
 
 :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
 
