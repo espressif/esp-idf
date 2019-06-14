@@ -279,6 +279,7 @@ class Mapping(Fragment):
     def __init__(self):
         Fragment.__init__(self)
         self.entries = set()
+        self.deprecated = False
 
     def set_key_value(self, key, parse_results):
         if key == "archive":
@@ -382,6 +383,7 @@ class DeprecatedMapping():
             fragment = Mapping()
             fragment.archive = toks[0].archive
             fragment.name = re.sub(r"[^0-9a-zA-Z]+", "_", fragment.archive)
+            fragment.deprecated = True
 
             fragment.entries = set()
             condition_true = False
