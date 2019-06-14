@@ -914,6 +914,81 @@ RingbufHandle_t xRingbufferCreateStatic(size_t xBufferSize,
 }
 #endif
 
+BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, size_t xItemSize, TickType_t xTicksToWait)
+{
+    //Check arguments
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+    configASSERT(ppvItem != NULL || xItemSize == 0);
+    //currently only supported in NoSplit buffers
+    configASSERT((pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) == 0);
+
+    *ppvItem = NULL;
+    if (xItemSize > pxRingbuffer->xMaxItemSize) {
+        return pdFALSE;     //Data will never ever fit in the queue.
+    }
+    if ((pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) && xItemSize == 0) {
+        return pdTRUE;      //Sending 0 bytes to byte buffer has no effect
+    }
+
+    //Attempt to send an item
+    BaseType_t xReturn = pdFALSE;
+    BaseType_t xReturnSemaphore = pdFALSE;
+    TickType_t xTicksEnd = xTaskGetTickCount() + xTicksToWait;
+    TickType_t xTicksRemaining = xTicksToWait;
+    while (xTicksRemaining <= xTicksToWait) {   //xTicksToWait will underflow once xTaskGetTickCount() > ticks_end
+        //Block until more free space becomes available or timeout
+        if (xSemaphoreTake(rbGET_TX_SEM_HANDLE(pxRingbuffer), xTicksRemaining) != pdTRUE) {
+            xReturn = pdFALSE;
+            break;
+        }
+
+        //Semaphore obtained, check if item can fit
+        portENTER_CRITICAL(&pxRingbuffer->mux);
+        if(pxRingbuffer->xCheckItemFits(pxRingbuffer, xItemSize) == pdTRUE) {
+            //Item will fit, copy item
+            *ppvItem = prvAcquireItemNoSplit(pxRingbuffer, xItemSize);
+            xReturn = pdTRUE;
+            //Check if the free semaphore should be returned to allow other tasks to send
+            if (prvGetFreeSize(pxRingbuffer) > 0) {
+                xReturnSemaphore = pdTRUE;
+            }
+            portEXIT_CRITICAL(&pxRingbuffer->mux);
+            break;
+        }
+        //Item doesn't fit, adjust ticks and take the semaphore again
+        if (xTicksToWait != portMAX_DELAY) {
+            xTicksRemaining = xTicksEnd - xTaskGetTickCount();
+        }
+        portEXIT_CRITICAL(&pxRingbuffer->mux);
+        /*
+         * Gap between critical section and re-acquiring of the semaphore. If
+         * semaphore is given now, priority inversion might occur (see docs)
+         */
+    }
+
+    if (xReturnSemaphore == pdTRUE) {
+        xSemaphoreGive(rbGET_TX_SEM_HANDLE(pxRingbuffer));  //Give back semaphore so other tasks can acquire
+    }
+    return xReturn;
+}
+
+BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem)
+{
+    //Check arguments
+    Ringbuffer_t *pxRingbuffer = (Ringbuffer_t *)xRingbuffer;
+    configASSERT(pxRingbuffer);
+    configASSERT(pvItem != NULL);
+    configASSERT((pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) == 0);
+
+    portENTER_CRITICAL(&pxRingbuffer->mux);
+    prvSendItemDoneNoSplit(pxRingbuffer, pvItem);
+    portEXIT_CRITICAL(&pxRingbuffer->mux);
+
+    xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
+    return pdTRUE;
+}
+
 BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer,
                            const void *pvItem,
                            size_t xItemSize,
