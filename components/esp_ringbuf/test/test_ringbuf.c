@@ -185,12 +185,12 @@ TEST_CASE("Test ring buffer No-Split", "[esp_ringbuf]")
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL, NULL);
     //Send large item that causes wrap around
     send_item_and_check(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     //Receive wrapped item
     receive_check_and_return_item_no_split(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
 
     //Cleanup
@@ -216,12 +216,12 @@ TEST_CASE("Test ring buffer Allow-Split", "[esp_ringbuf]")
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL, NULL);
     //Send large item that causes wrap around
     send_item_and_check(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     //Receive wrapped item
     receive_check_and_return_item_allow_split(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
 
     //Cleanup
@@ -247,12 +247,12 @@ TEST_CASE("Test ring buffer Byte Buffer", "[esp_ringbuf]")
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL, NULL);
     //Send large item that causes wrap around
     send_item_and_check(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     //Receive wrapped item
     receive_check_and_return_item_byte_buffer(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
 
     //Cleanup
