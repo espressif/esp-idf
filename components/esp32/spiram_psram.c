@@ -505,9 +505,11 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_mode_t
 {
     int spi_cache_dummy = 0;
     uint32_t rd_mode_reg = READ_PERI_REG(SPI_CTRL_REG(0));
-    if (rd_mode_reg & (SPI_FREAD_QIO_M | SPI_FREAD_DIO_M)) {
+    if (rd_mode_reg & SPI_FREAD_QIO_M) {
         spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
-    } else if (rd_mode_reg & (SPI_FREAD_QUAD_M | SPI_FREAD_DUAL_M)) {
+    } else if (rd_mode_reg & SPI_FREAD_DIO_M) {
+        spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;
+    }  else if (rd_mode_reg & (SPI_FREAD_QUAD_M | SPI_FREAD_DUAL_M)) {
         spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
     } else {
         spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
