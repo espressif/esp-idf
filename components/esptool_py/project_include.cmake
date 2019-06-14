@@ -114,12 +114,7 @@ if(NOT BOOTLOADER_BUILD AND
         )
 endif()
 
-if(NOT BOOTLOADER_BUILD)
-    add_custom_target(app ALL DEPENDS gen_project_binary)
-else()
-    add_custom_target(bootloader ALL DEPENDS gen_project_binary)
-endif()
-
+add_custom_target(app ALL DEPENDS gen_project_binary)
 
 if(NOT BOOTLOADER_BUILD AND
     CONFIG_SECURE_BOOT_ENABLED AND
@@ -151,7 +146,6 @@ endfunction()
 
 esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")
-esptool_py_custom_target(bootloader-flash bootloader "bootloader")
 
 if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
     esptool_py_custom_target(encrypted-flash encrypted_project "app;partition_table;bootloader")

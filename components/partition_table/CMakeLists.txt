@@ -74,19 +74,6 @@ if(CONFIG_SECURE_BOOT_ENABLED AND
         VERBATIM)
 endif()
 
-# If anti-rollback option is set then factory partition should not be in Partition Table.
-# In this case, should be used the partition table with two ota app without the factory.
-partition_table_get_partition_info(factory_offset "--partition-type app --partition-subtype factory" "offset")
-if(CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK AND factory_offset)
-    fail_at_build_time(check_table_contents
-        "ERROR: Anti-rollback option is enabled. Partition table should consist of two ota app without factory partition.")
-add_dependencies(bootloader check_table_contents)
-add_dependencies(app check_table_contents)
-endif()
-
-add_dependencies(bootloader partition_table)
-add_dependencies(app partition_table)
-
 # Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build
 # the list of esptool write arguments for flashing
 set_property(GLOBAL APPEND_STRING PROPERTY
@@ -95,13 +82,3 @@ set_property(GLOBAL APPEND_STRING PROPERTY
 
 esptool_py_flash_project_args(partition_table ${PARTITION_TABLE_OFFSET}
                               ${build_dir}/partition_table/partition-table.bin FLASH_IN_PROJECT)
-
-partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
-esptool_py_flash_project_args(app ${app_partition_offset} ${build_dir}/${PROJECT_BIN} FLASH_IN_PROJECT)
-
-if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_app_args.in "--encrypt ${app_partition_offset} ${PROJECT_BIN}")
-    esptool_py_flash_project_args(encrypted_app ${app_partition_offset} ${build_dir}/${PROJECT_BIN}
-                                FLASH_FILE_TEMPLATE ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_app_args.in)
-endif()
-
