@@ -334,8 +334,8 @@ class GenerationModel:
 
         # Generate rules based on mapping fragments
         for mapping in self.mappings.values():
-            mapping_rules = list()
             archive = mapping.archive
+            mapping_rules = all_mapping_rules[archive]
             for (obj, symbol, scheme_name) in mapping.entries:
                 try:
                     if not (obj == Mapping.MAPPING_ALL_OBJECTS and symbol is None and
@@ -344,8 +344,6 @@ class GenerationModel:
                 except KeyError:
                     message = GenerationException.UNDEFINED_REFERENCE + " to scheme '" + scheme_name + "'."
                     raise GenerationException(message, mapping)
-
-            all_mapping_rules[mapping.name] = mapping_rules
 
         # Detect rule conflicts
         for mapping_rules in all_mapping_rules.items():
@@ -453,21 +451,24 @@ class GenerationModel:
         for fragment in fragment_file.fragments:
             dict_to_append_to = None
 
-            if isinstance(fragment, Scheme):
-                dict_to_append_to = self.schemes
-            elif isinstance(fragment, Sections):
-                dict_to_append_to = self.sections
+            if isinstance(fragment, Mapping) and fragment.deprecated and fragment.name in self.mappings.keys():
+                self.mappings[fragment.name].entries |= fragment.entries
             else:
-                dict_to_append_to = self.mappings
+                if isinstance(fragment, Scheme):
+                    dict_to_append_to = self.schemes
+                elif isinstance(fragment, Sections):
+                    dict_to_append_to = self.sections
+                else:
+                    dict_to_append_to = self.mappings
 
-            # Raise exception when the fragment of the same type is already in the stored fragments
-            if fragment.name in dict_to_append_to.keys():
-                stored = dict_to_append_to[fragment.name].path
-                new = fragment.path
-                message = "Duplicate definition of fragment '%s' found in %s and %s." % (fragment.name, stored, new)
-                raise GenerationException(message)
+                # Raise exception when the fragment of the same type is already in the stored fragments
+                if fragment.name in dict_to_append_to.keys():
+                    stored = dict_to_append_to[fragment.name].path
+                    new = fragment.path
+                    message = "Duplicate definition of fragment '%s' found in %s and %s." % (fragment.name, stored, new)
+                    raise GenerationException(message)
 
-            dict_to_append_to[fragment.name] = fragment
+                dict_to_append_to[fragment.name] = fragment
 
 
 class TemplateModel:
