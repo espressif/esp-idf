@@ -36,6 +36,8 @@
 
 #define UART_NUM SOC_UART_NUM
 
+#define UART_NUM SOC_UART_NUM
+
 #define XOFF (char)0x13
 #define XON (char)0x11
 

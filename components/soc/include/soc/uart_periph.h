@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #pragma once
+
+#include "soc/uart_caps.h"
 #include "soc/uart_reg.h"
 #include "soc/uart_struct.h"
 #include "soc/uart_channel.h"
