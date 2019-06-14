@@ -324,6 +324,7 @@ static void spi_cache_mode_switch(uint32_t  modebit)
             REG_SET_FIELD(SPI_USER2_REG(0), SPI_USR_COMMAND_VALUE, 0x6B);
             REG_SET_FIELD(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN, SPI0_R_FAST_DUMMY_CYCLELEN + g_rom_spiflash_dummy_len_plus[0]);
         } else if ((modebit & SPI_FREAD_DIO)) {
+            REG_SET_FIELD(SPI_USER1_REG(0), SPI_USR_ADDR_BITLEN, SPI0_R_DIO_ADDR_BITSLEN);
             REG_SET_FIELD(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN, SPI0_R_DIO_DUMMY_CYCLELEN + g_rom_spiflash_dummy_len_plus[0]);
             REG_SET_FIELD(SPI_USER2_REG(0), SPI_USR_COMMAND_VALUE, 0xBB);
         } else if ((modebit & SPI_FREAD_DUAL)) {

@@ -306,10 +306,11 @@ static void IRAM_ATTR flash_gpio_configure(const esp_image_header_t* pfhdr)
     int drv = 2;
     switch (pfhdr->spi_mode) {
         case ESP_IMAGE_SPI_MODE_QIO:
-            spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;
+            spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
             break;
         case ESP_IMAGE_SPI_MODE_DIO:
-            spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;   //qio 3
+            spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;
+            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_ADDR_BITLEN_V, SPI0_R_DIO_ADDR_BITSLEN, SPI_USR_ADDR_BITLEN_S);
             break;
         case ESP_IMAGE_SPI_MODE_QOUT:
         case ESP_IMAGE_SPI_MODE_DOUT:
