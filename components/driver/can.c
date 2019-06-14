@@ -353,7 +353,7 @@ static void can_alert_handler(uint32_t alert_code, int *alert_req)
     }
 }
 
-static void can_intr_handler_err_warn(can_status_reg_t *status, BaseType_t *task_woken, int *alert_req)
+static void can_intr_handler_err_warn(can_status_reg_t *status, int *alert_req)
 {
     if (status->bus) {
         if (status->error) {
@@ -478,10 +478,15 @@ static void can_intr_handler_main(void *arg)
     status.val = can_get_status();
     intr_reason.val = (p_can_obj != NULL) ? can_get_interrupt_reason() : 0; //Incase intr occurs whilst driver is being uninstalled
 
+#ifdef __clang_analyzer__
+    if (intr_reason.val == 0) {  // Teach clang-tidy that all bitfields are zero if a register is zero; othewise it warns about p_can_obj null dereference
+        intr_reason.err_warn = intr_reason.err_passive = intr_reason.bus_err = intr_reason.arb_lost = intr_reason.rx = intr_reason.tx = 0;
+    }
+#endif
     //Handle error counter related interrupts
     if (intr_reason.err_warn) {
         //Triggers when Bus-Status or Error-status bits change
-        can_intr_handler_err_warn(&status, &task_woken, &alert_req);
+        can_intr_handler_err_warn(&status, &alert_req);
     }
     if (intr_reason.err_passive) {
         //Triggers when entering/returning error passive/active state
