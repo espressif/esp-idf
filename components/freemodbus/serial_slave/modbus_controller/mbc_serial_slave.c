@@ -69,7 +69,7 @@ static esp_err_t mbc_serial_slave_setup(void* comm_info)
     MB_SLAVE_CHECK((comm_settings->slave_addr <= MB_ADDRESS_MAX),
                 ESP_ERR_INVALID_ARG, "mb wrong slave address = (0x%x).",
                 (uint32_t)comm_settings->slave_addr);
-    MB_SLAVE_CHECK((comm_settings->port <= UART_NUM_2), ESP_ERR_INVALID_ARG,
+    MB_SLAVE_CHECK((comm_settings->port < UART_NUM_MAX), ESP_ERR_INVALID_ARG,
                 "mb wrong port to set = (0x%x).", (uint32_t)comm_settings->port);
     MB_SLAVE_CHECK((comm_settings->parity <= UART_PARITY_EVEN), ESP_ERR_INVALID_ARG,
                 "mb wrong parity option = (0x%x).", (uint32_t)comm_settings->parity);

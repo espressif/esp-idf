@@ -78,7 +78,7 @@ static TaskHandle_t  xMbTaskHandle;
 static const CHAR *TAG = "MB_SERIAL";
 
 // The UART hardware port number
-static UCHAR ucUartNumber = UART_NUM_2;
+static UCHAR ucUartNumber = UART_NUM_MAX - 1;
 
 static BOOL bRxStateEnabled = FALSE; // Receiver enabled flag
 static BOOL bTxStateEnabled = FALSE; // Transmitter enabled flag

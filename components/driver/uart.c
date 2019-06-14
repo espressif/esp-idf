@@ -34,6 +34,8 @@
 #include "esp32s2beta/clk.h"
 #endif
 
+#define UART_NUM SOC_UART_NUM
+
 #define XOFF (char)0x13
 #define XON (char)0x11
 
@@ -118,8 +120,20 @@ typedef struct {
 
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
 /* DRAM_ATTR is required to avoid UART array placed in flash, due to accessed from ISR */
-static DRAM_ATTR uart_dev_t* const UART[UART_NUM_MAX] = {&UART0, &UART1, &UART2};
-static portMUX_TYPE uart_spinlock[UART_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
+static DRAM_ATTR uart_dev_t* const UART[UART_NUM_MAX] = {
+    &UART0,
+    &UART1,
+#if UART_NUM > 2
+    &UART2
+#endif
+};
+static portMUX_TYPE uart_spinlock[UART_NUM_MAX] = {
+    portMUX_INITIALIZER_UNLOCKED,
+    portMUX_INITIALIZER_UNLOCKED,
+#if UART_NUM > 2
+    portMUX_INITIALIZER_UNLOCKED
+#endif
+};
 static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
 
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)
@@ -145,6 +159,7 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
     UART_CHECK((stop_bit < UART_STOP_BITS_MAX), "stop bit error", ESP_FAIL);
 
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+#if UART_NUM > 2
     //workaround for hardware bug, when uart stop bit set as 2-bit mode.
     if (stop_bit == UART_STOP_BITS_2) {
         stop_bit = UART_STOP_BITS_1;
@@ -152,6 +167,7 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
     } else {
         UART[uart_num]->rs485_conf.dl1_en = 0;
     }
+#endif
     UART[uart_num]->conf0.stop_bit_num = stop_bit;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
@@ -160,12 +176,16 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
 esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bit)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+#if CONFIG_IDF_TARGET_ESP32
     //workaround for hardware bug, when uart stop bit set as 2-bit mode.
     if (UART[uart_num]->rs485_conf.dl1_en == 1 && UART[uart_num]->conf0.stop_bit_num == UART_STOP_BITS_1) {
         (*stop_bit) = UART_STOP_BITS_2;
     } else {
         (*stop_bit) = UART[uart_num]->conf0.stop_bit_num;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    (*stop_bit) = UART[uart_num]->conf0.stop_bit_num;
+#endif
     return ESP_OK;
 }
 
@@ -252,10 +272,17 @@ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_t
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->flow_conf.sw_flow_con_en = enable? 1:0;
     UART[uart_num]->flow_conf.xonoff_del = enable?1:0;
+#if CONFIG_IDF_TARGET_ESP32
     UART[uart_num]->swfc_conf.xon_threshold =  rx_thresh_xon;
     UART[uart_num]->swfc_conf.xoff_threshold =  rx_thresh_xoff;
     UART[uart_num]->swfc_conf.xon_char = XON;
     UART[uart_num]->swfc_conf.xoff_char = XOFF;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    UART[uart_num]->swfc_conf1.xon_threshold =  rx_thresh_xon;
+    UART[uart_num]->swfc_conf0.xoff_threshold =  rx_thresh_xoff;
+    UART[uart_num]->swfc_conf1.xon_char = XON;
+    UART[uart_num]->swfc_conf0.xoff_char = XOFF;
+#endif
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
 }
@@ -268,7 +295,11 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow
     UART_CHECK((flow_ctrl < UART_HW_FLOWCTRL_MAX), "hw_flowctrl mode error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     if(flow_ctrl & UART_HW_FLOWCTRL_RTS) {
+#if CONFIG_IDF_TARGET_ESP32
         UART[uart_num]->conf1.rx_flow_thrhd = rx_thresh;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        UART[uart_num]->mem_conf.rx_flow_thrhd = rx_thresh;
+#endif
         UART[uart_num]->conf1.rx_flow_en = 1;
     } else {
         UART[uart_num]->conf1.rx_flow_en = 0;
@@ -299,11 +330,11 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
 static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+#if CONFIG_IDF_TARGET_ESP32
     //Due to hardware issue, we can not use fifo_rst to reset uart fifo.
     //See description about UART_TXFIFO_RST and UART_RXFIFO_RST in <<esp32_technical_reference_manual>> v2.6 or later.
 
     // we read the data out and make `fifo_len == 0 && rd_addr == wr_addr`.
-#if CONFIG_IDF_TARGET_ESP32
     while(UART[uart_num]->status.rxfifo_cnt != 0 || (UART[uart_num]->mem_rx_status.wr_addr != UART[uart_num]->mem_rx_status.rd_addr)) {
         READ_PERI_REG(UART_FIFO_REG(uart_num));
     }
@@ -538,9 +569,11 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
         case UART_NUM_1:
             ret=esp_intr_alloc(ETS_UART1_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
             break;
+#if UART_NUM > 2
         case UART_NUM_2:
             ret=esp_intr_alloc(ETS_UART2_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
             break;
+#endif
         case UART_NUM_0:
             default:
             ret=esp_intr_alloc(ETS_UART0_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
@@ -587,7 +620,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
             rts_sig = U1RTS_OUT_IDX;
             cts_sig = U1CTS_IN_IDX;
             break;
-#if CONFIG_IDF_TARGET_ESP32
+#if UART_NUM > 2
         case UART_NUM_2:
             tx_sig = U2TXD_OUT_IDX;
             rx_sig = U2RXD_IN_IDX;
@@ -668,11 +701,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         periph_module_enable(PERIPH_UART0_MODULE);
     } else if(uart_num == UART_NUM_1) {
         periph_module_enable(PERIPH_UART1_MODULE);
+#if UART_NUM > 2
     } else if(uart_num == UART_NUM_2) {
-#if CONFIG_IDF_TARGET_ESP32
         periph_module_enable(PERIPH_UART2_MODULE);
-#else
-        return ESP_FAIL;
 #endif
     }
     r = uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
@@ -702,6 +733,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
     UART[uart_num]->int_clr.val = UART_INTR_MASK;
     if(intr_conf->intr_enable_mask & UART_RXFIFO_TOUT_INT_ENA_M) {
+#if CONFIG_IDF_TARGET_ESP32
         //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
         //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
         if(UART[uart_num]->conf0.tick_ref_always_on == 0) {
@@ -709,6 +741,9 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
         } else {
             UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
         }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        UART[uart_num]->mem_conf.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
+#endif
         UART[uart_num]->conf1.rx_tout_en = 1;
     } else {
         UART[uart_num]->conf1.rx_tout_en = 0;
@@ -1480,11 +1515,9 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
            periph_module_disable(PERIPH_UART0_MODULE);
        } else if(uart_num == UART_NUM_1) {
            periph_module_disable(PERIPH_UART1_MODULE);
+#if UART_NUM > 2
        } else if(uart_num == UART_NUM_2) {
-#if CONFIG_IDF_TARGET_ESP32
-            periph_module_disable(PERIPH_UART2_MODULE);
-#else
-            return ESP_FAIL;
+           periph_module_disable(PERIPH_UART2_MODULE);
 #endif
        }
     }
@@ -1502,6 +1535,7 @@ portMUX_TYPE *uart_get_selectlock()
 {
     return &uart_selectlock;
 }
+
 // Set UART mode
 esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
 {
@@ -1570,7 +1604,15 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
     // The tout_thresh = 1, defines TOUT interrupt timeout equal to
     // transmission time of one symbol (~11 bit) on current baudrate
     if (tout_thresh > 0) {
-        UART[uart_num]->conf1.rx_tout_thrhd = (tout_thresh & UART_RX_TOUT_THRHD_V);
+#if CONFIG_IDF_TARGET_ESP32
+        if(UART[uart_num]->conf0.tick_ref_always_on == 0) {
+            UART[uart_num]->conf1.rx_tout_thrhd = ((tout_thresh * UART_TOUT_REF_FACTOR_DEFAULT) & UART_RX_TOUT_THRHD_V);
+        } else {
+            UART[uart_num]->conf1.rx_tout_thrhd = ((tout_thresh) & UART_RX_TOUT_THRHD_V);
+        }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        UART[uart_num]->mem_conf.rx_tout_thrhd = ((tout_thresh) & UART_RX_TOUT_THRHD_V);
+#endif
         UART[uart_num]->conf1.rx_tout_en = 1;
     } else {
         UART[uart_num]->conf1.rx_tout_en = 0;
