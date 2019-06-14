@@ -29,13 +29,13 @@ menu "Example Configuration"
     menu "I2C Slave"
         config I2C_SLAVE_SCL
             int "SCL GPIO Num"
-            default 26
+            default 5
             help
                 GPIO number for I2C Slave clock line.
 
         config I2C_SLAVE_SDA
             int "SDA GPIO Num"
-            default 25
+            default 4
             help
                 GPIO number for I2C Slave data line.
 
