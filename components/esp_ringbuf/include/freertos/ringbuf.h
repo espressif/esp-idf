@@ -1,9 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -73,7 +73,7 @@ typedef struct xSTATIC_RINGBUFFER {
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
     BaseType_t xDummy3;
-    void *pvDummy4[10];
+    void *pvDummy4[11];
     StaticSemaphore_t xDummy5[2];
     portMUX_TYPE muxDummy;
     /** @endcond */
@@ -453,12 +453,14 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
  * @param[out]  uxFree          Pointer use to store free pointer position
  * @param[out]  uxRead          Pointer use to store read pointer position
  * @param[out]  uxWrite         Pointer use to store write pointer position
+ * @param[out]  uxAcquire       Pointer use to store acquire pointer position
  * @param[out]  uxItemsWaiting  Pointer use to store number of items (bytes for byte buffer) waiting to be retrieved
  */
 void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
                         UBaseType_t *uxFree,
                         UBaseType_t *uxRead,
                         UBaseType_t *uxWrite,
+                        UBaseType_t *uxAcquire,
                         UBaseType_t *uxItemsWaiting);
 
 /**
