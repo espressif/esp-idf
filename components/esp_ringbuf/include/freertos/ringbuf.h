@@ -182,6 +182,50 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer,
                                   BaseType_t *pxHigherPriorityTaskWoken);
 
 /**
+ * @brief Acquire memory from the ring buffer to be written to by an external
+ *        source and to be sent later.
+ *
+ * Attempt to allocate buffer for an item to be sent into the ring buffer. This
+ * function will block until enough free space is available or until it
+ * timesout.
+ *
+ * The item, as well as the following items ``SendAcquire`` or ``Send`` after it,
+ * will not be able to be read from the ring buffer until this item is actually
+ * sent into the ring buffer.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to allocate the memory
+ * @param[out]  ppvItem         Double pointer to memory acquired (set to NULL if no memory were retrieved)
+ * @param[in]   xItemSize       Size of item to acquire.
+ * @param[in]   xTicksToWait    Ticks to wait for room in the ring buffer.
+ *
+ * @note Only applicable for no-split ring buffers now, the actual size of
+ *       memory that the item will occupy will be rounded up to the nearest 32-bit
+ *       aligned size. This is done to ensure all items are always stored in 32-bit
+ *       aligned fashion.
+ *
+ * @return
+ *      - pdTRUE if succeeded
+ *      - pdFALSE on time-out or when the data is larger than the maximum permissible size of the buffer
+ */
+BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, size_t xItemSize, TickType_t xTicksToWait);
+
+/**
+ * @brief       Actually send an item into the ring buffer allocated before by
+ *              ``xRingbufferSendAcquire``.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to insert the item into
+ * @param[in]   pvItem          Pointer to item in allocated memory to insert.
+ *
+ * @note Only applicable for no-split ring buffers. Only call for items
+ *       allocated by ``xRingbufferSendAcquire``.
+ *
+ * @return
+ *      - pdTRUE if succeeded
+ *      - pdFALSE if fail for some reason.
+ */
+BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem);
+
+/**
  * @brief   Retrieve an item from the ring buffer
  *
  * Attempt to retrieve an item from the ring buffer. This function will block
