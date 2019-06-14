@@ -21,6 +21,7 @@ extern "C" {
 #endif
 
 #include "soc/uart_periph.h"
+#include "soc/uart_caps.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
@@ -82,7 +83,9 @@ typedef enum {
 typedef enum {
     UART_NUM_0 = 0x0,  /*!< UART base address 0x3ff40000*/
     UART_NUM_1 = 0x1,  /*!< UART base address 0x3ff50000*/
+#if SOC_UART_NUM > 2
     UART_NUM_2 = 0x2,  /*!< UART base address 0x3ff6e000*/
+#endif
     UART_NUM_MAX,
 } uart_port_t;
 
@@ -674,6 +677,7 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
  */
 esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
 
+#if CONFIG_IDF_TARGET_ESP32
 /**
  * @brief UART enable pattern detect function.
  *        Designed for applications like 'AT commands'.
@@ -694,6 +698,28 @@ esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
  *     - ESP_FAIL Parameter error
  */
 esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+/**
+ * @brief UART enable pattern detect function.
+ *        Designed for applications like 'AT commands'.
+ *        When the hardware detect a series of one same character, the interrupt will be triggered.
+ *
+ * @param uart_num UART port number.
+ * @param pattern_chr character of the pattern
+ * @param chr_num number of the character, 8bit value.
+ * @param chr_tout timeout of the interval between each pattern characters, 16bit value, unit is baud rate.
+ *        When the duration is more than this value, it will not take this data as at_cmd char
+ * @param post_idle idle time after the last pattern character, 16bit value, unit is baud rate.
+ *        When the duration is less than this value, it will not take the previous data as the last at_cmd char
+ * @param pre_idle idle time before the first pattern character, 16bit value, unit is baud rate.
+ *        When the duration is less than this value, it will not take this data as the first at_cmd char
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
+#endif
 
 /**
  * @brief Return the nearest detected pattern position in buffer.
