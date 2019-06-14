@@ -1,19 +1,16 @@
+idf_build_get_property(target IDF_TARGET)
+
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need is headers
     set(COMPONENT_ADD_INCLUDEDIRS "include")
     set(COMPONENT_REQUIRES ${IDF_COMPONENTS})
     set(COMPONENT_SRCS)
     register_component()
-    idf_build_get_property(target IDF_TARGET)
-    set(scripts "${target}/ld/${target}.rom.ld")
-    if(target STREQUAL "esp32")
-        list(APPEND scripts
-            "${target}/ld/${target}.rom.newlib-funcs.ld"
-            "${target}/ld/${target}.rom.libgcc.ld")
-    elseif(target STREQUAL "esp32s2beta")
-        list(APPEND scripts
-            "${target}/ld/${target}.rom.spiflash.ld"
-            "${target}/ld/${target}.rom.spiram_incompatible_fns.ld")
+    set(scripts "${target}/ld/${target}.rom.ld"
+                "${target}/ld/${target}.rom.newlib-funcs.ld"
+                "${target}/ld/${target}.rom.libgcc.ld")
+    if (target STREQUAL "esp32s2beta")
+        list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
     endif()
     target_linker_script(${COMPONENT_LIB} "${scripts}")
 else()
@@ -23,14 +20,13 @@ else()
 
     register_component()
 
-    if (IDF_TARGET STREQUAL "esp32")
-        set(scripts
-            "esp32/ld/esp32.rom.ld"
-            "esp32/ld/esp32.rom.libgcc.ld"
-            "esp32/ld/esp32.rom.syscalls.ld"
-            "esp32/ld/esp32.rom.newlib-data.ld"
-            )
-        target_linker_script(${COMPONENT_LIB} "${scripts}")
+    set(scripts
+        "${target}/ld/${target}.rom.ld"
+        "${target}/ld/${target}.rom.libgcc.ld"
+        "${target}/ld/${target}.rom.newlib-data.ld")
+
+    if (target STREQUAL "esp32")
+        list(APPEND scripts "${target}/ld/${target}.rom.syscalls.ld")
 
         if(NOT CONFIG_SPIRAM_CACHE_WORKAROUND)
             target_linker_script(${COMPONENT_LIB} "esp32/ld/esp32.rom.newlib-funcs.ld")
@@ -48,12 +44,15 @@ else()
             target_linker_script(${COMPONENT_LIB} "esp32/ld/esp32.rom.spiflash.ld")
         endif()
 
-    elseif(IDF_TARGET STREQUAL "esp32s2beta")
-        set(scripts "esp32s2beta/ld/esp32s2beta.rom.ld"
-                    "esp32s2beta/ld/esp32s2beta.rom.nanofmt.ld"
-                    "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld"
-                    "esp32s2beta/ld/esp32s2beta.rom.spiram_incompatible_fns.ld")
-        target_linker_script(${COMPONENT_LIB} "${scripts}")
+    elseif(target STREQUAL "esp32s2beta")
+        # no SPIRAM workaround for esp32s2beta
+        # no nano formatting function in ROM
+        # no GCC 5.2.0 for esp32s2beta, hence not linking locale functions
+
+        list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.newlib-funcs.ld"
+                            "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
     endif()
+
+    target_linker_script(${COMPONENT_LIB} "${scripts}")
 
 endif()
