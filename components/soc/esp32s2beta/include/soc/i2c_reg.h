@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -747,6 +747,12 @@ extern "C" {
 #define I2C_SDA_SAMPLE_TIME_S  0
 
 #define I2C_SCL_HIGH_PERIOD_REG(i)          (REG_I2C_BASE(i) + 0x0038)
+/* I2C_SCL_WAIT_HIGH_PERIOD : R/W ;bitpos:[27:14] ;default: 14'b0 ; */
+/*description: */
+#define I2C_SCL_WAIT_HIGH_PERIOD  0x00003FFF
+#define I2C_SCL_WAIT_HIGH_PERIOD_M  ((I2C_SCL_WAIT_HIGH_PERIOD_V)<<(I2C_SCL_WAIT_HIGH_PERIOD_S))
+#define I2C_SCL_WAIT_HIGH_PERIOD_V  0x3FFF
+#define I2C_SCL_WAIT_HIGH_PERIOD_S  14
 /* I2C_SCL_HIGH_PERIOD : R/W ;bitpos:[13:0] ;default: 14'b0 ; */
 /*description: This register is used to configure the clock num during SCL is low level.*/
 #define I2C_SCL_HIGH_PERIOD  0x00003FFF
@@ -1102,7 +1108,7 @@ extern "C" {
 #define I2C_SCL_RST_SLV_EN_S  0
 
 #define I2C_DATE_REG(i)          (REG_I2C_BASE(i) + 0x00F8)
-/* I2C_DATE : R/W ;bitpos:[31:0] ;default: 32'h18051600 ; */
+/* I2C_DATE : R/W ;bitpos:[31:0] ;default: 32'h18073100 ; */
 /*description: */
 #define I2C_DATE  0xFFFFFFFF
 #define I2C_DATE_M  ((I2C_DATE_V)<<(I2C_DATE_S))
