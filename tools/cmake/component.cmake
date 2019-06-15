@@ -427,8 +427,7 @@ function(idf_component_register)
     list(REMOVE_ITEM common_reqs ${component_lib})
     link_libraries(${common_reqs})
 
-    idf_build_get_property(sdkconfig_h SDKCONFIG_HEADER)
-    get_filename_component(sdkconfig_h ${sdkconfig_h} DIRECTORY)
+    idf_build_get_property(config_dir CONFIG_DIR)
 
     # The contents of 'sources' is from the __component_add_sources call
     if(sources OR __EMBED_FILES OR __EMBED_TXTFILES)
@@ -436,14 +435,14 @@ function(idf_component_register)
         __component_set_property(${component_target} COMPONENT_TYPE LIBRARY)
         target_include_directories(${component_lib} PUBLIC ${__INCLUDE_DIRS})
         target_include_directories(${component_lib} PRIVATE ${__PRIV_INCLUDE_DIRS})
-        target_include_directories(${component_lib} PUBLIC ${sdkconfig_h})
+        target_include_directories(${component_lib} PUBLIC ${config_dir})
         set_target_properties(${component_lib} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME})
         __ldgen_add_component(${component_lib})
     else()
         add_library(${component_lib} INTERFACE)
         __component_set_property(${component_target} COMPONENT_TYPE CONFIG_ONLY)
         target_include_directories(${component_lib} INTERFACE ${__INCLUDE_DIRS})
-        target_include_directories(${component_lib} INTERFACE ${sdkconfig_h})
+        target_include_directories(${component_lib} INTERFACE ${config_dir})
     endif()
 
     # Alias the static/interface library created for linking to external targets.

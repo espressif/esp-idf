@@ -189,6 +189,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON ${sdkconfig_json})
     idf_build_set_property(SDKCONFIG_CMAKE ${sdkconfig_cmake})
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
+    idf_build_set_property(CONFIG_DIR ${config_dir})
 
     idf_build_get_property(menuconfig_depends __MENUCONFIG_DEPENDS)
 

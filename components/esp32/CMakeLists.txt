@@ -70,8 +70,7 @@ else()
     #symbols in it.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_panic_highint_hdl")
 
-    idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
-    get_filename_component(config_dir ${sdkconfig_header} DIRECTORY)
+    idf_build_get_property(config_dir CONFIG_DIR)
     # Preprocess esp32.ld linker script to include configuration, becomes esp32_out.ld
     set(LD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ld)
     add_custom_command(
