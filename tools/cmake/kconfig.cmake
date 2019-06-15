@@ -205,6 +205,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${sdkconfig}"
+        "IDF_TARGET=${idf_target}"
         ${mconf} ${root_kconfig}
         # VERBATIM cannot be used here because it cannot handle ${mconf}="winpty mconf-idf" and the escaping must be
         # done manually
