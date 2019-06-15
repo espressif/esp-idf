@@ -25,6 +25,11 @@ static const char *TAG = "bootloader_mmap";
 
 static spi_flash_mmap_handle_t map;
 
+uint32_t bootloader_mmap_get_free_pages()
+{
+    return spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+}
+
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 {
     if (map) {
@@ -91,11 +96,21 @@ static const char *TAG = "bootloader_flash";
 */
 #define MMU_BLOCK0_VADDR  0x3f400000
 #define MMU_BLOCK50_VADDR 0x3f720000
+#define MMU_FREE_PAGES    ((MMU_BLOCK50_VADDR - MMU_BLOCK0_VADDR) / FLASH_BLOCK_SIZE)
 
 static bool mapped;
 
 // Current bootloader mapping (ab)used for bootloader_read()
 static uint32_t current_read_mapping = UINT32_MAX;
+
+uint32_t bootloader_mmap_get_free_pages()
+{
+    /**
+     * Allow mapping up to 50 of the 51 available MMU blocks (last one used for reads)
+     * Since, bootloader_mmap function below assumes it to be 0x320000 (50 pages), we can safely do this.
+     */
+    return MMU_FREE_PAGES;
+}
 
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 {
