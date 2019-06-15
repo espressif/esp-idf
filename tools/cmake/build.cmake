@@ -367,15 +367,20 @@ macro(idf_build_process target)
     __build_check_python()
 
     idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
-    __component_get_requirements()
 
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
     # own requirements.
+    __component_get_requirements()
+
+    idf_build_get_property(component_targets __COMPONENT_TARGETS)
 
     # Finally, do component expansion. In this case it simply means getting a final list
     # of build component targets given the requirements set by each component.
+
+    # Check if we need to trim the components first, and build initial components list
+    # from that.
     if(__COMPONENTS)
         unset(component_targets)
         foreach(component ${__COMPONENTS})
@@ -390,7 +395,7 @@ macro(idf_build_process target)
     foreach(component_target ${component_targets})
         __build_expand_requirements(${component_target})
     endforeach()
-    unset(__COMPONENT_TARGETS_SEEN)
+    idf_build_unset_property(__COMPONENT_TARGETS_SEEN)
 
     # Get a list of common component requirements in component targets form (previously
     # we just have a list of component names)
