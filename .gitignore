@@ -70,6 +70,13 @@ test_multi_heap_host
 # VS Code Settings
 .vscode/
 
+# Idea files from Clion
+.idea/
+
+# CMake generated files
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
 # Results for the checking of the Python coding style
 flake8_output.txt
 
