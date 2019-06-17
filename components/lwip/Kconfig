@@ -74,15 +74,6 @@ menu "LWIP"
         help
             Enabling this option allows checking for available data on a netconn.
 
-    config LWIP_DHCP_MAX_NTP_SERVERS
-        int "Maximum number of NTP servers"
-        default 1
-        range 1 16
-        help
-            Set maximum number of NTP servers used by LwIP SNTP module.
-            First argument of sntp_setserver/sntp_setservername functions
-            is limited to this value.
-
     config LWIP_IP_FRAG
         bool "Enable fragment outgoing IP packets"
         default n
@@ -559,5 +550,27 @@ menu "LWIP"
                 limit is determined by available heap memory at runtime.
 
     endmenu  # LWIP RAW API
+
+    menu "SNTP"
+
+        config LWIP_DHCP_MAX_NTP_SERVERS
+            int "Maximum number of NTP servers"
+            default 1
+            range 1 16
+            help
+                Set maximum number of NTP servers used by LwIP SNTP module.
+                First argument of sntp_setserver/sntp_setservername functions
+                is limited to this value.
+
+        config LWIP_SNTP_UPDATE_DELAY
+            int "Request interval to update time (ms)"
+            range 15000 4294967295
+            default 3600000
+            help
+                This option allows you to set the time update period via SNTP.
+                Default is 1 hour. Must not be below 15 seconds by specification.
+                (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
+
+    endmenu # SNTP
 
 endmenu
