@@ -321,6 +321,8 @@ endmenu  # Wi-Fi
 menu PHY
 
     config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+        # ToDo: remove once NVS and PHY partial calibration are supported
+        depends on IDF_TARGET_ESP32
         bool "Store phy calibration data in NVS"
         default y
         help

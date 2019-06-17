@@ -162,10 +162,13 @@ void rtc_init(rtc_config_t cfg)
         // CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_ROM_RAM_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FORCE_NOISO);
         //cancel digital PADS force no iso
-        //wangqiang ++
-        rom_i2c_writeReg_Mask(0x6a,1,0,1,0,2);
-
-        rom_i2c_writeReg_Mask(0x6a,1,2,5,4,2);
+        if (cfg.cpu_waiti_clk_gate){
+            CLEAR_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_CPU_WAIT_MODE_FORCE_ON);
+        }
+        else{
+            SET_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_CPU_WAIT_MODE_FORCE_ON);
+        }
+        /*if DPORT_CPU_WAIT_MODE_FORCE_ON == 0 , the cpu clk will be closed when cpu enter WAITI mode*/
 
 #ifdef CONFIG_CHIP_IS_ESP32
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PAD_FORCE_UNHOLD);

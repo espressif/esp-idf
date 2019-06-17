@@ -17,6 +17,7 @@ elseif(CONFIG_IDF_TARGET_ESP32S2BETA)
                    "crosscore_int.c"
                    "dport_access.c"
                    "dport_panic_highint_hdl.S"
+                   "esp_adapter.c"
                    "esp_timer_esp32s2beta.c"
                    "gdbstub.c"
                    "hw_random.c"

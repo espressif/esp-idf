@@ -24,7 +24,7 @@
  */
 
 #define I2C_APLL            0X6D
-#define I2C_APLL_HOSTID     3
+#define I2C_APLL_HOSTID     1
 
 #define I2C_APLL_IR_CAL_DELAY        0
 #define I2C_APLL_IR_CAL_DELAY_MSB    3
