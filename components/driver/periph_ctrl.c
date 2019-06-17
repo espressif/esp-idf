@@ -130,7 +130,11 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
         case PERIPH_RNG_MODULE:
             return DPORT_WIFI_CLK_RNG_EN;
         case PERIPH_WIFI_MODULE:
+#if CONFIG_IDF_TARGET_ESP32
             return DPORT_WIFI_CLK_WIFI_EN_M;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+            return 0;
+#endif
         case PERIPH_BT_MODULE:
             return DPORT_WIFI_CLK_BT_EN_M;
         case PERIPH_WIFI_BT_COMMON_MODULE:

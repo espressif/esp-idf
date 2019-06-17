@@ -12,7 +12,9 @@
 #include "sdkconfig.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
+#if CONFIG_EXAMPLE_CONNECT_ETHERNET
 #include "esp_eth.h"
+#endif
 #include "esp_log.h"
 #include "tcpip_adapter.h"
 #include "freertos/FreeRTOS.h"
