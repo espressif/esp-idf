@@ -2047,6 +2047,31 @@ void BTM_Recovery_Pre_State(void)
 
 /*******************************************************************************
 **
+** Function         BTM_GetCurrentConnParams
+**
+** Description      This function is called to read the current connection parameters
+**                  of the device
+**
+** Returns          TRUE or FALSE
+**
+*******************************************************************************/
+
+BOOLEAN BTM_GetCurrentConnParams(BD_ADDR bda, uint16_t *interval, uint16_t *latency, uint16_t *timeout)
+{
+    if( (interval == NULL) || (latency == NULL) || (timeout == NULL) ) {
+        BTM_TRACE_ERROR("%s error ", __func__);
+        return FALSE;
+    }
+
+    if(btm_get_current_conn_params(bda, interval, latency, timeout)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+/*******************************************************************************
+**
 ** Function         btm_ble_build_adv_data
 **
 ** Description      This function is called build the adv data and rsp data.

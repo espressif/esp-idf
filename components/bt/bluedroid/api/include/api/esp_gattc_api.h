@@ -210,6 +210,7 @@ typedef union {
     struct gattc_connect_evt_param {
         uint16_t conn_id;               /*!< Connection id */
         esp_bd_addr_t remote_bda;       /*!< Remote bluetooth device address */
+        esp_gatt_conn_params_t conn_params; /*!< current connection parameters */
     } connect;                          /*!< Gatt client callback param of ESP_GATTC_CONNECT_EVT */
 
     /**
