@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_EFUSE_UTILITY_H_
-#define _ESP_EFUSE_UTILITY_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +22,20 @@ extern "C" {
 #include "esp_types.h"
 #include "esp_err.h"
 #include "esp_efuse.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/esp_efuse_utility.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/esp_efuse_utility.h"
+#endif
+
+/**
+ * @brief Structure range address by blocks
+ */
+typedef struct {
+    uint32_t start;
+    uint32_t end;
+} esp_efuse_range_addr_t;
 
 /**
  * @brief This is type of function that will handle the efuse field register.
@@ -133,8 +146,11 @@ void esp_efuse_utility_erase_virt_blocks(void);
  */
 esp_err_t esp_efuse_utility_apply_new_coding_scheme(void);
 
+/**
+ * @brief   Efuse read operation: copies data from physical efuses to efuse read registers.
+ */
+void esp_efuse_utility_clear_program_registers(void);
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _ESP_EFUSE_UTILITY_H_

@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <strings.h>
 #include "esp_efuse.h"
-#include "../src/esp_efuse_utility.h"
+#include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
 #include "unity.h"
 #include "bootloader_random.h"
@@ -82,20 +82,21 @@ TEST_CASE("Test 3/4 Coding Scheme Algorithm", "[efuse]")
         const coding_scheme_test_t *t = &coding_scheme_data[i];
 
         printf("Test case %d...\n", i);
-        esp_err_t r = esp_efuse_apply_34_encoding(t->unencoded, result, sizeof(t->unencoded));
+        esp_err_t r = esp_efuse_utility_apply_34_encoding(t->unencoded, result, sizeof(t->unencoded));
         TEST_ASSERT_EQUAL_HEX(ESP_OK, r);
         TEST_ASSERT_EQUAL_HEX32_ARRAY(t->encoded, result, 8);
 
         // Do the same, 6 bytes at a time
         for (int offs = 0; offs < sizeof(t->unencoded); offs += 6) {
             bzero(result, sizeof(result));
-            r = esp_efuse_apply_34_encoding(t->unencoded + offs, result, 6);
+            r = esp_efuse_utility_apply_34_encoding(t->unencoded + offs, result, 6);
             TEST_ASSERT_EQUAL_HEX(ESP_OK, r);
             TEST_ASSERT_EQUAL_HEX32_ARRAY(t->encoded + (offs / 6 * 2), result, 2);
         }
     }
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
 {
     int count_useful_reg = 0;
@@ -117,6 +118,7 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
     useful_data_in_byte = count_useful_reg * 4;
 
     for (int i = 0; i < 10; ++i) {
+        esp_efuse_utility_erase_virt_blocks();
         printf("Test case %d...\n", i);
         memset(buf, 0, sizeof(buf));
         memset(encoded, 0, sizeof(encoded));
@@ -140,7 +142,7 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
         if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
             memcpy((uint8_t*)encoded, buf, sizeof(buf));
         } else if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
-            TEST_ESP_OK(esp_efuse_apply_34_encoding(buf, encoded, useful_data_in_byte));
+            TEST_ESP_OK(esp_efuse_utility_apply_34_encoding(buf, encoded, useful_data_in_byte));
         } else if (coding_scheme == EFUSE_CODING_SCHEME_REPEAT) {
             for (int j = 0; j < count_useful_reg; ++j) {
                 encoded[j]     = *((uint32_t*)buf + j);
@@ -172,7 +174,9 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
     esp_efuse_utility_reset();
     bootloader_random_disable();
 }
+#endif
 
+#if CONFIG_IDF_TARGET_ESP32
 TEST_CASE("Test data does not match the coding scheme", "[efuse]")
 {
     int count_useful_reg = 0;
@@ -202,3 +206,4 @@ TEST_CASE("Test data does not match the coding scheme", "[efuse]")
 
     esp_efuse_utility_reset();
 }
+#endif

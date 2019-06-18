@@ -236,7 +236,7 @@ name4,                   EFUSE_BLK2,                     30,                    
 name1,                   EFUSE_BLK5,                     0,                     5,              Use for test name 1
 name2,                   EFUSE_BLK3,                     5,                     4,              Use for test name 2
             """
-        with self.assertRaisesRegex(efuse_table_gen.InputError, "'efuse_block' should consist from EFUSE_BLK0..EFUSE_BLK3"):
+        with self.assertRaisesRegex(efuse_table_gen.InputError, "'efuse_block' should be one of EFUSE_BLK0..EFUSE_BLK3"):
             efuse_table_gen.FuseTable.from_csv(csv)
 
     def test_field_size_is_ok(self):
