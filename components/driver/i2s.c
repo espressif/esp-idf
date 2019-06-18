@@ -253,7 +253,7 @@ static esp_err_t i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm
         max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, _sdm2, 0);
         min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, _sdm2, 31);
         avg = (max_rate + min_rate)/2;
-        if(abs(avg - rate) < min_diff) {
+        if (abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *sdm2 = _sdm2;
         }
@@ -263,9 +263,19 @@ static esp_err_t i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm
         max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, *sdm2, _odir);
         min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, *sdm2, _odir);
         avg = (max_rate + min_rate)/2;
-        if(abs(avg - rate) < min_diff) {
+        if (abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *odir = _odir;
+        }
+    }
+    min_diff = APLL_MAX_FREQ;
+    for (_sdm2 = 4; _sdm2 < 9; _sdm2 ++) {
+        max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, _sdm2, *odir);
+        min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, _sdm2, *odir);
+        avg = (max_rate + min_rate)/2;
+        if (abs(avg - rate) < min_diff) {
+            min_diff = abs(avg - rate);
+            *sdm2 = _sdm2;
         }
     }
 
