@@ -57,6 +57,7 @@ function run_tests()
 
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
+    PHY_INIT_BIN="phy_init_data.bin"
 
     print_status "Initial clean build"
     # if make fails here, everything fails
@@ -281,6 +282,18 @@ function run_tests()
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
     rm sdkconfig sdkconfig.defaults
+    make defconfig
+
+    print_status "can build with phy_init_data"
+    make clean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults
+    make defconfig > /dev/null
+    make || failure "Failed to build with PHY_INIT_DATA"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PHY_INIT_BIN}
+    rm sdkconfig
+    rm sdkconfig.defaults
     make defconfig
 
     print_status "Empty directory not treated as a component"

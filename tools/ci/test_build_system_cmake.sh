@@ -58,6 +58,7 @@ function run_tests()
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
     PARTITION_BIN="partition_table/partition-table.bin"
+    PHY_INIT_BIN="phy_init_data.bin"
     BUILD_ARTIFACTS="project_description.json flasher_args.json config/kconfig_menus.json config/sdkconfig.json"
     IDF_COMPONENT_PREFIX="__idf"
 
@@ -342,6 +343,18 @@ function run_tests()
     rm sdkconfig;
     rm sdkconfig.defaults;
 
+    print_status "can build with phy_init_data"
+    idf.py clean > /dev/null;
+    idf.py fullclean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults;
+    idf.py reconfigure > /dev/null;
+    idf.py build || failure "Failed to build with PHY_INIT_DATA"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} ${PHY_INIT_BIN}
+    rm sdkconfig;
+    rm sdkconfig.defaults;
+
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -rf build
@@ -440,7 +453,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
 
     print_status "If a component directory is added to COMPONENT_DIRS, its sibling directories are not added"
     clean_build_dir
-    mkdir -p mycomponents/mycomponent 
+    mkdir -p mycomponents/mycomponent
     echo "idf_component_register()" > mycomponents/mycomponent/CMakeLists.txt
     # first test by adding single component directory to EXTRA_COMPONENT_DIRS
     mkdir -p mycomponents/esp32
