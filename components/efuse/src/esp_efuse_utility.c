@@ -15,7 +15,6 @@
 #include "esp_efuse_utility.h"
 
 #include "soc/efuse_periph.h"
-#include "esp32/clk.h"
 #include "esp_log.h"
 #include "assert.h"
 #include "sdkconfig.h"
@@ -23,45 +22,16 @@
 
 static const char *TAG = "efuse";
 
-#define COUNT_EFUSE_BLOCKS        4      /* The number of blocks. */
-#define COUNT_EFUSE_REG_PER_BLOCK 8      /* The number of registers per block. */
-#define EFUSE_CONF_WRITE          0x5A5A /* eFuse_pgm_op_ena, force no rd/wr disable. */
-#define EFUSE_CONF_READ           0x5AA5 /* eFuse_read_op_ena, release force. */
-#define EFUSE_CMD_PGM             0x02   /* Command to program. */
-#define EFUSE_CMD_READ            0x01   /* Command to read. */
-
 // Array for emulate efuse registers.
 #ifdef CONFIG_EFUSE_VIRTUAL
-static uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
+uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
 
 /* Call the update function to seed virtual efuses during initialization */
 __attribute__((constructor)) void esp_efuse_utility_update_virt_blocks(void);
-
 #endif
 
-/**
- * @brief Structure range address by blocks
- */
-typedef struct {
-    uint32_t start;
-    uint32_t end;
-} esp_efuse_range_addr_t;
-
-/*Range addresses to read blocks*/
-static const esp_efuse_range_addr_t range_read_addr_blocks[] = {
-    {EFUSE_BLK0_RDATA0_REG, EFUSE_BLK0_RDATA6_REG},    // range address of EFUSE_BLK0
-    {EFUSE_BLK1_RDATA0_REG, EFUSE_BLK1_RDATA7_REG},    // range address of EFUSE_BLK1
-    {EFUSE_BLK2_RDATA0_REG, EFUSE_BLK2_RDATA7_REG},    // range address of EFUSE_BLK2
-    {EFUSE_BLK3_RDATA0_REG, EFUSE_BLK3_RDATA7_REG}     // range address of EFUSE_BLK3
-};
-
-/*Range addresses to write blocks*/
-static const esp_efuse_range_addr_t range_write_addr_blocks[] = {
-    {EFUSE_BLK0_WDATA0_REG, EFUSE_BLK0_WDATA6_REG},    // range address of EFUSE_BLK0
-    {EFUSE_BLK1_WDATA0_REG, EFUSE_BLK1_WDATA7_REG},    // range address of EFUSE_BLK1
-    {EFUSE_BLK2_WDATA0_REG, EFUSE_BLK2_WDATA7_REG},    // range address of EFUSE_BLK2
-    {EFUSE_BLK3_WDATA0_REG, EFUSE_BLK3_WDATA7_REG}     // range address of EFUSE_BLK3
-};
+extern const esp_efuse_range_addr_t range_read_addr_blocks[];
+extern const esp_efuse_range_addr_t range_write_addr_blocks[];
 
 static int get_reg_num(int bit_start, int bit_count, int i_reg);
 static int get_starting_bit_num_in_reg(int bit_start, int i_reg);
@@ -174,72 +144,13 @@ esp_err_t esp_efuse_utility_write_cnt(unsigned int num_reg, esp_efuse_block_t ef
 // Reset efuse write registers
 void esp_efuse_utility_reset(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
+    esp_efuse_utility_clear_program_registers();
     for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
         for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
             REG_WRITE(addr_wr_block, 0);
         }
     }
 }
-
-// Burn values written to the efuse write registers
-void esp_efuse_utility_burn_efuses(void)
-{
-#ifdef CONFIG_EFUSE_VIRTUAL
-    ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
-    for (int num_block = 0; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
-        esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
-        if (scheme == EFUSE_CODING_SCHEME_3_4) {
-            uint8_t buf[COUNT_EFUSE_REG_PER_BLOCK * 4] = { 0 };
-            int i = 0;
-            for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4, ++i) {
-                *((uint32_t*)buf + i) = REG_READ(addr_wr_block);
-            }
-            int j = 0;
-            uint32_t out_buf[COUNT_EFUSE_REG_PER_BLOCK] = { 0 };
-            for (int k = 0; k < 4; ++k, ++j) {
-                memcpy((uint8_t*)out_buf + j * 6, &buf[k * 8], 6);
-            }
-            for (int k = 0; k < COUNT_EFUSE_REG_PER_BLOCK; ++k) {
-                REG_WRITE(range_write_addr_blocks[num_block].start + k * 4,  out_buf[k]);
-            }
-        }
-        int subblock = 0;
-        for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
-            virt_blocks[num_block][subblock++] |= REG_READ(addr_wr_block);
-        }
-    }
-#else
-    // Update Efuse timing configuration
-    uint32_t apb_freq_mhz = esp_clk_apb_freq() / 1000000;
-    uint32_t clk_sel0, clk_sel1, dac_clk_div;
-    if (apb_freq_mhz <= 26) {
-        clk_sel0 = 250;
-        clk_sel1 = 255;
-        dac_clk_div = 52;
-    } else if (apb_freq_mhz <= 40) {
-        clk_sel0 = 160;
-        clk_sel1 = 255;
-        dac_clk_div = 80;
-    } else {
-        clk_sel0 = 80;
-        clk_sel1 = 128;
-        dac_clk_div = 100;
-    }
-    REG_SET_FIELD(EFUSE_DAC_CONF_REG, EFUSE_DAC_CLK_DIV, dac_clk_div);
-    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL0, clk_sel0);
-    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL1, clk_sel1);
-    // Permanently update values written to the efuse write registers
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_WRITE);
-    REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_PGM);
-    while (REG_READ(EFUSE_CMD_REG) != 0) {};
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
-    REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_READ);
-    while (REG_READ(EFUSE_CMD_REG) != 0) {};
-#endif
-    esp_efuse_utility_reset();
-}
-
 
 // Erase the virt_blocks array.
 void esp_efuse_utility_erase_virt_blocks(void)
@@ -314,13 +225,9 @@ esp_err_t esp_efuse_utility_write_reg(esp_efuse_block_t efuse_block, unsigned in
 // Reading efuse register.
 uint32_t esp_efuse_utility_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 {
-    assert(blk >= 0 && blk <= 3);
-    if (blk == 0) {
-        assert(num_reg <= 6);
-    } else {
-        assert(num_reg <= 7);
-    }
-
+    assert(blk >= 0 && blk < EFUSE_BLK_MAX);
+    unsigned int max_num_reg = (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t);
+    assert(num_reg <= max_num_reg);
     uint32_t value;
 #ifdef CONFIG_EFUSE_VIRTUAL
     value = virt_blocks[blk][num_reg];
@@ -335,12 +242,9 @@ uint32_t esp_efuse_utility_read_reg(esp_efuse_block_t blk, unsigned int num_reg)
 // writing efuse register.
 static void write_reg(esp_efuse_block_t blk, unsigned int num_reg, uint32_t value)
 {
-    assert(blk >= 0 && blk <= 3);
-    if (blk == 0) {
-        assert(num_reg <= 6);
-    } else {
-        assert(num_reg <= 7);
-    }
+    assert(blk >= 0 && blk < EFUSE_BLK_MAX);
+    unsigned int max_num_reg = (range_read_addr_blocks[blk].end - range_read_addr_blocks[blk].start) / sizeof(uint32_t);
+    assert(num_reg <= max_num_reg);
     uint32_t addr_wr_reg = range_write_addr_blocks[blk].start + num_reg * 4;
     uint32_t reg_to_write = REG_READ(addr_wr_reg) | value;
     // The register can be written in parts so we combine the new value with the one already available.
@@ -440,97 +344,11 @@ static uint32_t set_cnt_in_reg(int bit_start_in_reg, int bit_count_used_in_reg, 
 // check range of bits for any coding scheme.
 static bool check_range_of_bits(esp_efuse_block_t blk, int offset_in_bits, int size_bits)
 {
-    esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(blk);
     int max_num_bit = offset_in_bits + size_bits;
-    if ((scheme == EFUSE_CODING_SCHEME_NONE   && max_num_bit > 256) ||
-        (scheme == EFUSE_CODING_SCHEME_3_4    && max_num_bit > 192) ||
-        (scheme == EFUSE_CODING_SCHEME_REPEAT && max_num_bit > 128)) {
+    if (max_num_bit > 256) {
         return false;
+    } else {
+        ESP_EFUSE_FIELD_CORRESPONDS_CODING_SCHEME(blk, max_num_bit);
     }
     return true;
-}
-
-static bool read_w_data_and_check_fill(esp_efuse_block_t num_block, uint32_t *buf_w_data)
-{
-    bool blk_is_filled = false;
-    int i = 0;
-    for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4, ++i) {
-        buf_w_data[i] = REG_READ(addr_wr_block);
-        if (buf_w_data[i] != 0) {
-            REG_WRITE(addr_wr_block, 0);
-            blk_is_filled = true;
-        }
-    }
-    return blk_is_filled;
-}
-
-static void read_r_data(esp_efuse_block_t num_block, uint32_t* buf_r_data)
-{
-    int i = 0;
-    for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, ++i) {
-        buf_r_data[i] = REG_READ(addr_rd_block);
-    }
-}
-
-// After esp_efuse_write.. functions EFUSE_BLKx_WDATAx_REG were filled is not coded values.
-// This function reads EFUSE_BLKx_WDATAx_REG registers, applies coding scheme and writes encoded values back to EFUSE_BLKx_WDATAx_REG.
-esp_err_t esp_efuse_utility_apply_new_coding_scheme(void)
-{
-    uint8_t buf_w_data[COUNT_EFUSE_REG_PER_BLOCK * 4];
-    uint8_t buf_r_data[COUNT_EFUSE_REG_PER_BLOCK * 4];
-    uint32_t reg[COUNT_EFUSE_REG_PER_BLOCK];
-    // start with EFUSE_BLK1. EFUSE_BLK0 - always uses EFUSE_CODING_SCHEME_NONE.
-    for (int num_block = 1; num_block < COUNT_EFUSE_BLOCKS; num_block++) {
-        esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
-        // check and apply a new coding scheme.
-        if (scheme != EFUSE_CODING_SCHEME_NONE) {
-            memset(buf_w_data, 0, sizeof(buf_w_data));
-            memset((uint8_t*)reg, 0, sizeof(reg));
-            if (read_w_data_and_check_fill(num_block, (uint32_t*)buf_w_data) == true) {
-                read_r_data(num_block, (uint32_t*)buf_r_data);
-                if (scheme == EFUSE_CODING_SCHEME_3_4) {
-                    if (*((uint32_t*)buf_w_data + 6) != 0 || *((uint32_t*)buf_w_data + 7) != 0) {
-                        return ESP_ERR_CODING;
-                    }
-                    for (int i = 0; i < 24; ++i) {
-                        if (buf_w_data[i] != 0) {
-                            int st_offset_buf = (i / 6) * 6;
-                            // check that place is free.
-                            for (int n = st_offset_buf; n < st_offset_buf + 6; ++n) {
-                                if (buf_r_data[n] != 0) {
-                                    ESP_LOGE(TAG, "Bits are not empty. Write operation is forbidden.");
-                                    return ESP_ERR_CODING;
-                                }
-                            }
-
-                            esp_err_t err = esp_efuse_apply_34_encoding(&buf_w_data[st_offset_buf], reg, 6);
-                            if (err != ESP_OK) {
-                                return err;
-                            }
-
-                            int num_reg = (st_offset_buf / 6) * 2;
-                            for (int r = 0; r < 2; r++) {
-                                REG_WRITE(range_write_addr_blocks[num_block].start + (num_reg + r) * 4, reg[r]);
-                            }
-                            i = st_offset_buf + 5;
-                        }
-                    }
-                } else if (scheme == EFUSE_CODING_SCHEME_REPEAT) {
-                    uint32_t* buf_32 = (uint32_t*)buf_w_data;
-                    for (int i = 4; i < 8; ++i) {
-                        if (*(buf_32 + i) != 0) {
-                            return ESP_ERR_CODING;
-                        }
-                    }
-                    for (int i = 0; i < 4; ++i) {
-                        if (buf_32[i] != 0) {
-                            REG_WRITE(range_write_addr_blocks[num_block].start + i * 4, buf_32[i]);
-                            REG_WRITE(range_write_addr_blocks[num_block].start + (i + 4) * 4, buf_32[i]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return ESP_OK;
 }
