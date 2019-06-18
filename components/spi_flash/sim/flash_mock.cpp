@@ -109,3 +109,5 @@ void *heap_caps_malloc( size_t size, uint32_t caps )
 {
     return NULL;
 }
+
+esp_flash_t* esp_flash_default_chip = NULL;
