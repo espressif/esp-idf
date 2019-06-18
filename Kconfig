@@ -137,6 +137,18 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
                 memory for thrown exceptions when there is not enough memory on the heap.
 
+        config CXX_ENABLE_RTTI
+		    bool "Enable C++ Runtime Type Information"
+			default n
+			help
+			    Enabling this option compiles all IDF C++ files with runtime type information (rtti) support enabled.
+				
+				Disabling this option disables C++ runtime type information support and some features like
+				dynamic_cast<> can not be used.
+				
+				Enabling this option will add a small memory overhead to each class or struct that contains virtual
+				functions.
+
         choice STACK_CHECK_MODE
             prompt "Stack smashing protection mode"
             default STACK_CHECK_NONE
