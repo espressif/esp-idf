@@ -256,6 +256,7 @@ typedef union {
     struct gatts_add_attr_tab_evt_param{
         esp_gatt_status_t status;       /*!< Operation status */
         esp_bt_uuid_t svc_uuid;         /*!< Service uuid type */
+        uint8_t svc_inst_id;            /*!< Service id */
         uint16_t num_handle;            /*!< The number of the attribute handle to be added to the gatts database */
         uint16_t *handles;              /*!< The number to the handles */
     } add_attr_tab;                     /*!< Gatt server callback param of ESP_GATTS_CREAT_ATTR_TAB_EVT */
