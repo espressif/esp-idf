@@ -1,42 +1,28 @@
-SPI Flash API
-=============
+SPI Flash API (Legacy)
+========================
 
 Overview
 --------
-The spi_flash component contains API functions related to reading, writing,
-erasing, memory mapping for data in the external flash. The spi_flash
-component also has higher-level API functions which work with partitions
-defined in the :doc:`partition table </api-guides/partition-tables>`.
 
-Different from the API before IDF v4.0, the functionality is not limited to
-the "main" SPI flash chip (the same SPI flash chip from which program runs).
-With different chip pointers, you can access to external flashes chips on not
-only SPI0/1 but also HSPI/VSPI buses.
+This is the readme for the APIs before IDF v4.0. Enable the kconfig option ``SPI_FLASH_USE_LEGACY_IMPL`` to use the
+legacy implementation.
 
-Kconfig option :ref:``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` can be used to switch
-``spi_flash_*`` functions back to the implementation before IDF v4.0.
-However, the code size may get bigger if you use the new API and the old API
-the same time.
+The spi_flash component contains API functions related to reading, writing, erasing, memory mapping for data in the external SPI flash. The spi_flash component also has higher-level API functions which work with partitions defined in the :doc:`partition table </api-guides/partition-tables>`.
 
-Encrypted reads and writes use the old implementation, even if
-:ref:``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is not enabled. As such, encrypted
-flash operations are only supported with the main flash chip (and not with
-other flash chips on SPI1 with different CS).
+Note that all the functionality is limited to the "main" SPI flash chip, the same SPI flash chip from which programs are runs. For ``spi_flash_*`` functions, this is a software limitation. The underlying ROM functions which work with SPI flash do not have provisions for working with flash chips attached to SPI peripherals other than SPI0.
 
 SPI flash access API
 --------------------
 
 This is the set of API functions for working with data in flash:
 
-- :cpp:func:`esp_flash_read` reads data from flash to RAM
-- :cpp:func:`esp_flash_write` writes data from RAM to flash
-- :cpp:func:`esp_flash_erase_region` erases specific region of flash
-- :cpp:func:`esp_flash_erase_chip` erases the whole flash
-- :cpp:func:`esp_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
+- :cpp:func:`spi_flash_read` reads data from flash to RAM
+- :cpp:func:`spi_flash_write` writes data from RAM to flash
+- :cpp:func:`spi_flash_erase_sector` erases individual sectors of flash
+- :cpp:func:`spi_flash_erase_range` erases ranges of addresses in flash
+- :cpp:func:`spi_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
 
-Generally, try to avoid using the raw SPI flash functions to the "main" SPI
-flash chip in favour of :ref:`partition-specific functions
-<flash-partition-apis>`.
+Generally, try to avoid using the raw SPI flash functions in favor of :ref:`partition-specific functions <flash-partition-apis>`.
 
 SPI Flash Size
 --------------
@@ -45,7 +31,7 @@ The SPI flash size is configured by writing a field in the software bootloader i
 
 By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in ``make menuconfig``.
 
-If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
+If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``spi_flash_*`` functions (in both software & ROM) to check the bounds.
 
 Concurrency Constraints
 -----------------------
@@ -139,67 +125,3 @@ Differences between :cpp:func:`spi_flash_mmap` and :cpp:func:`esp_partition_mmap
 - :cpp:func:`esp_partition_mmap` may be given any arbitrary offset within the partition, it will adjust the returned pointer to mapped memory as necessary
 
 Note that since memory mapping happens in 64KB blocks, it may be possible to read data outside of the partition provided to ``esp_partition_mmap``.
-
-Implementation
---------------
-
-The ``esp_flash_t`` structure holds chip data as well as three important parts of this API:
-
-1. The host driver, which provides the hardware support to access the chip;
-2. The chip driver, which provides compability service to different chips;
-3. The OS functions, provides support of some OS functions (e.g. lock, delay)
-    in different stages (1st/2st boot, or the app).
-
-Host driver
-^^^^^^^^^^^
-
-The host driver relies on an interface (``spi_flash_host_driver_t``) defined
-in the ``spi_flash_host_drv.h`` (in the ``soc/include/hal`` folder). This
-interface provides some common functions to communicate with the chip.
-
-In other files of the SPI HAL, some of these functions are implemented with
-existing ESP32 memory-spi functionalities. However due to the speed
-limitations of ESP32, the HAL layer can't provide high-speed implementations
-to some reading commands (So we didn't do it at all). The files
-(``memspi_host_driver.h`` and ``.c``) implement the high-speed version of
-these commands with the ``common_command`` function provided in the HAL, and
-wrap these functions as ``spi_flash_host_driver_t`` for upper layer to use.
-
-You can also implement your own host driver, even with the GPIO. As long as
-all the functions in the ``spi_flash_host_driver_t`` are implemented, the
-esp_flash API can access to the flash regardless of the lowlevel hardware.
-
-Chip driver
-^^^^^^^^^^^
-
-The chip driver, defined in ``spi_flash_chip_driver.h``, wraps basic
-functions provided by the host driver for the API layer to use.
-
-Some operations need some commands to be sent first, or read some status
-after. Some chips need different command or value, or need special
-communication ways.
-
-There is a type of chip called ``generic chip`` which stands for common
-chips. Other special chip drivers can be developed on the base of the generic
-chip.
-
-The chip driver relies on the host driver.
-
-OS functions
-^^^^^^^^^^^^
-
-Currently the OS function layer provides a lock and a delay entrance.
-
-The lock is used to resolve the conflicts between the SPI chip access and
-other functions. E.g. the cache (used for the code and psram data fetch)
-should be disabled when the flash chip on the SPI0/1 is being accessed. Also,
-some devices which don't have CS wire, or the wire is controlled by the
-software (e.g. SD card via SPI interface), requires the bus to be monopolized
-during a period.
-
-The delay is used by some long operations which requires the master to wait
-or polling periodly.
-
-
-The top API wraps these the chip driver and OS functions into an entire
-component, and also provides some argument checking.
