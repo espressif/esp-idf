@@ -425,6 +425,8 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
     param.add_attr_tab.handles = btc_creat_tab_env.handles;
     memcpy(&param.add_attr_tab.svc_uuid, &btc_creat_tab_env.svc_uuid, sizeof(esp_bt_uuid_t));
 
+    param.add_attr_tab.svc_inst_id = srvc_inst_id;
+
     btc_gatts_cb_to_app(ESP_GATTS_CREAT_ATTR_TAB_EVT, gatts_if, &param);        
     //reset the env after sent the data to app
     memset(&btc_creat_tab_env, 0, sizeof(esp_btc_creat_tab_t));
