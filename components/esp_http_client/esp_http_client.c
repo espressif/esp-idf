@@ -11,8 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Modifications copyright 2019 Tricot Inc.
 
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "esp_system.h"
@@ -439,6 +442,21 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+static esp_err_t set_host_header(esp_http_client_handle_t client)
+{
+    if (!client->connection_info.host)
+        return ESP_ERR_INVALID_STATE;
+    // Always append the port; we need 1 + 5 + 1 = 7 extra characters beyond the length:
+    size_t size = strlen(client->connection_info.host) + 7;
+    char *buf = (char *)malloc(size);
+    if (!buf)
+        return ESP_ERR_NO_MEM;
+    snprintf(buf, size, "%s:%d", client->connection_info.host, client->connection_info.port);
+    esp_err_t rv = esp_http_client_set_header(client, "Host", buf);
+    free(buf);
+    return rv;
+}
+
 esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *config)
 {
 
@@ -524,7 +542,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     _success = (
                    (esp_http_client_set_url(client, config->url) == ESP_OK) &&
                    (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+                   (set_host_header(client) == ESP_OK)
                );
 
     if (!_success) {
@@ -643,7 +661,6 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 
 esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *url)
 {
-    char *old_host = NULL;
     struct http_parser_url purl;
     int old_port;
 
@@ -660,30 +677,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         ESP_LOGE(TAG, "Error parse url %s", url);
         return ESP_ERR_INVALID_ARG;
     }
-    if (client->connection_info.host) {
-        old_host = strdup(client->connection_info.host);
-    }
     old_port = client->connection_info.port;
-
-    if (purl.field_data[UF_HOST].len) {
-        http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
-        HTTP_MEM_CHECK(TAG, client->connection_info.host, return ESP_ERR_NO_MEM);
-    }
-    // Close the connection if host was changed
-    if (old_host && client->connection_info.host
-            && strcasecmp(old_host, (const void *)client->connection_info.host) != 0) {
-        ESP_LOGD(TAG, "New host assign = %s", client->connection_info.host);
-        if (esp_http_client_set_header(client, "Host", client->connection_info.host) != ESP_OK) {
-            free(old_host);
-            return ESP_ERR_NO_MEM;
-        }
-        esp_http_client_close(client);
-    }
-
-    if (old_host) {
-        free(old_host);
-        old_host = NULL;
-    }
 
     if (purl.field_data[UF_SCHEMA].len) {
         http_utils_assign_string(&client->connection_info.scheme, url + purl.field_data[UF_SCHEMA].off, purl.field_data[UF_SCHEMA].len);
@@ -700,28 +694,49 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         client->connection_info.port = strtol((const char*)(url + purl.field_data[UF_PORT].off), NULL, 10);
     }
 
-    if (old_port != client->connection_info.port) {
+    bool host_was_changed = false;
+    if (purl.field_data[UF_HOST].len) {
+        char *old_host = NULL;
+        if (client->connection_info.host) {
+            old_host = strdup(client->connection_info.host);
+            HTTP_MEM_CHECK(TAG, old_host, return ESP_ERR_NO_MEM);
+        }
+        http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
+        HTTP_MEM_CHECK(TAG, client->connection_info.host, {
+            free(old_host);
+            return ESP_ERR_NO_MEM;
+        });
+        host_was_changed = !old_host || strcasecmp(old_host, client->connection_info.host) != 0;
+        free(old_host);
+    }
+    // Close the connection if the host or port was changed
+    if (host_was_changed || old_port != client->connection_info.port) {
         esp_http_client_close(client);
+        if (set_host_header(client) != ESP_OK) {
+            return ESP_ERR_NO_MEM;
+        }
     }
 
     if (purl.field_data[UF_USERINFO].len) {
         char *user_info = NULL;
         http_utils_assign_string(&user_info, url + purl.field_data[UF_USERINFO].off, purl.field_data[UF_USERINFO].len);
-        if (user_info) {
-            char *username = user_info;
-            char *password = strchr(user_info, ':');
-            if (password) {
-                *password = 0;
-                password ++;
-                http_utils_assign_string(&client->connection_info.password, password, 0);
-                HTTP_MEM_CHECK(TAG, client->connection_info.password, return ESP_ERR_NO_MEM);
-            }
-            http_utils_assign_string(&client->connection_info.username, username, 0);
-            HTTP_MEM_CHECK(TAG, client->connection_info.username, return ESP_ERR_NO_MEM);
-            free(user_info);
-        } else {
+        if (!user_info) {
             return ESP_ERR_NO_MEM;
         }
+        char *username = user_info;
+        char *password = strchr(user_info, ':');
+        if (password) {
+            *password = 0;
+            password ++;
+            http_utils_assign_string(&client->connection_info.password, password, 0);
+            HTTP_MEM_CHECK(TAG, client->connection_info.password, {
+                free(user_info);
+                return ESP_ERR_NO_MEM;
+            });
+        }
+        http_utils_assign_string(&client->connection_info.username, username, 0);
+        free(user_info);
+        HTTP_MEM_CHECK(TAG, client->connection_info.username, return ESP_ERR_NO_MEM);
     } else {
         free(client->connection_info.username);
         free(client->connection_info.password);
@@ -729,8 +744,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         client->connection_info.password = NULL;
     }
 
-
-    //Reset path and query if there are no information
+    // Reset path and query if there are no information
     if (purl.field_data[UF_PATH].len) {
         http_utils_assign_string(&client->connection_info.path, url + purl.field_data[UF_PATH].off, purl.field_data[UF_PATH].len);
     } else {
