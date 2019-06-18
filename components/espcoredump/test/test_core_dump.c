@@ -17,6 +17,8 @@
 #define TCI_NULL_PTR    0x1
 #define TCI_UNALIGN_PTR 0x2
 #define TCI_FAIL_ASSERT 0x4
+#define TCI_IRAM        0x8
+#define TCI_STARVE_IDLE 0x10
 
 volatile unsigned long crash_flags = TCI_UNALIGN_PTR;
 
@@ -96,10 +98,43 @@ void failed_assert_task(void *pvParameter)
     fflush(stdout);
 }
 
+void spi_flash_disable_interrupts_caches_and_other_cpu();
+
+void IRAM_ATTR crash_from_ram_no_flash_cache()
+{
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+
+    printf("Crashed by calling printf while cache is disabled\n");
+}
+
+void crash_from_no_flash_cache()
+{
+    printf("Task 'crash_from_no_flash_cache' start.\n");
+    while (1) {
+        vTaskDelay(1000 / portTICK_RATE_MS);
+        printf("Task 'crash_from_no_flash_cache' run.\n");
+        crash_from_ram_no_flash_cache();
+    }
+    fflush(stdout);
+}
+
+void starve_idle()
+{
+    printf("Task 'starve_idle' start.\n");
+    while (1) {
+        if (!(crash_flags & TCI_STARVE_IDLE)) {
+            vTaskDelay(1000 / portTICK_RATE_MS);
+        }
+    }
+    fflush(stdout);
+}
+
 TEST_CASE("verify coredump functionality", "[coredump][ignore]")
 {
     nvs_flash_init();
     xTaskCreate(&bad_ptr_task, "bad_ptr_task", 2048, NULL, 5, NULL);
     xTaskCreatePinnedToCore(&unaligned_ptr_task, "unaligned_ptr_task", 2048, NULL, 7, NULL, 1);
     xTaskCreatePinnedToCore(&failed_assert_task, "failed_assert_task", 2048, NULL, 10, NULL, 0);
+    xTaskCreate(&crash_from_no_flash_cache, "no_flash_cache_task",     2048, NULL, 5, NULL);
+    xTaskCreate(&starve_idle, "starve_idle_task",     2048, NULL, 5, NULL);
 }
