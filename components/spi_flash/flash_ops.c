@@ -33,8 +33,8 @@
 #include "esp_log.h"
 #include "esp32/clk.h"
 #include "esp_flash_partitions.h"
-#include "esp_ota_ops.h"
 #include "cache_utils.h"
+#include "esp_flash.h"
 
 /* bytes erased by SPIEraseBlock() ROM function */
 #define BLOCK_ERASE_SIZE 65536
@@ -116,20 +116,10 @@ static const spi_flash_guard_funcs_t *s_flash_guard_ops;
 
 static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t size)
 {
-    bool result = true;
-    if (addr <= ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN) {
+    if (!esp_partition_main_flash_region_safe(addr, size)) {
         UNSAFE_WRITE_ADDRESS;
     }
-
-    const esp_partition_t *p = esp_ota_get_running_partition();
-    if (addr >= p->address && addr < p->address + p->size) {
-        UNSAFE_WRITE_ADDRESS;
-    }
-    if (addr < p->address && addr + size > p->address) {
-        UNSAFE_WRITE_ADDRESS;
-    }
-
-    return result;
+    return true;
 }
 
 
@@ -184,6 +174,7 @@ static inline void IRAM_ATTR spi_flash_guard_op_unlock()
     }
 }
 
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock()
 {
     static bool unlocked = false;
@@ -198,6 +189,16 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock()
     }
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
+#else
+static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock()
+{
+    esp_err_t err = esp_flash_set_chip_write_protect(NULL, false);
+    if (err != ESP_OK) {
+        return ESP_ROM_SPIFLASH_RESULT_ERR;
+    }
+    return ESP_ROM_SPIFLASH_RESULT_OK;
+}
+#endif
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 {
@@ -205,6 +206,8 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
     return spi_flash_erase_range(sec * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
 }
 
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+//deprecated, only used in compatible mode
 esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
     CHECK_WRITE_ADDRESS(start_addr, size);
@@ -416,6 +419,7 @@ out:
 
     return spi_flash_translate_rc(rc);
 }
+#endif
 
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {
@@ -483,6 +487,7 @@ esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src,
     return spi_flash_translate_rc(rc);
 }
 
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 {
     // Out of bound reads are checked in ROM code, but we can give better
@@ -624,6 +629,7 @@ out:
     COUNTER_STOP(read);
     return spi_flash_translate_rc(rc);
 }
+#endif
 
 esp_err_t IRAM_ATTR spi_flash_read_encrypted(size_t src, void *dstv, size_t size)
 {

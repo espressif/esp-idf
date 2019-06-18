@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -21,6 +21,14 @@
 #define SPI_IOMUX_PIN_NUM_CS    11
 #define SPI_IOMUX_PIN_NUM_WP    10
 #define SPI_IOMUX_PIN_NUM_HD    9
+
+//For D2WD and PICO-D4 chip
+#define SPI_D2WD_PIN_NUM_MISO  17
+#define SPI_D2WD_PIN_NUM_MOSI  8
+#define SPI_D2WD_PIN_NUM_CLK   6
+#define SPI_D2WD_PIN_NUM_CS    16
+#define SPI_D2WD_PIN_NUM_WP    7
+#define SPI_D2WD_PIN_NUM_HD    11
 
 #define HSPI_IOMUX_PIN_NUM_MISO 12
 #define HSPI_IOMUX_PIN_NUM_MOSI 13

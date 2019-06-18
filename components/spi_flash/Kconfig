@@ -77,4 +77,21 @@ menu "SPI Flash driver"
             bool "Allowed"
     endchoice
 
+    config SPI_FLASH_USE_LEGACY_IMPL
+        bool "Use the legacy implementation before IDF v4.0"
+        default n
+        help
+            The implementation of SPI flash has been greatly changed in IDF v4.0.
+            Enable this option to use the legacy implementation.
+
+    menu "Auto-detect flash chips"
+
+        config SPI_FLASH_SUPPORT_ISSI_CHIP
+            bool "ISSI"
+            default y
+            help
+                Enable this to support auto detection of ISSI chips if chip vendor not specified.
+                This adds support for variant chips, however will extend detecting time.
+    endmenu #auto detect flash chips
+
 endmenu
