@@ -901,6 +901,9 @@ void btc_gattc_cb_handler(btc_msg_t *msg)
         gattc_if = connect->client_if;
         param.connect.conn_id = BTC_GATT_GET_CONN_ID(connect->conn_id);
         memcpy(param.connect.remote_bda, connect->remote_bda, sizeof(esp_bd_addr_t));
+        param.connect.conn_params.interval = connect->conn_params.interval;
+        param.connect.conn_params.latency = connect->conn_params.latency;
+        param.connect.conn_params.timeout = connect->conn_params.timeout;
         btc_gattc_cb_to_app(ESP_GATTC_CONNECT_EVT, gattc_if, &param);
         break;
     }
