@@ -217,8 +217,8 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_si
 
     return;
 
-error_exit:;
 #if (HFP_DYNAMIC_MEMORY == TRUE)
+error_exit:;
         if (bta_hf_client_co_cb_ptr) {
             osi_free(bta_hf_client_co_cb_ptr);
             bta_hf_client_co_cb_ptr = NULL;
