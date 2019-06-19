@@ -19,6 +19,10 @@
 
 #include "hal/spi_flash_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct spi_flash_chip_t;
 typedef struct spi_flash_chip_t spi_flash_chip_t;
 
@@ -50,11 +54,11 @@ typedef struct {
     Structure must be passed to esp_flash_init() before use.
 */
 struct esp_flash_t {
-    const spi_flash_chip_t *chip_drv;   ///< Pointer to chip-model-specific "adpater" structure. If NULL, will be detected during initialisatiopn.
+    const spi_flash_chip_t *chip_drv;   ///< Pointer to chip-model-specific "adapter" structure. If NULL, will be detected during initialisation.
     spi_flash_host_driver_t *host;      ///< Pointer to hardware-specific "host_driver" structure.
 
-    const esp_flash_os_functions_t *os_func;    ///< Pointer to os-specific hooker strcuture.
-    void *os_func_data;                         ///< Pointer to argument for os-specific hooker.
+    const esp_flash_os_functions_t *os_func;    ///< Pointer to os-specific hook structure.
+    void *os_func_data;                         ///< Pointer to argument for os-specific hooks.
 
     esp_flash_read_mode_t read_mode; ///< Configured SPI flash read mode. Set before initialisation.
     uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation.
@@ -65,7 +69,7 @@ struct esp_flash_t {
  *
  * This function must be called before any other API functions are called for this chip.
  *
- * @note Only the spi, speed & read_mode fields of the chip structure need to be initialised. Other fields will be auto-detected
+ * @note Only the host, speed & read_mode fields of the chip structure need to be initialised. Other fields will be auto-detected
  * if left set to zero or NULL.
  *
  * @note If the chip->drv pointer is NULL, chip chip_drv will be autodetected based on its manufacturer & product IDs. See
@@ -175,15 +179,14 @@ esp_err_t esp_flash_set_chip_write_protect(esp_flash_t *chip, bool write_protect
  *
  * @return ESP_OK on success, or a flash error code if operation failed.
  */
-esp_err_t
-esp_flash_get_protectable_regions(const esp_flash_t *chip, const esp_flash_region_t **regions, uint32_t *num_regions);
+esp_err_t esp_flash_get_protectable_regions(const esp_flash_t *chip, const esp_flash_region_t **regions, uint32_t *num_regions);
 
 
 /** @brief Detect if a region of the SPI flash chip is protected
  *
  * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
  * @param region Pointer to a struct describing a protected region. This must match one of the regions returned from esp_flash_get_protectable_regions(...).
- * @param[out] protected Pointer to a flag which is set based on the protected status for this region.
+ * @param[out] out_protected Pointer to a flag which is set based on the protected status for this region.
  *
  * @note It is possible for this result to be false and write operations to still fail, if protection is enabled for the entire chip.
  *
@@ -192,13 +195,13 @@ esp_flash_get_protectable_regions(const esp_flash_t *chip, const esp_flash_regio
  *
  * @return ESP_OK on success, or a flash error code if operation failed.
  */
-esp_err_t esp_flash_get_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool *protected);
+esp_err_t esp_flash_get_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool *out_protected);
 
 /** @brief Update the protected status for a region of the SPI flash chip
  *
  * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
  * @param region Pointer to a struct describing a protected region. This must match one of the regions returned from esp_flash_get_protectable_regions(...).
- * @param protected Write protection flag to set.
+ * @param protect Write protection flag to set.
  *
  * @note It is possible for the region protection flag to be cleared and write operations to still fail, if protection is enabled for the entire chip.
  *
@@ -207,7 +210,7 @@ esp_err_t esp_flash_get_protected_region(esp_flash_t *chip, const esp_flash_regi
  *
  * @return ESP_OK on success, or a flash error code if operation failed.
  */
-esp_err_t esp_flash_set_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool protected);
+esp_err_t esp_flash_set_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool protect);
 
 /** @brief Read data from the SPI flash chip
  *
@@ -271,24 +274,29 @@ esp_err_t esp_flash_init_default_chip();
 /**
  *  Enable OS-level SPI flash protections in IDF
  *
+ *  Called by OS startup code. You do not need to call this in your own applications.
+ *
  * @return ESP_OK if success, otherwise failed. See return value of ``esp_flash_init_os_functions``.
  */
-esp_err_t esp_flash_app_init(); /* ROM TODO move this to IDF */
+esp_err_t esp_flash_app_init();
 
 /**
  *  Enable OS-level SPI flash for a specific chip.
  *
  * @param chip The chip to init os functions.
- * @param host_id Which SPI host to use, 0 for SPI1, 1 for HSPI2 and 2 for VSPI.
+ * @param host_id Which SPI host to use, 1 for SPI1, 2 for SPI2 (HSPI), 3 for SPI3 (VSPI)
  *
- * @return ESP_OK if success, otherwise failed. See return value of ``esp_flash_init_os_functions``.
+ * @return
+ *      - ESP_OK if success
+ *      - ESP_ERR_INVALID_ARG if host_id is invalid
  */
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id);
 
-/* The default (ie initial boot) no-OS ROM esp_flash_os_functions_t */
-extern const esp_flash_os_functions_t spi1_default_os_functions; //todo: put into non-ROM headers
-
-/* Pointer to the current esp_flash_os_functions_t structure in use.
-   Can be changed at runtime to reflect different running conditions.
+/**
+ * The default FreeRTOS-compatible esp_flash_os_functions_t, used for flash chips attached to the SPI1
  */
-//extern const esp_flash_os_functions_t *os_func;
+extern const esp_flash_os_functions_t esp_flash_spi1_default_os_functions;
+
+#ifdef __cplusplus
+}
+#endif
