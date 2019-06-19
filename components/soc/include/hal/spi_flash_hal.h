@@ -23,7 +23,7 @@
 #pragma once
 
 #include "hal/spi_flash_ll.h"
-#include "hal/spi_flash_host_drv.h"
+#include "hal/spi_flash_types.h"
 #include "soc/soc_memory_layout.h"
 
 #define ESP_FLASH_DEFAULT_FREQ ESP_FLASH_20MHZ

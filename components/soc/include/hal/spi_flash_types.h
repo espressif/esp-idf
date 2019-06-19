@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "hal/spi_flash_ll.h"
+#include <esp_types.h>
 #include "hal/esp_flash_err.h"
 
 /** Definition of a common transaction. Also holds the return value. */
@@ -25,6 +25,18 @@ typedef struct {
     uint32_t mosi_data;     ///< Output data to slave
     uint32_t miso_data[2];  ///< [out] Input data from slave, little endian
 } spi_flash_trans_t;
+
+/** @brief Mode used for reading from SPI flash */
+typedef enum {
+    SPI_FLASH_SLOWRD = 0, ///< Data read using single I/O, some limits on speed
+    SPI_FLASH_FASTRD, ///< Data read using single I/O, no limit on speed
+    SPI_FLASH_DOUT,   ///< Data read using dual I/O
+    SPI_FLASH_DIO,    ///< Both address & data transferred using dual I/O
+    SPI_FLASH_QOUT,   ///< Data read using quad I/O
+    SPI_FLASH_QIO,    ///< Both address & data transferred using quad I/O
+
+    SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
+} esp_flash_read_mode_t;
 
 
 struct spi_flash_host_driver_t;
