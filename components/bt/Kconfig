@@ -1263,6 +1263,16 @@ menu Bluetooth
             Bluedroid will report adv data or scan response to application layer immediately.
 
             # Memory reserved at start of DRAM for Bluetooth stack
+
+    config BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT
+        int "Timeout of BLE connection establishment"
+        depends on BLUEDROID_ENABLED
+        range 1 60
+        default 30
+        help
+            Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
+            establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
+
     config BT_RESERVE_DRAM
         hex
         default 0xdb5c if BT_ENABLED
