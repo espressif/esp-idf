@@ -68,9 +68,7 @@
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "trax.h"
-#if CONFIG_IDF_TARGET_ESP32
 #include "esp_efuse.h"
-#endif
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -390,6 +388,14 @@ static void main_task(void* args)
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
     rtc_wdt_disable();
 #endif
+
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
+    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
+    if (efuse_partition) {
+        esp_efuse_init(efuse_partition->address, efuse_partition->size);
+    }
+#endif
+
     app_main();
     vTaskDelete(NULL);
 }

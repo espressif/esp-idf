@@ -25,7 +25,6 @@
 #include "esp32s2beta/rom/uart.h"
 #include "soc/dport_reg.h"
 #include "soc/gpio_reg.h"
-#include "soc/efuse_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/timer_group_struct.h"
@@ -37,6 +36,8 @@
 #include "freertos/xtensa_api.h"
 #include "esp_heap_caps.h"
 #include "soc/syscon_reg.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 
 static const char* TAG = "system_api";
 
@@ -77,46 +78,12 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
-    return ESP_ERR_NOT_SUPPORTED; // TODO: read from MAC block in efuse
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
 {
-// TODO: implememt esp_efuse_mac_get_default for esp32s2beta - IDF-756
-    uint32_t mac_low;
-    uint32_t mac_high;
-    // uint8_t efuse_crc;
-    // uint8_t calc_crc;
-
-//   mac_low = REG_READ(EFUSE_BLK0_RDATA1_REG);
-//    mac_high = REG_READ(EFUSE_BLK0_RDATA2_REG);
-   mac_low  = REG_READ(EFUSE_RD_MAC_SPI_8M_0_REG);
-   mac_high = REG_GET_BIT(EFUSE_RD_MAC_SPI_8M_1_REG,EFUSE_MAC_1);
-
-    mac[0] = mac_high >> 8;
-    mac[1] = mac_high;
-    mac[2] = mac_low >> 24;
-    mac[3] = mac_low >> 16;
-    mac[4] = mac_low >> 8;
-    mac[5] = mac_low;
-
-    //efuse_crc = mac_high >> 16;
-
-    //calc_crc = esp_crc8(mac, 6);
-
-    //if (efuse_crc != calc_crc) {
-         // Small range of MAC addresses are accepted even if CRC is invalid.
-         // These addresses are reserved for Espressif internal use.
-    //    if ((mac_high & 0xFFFF) == 0x18fe) {
-    //        if ((mac_low >= 0x346a85c7) && (mac_low <= 0x346a85f8)) {
-    //            return ESP_OK;
-    //        }
-    //    } else {
-    //        ESP_LOGE(TAG, "Base MAC address from BLK0 of EFUSE CRC error, efuse_crc = 0x%02x; calc_crc = 0x%02x", efuse_crc, calc_crc);
-    //        abort();
-    //    }
-    //}
-    return ESP_OK;
+    return esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, mac, 48);
 }
 
 esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
