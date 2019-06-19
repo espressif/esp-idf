@@ -597,6 +597,14 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     reconfigureAllWdts();
 #endif
 
+    static bool cache_error = false;
+    // Note: Accumulate cache_errors across invocations into a core dump
+    //       since if the core dump process failed with a non-cache error
+    //       issue, the checking frame->exccause at the point of the choice
+    //       between restart types will not know that it's nested inside of
+    //       a cache error.
+    cache_error |= (frame->exccause == PANIC_RSN_CACHEERR);
+
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
     rtc_wdt_disable();
@@ -623,7 +631,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     rtc_wdt_disable();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
-    if (frame->exccause != PANIC_RSN_CACHEERR) {
+    if (!cache_error) {
         esp_restart_noos();
     } else {
         // The only way to clear invalid cache access interrupt is to reset the digital part
