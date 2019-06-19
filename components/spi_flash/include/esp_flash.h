@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "hal/spi_flash_host_drv.h"
+#include "hal/spi_flash_types.h"
 
 struct spi_flash_chip_t;
 typedef struct spi_flash_chip_t spi_flash_chip_t;
