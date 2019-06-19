@@ -22,7 +22,7 @@
 #include "esp_vfs.h"
 #include "esp_log.h"
 #include "ff.h"
-#include "diskio.h"
+#include "diskio_impl.h"
 
 typedef struct {
     char fat_drive[8];  /* FAT drive name */
