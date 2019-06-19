@@ -19,7 +19,6 @@
 extern "C" {
 #endif
 
-#include "integer.h"
 #include "wear_levelling.h"
 
 
@@ -29,8 +28,8 @@ extern "C" {
  * @param pdrv  drive number
  * @param flash_handle  handle of the wear levelling partition.
  */
-esp_err_t ff_diskio_register_wl_partition(BYTE pdrv, wl_handle_t flash_handle);
-BYTE ff_diskio_get_pdrv_wl(wl_handle_t flash_handle);
+esp_err_t ff_diskio_register_wl_partition(unsigned char pdrv, wl_handle_t flash_handle);
+unsigned char ff_diskio_get_pdrv_wl(wl_handle_t flash_handle);
 void ff_diskio_clear_pdrv_wl(wl_handle_t flash_handle);
 
 #ifdef __cplusplus

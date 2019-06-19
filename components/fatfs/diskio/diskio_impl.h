@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+typedef unsigned int UINT;
+typedef unsigned char BYTE;
+typedef uint32_t DWORD;
+
 #include "diskio.h"
 #include "esp_err.h"
 
@@ -27,11 +32,11 @@ extern "C" {
  * See FatFs documentation for details about these functions
  */
 typedef struct {
-    DSTATUS (*init) (BYTE pdrv);    /*!< disk initialization function */
-    DSTATUS (*status) (BYTE pdrv);  /*!< disk status check function */
-    DRESULT (*read) (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);  /*!< sector read function */
-    DRESULT (*write) (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);   /*!< sector write function */
-    DRESULT (*ioctl) (BYTE pdrv, BYTE cmd, void* buff); /*!< function to get info about disk and do some misc operations */
+    DSTATUS (*init) (unsigned char pdrv);    /*!< disk initialization function */
+    DSTATUS (*status) (unsigned char pdrv);  /*!< disk status check function */
+    DRESULT (*read) (unsigned char pdrv, unsigned char* buff, uint32_t sector, unsigned count);  /*!< sector read function */
+    DRESULT (*write) (unsigned char pdrv, const unsigned char* buff, uint32_t sector, unsigned count);   /*!< sector write function */
+    DRESULT (*ioctl) (unsigned char pdrv, unsigned char cmd, void* buff); /*!< function to get info about disk and do some misc operations */
 } ff_diskio_impl_t;
 
 /**
