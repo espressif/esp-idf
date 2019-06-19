@@ -1,4 +1,4 @@
-/* 
+/*
  * xtensa/config/core-isa.h -- HAL definitions that are dependent on Xtensa
  *				processor CORE configuration
  *
@@ -116,7 +116,7 @@
 #define XCHAL_HAVE_HIFI3Z_VFPU	0	/* HiFi3Z Audio Engine VFPU option */
 #define XCHAL_HAVE_HIFI2		0	/* HiFi2 Audio Engine pkg */
 #define XCHAL_HAVE_HIFI2EP		0	/* HiFi2EP */
-#define XCHAL_HAVE_HIFI_MINI		0	
+#define XCHAL_HAVE_HIFI_MINI		0
 
 
 
@@ -695,13 +695,13 @@
 /*----------------------------------------------------------------------
 				MPU
   ----------------------------------------------------------------------*/
-#define XCHAL_HAVE_MPU			0 
+#define XCHAL_HAVE_MPU			0
 #define XCHAL_MPU_ENTRIES		0
 
 #define XCHAL_MPU_ALIGN_REQ		1	/* MPU requires alignment of entries to background map */
 #define XCHAL_MPU_BACKGROUND_ENTRIES	0	/* number of entries in bg map*/
 #define XCHAL_MPU_BG_CACHEADRDIS	0	/* default CACHEADRDIS for bg */
- 
+
 #define XCHAL_MPU_ALIGN_BITS		0
 #define XCHAL_MPU_ALIGN			0
 

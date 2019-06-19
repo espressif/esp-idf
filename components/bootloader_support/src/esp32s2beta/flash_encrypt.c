@@ -86,7 +86,7 @@ static esp_err_t initialise_flash_encryption(void)
         ESP_LOGE(TAG, "TODO: Check key is read & write protected"); // TODO
     } else {
         ESP_LOGI(TAG, "Generating new flash encryption key...");
-#ifdef CONFIG_FLASH_ENCRYPTION_AES256
+#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_AES256
         const unsigned BLOCKS_NEEDED = 2;
         const ets_efuse_purpose_t PURPOSE_START = ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1;
         const ets_efuse_purpose_t PURPOSE_END = ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2;

@@ -1,4 +1,8 @@
 menu "ESP32S2-specific"
+    # TODO: this component simply shouldn't be included
+    # in the build at the CMake level, but this is currently
+    # not working so we just hide all items here
+    visible if IDF_TARGET_ESP32S2BETA
 
     choice ESP32S2_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
@@ -27,7 +31,8 @@ menu "ESP32S2-specific"
             default ESP32S2_INSTRUCTION_CACHE_8KB
             help
                 Instruction cache size to be set on application startup.
-                If you use 8KB instruction cache rather than 16KB instruction cache, the other 8KB will be added to the heap.
+                If you use 8KB instruction cache rather than 16KB instruction cache,
+                then the other 8KB will be added to the heap.
 
             config ESP32S2_INSTRUCTION_CACHE_8KB
                 bool "8KB"
@@ -35,7 +40,7 @@ menu "ESP32S2-specific"
                 bool "16KB"
         endchoice
 
-        choice ESP32S2_INSTRUCTION_CACHE_ASSOCIATED_WAYS
+        choice ESP32S2_INSTRUCTION_CACHE_WAYS
             prompt "Instruction cache associated ways"
             default ESP32S2_INSTRUCTION_CACHE_8WAYS
             help
@@ -163,28 +168,28 @@ menu "ESP32S2-specific"
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
 
-        # insert non-chip-specific items here
-        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
-
         config SPIRAM_FETCH_INSTRUCTIONS
             bool "Cache fetch instructions from SPI RAM"
             default n
             help
                 If enabled, instruction in flash will be copied into SPIRAM.
-                If you also enable SPIRAM_RODATA option, you can run the instruction when you are erasing or programming the flash.
+                If SPIRAM_RODATA also enabled,
+                you can run the instruction when erasing or programming the flash.
 
         config SPIRAM_RODATA
             bool "Cache load read only data from SPI RAM"
             default n
             help
                 If enabled, radata in flash will be copied into SPIRAM.
-                If you also enable SPIRAM_FETCH_INSTRUCTIONS option, you can run the instruction when you erasing or programming the flash.
+                If SPIRAM_FETCH_INSTRUCTIONS also enabled,
+                you can run the instruction when erasing or programming the flash.
 
         config SPIRAM_USE_AHB_DBUS3
             bool "Enable AHB DBUS3 to access SPIRAM"
             default n
             help
-                If Enabled, if SPI_CONFIG_SIZE is bigger then 10MB+576KB, then you can have 4MB more space to map the SPIRAM.
+                If Enabled, if SPI_CONFIG_SIZE is bigger then 10MB+576KB,
+                then you can have 4MB more space to map the SPIRAM.
                 However, the AHB bus is slower than other data cache buses.
 
         choice SPIRAM_SPEED
@@ -211,6 +216,9 @@ menu "ESP32S2-specific"
                 bool "80MHz clock speed"
         endchoice
 
+        # insert non-chip-specific items here
+        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
+
     endmenu
 
     config ESP32S2_MEMMAP_TRACEMEM
@@ -227,7 +235,6 @@ menu "ESP32S2-specific"
             of memory that can't be used for general purposes anymore. Disable this if you do not know
             what this is.
 
-    # Memory to reverse for trace, used in linker script
     config ESP32S2_TRACEMEM_RESERVE_DRAM
         hex
         default 0x4000 if ESP32S2_MEMMAP_TRACEMEM
