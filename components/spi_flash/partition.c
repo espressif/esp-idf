@@ -418,7 +418,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
  * we can add esp_partition_mmapv which will accept an array of offsets and sizes, and return array of
  * mmaped pointers, and a single handle for all these regions.
  */
-esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, uint32_t size,
+esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, size_t size,
                              spi_flash_mmap_memory_t memory,
                              const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {

@@ -260,7 +260,7 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
  *         or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
-                                    uint32_t start_addr, uint32_t size);
+                                    size_t start_addr, size_t size);
 
 /**
  * @brief Configure MMU to map partition into data memory
@@ -287,7 +287,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
  *
  * @return ESP_OK, if successful
  */
-esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, uint32_t size,
+esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, size_t size,
                              spi_flash_mmap_memory_t memory,
                              const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
