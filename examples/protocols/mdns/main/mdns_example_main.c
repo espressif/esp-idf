@@ -29,6 +29,11 @@
 static const char *TAG = "mdns-test";
 static char* generate_hostname(void);
 
+#if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
+static void  query_mdns_host_with_gethostbyname(char * host);
+static void  query_mdns_host_with_getaddrinfo(char * host);
+#endif
+
 static void initialise_mdns(void)
 {
     char* hostname = generate_hostname();
@@ -168,6 +173,8 @@ static void mdns_example_task(void *pvParameters)
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
     /* Send initial queries that are started by CI tester */
     query_mdns_host("tinytester");
+    query_mdns_host_with_gethostbyname("tinytester-lwip.local");
+    query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
 #endif
 
     while(1) {
@@ -211,3 +218,45 @@ static char* generate_hostname(void)
     return hostname;
 #endif
 }
+
+#if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
+/**
+ *  @brief Executes gethostbyname and displays list of resolved addresses.
+ *  Note: This function is used only to test advertised mdns hostnames resolution
+ */
+static void  query_mdns_host_with_gethostbyname(char * host)
+{
+    struct hostent *res = gethostbyname(host);
+    if (res) {
+        unsigned int i = 0;
+        while (res->h_addr_list[i] != NULL) {
+            ESP_LOGI(TAG, "gethostbyname: %s resolved to: %s", host, inet_ntoa(*(struct in_addr *) (res->h_addr_list[i])));
+            i++;
+        }
+    }
+}
+
+/**
+ *  @brief Executes getaddrinfo and displays list of resolved addresses.
+ *  Note: This function is used only to test advertised mdns hostnames resolution
+ */
+static void  query_mdns_host_with_getaddrinfo(char * host)
+{
+    struct addrinfo hints;
+    struct addrinfo * res;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (!getaddrinfo(host, NULL, &hints, &res)) {
+        while (res) {
+            ESP_LOGI(TAG, "getaddrinfo: %s resolved to: %s", host,
+                     res->ai_family == AF_INET?
+                     inet_ntoa(((struct sockaddr_in *) res->ai_addr)->sin_addr):
+                     inet_ntoa(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr));
+            res = res->ai_next;
+        }
+    }
+}
+#endif
