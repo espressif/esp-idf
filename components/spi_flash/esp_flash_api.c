@@ -241,7 +241,7 @@ static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
         }                                                   \
     } while (0)
 
-esp_err_t IRAM_ATTR esp_flash_read_id(esp_flash_t *chip, uint32_t *id)
+esp_err_t IRAM_ATTR esp_flash_read_id(esp_flash_t *chip, uint32_t *out_id)
 {
     if (chip == NULL) {
         chip = esp_flash_default_chip;
@@ -249,7 +249,7 @@ esp_err_t IRAM_ATTR esp_flash_read_id(esp_flash_t *chip, uint32_t *id)
     if (chip == NULL || !esp_flash_chip_driver_initialized(chip)) {
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
-    if (id == NULL) {
+    if (out_id == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_err_t err = spiflash_start(chip);
@@ -257,19 +257,19 @@ esp_err_t IRAM_ATTR esp_flash_read_id(esp_flash_t *chip, uint32_t *id)
         return err;
     }
 
-    err = chip->host->read_id(chip->host, id);
+    err = chip->host->read_id(chip->host, out_id);
 
     return spiflash_end(chip, err);
 }
 
-esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *size)
+esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
 {
     VERIFY_OP(detect_size);
-    if (size == NULL) {
+    if (out_size == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     if (chip->size != 0) {
-        *size = chip->size;
+        *out_size = chip->size;
         return ESP_OK;
     }
 
@@ -401,7 +401,7 @@ esp_err_t IRAM_ATTR esp_flash_get_chip_write_protect(esp_flash_t *chip, bool *wr
     return spiflash_end(chip, err);
 }
 
-esp_err_t IRAM_ATTR esp_flash_set_chip_write_protect(esp_flash_t *chip, bool write_protect_chip)
+esp_err_t IRAM_ATTR esp_flash_set_chip_write_protect(esp_flash_t *chip, bool write_protect)
 {
     VERIFY_OP(set_chip_write_protect);
     //TODO: skip writing if already locked or unlocked
@@ -411,24 +411,24 @@ esp_err_t IRAM_ATTR esp_flash_set_chip_write_protect(esp_flash_t *chip, bool wri
         return err;
     }
 
-    err = chip->chip_drv->set_chip_write_protect(chip, write_protect_chip);
+    err = chip->chip_drv->set_chip_write_protect(chip, write_protect);
 
     return spiflash_end(chip, err);
 }
 
-esp_err_t esp_flash_get_protectable_regions(const esp_flash_t *chip, const esp_flash_region_t **regions, uint32_t *num_regions)
+esp_err_t esp_flash_get_protectable_regions(const esp_flash_t *chip, const esp_flash_region_t **out_regions, uint32_t *out_num_regions)
 {
-    if(num_regions != NULL) {
-        *num_regions = 0; // In case caller doesn't check result
+    if(out_num_regions != NULL) {
+        *out_num_regions = 0; // In case caller doesn't check result
     }
     VERIFY_OP(get_protected_regions);
 
-    if(regions == NULL || num_regions == NULL) {
+    if(out_regions == NULL || out_num_regions == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    *num_regions = chip->chip_drv->num_protectable_regions;
-    *regions = chip->chip_drv->protectable_regions;
+    *out_num_regions = chip->chip_drv->num_protectable_regions;
+    *out_regions = chip->chip_drv->protectable_regions;
     return ESP_OK;
 }
 

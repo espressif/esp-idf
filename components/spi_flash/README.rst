@@ -13,13 +13,21 @@ the "main" SPI flash chip (the same SPI flash chip from which program runs).
 With different chip pointers, you can access to external flashes chips on not
 only SPI0/1 but also HSPI/VSPI buses.
 
-Kconfig option :ref:``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` can be used to switch
+.. note::
+
+    Flash APIs after IDF v4.0 are no longer *atomic*. A writing operation
+    during another on-going read operation, on the overlapped flash address,
+    may cause the return data from the read operation to be partly same as
+    before, and partly updated as new written.
+
+
+Kconfig option :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` can be used to switch
 ``spi_flash_*`` functions back to the implementation before IDF v4.0.
 However, the code size may get bigger if you use the new API and the old API
 the same time.
 
 Encrypted reads and writes use the old implementation, even if
-:ref:``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is not enabled. As such, encrypted
+:ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` is not enabled. As such, encrypted
 flash operations are only supported with the main flash chip (and not with
 other flash chips on SPI1 with different CS).
 
