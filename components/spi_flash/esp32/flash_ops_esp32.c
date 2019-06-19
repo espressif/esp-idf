@@ -11,24 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#include <string.h>
 #include "esp_spi_flash_chip.h"
+#include "esp_spi_flash.h"
 #include "cache_utils.h"
-#include "rom/spi_flash.h"
-#include "rom/cache.h"
+#include "esp32/rom/spi_flash.h"
+#include "esp32/rom/cache.h"
 
 static inline void IRAM_ATTR spi_flash_guard_start()
 {
-    spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
-    if (ops && s_ops->start) {
+    const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
+    if (ops && ops->start) {
         ops->start();
     }
 }
 
 static inline void IRAM_ATTR spi_flash_guard_end()
 {
-    spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
-    if (ops && s_ops->end) {
+    const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
+    if (ops && ops->end) {
         ops->end();
     }
 }

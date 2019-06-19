@@ -44,7 +44,7 @@ typedef enum {
 /**
  * @brief set wrap mode of flash
  *
- * @param spi_flash_wrap_mode_t mode: wrap mode support disable, 16 32, 64 byte
+ * @param mode: wrap mode support disable, 16 32, 64 byte
  *
  * @return esp_err_t : ESP_OK for successful.
  *
@@ -74,7 +74,7 @@ size_t spi_flash_get_chip_size();
 /**
  * @brief  Erase the Flash sector.
  *
- * @param  sector  Sector number, the count starts at sector 0, 4KB per sector.
+ * @param  sector: Sector number, the count starts at sector 0, 4KB per sector.
  *
  * @return esp_err_t
  */
