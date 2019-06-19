@@ -15,6 +15,8 @@
 #ifndef ESP_SPI_FLASH_CACHE_UTILS_H
 #define ESP_SPI_FLASH_CACHE_UTILS_H
 
+#include <stdbool.h>
+
 /**
  * This header file contains declarations of cache manipulation functions
  * used both in flash_ops.c and flash_mmap.c.

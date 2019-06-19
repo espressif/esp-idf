@@ -8,8 +8,8 @@ set(COMPONENT_SRCS  "src/wifi_config.c"
                     "proto-c/wifi_config.pb-c.c"
                     "proto-c/wifi_constants.pb-c.c")
 
-set(COMPONENT_REQUIRES lwip protocomm)
-set(COMPONENT_PRIV_REQUIRES protobuf-c bt mdns json)
+set(COMPONENT_REQUIRES lwip protocomm json)
+set(COMPONENT_PRIV_REQUIRES protobuf-c bt mdns)
 
 if(CONFIG_BT_ENABLED)
     if(CONFIG_BT_BLUEDROID_ENABLED)

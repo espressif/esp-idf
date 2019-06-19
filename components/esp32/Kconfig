@@ -1,8 +1,8 @@
 menu "ESP32-specific"
-     # TODO: this component simply shouldn't be included
-     # in the build at the CMake level, but this is currently
-     # not working so we just hide all items here
-     visible if CONFIG_IDF_TARGET_ESP32
+    # TODO: this component simply shouldn't be included
+    # in the build at the CMake level, but this is currently
+    # not working so we just hide all items here
+    visible if IDF_TARGET_ESP32
 
     choice ESP32_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
@@ -24,8 +24,8 @@ menu "ESP32-specific"
         default 160 if ESP32_DEFAULT_CPU_FREQ_160
         default 240 if ESP32_DEFAULT_CPU_FREQ_240
 
-    # Note: to support SPIRAM across multiple chips, check CONFIG_SPIRAM
-    # instead
+        # Note: to support SPIRAM across multiple chips, check CONFIG_SPIRAM
+        # instead
     config ESP32_SPIRAM_SUPPORT
         bool "Support for external, SPI-connected RAM"
         default "n"
@@ -83,6 +83,9 @@ menu "ESP32-specific"
                 bool "80MHz clock speed"
         endchoice
 
+        # insert non-chip-specific items here
+        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
+
         config SPIRAM_CACHE_WORKAROUND
             bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
             depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
@@ -95,9 +98,6 @@ menu "ESP32-specific"
 
                 This will also not use any bits of newlib that are located in ROM, opting for a version that is
                 compiled with the workaround and located in flash instead.
-
-        # insert non-chip-specific items here
-        source "$IDF_PATH/components/esp_common/Kconfig.spiram.common"
 
         config SPIRAM_BANKSWITCH_ENABLE
             bool "Enable bank switching for >4MiB external RAM"
@@ -123,18 +123,6 @@ menu "ESP32-specific"
                 Note that this reservation is only actually done if your program actually uses the himem API. Without
                 any himem calls, the reservation is not done and the original amount of memory will be available
                 to malloc/esp_heap_alloc_caps.
-
-        config SPIRAM_MALLOC_ALWAYSINTERNAL
-            int "Maximum malloc() size, in bytes, to always put in internal memory"
-            depends on SPIRAM_USE_MALLOC
-            default 16384
-            range 0 131072
-            help
-                If malloc() is capable of also allocating SPI-connected ram, its allocation strategy will prefer to
-                allocate chunks less than this size in internal memory, while allocations larger than this will be
-                done from external RAM. If allocation from the preferred region fails, an attempt is made to allocate
-                from the non-preferred region instead, so malloc() will not suddenly fail when either internal or
-                external memory is full.
 
         config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
             bool "Allow external memory as an argument to xTaskCreateStatic"

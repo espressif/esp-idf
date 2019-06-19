@@ -38,6 +38,7 @@
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"
+#include "esp32/rom/gpio.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
 #define REF_CLOCK_RMT_CHANNEL   7
