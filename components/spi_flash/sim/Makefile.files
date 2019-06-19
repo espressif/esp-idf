@@ -5,10 +5,12 @@ SOURCE_FILES := \
 	$(addprefix ../, \
 	partition.c \
 	flash_ops.c \
+	esp32/flash_ops_esp32.c \
 	) \
 
 INCLUDE_DIRS := \
 	. \
+	../ \
 	../include \
 	../private_include \
 	$(addprefix stubs/, \

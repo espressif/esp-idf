@@ -15,6 +15,8 @@
 #ifndef _SOC_RTC_GPIO_CHANNEL_H
 #define _SOC_RTC_GPIO_CHANNEL_H
 
+#define RTC_GPIO_NUMBER             18
+
 //RTC GPIO channels
 #define RTCIO_GPIO36_CHANNEL        0   //RTCIO_CHANNEL_0
 #define RTCIO_CHANNEL_0_GPIO_NUM    36

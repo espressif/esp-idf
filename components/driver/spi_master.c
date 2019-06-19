@@ -133,12 +133,14 @@ We have two bits to control the interrupt:
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "soc/soc_memory_layout.h"
+#include "soc/dport_access.h"
 #include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
 #include "stdatomic.h"
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
+#include "soc/dport_reg.h"
 #include "esp32/rom/ets_sys.h"
 #include "hal/spi_hal.h"
 #if CONFIG_IDF_TARGET_ESP32S2BETA

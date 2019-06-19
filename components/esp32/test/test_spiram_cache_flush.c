@@ -20,6 +20,7 @@ This code tests the interaction between PSRAM and SPI flash routines.
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "test_utils.h"
+#include "soc/soc.h"
 
 #if CONFIG_SPIRAM
 

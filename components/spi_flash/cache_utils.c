@@ -36,7 +36,7 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 
-static const char* TAG = "spiflash";
+static __attribute__((unused)) const char* TAG = "spiflash";
 
 static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state);
 static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);

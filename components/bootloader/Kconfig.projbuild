@@ -411,10 +411,10 @@ menu "Security features"
 
             Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html before enabling.
 
-    choice FLASH_ENCRYPTION_GENERATE_KEYSIZE
+    choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
-        default FLASH_ENCRYPTION_AES128
-        depends on IDF_TARGET_ESP32S2BETA && FLASH_ENCRYPTION_ENABLED
+        default SECURE_FLASH_ENCRYPTION_AES128
+        depends on IDF_TARGET_ESP32S2BETA && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
@@ -424,10 +424,10 @@ menu "Security features"
             This setting is ignored if either type of key is already burned to Efuse before the first boot.
             In this case, the pre-burned key is used and no new key is generated.
 
-        config FLASH_ENCRYPTION_AES128
+        config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
 
-        config FLASH_ENCRYPTION_AES256
+        config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
     endchoice
 
