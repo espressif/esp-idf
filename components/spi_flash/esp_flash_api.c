@@ -448,11 +448,11 @@ static esp_err_t find_region(const esp_flash_t *chip, const esp_flash_region_t *
    return ESP_ERR_NOT_FOUND;
 }
 
-esp_err_t IRAM_ATTR esp_flash_get_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool *protected)
+esp_err_t IRAM_ATTR esp_flash_get_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool *out_protected)
 {
     VERIFY_OP(get_protected_regions);
 
-    if (protected == NULL) {
+    if (out_protected == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -470,13 +470,13 @@ esp_err_t IRAM_ATTR esp_flash_get_protected_region(esp_flash_t *chip, const esp_
 
     err = chip->chip_drv->get_protected_regions(chip, &protection_mask);
     if (err == ESP_OK) {
-        *protected = protection_mask & (1LL << index);
+        *out_protected = protection_mask & (1LL << index);
     }
 
     return spiflash_end(chip, err);
 }
 
-esp_err_t IRAM_ATTR esp_flash_set_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool protected)
+esp_err_t IRAM_ATTR esp_flash_set_protected_region(esp_flash_t *chip, const esp_flash_region_t *region, bool protect)
 {
     VERIFY_OP(set_protected_regions);
 
@@ -494,7 +494,7 @@ esp_err_t IRAM_ATTR esp_flash_set_protected_region(esp_flash_t *chip, const esp_
 
     err = chip->chip_drv->get_protected_regions(chip, &protection_mask);
     if (err == ESP_OK) {
-        if (protected) {
+        if (protect) {
             protection_mask |= (1LL << index);
         } else {
             protection_mask &= ~(1LL << index);

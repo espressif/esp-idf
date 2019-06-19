@@ -17,6 +17,10 @@
 #include <stdint.h>
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Possible errors returned from esp flash internal functions, these error codes
  * should be consistent with esp_err_t codes. But in order to make the source
@@ -36,4 +40,6 @@
 #define ESP_ERR_FLASH_UNSUPPORTED_CHIP  (ESP_ERR_FLASH_ERR_BASE+5) ///< Requested operation isn't supported by this model of SPI flash chip.
 #define ESP_ERR_FLASH_PROTECTED         (ESP_ERR_FLASH_ERR_BASE+6) ///< Write operation failed due to chip's write protection being enabled.
 
-
+#ifdef __cplusplus
+}
+#endif
