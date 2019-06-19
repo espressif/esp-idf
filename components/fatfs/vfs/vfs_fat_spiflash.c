@@ -18,7 +18,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "vfs_fat_internal.h"
-#include "diskio.h"
+#include "diskio_impl.h"
 
 #include "diskio_rawflash.h"
 

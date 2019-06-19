@@ -28,7 +28,6 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
-#include "diskio.h"
 #include "ff.h"
 #include "test_fatfs_common.h"
 

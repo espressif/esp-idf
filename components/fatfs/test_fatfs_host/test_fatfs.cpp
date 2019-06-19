@@ -4,7 +4,7 @@
 #include "ff.h"
 #include "esp_partition.h"
 #include "wear_levelling.h"
-#include "diskio.h"
+#include "diskio_impl.h"
 #include "diskio_wl.h"
 
 #include "catch.hpp"

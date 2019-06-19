@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "diskio.h"
+#include "diskio_impl.h"
 #include "ffconf.h"
 #include "ff.h"
 #include "sdmmc_cmd.h"
