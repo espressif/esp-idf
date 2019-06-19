@@ -539,6 +539,9 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
 
     /*------------ new transaction starts here ------------------*/
     //ToDo: This is a stupidly simple low-cs-first priority scheme. Make this configurable somehow. - JD
+    //Disable interrupt before checking to avoid concurrency issue.
+    esp_intr_disable(host->intr);
+
     for (i=0; i<NO_CS; i++) {
         if (host->device[i]) {
             r=xQueueReceiveFromISR(host->device[i]->trans_queue, &host->cur_trans_buf, &do_yield);
@@ -548,13 +551,14 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
         }
     }
     if (i==NO_CS) {
-        //No packet waiting. Disable interrupt.
-        esp_intr_disable(host->intr);
 #ifdef CONFIG_PM_ENABLE
         //Release APB frequency lock
         esp_pm_lock_release(host->pm_lock);
 #endif
     } else {
+        //enable the interrupt again if there is packet to send
+        esp_intr_enable(host->intr);
+
         host->hw->slave.trans_done=0; //clear int bit
         //We have a transaction. Send it.
         spi_device_t *dev=host->device[i];

@@ -415,12 +415,14 @@ static void IRAM_ATTR spi_intr(void *arg)
         }
     }
 
+    //Disable interrupt before checking to avoid concurrency issue.
+    esp_intr_disable(host->intr);
     //Grab next transaction
     r = xQueueReceiveFromISR(host->trans_queue, &trans, &do_yield);
-    if (!r) {
-        //No packet waiting. Disable interrupt.
-        esp_intr_disable(host->intr);
-    } else {
+    if (r) {
+        //enable the interrupt again if there is packet to send
+        esp_intr_enable(host->intr);
+
         //We have a transaction. Send it.
         host->hw->slave.trans_done = 0; //clear int bit
         host->cur_trans = trans;
