@@ -312,3 +312,19 @@ R0.13a (October 14, 2017)
   Fixed f_setlabel() rejects some valid characters for exFAT volume. (appeared at R0.12)
 
 
+
+R0.13b (April 07, 2018)
+
+  Added support for UTF-32 encoding on the API. (FF_LFN_UNICODE = 3)
+  Added support for Unix style volume ID. (FF_STR_VOLUME_ID = 2)
+  Fixed accesing any object on the exFAT root directory beyond the cluster boundary can fail. (appeared at R0.12c)
+  Fixed f_setlabel() does not reject some invalid characters. (appeared at R0.09b)
+
+
+
+R0.13c (October 14, 2018)
+  Supported stdint.h for C99 and later. (integer.h was included in ff.h)
+  Fixed reading a directory gets infinite loop when the last directory entry is not empty. (appeared at R0.12)
+  Fixed creating a sub-directory in the fragmented sub-directory on the exFAT volume collapses FAT chain of the parent directory. (appeared at R0.12)
+  Fixed f_getcwd() cause output buffer overrun when the buffer has a valid drive number. (appeared at R0.13b)
+
