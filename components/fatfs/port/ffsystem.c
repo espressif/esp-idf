@@ -5,6 +5,7 @@
 
 
 #include <string.h>
+#include <stdlib.h>
 #include "ff.h"
 #include "sdkconfig.h"
 #ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
@@ -18,7 +19,7 @@
 /*------------------------------------------------------------------------*/
 
 void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on not enough core) */
-	UINT msize		/* Number of bytes to allocate */
+	unsigned msize		/* Number of bytes to allocate */
 )
 {
 #ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
@@ -26,21 +27,6 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on no
 											MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 #else
 	return malloc(msize);
-#endif
-}
-
-/*------------------------------------------------------------------------*/
-/* Allocate and zero out memory block                                     */
-/*------------------------------------------------------------------------*/
-
-
-void* ff_memcalloc (UINT num, UINT size)
-{
-#ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
-	return heap_caps_calloc_prefer(num, size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
-												MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
-#else
-	return calloc(num, size);
 #endif
 }
 

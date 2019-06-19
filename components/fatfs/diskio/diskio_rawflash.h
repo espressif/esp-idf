@@ -19,7 +19,6 @@
 extern "C" {
 #endif
 
-#include "integer.h"
 #include "esp_partition.h"
 
 /**
@@ -28,8 +27,8 @@ extern "C" {
  * @param pdrv  drive number
  * @param part_handle  pointer to raw flash partition.
  */
-esp_err_t ff_diskio_register_raw_partition(BYTE pdrv, const esp_partition_t* part_handle);
-BYTE ff_diskio_get_pdrv_raw(const esp_partition_t* part_handle);
+esp_err_t ff_diskio_register_raw_partition(unsigned char pdrv, const esp_partition_t* part_handle);
+unsigned char ff_diskio_get_pdrv_raw(const esp_partition_t* part_handle);
 
 #ifdef __cplusplus
 }
