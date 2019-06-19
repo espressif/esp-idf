@@ -6,7 +6,7 @@ import time
 import struct
 import dpkt
 import dpkt.dns
-from threading import Thread
+from threading import Thread, Event
 
 
 # this is a test case write with tiny-test-fw.
@@ -24,52 +24,59 @@ except ImportError:
 
 import DUT
 
-g_run_server = True
-g_done = False
+stop_mdns_server = Event()
+esp_answered = Event()
+
+
+def get_dns_query_for_esp(esp_host):
+    dns = dpkt.dns.DNS(b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01')
+    dns.qd[0].name = esp_host + u'.local'
+    print("Created query for esp host: {} ".format(dns.__repr__()))
+    return dns.pack()
+
+
+def get_dns_answer_to_mdns(tester_host):
+    dns = dpkt.dns.DNS(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    dns.op = dpkt.dns.DNS_QR | dpkt.dns.DNS_AA
+    dns.rcode = dpkt.dns.DNS_RCODE_NOERR
+    arr = dpkt.dns.DNS.RR()
+    arr.cls = dpkt.dns.DNS_IN
+    arr.type = dpkt.dns.DNS_A
+    arr.name = tester_host
+    arr.ip = socket.inet_aton('127.0.0.1')
+    dns. an.append(arr)
+    print("Created answer to mdns query: {} ".format(dns.__repr__()))
+    return dns.pack()
 
 
 def mdns_server(esp_host):
-    global g_done
+    global esp_answered
     UDP_IP = "0.0.0.0"
     UDP_PORT = 5353
     MCAST_GRP = '224.0.0.251'
+    TESTER_NAME = u'tinytester.local'
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     sock.bind((UDP_IP,UDP_PORT))
     mreq = struct.pack("4sl", socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-    dns = dpkt.dns.DNS(b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01')
     sock.settimeout(30)
-    resp_dns = dpkt.dns.DNS(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
-    resp_dns.op = dpkt.dns.DNS_QR | dpkt.dns.DNS_AA
-    resp_dns.rcode = dpkt.dns.DNS_RCODE_NOERR
-    arr = dpkt.dns.DNS.RR()
-    arr.cls = dpkt.dns.DNS_IN
-    arr.type = dpkt.dns.DNS_A
-    arr.name = u'tinytester.local'
-    arr.ip = socket.inet_aton('127.0.0.1')
-    resp_dns. an.append(arr)
-    sock.sendto(resp_dns.pack(),(MCAST_GRP,UDP_PORT))
-    while g_run_server:
+    while not stop_mdns_server.is_set():
         try:
-            m = sock.recvfrom(1024)
-            dns = dpkt.dns.DNS(m[0])
+            if not esp_answered.is_set():
+                sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP,UDP_PORT))
+                time.sleep(0.2)
+            data, addr = sock.recvfrom(1024)
+            dns = dpkt.dns.DNS(data)
             if len(dns.qd) > 0 and dns.qd[0].type == dpkt.dns.DNS_A:
-                if dns.qd[0].name == u'tinytester.local':
-                    print(dns.__repr__(),dns.qd[0].name)
-                    sock.sendto(resp_dns.pack(),(MCAST_GRP,UDP_PORT))
+                if dns.qd[0].name == TESTER_NAME:
+                    print("Received query: {} ".format(dns.__repr__()))
+                    sock.sendto(get_dns_answer_to_mdns(TESTER_NAME), (MCAST_GRP,UDP_PORT))
             if len(dns.an) > 0 and dns.an[0].type == dpkt.dns.DNS_A:
                 if dns.an[0].name == esp_host + u'.local':
-                    print("Received answer esp32-mdns query")
-                    g_done = True
-                print(dns.an[0].name)
-            dns = dpkt.dns.DNS(b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01')
-            dns.qd[0].name = esp_host + u'.local'
-            sock.sendto(dns.pack(),(MCAST_GRP,UDP_PORT))
-            print("Sending esp32-mdns query")
-            time.sleep(0.5)
-            sock.sendto(resp_dns.pack(),(MCAST_GRP,UDP_PORT))
+                    print("Received answer to esp32-mdns query: {}".format(dns.__repr__()))
+                    esp_answered.set()
         except socket.timeout:
             break
         except dpkt.UnpackError:
@@ -78,7 +85,7 @@ def mdns_server(esp_host):
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_mdns(env, extra_data):
-    global g_run_server
+    global stop_mdns_server
     """
     steps: |
       1. join AP + init mdns example
@@ -100,24 +107,17 @@ def test_examples_protocol_mdns(env, extra_data):
     thread1 = Thread(target=mdns_server, args=(specific_host,))
     thread1.start()
     try:
-        dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
-    except DUT.ExpectTimeout:
-        g_run_server = False
-        thread1.join()
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    # 3. check the mdns name is accessible
-    start = time.time()
-    while (time.time() - start) <= 60:
-        if g_done:
-            break
-        time.sleep(0.5)
-    if g_done is False:
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
-    # 4. check DUT output if mdns advertized host is resolved
-    try:
+        try:
+            dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+        except DUT.ExpectTimeout:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        # 3. check the mdns name is accessible
+        if not esp_answered.wait(timeout=30):
+            raise ValueError('Test has failed: did not receive mdns answer within timeout')
+        # 4. check DUT output if mdns advertized host is resolved
         dut1.expect(re.compile(r"mdns-test: Query A: tinytester.local resolved to: 127.0.0.1"), timeout=30)
     finally:
-        g_run_server = False
+        stop_mdns_server.set()
         thread1.join()
 
 
