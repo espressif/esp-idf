@@ -270,7 +270,7 @@ char * ets_strdup(const char *s);
 #ifdef _MSC_VER
 #define os_snprintf _snprintf
 #else
-#define os_snprintf vsnprintf
+#define os_snprintf snprintf
 #endif
 #endif
 
