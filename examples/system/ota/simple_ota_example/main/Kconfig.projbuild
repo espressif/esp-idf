@@ -21,7 +21,7 @@ menu "Example Configuration"
 
     config EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
         bool
-        default y if FIRMWARE_UPGRADE_URL = "FROM_STDIN"
+        default y if EXAMPLE_FIRMWARE_UPGRADE_URL = "FROM_STDIN"
 
     config EXAMPLE_SKIP_COMMON_NAME_CHECK
         bool "Skip server certificate CN fieldcheck"

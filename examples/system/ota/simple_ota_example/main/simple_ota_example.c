@@ -22,7 +22,7 @@
 #include "nvs_flash.h"
 #include "string.h"
 
-#ifdef CONFIG_FIRMWARE_UPGRADE_URL_FROM_STDIN
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
 #include "esp_vfs_dev.h"
 #include "driver/uart.h"
 #endif
@@ -41,8 +41,7 @@ const int CONNECTED_BIT = BIT0;
 
 #define OTA_URL_SIZE 256 
 
-#ifdef CONFIG_FIRMWARE_UPGRADE_URL_FROM_STDIN
-
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
 static esp_err_t example_configure_stdin_stdout(void)
 {
     // Initialize VFS & UART so we can use std::cout/cin
@@ -139,12 +138,12 @@ void simple_ota_example_task(void * pvParameter)
     ESP_LOGI(TAG, "Connected to WiFi network! Attempting to connect to server...");
     
     esp_http_client_config_t config = {
-        .url = CONFIG_FIRMWARE_UPGRADE_URL,
+        .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
         .cert_pem = (char *)server_cert_pem_start,
         .event_handler = _http_event_handler,
     };
 
-#ifdef CONFIG_FIRMWARE_UPGRADE_URL_FROM_STDIN
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
     char url_buf[OTA_URL_SIZE];
     if (strcmp(config.url, "FROM_STDIN") == 0) {
         example_configure_stdin_stdout();
@@ -158,7 +157,7 @@ void simple_ota_example_task(void * pvParameter)
     }
 #endif
 
-#ifdef CONFIG_SKIP_COMMON_NAME_CHECK
+#ifdef CONFIG_EXAMPLE_SKIP_COMMON_NAME_CHECK
     config.skip_cert_common_name_check = true;
 #endif
 
