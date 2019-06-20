@@ -1676,9 +1676,7 @@ static void _mdns_send_final_bye(bool include_ip)
     size_t srv_count = 0;
     mdns_srv_item_t * a = _mdns_server->services;
     while (a) {
-        if (!a->service->instance) {
-            srv_count++;
-        }
+        srv_count++;
         a = a->next;
     }
     if (!srv_count) {
@@ -1688,9 +1686,7 @@ static void _mdns_send_final_bye(bool include_ip)
     size_t i = 0;
     a = _mdns_server->services;
     while (a) {
-        if (!a->service->instance) {
-            services[i++] = a;
-        }
+        services[i++] = a;
         a = a->next;
     }
     _mdns_send_bye(services, srv_count, include_ip);
@@ -1699,7 +1695,7 @@ static void _mdns_send_final_bye(bool include_ip)
 /**
  * @brief  Stop the responder on all services without instance
  */
-static void _mdns_send_bye_all_pcbs_no_instance(void)
+static void _mdns_send_bye_all_pcbs_no_instance(bool include_ip)
 {
     size_t srv_count = 0;
     mdns_srv_item_t * a = _mdns_server->services;
@@ -1721,7 +1717,7 @@ static void _mdns_send_bye_all_pcbs_no_instance(void)
         }
         a = a->next;
     }
-    _mdns_send_bye(services, srv_count, false);
+    _mdns_send_bye(services, srv_count, include_ip);
 }
 
 /**
@@ -3728,14 +3724,14 @@ static void _mdns_execute_action(mdns_action_t * action)
             action->data.sys_event.event_id, action->data.sys_event.interface);
         break;
     case ACTION_HOSTNAME_SET:
-        _mdns_send_final_bye(true);
+        _mdns_send_bye_all_pcbs_no_instance(true);
         free((char*)_mdns_server->hostname);
         _mdns_server->hostname = action->data.hostname;
         _mdns_restart_all_pcbs();
 
         break;
     case ACTION_INSTANCE_SET:
-        _mdns_send_bye_all_pcbs_no_instance();
+        _mdns_send_bye_all_pcbs_no_instance(false);
         free((char*)_mdns_server->instance);
         _mdns_server->instance = action->data.instance;
         _mdns_restart_all_pcbs_no_instance();
