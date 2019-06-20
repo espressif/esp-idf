@@ -2462,7 +2462,6 @@ TEST_CASE("check and read data from partition generated via partition generation
     }
 }
 
-#if false
 TEST_CASE("check and read data from partition generated via manufacturing utility with multipage blob support disabled", "[mfg_gen]")
 {
     int childpid = fork();
@@ -2484,18 +2483,15 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         if (childpid == 0) {
             exit(execlp("python", "python",
                         "../../../tools/mass_mfg/mfg_gen.py",
-                        "--conf",
+                        "generate",
                         "../../../tools/mass_mfg/samples/sample_config.csv",
-                        "--values",
                         "../../../tools/mass_mfg/samples/sample_values_singlepage_blob.csv",
-                        "--prefix",
                         "Test",
-                        "--size",
                         "0x3000",
                         "--outdir",
                         "../../../tools/mass_mfg/host_test",
                         "--version",
-                        "v1",NULL));
+                        "1",NULL));
 
         } else {
             CHECK(childpid > 0);
@@ -2506,14 +2502,12 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             if (childpid == 0) {
                 exit(execlp("python", "python",
                             "../nvs_partition_generator/nvs_partition_gen.py",
-                            "--input",
+                            "generate",
                             "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
-                            "--output",
                             "../nvs_partition_generator/Test-1-partition.bin",
-                            "--size",
                             "0x3000",
                             "--version",
-                            "v1",NULL));
+                            "1",NULL));
 
             } else {
                 CHECK(childpid > 0);
@@ -2570,18 +2564,15 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         if (childpid == 0) {
             exit(execlp("python", "python",
                         "../../../tools/mass_mfg/mfg_gen.py",
-                        "--conf",
+                        "generate",
                         "../../../tools/mass_mfg/samples/sample_config.csv",
-                        "--values",
                         "../../../tools/mass_mfg/samples/sample_values_multipage_blob.csv",
-                        "--prefix",
                         "Test",
-                        "--size",
                         "0x4000",
                         "--outdir",
                         "../../../tools/mass_mfg/host_test",
                         "--version",
-                        "v2",NULL));
+                        "2",NULL));
 
         } else {
             CHECK(childpid > 0);
@@ -2592,14 +2583,12 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             if (childpid == 0) {
                 exit(execlp("python", "python",
                             "../nvs_partition_generator/nvs_partition_gen.py",
-                            "--input",
+                            "generate",
                             "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
-                            "--output",
                             "../nvs_partition_generator/Test-1-partition.bin",
-                            "--size",
                             "0x4000",
                             "--version",
-                            "v2",NULL));
+                            "2",NULL));
 
             } else {
                 CHECK(childpid > 0);
@@ -2633,7 +2622,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
 }
-#endif
 
 #if CONFIG_NVS_ENCRYPTION
 TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
@@ -3015,8 +3003,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
 }
 
-#if false
-TEST_CASE("check and read data from partition generated via manufacturing utility with encryption enabled using sample keyfile", "[mfg_gen]")
+TEST_CASE("check and read data from partition generated via manufacturing utility with encryption enabled using sample inputkey", "[mfg_gen]")
 {
     int childpid = fork();
     int status;
@@ -3037,21 +3024,16 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         if (childpid == 0) {
             exit(execlp("python", "python",
                         "../../../tools/mass_mfg/mfg_gen.py",
-                        "--conf",
+                        "generate",
                         "../../../tools/mass_mfg/samples/sample_config.csv",
-                        "--values",
                         "../../../tools/mass_mfg/samples/sample_values_multipage_blob.csv",
-                        "--prefix",
                         "Test",
-                        "--size",
                         "0x4000",
                         "--outdir",
                         "../../../tools/mass_mfg/host_test",
                         "--version",
-                        "v2",
-                        "--encrypt",
-                        "true",
-                        "--keyfile",
+                        "2",
+                        "--inputkey",
                         "mfg_testdata/sample_encryption_keys.bin",NULL));
 
         } else {
@@ -3063,17 +3045,13 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             if (childpid == 0) {
                 exit(execlp("python", "python",
                             "../nvs_partition_generator/nvs_partition_gen.py",
-                            "--input",
+                            "encrypt",
                             "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
-                            "--output",
                             "../nvs_partition_generator/Test-1-partition-encrypted.bin",
-                            "--size",
                             "0x4000",
                             "--version",
-                            "v2",
-                            "--encrypt",
-                            "true",
-                            "--keyfile",
+                            "2",
+                            "--inputkey",
                             "testdata/sample_encryption_keys.bin",NULL));
 
             } else {
@@ -3143,8 +3121,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
         if (childpid == 0) {
             exit(execlp("python", "python",
                         "../../../tools/mass_mfg/mfg_gen.py",
-                        "--keygen",
-                        "true",
+                        "generate-key",
                         "--outdir",
                         "../../../tools/mass_mfg/host_test",
                         "--keyfile",
@@ -3159,21 +3136,16 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
             if (childpid == 0) {
                 exit(execlp("python", "python",
                             "../../../tools/mass_mfg/mfg_gen.py",
-                            "--conf",
+                            "generate",
                             "../../../tools/mass_mfg/samples/sample_config.csv",
-                            "--values",
                             "../../../tools/mass_mfg/samples/sample_values_multipage_blob.csv",
-                            "--prefix",
                             "Test",
-                            "--size",
                             "0x4000",
                             "--outdir",
                             "../../../tools/mass_mfg/host_test",
                             "--version",
-                            "v2",
-                            "--encrypt",
-                            "true",
-                            "--keyfile",
+                            "2",
+                            "--inputkey",
                             "../../../tools/mass_mfg/host_test/keys/encr_keys_host_test.bin",NULL));
 
             } else {
@@ -3185,17 +3157,13 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
                 if (childpid == 0) {
                     exit(execlp("python", "python",
                                 "../nvs_partition_generator/nvs_partition_gen.py",
-                                "--input",
+                                "encrypt",
                                 "../../../tools/mass_mfg/host_test/csv/Test-1.csv",
-                                "--output",
                                 "../nvs_partition_generator/Test-1-partition-encrypted.bin",
-                                "--size",
                                 "0x4000",
                                 "--version",
-                                "v2",
-                                "--encrypt",
-                                "true",
-                                "--keyfile",
+                                "2",
+                                "--inputkey",
                                 "../../../tools/mass_mfg/host_test/keys/encr_keys_host_test.bin",NULL));
 
                 } else {
@@ -3255,7 +3223,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
 }
-#endif
 #endif
 
 /* Add new tests above */
