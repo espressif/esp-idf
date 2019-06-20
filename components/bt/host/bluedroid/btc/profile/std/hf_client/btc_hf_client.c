@@ -632,6 +632,27 @@ static bt_status_t btc_hf_client_request_last_voice_tag_number(void)
 
 /*******************************************************************************
 **
+** Function         btc_hf_client_send_nrec
+**
+** Description      Request AG to disable echo cancellation & noise reduction
+**
+** Returns          bt_status_t
+**
+*******************************************************************************/
+static bt_status_t btc_hf_client_send_nrec(void)
+{
+    CHECK_HF_CLIENT_SLC_CONNECTED();
+
+    if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_ECNR)
+    {
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_NREC, 0, 0, NULL);
+        return BT_STATUS_SUCCESS;
+    }
+    return BT_STATUS_UNSUPPORTED;
+}
+
+/*******************************************************************************
+**
 ** Function         bte_hf_client_evt
 **
 ** Description      Switches context from BTE to BTIF for all HF Client events
@@ -1072,6 +1093,9 @@ void btc_hf_client_call_handler(btc_msg_t *msg)
         break;
     case BTC_HF_CLIENT_REGISTER_DATA_CALLBACK_EVT:
         btc_hf_client_reg_data_cb(arg->reg_data_cb.recv, arg->reg_data_cb.send);
+        break;
+    case BTC_HF_CLIENT_SEND_NREC_EVT:
+        btc_hf_client_send_nrec();
         break;
     default:
         BTC_TRACE_WARNING("%s : unhandled event: %d\n", __FUNCTION__, msg->act);
