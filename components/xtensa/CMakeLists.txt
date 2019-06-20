@@ -3,6 +3,7 @@ if(NOT BOOTLOADER_BUILD)
     if(IDF_TARGET STREQUAL "esp32")
         list(APPEND COMPONENT_SRCS "trax.c")
     endif()
+    list(APPEND COMPONENT_SRCS "stdatomic.c")
 endif()
 
 set(COMPONENT_ADD_INCLUDEDIRS "include" "${IDF_TARGET}/include")
