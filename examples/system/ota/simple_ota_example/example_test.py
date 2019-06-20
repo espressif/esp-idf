@@ -101,12 +101,9 @@ def start_https_server(ota_image_dir, server_ip, server_port):
     httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
                                       SimpleHTTPServer.SimpleHTTPRequestHandler)
 
-    print "server cert path: " + server_file
-    print "key file path: " + key_file
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    keyfile=key_file,
                                    certfile=server_file, server_side=True)
-    print "serving OTA image at: " + server_ip + "port: " + "port"
     httpd.serve_forever()
 
 
@@ -126,7 +123,7 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
     IDF.check_performance("simple_ota_bin_size", bin_size // 1024)
     # start test
     host_ip = get_my_ip()
-    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path,host_ip,8000))
+    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
     thread1.daemon = True
     thread1.start()
     dut1.start_app()
