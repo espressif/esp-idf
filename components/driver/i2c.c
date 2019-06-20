@@ -1351,13 +1351,18 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType
 
     portBASE_TYPE res;
     int cnt = 0;
-    portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
+    portTickType ticks_start = xTaskGetTickCount();
 
     res = xSemaphoreTake(p_i2c->slv_tx_mux, ticks_to_wait);
     if (res == pdFALSE) {
         return 0;
     }
-    ticks_to_wait = ticks_end - xTaskGetTickCount();
+    TickType_t ticks_end = xTaskGetTickCount();
+    if (ticks_end - ticks_start > ticks_to_wait) {
+        ticks_to_wait = 0;
+    } else {
+        ticks_to_wait = ticks_to_wait - (ticks_end - ticks_start);
+    }
     res = xRingbufferSend(p_i2c->tx_ring_buf, data, size, ticks_to_wait);
     if (res == pdFALSE) {
         cnt = 0;
@@ -1392,18 +1397,28 @@ int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t* data, size_t max_size, Ti
 
     i2c_obj_t* p_i2c = p_i2c_obj[i2c_num];
     portBASE_TYPE res;
-    portTickType ticks_end = xTaskGetTickCount() + ticks_to_wait;
+    portTickType ticks_start = xTaskGetTickCount();
     res = xSemaphoreTake(p_i2c->slv_rx_mux, ticks_to_wait);
     if (res == pdFALSE) {
         return 0;
     }
-    ticks_to_wait = ticks_end - xTaskGetTickCount();
+    TickType_t ticks_end = xTaskGetTickCount();
+    if (ticks_end - ticks_start > ticks_to_wait) {
+        ticks_to_wait = 0;
+    } else {
+        ticks_to_wait = ticks_to_wait - (ticks_end - ticks_start);
+    }
     int cnt = i2c_slave_read(i2c_num, data, max_size, ticks_to_wait);
     if (cnt > 0) {
         I2C_ENTER_CRITICAL(&i2c_spinlock[i2c_num]);
         I2C[i2c_num]->int_ena.rx_fifo_full = 1;
         I2C_EXIT_CRITICAL(&i2c_spinlock[i2c_num]);
-        ticks_to_wait = ticks_end - xTaskGetTickCount();
+        ticks_end = xTaskGetTickCount();
+        if (ticks_end - ticks_start > ticks_to_wait) {
+            ticks_to_wait = 0;
+        } else {
+            ticks_to_wait = ticks_to_wait - (ticks_end - ticks_start);
+        }
         if (cnt < max_size && ticks_to_wait > 0) {
             cnt += i2c_slave_read(i2c_num, data + cnt, max_size - cnt, ticks_to_wait);
         }
