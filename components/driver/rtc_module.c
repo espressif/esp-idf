@@ -173,18 +173,27 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
 
 static esp_err_t rtc_gpio_output_enable(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_num != -1, "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << ( gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
+#endif
     return ESP_OK;
 }
 
 static esp_err_t rtc_gpio_output_disable(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_num != -1, "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << ( rtc_gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << ( gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
+#endif
     return ESP_OK;
 }
 
@@ -243,6 +252,7 @@ esp_err_t rtc_gpio_sleep_mode_disable(gpio_num_t gpio_num)
 
 esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;;
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
@@ -251,7 +261,14 @@ esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
     } else {
         WRITE_PERI_REG(RTC_GPIO_OUT_W1TC_REG, (1 << (rtc_gpio_num + RTC_GPIO_OUT_DATA_W1TC_S)));
     }
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    if (level) {
+        WRITE_PERI_REG(RTC_GPIO_OUT_W1TS_REG, (1 << (gpio_num + RTC_GPIO_OUT_DATA_W1TS_S)));
+    } else {
+        WRITE_PERI_REG(RTC_GPIO_OUT_W1TC_REG, (1 << (gpio_num + RTC_GPIO_OUT_DATA_W1TC_S)));
+    }
+#endif
     return ESP_OK;
 }
 
