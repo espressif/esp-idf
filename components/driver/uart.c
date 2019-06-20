@@ -29,6 +29,8 @@
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
 
+#define UART_NUM SOC_UART_NUM
+
 #define XOFF (char)0x13
 #define XON (char)0x11
 
@@ -113,8 +115,20 @@ typedef struct {
 
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
 /* DRAM_ATTR is required to avoid UART array placed in flash, due to accessed from ISR */
-static DRAM_ATTR uart_dev_t* const UART[UART_NUM_MAX] = {&UART0, &UART1, &UART2};
-static portMUX_TYPE uart_spinlock[UART_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
+static DRAM_ATTR uart_dev_t* const UART[UART_NUM_MAX] = {
+    &UART0,
+    &UART1,
+#if UART_NUM > 2
+    &UART2
+#endif
+};
+static portMUX_TYPE uart_spinlock[UART_NUM_MAX] = {
+    portMUX_INITIALIZER_UNLOCKED,
+    portMUX_INITIALIZER_UNLOCKED,
+#if UART_NUM > 2
+    portMUX_INITIALIZER_UNLOCKED
+#endif
+};
 static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
 
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit)
@@ -528,9 +542,11 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
         case UART_NUM_1:
             ret=esp_intr_alloc(ETS_UART1_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
             break;
+#if UART_NUM > 2
         case UART_NUM_2:
             ret=esp_intr_alloc(ETS_UART2_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
             break;
+#endif
         case UART_NUM_0:
             default:
             ret=esp_intr_alloc(ETS_UART0_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
@@ -577,12 +593,14 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
             rts_sig = U1RTS_OUT_IDX;
             cts_sig = U1CTS_IN_IDX;
             break;
+#if UART_NUM > 2
         case UART_NUM_2:
             tx_sig = U2TXD_OUT_IDX;
             rx_sig = U2RXD_IN_IDX;
             rts_sig = U2RTS_OUT_IDX;
             cts_sig = U2CTS_IN_IDX;
             break;
+#endif
         case UART_NUM_MAX:
             default:
             tx_sig = U0TXD_OUT_IDX;
@@ -656,8 +674,10 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
         periph_module_enable(PERIPH_UART0_MODULE);
     } else if(uart_num == UART_NUM_1) {
         periph_module_enable(PERIPH_UART1_MODULE);
+#if UART_NUM > 2
     } else if(uart_num == UART_NUM_2) {
         periph_module_enable(PERIPH_UART2_MODULE);
+#endif
     }
     r = uart_set_hw_flow_ctrl(uart_num, uart_config->flow_ctrl, uart_config->rx_flow_ctrl_thresh);
     if (r != ESP_OK) return r;
@@ -1460,8 +1480,10 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
            periph_module_disable(PERIPH_UART0_MODULE);
        } else if(uart_num == UART_NUM_1) {
            periph_module_disable(PERIPH_UART1_MODULE);
+#if UART_NUM > 2
        } else if(uart_num == UART_NUM_2) {
            periph_module_disable(PERIPH_UART2_MODULE);
+#endif
        }
     }
     return ESP_OK;
