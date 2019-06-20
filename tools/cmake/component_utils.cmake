@@ -17,7 +17,7 @@ function(find_component_path find_name components component_paths variable)
     else()
     endif()
     # TODO: find a way to print the dependency chain that lead to this not-found component
-    message(WARNING "Required component ${find_name} is not found in any of the provided COMPONENT_DIRS")
+    message(FATAL_ERROR "Required component ${find_name} is not found in any of the provided COMPONENT_DIRS")
 endfunction()
 
 # components_find_all: Search 'component_dirs' for components and return them
