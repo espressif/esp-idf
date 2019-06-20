@@ -78,7 +78,6 @@ task.h is included from an application file. */
 
 #include "esp32/rom/ets_sys.h"
 #include "esp_newlib.h"
-#include "esp_debug_helpers.h"
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"

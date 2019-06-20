@@ -30,6 +30,7 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_wdt.h"
+#include "soc/soc_memory_layout.h"
 
 #include "esp_private/gdbstub.h"
 #include "esp_debug_helpers.h"
@@ -446,33 +447,36 @@ static void esp_panic_dig_reset()
 
 static void putEntry(uint32_t pc, uint32_t sp)
 {
-    if (pc & 0x80000000) {
-        pc = (pc & 0x3fffffff) | 0x40000000;
-    }
     panicPutStr(" 0x");
     panicPutHex(pc);
     panicPutStr(":0x");
     panicPutHex(sp);
 }
 
-static void doBacktrace(XtExcFrame *frame)
+static void doBacktrace(XtExcFrame *exc_frame, int depth)
 {
-    uint32_t i = 0, pc = frame->pc, sp = frame->a1;
+    //Initialize stk_frame with first frame of stack
+    esp_backtrace_frame_t stk_frame = {.pc = exc_frame->pc, .sp = exc_frame->a1, .next_pc = exc_frame->a0};
     panicPutStr("\r\nBacktrace:");
-    /* Do not check sanity on first entry, PC could be smashed. */
-    putEntry(pc, sp);
-    pc = frame->a0;
-    while (i++ < 100) {
-        uint32_t psp = sp;
-        if (!esp_stack_ptr_is_sane(sp) || i++ > 100) {
-            break;
+    putEntry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+
+    //Check if first frame is valid
+    bool corrupted = (esp_stack_ptr_is_sane(stk_frame.sp) &&
+                      esp_ptr_executable((void*)esp_cpu_process_stack_pc(stk_frame.pc))) ?
+                      false : true;
+    uint32_t i = ((depth <= 0) ? INT32_MAX : depth) - 1;    //Account for stack frame that's already printed
+    while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
+        if (!esp_backtrace_get_next_frame(&stk_frame)) {    //Get next stack frame
+            corrupted = true;
         }
-        sp = *((uint32_t *) (sp - 0x10 + 4));
-        putEntry(pc - 3, sp); // stack frame addresses are return addresses, so subtract 3 to get the CALL address
-        pc = *((uint32_t *) (psp - 0x10));
-        if (pc < 0x40000000) {
-            break;
-        }
+        putEntry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+    }
+
+    //Print backtrace termination marker
+    if (corrupted) {
+        panicPutStr(" |<-CORRUPTED");
+    } else if (stk_frame.next_pc != 0) {    //Backtrace continues
+        panicPutStr(" |<-CONTINUES");
     }
     panicPutStr("\r\n");
 }
@@ -549,7 +553,7 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
     panicPutStr("\r\n");
 
     /* With windowed ABI backtracing is easy, let's do it. */
-    doBacktrace(frame);
+    doBacktrace(frame, 100);
 
     panicPutStr("\r\n");
 }
