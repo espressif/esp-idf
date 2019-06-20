@@ -171,13 +171,9 @@ typedef volatile struct {
     } fifo_data;
     union {
         struct {
-            uint32_t byte_num:      8;              /*Byte_num represent the number of data need to be send or data need to be received.*/
-            uint32_t ack_en:        1;              /*ack_check_en  ack_exp and ack value are used to control  the ack bit.*/
-            uint32_t ack_exp:       1;              /*ack_check_en  ack_exp and ack value are used to control  the ack bit.*/
-            uint32_t ack_val:       1;              /*ack_check_en  ack_exp and ack value are used to control  the ack bit.*/
-            uint32_t op_code:       3;              /*op_code is the command  0：RSTART   1：WRITE  2：READ  3：STOP . 4:END.*/
+            uint32_t command:      14;              /*command*/
             uint32_t reserved14:   17;
-            uint32_t done:          1;              /*command0_done*/
+            uint32_t done:          1;              /*command_done*/
         };
         uint32_t val;
     } command[16];

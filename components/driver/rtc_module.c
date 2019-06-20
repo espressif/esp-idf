@@ -86,7 +86,9 @@ static const char *RTC_MODULE_TAG = "RTC_MODULE";
 } }while (0)
 
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#if CONFIG_IDF_TARGET_ESP32
 static SemaphoreHandle_t rtc_touch_mux = NULL;
+#endif
 /*
 In ADC2, there're two locks used for different cases:
 1. lock shared with app and WIFI:
@@ -122,48 +124,6 @@ static touch_pad_filter_t *s_touch_pad_filter = NULL;
 // check if touch pad be inited.
 static uint16_t s_touch_pad_init_bit = 0x0000;
 static filter_cb_t s_filter_cb = NULL;
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-typedef volatile struct {
-    uint32_t reserved0:         13;
-    uint32_t fun_ie:             1;             /*input enable in work mode*/
-    uint32_t slp_oe:             1;             /*output enable in sleep mode*/
-    uint32_t slp_ie:             1;             /*input enable in sleep mode*/
-    uint32_t slp_sel:            1;             /*1: enable sleep mode during sleep 0: no sleep mode*/
-    uint32_t fun_sel:            2;             /*function sel*/
-    uint32_t mux_sel:            1;             /*1: use RTC GPIO 0: use digital GPIO*/
-    uint32_t reserved20:         7;
-    uint32_t rue:                1;             /*RUE*/
-    uint32_t rde:                1;             /*RDE*/
-    uint32_t drv:                2;             /*DRV*/
-    uint32_t reserved31:         1;
-} rtc_gpio_info_t;
-
-static rtc_gpio_info_t* rtc_gpio[RTC_GPIO_NUMBER] = {
-    &RTCIO.touch_pad[0].val,
-    &RTCIO.touch_pad[1].val,
-    &RTCIO.touch_pad[2].val,
-    &RTCIO.touch_pad[3].val,
-    &RTCIO.touch_pad[4].val,
-    &RTCIO.touch_pad[5].val,
-    &RTCIO.touch_pad[6].val,
-    &RTCIO.touch_pad[7].val,
-    &RTCIO.touch_pad[8].val,
-    &RTCIO.touch_pad[9].val,
-    &RTCIO.touch_pad[10].val,
-    &RTCIO.touch_pad[11].val,
-    &RTCIO.touch_pad[12].val,
-    &RTCIO.touch_pad[13].val,
-    &RTCIO.touch_pad[14].val,
-    &RTCIO.xtal_32p_pad.val,
-    &RTCIO.xtal_32n_pad.val,
-    &RTCIO.pad_dac[0].val,
-    &RTCIO.pad_dac[1].val,
-    &RTCIO.rtc_pad19.val,
-    &RTCIO.rtc_pad20.val,
-    &RTCIO.rtc_pad21.val
-};
 #endif
 
 typedef enum {
@@ -529,10 +489,13 @@ esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
 
 esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     if (rtc_gpio_desc[gpio_num].reg == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+#endif
     rtc_gpio_pullup_dis(gpio_num);
     rtc_gpio_pulldown_dis(gpio_num);
     rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
@@ -994,11 +957,9 @@ uint32_t IRAM_ATTR touch_pad_get_status()
     return TOUCH_BITS_SWAP(status);
 }
 
-esp_err_t IRAM_ATTR touch_pad_clear_status()
+esp_err_t touch_pad_clear_status()
 {
-    portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_touch_ctrl2.touch_meas_en_clr = 1;
-    portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
@@ -1281,6 +1242,7 @@ esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num)
 static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait, int sample_cycle)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     // Internal FSM reset wait time
     if (rst_wait >= 0) {
         SYSCON.saradc_fsm.rstb_wait = rst_wait;
@@ -1293,6 +1255,20 @@ static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait
     if (standby_wait >= 0) {
         SYSCON.saradc_fsm.standby_wait = standby_wait;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    // Internal FSM reset wait time
+    if (rst_wait >= 0) {
+        SYSCON.saradc_fsm_wait.rstb_wait = rst_wait;
+    }
+    // Internal FSM start wait time
+    if (start_wait >= 0) {
+        SYSCON.saradc_fsm_wait.xpd_wait = start_wait;
+    }
+    // Internal FSM standby wait time
+    if (standby_wait >= 0) {
+        SYSCON.saradc_fsm_wait.standby_wait = standby_wait;
+    }
+#endif
     // Internal FSM standby sample cycle
     if (sample_cycle >= 0) {
         SYSCON.saradc_fsm.sample_cycle = sample_cycle;
@@ -1617,31 +1593,19 @@ static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
             case ADC_CTRL_RTC:
                 SENS.sar_meas2_ctrl2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor 
                 SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
-                // SENS.sar_read_ctrl2.sar2_dig_force = false;     //RTC controller controls the ADC, not digital controller
-                // SENS.sar_read_ctrl2.sar2_pwdet_force = false;   //RTC controller controls the ADC, not PWDET
-                SYSCON.saradc_ctrl.sar2_mux = true;             //RTC controller controls the ADC, not PWDET
                 break;
             case ADC_CTRL_ULP:
                 SENS.sar_meas2_ctrl2.meas2_start_force = false;
                 SENS.sar_meas2_ctrl2.sar2_en_pad_force = false;
-                // SENS.sar_read_ctrl2.sar2_dig_force = false;
-                // SENS.sar_read_ctrl2.sar2_pwdet_force = false;
-                SYSCON.saradc_ctrl.sar2_mux = true;
                 break;
             case ADC_CTRL_DIG:
                 SENS.sar_meas2_ctrl2.meas2_start_force = true;
                 SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;
-                // SENS.sar_read_ctrl2.sar2_dig_force = true;
-                // SENS.sar_read_ctrl2.sar2_pwdet_force = false;
-                SYSCON.saradc_ctrl.sar2_mux = true;
                 break;
             case ADC2_CTRL_PWDET:
                 //currently only used by Wi-Fi
                 SENS.sar_meas2_ctrl2.meas2_start_force = true;
                 SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;
-                // SENS.sar_read_ctrl2.sar2_dig_force = false;
-                // SENS.sar_read_ctrl2.sar2_pwdet_force = true;
-                SYSCON.saradc_ctrl.sar2_mux = false;
                 break;
             default:
                 ESP_LOGE(TAG, "adc2 selects invalid controller");

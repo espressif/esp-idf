@@ -23,19 +23,11 @@ extern "C" {
 #include "esp_err.h"
 #include "soc/dac_periph.h"
 
-#if CONFIG_IDF_TARGET_ESP32
 typedef enum {
-    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 */
-    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO26 */
+    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 (ESP32), GPIO17 (ESP32-S2) */
+    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO26 (ESP32), GPIO18 (ESP32-S2) */
     DAC_CHANNEL_MAX,
 } dac_channel_t;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-typedef enum {
-    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO17 */
-    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO18 */
-    DAC_CHANNEL_MAX,
-} dac_channel_t;
-#endif
 
 /**
  * @brief Get the gpio number of a specific DAC channel.
