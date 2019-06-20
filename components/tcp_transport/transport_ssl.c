@@ -112,6 +112,7 @@ static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int 
     ret = esp_tls_conn_write(ssl->tls, (const unsigned char *) buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_write error, errno=%s", strerror(errno));
+        return -1;
     }
     return ret;
 }
@@ -129,6 +130,7 @@ static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout
     ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
+        return -1;
     }
     if (ret == 0) {
         ret = -1;
