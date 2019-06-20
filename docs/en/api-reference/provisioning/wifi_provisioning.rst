@@ -247,7 +247,7 @@ User side applications need to implement the signature handshaking required for 
 
 See Unified Provisioning for more details about the secure handshake and encryption used. Applications must use the `.proto` files found under `components/protocomm/proto <https://github.com/espressif/esp-idf/components/protocomm/proto>`_, which define the Protobuf message structures supported by `prov-session` endpoint.
 
-Once a session is established, Wi-Fi credentials are configured using the following set of commands, serialized as Protobuf messages (the corresponding `.proto` files can be found under `components/wifi_provisioning/proto <https://github.com/espressif/esp-idf/components/wifi_provisioning/proto>`_) :
+Once a session is established, Wi-Fi credentials are configured using the following set of commands, serialized as Protobuf messages (the corresponding `.proto` files can be found under `components/wifi_provisioning/proto <https://github.com/espressif/esp-idf/tree/master/components/wifi_provisioning/proto>`_) :
 
     * `get_status` - For querying the Wi-Fi connection status. The device will respond with a status which will be one of connecting / connected / disconnected. If status is disconnected, a disconnection reason will also be included in the status response.
     * `set_config` - For setting the Wi-Fi connection credentials
