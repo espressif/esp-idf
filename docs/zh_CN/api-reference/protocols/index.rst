@@ -8,6 +8,7 @@
    mDNS <mdns>
    ESP-TLS <esp_tls>
    HTTP Client <esp_http_client>
+   Websocket Client <esp_websocket_client>
    HTTP 服务器 <esp_http_server>
    HTTPS Server <esp_https_server>
    ASIO <asio>
