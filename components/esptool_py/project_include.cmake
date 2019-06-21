@@ -148,7 +148,10 @@ add_custom_target(flash_project_args_target)
 
 # esptool_py_flash_project_args
 #
-# Add file to the flasher args list, to be flashed at a particular offset
+# Add file to the flasher args list, to be flashed at a particular offset.
+#
+# When a template FLASH_FILE_TEMPLATE is given, the variables OFFSET and IMAGE
+# hold the value of arguments offset and image, respectively.
 function(esptool_py_flash_project_args entry offset image)
     set(options FLASH_IN_PROJECT)  # flash the image when flashing the project
     set(single_value FLASH_FILE_TEMPLATE) # template file to use to be able to
@@ -172,8 +175,16 @@ function(esptool_py_flash_project_args entry offset image)
     if(NOT __FLASH_FILE_TEMPLATE)
         file(GENERATE OUTPUT ${entry_flash_args} CONTENT "${offset} ${image}")
     else()
+        set(OFFSET ${offset})
+        set(IMAGE ${image})
         get_filename_component(template "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
-        file(GENERATE OUTPUT ${entry_flash_args} INPUT ${template})
+        configure_file(${template} ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2)
+        file(GENERATE OUTPUT ${entry_flash_args} INPUT ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2)
+        set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    APPEND PROPERTY
+                    ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2})
+        unset(OFFSET)
+        unset(IMAGE)
     endif()
 
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
