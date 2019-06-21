@@ -75,28 +75,33 @@ set(PROJECT_BIN "${elf_name}.bin")
 #
 # Add 'app.bin' target - generates with elf2image
 #
-add_custom_command(OUTPUT "${build_dir}/.app_hash"
+add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
     COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
         -o "${build_dir}/${unsigned_project_binary}" "${elf}"
-    COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.app_hash"
+    COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
+    COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
     DEPENDS ${elf}
     VERBATIM
     WORKING_DIRECTORY ${build_dir}
+    COMMENT "Generating binary image from built executable"
     )
-add_custom_target(gen_project_binary DEPENDS "${build_dir}/.app_hash")
+add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
 
 if(NOT BOOTLOADER_BUILD AND
     CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
 
     # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
-    add_custom_command(OUTPUT "${build_dir}/.signed_app_hash"
+    add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
         COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
             -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_app_hash"
-        DEPENDS "${build_dir}/.app_hash"
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
+                                "from ${build_dir}/${unsigned_project_binary}"
+        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
+        DEPENDS "${build_dir}/.bin_timestamp"
         VERBATIM
+        COMMENT "Generating signed binary image"
         )
-    add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_app_hash")
+    add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
     add_dependencies(gen_project_binary gen_signed_project_binary)
 endif()
 
@@ -105,6 +110,7 @@ if(NOT BOOTLOADER_BUILD)
 else()
     add_custom_target(bootloader ALL DEPENDS gen_project_binary)
 endif()
+
 
 if(NOT BOOTLOADER_BUILD AND
     CONFIG_SECURE_BOOT_ENABLED AND

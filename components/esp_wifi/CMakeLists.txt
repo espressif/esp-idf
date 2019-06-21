@@ -44,11 +44,12 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
 
     # To get the phy_init_data.bin file, compile phy_init_data.h as a C file and then objcopy
     # the object file to a raw binary
+    idf_build_get_property(config_dir CONFIG_DIR)
     add_custom_command(
         OUTPUT ${phy_init_data_bin}
         DEPENDS ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/include/phy_init_data.h
         COMMAND ${CMAKE_C_COMPILER} -x c -c
-        -I ${esp_common_dir}/include -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${build_dir}/config
+        -I ${esp_common_dir}/include -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${config_dir}
         -o phy_init_data.obj
         ${CMAKE_CURRENT_LIST_DIR}/${idf_target}/include/phy_init_data.h
         COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${phy_init_data_bin}
