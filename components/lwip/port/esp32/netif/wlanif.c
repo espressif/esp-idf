@@ -202,7 +202,7 @@ wlanif_init(struct netif *netif)
   /* Initialize interface hostname */
 
 #if ESP_LWIP
-  netif->hostname = "espressif";
+  netif->hostname = CONFIG_LWIP_LOCAL_HOSTNAME;
 #else
   netif->hostname = "lwip";
 #endif
