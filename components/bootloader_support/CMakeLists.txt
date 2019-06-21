@@ -1,21 +1,23 @@
-set(srcs "src/bootloader_clock.c"
-                   "src/bootloader_common.c"
-                   "src/bootloader_flash.c"
-                   "src/bootloader_random.c"
-                   "src/bootloader_utility.c"
-                   "src/esp_image_format.c"
-                   "src/flash_partitions.c"
-                   "src/flash_qio_mode.c")
+set(srcs 
+    "src/bootloader_clock.c"
+    "src/bootloader_common.c"
+    "src/bootloader_flash.c"
+    "src/bootloader_random.c"
+    "src/bootloader_utility.c"
+    "src/esp_image_format.c"
+    "src/flash_partitions.c"
+    "src/flash_qio_mode.c")
 
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "include_bootloader")
     set(requires soc)  #unfortunately the header directly uses SOC registers
     set(priv_requires micro-ecc spi_flash efuse)
-    list(APPEND srcs "src/bootloader_init.c"
-                    "src/${IDF_TARGET}/bootloader_sha.c"
-                    "src/${IDF_TARGET}/flash_encrypt.c"
-                    "src/${IDF_TARGET}/secure_boot_signatures.c"
-                    "src/${IDF_TARGET}/secure_boot.c")
+    list(APPEND srcs 
+        "src/bootloader_init.c"
+        "src/${IDF_TARGET}/bootloader_sha.c"
+        "src/${IDF_TARGET}/flash_encrypt.c"
+        "src/${IDF_TARGET}/secure_boot_signatures.c"
+        "src/${IDF_TARGET}/secure_boot.c")
 
     if(CONFIG_SECURE_SIGNED_APPS)
         get_filename_component(secure_boot_verification_key
@@ -51,8 +53,9 @@ if(BOOTLOADER_BUILD)
             "${secure_boot_verification_key}")
     endif()
 else()
-    list(APPEND srcs "src/idf/bootloader_sha.c"
-                    "src/idf/secure_boot_signatures.c")
+    list(APPEND srcs 
+        "src/idf/bootloader_sha.c"
+        "src/idf/secure_boot_signatures.c")
     set(include_dirs "include")
     set(priv_include_dirs "include_bootloader")
     set(requires soc) #unfortunately the header directly uses SOC registers

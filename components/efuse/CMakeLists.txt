@@ -7,9 +7,10 @@ if(EXISTS "${COMPONENT_DIR}/${soc_name}")
     set(include_dirs include ${soc_name}/include)
 endif()
 
-list(APPEND srcs "src/esp_efuse_api.c"
-                "src/esp_efuse_fields.c"
-                "src/esp_efuse_utility.c")
+list(APPEND srcs 
+    "src/esp_efuse_api.c"
+    "src/esp_efuse_fields.c"
+    "src/esp_efuse_utility.c")
 
 idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES bootloader_support soc

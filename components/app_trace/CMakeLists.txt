@@ -1,7 +1,9 @@
-set(srcs "app_trace.c"
-                   "app_trace_util.c"
-                   "host_file_io.c"
-                   "gcov/gcov_rtio.c")
+set(srcs 
+    "app_trace.c"
+    "app_trace_util.c"
+    "host_file_io.c"
+    "gcov/gcov_rtio.c")
+
 set(include_dirs "include")
 
 if(CONFIG_SYSVIEW_ENABLE)
@@ -10,12 +12,13 @@ if(CONFIG_SYSVIEW_ENABLE)
         sys_view/SEGGER
         sys_view/Sample/OS)
 
-    list(APPEND srcs "sys_view/SEGGER/SEGGER_SYSVIEW.c"
-                   "sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
-                   "sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c"
-                   "sys_view/esp32/SEGGER_RTT_esp32.c"
-                   "sys_view/ext/heap_trace_module.c"
-                   "sys_view/ext/logging.c")
+    list(APPEND srcs 
+        "sys_view/SEGGER/SEGGER_SYSVIEW.c"
+        "sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
+        "sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c"
+        "sys_view/esp32/SEGGER_RTT_esp32.c"
+        "sys_view/ext/heap_trace_module.c"
+        "sys_view/ext/logging.c")
 endif()
 
 if(CONFIG_HEAP_TRACING_TOHOST)

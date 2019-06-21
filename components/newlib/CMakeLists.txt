@@ -1,4 +1,5 @@
-set(srcs "heap.c"
+set(srcs 
+    "heap.c"
     "locks.c"
     "poll.c"
     "pthread.c"
