@@ -1,13 +1,13 @@
 SOURCE_FILES := \
 	$(addprefix ../src/, \
 		ff.c \
-		ffsystem.c \
 		ffunicode.c \
 	) \
 	$(addprefix ../diskio/,\
 		diskio.c \
 		diskio_wl.c \
-	)
+	) \
+	../port/linux/ffsystem.c
 
 INCLUDE_DIRS := \
 	. \

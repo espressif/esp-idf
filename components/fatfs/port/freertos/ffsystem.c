@@ -12,21 +12,15 @@
 #include "esp_heap_caps.h"
 #endif
 
-
-
-/*------------------------------------------------------------------------*/
-/* Allocate a memory block                                                */
-/*------------------------------------------------------------------------*/
-
-void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on not enough core) */
-	unsigned msize		/* Number of bytes to allocate */
+void* ff_memalloc (    /* Returns pointer to the allocated memory block (null on not enough core) */
+    unsigned msize     /* Number of bytes to allocate */
 )
 {
 #ifdef CONFIG_FATFS_ALLOC_EXTRAM_FIRST
-	return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
-											MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM,
+                                            MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
 #else
-	return malloc(msize);
+    return malloc(msize);
 #endif
 }
 
@@ -36,16 +30,16 @@ void* ff_memalloc (	/* Returns pointer to the allocated memory block (null on no
 /*------------------------------------------------------------------------*/
 
 void ff_memfree (
-	void* mblock	/* Pointer to the memory block to free (nothing to do for null) */
+    void* mblock    /* Pointer to the memory block to free (nothing to do for null) */
 )
 {
-	free(mblock);	/* Free the memory block with POSIX API */
+    free(mblock);   /* Free the memory block with POSIX API */
 }
 
 
 
 
-#if FF_FS_REENTRANT	/* Mutal exclusion */
+#if FF_FS_REENTRANT    /* Mutal exclusion */
 
 /*------------------------------------------------------------------------*/
 /* Create a Synchronization Object                                        */
@@ -56,9 +50,9 @@ void ff_memfree (
 */
 
 
-int ff_cre_syncobj (	/* 1:Function succeeded, 0:Could not create the sync object */
-	BYTE vol,			/* Corresponding volume (logical drive number) */
-	FF_SYNC_t *sobj		/* Pointer to return the created sync object */
+int ff_cre_syncobj (    /* 1:Function succeeded, 0:Could not create the sync object */
+    BYTE vol,           /* Corresponding volume (logical drive number) */
+    FF_SYNC_t *sobj     /* Pointer to return the created sync object */
 )
 {
     *sobj = xSemaphoreCreateMutex();
@@ -74,8 +68,8 @@ int ff_cre_syncobj (	/* 1:Function succeeded, 0:Could not create the sync object
 /  the f_mount() function fails with FR_INT_ERR.
 */
 
-int ff_del_syncobj (	/* 1:Function succeeded, 0:Could not delete due to an error */
-	FF_SYNC_t sobj		/* Sync object tied to the logical drive to be deleted */
+int ff_del_syncobj (    /* 1:Function succeeded, 0:Could not delete due to an error */
+    FF_SYNC_t sobj      /* Sync object tied to the logical drive to be deleted */
 )
 {
     vSemaphoreDelete(sobj);
@@ -90,8 +84,8 @@ int ff_del_syncobj (	/* 1:Function succeeded, 0:Could not delete due to an error
 /  When a 0 is returned, the file function fails with FR_TIMEOUT.
 */
 
-int ff_req_grant (	/* 1:Got a grant to access the volume, 0:Could not get a grant */
-	FF_SYNC_t sobj	/* Sync object to wait */
+int ff_req_grant (    /* 1:Got a grant to access the volume, 0:Could not get a grant */
+    FF_SYNC_t sobj    /* Sync object to wait */
 )
 {
     return (xSemaphoreTake(sobj, FF_FS_TIMEOUT) == pdTRUE) ? 1 : 0;
@@ -105,10 +99,10 @@ int ff_req_grant (	/* 1:Got a grant to access the volume, 0:Could not get a gran
 */
 
 void ff_rel_grant (
-	FF_SYNC_t sobj	/* Sync object to be signaled */
+    FF_SYNC_t sobj    /* Sync object to be signaled */
 )
 {
     xSemaphoreGive(sobj);
 }
 
-#endif
+#endif // FF_FS_REENTRANT
