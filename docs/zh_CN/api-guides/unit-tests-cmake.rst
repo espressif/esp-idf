@@ -152,21 +152,21 @@ DUT2（slave）终端：
 
 -  ``idf.py menuconfig`` - 配置单元测试程序。
 
--  ``idf.py build -T all`` - 编译单元测试程序，测试每个组件 ``test``
+-  ``idf.py -T all build`` - 编译单元测试程序，测试每个组件 ``test``
    子目录下的用例。
 
--  ``idf.py build -T xxx`` - 编译单元测试程序，测试指定的组件。
+-  ``idf.py -T xxx build`` - 编译单元测试程序，测试指定的组件。
 
--  ``idf.py build -T all -E xxx`` -
+-  ``idf.py -T all -E xxx build`` -
    编译单元测试程序，测试所有（除开指定）的组件。例如
-   ``idf.py build -T all -E ulp mbedtls`` -
+   ``idf.py -T all -E ulp mbedtls build`` -
    编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls``\ 组件。
 
 当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``idf.py flash``
 即可烧写所有编译输出的文件。
 
-您还可以运行 ``idf.py flash -T all`` 或者
-``idf.py flash -T xxx``
+您还可以运行 ``idf.py -T all flash`` 或者
+``idf.py -T xxx flash``
 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
 
 使用 ``menuconfig`` 可以设置烧写测试程序所使用的串口。

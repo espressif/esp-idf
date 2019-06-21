@@ -130,13 +130,13 @@ Change into tools/unit-test-app directory to configure and build it:
 
 * `idf.py menuconfig` - configure unit test app.
 
-* `idf.py build -T all` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* `idf.py build -T xxx` - build unit test app with tests for specific components. 
-* `idf.py build -T all -E xxx` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `idf.py build -T all -E ulp mbedtls` - build all unit tests exludes ulp and mbedtls components).
+* `idf.py -T all build` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
+* `idf.py -T xxx build` - build unit test app with tests for specific components. 
+* `idf.py -T all -E xxx build` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `idf.py -T all -E ulp -E mbedtls build` - build all unit tests exludes ulp and mbedtls components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
-You can also run ``idf.py flash -T all`` or ``idf.py flash -T xxx`` to build and flash. Everything needed will be rebuilt automatically before flashing. 
+You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing. 
 
 Use menuconfig to set the serial port for flashing.
 
