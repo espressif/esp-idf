@@ -10,6 +10,7 @@
 
 #include <string.h>
 #include <time.h>
+#include <stdlib.h>
 #include <sys/time.h>
 #include "diskio_impl.h"
 #include "ffconf.h"
