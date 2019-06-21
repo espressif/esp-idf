@@ -44,26 +44,50 @@ Aside from invoking the ``spiffsgen.py`` standalone by manually running it from 
 
 Make::
 
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>,[FLASH_IN_PROJECT]))
+    SPIFFS_IMAGE_FLASH_IN_PROJECT := ...
+    SPIFFS_IMAGE_DEPENDS := ...
+    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
 
 CMake::
 
-    spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+    spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT] [DEPENDS dep dep dep...])
 
 This is more convenient as the build configuration is automatically passed to the tool, ensuring that the generated image is valid for that build. An example of this is while the *image_size* is required for the standalone invocation, only the *partition* name is required when using ``spiffs_create_partition_image`` -- the image size is automatically obtained from the project's partition table.
 
-Due to the differences in structure between Make and Cmake, it is important to note that:
+Due to the differences in structure between Make and CMake, it is important to note that:
 - for Make ``spiffs_create_partition_image`` must be called from the project Makefile
 - for CMake ``spiffs_create_partition_image`` must be called from one of the component CMakeLists.txt files
 
-For both build systems, the image will be created in the build directory with the filename *partition*.bin. 
+Optionally, user can opt to have the image automatically flashed together with the app binaries, partition tables, etc. on
+``idf.py flash`` or ``make flash`` by specifying ``FLASH_IN_PROJECT``.  For example,
 
-Optionally, you can opt to have the image automatically flashed together with the app binaries, partition tables, etc., with
-``idf.py flash`` or ``make flash`` by specifying ``FLASH_IN_PROJECT``.  For example::
+in Make::
+
+    SPIFFS_IMAGE_FLASH_IN_PROJECT := 1
+    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
+
+in CMake::
 
     spiffs_create_partition_image(my_spiffs_partition my_folder FLASH_IN_PROJECT)
 
-If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py``, ``parttool.py``, or a custom build system target.
+If FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py``, ``parttool.py``, or a custom build system target.
+
+There are cases where the contents of the base directory itself is generated at build time. Users can use DEPENDS/SPIFFS_IMAGE_DEPENDS to specify targets
+that should be executed before generating the image. 
+
+in Make::
+
+    dep: 
+        ...
+
+    SPIFFS_IMAGE_DEPENDS := dep
+    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
+
+in CMake::
+
+    add_custom_target(dep COMMAND ...)
+
+    spiffs_create_partition_image(my_spiffs_partition my_folder DEPENDS dep)
 
 +For an example, see :example:`examples/storage/spiffsgen>`.
 
