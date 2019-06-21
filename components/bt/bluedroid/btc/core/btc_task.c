@@ -176,95 +176,121 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 }
 
 #if BTC_DYNAMIC_MENDRY
+
+static void btc_deinit_mem(void) {
+    if (btc_dm_cb_ptr) {
+        osi_free(btc_dm_cb_ptr);
+        btc_dm_cb_ptr = NULL;
+    }
+
+    if (btc_profile_cb_tab) {
+        osi_free(btc_profile_cb_tab);
+        btc_profile_cb_tab = NULL;
+    }
+
+#if (BLE_INCLUDED == TRUE)
+    if (gl_bta_adv_data_ptr) {
+        osi_free(gl_bta_adv_data_ptr);
+        gl_bta_adv_data_ptr = NULL;
+    }
+
+    if (gl_bta_scan_rsp_data_ptr) {
+        osi_free(gl_bta_scan_rsp_data_ptr);
+        gl_bta_scan_rsp_data_ptr = NULL;
+    }
+#endif  ///BLE_INCLUDED == TRUE
+
+#if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
+    if (btc_creat_tab_env_ptr) {
+        osi_free(btc_creat_tab_env_ptr);
+        btc_creat_tab_env_ptr = NULL;
+    }
+
+    if (blufi_env_ptr) {
+        osi_free(blufi_env_ptr);
+        blufi_env_ptr = NULL;
+    }
+#endif
+
+#if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_client_local_param_ptr) {
+        osi_free(hf_client_local_param_ptr);
+        hf_client_local_param_ptr = NULL;
+    }
+#endif
+
+#if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
+    if (btc_rc_cb_ptr) {
+        osi_free(btc_rc_cb_ptr);
+        btc_rc_cb_ptr = NULL;
+    }
+    if (bta_av_co_cb_ptr) {
+        osi_free(bta_av_co_cb_ptr);
+        bta_av_co_cb_ptr = NULL;
+    }
+#endif
+}
+
 static bt_status_t btc_init_mem(void) {
     if ((btc_dm_cb_ptr = (btc_dm_cb_t *)osi_malloc(sizeof(btc_dm_cb_t))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)btc_dm_cb_ptr, 0, sizeof(btc_dm_cb_t));
 
     if ((btc_profile_cb_tab = (void **)osi_malloc(sizeof(void *) * BTC_PID_NUM)) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)btc_profile_cb_tab, 0, sizeof(void *) * BTC_PID_NUM);
 
 #if (BLE_INCLUDED == TRUE)
     if ((gl_bta_adv_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)gl_bta_adv_data_ptr, 0, sizeof(tBTA_BLE_ADV_DATA));
 
     if ((gl_bta_scan_rsp_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)gl_bta_scan_rsp_data_ptr, 0, sizeof(tBTA_BLE_ADV_DATA));
 #endif  ///BLE_INCLUDED == TRUE
 
 #if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
     if ((btc_creat_tab_env_ptr = (esp_btc_creat_tab_t *)osi_malloc(sizeof(esp_btc_creat_tab_t))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)btc_creat_tab_env_ptr, 0, sizeof(esp_btc_creat_tab_t));
 
     if ((blufi_env_ptr = (tBLUFI_ENV *)osi_malloc(sizeof(tBLUFI_ENV))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)blufi_env_ptr, 0, sizeof(tBLUFI_ENV));
 #endif
 
 #if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
     if ((hf_client_local_param_ptr = (hf_client_local_param_t *)osi_malloc(sizeof(hf_client_local_param_t))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)hf_client_local_param_ptr, 0, sizeof(hf_client_local_param_t));
 #endif
 
 #if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
-    if ((btc_rc_vb_ptr = (btc_rc_cb_t *)osi_malloc(sizeof(btc_rc_cb_t))) == NULL) {
-        return BT_STATUS_NOMEM;
+    if ((btc_rc_cb_ptr = (btc_rc_cb_t *)osi_malloc(sizeof(btc_rc_cb_t))) == NULL) {
+        goto error_exit;
     }
-    memset((void *)btc_rc_vb_ptr, 0, sizeof(btc_rc_cb_t));
+    memset((void *)btc_rc_cb_ptr, 0, sizeof(btc_rc_cb_t));
     if ((bta_av_co_cb_ptr = (tBTA_AV_CO_CB *)osi_malloc(sizeof(tBTA_AV_CO_CB))) == NULL) {
-        return BT_STATUS_NOMEM;
+        goto error_exit;
     }
     memset((void *)bta_av_co_cb_ptr, 0, sizeof(tBTA_AV_CO_CB));
 #endif
 
     return BT_STATUS_SUCCESS;
+
+error_exit:;
+    btc_deinit_mem();
+    return BT_STATUS_NOMEM;
 }
-
-static void btc_deinit_mem(void) {
-    osi_free(btc_dm_cb_ptr);
-    btc_dm_cb_ptr = NULL;
-
-    osi_free(btc_profile_cb_tab);
-    btc_profile_cb_tab = NULL;
-
-    osi_free(gl_bta_adv_data_ptr);
-    gl_bta_adv_data_ptr = NULL;
-
-    osi_free(gl_bta_scan_rsp_data_ptr);
-    gl_bta_scan_rsp_data_ptr = NULL;
-
-#if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
-    osi_free(btc_creat_tab_env_ptr);
-    btc_creat_tab_env_ptr = NULL;
-    osi_free(blufi_env_ptr);
-    blufi_env_ptr = NULL;
-#endif
-
-#if BTC_HF_CLIENT_INCLUDED == TRUE && HFP_DYNAMIC_MEMORY == TRUE
-    osi_free(hf_client_local_param_ptr);
-    hf_client_local_param_ptr = NULL;
-#endif
-
-#if BTC_AV_INCLUDED == TRUE && AVRC_DYNAMIC_MEMORY == TRUE
-    osi_free(btc_rc_vb_ptr);
-    btc_rc_vb_ptr = NULL;
-    osi_free(bta_av_co_cb_ptr);
-    bta_av_co_cb_ptr = NULL;
-#endif
-}
-#endif
+#endif ///BTC_DYNAMIC_MENDRY
 
 int btc_init(void)
 {

@@ -246,7 +246,7 @@ uint8_t adv_param_status   = 0;
 uint8_t scan_enable_status = 0;
 uint8_t scan_param_status  = 0;
 
-void btm_lock_init(void)
+void btm_ble_lock_init(void)
 {
     osi_mutex_new(&adv_enable_lock);
     osi_mutex_new(&adv_data_lock);
@@ -255,7 +255,7 @@ void btm_lock_init(void)
     osi_mutex_new(&scan_param_lock);
 }
 
-void btm_lock_free(void)
+void btm_ble_lock_free(void)
 {
     osi_mutex_free(&adv_enable_lock);
     osi_mutex_free(&adv_data_lock);
@@ -264,7 +264,7 @@ void btm_lock_free(void)
     osi_mutex_free(&scan_param_lock);
 }
 
-void btm_sem_init(void)
+void btm_ble_sem_init(void)
 {
     osi_sem_new(&adv_enable_sem, 1, 0);
     osi_sem_new(&adv_data_sem, 1, 0);
@@ -273,7 +273,7 @@ void btm_sem_init(void)
     osi_sem_new(&scan_param_sem, 1, 0);
 }
 
-void btm_sem_free(void)
+void btm_ble_sem_free(void)
 {
     osi_sem_free(&adv_enable_sem);
     osi_sem_free(&adv_data_sem);

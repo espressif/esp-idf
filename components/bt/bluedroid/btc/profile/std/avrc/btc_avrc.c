@@ -1002,8 +1002,6 @@ static void btc_avrc_ct_init(void)
     /// initialize CT-TG shared resources
     if (s_rc_tg_init != BTC_RC_TG_INIT_MAGIC) {
         memset (&btc_rc_cb, 0, sizeof(btc_rc_cb_t));
-        btc_rc_cb.rc_vol_label = MAX_LABEL;
-        btc_rc_cb.rc_volume = MAX_VOLUME;
     }
 }
 

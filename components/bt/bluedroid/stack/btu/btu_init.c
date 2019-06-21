@@ -66,7 +66,7 @@ osi_thread_t *btu_thread = NULL;
 extern void PLATFORM_DisableHciTransport(UINT8 bDisable);
 
 extern void btu_task_thread_handler(void *arg);
-void btu_task_start_up(void);
+void btu_task_start_up(void * param);
 void btu_task_shut_down(void);
 
 /*****************************************************************************
@@ -197,6 +197,15 @@ error_exit:;
     BTU_ShutDown();
 }
 
+/*****************************************************************************
+**
+** Function         BTU_ShutDown
+**
+** Description      Deinitializes the BTU control block.
+**
+** Returns          void
+**
+******************************************************************************/
 void BTU_ShutDown(void)
 {
 #if BTU_DYNAMIC_MEMORY

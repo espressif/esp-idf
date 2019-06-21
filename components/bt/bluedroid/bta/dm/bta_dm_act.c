@@ -1298,7 +1298,9 @@ void bta_dm_loc_oob(tBTA_DM_MSG *p_data)
 *******************************************************************************/
 void bta_dm_oob_reply(tBTA_DM_MSG *p_data)
 {
+#if (BLE_INCLUDED)
     BTM_BleOobDataReply(p_data->oob_reply.bd_addr, BTM_SUCCESS, p_data->oob_reply.len, p_data->oob_reply.value);
+#endif
 }
 
 /*******************************************************************************

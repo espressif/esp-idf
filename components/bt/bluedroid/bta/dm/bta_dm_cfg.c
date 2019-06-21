@@ -441,4 +441,4 @@ tBTA_DM_EIR_CONF bta_dm_eir_cfg = {
     NULL
 #endif /* #if (BTC_GAP_BT_INCLUDED == TRUE) */
 };
-tBTA_DM_EIR_CONF *const p_bta_dm_eir_cfg = (tBTA_DM_EIR_CONF *) &bta_dm_eir_cfg;
+tBTA_DM_EIR_CONF *p_bta_dm_eir_cfg = (tBTA_DM_EIR_CONF *) &bta_dm_eir_cfg;

@@ -24,6 +24,7 @@
 #ifndef AVRC_API_H
 #define AVRC_API_H
 #include "common/bt_target.h"
+#include "common/bt_defs.h"
 #include "stack/avct_api.h"
 #include "stack/sdp_api.h"
 #include "stack/avrc_defs.h"
@@ -549,10 +550,10 @@ extern UINT8 AVRC_SetTraceLevel (UINT8 new_level);
 **                  control block (if using dynamic memory), and initializes the
 **                  control block and tracing level.
 **
-** Returns          void
+** Returns          status
 **
 *******************************************************************************/
-extern void AVRC_Init(void);
+extern bt_status_t AVRC_Init(void);
 
 /*******************************************************************************
 **

@@ -1711,11 +1711,16 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
 **
 ** Description      This function is called to initialize RFCOMM layer
 **
+** Returns          status
+**
 *******************************************************************************/
-void RFCOMM_Init (void)
+bt_status_t RFCOMM_Init (void)
 {
 #if RFC_DYNAMIC_MEMORY == TRUE
     rfc_cb_ptr = (tRFC_CB *)osi_malloc(sizeof(tRFC_CB));
+    if (rfc_cb_ptr == NULL) {
+        return BT_STATUS_NOMEM;
+    }
 #endif /* #if (RFC_DYNAMIC_MEMORY) */
     memset (&rfc_cb, 0, sizeof (tRFC_CB));  /* Init RFCOMM control block */
 
@@ -1728,6 +1733,7 @@ void RFCOMM_Init (void)
 #endif
 
     rfcomm_l2cap_if_init ();
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1743,8 +1749,10 @@ void RFCOMM_Init (void)
 void RFCOMM_Deinit(void)
 {
 #if RFC_DYNAMIC_MEMORY == TRUE
-    osi_free(rfc_cb_ptr);
-    rfc_cb_ptr = NULL;
+    if (rfc_cb_ptr){
+        osi_free(rfc_cb_ptr);
+        rfc_cb_ptr = NULL;
+    }
 #endif
 }
 

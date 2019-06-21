@@ -340,13 +340,16 @@ UINT8 AVRC_SetTraceLevel (UINT8 new_level)
 **                  control block (if using dynamic memory), and initializes the
 **                  control block and tracing level.
 **
-** Returns          void
+** Returns          status
 **
 *******************************************************************************/
-void AVRC_Init(void)
+bt_status_t AVRC_Init(void)
 {
 #if AVRC_DYNAMIC_MEMORY
     avrc_cb_ptr = (tAVRC_CB *)osi_malloc(sizeof(tAVRC_CB));
+    if (!avrc_cb_ptr) {
+        return BT_STATUS_NOMEM;
+    }
 #endif /* #if AVRC_DYNAMIC_MEMORY */
     memset(&avrc_cb, 0, sizeof(tAVRC_CB));
 
@@ -355,6 +358,7 @@ void AVRC_Init(void)
 #else
     avrc_cb.trace_level  = BT_TRACE_LEVEL_NONE;
 #endif
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -371,8 +375,10 @@ void AVRC_Init(void)
 void AVRC_Deinit(void)
 {
 #if AVRC_DYNAMIC_MEMORY
-    osi_free(avrc_cb_ptr);
-    avrc_cb_ptr = NULL;
+    if (avrc_cb_ptr){
+        osi_free(avrc_cb_ptr);
+        avrc_cb_ptr = NULL;
+    }
 #endif /* #if AVRC_DYNAMIC_MEMORY */
 }
 

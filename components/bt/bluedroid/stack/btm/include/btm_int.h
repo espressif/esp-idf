@@ -1148,13 +1148,13 @@ void  btm_acl_paging (BT_HDR *p, BD_ADDR dest);
 UINT8 btm_sec_clr_service_by_psm (UINT16 psm);
 void  btm_sec_clr_temp_auth_service (BD_ADDR bda);
 
-void btm_lock_init(void);
+void btm_ble_lock_init(void);
 
-void btm_sem_init(void);
+void btm_ble_sem_init(void);
 
-void btm_sem_free(void);
+void btm_ble_sem_free(void);
 
-void btm_lock_free(void);
+void btm_ble_lock_free(void);
 
 /*
 #ifdef __cplusplus
