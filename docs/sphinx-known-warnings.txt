@@ -77,6 +77,8 @@ If type alias or template alias:
 #
 spi_master.inc:line: WARNING: Duplicate declaration, struct spi_transaction_t spi_transaction_t
 spi_slave.inc:line: WARNING: Duplicate declaration, struct spi_slave_transaction_t spi_slave_transaction_t
+esp_flash.inc:line: WARNING: Duplicate declaration, struct esp_flash_t esp_flash_t
+spi_flash_types.inc:line: WARNING: Duplicate declaration, struct spi_flash_host_driver_t spi_flash_host_driver_t
 wear-levelling.rst:line: WARNING: Duplicate declaration, bool esp_vfs_fat_mount_config_t::format_if_mount_failed
 wear-levelling.rst:line: WARNING: Duplicate declaration, int esp_vfs_fat_mount_config_t::max_files
 wear-levelling.rst:line: WARNING: Duplicate declaration, size_t esp_vfs_fat_mount_config_t::allocation_unit_size

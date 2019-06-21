@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include "soc/spi_periph.h"
+#include "hal/spi_flash_types.h"
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
@@ -42,18 +43,6 @@
 
 ///Slowest io mode supported by ESP32, currently SlowRd
 #define SPI_FLASH_READ_MODE_MIN SPI_FLASH_SLOWRD
-
-/** @brief Mode used for reading from SPI flash */
-typedef enum {
-    SPI_FLASH_SLOWRD = 0, ///< Data read using single I/O, some limits on speed
-    SPI_FLASH_FASTRD, ///< Data read using single I/O, no limit on speed
-    SPI_FLASH_DOUT,   ///< Data read using dual I/O
-    SPI_FLASH_DIO,    ///< Both address & data transferred using dual I/O
-    SPI_FLASH_QOUT,   ///< Data read using quad I/O
-    SPI_FLASH_QIO,    ///< Both address & data transferred using quad I/O
-
-    SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
-} esp_flash_read_mode_t;
 
 /// type to store pre-calculated register value in above layers
 typedef typeof(SPI1.clock) spi_flash_ll_clock_reg_t;

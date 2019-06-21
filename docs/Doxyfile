@@ -129,9 +129,10 @@ INPUT = \
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
-    ../../components/spi_flash/include/esp_spi_flash.h \
+    ../../components/spi_flash/include/esp_flash.h \
     ../../components/spi_flash/include/esp_partition.h \
     ../../components/bootloader_support/include/esp_flash_encrypt.h \
+    ../../components/soc/include/hal/spi_flash_types.h \
     ## SPIFFS
     ../../components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host

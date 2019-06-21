@@ -13,13 +13,21 @@ the "main" SPI flash chip (the same SPI flash chip from which program runs).
 With different chip pointers, you can access to external flashes chips on not
 only SPI0/1 but also HSPI/VSPI buses.
 
-Kconfig option :ref:``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` can be used to switch
+.. note::
+
+    Flash APIs after IDF v4.0 are no longer *atomic*. A writing operation
+    during another on-going read operation, on the overlapped flash address,
+    may cause the return data from the read operation to be partly same as
+    before, and partly updated as new written.
+
+
+Kconfig option :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` can be used to switch
 ``spi_flash_*`` functions back to the implementation before IDF v4.0.
 However, the code size may get bigger if you use the new API and the old API
 the same time.
 
 Encrypted reads and writes use the old implementation, even if
-:ref:``CONFIG_SPI_FLASH_USE_LEGACY_IMPL`` is not enabled. As such, encrypted
+:ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` is not enabled. As such, encrypted
 flash operations are only supported with the main flash chip (and not with
 other flash chips on SPI1 with different CS).
 
@@ -146,7 +154,7 @@ Implementation
 The ``esp_flash_t`` structure holds chip data as well as three important parts of this API:
 
 1. The host driver, which provides the hardware support to access the chip;
-2. The chip driver, which provides compability service to different chips;
+2. The chip driver, which provides compatibility service to different chips;
 3. The OS functions, provides support of some OS functions (e.g. lock, delay)
     in different stages (1st/2st boot, or the app).
 
@@ -167,7 +175,7 @@ wrap these functions as ``spi_flash_host_driver_t`` for upper layer to use.
 
 You can also implement your own host driver, even with the GPIO. As long as
 all the functions in the ``spi_flash_host_driver_t`` are implemented, the
-esp_flash API can access to the flash regardless of the lowlevel hardware.
+esp_flash API can access to the flash regardless of the low-level hardware.
 
 Chip driver
 ^^^^^^^^^^^
@@ -188,17 +196,17 @@ The chip driver relies on the host driver.
 OS functions
 ^^^^^^^^^^^^
 
-Currently the OS function layer provides a lock and a delay entrance.
+Currently the OS function layer provides a lock and a delay entries.
 
 The lock is used to resolve the conflicts between the SPI chip access and
-other functions. E.g. the cache (used for the code and psram data fetch)
+other functions. E.g. the cache (used for the code and PSRAM data fetch)
 should be disabled when the flash chip on the SPI0/1 is being accessed. Also,
 some devices which don't have CS wire, or the wire is controlled by the
 software (e.g. SD card via SPI interface), requires the bus to be monopolized
 during a period.
 
 The delay is used by some long operations which requires the master to wait
-or polling periodly.
+or polling periodically.
 
 
 The top API wraps these the chip driver and OS functions into an entire

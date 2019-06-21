@@ -14,8 +14,12 @@
 
 #pragma once
 
-#include "hal/spi_flash_ll.h"
+#include <esp_types.h>
 #include "hal/esp_flash_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Definition of a common transaction. Also holds the return value. */
 typedef struct {
@@ -25,6 +29,39 @@ typedef struct {
     uint32_t mosi_data;     ///< Output data to slave
     uint32_t miso_data[2];  ///< [out] Input data from slave, little endian
 } spi_flash_trans_t;
+
+/**
+ * @brief SPI flash clock speed values, always refer to them by the enum rather
+ * than the actual value (more speed may be appended into the list).
+ *
+ * A strategy to select the maximum allowed speed is to enumerate from the
+ * ``ESP_FLSH_SPEED_MAX-1`` or highest frequency supported by your flash, and
+ * decrease the speed until the probing success.
+ */
+typedef enum {
+    ESP_FLASH_5MHZ = 0, ///< The flash runs under 5MHz
+    ESP_FLASH_10MHZ,    ///< The flash runs under 10MHz
+    ESP_FLASH_20MHZ,    ///< The flash runs under 20MHz
+    ESP_FLASH_26MHZ,    ///< The flash runs under 26MHz
+    ESP_FLASH_40MHZ,    ///< The flash runs under 40MHz
+    ESP_FLASH_80MHZ,    ///< The flash runs under 80MHz
+    ESP_FLASH_SPEED_MAX, ///< The maximum frequency supported by the host is ``ESP_FLASH_SPEED_MAX-1``.
+} esp_flash_speed_t;
+
+///Lowest speed supported by the driver, currently 5 MHz
+#define ESP_FLASH_SPEED_MIN     ESP_FLASH_5MHZ
+
+/** @brief Mode used for reading from SPI flash */
+typedef enum {
+    SPI_FLASH_SLOWRD = 0, ///< Data read using single I/O, some limits on speed
+    SPI_FLASH_FASTRD, ///< Data read using single I/O, no limit on speed
+    SPI_FLASH_DOUT,   ///< Data read using dual I/O
+    SPI_FLASH_DIO,    ///< Both address & data transferred using dual I/O
+    SPI_FLASH_QOUT,   ///< Data read using quad I/O
+    SPI_FLASH_QIO,    ///< Both address & data transferred using quad I/O
+
+    SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
+} esp_flash_read_mode_t;
 
 
 struct spi_flash_host_driver_t;
@@ -110,3 +147,6 @@ struct spi_flash_host_driver_t {
     bool (*region_protected)(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
 };
 
+#ifdef __cplusplus
+}
+#endif
