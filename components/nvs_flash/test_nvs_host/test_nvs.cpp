@@ -14,6 +14,7 @@
 #include "catch.hpp"
 #include "nvs.hpp"
 #include "nvs_test_api.h"
+#include "sdkconfig.h"
 #ifdef CONFIG_NVS_ENCRYPTION
 #include "nvs_encr.hpp"
 #endif
@@ -2470,10 +2471,10 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     if (childpid == 0) {
         exit(execlp("bash", "bash",
                     "-c",
-                    "rm -rf ../../../tools/mass_mfg/host_test | \
-                    cp -rf ../../../tools/mass_mfg/testdata mfg_testdata | \
-                    cp -rf ../nvs_partition_generator/testdata . | \
-                    mkdir -p ../../../tools/mass_mfg/host_test",NULL));
+                    "rm -rf ../../../tools/mass_mfg/host_test && \
+                    cp -rf ../../../tools/mass_mfg/testdata mfg_testdata && \
+                    cp -rf ../nvs_partition_generator/testdata . && \
+                    mkdir -p ../../../tools/mass_mfg/host_test", NULL));
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
