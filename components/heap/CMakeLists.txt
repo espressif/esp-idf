@@ -1,6 +1,7 @@
-set(srcs "heap_caps.c"
-        "heap_caps_init.c"
-        "multi_heap.c")
+set(srcs 
+    "heap_caps.c"
+    "heap_caps_init.c"
+    "multi_heap.c")
 
 if(NOT CONFIG_HEAP_POISONING_DISABLED)
     list(APPEND srcs "multi_heap_poisoning.c")

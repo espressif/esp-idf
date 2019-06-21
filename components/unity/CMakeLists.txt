@@ -1,5 +1,6 @@
-set(srcs "unity/src/unity.c"
-        "unity_port_esp32.c")
+set(srcs 
+    "unity/src/unity.c"
+    "unity_port_esp32.c")
 
 if(CONFIG_UNITY_ENABLE_BACKTRACE_ON_FAIL)
     list(APPEND COMPONENT_PRIV_INCLUDEDIRS "include/priv")

@@ -9,15 +9,16 @@ if(EXISTS "${COMPONENT_DIR}/${soc_name}")
 endif()
 
 list(APPEND include_dirs include)
-list(APPEND srcs "src/memory_layout_utils.c"
-        "src/lldesc.c"
-        "src/hal/spi_hal.c"
-        "src/hal/spi_hal_iram.c"
-        "src/hal/spi_slave_hal.c"
-        "src/hal/spi_slave_hal_iram.c"
-        "src/soc_include_legacy_warn.c"
-        "src/hal/spi_flash_hal.c"
-        "src/hal/spi_flash_hal_iram.c"
+list(APPEND srcs 
+    "src/memory_layout_utils.c"
+    "src/lldesc.c"
+    "src/hal/spi_hal.c"
+    "src/hal/spi_hal_iram.c"
+    "src/hal/spi_slave_hal.c"
+    "src/hal/spi_slave_hal_iram.c"
+    "src/soc_include_legacy_warn.c"
+    "src/hal/spi_flash_hal.c"
+    "src/hal/spi_flash_hal_iram.c"
     )
 
 idf_component_register(SRCS "${srcs}"
