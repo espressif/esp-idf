@@ -189,6 +189,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON ${sdkconfig_json})
     idf_build_set_property(SDKCONFIG_CMAKE ${sdkconfig_cmake})
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
+    idf_build_set_property(CONFIG_DIR ${config_dir})
 
     idf_build_get_property(menuconfig_depends __MENUCONFIG_DEPENDS)
 
@@ -204,6 +205,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
         "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${sdkconfig}"
+        "IDF_TARGET=${idf_target}"
         ${mconf} ${root_kconfig}
         # VERBATIM cannot be used here because it cannot handle ${mconf}="winpty mconf-idf" and the escaping must be
         # done manually

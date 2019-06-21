@@ -943,7 +943,10 @@ the first element/member instead.
 
   idf_build_component(component_dir)
 
-Add a directory *component_dir* that contains a component to the build. 
+Present a directory *component_dir* that contains a component to the build system. Relative paths are converted to absolute paths with respect to current directory.
+All calls to this command must be performed before `idf_build_process`. 
+
+This command does not guarantee that the component will be processed during build (see the `COMPONENTS` argument description for `idf_build_process`)
 
 .. code-block:: none
 
@@ -970,7 +973,10 @@ The call requires the target chip to be specified with *target* argument. Option
 - SDKCONFIG - output path of generated sdkconfig file; defaults to PROJECT_DIR/sdkconfig or CMAKE_SOURCE_DIR/sdkconfig depending if PROJECT_DIR is set
 - SDKCONFIG_DEFAULTS - defaults file to use for the build; defaults to empty
 - BUILD_DIR - directory to place ESP-IDF build-related artifacts, such as generated binaries, text files, components; defaults to CMAKE_BINARY_DIR
-- COMPONENTS - starting components for trimming the build; components not in the list are automatically if they are required in the expanded dependency tree
+- COMPONENTS - select components to process among the components known by the build system (added via `idf_build_component`). This argument is used to trim the build. 
+  Other components are automatically added if they are required in the dependency chain, i.e. 
+  the public and private requirements of the components in this list are automatically added, and in turn the public and private requirements of those requirements, 
+  so on and so forth. If not specified, all components known to the build system are processed.
 
 .. code-block:: none
 

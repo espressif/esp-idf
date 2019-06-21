@@ -163,12 +163,14 @@ endfunction()
 
 # idf_build_component
 #
-# @brief Specify component directory for the build system to process.
+# @brief Present a directory that contains a component to the build system.
 #        Relative paths are converted to absolute paths with respect to current directory.
-#        Any component that needs to be processed has to be specified using this
-#        command before calling idf_build_process.
+#        All calls to this command must be performed before idf_build_process.
 #
-# @param[in] component_dir directory of the component to process
+# @note  This command does not guarantee that the component will be processed
+#        during build (see the COMPONENTS argument description for command idf_build_process)
+#
+# @param[in] component_dir directory of the component
 function(idf_build_component component_dir)
     idf_build_get_property(prefix __PREFIX)
     __component_add(${component_dir} ${prefix} 0)
@@ -335,7 +337,16 @@ endfunction()
 # @param[in, optional] SDKCONFIG_DEFAULTS (single value) config defaults file to use for the build; defaults
 #                       to none (Kconfig defaults or previously generated config are used)
 # @param[in, optional] BUILD_DIR (single value) directory for build artifacts; defautls to CMAKE_BINARY_DIR
-# @param[in, optional] COMPONENTS (multivalue) starting components for trimming build
+# @param[in, optional] COMPONENTS (multivalue) select components to process among the components
+#                       known by the build system
+#                       (added via `idf_build_component`). This argument is used to trim the build.
+#                       Other components are automatically added if they are required
+#                       in the dependency chain, i.e.
+#                       the public and private requirements of the components in this list
+#                       are automatically added, and in
+#                       turn the public and private requirements of those requirements,
+#                       so on and so forth. If not specified, all components known to the build system
+#                       are processed.
 macro(idf_build_process target)
     set(options)
     set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG SDKCONFIG_DEFAULTS)
@@ -367,15 +378,20 @@ macro(idf_build_process target)
     __build_check_python()
 
     idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
-    __component_get_requirements()
 
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
     # own requirements.
+    __component_get_requirements()
+
+    idf_build_get_property(component_targets __COMPONENT_TARGETS)
 
     # Finally, do component expansion. In this case it simply means getting a final list
     # of build component targets given the requirements set by each component.
+
+    # Check if we need to trim the components first, and build initial components list
+    # from that.
     if(__COMPONENTS)
         unset(component_targets)
         foreach(component ${__COMPONENTS})
@@ -390,7 +406,7 @@ macro(idf_build_process target)
     foreach(component_target ${component_targets})
         __build_expand_requirements(${component_target})
     endforeach()
-    unset(__COMPONENT_TARGETS_SEEN)
+    idf_build_unset_property(__COMPONENT_TARGETS_SEEN)
 
     # Get a list of common component requirements in component targets form (previously
     # we just have a list of component names)
