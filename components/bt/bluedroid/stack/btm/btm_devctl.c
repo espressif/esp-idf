@@ -693,6 +693,7 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
 void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback)
 {
+#if (BLE_INCLUDED == TRUE)
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
     switch(opcode) {
         case HCI_VENDOR_BLE_LONG_ADV_DATA:
@@ -721,6 +722,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
         vcs_cplt_params.p_param_buf = p;
         (*p_vsc_cplt_cback)(&vcs_cplt_params);  /* Call the VSC complete callback function */
     }
+#endif
 }
 
 /*******************************************************************************

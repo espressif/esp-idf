@@ -215,7 +215,7 @@ extern "C" {
 
 extern void bta_sys_init(void);
 extern void bta_sys_free(void);
-extern void bta_sys_event(BT_HDR *p_msg);
+extern void bta_sys_event(void * param);
 extern void bta_sys_set_trace_level(UINT8 level);
 extern void bta_sys_register(UINT8 id, const tBTA_SYS_REG *p_reg);
 extern void bta_sys_deregister(UINT8 id);

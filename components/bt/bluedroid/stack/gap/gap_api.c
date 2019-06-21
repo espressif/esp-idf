@@ -57,13 +57,16 @@ UINT8 GAP_SetTraceLevel (UINT8 new_level)
 **                  This routine should not be called except once per
 **                      stack invocation.
 **
-** Returns          Nothing
+** Returns          status
 **
 *******************************************************************************/
-void GAP_Init(void)
+bt_status_t GAP_Init(void)
 {
 #if GAP_DYNAMIC_MEMORY == TRUE
     gap_cb_ptr = (tGAP_CB *)osi_malloc(sizeof(tGAP_CB));
+    if (!gap_cb_ptr) {
+        return BT_STATUS_NOMEM;
+    }
 #endif
 
     memset (&gap_cb, 0, sizeof (tGAP_CB));
@@ -81,6 +84,8 @@ void GAP_Init(void)
 #if BLE_INCLUDED == TRUE && GATTS_INCLUDED == TRUE
     gap_attr_db_init();
 #endif
+
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -96,7 +101,9 @@ void GAP_Init(void)
 void GAP_Deinit(void)
 {
 #if GAP_DYNAMIC_MEMORY == TRUE
-    osi_free(gap_cb_ptr);
-    gap_cb_ptr = NULL;
+    if (gap_cb_ptr) {
+        osi_free(gap_cb_ptr);
+        gap_cb_ptr = NULL;
+    }
 #endif
 }

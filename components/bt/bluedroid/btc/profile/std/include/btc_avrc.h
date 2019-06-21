@@ -98,7 +98,7 @@ typedef enum {
 
 #define CHECK_ESP_RC_CONNECTED       do { \
         BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
-        if (btc_rc_vb.rc_connected == FALSE) { \
+        if (btc_rc_cb.rc_connected == FALSE) { \
             BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
         return ESP_ERR_INVALID_STATE; \
         } \

@@ -90,7 +90,7 @@ typedef struct {
 //#include "bt_app_common.h"
 //#endif
 
-extern void BTE_InitStack(void);
+extern bt_status_t BTE_InitStack(void);
 extern void BTE_DeinitStack(void);
 
 /* Define BTU storage area
@@ -119,17 +119,19 @@ extern bluedroid_init_done_cb_t bluedroid_init_done_cb;
 /* Define a function prototype to allow a generic timeout handler */
 typedef void (tUSER_TIMEOUT_FUNC) (TIMER_LIST_ENT *p_tle);
 
-static void btu_l2cap_alarm_process(TIMER_LIST_ENT *p_tle);
-static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle);
-static void btu_hci_msg_process(BT_HDR *p_msg);
+static void btu_l2cap_alarm_process(void *param);
+static void btu_general_alarm_process(void *param);
+static void btu_hci_msg_process(void *param);
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle);
+static void btu_bta_alarm_process(void *param);
 #endif
 
-static void btu_hci_msg_process(BT_HDR *p_msg)
+static void btu_hci_msg_process(void *param)
 {
     /* Determine the input message type. */
+    BT_HDR *p_msg = (BT_HDR *)param;
+
     switch (p_msg->event & BT_EVT_MASK) {
     case BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK: // TODO(zachoverflow): remove this
       {
@@ -196,8 +198,9 @@ static void btu_hci_msg_process(BT_HDR *p_msg)
 }
 
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
-static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle)
+static void btu_bta_alarm_process(void *param)
 {
+    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)param;
     // call timer callback
     if (p_tle->p_cback) {
         (*p_tle->p_cback)(p_tle);
@@ -213,56 +216,42 @@ static void btu_bta_alarm_process(TIMER_LIST_ENT *p_tle)
 }
 #endif
 
-void btu_thread_handler(void *arg)
+bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
 {
-    btu_thread_evt_t *evt = (btu_thread_evt_t *)arg;
+    bool status = false;
 
-    switch (evt->sig) {
+    switch (sig) {
         case SIG_BTU_START_UP:
-            btu_task_start_up();
+            status = osi_thread_post(btu_thread, btu_task_start_up, param, 0, timeout);
             break;
         case SIG_BTU_HCI_MSG:
-            btu_hci_msg_process((BT_HDR *)evt->param);
+            status = osi_thread_post(btu_thread, btu_hci_msg_process, param, 0, timeout);
             break;
 #if (defined(BTA_INCLUDED) && BTA_INCLUDED == TRUE)
         case SIG_BTU_BTA_MSG:
-            bta_sys_event((BT_HDR *)evt->param);
+            status = osi_thread_post(btu_thread, bta_sys_event, param, 0, timeout);
             break;
         case SIG_BTU_BTA_ALARM:
-            btu_bta_alarm_process((TIMER_LIST_ENT *)evt->param);
+            status = osi_thread_post(btu_thread, btu_bta_alarm_process, param, 0, timeout);
             break;
 #endif
         case SIG_BTU_GENERAL_ALARM:
         case SIG_BTU_ONESHOT_ALARM:
-            btu_general_alarm_process((TIMER_LIST_ENT *)evt->param);
+            status = osi_thread_post(btu_thread, btu_general_alarm_process, param, 0, timeout);
             break;
         case SIG_BTU_L2CAP_ALARM:
-            btu_l2cap_alarm_process((TIMER_LIST_ENT *)evt->param);
+            status = osi_thread_post(btu_thread, btu_l2cap_alarm_process, param, 0, timeout);
             break;
         default:
             break;
     }
 
-    osi_free(evt);
+    return status;
 }
 
-bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
+void btu_task_start_up(void *param)
 {
-    btu_thread_evt_t *evt;
-
-    evt = (btu_thread_evt_t *)osi_malloc(sizeof(btu_thread_evt_t));
-    if (evt == NULL) {
-        return false;
-    }
-
-    evt->sig = sig;
-    evt->param = param;
-
-    return osi_thread_post(btu_thread, btu_thread_handler, evt, 0, timeout);
-}
-
-void btu_task_start_up(void)
-{
+    UNUSED(param);
     /* Initialize the mandatory core stack control blocks
        (BTU, BTM, L2CAP, and SDP)
      */
@@ -305,8 +294,9 @@ void btu_task_shut_down(void)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_general_alarm_process(TIMER_LIST_ENT *p_tle)
+static void btu_general_alarm_process(void *param)
 {
+    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)param;
     assert(p_tle != NULL);
 
     switch (p_tle->event) {
@@ -511,8 +501,9 @@ void btu_free_timer(TIMER_LIST_ENT *p_tle)
 ** Returns          void
 **
 *******************************************************************************/
-static void btu_l2cap_alarm_process(TIMER_LIST_ENT *p_tle)
+static void btu_l2cap_alarm_process(void *param)
 {
+    TIMER_LIST_ENT *p_tle = (TIMER_LIST_ENT *)param;
     assert(p_tle != NULL);
 
     switch (p_tle->event) {

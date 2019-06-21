@@ -283,7 +283,7 @@ void  btu_free_core(void);
 void BTU_StartUp(void);
 void BTU_ShutDown(void);
 
-void btu_task_start_up(void);
+void btu_task_start_up(void *param);
 void btu_task_shut_down(void);
 
 UINT16 BTU_BleAclPktSize(void);

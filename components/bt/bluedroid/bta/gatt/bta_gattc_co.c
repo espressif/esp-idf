@@ -269,8 +269,8 @@ tBTA_GATT_STATUS bta_gattc_co_cache_load(tBTA_GATTC_NV_ATTR *attr, UINT8 index)
     // Read the size of memory space required for blob
     nvs_get_blob(cache_env->cache_addr[index].cache_fp, cache_key, NULL, &length);
     // Read previously saved blob if available
-#if (!CONFIG_BT_STACK_NO_LOG)
     esp_err_t err_code = nvs_get_blob(cache_env->cache_addr[index].cache_fp, cache_key, attr, &length);
+#if (!CONFIG_BT_STACK_NO_LOG)
     num_attr = length / sizeof(tBTA_GATTC_NV_ATTR);
 #endif
     status = (err_code == ESP_OK && length != 0) ? BTA_GATT_OK : BTA_GATT_ERROR;

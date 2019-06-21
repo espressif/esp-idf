@@ -320,10 +320,10 @@ extern UINT8 GAP_SetTraceLevel (UINT8 new_level);
 **                  This routine should not be called except once per
 **                      stack invocation.
 **
-** Returns          Nothing
+** Returns          status
 **
 *******************************************************************************/
-extern void GAP_Init(void);
+extern bt_status_t GAP_Init(void);
 
 /*******************************************************************************
 **

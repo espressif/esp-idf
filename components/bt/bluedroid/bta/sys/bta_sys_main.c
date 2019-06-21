@@ -482,8 +482,10 @@ void bta_sys_hw_evt_stack_enabled(tBTA_SYS_HW_MSG *p_sys_hw_msg)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_sys_event(BT_HDR *p_msg)
+void bta_sys_event(void * param)
 {
+    BT_HDR *p_msg = (BT_HDR *)param;
+
     UINT8       id;
     BOOLEAN     freebuf = TRUE;
 

@@ -15,9 +15,6 @@
 #ifndef __BT_USER_CONFIG_H__
 #define __BT_USER_CONFIG_H__
 
-
-
-
 /* All the configuration from SDK defined here */
 
 #include "sdkconfig.h"
@@ -86,6 +83,7 @@
 #define UC_BT_SSP_ENABLED                   CONFIG_BT_SSP_ENABLED
 #else
 #define UC_BT_SSP_ENABLED                   FALSE
+#endif
 
 //BLE
 #ifdef CONFIG_BT_BLE_ENABLED
@@ -96,16 +94,16 @@
 
 //GATTS
 #ifdef CONFIG_BT_GATTS_ENABLE
-#define UC_BT_GATTS_ENABLED                 CONFIG_BT_GATTS_ENABLE
+#define UC_BT_GATTS_ENABLE                  CONFIG_BT_GATTS_ENABLE
 #else
-#define UC_BT_GATTS_ENABLED                 FALSE
+#define UC_BT_GATTS_ENABLE                  FALSE
 #endif
 
 //GATTC
 #ifdef CONFIG_BT_GATTC_ENABLE
-#define UC_BT_GATTC_ENABLED                 CONFIG_BT_GATTC_ENABLE
+#define UC_BT_GATTC_ENABLE                  CONFIG_BT_GATTC_ENABLE
 #else
-#define UC_BT_GATTC_ENABLED                 FALSE
+#define UC_BT_GATTC_ENABLE                  FALSE
 #endif
 
 //GATTC CACHE
@@ -117,9 +115,9 @@
 
 //SMP
 #ifdef CONFIG_BT_SMP_ENABLE
-#define UC_BT_SMP_ENABLED                      CONFIG_BT_SMP_ENABLE
+#define UC_BT_SMP_ENABLE                       CONFIG_BT_SMP_ENABLE
 #else
-#define UC_BT_SMP_ENABLED                      FALSE
+#define UC_BT_SMP_ENABLE                       FALSE
 #endif
 
 //SMP_SLAVE_CON_PARAMS_UPD_ENABLE
@@ -370,7 +368,6 @@
 #else
 #define UC_BT_LOG_BLUFI_TRACE_LEVEL         UC_TRACE_LEVEL_WARNING
 #endif
-
 
 #endif /* __BT_USER_CONFIG_H__ */
 
