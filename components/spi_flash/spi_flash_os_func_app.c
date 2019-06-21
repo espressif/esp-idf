@@ -89,13 +89,13 @@ static app_func_arg_t spi3_arg = {
 };
 
 //for SPI1, we have to disable the cache and interrupts before using the SPI bus
-const DRAM_ATTR esp_flash_os_functions_t spi1_default_os_functions = {
+const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
     .start = spi1_start,
     .end = spi1_end,
     .delay_ms = delay_ms,
 };
 
-const esp_flash_os_functions_t spi23_default_os_functions = {
+const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
     .start = spi23_start,
     .end = spi23_end,
     .delay_ms = delay_ms,
@@ -105,11 +105,11 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
 {
     if (host_id == 0) {
         //SPI1
-        chip->os_func = &spi1_default_os_functions;
+        chip->os_func = &esp_flash_spi1_default_os_functions;
         chip->os_func_data = &spi1_arg;
     } else if (host_id == 1 || host_id == 2) {
         //SPI2,3
-        chip->os_func = &spi23_default_os_functions;
+        chip->os_func = &esp_flash_spi23_default_os_functions;
         chip->os_func_data = (host_id == 1) ? &spi2_arg : &spi3_arg;
     } else {
         return ESP_ERR_INVALID_ARG;

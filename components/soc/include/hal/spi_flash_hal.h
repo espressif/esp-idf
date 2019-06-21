@@ -23,35 +23,12 @@
 #pragma once
 
 #include "hal/spi_flash_ll.h"
-#include "hal/spi_flash_host_drv.h"
+#include "hal/spi_flash_types.h"
 #include "soc/soc_memory_layout.h"
-
-#define ESP_FLASH_DEFAULT_FREQ ESP_FLASH_20MHZ
 
 /* Hardware host-specific constants */
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
 #define SPI_FLASH_HAL_MAX_READ_BYTES 64
-
-///Lowest speed supported by the driver, currently 5 MHz
-#define ESP_FLASH_SPEED_MIN     ESP_FLASH_5MHZ
-
-/**
- * @brief SPI flash clock speed values, always refer to them by the enum rather
- * than the actual value (more speed may be appended into the list).
- *
- * A strategy to select the maximum allowed speed is to enumerate from the
- * ``ESP_FLSH_SPEED_MAX-1`` or highest frequency supported by your flash, and
- * decrease the speed until the probing success.
- */
-typedef enum {
-    ESP_FLASH_5MHZ = 0, ///< The flash runs under 5MHz
-    ESP_FLASH_10MHZ,    ///< The flash runs under 10MHz
-    ESP_FLASH_20MHZ,    ///< The flash runs under 20MHz
-    ESP_FLASH_26MHZ,    ///< The flash runs under 26MHz
-    ESP_FLASH_40MHZ,    ///< The flash runs under 40MHz
-    ESP_FLASH_80MHZ,    ///< The flash runs under 80MHz
-    ESP_FLASH_SPEED_MAX, ///< The maximum frequency supported by the host is ``ESP_FLASH_SPEED_MAX-1``.
-} esp_flash_speed_t;
 
 /**
  * Generic driver context structure for all chips using the SPI peripheral.
