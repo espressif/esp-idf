@@ -19,25 +19,13 @@ when program hits breakpoint at `heap_trace_start`. Trace data will be saved to 
 
 3. [SEGGER SystemView tool](https://www.segger.com/products/development-tools/systemview/). By default SystemView shows only numeric values of IDs and parameters for IDF's heap messages in `Events` view. To make them pretty-looking you need to copy `SYSVIEW_FreeRTOS.txt` from the project's root directory to SystemView installation one.
 
-### Configure the project
-
-If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
-
-If using CMake based build system, no configuration is required.
-
 ### Build and flash
-
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-make -j4 flash monitor
-```
-
-Or, for CMake based build system (replace PORT with serial port name):
 
 ```
 idf.py -p PORT flash monitor
 ```
+
+(Replace PORT with serial port name.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

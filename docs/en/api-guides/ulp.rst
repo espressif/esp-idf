@@ -50,7 +50,7 @@ To compile ULP code as part of a component, the following steps must be taken:
    include $(IDF_PATH)/components/ulp/component_ulp_common.mk
     Includes common definitions of ULP build steps. Defines build targets for ULP object files, ELF file, binary file, etc.
 
-3. Build the application as usual (e.g. `make app`)
+3. Build the application as usual (e.g. ``idf.py build`` or ``idf.py app``)
    
    Inside, the build system will take the following steps to build ULP program:
 

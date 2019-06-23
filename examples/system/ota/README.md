@@ -27,7 +27,7 @@ To run the OTA examples, you need an ESP32 dev board (e.g. ESP32-WROVER Kit) or 
 
 ### Configure the project
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. 
+Open the project configuration menu (`idf.py menuconfig`). 
 
 In the `Example Connection Configuration` menu:
 
@@ -44,7 +44,7 @@ In the `Example Configuration` menu:
 
 ### Build and Flash
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system. This command will find if partition table has ota_data partition (as in our case) then ota_data will erase to initial. It allows to run the newly loaded app from a factory partition.
+Run `idf.py -p PORT flash monitor` to build and flash the project.. This command will find if partition table has ota_data partition (as in our case) then ota_data will erase to initial. It allows to run the newly loaded app from a factory partition.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -85,7 +85,7 @@ When the example starts up, it will print "Starting OTA example" to the console 
 3. Write the image to flash, and configure the next boot from this image.
 4. Reboot
 
-If you want to rollback to factory app (or the first OTA partition when the factory partition do not exist) after the upgrade, then run the command `make erase_otadata` or `idf.py erase_otadata`. It can erase the ota_data partition to initial state.
+If you want to rollback to factory app (or the first OTA partition when the factory partition do not exist) after the upgrade, then run the command `idf.py erase_otadata`. It can erase the ota_data partition to initial state.
 
 **Notes:** This assumes that the partition table of this project is the one that is on the device.
 
@@ -127,4 +127,4 @@ In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the v
 
 If you see this error then check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table only works with 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (look in components/partition_table) and configure it in menuconfig.
 
-If changing partition layout, it is usually wise to run "make erase_flash" between steps.
+If changing partition layout, it is usually wise to run "idf.py erase_flash" between steps.

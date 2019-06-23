@@ -19,21 +19,9 @@ If not done already, consider checking simpler example *storage/nvs_rw_value*, t
 
 This example can be run on most common development boards which have an active button connected to GPIO0. On most boards, this button is labeled as "Boot". When pressed, the button connects GPIO0 to ground.
 
-### Configure the project
-
-If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
-
-If using CMake based build system, no configuration is required.
-
 ### Build and flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-make -j4 flash monitor
-```
-
-Or, for CMake based build system (replace PORT with serial port name):
 
 ```
 idf.py -p PORT flash monitor
@@ -75,5 +63,5 @@ Run time:
 2: 5860
 ```
 
-To reset the counter and run time array, erase the contents of flash memory using `make erase_flash` (or `idf.py erase_flash`, if using CMake build system), then upload the program again as described above.
+To reset the counter and run time array, erase the contents of flash memory using `idf.py erase_flash`, then upload the program again as described above.
 

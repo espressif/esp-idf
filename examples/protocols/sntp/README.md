@@ -4,7 +4,7 @@ This example demonstrates the use of LwIP SNTP module to obtain time from Intern
 
 ## Configuring the Example
 
-To configure the project, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system).
+Open the project configuration menu (`idf.py menuconfig`):
 
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
 

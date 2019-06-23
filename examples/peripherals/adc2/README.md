@@ -59,7 +59,7 @@ start conversion.
 
 * program upload failure
 
-    * Hardware connection is not correct: run `make monitor`, and reboot your board to see if there are any output logs.
+    * Hardware connection is not correct: run `idf.py monitor`, and reboot your board to see if there are any output logs.
     * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
