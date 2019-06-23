@@ -28,10 +28,8 @@ If the internal DAC is selected, analog audio will be available on GPIO25 and GP
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
-
-* Set serial port under Serial Flasher Options.
 
 * Set the use of external I2S codec or internal DAC for audio output, and configure the output PINs under A2DP Example Configuration
 
@@ -42,7 +40,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output.
 
 ```
-make -j4 flash monitor
+idf.py flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

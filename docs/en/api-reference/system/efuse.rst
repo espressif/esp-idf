@@ -31,8 +31,8 @@ The component has API functions for reading and writing fields. Access to the fi
 
 CSV files:
 
-* common (`esp_efuse_table.csv`) - contains eFuse fields which are used inside the IDF. C-source generation should be done manually when changing this file (run command 'make efuse_common_table' or `idf.py efuse_common_table`). Note that changes in this file can lead to incorrect operation.
-* custom - (optional and can be enabled by :envvar:`CONFIG_EFUSE_CUSTOM_TABLE`) contains eFuse fields that are used by the user in their application. C-source generation should be done manually when changing this file (run command 'make efuse_custom_table' or `idf.py efuse_custom_table`).
+* common (`esp_efuse_table.csv`) - contains eFuse fields which are used inside the IDF. C-source generation should be done manually when changing this file (run command ``idf.py efuse_common_table``). Note that changes in this file can lead to incorrect operation.
+* custom - (optional and can be enabled by :envvar:`CONFIG_EFUSE_CUSTOM_TABLE`) contains eFuse fields that are used by the user in their application. C-source generation should be done manually when changing this file and running ``idf.py efuse_custom_table``.
 
 
 Description CSV file
@@ -84,7 +84,7 @@ efuse_table_gen.py tool
 
 The tool is designed to generate C-source files from CSV file and validate fields. First of all, the check is carried out on the uniqueness of the names and overlaps of the field bits. If an additional `custom` file is used, it will be checked with the existing `common` file (esp_efuse_table.csv). In case of errors, a message will be displayed and the string that caused the error. C-source files contain structures of type `esp_efuse_desc_t`.
 
-To generate a `common` files, use the following command 'make efuse_common_table' or `idf.py efuse_common_table` or:
+To generate a `common` files, use the following command ``idf.py efuse_common_table`` or:
 
 ::
 	
@@ -96,7 +96,7 @@ After generation in the folder `esp32` create:
 * `esp_efuse_table.c` file.
 * In `include` folder `esp_efuse_table.c` file.
 
-To generate a `custom` files, use the following command 'make efuse_custom_table' or `idf.py efuse_custom_table` or:
+To generate a `custom` files, use the following command ``idf.py efuse_custom_table`` or:
 
 ::
 
@@ -170,7 +170,7 @@ For frequently used fields, special functions are made, like this :cpp:func:`esp
 How add a new field
 -------------------
 
-1. Find a free bits for field. Show `esp_efuse_table.csv` file or run ``make show_efuse_table`` or ``idf.py show_efuse_table`` or the next command:
+1. Find a free bits for field. Show `esp_efuse_table.csv` file or run ``idf.py show_efuse_table`` or the next command:
 
 ::
 

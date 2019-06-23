@@ -39,7 +39,7 @@ To run this example, you need an ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP3
 
 ### Configure the project
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
+Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
 
 - Set the size of ring buffer used by uart driver in `NMEA Parser Ring Buffer Size` option.
 - Set the stack size of the NMEA Parser task in `NMEA Parser Task Stack Size` option.
@@ -48,7 +48,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
 
 ### Build and Flash
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system.
+Run `idf.py -p PORT flash monitor` to build and flash the project..
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

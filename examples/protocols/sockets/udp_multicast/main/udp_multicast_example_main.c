@@ -25,7 +25,7 @@
 #include <lwip/netdb.h>
 
 /* The examples use simple configuration that you can set via
-   'make menuconfig'.
+   project configuration.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define UDP_PORT 3333

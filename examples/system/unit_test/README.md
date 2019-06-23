@@ -55,9 +55,7 @@ This example doesn't require any special hardware, and can run on any ESP32 deve
 
 As explained above, this example contains two projects: application project and test project.
 
-When using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options, in each of these projects.
-
-For the test project, you can explore a few options related to Unity under Component Config, Unity unit testing library.
+For the test project, you can open the project configuration menu (`idf.py menuconfig`) and explore a few options related to Unity under Component Config, Unity unit testing library.
 
 ### Build and flash
 
@@ -65,12 +63,12 @@ As explained above, this example contains two projects: application project and 
 
 1. Application project calls an API defined in the component, and displays the results. It is not of much value to run. Application project is provided mainly to illustrate the layout of all the files. If you decide to run this project, the procedure is:
 
-    * Run `make -j4 flash monitor` in the current directory (`unit_test`), or `idf.py -p PORT flash monitor` if you are using CMake build system.
+    * Run `idf.py -p PORT flash monitor` in the current directory (`unit_test`).
     * Observe the output: a list of random numbers and their mean value.
 
 2. Test project is responsible for running the tests.
 
-	* Enter `test` directory (`unit_test/test`), and run `make -j4 flash monitor`, or `idf.py -p PORT flash monitor` if you are using CMake build system.
+	* Enter `test` directory (`unit_test/test`), and run `idf.py -p PORT flash monitor`.
 	* Observe the output: results of test case execution.
 
 

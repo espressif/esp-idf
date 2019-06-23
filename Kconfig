@@ -46,11 +46,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 The executable name/path that is used to run python. On some systems Python 2.x
                 may need to be invoked as python2.
 
-                (Note: This option is used with the GNU Make build system only, not idf.py
-                or CMake-based builds.)
+                (Note: This option is used with the legacy GNU Make build system only.)
 
         config SDK_MAKE_WARN_UNDEFINED_VARIABLES
             bool "'make' warns on undefined variables"
+            depends on !IDF_CMAKE
             default "y"
             help
                 Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
@@ -59,6 +59,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 This option helps find places where a variable reference is misspelled
                 or otherwise missing, but it can be unwanted if you have Makefiles which
                 depend on undefined variables expanding to an empty string.
+
+                (Note: this option is used with the legacy GNU Make build system only.)
 
     endmenu  # SDK tool configuration
 

@@ -29,7 +29,7 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the software bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in ``make menuconfig``.
+By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``spi_flash_*`` functions (in both software & ROM) to check the bounds.
 

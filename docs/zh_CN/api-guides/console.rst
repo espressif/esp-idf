@@ -16,7 +16,7 @@ ESP-IDF 提供了 ``console`` 组件，它包含了开发基于串口的交互�
 
 行编辑功能允许用户通过按键输入来编辑命令，使用退格键删除符号，使用左/右键在命令中移动光标，使用上/下键导航到之前输入的命令，使用制表键（“Tab”）来自动补全命令。
 
-.. note:: 此功能依赖于终端应用程序对 ANSI 转移符的支持，显示原始 UART 数据的串口监视器不能与行编辑库一同使用。如果运行 get_started/console 示例程序的时候观察到的输出结果是 ``[6n`` 或者类似的转义字符而不是命令行提示符 ``[esp32]>`` 时，就表明当前的串口监视器不支持 ANSI 转移字符。已知可用的串口监视程序有 GNU screen，minicom 和 idf_monitor.py（可以通过在项目目录下执行 ``make monitor`` 来调用）。
+.. note:: 此功能依赖于终端应用程序对 ANSI 转移符的支持，显示原始 UART 数据的串口监视器不能与行编辑库一同使用。如果运行 get_started/console 示例程序的时候观察到的输出结果是 ``[6n`` 或者类似的转义字符而不是命令行提示符 ``[esp32]>`` 时，就表明当前的串口监视器不支持 ANSI 转移字符。已知可用的串口监视程序有 GNU screen，minicom 和 idf_monitor.py（可以通过在项目目录下执行 ``idf.py monitor`` 来调用）。
 
 前往这里可以查看 `linenoise <https://github.com/antirez/linenoise>`_ 库提供的所有函数的描述。
 

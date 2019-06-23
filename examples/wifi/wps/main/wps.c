@@ -29,7 +29,7 @@
 #include "nvs_flash.h"
 
 
-/*set wps mode via "make menuconfig"*/
+/*set wps mode via project configuration */
 #if CONFIG_EXAMPLE_WPS_TYPE_PBC
 #define WPS_MODE WPS_TYPE_PBC
 #elif CONFIG_EXAMPLE_WPS_TYPE_PIN

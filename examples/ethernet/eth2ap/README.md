@@ -18,7 +18,7 @@ To run this example, it's recommended that you have an official ESP32 Ethernet d
 
 ### Project configuration in menuconfig
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system.
+Open the project configuration menu (`idf.py menuconfig`).
 
 1. In the `Example Configuration` menu:
     * Set the SSID and password for Wi-Fi ap interface under `Wi-Fi SSID` and `Wi-Fi Password`.
@@ -57,7 +57,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
 
 ### Build and Flash
 
-To build and flash the example, enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system.
+To build and flash the example, enter `idf.py -p PORT flash monitor`.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
