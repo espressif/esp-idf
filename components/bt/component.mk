@@ -72,7 +72,19 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/utils/include                 \
                                 bluedroid/common/include
 
-COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api
+COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api       \
+                                bluedroid/osi/include           \
+
+ifdef CONFIG_BLE_MESH
+    COMPONENT_ADD_INCLUDEDIRS += ble_mesh/mesh_core             \
+                                 ble_mesh/mesh_core/include     \
+                                 ble_mesh/mesh_core/settings    \
+                                 ble_mesh/btc/include           \
+                                 ble_mesh/mesh_models/include   \
+                                 ble_mesh/api/core/include      \
+                                 ble_mesh/api/models/include    \
+                                 ble_mesh/api
+endif
 
 COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/bta/gatt                    \
@@ -121,6 +133,15 @@ COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
                         bluedroid/utils                       \
                         bluedroid/api                         \
                         bluedroid
+
+ifdef CONFIG_BLE_MESH
+    COMPONENT_SRCDIRS +=    ble_mesh/mesh_core               \
+                            ble_mesh/mesh_core/settings      \
+                            ble_mesh/btc                     \
+                            ble_mesh/mesh_models             \
+                            ble_mesh/api/core                \
+                            ble_mesh/api/models 
+endif
 
 ifeq ($(GCC_NOT_5_2_0), 1)
 bluedroid/bta/sdp/bta_sdp_act.o: CFLAGS += -Wno-unused-const-variable
