@@ -24,7 +24,8 @@
 extern void *pvPortZalloc(size_t size);
 extern void vPortFree(void *pv);
 
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+
+#if HEAP_MEMORY_DEBUG
 
 #define OSI_MEM_DBG_INFO_MAX    1024*3
 typedef struct {
@@ -35,8 +36,16 @@ typedef struct {
 } osi_mem_dbg_info_t;
 
 static uint32_t mem_dbg_count = 0;
-static uint32_t mem_dbg_count2 = 0;
 static osi_mem_dbg_info_t mem_dbg_info[OSI_MEM_DBG_INFO_MAX];
+static uint32_t mem_dbg_current_size = 0;
+static uint32_t mem_dbg_max_size = 0;
+
+#define OSI_MEM_DBG_MAX_SECTION_NUM 5
+typedef struct {
+    bool used;
+    uint32_t max_size;
+} osi_mem_dbg_max_size_section_t;
+static osi_mem_dbg_max_size_section_t mem_dbg_max_size_section[OSI_MEM_DBG_MAX_SECTION_NUM];
 
 void osi_mem_dbg_init(void)
 {
@@ -49,7 +58,13 @@ void osi_mem_dbg_init(void)
         mem_dbg_info[i].line = 0;
     }
     mem_dbg_count = 0;
-    mem_dbg_count2 = 0;
+    mem_dbg_current_size = 0;
+    mem_dbg_max_size = 0;
+
+    for (i = 0; i < OSI_MEM_DBG_MAX_SECTION_NUM; i++){
+        mem_dbg_max_size_section[i].used = false;
+        mem_dbg_max_size_section[i].max_size = 0;
+    }
 }
 
 void osi_mem_dbg_record(void *p, int size, const char *func, int line)
@@ -75,6 +90,19 @@ void osi_mem_dbg_record(void *p, int size, const char *func, int line)
     if (i >= OSI_MEM_DBG_INFO_MAX) {
         OSI_TRACE_ERROR("%s full %s %d !!\n", __func__, func, line);
     }
+
+    mem_dbg_current_size += size;
+    if(mem_dbg_max_size < mem_dbg_current_size) {
+        mem_dbg_max_size = mem_dbg_current_size;
+    }
+
+    for (i = 0; i < OSI_MEM_DBG_MAX_SECTION_NUM; i++){
+        if (mem_dbg_max_size_section[i].used) {
+            if(mem_dbg_max_size_section[i].max_size < mem_dbg_current_size) {
+                mem_dbg_max_size_section[i].max_size = mem_dbg_current_size;
+            }
+        }
+    }
 }
 
 void osi_mem_dbg_clean(void *p, const char *func, int line)
@@ -88,6 +116,7 @@ void osi_mem_dbg_clean(void *p, const char *func, int line)
 
     for (i = 0; i < OSI_MEM_DBG_INFO_MAX; i++) {
         if (mem_dbg_info[i].p == p) {
+            mem_dbg_current_size -= mem_dbg_info[i].size;
             mem_dbg_info[i].p = NULL;
             mem_dbg_info[i].size = 0;
             mem_dbg_info[i].func = NULL;
@@ -112,6 +141,60 @@ void osi_mem_dbg_show(void)
         }
     }
     OSI_TRACE_ERROR("--> count %d\n", mem_dbg_count);
+    OSI_TRACE_ERROR("--> size %dB\n--> max size %dB\n", mem_dbg_current_size, mem_dbg_max_size);
+}
+
+uint32_t osi_mem_dbg_get_max_size(void)
+{
+    return mem_dbg_max_size;
+}
+
+uint32_t osi_mem_dbg_get_current_size(void)
+{
+    return mem_dbg_current_size;
+}
+
+void osi_men_dbg_set_section_start(uint8_t index)
+{
+    if (index >= OSI_MEM_DBG_MAX_SECTION_NUM) {
+        OSI_TRACE_ERROR("Then range of index should be between 0 and %d, current index is %d.\n",
+                            OSI_MEM_DBG_MAX_SECTION_NUM - 1, index);
+        return;
+    }
+
+    if (mem_dbg_max_size_section[index].used) {
+        OSI_TRACE_WARNING("This index(%d) has been started, restart it.\n", index);
+    }
+
+    mem_dbg_max_size_section[index].used = true;
+    mem_dbg_max_size_section[index].max_size = mem_dbg_current_size;
+}
+
+void osi_men_dbg_set_section_end(uint8_t index)
+{
+    if (index >= OSI_MEM_DBG_MAX_SECTION_NUM) {
+        OSI_TRACE_ERROR("Then range of index should be between 0 and %d, current index is %d.\n",
+                            OSI_MEM_DBG_MAX_SECTION_NUM - 1, index);
+        return;
+    }
+
+    if (!mem_dbg_max_size_section[index].used) {
+        OSI_TRACE_ERROR("This index(%d) has not been started.\n", index);
+        return;
+    }
+
+    mem_dbg_max_size_section[index].used = false;
+}
+
+uint32_t osi_mem_dbg_get_max_size_section(uint8_t index)
+{
+    if (index >= OSI_MEM_DBG_MAX_SECTION_NUM){
+        OSI_TRACE_ERROR("Then range of index should be between 0 and %d, current index is %d.\n",
+                            OSI_MEM_DBG_MAX_SECTION_NUM - 1, index);
+        return 0;
+    }
+
+    return mem_dbg_max_size_section[index].max_size;
 }
 #endif
 
@@ -130,48 +213,48 @@ char *osi_strdup(const char *str)
 
 void *osi_malloc_func(size_t size)
 {
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#if HEAP_MEMORY_DEBUG
     void *p;
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     p = heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     p = malloc(size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     return heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return malloc(size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
-#endif /* #ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void *osi_calloc_func(size_t size)
 {
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#if HEAP_MEMORY_DEBUG
     void *p;
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     p = heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     p = calloc(1, size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
     osi_mem_dbg_record(p, size, __func__, __LINE__);
     return p;
 #else
-#if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST
+#if HEAP_ALLOCATION_FROM_SPIRAM_FIRST
     return heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
 #else
     return calloc(1, size);
-#endif /* #if CONFIG_BT_ALLOCATION_FROM_SPIRAM_FIRST */ 
-#endif /* #ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG */
+#endif /* #if HEAP_ALLOCATION_FROM_SPIRAM_FIRST */
+#endif /* #if HEAP_MEMORY_DEBUG */
 }
 
 void osi_free_func(void *ptr)
 {
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
-    osi_mem_dbg_clean(ptr, __func__, __LINE__); 
+#if HEAP_MEMORY_DEBUG
+    osi_mem_dbg_clean(ptr, __func__, __LINE__);
 #endif
     free(ptr);
 }

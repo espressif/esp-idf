@@ -19,6 +19,7 @@
 #include "esp_bt_defs.h"
 #include "esp_gatt_defs.h"
 #include "esp_gatts_api.h"
+#include "osi/future.h"
 
 typedef enum {
     BTC_GATTS_ACT_APP_REGISTER = 0,
@@ -150,6 +151,21 @@ typedef union {
 
 } btc_ble_gatts_args_t;
 
+typedef struct {
+    future_t *complete_future;
+    uint16_t svc_start_hdl;
+    esp_bt_uuid_t svc_uuid;
+    bool        is_tab_creat_svc;
+    bool      is_use_svc;
+    uint8_t   num_handle;
+    uint8_t   handle_idx;
+    uint16_t handles[ESP_GATT_ATTR_HANDLE_MAX];
+} esp_btc_creat_tab_t;
+
+#if GATT_DYNAMIC_MEMORY == TRUE
+extern esp_btc_creat_tab_t *btc_creat_tab_env_ptr;
+#define btc_creat_tab_env (*btc_creat_tab_env_ptr)
+#endif
 
 void btc_gatts_call_handler(btc_msg_t *msg);
 void btc_gatts_cb_handler(btc_msg_t *msg);

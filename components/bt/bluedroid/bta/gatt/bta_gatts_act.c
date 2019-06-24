@@ -49,7 +49,7 @@ static void bta_gatts_send_request_cback (UINT16 conn_id,
         tGATTS_REQ_TYPE req_type, tGATTS_DATA *p_data);
 static void bta_gatts_cong_cback (UINT16 conn_id, BOOLEAN congested);
 
-static tGATT_CBACK bta_gatts_cback = {
+static const tGATT_CBACK bta_gatts_cback = {
     bta_gatts_conn_cback,
     NULL,
     NULL,
@@ -59,7 +59,7 @@ static tGATT_CBACK bta_gatts_cback = {
     bta_gatts_cong_cback
 };
 
-tGATT_APPL_INFO bta_gatts_nv_cback = {
+const tGATT_APPL_INFO bta_gatts_nv_cback = {
     bta_gatts_nv_save_cback,
     bta_gatts_nv_srv_chg_cback
 };

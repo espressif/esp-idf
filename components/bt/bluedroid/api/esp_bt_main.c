@@ -128,9 +128,11 @@ esp_err_t esp_bluedroid_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
-#ifdef CONFIG_BT_BLUEDROID_MEM_DEBUG
+#if HEAP_MEMORY_DEBUG
     osi_mem_dbg_init();
 #endif
+
+    btc_init();
 
     future_p = btc_main_get_future_p(BTC_MAIN_INIT_FUTURE);
     *future_p = future_new();
@@ -138,8 +140,6 @@ esp_err_t esp_bluedroid_init(void)
         LOG_ERROR("Bluedroid initialise failed\n");
         return ESP_ERR_NO_MEM;
     }
-
-    btc_init();
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_MAIN_INIT;

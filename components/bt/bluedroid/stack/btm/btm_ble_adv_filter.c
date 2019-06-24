@@ -48,8 +48,16 @@
 #define BTM_BLE_PF_BIT_TO_MASK(x)          (UINT16)(1 << (x))
 
 
+#if BTM_DYNAMIC_MEMORY == FALSE
 tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
-tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+tBTM_BLE_VSC_CB cmn_ble_adv_vsc_cb;
+#else
+tBTM_BLE_ADV_FILTER_CB *btm_ble_adv_filt_cb_ptr;
+tBTM_BLE_VSC_CB *cmn_ble_adv_vsc_cb_ptr;
+#define btm_ble_adv_filt_cb (*btm_ble_adv_filt_cb_ptr)
+#define cmn_ble_adv_vsc_cb  (*cmn_ble_adv_vsc_cb_ptr)
+#endif
+
 static const BD_ADDR     na_bda = {0};
 
 static UINT8 btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
@@ -87,13 +95,13 @@ tBTM_STATUS btm_ble_obtain_vsc_details()
     tBTM_STATUS st = BTM_SUCCESS;
 
 #if BLE_VND_INCLUDED == TRUE
-    BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-    if (0 == cmn_ble_vsc_cb.max_filter) {
+    BTM_BleGetVendorCapabilities(&cmn_ble_adv_vsc_cb);
+    if (0 == cmn_ble_adv_vsc_cb.max_filter) {
         st = BTM_MODE_UNSUPPORTED;
         return st;
     }
 #else
-    cmn_ble_vsc_cb.max_filter = BTM_BLE_MAX_FILTER_COUNTER;
+    cmn_ble_adv_vsc_cb.max_filter = BTM_BLE_MAX_FILTER_COUNTER;
 #endif
     return st;
 }
@@ -367,7 +375,7 @@ tBTM_BLE_PF_COUNT *btm_ble_find_addr_filter_counter(tBLE_BD_ADDR *p_le_bda)
         return &btm_ble_adv_filt_cb.p_addr_filter_count[0];
     }
 
-    for (i = 0; i < cmn_ble_vsc_cb.max_filter; i ++, p_addr_filter ++) {
+    for (i = 0; i < cmn_ble_adv_vsc_cb.max_filter; i ++, p_addr_filter ++) {
         if (p_addr_filter->in_use &&
                 memcmp(p_le_bda->bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0) {
             return p_addr_filter;
@@ -390,7 +398,7 @@ tBTM_BLE_PF_COUNT *btm_ble_alloc_addr_filter_counter(BD_ADDR bd_addr)
     UINT8               i;
     tBTM_BLE_PF_COUNT   *p_addr_filter = &btm_ble_adv_filt_cb.p_addr_filter_count[1];
 
-    for (i = 0; i < cmn_ble_vsc_cb.max_filter; i ++, p_addr_filter ++) {
+    for (i = 0; i < cmn_ble_adv_vsc_cb.max_filter; i ++, p_addr_filter ++) {
         if (memcmp(na_bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0) {
             memcpy(p_addr_filter->bd_addr, bd_addr, BD_ADDR_LEN);
             p_addr_filter->in_use = TRUE;
@@ -418,7 +426,7 @@ BOOLEAN btm_ble_dealloc_addr_filter_counter(tBLE_BD_ADDR *p_bd_addr, UINT8 filte
         memset(&btm_ble_adv_filt_cb.p_addr_filter_count[0], 0, sizeof(tBTM_BLE_PF_COUNT));
     }
 
-    for (i = 0; i < cmn_ble_vsc_cb.max_filter; i ++, p_addr_filter ++) {
+    for (i = 0; i < cmn_ble_adv_vsc_cb.max_filter; i ++, p_addr_filter ++) {
         if ((p_addr_filter->in_use) && (NULL == p_bd_addr ||
                                         (NULL != p_bd_addr &&
                                          memcmp(p_bd_addr->bda, p_addr_filter->bd_addr, BD_ADDR_LEN) == 0))) {
@@ -682,7 +690,7 @@ UINT8 btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
             }
 
             BTM_TRACE_DEBUG("counter = %d, maxfilt = %d, num_avbl=%d",
-                            p_counter[cond_type], cmn_ble_vsc_cb.max_filter, num_available);
+                            p_counter[cond_type], cmn_ble_adv_vsc_cb.max_filter, num_available);
             return p_counter[cond_type];
         }
     } else {
@@ -1052,12 +1060,12 @@ tBTM_STATUS BTM_BleAdvFilterParamSetup(int action, tBTM_BLE_PF_FILT_INDEX filt_i
             /* set onlost timeout */
             UINT16_TO_STREAM(p, p_filt_params->lost_timeout);
             /* set num_of_track_entries for firmware greater than L-release version */
-            if (cmn_ble_vsc_cb.version_supported > BTM_VSC_CHIP_CAPABILITY_L_VERSION) {
+            if (cmn_ble_adv_vsc_cb.version_supported > BTM_VSC_CHIP_CAPABILITY_L_VERSION) {
                 UINT16_TO_STREAM(p, p_filt_params->num_of_tracking_entries);
             }
         }
 
-        if (cmn_ble_vsc_cb.version_supported == BTM_VSC_CHIP_CAPABILITY_L_VERSION) {
+        if (cmn_ble_adv_vsc_cb.version_supported == BTM_VSC_CHIP_CAPABILITY_L_VERSION) {
             len = BTM_BLE_ADV_FILT_META_HDR_LENGTH + BTM_BLE_ADV_FILT_FEAT_SELN_LEN;
         } else {
             len = BTM_BLE_ADV_FILT_META_HDR_LENGTH + BTM_BLE_ADV_FILT_FEAT_SELN_LEN +
@@ -1248,14 +1256,24 @@ tBTM_STATUS BTM_BleCfgFilterCondition(tBTM_BLE_SCAN_COND_OP action,
 *******************************************************************************/
 void btm_ble_adv_filter_init(void)
 {
-    memset(&btm_ble_adv_filt_cb, 0, sizeof(tBTM_BLE_MULTI_ADV_CB));
+#if BTM_DYNAMIC_MEMORY == TRUE
+    btm_ble_adv_filt_cb_ptr = (tBTM_BLE_ADV_FILTER_CB *)osi_malloc(sizeof(tBTM_BLE_ADV_FILTER_CB));
+    cmn_ble_adv_vsc_cb_ptr = (tBTM_BLE_VSC_CB *)osi_malloc(sizeof(tBTM_BLE_VSC_CB));
+    if (btm_ble_adv_filt_cb_ptr == NULL || cmn_ble_adv_vsc_cb_ptr == NULL) {
+        BTM_TRACE_ERROR("%s malloc failed", __func__);
+        return;
+    }
+    memset((void *)btm_ble_adv_filt_cb_ptr, 0, sizeof(tBTM_BLE_ADV_FILTER_CB));
+    memset((void *)cmn_ble_adv_vsc_cb_ptr, 0, sizeof(tBTM_BLE_VSC_CB));
+#endif
+    memset(&btm_ble_adv_filt_cb, 0, sizeof(tBTM_BLE_ADV_FILTER_CB));
     if (BTM_SUCCESS != btm_ble_obtain_vsc_details()) {
         return;
     }
 
-    if (cmn_ble_vsc_cb.max_filter > 0) {
+    if (cmn_ble_adv_vsc_cb.max_filter > 0) {
         btm_ble_adv_filt_cb.p_addr_filter_count =
-            (tBTM_BLE_PF_COUNT *) osi_malloc( sizeof(tBTM_BLE_PF_COUNT) * cmn_ble_vsc_cb.max_filter);
+            (tBTM_BLE_PF_COUNT *) osi_malloc( sizeof(tBTM_BLE_PF_COUNT) * cmn_ble_adv_vsc_cb.max_filter);
     }
 }
 
@@ -1276,6 +1294,13 @@ void btm_ble_adv_filter_cleanup(void)
         osi_free(btm_ble_adv_filt_cb.p_addr_filter_count);
         btm_ble_adv_filt_cb.p_addr_filter_count = NULL;
     }
+
+#if BTM_DYNAMIC_MEMORY == TRUE
+    osi_free(btm_ble_adv_filt_cb_ptr);
+    btm_ble_adv_filt_cb_ptr = NULL;
+    osi_free(cmn_ble_adv_vsc_cb_ptr);
+    cmn_ble_adv_vsc_cb_ptr = NULL;
+#endif
 }
 
 #endif

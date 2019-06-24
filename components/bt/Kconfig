@@ -1,6 +1,5 @@
 menu Bluetooth
 
-
     config BT_ENABLED
         bool "Bluetooth"
         help
@@ -475,9 +474,16 @@ menu Bluetooth
         help
             This enables the Secure Simple Pairing. If disable this option, Bluedroid will only support Legacy Pairing
 
+    config BT_BLE_ENABLED
+        bool "Bluetooth Low Energy"
+        depends on BT_BLUEDROID_ENABLED
+        default y
+        help
+            This enables Bluetooth Low Energy
+
     config BT_GATTS_ENABLE
         bool "Include GATT server module(GATTS)"
-        depends on BT_BLUEDROID_ENABLED && (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+        depends on BT_BLE_ENABLED
         default y
         help
             This option can be disabled when the app work only on gatt client mode
@@ -510,21 +516,21 @@ menu Bluetooth
 
     config BT_GATTC_ENABLE
         bool "Include GATT client module(GATTC)"
-        depends on BT_BLUEDROID_ENABLED && (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+        depends on BT_BLE_ENABLED
         default y
         help
             This option can be close when the app work only on gatt server mode
 
     config BT_GATTC_CACHE_NVS_FLASH
         bool "Save gattc cache data to nvs flash"
-        depends on BT_GATTC_ENABLE && (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+        depends on BT_GATTC_ENABLE
         default n
         help
             This select can save gattc cache data to nvs flash
 
     config BT_BLE_SMP_ENABLE
         bool "Include BLE security module(SMP)"
-        depends on BT_BLUEDROID_ENABLED && (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+        depends on BT_BLE_ENABLED
         default y
         help
             This option can be close when the app not used the ble security connect.

@@ -531,11 +531,32 @@ typedef struct {
     UINT8               video_streams;  /* handle mask of streaming video channels */
 } tBTA_AV_CB;
 
+/* type for dealing with SBC data frames and codec capabilities functions */
+typedef int (tBTA_AV_SBC_ACT)(void *p_src, void *p_dst,
+                              UINT32 src_samples, UINT32 dst_samples,
+                              UINT32 *p_ret);
 
+/* type for AV up sample control block */
+typedef struct {
+    INT32               cur_pos;    /* current position */
+    UINT32              src_sps;    /* samples per second (source audio data) */
+    UINT32              dst_sps;    /* samples per second (converted audio data) */
+    tBTA_AV_SBC_ACT     *p_act;     /* the action function to do the conversion */
+    UINT16              bits;       /* number of bits per pcm sample */
+    UINT16              n_channels; /* number of channels (i.e. mono(1), stereo(2)...) */
+    INT16               worker1;
+    INT16               worker2;
+    UINT8               div;
+} tBTA_AV_SBC_UPS_CB;
 
 /*****************************************************************************
 **  Global data
 *****************************************************************************/
+/* control block declaration up sample */
+#if BTA_DYNAMIC_MEMORY == TRUE
+extern tBTA_AV_SBC_UPS_CB *bta_av_sbc_ups_cb_ptr;
+#define bta_av_sbc_ups_cb (*bta_av_sbc_ups_cb_ptr)
+#endif
 
 /* control block declaration */
 #if BTA_DYNAMIC_MEMORY == FALSE
@@ -670,3 +691,4 @@ extern void bta_av_reg_vdp (tAVDT_CS *p_cs, char *p_service_name, void *p_data);
 #endif  ///BTA_AV_INCLUDED == TRUE
 
 #endif /* BTA_AV_INT_H */
+

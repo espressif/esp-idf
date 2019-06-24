@@ -18,15 +18,19 @@
 #ifndef DYN_MEM_H
 #define DYN_MEM_H
 
-#include "sdkconfig.h"
-#if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY
+#include "common/bt_user_config.h"
+
+#if UC_BT_BLE_DYNAMIC_ENV_MEMORY
+#define BT_BLE_DYNAMIC_ENV_MEMORY  TRUE
 #define BTU_DYNAMIC_MEMORY         TRUE
 #define BTM_DYNAMIC_MEMORY         TRUE
 #define L2C_DYNAMIC_MEMORY         TRUE
 #define GATT_DYNAMIC_MEMORY        TRUE
 #define SMP_DYNAMIC_MEMORY         TRUE
 #define BTA_DYNAMIC_MEMORY         TRUE
+#define BTC_DYNAMIC_MENDRY         TRUE
 #define SDP_DYNAMIC_MEMORY         TRUE
+#define GAP_DYNAMIC_MEMORY         TRUE
 #define RFC_DYNAMIC_MEMORY         TRUE
 #define TCS_DYNAMIC_MEMORY         TRUE
 #define BNEP_DYNAMIC_MEMORY        TRUE
@@ -51,11 +55,18 @@
 #define SLIP_DYNAMIC_MEMORY        TRUE
 #define LLCP_DYNAMIC_MEMORY        TRUE
 #define BTC_SBC_DEC_DYNAMIC_MEMORY TRUE
-#define BTC_SBC_ENC_DYNAMIC_MEMORY TRUE
 
-#else  /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
-
+#else  /* #if UC_BT_BLE_DYNAMIC_ENV_MEMORY */
+#define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
+#define BTU_DYNAMIC_MEMORY         FALSE
+#define BTM_DYNAMIC_MEMORY         FALSE
+#define L2C_DYNAMIC_MEMORY         FALSE
+#define GATT_DYNAMIC_MEMORY        FALSE
+#define SMP_DYNAMIC_MEMORY         FALSE
+#define BTA_DYNAMIC_MEMORY         FALSE
+#define BTC_DYNAMIC_MENDRY         FALSE
 #define SDP_DYNAMIC_MEMORY         FALSE
+#define GAP_DYNAMIC_MEMORY         FALSE
 #define RFC_DYNAMIC_MEMORY         FALSE
 #define TCS_DYNAMIC_MEMORY         FALSE
 #define BNEP_DYNAMIC_MEMORY        FALSE
@@ -80,9 +91,13 @@
 #define SLIP_DYNAMIC_MEMORY        FALSE
 #define LLCP_DYNAMIC_MEMORY        FALSE
 #define BTC_SBC_DEC_DYNAMIC_MEMORY FALSE
-#define BTC_SBC_ENC_DYNAMIC_MEMORY FALSE
 
-#endif /* #if CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY */
+#endif /* #if UC_BT_BLE_DYNAMIC_ENV_MEMORY */
+
+#ifndef BT_BLE_DYNAMIC_ENV_MEMORY
+#define BT_BLE_DYNAMIC_ENV_MEMORY  FALSE
+#endif
+
 /****************************************************************************
 ** Define memory usage for each CORE component (if not defined in bdroid_buildcfg.h)
 **  The default for each component is to use static memory allocations.
@@ -97,6 +112,10 @@
 
 #ifndef SDP_DYNAMIC_MEMORY
 #define SDP_DYNAMIC_MEMORY  FALSE
+#endif
+
+#ifndef GAP_DYNAMIC_MEMORY
+#define GAP_DYNAMIC_MEMORY  FALSE
 #endif
 
 #ifndef L2C_DYNAMIC_MEMORY
@@ -208,12 +227,15 @@
 #endif
 
 /****************************************************************************
-** Define memory usage for BTA (if not defined in bdroid_buildcfg.h)
+** Define memory usage for BTA and BTC (if not defined in bdroid_buildcfg.h)
 **  The default for each component is to use static memory allocations.
 */
 #ifndef BTA_DYNAMIC_MEMORY
 #define BTA_DYNAMIC_MEMORY FALSE
 #endif
 
-#endif  /* #ifdef DYN_MEM_H */
+#ifndef BTC_DYNAMIC_MENDRY
+#define BTC_DYNAMIC_MENDRY FALSE
+#endif
 
+#endif  /* #ifdef DYN_MEM_H */

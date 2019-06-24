@@ -21,10 +21,13 @@
 
 #include <stdbool.h>
 #include "osi/list.h"
+#include "osi/semaphore.h"
 
 #ifndef QUEUE_SIZE_MAX
 #define QUEUE_SIZE_MAX                    254
 #endif
+
+#define FIXED_QUEUE_MAX_TIMEOUT           OSI_SEM_MAX_TIMEOUT
 
 struct fixed_queue_t;
 
@@ -56,27 +59,14 @@ size_t fixed_queue_length(fixed_queue_t *queue);
 // not be NULL.
 size_t fixed_queue_capacity(fixed_queue_t *queue);
 
-// Enqueues the given |data| into the |queue|. The caller will be blocked
-// if nore more space is available in the queue. Neither |queue| nor |data|
-// may be NULL.
-void fixed_queue_enqueue(fixed_queue_t *queue, void *data);
+// Enqueues the given |data| into the |queue|. The caller will be blocked or immediately return or wait for timeout according to the parameter timeout.
+// If enqueue failed, it will return false, otherwise return true
+bool fixed_queue_enqueue(fixed_queue_t *queue, void *data, uint32_t timeout);
 
 // Dequeues the next element from |queue|. If the queue is currently empty,
-// this function will block the caller until an item is enqueued. This
-// function will never return NULL. |queue| may not be NULL.
-void *fixed_queue_dequeue(fixed_queue_t *queue);
-
-// Tries to enqueue |data| into the |queue|. This function will never block
-// the caller. If the queue capacity would be exceeded by adding one more
-// element, this function returns false immediately. Otherwise, this function
-// returns true. Neither |queue| nor |data| may be NULL.
-bool fixed_queue_try_enqueue(fixed_queue_t *queue, void *data);
-
-// Tries to dequeue an element from |queue|. This function will never block
-// the caller. If the queue is empty, this function returns NULL immediately.
-// Otherwise, the next element in the queue is returned. |queue| may not be
-// NULL.
-void *fixed_queue_try_dequeue(fixed_queue_t *queue);
+// this function will block the caller until an item is enqueued or immediately return or wait for timeout according to the parameter timeout.
+// If dequeue failed, it will return NULL, otherwise return a point.
+void *fixed_queue_dequeue(fixed_queue_t *queue, uint32_t timeout);
 
 // Returns the first element from |queue|, if present, without dequeuing it.
 // This function will never block the caller. Returns NULL if there are no

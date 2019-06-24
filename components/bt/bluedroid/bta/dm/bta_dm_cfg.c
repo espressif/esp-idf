@@ -112,9 +112,9 @@ const tBTA_DM_RM bta_dm_rm_cfg[] = {
 };
 
 
-tBTA_DM_CFG *p_bta_dm_cfg = (tBTA_DM_CFG *) &bta_dm_cfg;
+tBTA_DM_CFG *const p_bta_dm_cfg = (tBTA_DM_CFG *) &bta_dm_cfg;
 
-tBTA_DM_RM *p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
+tBTA_DM_RM *const p_bta_dm_rm_cfg = (tBTA_DM_RM *) &bta_dm_rm_cfg;
 
 #if BLE_INCLUDED == TRUE
 #  define BTA_DM_NUM_PM_ENTRY         8  /* number of entries in bta_dm_pm_cfg except the first */
@@ -375,12 +375,12 @@ tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
     {360,  160, 2}      /* BTA_DM_PM_SSR3 - HD */
 };
 
-tBTA_DM_SSR_SPEC *p_bta_dm_ssr_spec = (tBTA_DM_SSR_SPEC *) &bta_dm_ssr_spec;
+tBTA_DM_SSR_SPEC *const p_bta_dm_ssr_spec = (tBTA_DM_SSR_SPEC *) &bta_dm_ssr_spec;
 #endif
 
-tBTA_DM_PM_CFG *p_bta_dm_pm_cfg = (tBTA_DM_PM_CFG *) &bta_dm_pm_cfg;
-tBTA_DM_PM_SPEC *p_bta_dm_pm_spec = (tBTA_DM_PM_SPEC *) &bta_dm_pm_spec;
-tBTM_PM_PWR_MD *p_bta_dm_pm_md = (tBTM_PM_PWR_MD *) &bta_dm_pm_md;
+tBTA_DM_PM_CFG *const p_bta_dm_pm_cfg = (tBTA_DM_PM_CFG *) &bta_dm_pm_cfg;
+tBTA_DM_PM_SPEC *const p_bta_dm_pm_spec = (tBTA_DM_PM_SPEC *) &bta_dm_pm_spec;
+tBTM_PM_PWR_MD *const p_bta_dm_pm_md = (tBTM_PM_PWR_MD *) &bta_dm_pm_md;
 
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 

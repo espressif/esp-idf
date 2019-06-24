@@ -110,7 +110,7 @@ BOOLEAN GATTS_AddHandleRange(tGATTS_HNDL_RANGE *p_hndl_range)
 ** Returns          TRUE if registered OK, else FALSE
 **
 *******************************************************************************/
-BOOLEAN  GATTS_NVRegister (tGATT_APPL_INFO *p_cb_info)
+BOOLEAN  GATTS_NVRegister (const tGATT_APPL_INFO *p_cb_info)
 {
     BOOLEAN status = FALSE;
     if (p_cb_info) {
@@ -1192,7 +1192,7 @@ void GATT_SetIdleTimeout (BD_ADDR bd_addr, UINT16 idle_tout, tBT_TRANSPORT trans
 ** Returns          0 for error, otherwise the index of the client registered with GATT
 **
 *******************************************************************************/
-tGATT_IF GATT_Register (tBT_UUID *p_app_uuid128, tGATT_CBACK *p_cb_info)
+tGATT_IF GATT_Register (tBT_UUID *p_app_uuid128, const tGATT_CBACK *p_cb_info)
 {
     tGATT_REG    *p_reg;
     UINT8        i_gatt_if = 0;

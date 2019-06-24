@@ -882,6 +882,7 @@ void btm_ble_enable_resolving_list(UINT8 rl_mask)
     }
 }
 
+#if 0 //Unused
 /*******************************************************************************
 **
 ** Function         btm_ble_resolving_list_empty
@@ -896,6 +897,7 @@ BOOLEAN btm_ble_resolving_list_empty(void)
     return (controller_get_interface()->get_ble_resolving_list_max_size() ==
             btm_cb.ble_ctr_cb.resolving_list_avail_size);
 }
+#endif
 
 /*******************************************************************************
 **

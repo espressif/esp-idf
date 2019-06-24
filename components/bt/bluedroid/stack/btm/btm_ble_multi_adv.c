@@ -45,8 +45,15 @@
 /************************************************************************************
 **  Static variables
 ************************************************************************************/
-tBTM_BLE_MULTI_ADV_CB  btm_multi_adv_cb;
-tBTM_BLE_MULTI_ADV_INST_IDX_Q btm_multi_adv_idx_q;
+#if BTM_DYNAMIC_MEMORY == FALSE
+tBTM_BLE_MULTI_ADV_CB           btm_multi_adv_cb;
+tBTM_BLE_MULTI_ADV_INST_IDX_Q   btm_multi_adv_idx_q;
+#else
+tBTM_BLE_MULTI_ADV_CB           *btm_multi_adv_cb_ptr;
+tBTM_BLE_MULTI_ADV_INST_IDX_Q   *btm_multi_adv_idx_q_ptr;
+#define btm_multi_adv_cb        (*btm_multi_adv_cb_ptr)
+#define btm_multi_adv_idx_q     (*btm_multi_adv_idx_q_ptr)
+#endif
 
 /************************************************************************************
 **  Externs
@@ -764,6 +771,15 @@ void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
 *******************************************************************************/
 void btm_ble_multi_adv_init()
 {
+#if BTM_DYNAMIC_MEMORY == TRUE
+    btm_multi_adv_cb_ptr = (tBTM_BLE_MULTI_ADV_CB *)osi_malloc(sizeof(tBTM_BLE_MULTI_ADV_CB));
+    btm_multi_adv_idx_q_ptr = (tBTM_BLE_MULTI_ADV_INST_IDX_Q *)osi_malloc(sizeof(tBTM_BLE_MULTI_ADV_INST_IDX_Q));
+    if (btm_multi_adv_cb_ptr == NULL || btm_multi_adv_idx_q_ptr == NULL) {
+        BTM_TRACE_ERROR("%s malloc failed", __func__);
+        return;
+    }
+#endif
+
     UINT8 i = 0;
     memset(&btm_multi_adv_cb, 0, sizeof(tBTM_BLE_MULTI_ADV_CB));
     memset (&btm_multi_adv_idx_q, 0, sizeof (tBTM_BLE_MULTI_ADV_INST_IDX_Q));
@@ -823,6 +839,12 @@ void btm_ble_multi_adv_cleanup(void)
         btm_multi_adv_cb.op_q.p_inst_id = NULL;
     }
 
+#if BTM_DYNAMIC_MEMORY == TRUE
+    osi_free(btm_multi_adv_cb_ptr);
+    osi_free(btm_multi_adv_idx_q_ptr);
+    btm_multi_adv_cb_ptr = NULL;
+    btm_multi_adv_idx_q_ptr = NULL;
+#endif
 }
 
 /*******************************************************************************

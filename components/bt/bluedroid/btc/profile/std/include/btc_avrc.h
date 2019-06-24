@@ -86,6 +86,50 @@ typedef enum {
     BTC_AVRC_TG_API_SEND_RN_RSP_EVT,
 } btc_avrc_tg_act_t;
 
+/*****************************************************************************
+**  Constants & Macros
+******************************************************************************/
+/* for AVRC 1.4 need to change this */
+#define BTC_RC_CT_INIT_MAGIC            0x20181128
+#define BTC_RC_TG_INIT_MAGIC            0x20181129
+
+#define MAX_RC_NOTIFICATIONS            (13)  // refer to ESP_AVRC_RN_MAX_EVT
+
+
+#define CHECK_ESP_RC_CONNECTED       do { \
+        BTC_TRACE_DEBUG("## %s ##", __FUNCTION__); \
+        if (btc_rc_cb.rc_connected == FALSE) { \
+            BTC_TRACE_WARNING("Function %s() called when RC is not connected", __FUNCTION__); \
+        return ESP_ERR_INVALID_STATE; \
+        } \
+    } while (0)
+
+/*****************************************************************************
+**  Local type definitions
+******************************************************************************/
+typedef struct {
+    BOOLEAN registered;
+    UINT8 label;
+} btc_rc_reg_ntf_t;
+
+typedef struct {
+    BOOLEAN                     rc_connected;
+    UINT8                       rc_handle;
+    tBTA_AV_FEAT                rc_features;
+    UINT16                      rc_ct_features;
+    UINT16                      rc_tg_features;
+    BD_ADDR                     rc_addr;
+    btc_rc_reg_ntf_t            rc_ntf[MAX_RC_NOTIFICATIONS];
+} btc_rc_cb_t;
+
+/*****************************************************************************
+**  Static variables
+******************************************************************************/
+#if AVRC_DYNAMIC_MEMORY == TRUE
+extern btc_rc_cb_t *btc_rc_cb_ptr;
+#define btc_rc_cb (*btc_rc_cb_ptr)
+#endif ///AVRC_DYNAMIC_MEMORY == FALSE
+
 typedef struct {
     esp_avrc_rn_event_ids_t event_id;
     esp_avrc_rn_rsp_t rsp;

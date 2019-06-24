@@ -49,7 +49,7 @@ static void  gap_ble_c_connect_cback (tGATT_IF gatt_if, BD_ADDR bda, UINT16 conn
                                       tGATT_DISCONN_REASON reason, tGATT_TRANSPORT transport);
 static void  gap_ble_c_cmpl_cback (UINT16 conn_id, tGATTC_OPTYPE op, tGATT_STATUS status, tGATT_CL_COMPLETE *p_data);
 
-static tGATT_CBACK gap_cback = {
+static const tGATT_CBACK gap_cback = {
     gap_ble_c_connect_cback,
     gap_ble_c_cmpl_cback,
     NULL,
@@ -145,7 +145,7 @@ void gap_ble_dealloc_clcb(tGAP_CLCB *p_clcb)
 {
     tGAP_BLE_REQ    *p_q;
 
-    while ((p_q = (tGAP_BLE_REQ *)fixed_queue_try_dequeue(p_clcb->pending_req_q)) != NULL) {
+    while ((p_q = (tGAP_BLE_REQ *)fixed_queue_dequeue(p_clcb->pending_req_q, 0)) != NULL) {
         /* send callback to all pending requests if being removed*/
         if (p_q->p_cback != NULL) {
             (*p_q->p_cback)(FALSE, p_clcb->bda, 0, NULL);
@@ -173,7 +173,7 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
     if (p_q != NULL) {
         p_q->p_cback = p_cback;
         p_q->uuid = uuid;
-        fixed_queue_enqueue(p_clcb->pending_req_q, p_q);
+        fixed_queue_enqueue(p_clcb->pending_req_q, p_q, FIXED_QUEUE_MAX_TIMEOUT);
         return TRUE;
     }
 
@@ -190,7 +190,7 @@ BOOLEAN gap_ble_enqueue_request (tGAP_CLCB *p_clcb, UINT16 uuid, tGAP_BLE_CMPL_C
 *******************************************************************************/
 BOOLEAN gap_ble_dequeue_request (tGAP_CLCB *p_clcb, UINT16 *p_uuid, tGAP_BLE_CMPL_CBACK **p_cback)
 {
-    tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)fixed_queue_try_dequeue(p_clcb->pending_req_q);;
+    tGAP_BLE_REQ *p_q = (tGAP_BLE_REQ *)fixed_queue_dequeue(p_clcb->pending_req_q, 0);;
 
     if (p_q != NULL) {
         *p_cback    = p_q->p_cback;

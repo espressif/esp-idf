@@ -826,6 +826,8 @@ int PORT_FlowControl (UINT16 handle, BOOLEAN enable)
     }
     return (PORT_SUCCESS);
 }
+
+#if 0 //Unused
 /*******************************************************************************
 **
 ** Function         PORT_FlowControl_MaxCredit
@@ -839,7 +841,6 @@ int PORT_FlowControl (UINT16 handle, BOOLEAN enable)
 **                  enable     - enables data flow
 **
 *******************************************************************************/
-
 int PORT_FlowControl_MaxCredit (UINT16 handle, BOOLEAN enable)
 {
     tPORT      *p_port;
@@ -896,7 +897,7 @@ int PORT_FlowControl_MaxCredit (UINT16 handle, BOOLEAN enable)
     }
     return (PORT_SUCCESS);
 }
-
+#endif
 
 /*******************************************************************************
 **
@@ -1097,7 +1098,7 @@ int PORT_Purge (UINT16 handle, UINT8 purge_flags)
 
         count = fixed_queue_length(p_port->rx.queue);
 
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue, 0)) != NULL) {
             osi_free (p_buf);
         }
 
@@ -1114,7 +1115,7 @@ int PORT_Purge (UINT16 handle, UINT8 purge_flags)
     if (purge_flags & PORT_PURGE_TXCLEAR) {
         osi_mutex_global_lock();  /* to prevent tx.queue_size from being negative */
 
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->tx.queue)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->tx.queue, 0)) != NULL) {
             osi_free (p_buf);
         }
 
@@ -1217,7 +1218,7 @@ int PORT_ReadData (UINT16 handle, char *p_data, UINT16 max_len, UINT16 *p_len)
                 p_data  += p_buf->len;
             }
 
-            osi_free(fixed_queue_try_dequeue(p_port->rx.queue));
+            osi_free(fixed_queue_dequeue(p_port->rx.queue, 0));
 
             osi_mutex_global_unlock();
 
@@ -1273,7 +1274,7 @@ int PORT_Read (UINT16 handle, BT_HDR **pp_buf)
 
     osi_mutex_global_lock();
 
-    p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue);
+    p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue, 0);
     if (p_buf) {
         p_port->rx.queue_size -= p_buf->len;
 
@@ -1339,7 +1340,7 @@ static int port_write (tPORT *p_port, BT_HDR *p_buf)
                             p_port->rfc.state,
                             p_port->port_ctrl);
 
-        fixed_queue_enqueue(p_port->tx.queue, p_buf);
+        fixed_queue_enqueue(p_port->tx.queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         p_port->tx.queue_size += p_buf->len;
 
         return (PORT_CMD_PENDING);
@@ -1710,11 +1711,16 @@ int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len)
 **
 ** Description      This function is called to initialize RFCOMM layer
 **
+** Returns          status
+**
 *******************************************************************************/
-void RFCOMM_Init (void)
+bt_status_t RFCOMM_Init (void)
 {
-#if (RFC_DYNAMIC_MEMORY)
+#if RFC_DYNAMIC_MEMORY == TRUE
     rfc_cb_ptr = (tRFC_CB *)osi_malloc(sizeof(tRFC_CB));
+    if (rfc_cb_ptr == NULL) {
+        return BT_STATUS_NOMEM;
+    }
 #endif /* #if (RFC_DYNAMIC_MEMORY) */
     memset (&rfc_cb, 0, sizeof (tRFC_CB));  /* Init RFCOMM control block */
 
@@ -1727,6 +1733,27 @@ void RFCOMM_Init (void)
 #endif
 
     rfcomm_l2cap_if_init ();
+    return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+**
+** Function         RFCOMM_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void RFCOMM_Deinit(void)
+{
+#if RFC_DYNAMIC_MEMORY == TRUE
+    if (rfc_cb_ptr){
+        osi_free(rfc_cb_ptr);
+        rfc_cb_ptr = NULL;
+    }
+#endif
 }
 
 /*******************************************************************************

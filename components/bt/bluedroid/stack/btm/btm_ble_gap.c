@@ -57,7 +57,12 @@
 #define MIN_ADV_LENGTH                       2
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE 9
 
-static tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+#if BTM_DYNAMIC_MEMORY == FALSE
+static tBTM_BLE_VSC_CB cmn_ble_gap_vsc_cb;
+#else
+static tBTM_BLE_VSC_CB *cmn_ble_gap_vsc_cb_ptr;
+#define cmn_ble_gap_vsc_cb (*cmn_ble_gap_vsc_cb_ptr)
+#endif
 
 #if BLE_VND_INCLUDED == TRUE
 static tBTM_BLE_CTRL_FEATURES_CBACK    *p_ctrl_le_feature_rd_cmpl_cback = NULL;
@@ -241,7 +246,7 @@ uint8_t adv_param_status   = 0;
 uint8_t scan_enable_status = 0;
 uint8_t scan_param_status  = 0;
 
-void btm_lock_init(void)
+void btm_ble_lock_init(void)
 {
     osi_mutex_new(&adv_enable_lock);
     osi_mutex_new(&adv_data_lock);
@@ -250,7 +255,7 @@ void btm_lock_init(void)
     osi_mutex_new(&scan_param_lock);
 }
 
-void btm_lock_free(void)
+void btm_ble_lock_free(void)
 {
     osi_mutex_free(&adv_enable_lock);
     osi_mutex_free(&adv_data_lock);
@@ -259,7 +264,7 @@ void btm_lock_free(void)
     osi_mutex_free(&scan_param_lock);
 }
 
-void btm_sem_init(void)
+void btm_ble_sem_init(void)
 {
     osi_sem_new(&adv_enable_sem, 1, 0);
     osi_sem_new(&adv_data_sem, 1, 0);
@@ -268,7 +273,7 @@ void btm_sem_init(void)
     osi_sem_new(&scan_param_sem, 1, 0);
 }
 
-void btm_sem_free(void)
+void btm_ble_sem_free(void)
 {
     osi_sem_free(&adv_enable_sem);
     osi_sem_free(&adv_data_sem);
@@ -447,7 +452,7 @@ tBTM_STATUS BTM_BleObserve(BOOLEAN start, UINT32 duration,
             btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 #endif
 
-            if (cmn_ble_vsc_cb.extended_scan_support == 0) {
+            if (cmn_ble_gap_vsc_cb.extended_scan_support == 0) {
                 btsnd_hcic_ble_set_scan_params(p_inq->scan_type, (UINT16)scan_interval,
                                                (UINT16)scan_window,
                                                btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
@@ -4292,9 +4297,17 @@ BOOLEAN btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 st
 *******************************************************************************/
 void btm_ble_init (void)
 {
-    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
-
     BTM_TRACE_DEBUG("%s", __func__);
+
+#if BTM_DYNAMIC_MEMORY == TRUE
+    cmn_ble_gap_vsc_cb_ptr = (tBTM_BLE_VSC_CB *)osi_malloc(sizeof(tBTM_BLE_VSC_CB));
+    if (cmn_ble_gap_vsc_cb_ptr == NULL) {
+        BTM_TRACE_ERROR("%s malloc failed", __func__);
+        return;
+    }
+#endif
+
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
 
     btu_free_timer(&p_cb->obs_timer_ent);
     btu_free_timer(&p_cb->scan_timer_ent);
@@ -4340,6 +4353,11 @@ void btm_ble_free (void)
     BTM_TRACE_DEBUG("%s", __func__);
 
     fixed_queue_free(p_cb->conn_pending_q, osi_free_func);
+
+#if BTM_DYNAMIC_MEMORY == TRUE
+    osi_free(cmn_ble_gap_vsc_cb_ptr);
+    cmn_ble_gap_vsc_cb_ptr = NULL;
+#endif
 }
 
 /*******************************************************************************

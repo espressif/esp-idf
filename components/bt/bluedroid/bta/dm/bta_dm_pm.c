@@ -32,7 +32,11 @@
 #include "stack/btm_api.h"
 #include "osi/allocator.h"
 
-tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
+#if BTA_DYNAMIC_MEMORY == FALSE
+tBTA_DM_CONNECTED_SRVCS  bta_dm_conn_srvcs;
+#else
+tBTA_DM_CONNECTED_SRVCS *bta_dm_conn_srvcs_ptr;
+#endif
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, UINT8 id, UINT8 app_id, BD_ADDR peer_addr);

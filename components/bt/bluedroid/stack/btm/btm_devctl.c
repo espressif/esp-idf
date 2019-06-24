@@ -190,9 +190,9 @@ static void reset_complete(void)
         l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
     }
 #endif
-#if (SMP_INCLUDED == TRUE)
+#if (SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE)
     BTM_SetPinType (btm_cb.cfg.pin_type, btm_cb.cfg.pin_code, btm_cb.cfg.pin_code_len);
-#endif  ///SMP_INCLUDED == TRUE
+#endif  ///SMP_INCLUDED == TRUE && CLASSIC_BT_INCLUDED == TRUE
     for (int i = 0; i <= controller->get_last_features_classic_index(); i++) {
         btm_decode_ext_features_page(i, controller->get_features_classic(i)->as_array);
     }
@@ -693,6 +693,7 @@ tBTM_STATUS BTM_VendorSpecificCommand(UINT16 opcode, UINT8 param_len,
 void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
                        tBTM_CMPL_CB *p_vsc_cplt_cback)
 {
+#if (BLE_INCLUDED == TRUE)
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
     switch(opcode) {
         case HCI_VENDOR_BLE_LONG_ADV_DATA:
@@ -721,6 +722,7 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
         vcs_cplt_params.p_param_buf = p;
         (*p_vsc_cplt_cback)(&vcs_cplt_params);  /* Call the VSC complete callback function */
     }
+#endif
 }
 
 /*******************************************************************************

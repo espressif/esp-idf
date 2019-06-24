@@ -61,6 +61,15 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
     tBTA_SDP_API_ENABLE  *p_buf;
 
     APPL_TRACE_API("%s\n", __FUNCTION__);
+
+#if BTA_DYNAMIC_MEMORY == TRUE
+    /* Malloc buffer for SDP configuration structure */
+    p_bta_sdp_cfg->p_sdp_db = (tSDP_DISCOVERY_DB *)osi_malloc(p_bta_sdp_cfg->sdp_db_size);
+    if (p_bta_sdp_cfg->p_sdp_db == NULL) {
+        return BTA_SDP_FAILURE;
+    }
+#endif
+
     if (p_cback && FALSE == bta_sys_is_register(BTA_ID_SDP)) {
         memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
 
@@ -75,6 +84,29 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK *p_cback)
             status = BTA_SDP_SUCCESS;
         }
     }
+    return (status);
+}
+
+
+/*******************************************************************************
+**
+** Function         BTA_SdpDisable
+**
+** Description      Disable the SDP search I/F service.
+**                  Free buffer for SDP configuration structure.
+**
+** Returns          BTA_SDP_SUCCESS if successful.
+**                  BTA_SDP_FAIL if internal failure.
+**
+*******************************************************************************/
+tBTA_SDP_STATUS BTA_SdpDisable(void)
+{
+    tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
+#if BTA_DYNAMIC_MEMORY == TRUE
+    /* Free buffer for SDP configuration structure */
+    osi_free(p_bta_sdp_cfg->p_sdp_db);
+    p_bta_sdp_cfg->p_sdp_db = NULL;
+#endif
     return (status);
 }
 

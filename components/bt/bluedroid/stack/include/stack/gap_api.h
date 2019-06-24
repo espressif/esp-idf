@@ -320,10 +320,22 @@ extern UINT8 GAP_SetTraceLevel (UINT8 new_level);
 **                  This routine should not be called except once per
 **                      stack invocation.
 **
-** Returns          Nothing
+** Returns          status
 **
 *******************************************************************************/
-extern void GAP_Init(void);
+extern bt_status_t GAP_Init(void);
+
+/*******************************************************************************
+**
+** Function         GAP_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void GAP_Deinit(void);
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************

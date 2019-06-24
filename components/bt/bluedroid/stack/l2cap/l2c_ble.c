@@ -223,28 +223,6 @@ UINT8 L2CA_GetBleConnRole (BD_ADDR bd_addr)
 
     return role;
 }
-/*******************************************************************************
-**
-** Function         L2CA_GetDisconnectReason
-**
-** Description      This function returns the disconnect reason code.
-**
-** Returns          disconnect reason
-**
-*******************************************************************************/
-UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport)
-{
-    tL2C_LCB            *p_lcb;
-    UINT16              reason = 0;
-
-    if ((p_lcb = l2cu_find_lcb_by_bd_addr (remote_bda, transport)) != NULL) {
-        reason = p_lcb->disc_reason;
-    }
-
-    L2CAP_TRACE_DEBUG ("L2CA_GetDisconnectReason=%d ", reason);
-
-    return reason;
-}
 
 /*******************************************************************************
 **
@@ -1383,7 +1361,7 @@ void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, 
 
     if (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
     {
-        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q, FIXED_QUEUE_MAX_TIMEOUT);
         if (!p_buf)
         {
             L2CAP_TRACE_WARNING ("%s Security complete for request not initiated from L2CAP",
@@ -1428,7 +1406,7 @@ void  l2cble_sec_comp(BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, 
 
     while (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
     {
-        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+        p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q, FIXED_QUEUE_MAX_TIMEOUT);
 
         if (status != BTM_SUCCESS) {
             (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
@@ -1484,10 +1462,32 @@ BOOLEAN l2ble_sec_access_req(BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_originator,
     p_buf->is_originator = is_originator;
     p_buf->p_callback = p_callback;
     p_buf->p_ref_data = p_ref_data;
-    fixed_queue_enqueue(p_lcb->le_sec_pending_q, p_buf);
+    fixed_queue_enqueue(p_lcb->le_sec_pending_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     status = btm_ble_start_sec_check(bd_addr, psm, is_originator, &l2cble_sec_comp, p_ref_data);
 
     return status;
 }
 #endif /* #if (SMP_INCLUDED == TRUE) */
 #endif /* (BLE_INCLUDED == TRUE) */
+/*******************************************************************************
+**
+** Function         L2CA_GetDisconnectReason
+**
+** Description      This function returns the disconnect reason code.
+**
+** Returns          disconnect reason
+**
+*******************************************************************************/
+UINT16 L2CA_GetDisconnectReason (BD_ADDR remote_bda, tBT_TRANSPORT transport)
+{
+    tL2C_LCB            *p_lcb;
+    UINT16              reason = 0;
+
+    if ((p_lcb = l2cu_find_lcb_by_bd_addr (remote_bda, transport)) != NULL) {
+        reason = p_lcb->disc_reason;
+    }
+
+    L2CAP_TRACE_DEBUG ("L2CA_GetDisconnectReason=%d ", reason);
+
+    return reason;
+}

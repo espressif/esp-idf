@@ -332,7 +332,7 @@ UINT16 GAP_ConnReadData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT1
             p_buf->len    -= copy_len;
             break;
         }
-        osi_free(fixed_queue_try_dequeue(p_ccb->rx_queue));
+        osi_free(fixed_queue_dequeue(p_ccb->rx_queue, 0));
     }
 
     p_ccb->rx_queue_size -= *p_len;
@@ -404,7 +404,7 @@ UINT16 GAP_ConnBTRead (UINT16 gap_handle, BT_HDR **pp_buf)
         return (GAP_ERR_BAD_HANDLE);
     }
 
-    p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->rx_queue);
+    p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->rx_queue, 0);
 
     if (p_buf) {
         *pp_buf = p_buf;
@@ -451,7 +451,7 @@ UINT16 GAP_ConnBTWrite (UINT16 gap_handle, BT_HDR *p_buf)
         return (GAP_ERR_BUF_OFFSET);
     }
 
-    fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
+    fixed_queue_enqueue(p_ccb->tx_queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
 
     if (p_ccb->is_congested) {
         return (BT_PASS);
@@ -461,7 +461,7 @@ UINT16 GAP_ConnBTWrite (UINT16 gap_handle, BT_HDR *p_buf)
 #if (GAP_CONN_POST_EVT_INCLUDED == TRUE)
     gap_send_event (gap_handle);
 #else
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
+    while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->tx_queue, 0)) != NULL) {
         UINT8 status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
 
         if (status == L2CAP_DW_CONGESTED) {
@@ -532,7 +532,7 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
 
         GAP_TRACE_EVENT ("GAP_WriteData %d bytes", p_buf->len);
 
-        fixed_queue_enqueue(p_ccb->tx_queue, p_buf);
+        fixed_queue_enqueue(p_ccb->tx_queue, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
     if (p_ccb->is_congested) {
@@ -543,7 +543,7 @@ UINT16 GAP_ConnWriteData (UINT16 gap_handle, UINT8 *p_data, UINT16 max_len, UINT
 #if (GAP_CONN_POST_EVT_INCLUDED == TRUE)
     gap_send_event (gap_handle);
 #else
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL)
+    while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->tx_queue, 0)) != NULL)
     {
         UINT8 status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
 
@@ -989,7 +989,7 @@ static void gap_data_ind (UINT16 l2cap_cid, BT_HDR *p_msg)
     }
 
     if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED) {
-        fixed_queue_enqueue(p_ccb->rx_queue, p_msg);
+        fixed_queue_enqueue(p_ccb->rx_queue, p_msg, FIXED_QUEUE_MAX_TIMEOUT);
 
         p_ccb->rx_queue_size += p_msg->len;
         /*
@@ -1033,7 +1033,7 @@ static void gap_congestion_ind (UINT16 lcid, BOOLEAN is_congested)
     p_ccb->p_callback (p_ccb->gap_handle, event);
 
     if (!is_congested) {
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->tx_queue, 0)) != NULL) {
             status = L2CA_DATA_WRITE (p_ccb->connection_id, p_buf);
 
             if (status == L2CAP_DW_CONGESTED) {
@@ -1154,13 +1154,13 @@ static void gap_release_ccb (tGAP_CCB *p_ccb)
     p_ccb->rx_queue_size = 0;
 
     while (!fixed_queue_is_empty(p_ccb->rx_queue)) {
-        osi_free(fixed_queue_try_dequeue(p_ccb->rx_queue));
+        osi_free(fixed_queue_dequeue(p_ccb->rx_queue, 0));
 	}
     fixed_queue_free(p_ccb->rx_queue, NULL);
     p_ccb->rx_queue = NULL;
 
     while (!fixed_queue_is_empty(p_ccb->tx_queue)) {
-        osi_free(fixed_queue_try_dequeue(p_ccb->tx_queue));
+        osi_free(fixed_queue_dequeue(p_ccb->tx_queue, 0));
 	}
     fixed_queue_free(p_ccb->tx_queue, NULL);
     p_ccb->tx_queue = NULL;

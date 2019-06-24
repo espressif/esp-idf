@@ -367,7 +367,9 @@ BOOLEAN smp_send_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
 
     if (!sent) {
         if (p_cb->smp_over_br) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
             smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &failure);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
         } else {
             smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &failure);
         }
@@ -393,7 +395,9 @@ void smp_rsp_timeout(TIMER_LIST_ENT *p_tle)
     SMP_TRACE_EVENT("%s state:%d br_state:%d", __FUNCTION__, p_cb->state, p_cb->br_state);
 
     if (p_cb->smp_over_br) {
+#if (CLASSIC_BT_INCLUDED == TRUE)
         smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &failure);
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
     } else {
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &failure);
     }
@@ -550,6 +554,7 @@ static BT_HDR *smp_build_master_id_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
 static BT_HDR *smp_build_identity_info_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
 {
     BT_HDR      *p_buf = NULL ;
+#if (BLE_INCLUDED == TRUE)
     UINT8       *p;
     BT_OCTET16  irk;
     UNUSED(cmd_code);
@@ -568,6 +573,7 @@ static BT_HDR *smp_build_identity_info_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
         p_buf->len = SMP_ID_INFO_SIZE;
     }
 
+#endif  ///BLE_INCLUDED == TRUE
     return p_buf;
 }
 
@@ -590,13 +596,16 @@ static BT_HDR *smp_build_id_addr_cmd(UINT8 cmd_code, tSMP_CB *p_cb)
         p = (UINT8 *)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
         UINT8_TO_STREAM (p, SMP_OPCODE_ID_ADDR);
-        /* Identity Address Information is used in the Transport Specific Key Distribution phase to distribute 
+        /* Identity Address Information is used in the Transport Specific Key Distribution phase to distribute
         its public device address or static random address. if slave using static random address is encrypted,
         it should distribute its static random address */
+#if (BLE_INCLUDED == TRUE)
         if(btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM && memcmp(btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr,6) == 0) {
             UINT8_TO_STREAM (p, 0x01);
             BDADDR_TO_STREAM (p, btm_cb.ble_ctr_cb.addr_mgnt_cb.static_rand_addr);
-        } else {
+        } else
+#endif  ///BLE_INCLUDED == TRUE
+        {
             UINT8_TO_STREAM (p, 0);
             BDADDR_TO_STREAM (p, controller_get_interface()->get_address()->address);
         }
@@ -866,9 +875,10 @@ void smp_mask_enc_key(UINT8 loc_enc_size, UINT8 *p_data)
 ** Returns          void
 **
 *******************************************************************************/
-void smp_xor_128(BT_OCTET16 a, BT_OCTET16 b)
+void smp_xor_128(BT_OCTET16 a, const BT_OCTET16 b)
 {
-    UINT8 i, *aa = a, *bb = b;
+    UINT8 i, *aa = a;
+    const UINT8 *bb = b;
 
     SMP_TRACE_EVENT("smp_xor_128\n");
     for (i = 0; i < BT_OCTET16_LEN; i++) {
@@ -964,13 +974,14 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
     tSMP_EVT_DATA   evt_data = {0};
     tSMP_CALLBACK   *p_callback = p_cb->p_callback;
     BD_ADDR         pairing_bda;
-    tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
 
     SMP_TRACE_DEBUG ("smp_proc_pairing_cmpl \n");
 
     evt_data.cmplt.reason = p_cb->status;
     evt_data.cmplt.smp_over_br = p_cb->smp_over_br;
     evt_data.cmplt.auth_mode = 0;
+#if (BLE_INCLUDED == TRUE)
+    tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
     if (p_cb->status == SMP_SUCCESS) {
         evt_data.cmplt.sec_level = p_cb->sec_level;
         if (p_cb->auth_mode) { // the first encryption
@@ -982,6 +993,12 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
             evt_data.cmplt.auth_mode =  p_rec->ble.auth_mode;
         }
     }
+#else
+    if (p_cb->status == SMP_SUCCESS) {
+        evt_data.cmplt.sec_level = p_cb->sec_level;
+        evt_data.cmplt.auth_mode = p_cb->auth_mode;
+    }
+#endif
 
     evt_data.cmplt.is_pair_cancel  = FALSE;
 
@@ -996,6 +1013,7 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
 
     memcpy (pairing_bda, p_cb->pairing_bda, BD_ADDR_LEN);
 
+#if (BLE_INCLUDED == TRUE)
 #if (SMP_SLAVE_CON_PARAMS_UPD_ENABLE == TRUE)
     if (p_cb->role == HCI_ROLE_SLAVE) {
         if(p_rec && p_rec->ble.skip_update_conn_param) {
@@ -1005,7 +1023,10 @@ void smp_proc_pairing_cmpl(tSMP_CB *p_cb)
             L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, TRUE);
         }
     }
+
 #endif
+#endif  ///BLE_INCLUDED == TRUE
+
     smp_reset_control_value(p_cb);
 
     if (p_callback) {
@@ -1404,7 +1425,7 @@ void smp_collect_peer_io_capabilities(UINT8 *iocap, tSMP_CB *p_cb)
     iocap[1] = p_cb->peer_oob_flag;
     iocap[2] = p_cb->peer_auth_req;
 }
-
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 ** Function         smp_collect_local_ble_address
 **
@@ -1557,7 +1578,7 @@ BOOLEAN smp_calculate_f5_mackey_and_long_term_key(tSMP_CB *p_cb)
     SMP_TRACE_EVENT ("%s is completed\n", __func__);
     return TRUE;
 }
-
+#endif  ///BLE_INCLUDED == TRUE
 /*******************************************************************************
 **
 ** Function         smp_request_oob_data

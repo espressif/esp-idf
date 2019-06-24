@@ -34,17 +34,25 @@
 #include "bdroid_buildcfg.h"
 #endif
 
-#include "sdkconfig.h"
+#include "bt_user_config.h"
 #include "stack/bt_types.h"   /* This must be defined AFTER buildcfg.h */
 
 #include "stack/dyn_mem.h"    /* defines static and/or dynamic memory for components */
+
+
+/* OS Configuration from User config (eg: sdkconfig) */
+#define TASK_PINNED_TO_CORE         UC_TASK_PINNED_TO_CORE
+#define BT_TASK_MAX_PRIORITIES      configMAX_PRIORITIES
+#define BT_BTC_TASK_STACK_SIZE      UC_BTC_TASK_STACK_SIZE
+#define A2DP_SINK_TASK_STACK_SIZE   UC_A2DP_SINK_TASK_STACK_SIZE
+#define A2DP_SOURCE_TASK_STACK_SIZE UC_A2DP_SOURCE_TASK_STACK_SIZE
 
 /******************************************************************************
 **
 ** Classic BT features
 **
 ******************************************************************************/
-#if CONFIG_BT_CLASSIC_ENABLED
+#if (UC_BT_CLASSIC_ENABLED == TRUE)
 #define CLASSIC_BT_INCLUDED         TRUE
 #define BTC_SM_INCLUDED             TRUE
 #define BTC_PRF_QUEUE_INCLUDED      TRUE
@@ -53,7 +61,7 @@
 #define BTA_DM_PM_INCLUDED          TRUE
 #define SDP_INCLUDED                TRUE
 
-#if CONFIG_BT_A2DP_ENABLE
+#if (UC_BT_A2DP_ENABLED == TRUE)
 #define BTA_AR_INCLUDED             TRUE
 #define BTA_AV_INCLUDED             TRUE
 #define AVDT_INCLUDED               TRUE
@@ -66,15 +74,15 @@
 #define SBC_DEC_INCLUDED            TRUE
 #define BTC_AV_SRC_INCLUDED         TRUE
 #define SBC_ENC_INCLUDED            TRUE
-#endif /* CONFIG_BT_A2DP_ENABLE */
+#endif /* UC_BT_A2DP_ENABLED */
 
-#if CONFIG_BT_SPP_ENABLED
+#if (UC_BT_SPP_ENABLED == TRUE)
 #define RFCOMM_INCLUDED             TRUE
 #define BTA_JV_INCLUDED             TRUE
 #define BTC_SPP_INCLUDED            TRUE
-#endif /* CONFIG_BT_SPP_ENABLED */
+#endif /* UC_BT_SPP_ENABLED */
 
-#if CONFIG_BT_HFP_CLIENT_ENABLE
+#if (UC_BT_HFP_CLIENT_ENABLED == TRUE)
 #define BTC_HF_CLIENT_INCLUDED      TRUE
 #define BTA_HF_INCLUDED             TRUE
 #define PLC_INCLUDED                TRUE
@@ -87,96 +95,91 @@
 #ifndef BTM_MAX_SCO_LINKS
 #define BTM_MAX_SCO_LINKS           (1)
 #endif
+
 #ifndef SBC_DEC_INCLUDED
 #define SBC_DEC_INCLUDED            TRUE
 #endif
 #ifndef SBC_ENC_INCLUDED
 #define SBC_ENC_INCLUDED            TRUE
 #endif
-#endif  /* CONFIG_HFP_HF_ENABLE */
+#endif  /* UC_BT_HFP_CLIENT_ENABLED */
 
-#if CONFIG_BT_SSP_ENABLED
+#if UC_BT_SSP_ENABLED
 #define BT_SSP_INCLUDED             TRUE
-#endif /* CONFIG_BT_SSP_ENABLED */
+#endif /* UC_BT_SSP_ENABLED */
 
-#endif /* #if CONFIG_BT_CLASSIC_ENABLED */
+#endif /* UC_BT_CLASSIC_ENABLED */
 
 #ifndef CLASSIC_BT_INCLUDED
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
-
-#ifndef CONFIG_BT_GATTC_CACHE_NVS_FLASH
-#define CONFIG_BT_GATTC_CACHE_NVS_FLASH         FALSE
-#endif /* CONFIG_BT_GATTC_CACHE_NVS_FLASH */
 
 /******************************************************************************
 **
 ** BLE features
 **
 ******************************************************************************/
-#if (CONFIG_BT_GATTS_ENABLE)
+#if (UC_BT_BLE_ENABLED ==TRUE)
+#define BLE_INCLUDED              TRUE
+#else
+#define BLE_INCLUDED              FALSE
+#endif /* UC_BT_BLE_ENABLED */
+
+#if (UC_BT_GATTS_ENABLE)
 #define GATTS_INCLUDED              TRUE
 #else
 #define GATTS_INCLUDED              FALSE
-#endif /* CONFIG_BT_GATTS_ENABLE */
+#endif /* UC_BT_GATTS_ENABLE */
 
-#if (CONFIG_BT_GATTC_ENABLE)
+#if (UC_BT_GATTC_ENABLE)
 #define GATTC_INCLUDED              TRUE
 #else
 #define GATTC_INCLUDED              FALSE
-#endif  /* CONFIG_BT_GATTC_ENABLE */
+#endif  /* UC_BT_GATTC_ENABLE */
 
-#if (CONFIG_BT_GATTC_ENABLE && CONFIG_BT_GATTC_CACHE_NVS_FLASH)
-#define GATTC_CACHE_NVS              TRUE
+#if (UC_BT_GATTC_ENABLE && UC_BT_GATTC_CACHE_NVS_FLASH_ENABLED)
+#define GATTC_CACHE_NVS             TRUE
 #else
-#define GATTC_CACHE_NVS              FALSE
-#endif  /* CONFIG_BT_GATTC_CACHE_NVS_FLASH */
+#define GATTC_CACHE_NVS             FALSE
+#endif  /* UC_BT_GATTC_ENABLE && UC_BT_GATTC_CACHE_NVS_FLASH_ENABLED */
 
-#if (CONFIG_BT_SMP_ENABLE)
-#define SMP_INCLUDED              TRUE
-#define BLE_PRIVACY_SPT           TRUE
+#if (UC_BT_SMP_ENABLE)
+#define SMP_INCLUDED                TRUE
+#if (BLE_INCLUDED == TRUE)
+#define BLE_PRIVACY_SPT             TRUE
 #else
-#define SMP_INCLUDED              FALSE
-#define BLE_PRIVACY_SPT           FALSE
-#endif  /* CONFIG_BT_SMP_ENABLE */
+#define BLE_PRIVACY_SPT             FALSE
+#endif  /*BLE_INCLUDED*/
+#else
+#define SMP_INCLUDED                FALSE
+#define BLE_PRIVACY_SPT             FALSE
+#endif  /* UC_BT_SMP_ENABLE */
 
-#ifdef CONFIG_BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE
-#if(CONFIG_BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE)
-#define SMP_SLAVE_CON_PARAMS_UPD_ENABLE  TRUE
+#if(UC_BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE)
+#define SMP_SLAVE_CON_PARAMS_UPD_ENABLE     TRUE
 #else
-#define SMP_SLAVE_CON_PARAMS_UPD_ENABLE  FALSE
-#endif
-#else
-#define SMP_SLAVE_CON_PARAMS_UPD_ENABLE  FALSE
-#endif
+#define SMP_SLAVE_CON_PARAMS_UPD_ENABLE     FALSE
+#endif /* UC_BT_SMP_SLAVE_CON_PARAMS_UPD_ENABLE */
 
-#ifndef CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
-#define BLE_ADV_REPORT_FLOW_CONTROL  FALSE
-#else
-#define BLE_ADV_REPORT_FLOW_CONTROL  CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
-#endif /* CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP */
+#ifdef UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+#define BLE_ADV_REPORT_FLOW_CONTROL         UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP
+#endif /* UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_SUPP */
 
-#ifndef CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
-#define BLE_ADV_REPORT_FLOW_CONTROL_NUM   100
-#else
-#define BLE_ADV_REPORT_FLOW_CONTROL_NUM     CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
-#endif /* CONFIG_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM */
+#ifdef UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
+#define BLE_ADV_REPORT_FLOW_CONTROL_NUM     UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM
+#endif /* UC_BTDM_BLE_ADV_REPORT_FLOW_CTRL_NUM */
 
-#ifndef CONFIG_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
-#define BLE_ADV_REPORT_DISCARD_THRSHOLD  20
-#else
-#define BLE_ADV_REPORT_DISCARD_THRSHOLD  CONFIG_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
-#endif /* CONFIG_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD */
+#ifdef UC_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
+#define BLE_ADV_REPORT_DISCARD_THRSHOLD     UC_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
+#endif /* UC_BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD */
 
-#if (CONFIG_BT_ACL_CONNECTIONS)
-#define MAX_ACL_CONNECTIONS  CONFIG_BT_ACL_CONNECTIONS
-#define GATT_MAX_PHY_CHANNEL CONFIG_BT_ACL_CONNECTIONS
-#endif  /* CONFIG_BT_ACL_CONNECTIONS */
+#ifdef UC_BT_ACL_CONNECTIONS
+#define MAX_ACL_CONNECTIONS         UC_BT_ACL_CONNECTIONS
+#define GATT_MAX_PHY_CHANNEL        UC_BT_ACL_CONNECTIONS
+#endif  /* UC_BT_ACL_CONNECTIONS */
 
-#if(CONFIG_BT_BLE_ESTAB_LINK_CONN_TOUT)
-#define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT CONFIG_BT_BLE_ESTAB_LINK_CONN_TOUT
-#else
-#define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT 30
+#ifdef UC_BT_BLE_ESTAB_LINK_CONN_TOUT
+#define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT UC_BT_BLE_ESTAB_LINK_CONN_TOUT
 #endif
 
 //------------------Added from bdroid_buildcfg.h---------------------
@@ -333,7 +336,7 @@
 #endif
 
 #ifndef BTA_AVRCP_FF_RW_SUPPORT
-#define BTA_AVRCP_FF_RW_SUPPORT FALSE//TRUE
+#define BTA_AVRCP_FF_RW_SUPPORT FALSE
 #endif
 
 #ifndef BTA_AG_SCO_PKT_TYPES
@@ -349,34 +352,30 @@
 #endif
 
 #ifndef BTA_AV_CO_CP_SCMS_T
-#define BTA_AV_CO_CP_SCMS_T  FALSE//FALSE
+#define BTA_AV_CO_CP_SCMS_T  FALSE
 #endif
 
 #ifndef QUEUE_CONGEST_SIZE
 #define  QUEUE_CONGEST_SIZE    40
 #endif
 
-#ifndef CONFIG_BT_BLE_HOST_QUEUE_CONG_CHECK
+#if UC_BT_BLE_HOST_QUEUE_CONGESTION_CHECK
+#define SCAN_QUEUE_CONGEST_CHECK  TRUE
+#else
 #define SCAN_QUEUE_CONGEST_CHECK  FALSE
-#else
-#define SCAN_QUEUE_CONGEST_CHECK  CONFIG_BT_BLE_HOST_QUEUE_CONG_CHECK
 #endif
 
-#ifndef CONFIG_BT_GATTS_SEND_SERVICE_CHANGE_MODE
-#define GATTS_SEND_SERVICE_CHANGE_MODE GATTS_SEND_SERVICE_CHANGE_AUTO
-#else
-#define GATTS_SEND_SERVICE_CHANGE_MODE CONFIG_BT_GATTS_SEND_SERVICE_CHANGE_MODE
+#ifdef UC_BT_GATTS_SEND_SERVICE_CHANGE_MODE
+#define GATTS_SEND_SERVICE_CHANGE_MODE UC_BT_GATTS_SEND_SERVICE_CHANGE_MODE
 #endif
 
-#ifndef CONFIG_BT_BLE_ACT_SCAN_REP_ADV_SCAN
-#define BTM_BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY    FALSE
-#else
-#define BTM_BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY    CONFIG_BT_BLE_ACT_SCAN_REP_ADV_SCAN
+#ifdef UC_BT_BLE_ACT_SCAN_REP_ADV_SCAN
+#define BTM_BLE_ACTIVE_SCAN_REPORT_ADV_SCAN_RSP_INDIVIDUALLY    UC_BT_BLE_ACT_SCAN_REP_ADV_SCAN
 #endif
 
 /* This feature is used to eanble interleaved scan*/
 #ifndef BTA_HOST_INTERLEAVE_SEARCH
-#define BTA_HOST_INTERLEAVE_SEARCH FALSE//FALSE
+#define BTA_HOST_INTERLEAVE_SEARCH FALSE
 #endif
 
 #ifndef BT_USE_TRACES
@@ -404,7 +403,7 @@
 #endif
 
 #ifndef BTIF_DM_OOB_TEST
-#define BTIF_DM_OOB_TEST  FALSE//TRUE
+#define BTIF_DM_OOB_TEST  FALSE
 #endif
 
 // How long to wait before activating sniff mode after entering the
@@ -589,11 +588,11 @@
 
 /* Includes SCO if TRUE */
 #ifndef BTM_SCO_HCI_INCLUDED
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+#if UC_BT_HFP_AUDIO_DATA_PATH_HCI
 #define BTM_SCO_HCI_INCLUDED            TRUE       /* TRUE includes SCO over HCI code */
 #else
 #define BTM_SCO_HCI_INCLUDED            FALSE
-#endif /* CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
+#endif /* UC_HFP_AUDIO_DATA_PATH_HCI */
 #endif
 
 /* Includes WBS if TRUE */
@@ -1035,7 +1034,7 @@
 ******************************************************************************/
 
 #ifndef BLE_INCLUDED
-#define BLE_INCLUDED            TRUE
+#define BLE_INCLUDED            FALSE
 #endif
 
 #ifndef BLE_ANDROID_CONTROLLER_SCAN_FILTER
@@ -1127,7 +1126,7 @@
 #endif
 
 #ifndef ATT_DEBUG
-#define ATT_DEBUG           FALSE//TRUE
+#define ATT_DEBUG           FALSE
 #endif
 
 #ifndef BLE_PERIPHERAL_MODE_SUPPORT
@@ -1192,12 +1191,6 @@
 #endif
 #endif
 
-
-#if SMP_INCLUDED == TRUE && BLE_INCLUDED == FALSE
-#error "can't have SMP without BLE"
-#endif
-
-
 /******************************************************************************
 **
 ** SMP
@@ -1209,10 +1202,6 @@
 #else
 #define SMP_INCLUDED         FALSE
 #endif
-#endif
-
-#if SMP_INCLUDED == TRUE && BLE_INCLUDED == FALSE
-#error "can't have SMP without BLE"
 #endif
 
 #ifndef SMP_DEBUG
@@ -1529,12 +1518,12 @@ Range: 2 octets
 ******************************************************************************/
 
 #ifndef BNEP_INCLUDED
-#define BNEP_INCLUDED               FALSE//TRUE
+#define BNEP_INCLUDED               FALSE
 #endif
 
 /* BNEP status API call is used mainly to get the L2CAP handle */
 #ifndef BNEP_SUPPORTS_STATUS_API
-#define BNEP_SUPPORTS_STATUS_API            FALSE//TRUE
+#define BNEP_SUPPORTS_STATUS_API            FALSE
 #endif
 
 /*
@@ -1542,7 +1531,7 @@ Range: 2 octets
 ** we will do an authentication check again on the new role
 */
 #ifndef BNEP_DO_AUTH_FOR_ROLE_SWITCH
-#define BNEP_DO_AUTH_FOR_ROLE_SWITCH        FALSE//TRUE
+#define BNEP_DO_AUTH_FOR_ROLE_SWITCH        FALSE
 #endif
 
 
@@ -1655,22 +1644,22 @@ Range: 2 octets
 
 /* This will enable the PANU role */
 #ifndef PAN_SUPPORTS_ROLE_PANU
-#define PAN_SUPPORTS_ROLE_PANU              FALSE//TRUE
+#define PAN_SUPPORTS_ROLE_PANU              FALSE
 #endif
 
 /* This will enable the GN role */
 #ifndef PAN_SUPPORTS_ROLE_GN
-#define PAN_SUPPORTS_ROLE_GN                FALSE//TRUE
+#define PAN_SUPPORTS_ROLE_GN                FALSE
 #endif
 
 /* This will enable the NAP role */
 #ifndef PAN_SUPPORTS_ROLE_NAP
-#define PAN_SUPPORTS_ROLE_NAP               FALSE//TRUE
+#define PAN_SUPPORTS_ROLE_NAP               FALSE
 #endif
 
 /* This is just for debugging purposes */
 #ifndef PAN_SUPPORTS_DEBUG_DUMP
-#define PAN_SUPPORTS_DEBUG_DUMP             FALSE//TRUE
+#define PAN_SUPPORTS_DEBUG_DUMP             FALSE
 #endif
 
 /* Maximum number of PAN connections allowed */
@@ -1992,7 +1981,7 @@ The maximum number of payload octets that the local device can receive in a sing
 ******************************************************************************/
 
 #ifndef HCILP_INCLUDED
-#define HCILP_INCLUDED                  FALSE//TRUE
+#define HCILP_INCLUDED                  FALSE
 #endif
 
 /******************************************************************************
@@ -2034,7 +2023,7 @@ The maximum number of payload octets that the local device can receive in a sing
 #endif
 
 #ifndef BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY
-#define BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY FALSE//TRUE
+#define BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY FALSE
 #endif
 
 /******************************************************************************
@@ -2045,7 +2034,19 @@ The maximum number of payload octets that the local device can receive in a sing
 
 /* Enable/disable BTSnoop memory logging */
 #ifndef BTSNOOP_MEM
-#define BTSNOOP_MEM FALSE//TRUE
+#define BTSNOOP_MEM FALSE
+#endif
+
+#if UC_BT_BLUEDROID_MEM_DEBUG
+#define HEAP_MEMORY_DEBUG   TRUE
+#else
+#define HEAP_MEMORY_DEBUG   FALSE
+#endif
+
+#if UC_HEAP_ALLOCATION_FROM_SPIRAM_FIRST
+#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST TRUE
+#else
+#define HEAP_ALLOCATION_FROM_SPIRAM_FIRST FALSE
 #endif
 
 #include "common/bt_trace.h"

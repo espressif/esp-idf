@@ -1383,7 +1383,7 @@ static BOOLEAN allocate_svc_db_buf(tGATT_SVC_DB *p_db)
     p_db->p_free_mem    = (UINT8 *) p_buf;
     p_db->mem_free = GATT_DB_BUF_SIZE;
 
-    fixed_queue_enqueue(p_db->svc_buffer, p_buf);
+    fixed_queue_enqueue(p_db->svc_buffer, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
 
     return TRUE;
 

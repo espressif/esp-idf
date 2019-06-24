@@ -96,6 +96,7 @@ void btc_storage_save(void)
     btc_config_unlock();
 }
 
+#if (BLE_INCLUDED == TRUE)
 static bt_status_t _btc_storage_add_ble_bonding_key(bt_bdaddr_t *remote_bd_addr,
                                             char *key,
                                             uint8_t key_type,
@@ -552,6 +553,7 @@ bt_status_t btc_storage_remove_ble_dev_type(bt_bdaddr_t *remote_bd_addr, bool fl
 
     return ret;
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 static bt_status_t _btc_storage_set_ble_dev_auth_mode(bt_bdaddr_t *remote_bd_addr, uint8_t auth_mode, bool flush)
 {
@@ -725,6 +727,7 @@ bt_status_t btc_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
     return ret;
 }
 
+#if (BLE_INCLUDED == TRUE)
 static void _btc_read_le_key(const uint8_t key_type, const size_t key_len, bt_bdaddr_t bd_addr,
                  const uint8_t addr_type, const bool add_key, bool *device_added, bool *key_found)
 {
@@ -774,7 +777,7 @@ static bt_status_t _btc_storage_in_fetch_bonded_ble_device(const char *remote_bd
         BTC_TRACE_ERROR("%s, device_type = %x", __func__, device_type);
         return BT_STATUS_FAIL;
     }
-   
+
     string_to_bdaddr(remote_bd_addr, &bd_addr);
     bdcpy(bta_bd_addr, bd_addr.address);
 
@@ -817,7 +820,7 @@ static bt_status_t btc_storage_in_fetch_bonded_ble_devices(int add)
     for (const btc_config_section_iter_t *iter = btc_config_section_begin(); iter != btc_config_section_end();
             iter = btc_config_section_next(iter)) {
         const char *name = btc_config_section_name(iter);
-        
+
         if (!string_is_bdaddr(name) ||
             !btc_config_get_int(name, BTC_BLE_STORAGE_DEV_TYPE_STR, (int *)&device_type) ||
             ((device_type & BT_DEVICE_TYPE_BLE) != BT_DEVICE_TYPE_BLE)) {
@@ -926,5 +929,6 @@ int btc_storage_get_num_ble_bond_devices(void)
 
     return num_dev;
 }
+#endif  ///BLE_INCLUDED == TRUE
 #endif  ///SMP_INCLUDED == TRUE
-                                       
+

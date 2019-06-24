@@ -357,7 +357,9 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
     p_lcb = l2cu_find_lcb_by_handle (handle);
     /* If we don't have one, maybe an SCO link. Send to MM */
     if (!p_lcb) {
+#if (BLE_INCLUDED == TRUE)
         BTM_Recovery_Pre_State();
+#endif  ///BLE_INCLUDED == TRUE
         status = FALSE;
     } else {
         /* There can be a case when we rejected PIN code authentication */
@@ -1026,8 +1028,10 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
 
         /* Loop through, starting at the next */
         for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
-            /* If controller window is full, nothing to do */
+#if (BLE_INCLUDED == TRUE)
             L2CAP_TRACE_DEBUG("window = %d,robin_unacked = %d,robin_quota=%d",l2cb.controller_le_xmit_window,l2cb.ble_round_robin_unacked,l2cb.ble_round_robin_quota);
+#endif  ///BLE_INCLUDED == TRUE
+            /* If controller window is full, nothing to do */
             if (((l2cb.controller_xmit_window == 0 ||
                     (l2cb.round_robin_unacked >= l2cb.round_robin_quota))
 #if (BLE_INCLUDED == TRUE)
@@ -1038,7 +1042,7 @@ void l2c_link_check_send_pkts (tL2C_LCB *p_lcb, tL2C_CCB *p_ccb, BT_HDR *p_buf)
                          l2cb.controller_le_xmit_window == 0 )))
 #else
                 ))
-#endif
+#endif  ///BLE_INCLUDED == TRUE
                 break;
 
 

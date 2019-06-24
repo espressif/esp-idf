@@ -210,13 +210,13 @@ void port_release_port (tPORT *p_port)
 
     osi_mutex_global_lock();
     RFCOMM_TRACE_DEBUG("port_release_port, p_port:%p", p_port);
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->rx.queue)) != NULL) {
+    while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->rx.queue, 0)) != NULL) {
         osi_free (p_buf);
     }
 
     p_port->rx.queue_size = 0;
 
-    while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_port->tx.queue)) != NULL) {
+    while ((p_buf = (BT_HDR *)fixed_queue_dequeue(p_port->tx.queue, 0)) != NULL) {
         osi_free (p_buf);
     }
 
