@@ -23,6 +23,7 @@
 #pragma once
 
 #include "hal/spi_flash_ll.h"
+#include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include "soc/soc_memory_layout.h"
 
@@ -44,7 +45,7 @@ typedef struct {
 
 /// Configuration structure for the SPI driver.
 typedef struct {
-    int host_id;            ///< SPI peripheral ID, 1 for SPI1, 2 for SPI2 (HSPI), 3 for SPI3 (VSPI)
+    spi_host_device_t host_id;            ///< SPI peripheral ID.
     int cs_num;             ///< Which cs pin is used, 0-2.
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock， used for timing compensation.

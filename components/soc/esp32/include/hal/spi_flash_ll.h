@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include "soc/spi_periph.h"
+#include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
@@ -39,10 +40,7 @@
 #define SPI_FLASH_LL_CLKREG_VAL_80MHZ   ((spi_flash_ll_clock_reg_t){.val=0x80000000})   ///< Clock set to 80 MHz
 
 /// Get the start address of SPI peripheral registers by the host ID
-#define spi_flash_ll_get_hw(n)  ((n)==0||(n)==1? &SPI1:((n)==2?&SPI2:((n)==3?&SPI3:({abort();(spi_dev_t*)0;}))))
-
-///Slowest io mode supported by ESP32, currently SlowRd
-#define SPI_FLASH_READ_MODE_MIN SPI_FLASH_SLOWRD
+#define spi_flash_ll_get_hw(host_id)  ((host_id)==SPI1_HOST? &SPI1:((host_id)==SPI2_HOST?&SPI2:((host_id)==SPI3_HOST?&SPI3:({abort();(spi_dev_t*)0;}))))
 
 /// type to store pre-calculated register value in above layers
 typedef typeof(SPI1.clock) spi_flash_ll_clock_reg_t;
