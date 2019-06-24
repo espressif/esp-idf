@@ -10,7 +10,7 @@ ESP32-PICO-KIT V4/V4.1 入门指南
 准备工作
 --------
 
-* :ref:`ESP32-PICO-KIT 迷你开发板 <get-started-pico-kit-v4-board-front-cmake>`
+* :ref:`ESP32-PICO-KIT 迷你开发板 <get-started-pico-kit-v4-board-front>`
 * USB 2.0 线（A 型转 Micro-B 型）
 * PC（Windows、Linux 或 Mac OS）
 
@@ -56,7 +56,7 @@ ESP32-PICO-KIT 开发板的主要组件和连接方式见下。
 
 ESP32-PICO-KIT 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-pico-kit-v4-board-front-cmake:
+.. _get-started-pico-kit-v4-board-front:
 
 .. figure:: ../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
@@ -106,7 +106,7 @@ EN                  复位按键。
 管脚说明
 ----------
 
-下表介绍了开发板 I/O 管脚的 **名称** 和 **功能**，具体布局请见 `相关文档`_ 中的原理图。请参考 :ref:`get-started-pico-kit-v4-board-front-cmake`。
+下表介绍了开发板 I/O 管脚的 **名称** 和 **功能**，具体布局请见 `相关文档`_ 中的原理图。请参考 :ref:`get-started-pico-kit-v4-board-front`。
 
 
 Header J2
@@ -115,9 +115,9 @@ Header J2
 ======  =================  ======  ======================================================
 编号     名称               类型     功能
 ======  =================  ======  ======================================================
-1       FLASH_SD1 (FSD1)   I/O     | GPIO8, SD_DATA1, SPID, HS1_DATA1 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes-cmake>` , U2CTS
-2       FLASH_SD3 (FSD3)   I/O     | GPIO7, SD_DATA0, SPIQ, HS1_DATA0 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes-cmake>` , U2RTS
-3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes-cmake>` , U1CTS 
+1       FLASH_SD1 (FSD1)   I/O     | GPIO8, SD_DATA1, SPID, HS1_DATA1 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U2CTS
+2       FLASH_SD3 (FSD3)   I/O     | GPIO7, SD_DATA0, SPIQ, HS1_DATA0 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U2RTS
+3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U1CTS 
 4       IO21               I/O     | GPIO21, VSPIHD, EMAC_TX_EN
 5       IO22               I/O     | GPIO22, VSPIWP, U0RTS, EMAC_TXD1
 6       IO19               I/O     | GPIO19, VSPIQ, U0CTS, EMAC_TXD0
@@ -126,8 +126,8 @@ Header J2
 9       IO5                I/O     | GPIO5, VSPICS0, HS1_DATA6, EMAC_RX_CLK
 10      IO10               I/O     | GPIO10, SD_DATA3, SPIWP, HS1_DATA3, U1TXD
 11      IO9                I/O     | GPIO9, SD_DATA2, SPIHD, HS1_DATA2, U1RXD
-12      RXD0               I/O     | GPIO3, U0RXD :ref:`（见说明 3） <get-started-pico-kit-v4-pin-notes-cmake>` , CLK_OUT2
-13      TXD0               I/O     | GPIO1, U0TXD :ref:`（见说明 3） <get-started-pico-kit-v4-pin-notes-cmake>` , CLK_OUT3, EMAC_RXD2
+12      RXD0               I/O     | GPIO3, U0RXD :ref:`（见说明 3） <get-started-pico-kit-v4-pin-notes>` , CLK_OUT2
+13      TXD0               I/O     | GPIO1, U0TXD :ref:`（见说明 3） <get-started-pico-kit-v4-pin-notes>` , CLK_OUT3, EMAC_RXD2
 14      IO35               I       | ADC1_CH7, RTC_GPIO5
 15      IO34               I       | ADC1_CH6, RTC_GPIO4
 16      IO38               I       | GPIO38, ADC1_CH2, RTC_GPIO2
@@ -144,20 +144,20 @@ Header J3
 ======  =================  ======  ======================================================
 No.     Name               Type    Function
 ======  =================  ======  ======================================================
-1       FLASH_CS (FCS)     I/O     | GPIO16, HS1_DATA4 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes-cmake>` , U2RXD, EMAC_CLK_OUT
-2       FLASH_SD0 (FSD0)   I/O     | GPIO17, HS1_DATA5 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes-cmake>` , U2TXD, EMAC_CLK_OUT_180
-3       FLASH_SD2 (FSD2)   I/O     | GPIO11, SD_CMD, SPICS0, HS1_CMD :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes-cmake>` , U1RTS
+1       FLASH_CS (FCS)     I/O     | GPIO16, HS1_DATA4 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U2RXD, EMAC_CLK_OUT
+2       FLASH_SD0 (FSD0)   I/O     | GPIO17, HS1_DATA5 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U2TXD, EMAC_CLK_OUT_180
+3       FLASH_SD2 (FSD2)   I/O     | GPIO11, SD_CMD, SPICS0, HS1_CMD :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U1RTS
 4       SENSOR_VP (FSVP)   I       | GPIO36, ADC1_CH0, RTC_GPIO0
 5       SENSOR_VN (FSVN)   I       | GPIO39, ADC1_CH3, RTC_GPIO3
 6       IO25               I/O     | GPIO25, DAC_1, ADC2_CH8, RTC_GPIO6, EMAC_RXD0
 7       IO26               I/O     | GPIO26, DAC_2, ADC2_CH9, RTC_GPIO7, EMAC_RXD1
-8       IO32               I/O     | 32K_XP :ref:`（见说明 2a） <get-started-pico-kit-v4-pin-notes-cmake>` , ADC1_CH4, TOUCH9, RTC_GPIO9
-9       IO33               I/O     | 32K_XN :ref:`（见说明 2b） <get-started-pico-kit-v4-pin-notes-cmake>` , ADC1_CH5, TOUCH8, RTC_GPIO8
+8       IO32               I/O     | 32K_XP :ref:`（见说明 2a） <get-started-pico-kit-v4-pin-notes>` , ADC1_CH4, TOUCH9, RTC_GPIO9
+9       IO33               I/O     | 32K_XN :ref:`（见说明 2b） <get-started-pico-kit-v4-pin-notes>` , ADC1_CH5, TOUCH8, RTC_GPIO8
 10      IO27               I/O     | GPIO27, ADC2_CH7, TOUCH7, RTC_GPIO17
                                    | EMAC_RX_DV
 11      IO14               I/O     | ADC2_CH6, TOUCH6, RTC_GPIO16, MTMS, HSPICLK,
                                    | HS2_CLK, SD_CLK, EMAC_TXD2
-12      IO12               I/O     | ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI :ref:`（见说明 4） <get-started-pico-kit-v4-pin-notes-cmake>` , HSPIQ,
+12      IO12               I/O     | ADC2_CH5, TOUCH5, RTC_GPIO15, MTDI :ref:`（见说明 4） <get-started-pico-kit-v4-pin-notes>` , HSPIQ,
                                    | HS2_DATA2, SD_DATA2, EMAC_TXD3
 13      IO13               I/O     | ADC2_CH4, TOUCH4, RTC_GPIO14, MTCK, HSPID,
                                    | HS2_DATA3, SD_DATA3, EMAC_RX_ER
@@ -175,7 +175,7 @@ No.     Name               Type    Function
 ======  =================  ======  ======================================================
 
 
-.. _get-started-pico-kit-v4-pin-notes-cmake:
+.. _get-started-pico-kit-v4-pin-notes:
 
 有关上表的说明：
 
@@ -190,9 +190,7 @@ No.     Name               Type    Function
 
 ESP32-PICO-KIT 上电前，请首先确认开发板完好无损。
 
-之后，请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
-
-如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
+之后，请前往 :doc:`../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 开发板尺寸
