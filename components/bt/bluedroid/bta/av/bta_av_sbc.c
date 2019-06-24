@@ -31,24 +31,13 @@
 #include "common/bt_defs.h"
 
 #if defined(BTA_AV_INCLUDED) && (BTA_AV_INCLUDED == TRUE)
+#include "bta_av_int.h"
 
-typedef int (tBTA_AV_SBC_ACT)(void *p_src, void *p_dst,
-                              UINT32 src_samples, UINT32 dst_samples,
-                              UINT32 *p_ret);
-
-typedef struct {
-    INT32               cur_pos;    /* current position */
-    UINT32              src_sps;    /* samples per second (source audio data) */
-    UINT32              dst_sps;    /* samples per second (converted audio data) */
-    tBTA_AV_SBC_ACT     *p_act;     /* the action function to do the conversion */
-    UINT16              bits;       /* number of bits per pcm sample */
-    UINT16              n_channels; /* number of channels (i.e. mono(1), stereo(2)...) */
-    INT16               worker1;
-    INT16               worker2;
-    UINT8               div;
-} tBTA_AV_SBC_UPS_CB;
-
-tBTA_AV_SBC_UPS_CB bta_av_sbc_ups_cb;
+#if BTA_DYNAMIC_MEMORY == FALSE
+static tBTA_AV_SBC_UPS_CB bta_av_sbc_ups_cb;
+#else
+tBTA_AV_SBC_UPS_CB *bta_av_sbc_ups_cb_ptr;
+#endif
 
 /*******************************************************************************
 **

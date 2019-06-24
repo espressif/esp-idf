@@ -243,12 +243,13 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         (*p_cb) (L2CAP_PING_RESULT_NO_LINK);
     }
 
+#if (BLE_INCLUDED == TRUE)
 	/* Check and release all the LE COC connections waiting for security */
     if (p_lcb->le_sec_pending_q)
     {
         while (!fixed_queue_is_empty(p_lcb->le_sec_pending_q))
         {
-            tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q);
+            tL2CAP_SEC_DATA *p_buf = (tL2CAP_SEC_DATA*) fixed_queue_dequeue(p_lcb->le_sec_pending_q, FIXED_QUEUE_MAX_TIMEOUT);
             if (p_buf->p_callback) {
                 p_buf->p_callback(p_lcb->remote_bd_addr, p_lcb->transport, p_buf->p_ref_data, BTM_DEV_RESET);
             }
@@ -257,6 +258,7 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
         fixed_queue_free(p_lcb->le_sec_pending_q, NULL);
         p_lcb->le_sec_pending_q = NULL;
     }
+#endif  ///BLE_INCLUDED == TRUE
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
     p_lcb->completed_packets = 0;
@@ -928,7 +930,7 @@ void l2cu_send_peer_disc_req (tL2C_CCB *p_ccb)
        layer checks that all buffers are sent before disconnecting.
     */
     if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
-        while ((p_buf2 = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q)) != NULL) {
+        while ((p_buf2 = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0)) != NULL) {
             l2cu_set_acl_hci_header (p_buf2, p_ccb);
             l2c_link_check_send_pkts (p_ccb->p_lcb, p_ccb, p_buf2);
         }
@@ -1765,6 +1767,7 @@ tL2C_RCB *l2cu_allocate_rcb (UINT16 psm)
     return (NULL);
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_allocate_ble_rcb
@@ -1796,6 +1799,7 @@ tL2C_RCB *l2cu_allocate_ble_rcb (UINT16 psm)
     /* If here, no free RCB found */
     return (NULL);
 }
+#endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -1867,6 +1871,7 @@ tL2C_RCB *l2cu_find_rcb_by_psm (UINT16 psm)
     return (NULL);
 }
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         l2cu_find_ble_rcb_by_psm
@@ -1892,7 +1897,7 @@ tL2C_RCB *l2cu_find_ble_rcb_by_psm (UINT16 psm)
     /* If here, no match found */
     return (NULL);
 }
-
+#endif  ///BLE_INCLUDED == TRUE
 
 
 /*******************************************************************************
@@ -3483,7 +3488,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
 
         } else {
             if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-                p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+                p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
                 if (NULL == p_buf) {
                     L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send: No data to be sent");
                     return (NULL);
@@ -3520,7 +3525,7 @@ BT_HDR *l2cu_get_next_buffer_to_send (tL2C_LCB *p_lcb)
         }
 
     } else {
-        p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+        p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
         if (NULL == p_buf) {
             L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send() #2: No data to be sent");
             return (NULL);

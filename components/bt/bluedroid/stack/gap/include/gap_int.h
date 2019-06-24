@@ -142,8 +142,13 @@ typedef struct {
 #endif
 } tGAP_CB;
 
-
+#if GAP_DYNAMIC_MEMORY == FALSE
 extern tGAP_CB  gap_cb;
+#else
+extern tGAP_CB  *gap_cb_ptr;
+#define gap_cb (*gap_cb_ptr)
+#endif
+
 #if (GAP_CONN_INCLUDED == TRUE)
 extern void gap_conn_init(void);
 #endif

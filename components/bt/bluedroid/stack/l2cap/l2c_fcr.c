@@ -752,7 +752,7 @@ void l2c_fcr_proc_pdu (tL2C_CCB *p_ccb, BT_HDR *p_buf)
         fixed_queue_t *temp_q = p_ccb->fcrb.srej_rcv_hold_q;
         p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(QUEUE_SIZE_MAX);
 
-        while ((p_buf = (BT_HDR *)fixed_queue_try_dequeue(temp_q)) != NULL) {
+        while ((p_buf = (BT_HDR *)fixed_queue_dequeue(temp_q, 0)) != NULL) {
             if (p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {
                 /* Get the control word */
                 p = ((UINT8 *)(p_buf + 1)) + p_buf->offset - L2CAP_FCR_OVERHEAD;
@@ -921,7 +921,7 @@ static BOOLEAN process_reqseq (tL2C_CCB *p_ccb, UINT16 ctrl_word)
 #endif
 
         for (xx = 0; xx < num_bufs_acked; xx++) {
-            BT_HDR *p_tmp = (BT_HDR *)fixed_queue_try_dequeue(p_fcrb->waiting_for_ack_q);
+            BT_HDR *p_tmp = (BT_HDR *)fixed_queue_dequeue(p_fcrb->waiting_for_ack_q, 0);
             ls = p_tmp->layer_specific & L2CAP_FCR_SAR_BITS;
 
             if ( (ls == L2CAP_FCR_UNSEG_SDU) || (ls == L2CAP_FCR_END_SDU) ) {
@@ -1118,7 +1118,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                                        num_lost, tx_seq, p_fcrb->next_seq_expected, p_fcrb->rej_sent);
 
                     p_buf->layer_specific = tx_seq;
-                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf);
+                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
                 } else {
                     L2CAP_TRACE_WARNING ("process_i_frame() CID: 0x%04x  frame dropped in Srej Sent next_srej:%u  hold_q.count:%u  win_sz:%u",
                                          p_ccb->local_cid, next_srej, fixed_queue_length(p_fcrb->srej_rcv_hold_q), p_ccb->our_cfg.fcr.tx_win_sz);
@@ -1147,7 +1147,7 @@ static void process_i_frame (tL2C_CCB *p_ccb, BT_HDR *p_buf, UINT16 ctrl_word, B
                                              p_ccb->local_cid, tx_seq, fixed_queue_length(p_fcrb->srej_rcv_hold_q));
                     }
                     p_buf->layer_specific = tx_seq;
-                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf);
+                    fixed_queue_enqueue(p_fcrb->srej_rcv_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
                     p_fcrb->srej_sent = TRUE;
                     l2c_fcr_send_S_frame (p_ccb, L2CAP_FCR_SUP_SREJ, 0);
                 }
@@ -1471,7 +1471,7 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
 
         /* Also flush our retransmission queue */
         while (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
-            osi_free(fixed_queue_try_dequeue(p_ccb->fcrb.retrans_q));
+            osi_free(fixed_queue_dequeue(p_ccb->fcrb.retrans_q, 0));
 		}
 
         if (list_ack != NULL) {
@@ -1490,7 +1490,7 @@ static BOOLEAN retransmit_i_frames (tL2C_CCB *p_ccb, UINT8 tx_seq)
             {
                 p_buf2->layer_specific = p_buf->layer_specific;
 
-                fixed_queue_enqueue(p_ccb->fcrb.retrans_q, p_buf2);
+                fixed_queue_enqueue(p_ccb->fcrb.retrans_q, p_buf2, FIXED_QUEUE_MAX_TIMEOUT);
             }
 
             if ( (tx_seq != L2C_FCR_RETX_ALL_PKTS) || (p_buf2 == NULL) ) {
@@ -1534,7 +1534,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
 
     /* If there is anything in the retransmit queue, that goes first
     */
-    p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->fcrb.retrans_q);
+    p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->fcrb.retrans_q, 0);
     if (p_buf != NULL) {
         /* Update Rx Seq and FCS if we acked some packets while this one was queued */
         prepare_I_frame (p_ccb, p_buf, TRUE);
@@ -1586,7 +1586,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
             return (NULL);
         }
     } else { /* Use the original buffer if no segmentation, or the last segment */
-        p_xmit = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+        p_xmit = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
 
         if (p_xmit->event != 0) {
             last_seg = TRUE;
@@ -1647,7 +1647,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
             }
 
             /* Pretend we sent it and it got lost */
-            fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_xmit);
+            fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_xmit, FIXED_QUEUE_MAX_TIMEOUT);
             return (NULL);
         } else {
 #if (L2CAP_ERTM_STATS == TRUE)
@@ -1661,7 +1661,7 @@ BT_HDR *l2c_fcr_get_next_xmit_sdu_seg (tL2C_CCB *p_ccb, UINT16 max_packet_length
             }
 
             p_wack->layer_specific = p_xmit->layer_specific;
-            fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_wack);
+            fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_wack, FIXED_QUEUE_MAX_TIMEOUT);
         }
 
 #if (L2CAP_ERTM_STATS == TRUE)

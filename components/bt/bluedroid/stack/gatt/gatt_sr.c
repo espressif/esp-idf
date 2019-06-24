@@ -140,7 +140,7 @@ void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb)
 
     if (p_tcb->sr_cmd.multi_rsp_q) {
         while (!fixed_queue_is_empty(p_tcb->sr_cmd.multi_rsp_q)) {
-            osi_free(fixed_queue_try_dequeue(p_tcb->sr_cmd.multi_rsp_q));
+            osi_free(fixed_queue_dequeue(p_tcb->sr_cmd.multi_rsp_q, 0));
         }
         fixed_queue_free(p_tcb->sr_cmd.multi_rsp_q, NULL);
     }
@@ -178,7 +178,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
     }
     memcpy((void *)p_buf, (const void *)p_msg, sizeof(tGATTS_RSP));
 
-    fixed_queue_enqueue(p_cmd->multi_rsp_q, p_buf);
+    fixed_queue_enqueue(p_cmd->multi_rsp_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
 
     p_cmd->status = status;
     if (status == GATT_SUCCESS) {
@@ -418,7 +418,7 @@ void gatt_process_exec_write_req (tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len, U
 
     //dequeue prepare write data
     while(fixed_queue_try_peek_first(prepare_record->queue)) {
-        queue_data = fixed_queue_dequeue(prepare_record->queue);
+        queue_data = fixed_queue_dequeue(prepare_record->queue, FIXED_QUEUE_MAX_TIMEOUT);
         if (is_prepare_write_valid){
             if((queue_data->p_attr->p_value != NULL) && (queue_data->p_attr->p_value->attr_val.attr_val != NULL)){
                 if(is_first) {
@@ -1291,7 +1291,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
             if (prepare_record->queue == NULL) {
                 prepare_record->queue = fixed_queue_new(QUEUE_SIZE_MAX);
             }
-            fixed_queue_enqueue(prepare_record->queue, queue_data);
+            fixed_queue_enqueue(prepare_record->queue, queue_data, FIXED_QUEUE_MAX_TIMEOUT);
         }
     }
     

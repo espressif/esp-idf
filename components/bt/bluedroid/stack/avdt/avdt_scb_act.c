@@ -1232,7 +1232,7 @@ void avdt_scb_hdl_write_req_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
         /* this shouldn't be happening */
         AVDT_TRACE_WARNING("*** Dropped media packet; congested");
         BT_HDR *p_frag;
-        while ((p_frag = (BT_HDR*)fixed_queue_try_dequeue(p_scb->frag_q)) != NULL)
+        while ((p_frag = (BT_HDR*)fixed_queue_dequeue(p_scb->frag_q, 0)) != NULL)
              osi_free(p_frag);
     }
 
@@ -1397,7 +1397,7 @@ void avdt_scb_snd_stream_close(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     /* clean fragments queue */
     BT_HDR *p_frag;
-    while ((p_frag = (BT_HDR*)fixed_queue_try_dequeue(p_scb->frag_q)) != NULL) {
+    while ((p_frag = (BT_HDR*)fixed_queue_dequeue(p_scb->frag_q, 0)) != NULL) {
         osi_free(p_frag);
     }
     p_scb->frag_off = 0;
@@ -1824,7 +1824,7 @@ void avdt_scb_free_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 #if AVDT_MULTIPLEXING == TRUE
     /* clean fragments queue */
     BT_HDR          *p_frag;
-    while ((p_frag = (BT_HDR*)fixed_queue_try_dequeue(p_scb->frag_q)) != NULL) {
+    while ((p_frag = (BT_HDR*)fixed_queue_dequeue(p_scb->frag_q, 0)) != NULL) {
          osi_free(p_frag);
 	}
 #endif
@@ -1880,7 +1880,7 @@ void avdt_scb_clr_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
         AVDT_TRACE_DEBUG("Dropped fragments queue");
         /* clean fragments queue */
         BT_HDR *p_frag;
-        while ((p_frag = (BT_HDR*)fixed_queue_try_dequeue(p_scb->frag_q)) != NULL) {
+        while ((p_frag = (BT_HDR*)fixed_queue_dequeue(p_scb->frag_q, 0)) != NULL) {
              osi_free(p_frag);
 		}
         p_scb->frag_off = 0;
@@ -1933,7 +1933,7 @@ void avdt_scb_chk_snd_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
                              L2CA_FlushChannel(avdt_cb.ad.rt_tbl[avdt_ccb_to_idx(p_scb->p_ccb)][avdt_ad_type_to_tcid(AVDT_CHAN_MEDIA, p_scb)].lcid),
                              L2CAP_FLUSH_CHANS_GET);
 #endif
-            while ((p_pkt = (BT_HDR*)fixed_queue_try_dequeue(p_scb->frag_q)) != NULL) {
+            while ((p_pkt = (BT_HDR*)fixed_queue_dequeue(p_scb->frag_q, 0)) != NULL) {
                 sent = TRUE;
                 AVDT_TRACE_DEBUG("Send fragment len=%d\n", p_pkt->len);
                 /* fragments queue contains fragment to send */
@@ -2096,7 +2096,7 @@ void avdt_scb_queue_frags(tAVDT_SCB *p_scb, UINT8 **pp_data, UINT32 *p_data_len,
             UINT16_TO_BE_STREAM(p, p_frag->layer_specific );
         }
         /* put fragment into gueue */
-        fixed_queue_enqueue(p_scb->frag_q, p_frag);
+        fixed_queue_enqueue(p_scb->frag_q, p_frag, FIXED_QUEUE_MAX_TIMEOUT);
         num_frag--;
     }
 }

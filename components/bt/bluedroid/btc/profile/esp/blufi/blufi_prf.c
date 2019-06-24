@@ -55,13 +55,17 @@
 
 #define BLUFI_HDL_NUM   6
 
+#if GATT_DYNAMIC_MEMORY == FALSE
 tBLUFI_ENV blufi_env;
+#else
+tBLUFI_ENV *blufi_env_ptr;
+#endif
 
-static /* const */ tBT_UUID blufi_srvc_uuid = {LEN_UUID_16, {BLUFI_SERVICE_UUID}};
-static /* const */ tBT_UUID blufi_char_uuid_p2e = {LEN_UUID_16, {BLUFI_CHAR_P2E_UUID}};
-static /* const */ tBT_UUID blufi_char_uuid_e2p = {LEN_UUID_16, {BLUFI_CHAR_E2P_UUID}};
-static /* const */ tBT_UUID blufi_descr_uuid_e2p = {LEN_UUID_16, {BLUFI_DESCR_E2P_UUID}};
-static /* const */ tBT_UUID blufi_app_uuid = {LEN_UUID_16, {BLUFI_APP_UUID}};
+static  const  tBT_UUID blufi_srvc_uuid = {LEN_UUID_16, {BLUFI_SERVICE_UUID}};
+static  const  tBT_UUID blufi_char_uuid_p2e = {LEN_UUID_16, {BLUFI_CHAR_P2E_UUID}};
+static  const  tBT_UUID blufi_char_uuid_e2p = {LEN_UUID_16, {BLUFI_CHAR_E2P_UUID}};
+static  const  tBT_UUID blufi_descr_uuid_e2p = {LEN_UUID_16, {BLUFI_DESCR_E2P_UUID}};
+static  const  tBT_UUID blufi_app_uuid = {LEN_UUID_16, {BLUFI_APP_UUID}};
 
 // static functions declare
 static void blufi_profile_cb(tBTA_GATTS_EVT event,  tBTA_GATTS *p_data);
@@ -189,7 +193,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
             BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                           p_data->req_data.status, NULL);
         }
-        
+
         if (p_data->req_data.p_data->write_req.handle == blufi_env.handle_char_p2e) {
             btc_blufi_recv_handler(&p_data->req_data.p_data->write_req.value[0],
                                     p_data->req_data.p_data->write_req.len);
@@ -363,7 +367,7 @@ static void btc_blufi_send_notify(uint8_t *pkt, int pkt_len)
     UINT16 conn_id = blufi_env.conn_id;
     UINT16 attr_id = blufi_env.handle_char_e2p;
     bool rsp = false;
-    
+
     BTA_GATTS_HandleValueIndication(conn_id, attr_id, pkt_len,
                                      pkt, rsp);
 }
@@ -479,7 +483,7 @@ void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
         hdr->type = type;
         hdr->fc |= BLUFI_FC_DIR_E2P;
         hdr->seq = blufi_env.send_seq++;
- 
+
         if (BLUFI_TYPE_IS_CTRL(hdr->type)) {
             if ((blufi_env.sec_mode & BLUFI_CTRL_SEC_MODE_CHECK_MASK)
                     && (blufi_env.cbs && blufi_env.cbs->checksum_func)) {
@@ -1052,7 +1056,7 @@ void btc_blufi_call_deep_free(btc_msg_t *msg)
     case BTC_BLUFI_ACT_SEND_CUSTOM_DATA:{
         uint8_t *data = arg->custom_data.data;
         if(data) {
-            osi_free(data);    
+            osi_free(data);
         }
         break;
     }

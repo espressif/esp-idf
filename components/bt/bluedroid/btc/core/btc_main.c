@@ -64,15 +64,20 @@ static void btc_init_bluetooth(void)
     bte_main_boot_entry(btc_init_callback);
 #if (SMP_INCLUDED)
     btc_config_init();
+
+#if (BLE_INCLUDED == TRUE)
     //load the ble local key which has been stored in the flash
     btc_dm_load_ble_local_keys();
+#endif  ///BLE_INCLUDED == TRUE
 #endif /* #if (SMP_INCLUDED) */
 }
 
 
 static void btc_deinit_bluetooth(void)
 {
+#if (BLE_INCLUDED == TRUE)
     btc_gap_ble_deinit();
+#endif  ///BLE_INCLUDED == TRUE
     bta_dm_sm_deinit();
 #if (GATTC_INCLUDED)
     bta_gattc_deinit();

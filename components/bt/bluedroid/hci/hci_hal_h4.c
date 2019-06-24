@@ -30,6 +30,7 @@
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
 #include "l2c_int.h"
 #endif ///C2H_FLOW_CONTROL_INCLUDED == TRUE
+#include "stack/hcimsgs.h"
 
 #define HCI_HAL_SERIAL_BUFFER_SIZE 1026
 #define HCI_BLE_EVENT 0x3e
@@ -63,9 +64,7 @@ static hci_hal_env_t hci_hal_env;
 static const hci_hal_t interface;
 static const hci_hal_callbacks_t *callbacks;
 static const esp_vhci_host_callback_t vhci_host_cb;
-
-static xTaskHandle xHciH4TaskHandle;
-static xQueueHandle xHciH4Queue;
+static osi_thread_t *hci_h4_thread;
 
 static void host_send_pkt_available_cb(void);
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len);
@@ -100,9 +99,11 @@ static void hci_hal_env_deinit(void)
     hci_hal_env.rx_q = NULL;
 }
 
-static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
+static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thread)
 {
     assert(upper_callbacks != NULL);
+    assert(task_thread != NULL);
+
     callbacks = upper_callbacks;
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, BLE_ADV_REPORT_FLOW_CONTROL_NUM + L2CAP_HOST_FC_ACL_BUFS + QUEUE_SIZE_MAX); // adv flow control num + ACL flow control num + hci cmd numeber
@@ -110,8 +111,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks)
     hci_hal_env_init(HCI_HAL_SERIAL_BUFFER_SIZE, QUEUE_SIZE_MAX);
 #endif
 
-    xHciH4Queue = xQueueCreate(HCI_H4_QUEUE_LEN, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(hci_hal_h4_rx_handler, HCI_H4_TASK_NAME, HCI_H4_TASK_STACK_SIZE, NULL, HCI_H4_TASK_PRIO, &xHciH4TaskHandle, HCI_H4_TASK_PINNED_TO_CORE);
+    hci_h4_thread = (osi_thread_t *)task_thread;
 
     //register vhci host cb
     if (esp_vhci_host_register_callback(&vhci_host_cb) != ESP_OK) {
@@ -125,9 +125,7 @@ static void hal_close()
 {
     hci_hal_env_deinit();
 
-    /* delete task and queue */
-    vTaskDelete(xHciH4TaskHandle);
-    vQueueDelete(xHciH4Queue);
+    hci_h4_thread = NULL;
 }
 
 /**
@@ -169,30 +167,12 @@ static uint16_t transmit_data(serial_data_type_t type,
 // Internal functions
 static void hci_hal_h4_rx_handler(void *arg)
 {
-    BtTaskEvt_t e;
-
-    for (;;) {
-        if (pdTRUE == xQueueReceive(xHciH4Queue, &e, (portTickType)portMAX_DELAY)) {
-            if (e.sig == SIG_HCI_HAL_RECV_PACKET) {
-                fixed_queue_process(hci_hal_env.rx_q);
-
-            }
-        }
-    }
+    fixed_queue_process(hci_hal_env.rx_q);
 }
 
-task_post_status_t hci_hal_h4_task_post(task_post_t timeout)
+bool hci_hal_h4_task_post(uint32_t timeout)
 {
-    BtTaskEvt_t evt;
-
-    evt.sig = SIG_HCI_HAL_RECV_PACKET;
-    evt.par = 0;
-
-    if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
-        return TASK_POST_SUCCESS;
-    }
-
-    return TASK_POST_FAIL;
+    return osi_thread_post(hci_h4_thread, hci_hal_h4_rx_handler, NULL, 1, timeout);
 }
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
@@ -334,7 +314,7 @@ static void event_uart_has_bytes(fixed_queue_t *queue)
 {
     BT_HDR *packet;
     while (!fixed_queue_is_empty(queue)) {
-        packet = fixed_queue_dequeue(queue);
+        packet = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
         hci_hal_h4_hdl_rx_packet(packet);
     }
 }
@@ -343,7 +323,7 @@ static void host_send_pkt_available_cb(void)
 {
     //Controller rx cache buffer is ready for receiving new host packet
     //Just Call Host main thread task to process pending packets.
-    hci_host_task_post(TASK_POST_BLOCKING);
+    hci_host_task_post(OSI_THREAD_MAX_TIMEOUT);
 }
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
@@ -367,8 +347,9 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
     pkt->len = len;
     pkt->layer_specific = 0;
     memcpy(pkt->data, data, len);
-    fixed_queue_enqueue(hci_hal_env.rx_q, pkt);
+    fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
     hci_hal_h4_task_post(0);
+
 
     BTTRC_DUMP_BUFFER("Recv Pkt", pkt->data, len);
 

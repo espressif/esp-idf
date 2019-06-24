@@ -1440,7 +1440,7 @@ void avdt_msg_send_cmd(tAVDT_CCB *p_ccb, void *p_scb, UINT8 sig_id, tAVDT_MSG *p
     p_ccb->label = (p_ccb->label + 1) % 16;
 
     /* queue message and trigger ccb to send it */
-    fixed_queue_enqueue(p_ccb->cmd_q, p_buf);
+    fixed_queue_enqueue(p_ccb->cmd_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     avdt_ccb_event(p_ccb, AVDT_CCB_SENDMSG_EVT, NULL);
 }
 
@@ -1487,7 +1487,7 @@ void avdt_msg_send_rsp(tAVDT_CCB *p_ccb, UINT8 sig_id, tAVDT_MSG *p_params)
     AVDT_BLD_LAYERSPEC(p_buf->layer_specific, AVDT_MSG_TYPE_RSP, p_params->hdr.label);
 
     /* queue message and trigger ccb to send it */
-    fixed_queue_enqueue(p_ccb->rsp_q, p_buf);
+    fixed_queue_enqueue(p_ccb->rsp_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     avdt_ccb_event(p_ccb, AVDT_CCB_SENDMSG_EVT, NULL);
 }
 
@@ -1547,7 +1547,7 @@ void avdt_msg_send_rej(tAVDT_CCB *p_ccb, UINT8 sig_id, tAVDT_MSG *p_params)
     AVDT_BLD_LAYERSPEC(p_buf->layer_specific, AVDT_MSG_TYPE_REJ, p_params->hdr.label);
 
     /* queue message and trigger ccb to send it */
-    fixed_queue_enqueue(p_ccb->rsp_q, p_buf);
+    fixed_queue_enqueue(p_ccb->rsp_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     avdt_ccb_event(p_ccb, AVDT_CCB_SENDMSG_EVT, NULL);
 }
 
@@ -1591,7 +1591,7 @@ void avdt_msg_send_grej(tAVDT_CCB *p_ccb, UINT8 sig_id, tAVDT_MSG *p_params)
     AVDT_TRACE_DEBUG("avdt_msg_send_grej");
 
     /* queue message and trigger ccb to send it */
-    fixed_queue_enqueue(p_ccb->rsp_q, p_buf);
+    fixed_queue_enqueue(p_ccb->rsp_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     avdt_ccb_event(p_ccb, AVDT_CCB_SENDMSG_EVT, NULL);
 }
 

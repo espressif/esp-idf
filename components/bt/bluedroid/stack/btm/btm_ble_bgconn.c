@@ -785,7 +785,7 @@ void btm_ble_enqueue_direct_conn_req(void *p_param)
 
     p->p_param = p_param;
 
-    fixed_queue_enqueue(btm_cb.ble_ctr_cb.conn_pending_q, p);
+    fixed_queue_enqueue(btm_cb.ble_ctr_cb.conn_pending_q, p, FIXED_QUEUE_MAX_TIMEOUT);
 }
 /*******************************************************************************
 **
@@ -801,7 +801,7 @@ BOOLEAN btm_send_pending_direct_conn(void)
     tBTM_BLE_CONN_REQ *p_req;
     BOOLEAN     rt = FALSE;
 
-    p_req = (tBTM_BLE_CONN_REQ*)fixed_queue_try_dequeue(btm_cb.ble_ctr_cb.conn_pending_q);
+    p_req = (tBTM_BLE_CONN_REQ*)fixed_queue_dequeue(btm_cb.ble_ctr_cb.conn_pending_q, 0);
     if (p_req != NULL) {
         rt = l2cble_init_direct_conn((tL2C_LCB *)(p_req->p_param));
 

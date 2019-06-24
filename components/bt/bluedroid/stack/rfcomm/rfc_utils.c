@@ -492,12 +492,12 @@ void rfc_check_send_cmd(tRFC_MCB *p_mcb, BT_HDR *p_buf)
                                __func__, p_mcb, p_mcb->lcid,
                                rfc_find_lcid_mcb(p_mcb->lcid));
         }
-        fixed_queue_enqueue(p_mcb->cmd_q, p_buf);
+        fixed_queue_enqueue(p_mcb->cmd_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
     }
 
     /* handle queue if L2CAP not congested */
     while (p_mcb->l2cap_congested == FALSE) {
-        if ((p = (BT_HDR *)fixed_queue_try_dequeue(p_mcb->cmd_q)) == NULL) {
+        if ((p = (BT_HDR *)fixed_queue_dequeue(p_mcb->cmd_q, 0)) == NULL) {
             break;
         }
 

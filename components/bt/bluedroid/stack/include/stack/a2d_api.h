@@ -23,6 +23,7 @@
  ******************************************************************************/
 #ifndef A2D_API_H
 #define A2D_API_H
+#include "common/bt_defs.h"
 #include "stack/sdp_api.h"
 #if (A2D_INCLUDED == TRUE)
 /*****************************************************************************
@@ -250,7 +251,7 @@ extern UINT8 A2D_BitsSet(UINT8 num);
 ** Returns          void
 **
 *******************************************************************************/
-extern void A2D_Init(void);
+extern bt_status_t A2D_Init(void);
 extern void A2D_Deinit(void);
 #endif  ///A2D_INCLUDED
 #endif /* A2D_API_H */

@@ -372,13 +372,16 @@ UINT8 A2D_BitsSet(UINT8 num)
 **                  other API functions for this layer.  It is typically called
 **                  once during the start up of the stack.
 **
-** Returns          void
+** Returns          status
 **
 *******************************************************************************/
-void A2D_Init(void)
+bt_status_t A2D_Init(void)
 {
 #if (A2D_DYNAMIC_MEMORY)
     a2d_cb_ptr = (tA2D_CB *)osi_malloc(sizeof(tA2D_CB));
+    if (!a2d_cb_ptr) {
+        return BT_STATUS_NOMEM;
+    }
 #endif /* #if (A2D_DYNAMIC_MEMORY) */
     memset(&a2d_cb, 0, sizeof(tA2D_CB));
 
@@ -389,6 +392,7 @@ void A2D_Init(void)
 #else
     a2d_cb.trace_level  = BT_TRACE_LEVEL_NONE;
 #endif
+    return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -404,8 +408,10 @@ void A2D_Init(void)
 void A2D_Deinit(void)
 {
 #if (A2D_DYNAMIC_MEMORY)
-    osi_free(a2d_cb_ptr);
-    a2d_cb_ptr = NULL;
+    if (a2d_cb_ptr) {
+        osi_free(a2d_cb_ptr);
+        a2d_cb_ptr = NULL;
+    }
 #endif /* #if (A2D_DYNAMIC_MEMORY) */
 }
 

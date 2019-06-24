@@ -30,7 +30,6 @@
 #include "osi/list.h"
 
 #ifndef     BTA_GATT_INCLUDED
-#warning BTA_GATT_INCLUDED not defined
 #define     BTA_GATT_INCLUDED     FALSE
 #endif
 
@@ -881,7 +880,7 @@ extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(UINT16 conn_
 *******************************************************************************/
 extern const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(UINT16 conn_id, UINT16 handle);
 
-extern void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid, 
+extern void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid,
                                          btgatt_db_element_t **db, int *count);
 
 extern void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
@@ -1234,7 +1233,7 @@ extern void BTA_GATTS_Disable(void);
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_GATTS_AppRegister(tBT_UUID *p_app_uuid, tBTA_GATTS_CBACK *p_cback);
+extern void BTA_GATTS_AppRegister(const tBT_UUID * p_app_uuid, tBTA_GATTS_CBACK *p_cback);
 
 
 /*******************************************************************************
@@ -1269,7 +1268,7 @@ extern void BTA_GATTS_AppDeregister(tBTA_GATTS_IF server_if);
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_GATTS_CreateService(tBTA_GATTS_IF server_if, tBT_UUID *p_service_uuid,
+extern void BTA_GATTS_CreateService(tBTA_GATTS_IF server_if, const tBT_UUID * p_service_uuid,
                                     UINT8 inst, UINT16 num_handle, BOOLEAN is_primary);
 
 /*******************************************************************************
@@ -1304,8 +1303,8 @@ extern void BTA_GATTS_AddIncludeService(UINT16 service_id, UINT16 included_servi
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_uuid,
-                                  tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property, tGATT_ATTR_VAL *attr_val, 
+extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  const tBT_UUID  * p_char_uuid,
+                                  tBTA_GATT_PERM perm, tBTA_GATT_CHAR_PROP property, tGATT_ATTR_VAL *attr_val,
                                   tBTA_GATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************
@@ -1327,7 +1326,7 @@ extern void BTA_GATTS_AddCharacteristic (UINT16 service_id,  tBT_UUID  *p_char_u
 *******************************************************************************/
 extern void BTA_GATTS_AddCharDescriptor (UINT16 service_id,
                                   tBTA_GATT_PERM perm,
-                                  tBT_UUID   *p_descr_uuid, tBTA_GATT_ATTR_VAL *attr_val, 
+                                  const tBT_UUID  * p_descr_uuid, tBTA_GATT_ATTR_VAL *attr_val,
                                   tBTA_GATTS_ATTR_CONTROL *control);
 
 /*******************************************************************************

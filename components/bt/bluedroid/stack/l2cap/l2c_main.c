@@ -52,6 +52,7 @@ tL2C_CB l2cb;
 tL2C_CB *l2c_cb_ptr;
 #endif
 
+#if 0 //Unused
 /*******************************************************************************
 **
 ** Function         l2c_bcst_msg
@@ -104,7 +105,7 @@ void l2c_bcst_msg( BT_HDR *p_buf, UINT16 psm )
         bte_main_hci_send(p_buf, BT_EVT_TO_LM_HCI_ACL);
     }
 }
-
+#endif
 
 /*******************************************************************************
 **
@@ -294,7 +295,9 @@ void l2c_rcv_acl_data (BT_HDR *p_msg)
                     /* we have received credits more than max coc credits,
                      * so disconnecting the Le Coc Channel
                      */
+#if (BLE_INCLUDED == TRUE)
                     l2cble_send_peer_disc_req (p_ccb);
+#endif  ///BLE_INCLUDED == TRUE
                 } else {
                     p_ccb->peer_conn_cfg.credits += credit;
                     l2c_link_check_send_pkts (p_ccb->p_lcb, NULL, NULL);
@@ -925,6 +928,7 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
         l2c_info_timeout((tL2C_LCB *)p_tle->param);
         break;
     case BTU_TTYPE_L2CAP_UPDA_CONN_PARAMS: {
+#if (BLE_INCLUDED == TRUE)
         UINT8 status = HCI_ERR_HOST_TIMEOUT;
         tL2C_LCB *p_lcb = (tL2C_LCB *)p_tle->param;
         if (p_lcb){
@@ -932,6 +936,7 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
             p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
         }
         l2c_send_update_conn_params_cb(p_lcb, status);
+#endif  ///BLE_INCLUDED == TRUE
         break;
     }
     }

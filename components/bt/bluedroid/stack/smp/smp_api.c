@@ -51,8 +51,12 @@ void SMP_Init(void)
 {
 #if SMP_DYNAMIC_MEMORY
     smp_cb_ptr = (tSMP_CB *)osi_malloc(sizeof(tSMP_CB));
+    curve_ptr = (elliptic_curve_t *)osi_malloc(sizeof(elliptic_curve_t));
+    curve_p256_ptr = (elliptic_curve_t *)osi_malloc(sizeof(elliptic_curve_t));
 #endif
     memset(&smp_cb, 0, sizeof(tSMP_CB));
+    memset(&curve, 0, sizeof(elliptic_curve_t));
+    memset(&curve_p256, 0, sizeof(elliptic_curve_t));
 
 #if defined(SMP_INITIAL_TRACE_LEVEL)
     smp_cb.trace_level = SMP_INITIAL_TRACE_LEVEL;
@@ -71,6 +75,8 @@ void SMP_Free(void)
     memset(&smp_cb, 0, sizeof(tSMP_CB));
 #if SMP_DYNAMIC_MEMORY
     FREE_AND_RESET(smp_cb_ptr);
+    FREE_AND_RESET(curve_ptr);
+    FREE_AND_RESET(curve_p256_ptr);
 #endif /* #if SMP_DYNAMIC_MEMORY */
 }
 
@@ -177,6 +183,7 @@ tSMP_STATUS SMP_Pair (BD_ADDR bd_addr)
 ** Returns          SMP_STARTED if pairing started, otherwise reason for failure.
 **
 *******************************************************************************/
+#if (CLASSIC_BT_INCLUDED == TRUE)
 tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
 {
     tSMP_CB   *p_cb = &smp_cb;
@@ -206,6 +213,7 @@ tSMP_STATUS SMP_BR_PairWith (BD_ADDR bd_addr)
 
     return SMP_STARTED;
 }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
 /*******************************************************************************
 **
@@ -252,6 +260,7 @@ void SMP_SecurityGrant(BD_ADDR bd_addr, UINT8 res)
 {
     SMP_TRACE_EVENT ("SMP_SecurityGrant ");
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (smp_cb.smp_over_br) {
         if (smp_cb.br_state != SMP_BR_STATE_WAIT_APP_RSP ||
                 smp_cb.cb_evt != SMP_SEC_REQUEST_EVT ||
@@ -265,6 +274,7 @@ void SMP_SecurityGrant(BD_ADDR bd_addr, UINT8 res)
         smp_br_state_machine_event(&smp_cb, SMP_BR_API_SEC_GRANT_EVT, &res);
         return;
     }
+#endif  ///CLASSIC_BT_INCLUDED == TRUE
 
     if (smp_cb.state != SMP_STATE_WAIT_APP_RSP ||
             smp_cb.cb_evt != SMP_SEC_REQUEST_EVT ||

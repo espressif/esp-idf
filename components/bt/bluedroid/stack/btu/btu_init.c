@@ -44,6 +44,11 @@
 #endif
 #endif
 
+#define BTU_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
+#define BTU_TASK_STACK_SIZE             (4096 + BT_TASK_EXTRA_STACK_SIZE)
+#define BTU_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 5)
+#define BTU_TASK_NAME                   "btuT"
+
 hash_map_t *btu_general_alarm_hash_map;
 osi_mutex_t btu_general_alarm_lock;
 static const size_t BTU_GENERAL_ALARM_HASH_MAP_SIZE = 34;
@@ -56,16 +61,14 @@ hash_map_t *btu_l2cap_alarm_hash_map;
 osi_mutex_t btu_l2cap_alarm_lock;
 static const size_t BTU_L2CAP_ALARM_HASH_MAP_SIZE = 34;
 
-//thread_t *bt_workqueue_thread;
-//static const char *BT_WORKQUEUE_NAME = "bt_workqueue";
-xTaskHandle  xBtuTaskHandle = NULL;
-xQueueHandle xBtuQueue = 0;
+osi_thread_t *btu_thread = NULL;
 
 extern void PLATFORM_DisableHciTransport(UINT8 bDisable);
 
 extern void btu_task_thread_handler(void *arg);
-void btu_task_start_up(void);
+void btu_task_start_up(void * param);
 void btu_task_shut_down(void);
+
 /*****************************************************************************
 **                          V A R I A B L E S                                *
 ******************************************************************************/
@@ -178,10 +181,14 @@ void BTU_StartUp(void)
 
     osi_mutex_new(&btu_l2cap_alarm_lock);
 
-    xBtuQueue = xQueueCreate(BTU_QUEUE_LEN, sizeof(BtTaskEvt_t));
-    xTaskCreatePinnedToCore(btu_task_thread_handler, BTU_TASK_NAME, BTU_TASK_STACK_SIZE, NULL, BTU_TASK_PRIO, &xBtuTaskHandle, BTU_TASK_PINNED_TO_CORE);
+    btu_thread = osi_thread_create(BTU_TASK_NAME, BTU_TASK_STACK_SIZE, BTU_TASK_PRIO, BTU_TASK_PINNED_TO_CORE, 1);
+    if (btu_thread == NULL) {
+        goto error_exit;
+    }
 
-    btu_task_post(SIG_BTU_START_UP, NULL, TASK_POST_BLOCKING);
+    if (btu_task_post(SIG_BTU_START_UP, NULL, OSI_THREAD_MAX_TIMEOUT) == false) {
+        goto error_exit;
+    }
 
     return;
 
@@ -190,6 +197,15 @@ error_exit:;
     BTU_ShutDown();
 }
 
+/*****************************************************************************
+**
+** Function         BTU_ShutDown
+**
+** Description      Deinitializes the BTU control block.
+**
+** Returns          void
+**
+******************************************************************************/
 void BTU_ShutDown(void)
 {
 #if BTU_DYNAMIC_MEMORY
@@ -206,17 +222,14 @@ void BTU_ShutDown(void)
     hash_map_free(btu_l2cap_alarm_hash_map);
     osi_mutex_free(&btu_l2cap_alarm_lock);
 
-    vTaskDelete(xBtuTaskHandle);
-    vQueueDelete(xBtuQueue);
+    if (btu_thread) {
+        osi_thread_free(btu_thread);
+        btu_thread = NULL;
+    }
 
     btu_general_alarm_hash_map = NULL;
-
     btu_oneshot_alarm_hash_map = NULL;
-
     btu_l2cap_alarm_hash_map = NULL;
-
-    xBtuTaskHandle = NULL;
-    xBtuQueue = 0;
 }
 
 /*****************************************************************************
@@ -236,13 +249,14 @@ UINT16 BTU_BleAclPktSize(void)
     return 0;
 #endif
 }
+
 #if SCAN_QUEUE_CONGEST_CHECK
 bool BTU_check_queue_is_congest(void)
 {
-    UBaseType_t wait_size = uxQueueMessagesWaiting(xBtuQueue);
-    if(wait_size >= QUEUE_CONGEST_SIZE ) {
+    if (osi_thread_queue_wait_size(btu_thread, 0) >= QUEUE_CONGEST_SIZE) {
         return true;
     }
+
     return false;
 }
 #endif

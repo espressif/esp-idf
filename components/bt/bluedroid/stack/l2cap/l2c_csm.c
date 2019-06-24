@@ -1243,7 +1243,7 @@ void l2c_enqueue_peer_data (tL2C_CCB *p_ccb, BT_HDR *p_buf)
         UINT16_TO_STREAM (p, p_ccb->remote_cid);
     }
 
-    fixed_queue_enqueue(p_ccb->xmit_hold_q, p_buf);
+    fixed_queue_enqueue(p_ccb->xmit_hold_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
 
     l2cu_check_channel_congestion (p_ccb);
 

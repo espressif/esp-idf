@@ -75,8 +75,10 @@ void btm_init (void)
 #endif
 
     btm_dev_init();                     /* Device Manager Structures & HCI_Reset */
-    btm_lock_init();
-    btm_sem_init();
+#if BLE_INCLUDED == TRUE
+    btm_ble_lock_init();
+    btm_ble_sem_init();
+#endif
 }
 
 
@@ -96,6 +98,8 @@ void btm_free(void)
 #if BTM_DYNAMIC_MEMORY
     FREE_AND_RESET(btm_cb_ptr);
 #endif
-    btm_lock_free();
-    btm_sem_free();
+#if BLE_INCLUDED == TRUE
+    btm_ble_lock_free();
+    btm_ble_sem_free();
+#endif
 }

@@ -43,15 +43,22 @@
  * between BTA_JvEnable and BTA_JvDisable
  * p_bta_jv_cfg->p_sdp_raw_data can be allocated before calling BTA_JvStartDiscovery
  * it can be de-allocated after the last call to access the database */
+#if BTA_DYNAMIC_MEMORY == FALSE
 static UINT8 bta_jv_sdp_raw_data[BTA_JV_SDP_RAW_DATA_SIZE];
 static UINT8 __attribute__ ((aligned(4))) bta_jv_sdp_db_data[BTA_JV_SDP_DB_SIZE];
+#endif
 
 /* JV configuration structure */
-const tBTA_JV_CFG bta_jv_cfg = {
+/*const */tBTA_JV_CFG bta_jv_cfg = {
     BTA_JV_SDP_RAW_DATA_SIZE,   /* The size of p_sdp_raw_data */
     BTA_JV_SDP_DB_SIZE,         /* The size of p_sdp_db_data */
+#if BTA_DYNAMIC_MEMORY == FALSE
     bta_jv_sdp_raw_data,        /* The data buffer to keep raw data */
     (tSDP_DISCOVERY_DB *)bta_jv_sdp_db_data /* The data buffer to keep SDP database */
+#else
+    NULL,
+    NULL
+#endif
 };
 
 tBTA_JV_CFG *p_bta_jv_cfg = (tBTA_JV_CFG *) &bta_jv_cfg;

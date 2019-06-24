@@ -26,6 +26,7 @@
 #include <string.h>
 #include "sbc_encoder.h"
 #include "sbc_enc_func_declare.h"
+#include "osi/allocator.h"
 /*#include <math.h>*/
 #if (defined(SBC_ENC_INCLUDED) && SBC_ENC_INCLUDED == TRUE)
 
@@ -158,9 +159,16 @@
 #if (SBC_USE_ARM_PRAGMA==TRUE)
 #pragma arm section zidata = "sbc_s32_analysis_section"
 #endif
+#if BT_BLE_DYNAMIC_ENV_MEMORY == FALSE
 static SINT32   s32DCTY[16]  = {0};
 static SINT32   s32X[ENC_VX_BUFFER_SIZE / 2];
 static SINT16   *s16X = (SINT16 *) s32X;   /* s16X must be 32 bits aligned cf  SHIFTUP_X8_2*/
+#else
+static SINT32   *s32DCTY;
+static SINT32   *s32X;
+static SINT16   *s16X;   /* s16X must be 32 bits aligned cf  SHIFTUP_X8_2*/
+#endif //BT_BLE_DYNAMIC_ENV_MEMORY == FALSE
+
 #if (SBC_USE_ARM_PRAGMA==TRUE)
 #pragma arm section zidata
 #endif
@@ -1076,6 +1084,19 @@ void SbcAnalysisFilter8 (SBC_ENC_PARAMS *pstrEncParams)
 
 void SbcAnalysisInit (void)
 {
+    static bool loaded = false;
+    if (!loaded) {
+        loaded = true;
+#if BT_BLE_DYNAMIC_ENV_MEMORY == TRUE
+        s32X = (SINT32 *)osi_malloc(sizeof(SINT32) * (ENC_VX_BUFFER_SIZE / 2));
+        s32DCTY = (SINT32 *)osi_malloc(sizeof(SINT32) * 16);
+        assert(s32X);
+        assert(s32DCTY);
+        memset(s32X, 0, sizeof(SINT16) * ENC_VX_BUFFER_SIZE);
+        memset(s32DCTY, 0, sizeof(SINT32) * 16);
+        s16X = (SINT16 *) s32X;
+#endif
+    }
     memset(s16X, 0, ENC_VX_BUFFER_SIZE * sizeof(SINT16));
     ShiftCounter = 0;
 }

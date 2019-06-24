@@ -25,6 +25,7 @@
 #define PORT_API_H
 
 #include "common/bt_target.h"
+#include "common/bt_defs.h"
 
 /*****************************************************************************
 **  Constants and Types
@@ -621,8 +622,19 @@ extern int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len);
 ** Description      This function is called to initialize RFCOMM layer
 **
 *******************************************************************************/
-extern void RFCOMM_Init (void);
+extern bt_status_t RFCOMM_Init (void);
 
+/*******************************************************************************
+**
+** Function         RFCOMM_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void RFCOMM_Deinit(void);
 
 /*******************************************************************************
 **

@@ -157,7 +157,9 @@ enum {
     BTA_DM_API_UPDATE_WHITE_LIST_EVT,
     BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
     BTA_DM_API_BLE_READ_RSSI_EVT,
+#if BLE_INCLUDED == TRUE
     BTA_DM_API_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_EVT,
+#endif
     BTA_DM_MAX_EVT
 };
 
@@ -203,6 +205,7 @@ typedef struct {
     UINT8               data[];
 }tBTA_DM_API_CONFIG_EIR;
 
+#if (BLE_INCLUDED == TRUE)
 typedef struct {
     BT_HDR    hdr;
     BOOLEAN   add_remove;
@@ -223,6 +226,7 @@ typedef struct {
     BT_HDR       hdr;
     tBTA_CMPL_CB *read_tx_power_cb;
 }tBTA_DM_API_READ_ADV_TX_POWER;
+#endif  ///BLE_INCLUDED == TRUE
 
 typedef struct {
     BT_HDR        hdr;
@@ -402,8 +406,8 @@ typedef struct {
     UINT8           hci_status;
 #if BLE_INCLUDED == TRUE
     UINT16          handle;
-    tBT_TRANSPORT   transport;
 #endif
+    tBT_TRANSPORT   transport;
 } tBTA_DM_ACL_CHANGE;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
@@ -801,9 +805,12 @@ typedef union {
     tBTA_DM_API_SET_NAME set_name;
     tBTA_DM_API_CONFIG_EIR config_eir;
 
+#if (BLE_INCLUDED == TRUE)
     tBTA_DM_API_UPDATE_WHITE_LIST white_list;
     tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
     tBTA_DM_API_READ_RSSI rssi;
+#endif  ///BLE_INCLUDED == TRUE
+
     tBTA_DM_API_SET_VISIBILITY set_visibility;
 
     tBTA_DM_API_ADD_DEVICE  add_dev;
@@ -939,8 +946,8 @@ typedef struct {
     BOOLEAN                     remove_dev_pending;
 #if BLE_INCLUDED == TRUE
     UINT16                      conn_handle;
-    tBT_TRANSPORT               transport;
 #endif
+    tBT_TRANSPORT               transport;
 } tBTA_DM_PEER_DEVICE;
 
 
@@ -976,7 +983,6 @@ typedef struct {
 
 }  tBTA_DM_CONNECTED_SRVCS;
 
-extern tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
 
@@ -1032,6 +1038,8 @@ typedef struct {
     BOOLEAN                     disable_pair_mode;          /* disable pair mode or not */
     BOOLEAN                     conn_paired_only;   /* allow connectable to paired device only or not */
     tBTA_DM_API_SEARCH          search_msg;
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16                      page_scan_interval;
     UINT16                      page_scan_window;
     UINT16                      inquiry_scan_interval;
@@ -1041,8 +1049,10 @@ typedef struct {
     BD_ADDR                     pin_bd_addr;
     DEV_CLASS                   pin_dev_class;
     tBTA_DM_SEC_EVT             pin_evt;
-    UINT32          num_val;        /* the numeric value for comparison. If just_works, do not show this number to UI */
-    BOOLEAN         just_works;     /* TRUE, if "Just Works" association model */
+    UINT32                      num_val;        /* the numeric value for comparison. If just_works, do not show this number to UI */
+    BOOLEAN                     just_works;     /* TRUE, if "Just Works" association model */
+#endif
+
 #if ( BTA_EIR_CANNED_UUID_LIST != TRUE )
     /* store UUID list for EIR */
     TIMER_LIST_ENT              app_ready_timer;
@@ -1150,8 +1160,8 @@ typedef struct {
 
 } tBTA_DM_RM ;
 
-extern tBTA_DM_CFG *p_bta_dm_cfg;
-extern tBTA_DM_RM *p_bta_dm_rm_cfg;
+extern tBTA_DM_CFG *const p_bta_dm_cfg;
+extern tBTA_DM_RM *const p_bta_dm_rm_cfg;
 
 typedef struct {
 
@@ -1192,11 +1202,11 @@ typedef struct {
 } tBTA_DM_LMP_VER_INFO;
 
 #if (BTA_DM_PM_INCLUDED == TRUE)
-extern tBTA_DM_PM_CFG *p_bta_dm_pm_cfg;
-extern tBTA_DM_PM_SPEC *p_bta_dm_pm_spec;
-extern tBTM_PM_PWR_MD *p_bta_dm_pm_md;
+extern tBTA_DM_PM_CFG *const p_bta_dm_pm_cfg;
+extern tBTA_DM_PM_SPEC *const p_bta_dm_pm_spec;
+extern tBTM_PM_PWR_MD *const p_bta_dm_pm_md;
 #if (BTM_SSR_INCLUDED == TRUE)
-extern tBTA_DM_SSR_SPEC *p_bta_dm_ssr_spec;
+extern tBTA_DM_SSR_SPEC *const p_bta_dm_ssr_spec;
 #endif
 #endif /* #if (BTA_DM_PM_INCLUDED == TRUE) */
 
@@ -1226,6 +1236,19 @@ extern tBTA_DM_DI_CB  bta_dm_di_cb;
 #else
 extern tBTA_DM_DI_CB *bta_dm_di_cb_ptr;
 #define bta_dm_di_cb (*bta_dm_di_cb_ptr)
+#endif
+
+#if BTA_DYNAMIC_MEMORY == FALSE
+extern tBTA_DM_CONNECTED_SRVCS  bta_dm_conn_srvcs;
+#else
+extern tBTA_DM_CONNECTED_SRVCS *bta_dm_conn_srvcs_ptr;
+#define bta_dm_conn_srvcs (*bta_dm_conn_srvcs_ptr)
+#endif
+
+/* Discovery raw data buffer */
+#define MAX_DISC_RAW_DATA_BUF       (1024)
+#if BTA_DYNAMIC_MEMORY == TRUE
+extern UINT8 *g_disc_raw_data_buf;
 #endif
 
 extern BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg);

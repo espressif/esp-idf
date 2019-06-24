@@ -61,42 +61,31 @@
                                     BTA_HF_CLIENT_FEAT_CODEC)
 #endif
 
-/************************************************************************************
-**  Local type definitions
-************************************************************************************/
-/* BTC-HF control block to map bdaddr to BTA handle */
-typedef struct
-{
-    bool                               initialized;
-    UINT16                             handle;
-    bt_bdaddr_t                        connected_bda;
-    esp_hf_client_connection_state_t   state;
-    esp_hf_vr_state_t                  vr_state;
-    tBTA_HF_CLIENT_PEER_FEAT           peer_feat;
-    tBTA_HF_CLIENT_CHLD_FEAT           chld_feat;
-} btc_hf_client_cb_t;
+
 
 /************************************************************************************
 **  Static variables
 ************************************************************************************/
 const char *btc_hf_client_version = "1.6";
-static UINT32 btc_hf_client_features = 0;
-static btc_hf_client_cb_t btc_hf_client_cb;
-static esp_hf_client_incoming_data_cb_t btc_hf_client_incoming_data_cb = NULL;
-static esp_hf_client_outgoing_data_cb_t btc_hf_client_outgoing_data_cb = NULL;
+
+#if HFP_DYNAMIC_MEMORY == FALSE
+static hf_client_local_param_t hf_client_local_param;
+#else
+hf_client_local_param_t *hf_client_local_param_ptr;
+#endif
 
 /************************************************************************************
 **  Static functions
 ************************************************************************************/
 #define CHECK_HF_CLIENT_INIT() do { \
-if (! btc_hf_client_cb.initialized) { \
+if (! hf_client_local_param.btc_hf_client_cb.initialized) { \
     return BT_STATUS_NOT_READY; \
 } \
 } while (0)
 
 #define CHECK_HF_CLIENT_SLC_CONNECTED() do { \
-if (! btc_hf_client_cb.initialized || \
-    btc_hf_client_cb.state != ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) { \
+if (! hf_client_local_param.btc_hf_client_cb.initialized || \
+    hf_client_local_param.btc_hf_client_cb.state != ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) { \
     return BT_STATUS_NOT_READY; \
 } \
 } while (0)
@@ -111,14 +100,14 @@ static inline void btc_hf_client_cb_to_app(esp_hf_client_cb_event_t event, esp_h
 
 static void clear_state(void)
 {
-    memset(&btc_hf_client_cb, 0, sizeof(btc_hf_client_cb_t));
+    memset(&hf_client_local_param.btc_hf_client_cb, 0, sizeof(btc_hf_client_cb_t));
 }
 
 static BOOLEAN is_connected(bt_bdaddr_t *bd_addr)
 {
-    if (((btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED) ||
-            (btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED))&&
-        ((bd_addr == NULL) || (bdcmp(bd_addr->address, btc_hf_client_cb.connected_bda.address) == 0)))
+    if (((hf_client_local_param.btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED) ||
+            (hf_client_local_param.btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED))&&
+        ((bd_addr == NULL) || (bdcmp(bd_addr->address, hf_client_local_param.btc_hf_client_cb.connected_bda.address) == 0)))
         return TRUE;
     return FALSE;
 }
@@ -126,23 +115,23 @@ static BOOLEAN is_connected(bt_bdaddr_t *bd_addr)
 void btc_hf_client_reg_data_cb(esp_hf_client_incoming_data_cb_t recv,
                                esp_hf_client_outgoing_data_cb_t send)
 {
-    btc_hf_client_incoming_data_cb = recv;
-    btc_hf_client_outgoing_data_cb = send;
+    hf_client_local_param.btc_hf_client_incoming_data_cb = recv;
+    hf_client_local_param.btc_hf_client_outgoing_data_cb = send;
 }
 
 void btc_hf_client_incoming_data_cb_to_app(const uint8_t *data, uint32_t len)
 {
     // todo: critical section protection
-    if (btc_hf_client_incoming_data_cb) {
-        btc_hf_client_incoming_data_cb(data, len);
+    if (hf_client_local_param.btc_hf_client_incoming_data_cb) {
+        hf_client_local_param.btc_hf_client_incoming_data_cb(data, len);
     }
 }
 
 uint32_t btc_hf_client_outgoing_data_cb_to_app(uint8_t *data, uint32_t len)
 {
     // todo: critical section protection
-    if (btc_hf_client_outgoing_data_cb) {
-        return btc_hf_client_outgoing_data_cb(data, len);
+    if (hf_client_local_param.btc_hf_client_outgoing_data_cb) {
+        return hf_client_local_param.btc_hf_client_outgoing_data_cb(data, len);
     } else {
         return 0;
     }
@@ -172,9 +161,9 @@ bt_status_t btc_hf_client_init(void)
 
     clear_state();
 
-    btc_hf_client_cb.initialized = true;
+    hf_client_local_param.btc_hf_client_cb.initialized = true;
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+#if BTM_SCO_HCI_INCLUDED
     data_path = ESP_SCO_DATA_PATH_HCI;
 #else
     data_path = ESP_SCO_DATA_PATH_PCM;
@@ -199,10 +188,10 @@ static bt_status_t connect_int( bt_bdaddr_t *bd_addr, uint16_t uuid )
         return BT_STATUS_BUSY;
     }
 
-    btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_CONNECTING;
-    bdcpy(btc_hf_client_cb.connected_bda.address, bd_addr->address);
+    hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_CONNECTING;
+    bdcpy(hf_client_local_param.btc_hf_client_cb.connected_bda.address, bd_addr->address);
 
-    BTA_HfClientOpen(btc_hf_client_cb.handle, btc_hf_client_cb.connected_bda.address,
+    BTA_HfClientOpen(hf_client_local_param.btc_hf_client_cb.handle, hf_client_local_param.btc_hf_client_cb.connected_bda.address,
                BTC_HF_CLIENT_SECURITY);
 
     return BT_STATUS_SUCCESS;
@@ -232,7 +221,7 @@ void  btc_hf_client_deinit( void )
 
     btc_dm_disable_service(BTA_HFP_HS_SERVICE_ID);
 
-    btc_hf_client_cb.initialized = false;
+    hf_client_local_param.btc_hf_client_cb.initialized = false;
 }
 
 /*******************************************************************************
@@ -250,7 +239,7 @@ bt_status_t btc_hf_client_disconnect( bt_bdaddr_t *bd_addr )
 
     if (is_connected(bd_addr))
     {
-        BTA_HfClientClose(btc_hf_client_cb.handle);
+        BTA_HfClientClose(hf_client_local_param.btc_hf_client_cb.handle);
         return BT_STATUS_SUCCESS;
     }
 
@@ -272,13 +261,13 @@ bt_status_t btc_hf_client_connect_audio( bt_bdaddr_t *bd_addr )
 
     if (is_connected(bd_addr))
     {
-        if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_CODEC)
+        if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_CODEC)
         {
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BCC, 0, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BCC, 0, 0, NULL);
         }
         else
         {
-            BTA_HfClientAudioOpen(btc_hf_client_cb.handle);
+            BTA_HfClientAudioOpen(hf_client_local_param.btc_hf_client_cb.handle);
         }
 
         /* Inform the application that the audio connection has been initiated successfully */
@@ -286,7 +275,7 @@ bt_status_t btc_hf_client_connect_audio( bt_bdaddr_t *bd_addr )
             esp_hf_client_cb_param_t param;
             memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
             param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTING;
-            memcpy(param.audio_stat.remote_bda, &btc_hf_client_cb.connected_bda, sizeof(esp_bd_addr_t));
+            memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda, sizeof(esp_bd_addr_t));
             btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
         } while (0);
 
@@ -311,7 +300,7 @@ bt_status_t btc_hf_client_disconnect_audio( bt_bdaddr_t *bd_addr )
 
     if (is_connected(bd_addr))
     {
-        BTA_HfClientAudioClose(btc_hf_client_cb.handle);
+        BTA_HfClientAudioClose(hf_client_local_param.btc_hf_client_cb.handle);
         return BT_STATUS_SUCCESS;
     }
 
@@ -331,9 +320,9 @@ static bt_status_t btc_hf_client_start_voice_recognition(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_VREC)
+    if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_VREC)
     {
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BVRA, 1, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BVRA, 1, 0, NULL);
 
         return BT_STATUS_SUCCESS;
     }
@@ -355,9 +344,9 @@ static bt_status_t btc_hf_client_stop_voice_recognition(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_VREC)
+    if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_VREC)
     {
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BVRA, 0, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BVRA, 0, 0, NULL);
 
         return BT_STATUS_SUCCESS;
     }
@@ -381,10 +370,10 @@ static bt_status_t btc_hf_client_volume_update(esp_hf_volume_control_target_t ty
     switch (type)
     {
         case ESP_HF_VOLUME_CONTROL_TARGET_SPK:
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_VGS, volume, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_VGS, volume, 0, NULL);
             break;
         case ESP_HF_VOLUME_CONTROL_TARGET_MIC:
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_VGM, volume, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_VGM, volume, 0, NULL);
             break;
         default:
             return BT_STATUS_UNSUPPORTED;
@@ -408,11 +397,11 @@ static bt_status_t btc_hf_client_dial(const char *number)
 
     if (strlen(number) != 0)
     {
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATD, 0, 0, number);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATD, 0, 0, number);
     }
     else
     {
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BLDN, 0, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BLDN, 0, 0, NULL);
     }
 
     return BT_STATUS_SUCCESS;
@@ -431,7 +420,7 @@ static bt_status_t btc_hf_client_dial_memory(int location)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATD, location, 0, NULL);
+    BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATD, location, 0, NULL);
 
     return BT_STATUS_SUCCESS;
 }
@@ -443,61 +432,61 @@ static bt_status_t btc_hf_client_send_chld_cmd(esp_hf_chld_type_t type, int idx)
     switch (type)
     {
     case ESP_HF_CHLD_TYPE_REL:
-        if (btc_hf_client_cb.chld_feat & BTA_HF_CLIENT_CHLD_REL)
+        if (hf_client_local_param.btc_hf_client_cb.chld_feat & BTA_HF_CLIENT_CHLD_REL)
         {
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 0, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 0, 0, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
     case ESP_HF_CHLD_TYPE_REL_ACC:
         // CHLD 1 is mandatory for 3 way calling
-        if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_3WAY)
+        if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_3WAY)
         {
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 1, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 1, 0, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
     case ESP_HF_CHLD_TYPE_HOLD_ACC:
         // CHLD 2 is mandatory for 3 way calling
-        if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_3WAY)
+        if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_FEAT_3WAY)
         {
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 2, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 2, 0, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
     case ESP_HF_CHLD_TYPE_MERGE:
-        if (btc_hf_client_cb.chld_feat & BTA_HF_CLIENT_CHLD_MERGE)
+        if (hf_client_local_param.btc_hf_client_cb.chld_feat & BTA_HF_CLIENT_CHLD_MERGE)
         {
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 3, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 3, 0, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
     case ESP_HF_CHLD_TYPE_MERGE_DETACH:
-        if (btc_hf_client_cb.chld_feat & BTA_HF_CLIENT_CHLD_MERGE_DETACH)
+        if (hf_client_local_param.btc_hf_client_cb.chld_feat & BTA_HF_CLIENT_CHLD_MERGE_DETACH)
         {
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 4, 0, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 4, 0, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
     case ESP_HF_CHLD_TYPE_REL_X:
-        if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_ECC)
+        if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_ECC)
         {
             if (idx < 1)
             {
                 return BT_STATUS_FAIL;
             }
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 1, idx, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 1, idx, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
     case ESP_HF_CHLD_TYPE_PRIV_X:
-        if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_ECC)
+        if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_ECC)
         {
             if (idx < 1)
             {
                 return BT_STATUS_FAIL;
             }
-            BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 2, idx, NULL);
+            BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHLD, 2, idx, NULL);
             break;
         }
         return BT_STATUS_UNSUPPORTED;
@@ -512,13 +501,13 @@ static bt_status_t btc_hf_client_send_btrh_cmd(esp_hf_btrh_cmd_t btrh)
 
     switch (btrh) {
     case ESP_HF_BTRH_CMD_HOLD:
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BTRH, 0, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BTRH, 0, 0, NULL);
         break;
     case ESP_HF_BTRH_CMD_ACCEPT:
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BTRH, 1, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BTRH, 1, 0, NULL);
         break;
     case ESP_HF_BTRH_CMD_REJECT:
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BTRH, 2, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BTRH, 2, 0, NULL);
         break;
     default:
         return BT_STATUS_FAIL;
@@ -530,14 +519,14 @@ static bt_status_t btc_hf_client_send_btrh_cmd(esp_hf_btrh_cmd_t btrh)
 static bt_status_t btc_hf_client_answer_call(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
-    BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATA, 0, 0, NULL);
+    BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_ATA, 0, 0, NULL);
     return BT_STATUS_SUCCESS;
 }
 
 static bt_status_t btc_hf_client_reject_call(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
-    BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHUP, 0, 0, NULL);
+    BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CHUP, 0, 0, NULL);
     return BT_STATUS_SUCCESS;
 }
 
@@ -554,9 +543,9 @@ static bt_status_t btc_hf_client_query_current_calls(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_ECS)
+    if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_ECS)
     {
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CLCC, 0, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CLCC, 0, 0, NULL);
 
         return BT_STATUS_SUCCESS;
     }
@@ -577,7 +566,7 @@ static bt_status_t btc_hf_client_query_current_operator_name(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_COPS, 0, 0, NULL);
+    BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_COPS, 0, 0, NULL);
 
     return BT_STATUS_SUCCESS;
 }
@@ -595,7 +584,7 @@ static bt_status_t btc_hf_client_retrieve_subscriber_info(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CNUM, 0, 0, NULL);
+    BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_CNUM, 0, 0, NULL);
 
     return BT_STATUS_SUCCESS;
 }
@@ -613,7 +602,7 @@ static bt_status_t btc_hf_client_send_dtmf(char code)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_VTS, code, 0, NULL);
+    BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_VTS, code, 0, NULL);
 
     return BT_STATUS_SUCCESS;
 }
@@ -631,9 +620,9 @@ static bt_status_t btc_hf_client_request_last_voice_tag_number(void)
 {
     CHECK_HF_CLIENT_SLC_CONNECTED();
 
-    if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_VTAG)
+    if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_VTAG)
     {
-        BTA_HfClientSendAT(btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BINP, 1, 0, NULL);
+        BTA_HfClientSendAT(hf_client_local_param.btc_hf_client_cb.handle, BTA_HF_CLIENT_AT_CMD_BINP, 1, 0, NULL);
 
         return BT_STATUS_SUCCESS;
     }
@@ -694,17 +683,17 @@ bt_status_t btc_hf_client_execute_service(BOOLEAN b_enable)
           else
           {
               BTC_TRACE_EVENT("No Codec Nego Supported");
-              btc_hf_client_features = BTC_HF_CLIENT_FEATURES;
-              btc_hf_client_features = btc_hf_client_features & (~BTA_HF_CLIENT_FEAT_CODEC);
-              BTC_TRACE_EVENT("btc_hf_client_features is   %d", btc_hf_client_features);
-              BTA_HfClientRegister(BTC_HF_CLIENT_SECURITY, btc_hf_client_features,
+              hf_client_local_param.btc_hf_client_features = BTC_HF_CLIENT_FEATURES;
+              hf_client_local_param.btc_hf_client_features = hf_client_local_param.btc_hf_client_features & (~BTA_HF_CLIENT_FEAT_CODEC);
+              BTC_TRACE_EVENT("hf_client_local_param.btc_hf_client_features is   %d", hf_client_local_param.btc_hf_client_features);
+              BTA_HfClientRegister(BTC_HF_CLIENT_SECURITY, hf_client_local_param.btc_hf_client_features,
                       BTC_HF_CLIENT_SERVICE_NAME);
           }
 
      }
      else
      {
-         BTA_HfClientDeregister(btc_hf_client_cb.handle);
+         BTA_HfClientDeregister(hf_client_local_param.btc_hf_client_cb.handle);
          BTA_HfClientDisable();
      }
      return BT_STATUS_SUCCESS;
@@ -769,44 +758,43 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
         case BTA_HF_CLIENT_DISABLE_EVT:
             break;
         case BTA_HF_CLIENT_REGISTER_EVT:
-            btc_hf_client_cb.handle = p_data->reg.handle;
+            hf_client_local_param.btc_hf_client_cb.handle = p_data->reg.handle;
             break;
         case BTA_HF_CLIENT_OPEN_EVT:
             if (p_data->open.status == BTA_HF_CLIENT_SUCCESS)
             {
-                bdcpy(btc_hf_client_cb.connected_bda.address, p_data->open.bd_addr);
-                btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED;
-                btc_hf_client_cb.peer_feat = 0;
-                btc_hf_client_cb.chld_feat = 0;
+                bdcpy(hf_client_local_param.btc_hf_client_cb.connected_bda.address, p_data->open.bd_addr);
+                hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_CONNECTED;
+                hf_client_local_param.btc_hf_client_cb.peer_feat = 0;
+                hf_client_local_param.btc_hf_client_cb.chld_feat = 0;
                 //clear_phone_state();
             }
-            else if (btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTING)
+            else if (hf_client_local_param.btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_CONNECTING)
             {
-                btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
+                hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
             }
             else
             {
                 BTC_TRACE_WARNING("%s: HF CLient open failed, but another device connected. status=%d state=%d connected device=%s",
-                        __FUNCTION__, p_data->open.status, btc_hf_client_cb.state, bdaddr_to_string(&btc_hf_client_cb.connected_bda, bdstr, sizeof(bdstr)));
+                        __FUNCTION__, p_data->open.status, hf_client_local_param.btc_hf_client_cb.state, bdaddr_to_string(&hf_client_local_param.btc_hf_client_cb.connected_bda, bdstr, sizeof(bdstr)));
                 UNUSED(bdstr);
                 break;
             }
 
             do {
                 memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
-                param.conn_stat.state = btc_hf_client_cb.state;
+                param.conn_stat.state = hf_client_local_param.btc_hf_client_cb.state;
                 param.conn_stat.peer_feat = 0;
                 param.conn_stat.chld_feat = 0;
 
-                memcpy(param.conn_stat.remote_bda, &btc_hf_client_cb.connected_bda,
+                memcpy(param.conn_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
 
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CONNECTION_STATE_EVT, &param);
             } while (0);
 
-            if (btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED) {
-                bdsetany(btc_hf_client_cb.connected_bda.address);
-            }
+            if (hf_client_local_param.btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED)
+                bdsetany(hf_client_local_param.btc_hf_client_cb.connected_bda.address);
 
             if (p_data->open.status != BTA_HF_CLIENT_SUCCESS) {
                 btc_queue_advance();
@@ -815,24 +803,24 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
 
         case BTA_HF_CLIENT_CONN_EVT:
-            btc_hf_client_cb.peer_feat = p_data->conn.peer_feat;
-            btc_hf_client_cb.chld_feat = p_data->conn.chld_feat;
-            btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED;
+            hf_client_local_param.btc_hf_client_cb.peer_feat = p_data->conn.peer_feat;
+            hf_client_local_param.btc_hf_client_cb.chld_feat = p_data->conn.chld_feat;
+            hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED;
 
             do {
                 memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
-                param.conn_stat.state = btc_hf_client_cb.state;
-                param.conn_stat.peer_feat = btc_hf_client_cb.peer_feat;
-                param.conn_stat.chld_feat = btc_hf_client_cb.chld_feat;
+                param.conn_stat.state = hf_client_local_param.btc_hf_client_cb.state;
+                param.conn_stat.peer_feat = hf_client_local_param.btc_hf_client_cb.peer_feat;
+                param.conn_stat.chld_feat = hf_client_local_param.btc_hf_client_cb.chld_feat;
 
-                memcpy(param.conn_stat.remote_bda, &btc_hf_client_cb.connected_bda,
+                memcpy(param.conn_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
 
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CONNECTION_STATE_EVT, &param);
             } while (0);
 
             /* Inform the application about in-band ringtone */
-            if (btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_INBAND)
+            if (hf_client_local_param.btc_hf_client_cb.peer_feat & BTA_HF_CLIENT_PEER_INBAND)
             {
                 do {
                     memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
@@ -845,22 +833,22 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             break;
 
         case BTA_HF_CLIENT_CLOSE_EVT:
-            btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
+            hf_client_local_param.btc_hf_client_cb.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
             do {
                 memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.conn_stat.state = ESP_HF_CLIENT_CONNECTION_STATE_DISCONNECTED;
                 param.conn_stat.peer_feat = 0;
                 param.conn_stat.chld_feat = 0;
 
-                memcpy(param.conn_stat.remote_bda, &btc_hf_client_cb.connected_bda,
+                memcpy(param.conn_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
 
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_CONNECTION_STATE_EVT, &param);
             } while (0);
 
-            bdsetany(btc_hf_client_cb.connected_bda.address);
-            btc_hf_client_cb.peer_feat = 0;
-            btc_hf_client_cb.chld_feat = 0;
+            bdsetany(hf_client_local_param.btc_hf_client_cb.connected_bda.address);
+            hf_client_local_param.btc_hf_client_cb.peer_feat = 0;
+            hf_client_local_param.btc_hf_client_cb.chld_feat = 0;
             btc_queue_advance();
             break;
         case BTA_HF_CLIENT_IND_EVT:
@@ -983,7 +971,7 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             do {
                 memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTED;
-                memcpy(param.audio_stat.remote_bda, &btc_hf_client_cb.connected_bda,
+                memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
@@ -992,7 +980,7 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             do {
                 memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC;
-                memcpy(param.audio_stat.remote_bda, &btc_hf_client_cb.connected_bda,
+                memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
@@ -1001,7 +989,7 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
             do {
                 memset(&param, 0, sizeof(esp_hf_client_cb_param_t));
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED;
-                memcpy(param.audio_stat.remote_bda, &btc_hf_client_cb.connected_bda,
+                memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);

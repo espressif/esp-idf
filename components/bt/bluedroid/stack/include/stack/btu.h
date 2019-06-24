@@ -29,6 +29,7 @@
 
 #include "common/bt_target.h"
 #include "common/bt_defs.h"
+#include "osi/thread.h"
 
 // HACK(zachoverflow): temporary dark magic
 #define BTU_POST_TO_TASK_NO_GOOD_HORRIBLE_HACK 0x1700 // didn't look used in bt_types...here goes nothing
@@ -163,6 +164,17 @@ typedef void (*tBTU_EVENT_CALLBACK)(BT_HDR *p_hdr);
 #define BTU_TTYPE_UCD_TO                            108
 #define BTU_TTYPE_BLE_SCAN                          109
 
+/* BTU Task Signal */
+typedef enum {
+    SIG_BTU_START_UP = 0,
+    SIG_BTU_HCI_MSG,
+    SIG_BTU_BTA_MSG,
+    SIG_BTU_BTA_ALARM,
+    SIG_BTU_GENERAL_ALARM,
+    SIG_BTU_ONESHOT_ALARM,
+    SIG_BTU_L2CAP_ALARM,
+    SIG_BTU_NUM,
+} SIG_BTU_t;
 
 /* This is the inquiry response information held by BTU, and available
 ** to applications.
@@ -271,10 +283,12 @@ void  btu_free_core(void);
 void BTU_StartUp(void);
 void BTU_ShutDown(void);
 
-void btu_task_start_up(void);
+void btu_task_start_up(void *param);
 void btu_task_shut_down(void);
 
 UINT16 BTU_BleAclPktSize(void);
+
+bool btu_task_post(uint32_t sig, void *param, uint32_t timeout);
 
 /*
 #ifdef __cplusplus

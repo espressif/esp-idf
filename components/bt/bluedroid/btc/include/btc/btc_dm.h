@@ -66,7 +66,21 @@ typedef struct
     btc_dm_local_key_id_t  id_keys;  /* ID kyes */
 } btc_dm_local_key_cb_t;
 
+typedef struct
+{
+    tBTA_SERVICE_MASK btc_enabled_services;
+#if (SMP_INCLUDED == TRUE)
+    btc_dm_pairing_cb_t pairing_cb;
+    btc_dm_local_key_cb_t ble_local_key_cb;
+#endif
+} btc_dm_cb_t;
 
+#if BTC_DYNAMIC_MENDRY == FALSE
+extern btc_dm_cb_t btc_dm_cb;
+#else
+extern btc_dm_cb_t *btc_dm_cb_ptr;
+#define btc_dm_cb (*btc_dm_cb_ptr)
+#endif
 
 // void btc_dm_call_handler(btc_msg_t *msg);
 void btc_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *data);

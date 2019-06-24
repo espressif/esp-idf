@@ -79,6 +79,9 @@ typedef struct {
     UINT8 flags;
     tBTA_AV_EDR edr;
     UINT8   peer_sep;  /* sep type of peer device */
+#if BTC_AV_SRC_INCLUDED
+    osi_alarm_t *tle_av_open_on_rc;
+#endif /* BTC_AV_SRC_INCLUDED */
 } btc_av_cb_t;
 
 typedef struct {
@@ -89,11 +92,12 @@ typedef struct {
 /*****************************************************************************
 **  Static variables
 ******************************************************************************/
+#if A2D_DYNAMIC_MEMORY == FALSE
 static btc_av_cb_t btc_av_cb = {0};
-
-#if BTC_AV_SRC_INCLUDED
-static osi_alarm_t *tle_av_open_on_rc = NULL;
-#endif /* BTC_AV_SRC_INCLUDED */
+#else
+static btc_av_cb_t *btc_av_cb_ptr = NULL;
+#define btc_av_cb (*btc_av_cb_ptr)
+#endif ///A2D_DYNAMIC_MEMORY == FALSE
 
 /* both interface and media task needs to be ready to alloc incoming request */
 #define CHECK_BTAV_INIT() do \
@@ -337,8 +341,8 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
 
 #if BTC_AV_SRC_INCLUDED
         BTC_TRACE_DEBUG("BTA_AV_RC_OPEN_EVT received w/o AV");
-        tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
-        osi_alarm_set(tle_av_open_on_rc, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
+        btc_av_cb.tle_av_open_on_rc = osi_alarm_new("AVconn", btc_initiate_av_open_tmr_hdlr, NULL, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
+        osi_alarm_set(btc_av_cb.tle_av_open_on_rc, BTC_TIMEOUT_AV_OPEN_ON_RC_SECS * 1000);
 #endif /* BTC_AV_SRC_INCLUDED */
         btc_rc_handler(event, p_data);
         break;
@@ -353,9 +357,9 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
 
     case BTA_AV_RC_CLOSE_EVT:
 #if BTC_AV_SRC_INCLUDED
-        if (tle_av_open_on_rc) {
-            osi_alarm_free(tle_av_open_on_rc);
-            tle_av_open_on_rc = NULL;
+        if (btc_av_cb.tle_av_open_on_rc) {
+            osi_alarm_free(btc_av_cb.tle_av_open_on_rc);
+            btc_av_cb.tle_av_open_on_rc = NULL;
         }
 #endif /* BTC_AV_SRC_INCLUDED */
         btc_rc_handler(event, p_data);
@@ -961,6 +965,19 @@ static void btc_av_event_free_data(btc_sm_event_t event, void *p_data)
 
 static bt_status_t btc_av_init(int service_id)
 {
+
+#if A2D_DYNAMIC_MEMORY == TRUE
+    if (btc_av_cb_ptr != NULL) {
+        return BT_STATUS_FAIL;
+    }
+
+    if ((btc_av_cb_ptr = (btc_av_cb_t *)osi_malloc(sizeof(btc_av_cb_t))) == NULL) {
+        APPL_TRACE_ERROR("%s malloc failed!", __func__);
+        return BT_STATUS_NOMEM;
+    }
+    memset((void *)btc_av_cb_ptr, 0, sizeof(btc_av_cb_t));
+#endif
+
     if (btc_av_cb.sm_handle == NULL) {
         btc_av_cb.service_id = service_id;
         bool stat = false;
@@ -975,6 +992,10 @@ static bt_status_t btc_av_init(int service_id)
         }
 
         if (!stat) {
+#if A2D_DYNAMIC_MEMORY == TRUE
+            osi_free(btc_av_cb_ptr);
+            btc_av_cb_ptr = NULL;
+#endif
             return BT_STATUS_FAIL;
         }
 
@@ -1034,9 +1055,9 @@ static void clean_up(int service_id)
     if (service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
 #if BTC_AV_SRC_INCLUDED
         btc_a2dp_source_shutdown();
-        if (tle_av_open_on_rc) {
-            osi_alarm_free(tle_av_open_on_rc);
-            tle_av_open_on_rc = NULL;
+        if (btc_av_cb.tle_av_open_on_rc) {
+            osi_alarm_free(btc_av_cb.tle_av_open_on_rc);
+            btc_av_cb.tle_av_open_on_rc = NULL;
         }
 #endif /* BTC_AV_SRC_INCLUDED */
     }
@@ -1056,6 +1077,11 @@ static void clean_up(int service_id)
         btc_a2dp_sink_shutdown();
 #endif /* BTC_AV_SINK_INCLUDED */
     }
+
+#if A2D_DYNAMIC_MEMORY == TRUE
+            osi_free(btc_av_cb_ptr);
+            btc_av_cb_ptr = NULL;
+#endif
 }
 
 /*******************************************************************************

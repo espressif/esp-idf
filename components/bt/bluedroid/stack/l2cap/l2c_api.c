@@ -1301,6 +1301,7 @@ UINT8 L2CA_GetChnlFcrMode (UINT16 lcid)
 
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
 
+#if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         L2CA_RegisterLECoc
@@ -1610,8 +1611,7 @@ BOOLEAN L2CA_GetPeerLECocConfig (UINT16 lcid, tL2CAP_LE_CFG_INFO* peer_cfg)
 
     return TRUE;
 }
-
-
+#endif  ///BLE_INCLUDED == TRUE
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
@@ -2221,7 +2221,7 @@ UINT16 L2CA_FlushChannel (UINT16 lcid, UINT16 num_to_flush)
 
     /* If needed, flush buffers in the CCB xmit hold queue */
     while ( (num_to_flush != 0) && (!fixed_queue_is_empty(p_ccb->xmit_hold_q))) {
-        BT_HDR *p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
+        BT_HDR *p_buf = (BT_HDR *)fixed_queue_dequeue(p_ccb->xmit_hold_q, 0);
         if (p_buf) {
             osi_free (p_buf);
         }

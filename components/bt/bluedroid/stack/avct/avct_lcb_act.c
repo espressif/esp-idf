@@ -449,7 +449,7 @@ void avct_lcb_cong_ind(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
     if (p_lcb->cong == FALSE && !fixed_queue_is_empty(p_lcb->tx_q))
     {
         while (!p_lcb->cong &&
-               (p_buf = (BT_HDR *)fixed_queue_try_dequeue(p_lcb->tx_q)) != NULL)
+               (p_buf = (BT_HDR *)fixed_queue_dequeue(p_lcb->tx_q, 0)) != NULL)
         {
             if (L2CA_DataWrite(p_lcb->ch_lcid, p_buf) == L2CAP_DW_CONGESTED)
             {
@@ -569,7 +569,7 @@ void avct_lcb_send_msg(tAVCT_LCB *p_lcb, tAVCT_LCB_EVT *p_data)
         }
 
         if (p_lcb->cong == TRUE) {
-            fixed_queue_enqueue(p_lcb->tx_q, p_buf);
+            fixed_queue_enqueue(p_lcb->tx_q, p_buf, FIXED_QUEUE_MAX_TIMEOUT);
         }
 
         /* send message to L2CAP */
