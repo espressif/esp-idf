@@ -188,8 +188,7 @@ Restrictions:
 
 ``security_version``:
 
-- In application image it is stored in ``esp_app_desc`` structure. The number is set
-  :ref:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
+- In application image it is stored in ``esp_app_desc`` structure. The number is set :ref:`CONFIG_BOOTLOADER_APP_SECURE_VERSION`.
 - In ESP32 it is stored in efuse ``EFUSE_BLK3_RDATA4_REG``. (when a eFuse bit is programmed to 1, it can never be reverted to 0). The number of bits set in this register is the ``security_version`` from app.
 
 .. _secure-ota-updates:
