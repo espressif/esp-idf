@@ -46,7 +46,7 @@ get-started-cmake/get-started-wrover-kit-v3    hw-reference/get-started-wrover-k
 get-started-cmake/get-started-pico-kit         hw-reference/get-started-pico-kit
 get-started-cmake/get-started-pico-kit-v3      hw-reference/get-started-pico-kit-v3
 
-
 api-guide/build-system-cmake                   api-guide/build-system
 api-guide/ulp-cmake                            api-guide/ulp
+api-guide/unit-tests-cmake                     api-guide/unit-tests
 

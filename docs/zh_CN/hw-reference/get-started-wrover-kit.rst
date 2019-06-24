@@ -8,7 +8,7 @@ ESP-WROVER-KIT V4.1 入门指南
 准备工作
 -------------
 
-* :ref:`ESP-WROVER-KIT V4.1 开发板 <get-started-esp-wrover-kit-v4.1-board-front-cmake>`
+* :ref:`ESP-WROVER-KIT V4.1 开发板 <get-started-esp-wrover-kit-v4.1-board-front>`
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
@@ -53,7 +53,7 @@ ESP-WROVER-KIT 开发板的主要组件和连接方式如下图所示。
 
 ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-esp-wrover-kit-v4.1-board-front-cmake:
+.. _get-started-esp-wrover-kit-v4.1-board-front:
 
 .. figure:: ../../_static/esp-wrover-kit-v4.1-layout-front.png
     :align: center
@@ -62,7 +62,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
     ESP-WROVER-KIT 开发板布局 -- 俯视图
 
-.. _get-started-esp-wrover-kit-v4.1-board-back-cmake:
+.. _get-started-esp-wrover-kit-v4.1-board-back:
 
 .. figure:: ../../_static/esp-wrover-kit-v4.1-layout-back.png
     :align: center
@@ -120,11 +120,11 @@ I/O 连接器               板上模组的所有管脚均已引出至开发板�
 
 MicroSD 卡槽            适用于需要扩充数据存储空间或进行备份的应用开发场景。
 
-LCD 显示屏               支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v4.1-board-back-cmake`。
+LCD 显示屏               支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v4.1-board-back`。
 ====================  ======================================================================================================================================================================================================================================================================================================================================
 
 
-.. _get-started-esp-wrover-kit-v4.1-setup-options-cmake:
+.. _get-started-esp-wrover-kit-v4.1-setup-options:
 
 设置选项
 -------------
@@ -180,17 +180,17 @@ JTAG，MicroSD          IO15   5V
 
 说明：
 
-* NC/XTAL - :ref:`32.768 kHz 晶振 <get-started-esp-wrover-kit-v4.1-xtal-cmake>`
-* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v4.1-jtag-header-cmake>`
+* NC/XTAL - :ref:`32.768 kHz 晶振 <get-started-esp-wrover-kit-v4.1-xtal>`
+* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v4.1-jtag-header>`
 * Boot - Boot 按键 / SW2
-* 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header-cmake>`
-* LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections-cmake>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot-cmake>`
-* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector-cmake>`
+* 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
+* LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
+* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
+* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
 * PSRAM - ESP32-WROVER-B 的 PSRAM
 
 
-.. _get-started-esp-wrover-kit-v4.1-xtal-cmake:
+.. _get-started-esp-wrover-kit-v4.1-xtal:
 
 32.768 kHz 晶振
 ^^^^^^^^^^^^^^^^^^^^^
@@ -207,7 +207,7 @@ JTAG，MicroSD          IO15   5V
     默认情况下，管脚 GPIO32 和 GPIO33 已连接至晶振。因此，为了保证信号的完整性，这两个管脚并未连接至 JP1 I/O 连接器。用户可通过将 R11/R23 处的 0 欧电阻移至 R12/R24 处，以将 GP1O32 和 GPIO33 的连接从晶振移至 JP1。
 
 
-.. _get-started-esp-wrover-kit-v4.1-spi-flash-header-cmake:
+.. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
 
 SPI Flash / JP2
 ^^^^^^^^^^^^^^^
@@ -229,7 +229,7 @@ SPI Flash / JP2
 
 
 
-.. _get-started-esp-wrover-kit-v4.1-jtag-header-cmake:
+.. _get-started-esp-wrover-kit-v4.1-jtag-header:
 
 JTAG / JP2
 ^^^^^^^^^^
@@ -245,7 +245,7 @@ JTAG / JP2
 ====  ==============  =============
 
 
-.. _get-started-esp-wrover-kit-v4.1-camera-header-cmake:
+.. _get-started-esp-wrover-kit-v4.1-camera-header:
 
 摄像头 / JP4
 ^^^^^^^^^^^^
@@ -276,7 +276,7 @@ JTAG / JP2
 * D0 到 D7 为摄像头的数据总线
 
 
-.. _get-started-esp-wrover-kit-v4.1-rgb-led-connections-cmake:
+.. _get-started-esp-wrover-kit-v4.1-rgb-led-connections:
 
 RGB LED
 ^^^^^^^
@@ -290,7 +290,7 @@ RGB LED
 ====  ==========  =========
 
 
-.. _get-started-esp-wrover-kit-v4.1-microsd-card-slot-cmake:
+.. _get-started-esp-wrover-kit-v4.1-microsd-card-slot:
 
 MicroSD 卡
 ^^^^^^^^^^^^
@@ -308,7 +308,7 @@ MicroSD 卡
 ====  ==============  ===============
 
 
-.. _get-started-esp-wrover-kit-v4.1-lcd-connector-cmake:
+.. _get-started-esp-wrover-kit-v4.1-lcd-connector:
 
 LCD / U5
 ^^^^^^^^
@@ -326,7 +326,7 @@ LCD / U5
 ====  ==============  ===============
 
 
-.. _get-started-esp-wrover-kit-start-development-cmake:
+.. _get-started-esp-wrover-kit-start-development:
 
 应用程序开发
 -----------------------------
@@ -356,7 +356,7 @@ USB 供电                   使能 UART 通信
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+请前往 :doc:`../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
 
