@@ -23,6 +23,7 @@ System API
    ESP HTTPS OTA <esp_https_ota>
    ESP pthread <esp_pthread>
    Error Codes and Helper Functions <esp_err>
+   App image format <app_image_format>
    Miscellaneous System APIs <system>
 
 
