@@ -502,7 +502,9 @@ $(eval $(call ldgen_create_commands))
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
-$(if $(V),$$(info including $(1)/Makefile.projbuild...))
+ifeq ("$(V)","1")
+$$(info including $(1)/Makefile.projbuild...)
+endif
 COMPONENT_PATH := $(1)
 include $(1)/Makefile.projbuild
 endef
