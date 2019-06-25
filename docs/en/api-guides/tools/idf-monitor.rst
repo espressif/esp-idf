@@ -115,7 +115,7 @@ In the background, IDF Monitor runs the following command::
 Output Filtering
 ~~~~~~~~~~~~~~~~
 
-IDF monitor can be invoked as ``make monitor PRINT_FILTER=""`` (for make) or ``idf.py monitor PRINT_FILTER=""`` (for cmake), where ``PRINT_FILTER`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed.
+IDF monitor can be invoked as ``make monitor PRINT_FILTER=""`` (for make) or ``idf.py monitor --print-filter=""`` (for cmake), where ``PRINT_FILTER`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed.
 
 Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
 
