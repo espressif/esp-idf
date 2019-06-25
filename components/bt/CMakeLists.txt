@@ -288,7 +288,7 @@ if(CONFIG_BT_ENABLED)
 endif()
 
 if (CONFIG_BLE_MESH)
-    list(APPEND COMPONENT_ADD_INCLUDEDIRS
+    list(APPEND include_dirs
         "bluedroid/osi/include"
         "ble_mesh/mesh_core"
         "ble_mesh/mesh_core/include"
@@ -299,7 +299,7 @@ if (CONFIG_BLE_MESH)
         "ble_mesh/api/models/include"
         "ble_mesh/api")
 
-    list(APPEND COMPONENT_SRCS
+    list(APPEND srcs
         "ble_mesh/api/core/esp_ble_mesh_common_api.c"
         "ble_mesh/api/core/esp_ble_mesh_local_data_operation_api.c"
         "ble_mesh/api/core/esp_ble_mesh_low_power_api.c"
