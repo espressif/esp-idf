@@ -1,19 +1,22 @@
 menu "Example Configuration"
 
     choice BASE_MAC_ADDRESS_STORAGE
-        prompt "Storage of the base MAC address"
+        prompt "Storage location of the base MAC address"
         default BASE_MAC_STORED_EFUSE_BLK0
         help
-            Select storage of the base MAC address which is used to generate MAC addresses of all network interfaces
-            when networking is initialized.
-            If "Default (Espressif factory) eFuse BLK0" is selected, esp32 will use default base MAC address which is
-            written into eFuse block 0 words 1, 2 when the chip is manufactured.
-            If "Custom eFuse BLK3" is selected, ESP32 will use customer-defined base MAC address which is written into
-            eFuse Block 3 words 0, 1. Users must call esp_efuse_mac_get_custom to get base MAC address and
-            esp_base_mac_addr_set to set the base MAC address before network interfaces are initialised.
-            If "Other external storage" is selected, esp32 will use customer-defined base MAC address from external
-            storage(flash, EEPROM, etc). Users must get the base MAC address first and call esp_base_mac_addr_set to
-            set the base MAC address before network interfaces are initialised.
+            Select the storage location of the base MAC addresses.
+            1. eFuse BLK0: The "Default (Espressif factory)" selection. The
+            default base MAC address is written to words 1 and 2 of eFuse block
+            0 when the chip was manufactured. Call esp_efuse_mac_get_default()
+            read retrieve the "eFuse BLK0" MAC address.
+            2. eFuse BLK3: A custom base MAC address is burned by the user into
+            eFuse word 0 of block 3. Call esp_efuse_mac_get_custom() to read
+            the "eFuse BLK3" MAC address.
+            3. Other External Storage: Selecting this option will cause the
+            example to call external_storage_mac_get() which is defined in this
+            example to simply return a MAC address preset in software. Users
+            should modify this function to access their desired storage mediums
+            (e.g. flash, EEPROM etc).
 
         config BASE_MAC_STORED_EFUSE_BLK0
             bool "Default (Espressif factory) eFuse BLK0"
@@ -24,19 +27,20 @@ menu "Example Configuration"
     endchoice
 
     choice BASE_MAC_STORED_EFUSE_BLK3_ERROR_BEHAV
-        prompt "Read base MAC address from BLK3 of eFuse error behavior"
+        prompt "Behavior when retrieving eFuse BLK3 fails"
         depends on BASE_MAC_STORED_EFUSE_BLK3
         default BASE_MAC_STORED_EFUSE_BLK3_ERROR_DEFAULT
         help
-            Select behavior when reading base MAC address from BLK3 of eFuse error.
-            If "Abort" is selected, esp32 will abort.
-            If "Use base MAC address from BLK3 of eFuse" is selected, esp32 will use the base MAC address which is
-            written into eFuse block 0 words 1, 2 when the chip is manufactured.
+            Select the behavior when reading base MAC address "eFuse BLK3" fails
+            (i.e. the retrieved result is all 0).
+            - If "Abort" is selected, the ESP32 will abort.
+            - If "Use the default base MAC address from BLK0 of eFuse" is
+            selected, the default "eFuse BLK0" will be used instead.
 
         config BASE_MAC_STORED_EFUSE_BLK3_ERROR_ABORT
             bool "Abort"
         config BASE_MAC_STORED_EFUSE_BLK3_ERROR_DEFAULT
-            bool "Use base MAC address from BLK3 of eFuse"
+            bool "Use the default base MAC address eFuse BLK0"
     endchoice
 
 endmenu
