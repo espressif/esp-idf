@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "gattc_multi_connect.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "gattc_multi_connect.c"
+                    INCLUDE_DIRS ".")

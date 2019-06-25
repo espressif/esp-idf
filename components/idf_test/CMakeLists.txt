@@ -1,2 +1,1 @@
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-register_component()
+idf_component_register(INCLUDE_DIRS include)

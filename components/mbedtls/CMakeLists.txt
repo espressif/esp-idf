@@ -1,8 +1,6 @@
-set(COMPONENT_ADD_INCLUDEDIRS "port/include" "mbedtls/include")
-set(COMPONENT_SRCS "mbedtls.c")
-set(COMPONENT_REQUIRES lwip)
-
-register_component()
+idf_component_register(SRCS "mbedtls.c"
+                    INCLUDE_DIRS "port/include" "mbedtls/include"
+                    REQUIRES lwip)
 
 # Only build mbedtls libraries
 set(ENABLE_TESTING CACHE BOOL OFF)

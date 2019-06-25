@@ -1,10 +1,6 @@
-# Set usual component variables
-set(COMPONENT_SRCS "ulp_adc_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS "")
-set(COMPONENT_REQUIRES soc nvs_flash ulp driver)
-
-register_component()
-
+idf_component_register(SRCS "ulp_adc_example_main.c"
+                    INCLUDE_DIRS ""
+                    REQUIRES soc nvs_flash ulp driver)
 #
 # ULP support additions to component CMakeLists.txt.
 #

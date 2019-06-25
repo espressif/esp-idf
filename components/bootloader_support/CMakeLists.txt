@@ -1,21 +1,23 @@
-set(COMPONENT_SRCS "src/bootloader_clock.c"
-                   "src/bootloader_common.c"
-                   "src/bootloader_flash.c"
-                   "src/bootloader_random.c"
-                   "src/bootloader_utility.c"
-                   "src/esp_image_format.c"
-                   "src/flash_partitions.c"
-                   "src/flash_qio_mode.c")
+set(srcs 
+    "src/bootloader_clock.c"
+    "src/bootloader_common.c"
+    "src/bootloader_flash.c"
+    "src/bootloader_random.c"
+    "src/bootloader_utility.c"
+    "src/esp_image_format.c"
+    "src/flash_partitions.c"
+    "src/flash_qio_mode.c")
 
 if(BOOTLOADER_BUILD)
-    set(COMPONENT_ADD_INCLUDEDIRS "include include_bootloader")
-    set(COMPONENT_REQUIRES soc) #unfortunately the header directly uses SOC registers
-    set(COMPONENT_PRIV_REQUIRES micro-ecc spi_flash efuse)
-    list(APPEND COMPONENT_SRCS "src/bootloader_init.c"
-                               "src/${IDF_TARGET}/bootloader_sha.c"
-                               "src/${IDF_TARGET}/flash_encrypt.c"
-                               "src/${IDF_TARGET}/secure_boot_signatures.c"
-                               "src/${IDF_TARGET}/secure_boot.c")
+    set(include_dirs "include" "include_bootloader")
+    set(requires soc)  #unfortunately the header directly uses SOC registers
+    set(priv_requires micro-ecc spi_flash efuse)
+    list(APPEND srcs 
+        "src/bootloader_init.c"
+        "src/${IDF_TARGET}/bootloader_sha.c"
+        "src/${IDF_TARGET}/flash_encrypt.c"
+        "src/${IDF_TARGET}/secure_boot_signatures.c"
+        "src/${IDF_TARGET}/secure_boot.c")
 
     if(CONFIG_SECURE_SIGNED_APPS)
         get_filename_component(secure_boot_verification_key
@@ -45,18 +47,24 @@ if(BOOTLOADER_BUILD)
                 DEPENDS "${orig_secure_boot_verification_key}"
                 VERBATIM)
         endif()
-        set(COMPONENT_EMBED_FILES "${secure_boot_verification_key}")
+        set(embed_files "${secure_boot_verification_key}")
         set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
             APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
             "${secure_boot_verification_key}")
     endif()
 else()
-    list(APPEND COMPONENT_SRCS "src/idf/bootloader_sha.c"
-                               "src/idf/secure_boot_signatures.c")
-    set(COMPONENT_ADD_INCLUDEDIRS "include")
-    set(COMPONENT_PRIV_INCLUDEDIRS "include_bootloader")
-    set(COMPONENT_REQUIRES soc) #unfortunately the header directly uses SOC registers
-    set(COMPONENT_PRIV_REQUIRES spi_flash mbedtls efuse)
+    list(APPEND srcs 
+        "src/idf/bootloader_sha.c"
+        "src/idf/secure_boot_signatures.c")
+    set(include_dirs "include")
+    set(priv_include_dirs "include_bootloader")
+    set(requires soc) #unfortunately the header directly uses SOC registers
+    set(priv_requires spi_flash mbedtls efuse)
 endif()
 
-register_component()
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS "${include_dirs}"
+                    PRIV_INCLUDE_DIRS "${priv_include_dirs}"
+                    REQUIRES "${requires}"
+                    PRIV_REQUIRES "${priv_requires}"
+                    EMBED_FILES "${embed_files}")

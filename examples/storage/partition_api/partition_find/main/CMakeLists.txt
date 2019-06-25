@@ -1,6 +1,3 @@
-set(COMPONENT_SRCS "main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_EMBED_TXTFILES ../partitions_example.csv)
-
-register_component()
+idf_component_register(SRCS "main.c"
+                    INCLUDE_DIRS "."
+                    EMBED_TXTFILES ../partitions_example.csv)

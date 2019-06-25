@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "ble_spp_server_demo.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "ble_spp_server_demo.c"
+                    INCLUDE_DIRS ".")
