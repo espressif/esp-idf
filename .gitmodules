@@ -65,3 +65,7 @@
 [submodule "components/esp_wifi/lib_esp32"]
 	path = components/esp_wifi/lib_esp32
 	url = https://github.com/espressif/esp32-wifi-lib.git
+
+[submodule "components/nimble/nimble"]
+	path = components/nimble/nimble
+	url = https://github.com/espressif/esp-nimble.git

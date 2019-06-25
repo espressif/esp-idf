@@ -10,6 +10,7 @@
    Bluetooth Common <bt_common>
    Bluetooth LE <bt_le>
    Bluetooth Classic <classic_bt>
+   NimBLE <nimble/index>
 
 
 请点击下方链接，查看 ESP32 蓝牙架构：
