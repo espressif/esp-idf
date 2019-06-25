@@ -1,3 +1,2 @@
-set(COMPONENT_SRCS "src/jsmn.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-register_component()
+idf_component_register(SRCS "src/jsmn.c"
+                    INCLUDE_DIRS "include")

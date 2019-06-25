@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "example_spp_initiator_demo.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "example_spp_initiator_demo.c"
+                    INCLUDE_DIRS ".")

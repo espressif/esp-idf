@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "coap_client_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "coap_client_example_main.c"
+                    INCLUDE_DIRS ".")

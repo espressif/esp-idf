@@ -1,4 +1,4 @@
-register_config_only_component()
+idf_component_register()
 
 if(BOOTLOADER_BUILD)
     return()

@@ -1,9 +1,6 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ". ${CMAKE_CURRENT_BINARY_DIR}")
-
-set(COMPONENT_REQUIRES unity test_utils nvs_flash ulp esp_common)
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                    INCLUDE_DIRS "." "${CMAKE_CURRENT_BINARY_DIR}"
+                    REQUIRES unity test_utils nvs_flash ulp esp_common)
 
 add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h"
                 COMMAND xxd -i "logo.jpg" "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h"

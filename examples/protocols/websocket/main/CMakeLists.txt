@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "websocket_example.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "websocket_example.c"
+                    INCLUDE_DIRS ".")

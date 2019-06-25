@@ -1,7 +1,5 @@
-set(COMPONENT_SRCS "spiffsgen_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "spiffsgen_example_main.c"
+                    INCLUDE_DIRS ".")
 
 # Create a SPIFFS image from the contents of the 'spiffs_image' directory
 # that fits the partition named 'storage'. FLASH_IN_PROJECT indicates that

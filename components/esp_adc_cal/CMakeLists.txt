@@ -1,6 +1,3 @@
-set(COMPONENT_SRCS "esp_adc_cal.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-
-set(COMPONENT_REQUIRES)
-
-register_component()
+idf_component_register(SRCS "esp_adc_cal.c"
+                    INCLUDE_DIRS "include"
+                    REQUIRES driver)
