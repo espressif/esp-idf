@@ -107,6 +107,8 @@ function(register_component)
         target_link_libraries(${component} "-L${CMAKE_CURRENT_BINARY_DIR}")
         target_link_libraries(${component} "-Wl,--whole-archive -l${component} -Wl,--no-whole-archive")
     endif()
+
+    set(COMPONENT_TARGET ${COMPONENT_NAME} PARENT_SCOPE)
 endfunction()
 
 function(register_config_only_component)
