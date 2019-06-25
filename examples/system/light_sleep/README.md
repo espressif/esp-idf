@@ -2,7 +2,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example illustrates usage of light sleep mode. Unlike deep sleep mode, light sleep preserves the state of the memory, CPU, and peripherals. Execution of code on both CPUs is stopped when `esp_light_sleep_start` function is called. When the chip exits light sleep mode, execution continues at the point where it was stopped, and `esp_light_sleep_start` function returns.
+This example illustrates usage of light sleep mode. Unlike deep sleep mode, light sleep preserves the state of the memory, CPU, and peripherals. Execution of code on both CPUs is stopped when `esp_light_sleep_start()` function is called. When the chip exits light sleep mode, execution continues at the point where it was stopped, and `esp_light_sleep_start()` function returns.
 
 The example enables the following wakeup sources:
 
@@ -15,7 +15,13 @@ The example also prints time spent in light sleep mode to illustrate that timeke
 
 ### Hardware Required
 
-This example can be used with any ESP32 development board. Most boards have a button attached to GPIO0, often labelled "BOOT". If the board does not have such button, an external button can be connected, along with a 10k pull-up resistor, and a 100nF capacitor to ground for debouncing.
+This example can be used with any ESP32 development board. Most boards have a button attached to GPIO0, often labelled `BOOT`. If the board does not have such button, an external button can be connected, along with a 10k pull-up resistor, and a 100nF capacitor to ground for debouncing.
+
+### Configure the project
+
+```
+idf.py menuconfig
+```
 
 ### Build and Flash
 
