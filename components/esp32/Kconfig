@@ -1038,6 +1038,13 @@ menu "ESP32-specific"
             This option depends on the CONFIG_FREERTOS_UNICORE option because RTC fast memory
             can be accessed only by PRO_CPU core.
 
+    config ESP32_DPORT_DIS_INTERRUPT_LVL
+        int "Disable the interrupt level for the DPORT workarounds"
+        default 5
+        help
+            To prevent interrupting DPORT workarounds,
+            need to disable interrupt with a maximum used level in the system.
+
 endmenu  # ESP32-Specific
 
 menu Wi-Fi
@@ -1405,7 +1412,6 @@ menu PHY
         default ESP32_PHY_MAX_WIFI_TX_POWER
 
 endmenu  # PHY
-
 
 menu "Power Management"
 
