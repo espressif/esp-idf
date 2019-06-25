@@ -6,7 +6,8 @@ This directory contains a range of example ESP-IDF projects. These are intended 
 
 The examples are grouped into subdirectories by category. Each category directory contains one or more example projects:
 
-* `bluetooth` contains Bluetooth (BLE & BT Classic) examples.
+* `bluetooth` contains Bluetooth (BLE & BT Classic) examples using default Bluedroid host stack.
+* `bleutooth/nimble` contains BLE examples using NimBLE host stack
 * `ethernet` contains Ethernet examples.
 * `get-started` contains some very simple examples with minimal functionality.
 * `mesh` contains Wi-Fi Mesh examples.
