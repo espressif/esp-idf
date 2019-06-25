@@ -417,6 +417,8 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  *      esp_bt_controller_deinit();
  *      esp_bt_mem_release(ESP_BT_MODE_BTDM);
  *
+ * @note In case of NimBLE host, to release BSS and data memory to heap, the mode needs to be
+ * set to ESP_BT_MODE_BTDM as controller is dual mode.
  * @param mode : the mode whose memory is to be released
  * @return ESP_OK - success, other - failed
  */
