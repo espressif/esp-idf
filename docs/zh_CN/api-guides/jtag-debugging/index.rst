@@ -194,7 +194,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 上传待调试的应用程序
 ~~~~~~~~~~~~~~~~~~~~
 
-您可以像往常一样构建并上传 ESP32 应用程序，具体请参阅 :ref:`get-started-build-and-flash` 章节。
+您可以像往常一样构建并上传 ESP32 应用程序，具体请参阅 :ref:`get-started-build` 章节。
 
 除此以外，还支持使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下::
 

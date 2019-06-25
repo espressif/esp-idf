@@ -2,7 +2,7 @@
 Updating ESP-IDF tools on Windows
 *********************************
 
-.. _get-started-cmake-install_bat-windows:
+.. _get-started-install_bat-windows:
 
 Install ESP-IDF tools using ``install.bat``
 ===========================================
@@ -14,7 +14,7 @@ From the Windows Command Prompt, change to the directory where ESP-IDF is instal
 This will download and install the tools necessary to use ESP-IDF. If the specific version of the tool is already installed, no action will be taken.
 The tools are downloaded and installed into a directory specified during ESP-IDF Tools Installer process. By default, this is ``C:\Users\username\.espressif``.
 
-.. _get-started-cmake-export_bat-windows:
+.. _get-started-export_bat-windows:
 
 Add ESP-IDF tools to PATH using ``export.bat``
 ==============================================

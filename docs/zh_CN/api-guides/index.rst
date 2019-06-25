@@ -7,7 +7,7 @@ API 指南
 
    一般注意事项 <general-notes>
    构建系统 <build-system>
-   构建系统 (CMake) <build-system-cmake>
+   构建系统 (传统 GNU Make) <build-system-legacy>
    错误处理 <error-handling>
    严重错误 <fatal-errors>
    Event Handling <event-handling>
@@ -21,10 +21,10 @@ API 指南
    Bootloader <bootloader>
    分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
-   ULP Coprocessor <ulp>
-   ULP 协处理器 (CMake) <ulp-cmake>
+   ULP 协处理器 <ulp>
+   ULP ( CMake) <ulp-legacy>
    单元测试 <unit-tests>
-   单元测试 (CMake) <unit-tests-cmake>
+   单元测试 (传统 GNU Make) <unit-tests-legacy>
    应用层跟踪 <app_trace>
    控制台终端组件 <console>
    ROM debug console <romconsole>

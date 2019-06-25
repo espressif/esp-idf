@@ -1,6 +1,8 @@
-Unit Testing in ESP32
-=====================
+Unit Testing (Legacy GNU Make)
+==============================
 :link_to_translation:`zh_CN:[中文]`
+
+.. include:: ../gnu-make-legacy.rst
 
 ESP-IDF comes with a unit test app based on Unity - unit test framework. Unit tests are integrated in the ESP-IDF repository and are placed in ``test`` subdirectory of each component respectively.
 

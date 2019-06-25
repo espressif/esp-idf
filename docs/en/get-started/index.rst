@@ -1,12 +1,8 @@
-﻿*******************
-Get Started (CMake)
-*******************
+﻿***********
+Get Started
+***********
 
 :link_to_translation:`zh_CN:[中文]`
-
-.. include:: ../cmake-warning.rst
-
-.. include:: ../cmake-pending-features.rst
 
 This document is intended to help you set up the software development environment for the hardware based on the ESP32 chip by Espressif.
 
@@ -46,7 +42,7 @@ Software:
 * **Text editor** to write programs (**Projects**) in C, e.g., `Eclipse <https://www.eclipse.org/>`_
 
 
-.. figure:: ../../_static/what-you-need-cmake.png
+.. figure:: ../../_static/what-you-need.png
     :align: center
     :alt: Development of applications for ESP32
     :figclass: align-center
@@ -68,7 +64,7 @@ If you have one of ESP32 development boards listed below, you can click on the l
     ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
     
 
-.. _get-started-step-by-step-cmake:
+.. _get-started-step-by-step:
 
 Installation Step by Step
 =========================
@@ -78,23 +74,23 @@ This is a detailed roadmap to walk you through the installation process.
 Setting up Development Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-get-prerequisites-cmake` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`macOS <macos-setup>`
-* :ref:`get-started-get-esp-idf-cmake`
-* :ref:`get-started-set-up-tools-cmake`
-* :ref:`get-started-set-up-env-cmake`
+* :ref:`get-started-get-prerequisites` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`macOS <macos-setup>`
+* :ref:`get-started-get-esp-idf`
+* :ref:`get-started-set-up-tools`
+* :ref:`get-started-set-up-env`
 
 Creating Your First Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-start-project-cmake`
-* :ref:`get-started-connect-cmake`
-* :ref:`get-started-configure-cmake`
-* :ref:`get-started-build-cmake`
-* :ref:`get-started-flash-cmake`
-* :ref:`get-started-build-monitor-cmake`
+* :ref:`get-started-start-project`
+* :ref:`get-started-connect`
+* :ref:`get-started-configure`
+* :ref:`get-started-build`
+* :ref:`get-started-flash`
+* :ref:`get-started-build-monitor`
 
 
-.. _get-started-get-prerequisites-cmake:
+.. _get-started-get-prerequisites:
 
 Step 1. Install prerequisites
 =============================
@@ -108,20 +104,33 @@ Some tools need to be installed on the computer before proceeding to the next st
     Linux <linux-setup>
     macOS <macos-setup>
 
-* :doc:`windows-setup`
-* :doc:`linux-setup`
-* :doc:`macos-setup`
++-------------------+-------------------+-------------------+
+| |windows-logo|    | |linux-logo|      | |macos-logo|      |
++-------------------+-------------------+-------------------+
+| `Windows`_        | `Linux`_          | `Mac OS`_         |
++-------------------+-------------------+-------------------+
 
-.. _get-started-get-esp-idf-cmake:
+.. |windows-logo| image:: ../../_static/windows-logo.png
+    :target: ../get-started/windows-setup.html
+
+.. |linux-logo| image:: ../../_static/linux-logo.png
+    :target: ../get-started/linux-setup.html
+
+.. |macos-logo| image:: ../../_static/macos-logo.png
+    :target: ../get-started/macos-setup.html
+
+.. _Windows: ../get-started/windows-setup.html
+.. _Linux: ../get-started/linux-setup.html
+.. _Mac OS: ../get-started/macos-setup.html
+
+.. _get-started-get-esp-idf:
 
 Step 2. Get ESP-IDF
 ===================
 
 To build applications for the ESP32, you need the software libraries provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
 
-Get ESP-IDF in accordance with your operating system.
-
-To get ESP-IDF, navigate to your installation directory and clone the repository with ``git clone``.
+To get ESP-IDF, navigate to your installation directory and clone the repository with ``git clone``, following instructions below specific to your operating system.
 
 .. note::
 
@@ -141,13 +150,13 @@ Consult :doc:`/versions` for information about which ESP-IDF version to use in a
 Windows
 ~~~~~~~
 
-In addition to installing the tools, :ref:`get-started-cmake-windows-tools-installer` for Windows introduced in Step 1 can also download a copy of ESP-IDF.
+In addition to installing the tools, :ref:`get-started-windows-tools-installer` for Windows introduced in Step 1 can also download a copy of ESP-IDF.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-If you wish to download ESP-IDF without the help of ESP-IDF Tools Installer, refer to these :ref:`instructions <get-esp-idf-windows-command-line-cmake>`.
+If you wish to download ESP-IDF without the help of ESP-IDF Tools Installer, refer to these :ref:`instructions <get-esp-idf-windows-command-line>`.
 
-.. _get-started-set-up-tools-cmake:
+.. _get-started-set-up-tools:
 
 Step 3. Set up the tools
 ========================
@@ -157,7 +166,7 @@ Aside from the ESP-IDF, you also need to install the tools used by ESP-IDF, such
 Windows
 ~~~~~~~
 
-:ref:`get-started-cmake-windows-tools-installer` for Windows introduced in Step 1 installs all the required tools.
+:ref:`get-started-windows-tools-installer` for Windows introduced in Step 1 installs all the required tools.
 
 If you want to install the tools without the help of ESP-IDF Tools Installer, open the Command Prompt and follow these steps:
 
@@ -181,7 +190,7 @@ The scripts introduced in this step install compilation tools required by ESP-ID
 
 If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the ``install.bat``/``install.sh`` and ``export.bat``/``export.sh`` scripts are executed.
 
-.. _get-started-set-up-env-cmake:
+.. _get-started-set-up-env:
 
 Step 4. Set up the environment variables
 ========================================
@@ -191,7 +200,7 @@ The installed tools are not yet added to the PATH environment variable. To make 
 Windows
 ~~~~~~~
 
-:ref:`get-started-cmake-windows-tools-installer` for Windows creates an "ESP-IDF Command Prompt" shortcut in the Start Menu. This shortcut opens the Command Prompt and sets up all the required environment variables. You can open this shortcut and proceed to the next step.
+:ref:`get-started-windows-tools-installer` for Windows creates an "ESP-IDF Command Prompt" shortcut in the Start Menu. This shortcut opens the Command Prompt and sets up all the required environment variables. You can open this shortcut and proceed to the next step.
 
 Alternatively, if you want to use ESP-IDF in an existing Command Prompt window, you can run:
 
@@ -212,7 +221,7 @@ Note the space between the leading dot and the path!
 
 You can also automate this step, making ESP-IDF tools available in every terminal, by adding this line to your ``.profile`` or ``.bash_profile`` script.
 
-.. _get-started-start-project-cmake:
+.. _get-started-start-project:
 
 Step 5. Start a Project
 =======================
@@ -245,7 +254,7 @@ It is also possible to build examples in-place, without copying them first.
 
     The ESP-IDF build system does not support spaces in the paths to either ESP-IDF or to projects.
 
-.. _get-started-connect-cmake:
+.. _get-started-connect:
 
 Step 6. Connect Your Device
 ===========================
@@ -265,12 +274,12 @@ If you are not sure how to check the serial port name, please refer to :doc:`est
     Keep the port name handy as you will need it in the next steps.
 
 
-.. _get-started-configure-cmake:
+.. _get-started-configure:
 
 Step 7. Configure
 =================
 
-Navigate to your ``hello_world`` directory from :ref:`get-started-start-project-cmake` and run the project configuration utility ``menuconfig``.
+Navigate to your ``hello_world`` directory from :ref:`get-started-start-project` and run the project configuration utility ``menuconfig``.
 
 Linux and macOS
 ~~~~~~~~~~~~~~~
@@ -313,7 +322,7 @@ To navigate and use ``menuconfig``, press the following keys:
 
     If you use ESP32-DevKitC board with the **ESP32-SOLO-1** module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing examples.
 
-.. _get-started-build-cmake:
+.. _get-started-build:
 
 Step 8. Build the Project
 =========================
@@ -347,7 +356,7 @@ This command will compile the application and all ESP-IDF components, then it wi
 If there are no errors, the build will finish by generating the firmware binary .bin file.
 
 
-.. _get-started-flash-cmake:
+.. _get-started-flash:
 
 Step 9. Flash onto the Device
 =============================
@@ -356,7 +365,7 @@ Flash the binaries that you just built onto your ESP32 board by running::
 
     idf.py -p PORT [-b BAUD] flash
 
-Replace PORT with your ESP32 board's serial port name from :ref:`get-started-connect-cmake`.
+Replace PORT with your ESP32 board's serial port name from :ref:`get-started-connect`.
 
 You can also change the flasher baud rate by replacing BAUD with the baud rate you need. The default baud rate is ``460800``.
 
@@ -402,7 +411,7 @@ If there are no issues by the end of the flash process, the module will be reset
 .. (Not currently supported) If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`.
 
 
-.. _get-started-build-monitor-cmake:
+.. _get-started-build-monitor:
 
 Step 10. Monitor
 ================
@@ -446,9 +455,9 @@ If IDF monitor fails shortly after the upload, or, if instead of the messages ab
 If you have such a problem, do the following:
 
 1. Exit the monitor.
-2. Go back to :ref:`menuconfig <get-started-configure-cmake>`.
+2. Go back to :ref:`menuconfig <get-started-configure>`.
 3. Go to Component config --> ESP32-specific --> Main XTAL frequency, then change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz.
-4. After that, :ref:`build and flash <get-started-flash-cmake>` the application again.
+4. After that, :ref:`build and flash <get-started-flash>` the application again.
 
 .. note::
 
@@ -468,13 +477,13 @@ Now you are ready to try some other :idf:`examples`, or go straight to developin
 Updating ESP-IDF
 ================
 
-You should update ESP-IDF from time to time, as newer versions fix bugs and provide new features. The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf-cmake`.
+You should update ESP-IDF from time to time, as newer versions fix bugs and provide new features. The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf`.
 
 Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
 
-After updating ESP-IDF, execute ``install.sh`` (``install.bat`` on Windows) again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools-cmake`.
+After updating ESP-IDF, execute ``install.sh`` (``install.bat`` on Windows) again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
 
-Once the new tools are installed, update the environment using ``export.sh`` (``export.bat`` on Windows). See instructions at :ref:`get-started-set-up-env-cmake`.
+Once the new tools are installed, update the environment using ``export.sh`` (``export.bat`` on Windows). See instructions at :ref:`get-started-set-up-env`.
 
 Related Documents
 =================

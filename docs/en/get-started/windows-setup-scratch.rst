@@ -1,10 +1,8 @@
-**********************************
-Windows Setup from Scratch (CMake)
-**********************************
+********************************************
+Setup Windows Toolchain from Scratch
+********************************************
 
 :link_to_translation:`zh_CN:[中文]`
-
-.. include:: ../cmake-warning.rst
 
 This is a step-by-step alternative to running the :doc:`ESP-IDF Tools Installer <windows-setup>` for the CMake-based build system. Installing all of the tools by hand allows more control over the process, and also provides the information for advanced users to customize the install.
 
@@ -13,7 +11,7 @@ To quickly setup the toolchain and other tools in standard way, using the ESP-ID
 .. note::
    The GNU Make based build system requires the MSYS2_ Unix compatibility environment on Windows. The CMake-based build system does not require this environment.
 
-.. _get-esp-idf-windows-command-line-cmake:
+.. _get-esp-idf-windows-command-line:
 
 Get ESP-IDF
 ===========
@@ -98,7 +96,7 @@ Next, the ``bin`` subdirectory of this directory must be `added to your Path <ad
    If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-esp32-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
 
 
-.. _add-directory-windows-path-cmake:
+.. _add-directory-windows-path:
 
 Adding Directory to Path
 ========================
@@ -113,7 +111,7 @@ Double-click the ``Path`` variable (either User or System Path, depending if you
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf-cmake`.
+To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
 
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/

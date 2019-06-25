@@ -1,4 +1,4 @@
-ULP coprocessor programming (CMake)
+ULP coprocessor programming
 ===================================
 
 :link_to_translation:`zh_CN:[中文]`

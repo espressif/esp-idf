@@ -1,5 +1,5 @@
-ULP coprocessor programming
-===========================
+ULP coprocessor (Legacy GNU Make)
+=================================
 
 .. toctree::
    :maxdepth: 1
@@ -7,6 +7,7 @@ ULP coprocessor programming
    Instruction set reference <ulp_instruction_set>
    Programming using macros (legacy) <ulp_macros>
 
+.. include:: ../gnu-make-legacy.rst
 
 ULP (Ultra Low Power) coprocessor is a simple FSM which is designed to perform measurements using ADC, temperature sensor, and external I2C sensors, while main processors are in deep sleep mode. ULP coprocessor can access RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. ULP coprocessor uses fixed-width 32-bit instructions, 32-bit memory addressing, and has 4 general purpose 16-bit registers.
 
