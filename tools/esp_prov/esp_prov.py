@@ -61,7 +61,7 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
     try:
         tp = None
         if (sel_transport == 'softap'):
-            tp = transport.Transport_Softap(softap_endpoint)
+            tp = transport.Transport_HTTP(softap_endpoint)
         elif (sel_transport == 'ble'):
             # BLE client is now capable of automatically figuring out
             # the primary service from the advertisement data and the

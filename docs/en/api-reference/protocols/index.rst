@@ -14,6 +14,7 @@ Application Protocols
    ASIO <asio>
    ESP-MQTT <mqtt>
    Modbus <modbus>
+   Local Control <esp_local_ctrl>
 
 Code examples for this API section are provided in the :example:`protocols` directory of ESP-IDF examples.
 

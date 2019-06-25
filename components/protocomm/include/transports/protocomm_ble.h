@@ -48,7 +48,7 @@ typedef struct name_uuid {
 /**
  * @brief   Config parameters for protocomm BLE service
  */
-typedef struct {
+typedef struct protocomm_ble_config {
     /**
      * BLE device name being broadcast at the time of provisioning
      */
