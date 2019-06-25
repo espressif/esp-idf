@@ -741,6 +741,13 @@ menu "ESP32-specific"
             Please note that the actual length will be reduced by BT_RESERVE_DRAM if Bluetooth
             controller is enabled.
 
+    config ESP32_DPORT_DIS_INTERRUPT_LVL
+        int "Disable the interrupt level for the DPORT workarounds"
+        default 5
+        help
+            To prevent interrupting DPORT workarounds,
+            need to disable interrupt with a maximum used level in the system.
+
 endmenu  # ESP32-Specific
 
 menu "Power Management"
