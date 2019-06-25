@@ -19,7 +19,7 @@ set(COMPONENTS bootloader esptool_py partition_table soc bootloader_support log 
 set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
 set(common_req log esp_rom esp_common xtensa)
-if (CONFIG_LEGACY_INCLUDE_COMMON_HEADERS)
+if(LEGACY_INCLUDE_COMMON_HEADERS)
     list(APPEND common_req soc)
 endif()
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
