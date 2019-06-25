@@ -103,7 +103,7 @@ IDF 监控器在后台运行如下命令::
 输出筛选
 ~~~~~~~~~~~~~~~~
 
-IDF 监视器有两种启用方式：运行 ``make monitor PRINT_FILTER=""`` （适用于 Make）或者 ``idf.py monitor PRINT_FILTER=""`` （适用于 CMake），其中，``PRINT_FILTER`` 是输出筛选的参数。参数默认值为空字符串，可打印任何内容。
+IDF 监视器有两种启用方式：运行 ``make monitor PRINT_FILTER=""`` （适用于 Make）或者 ``idf.py monitor --print-filter=""`` （适用于 CMake），其中，``PRINT_FILTER`` 是输出筛选的参数。参数默认值为空字符串，可打印任何内容。
 
 若需对打印内容设置限制，可指定 ``<tag>:<log_level>`` 等选项，其中 ``<tag>`` 是标签字符串，``<log_level>`` 是 ``{N, E, W, I, D, V, *}`` 集合中的一个字母，指的是 :doc:`日志 <../../api-reference/system/log>` 级别。
 
