@@ -1,5 +1,6 @@
+
 ESP-WROVER-KIT V3 Getting Started Guide
-===============================================
+=======================================
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP-WROVER-KIT V3 development board and also provides information about its functionality and configuration options. For the description of other ESP-WROVER-KIT versions, please check :doc:`../hw-reference/index`.
@@ -8,7 +9,7 @@ This guide shows how to get started with the ESP-WROVER-KIT V3 development board
 What You Need
 -------------
 
-* :ref:`ESP-WROVER-KIT V3 board <get-started-esp-wrover-kit-v3-board-front-cmake>`
+* :ref:`ESP-WROVER-KIT V3 board <get-started-esp-wrover-kit-v3-board-front>`
 * USB 2.0 cable（A to Micro-B）
 * Computer running Windows, Linux, or macOS
 
@@ -52,7 +53,7 @@ Functional Description
 
 The following two figures and the table below describe the key components, interfaces, and controls of the ESP-WROVER-KIT board.
 
-.. _get-started-esp-wrover-kit-v3-board-front-cmake:
+.. _get-started-esp-wrover-kit-v3-board-front:
 
 .. figure:: ../../_static/esp-wrover-kit-v3-layout-front.jpg
     :align: center
@@ -61,7 +62,7 @@ The following two figures and the table below describe the key components, inter
 
     ESP-WROVER-KIT board layout - front
 
-.. _get-started-esp-wrover-kit-v3-board-back-cmake:
+.. _get-started-esp-wrover-kit-v3-board-back:
 
 .. figure:: ../../_static/esp-wrover-kit-v3-layout-back.jpg
     :align: center
@@ -118,11 +119,11 @@ I/O                 All the pins on the ESP32 module are broken out to pin heade
 
 MicroSD Card Slot   Useful for developing applications that access MicroSD card for data storage and retrieval.
 
-LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v3-board-back-cmake`.
+LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v3-board-back`.
 ==================  =================================================================================================================================
 
 
-.. _get-started-esp-wrover-kit-v3-setup-options-cmake:
+.. _get-started-esp-wrover-kit-v3-setup-options:
 
 Setup Options
 -------------
@@ -178,17 +179,17 @@ JTAG, MicroSD          IO15   5V
 
 Legend:
 
-* NC/XTAL - :ref:`32.768 kHz Oscillator <get-started-esp-wrover-kit-v3-xtal-cmake>`
-* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v3-jtag-header-cmake>`
+* NC/XTAL - :ref:`32.768 kHz Oscillator <get-started-esp-wrover-kit-v3-xtal>`
+* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v3-jtag-header>`
 * Boot - Boot button / SW2
-* Camera - :ref:`Camera / JP4 <get-started-esp-wrover-kit-v3-camera-header-cmake>`
-* LED - :ref:`RGB LED <get-started-esp-wrover-kit-v3-rgb-led-connections-cmake>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v3-microsd-card-slot-cmake>`
-* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v3-lcd-connector-cmake>`
+* Camera - :ref:`Camera / JP4 <get-started-esp-wrover-kit-v3-camera-header>`
+* LED - :ref:`RGB LED <get-started-esp-wrover-kit-v3-rgb-led-connections>`
+* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v3-microsd-card-slot>`
+* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v3-lcd-connector>`
 * PSRAM - only in case ESP32-WROVER is installed
 
 
-.. _get-started-esp-wrover-kit-v3-xtal-cmake:
+.. _get-started-esp-wrover-kit-v3-xtal:
 
 32.768 kHz Oscillator
 ^^^^^^^^^^^^^^^^^^^^^
@@ -205,7 +206,7 @@ Legend:
     Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering them to positions R12 / R24.
 
 
-.. _get-started-esp-wrover-kit-v3-spi-flash-header-cmake:
+.. _get-started-esp-wrover-kit-v3-spi-flash-header:
 
 SPI Flash / JP13
 ^^^^^^^^^^^^^^^^
@@ -223,10 +224,10 @@ SPI Flash / JP13
 
 .. important::
 
-    The module's flash bus is connected to the jumper block JP13 through zero-ohm resistors R140 ~ R145. If the flash memory needs to operate at the frequency of 80 MHz, for reasons such as improving the integrity of bus signals, you can disolder these resistors to disconnect the module's flash bus from the pin header JP13.
+    The module's flash bus is connected to the jumper block JP13 through zero-ohm resistors R140 ~ R145. If the flash memory needs to operate at the frequency of 80 MHz, for reasons such as improving the integrity of bus signals, you can desolder these resistors to disconnect the module's flash bus from the pin header JP13.
 
 
-.. _get-started-esp-wrover-kit-v3-jtag-header-cmake:
+.. _get-started-esp-wrover-kit-v3-jtag-header:
 
 JTAG / JP8
 ^^^^^^^^^^
@@ -242,7 +243,7 @@ JTAG / JP8
 ====  ==============  =============
 
 
-.. _get-started-esp-wrover-kit-v3-camera-header-cmake:
+.. _get-started-esp-wrover-kit-v3-camera-header:
 
 Camera / JP4
 ^^^^^^^^^^^^
@@ -273,7 +274,7 @@ Camera / JP4
 * Signals D0 .. D7 denote camera data bus
 
 
-.. _get-started-esp-wrover-kit-v3-rgb-led-connections-cmake:
+.. _get-started-esp-wrover-kit-v3-rgb-led-connections:
 
 RGB LED
 ^^^^^^^
@@ -287,7 +288,7 @@ RGB LED
 ====  ==========  =========
 
 
-.. _get-started-esp-wrover-kit-v3-microsd-card-slot-cmake:
+.. _get-started-esp-wrover-kit-v3-microsd-card-slot:
 
 MicroSD Card
 ^^^^^^^^^^^^
@@ -305,7 +306,7 @@ MicroSD Card
 ====  ==============  ===============
 
 
-.. _get-started-esp-wrover-kit-v3-lcd-connector-cmake:
+.. _get-started-esp-wrover-kit-v3-lcd-connector:
 
 LCD / U5
 ^^^^^^^^
@@ -323,7 +324,7 @@ LCD / U5
 ====  ==============  ===============
 
 
-.. _get-started-esp-wrover-kit-v3-start-development-cmake:
+.. _get-started-esp-wrover-kit-v3-start-development:
 
 Start Application Development
 -----------------------------
@@ -353,9 +354,7 @@ Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Proceed to :doc:`../get-started-cmake/index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
-
-If you prefer using an older GNU Make build system, then proceed to respective :ref:`get-started-step-by-step` for the GNU Make.
+Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents

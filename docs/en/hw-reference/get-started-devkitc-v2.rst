@@ -9,7 +9,7 @@ This guide shows how to start using the ESP32-DevKitC V2 development board.
 What You Need
 -------------
 
-* :ref:`ESP32-DevKitC V2 board <get-started-esp32-devkitc-v2-board-front-cmake>`
+* ESP32-DevKitC V2 board
 * USB A / micro USB B cable
 * Computer running Windows, Linux, or macOS
 
@@ -27,7 +27,7 @@ Functional Description
 
 The following figure and the table below describe the key components, interfaces and controls of the ESP32-DevKitC V2 board.
 
-.. _get-started-esp32-devkitc-v2-board-front-cmake:
+.. _get-started-esp32-devkitc-v2-board-front-make:
 
 .. figure:: ../../_static/esp32-devkitc-v2-functional-overview.png
     :align: center
@@ -71,9 +71,7 @@ Start Application Development
 
 Before powering up your ESP32-DevKitC V2, please make sure that the board is in good condition with no obvious signs of damage.
 
-After that, proceed to :doc:`../get-started-cmake/index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
-
-If you prefer using an older GNU Make build system, then proceed to respective :ref:`get-started-step-by-step` for the GNU Make.
+After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents

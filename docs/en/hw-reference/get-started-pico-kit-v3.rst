@@ -1,5 +1,5 @@
 ESP32-PICO-KIT V3 Getting Started Guide
-===============================================
+=======================================
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP32-PICO-KIT V3 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../hw-reference/index`.
@@ -65,9 +65,7 @@ Start Application Development
 
 Before powering up your ESP32-PICO-KIT V3, please make sure that the board is in good condition with no obvious signs of damage.
 
-After that, proceed to :doc:`../get-started-cmake/index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
-
-If you prefer using an older GNU Make build system, then proceed to respective :ref:`get-started-step-by-step` for the GNU Make.
+After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents

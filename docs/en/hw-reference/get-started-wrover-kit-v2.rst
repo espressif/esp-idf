@@ -1,5 +1,5 @@
 ESP-WROVER-KIT V2 Getting Started Guide
-===============================================
+=======================================
 :link_to_translation:`zh_CN:[中文]`
 
 This guide shows how to get started with the ESP-WROVER-KIT V2 development board and also provides information about its functionality and configuration options. For the description of other ESP-WROVER-KIT versions, please check :doc:`../hw-reference/index`.
@@ -52,7 +52,7 @@ Functional Description
 
 The following two figures and the table below describe the key components, interfaces, and controls of the ESP-WROVER-KIT board.
 
-.. _get-started-esp-wrover-kit-v2-board-front-cmake:
+.. _get-started-esp-wrover-kit-v2-board-front:
 
 .. figure:: ../../_static/esp-wrover-kit-v2-layout-front.png
     :align: center
@@ -61,7 +61,7 @@ The following two figures and the table below describe the key components, inter
 
     ESP-WROVER-KIT board layout - front
 
-.. _get-started-esp-wrover-kit-v2-board-back-cmake:
+.. _get-started-esp-wrover-kit-v2-board-back:
 
 .. figure:: ../../_static/esp-wrover-kit-v2-layout-back.png
     :align: center
@@ -116,11 +116,11 @@ I/O                 All the pins on the ESP32 module are broken out to pin heade
 
 MicroSD Card        MicroSD card slot for data storage: when ESP32 enters the download mode, GPIO2 cannot be held high. However, a pull-up resistor is required on GPIO2 to enable the MicroSD Card. By default, GPIO2 and the pull-up resistor R153 are disconnected. To enable the SD Card, use jumpers on JP1 as shown in Section `Setup Options`_.
 
-LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v2-board-back-cmake`.
+LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v2-board-back`.
 ==================  =================================================================================================================================
 
 
-.. _get-started-esp-wrover-kit-v2-setup-options-cmake:
+.. _get-started-esp-wrover-kit-v2-setup-options:
 
 Setup Options
 -------------
@@ -140,7 +140,7 @@ JP14     |jp14|            Enable RTS/CTS flow control for serial communication
 =======  ================  =========================================================
 
 
-.. _get-started-esp-wrover-kit-v2-start-development-cmake:
+.. _get-started-esp-wrover-kit-v2-start-development:
 
 Start Application Development
 -----------------------------
@@ -170,9 +170,7 @@ Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Proceed to :doc:`../get-started-cmake/index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
-
-If you prefer using an older GNU Make build system, then proceed to respective :ref:`get-started-step-by-step` for the GNU Make.
+Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents
