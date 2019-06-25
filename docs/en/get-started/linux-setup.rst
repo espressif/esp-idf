@@ -1,10 +1,8 @@
-﻿***********************************************
-Installation of Prerequisites for Linux (CMake)
-***********************************************
+﻿*********************************************
+Standard Setup of Toolchain for Linux
+*********************************************
 
 :link_to_translation:`zh_CN:[中文]`
-
-.. include:: ../cmake-warning.rst
 
 Install Prerequisites
 =====================
@@ -32,7 +30,7 @@ Additional Tips
 Permission issues /dev/ttyUSB0
 ------------------------------
 
-With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group-cmake>`.
+With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
 
 
 Arch Linux Users
@@ -53,7 +51,7 @@ Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf-cmake`.
+To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
 
 
 Related Documents

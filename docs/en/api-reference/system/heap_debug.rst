@@ -250,7 +250,7 @@ An example::
 
 To gather and analyse heap trace do the following on the host:
 
-1.  Build the program and download it to the target as described in :doc:`Build and Flash </get-started/make-project>`.
+1.  Build the program and download it to the target as described in :ref:`Getting Started Guide <get-started-build>`.
 
 2.  Run OpenOCD (see :doc:`JTAG Debugging </api-guides/jtag-debugging/index>`).
 

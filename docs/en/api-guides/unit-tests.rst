@@ -1,8 +1,6 @@
-Unit Testing in ESP32 (CMake)
+Unit Testing in ESP32
 =============================
 :link_to_translation:`zh_CN:[中文]`
-
-.. include:: ../cmake-warning.rst
 
 ESP-IDF comes with a unit test app based on Unity - unit test framework. Unit tests are integrated in the ESP-IDF repository and are placed in ``test`` subdirectory of each component respectively.
 
@@ -28,7 +26,7 @@ Identifiers are used to group related test, or tests with specific properties.
 There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_END()`` in each test case.
 ``unity_platform.c`` will run ``UNITY_BEGIN()``, run the tests cases, and then call ``​UNITY_END()``.
 
-The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories-cmake>`, since they are themselves,
+The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves,
 components. ESP-IDF uses the test framework ``unity`` and should be specified as a requirement for the component. Normally, components 
 :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the 
 use of ``COMPONENT_SRCDIRS`` is advised.
@@ -132,7 +130,7 @@ Change into tools/unit-test-app directory to configure and build it:
 
 * `idf.py -T all build` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
 * `idf.py -T xxx build` - build unit test app with tests for specific components. 
-* `idf.py -T all -E xxx build` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `idf.py -T all -E ulp -E mbedtls build` - build all unit tests exludes ulp and mbedtls components).
+* `idf.py -T all -E xxxbuild` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `idf.py -T all -E ulp mbedtls build` - build all unit tests exludes ulp and mbedtls components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 

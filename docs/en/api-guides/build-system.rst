@@ -1,15 +1,11 @@
-Build System (CMake)
-********************
+Build System
+************
 
 :link_to_translation:`zh_CN:[中文]`
 
-.. include:: ../cmake-warning.rst
+This document explains the implementation of the ESP-IDF build system and the concept of "components". Read this document if you want to know how to organise and build a new ESP-IDF project or component.
 
-.. include:: ../cmake-pending-features.rst
-
-This document explains the implementation of the CMake-based ESP-IDF build system and the concept of "components". :doc:`Documentation for the GNU Make based build system <build-system>` is also available
-
-Read this document if you want to know how to organise and build a new ESP-IDF project or component using the CMake-based build system.
+.. note:: This document describes the CMake-based build system, which is the default since ESP-IDF V4.0. ESP-IDF also supports a :doc:`legacy build system based on GNU Make <build-system-legacy>`, which was the default before ESP-IDF V4.0.
 
 
 Overview
@@ -67,7 +63,7 @@ The ``idf.py`` command line tool provides a front-end for easily managing your p
 - A command line build tool (either Ninja_ build or `GNU Make`)
 - `esptool.py`_ for flashing ESP32.
 
-The :ref:`getting started guide <get-started-configure-cmake>` contains a brief introduction to how to set up ``idf.py`` to configure, build, and flash projects.
+The :ref:`getting started guide <get-started-configure>` contains a brief introduction to how to set up ``idf.py`` to configure, build, and flash projects.
 
 ``idf.py`` should be run in an ESP-IDF "project" directory, ie one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
 
@@ -211,7 +207,7 @@ This example "myProject" contains the following elements:
 
 - Optional "components" directory contains components that are part of the project. A project does not have to contain custom components of this kind, but it can be useful for structuring reusable code or including third party components that aren't part of ESP-IDF.
 
-- "main" directory is a special "pseudo-component" that contains source code for the project itself. "main" is a default name, the CMake variable ``COMPONENT_DIRS`` includes this component but you can modify this variable. Alternatively, ``EXTRA_COMPONENT_DIRS`` can be set in the top-level CMakeLists.txt to look for components in other places. See the :ref:`renaming main <rename-main-cmake>` section for more info. If you have a lot of source files in your project, we recommend grouping most into components instead of putting them all in "main".
+- "main" directory is a special "pseudo-component" that contains source code for the project itself. "main" is a default name, the CMake variable ``COMPONENT_DIRS`` includes this component but you can modify this variable. Alternatively, ``EXTRA_COMPONENT_DIRS`` can be set in the top-level CMakeLists.txt to look for components in other places. See the :ref:`renaming main <rename-main>` section for more info. If you have a lot of source files in your project, we recommend grouping most into components instead of putting them all in "main".
 
 - "build" directory is where build output is created. This directory is created by ``idf.py`` if it doesn't already exist. CMake configures the project and generates interim build files in this directory. Then, after the main build process is run, this directory will also contain interim object files and libraries as well as final binary output files. This directory is usually not added to source control or distributed with the project source code.
 
@@ -262,7 +258,7 @@ Any paths in these variables can be absolute paths, or set relative to the proje
 
 To set these variables, use the `cmake set command <cmake set_>`_ ie ``set(VARIABLE "VALUE")``. The ``set()`` commands should be placed after the ``cmake_minimum(...)`` line but before the ``include(...)`` line.
 
-.. _rename-main-cmake:
+.. _rename-main:
 
 Renaming ``main`` component
 ----------------------------
@@ -277,12 +273,12 @@ and manually specifying its dependencies. Specifically, the steps to renaming ``
 2. Set ``EXTRA_COMPONENT_DIRS`` in the project CMakeLists.txt to include the renamed ``main`` directory.
 3. Specify the dependencies in the renamed component's CMakeLists.txt file via REQUIRES or PRIV_REQUIRES arguments :ref:`on component registration<cmake_minimal_component_cmakelists>`.
 
-.. _component-directories-cmake:
+.. _component-directories:
 
 Component CMakeLists Files
 ==========================
 
-Each project contains one or more components. Components can be part of ESP-IDF, part of the project's own components directory, or added from custom component directories (:ref:`see above <component-directories-cmake>`).
+Each project contains one or more components. Components can be part of ESP-IDF, part of the project's own components directory, or added from custom component directories (:ref:`see above <component-directories>`).
 
 A component is any directory in the ``COMPONENT_DIRS`` list which contains a ``CMakeLists.txt`` file.
 
@@ -382,7 +378,7 @@ This can be useful if there is upstream code that emits warnings.
 
 When using these commands, place them after the call to ``idf_component_register`` in the component CMakeLists file.
 
-.. _component-configuration-cmake:
+.. _component-configuration:
 
 Component Configuration
 =======================
@@ -497,7 +493,11 @@ Some tips for debugging the ESP-IDF CMake-based build system:
 - Running ``cmake -DDEBUG=1`` will produce more verbose diagnostic output from the IDF build system.
 - Running ``cmake`` with the ``--trace`` or ``--trace-expand`` options will give a lot of information about control flow. See the `cmake command line documentation`_.
 
-.. _warn-undefined-variables-cmake:
+When included from a project CMakeLists file, the ``project.cmake`` file defines some utility modules and global variables and then sets ``IDF_PATH`` if it was not set in the system environment.
+
+It also defines an overridden custom version of the built-in CMake_ ``project`` function. This function is overridden to add all of the ESP-IDF specific project functionality.
+
+.. _warn-undefined-variables:
 
 Warning On Undefined Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -505,6 +505,8 @@ Warning On Undefined Variables
 By default, ``idf.py`` passes the ``--warn-uninitialized`` flag to CMake_ so it will print a warning if an undefined variable is referenced in the build. This can be very useful to find buggy CMake files.
 
 If you don't want this behaviour, it can be disabled by passing ``--no-warnings`` to ``idf.py``.
+
+Browse the :idf_file:`/tools/cmake/project.cmake` file and supporting functions in :idf_file:`/tools/cmake/idf_functions.cmake` for more details.
 
 Overriding Parts of the Project
 -------------------------------
@@ -531,11 +533,12 @@ Take great care when setting variables or targets in a ``project_include.cmake``
 KConfig.projbuild
 ^^^^^^^^^^^^^^^^^
 
-This is an equivalent to ``project_include.cmake`` for :ref:`component-configuration-cmake` KConfig files. If you want to include
+This is an equivalent to ``project_include.cmake`` for :ref:`component-configuration` KConfig files. If you want to include
 configuration options at the top-level of menuconfig, rather than inside the "Component Configuration" sub-menu, then these can be defined in the KConfig.projbuild file alongside the ``CMakeLists.txt`` file.
 
-Take care when adding configuration values in this file, as they will be included across the entire project configuration. Where possible, it's generally better to create a KConfig file for :ref:`component-configuration-cmake`.
+Take care when adding configuration values in this file, as they will be included across the entire project configuration. Where possible, it's generally better to create a KConfig file for :ref:`component-configuration`.
 
+``project_include.cmake`` files are used inside ESP-IDF, for defining project-wide build features such as ``esptool.py`` command line arguments and the ``bootloader`` "special app".
 
 Configuration-Only Components
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -770,7 +773,7 @@ CMake has some unusual behaviour around external project builds:
 
 The best of these approaches for building an external project will depend on the project itself, its build system, and whether you anticipate needing to frequently recompile the project.
 
-.. _custom-sdkconfig-defaults-cmake:
+.. _custom-sdkconfig-defaults:
 
 Custom sdkconfig defaults
 =========================
@@ -1078,9 +1081,8 @@ Commands that set and operate on variables are generally okay to call before ``i
 The arguments for ``idf_component_register`` include:
 
   - SRCS - component source files used for creating a static library for the component; if not specified, component is a treated as a 
-          config-only component and an interface library is created instead.
-  - SRC_DIRS, EXCLUDE_SRCS - used to glob source files (.c, .cpp, .S) by specifying directories, instead of specifying source files manually via SRCS.
-          Note that this is subject to the :ref:`limitations of globbing in CMake<cmake-file-globbing>`. Source files specified in EXCLUDE_SRCS are removed from the globbed files.
+    config-only component and an interface library is created instead.
+  - SRC_DIRS, EXCLUDE_SRCS - used to glob source files (.c, .cpp, .S) by specifying directories, instead of specifying source files manually via SRCS. Note that this is subject to the :ref:`limitations of globbing in CMake<cmake-file-globbing>`. Source files specified in EXCLUDE_SRCS are removed from the globbed files.
   - INCLUDE_DIRS - paths, relative to the component directory, which will be added to the include search path for all other components which require the current component
   - PRIV_INCLUDE_DIRS - directory paths, must be relative to the component directory, which will be added to the include search path for this component's source files only
   - REQUIRES - public component requirements for the component
@@ -1109,13 +1111,13 @@ For example, to get the directory of the ``freertos`` component:
   message(STATUS "The 'freertos' component directory is: ${dir}")
 
 - COMPONENT_ALIAS - alias for COMPONENT_LIB used for linking the component to external targets; set by ``idf_build_component`` and alias library itself
-                is created by ``idf_component_register``
+  is created by ``idf_component_register``
 - COMPONENT_DIR - component directory; set by ``idf_build_component``
 - COMPONENT_LIB - name for created component static/interface library; set by ``idf_build_component`` and library itself
-                is created by ``idf_component_register``
+  is created by ``idf_component_register``
 - COMPONENT_NAME - name of the component; set by ``idf_build_component`` based on the component directory name
 - COMPONENT_TYPE - type of the component, whether LIBRARY or CONFIG_ONLY. A component is of type LIBRARY if it specifies
-                source files or embeds a file
+  source files or embeds a file
 - EMBED_FILES - list of files to embed in component; set from ``idf_component_register`` EMBED_FILES argument
 - EMBED_TXTFILES - list of text files to embed in component; set from ``idf_component_register`` EMBED_TXTFILES argument
 - INCLUDE_DIRS - list of component include directories; set from ``idf_component_register`` INCLUDE_DIRS argument

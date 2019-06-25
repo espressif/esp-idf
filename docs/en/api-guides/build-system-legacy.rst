@@ -1,11 +1,13 @@
-Build System
-************
+Build System (Legacy GNU Make)
+******************************
 :link_to_translation:`zh_CN:[中文]`
 
-This document explains the Espressif IoT Development Framework build system and the
+.. include:: ../gnu-make-legacy.rst
+
+This document explains the legacy GNU Make Espressif IoT Development Framework build system and the
 concept of "components"
 
-Read this document if you want to know how to organise a new ESP-IDF project.
+Read this document if you want to know how to organise an ESP-IDF project using GNU Make build system.
 
 We recommend using the esp-idf-template_ project as a starting point for your project.
 
@@ -21,7 +23,7 @@ An ESP-IDF project can be seen as an amalgamation of a number of components.
 For example, for a webserver that shows the current humidity, there could be:
 
 - The ESP32 base libraries (libc, rom bindings etc)
-- The WiFi drivers
+- The Wi-Fi drivers
 - A TCP/IP stack
 - The FreeRTOS operating system
 - A webserver
@@ -374,7 +376,7 @@ Some tips for debugging the esp-idf build system:
 
 For more debugging tips and general make information, see the `GNU Make Manual`.
 
-.. _warn-undefined-variables:
+.. _warn-undefined-variables-legacy:
 
 Warning On Undefined Variables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -619,7 +621,7 @@ is overridden then the component can instruct the linker to link other binaries 
 .. _GNU Make Manual: https://www.gnu.org/software/make/manual/make.html
 
 
-.. _custom-sdkconfig-defaults:
+.. _custom-sdkconfig-defaults-legacy:
 
 Custom sdkconfig defaults
 -------------------------

@@ -26,9 +26,9 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 
 # Flash Size
 
-The unit test partition table assumes a 4MB flash size. When testing `TESTS_ALL=1` (Make) or `-T all` (CMake), this additional factory app partition size is required.
+The unit test partition table assumes a 4MB flash size. When testing `-T all` or `TESTS_ALL=1` (Legacy GNU Make) or, this additional factory app partition size is required.
 
-If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `TEST_COMPONENTS=` (Make) or `-T <component> <component> ...` (CMake) instead of `TESTS_ALL` or `-T all` if tests don't fit in a smaller factory app partition (exact size will depend on configured options).
+If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `-T <component> <component> ...` or `TEST_COMPONENTS=` (Legacy GNU Make) or instead of `-T all` or `TESTS_ALL` if tests don't fit in a smaller factory app partition (exact size will depend on configured options).
 
 # Running Unit Tests
 

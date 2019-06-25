@@ -1,13 +1,11 @@
-*************************************************
-Installation of Prerequisites for Windows (CMake)
-*************************************************
+***********************************************
+Standard Setup of Toolchain for Windows
+***********************************************
 
 :link_to_translation:`zh_CN:[中文]`
 
-.. include:: ../cmake-warning.rst
-
 .. note::
-      The CMake-based build system is only supported on 64-bit versions of Windows.
+      Currently only 64-bit versions of Windows are supported. 32-bit Windows can use the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>`.
 
 Introduction
 ============
@@ -19,7 +17,7 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
 .. note::
    The GNU Make based build system requires the MSYS2_ Unix compatibility environment on Windows. The CMake-based build system does not require this environment.
 
-.. _get-started-cmake-windows-tools-installer:
+.. _get-started-windows-tools-installer:
 
 ESP-IDF Tools Installer
 =======================
@@ -48,7 +46,7 @@ Note that this shortcut is specific to the ESP-IDF directory selected in the ESP
 Next Steps
 ==========
 
-If the ESP-IDF Tools Installer has finished successfully, then the development environment setup is complete. Proceed directly to :ref:`get-started-start-project-cmake`.
+If the ESP-IDF Tools Installer has finished successfully, then the development environment setup is complete. Proceed directly to :ref:`get-started-start-project`.
 
 Related Documents
 =================

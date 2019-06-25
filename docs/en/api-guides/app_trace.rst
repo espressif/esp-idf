@@ -149,7 +149,7 @@ In general user should decide what type of data should be transferred in every d
             return res;
         }
 
-2.  The next step is to build the program image and download it to the target as described in :doc:`Build and Flash <../get-started/make-project>`.
+2.  The next step is to build the program image and download it to the target as described in the :ref:`Getting Started Guide <get-started-build>`.
 3.  Run OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>`).
 4.  Connect to OpenOCD telnet server. It can be done using the following command in terminal ``telnet <oocd_host> 4444``. If telnet session is opened on the same machine which runs OpenOCD you can use ``localhost`` as ``<oocd_host>`` in the command above.
 5.  Start trace data collection using special OpenOCD command. This command will transfer tracing data and redirect them to specified file or socket (currently only files are supported as trace data destination). For description of the corresponding commands see `OpenOCD Application Level Tracing Commands`_.
