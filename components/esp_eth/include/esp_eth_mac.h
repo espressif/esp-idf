@@ -20,6 +20,11 @@ extern "C" {
 #include <stdbool.h>
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
+#if CONFIG_ETH_USE_SPI_ETHERNET
+#include "driver/gpio.h"
+#include "driver/spi_master.h"
+#endif
+
 
 /**
 * @brief Ethernet MAC
@@ -115,6 +120,7 @@ struct esp_eth_mac_s {
     *      - ESP_OK: read PHY register successfully
     *      - ESP_ERR_INVALID_ARG: read PHY register failed because of invalid argument
     *      - ESP_ERR_INVALID_STATE: read PHY register failed because of wrong state of MAC
+    *      - ESP_ERR_TIMEOUT: read PHY register failed because of timeout
     *      - ESP_FAIL: read PHY register failed because some other error occurred
     *
     */
@@ -131,6 +137,7 @@ struct esp_eth_mac_s {
     * @return
     *      - ESP_OK: write PHY register successfully
     *      - ESP_ERR_INVALID_STATE: write PHY register failed because of wrong state of MAC
+    *      - ESP_ERR_TIMEOUT: write PHY register failed because of timeout
     *      - ESP_FAIL: write PHY register failed because some other error occurred
     *
     */
@@ -241,6 +248,10 @@ typedef struct {
     uint32_t rx_task_stack_size;  /*!< Stack size of the receive task */
     uint32_t rx_task_prio;        /*!< Priority of the receive task */
     uint32_t queue_len;           /*!< Length of the transaction queue */
+#if CONFIG_ETH_USE_SPI_ETHERNET
+    spi_device_handle_t spi_hdl;  /*!< Handle of spi device */
+#endif
+
 } eth_mac_config_t;
 
 /**
@@ -255,6 +266,7 @@ typedef struct {
         .queue_len = 100,           \
     }
 
+#if CONFIG_ETH_USE_ESP32_EMAC
 /**
 * @brief Create ESP32 Ethernet MAC instance
 *
@@ -265,7 +277,20 @@ typedef struct {
 *      - NULL: create MAC instance failed because some error occurred
 */
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
+#endif
 
+#if CONFIG_ETH_SPI_ETHERNET_DM9051
+/**
+* @brief Create DM9051 Ethernet MAC instance
+*
+* @param config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
+esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_mac_config_t *config);
+#endif
 #ifdef __cplusplus
 }
 #endif
