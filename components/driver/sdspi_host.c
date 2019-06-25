@@ -26,6 +26,8 @@
 #include "sdspi_private.h"
 #include "sdspi_crc.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 
 /// Max number of transactions in flight (used in start_command_write_blocks)

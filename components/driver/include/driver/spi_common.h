@@ -88,6 +88,48 @@ typedef struct {
 
 
 /**
+ * @brief Initialize a SPI bus
+ *
+ * @warning For now, only supports HSPI and VSPI.
+ *
+ * @param host SPI peripheral that controls this bus
+ * @param bus_config Pointer to a spi_bus_config_t struct specifying how the host should be initialized
+ * @param dma_chan Either channel 1 or 2, or 0 in the case when no DMA is required. Selecting a DMA channel
+ *                 for a SPI bus allows transfers on the bus to have sizes only limited by the amount of
+ *                 internal memory. Selecting no DMA channel (by passing the value 0) limits the amount of
+ *                 bytes transfered to a maximum of 64. Set to 0 if only the SPI flash uses
+ *                 this bus.
+ *
+ * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
+ *          DMA-capable memory.
+ *
+ * @warning The ISR of SPI is always executed on the core which calls this
+ *          function. Never starve the ISR on this core or the SPI transactions will not
+ *          be handled.
+ *
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if configuration is invalid
+ *         - ESP_ERR_INVALID_STATE if host already is in use
+ *         - ESP_ERR_NO_MEM        if out of memory
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan);
+
+/**
+ * @brief Free a SPI bus
+ *
+ * @warning In order for this to succeed, all devices have to be removed first.
+ *
+ * @param host SPI peripheral to free
+ * @return
+ *         - ESP_ERR_INVALID_ARG   if parameter is invalid
+ *         - ESP_ERR_INVALID_STATE if not all devices on the bus are freed
+ *         - ESP_OK                on success
+ */
+esp_err_t spi_bus_free(spi_host_device_t host);
+
+
+/**
  * @brief Try to claim a SPI peripheral
  *
  * Call this if your driver wants to manage a SPI peripheral.
