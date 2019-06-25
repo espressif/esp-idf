@@ -1,0 +1,1209 @@
+.GATT_CASE: &GATT_CASE
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  initial condition: BLE_CONN2
+  test environment: SSC_T2_5
+  execution time: 0
+  module: BLUEDROID
+  sub module: GATT
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+
+.primary_service_discovery: &primary_service_discovery
+  LIST_MERGE:
+    - - "SSC SSC1 gattc -D -z primaryService -p 0x10 -r <dut2_bt_mac>"
+      - ["R SSC1 C +GATTC:Discover,OK"]
+
+.included_service_connection: &included_primary_service_connection
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA1"
+      - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+    - - "SSC SSC2 gatts -S -z include -p 0xA1 -i 0xA0"
+      - ["R SSC2 C +GATTS:AddIncludedService,OK"]
+    - - "SSC SSC2 gatts -S -z add -p 0xA1"
+      - ["R SSC2 C +GATTS:StartService,OK,A001"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+
+.included_second_service_connection: &included_second_service_connection
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA4"
+      - ["R SSC2 C +GATTS:StartService,OK,A004"]
+    - - "SSC SSC2 gatts -S -z load -p 0xA1"
+      - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+    - - "SSC SSC1 gatts -S -z add -p 0xA1"
+      - ["R SSC1 C +GATTS:StartService,OK,A001"]
+    - - "SSC SSC2 gatts -S -z include -p 0xA1 -i 0xA4"
+      - ["R SSC2 C +GATTS:AddIncludedService,OK"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+
+.table_include_table_service: &table_include_table_service
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA5 -i 0xA2"
+      - ["R SSC2 C +GATTS:StartService,OK,A005"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+
+.table_include_service: &table_include_service
+  LIST_MERGE:
+    - - "SSC SSC2 gatts -S -z load -p 0xA5 -i 0xA0"
+      - ["R SSC2 C +GATTS:StartService,OK,A005"]
+    - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+      - ['R SSC1 C +GATTC:OK']
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+
+.register_notify_c107: &register_notify_c107
+  LIST_MERGE:
+    - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+      - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C107"]
+
+.register_indicate_c108: &register_indicate_c108
+  LIST_MERGE:
+    - - "SSC SSC1 gattc -N -z register -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+      - ["R SSC1 C +GATTC:RegNotify,OK,0010,A000,C108"]
+
+.stop_adv: &stop_adv
+  LIST_MERGE:
+    - - "SSC SSC2 bleadv -D -z stop"
+      - ["R SSC2 C +BLEADV:Stop"]
+
+test cases:
+- ID: BLUEDROID_GATT_01001
+  <<: *GATT_CASE
+  test point 2: BLE GATT server create service
+  summary: create service, add char and descriptor and start service for BLUEDOID
+  steps: |
+    1. create preset service 0xA000
+  expected result: |
+    1. succeed
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_4
+  cmd set:
+  - ""
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ["R SSC1 C +GATTS:StartService,OK,A000"]
+- ID: BLUEDROID_GATT_01002
+  <<: *GATT_CASE
+  test point 2: BLE GATT server create service
+  summary: create service and include another service for BLUEDROID
+  steps: |
+    1. create preset service 0xA000
+    2. create preset service 0xA001
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_4
+  cmd set:
+  - ""
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ["R SSC1 C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC1 gatts -S -z load -p 0xA1"
+    - ["R SSC1 C +GATTS:CreateService,OK,A001"]
+  - - "SSC SSC1 gatts -S -z add -p 0xA1"
+    - ["R SSC1 C +GATTS:StartService,OK,A001"]
+- ID: BLUEDROID_GATT_20001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client discover manual primary service for BLUEDOID
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. found service 0xA000 and 0xA001
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - *included_primary_service_connection
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A001"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+- ID: BLUEDROID_GATT_20002
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client get manual included service for BLUEDOID
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 get included service 0xA000 from service 0xA001
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. get included service 0xA000 from service 0xA001
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - *included_primary_service_connection
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 A <handle_range>:GATTC:DiscoverService,A001,(\\d+-\\d+)"]
+  - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA001 -i 0xA000 -q <handle_range> -k 1"
+    - ["R SSC1 C +GATTC:IncludedService,0010,A001,A000"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+- ID: BLUEDROID_GATT_20003
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client discover table primary service (table service include table service) for BLUEDROID
+  steps: |
+    1. DUT2 create preset service 0xA002
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. found service 0xA002 and 0xA005
+  initial condition: BLE_INIT3
+  cmd set:
+  - ""
+  - *table_include_table_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A002 C +GATTC:DiscoverService,A005"]
+- ID: BLUEDROID_GATT_20004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client get table included service for BLUEDROID
+  steps: |
+    1. DUT2 create preset service 0xA002
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 get included service 0xA002 from service 0xA005
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. get included service 0xA002 from service 0xA005
+  initial condition: BLE_INIT3
+  cmd set:
+  - ""
+  - *table_include_table_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A002 A <handle_range>:GATTC:DiscoverService,A005,(\\d+-\\d+)"]
+  - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA005 -i 0xA002 -q <handle_range> -k 1"
+    - ["R SSC1 C +GATTC:IncludedService,0010,A005,A002"]
+- ID: BLUEDROID_GATT_20005
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client discover table primary service (table service include manual service) for BLUEDROID
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. found service 0xA000 and 0xA005
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - *table_include_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 C +GATTC:DiscoverService,A005"]
+- ID: BLUEDROID_GATT_20006
+  <<: *GATT_CASE
+  test point 2: BLE GATT client service / char discovery
+  summary: GATT client get table included manual service for BLUEDROID
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA005
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 get included service 0xA000 from service 0xA005
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. get included service 0xA000 from service 0xA005
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - *table_include_service
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10"
+    - ["R SSC1 C +GATTC:DiscoverService,A000 A <handle_range>:GATTC:DiscoverService,A005,(\\d+-\\d+)"]
+  - - "SSC SSC1 gattc -D -z includedService -p 0x10 -s 0xA005 -i 0xA000 -q <handle_range> -k 1"
+    - ["R SSC1 C +GATTC:IncludedService,0010,A005,A000"]
+- ID: BLUEDROID_GATT_21001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short char for BLUEDROID
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read 1 byte short char
+  expected result: |
+    1. succeed
+    2. read succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+- ID: BLUEDROID_GATT_21002
+  <<: *GATT_CASE
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read long char for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 GATT client read 256 bytes long char
+  expected result: |
+    1. succeed
+    2. read succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC101 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256", "R SSC1 C +GATTC:Read,OK,0010,A000,C101"]
+- ID: BLUEDROID_GATT_21003
+  <<: *GATT_CASE
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short descriptor for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client read short descriptor
+  expected result: |
+    1. succeed
+    2. read succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C107,2902,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C107,2902"]
+- ID: BLUEDROID_GATT_21004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read long descriptor for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client read long descriptor
+  expected result: |
+    1. succeed
+    2. read succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,2901,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C100,2901"]
+- ID: BLUEDROID_GATT_21005
+  <<: *GATT_CASE
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short char of an included service for BLUEDROID
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client read 1 byte short char
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+- ID: BLUEDROID_GATT_21006
+  <<: *GATT_CASE
+  test point 2: BLE GATT client read char and descriptor
+  summary: GATT client read short descriptor or an included service for BLUEDROID
+  allow fail: 1/2
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client read 1 byte short descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C107,2902,2", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C107,2902"]
+- ID: BLUEDROID_GATT_22001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write with response to a short char with response for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write with response to short char with response
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+- ID: BLUEDROID_GATT_22002
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write without response to a short char without response for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write without response to short char without response
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC103 -p 0x10 -v 0x01 -w 1"
+    - - "P SSC1 C +GATTC:WriteOnce,0010,A000,C103"
+      - "P SSC2 C +GATTS:Write,OK,A000,C103"
+      - "P SSC1 C +GATTC:Write,OK,0010,A000,C103"
+- ID: BLUEDROID_GATT_22003
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do execute for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do execute
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA000 -c 0xC110 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+- ID: BLUEDROID_GATT_22004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client prepare write and do cancel for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client prepare write and do cancel
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA000 -c 0xC110 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC110 -p 0x10 -l 256 -e 0"
+    - ["P SSC1 C +GATTC:Write,OK,0010,A000,C110"]
+- ID: BLUEDROID_GATT_22005
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to a short descriptor for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to short descriptor
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+- ID: BLUEDROID_GATT_22006
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to long descriptor and execute for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to long descriptor and execute
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C100,2901"]
+- ID: BLUEDROID_GATT_22007
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to long descriptor using write API for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. GATT client write to long descriptor and execute
+  expected result: |
+    1. succeed
+    2. write succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10 -l 256"
+    - ["P SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C100,2901"]
+- ID: BLUEDROID_GATT_22008
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to an included char for BLUEDROID
+  allow fail: 1/2
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client write with response to short char with response
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+- ID: BLUEDROID_GATT_22009
+  <<: *GATT_CASE
+  test point 2: BLE GATT client write char and descriptor
+  summary: GATT client write to an included descriptor for BLUEDROID
+  steps: |
+    1. DUT2 create preset service 0xA000
+    2. DUT2 create preset service 0xA001
+    3. DUT1 connect to DUT2
+    4. DUT1 do discover
+    5. GATT client write to short descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  initial condition: BLE_INIT2
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA1"
+    - ["R SSC2 C +GATTS:CreateService,OK,A001"]
+  - - SSC SSC1 gattc -F -r <dut2_bt_mac>
+    - ['R SSC1 C +GATTC:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ["R SSC1 C +BLECONN:GapConnect,OK,0010", "R SSC2 C +BLECONN:GapConnect"]
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+- ID: BLUEDROID_GATT_23001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client register/unregister notify for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notification char
+    3. DUT1 register notify on indication char
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - *register_notify_c107
+  - *register_indicate_c108
+  - - "SSC SSC1 gattc -N -z unregister -s 0xA000 -c 0xC107 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:UnRegNotify,OK,0010,A000,C107"]
+  - - "SSC SSC1 gattc -N -z unregister -s 0xA000 -c 0xC108 -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:UnRegNotify,OK,0010,A000,C108"]
+- ID: BLUEDROID_GATT_23002
+  <<: *GATT_CASE
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive notify for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notification char and write to CCC
+    3. DUT2 do notify
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv notify
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - *register_notify_c107
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01 -r <dut1_bt_mac>"
+    - ["R SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+- ID: BLUEDROID_GATT_23003
+  <<: *GATT_CASE
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client receive indication for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on inidcation char and write to CCC
+    3. DUT2 do indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 recv indication
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - *register_indicate_c108
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC108 -d 0x2902 -p 0x10 -v 0x0002"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C108,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C108,2902"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01 -r <dut1_bt_mac>"
+    - ["R SSC1 C +GATTC:Indication,0010,A000,C108,1"]
+- ID: BLUEDROID_GATT_23004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client receive notify and indication
+  summary: GATT client can't receive notification/indication without write to CCC (manual service) for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 register notify on notify and inidcation char
+    3. DUT2 do notify and indication
+  expected result: |
+    1. succeed
+    2. succeed
+    3. DUT1 can recv notify and indication (this is aganist Spec, but a reasonable behavior in bluedroid)
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - *register_notify_c107
+  - *register_indicate_c108
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0000"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01 -r <dut1_bt_mac>"
+    - ["P SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01 -r <dut1_bt_mac>"
+    - ["P SSC1 C +GATTC:Indication,0010,A000,C108,1"]
+- ID: BLUEDROID_GATT_24001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid read
+  summary: GATT client read to a char without read property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 read to a char without read property
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC103 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+- ID: BLUEDROID_GATT_24002
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid read
+  summary: GATT client read to a descriptor without read property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 read to a descriptor without read property
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC102 -d 0x2901 -p 0x10"
+    - ["P SSC1 C +GATTC:Read,ERROR"]
+- ID: BLUEDROID_GATT_25001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char without write property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to a char without write property
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC100 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BLUEDROID_GATT_25002
+  <<: *GATT_CASE
+  test point 1: basic function
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write without response to a char without write property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write without response to a char without write property
+  expected result: |
+    1. succeed
+    2. succeed (write without response always succeed)
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC100 -p 0x10 -l 1 -w 1"
+    - ["R SSC1 C +GATTC:Write,OK"]
+- ID: BLUEDROID_GATT_25003
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write to a descriptor without write property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write to a descriptor without write property
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC101 -d 0x2901 -p 0x10 -l 1"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BLUEDROID_GATT_25004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client prepare write to a char without write property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 prepare write to a char without write property
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z longChar -s 0xA000 -c 0xC100 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BLUEDROID_GATT_25005
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client prepare write to a descriptor without write property for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 prepare write to a descriptor without write property
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z longDescriptor -s 0xA000 -c 0xC101 -d 0x2901 -p 0x10 -l 256"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BLUEDROID_GATT_25006
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char not send response for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to a char not send response
+  expected result: |
+    1. succeed
+    2. failed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC103 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BLUEDROID_GATT_25007
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write without response to a char will send response for BLUEDROID
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write without response to a char will send response
+  expected result: |
+    1. succeed
+    2. succeed (write without response always succeed)
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01 -w 1"
+    - ["P SSC1 C +GATTC:WriteOnce"]
+- ID: BLUEDROID_GATT_25013
+  <<: *GATT_CASE
+  test point 2: BLE GATT client do invalid write
+  summary: GATT client write with response to a char created by table not send response
+  steps: |
+    1. DUT1 do service discovery
+    2. DUT1 write with response to auto reply char created by table not send response
+    3. DUT1 write with response to app reply char created by table not send response
+  expected result: |
+    1. succeed
+    2. succeed(BLE Spec do not define the behavior of this case. IDF implementation will return success when GATTC write with response and recv response from remote side)
+    3. failed
+  initial condition: BLE_CONN3
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC303 -p 0x10 -v 0x01 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:Write,OK,0010,A002,C303"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA002 -c 0xC313 -p 0x10 -v 0x01 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:Write,ERROR"]
+- ID: BLUEDROID_GATT_26001
+  <<: *GATT_CASE
+  test point 2: BLE GATT client set mtu
+  summary: GATT client config different mtu size for BLUEDOID
+  steps: |
+    1. set mtu size 22
+    2. set mtu size 23
+    3. set mtu size 517
+    4. set mtu size 518
+  expected result: |
+    1. failed
+    2. succeed
+    3. succeed
+    4. failed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -D -z all"
+    - ["P SSC1 C +BLECONN:GapDisconnect,OK", "P SSC2 C +BLECONN:GapDisconnect,OK"]
+  - - "SSC SSC1 gattc -S -m 22 "
+    - ["R SSC1 C +GATTC:ERROR"]
+  - - "SSC SSC1 gattc -S -m 23"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 gattc -S -m 517"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC1 gattc -S -m 518"
+    - ["R SSC1 C +GATTC:ERROR"]
+- ID: BLUEDROID_GATT_26002
+  <<: *GATT_CASE
+  test point 2: BLE GATT server set mtu
+  summary: GATT server config different mtu size for BLUEDOID
+  steps: |
+    1. set mtu size 22
+    2. set mtu size 23
+    3. set mtu size 517
+    4. set mtu size 518
+  expected result: |
+    1. failed
+    2. succeed
+    3. succeed
+    4. failed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -D -z all"
+    - ["P SSC1 C +BLECONN:GapDisconnect,OK", "P SSC2 C +BLECONN:GapDisconnect,OK"]
+  - - "SSC SSC2 gatts -C -m 22"
+    - ["R SSC2 C +GATTS:ERROR"]
+  - - "SSC SSC2 gatts -C -m 23"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC2 gatts -C -m 517"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC2 gatts -C -m 518"
+    - ["R SSC2 C +GATTS:ERROR"]
+- ID: BLUEDROID_GATT_26004
+  <<: *GATT_CASE
+  test point 2: BLE GATT client config mtu
+  summary: GATT read write on mtu size 261
+  allow fail: 1/2
+  steps: |
+    1. config mtu size 261
+    2. do read
+    3. do write
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ["P SSC1 C +BLECONN:GapDisconnect,OK", "P SSC2 C +BLECONN:GapDisconnect,OK"]
+  - - "SSC SSC1 gattc -S -m 261"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC2 gatts -C -m 261"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - - "SSC SSC1 gattc -C"
+    - ["R SSC1 C +GATTC:OK","P SSC[1-2] C ConfigMTU,OK,261"]
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 256"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+  - - "SSC SSC1 gattc -W -z longChar -p 0x10 -s 0xA000 -c 0xC110 -l 512"
+    - ["R SSC1 C +GATTC:Write,OK,0010,A000,C110", "P SSC2 C +GATTS:ReliableWrite,OK"]
+- ID: BLUEDROID_GATT_26005
+  <<: *GATT_CASE
+  test point 2: BLE GATT client config mtu
+  summary: GATT read write on mtu size 517 for BLUEDOID
+  allow fail: 1/2
+  steps: |
+    1. config mtu size 517
+    2. do read
+    3. do write
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -D  -z all"
+    - ["P SSC1 C +BLECONN:GapDisconnect,OK", "P SSC2 C +BLECONN:GapDisconnect,OK"]
+  - - "SSC SSC1 gattc -S -m 517"
+    - ["R SSC1 C +GATTC:OK"]
+  - - "SSC SSC2 gatts -C -m 517"
+    - ["R SSC2 C +GATTS:OK"]
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect,OK']
+  - - "SSC SSC1 gattc -C -r <dut2_bt_mac>"
+    - ["P SSC1 C +GATTC:OK", "P SSC[1-2] C ConfigMTU,OK,517"]
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -p 0x10 -s 0xA000 -c 0xC101"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C101,256"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 256"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+  - - "SSC SSC1 gattc -W -z char -p 0x10 -s 0xA000 -c 0xC109 -l 512"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C109"]
+- ID: BLUEDROID_GATT_27001
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read 2 char and 11 char of same service for BLUEDROID
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read 2 char
+    3. GATT client read 11 char
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u #0xC100##0xC101# -s 0xA000 -r <dut2_bt_mac>"
+    - ['R SSC1 C +GATTC:ReadOnce,22', 'R SSC1 C +GATTC:ReadMultiple,OK']
+  - - "SSC SSC1 gattc -R -z multiple -u #0xC100##0xC101##0xC107##0xC108##0xC109##0xC110##0xC100##0xC101##0xC107##0xC108##0xC109# -s 0xA000"
+    - ['R SSC1 C +GATTC:Read,ERROR']
+- ID: BLUEDROID_GATT_27002
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read char and descriptor for BLUEDROID
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read all char and descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u 0xA00xC100#0xA00xC101#0xA00xC1000x29010xA00xC1070x2902 -r <dut2_bt_mac>"
+    - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
+- ID: BLUEDROID_GATT_27003
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read char and descriptor of table create service for BLUEDROID
+  steps: |
+    1. DUT1 do discover
+    2. GATT client read all char and descriptor
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA2"
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u 0xA20xC300#0xA20xC301#0xA20xC310#0xA20xC311# -r <dut2_bt_mac>"
+    - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
+- ID: BLUEDROID_GATT_27004
+  <<: *GATT_CASE
+  test point 2: BLE GATT read multiple
+  summary: GATT client read char and descriptor of included service and table service for BLUEDROID
+  initial condition: BLE_INIT2
+  steps: |
+    1. DUT2 load service included service and table service
+    2. DUT1 search service
+    3. GATT client read all char and descriptor of different services
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC2 gatts -S -z load -p 0xA2"
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
+  - *included_primary_service_connection
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z multiple -u 0xA10xC200#0xA00xC100#0xA00xC101#0xA20xC300#0xA20xC301#"
+    - ['R SSC1 C +GATTC:ReadOnce', 'R SSC1 C +GATTC:ReadMultiple,OK']
+- ID: BLUEDROID_GATT_30004
+  <<: *GATT_CASE
+  test point 2: BLE GATT multi connection service discovery test
+  summary: do primary service discovery when master and slave both create GATTC and GATTS for BLUEDOID
+  steps: |
+    1. DUT1 do primary service discovery for DUT2
+    2. DUT2 do primary service discovery for DUT1
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN4
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>"
+    - ["R SSC2 C +BLE:GattcOpen,OK"]
+  - - "SSC SSC1 gattc -D -z primaryService -p 0x10 -r <dut2_bt_mac>"
+    - ["R SSC1 C +GATTC:Discover,OK"]
+  - - "SSC SSC2 gattc -D -z primaryService -p 0x10 -r <dut1_bt_mac>"
+    - ["R SSC2 C +GATTC:Discover,OK"]
+- ID: BLUEDROID_GATT_31004
+  <<: *GATT_CASE
+  test point 2: BLE GATT multi connection read test
+  summary: do read when master and slave both create GATTC and GATTS for BLUEDOID
+  steps: |
+    1. DUT1 do primary service discovery for DUT2
+    2. DUT2 do primary service discovery for DUT1
+    3. DUT1 do read on DUT2
+    4. DUT2 do read on DUT1
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  initial condition: BLE_CONN4
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>"
+    - ["R SSC2 C +BLE:GattcOpen,OK"]
+  - - "SSC SSC[1-2] gattc -D -z primaryService -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:Discover,OK"]
+  - - "SSC SSC[1-2] gattc -R -z char -s 0xA002 -c 0xC300 -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:ReadOnce,0010,A002,C300,1"]
+  - - "SSC SSC[1-2] gattc -R -z char -s 0xA002 -c 0xC301 -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:ReadOnce,0010,A002,C301,256"]
+- ID: BLUEDROID_GATT_32004
+  <<: *GATT_CASE
+  test point 2: BLE GATT multi connection write test
+  summary: do write when master and slave both create GATTC and GATTS for BLUEDOID
+  steps: |
+    1. DUT1 do primary service discovery for DUT2
+    2. DUT2 do primary service discovery for DUT1
+    3. DUT1 do write on DUT2
+    4. DUT2 do write on DUT1
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  initial condition: BLE_CONN4
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>"
+    - ["R SSC2 C +BLE:GattcOpen,OK"]
+  - - "SSC SSC[1-2] gattc -D -z primaryService -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:Discover,OK"]
+  - - "SSC SSC[1-2] -W -z char -s 0xA002 -c 0xC302 -l 1 -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:Write,OK,0010,A002,C302"]
+  - - "SSC SSC[1-2] -W -z char -s 0xA002 -c 0xC304 -l 256 -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:Write,OK,0010,A002,C304"]
+- ID: BLUEDROID_GATT_33004
+  <<: *GATT_CASE
+  test point 2: BLE GATT multi connection notify test
+  summary: do notify when master and slave both create GATTC and GATTS for BLUEDOID
+  steps: |
+    1. DUT1 do primary service discovery for DUT2
+    2. DUT2 do primary service discovery for DUT1
+    3. DUT[1-2] do register notify
+    4. DUT1 and DUT2 send notify to each other
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. receive notification
+  initial condition: BLE_CONN4
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>"
+    - ["R SSC2 C +BLE:GattcOpen,OK"]
+  - - "SSC SSC[1-2] gattc -D -z primaryService -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:Discover,OK"]
+  - - "SSC SSC[1-2] gattc -N -z register -s 0xA002 -c 0xC305 -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:RegNotify,OK,0010,A002,C305"]
+  - - "SSC SSC[1-2] gatts -N -c 0xC305 -l 1 -p 0xA2 -r <dut[2-1]_bt_mac>"
+    - ['P SSC[1,2] RE "\+GATTC:Notification,0010,A002,C305,1,%%s"%%(<dut[2,1]_bt_mac>)']
+- ID: BLUEDROID_GATT_34004
+  <<: *GATT_CASE
+  test point 2: BLE GATT multi connection indicate test
+  summary: do indicate when master and slave both create GATTC and GATTS for BLUEDOID
+  steps: |
+    1. DUT1 do primary service discovery for DUT2
+    2. DUT2 do primary service discovery for DUT1
+    3. DUT[1-2] do register indication
+    4. DUT1 and DUT2 send notify to each other
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. receive indication
+  initial condition: BLE_CONN4
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>"
+    - ["R SSC2 C +BLE:GattcOpen,OK"]
+  - - "SSC SSC[1-2] gattc -D -z primaryService -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:Discover,OK"]
+  - - "SSC SSC[1-2] gattc -N -z register -s 0xA002 -c 0xC306 -p 0x10 -r <dut[2-1]_bt_mac>"
+    - ["R SSC[1-2] C +GATTC:RegNotify,OK,0010,A002,C306"]
+  - - "SSC SSC[1-2] gatts -I -c 0xC306 -l 1 -p 0xA2 -r <dut[2-1]_bt_mac>"
+    - ['P SSC[1,2] RE "\+GATTC:Indication,0010,A002,C306,1,%%s"%%(<dut[2,1]_bt_mac>)']
+- ID: BLUEDROID_GATT_40001
+  <<: *GATT_CASE
+  auto test: 'No'
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GATTC only and GATTS only test for BLUEDROID
+  steps: |
+    1. download GATTC only bin to DUT1 and GATTS only bin to DUT2
+    2. DUT2 start adv, enable service 0xA000, DUT1 connect to DUT2
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 do read
+    6. DUT1 do read descriptor
+    7. DUT1 do write
+    8. DUT1 do write descriptor
+    9. DUT1 register for notify and indication
+    10. DUT2 do notify
+    11. DUT2 do indicate
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. succeed
+    9. succeed
+    10. succeed
+    11. succeed
+  initial condition: None
+  execution time: 5
+  CI ready: 'No'
+  cmd set:
+  - ""
+  - - SSC SSC[1-2] reboot
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,2901,256", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C100,2901"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - *register_notify_c107
+  - *register_indicate_c108
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0300 -n 1"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Notify,A000,C107", "P SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Indicate,A000,C108", "P SSC1 C +GATTC:Indication,0010,A000,C108,1"]
+- ID: BLUEDROID_GATT_40002
+  <<: *GATT_CASE
+  auto test: 'No'
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GATTC_SMP only and GATTS_SMP only test for BLUEDROID
+  steps: |
+    1. download GATTC_SMP bin to DUT1 and GATTS_SMP bin to DUT2
+    2. DUT2 start adv, start service 0xA000, DUT1 connect to DUT2
+    3. DUT1 connect to DUT2
+    4. DUT1 do primary service discovery
+    5. DUT1 do read
+    6. DUT1 do read descriptor
+    7. DUT1 do write
+    8. DUT1 do write descriptor
+    9. DUT1 register for notify and indication
+    10. DUT2 do notify
+    11. DUT2 do indicate
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+    7. succeed
+    8. succeed
+    9. succeed
+    10. succeed
+    11. succeed
+  initial condition: None
+  execution time: 5
+  CI ready: 'No'
+  cmd set:
+  - ""
+  - - SSC SSC[1-2] reboot
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - SSC SSC[1-2] ble -R
+    - ['R SSC[1-2] C +BLE:OK']
+  - - SSC SSC2 bleadv -D -z start
+    - ['R SSC2 C +BLEADV:OK']
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - ['R SSC2 C +GATTS:StartService,OK,A000']
+  - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - *primary_service_discovery
+  - - "SSC SSC1 gattc -R -z char -s 0xA000 -c 0xC100 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,1", "R SSC1 C +GATTC:Read,OK,0010,A000,C100"]
+  - - "SSC SSC1 gattc -W -z char -s 0xA000 -c 0xC102 -p 0x10 -v 0x01"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C102", "R SSC1 C +GATTC:Write,OK,0010,A000,C102"]
+  - - "SSC SSC1 gattc -R -z descriptor -s 0xA000 -c 0xC100 -d 0x2901 -p 0x10"
+    - ["R SSC1 C +GATTC:ReadOnce,0010,A000,C100,2901,256", "R SSC1 C +GATTC:ReadDescriptor,OK,0010,A000,C100,2901"]
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0100"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - *register_notify_c107
+  - *register_indicate_c108
+  - - "SSC SSC1 gattc -W -z descriptor -s 0xA000 -c 0xC107 -d 0x2902 -p 0x10 -v 0x0300 -n 1"
+    - ["R SSC1 C +GATTC:WriteOnce,0010,A000,C107,2902", "R SSC1 C +GATTC:WriteDescriptor,OK,0010,A000,C107,2902"]
+  - - "SSC SSC2 gatts -N -c 0xC107 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Notify,A000,C107", "P SSC1 C +GATTC:Notification,0010,A000,C107,1"]
+  - - "SSC SSC2 gatts -I -c 0xC108 -p 0xA0 -v 0x01"
+    - ["P SSC2 C +GATTS:Done,Indicate,A000,C108", "P SSC1 C +GATTC:Indication,0010,A000,C108,1"]
