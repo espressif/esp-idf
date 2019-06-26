@@ -1,9 +1,9 @@
-// Copyright 2010-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#ifndef _DRIVER_SPI_COMMON_H_
-#define _DRIVER_SPI_COMMON_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -129,6 +127,8 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
 esp_err_t spi_bus_free(spi_host_device_t host);
 
 
+/** @cond */    //Doxygen command to hide deprecated function (or non-public) from API Reference
+
 /**
  * @brief Try to claim a SPI peripheral
  *
@@ -136,6 +136,8 @@ esp_err_t spi_bus_free(spi_host_device_t host);
  *
  * @param host Peripheral to claim
  * @param source The caller indentification string.
+ *
+ * @note This public API is deprecated.
  *
  * @return True if peripheral is claimed successfully; false if peripheral already is claimed.
  */
@@ -158,6 +160,8 @@ bool spicommon_periph_claim(spi_host_device_t host, const char* source);
  *
  * @param host Peripheral to check.
  *
+ * @note This public API is deprecated.
+ *
  * @return True if in use, otherwise false.
  */
 bool spicommon_periph_in_use(spi_host_device_t host);
@@ -166,6 +170,9 @@ bool spicommon_periph_in_use(spi_host_device_t host);
  * @brief Return the SPI peripheral so another driver can claim it.
  *
  * @param host Peripheral to return
+ *
+ * @note This public API is deprecated.
+ *
  * @return True if peripheral is returned successfully; false if peripheral was free to claim already.
  */
 bool spicommon_periph_free(spi_host_device_t host);
@@ -177,6 +184,8 @@ bool spicommon_periph_free(spi_host_device_t host);
  *
  * @param dma_chan channel to claim
  *
+ * @note This public API is deprecated.
+ *
  * @return True if success; false otherwise.
  */
 bool spicommon_dma_chan_claim(int dma_chan);
@@ -185,6 +194,8 @@ bool spicommon_dma_chan_claim(int dma_chan);
  * @brief Check whether the spi DMA channel is in use.
  *
  * @param dma_chan DMA channel to check.
+ *
+ * @note This public API is deprecated.
  *
  * @return True if in use, otherwise false.
  */
@@ -195,10 +206,13 @@ bool spicommon_dma_chan_in_use(int dma_chan);
  *
  * @param dma_chan channel to return
  *
+ * @note This public API is deprecated.
+ *
  * @return True if success; false otherwise.
  */
 bool spicommon_dma_chan_free(int dma_chan);
 
+/// @note macros deprecated from public API
 #define SPICOMMON_BUSFLAG_SLAVE         0          ///< Initialize I/O in slave mode
 #define SPICOMMON_BUSFLAG_MASTER        (1<<0)     ///< Initialize I/O in master mode
 #define SPICOMMON_BUSFLAG_IOMUX_PINS    (1<<1)     ///< Check using iomux pins. Or indicates the pins are configured through the IO mux rather than GPIO matrix.
@@ -218,6 +232,9 @@ bool spicommon_dma_chan_free(int dma_chan);
  * This routine is used to connect a SPI peripheral to the IO-pads and DMA channel given in
  * the arguments. Depending on the IO-pads requested, the routing is done either using the
  * IO_mux or using the GPIO matrix.
+ *
+ * @note This public API is deprecated. Please call ``spi_bus_initialize`` for master
+ *       bus initialization and ``spi_slave_initialize`` for slave initialization.
  *
  * @param host SPI peripheral to be routed
  * @param bus_config Pointer to a spi_bus_config struct detailing the GPIO pins
@@ -247,18 +264,9 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 
 /**
  * @brief Free the IO used by a SPI peripheral
- * @deprecated Use spicommon_bus_free_io_cfg instead.
  *
- * @param host SPI peripheral to be freed
- *
- * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_OK                on success
- */
-esp_err_t spicommon_bus_free_io(spi_host_device_t host) __attribute__((deprecated));
-
-/**
- * @brief Free the IO used by a SPI peripheral
+ * @note This public API is deprecated. Please call ``spi_bus_free`` for master
+ *       bus deinitialization and ``spi_slave_free`` for slave deinitialization.
  *
  * @param bus_cfg Bus config struct which defines which pins to be used.
  *
@@ -271,6 +279,8 @@ esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg);
 /**
  * @brief Initialize a Chip Select pin for a specific SPI peripheral
  *
+ * @note This public API is deprecated. Please call corresponding device initialization
+ *       functions.
  *
  * @param host SPI peripheral
  * @param cs_io_num GPIO pin to route
@@ -278,54 +288,34 @@ esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg);
  * @param force_gpio_matrix If true, CS will always be routed through the GPIO matrix. If false,
  *                          if the GPIO number allows it, the routing will happen through the IO_mux.
  */
-
 void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, int force_gpio_matrix);
-
-/**
- * @brief Free a chip select line
- * @deprecated Use spicommon_cs_io, which inputs the gpio num rather than the cs id instead.
- *
- * @param host SPI peripheral
- * @param cs_num CS id to free
- */
-void spicommon_cs_free(spi_host_device_t host, int cs_num) __attribute__((deprecated));
 
 /**
  * @brief Free a chip select line
  *
  * @param cs_gpio_num CS gpio num to free
+ *
+ * @note This public API is deprecated.
  */
 void spicommon_cs_free_io(int cs_gpio_num);
 
 /**
- * @brief Setup a DMA link chain
+ * @brief Check whether all pins used by a host are through IOMUX.
  *
- * This routine will set up a chain of linked DMA descriptors in the array pointed to by
- * ``dmadesc``. Enough DMA descriptors will be used to fit the buffer of ``len`` bytes in, and the
- * descriptors will point to the corresponding positions in ``buffer`` and linked together. The
- * end result is that feeding ``dmadesc[0]`` into DMA hardware results in the entirety ``len`` bytes
- * of ``data`` being read or written.
+ * @param host SPI peripheral
  *
- * @param dmadesc Pointer to array of DMA descriptors big enough to be able to convey ``len`` bytes
- * @param len Length of buffer
- * @param data Data buffer to use for DMA transfer
- * @param isrx True if data is to be written into ``data``, false if it's to be read from ``data``.
+ * @note This public API is deprecated.
+ *
+ * @return false if any pins are through the GPIO matrix, otherwise true.
  */
-void spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const uint8_t *data, bool isrx);
-
-/**
- * @brief Get the position of the hardware registers for a specific SPI host
- *
- * @param host The SPI host
- *
- * @return A register descriptor stuct pointer, pointed at the hardware registers
- */
-spi_dev_t *spicommon_hw_for_host(spi_host_device_t host);
+bool spicommon_bus_using_iomux(spi_host_device_t host);
 
 /**
  * @brief Get the IRQ source for a specific SPI host
  *
  * @param host The SPI host
+ *
+ * @note This public API is deprecated.
  *
  * @return The hosts IRQ source
  */
@@ -335,6 +325,8 @@ int spicommon_irqsource_for_host(spi_host_device_t host);
  * @brief Get the IRQ source for a specific SPI DMA
  *
  * @param host The SPI host
+ *
+ * @note This public API is deprecated.
  *
  * @return The hosts IRQ source
  */
@@ -362,6 +354,8 @@ typedef void(*dmaworkaround_cb_t)(void *arg);
  * @param cb Callback to call in case DMA channel cannot be reset immediately
  * @param arg Argument to the callback
  *
+ * @note This public API is deprecated.
+ *
  * @return True when a DMA reset could be executed immediately. False when it could not; in this
  *         case the callback will be called with the specified argument when the logic can execute
  *         a reset, after that reset.
@@ -371,6 +365,8 @@ bool spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void 
 
 /**
  * @brief Check if a DMA reset is requested but has not completed yet
+ *
+ * @note This public API is deprecated.
  *
  * @return True when a DMA reset is requested but hasn't completed yet. False otherwise.
  */
@@ -382,6 +378,8 @@ bool spicommon_dmaworkaround_reset_in_progress();
  *
  * A call to this function tells the workaround logic that this channel will
  * not be affected by a global SPI DMA reset.
+ *
+ * @note This public API is deprecated.
  */
 void spicommon_dmaworkaround_idle(int dmachan);
 
@@ -390,13 +388,13 @@ void spicommon_dmaworkaround_idle(int dmachan);
  *
  * A call to this function tells the workaround logic that this channel will
  * be affected by a global SPI DMA reset, and a reset like that should not be attempted.
+ *
+ * @note This public API is deprecated.
  */
 void spicommon_dmaworkaround_transfer_active(int dmachan);
 
-
+/** @endcond */
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
