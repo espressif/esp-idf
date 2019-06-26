@@ -311,6 +311,17 @@ void spicommon_cs_free_io(int cs_gpio_num);
 bool spicommon_bus_using_iomux(spi_host_device_t host);
 
 /**
+ * @brief Check whether all pins used by a host are through IOMUX.
+ *
+ * @param host SPI peripheral
+ *
+ * @note This public API is deprecated.
+ *
+ * @return false if any pins are through the GPIO matrix, otherwise true.
+ */
+bool spicommon_bus_using_iomux(spi_host_device_t host);
+
+/**
  * @brief Get the IRQ source for a specific SPI host
  *
  * @param host The SPI host
