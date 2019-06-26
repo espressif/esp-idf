@@ -377,6 +377,11 @@ The ESP-IDF FreeRTOS critical section functions have been modified as follows…
    ``portEXIT_CRITICAL(mux)``, ``portEXIT_CRITICAL_ISR(mux)`` are all macro 
    defined to call :cpp:func:`vTaskExitCritical`
 
+ - ``portENTER_CRITICAL_SAFE(mux)``, ``portEXIT_CRITICAL_SAFE(mux)`` macro identifies
+   the context of execution, i.e ISR or Non-ISR, and calls appropriate critical
+   section functions (``port*_CRITICAL`` in Non-ISR and ``port*_CRITICAL_ISR`` in ISR)
+   in order to be in compliance with Vanilla FreeRTOS.
+
 For more details see :component_file:`freertos/include/freertos/portmacro.h` 
 and :component_file:`freertos/task.c`
 
