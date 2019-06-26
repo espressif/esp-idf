@@ -183,12 +183,16 @@ function(esptool_py_flash_project_args entry offset image)
     else()
         set(OFFSET ${offset})
         set(IMAGE ${image})
-        get_filename_component(template "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
-        configure_file(${template} ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2)
-        file(GENERATE OUTPUT ${entry_flash_args} INPUT ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2)
+
+        get_filename_component(template_in "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
+        get_filename_component(template_name "${template_in}" NAME)
+        set(template_partial "${CMAKE_CURRENT_BINARY_DIR}/${template_name}.in2")
+
+        configure_file("${template_in}" "${template_partial}")
+        file(GENERATE OUTPUT ${entry_flash_args} INPUT "${template_partial}")
         set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                     APPEND PROPERTY
-                    ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2})
+                    ADDITIONAL_MAKE_CLEAN_FILES "${template_partial}")
         unset(OFFSET)
         unset(IMAGE)
     endif()
