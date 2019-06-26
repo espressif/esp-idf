@@ -301,7 +301,7 @@ static void hci_hal_h4_hdl_rx_packet(BT_HDR *packet)
 
 #if SCAN_QUEUE_CONGEST_CHECK
     if(BTU_check_queue_is_congest() && host_recv_adv_packet(packet)) {
-        HCI_TRACE_ERROR("BtuQueue is congested");
+        HCI_TRACE_DEBUG("BtuQueue is congested");
         osi_free(packet);
         return;
     }

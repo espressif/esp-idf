@@ -50,11 +50,16 @@ extern "C" {
 #define ESP_GATT_UUID_HID_SVC                       0x1812          /* HID Service*/
 #define ESP_GATT_UUID_SCAN_PARAMETERS_SVC           0x1813          /* Scan Parameters Service*/
 #define ESP_GATT_UUID_RUNNING_SPEED_CADENCE_SVC     0x1814          /* Running Speed and Cadence Service*/
+#define ESP_GATT_UUID_Automation_IO_SVC             0x1815          /* Automation IO Service*/
 #define ESP_GATT_UUID_CYCLING_SPEED_CADENCE_SVC     0x1816          /* Cycling Speed and Cadence Service*/
 #define ESP_GATT_UUID_CYCLING_POWER_SVC             0x1818          /* Cycling Power Service*/
 #define ESP_GATT_UUID_LOCATION_AND_NAVIGATION_SVC   0x1819          /* Location and Navigation Service*/
+#define ESP_GATT_UUID_ENVIRONMENTAL_SENSING_SVC     OX181A          /* Environmental Sensing Service*/
+#define ESP_GATT_UUID_BODY_COMPOSITION              0x181B          /* Body Composition Service*/
 #define ESP_GATT_UUID_USER_DATA_SVC                 0x181C          /* User Data Service*/
 #define ESP_GATT_UUID_WEIGHT_SCALE_SVC              0x181D          /* Weight Scale Service*/
+#define ESP_GATT_UUID_BOND_MANAGEMENT_SVC           0x181E          /* Bond Management Service*/
+#define ESP_GATT_UUID_CONT_GLUCOSE_MONITOR_SVC      0x181F          /* Continuous Glucose Monitoring Service*/
 
 #define ESP_GATT_UUID_PRI_SERVICE                   0x2800
 #define ESP_GATT_UUID_SEC_SERVICE                   0x2801

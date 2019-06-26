@@ -331,7 +331,7 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
              (conn_interval > p_dev_rec->conn_params.max_conn_int) ||
              (conn_latency > p_dev_rec->conn_params.slave_latency) ||
              (conn_timeout > p_dev_rec->conn_params.supervision_tout))) {
-        L2CAP_TRACE_ERROR ("upd_ll_conn_params: HANDLE=%d min_conn_int=%d max_conn_int=%d slave_latency=%d supervision_tout=%d",
+        L2CAP_TRACE_WARNING ("upd_ll_conn_params: HANDLE=%d min_conn_int=%d max_conn_int=%d slave_latency=%d supervision_tout=%d",
                            handle, p_dev_rec->conn_params.min_conn_int, p_dev_rec->conn_params.max_conn_int,
                            p_dev_rec->conn_params.slave_latency, p_dev_rec->conn_params.supervision_tout);
 
