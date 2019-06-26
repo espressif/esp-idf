@@ -22,7 +22,7 @@
 #include "esp_vfs.h"
 #include "esp_log.h"
 #include "ff.h"
-#include "diskio.h"
+#include "diskio_impl.h"
 
 typedef struct {
     char fat_drive[8];  /* FAT drive name */
@@ -150,15 +150,17 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .utime_p = &vfs_fat_utime,
     };
     size_t ctx_size = sizeof(vfs_fat_ctx_t) + max_files * sizeof(FIL);
-    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ff_memcalloc(1, ctx_size);
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ff_memalloc(ctx_size);
     if (fat_ctx == NULL) {
         return ESP_ERR_NO_MEM;
     }
+    memset(fat_ctx, 0, ctx_size);
     fat_ctx->o_append = ff_memalloc(max_files * sizeof(bool));
     if (fat_ctx->o_append == NULL) {
         free(fat_ctx);
         return ESP_ERR_NO_MEM;
     }
+    memset(fat_ctx->o_append, 0, max_files * sizeof(bool));
     fat_ctx->max_files = max_files;
     strlcpy(fat_ctx->fat_drive, fat_drive, sizeof(fat_ctx->fat_drive) - 1);
     strlcpy(fat_ctx->base_path, base_path, sizeof(fat_ctx->base_path) - 1);
@@ -512,8 +514,8 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
     prepend_drive_to_path(fat_ctx, &n1, &n2);
     const size_t copy_buf_size = fat_ctx->fs.csize;
     FRESULT res;
-    FIL* pf1 = ff_memcalloc(1, sizeof(FIL));
-    FIL* pf2 = ff_memcalloc(1, sizeof(FIL));
+    FIL* pf1 = (FIL*) ff_memalloc(sizeof(FIL));
+    FIL* pf2 = (FIL*) ff_memalloc(sizeof(FIL));
     void* buf = ff_memalloc(copy_buf_size);
     if (buf == NULL || pf1 == NULL || pf2 == NULL) {
         _lock_release(&fat_ctx->lock);
@@ -524,6 +526,8 @@ static int vfs_fat_link(void* ctx, const char* n1, const char* n2)
         errno = ENOMEM;
         return -1;
     }
+    memset(pf1, 0, sizeof(*pf1));
+    memset(pf2, 0, sizeof(*pf2));
     res = f_open(pf1, n1, FA_READ | FA_OPEN_EXISTING);
     if (res != FR_OK) {
         _lock_release(&fat_ctx->lock);
@@ -591,12 +595,14 @@ static DIR* vfs_fat_opendir(void* ctx, const char* name)
     vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &name, NULL);
-    vfs_fat_dir_t* fat_dir = ff_memcalloc(1, sizeof(vfs_fat_dir_t));
+    vfs_fat_dir_t* fat_dir = ff_memalloc(sizeof(vfs_fat_dir_t));
     if (!fat_dir) {
         _lock_release(&fat_ctx->lock);
         errno = ENOMEM;
         return NULL;
     }
+    memset(fat_dir, 0, sizeof(*fat_dir));
+
     FRESULT res = f_opendir(&fat_dir->ffdir, name);
     _lock_release(&fat_ctx->lock);
     if (res != FR_OK) {
@@ -766,7 +772,7 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
     _lock_acquire(&fat_ctx->lock);
     prepend_drive_to_path(fat_ctx, &path, NULL);
 
-    file = (FIL*) ff_memcalloc(1, sizeof(FIL));
+    file = (FIL*) ff_memalloc(sizeof(FIL));
     if (file == NULL) {
         _lock_release(&fat_ctx->lock);
         ESP_LOGD(TAG, "truncate alloc failed");
@@ -774,6 +780,7 @@ static int vfs_fat_truncate(void* ctx, const char *path, off_t length)
         ret = -1;
         goto out;
     }
+    memset(file, 0, sizeof(*file));
 
     res = f_open(file, path, FA_WRITE);
 
