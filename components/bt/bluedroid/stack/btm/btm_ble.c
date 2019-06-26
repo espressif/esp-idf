@@ -1932,9 +1932,7 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     UINT8       role, status, bda_type;
     UINT16      handle;
     BD_ADDR     bda;
-#if (BLE_PRIVACY_SPT == TRUE)
     BD_ADDR     local_rpa, peer_rpa;
-#endif  ///BLE_PRIVACY_SPT == TRUE
     UINT16      conn_interval, conn_latency, conn_timeout;
     BOOLEAN     match = FALSE;
     UNUSED(evt_len);
@@ -1945,14 +1943,13 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     STREAM_TO_BDADDR   (bda, p);
     BTM_TRACE_DEBUG("status = %d, handle = %d, role = %d, bda_type = %d",status,handle,role,bda_type);
     if (status == 0) {
-#if (BLE_PRIVACY_SPT == TRUE )
-        peer_addr_type = bda_type;
-        match = btm_identity_addr_to_random_pseudo (bda, &bda_type, TRUE);
-
         if (enhanced) {
             STREAM_TO_BDADDR   (local_rpa, p);
             STREAM_TO_BDADDR   (peer_rpa, p);
         }
+#if (BLE_PRIVACY_SPT == TRUE )
+        peer_addr_type = bda_type;
+        match = btm_identity_addr_to_random_pseudo (bda, &bda_type, TRUE);
 
         /* possiblly receive connection complete with resolvable random on
            slave role while the device has been paired */
