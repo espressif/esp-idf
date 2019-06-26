@@ -16,6 +16,10 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Enable early entropy source for RNG
  *
@@ -47,3 +51,7 @@ void bootloader_random_disable(void);
  * @param length This many bytes of random data will be copied to buffer
  */
 void bootloader_fill_random(void *buffer, size_t length);
+
+#ifdef __cplusplus
+}
+#endif
