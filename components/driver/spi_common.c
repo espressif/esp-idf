@@ -1,9 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -15,10 +15,8 @@
 
 #include <string.h>
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
 #include "driver/spi_master.h"
 #include "soc/spi_periph.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -32,9 +30,6 @@
 #include "driver/spi_common.h"
 #include "stdatomic.h"
 #include "hal/spi_hal.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#include "cas.h"
-#endif
 
 static const char *SPI_TAG = "spi";
 
@@ -54,14 +49,16 @@ static const char *SPI_TAG = "spi";
 
 typedef struct spi_device_t spi_device_t;
 
-#define FUNC_SPI    1   //all pins of HSPI and VSPI shares this function number
 #define FUNC_GPIO   PIN_FUNC_GPIO
-
 
 #define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
 
 //Periph 1 is 'claimed' by SPI flash code.
-static atomic_bool spi_periph_claimed[3] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false)};
+static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false),
+#if SOC_SPI_PERIPH_NUM >= 4
+        ATOMIC_VAR_INIT(false),
+#endif
+};
 static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
 static uint8_t spi_dma_chan_enabled = 0;
 static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -101,15 +98,38 @@ int spicommon_irqsource_for_host(spi_host_device_t host)
     return spi_periph_signal[host].irq;
 }
 
+int spicommon_irqdma_source_for_host(spi_host_device_t host)
+{
+    return spi_periph_signal[host].irq_dma;
+}
+
 spi_dev_t *spicommon_hw_for_host(spi_host_device_t host)
 {
     return spi_periph_signal[host].hw;
 }
 
+static inline uint32_t get_dma_periph(int dma_chan)
+{
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    if (dma_chan==1) {
+        return PERIPH_SPI2_DMA_MODULE;
+    } else if (dma_chan==2) {
+        return PERIPH_SPI3_DMA_MODULE;
+    } else if (dma_chan==3) {
+        return PERIPH_SPI_SHARED_DMA_MODULE;
+    } else {
+        abort();
+        return -1;
+    }
+#elif defined(CONFIG_IDF_TARGET_ESP32)
+    return PERIPH_SPI_DMA_MODULE;
+#endif
+}
+
 bool spicommon_dma_chan_claim (int dma_chan)
 {
     bool ret = false;
-    assert( dma_chan == 1 || dma_chan == 2 );
+    assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
 
     portENTER_CRITICAL(&spi_dma_spinlock);
     if ( !(spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan)) ) {
@@ -118,7 +138,7 @@ bool spicommon_dma_chan_claim (int dma_chan)
         ret = true;
     }
 #if CONFIG_IDF_TARGET_ESP32
-    periph_module_enable( PERIPH_SPI_DMA_MODULE );
+    periph_module_enable(get_dma_periph(dma_chan));
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     if (dma_chan==1) {
         periph_module_enable(PERIPH_SPI2_DMA_MODULE);
@@ -149,7 +169,7 @@ bool spicommon_dma_chan_free(int dma_chan)
 #if CONFIG_IDF_TARGET_ESP32
     if ( spi_dma_chan_enabled == 0 ) {
         //disable the DMA only when all the channels are freed.
-        periph_module_disable( PERIPH_SPI_DMA_MODULE );
+        periph_module_disable(get_dma_periph(dma_chan));
     }
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     if (dma_chan==1) {
@@ -237,7 +257,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 
     //check if the selected pins correspond to the iomux pins of the peripheral
     bool use_iomux = bus_uses_iomux_pins(host, bus_config);
-    if (use_iomux) temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
+    if (use_iomux) temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
 
     uint32_t missing_flag = flags & ~temp_flag;
     missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;//don't check this flag
@@ -249,7 +269,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (missing_flag & SPICOMMON_BUSFLAG_MISO) ESP_LOGE(SPI_TAG, "miso pin required.");
         if (missing_flag & SPICOMMON_BUSFLAG_DUAL) ESP_LOGE(SPI_TAG, "not both mosi and miso output capable");
         if (missing_flag & SPICOMMON_BUSFLAG_WPHD) ESP_LOGE(SPI_TAG, "both wp and hd required.");
-        if (missing_flag & SPICOMMON_BUSFLAG_NATIVE_PINS) ESP_LOGE(SPI_TAG, "not using iomux pins");
+        if (missing_flag & SPICOMMON_BUSFLAG_IOMUX_PINS) ESP_LOGE(SPI_TAG, "not using iomux pins");
         SPI_CHECK(missing_flag == 0, "not all required capabilities satisfied.", ESP_ERR_INVALID_ARG);
     }
 
@@ -260,7 +280,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->mosi_io_num >= 0) {
             gpio_iomux_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in);
 #if CONFIG_IDF_TARGET_ESP32
-            gpio_iomux_out(bus_config->mosi_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
             gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
 #endif
@@ -268,7 +288,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->miso_io_num >= 0) {
             gpio_iomux_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in);
 #if CONFIG_IDF_TARGET_ESP32
-            gpio_iomux_out(bus_config->miso_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
             gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
 #endif
@@ -276,7 +296,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->quadwp_io_num >= 0) {
             gpio_iomux_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in);
 #if CONFIG_IDF_TARGET_ESP32
-            gpio_iomux_out(bus_config->quadwp_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
             gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
 #endif
@@ -284,7 +304,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->quadhd_io_num >= 0) {
             gpio_iomux_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in);
 #if CONFIG_IDF_TARGET_ESP32
-            gpio_iomux_out(bus_config->quadhd_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
             gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
 #endif
@@ -292,12 +312,12 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (bus_config->sclk_io_num >= 0) {
             gpio_iomux_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in);
 #if CONFIG_IDF_TARGET_ESP32
-            gpio_iomux_out(bus_config->sclk_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
             gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
 #endif
         }
-        temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
+        temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
     } else {
         //Use GPIO matrix
         ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host+1);
@@ -358,21 +378,12 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-        if (bus_config->spicd_io_num >= 0) {
-            gpio_set_direction(bus_config->spicd_io_num, GPIO_MODE_INPUT_OUTPUT);
-            gpio_matrix_out(bus_config->spicd_io_num, spi_periph_signal[host].spicd_out, false, false);
-            gpio_matrix_in(bus_config->spicd_io_num, spi_periph_signal[host].spicd_in, false);
-            PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->spicd_io_num]);
-            PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->spicd_io_num], FUNC_GPIO);
-        }
-#endif
     }
 
     //Select DMA channel.
-#if CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_IDF_TARGET_ESP32
     DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
     if (dma_chan==VSPI_HOST) {
         DPORT_SET_PERI_REG_MASK(DPORT_SPI_DMA_CHAN_SEL_REG, DPORT_SPI_SHARED_DMA_SEL_M);
     }
@@ -430,7 +441,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
         gpio_iomux_in(cs_io_num, spi_periph_signal[host].spics_in);
 #if CONFIG_IDF_TARGET_ESP32
-        gpio_iomux_out(cs_io_num, FUNC_SPI, false);
+        gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
         gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
 #endif
@@ -443,9 +454,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
             gpio_set_direction(cs_io_num, GPIO_MODE_INPUT);
         }
         if (cs_num == 0) gpio_matrix_in(cs_io_num, spi_periph_signal[host].spics_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[cs_io_num]);
-#endif
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[cs_io_num], FUNC_GPIO);
     }
 }
@@ -474,13 +483,13 @@ void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const 
 /*
 Code for workaround for DMA issue in ESP32 v0/v1 silicon
 */
-
-
+#if CONFIG_IDF_TARGET_ESP32
 static volatile int dmaworkaround_channels_busy[2] = {0, 0};
 static dmaworkaround_cb_t dmaworkaround_cb;
 static void *dmaworkaround_cb_arg;
 static portMUX_TYPE dmaworkaround_mux = portMUX_INITIALIZER_UNLOCKED;
 static int dmaworkaround_waiting_for_chan = 0;
+#endif
 
 bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
 {
@@ -501,14 +510,19 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     }
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
     return ret;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#else
+    //no need to reset
     return true;
 #endif
 }
 
 bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress()
 {
+#if CONFIG_IDF_TARGET_ESP32
     return (dmaworkaround_waiting_for_chan != 0);
+#else
+    return false;
+#endif
 }
 
 void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
@@ -530,9 +544,9 @@ void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
 
 void IRAM_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
 {
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan-1] = 1;
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
-}
-
 #endif
+}

@@ -12,8 +12,8 @@ void spi_slave_hal_init(spi_slave_hal_context_t *hal, int host_id)
     //Force a transaction done interrupt. This interrupt won't fire yet because we initialized the SPI interrupt as
     //disabled.  This way, we can just enable the SPI interrupt and the interrupt handler will kick in, handling
     //any transactions that are queued.
-    spi_ll_enable_int(hal->hw);
     spi_ll_set_int_stat(hal->hw);
+    spi_ll_slave_set_int_type(hal->hw, SPI_LL_INT_TYPE_NORMAL);
 }
 
 void spi_slave_hal_setup_device(const spi_slave_hal_context_t *hal)

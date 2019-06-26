@@ -34,7 +34,7 @@
 // field comments.
 
 #pragma once
-#include "spi_ll.h"
+#include "hal/spi_ll.h"
 #include <esp_err.h>
 #include "soc/lldesc.h"
 
@@ -85,7 +85,9 @@ typedef struct {
         uint32_t rx_lsbfirst : 1;   ///< Whether LSB is received first for RX data, device specific
         uint32_t dma_enabled : 1;   ///< Whether the DMA is enabled, do not update after initialization
         uint32_t no_compensate : 1; ///< No need to add dummy to compensate the timing, device specific
-        uint32_t as_cs  : 1;        ///< Whether the AS_CS feature is enabled, device specific
+#ifdef SOC_SPI_SUPPORT_AS_CS
+        uint32_t as_cs  : 1;        ///< Whether to toggle the CS while the clock toggles, device specific
+#endif
         uint32_t positive_cs : 1;   ///< Whether the postive CS feature is abled, device specific
     };//boolean configurations
 

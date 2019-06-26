@@ -14,10 +14,10 @@ if(NOT BOOTLOADER_BUILD)
                                "src/lldesc.c"
                                "src/soc_include_legacy_warn.c")
 
-    if(soc_name STREQUAL "esp32")
-        list(APPEND COMPONENT_SRCS  "src/hal/spi_hal.c" "src/hal/spi_hal_iram.c"
-                                    "src/hal/spi_slave_hal.c" "src/hal/spi_slave_hal_iram.c")
-    endif()
+    list(APPEND COMPONENT_SRCS "src/hal/spi_hal.c"
+                               "src/hal/spi_hal_iram.c"
+                               "src/hal/spi_slave_hal.c"
+                               "src/hal/spi_slave_hal_iram.c")
 
     set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 endif()

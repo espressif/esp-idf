@@ -35,6 +35,7 @@
 #include "soc/lldesc.h"
 #include "soc/spi_struct.h"
 #include <esp_types.h>
+#include "soc/spi_caps.h"
 
 /**
  * Context that should be maintained by both the driver and the HAL.
