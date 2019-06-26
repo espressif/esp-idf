@@ -841,6 +841,16 @@ enum {
 #define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS
 #define LWIP_TIMEVAL_PRIVATE            0
 
+/*
+   --------------------------------------
+   ------------ SNTP options ------------
+   --------------------------------------
+*/
+/*
+ * SNTP update delay - in milliseconds
+ */
+#define SNTP_UPDATE_DELAY              CONFIG_LWIP_SNTP_UPDATE_DELAY
+
 #define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
     do { \
         struct timeval tv = { .tv_sec = sec, .tv_usec = us }; \
