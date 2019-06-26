@@ -144,6 +144,12 @@ esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")
 esptool_py_custom_target(bootloader-flash bootloader "bootloader")
 
+if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    esptool_py_custom_target(encrypted-flash encrypted_project "app;partition_table;bootloader")
+    esptool_py_custom_target(encrypted-app-flash encrypted_app "app")
+endif()
+
+
 add_custom_target(flash_project_args_target)
 
 # esptool_py_flash_project_args

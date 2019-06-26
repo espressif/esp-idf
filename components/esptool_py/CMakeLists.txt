@@ -20,6 +20,18 @@ file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/flash_project_args.in2
 file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/flash_project_args
               INPUT ${CMAKE_CURRENT_BINARY_DIR}/flash_project_args.in2)
 
+
+if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    configure_file(${COMPONENT_DIR}/flash_encrypted_project_args.in
+                ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_project_args.in)
+
+    file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_project_args.in2
+                INPUT ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_project_args.in)
+    file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/flash_encrypted_project_args
+                INPUT ${CMAKE_CURRENT_BINARY_DIR}/flash_encrypted_project_args.in2)
+endif()
+
+
 configure_file(${COMPONENT_DIR}/flasher_args.json.in
                ${CMAKE_CURRENT_BINARY_DIR}/flasher_args.json.in)
 

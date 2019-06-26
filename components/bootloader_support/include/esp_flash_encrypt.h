@@ -22,6 +22,14 @@
 #endif
 #include "soc/efuse_periph.h"
 
+/* @brief Flash encryption mode based on efuse values
+*/
+typedef enum {
+    ESP_FLASH_ENC_MODE_DISABLED,          // flash encryption is not enabled (flash crypt cnt=0)
+    ESP_FLASH_ENC_MODE_DEVELOPMENT,       // flash encryption is enabled but for Development (reflash over UART allowed)
+    ESP_FLASH_ENC_MODE_RELEASE            // flash encryption is enabled for Release (reflash over UART disabled)
+}esp_flash_enc_mode_t;
+
 /**
  * @file esp_partition.h
  * @brief Support functions for flash encryption features
@@ -113,5 +121,14 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  * @return 
  */
 void esp_flash_write_protect_crypt_cnt();
+
+/** @brief Return the flash encryption mode
+ *
+ * The API is called during boot process but can also be called by
+ * application to check the current flash encryption mode of ESP32
+ *
+ * @return
+ */
+esp_flash_enc_mode_t esp_get_flash_encryption_mode();
 
 #endif
