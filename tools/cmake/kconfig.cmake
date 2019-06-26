@@ -123,15 +123,19 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     string(REPLACE ";" " " kconfigs "${kconfigs}")
     string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
 
+    # Place the long environment arguments into an input file
+    # to work around command line length limits for execute_process
+    # on Windows & CMake < 3.11
+    configure_file(
+        "${idf_path}/tools/kconfig_new/confgen.env.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/confgen.env")
+
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
         --kconfig ${root_kconfig}
         --config ${sdkconfig}
         ${defaults_arg}
-        --env "COMPONENT_KCONFIGS=${kconfigs}"
-        --env "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
-        --env "IDF_CMAKE=y"
-        --env "IDF_TARGET=${idf_target}")
+        --env-file "${CMAKE_CURRENT_BINARY_DIR}/confgen.env")
 
     idf_build_get_property(build_dir BUILD_DIR)
     set(config_dir ${build_dir}/config)
