@@ -408,6 +408,50 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
     return 0;
 }
 
+/*
+ * AES-OFB (Output Feedback Mode) buffer encryption/decryption
+ */
+int esp_aes_crypt_ofb( esp_aes_context *ctx,
+                           size_t length,
+                           size_t *iv_off,
+                           unsigned char iv[16],
+                           const unsigned char *input,
+                           unsigned char *output )
+{
+    int ret = 0;
+    size_t n;
+
+    if ( ctx == NULL || iv_off == NULL || iv == NULL ||
+        input == NULL || output == NULL ) {
+            return MBEDTLS_ERR_AES_BAD_INPUT_DATA;
+    }
+
+    n = *iv_off;
+
+    if( n > 15 ) {
+        return( MBEDTLS_ERR_AES_BAD_INPUT_DATA );
+    }
+
+    esp_aes_acquire_hardware();
+
+    esp_aes_setkey_hardware(ctx, ESP_AES_ENCRYPT);
+
+    while( length-- ) {
+        if( n == 0 ) {
+            esp_aes_block( iv, iv );
+        }
+        *output++ =  *input++ ^ iv[n];
+
+        n = ( n + 1 ) & 0x0F;
+    }
+
+    *iv_off = n;
+
+    esp_aes_release_hardware();
+
+    return( ret );
+}
+
 /* Below XTS implementation is copied aes.c of mbedtls library. 
  * When MBEDTLS_AES_ALT is defined mbedtls expects alternate
  * definition of XTS functions to be available. Even if this 
