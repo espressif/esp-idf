@@ -82,6 +82,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         # V2 onwards: separate visibility from version
         json.dump({"version": default_version, "values": config_dict, "ranges": ranges_dict, "visible": visible_dict}, sys.stdout)
     print("\n")
+    sys.stdout.flush()
 
     while True:
         line = sys.stdin.readline()
@@ -93,6 +94,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             response = {"version": default_version, "error": ["JSON formatting error: %s" % e]}
             json.dump(response, sys.stdout)
             print("\n")
+            sys.stdout.flush()
             continue
         before = confgen.get_json_values(config)
         before_ranges = get_ranges(config)
@@ -142,6 +144,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             response["error"] = error
         json.dump(response, sys.stdout)
         print("\n")
+        sys.stdout.flush()
 
 
 def handle_request(deprecated_options, config, req):
