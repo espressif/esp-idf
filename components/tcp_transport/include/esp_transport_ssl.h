@@ -69,6 +69,15 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
  */
 void esp_transport_ssl_set_client_key_data(esp_transport_handle_t t, const char *data, int len);
 
+/**
+ * @brief      Skip validation of certificate's common name field
+ *
+ * @note       Skipping CN validation is not recommended
+ *
+ * @param      t     ssl transport
+ */
+void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t);
+
 #ifdef __cplusplus
 }
 #endif

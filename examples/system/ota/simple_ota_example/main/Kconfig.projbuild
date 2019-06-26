@@ -1,8 +1,20 @@
 menu "Example Configuration"
 
     config EXAMPLE_FIRMWARE_UPGRADE_URL
-        string "Firmware Upgrade URL"
-        default "https://192.168.2.106:8070/hello-world.bin"
+        string "firmware upgrade url endpoint"
+        default "https://192.168.0.3:8070/hello-world.bin"
         help
-            URL of server which hosts the firmware image.
+            URL of server which hosts the firmware
+            image.
+
+    config EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+        bool
+        default y if EXAMPLE_FIRMWARE_UPGRADE_URL = "FROM_STDIN"
+
+    config EXAMPLE_SKIP_COMMON_NAME_CHECK
+        bool "Skip server certificate CN fieldcheck"
+        default n
+        help
+            This allows you to skip the validation of OTA server certificate CN field.
+
 endmenu
