@@ -1,71 +1,75 @@
+#
+# All the relative URL paths are intended to be GitHub ones
+#
+
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
-	url = https://github.com/espressif/esptool.git
+	url = ../esptool.git
 
 [submodule "components/bt/lib"]
 	path = components/bt/lib
-	url = https://github.com/espressif/esp32-bt-lib.git
+	url = ../esp32-bt-lib.git
 
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
-	url = https://github.com/kmackay/micro-ecc.git
+	url = ../../kmackay/micro-ecc.git
 
 [submodule "components/coap/libcoap"]
 	path = components/coap/libcoap
-	url = https://github.com/obgm/libcoap.git
+	url = ../../obgm/libcoap.git
 
 [submodule "components/nghttp/nghttp2"]
 	path = components/nghttp/nghttp2
-	url = https://github.com/nghttp2/nghttp2.git
+	url = ../../nghttp2/nghttp2.git
 
 [submodule "components/libsodium/libsodium"]
 	path = components/libsodium/libsodium
-	url = https://github.com/jedisct1/libsodium.git
+	url = ../../jedisct1/libsodium.git
 
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
-	url = https://github.com/pellepl/spiffs.git
+	url = ../../pellepl/spiffs.git
 
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
-	url = https://github.com/DaveGamble/cJSON.git
+	url = ../../DaveGamble/cJSON.git
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
-	url = https://github.com/espressif/mbedtls.git
+	url = ../mbedtls.git
 
 [submodule "components/asio/asio"]
 	path = components/asio/asio
-	url = https://github.com/espressif/asio.git
+	url = ../asio.git
 
 [submodule "components/expat/expat"]
 	path = components/expat/expat
-	url = https://github.com/libexpat/libexpat.git
+	url = ../../libexpat/libexpat.git
 
 [submodule "components/lwip/lwip"]
 	path = components/lwip/lwip
-	url = https://github.com/espressif/esp-lwip.git
+	url = ../esp-lwip.git
 
 [submodule "components/mqtt/esp-mqtt"]
 	path = components/mqtt/esp-mqtt
-	url = https://github.com/espressif/esp-mqtt.git
+	url = ../esp-mqtt.git
 
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
-	url = https://github.com/protobuf-c/protobuf-c
+	url = ../../protobuf-c/protobuf-c
 
 [submodule "components/unity/unity"]
 	path = components/unity/unity
-	url = https://github.com/ThrowTheSwitch/Unity
+	url = ../../ThrowTheSwitch/Unity
 
 [submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
 	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
-	url = https://github.com/leethomason/tinyxml2
+	url = ../../leethomason/tinyxml2
 
 [submodule "components/esp_wifi/lib_esp32"]
 	path = components/esp_wifi/lib_esp32
-	url = https://github.com/espressif/esp32-wifi-lib.git
+	url = ../esp32-wifi-lib.git
 
 [submodule "components/nimble/nimble"]
 	path = components/nimble/nimble
-	url = https://github.com/espressif/esp-nimble.git
+	url = ../esp-nimble.git
