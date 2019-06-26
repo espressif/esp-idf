@@ -9,7 +9,7 @@ Additionally, FatFs has been modified to support the runtime pluggable disk I/O 
 Using FatFs with VFS
 --------------------
 
-The header file :component_file:`fatfs/src/esp_vfs_fat.h` defines the functions for connecting FatFs and VFS.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines the functions for connecting FatFs and VFS.
 
 The function :cpp:func:`esp_vfs_fat_register` allocates a ``FATFS`` structure and registers a given path prefix in VFS. Subsequent operations on files starting with this prefix are forwarded to FatFs APIs.
 The function :cpp:func:`esp_vfs_fat_unregister_path` deletes the registration with VFS, and frees the ``FATFS`` structure.
@@ -46,7 +46,7 @@ The convenience functions ``esp_vfs_fat_sdmmc_mount`` and ``esp_vfs_fat_sdmmc_un
 Using FatFs with VFS and SD cards
 ---------------------------------
 
-The header file :component_file:`fatfs/src/esp_vfs_fat.h` defines convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount` and :cpp:func:`esp_vfs_fat_sdmmc_unmount`. These function perform Steps 1–3 and 7–9 respectively and handle SD card initialization, but provide only limited error handling. Developers are encouraged to check its source code and incorporate more advanced features into production applications.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount` and :cpp:func:`esp_vfs_fat_sdmmc_unmount`. These function perform Steps 1–3 and 7–9 respectively and handle SD card initialization, but provide only limited error handling. Developers are encouraged to check its source code and incorporate more advanced features into production applications.
 
 The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the filesystem and releases the resources acquired by :cpp:func:`esp_vfs_fat_sdmmc_mount`.
 
@@ -59,7 +59,7 @@ The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the file
 Using FatFs with VFS in read-only mode
 --------------------------------------
 
-The header file :component_file:`fatfs/src/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_rawflash_mount` and :cpp:func:`esp_vfs_fat_rawflash_unmount`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_rawflash_mount` and :cpp:func:`esp_vfs_fat_rawflash_unmount`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
 
 .. doxygenfunction:: esp_vfs_fat_rawflash_mount
 .. doxygenfunction:: esp_vfs_fat_rawflash_unmount
@@ -76,4 +76,7 @@ They provide implementation of disk I/O functions for SD/MMC cards and can be re
 .. doxygenstruct:: ff_diskio_impl_t
     :members:
 .. doxygenfunction:: ff_diskio_register_sdmmc
+.. doxygenfunction:: ff_diskio_register_wl_partition
+.. doxygenfunction:: ff_diskio_register_raw_partition
+
 

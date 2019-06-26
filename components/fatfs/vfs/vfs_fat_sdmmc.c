@@ -21,7 +21,8 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "sdmmc_cmd.h"
-#include "diskio.h"
+#include "diskio_impl.h"
+#include "diskio_sdmmc.h"
 
 static const char* TAG = "vfs_fat_sdmmc";
 static sdmmc_card_t* s_card = NULL;

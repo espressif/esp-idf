@@ -154,8 +154,11 @@ INPUT = \
     ../../components/vfs/include/esp_vfs_semihost.h \
     ## FAT Filesystem
     ## NOTE: for two lines below header_file.inc is not used
-    ../../components/fatfs/src/esp_vfs_fat.h \
-    ../../components/fatfs/src/diskio.h \
+    ../../components/fatfs/vfs/esp_vfs_fat.h \
+    ../../components/fatfs/diskio/diskio_impl.h \
+    ../../components/fatfs/diskio/diskio_sdmmc.h \
+    ../../components/fatfs/diskio/diskio_wl.h \
+    ../../components/fatfs/diskio/diskio_rawflash.h \
     ## Wear Levelling
     ../../components/wear_levelling/include/wear_levelling.h \
     ##

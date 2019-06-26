@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <string.h>
-#include "diskio.h"
+#include "diskio_impl.h"
 #include "ffconf.h"
 #include "ff.h"
 #include "esp_log.h"
