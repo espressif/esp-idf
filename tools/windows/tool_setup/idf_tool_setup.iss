@@ -60,10 +60,8 @@ Source: "cmdlinerunner\build\cmdlinerunner.dll"; Flags: dontcopy
 Source: "unzip\7za.exe"; Flags: dontcopy
 Source: "idf_versions.txt"; Flags: dontcopy
 Source: "..\..\idf_tools.py"; DestDir: "{app}"; DestName: "idf_tools_fallback.py"
-; Note: this tools.json should match the requirements of IDF v3.x versions.
-; For now, we use this copy to avoid duplication. Later we should create
-; tools_fallback.json in this directory.
-Source: "..\..\tools.json"; DestDir: "{app}"; DestName: "tools_fallback.json"
+; Note: this tools.json matches the requirements of IDF v3.x versions.
+Source: "tools_fallback.json"; DestDir: "{app}"; DestName: "tools_fallback.json"
 Source: "idf_cmd_init.bat"; DestDir: "{app}"
 Source: "dist\*"; DestDir: "{app}\dist"
 
