@@ -133,19 +133,11 @@ We have two bits to control the interrupt:
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "soc/soc_memory_layout.h"
-#include "soc/dport_access.h"
-#include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
 #include "esp_heap_caps.h"
 #include "stdatomic.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "soc/dport_reg.h"
-#include "esp32/rom/ets_sys.h"
 #include "hal/spi_hal.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#include "cas.h"
-#endif
 
 typedef struct spi_device_t spi_device_t;
 
@@ -188,9 +180,6 @@ typedef struct {
     int dma_chan;
     int max_transfer_sz;
     spi_bus_config_t bus_cfg;
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-    int id;
-#endif
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -207,7 +196,7 @@ struct spi_device_t {
     bool        waiting;                //the device is waiting for the exclusive control of the bus
 };
 
-static spi_host_t *spihost[SPI_PERIPH_NUM];
+static spi_host_t *spihost[SOC_SPI_PERIPH_NUM];
 
 
 static const char *SPI_TAG = "spi_master";
@@ -229,7 +218,11 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     SPI_CHECK(host!=SPI_HOST, "SPI1 is not supported", ESP_ERR_NOT_SUPPORTED);
 
     SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
+#ifdef CONFIG_IDF_TARGET_ESP32
     SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SPI_CHECK( dma_chan == 0 || dma_chan == host, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_SPI_MASTER_ISR_IN_IRAM
     SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM)==0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_MASTER_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
@@ -254,9 +247,6 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     memset(spihost[host], 0, sizeof(spi_host_t));
     memcpy( &spihost[host]->bus_cfg, bus_config, sizeof(spi_bus_config_t));
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-    spihost[host]->id = host;
-#endif
 #ifdef CONFIG_PM_ENABLE
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
             &spihost[host]->pm_lock);
@@ -271,17 +261,10 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
         ret = err;
         goto cleanup;
     }
-#if CONFIG_IDF_TARGET_ESP32
-    DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-    if (host==VSPI_HOST) {
-        DPORT_SET_PERI_REG_BITS(DPORT_SPI_SHARED_DMA_SEL_REG, DPORT_SPI_SHARED_DMA_SEL_M, 1, DPORT_SPI_SHARED_DMA_SEL_S);
-    }
-#endif
     int dma_desc_ct=0;
     spihost[host]->dma_chan=dma_chan;
     if (dma_chan == 0) {
-        spihost[host]->max_transfer_sz = 64;
+        spihost[host]->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     } else {
         //See how many dma descriptors we need and allocate them
         dma_desc_ct=lldesc_get_required_num(bus_config->max_transfer_sz);
@@ -397,23 +380,27 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
         if (atomic_compare_exchange_strong(&spihost[host]->device[freecs], &null, (spi_device_t *)1)) break;
     }
     SPI_CHECK(freecs!=NO_CS, "no free cs pins for host", ESP_ERR_NOT_FOUND);
+#ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
     SPI_CHECK( dev_config->cs_ena_pretrans <= 1 || (dev_config->address_bits == 0 && dev_config->command_bits == 0) ||
         (dev_config->flags & SPI_DEVICE_HALFDUPLEX), "In full-duplex mode, only support cs pretrans delay = 1 and without address_bits and command_bits", ESP_ERR_INVALID_ARG);
+#endif
 
     duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
 
     int freq;
     spi_hal_context_t *hal = &spihost[host]->hal;
     hal->half_duplex = dev_config->flags & SPI_DEVICE_HALFDUPLEX ? 1 : 0;
+#ifdef SOC_SPI_SUPPORT_AS_CS
     hal->as_cs = dev_config->flags & SPI_DEVICE_CLK_AS_CS ? 1 : 0;
+#endif
     hal->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
     hal->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
 
     spi_hal_timing_conf_t temp_timing_conf;
     esp_err_t ret = spi_hal_get_clock_conf(hal, dev_config->clock_speed_hz, duty_cycle,
-                                        !(spihost[host]->flags & SPICOMMON_BUSFLAG_NATIVE_PINS),
+                                        !(spihost[host]->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
                                         dev_config->input_delay_ns, &freq,
                                         &temp_timing_conf);
 
@@ -445,7 +432,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_NATIVE_PINS));
+        spicommon_cs_initialize(host, dev_config->spics_io_num, freecs, !(spihost[host]->flags&SPICOMMON_BUSFLAG_IOMUX_PINS));
     }
 
     *handle=dev;
@@ -820,8 +807,12 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     //check working mode
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (handle->cfg.flags & SPI_DEVICE_3WIRE)), "incompatible iface params", ESP_ERR_INVALID_ARG);
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && (!(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX))), "incompatible iface params", ESP_ERR_INVALID_ARG);
+#ifdef CONFIG_IDF_TARGET_ESP32
     SPI_CHECK( !(handle->cfg.flags & SPI_DEVICE_HALFDUPLEX) || host->dma_chan == 0 || !(trans_desc->flags & SPI_TRANS_USE_RXDATA || trans_desc->rx_buffer != NULL)
         || !(trans_desc->flags & SPI_TRANS_USE_TXDATA || trans_desc->tx_buffer!=NULL), "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
+#else
+    (void)host;
+#endif
     //MOSI phase is skipped only when both tx_buffer and SPI_TRANS_USE_TXDATA are not set.
     SPI_CHECK(trans_desc->length != 0 || (trans_desc->tx_buffer == NULL && !(trans_desc->flags & SPI_TRANS_USE_TXDATA)),
         "trans tx_buffer should be NULL and SPI_TRANS_USE_TXDATA should be cleared to skip MOSI phase.", ESP_ERR_INVALID_ARG);
@@ -1102,4 +1093,3 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_transmit(spi_device_handle_t ha
     return ESP_OK;
 }
 
-#endif
