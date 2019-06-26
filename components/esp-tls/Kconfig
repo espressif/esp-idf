@@ -1,0 +1,9 @@
+menu "ESP-TLS"
+
+    config ESP_TLS_SERVER
+        bool "Enable ESP-TLS Server"
+        help
+            Enable support for creating server side SSL/TLS session
+
+endmenu
+

@@ -42,6 +42,11 @@ typedef enum esp_tls_conn_state {
     ESP_TLS_DONE,
 } esp_tls_conn_state_t;
 
+typedef enum esp_tls_role {
+    ESP_TLS_CLIENT = 0,
+    ESP_TLS_SERVER,
+} esp_tls_role_t;
+
 /**
  * @brief      ESP-TLS configuration parameters 
  */ 
@@ -52,9 +57,8 @@ typedef struct esp_tls_cfg {
                                                  The format is length followed by protocol
                                                  name. 
                                                  For the most common cases the following is ok:
-                                                 "\x02h2"
-                                                 - where the first '2' is the length of the protocol and
-                                                 - the subsequent 'h2' is the protocol name */
+                                                 const char **alpn_protos = { "h2", NULL };
+                                                 - where 'h2' is the protocol name */
  
     const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer.
                                                  This buffer should be NULL terminated */
@@ -64,7 +68,7 @@ typedef struct esp_tls_cfg {
 
     const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer
                                                  This buffer should be NULL terminated */
- 
+
     unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
                                                  clientcert_pem_buf */
 
@@ -94,6 +98,43 @@ typedef struct esp_tls_cfg {
     bool skip_common_name;                  /*!< Skip any validation of server certificate CN field */
 } esp_tls_cfg_t;
 
+#ifdef CONFIG_ESP_TLS_SERVER
+typedef struct esp_tls_cfg_server {
+    const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
+                                                     If HTTP2/ALPN support is required, a list
+                                                     of protocols that should be negotiated.
+                                                     The format is length followed by protocol
+                                                     name.
+                                                     For the most common cases the following is ok:
+                                                     const char **alpn_protos = { "h2", NULL };
+                                                     - where 'h2' is the protocol name */
+
+    const unsigned char *cacert_pem_buf;    /*!< Client CA certificate in a buffer.
+                                                     This buffer should be NULL terminated */
+
+    unsigned int cacert_pem_bytes;          /*!< Size of client CA certificate
+                                                     pointed to by cacert_pem_buf */
+
+    const unsigned char *servercert_pem_buf;    /*!< Server certificate in a buffer
+                                                     This buffer should be NULL terminated */
+
+    unsigned int servercert_pem_bytes;          /*!< Size of server certificate pointed to by
+                                                     servercert_pem_buf */
+
+    const unsigned char *serverkey_pem_buf;     /*!< Server key in a buffer
+                                                     This buffer should be NULL terminated */
+
+    unsigned int serverkey_pem_bytes;           /*!< Size of server key pointed to by
+                                                     serverkey_pem_buf */
+
+    const unsigned char *serverkey_password;    /*!< Server key decryption password string */
+
+    unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
+                                                     serverkey_password */
+
+} esp_tls_cfg_server_t;
+#endif /* ! CONFIG_ESP_TLS_SERVER */
+
 /**
  * @brief      ESP-TLS Connection Handle 
  */
@@ -120,7 +161,12 @@ typedef struct esp_tls {
 
     mbedtls_pk_context clientkey;                                               /*!< Container for the private key of the client
                                                                                      certificate */
+#ifdef CONFIG_ESP_TLS_SERVER
+    mbedtls_x509_crt servercert;                                                /*!< Container for the X.509 server certificate */
 
+    mbedtls_pk_context serverkey;                                               /*!< Container for the private key of the server
+                                                                                   certificate */
+#endif
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
  
     ssize_t (*read)(struct esp_tls  *tls, char *data, size_t datalen);          /*!< Callback function for reading data from TLS/SSL
@@ -136,6 +182,10 @@ typedef struct esp_tls {
     fd_set wset;                                                                /*!< write file descriptors */
 
     bool is_tls;                                                                /*!< indicates connection type (TLS or NON-TLS) */
+
+    esp_tls_role_t role;                                                        /*!< esp-tls role
+                                                                                     - ESP_TLS_CLIENT
+                                                                                     - ESP_TLS_SERVER */
 } esp_tls_t;
 
 /**
@@ -323,6 +373,33 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store();
  */
 void esp_tls_free_global_ca_store();
 
+#ifdef CONFIG_ESP_TLS_SERVER
+/**
+ * @brief      Create TLS/SSL server session
+ *
+ * This function creates a TLS/SSL server context for already accepted client connection
+ * and performs TLS/SSL handshake with the client
+ *
+ * @param[in]  cfg      Pointer to esp_tls_cfg_server_t
+ * @param[in]  sockfd   FD of accepted connection
+ * @param[out] tls      Pointer to allocated esp_tls_t
+ *
+ * @return
+ *          - 0  if successful
+ *          - <0 in case of error
+ *
+ */
+int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
+
+/**
+ * @brief      Close the server side TLS/SSL connection and free any allocated resources.
+ *
+ * This function should be called to close each tls connection opened with esp_tls_server_session_create()
+ *
+ * @param[in]  tls  pointer to esp_tls_t
+ */
+void esp_tls_server_session_delete(esp_tls_t *tls);
+#endif /* ! CONFIG_ESP_TLS_SERVER */
 
 #ifdef __cplusplus
 }

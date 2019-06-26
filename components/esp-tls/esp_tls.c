@@ -34,6 +34,17 @@ static mbedtls_x509_crt *global_cacert = NULL;
 #define ESP_LOGE(TAG, ...) printf(__VA_ARGS__);
 #endif
 
+typedef struct esp_tls_pki_t {
+    mbedtls_x509_crt *public_cert;
+    mbedtls_pk_context *pk_key;
+    const unsigned char *publiccert_pem_buf;
+    unsigned int publiccert_pem_bytes;
+    const unsigned char *privkey_pem_buf;
+    unsigned int privkey_pem_bytes;
+    const unsigned char *privkey_password;
+    unsigned int privkey_password_len;
+} esp_tls_pki_t;
+
 static struct addrinfo *resolve_host_name(const char *host, size_t hostlen)
 {
     struct addrinfo hints;
@@ -169,7 +180,7 @@ esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const
     }
     ret = mbedtls_x509_crt_parse(global_cacert, cacert_pem_buf, cacert_pem_bytes);
     if (ret < 0) {
-        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
         mbedtls_x509_crt_free(global_cacert);
         global_cacert = NULL;
         return ESP_FAIL;
@@ -215,6 +226,10 @@ static void mbedtls_cleanup(esp_tls_t *tls)
         mbedtls_x509_crt_free(tls->cacert_ptr);
     }
     tls->cacert_ptr = NULL;
+#ifdef CONFIG_ESP_TLS_SERVER
+    mbedtls_x509_crt_free(&tls->servercert);
+    mbedtls_pk_free(&tls->serverkey);
+#endif
     mbedtls_x509_crt_free(&tls->cacert);
     mbedtls_x509_crt_free(&tls->clientcert);
     mbedtls_pk_free(&tls->clientkey);
@@ -224,22 +239,130 @@ static void mbedtls_cleanup(esp_tls_t *tls)
     mbedtls_ssl_free(&tls->ssl);
 }
 
-static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostlen, const esp_tls_cfg_t *cfg)
+static int set_global_ca_store(esp_tls_t *tls)
 {
+    assert(tls);
+    if (global_cacert == NULL) {
+        ESP_LOGE(TAG, "global_cacert is NULL");
+        return -1;
+    }
+    tls->cacert_ptr = global_cacert;
+    mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
+    return 0;
+}
+
+static int set_ca_cert(esp_tls_t *tls, const unsigned char *cacert, size_t cacert_len)
+{
+    assert(tls);
+    tls->cacert_ptr = &tls->cacert;
+    mbedtls_x509_crt_init(tls->cacert_ptr);
+    int ret = mbedtls_x509_crt_parse(tls->cacert_ptr, cacert, cacert_len);
+    if (ret < 0) {
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
+        return ret;
+    }
+    mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
+    return 0;
+}
+
+static int set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
+{
+    assert(tls);
+    assert(pki);
     int ret;
 
-    tls->server_fd.fd = tls->sockfd;
-    mbedtls_ssl_init(&tls->ssl);
-    mbedtls_ctr_drbg_init(&tls->ctr_drbg);
-    mbedtls_ssl_config_init(&tls->conf);
-    mbedtls_entropy_init(&tls->entropy);
-    
-    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg, 
-                    mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
-        goto exit;        
+    if (pki->publiccert_pem_buf != NULL &&
+        pki->privkey_pem_buf != NULL &&
+        pki->public_cert != NULL &&
+        pki->pk_key != NULL) {
+
+        mbedtls_x509_crt_init(pki->public_cert);
+        mbedtls_pk_init(pki->pk_key);
+
+        ret = mbedtls_x509_crt_parse(pki->public_cert, pki->publiccert_pem_buf, pki->publiccert_pem_bytes);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
+            return ret;
+        }
+
+        ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
+                  NULL, 0);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
+            return ret;
+        }
+
+        ret = mbedtls_ssl_conf_own_cert(&tls->conf, pki->public_cert, pki->pk_key);
+        if (ret < 0) {
+            ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%x", -ret);
+            return ret;
+        }
+    } else {
+        return ESP_ERR_INVALID_ARG;
     }
-    
+    return 0;
+}
+
+#ifdef CONFIG_ESP_TLS_SERVER
+static int set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
+{
+    assert(cfg != NULL);
+    assert(tls != NULL);
+    int ret;
+    if ((ret = mbedtls_ssl_config_defaults(&tls->conf,
+                    MBEDTLS_SSL_IS_SERVER,
+                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                    MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
+        return ret;
+    }
+
+#ifdef CONFIG_MBEDTLS_SSL_ALPN
+    if (cfg->alpn_protos) {
+        mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos);
+    }
+#endif
+
+    if (cfg->cacert_pem_buf != NULL) {
+        ret = set_ca_cert(tls, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
+        if (ret != 0) {
+            return ret;
+        }
+    } else {
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
+    }
+
+    if (cfg->servercert_pem_buf != NULL && cfg->serverkey_pem_buf != NULL) {
+        esp_tls_pki_t pki = {
+            .public_cert = &tls->servercert,
+            .pk_key = &tls->serverkey,
+            .publiccert_pem_buf = cfg->servercert_pem_buf,
+            .publiccert_pem_bytes = cfg->servercert_pem_bytes,
+            .privkey_pem_buf = cfg->serverkey_pem_buf,
+            .privkey_pem_bytes = cfg->serverkey_pem_bytes,
+            .privkey_password = cfg->serverkey_password,
+            .privkey_password_len = cfg->serverkey_password_len,
+        };
+        ret = set_pki_context(tls, &pki);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "Failed to set server pki context");
+            return ret;
+        }
+    } else {
+        ESP_LOGE(TAG, "Missing server certificate and/or key");
+        return -1;
+    }
+    return 0;
+}
+#endif /* ! CONFIG_ESP_TLS_SERVER */
+
+static int set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls)
+{
+    assert(cfg != NULL);
+    assert(tls != NULL);
+    int ret;
     if (!cfg->skip_common_name) {
         char *use_host = NULL;
         if (cfg->common_name != NULL) {
@@ -249,14 +372,13 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
         }
 
         if (use_host == NULL) {
-            goto exit;
+            return -1;
         }
-
         /* Hostname set here should match CN in server certificate */
         if ((ret = mbedtls_ssl_set_hostname(&tls->ssl, use_host)) != 0) {
             ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
             free(use_host);
-            goto exit;
+            return ret;
         }
         free(use_host);
     }
@@ -266,7 +388,7 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
                     MBEDTLS_SSL_TRANSPORT_STREAM,
                     MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
-        goto exit;
+        return ret;
     }
 
 #ifdef CONFIG_MBEDTLS_SSL_ALPN
@@ -276,51 +398,72 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
 #endif
 
     if (cfg->use_global_ca_store == true) {
-        if (global_cacert == NULL) {
-            ESP_LOGE(TAG, "global_cacert is NULL");
-            goto exit;
-        }
-        tls->cacert_ptr = global_cacert;
-        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-        mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
-    } else if (cfg->cacert_pem_buf != NULL) {
-        tls->cacert_ptr = &tls->cacert;
-        mbedtls_x509_crt_init(tls->cacert_ptr);
-        ret = mbedtls_x509_crt_parse(tls->cacert_ptr, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
+        ret = set_global_ca_store(tls);
         if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-            goto exit;
+            return ret;
         }
-        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-        mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
+    } else if (cfg->cacert_pem_buf != NULL) {
+        ret = set_ca_cert(tls, cfg->cacert_pem_buf, cfg->cacert_pem_bytes);
+        if (ret < 0) {
+            return ret;
+        }
     } else {
         mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
     }
 
     if (cfg->clientcert_pem_buf != NULL && cfg->clientkey_pem_buf != NULL) {
-        mbedtls_x509_crt_init(&tls->clientcert);
-        mbedtls_pk_init(&tls->clientkey);
-
-        ret = mbedtls_x509_crt_parse(&tls->clientcert, cfg->clientcert_pem_buf, cfg->clientcert_pem_bytes);
+        esp_tls_pki_t pki = {
+            .public_cert = &tls->clientcert,
+            .pk_key = &tls->clientkey,
+            .publiccert_pem_buf = cfg->clientcert_pem_buf,
+            .publiccert_pem_bytes = cfg->clientcert_pem_bytes,
+            .privkey_pem_buf = cfg->clientkey_pem_buf,
+            .privkey_pem_bytes = cfg->clientkey_pem_bytes,
+            .privkey_password = cfg->clientkey_password,
+            .privkey_password_len = cfg->clientkey_password_len,
+        };
+        ret = set_pki_context(tls, &pki);
         if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
-            goto exit;
-        }
-
-        ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->clientkey_pem_buf, cfg->clientkey_pem_bytes,
-                  cfg->clientkey_password, cfg->clientkey_password_len);
-        if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x\n\n", -ret);
-            goto exit;
-        }
-
-        ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->clientcert, &tls->clientkey);
-        if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%x\n\n", -ret);
-            goto exit;
+            ESP_LOGE(TAG, "Failed to set server pki context");
+            return ret;
         }
     } else if (cfg->clientcert_pem_buf != NULL || cfg->clientkey_pem_buf != NULL) {
-        ESP_LOGE(TAG, "You have to provide both clientcert_pem_buf and clientkey_pem_buf for mutual authentication\n\n");
+        ESP_LOGE(TAG, "You have to provide both clientcert_pem_buf and clientkey_pem_buf for mutual authentication");
+        return -1;
+    }
+    return 0;
+}
+
+static int create_ssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
+{
+    assert(cfg != NULL);
+    assert(tls != NULL);
+    int ret;
+    tls->server_fd.fd = tls->sockfd;
+    mbedtls_ssl_init(&tls->ssl);
+    mbedtls_ctr_drbg_init(&tls->ctr_drbg);
+    mbedtls_ssl_config_init(&tls->conf);
+    mbedtls_entropy_init(&tls->entropy);
+
+    if (tls->role == ESP_TLS_CLIENT) {
+        ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "Failed to set client configurations");
+            goto exit;
+        }
+#ifdef CONFIG_ESP_TLS_SERVER
+    } else if (tls->role == ESP_TLS_SERVER) {
+        ret = set_server_config((esp_tls_cfg_server_t *) cfg, tls);
+        if (ret != 0) {
+            ESP_LOGE(TAG, "Failed to set server configurations");
+            goto exit;
+        }
+#endif
+    }
+
+    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg,
+                    mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
+        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
         goto exit;
     }
 
@@ -331,7 +474,7 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
 #endif
 
     if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+        ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
         goto exit;
     }
     mbedtls_ssl_set_bio(&tls->ssl, &tls->server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
@@ -339,7 +482,7 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
     return 0;
 exit:
     mbedtls_cleanup(tls);
-    return -1;
+    return ret;
 }
 
 /**
@@ -431,7 +574,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
                 }
             }
             /* By now, the connection has been established */
-            ret = create_ssl_handle(tls, hostname, hostlen, cfg);
+            ret = create_ssl_handle(hostname, hostlen, cfg, tls);
             if (ret != 0) {
                 ESP_LOGD(TAG, "create_ssl_handshake failed");
                 tls->conn_state = ESP_TLS_FAIL;
@@ -556,3 +699,43 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
     return esp_tls_conn_new_async(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
 			    get_port(url, &u), cfg, tls);
 }
+
+#ifdef CONFIG_ESP_TLS_SERVER
+/**
+ * @brief      Create TLS/SSL server session
+ */
+int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls)
+{
+    if (tls == NULL || cfg == NULL) {
+        return -1;
+    }
+    tls->role = ESP_TLS_SERVER;
+    tls->sockfd = sockfd;
+    int ret = create_ssl_handle(NULL, 0, cfg, tls);
+    if (ret != 0) {
+        ESP_LOGD(TAG, "create_ssl_handle failed");
+        tls->conn_state = ESP_TLS_FAIL;
+        return ret;
+    }
+    tls->read = tls_read;
+    tls->write = tls_write;
+    while ((ret = mbedtls_ssl_handshake(&tls->ssl)) != 0) {
+        if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+            ESP_LOGE(TAG, "mbedtls_ssl_handshake returned %d", ret);
+            tls->conn_state = ESP_TLS_FAIL;
+            return ret;
+        }
+    }
+    return 0;
+}
+/**
+ * @brief      Close the server side TLS/SSL connection and free any allocated resources.
+ */
+void esp_tls_server_session_delete(esp_tls_t *tls)
+{
+    if (tls != NULL) {
+        mbedtls_cleanup(tls);
+        free(tls);
+    }
+};
+#endif /* ! CONFIG_ESP_TLS_SERVER */
