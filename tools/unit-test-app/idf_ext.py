@@ -26,9 +26,7 @@ def action_extensions(base_actions, project_path=os.getcwd()):
         config_name = re.match(r"ut-apply-config-(.*)", ut_apply_config_name).group(1)
 
         def set_config_build_variables(prop, defval=None):
-            property_value = re.findall(
-                r"^%s=(.+)" % prop, config_file_content, re.MULTILINE
-            )
+            property_value = re.findall(r"^%s=(.+)" % prop, config_file_content, re.MULTILINE)
             if property_value:
                 property_value = property_value[0]
             else:
@@ -98,22 +96,15 @@ def action_extensions(base_actions, project_path=os.getcwd()):
                 sdkconfig_temp.flush()
 
                 try:
-                    args.define_cache_entry.append(
-                        "SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name
-                    )
+                    args.define_cache_entry.append("SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name)
                 except AttributeError:
-                    args.define_cache_entry = [
-                        "SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name
-                    ]
+                    args.define_cache_entry = ["SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name]
 
                 reconfigure = base_actions["actions"]["reconfigure"]["callback"]
                 reconfigure(None, ctx, args)
         else:
             if not config_name == "all-configs":
-                print(
-                    "unknown unit test app config for action '%s'"
-                    % ut_apply_config_name
-                )
+                print("unknown unit test app config for action '%s'" % ut_apply_config_name)
 
     # This target builds the configuration. It does not currently track dependencies,
     # but is good enough for CI builds if used together with clean-all-configs.
@@ -165,18 +156,14 @@ def action_extensions(base_actions, project_path=os.getcwd()):
                 os.path.join(dest, "bootloader", "bootloader.bin"),
             )
 
-            for partition_table in glob.glob(
-                os.path.join(src, "partition_table", "partition-table*.bin")
-            ):
+            for partition_table in glob.glob(os.path.join(src, "partition_table", "partition-table*.bin")):
                 try:
                     os.mkdir(os.path.join(dest, "partition_table"))
                 except OSError:
                     pass
                 shutil.copyfile(
                     partition_table,
-                    os.path.join(
-                        dest, "partition_table", os.path.basename(partition_table)
-                    ),
+                    os.path.join(dest, "partition_table", os.path.basename(partition_table)),
                 )
 
             shutil.copyfile(
@@ -219,9 +206,7 @@ def action_extensions(base_actions, project_path=os.getcwd()):
                 cache_entries.append("TEST_COMPONENTS='%s'" % " ".join(test_components))
 
         if test_exclude_components:
-            cache_entries.append(
-                "TEST_EXCLUDE_COMPONENTS='%s'" % " ".join(test_exclude_components)
-            )
+            cache_entries.append("TEST_EXCLUDE_COMPONENTS='%s'" % " ".join(test_exclude_components))
 
         if cache_entries:
             global_args.define_cache_entry = list(global_args.define_cache_entry)
@@ -229,23 +214,23 @@ def action_extensions(base_actions, project_path=os.getcwd()):
 
             # Brute force add reconfigure at the very beginning
             reconfigure_task = ctx.invoke(ctx.command.get_command(ctx, "reconfigure"))
+            # Strip arguments from the task
+            reconfigure_task.action_args = {}
             tasks.insert(0, reconfigure_task)
 
     # Add global options
     extensions = {
-        "global_options": [
-            # For convenience, define a -T and -E argument that gets converted to -D arguments
-            {
-                "names": ["-T", "--test-components"],
-                "help": "Specify the components to test",
-                "multiple": True,
-            },
-            {
-                "names": ["-E", "--test-exclude-components"],
-                "help": "Specify the components to exclude from testing",
-                "multiple": True,
-            },
-        ],
+        "global_options": [{
+            "names": ["-T", "--test-components"],
+            "help": "Specify the components to test.",
+            "scope": "shared",
+            "multiple": True,
+        }, {
+            "names": ["-E", "--test-exclude-components"],
+            "help": "Specify the components to exclude from testing.",
+            "scope": "shared",
+            "multiple": True,
+        }],
         "global_action_callbacks": [test_component_callback],
         "actions": {},
     }
@@ -260,23 +245,24 @@ def action_extensions(base_actions, project_path=os.getcwd()):
         config_apply_config_action_name = "ut-apply-config-" + config
 
         extensions["actions"][config_build_action_name] = {
-            "callback": ut_build,
-            "help": "Build unit-test-app with configuration provided in configs/NAME. "
-            + "Build directory will be builds/%s/, " % config_build_action_name
-            + "output binaries will be under output/%s/" % config_build_action_name,
+            "callback":
+            ut_build,
+            "help":
+            ("Build unit-test-app with configuration provided in configs/%s. "
+             "Build directory will be builds/%s/, output binaries will be under output/%s/" % (config, config, config)),
         }
 
         extensions["actions"][config_clean_action_name] = {
             "callback": ut_clean,
-            "help": "Remove build and output directories for configuration %s."
-            % config_clean_action_name,
+            "help": "Remove build and output directories for configuration %s." % config_clean_action_name,
         }
 
         extensions["actions"][config_apply_config_action_name] = {
-            "callback": ut_apply_config,
-            "help": "Generates configuration based on configs/%s in sdkconfig file."
-            % config_apply_config_action_name
-            + "After this, normal all/flash targets can be used. Useful for development/debugging.",
+            "callback":
+            ut_apply_config,
+            "help":
+            "Generates configuration based on configs/%s in sdkconfig file. " % config_apply_config_action_name +
+            "After this, normal all/flash targets can be used. Useful for development/debugging.",
         }
 
         build_all_config_deps.append(config_build_action_name)
