@@ -75,7 +75,7 @@ typedef struct
 #endif
 } btc_dm_cb_t;
 
-#if BTC_DYNAMIC_MENDRY == FALSE
+#if BTC_DYNAMIC_MEMORY == FALSE
 extern btc_dm_cb_t btc_dm_cb;
 #else
 extern btc_dm_cb_t *btc_dm_cb_ptr;
