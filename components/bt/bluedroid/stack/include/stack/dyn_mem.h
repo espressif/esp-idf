@@ -28,7 +28,7 @@
 #define GATT_DYNAMIC_MEMORY        TRUE
 #define SMP_DYNAMIC_MEMORY         TRUE
 #define BTA_DYNAMIC_MEMORY         TRUE
-#define BTC_DYNAMIC_MENDRY         TRUE
+#define BTC_DYNAMIC_MEMORY         TRUE
 #define SDP_DYNAMIC_MEMORY         TRUE
 #define GAP_DYNAMIC_MEMORY         TRUE
 #define RFC_DYNAMIC_MEMORY         TRUE
@@ -64,7 +64,7 @@
 #define GATT_DYNAMIC_MEMORY        FALSE
 #define SMP_DYNAMIC_MEMORY         FALSE
 #define BTA_DYNAMIC_MEMORY         FALSE
-#define BTC_DYNAMIC_MENDRY         FALSE
+#define BTC_DYNAMIC_MEMORY         FALSE
 #define SDP_DYNAMIC_MEMORY         FALSE
 #define GAP_DYNAMIC_MEMORY         FALSE
 #define RFC_DYNAMIC_MEMORY         FALSE
@@ -234,8 +234,8 @@
 #define BTA_DYNAMIC_MEMORY FALSE
 #endif
 
-#ifndef BTC_DYNAMIC_MENDRY
-#define BTC_DYNAMIC_MENDRY FALSE
+#ifndef BTC_DYNAMIC_MEMORY
+#define BTC_DYNAMIC_MEMORY FALSE
 #endif
 
 #endif  /* #ifdef DYN_MEM_H */

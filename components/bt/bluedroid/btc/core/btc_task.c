@@ -196,7 +196,7 @@ bt_status_t btc_transfer_context(btc_msg_t *msg, void *arg, int arg_len, btc_arg
 
 }
 
-#if BTC_DYNAMIC_MENDRY
+#if BTC_DYNAMIC_MEMORY
 
 static void btc_deinit_mem(void) {
     if (btc_dm_cb_ptr) {
@@ -311,7 +311,7 @@ error_exit:;
     btc_deinit_mem();
     return BT_STATUS_NOMEM;
 }
-#endif ///BTC_DYNAMIC_MENDRY
+#endif ///BTC_DYNAMIC_MEMORY
 
 int btc_init(void)
 {
@@ -320,7 +320,7 @@ int btc_init(void)
         return BT_STATUS_NOMEM;
     }
 
-#if BTC_DYNAMIC_MENDRY
+#if BTC_DYNAMIC_MEMORY
     if (btc_init_mem() != BT_STATUS_SUCCESS){
         return BT_STATUS_NOMEM;
     }
@@ -339,7 +339,7 @@ int btc_init(void)
 
 void btc_deinit(void)
 {
-#if BTC_DYNAMIC_MENDRY
+#if BTC_DYNAMIC_MEMORY
     btc_deinit_mem();
 #endif
 
