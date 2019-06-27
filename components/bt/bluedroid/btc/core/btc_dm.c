@@ -41,7 +41,7 @@
 /******************************************************************************
 **  Static variables
 ******************************************************************************/
-#if BTC_DYNAMIC_MENDRY == FALSE
+#if BTC_DYNAMIC_MEMORY == FALSE
 btc_dm_cb_t btc_dm_cb = {0};
 #else
 btc_dm_cb_t *btc_dm_cb_ptr;
