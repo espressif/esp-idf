@@ -170,9 +170,10 @@ err:
 static int create_multicast_ipv6_socket()
 {
     struct sockaddr_in6 saddr = { 0 };
+    u8_t  netif_index = EXAMPLE_INTERFACE;
     struct in6_addr if_inaddr = { 0 };
     struct ip6_addr if_ipaddr = { 0 };
-    struct ip6_mreq v6imreq = { 0 };
+    struct ipv6_mreq v6imreq = { 0 };
     int sock = -1;
     int err = 0;
 
@@ -211,8 +212,7 @@ static int create_multicast_ipv6_socket()
 #endif // LISTEN_ALL_IF
 
     // Assign the multicast source interface, via its IP
-    err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &if_inaddr,
-                     sizeof(struct in6_addr));
+    err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &netif_index,sizeof(uint8_t));
     if (err < 0) {
         ESP_LOGE(V6TAG, "Failed to set IPV6_MULTICAST_IF. Error %d", errno);
         goto err;
@@ -245,7 +245,8 @@ static int create_multicast_ipv6_socket()
 #if LISTEN_ALL_IF
     v6imreq.imr_interface.s_addr = IPADDR_ANY;
 #else
-    inet6_addr_from_ip6addr(&v6imreq.ipv6mr_interface, &if_ipaddr);
+    v6imreq.ipv6mr_interface = EXAMPLE_INTERFACE;
+   /*  inet6_addr_from_ip6addr(&v6imreq.ipv6mr_interface, &if_ipaddr);*/
 #endif // LISTEN_ALL_IF
 #ifdef CONFIG_EXAMPLE_IPV6
     // Configure multicast address to listen to
@@ -262,7 +263,7 @@ static int create_multicast_ipv6_socket()
     }
 
     err = setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
-                     &v6imreq, sizeof(struct ip6_mreq));
+                     &v6imreq, sizeof(struct ipv6_mreq));
     if (err < 0) {
         ESP_LOGE(V6TAG, "Failed to set IPV6_ADD_MEMBERSHIP. Error %d", errno);
         goto err;
