@@ -113,6 +113,21 @@ typedef enum {
 } adc_i2s_source_t;
 
 /**
+ * Configure pattern table, each 8 bit defines one channel
+ * [7:4]-channel [3:2]-bit width [1:0]- attenuation
+ * BIT WIDTH: 3: 12BIT  2: 11BIT  1: 10BIT  0: 9BIT
+ * ATTEN: 3: ATTEN = 11dB 2: 6dB 1: 2.5dB 0: 0dB
+ */
+typedef union {
+    struct {
+        uint8_t atten: 2;       /*!< Pattern table ADC attenuation */
+        uint8_t bits:  2;       /*!< Pattern table ADC capture width */
+        uint8_t channel: 4;     /*!< Pattern table ADC channel number */
+    };
+    uint8_t val;
+} adc_i2s_pattern_t;
+
+/**
  * @brief Get the gpio number of a specific ADC1 channel.
  * 
  * @param channel Channel to get the gpio number
@@ -258,6 +273,16 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
 esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en);
 
 /**
+ * @brief Set DIG ADC CTRL data invert
+ * @param adc_unit ADC unit index
+ * @param inv_en whether enable data invert
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t adc_set_mode_inv(adc_unit_t adc_unit, bool inv_en);
+
+/**
  * @brief Set ADC source clock
  * @param clk_div ADC clock divider, ADC clock is divided from APB clock
  * @return
@@ -276,12 +301,13 @@ esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src);
 /**
  * @brief Initialize I2S ADC mode
  * @param adc_unit ADC unit index
- * @param channel ADC channel index
+ * @param adc_pattern ADC channels pattern table
+ * @param adc_items items amount in pattern table
  * @return
  *     - ESP_OK success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel);
+esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, const adc_i2s_pattern_t* adc_pattern, uint8_t adc_items);
 
 /**
  * @brief Configure ADC1 to be usable by the ULP
