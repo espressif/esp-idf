@@ -876,7 +876,7 @@ def init_cli():
                         )
                     else:
                         print("Executing action: %s" % name_with_aliases)
-                        task.run(ctx, global_args, **task.action_args)
+                        task.run(ctx, global_args, task.action_args)
 
                     completed_tasks.add(task.name)
 
