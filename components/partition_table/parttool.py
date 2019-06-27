@@ -66,8 +66,9 @@ PARTITION_BOOT_DEFAULT = _PartitionId()
 
 class ParttoolTarget():
 
-    def __init__(self, port=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None):
+    def __init__(self, port=None, baud=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None):
         self.port = port
+        self.baud = baud
 
         gen.offset_part_table = partition_table_offset
 
@@ -98,6 +99,9 @@ class ParttoolTarget():
         if self.port:
             esptool_args += ["--port", self.port]
 
+        if self.baud:
+            esptool_args += ["--baud", str(self.baud)]
+            
         esptool_args += args
 
         with open(os.devnull, "w") as null_file:
@@ -196,6 +200,7 @@ def main():
     # is specified, that is used instead.
     parser.add_argument("--port", "-p", help="port where the target device of the command is connected to; the partition table is sourced from this device \
                                             when the partition table file is not defined")
+    parser.add_argument("--baud", "-b", help="baudrate to use", type=int)
 
     parser.add_argument("--partition-table-offset", "-o", help="offset to read the partition table from", type=str)
     parser.add_argument("--partition-table-file", "-f", help="file (CSV/binary) to read the partition table from; \
@@ -257,6 +262,9 @@ def main():
 
     if args.port:
         target_args["port"] = args.port
+
+    if args.baud:
+        target_args["baud"] = args.baud
 
     if args.partition_table_file:
         target_args["partition_table_file"] = args.partition_table_file
