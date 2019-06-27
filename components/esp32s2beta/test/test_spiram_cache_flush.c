@@ -4,23 +4,22 @@ This code tests the interaction between PSRAM and SPI flash routines.
 
 #include <esp_types.h>
 #include <stdio.h>
-#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 #include "unity.h"
+#include "soc/dport_reg.h"
+#include "soc/io_mux_reg.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "test_utils.h"
-#include "soc/soc.h"
 
 #if CONFIG_SPIRAM
 
