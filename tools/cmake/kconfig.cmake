@@ -107,6 +107,17 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(KCONFIG_PROJBUILDS "${kconfig_projbuilds}")
 
     idf_build_get_property(idf_target IDF_TARGET)
+    idf_build_get_property(idf_path IDF_PATH)
+
+    string(REPLACE ";" " " kconfigs "${kconfigs}")
+    string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
+
+    # Place config-related environment arguments into config.env file
+    # to work around command line length limits for execute_process
+    # on Windows & CMake < 3.11
+    set(config_env_path "${CMAKE_CURRENT_BINARY_DIR}/config.env")
+    configure_file("${idf_path}/tools/kconfig_new/config.env.in" ${config_env_path})
+    idf_build_set_property(CONFIG_ENV_PATH ${config_env_path})
 
     if(sdkconfig_defaults)
         set(defaults_arg --defaults "${sdkconfig_defaults}")
@@ -116,26 +127,15 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         list(APPEND defaults_arg --defaults "${sdkconfig_defaults}.${idf_target}")
     endif()
 
-    idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
     idf_build_get_property(python PYTHON)
-
-    string(REPLACE ";" " " kconfigs "${kconfigs}")
-    string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
-
-    # Place the long environment arguments into an input file
-    # to work around command line length limits for execute_process
-    # on Windows & CMake < 3.11
-    configure_file(
-        "${idf_path}/tools/kconfig_new/confgen.env.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/confgen.env")
 
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
         --kconfig ${root_kconfig}
         --config ${sdkconfig}
         ${defaults_arg}
-        --env-file "${CMAKE_CURRENT_BINARY_DIR}/confgen.env")
+        --env-file ${config_env_path})
 
     idf_build_get_property(build_dir BUILD_DIR)
     set(config_dir ${build_dir}/config)
@@ -221,10 +221,10 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     # Custom target to run confserver.py from the build tool
     add_custom_target(confserver
-        COMMAND ${CMAKE_COMMAND} -E env
-        "COMPONENT_KCONFIGS=${kconfigs}"
-        "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
-        ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py --kconfig ${IDF_PATH}/Kconfig --config ${sdkconfig}
+        COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
+        --env-file ${config_env_path}
+        --kconfig ${IDF_PATH}/Kconfig
+        --config ${sdkconfig}
         VERBATIM
         USES_TERMINAL)
 endfunction()
