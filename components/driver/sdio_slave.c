@@ -360,19 +360,39 @@ static inline bool sdio_ringbuf_empty(sdio_ringbuf_t* buf)
 }
 /**************** End of Ring buffer for SDIO *****************/
 
-static inline void show_ll(buf_desc_t *item)
+static inline void show_queue_item(buf_desc_t *item)
 {
-   ESP_EARLY_LOGD(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
-    ESP_EARLY_LOGD(TAG, "   buf: %p, stqe_next: %p, tqe-prev: %p", item->buf, item->qe.stqe_next, item->te.tqe_prev);
+    ESP_EARLY_LOGI(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
+    ESP_EARLY_LOGI(TAG, "   buf: %p, stqe_next: %p, tqe-prev: %p", item->buf, item->qe.stqe_next, item->te.tqe_prev);
 }
 
-static void __attribute((unused)) dump_ll(buf_stailq_t *queue)
+static void __attribute((unused)) dump_queue(buf_stailq_t *queue)
 {
+    int cnt = 0;
     buf_desc_t *item = NULL;
-    ESP_EARLY_LOGD(TAG, ">>>>> first: %p, last: %p <<<<<", queue->stqh_first, queue->stqh_last);
+    ESP_EARLY_LOGI(TAG, ">>>>> first: %p, last: %p <<<<<", queue->stqh_first, queue->stqh_last);
     STAILQ_FOREACH(item, queue, qe) {
-        show_ll(item);
+        cnt++;
+        show_queue_item(item);
     }
+    ESP_EARLY_LOGI(TAG, "total: %d", cnt);
+}
+
+static inline void show_ll(lldesc_t *item)
+{
+    ESP_EARLY_LOGI(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
+    ESP_EARLY_LOGI(TAG, "   buf: %p, stqe_next: %p", item->buf, item->qe.stqe_next);
+}
+static void __attribute((unused)) dump_ll(lldesc_t *queue)
+{
+    int cnt = 0;
+    lldesc_t *item = queue;
+    while (item != NULL) {
+        cnt++;
+        show_ll(item);
+        item = STAILQ_NEXT(item, qe);
+    }
+    ESP_EARLY_LOGI(TAG, "total: %d", cnt);
 }
 
 static inline void deinit_context()
@@ -964,7 +984,7 @@ static esp_err_t send_flush_data()
     buf_desc_t *last = NULL;
     if (context.in_flight) {
         buf_desc_t *desc = context.in_flight;
-        while(desc != NULL) {
+        while (desc != NULL) {
             xQueueSend(context.ret_queue, &desc->arg, portMAX_DELAY);
             last = desc;
             desc = STAILQ_NEXT(desc, qe);
@@ -975,13 +995,14 @@ static esp_err_t send_flush_data()
         context.in_flight_end = NULL;
     }
 
-    buf_desc_t *head;
-    esp_err_t ret = sdio_ringbuf_recv(&context.sendbuf, (uint8_t**)&head, NULL, RINGBUF_GET_ALL, 0);
+    buf_desc_t *head, *tail;
+    esp_err_t ret = sdio_ringbuf_recv(&context.sendbuf, (uint8_t**)&head, (uint8_t**)&tail, RINGBUF_GET_ALL, 0);
     if (ret == ESP_OK) {
         buf_desc_t *desc = head;
-        while(desc != NULL) {
+        while (1) {
             xQueueSend(context.ret_queue, &desc->arg, portMAX_DELAY);
             last = desc;
+            if (desc == tail) break;
             desc = STAILQ_NEXT(desc, qe);
         }
         sdio_ringbuf_return(&context.sendbuf, (uint8_t*)head);
@@ -1162,6 +1183,7 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
     buf_stailq_t *const queue = &context.recv_link_list;
 
     critical_enter_recv();
+    assert(desc->not_receiving);
     TAILQ_REMOVE(&context.recv_reg_list, desc, te);
     desc->owner = 1;
     desc->not_receiving = 0; //manually remove the prev link (by set not_receiving=0), to indicate this is in the queue
@@ -1252,4 +1274,10 @@ uint8_t* sdio_slave_recv_get_buf(sdio_slave_buf_handle_t handle, size_t *len_o)
 
     if (len_o!= NULL) *len_o= desc->length;
     return desc->buf;
+}
+
+static void __attribute((unused)) sdio_slave_recv_get_loaded_buffer_num()
+{
+    buf_stailq_t *const queue = &context.recv_link_list;
+    dump_queue(queue);
 }
