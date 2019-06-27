@@ -31,6 +31,28 @@ Encrypted reads and writes use the old implementation, even if
 flash operations are only supported with the main flash chip (and not with
 other flash chips on SPI1 with different CS).
 
+Initializing a flash device
+---------------------------
+
+To use ``esp_flash_*`` APIs, you need to have a chip initialized on a certain
+SPI bus.
+
+1. Call :cpp:func:`spi_bus_initialize` to properly initialize an SPI bus.
+   This functions initialize the resources (I/O, DMA, interrupts) shared
+   among devices attached to this bus.
+
+2. Call :cpp:func:`spi_bus_add_flash_device` to attach the flash device onto
+   the bus. This allocates memory, and fill the members for the
+   ``esp_flash_t`` structure. The CS I/O is also initialized here.
+
+3. Call :cpp:func:`esp_flash_init` to actually communicate with the chip.
+   This will also detect the chip type, and influence the following
+   operations.
+
+.. note:: Multiple flash chips can be attached to the same bus now. However,
+          using ``esp_flash_*`` devices and ``spi_device_*`` devices on the
+          same SPI bus is not supported yet.
+
 SPI flash access API
 --------------------
 
@@ -55,12 +77,14 @@ By default, the SPI flash size is detected by esptool.py when this bootloader is
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
-Concurrency Constraints
------------------------
+Concurrency Constraints for flash on SPI1
+-----------------------------------------
 
-Because the SPI flash is also used for firmware execution via the instruction & data caches, these caches must be disabled while reading/writing/erasing. This means that both CPUs must be running code from IRAM and must only be reading data from DRAM while flash write operations occur.
+Because the SPI1 flash is also used for firmware execution via the instruction & data caches, these caches must be disabled while reading/writing/erasing. This means that both CPUs must be running code from IRAM and must only be reading data from DRAM while flash write operations occur.
 
 If you use the API functions documented here, then these constraints are applied automatically and transparently. However, note that it will have some performance impact on other tasks in the system.
+
+There are no such constraints and impacts for flash chips on other SPI buses than SPI0/1.
 
 For differences between IRAM, DRAM, and flash cache, please refer to the :ref:`application memory layout <memory-layout>` documentation.
 
@@ -156,7 +180,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 1. The host driver, which provides the hardware support to access the chip;
 2. The chip driver, which provides compatibility service to different chips;
 3. The OS functions, provides support of some OS functions (e.g. lock, delay)
-    in different stages (1st/2st boot, or the app).
+   in different stages (1st/2st boot, or the app).
 
 Host driver
 ^^^^^^^^^^^

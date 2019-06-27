@@ -31,6 +31,7 @@ In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need 
 API Reference - SPI Flash
 -------------------------
 
+.. include:: /_build/inc/esp_flash_spi_init.inc
 .. include:: /_build/inc/esp_flash.inc
 .. include:: /_build/inc/spi_flash_types.inc
 

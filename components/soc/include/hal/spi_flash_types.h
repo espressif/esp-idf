@@ -63,6 +63,8 @@ typedef enum {
     SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
 } esp_flash_read_mode_t;
 
+///Slowest io mode supported by ESP32, currently SlowRd
+#define SPI_FLASH_READ_MODE_MIN SPI_FLASH_SLOWRD
 
 struct spi_flash_host_driver_t;
 typedef struct spi_flash_host_driver_t spi_flash_host_driver_t;

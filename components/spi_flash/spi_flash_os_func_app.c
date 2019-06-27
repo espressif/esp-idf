@@ -117,9 +117,4 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
     return ESP_OK;
 }
 
-esp_err_t esp_flash_app_init()
-{
-    return esp_flash_init_os_functions(esp_flash_default_chip, 0);
-}
-
 
