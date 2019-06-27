@@ -314,6 +314,10 @@ static esp_err_t esp_system_event_debug(system_event_t *event)
         ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PIN");
         break;
     }
+     case SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP: {
+	    ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP");
+	    break;
+	}
     case SYSTEM_EVENT_AP_START: {
         ESP_LOGD(TAG, "SYSTEM_EVENT_AP_START");
         break;
