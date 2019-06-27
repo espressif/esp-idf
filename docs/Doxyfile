@@ -132,6 +132,7 @@ INPUT = \
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
+    ../../components/spi_flash/include/esp_flash_spi_init.h \
     ../../components/spi_flash/include/esp_flash.h \
     ../../components/spi_flash/include/esp_partition.h \
     ../../components/bootloader_support/include/esp_flash_encrypt.h \

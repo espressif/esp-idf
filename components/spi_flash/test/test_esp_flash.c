@@ -6,7 +6,8 @@
 
 #include <unity.h>
 #include "esp_flash.h"
-#include "spi_flash_chip_generic.h"
+#include "driver/spi_common.h"
+#include "esp_flash_spi_init.h"
 #include <esp_attr.h>
 #include "esp_log.h"
 
@@ -14,7 +15,6 @@
 
 #include "unity.h"
 #include "driver/spi_common.h"
-#include "memspi_host_driver.h"
 #include "driver/gpio.h"
 #include "soc/io_mux_reg.h"
 
@@ -30,38 +30,43 @@ static uint8_t sector_buf[4096];
 #define TEST_SPI_READ_MODE  SPI_FLASH_FASTRD
 //#define FORCE_GPIO_MATRIX
 
-#ifdef TEST_SPI2_CS0
-#define TEST_HOST           HSPI_HOST
-#define TEST_CS             0
-#define TEST_CS_PIN         HSPI_IOMUX_PIN_NUM_CS
 #define HSPI_PIN_NUM_MOSI   HSPI_IOMUX_PIN_NUM_MOSI
 #define HSPI_PIN_NUM_MISO   HSPI_IOMUX_PIN_NUM_MISO
 #define HSPI_PIN_NUM_CLK    HSPI_IOMUX_PIN_NUM_CLK
 #define HSPI_PIN_NUM_HD     HSPI_IOMUX_PIN_NUM_HD
 #define HSPI_PIN_NUM_WP     HSPI_IOMUX_PIN_NUM_WP
-#define TEST_INPUT_DELAY    20
-#elif defined TEST_SPI3_CS0
-#define TEST_HOST           VSPI_HOST
-#define TEST_CS             0
-#define TEST_CS_PIN         VSPI_IOMUX_PIN_NUM_CS
+
 #define VSPI_PIN_NUM_MOSI   VSPI_IOMUX_PIN_NUM_MOSI
 #define VSPI_PIN_NUM_MISO   VSPI_IOMUX_PIN_NUM_MISO
 #define VSPI_PIN_NUM_CLK    VSPI_IOMUX_PIN_NUM_CLK
 #define VSPI_PIN_NUM_HD     VSPI_IOMUX_PIN_NUM_HD
 #define VSPI_PIN_NUM_WP     VSPI_IOMUX_PIN_NUM_WP
-#define TEST_INPUT_DELAY    0
-#elif defined TEST_SPI1_CS1
-#define TEST_HOST   SPI_HOST
-#define TEST_CS     1
-// #define TEST_CS_PIN 14
-#define TEST_CS_PIN 16  //the pin which is usually used by the PSRAM
-// #define TEST_CS_PIN 27
-#define TEST_INPUT_DELAY    25
 
-#define EXTRA_SPI1_CLK_IO   17  //the pin which is usually used by the PSRAM clk
+#if defined TEST_SPI1_CS1
+#  define TEST_HOST   SPI_HOST
+#  define TEST_CS     1
+// #define TEST_CS_PIN 14
+#  define TEST_CS_PIN 16  //the pin which is usually used by the PSRAM
+// #define TEST_CS_PIN 27
+#  define TEST_INPUT_DELAY    0
+#  define EXTRA_SPI1_CLK_IO   17  //the pin which is usually used by the PSRAM clk
+
+#elif defined TEST_SPI2_CS0
+
+#  define TEST_HOST           HSPI_HOST
+#  define TEST_CS             0
+#  define TEST_CS_PIN         HSPI_IOMUX_PIN_NUM_CS
+#  define TEST_INPUT_DELAY    20
+
+#elif defined TEST_SPI3_CS0
+
+#  define TEST_HOST           VSPI_HOST
+#  define TEST_CS             0
+#  define TEST_CS_PIN         VSPI_IOMUX_PIN_NUM_CS
+#  define TEST_INPUT_DELAY    0
 
 #else
-#define SKIP_EXTENDED_CHIP_TEST
+#  define SKIP_EXTENDED_CHIP_TEST
 #endif
 
 
@@ -71,141 +76,82 @@ static const char TAG[] = "test_esp_flash";
 #ifndef SKIP_EXTENDED_CHIP_TEST
 
 static esp_flash_t *test_chip = NULL;
-static esp_flash_t chip_init;
-static spi_flash_host_driver_t chip_host_driver;
-static memspi_host_data_t driver_data = {};
 
-static void IRAM_ATTR cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, bool use_iomux)
+static void setup_bus(spi_host_device_t host_id)
 {
-    int spics_in = spi_periph_signal[host].spics_in;
-    int spics_out = spi_periph_signal[host].spics_out[cs_num];
-    uint32_t iomux_reg = GPIO_PIN_MUX_REG[TEST_CS_PIN];
-    //to avoid the panic caused by flash data line conflicts during cs line initialization, disable the cache temporarily
-    //some data from flash to be used should be read before the cache disabling
-    g_flash_guard_default_ops.start();
-    if (use_iomux) {
-        GPIO.func_in_sel_cfg[spics_in].sig_in_sel = 0;
-        PIN_INPUT_ENABLE(iomux_reg);
-        GPIO.func_out_sel_cfg[spics_out].oen_sel = 0;
-        GPIO.func_out_sel_cfg[spics_out].oen_inv_sel = false;
-        PIN_FUNC_SELECT(iomux_reg, FUNC_SPI);
+    if (host_id == SPI_HOST) {
+        ESP_LOGI(TAG, "setup flash on SPI1 CS1...\n");
+        //no need to initialize the bus, however the CLK may need one more output if it's on the usual place of PSRAM
+#ifdef EXTRA_SPI1_CLK_IO
+        gpio_matrix_out(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
+#endif
+        //currently the SPI bus for main flash chip is initialized through GPIO matrix
+    } else if (host_id == HSPI_HOST) {
+        ESP_LOGI(TAG, "setup flash on SPI2 (HSPI) CS0...\n");
+        spi_bus_config_t hspi_bus_cfg = {
+            .mosi_io_num = HSPI_PIN_NUM_MOSI,
+            .miso_io_num = HSPI_PIN_NUM_MISO,
+            .sclk_io_num = HSPI_PIN_NUM_CLK,
+            .quadhd_io_num = HSPI_PIN_NUM_HD,
+            .quadwp_io_num = HSPI_PIN_NUM_WP,
+            .max_transfer_sz = 64,
+        };
+#ifdef FORCE_GPIO_MATRIX
+        hspi_bus_cfg.quadhd_io_num = 23;
+#endif
+        esp_err_t ret = spi_bus_initialize(host_id, &hspi_bus_cfg, 0);
+        TEST_ESP_OK(ret);
+    } else if (host_id == VSPI_HOST) {
+        ESP_LOGI(TAG, "setup flash on SPI3 (VSPI) CS0...\n");
+        spi_bus_config_t vspi_bus_cfg = {
+            .mosi_io_num = VSPI_PIN_NUM_MOSI,
+            .miso_io_num = VSPI_PIN_NUM_MISO,
+            .sclk_io_num = VSPI_PIN_NUM_CLK,
+            .quadhd_io_num = VSPI_PIN_NUM_HD,
+            .quadwp_io_num = VSPI_PIN_NUM_WP,
+            .max_transfer_sz = 64,
+        };
+#ifdef FORCE_GPIO_MATRIX
+        vspi_bus_cfg.quadhd_io_num = 23;
+#endif
+        esp_err_t ret = spi_bus_initialize(host_id, &vspi_bus_cfg, 0);
+        TEST_ESP_OK(ret);
     } else {
-        PIN_INPUT_ENABLE(iomux_reg);
-        if (cs_io_num < 32) {
-            GPIO.enable_w1ts = (0x1 << cs_io_num);
-        } else {
-            GPIO.enable1_w1ts.data = (0x1 << (cs_io_num - 32));
-        }
-        GPIO.pin[cs_io_num].pad_driver = 0;
-        gpio_matrix_out(cs_io_num, spics_out, false, false);
-        if (cs_num == 0) {
-            gpio_matrix_in(cs_io_num, spics_in, false);
-        }
-        PIN_FUNC_SELECT(iomux_reg, PIN_FUNC_GPIO);
+        ESP_LOGE(TAG, "invalid bus");
     }
-    g_flash_guard_default_ops.end();
+}
+
+static void release_bus(int host_id)
+{
+    if (host_id == HSPI_HOST || host_id == VSPI_HOST) {
+        spi_bus_free(host_id);
+    }
 }
 
 static void setup_new_chip(esp_flash_read_mode_t io_mode, esp_flash_speed_t speed)
 {
-    chip_init = (esp_flash_t) {
-        .read_mode = io_mode,
-    };
+    //the bus should be initialized before the flash is attached to the bus
+    setup_bus(TEST_HOST);
 
-#ifdef TEST_SPI2_CS0
-    bool spi_chan_claimed = spicommon_periph_claim(HSPI_HOST, "spi flash");
-    TEST_ASSERT(spi_chan_claimed);
-
-    spi_bus_config_t hspi_bus_cfg = {
-        .mosi_io_num = HSPI_PIN_NUM_MOSI,
-        .miso_io_num = HSPI_PIN_NUM_MISO,
-        .sclk_io_num = HSPI_PIN_NUM_CLK,
-        .quadhd_io_num = HSPI_PIN_NUM_HD,
-        .quadwp_io_num = HSPI_PIN_NUM_WP,
-        .max_transfer_sz = 64,
-    };
-#ifdef FORCE_GPIO_MATRIX
-    hspi_bus_cfg.quadhd_io_num = 23;
-#endif
-
-    uint32_t flags;
-    esp_err_t ret = spicommon_bus_initialize_io(HSPI_HOST, &hspi_bus_cfg, 0, SPICOMMON_BUSFLAG_MASTER | (&hspi_bus_cfg)->flags, &flags);
-    TEST_ESP_OK(ret);
-    bool use_iomux = (flags & SPICOMMON_BUSFLAG_NATIVE_PINS) ? 1 : 0;
-
-    printf("setup flash on SPI2 (HSPI) CS0...\n");
-    printf("use iomux:%d\n", use_iomux);
-    memspi_host_config_t cfg = {
-        .host_id = 2,
+    esp_flash_spi_device_config_t dev_cfg = {
+        .host_id = TEST_HOST,
+        .io_mode = io_mode,
         .speed = speed,
-        .iomux = use_iomux,
-        .cs_num = TEST_CS,
+        .cs_id = TEST_CS,
+        .cs_io_num = TEST_CS_PIN,
         .input_delay_ns = TEST_INPUT_DELAY,
     };
-#elif defined TEST_SPI3_CS0
-    bool spi_chan_claimed = spicommon_periph_claim(VSPI_HOST, "spi flash");
-    TEST_ASSERT(spi_chan_claimed);
-
-    spi_bus_config_t vspi_bus_cfg = {
-        .mosi_io_num = VSPI_PIN_NUM_MOSI,
-        .miso_io_num = VSPI_PIN_NUM_MISO,
-        .sclk_io_num = VSPI_PIN_NUM_CLK,
-        .quadhd_io_num = VSPI_PIN_NUM_HD,
-        .quadwp_io_num = VSPI_PIN_NUM_WP,
-        .max_transfer_sz = 64,
-    };
-#ifdef FORCE_GPIO_MATRIX
-    vspi_bus_cfg.quadhd_io_num = 23;
-#endif
-
-    uint32_t flags;
-    esp_err_t ret = spicommon_bus_initialize_io(VSPI_HOST, &vspi_bus_cfg, 0, SPICOMMON_BUSFLAG_MASTER | (&vspi_bus_cfg)->flags, &flags);
-    TEST_ESP_OK(ret);
-    bool use_iomux = (flags & SPICOMMON_BUSFLAG_NATIVE_PINS) ? 1 : 0;
-    //TEST_ASSERT(use_iomux);
-
-    printf("setup flash on SPI3 (VSPI) CS0...\n");
-    printf("use iomux:%d\n", use_iomux);
-    memspi_host_config_t cfg = {
-        .host_id = 3,
-        .speed = speed,
-        .iomux = use_iomux,
-        .cs_num = TEST_CS,
-        .input_delay_ns = TEST_INPUT_DELAY,
-    };
-#elif defined TEST_SPI1_CS1
-    printf("setup flash on SPI1 CS1...\n");
-    memspi_host_config_t cfg = {
-        .host_id = 1,
-        .speed = speed,
-        .iomux = true,
-        .cs_num = TEST_CS,
-        .input_delay_ns = TEST_INPUT_DELAY,
-    };
-    bool use_iomux = (TEST_CS_PIN == spi_periph_signal[TEST_HOST].spics0_iomux_pin) && (driver_data.cs_num == 0);
-
-#  ifdef EXTRA_SPI1_CLK_IO
-    gpio_matrix_out(EXTRA_SPI1_CLK_IO, SPICLK_OUT_IDX, 0, 0);
-#  endif
-#endif
-
-    esp_err_t err = memspi_host_init_pointers(&chip_host_driver, &driver_data, &cfg);
-    cs_initialize(TEST_HOST, TEST_CS_PIN, driver_data.cs_num, use_iomux);
+    esp_err_t err = spi_bus_add_flash_device(&test_chip, &dev_cfg);
     TEST_ESP_OK(err);
-    chip_init.host = &chip_host_driver;
-
-    esp_flash_init_os_functions(&chip_init, TEST_HOST);
-
-    err = esp_flash_init(&chip_init);
+    err = esp_flash_init(test_chip);
     TEST_ESP_OK(err);
-    test_chip = &chip_init;
 }
 
 void teardown_test_chip()
 {
-    if (TEST_HOST == HSPI_HOST || TEST_HOST == VSPI_HOST) {
-        spicommon_periph_free(TEST_HOST);
-    }
+    spi_bus_remove_flash_device(test_chip);
+    test_chip = NULL;
+    release_bus(TEST_HOST);
 }
 
 #endif

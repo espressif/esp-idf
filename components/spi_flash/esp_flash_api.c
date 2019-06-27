@@ -19,7 +19,6 @@
 
 #include "spi_flash_chip_driver.h"
 #include "memspi_host_driver.h"
-#include "esp32/rom/spi_flash.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
@@ -29,29 +28,6 @@ static const char TAG[] = "spi_flash";
 #define MAX_WRITE_CHUNK 8192 /* write in chunks */
 #define MAX_READ_CHUNK 16384
 
-#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_80MHZ
-#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_40M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_40MHZ
-#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_26M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_26MHZ
-#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_20M
-#define DEFAULT_FLASH_SPEED ESP_FLASH_20MHZ
-#else
-#error flash frequency not defined! check sdkconfig.h
-#endif
-
-#if defined(CONFIG_ESPTOOLPY_FLASHMODE_QIO)
-#define DEFAULT_FLASH_MODE  SPI_FLASH_QIO
-#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_QOUT)
-#define DEFAULT_FLASH_MODE  SPI_FLASH_QOUT
-#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DIO)
-#define DEFAULT_FLASH_MODE  SPI_FLASH_DIO
-#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DOUT)
-#define DEFAULT_FLASH_MODE  SPI_FLASH_DOUT
-#else
-#define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
-#endif
 
 #ifdef CONFIG_SPI_FLASH_DANGEROUS_WRITE_ABORTS
 #define UNSAFE_WRITE_ADDRESS abort()
@@ -638,55 +614,6 @@ inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,ui
     uint32_t a_end = a_start + a_len;
     uint32_t b_end = b_start + b_len;
     return (a_end > b_start && b_end > a_start);
-}
-
-#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = 1,\
-    .speed = DEFAULT_FLASH_SPEED, \
-    .cs_num = 0, \
-    .iomux = true, \
-    .input_delay_ns = 25,\
-}
-
-static DRAM_ATTR spi_flash_host_driver_t esp_flash_default_host_drv = ESP_FLASH_DEFAULT_HOST_DRIVER();
-
-static DRAM_ATTR memspi_host_data_t default_driver_data;
-
-/* The default (ie initial boot) no-OS ROM esp_flash_os_functions_t */
-extern const esp_flash_os_functions_t esp_flash_noos_functions;
-
-static DRAM_ATTR esp_flash_t default_chip = {
-    .read_mode = DEFAULT_FLASH_MODE,
-    .host = &esp_flash_default_host_drv,
-    .os_func = &esp_flash_noos_functions,
-};
-
-esp_flash_t *esp_flash_default_chip = &default_chip;
-
-esp_err_t esp_flash_init_default_chip()
-{
-    memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
-    //the host is already initialized, only do init for the data and load it to the host
-    spi_flash_hal_init(&default_driver_data, &cfg);
-    default_chip.host->driver_data = &default_driver_data;
-
-    // ROM TODO: account for non-standard default pins in efuse
-    // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
-    esp_err_t err = esp_flash_init(&default_chip);
-    if (err != ESP_OK) {
-        return err;
-    }
-    if (default_chip.size < g_rom_flashchip.chip_size) {
-        ESP_EARLY_LOGE(TAG, "detected size(%dk) smaller than the size in the binary image header(%dk). probe failed.", default_chip.size/1024, g_rom_flashchip.chip_size/1024);
-        return ESP_ERR_FLASH_SIZE_NOT_MATCH;
-    } else if (default_chip.size > g_rom_flashchip.chip_size) {
-        ESP_EARLY_LOGW(TAG, "detected size larger than the size in the binary image header. use the size in the binary image header.");
-        default_chip.size = g_rom_flashchip.chip_size;
-    }
-        default_chip.size = g_rom_flashchip.chip_size;
-
-    esp_flash_default_chip = &default_chip;
-    return ESP_OK;
 }
 
 
