@@ -131,7 +131,6 @@ typedef struct {
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;
 
-
 #ifdef __cplusplus
 }
 #endif
