@@ -488,6 +488,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     print_status "Can set -D twice: globally and for subcommand, only if values are the same"
     idf.py -DAAA=BBB -DCCC=EEE build -DAAA=BBB -DCCC=EEE || failure "It should be allowed to set -D twice (globally and for subcommand) if values are the same"
 
+    # idf.py subcommand options, (using monitor with as example)
+    print_status "Can set options to subcommands: print_filter for monitor"
+    mv ${IDF_PATH}/tools/idf_monitor.py ${IDF_PATH}/tools/idf_monitor.py.tmp
+    echo "import sys;print(sys.argv[1:])" > ${IDF_PATH}/tools/idf_monitor.py
+    idf.py build || "Failed to build project"
+    idf.py monitor --print-filter="*:I" -p tty.fake | grep "'--print_filter', '\*:I'" || failure "It should process options for subcommands (and pass print-filter to idf_monitor.py)"
+    mv ${IDF_PATH}/tools/idf_monitor.py.tmp ${IDF_PATH}/tools/idf_monitor.py
+
     print_status "Fail on build time works"
     clean_build_dir
     cp CMakeLists.txt CMakeLists.txt.bak
@@ -498,6 +506,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     rm -rf hello.txt CMakeLists.txt
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
+
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
