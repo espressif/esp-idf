@@ -54,6 +54,8 @@ function(__ldgen_process_template template output)
     string(REPLACE ";" " " kconfigs "${kconfigs}")
     string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
 
+    idf_build_get_property(config_env_path CONFIG_ENV_PATH)
+
     add_custom_command(
         OUTPUT ${output}
         COMMAND ${python} ${idf_path}/tools/ldgen/ldgen.py
@@ -62,11 +64,7 @@ function(__ldgen_process_template template output)
         --input     ${template}
         --output    ${output}
         --kconfig   ${root_kconfig}
-        --env       "COMPONENT_KCONFIGS=${kconfigs}"
-        --env       "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
-        --env       "IDF_CMAKE=y"
-        --env       "IDF_PATH=${idf_path}"
-        --env       "IDF_TARGET=${idf_target}"
+        --env-file  "${config_env_path}"
         --libraries-file ${build_dir}/ldgen_libraries
         --objdump   ${CMAKE_OBJDUMP}
         DEPENDS     ${template} ${ldgen_fragment_files} ${ldgen_depends} ${SDKCONFIG}
