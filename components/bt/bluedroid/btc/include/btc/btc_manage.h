@@ -19,7 +19,7 @@
 #include "btc/btc_task.h"
 #include "esp_bt_defs.h"
 
-#if BTC_DYNAMIC_MENDRY == FALSE
+#if BTC_DYNAMIC_MEMORY == FALSE
 extern void *btc_profile_cb_tab[BTC_PID_NUM];
 #else
 extern void **btc_profile_cb_tab;
