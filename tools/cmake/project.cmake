@@ -244,12 +244,13 @@ macro(project project_name)
 
     __target_set_toolchain()
 
-    # Enable ccache if it's on the path
-    if(NOT CCACHE_DISABLE)
+    if(CCACHE_ENABLE)
         find_program(CCACHE_FOUND ccache)
         if(CCACHE_FOUND)
             message(STATUS "ccache will be used for faster builds")
             set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+        else()
+            message(WARNING "enabled ccache in build but ccache program not found")
         endif()
     endif()
 

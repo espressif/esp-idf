@@ -235,8 +235,8 @@ def _ensure_build_directory(args, always_run_cmake=False):
             ]
             if not args.no_warnings:
                 cmake_args += ["--warn-uninitialized"]
-            if args.no_ccache:
-                cmake_args += ["-DCCACHE_DISABLE=1"]
+            if args.ccache:
+                cmake_args += ["-DCCACHE_ENABLE=1"]
             if args.define_cache_entry:
                 cmake_args += ["-D" + d for d in args.define_cache_entry]
             cmake_args += [project_dir]
@@ -305,7 +305,7 @@ def build_target(target_name, ctx, args):
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
 
-    if not args.no_ccache:
+    if args.ccache:
         # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
         # (this means ccache hits can be shared between different projects. It may mean that some debug information
         # will point to files in another project, if these files are perfect duplicates of each other.)
@@ -960,10 +960,18 @@ def init_cli():
                 "default": False,
             },
             {
-                "names": ["--no-ccache"],
-                "help": "Disable ccache. Otherwise, if ccache is available on the PATH then it will be used for faster builds.",
+                "names": ["--ccache"],
+                "help": "Use ccache in build",
                 "is_flag": True,
                 "default": False,
+            },
+            {
+                # This is unused/ignored argument, as ccache use was originally opt-out.
+                # Use of ccache has been made opt-in using --cache arg.
+                "names": ["--no-ccache"],
+                "default": True,
+                "is_flag": True,
+                "hidden": True,
             },
             {
                 "names": ["-G", "--generator"],
