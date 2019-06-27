@@ -694,7 +694,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
     }
     if (config_eir->eir_url) {
         p_bta_dm_eir_cfg->bta_dm_eir_url = osi_malloc(config_eir->eir_url_len);
-        if (p_bta_dm_eir_cfg->bta_dm_eir_url == NULL) {
+        if (p_bta_dm_eir_cfg->bta_dm_eir_url) {
             memcpy(p_bta_dm_eir_cfg->bta_dm_eir_url, config_eir->eir_url, config_eir->eir_url_len);
         } else {
             APPL_TRACE_ERROR("%s, malloc failed.", __func__);
