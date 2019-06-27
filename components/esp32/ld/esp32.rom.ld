@@ -1591,6 +1591,7 @@ PROVIDE ( ets_update_cpu_frequency_rom = 0x40008550 );  /* Updates g_ticks_per_u
 PROVIDE ( hci_tl_env = 0x3ffb8154 );
 PROVIDE ( ld_acl_env = 0x3ffb8258 );
 PROVIDE ( ea_env = 0x3ffb80ec );
+PROVIDE ( lc_sco_env = 0x3ffb81fc );
 PROVIDE ( lc_sco_data_path_config = 0x3ffb81f8 );
 PROVIDE ( ld_active_ch_map = 0x3ffb8334 );
 PROVIDE ( ld_bcst_acl_env = 0x3ffb8274 );

@@ -6,6 +6,29 @@ config BT_ENABLED
     help
         Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
+choice BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH
+    prompt "BR/EDR Sync(SCO/eSCO) default data path"
+    depends on BT_ENABLED
+    default BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
+    help
+        SCO data path, i.e. HCI or PCM.
+        SCO data can be sent/received through HCI synchronous packets, or the data
+        can be routed to on-chip PCM module on ESP32. PCM input/output signals can
+        be "matrixed" to GPIOs. The default data path can also be set using API
+        "esp_bredr_sco_datapath_set"
+
+    config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_HCI
+        bool "HCI"
+    config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
+        bool "PCM"
+endchoice
+
+config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF
+    int
+    default 0 if BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_HCI
+    default 1 if BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
+    default 0
+
 choice BTDM_CONTROLLER_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
     depends on BT_ENABLED && !FREERTOS_UNICORE
@@ -109,7 +132,6 @@ config BTDM_LPCLK_SEL_EXT_32K_XTAL
     bool "External 32kHz crystal"
     depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
 endchoice
-
 endmenu
 
 menuconfig BLUEDROID_ENABLED
@@ -201,15 +223,15 @@ endchoice
 choice HFP_AUDIO_DATA_PATH
     prompt "audio(SCO) data path"
     depends on HFP_ENABLE
+    help
+        SCO data path, i.e. HCI or PCM. This option is set using API
+        "esp_bredr_sco_datapath_set" in Bluetooth host. Default SCO data
+        path can also be set in Bluetooth Controller.
 
 config HFP_AUDIO_DATA_PATH_PCM
     bool "PCM"
-    help
-        This enables the Serial Port Profile
 config HFP_AUDIO_DATA_PATH_HCI
     bool "HCI"
-    help
-        This enables the Serial Port Profile
 endchoice
 
 config GATTS_ENABLE
@@ -1022,8 +1044,8 @@ config BLE_HOST_QUEUE_CONGESTION_CHECK
     depends on BLUEDROID_ENABLED
     default n
     help
-        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around or application layer 
-        handling adv packets is slow, it will cause the controller memory to run out. if enabled, adv packets will be 
+        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around or application layer
+        handling adv packets is slow, it will cause the controller memory to run out. if enabled, adv packets will be
         lost when host queue is congested.
 
 config BLE_SCAN_DUPLICATE

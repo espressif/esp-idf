@@ -40,6 +40,7 @@ typedef struct {
     uint16_t mesh_adv_size;                 /*!< Mesh adv size for scan duplicate */
     uint16_t send_adv_reserved_size;        /*!< Controller minimum memory value */
     uint32_t  controller_debug_flag;         /*!< Controller debug log flag */
+    uint8_t bt_sco_datapath;                /*!< SCO data path, i.e. HCI or PCM module */
 } esp_bt_controller_config_t;
 
 #ifdef CONFIG_BT_ENABLED
@@ -97,6 +98,7 @@ the adv packet will be discarded until the memory is restored. */
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                \
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,          \
     .controller_debug_flag = CONTROLLER_ADV_LOST_DEBUG_BIT,         \
+    .bt_sco_datapath = CONFIG_BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF,    \
 };
 
 #else
