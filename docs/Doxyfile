@@ -62,11 +62,10 @@ INPUT = \
     ##
     ## Ethernet - API Reference
     ##
-    ../../components/ethernet/include/esp_eth.h \
-    ../../components/ethernet/include/eth_phy/phy.h \
-    ../../components/ethernet/include/eth_phy/phy_tlk110.h \
-    ../../components/ethernet/include/eth_phy/phy_lan8720.h \
-    ../../components/ethernet/include/eth_phy/phy_ip101.h \
+    ../../components/esp_eth/include/esp_eth.h \
+    ../../components/esp_eth/include/esp_eth_com.h \
+    ../../components/esp_eth/include/esp_eth_mac.h \
+    ../../components/esp_eth/include/esp_eth_phy.h \
     ##
     ## Peripherals - API Reference
     ##

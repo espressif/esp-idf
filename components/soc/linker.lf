@@ -14,4 +14,9 @@ entries:
     spi_slave_hal_iram (noflash_text)
     spi_flash_hal_iram (noflash)
     lldesc (noflash_text)
-
+    emac_hal:emac_hal_isr (noflash_text)
+    emac_hal:emac_hal_tx_complete_cb (noflash_text)
+    emac_hal:emac_hal_tx_unavail_cb (noflash_text)
+    emac_hal:emac_hal_rx_complete_cb (noflash_text)
+    emac_hal:emac_hal_rx_early_cb (noflash_text)
+    emac_hal:emac_hal_rx_unavail_cb (noflash_text)

@@ -1,4 +1,4 @@
-# Ethernet iperf example
+# Ethernet iperf Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -6,9 +6,11 @@
 
 This example demonstrates basic usage of [iperf](https://iperf.fr/) protocol to measure the throughout/bandwidth of Ethernet.
 
-This example is based on esp-idf's console component. For more information about console you can read the [guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html).
+The cli environment in the example is based on the [console component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/console.html).
 
 ## How to use example
+
+To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
 
 ### Prepare work
 
@@ -16,38 +18,35 @@ This example is based on esp-idf's console component. For more information about
    * Debian/Ubuntu: `sudo apt-get install iperf` 
    * macOS: `brew install iperf`(if using Homebrew) or `sudo port install iperf`(if using MacPorts)
    * Windows(MSYS2): Downloads binaries from [here]( https://iperf.fr/iperf-download.php#windows)
-2. Initialize Ethernet on ESP32, run `ethernet start`
-3. Get ip information(optional), run `ethernet info`
 
-### Configure the project
+### Project configuration in menuconfig
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system. Then go into `Example Configuration` menu.
+Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system.
 
-* Check whether or not to store the history command into flash under `Store command history in flash` option
+1. In the `Example Configuration` menu:
 
-* Set PHY address under `Ethernet PHY address` option, this address depends on the hardware and the PHY configuration. Consult the documentation/datasheet for the PHY hardware you have.
-  - Address 1 for the common Waveshare LAN8720 PHY breakout and official ESP32-Ethernet-Kit board
+* Enable storing history commands in flash under `Store command history in flash`.
+* Choose PHY device under `Ethernet PHY Device`, by default, the **ESP32-Ethernet-Kit** has an `IP101` on board.
 
-* Check whether or not to control PHY's power (if true, you need also to set PHY Power GPIO number later)
+2. In the `Component config > Ethernet` menu:
 
-* Set SMI MDC/MDIO GPIO number according to board schematic, default these two GPIOs are set as below:
+* Enable `Use ESP32 internal EMAC controller`, and then go into this menu.
+* In the `PHY interface`, it's highly recommended that you choose `Reduced Media Independent Interface (RMII)` which will cost fewer pins.
+* In the `RMII clock mode`, you can choose the source of RMII clock (50MHz): `Input RMII clock from external` or `Output RMII clock from internal`.
+* Once `Output RMII clock from internal` is enabled, you also have to set the number of the GPIO used for outputting the RMII clock under `RMII clock GPIO number`. In this case, you can set the GPIO number to 16 or 17.
+* Once `Output RMII clock from GPIO0 (Experimental!)` is enabled, then you have no choice but GPIO0 to output the RMII clock.
+* Set SMI MDC/MDIO GPIO number according to board schematic, by default these two GPIOs are set as below:
 
   | Default Example GPIO | RMII Signal | Notes         |
   | -------------------- | ----------- | ------------- |
   | GPIO23               | MDC         | Output to PHY |
   | GPIO18               | MDIO        | Bidirectional |
 
-* Select one kind of EMAC clock mode under `EMAC clock mode` option. Possible configurations of the clock are listed as below:
+* If you have connect a GPIO to the PHY chip's RST pin, then you need to enable `Use Reset Pin of PHY Chip` and set the GPIO number under `PHY RST GPIO number`.
 
-  | Mode     | GPIO Pin | Signal name  | Notes                                                        |
-  | -------- | -------- | ------------ | ------------------------------------------------------------ |
-  | external | GPIO0    | EMAC_TX_CLK  | Input of 50MHz PHY clock                                     |
-  | internal | GPIO0    | CLK_OUT1     | Output of 50MHz APLL clock                                   |
-  | internal | GPIO16   | EMAC_CLK_OUT | Output of 50MHz APLL clock                                   |
-  | internal | GPIO17   | EMAC_CLK_180 | Inverted output of 50MHz APLL clock (suitable for long clock trace) |
+### Extra configuration in the code (Optional)
 
-  - The external reference clock of 50MHz must be supplied on `GPIO0`.
-  - The ESP32 can generate a 50MHz clock using its APLL. When the APLL is already used as clock source for other purposes (most likely I²S), you have no choice but choose external clock.
+* By default Ethernet driver will assume the PHY address to `1`, but you can alway reconfigure this value after `eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();`. The actual PHY address should depend on the hardware you use, so make sure to consult the schematic and datasheet.
 
 ### Build and Flash
 
@@ -146,19 +145,18 @@ I (2534456) iperf: want recv=16384
 
 ## Suggestions of getting higher bandwidth
 
-1. Higher MCU working frequency will get higher bandwidth
+1. Higher MCU working frequency will get higher bandwidth.
 2. Put frequency invoked function into IRAM via macro `IRAM_ATTR` in code.
 3. Priority of iperf task may also have effect.
 
 ## Troubleshooting
 
-- If the PHY address is incorrect then the EMAC will still be initialized, but all attempts to read/write configuration registers in the PHY's register will fail, for example, waiting for auto-negotiation done.
+* RMII Clock
+  * ESP32's MAC and the external PHY device need a common 50MHz reference clock (aka RMII clock). This clock can either be provided by an externally oscillator or generated from internal APLL. The signal integrity of RMII clock is strict, so it is highly recommended to add a 33Ω resistor in series to reduce possible ringing.
+  * ESP32 can generate a 50MHz clock using internal APLL. But if the APLL is already used for other purposes (e.g. I2S peripheral), then you have no choice but use an external RMII clock.
 
-- Check PHY Clock
-
-  > The ESP32's MAC and the External PHY device need a common 50MHz reference clock. This clock can either be provided externally by a crystal oscillator (e.g. crystal connected to the PHY or a separate crystal oscillator) or internally by generating from EPS32's APLL. The signal integrity of this clock is strict, so it is highly recommended to add a 33Ω resistor in series to reduce ringing.
-
-- Check GPIO connections, the RMII PHY wiring is fixed which can not be changed through either IOMUX or GPIO Matrix. They're described as below:
+* GPIO connections
+  * RMII PHY wiring is fixed and can not be changed through either IOMUX or GPIO Matrix. They're described as below:
 
   | GPIO   | RMII Signal | ESP32 EMAC Function |
   | ------ | ----------- | ------------------- |
@@ -169,6 +167,4 @@ I (2534456) iperf: want recv=16384
   | GPIO26 | RX1         | EMAC_RXD1           |
   | GPIO27 | CRS_DV      | EMAC_RX_DRV         |
 
-- Check GPIO0
-
-  > GPIO0 is a strapping pin for entering UART flashing mode on reset, care must be taken when using this pin as `EMAC_TX_CLK`. If the clock output from the PHY is oscillating during reset, the ESP32 may randomly enter UART flashing mode. One solution is to use an additional GPIO as a "power pin", which either powers the PHY on/off or enables/disables the PHY's own oscillator. This prevents the clock signal from being active during a system reset. For this configuration to work, `GPIO0` also needs a pullup resistor and the "power pin" GPIO will need a pullup/pulldown resistor - as appropriate in order to keep the PHY clock disabled when the ESP32 is in reset. See the example source code to see how the "power pin" GPIO can be managed in software. 
+(For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)

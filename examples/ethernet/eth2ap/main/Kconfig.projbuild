@@ -1,94 +1,35 @@
 menu "Example Configuration"
 
-    choice EXAMPLE_PHY_MODEL
+    choice EXAMPLE_ETH_PHY_MODEL
         prompt "Ethernet PHY Device"
-        default EXAMPLE_PHY_IP101
+        default EXAMPLE_ETH_PHY_IP101
         help
-            Select the PHY driver to use for the example.
-        config EXAMPLE_PHY_IP101
+            Select the Ethernet PHY device to use in the example.
+
+        config EXAMPLE_ETH_PHY_IP101
             bool "IP101"
             help
                 IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
                 Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
-        config EXAMPLE_PHY_TLK110
-            bool "TLK110"
+
+        config EXAMPLE_ETH_PHY_RTL8201
+            bool "RTL8201/SR8201"
             help
-                TLK110 is an Industrial 10/100Mbps Ethernet Physical Layer Transceiver.
-                Goto http://www.ti.com/product/TLK110 for information about it.
-        config EXAMPLE_PHY_LAN8720
+                RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
+                Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
+
+        config EXAMPLE_ETH_PHY_LAN8720
             bool "LAN8720"
             help
-                LAN8720 is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
+                LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
                 Goto https://www.microchip.com/LAN8720A for more information about it.
+
+        config EXAMPLE_ETH_PHY_DP83848
+            bool "DP83848"
+            help
+                DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
+                Goto http://www.ti.com/product/DP83848J for more information about it.
     endchoice
-
-    config EXAMPLE_PHY_ADDRESS
-        int "Ethernet PHY Address"
-        default 1
-        range 0 31
-        help
-            PHY Address of your PHY device. It depends on your schematic design.
-
-    choice EXAMPLE_PHY_CLOCK_MODE
-        prompt "Ethernet RMII Clock Mode"
-        default EXAMPLE_PHY_CLOCK_GPIO0_IN
-        help
-            Select external (input on GPIO0) or internal (output on GPIO0, GPIO16 or GPIO17) RMII clock.
-        config EXAMPLE_PHY_CLOCK_GPIO0_IN
-            bool "GPIO0 Input"
-            help
-                Input of 50MHz RMII clock on GPIO0.
-        config EXAMPLE_PHY_CLOCK_GPIO0_OUT
-            bool "GPIO0 Output"
-            help
-                Output the internal 50MHz RMII clock on GPIO0.
-        config EXAMPLE_PHY_CLOCK_GPIO16_OUT
-            bool "GPIO16 Output"
-            help
-                Output the internal 50MHz RMII clock on GPIO16.
-        config EXAMPLE_PHY_CLOCK_GPIO17_OUT
-            bool "GPIO17 Output (inverted)"
-            help
-                Output the internal 50MHz RMII clock on GPIO17 (inverted signal).
-    endchoice
-
-    config EXAMPLE_PHY_CLOCK_MODE
-        int
-        default 0 if EXAMPLE_PHY_CLOCK_GPIO0_IN
-        default 1 if EXAMPLE_PHY_CLOCK_GPIO0_OUT
-        default 2 if EXAMPLE_PHY_CLOCK_GPIO16_OUT
-        default 3 if EXAMPLE_PHY_CLOCK_GPIO17_OUT
-
-    config EXAMPLE_PHY_USE_POWER_PIN
-        bool "Use PHY Power (enable / disable) pin"
-        default y
-        help
-            Use a GPIO "power pin" to power the PHY on/off during operation.
-            When using GPIO0 to input RMII clock, the reset process will be interfered by this clock.
-            So we need another GPIO to control the switch on / off of the RMII clock.
-
-    if EXAMPLE_PHY_USE_POWER_PIN
-        config EXAMPLE_PHY_POWER_PIN
-            int "PHY power pin"
-            default 5
-            range 0 33
-            help
-                Set the GPIO number used for powering on/off the PHY.
-    endif
-
-    config EXAMPLE_PHY_SMI_MDC_PIN
-        int "Ethernet SMI MDC gpio number"
-        default 23
-        range 0 33
-        help
-            GPIO number used for SMI clock signal.
-
-    config EXAMPLE_PHY_SMI_MDIO_PIN
-        int "Ethernet SMI MDIO gpio number"
-        default 18
-        range 0 33
-        help
-            GPIO number used for SMI data signal.
 
     config EXAMPLE_WIFI_SSID
         string "Wi-Fi SSID"
