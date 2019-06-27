@@ -55,23 +55,12 @@ inline static bool iperf_is_tcp_server(void)
 
 int iperf_get_socket_error_code(int sockfd)
 {
-    uint32_t optlen = sizeof(int);
-    int result;
-    int err;
-
-    err = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &result, &optlen);
-    if (err == -1) {
-        ESP_LOGE(TAG, "getsockopt failed: ret=%d", err);
-        return -1;
-    }
-
-    return result;
+    return errno;
 }
 
 int iperf_show_socket_error_reason(const char *str, int sockfd)
 {
-    int err = iperf_get_socket_error_code(sockfd);
-
+    int err = errno;
     if (err != 0) {
         ESP_LOGW(TAG, "%s error, error code: %d, reason: %s", str, err, strerror(err));
     }
