@@ -52,10 +52,10 @@ static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id,
 {
     tcpip_adapter_ip_info_t eth_ip;
     uint8_t eth_mac[6];
-
-    esp_eth_get_mac(eth_mac);
+    esp_eth_handle_t eth_handle = *(esp_eth_handle_t*)data;
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, eth_mac);
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
-    tcpip_adapter_eth_start(eth_mac, &eth_ip);
+    tcpip_adapter_eth_start(eth_mac, &eth_ip, eth_handle);
 }
 
 static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)

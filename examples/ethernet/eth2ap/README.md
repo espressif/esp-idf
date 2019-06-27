@@ -12,36 +12,38 @@ The similarities on MAC layer between Ethernet and Wi-Fi make it easy to forward
 
 ### Hardware Required
 
-To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports three Ethernet PHY: `TLK110`, `LAN8720` and `IP101`, additional PHY drivers should be implemented by users themselves.
+To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
 
-### Configure the project
+### Project configuration in menuconfig
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
+Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system.
+
+1. In the `Example Configuration` menu:
 
 * Choose PHY device under `Ethernet PHY Device`, by default, the **ESP32-Ethernet-Kit** has an `IP101` on board.
-* Set PHY address under `Ethernet PHY address`, it should depend on the PHY configuration of your hardware. You'd better consult the schematic of the board. By default, the PHY address of **ESP32-Ethernet-Kit** is *1*.
-* Check whether or not to control the power of PHY chip under `Use PHY Power (enable / disable) pin`, (if set true, you also need to give the GPIO number of that pin under `PHY Power GPIO`).
-* Set SMI MDC/MDIO GPIO number according to board schematic, by default they are set as below:
+* Set the SSID and password for Wi-Fi ap interface under `Wi-Fi SSID` and `Wi-Fi Password`.
+* Set the maximum connection number under `Maximum STA connections`.
+
+2. In the `Component config > Ethernet` menu:
+
+* Enable `Use ESP32 internal EMAC controller`, and then go into this menu.
+* In the `PHY interface`, it's highly recommended that you choose `Reduced Media Independent Interface (RMII)` which will cost fewer pins.
+* In the `RMII clock mode`, you can choose the source of RMII clock (50MHz): `Input RMII clock from external` or `Output RMII clock from internal`.
+* Once `Output RMII clock from internal` is enabled, you also have to set the number of the GPIO used for outputting the RMII clock under `RMII clock GPIO number`. In this case, you can set the GPIO number to 16 or 17.
+* Once `Output RMII clock from GPIO0 (Experimental!)` is enabled, then you have no choice but GPIO0 to output the RMII clock.
+* Set SMI MDC/MDIO GPIO number according to board schematic, by default these two GPIOs are set as below:
 
   | Default Example GPIO | RMII Signal | Notes         |
   | -------------------- | ----------- | ------------- |
   | GPIO23               | MDC         | Output to PHY |
   | GPIO18               | MDIO        | Bidirectional |
 
-* Select one kind of RMII clock mode under `Ethernet RMII Clock Mode` option. Possible configurations of the clock are listed as below. By default, ESP32-Ethernet-Kit use the `GPIO0 input` mode, which gives a good performance when enabling Ethernet and Wi-Fi at the same time.
+* If you have connect a GPIO to the PHY chip's RST pin, then you need to enable `Use Reset Pin of PHY Chip` and set the GPIO number under `PHY RST GPIO number`.
 
-  | Mode     | GPIO Pin | Signal name  | Notes                                                        |
-  | -------- | -------- | ------------ | ------------------------------------------------------------ |
-  | external | GPIO0    | EMAC_TX_CLK  | Input of 50MHz PHY clock                                     |
-  | internal | GPIO0    | CLK_OUT1     | Output of 50MHz APLL clock                                   |
-  | internal | GPIO16   | EMAC_CLK_OUT | Output of 50MHz APLL clock                                   |
-  | internal | GPIO17   | EMAC_CLK_180 | Inverted output of 50MHz APLL clock (suitable for long clock trace) |
+### Extra configuration in the code (Optional)
 
-  * External RMII clock must be connected to `GPIO0`.
-  * ESP32 can generate the RMII clock(50MHz) using its internal APLL. But if the APLL has already been used for other peripheral (e.g. I²S), you'd better choose the external clock.
+* By default Ethernet driver will assume the PHY address to `1`, but you can alway reconfigure this value after `eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();`. The actual PHY address should depend on the hardware you use, so make sure to consult the schematic and datasheet.peripheral (e.g. I²S), you'd better choose the external clock.
 
-* Set the SSID and password for Wi-Fi ap interface under `Wi-Fi SSID` and `Wi-Fi Password`.
-* Set the maximum connection number under `Maximum STA connections`.
 
 ### Build and Flash
 
@@ -104,11 +106,29 @@ Now your mobile phone should get access to the Internet.
 
 ## Troubleshooting
 
-* Got error message `emac: emac rx buf err` when running the example.
-    * This example just forwards the packets on the Layer2 between Wi-Fi and Ethernet, it won't do any Layer3 business. So make sure you have disabled the `CONFIG_ETH_EMAC_L2_TO_L3_RX_BUF_MODE`. By default, this option is false in the `sdkconfig.defaults` file.
+* RMII Clock
+    * ESP32's MAC and the external PHY device need a common 50MHz reference clock (aka RMII clock). This clock can either be provided by an externally oscillator or generated from internal APLL. The signal integrity of RMII clock is strict, so it is highly recommended to add a 33Ω resistor in series to reduce possible ringing.
+    * ESP32 can generate a 50MHz clock using internal APLL. But if the APLL is already used for other purposes (e.g. I2S peripheral), then you have no choice but use an external RMII clock.
 
-* Got error message `example: WiFi send packet failed: -1` when running the example.
+* GPIO connections
+    * RMII PHY wiring is fixed and can not be changed through either IOMUX or GPIO Matrix. They're described as below:
+
+  | GPIO   | RMII Signal | ESP32 EMAC Function |
+  | ------ | ----------- | ------------------- |
+  | GPIO21 | TX_EN       | EMAC_TX_EN          |
+  | GPIO19 | TX0         | EMAC_TXD0           |
+  | GPIO22 | TX1         | EMAC_TXD1           |
+  | GPIO25 | RX0         | EMAC_RXD0           |
+  | GPIO26 | RX1         | EMAC_RXD1           |
+  | GPIO27 | CRS_DV      | EMAC_RX_DRV         |
+
+* Got error message `WiFi send packet failed` when running the example.
     * Ethernet process packets faster than Wi-Fi on ESP32, so have a try to enlarge the value of `FLOW_CONTROL_WIFI_SEND_DELAY_MS`.
+
+* Got error message `send flow control message failed or timeout` when running the example.
+    * Enlarge the length of `FLOW_CONTROL_QUEUE_LENGTH`.
 
 * Wi-Fi station doesn't receive any IP via DHCP.
     * All Layer 3 (TCP/IP functions) on the ESP32 are disabled, including the SoftAP DHCP server. This means that devices must be able to access another DHCP server (for example on a Wi-Fi router connected via ethernet) or should use statically assigned IP addresses.
+
+(For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)
