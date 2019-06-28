@@ -16,7 +16,7 @@ else()
     set(final_partition_target "build_partition_table")
 endif()
 
-if(CONFIG_PARTITION_TABLE_MD5)
+if(NOT CONFIG_PARTITION_TABLE_MD5)
     set(md5_opt --disable-md5sum)
 endif()
 
