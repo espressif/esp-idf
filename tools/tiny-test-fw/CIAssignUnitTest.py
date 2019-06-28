@@ -10,6 +10,11 @@ import argparse
 import yaml
 
 try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
+try:
     from Utility import CIAssignTest
 except ImportError:
     test_fw_path = os.getenv("TEST_FW_PATH")
@@ -110,7 +115,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
 
         try:
             with open(test_case_path, "r") as f:
-                raw_data = yaml.load(f)
+                raw_data = yaml.load(f, Loader=Loader)
             test_cases = raw_data["test cases"]
         except IOError:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
