@@ -35,3 +35,4 @@ add_definitions(-DCOEX_ADAPTER_MD5=\"${COEX_ADAPTER_MD5}\")
 add_custom_target(esp32_test_logo DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h")
 
 add_dependencies(${COMPONENT_TARGET} esp32_test_logo)
+target_link_libraries(${COMPONENT_TARGET} "-u ld_include_test_dport_xt_highint5")
