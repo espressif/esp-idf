@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -74,73 +74,83 @@
  *  @brief Bluetooth Mesh Time Scene Client Model Get and Set parameters structure.
  */
 
+/** Parameters of Time Set */
 typedef struct {
-    u8_t  tai_seconds[5];     /* The current TAI time in seconds */
-    u8_t  sub_second;         /* The sub-second time in units of 1/256 second */
-    u8_t  uncertainty;        /* The estimated uncertainty in 10-millisecond steps */
-    u16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
-    u16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
-    u8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
+    u8_t  tai_seconds[5];           /*!< The current TAI time in seconds */
+    u8_t  sub_second;               /*!< The sub-second time in units of 1/256 second */
+    u8_t  uncertainty;              /*!< The estimated uncertainty in 10-millisecond steps */
+    u16_t time_authority : 1;       /*!< 0 = No Time Authority, 1 = Time Authority */
+    u16_t tai_utc_delta : 15;       /*!< Current difference between TAI and UTC in seconds */
+    u8_t  time_zone_offset;         /*!< The local time zone offset in 15-minute increments */
 } esp_ble_mesh_time_set_t;
 
+/** Parameters of Time Zone Set */
 typedef struct {
-    u8_t time_zone_offset_new; /* Upcoming local time zone offset */
-    u8_t tai_zone_change[5];   /* TAI Seconds time of the upcoming Time Zone Offset change */
+    u8_t time_zone_offset_new;      /*!< Upcoming local time zone offset */
+    u8_t tai_zone_change[5];        /*!< TAI Seconds time of the upcoming Time Zone Offset change */
 } esp_ble_mesh_time_zone_set_t;
 
+/** Parameters of TAI-UTC Delta Set */
 typedef struct {
-    u16_t tai_utc_delta_new : 15; /* Upcoming difference between TAI and UTC in seconds */
-    u16_t padding : 1;            /* Always 0b0. Other values are Prohibited. */
-    u8_t tai_delta_change[5];     /* TAI Seconds time of the upcoming TAI-UTC Delta change */
+    u16_t tai_utc_delta_new : 15;   /*!< Upcoming difference between TAI and UTC in seconds */
+    u16_t padding : 1;              /*!< Always 0b0. Other values are Prohibited. */
+    u8_t tai_delta_change[5];       /*!< TAI Seconds time of the upcoming TAI-UTC Delta change */
 } esp_ble_mesh_tai_utc_delta_set_t;
 
+/** Parameter of Time Role Set */
 typedef struct {
-    u8_t time_role; /* The Time Role for the element */
+    u8_t time_role;                 /*!< The Time Role for the element */
 } esp_ble_mesh_time_role_set_t;
 
+/** Parameter of Scene Store */
 typedef struct {
-    u16_t scene_number; /* The number of scenes to be stored */
+    u16_t scene_number;             /*!< The number of scenes to be stored */
 } esp_ble_mesh_scene_store_t;
 
+/** Parameters of Scene Recall */
 typedef struct {
-    bool  op_en;        /* Indicate if optional parameters are included  */
-    u16_t scene_number; /* The number of scenes to be recalled           */
-    u8_t  tid;          /* Transaction ID                                */
-    u8_t  trans_time;   /* Time to complete state transition (optional)  */
-    u8_t  delay;        /* Indicate message execution delay (C.1)        */
+    bool  op_en;                    /*!< Indicate if optional parameters are included */
+    u16_t scene_number;             /*!< The number of scenes to be recalled */
+    u8_t  tid;                      /*!< Transaction ID */
+    u8_t  trans_time;               /*!< Time to complete state transition (optional) */
+    u8_t  delay;                    /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_scene_recall_t;
 
+/** Parameter of Scene Delete */
 typedef struct {
-    u16_t scene_number; /* The number of scenes to be deleted */
+    u16_t scene_number;             /*!< The number of scenes to be deleted */
 } esp_ble_mesh_scene_delete_t;
 
+/** Parameter of Scheduler Action Get */
 typedef struct {
-    u8_t index; /* Index of the Schedule Register entry to get */
+    u8_t index;                     /*!< Index of the Schedule Register entry to get */
 } esp_ble_mesh_scheduler_act_get_t;
 
+/** Parameters of Scheduler Action Set */
 typedef struct {
-    u64_t index : 4;        /* Index of the Schedule Register entry to set */
-    u64_t year : 7;         /* Scheduled year for the action */
-    u64_t month : 12;       /* Scheduled month for the action */
-    u64_t day : 5;          /* Scheduled day of the month for the action */
-    u64_t hour : 5;         /* Scheduled hour for the action */
-    u64_t minute : 6;       /* Scheduled minute for the action */
-    u64_t second : 6;       /* Scheduled second for the action */
-    u64_t day_of_week : 7;  /* Schedule days of the week for the action */
-    u64_t action : 4;       /* Action to be performed at the scheduled time */
-    u64_t trans_time : 8;   /* Transition time for this action */
-    u16_t scene_number;     /* Transition time for this action */
+    u64_t index : 4;                /*!< Index of the Schedule Register entry to set */
+    u64_t year : 7;                 /*!< Scheduled year for the action */
+    u64_t month : 12;               /*!< Scheduled month for the action */
+    u64_t day : 5;                  /*!< Scheduled day of the month for the action */
+    u64_t hour : 5;                 /*!< Scheduled hour for the action */
+    u64_t minute : 6;               /*!< Scheduled minute for the action */
+    u64_t second : 6;               /*!< Scheduled second for the action */
+    u64_t day_of_week : 7;          /*!< Schedule days of the week for the action */
+    u64_t action : 4;               /*!< Action to be performed at the scheduled time */
+    u64_t trans_time : 8;           /*!< Transition time for this action */
+    u16_t scene_number;             /*!< Transition time for this action */
 } esp_ble_mesh_scheduler_act_set_t;
 
 /**
- * @brief For
- *
- * the get_state parameter in the esp_ble_mesh_time_scene_client_get_state function should be set to NULL.
+ * @brief Time Scene Client Model get message union
  */
 typedef union {
     esp_ble_mesh_scheduler_act_get_t scheduler_act_get; /*!< For ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET */
 } esp_ble_mesh_time_scene_client_get_state_t;
 
+/**
+ * @brief Time Scene Client Model set message union
+ */
 typedef union {
     esp_ble_mesh_time_set_t          time_set;          /*!< For ESP_BLE_MESH_MODEL_OP_TIME_SET */
     esp_ble_mesh_time_zone_set_t     time_zone_set;     /*!< For ESP_BLE_MESH_MODEL_OP_TIME_ZONE_SET */
@@ -156,65 +166,76 @@ typedef union {
  *  @brief Bluetooth Mesh Time Scene Client Model Get and Set callback parameters structure.
  */
 
+/** Parameters of Time Status */
 typedef struct {
-    u8_t  tai_seconds[5];     /* The current TAI time in seconds */
-    u8_t  sub_second;         /* The sub-second time in units of 1/256 second */
-    u8_t  uncertainty;        /* The estimated uncertainty in 10-millisecond steps */
-    u16_t time_authority : 1; /* 0 = No Time Authority, 1 = Time Authority */
-    u16_t tai_utc_delta : 15; /* Current difference between TAI and UTC in seconds */
-    u8_t  time_zone_offset;   /* The local time zone offset in 15-minute increments */
+    u8_t  tai_seconds[5];           /*!< The current TAI time in seconds */
+    u8_t  sub_second;               /*!< The sub-second time in units of 1/256 second */
+    u8_t  uncertainty;              /*!< The estimated uncertainty in 10-millisecond steps */
+    u16_t time_authority : 1;       /*!< 0 = No Time Authority, 1 = Time Authority */
+    u16_t tai_utc_delta : 15;       /*!< Current difference between TAI and UTC in seconds */
+    u8_t  time_zone_offset;         /*!< The local time zone offset in 15-minute increments */
 } esp_ble_mesh_time_status_cb_t;
 
+/** Parameters of Time Zone Status */
 typedef struct {
-    u8_t time_zone_offset_curr; /* Current local time zone offset */
-    u8_t time_zone_offset_new;  /* Upcoming local time zone offset */
-    u8_t tai_zone_change[5];    /* TAI Seconds time of the upcoming Time Zone Offset change */
+    u8_t time_zone_offset_curr;     /*!< Current local time zone offset */
+    u8_t time_zone_offset_new;      /*!< Upcoming local time zone offset */
+    u8_t tai_zone_change[5];        /*!< TAI Seconds time of the upcoming Time Zone Offset change */
 } esp_ble_mesh_time_zone_status_cb_t;
 
+/** Parameters of TAI-UTC Delta Status */
 typedef struct {
-    u16_t tai_utc_delta_curr : 15; /* Current difference between TAI and UTC in seconds */
-    u16_t padding_1 : 1;           /* Always 0b0. Other values are Prohibited. */
-    u16_t tai_utc_delta_new : 15;  /* Upcoming difference between TAI and UTC in seconds */
-    u16_t padding_2 : 1;           /* Always 0b0. Other values are Prohibited. */
-    u8_t tai_delta_change[5];      /* TAI Seconds time of the upcoming TAI-UTC Delta change */
+    u16_t tai_utc_delta_curr : 15;  /*!< Current difference between TAI and UTC in seconds */
+    u16_t padding_1 : 1;            /*!< Always 0b0. Other values are Prohibited. */
+    u16_t tai_utc_delta_new : 15;   /*!< Upcoming difference between TAI and UTC in seconds */
+    u16_t padding_2 : 1;            /*!< Always 0b0. Other values are Prohibited. */
+    u8_t tai_delta_change[5];       /*!< TAI Seconds time of the upcoming TAI-UTC Delta change */
 } esp_ble_mesh_tai_utc_delta_status_cb_t;
 
+/** Parameter of Time Role Status */
 typedef struct {
-    u8_t time_role; /* The Time Role for the element */
+    u8_t time_role;                 /*!< The Time Role for the element */
 } esp_ble_mesh_time_role_status_cb_t;
 
+/** Parameters of Scene Status */
 typedef struct {
-    bool  op_en;         /* Indicate if optional parameters are included  */
-    u8_t  status_code;   /* Status code of the last operation             */
-    u16_t current_scene; /* Scene Number of the current scene             */
-    u16_t target_scene;  /* Scene Number of the target scene (optional)   */
-    u8_t  remain_time;   /* Time to complete state transition (C.1)       */
+    bool  op_en;                    /*!< Indicate if optional parameters are included */
+    u8_t  status_code;              /*!< Status code of the last operation */
+    u16_t current_scene;            /*!< Scene Number of the current scene */
+    u16_t target_scene;             /*!< Scene Number of the target scene (optional) */
+    u8_t  remain_time;              /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_scene_status_cb_t;
 
+/** Parameters of Scene Register Status */
 typedef struct {
-    u8_t  status_code;              /* Status code for the previous operation    */
-    u16_t current_scene;            /* Scene Number of the current scene         */
-    struct net_buf_simple *scenes;  /* A list of scenes stored within an element */
+    u8_t  status_code;              /*!< Status code for the previous operation */
+    u16_t current_scene;            /*!< Scene Number of the current scene */
+    struct net_buf_simple *scenes;  /*!< A list of scenes stored within an element */
 } esp_ble_mesh_scene_register_status_cb_t;
 
+/** Parameter of Scheduler Status */
 typedef struct {
-    u16_t schedules; /* Bit field indicating defined Actions in the Schedule Register */
+    u16_t schedules;                /*!< Bit field indicating defined Actions in the Schedule Register */
 } esp_ble_mesh_scheduler_status_cb_t;
 
+/** Parameters of Scheduler Action Status */
 typedef struct {
-    u64_t index : 4;        /* Enumerates (selects) a Schedule Register entry */
-    u64_t year : 7;         /* Scheduled year for the action */
-    u64_t month : 12;       /* Scheduled month for the action */
-    u64_t day : 5;          /* Scheduled day of the month for the action */
-    u64_t hour : 5;         /* Scheduled hour for the action */
-    u64_t minute : 6;       /* Scheduled minute for the action */
-    u64_t second : 6;       /* Scheduled second for the action */
-    u64_t day_of_week : 7;  /* Schedule days of the week for the action */
-    u64_t action : 4;       /* Action to be performed at the scheduled time */
-    u64_t trans_time : 8;   /* Transition time for this action */
-    u16_t scene_number;     /* Transition time for this action */
+    u64_t index : 4;                /*!< Enumerates (selects) a Schedule Register entry */
+    u64_t year : 7;                 /*!< Scheduled year for the action */
+    u64_t month : 12;               /*!< Scheduled month for the action */
+    u64_t day : 5;                  /*!< Scheduled day of the month for the action */
+    u64_t hour : 5;                 /*!< Scheduled hour for the action */
+    u64_t minute : 6;               /*!< Scheduled minute for the action */
+    u64_t second : 6;               /*!< Scheduled second for the action */
+    u64_t day_of_week : 7;          /*!< Schedule days of the week for the action */
+    u64_t action : 4;               /*!< Action to be performed at the scheduled time */
+    u64_t trans_time : 8;           /*!< Transition time for this action */
+    u16_t scene_number;             /*!< Transition time for this action */
 } esp_ble_mesh_scheduler_act_status_cb_t;
 
+/**
+ * @brief Time Scene Client Model received message union
+ */
 typedef union {
     esp_ble_mesh_time_status_cb_t           time_status;            /*!< For ESP_BLE_MESH_MODEL_OP_TIME_STATUS */
     esp_ble_mesh_time_zone_status_cb_t      time_zone_status;       /*!< For ESP_BLE_MESH_MODEL_OP_TIME_ZONE_STATUS */
@@ -226,12 +247,14 @@ typedef union {
     esp_ble_mesh_scheduler_act_status_cb_t  scheduler_act_status;   /*!< For ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS */
 } esp_ble_mesh_time_scene_client_status_cb_t;
 
+/** Time Scene Client Model callback parameters */
 typedef struct {
     int error_code;                                         /*!< Appropriate error code */
     esp_ble_mesh_client_common_param_t        *params;      /*!< The client common parameters. */
     esp_ble_mesh_time_scene_client_status_cb_t status_cb;   /*!< The scene status message callback values */
 } esp_ble_mesh_time_scene_client_cb_param_t;
 
+/** This enum value is the event of Time Scene Client Model */
 typedef enum {
     ESP_BLE_MESH_TIME_SCENE_CLIENT_GET_STATE_EVT,
     ESP_BLE_MESH_TIME_SCENE_CLIENT_SET_STATE_EVT,
@@ -244,7 +267,11 @@ typedef enum {
  *  @brief Bluetooth Mesh Time Scene Client Model function.
  */
 
-/** @brief: event, event code of Time Scene Client Model events; param, parameters of Time Scene Client Model events */
+/**
+ * @brief   Time Scene Client Model callback function type
+ * @param   event: Event type
+ * @param   param: Pointer to callback parameter
+ */
 typedef void (* esp_ble_mesh_time_scene_client_cb_t)(esp_ble_mesh_time_scene_client_cb_event_t event,
         esp_ble_mesh_time_scene_client_cb_param_t *param);
 
@@ -262,7 +289,7 @@ esp_err_t esp_ble_mesh_register_time_scene_client_callback(esp_ble_mesh_time_sce
  * @brief       Get the value of Time Scene Server Model states using the Time Scene Client Model get messages.
  *
  * @note        If you want to know the opcodes and corresponding meanings accepted by this API,
- *              please refer to (@ref esp_ble_mesh_time_scene_message_opcode_t).
+ *              please refer to esp_ble_mesh_time_scene_message_opcode_t in esp_ble_mesh_defs.h
  *
  * @param[in]   params:    Pointer to BLE Mesh common client parameters.
  * @param[in]   get_state: Pointer to time scene get message value.
@@ -277,7 +304,7 @@ esp_err_t esp_ble_mesh_time_scene_client_get_state(esp_ble_mesh_client_common_pa
  * @brief       Set the value of Time Scene Server Model states using the Time Scene Client Model set messages.
  *
  * @note        If you want to know the opcodes and corresponding meanings accepted by this API,
- *              please refer to (@ref esp_ble_mesh_time_scene_message_opcode_t).
+ *              please refer to esp_ble_mesh_time_scene_message_opcode_t in esp_ble_mesh_defs.h
  *
  * @param[in]   params:    Pointer to BLE Mesh common client parameters.
  * @param[in]   set_state: Pointer to time scene set message value.
