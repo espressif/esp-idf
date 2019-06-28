@@ -1,0 +1,247 @@
+
+.build_template:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+    V: "0"
+
+.build_esp_idf_unit_test_template:
+  extends: .build_template
+  artifacts:
+    paths:
+      - tools/unit-test-app/output
+      - components/idf_test/unit_test/TestCaseAll.yml
+    expire_in: 3 days
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_REGULAR_TEST
+
+build_template_app:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - git clone ${ESP_IDF_TEMPLATE_GIT}
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - cd esp-idf-template
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default
+    # branch
+    - make defconfig
+    # Test debug build (default)
+    - make all V=1
+    # Now test release build
+    - make clean
+    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
+    - make all V=1
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - cd ../components/esp_wifi/lib_esp32
+    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
+    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
+
+
+build_ssc:
+  extends: .build_template
+  parallel: 3
+  artifacts:
+    paths:
+      - SSC/ssc_bin
+    expire_in: 1 week
+  variables:
+    SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    - git clone $SSC_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT SSC SSC
+    - cd SSC
+    - MAKEFLAGS= ./ci_build_ssc.sh
+
+build_esp_idf_tests_make:
+  extends: .build_esp_idf_unit_test_template
+  script:
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
+    - make ut-clean-all-configs
+    - make ut-build-all-configs
+    - python tools/UnitTestParser.py
+    # Check if the tests demand Make built binaries. If not, delete them
+    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
+    - rm -rf builds output sdkconfig
+    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+
+build_esp_idf_tests_cmake:
+  extends: .build_esp_idf_unit_test_template
+  script:
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - idf.py ut-clean-all-configs
+    - idf.py ut-build-all-configs
+    - python tools/UnitTestParser.py
+    # Check if the tests demand CMake built binaries. If not, delete them
+    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
+    - rm -rf builds output sdkconfig
+    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+
+build_examples_make:
+  extends: .build_template
+  parallel: 8
+  # This is a workaround for a rarely encountered issue with building examples in CI.
+  # Probably related to building of Kconfig in 'make clean' stage
+  retry: 1
+  artifacts:
+    when: always
+    paths:
+      - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/sdkconfig
+      - build_examples/*/*/*/build/*.elf
+      - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/download.config
+      - build_examples/*/*/*/build/bootloader/*.bin
+      - $LOG_PATH
+    expire_in: 3 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_EXAMPLE_TEST
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - rm -rf build_examples
+    - mkdir build_examples
+    - cd build_examples
+    # build some of examples
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_examples.sh
+
+# same as above, but for CMake
+build_examples_cmake:
+  extends: .build_template
+  parallel: 5
+  artifacts:
+    when: always
+    paths:
+      - build_examples_cmake/*/*/*/build/*.bin
+      - build_examples_cmake/*/*/*/sdkconfig
+      - build_examples_cmake/*/*/*/build/*.elf
+      - build_examples_cmake/*/*/*/build/*.map
+      - build_examples_cmake/*/*/*/build/flasher_args.json
+      - build_examples_cmake/*/*/*/build/bootloader/*.bin
+      - $LOG_PATH
+    expire_in: 3 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_EXAMPLE_TEST
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - rm -rf build_examples_cmake
+    - mkdir build_examples_cmake
+    - cd build_examples_cmake
+    # build some of examples
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
+
+# If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
+
+build_docs:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build_docs
+  artifacts:
+    when: always
+    paths:
+      # English version of documentation
+      - docs/en/doxygen-warning-log.txt
+      - docs/en/sphinx-warning-log.txt
+      - docs/en/sphinx-warning-log-sanitized.txt
+      - docs/en/_build/html
+      - docs/sphinx-err-*
+      # Chinese version of documentation
+      - docs/zh_CN/doxygen-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log-sanitized.txt
+      - docs/zh_CN/_build/html
+    expire_in: 3 days
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_BUILD_DOCS
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    - cd docs
+    - ./check_lang_folder_sync.sh
+    - cd en
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh
+    - cd ../zh_CN
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh
+
+verify_cmake_style:
+  extends: .check_job_template
+  stage: build
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    tools/cmake/run_cmake_lint.sh
+
+test_build_system:
+  extends: .build_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system.sh
+
+test_build_system_cmake:
+  extends: .build_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
