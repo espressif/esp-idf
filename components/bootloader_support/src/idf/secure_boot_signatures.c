@@ -20,6 +20,7 @@
 #include "esp_secure_boot.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/x509.h"
+#include "mbedtls/ecdsa.h"
 
 static const char *TAG = "secure_boot";
 
