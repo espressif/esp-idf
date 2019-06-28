@@ -890,7 +890,7 @@ test cases:
   - - SSC SSC1 ap -S -s <random_string> -p <random_string> -t 3 -m 1
     - - R SSC1 C +SAP:OK
   - - SSC SSC2 sta -C -s <random_string> -p 1234567890
-    - - R SSC2 RE JAP:DISCONNECTED,\d+,204
+    - - R SSC2 RE JAP:DISCONNECTED,\d+,15
   - - SSC SSC2 sta -D
     - - R SSC2 C +QAP:OK
   - - WIFI <pc_wifi_nic> CONN <random_string> <random_string> <pc_ip_wifi>
