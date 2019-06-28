@@ -75,7 +75,7 @@ entry:
 	 * Check which IO this is.
 	 */
 	move r0, r3
-	jumpr read_io_high, 16, ge
+	jumps read_io_high, 16, ge
 
 	/* Read the value of lower 16 RTC IOs into R0 */
 	READ_RTC_REG(RTC_GPIO_IN_REG, RTC_GPIO_IN_NEXT_S, 16)
