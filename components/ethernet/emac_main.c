@@ -1081,6 +1081,8 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 {
     int i = 0;
     esp_err_t ret = ESP_OK;
+    rtc_xtal_freq_t rtc_xtal_freq = rtc_clk_xtal_freq_get();
+
     if (emac_config.emac_status != EMAC_RUNTIME_NOT_INIT) {
         goto _initialised;
     }
@@ -1122,8 +1124,20 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
             ESP_LOGW(TAG, "GPIO16/17 is used for clock of EMAC, Please Make Sure you're not using PSRAM.");
         }
 #endif
-        // 50 MHz = 40MHz * (6 + 4) / (2 * (2 + 2) = 400MHz / 8
-        rtc_clk_apll_enable(1, 0, 0, 6, 2);
+        switch (rtc_xtal_freq) {
+        case RTC_XTAL_FREQ_40M:
+            // 50 MHz = 40MHz * (6 + 4) / (2 * (2 + 2)) = 400MHz / 8
+            rtc_clk_apll_enable(1, 0, 0, 6, 2);
+            break;
+        case RTC_XTAL_FREQ_26M:
+            // 50 MHz = 26MHz * (15 + 4 + 59 / 256) / (2 * (2 + 3)) = 499.99MHz / 10
+            rtc_clk_apll_enable(1, 0, 59, 15, 3);
+            break;
+        default:
+            ESP_LOGE(TAG, "unsupported rtc xtal frequency");
+            ret = ESP_FAIL;
+            goto _verify_err;
+        }
         REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_H_DIV_NUM, 0);
         REG_SET_FIELD(EMAC_EX_CLKOUT_CONF_REG, EMAC_EX_CLK_OUT_DIV_NUM, 0);
 
