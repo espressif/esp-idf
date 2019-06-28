@@ -1,0 +1,153 @@
+
+.clang_tidy_deploy_template:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env
+  tags:
+    - deploy
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
+    - export GIT_VER=$(git describe --always)
+    - cd $IDF_PATH/examples/get-started/hello_world/tidybuild
+    - mv report $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - export STATIC_REPORT_PATH="web/static_analysis/esp-idf/"
+    - ssh $DOCS_SERVER -x "mkdir -p $STATIC_REPORT_PATH/clang-tidy"
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$STATIC_REPORT_PATH/clang-tidy
+    - ssh $DOCS_SERVER -x "cd $STATIC_REPORT_PATH/clang-tidy && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+    # add link to view the report
+    - echo "[static analysis][clang tidy] $CI_DOCKER_REGISTRY/static_analysis/esp-idf/clang-tidy/${GIT_VER}/index.html"
+    - test ! -e ${GIT_VER}/FAILED_RULES || { echo 'Failed static analysis rules!'; cat ${GIT_VER}/FAILED_RULES; exit 1; }
+
+clang_tidy_deploy:
+  extends: .clang_tidy_deploy_template
+  dependencies:
+    - clang_tidy_check
+    - clang_tidy_check_all
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+
+clang_tidy_deploy_regular:
+  extends: .clang_tidy_deploy_template
+  dependencies:
+    - clang_tidy_check_regular
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+    variables:
+      - $BOT_LABEL_STATIC_ANALYSIS
+      - $BOT_LABEL_STATIC_ANALYSIS_ALL
+
+push_to_github:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - deploy
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  when: on_success
+  dependencies: []
+  extends: .before_script_lesser
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GH_PUSH_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+    - git remote remove github &>/dev/null || true
+    - git remote add github git@github.com:espressif/esp-idf.git
+    - tools/ci/push_to_github.sh
+
+deploy_docs:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - deploy
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD_DOCS
+  dependencies:
+    - build_docs
+  extends: .before_script_lesser
+  script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
+    - export GIT_VER=$(git describe --always)
+    - cd docs/en/_build/
+    - mv html $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/en
+    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/en && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+    - cd ../../zh_CN/_build/
+    - mv html $GIT_VER
+    - tar czvf $GIT_VER.tar.gz $GIT_VER
+    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/zh_CN
+    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/zh_CN && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+    # add link to preview doc
+    - echo "[document preview][en] $CI_DOCKER_REGISTRY/docs/esp-idf/en/${GIT_VER}/index.html"
+    - echo "[document preview][zh_CN] $CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/${GIT_VER}/index.html"
+
+deploy_test_result:
+  stage: deploy
+  image: $CI_DOCKER_REGISTRY/bot-env
+  tags:
+    - deploy_test
+  when: always
+  only:
+    refs:
+      - master
+      - schedules
+  artifacts:
+    when: always
+    paths:
+      - ${CI_PROJECT_DIR}/test-management/*.log
+      # save all test logs as artifacts, make it easier to track errors
+      - ${CI_PROJECT_DIR}/TEST_LOGS
+      - $CI_PROJECT_DIR/$CI_COMMIT_SHA
+    expire_in: 1 mos
+  variables:
+    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
+    BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
+  before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -n $GITLAB_KEY > ~/.ssh/id_rsa_base64
+    - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+  script:
+    - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
+    - export REV_COUNT=$(git rev-list --count HEAD)
+    - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
+    # artifacts of job update_test_cases creates test-management folder
+    # we need to remove it so we can clone test-management folder again
+    - rm -r test-management
+    - git clone $TEST_MANAGEMENT_REPO
+    - python3 $CHECKOUT_REF_SCRIPT test-management test-management
+    - cd test-management
+    - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
+    # update test results
+    - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l CI -p ${CI_PROJECT_DIR}/TEST_LOGS ${CI_PROJECT_DIR}/${CI_COMMIT_SHA} --pipeline_url ${CI_PIPELINE_URL}
