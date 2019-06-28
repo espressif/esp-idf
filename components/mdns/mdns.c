@@ -4161,7 +4161,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     action->data.sys_event.event_id = event_id;
     if (event_base == IP_EVENT && event_id == IP_EVENT_GOT_IP6) {
         ip_event_got_ip6_t* event = (ip_event_got_ip6_t*) event_data;
-        action->data.sys_event.interface = event->if_index;
+        action->data.sys_event.interface = tcpip_adapter_if_from_esp_netif(event->esp_netif);
     }
 
     if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {

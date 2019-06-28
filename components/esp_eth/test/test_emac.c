@@ -62,7 +62,7 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
 {
     EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-    const tcpip_adapter_ip_info_t *ip_info = &event->ip_info;
+    const tcpip_adapter_ip_info_t *ip_info = (tcpip_adapter_ip_info_t *)&event->ip_info;
 
     ESP_LOGI(TAG, "Ethernet Got IP Address");
     ESP_LOGI(TAG, "~~~~~~~~~~~");

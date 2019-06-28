@@ -15,4 +15,32 @@
 #ifndef _ESP_WIFI_DEFAULT_H
 #define _ESP_WIFI_DEFAULT_H
 
+#define ESP_NETIF_DRIVER_DEFAULT_WIFI_STA &_g_wifi_driver_sta_ifconfig
+#define ESP_NETIF_DRIVER_DEFAULT_WIFI_AP  &_g_wifi_driver_ap_ifconfig
+
+/**
+ * @brief Sets default wifi event handlers for STA interface
+ *
+ * @param esp_netif instance of corresponding if object
+ *
+ * @return
+ *  - ESP_OK on success, error returned from esp_event_handler_register if failed
+ */
+esp_err_t esp_wifi_set_default_wifi_sta_handlers(void *esp_netif);
+
+/**
+ * @brief Sets default wifi event handlers for STA interface
+ *
+ * @param esp_netif instance of corresponding if object
+ *
+ * @return
+ *  - ESP_OK on success, error returned from esp_event_handler_register if failed
+ */
+esp_err_t esp_wifi_set_default_wifi_ap_handlers(void *esp_netif);
+
+
+extern const esp_netif_driver_ifconfig_t _g_wifi_driver_sta_ifconfig;
+extern const esp_netif_driver_ifconfig_t _g_wifi_driver_ap_ifconfig;
+
+
 #endif //_ESP_WIFI_DEFAULT_H

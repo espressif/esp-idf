@@ -24,7 +24,7 @@ bool dhcp_ip_addr_restore(void *netif);
 
 void dhcp_ip_addr_store(void *netif);
 
-void dhcp_ip_addr_erase(void *netif);
+void dhcp_ip_addr_erase(void *esp_netif);
 
 #ifdef __cplusplus
 }
