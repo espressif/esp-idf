@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,8 +29,6 @@ int32_t esp_ble_mesh_get_model_publish_period(esp_ble_mesh_model_t *model);
 
 /**
  * @brief         Get the address of the primary element.
- *
- * @param         None.
  *
  * @return        Address of the primary element on success, or
  *                ESP_BLE_MESH_ADDR_UNASSIGNED on failure which means the device has not been provisioned.
@@ -68,8 +66,6 @@ esp_ble_mesh_elem_t *esp_ble_mesh_find_element(uint16_t element_addr);
 /**
  * @brief         Get the number of elements that have been registered.
  *
- * @param         None.
- *
  * @return        Number of elements.
  *
  */
@@ -102,8 +98,6 @@ esp_ble_mesh_model_t *esp_ble_mesh_find_sig_model(const esp_ble_mesh_elem_t *ele
 
 /**
  * @brief        Get the Composition data which has been registered.
- *
- * @param        None.
  *
  * @return       Pointer to the Composition data on success, or NULL on failure which means the Composition data is not initialized.
  *

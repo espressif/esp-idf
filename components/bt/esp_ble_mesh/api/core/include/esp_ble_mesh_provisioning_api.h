@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ esp_err_t esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb_t callback);
 
 /**
  * @brief         Check if a device has been provisioned.
- *
- * @param         None.
  *
  * @return        TRUE if the device is provisioned, FALSE if the device is unprovisioned.
  *
