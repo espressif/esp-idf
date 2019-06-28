@@ -903,6 +903,9 @@ def generate(args, is_encr_enabled=False, encr_key=None):
         print("\nCreating NVS binary with version:", version_set)
         for row in reader:
             try:
+                # Check key length
+                if len(row["key"]) > 15:
+                    raise InputError("Length of key `%s` should be <= 15 characters." % row["key"])
                 write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
             except InputError as e:
                 print(e)
