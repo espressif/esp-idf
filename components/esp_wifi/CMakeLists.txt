@@ -53,7 +53,7 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
         COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${phy_init_data_bin}
         )
     add_custom_target(phy_init_data ALL DEPENDS ${phy_init_data_bin})
-    add_dependencies(app phy_init_data)
+    add_dependencies(flash phy_init_data)
 
     esptool_py_flash_project_args(phy ${phy_partition_offset} ${phy_init_data_bin} FLASH_IN_PROJECT)
 endif()
