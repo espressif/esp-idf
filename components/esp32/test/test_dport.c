@@ -2,6 +2,8 @@
 #include <esp_types.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "xtensa/core-macros.h"
+#include "xtensa/hal.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -12,10 +14,13 @@
 #include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
+#include "esp_intr_alloc.h"
+#include "driver/timer.h"
 #define MHZ (1000000)
 static volatile bool exit_flag;
 static bool dport_test_result;
 static bool apb_test_result;
+uint32_t volatile apb_intr_test_result;
 
 static void accessDPORT(void *pvParameters)
 {
@@ -57,6 +62,7 @@ static void accessAPB(void *pvParameters)
 
 void run_tasks(const char *task1_description, void (* task1_func)(void *), const char *task2_description, void (* task2_func)(void *), uint32_t delay_ms)
 {
+    apb_intr_test_result = 1;
     int i;
     TaskHandle_t th[2];
     xSemaphoreHandle exit_sema[2];
@@ -92,7 +98,7 @@ void run_tasks(const char *task1_description, void (* task1_func)(void *), const
             vSemaphoreDelete(exit_sema[i]);
         }
     }
-    TEST_ASSERT(dport_test_result == true && apb_test_result == true);
+    TEST_ASSERT(dport_test_result == true && apb_test_result == true && apb_intr_test_result == 1);
 }
 
 TEST_CASE("access DPORT and APB at same time", "[esp32]")
@@ -319,3 +325,88 @@ TEST_CASE("BENCHMARK for DPORT access performance", "[freertos]")
     }
     BENCHMARK_END("_DPORT_REG_READ");
 }
+
+uint32_t xt_highint5_read_apb;
+
+#ifndef CONFIG_FREERTOS_UNICORE
+timer_isr_handle_t inth;
+xSemaphoreHandle sync_sema;
+
+static void init_hi_interrupt(void *arg)
+{
+    printf("init hi_interrupt on CPU%d \n", xPortGetCoreID());
+    TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_TIMER2_INTR_SOURCE, ESP_INTR_FLAG_LEVEL5 | ESP_INTR_FLAG_IRAM, NULL, NULL, &inth));
+    while (exit_flag == false);
+    esp_intr_free(inth);
+    printf("disable hi_interrupt on CPU%d \n", xPortGetCoreID());
+    vTaskDelete(NULL);
+}
+
+static void accessDPORT2_stall_other_cpu(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    dport_test_result = true;
+    while (exit_flag == false) {
+        DPORT_STALL_OTHER_CPU_START();
+        XTHAL_SET_CCOMPARE(2, XTHAL_GET_CCOUNT());
+        xt_highint5_read_apb = 1;
+        for (int i = 0; i < 200; ++i) {
+            if (_DPORT_REG_READ(DPORT_DATE_REG) != _DPORT_REG_READ(DPORT_DATE_REG)) {
+                apb_test_result = false;
+                break;
+            }
+        }
+        xt_highint5_read_apb = 0;
+        DPORT_STALL_OTHER_CPU_END();
+    }
+    printf("accessDPORT2_stall_other_cpu finish\n");
+
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Check stall workaround DPORT and Hi-interrupt", "[esp32]")
+{
+    xt_highint5_read_apb = 0;
+    dport_test_result    = false;
+    apb_test_result      = true;
+    TEST_ASSERT(xTaskCreatePinnedToCore(&init_hi_interrupt, "init_hi_intr", 2048, NULL, 6, NULL, 1) == pdTRUE);
+    // Access DPORT(stall other cpu method) - CPU0
+    // STALL                                - CPU1
+    // Hi-interrupt                         - CPU1
+    run_tasks("accessDPORT2_stall_other_cpu", accessDPORT2_stall_other_cpu, " - ", NULL, 10000);
+}
+
+static void accessDPORT2(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    dport_test_result = true;
+
+    TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_TIMER2_INTR_SOURCE, ESP_INTR_FLAG_LEVEL5 | ESP_INTR_FLAG_IRAM, NULL, NULL, &inth));
+
+    while (exit_flag == false) {
+        XTHAL_SET_CCOMPARE(2, XTHAL_GET_CCOUNT() + 21);
+        for (int i = 0; i < 200; ++i) {
+            if (DPORT_REG_READ(DPORT_DATE_REG) != DPORT_REG_READ(DPORT_DATE_REG)) {
+                dport_test_result = false;
+                break;
+            }
+        }
+    }
+    esp_intr_free(inth);
+    printf("accessDPORT2 finish\n");
+
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Check pre-read workaround DPORT and Hi-interrupt", "[esp32]")
+{
+    xt_highint5_read_apb = 0;
+    dport_test_result    = false;
+    apb_test_result      = true;
+    // Access DPORT(pre-read method) - CPU1
+    // Hi-interrupt                  - CPU1
+    run_tasks("accessAPB", accessAPB, "accessDPORT2", accessDPORT2, 10000);
+}
+#endif // CONFIG_FREERTOS_UNICORE
