@@ -15,6 +15,10 @@
 #ifndef __SNTP_H__
 #define __SNTP_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The time update takes place in the sntp_sync_time() function.
  * The user has the ability to redefine this function in order
@@ -115,5 +119,9 @@ void sntp_set_sync_status(sntp_sync_status_t sync_status);
  * @param callback a callback function
  */
 void sntp_set_time_sync_notification_cb(sntp_sync_time_cb_t callback);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __SNTP_H__
