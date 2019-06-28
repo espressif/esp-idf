@@ -85,6 +85,7 @@ typedef struct {
     *       - ESP_FAIL: error occurred when processing extra lowlevel deinitialization
     */
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
+
 } esp_eth_config_t;
 
 /**
@@ -100,6 +101,15 @@ typedef struct {
         .on_lowlevel_init_done = NULL,   \
         .on_lowlevel_deinit_done = NULL, \
     }
+
+/**
+* @brief Default esp-netif driver related configuration
+*
+*/
+#define ESP_NETIF_DRIVER_DEFAULT_ETH      _g_eth_driver_ifconfig
+
+struct esp_netif_driver_ifconfig;
+extern const struct esp_netif_driver_ifconfig *_g_eth_driver_ifconfig;
 
 /**
 * @brief Install Ethernet driver
@@ -139,7 +149,7 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
 *       - ESP_ERR_INVALID_ARG: transmit frame buffer failed because of some invalid argument
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
-esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length);
+esp_err_t esp_eth_transmit(void* hdl, void *buf, uint32_t length);
 
 /**
 * @brief General Receive
@@ -173,6 +183,22 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);
 *       - ESP_FAIL: process io command failed because some other error occurred
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
+
+/**
+ * @brief Register default ethernet handlers
+ *
+ * @param[in] esp_netif esp network interface handle created for this driver
+ * (note: appropriate ethernet handle not yet properly initialized when setting up
+ * default handlers)
+ */
+esp_err_t esp_eth_set_default_handlers(void* esp_netif);
+
+/**
+ * @brief Unregister default ethernet handlers
+ *
+ * @param[in] esp_netif esp network interface handle created for this driver
+ */
+esp_err_t esp_eth_clear_default_handlers(void* esp_netif);
 
 #ifdef __cplusplus
 }

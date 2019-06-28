@@ -1,6 +1,6 @@
-menu "TCP/IP Adapter"
+menu "ESP NETIF Adapter"
 
-    config NETIF_IP_LOST_TIMER_INTERVAL
+    config ESP_NETIF_IP_LOST_TIMER_INTERVAL
         int "IP Address lost timer interval (seconds)"
         range 0 65535
         default 120
@@ -13,7 +13,7 @@ menu "TCP/IP Adapter"
             the timer expires. The IP lost timer is stopped if the station get the IP again before
             the timer expires.
 
-    choice NETIF_USE_TCPIP_STACK_LIB
+    choice ESP_NETIF_USE_TCPIP_STACK_LIB
         prompt "TCP/IP Stack Library"
         default TCPIP_LWIP
         help
@@ -24,4 +24,11 @@ menu "TCP/IP Adapter"
                 lwIP is a small independent implementation of the TCP/IP protocol suite.
     endchoice
 
+    config ESP_NETIF_USE_TCPIP_ADAPTER_COMPATIBLE_LAYER
+        bool "Enable backward compatible tcpip_adapter interface"
+        default y
+        help
+            Backward compatible interface to tcpip_adapter is enabled by default to support
+            legacy tcpip stack initialisation code. Disable this option to use only esp-netif
+            interface.
 endmenu

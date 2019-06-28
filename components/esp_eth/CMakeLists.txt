@@ -30,5 +30,5 @@ idf_component_register(SRCS "${srcs}"
     INCLUDE_DIRS ${include}
     LDFRAGMENTS ${linker}
     REQUIRES "esp_event"
-    PRIV_REQUIRES "tcpip_adapter" "driver" "log")
+    PRIV_REQUIRES "esp_netif" "driver" "log")
 

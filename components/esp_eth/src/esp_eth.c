@@ -18,6 +18,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/timers.h"
+#include "esp_netif.h"
+#include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
 
 static const char *TAG = "esp_eth";
 #define ETH_CHECK(a, str, goto_tag, ret_value, ...)                               \
@@ -33,6 +35,15 @@ static const char *TAG = "esp_eth";
 
 ESP_EVENT_DEFINE_BASE(ETH_EVENT);
 
+// Default driver interface config, at the init moment doesn't include driver handle, as it is created
+// in starup phase, netif is updated in event handler on eth_start event with valid ethernet driver handle
+static const esp_netif_driver_ifconfig_t _s_eth_driver_ifconfig = {
+        .handle =  NULL,
+        .transmit = esp_eth_transmit,
+};
+
+const esp_netif_driver_ifconfig_t *_g_eth_driver_ifconfig = &_s_eth_driver_ifconfig;
+
 /**
  * @brief The Ethernet driver mainly consists of PHY, MAC and
  * the mediator who will handle the request/response from/to MAC, PHY and Users.
@@ -44,6 +55,7 @@ ESP_EVENT_DEFINE_BASE(ETH_EVENT);
  * In the callback, user can do any low level operations (e.g. enable/disable crystal clock).
  */
 typedef struct {
+    esp_netif_driver_base_t base;
     esp_eth_mediator_t mediator;
     esp_eth_phy_t *phy;
     esp_eth_mac_t *mac;
@@ -83,7 +95,7 @@ static esp_err_t eth_stack_input(esp_eth_mediator_t *eth, uint8_t *buffer, uint3
 {
     esp_eth_driver_t *eth_driver = __containerof(eth, esp_eth_driver_t, mediator);
     if (!eth_driver->stack_input) {
-        return tcpip_adapter_eth_input(buffer, length, NULL);
+        return esp_netif_receive(eth_driver->base.netif, buffer, length, NULL);
     } else {
         return eth_driver->stack_input((esp_eth_handle_t)eth_driver, buffer, length);
     }
@@ -154,6 +166,37 @@ static void eth_check_link_timer_cb(TimerHandle_t xTimer)
 // It's helpful for us to support multiple Ethernet port on ESP32.
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+static esp_err_t esp_eth_driver_start(esp_netif_t * esp_netif, void * args)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = args;
+    eth_driver->base.netif = esp_netif;
+    // Update esp-netif with already created ethernet handle
+
+    esp_netif_driver_ifconfig_t driver_ifconfig = {
+            .handle =  eth_driver,
+            .transmit = esp_eth_transmit,
+    };
+    esp_netif_config_t cfg =  {
+            .driver = &driver_ifconfig,
+
+    };
+    ESP_ERROR_CHECK(esp_netif_configure(esp_netif, &cfg));
+    uint8_t eth_mac[6];
+    esp_eth_ioctl(eth_driver, ETH_CMD_G_MAC_ADDR, eth_mac);
+    ESP_LOGI(TAG, "%x %x %x %x %x %x", eth_mac[0], eth_mac[1], eth_mac[2], eth_mac[3], eth_mac[4], eth_mac[5]);
+
+    esp_netif_set_mac(esp_netif, eth_mac);
+    ESP_LOGI(TAG, "ETH netif started");
+
+    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
+              "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
+    return ret;
+err_event:
+    esp_eth_driver_uninstall(eth_driver);
+    return ret;
+}
+
 esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_t *out_hdl)
 {
     esp_err_t ret = ESP_OK;
@@ -184,12 +227,10 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
                                    eth_driver, eth_check_link_timer_cb);
     ETH_CHECK(eth_driver->check_link_timer, "create eth_link_timer failed", err_create_timer, ESP_FAIL);
     ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS, "start eth_link_timer failed", err_start_timer, ESP_FAIL);
-    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
-              "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
+    eth_driver->base.post_attach = esp_eth_driver_start;
     *out_hdl = (esp_eth_handle_t)eth_driver;
+    tcpip_adapter_start_eth(eth_driver);
     return ESP_OK;
-err_event:
-    xTimerStop(eth_driver->check_link_timer, 0);
 err_start_timer:
     xTimerDelete(eth_driver->check_link_timer, 0);
 err_create_timer:
@@ -221,7 +262,7 @@ err:
     return ret;
 }
 
-esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length)
+esp_err_t esp_eth_transmit(void* hdl, void *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
@@ -280,5 +321,57 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
     }
     return ESP_OK;
 err:
+    return ret;
+}
+
+esp_err_t esp_eth_clear_default_handlers(void* esp_netif)
+{
+    esp_err_t ret;
+    ETH_CHECK(esp_netif, "esp-netif handle can't be null", fail, ESP_ERR_INVALID_ARG);
+
+    esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_START, esp_netif_action_start);
+    esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_STOP, esp_netif_action_stop);
+    esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_CONNECTED, esp_netif_action_connected);
+    esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, esp_netif_action_disconnected);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, esp_netif_action_got_ip);
+    return ESP_OK;
+fail:
+    return ret;
+}
+
+esp_err_t esp_eth_set_default_handlers(void* esp_netif)
+{
+    esp_err_t ret;
+    ETH_CHECK(esp_netif, "esp-netif handle can't be null", fail, ESP_ERR_INVALID_ARG);
+
+    ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, esp_netif_action_start, esp_netif);
+    if (ret != ESP_OK) {
+        goto fail;
+    }
+
+    ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_STOP, esp_netif_action_stop, esp_netif);
+    if (ret != ESP_OK) {
+        goto fail;
+    }
+
+    ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_CONNECTED, esp_netif_action_connected, esp_netif);
+    if (ret != ESP_OK) {
+        goto fail;
+    }
+
+    ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, esp_netif_action_disconnected, esp_netif);
+    if (ret != ESP_OK) {
+        goto fail;
+    }
+
+    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, esp_netif_action_got_ip, esp_netif);
+    if (ret != ESP_OK) {
+        goto fail;
+    }
+
+    return ESP_OK;
+
+fail:
+    esp_eth_clear_default_handlers(esp_netif);
     return ret;
 }
