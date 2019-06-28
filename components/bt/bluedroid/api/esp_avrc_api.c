@@ -29,7 +29,7 @@ esp_err_t esp_avrc_ct_register_callback(esp_avrc_ct_cb_t callback)
     }
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_profile_cb_set(BTC_PID_AVRC_CT, callback);
@@ -76,8 +76,8 @@ esp_err_t esp_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t attr_id, uin
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (tl >= 16 || attr_id > ESP_AVRC_PS_MAX_ATTR - 1) {
-        return ESP_FAIL;
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX || attr_id > ESP_AVRC_PS_MAX_ATTR - 1) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_msg_t msg;
@@ -103,7 +103,7 @@ esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd(uint8_t tl)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (tl >= 16) {
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -128,8 +128,8 @@ esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_i
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (tl >= 16 || event_id > ESP_AVRC_RN_MAX_EVT - 1) {
-        return ESP_FAIL;
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX || event_id > ESP_AVRC_RN_MAX_EVT - 1) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     if (!btc_avrc_ct_rn_evt_supported(event_id)) {
@@ -153,14 +153,48 @@ esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_i
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (volume > BTC_AVRC_MAX_VOLUME) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!btc_avrc_ct_rn_evt_supported(ESP_AVRC_RN_VOLUME_CHANGE)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+
+    arg.set_abs_vol_cmd.tl = tl;
+    arg.set_abs_vol_cmd.volume = volume;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask)
 {
     if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (tl >= 16) {
-        return ESP_FAIL;
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_msg_t msg;
@@ -185,8 +219,8 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (tl >= 16 || key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
-        return ESP_FAIL;
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX || key_state > ESP_AVRC_PT_CMD_STATE_RELEASED) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_msg_t msg;
@@ -217,7 +251,7 @@ esp_err_t esp_avrc_tg_register_callback(esp_avrc_tg_cb_t callback)
     }
 
     if (callback == NULL) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
 
     btc_profile_cb_set(BTC_PID_AVRC_TG, callback);
@@ -445,7 +479,7 @@ esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_
     /* Switch to BTC context */
     bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_tg_args_t), NULL);
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
-    
+
 }
 
 #endif /* #if BTC_AV_INCLUDED */
