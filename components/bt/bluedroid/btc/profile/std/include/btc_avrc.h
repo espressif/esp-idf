@@ -38,7 +38,8 @@ typedef enum {
     BTC_AVRC_STATUS_API_SND_PLAY_STATUS_EVT,
     BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT,
     BTC_AVRC_NOTIFY_API_SND_REG_NOTIFY_EVT,
-    BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT
+    BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT,
+    BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT
 } btc_avrc_act_t;
 
 typedef struct {
@@ -68,6 +69,14 @@ typedef struct {
     uint8_t tl;
 } get_caps_cmd_t;
 
+#define BTC_AVRC_MIN_VOLUME 0x00
+#define BTC_AVRC_MAX_VOLUME 0x7f
+
+typedef struct {
+    uint8_t tl;
+    uint8_t volume;
+} set_abs_vol_cmd_t;
+
 /* btc_avrc_args_t */
 typedef union {
     pt_cmd_t pt_cmd;
@@ -75,6 +84,7 @@ typedef union {
     rn_cmd_t rn_cmd;
     ps_cmd_t ps_cmd;
     get_caps_cmd_t get_caps_cmd;
+    set_abs_vol_cmd_t set_abs_vol_cmd;
 } btc_avrc_args_t;
 
 /* btc_avrc_tg_act_t */
