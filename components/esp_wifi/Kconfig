@@ -353,7 +353,7 @@ menu PHY
 
     config ESP32_PHY_MAX_WIFI_TX_POWER
         int "Max WiFi TX power (dBm)"
-        range 0 20
+        range 10 20
         default 20
         help
             Set maximum transmit power for WiFi radio. Actual transmit power for high
