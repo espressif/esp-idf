@@ -416,6 +416,20 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
     I2C_WRITEREG_MASK_RTC(I2C_BBPLL, I2C_BBPLL_OC_DR3, dr3);
     I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_OC_DCUR, i2c_bbpll_dcur);
 
+    // Enable calibration by software
+    I2C_WRITEREG_MASK_RTC(I2C_BBPLL, I2C_BBPLL_IR_CAL_ENX_CAP, 1);
+    for (int ext_cap = 0; ext_cap < 16; ext_cap++) {
+        uint8_t cal_result;
+        I2C_WRITEREG_MASK_RTC(I2C_BBPLL, I2C_BBPLL_IR_CAL_EXT_CAP, ext_cap);
+        cal_result = I2C_READREG_MASK_RTC(I2C_BBPLL, I2C_BBPLL_OR_CAL_CAP);
+        if (cal_result == 0) {
+            break;
+        }
+        if(ext_cap == 15) {
+            SOC_LOGE(TAG, "BBPLL SOFTWARE CAL FAIL");
+        }
+    }
+
     /* this delay is replaced by polling Pll calibration end flag
      * uint32_t delay_pll_en = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
      *       DELAY_PLL_ENABLE_WITH_150K : DELAY_PLL_ENABLE_WITH_32K;
@@ -427,7 +441,6 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
         ets_delay_us(1);
     }
     */
-    ets_delay_us(50000);
 }
 
 /**

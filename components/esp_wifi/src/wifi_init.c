@@ -25,8 +25,10 @@ ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
 /* Callback function to update WiFi MAC time */
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
+#endif
 
 static const char* TAG = "wifi_init";
 
@@ -105,7 +107,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     esp_err_t result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
         esp_wifi_set_debug_log();
+#if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
+#endif
     }
 
     return result;

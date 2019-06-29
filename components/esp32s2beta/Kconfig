@@ -508,6 +508,10 @@ menu "ESP32S2-specific"
 endmenu  # ESP32S2-Specific
 
 menu "Power Management"
+    # TODO: this component simply shouldn't be included
+    # in the build at the CMake level, but this is currently
+    # not working so we just hide all items here
+    visible if IDF_TARGET_ESP32S2BETA
 
     config PM_ENABLE
         bool "Support for power management"
