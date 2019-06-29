@@ -43,7 +43,9 @@
 #include "esp32s2beta/rom/rtc.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
+#endif
 
 static const char* TAG = "phy_init";
 
@@ -68,8 +70,10 @@ static volatile bool s_is_modem_sleep_en = false;
 
 static _lock_t s_modem_sleep_lock;
 
+#if CONFIG_IDF_TARGET_ESP32
 /* time stamp updated when the PHY/RF is turned on */
 static int64_t s_phy_rf_en_ts = 0;
+#endif
 
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
@@ -81,6 +85,7 @@ void IRAM_ATTR phy_exit_critical(uint32_t level)
     portEXIT_CRITICAL_NESTED(level);
 }
 
+#if CONFIG_IDF_TARGET_ESP32
 int64_t esp_phy_rf_get_on_ts(void)
 {
     return s_phy_rf_en_ts;
@@ -103,6 +108,7 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
         }
     }
 }
+#endif
 
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibration_mode_t mode,
                           esp_phy_calibration_data_t* calibration_data, phy_rf_module_t module)
@@ -147,10 +153,12 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             }
         }
         if (s_is_phy_rf_en == true){
+#if CONFIG_IDF_TARGET_ESP32
             // Update time stamp
             s_phy_rf_en_ts = esp_timer_get_time();
             // Update WiFi MAC time before WiFi/BT common clock is enabled
             phy_update_wifi_mac_time(false, s_phy_rf_en_ts);
+#endif
             // Enable WiFi/BT common peripheral clock
             periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
             phy_set_wifi_mode_only(0);
@@ -234,8 +242,10 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
         if (s_is_phy_rf_en == false) {
             // Disable PHY and RF.
             phy_close_rf();
+#if CONFIG_IDF_TARGET_ESP32
             // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
             phy_update_wifi_mac_time(true, esp_timer_get_time());
+#endif
             // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
             periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
         }
@@ -620,9 +630,12 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     }
 
     memcpy(init_data, phy_init_data, sizeof(esp_phy_init_data_t));
+#if CONFIG_IDF_TARGET_ESP32
+    // ToDo: remove once esp_reset_reason is supported on esp32s2
     if (esp_reset_reason() == ESP_RST_BROWNOUT) {
         esp_phy_reduce_tx_power(init_data);
     }
+#endif
 #else
     const esp_phy_init_data_t* init_data = esp_phy_get_init_data();
     if (init_data == NULL) {

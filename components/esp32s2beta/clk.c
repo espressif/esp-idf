@@ -292,6 +292,9 @@ void esp_perip_clk_init(void)
     /* Disable WiFi/BT/SDIO clocks. */
     DPORT_CLEAR_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, wifi_bt_sdio_clk);
 
+    /* Enable WiFi MAC and POWER clocks */
+    DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_WIFI_EN);
+
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
 }

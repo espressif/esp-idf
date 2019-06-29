@@ -308,9 +308,8 @@ static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
         READ_PERI_REG(UART_FIFO_REG(uart_num));
     }
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-    while(UART[uart_num]->status.rxfifo_cnt != 0 || (UART[uart_num]->mem_rx_status.rx_waddr != UART[uart_num]->mem_rx_status.apb_rx_raddr)) {
-        READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
-    }
+    UART[uart_num]->conf0.rxfifo_rst = 1;
+    UART[uart_num]->conf0.rxfifo_rst = 0;
 #endif
     return ESP_OK;
 }

@@ -598,6 +598,7 @@ typedef struct {
     uint32_t rtc_dboost_fpd : 1;    //!< Force power down RTC_DBOOST
     uint32_t xtal_fpu : 1;
     uint32_t bbpll_fpu : 1;
+    uint32_t cpu_waiti_clk_gate : 1;
 } rtc_config_t;
 
 /**
@@ -614,7 +615,8 @@ typedef struct {
     .pwrctl_init = 1, \
     .rtc_dboost_fpd = 1, \
     .xtal_fpu = 0, \
-    .bbpll_fpu = 0 \
+    .bbpll_fpu = 0, \
+    .cpu_waiti_clk_gate = 1\
 }
 
 /**

@@ -329,7 +329,7 @@ extern "C" {
 #define RTC_CNTL_PLL_BUF_WAIT_M  ((RTC_CNTL_PLL_BUF_WAIT_V)<<(RTC_CNTL_PLL_BUF_WAIT_S))
 #define RTC_CNTL_PLL_BUF_WAIT_V  0xFF
 #define RTC_CNTL_PLL_BUF_WAIT_S  24
-#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
+#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  100
 /* RTC_CNTL_XTL_BUF_WAIT : R/W ;bitpos:[23:14] ;default: 10'd80 ; */
 /*description: XTAL wait cycles in slow_clk_rtc*/
 #define RTC_CNTL_XTL_BUF_WAIT  0x000003FF

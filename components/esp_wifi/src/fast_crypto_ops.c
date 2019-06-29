@@ -28,6 +28,11 @@
 #include "wpa2/eap_peer/eap_i.h"
 #include "wpa2/eap_peer/eap_common.h"
 #include "esp_wifi_crypto_types.h"
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#warning "TODO: fix hardware crypto support for esp32s2beta"
+#endif
+
 /* 
  * The parameters is used to set the cyrpto callback function for station connect when in security mode,
  * every callback function can register as fast_xxx or normal one, i.e, fast_aes_wrap or aes_wrap, the 
@@ -38,10 +43,17 @@
 const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
     .size = sizeof(wpa_crypto_funcs_t), 
     .version = ESP_WIFI_CRYPTO_VERSION,
+#if CONFIG_IDF_TARGET_ESP32
     .aes_wrap = (esp_aes_wrap_t)fast_aes_wrap,
     .aes_unwrap = (esp_aes_unwrap_t)fast_aes_unwrap,
     .hmac_sha256_vector = (esp_hmac_sha256_vector_t)fast_hmac_sha256_vector,
     .sha256_prf = (esp_sha256_prf_t)fast_sha256_prf,
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    .aes_wrap = (esp_aes_wrap_t)aes_wrap,
+    .aes_unwrap = (esp_aes_unwrap_t)aes_unwrap,
+    .hmac_sha256_vector = (esp_hmac_sha256_vector_t)hmac_sha256_vector,
+    .sha256_prf = (esp_sha256_prf_t)sha256_prf,
+#endif
     .hmac_md5 = (esp_hmac_md5_t)hmac_md5,
     .hamc_md5_vector = (esp_hmac_md5_vector_t)hmac_md5_vector,
     .hmac_sha1 = (esp_hmac_sha1_t)hmac_sha1,
@@ -62,12 +74,21 @@ const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
 const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs = {
     .size = sizeof(wps_crypto_funcs_t), 
     .version = ESP_WIFI_CRYPTO_VERSION,
+#if CONFIG_IDF_TARGET_ESP32
     .aes_128_encrypt = (esp_aes_128_encrypt_t)fast_aes_128_cbc_encrypt,
     .aes_128_decrypt = (esp_aes_128_decrypt_t)fast_aes_128_cbc_decrypt,
     .crypto_mod_exp = (esp_crypto_mod_exp_t)fast_crypto_mod_exp,
     .hmac_sha256 = (esp_hmac_sha256_t)fast_hmac_sha256,
     .hmac_sha256_vector = (esp_hmac_sha256_vector_t)fast_hmac_sha256_vector,
     .sha256_vector = (esp_sha256_vector_t)fast_sha256_vector,
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    .aes_128_encrypt = (esp_aes_128_encrypt_t)aes_128_cbc_encrypt,
+    .aes_128_decrypt = (esp_aes_128_decrypt_t)aes_128_cbc_decrypt,
+    .crypto_mod_exp = (esp_crypto_mod_exp_t)crypto_mod_exp,
+    .hmac_sha256 = (esp_hmac_sha256_t)hmac_sha256,
+    .hmac_sha256_vector = (esp_hmac_sha256_vector_t)hmac_sha256_vector,
+    .sha256_vector = (esp_sha256_vector_t)fast_sha256_vector,
+#endif
     .uuid_gen_mac_addr = (esp_uuid_gen_mac_addr_t)uuid_gen_mac_addr,
     .dh5_free = (esp_dh5_free_t)dh5_free,
     .wps_build_assoc_req_ie = (esp_wps_build_assoc_req_ie_t)wps_build_assoc_req_ie,
@@ -91,6 +112,7 @@ const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs = {
 const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
     .size = sizeof(wpa2_crypto_funcs_t),
     .version = ESP_WIFI_CRYPTO_VERSION,
+#if CONFIG_IDF_TARGET_ESP32
     .crypto_hash_init = (esp_crypto_hash_init_t)fast_crypto_hash_init,
     .crypto_hash_update = (esp_crypto_hash_update_t)fast_crypto_hash_update,
     .crypto_hash_finish = (esp_crypto_hash_finish_t)fast_crypto_hash_finish,
@@ -100,6 +122,17 @@ const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
     .crypto_cipher_deinit = (esp_crypto_cipher_deinit_t)fast_crypto_cipher_deinit,
     .crypto_mod_exp = (esp_crypto_mod_exp_t)crypto_mod_exp,
     .sha256_vector = (esp_sha256_vector_t)fast_sha256_vector,
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    .crypto_hash_init = (esp_crypto_hash_init_t)crypto_hash_init,
+    .crypto_hash_update = (esp_crypto_hash_update_t)crypto_hash_update,
+    .crypto_hash_finish = (esp_crypto_hash_finish_t)crypto_hash_finish,
+    .crypto_cipher_init = (esp_crypto_cipher_init_t)crypto_cipher_init,
+    .crypto_cipher_encrypt = (esp_crypto_cipher_encrypt_t)crypto_cipher_encrypt,
+    .crypto_cipher_decrypt = (esp_crypto_cipher_decrypt_t)crypto_cipher_decrypt,
+    .crypto_cipher_deinit = (esp_crypto_cipher_deinit_t)crypto_cipher_deinit,
+    .crypto_mod_exp = (esp_crypto_mod_exp_t)crypto_mod_exp,
+    .sha256_vector = (esp_sha256_vector_t)sha256_vector,
+#endif
     .tls_init = (esp_tls_init_t)tls_init,
     .tls_deinit = (esp_tls_deinit_t)tls_deinit,
     .eap_peer_blob_init = (esp_eap_peer_blob_init_t)eap_peer_blob_init,
@@ -117,6 +150,11 @@ const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
 };
 
 const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs = {
+#if CONFIG_IDF_TARGET_ESP32
     .aes_128_encrypt = (esp_aes_128_encrypt_t)fast_aes_128_cbc_encrypt,
     .aes_128_decrypt = (esp_aes_128_decrypt_t)fast_aes_128_cbc_decrypt,
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    .aes_128_encrypt = (esp_aes_128_encrypt_t)aes_128_cbc_encrypt,
+    .aes_128_decrypt = (esp_aes_128_decrypt_t)aes_128_cbc_decrypt,
+#endif
 };
