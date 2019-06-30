@@ -6,8 +6,8 @@
 	path = components/esptool_py/esptool
 	url = ../esptool.git
 
-[submodule "components/bt/lib"]
-	path = components/bt/lib
+[submodule "components/bt/controller/lib"]
+	path = components/bt/controller/lib
 	url = ../esp32-bt-lib.git
 
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
@@ -70,6 +70,6 @@
 	path = components/esp_wifi/lib_esp32
 	url = ../esp32-wifi-lib.git
 
-[submodule "components/nimble/nimble"]
-	path = components/nimble/nimble
+[submodule "components/bt/host/nimble/nimble"]
+	path = components/bt/host/nimble/nimble
 	url = ../esp-nimble.git
