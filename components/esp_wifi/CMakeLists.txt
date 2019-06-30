@@ -19,7 +19,7 @@ idf_build_get_property(build_dir BUILD_DIR)
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}")
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
-    set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
+    set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig)
     foreach(blob ${blobs})
         add_library(${blob} STATIC IMPORTED)
         set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}/lib${blob}.a)
