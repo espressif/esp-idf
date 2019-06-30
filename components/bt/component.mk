@@ -3,151 +3,196 @@
 #
 ifdef CONFIG_BT_ENABLED
 
-COMPONENT_SRCDIRS := .
+COMPONENT_SRCDIRS := controller
 
 COMPONENT_ADD_INCLUDEDIRS := include
 
 LIBS := btdm_app
 
-COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/lib \
+COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/controller/lib \
                            $(addprefix -l,$(LIBS))
 
 # re-link program if BT binary libs change
-COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/lib/lib%.a,$(LIBS))
+COMPONENT_ADD_LINKER_DEPS := $(patsubst %,$(COMPONENT_PATH)/controller/lib/lib%.a,$(LIBS))
 
-COMPONENT_SUBMODULES += lib
+COMPONENT_SUBMODULES += controller/lib
 
 ifeq ($(GCC_NOT_5_2_0), 1)
 # TODO: annotate fallthroughs in Bluedroid code with comments
 CFLAGS += -Wno-implicit-fallthrough
 endif
 
-endif
-
-
 ifdef CONFIG_BT_BLUEDROID_ENABLED
 
-COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
-                                bluedroid/bta/ar/include                \
-                                bluedroid/bta/av/include                \
-                                bluedroid/bta/hf_client/include         \
-                                bluedroid/bta/dm/include                \
-                                bluedroid/bta/gatt/include              \
-                                bluedroid/bta/hh/include                \
-                                bluedroid/bta/jv/include                \
-                                bluedroid/bta/sdp/include               \
-                                bluedroid/bta/sys/include               \
-                                bluedroid/btcore/include                \
-                                bluedroid/device/include                \
-                                bluedroid/gki/include                   \
-                                bluedroid/hci/include                   \
-                                bluedroid/osi/include                   \
-                                bluedroid/utils/include                 \
-                                bluedroid/external/sbc/decoder/include  \
-                                bluedroid/external/sbc/encoder/include  \
-                                bluedroid/external/sbc/plc/include      \
-                                bluedroid/btc/core/include              \
-                                bluedroid/btc/profile/esp/blufi/include \
-                                bluedroid/btc/profile/esp/include       \
-                                bluedroid/btc/profile/std/gatt/include  \
-                                bluedroid/btc/profile/std/gap/include   \
-                                bluedroid/btc/profile/std/a2dp/include  \
-                                bluedroid/btc/profile/std/include       \
-                                bluedroid/btc/include                   \
-                                bluedroid/btif/include                  \
-                                bluedroid/stack/btm/include             \
-                                bluedroid/stack/btu/include             \
-                                bluedroid/stack/gap/include             \
-                                bluedroid/stack/gatt/include            \
-                                bluedroid/stack/hcic/include            \
-                                bluedroid/stack/l2cap/include           \
-                                bluedroid/stack/sdp/include             \
-                                bluedroid/stack/smp/include             \
-                                bluedroid/stack/avct/include            \
-                                bluedroid/stack/avrc/include            \
-                                bluedroid/stack/avdt/include            \
-                                bluedroid/stack/a2dp/include            \
-                                bluedroid/stack/rfcomm/include          \
-                                bluedroid/stack/include                 \
-                                bluedroid/utils/include                 \
-                                bluedroid/common/include
+COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
+                                host/bluedroid/bta/ar/include                \
+                                host/bluedroid/bta/av/include                \
+                                host/bluedroid/bta/hf_client/include         \
+                                host/bluedroid/bta/dm/include                \
+                                host/bluedroid/bta/gatt/include              \
+                                host/bluedroid/bta/hh/include                \
+                                host/bluedroid/bta/jv/include                \
+                                host/bluedroid/bta/sdp/include               \
+                                host/bluedroid/bta/sys/include               \
+                                host/bluedroid/device/include                \
+                                host/bluedroid/gki/include                   \
+                                host/bluedroid/hci/include                   \
+                                host/bluedroid/utils/include                 \
+                                host/bluedroid/external/sbc/decoder/include  \
+                                host/bluedroid/external/sbc/encoder/include  \
+                                host/bluedroid/external/sbc/plc/include      \
+                                host/bluedroid/btc/profile/esp/blufi/include \
+                                host/bluedroid/btc/profile/esp/include       \
+                                host/bluedroid/btc/profile/std/gatt/include  \
+                                host/bluedroid/btc/profile/std/gap/include   \
+                                host/bluedroid/btc/profile/std/a2dp/include  \
+                                host/bluedroid/btc/profile/std/include       \
+                                host/bluedroid/btc/include                   \
+                                host/bluedroid/btif/include                  \
+                                host/bluedroid/stack/btm/include             \
+                                host/bluedroid/stack/btu/include             \
+                                host/bluedroid/stack/gap/include             \
+                                host/bluedroid/stack/gatt/include            \
+                                host/bluedroid/stack/hcic/include            \
+                                host/bluedroid/stack/l2cap/include           \
+                                host/bluedroid/stack/sdp/include             \
+                                host/bluedroid/stack/smp/include             \
+                                host/bluedroid/stack/avct/include            \
+                                host/bluedroid/stack/avrc/include            \
+                                host/bluedroid/stack/avdt/include            \
+                                host/bluedroid/stack/a2dp/include            \
+                                host/bluedroid/stack/rfcomm/include          \
+                                host/bluedroid/stack/include                 \
+                                host/bluedroid/utils/include                 \
+                                host/bluedroid/common/include
 
-COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api       \
-                                bluedroid/osi/include           \
+COMPONENT_ADD_INCLUDEDIRS +=    host/bluedroid/api/include/api       \
+								common/osi/include
 
-ifdef CONFIG_BLE_MESH
-    COMPONENT_ADD_INCLUDEDIRS += ble_mesh/mesh_core             \
-                                 ble_mesh/mesh_core/include     \
-                                 ble_mesh/mesh_core/settings    \
-                                 ble_mesh/btc/include           \
-                                 ble_mesh/mesh_models/include   \
-                                 ble_mesh/api/core/include      \
-                                 ble_mesh/api/models/include    \
-                                 ble_mesh/api
-endif
+COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
+                        host/bluedroid/bta/gatt                    \
+                        host/bluedroid/bta/hh                      \
+                        host/bluedroid/bta/sdp                     \
+                        host/bluedroid/bta/av                      \
+                        host/bluedroid/bta/ar                      \
+                        host/bluedroid/bta/sys                     \
+                        host/bluedroid/bta/jv                      \
+                        host/bluedroid/bta/hf_client               \
+                        host/bluedroid/bta                         \
+                        host/bluedroid/btif                        \
+                        host/bluedroid/device                      \
+                        host/bluedroid/gki                         \
+                        host/bluedroid/hci                         \
+                        host/bluedroid/main                        \
+                        host/bluedroid/external/sbc/decoder/srce   \
+                        host/bluedroid/external/sbc/encoder/srce   \
+                        host/bluedroid/external/sbc/plc            \
+                        host/bluedroid/btc/core                    \
+                        host/bluedroid/btc/profile/esp/blufi       \
+                        host/bluedroid/btc/profile/std/gap         \
+                        host/bluedroid/btc/profile/std/gatt        \
+                        host/bluedroid/btc/profile/std/a2dp        \
+                        host/bluedroid/btc/profile/std/avrc        \
+                        host/bluedroid/btc/profile/std/spp         \
+                        host/bluedroid/btc/profile/std/hf_client   \
+                        host/bluedroid/btc/profile                 \
+                        host/bluedroid/stack/btm                   \
+                        host/bluedroid/stack/btu                   \
+                        host/bluedroid/stack/gap                   \
+                        host/bluedroid/stack/gatt                  \
+                        host/bluedroid/stack/hcic                  \
+                        host/bluedroid/stack/include               \
+                        host/bluedroid/stack/l2cap                 \
+                        host/bluedroid/stack/sdp                   \
+                        host/bluedroid/stack/smp                   \
+                        host/bluedroid/stack/avct                  \
+                        host/bluedroid/stack/avrc                  \
+                        host/bluedroid/stack/avdt                  \
+                        host/bluedroid/stack/a2dp                  \
+                        host/bluedroid/stack/rfcomm                \
+                        host/bluedroid/stack                       \
+                        host/bluedroid/utils                       \
+                        host/bluedroid/api                         \
+                        host/bluedroid
 
-COMPONENT_SRCDIRS +=    bluedroid/bta/dm                      \
-                        bluedroid/bta/gatt                    \
-                        bluedroid/bta/hh                      \
-                        bluedroid/bta/sdp                     \
-                        bluedroid/bta/av                      \
-                        bluedroid/bta/ar                      \
-                        bluedroid/bta/sys                     \
-                        bluedroid/bta/jv                      \
-                        bluedroid/bta/hf_client               \
-                        bluedroid/bta                         \
-                        bluedroid/btcore                      \
-                        bluedroid/btif                        \
-                        bluedroid/device                      \
-                        bluedroid/gki                         \
-                        bluedroid/hci                         \
-                        bluedroid/main                        \
-                        bluedroid/osi                         \
-                        bluedroid/external/sbc/decoder/srce   \
-                        bluedroid/external/sbc/encoder/srce   \
-                        bluedroid/external/sbc/plc            \
-                        bluedroid/btc/core                    \
-                        bluedroid/btc/profile/esp/blufi       \
-                        bluedroid/btc/profile/std/gap         \
-                        bluedroid/btc/profile/std/gatt        \
-                        bluedroid/btc/profile/std/a2dp        \
-                        bluedroid/btc/profile/std/avrc        \
-                        bluedroid/btc/profile/std/spp         \
-                        bluedroid/btc/profile/std/hf_client   \
-                        bluedroid/btc/profile                 \
-                        bluedroid/stack/btm                   \
-                        bluedroid/stack/btu                   \
-                        bluedroid/stack/gap                   \
-                        bluedroid/stack/gatt                  \
-                        bluedroid/stack/hcic                  \
-                        bluedroid/stack/include               \
-                        bluedroid/stack/l2cap                 \
-                        bluedroid/stack/sdp                   \
-                        bluedroid/stack/smp                   \
-                        bluedroid/stack/avct                  \
-                        bluedroid/stack/avrc                  \
-                        bluedroid/stack/avdt                  \
-                        bluedroid/stack/a2dp                  \
-                        bluedroid/stack/rfcomm                \
-                        bluedroid/stack                       \
-                        bluedroid/utils                       \
-                        bluedroid/api                         \
-                        bluedroid
-
-ifdef CONFIG_BLE_MESH
-    COMPONENT_SRCDIRS +=    ble_mesh/mesh_core               \
-                            ble_mesh/mesh_core/settings      \
-                            ble_mesh/btc                     \
-                            ble_mesh/mesh_models             \
-                            ble_mesh/api/core                \
-                            ble_mesh/api/models 
-endif
 
 ifeq ($(GCC_NOT_5_2_0), 1)
-bluedroid/bta/sdp/bta_sdp_act.o: CFLAGS += -Wno-unused-const-variable
-bluedroid/btc/core/btc_config.o: CFLAGS += -Wno-unused-const-variable
-bluedroid/stack/btm/btm_sec.o: CFLAGS += -Wno-unused-const-variable
-bluedroid/stack/smp/smp_keys.o: CFLAGS += -Wno-unused-const-variable
+host/bluedroid/bta/sdp/bta_sdp_act.o: CFLAGS += -Wno-unused-const-variable
+host/bluedroid/btc/core/btc_config.o: CFLAGS += -Wno-unused-const-variable
+host/bluedroid/stack/btm/btm_sec.o: CFLAGS += -Wno-unused-const-variable
+host/bluedroid/stack/smp/smp_keys.o: CFLAGS += -Wno-unused-const-variable
+endif
+
+COMPONENT_PRIV_INCLUDEDIRS += common/btc/include              	   \
+							  common/include
+
+COMPONENT_SRCDIRS += common/osi                         		   \
+					 common/btc/core
+
+endif
+
+ifdef CONFIG_BLE_MESH
+    COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_core             \
+                                 esp_ble_mesh/mesh_core/include     \
+                                 esp_ble_mesh/mesh_core/settings    \
+                                 esp_ble_mesh/btc/include           \
+                                 esp_ble_mesh/mesh_models/include   \
+                                 esp_ble_mesh/api/core/include      \
+                                 esp_ble_mesh/api/models/include    \
+                                 esp_ble_mesh/api
+
+    COMPONENT_SRCDIRS +=    esp_ble_mesh/mesh_core               \
+                            esp_ble_mesh/mesh_core/settings      \
+                            esp_ble_mesh/btc                     \
+                            esp_ble_mesh/mesh_models             \
+                            esp_ble_mesh/api/core                \
+                            esp_ble_mesh/api/models 
+endif
+
+
+ifdef CONFIG_BT_NIMBLE_ENABLED
+COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/nimble/include                     \
+                             host/nimble/nimble/nimble/host/include                \
+                             host/nimble/nimble/porting/nimble/include             \
+                             host/nimble/nimble/porting/npl/freertos/include       \
+                             host/nimble/nimble/nimble/host/services/ans/include   \
+                             host/nimble/nimble/nimble/host/services/bas/include   \
+                             host/nimble/nimble/nimble/host/services/gap/include   \
+                             host/nimble/nimble/nimble/host/services/gatt/include  \
+                             host/nimble/nimble/nimble/host/services/ias/include   \
+                             host/nimble/nimble/nimble/host/services/lls/include   \
+                             host/nimble/nimble/nimble/host/services/tps/include   \
+                             host/nimble/nimble/nimble/host/util/include           \
+                             host/nimble/nimble/nimble/host/store/ram/include      \
+                             host/nimble/nimble/nimble/host/store/config/include   \
+                             host/nimble/nimble/ext/tinycrypt/include              \
+                             host/nimble/esp-hci/include                           \
+                             host/nimble/port/include
+
+COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/src                            \
+                     host/nimble/nimble/porting/nimble/src                         \
+                     host/nimble/nimble/porting/npl/freertos/src                   \
+                     host/nimble/nimble/ext/tinycrypt/src                          \
+                     host/nimble/nimble/nimble/host/services/ans/src               \
+                     host/nimble/nimble/nimble/host/services/bas/src               \
+                     host/nimble/nimble/nimble/host/services/gap/src               \
+                     host/nimble/nimble/nimble/host/services/gatt/src              \
+                     host/nimble/nimble/nimble/host/services/ias/src               \
+                     host/nimble/nimble/nimble/host/services/lls/src               \
+                     host/nimble/nimble/nimble/host/services/tps/src               \
+                     host/nimble/nimble/nimble/host/util/src                       \
+                     host/nimble/nimble/nimble/host/store/ram/src                  \
+                     host/nimble/nimble/nimble/host/store/config/src               \
+                     host/nimble/esp-hci/src
+
+COMPONENT_OBJEXCLUDE += host/nimble/nimble/nimble/host/store/config/src/ble_store_config_conf.o
+
+ifdef CONFIG_BT_NIMBLE_MESH
+
+COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/nimble/host/mesh/include
+COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/mesh/src
+
+endif
 endif
 
 endif
