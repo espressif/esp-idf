@@ -21,9 +21,9 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
+#include "utils/common.h"
 #include "crypto/crypto.h"
 #include "crypto/aes_i.h"
 

@@ -6,20 +6,12 @@
  * See README for more details.
  */
 
-//#include "wpa/includes.h"
-
-//#include "wpa/common.h"
-#include "crypto/common.h"
+#include "utils/common.h"
 #include "crypto/crypto.h"
 #include "crypto/aes.h"
 #if defined(CONFIG_DES) || defined(CONFIG_DES3)
 #include "crypto/des_i.h"
 #endif
-
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
-#endif
-
 
 struct crypto_cipher {
 	enum crypto_cipher_alg alg;
