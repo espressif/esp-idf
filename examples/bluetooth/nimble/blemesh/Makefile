@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ble_mesh
+PROJECT_NAME := blemesh
 
 include $(IDF_PATH)/make/project.mk
