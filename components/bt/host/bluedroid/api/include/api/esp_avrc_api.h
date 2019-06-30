@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+#define ESP_AVRC_TRANS_LABEL_MAX        15       /*!< max transaction label */
+
 /// AVRC feature bit mask
 typedef enum {
     ESP_AVRC_FEAT_RCTG = 0x0001,                 /*!< remote control target */
@@ -140,6 +142,7 @@ typedef enum {
     ESP_AVRC_CT_CHANGE_NOTIFY_EVT = 4,           /*!< notification event */
     ESP_AVRC_CT_REMOTE_FEATURES_EVT = 5,         /*!< feature of remote device indication event */
     ESP_AVRC_CT_GET_RN_CAPABILITIES_RSP_EVT = 6,     /*!< supported notification events capability of peer device */
+    ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT = 7, /*!< set absolute volume response event */
 } esp_avrc_ct_cb_event_t;
 
 /// AVRC Target callback events
@@ -327,6 +330,13 @@ typedef union {
         uint8_t cap_count;                       /*!< number of items provided in event or company_id according to cap_id used */
         esp_avrc_rn_evt_cap_mask_t evt_set;      /*!< supported event_ids represented in bit-mask */
     } get_rn_caps_rsp;                           /*!< get supported event capabilities response from AVRCP target */
+
+    /**
+     * @brief ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT
+     */
+    struct avrc_ct_set_volume_rsp_param {
+        uint8_t volume;                          /*!< the volume which has actually been set, range is 0 to 0x7f, means 0% to 100% */
+    } set_volume_rsp;                            /*!< set absolute volume response event */
 } esp_avrc_ct_cb_param_t;
 
 /// AVRC target callback parameters
@@ -460,7 +470,8 @@ esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd(uint8_t tl);
  *
  * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
  * @param[in]       event_id : id of events, e.g. ESP_AVRC_RN_PLAY_STATUS_CHANGE, ESP_AVRC_RN_TRACK_CHANGE, etc.
- * @param[in]       event_parameter : special parameters, eg. playback interval for ESP_AVRC_RN_PLAY_POS_CHANGED
+ * @param[in]       event_parameter : playback interval for ESP_AVRC_RN_PLAY_POS_CHANGED;
+ *                                     For other events , value of this parameter is ignored.
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -469,6 +480,19 @@ esp_err_t esp_avrc_ct_send_get_rn_capabilities_cmd(uint8_t tl);
  */
 esp_err_t esp_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_t event_id, uint32_t event_parameter);
 
+/**
+ * @brief           Send set absolute volume command to AVRCP target, This function should be called after
+ *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established
+ *
+ * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ * @param[in]       volume : volume, 0 to 0x7f, means 0% to 100%
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_ERR_NOT_SUPPORTED: if the event_id is not supported in current implementation
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume);
 
 /**
  * @brief           Send metadata command to AVRCP target, This function should be called after
@@ -562,22 +586,22 @@ esp_err_t esp_avrc_tg_get_psth_cmd_filter(esp_avrc_psth_filter_t filter, esp_avr
 
 /**
  *
- * @brief           Set the filter of remote passthrough commands on AVRC target. Filter is given by 
- *                  filter type and bit mask for the passthrough commands. This function should be called 
+ * @brief           Set the filter of remote passthrough commands on AVRC target. Filter is given by
+ *                  filter type and bit mask for the passthrough commands. This function should be called
  *                  after esp_avrc_tg_init().
  *                  If filter type is ESP_AVRC_PSTH_FILTER_SUPPORT_CMD, the passthrough commands which
- *                  are set "1" as given in cmd_set will generate ESP_AVRC_CT_PASSTHROUGH_RSP_EVT callback 
+ *                  are set "1" as given in cmd_set will generate ESP_AVRC_CT_PASSTHROUGH_RSP_EVT callback
  *                  event and are auto-accepted in the protocol stack, other commands are replied with response
- *                  type "NOT IMPLEMENTED" (8). The set of supported commands should be a subset of allowed 
- *                  command set. The allowed command set can be retrieved using esp_avrc_tg_get_psth_cmd_filter() 
+ *                  type "NOT IMPLEMENTED" (8). The set of supported commands should be a subset of allowed
+ *                  command set. The allowed command set can be retrieved using esp_avrc_tg_get_psth_cmd_filter()
  *                  with filter type "ESP_AVRC_PSTH_FILTER_ALLOWED_CMD".
- *                  
+ *
  *                  Filter type "ESP_AVRC_PSTH_FILTER_ALLOWED_CMD" does not apply to this function
  * @return
  *                  - ESP_OK: success
  *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not enabled
  *                  - ESP_ERR_INVALID_ARG: if filter type is invalid or cmd_set is NULL
- *                  - ESP_ERR_NOT_SUPPORTED:: if filter type is ESP_AVRC_PSTH_FILTER_ALLOWED_CMD, or cmd_set 
+ *                  - ESP_ERR_NOT_SUPPORTED:: if filter type is ESP_AVRC_PSTH_FILTER_ALLOWED_CMD, or cmd_set
  *                    includes unallowed commands
  *
  */
@@ -601,13 +625,13 @@ bool esp_avrc_psth_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_psth_b
 /**
  *
  * @brief           Get the requested event notification capabilies on local AVRC target. The capability is returned
- *                  in a bit mask representation in evt_set. This function should be called after 
+ *                  in a bit mask representation in evt_set. This function should be called after
  *                  esp_avrc_tg_init().
  *                  For capability type "ESP_AVRC_RN_CAP_ALLOWED_EVT, the retrieved event set is constant and
- *                  it covers all of the notifcation events that can possibly be supported with current 
+ *                  it covers all of the notifcation events that can possibly be supported with current
  *                  implementation.
  *                  For capability type ESP_AVRC_RN_CAP_SUPPORTED_EVT, the event set covers the notification
- *                  events selected to be supported under current configuration, The configuration can be 
+ *                  events selected to be supported under current configuration, The configuration can be
  *                  changed using esp_avrc_tg_set_rn_evt_cap()
  *
  * @return
@@ -652,7 +676,7 @@ bool esp_avrc_rn_evt_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_rn_e
  * @brief           Send RegisterNotification Response to remote AVRCP controller. Local event notification
  *                  capability can be set using esp_avrc_tg_set_rn_evt_cap(),
  *                  in a bit mask representation in evt_set. This function should be called after
- *                  esp_avrc_tg_init() 
+ *                  esp_avrc_tg_init()
  * @param[in]       event_id: notification event ID that remote AVRCP CT registers
  * @param[in]       rsp: notification response code
  * @param[in]       param: parameters included in the specific notification

@@ -71,7 +71,7 @@ const static uint16_t cs_psth_allowed_cmd[8] = {
     0x0078, /* bit mask: 0=CHAN_UP, 1=CHAN_DOWN, 2=PREV_CHAN, 3=SOUND_SEL,
                          4=INPUT_SEL, 5=DISP_INFO, 6=HELP, 7=PAGE_UP,
                          8=PAGE_DOWN */
-    0x1b3F, /* bit mask: 0=POWER, 1=VOL_UP, 2=VOL_DOWN, 3=MUTE,
+    0x1b7F, /* bit mask: 0=POWER, 1=VOL_UP, 2=VOL_DOWN, 3=MUTE,
                          4=PLAY, 5=STOP, 6=PAUSE, 7=RECORD,
                          8=REWIND, 9=FAST_FOR, 10=EJECT, 11=FORWARD,
                          12=BACKWARD */
@@ -635,6 +635,16 @@ static void handle_rc_get_caps_rsp (tAVRC_GET_CAPS_RSP *rsp)
     }
 }
 
+static void handle_rc_set_absolute_volume_rsp(tAVRC_SET_VOLUME_RSP *rsp)
+{
+    esp_avrc_ct_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+
+    param.set_volume_rsp.volume = rsp->volume;
+
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT, &param);
+}
+
 /***************************************************************************
  *  Function       handle_rc_metamsg_cmd
  *
@@ -820,6 +830,11 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
     case AVRC_PDU_GET_CAPABILITIES:
         if (vendor_msg->hdr.ctype == AVRC_RSP_IMPL_STBL) {
             handle_rc_get_caps_rsp(&avrc_response.get_caps);
+        }
+        break;
+    case AVRC_PDU_SET_ABSOLUTE_VOLUME:
+        if (vendor_msg->hdr.ctype == AVRC_RSP_ACCEPT) {
+            handle_rc_set_absolute_volume_rsp(&avrc_response.volume);
         }
         break;
     default:
@@ -1055,15 +1070,15 @@ static bt_status_t btc_avrc_ct_send_set_player_value_cmd(uint8_t tl, uint8_t att
     avrc_cmd.set_app_val.p_vals = &values;
     avrc_cmd.set_app_val.pdu = AVRC_PDU_SET_PLAYER_APP_VALUE;
 
-    status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-    if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, BTA_AV_CMD_CTRL, p_msg);
             status = BT_STATUS_SUCCESS;
-        } else {
-            status = BT_STATUS_FAIL;
-            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
 #else
@@ -1088,15 +1103,15 @@ static bt_status_t btc_avrc_ct_send_get_rn_caps_cmd(uint8_t tl)
     avrc_cmd.get_caps.pdu = AVRC_PDU_GET_CAPABILITIES;
     avrc_cmd.get_caps.capability_id = AVRC_CAP_EVENTS_SUPPORTED;
 
-    status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-    if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
             status = BT_STATUS_SUCCESS;
-        } else {
-            status = BT_STATUS_FAIL;
-            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
 #else
@@ -1122,15 +1137,48 @@ static bt_status_t btc_avrc_ct_send_register_notification_cmd(uint8_t tl, uint8_
     avrc_cmd.reg_notif.param = event_parameter;
     avrc_cmd.reg_notif.pdu = AVRC_PDU_REGISTER_NOTIFICATION;
 
-    status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-    if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_NOTIF, p_msg);
             status = BT_STATUS_SUCCESS;
-        } else {
-            status = BT_STATUS_FAIL;
-            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
+    }
+
+#else
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
+#endif
+
+    return status;
+}
+
+static bt_status_t btc_avrc_ct_send_set_absolute_volume_cmd(uint8_t tl, uint8_t volume)
+{
+    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+
+#if (AVRC_METADATA_INCLUDED == TRUE)
+    CHECK_ESP_RC_CONNECTED;
+
+    tAVRC_COMMAND avrc_cmd = {0};
+    BT_HDR *p_msg = NULL;
+
+    avrc_cmd.volume.opcode = AVRC_OP_VENDOR;
+    avrc_cmd.volume.status = AVRC_STS_NO_ERROR;
+    avrc_cmd.volume.volume = volume;
+    avrc_cmd.volume.pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME;
+
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_CTRL, p_msg);
+            status = BT_STATUS_SUCCESS;
+        }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
 #else
@@ -1164,15 +1212,15 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
 
     avrc_cmd.get_elem_attrs.num_attr = index;
 
-    status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-    if (status == AVRC_STS_NO_ERROR) {
-        if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
             BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
             status = BT_STATUS_SUCCESS;
-        } else {
-            status = BT_STATUS_FAIL;
-            BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
         }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
     }
 
 #else
@@ -1336,6 +1384,10 @@ void btc_avrc_ct_call_handler(btc_msg_t *msg)
     }
     case BTC_AVRC_CTRL_API_SND_SET_PLAYER_SETTING_EVT: {
         btc_avrc_ct_send_set_player_value_cmd(arg->ps_cmd.tl, arg->ps_cmd.attr_id, arg->ps_cmd.value_id);
+        break;
+    }
+    case BTC_AVRC_CTRL_API_SND_SET_ABSOLUTE_VOLUME_EVT: {
+        btc_avrc_ct_send_set_absolute_volume_cmd(arg->set_abs_vol_cmd.tl, arg->set_abs_vol_cmd.volume);
         break;
     }
     default:
