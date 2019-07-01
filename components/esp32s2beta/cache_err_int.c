@@ -66,6 +66,5 @@ void esp_cache_err_int_init()
 
 int IRAM_ATTR esp_cache_err_get_cpuid()
 {
-    esp_dport_access_int_pause();
     return PRO_CPU_NUM;
 }
