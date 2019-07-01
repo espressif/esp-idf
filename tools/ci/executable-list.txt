@@ -48,6 +48,7 @@ tools/kconfig/mconf
 tools/kconfig/merge_config.sh
 tools/kconfig/streamline_config.pl
 tools/mass_mfg/mfg_gen.py
+tools/set-submodules-to-github.sh
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.sh

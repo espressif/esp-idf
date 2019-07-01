@@ -1,5 +1,6 @@
 #
 # All the relative URL paths are intended to be GitHub ones
+# For Espressif's public projects please use '../../espressif/proj', not a '../proj'
 #
 
 [submodule "components/esp32/lib"]
