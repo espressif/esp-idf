@@ -19,7 +19,7 @@ idf_build_get_property(build_dir BUILD_DIR)
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}")
 
 if(NOT CONFIG_ESP32_NO_BLOBS)
-    set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig wpa2 wpa wps)
+    set(blobs coexist core espnow mesh net80211 phy pp rtc smartconfig)
     foreach(blob ${blobs})
         add_library(${blob} STATIC IMPORTED)
         set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}/lib${blob}.a)
@@ -53,7 +53,7 @@ if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
         COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${phy_init_data_bin}
         )
     add_custom_target(phy_init_data ALL DEPENDS ${phy_init_data_bin})
-    add_dependencies(app phy_init_data)
+    add_dependencies(flash phy_init_data)
 
     esptool_py_flash_project_args(phy ${phy_partition_offset} ${phy_init_data_bin} FLASH_IN_PROJECT)
 endif()

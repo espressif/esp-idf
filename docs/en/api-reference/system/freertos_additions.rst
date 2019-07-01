@@ -323,6 +323,51 @@ The following example demonstrates queue set usage with ring buffers.
             ...
         }
 
+Ring Buffers with Static Allocation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :cpp:func:`xRingbufferCreateStatic` can be used to create ring buffers with specific memory requirements (such as a ring buffer being allocated in external RAM). All blocks of memory used by a ring buffer must be manually allocated beforehand then passed to the :cpp:func:`xRingbufferCreateStatic` to be initialized as a ring buffer. These blocks include the following:
+
+- The ring buffer's data structure of type :cpp:type:`StaticRingbuffer_t`
+- The ring buffer's storage area of size ``xBufferSize``. Note that ``xBufferSize`` must be 32-bit aligned for no-split/allow-split buffers.
+
+The manner in which these blocks are allocated will depend on the users requirements (e.g. all blocks being statically declared, or dynamically allocated with specific capabilities such as external RAM). 
+
+.. note::
+    The :ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig` for statically allocated ring buffers to be available.
+
+.. note::
+    When deleting a ring buffer created via :cpp:func:`xRingbufferCreateStatic`,
+    the function :cpp:func:`vRingbufferDelete` will not free any of the memory blocks. This must be done manually by the user after :cpp:func:`vRingbufferDelete` is called.
+
+The code snippet below demonstrates a ring buffer being allocated entirely in external RAM.
+
+.. code-block:: c
+
+    #include "freertos/ringbuf.h"
+    #include "freertos/semphr.h"
+    #include "esp_heap_caps.h"
+
+    #define BUFFER_SIZE     400      //32-bit aligned size
+    #define BUFFER_TYPE     RINGBUF_TYPE_NOSPLIT
+    ...
+
+    //Allocate ring buffer data structure and storage area into external RAM
+    StaticRingbuffer_t *buffer_struct = (StaticRingbuffer_t *)heap_caps_malloc(sizeof(StaticRingbuffer_t), MALLOC_CAP_SPIRAM);
+    uint8_t *buffer_storage = (uint8_t *)heap_caps_malloc(sizeof(uint8_t)*BUFFER_SIZE, MALLOC_CAP_SPIRAM);
+
+    //Create a ring buffer with manually allocated memory
+    RingbufHandle_t handle = xRingbufferCreateStatic(BUFFER_SIZE, BUFFER_TYPE, buffer_storage, buffer_struct);
+
+    ...
+
+    //Delete the ring buffer after used
+    vRingbufferDelete(handle);
+
+    //Manually free all blocks of memory
+    free(buffer_struct);
+    free(buffer_storage);
+
 
 Ring Buffer API Reference
 -------------------------

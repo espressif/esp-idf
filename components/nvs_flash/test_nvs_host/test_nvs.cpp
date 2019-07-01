@@ -2375,14 +2375,14 @@ TEST_CASE("check and read data from partition generated via partition generation
         if (childpid == 0) {
             exit(execlp("python", "python",
                     "../nvs_partition_generator/nvs_partition_gen.py",
-                    "--input",
+                    "generate",
                     "../nvs_partition_generator/sample_singlepage_blob.csv",
-                    "--output",
-                    "../nvs_partition_generator/partition_single_page.bin",
-                    "--size",
+                    "partition_single_page.bin",
                     "0x3000",
                     "--version",
-                    "v1",NULL));
+                    "1",
+                    "--outdir",
+                    "../nvs_partition_generator",NULL));
         } else {
             CHECK(childpid > 0);
             int status;
@@ -2429,14 +2429,14 @@ TEST_CASE("check and read data from partition generated via partition generation
         if (childpid == 0) {
             exit(execlp("python", "python",
                     "../nvs_partition_generator/nvs_partition_gen.py",
-                    "--input",
+                    "generate",
                     "../nvs_partition_generator/sample_multipage_blob.csv",
-                    "--output",
-                    "../nvs_partition_generator/partition_multipage_blob.bin",
-                    "--size",
+                    "partition_multipage_blob.bin",
                     "0x4000",
                     "--version",
-                    "v2",NULL));
+                    "2",
+                    "--outdir",
+                    "../nvs_partition_generator",NULL));
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
@@ -2461,6 +2461,7 @@ TEST_CASE("check and read data from partition generated via partition generation
     }
 }
 
+#if false
 TEST_CASE("check and read data from partition generated via manufacturing utility with multipage blob support disabled", "[mfg_gen]")
 {
     int childpid = fork();
@@ -2631,6 +2632,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
 }
+#endif
 
 #if CONFIG_NVS_ENCRYPTION
 TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
@@ -2790,16 +2792,14 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         if (childpid == 0) {
             exit(execlp("python", "python",
                     "../nvs_partition_generator/nvs_partition_gen.py",
-                    "--input",
+                    "encrypt",
                     "../nvs_partition_generator/sample_multipage_blob.csv",
-                    "--output",
-                    "../nvs_partition_generator/partition_encrypted.bin",
-                    "--size",
+                    "partition_encrypted.bin",
                     "0x4000",
-                    "--encrypt",
-                    "True",
-                    "--keyfile",
-                    "../nvs_partition_generator/testdata/sample_encryption_keys.bin",NULL));
+                    "--inputkey",
+                    "../nvs_partition_generator/testdata/sample_encryption_keys.bin",
+                    "--outdir",
+                    "../nvs_partition_generator",NULL));
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
@@ -2831,7 +2831,6 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
 }
 
-
 TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using keygen", "[nvs_part_gen]")
 {
     int childpid = fork();
@@ -2852,7 +2851,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         if (childpid == 0) {
             exit(execlp("rm", " rm",
                         "-rf",
-                        "keys",NULL));
+                        "../nvs_partition_generator/keys",NULL));
         } else {
             CHECK(childpid > 0);
             waitpid(childpid, &status, 0);
@@ -2862,16 +2861,13 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
             if (childpid == 0) {
                 exit(execlp("python", "python",
                             "../nvs_partition_generator/nvs_partition_gen.py",
-                            "--input",
+                            "encrypt",
                             "../nvs_partition_generator/sample_multipage_blob.csv",
-                            "--output",
-                            "../nvs_partition_generator/partition_encrypted_using_keygen.bin",
-                            "--size",
+                            "partition_encrypted_using_keygen.bin",
                             "0x4000",
-                            "--encrypt",
-                            "True",
                             "--keygen",
-                            "true",NULL));
+                            "--outdir",
+                            "../nvs_partition_generator",NULL));
 
             } else {
                 CHECK(childpid > 0);
@@ -2889,7 +2885,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     char *files;
     char *file_ext;
 
-    dir = opendir("keys");
+    dir = opendir("../nvs_partition_generator/keys");
     while ((file = readdir(dir)) != NULL)
     {
         filename = file->d_name;
@@ -2904,7 +2900,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         }
     }
 
-    std::string encr_file = std::string("keys/") + std::string(filename);
+    std::string encr_file = std::string("../nvs_partition_generator/keys/") + std::string(filename);
     SpiFlashEmulator emu("../nvs_partition_generator/partition_encrypted_using_keygen.bin");
 
     char buffer[64];
@@ -2927,7 +2923,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
 }
 
-TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using keyfile", "[nvs_part_gen]")
+TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled using inputkey", "[nvs_part_gen]")
 {
     int childpid = fork();
     int status;
@@ -2938,7 +2934,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     char *files;
     char *file_ext;
 
-    dir = opendir("keys");
+    dir = opendir("../nvs_partition_generator/keys");
     while ((file = readdir(dir)) != NULL)
     {
         filename = file->d_name;
@@ -2953,21 +2949,19 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
         }
     }
 
-    std::string encr_file = std::string("keys/") + std::string(filename);
+    std::string encr_file = std::string("../nvs_partition_generator/keys/") + std::string(filename);
 
      if (childpid == 0) {
         exit(execlp("python", "python",
                 "../nvs_partition_generator/nvs_partition_gen.py",
-                "--input",
+                "encrypt",
                 "../nvs_partition_generator/sample_multipage_blob.csv",
-                "--output",
-                "../nvs_partition_generator/partition_encrypted_using_keyfile.bin",
-                "--size",
+                "partition_encrypted_using_keyfile.bin",
                 "0x4000",
-                "--encrypt",
-                "True",
-                "--keyfile",
-                encr_file.c_str(),NULL));
+                "--inputkey",
+                encr_file.c_str(),
+                "--outdir",
+                "../nvs_partition_generator",NULL));
 
     } else {
         CHECK(childpid > 0);
@@ -2999,7 +2993,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
     if (childpid == 0) {
         exit(execlp("rm", " rm",
                     "-rf",
-                    "keys",NULL));
+                    "../nvs_partition_generator/keys",NULL));
     } else {
         CHECK(childpid > 0);
         waitpid(childpid, &status, 0);
@@ -3020,6 +3014,7 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
 }
 
+#if false
 TEST_CASE("check and read data from partition generated via manufacturing utility with encryption enabled using sample keyfile", "[mfg_gen]")
 {
     int childpid = fork();
@@ -3259,6 +3254,7 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     }
 
 }
+#endif
 #endif
 
 /* Add new tests above */

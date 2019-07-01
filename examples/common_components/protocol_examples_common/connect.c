@@ -21,23 +21,22 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-#define GOT_IPV4_BIT  BIT(0)
-#define GOT_IPV6_BIT  BIT(1)
+#define GOT_IPV4_BIT BIT(0)
+#define GOT_IPV6_BIT BIT(1)
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
-#define CONNECTED_BITS  (GOT_IPV4_BIT | GOT_IPV6_BIT)
+#define CONNECTED_BITS (GOT_IPV4_BIT | GOT_IPV6_BIT)
 #else
-#define CONNECTED_BITS  (GOT_IPV4_BIT)
+#define CONNECTED_BITS (GOT_IPV4_BIT)
 #endif
 
 static EventGroupHandle_t s_connect_event_group;
 static ip4_addr_t s_ip_addr;
-static const char* s_connection_name;
+static const char *s_connection_name;
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 static ip6_addr_t s_ipv6_addr;
 #endif
-
 
 static const char *TAG = "example_connect";
 
@@ -47,20 +46,20 @@ static void start();
 /* tear down connection, release resources */
 static void stop();
 
-static void on_got_ip(void* arg, esp_event_base_t event_base,
-                      int32_t event_id, void* event_data)
+static void on_got_ip(void *arg, esp_event_base_t event_base,
+                      int32_t event_id, void *event_data)
 {
-    ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+    ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     memcpy(&s_ip_addr, &event->ip_info.ip, sizeof(s_ip_addr));
     xEventGroupSetBits(s_connect_event_group, GOT_IPV4_BIT);
 }
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 
-static void on_got_ipv6(void* arg, esp_event_base_t event_base,
-                        int32_t event_id, void* event_data)
+static void on_got_ipv6(void *arg, esp_event_base_t event_base,
+                        int32_t event_id, void *event_data)
 {
-    ip_event_got_ip6_t* event = (ip_event_got_ip6_t*) event_data;
+    ip_event_got_ip6_t *event = (ip_event_got_ip6_t *)event_data;
     memcpy(&s_ipv6_addr, &event->ip6_info.ip, sizeof(s_ipv6_addr));
     xEventGroupSetBits(s_connect_event_group, GOT_IPV6_BIT);
 }
@@ -98,17 +97,17 @@ esp_err_t example_disconnect()
 
 #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
 
-static void on_wifi_disconnect(void* arg, esp_event_base_t event_base,
-                               int32_t event_id, void* event_data)
+static void on_wifi_disconnect(void *arg, esp_event_base_t event_base,
+                               int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
-    ESP_ERROR_CHECK( esp_wifi_connect() );
+    ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 
-static void on_wifi_connect(void* arg, esp_event_base_t event_base,
-                            int32_t event_id, void* event_data)
+static void on_wifi_connect(void *arg, esp_event_base_t event_base,
+                            int32_t event_id, void *event_data)
 {
     tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
 }
@@ -155,87 +154,13 @@ static void stop()
 }
 #endif // CONFIG_EXAMPLE_CONNECT_WIFI
 
-
 #ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
-
-#include "driver/gpio.h"
-
-#ifdef CONFIG_EXAMPLE_PHY_LAN8720
-#include "eth_phy/phy_lan8720.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#endif
-#ifdef CONFIG_EXAMPLE_PHY_TLK110
-#include "eth_phy/phy_tlk110.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
-#elif CONFIG_EXAMPLE_PHY_IP101
-#include "eth_phy/phy_ip101.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_ip101_default_ethernet_config
-#endif
-
-#define PIN_PHY_POWER CONFIG_EXAMPLE_PHY_POWER_PIN
-#define PIN_SMI_MDC CONFIG_EXAMPLE_PHY_SMI_MDC_PIN
-#define PIN_SMI_MDIO CONFIG_EXAMPLE_PHY_SMI_MDIO_PIN
-
-#ifdef CONFIG_EXAMPLE_PHY_USE_POWER_PIN
-/**
- * @brief re-define power enable func for phy
- *
- * @param enable true to enable, false to disable
- *
- * @note This function replaces the default PHY power on/off function.
- * If this GPIO is not connected on your device (and PHY is always powered),
- * you can use the default PHY-specific power on/off function.
- */
-static void phy_device_power_enable_via_gpio(bool enable)
-{
-    assert(DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable);
-
-    if (!enable) {
-        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(false);
-    }
-
-    gpio_pad_select_gpio(PIN_PHY_POWER);
-    gpio_set_direction(PIN_PHY_POWER, GPIO_MODE_OUTPUT);
-    if (enable == true) {
-        gpio_set_level(PIN_PHY_POWER, 1);
-        ESP_LOGI(TAG, "Power On Ethernet PHY");
-    } else {
-        gpio_set_level(PIN_PHY_POWER, 0);
-        ESP_LOGI(TAG, "Power Off Ethernet PHY");
-    }
-
-    vTaskDelay(1); // Allow the power up/down to take effect, min 300us
-
-    if (enable) {
-        /* call the default PHY-specific power on function */
-        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(true);
-    }
-}
-#endif
-
-/**
- * @brief gpio specific init
- *
- * @note RMII data pins are fixed in esp32:
- * TXD0 <=> GPIO19
- * TXD1 <=> GPIO22
- * TX_EN <=> GPIO21
- * RXD0 <=> GPIO25
- * RXD1 <=> GPIO26
- * CLK <=> GPIO0
- *
- */
-static void eth_gpio_config_rmii(void)
-{
-    phy_rmii_configure_data_interface_pins();
-    phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
-}
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 
 /** Event handler for Ethernet events */
-static void on_eth_event(void* arg, esp_event_base_t event_base, 
-                         int32_t event_id, void* event_data)
+static void on_eth_event(void *arg, esp_event_base_t event_base,
+                         int32_t event_id, void *event_data)
 {
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
@@ -249,30 +174,33 @@ static void on_eth_event(void* arg, esp_event_base_t event_base,
 
 #endif // CONFIG_EXAMPLE_CONNECT_IPV6
 
+static esp_eth_handle_t s_eth_handle = NULL;
+static esp_eth_mac_t *s_mac = NULL;
+static esp_eth_phy_t *s_phy = NULL;
+
 static void start()
 {
-    eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
-    config.phy_addr = CONFIG_EXAMPLE_PHY_ADDRESS;
-    config.gpio_config = eth_gpio_config_rmii;
-    config.tcpip_input = tcpip_adapter_eth_input;
-    config.clock_mode = CONFIG_EXAMPLE_PHY_CLOCK_MODE;
-
-#ifdef CONFIG_EXAMPLE_PHY_USE_POWER_PIN
-    /* Replace the default 'power enable' function with an example-specific one
-     that toggles a power GPIO. */
-    config.phy_power_enable = phy_device_power_enable_via_gpio;
-#endif
-
-    ESP_ERROR_CHECK(esp_eth_init(&config));
-
+    ESP_ERROR_CHECK(tcpip_adapter_set_default_eth_handlers());
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &on_got_ip, NULL));
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_CONNECTED, &on_eth_event, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_GOT_IP6, &on_got_ipv6, NULL));
 #endif
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    s_mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+#if CONFIG_EXAMPLE_ETH_PHY_IP101
+    s_phy = esp_eth_phy_new_ip101(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
+    s_phy = esp_eth_phy_new_rtl8201(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_LAN8720
+    s_phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_DP83848
+    s_phy = esp_eth_phy_new_dp83848(&phy_config);
+#endif
+    esp_eth_config_t config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
 
-    ESP_ERROR_CHECK(esp_eth_enable());
-
+    ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
     s_connection_name = "Ethernet";
 }
 
@@ -283,9 +211,9 @@ static void stop()
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_GOT_IP6, &on_got_ipv6));
     ESP_ERROR_CHECK(esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_CONNECTED, &on_eth_event));
 #endif
-
-    ESP_ERROR_CHECK(esp_eth_disable());
-    ESP_ERROR_CHECK(esp_eth_deinit());
+    ESP_ERROR_CHECK(esp_eth_driver_uninstall(s_eth_handle));
+    ESP_ERROR_CHECK(s_phy->del(s_phy));
+    ESP_ERROR_CHECK(s_mac->del(s_mac));
 }
 
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET

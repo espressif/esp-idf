@@ -3,8 +3,8 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 
 
-#include "crypto/includes.h"
-#include "crypto/common.h"
+#include "utils/includes.h"
+#include "utils/common.h"
 #include "crypto/aes.h"
 #include "crypto/aes_wrap.h"
 #include "mbedtls/aes.h"

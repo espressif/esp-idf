@@ -19,7 +19,7 @@ TEST_CASE("wifi os adapter MD5","[wifi]")
 }
 
 TEST_CASE("wifi crypto types MD5","[wifi]")
-{    
+{   
     const char *test_wifi_crypto_funcs_md5 = WIFI_CRYPTO_MD5;
 
     ESP_LOGI(TAG, "test wifi crypto adapter MD5...");

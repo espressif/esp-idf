@@ -18,6 +18,10 @@
 #include "esp_flash_partitions.h"
 #include "esp_app_format.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ESP_ERR_IMAGE_BASE       0x2000
 #define ESP_ERR_IMAGE_FLASH_FAIL (ESP_ERR_IMAGE_BASE + 1)
 #define ESP_ERR_IMAGE_INVALID    (ESP_ERR_IMAGE_BASE + 2)
@@ -158,3 +162,7 @@ typedef struct {
     uint32_t irom_load_addr;
     uint32_t irom_size;
 } esp_image_flash_mapping_t;
+
+#ifdef __cplusplus
+}
+#endif

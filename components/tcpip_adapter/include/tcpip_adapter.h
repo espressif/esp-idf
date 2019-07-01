@@ -189,13 +189,14 @@ void tcpip_adapter_init(void);
  *
  * @param[in]  mac Set MAC address of this interface
  * @param[in]  ip_info Set IP address of this interface
+ * @param[in]  args extra args passed to tcpip_adapter
  *
  * @return
  *         - ESP_OK
  *         - ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  *         - ESP_ERR_NO_MEM
  */
-esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info, void *args);
 
 /**
  * @brief  Cause the TCP/IP stack to start the Wi-Fi station interface with specified MAC and IP

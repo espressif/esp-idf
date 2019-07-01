@@ -11,8 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef __ESP32_FLASH_ENCRYPT_H
-#define __ESP32_FLASH_ENCRYPT_H
+#pragma once
 
 #include <stdbool.h>
 #include "esp_attr.h"
@@ -22,13 +21,17 @@
 #endif
 #include "soc/efuse_periph.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* @brief Flash encryption mode based on efuse values
 */
 typedef enum {
     ESP_FLASH_ENC_MODE_DISABLED,          // flash encryption is not enabled (flash crypt cnt=0)
     ESP_FLASH_ENC_MODE_DEVELOPMENT,       // flash encryption is enabled but for Development (reflash over UART allowed)
     ESP_FLASH_ENC_MODE_RELEASE            // flash encryption is enabled for Release (reflash over UART disabled)
-}esp_flash_enc_mode_t;
+} esp_flash_enc_mode_t;
 
 /**
  * @file esp_partition.h
@@ -118,7 +121,6 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  * is enabled but secure boot is not used. This should protect against
  * serial re-flashing of an unauthorised code in absence of secure boot.
  *
- * @return 
  */
 void esp_flash_write_protect_crypt_cnt();
 
@@ -131,4 +133,6 @@ void esp_flash_write_protect_crypt_cnt();
  */
 esp_flash_enc_mode_t esp_get_flash_encryption_mode();
 
+#ifdef __cplusplus
+}
 #endif

@@ -39,34 +39,33 @@ INPUT = \
     ../../components/bt/include/esp_bt.h \
     ## Bluetooth COMMON
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_bt_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_bt_main.h \
-    ../../components/bt/bluedroid/api/include/api/esp_bt_device.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
     ## Bluetooth LE
-    ../../components/bt/bluedroid/api/include/api/esp_gap_ble_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_gatt_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_gatts_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_gattc_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_blufi_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_blufi_api.h \
     ## Bluetooth Classic
-    ../../components/bt/bluedroid/api/include/api/esp_gap_bt_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_a2dp_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_avrc_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_hf_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
     ## NimBLE related Bluetooth APIs
-    ../../components/nimble/esp-hci/include/esp_nimble_hci.h \
+    ../../components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     ##
     ## Ethernet - API Reference
     ##
-    ../../components/ethernet/include/esp_eth.h \
-    ../../components/ethernet/include/eth_phy/phy.h \
-    ../../components/ethernet/include/eth_phy/phy_tlk110.h \
-    ../../components/ethernet/include/eth_phy/phy_lan8720.h \
-    ../../components/ethernet/include/eth_phy/phy_ip101.h \
+    ../../components/esp_eth/include/esp_eth.h \
+    ../../components/esp_eth/include/esp_eth_com.h \
+    ../../components/esp_eth/include/esp_eth_mac.h \
+    ../../components/esp_eth/include/esp_eth_phy.h \
     ##
     ## Peripherals - API Reference
     ##
@@ -132,6 +131,7 @@ INPUT = \
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
+    ../../components/spi_flash/include/esp_flash_spi_init.h \
     ../../components/spi_flash/include/esp_flash.h \
     ../../components/spi_flash/include/esp_partition.h \
     ../../components/bootloader_support/include/esp_flash_encrypt.h \

@@ -294,10 +294,6 @@ esp_err_t esp_flash_app_init();
  */
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id);
 
-/**
- * The default FreeRTOS-compatible esp_flash_os_functions_t, used for flash chips attached to the SPI1
- */
-extern const esp_flash_os_functions_t esp_flash_spi1_default_os_functions;
 
 #ifdef __cplusplus
 }

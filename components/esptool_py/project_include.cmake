@@ -31,7 +31,7 @@ else()
     set(ESPTOOLPY_COMPRESSED_OPT -u)
 endif()
 
-set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
+set(ESPTOOLPY_FLASH_OPTIONS
     --flash_mode ${ESPFLASHMODE}
     --flash_freq ${ESPFLASHFREQ}
     --flash_size ${ESPFLASHSIZE}
@@ -40,17 +40,16 @@ set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
 # String for printing flash command
 string(REPLACE ";" " " ESPTOOLPY_WRITE_FLASH_STR
     "${ESPTOOLPY} --port (PORT) --baud (BAUD) --before ${ESPTOOLPY_BEFORE} --after ${ESPTOOLPY_AFTER} "
-    "write_flash ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
-
-if(CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
-    NOT BOOTLOADER_BUILD)
-    set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
-        ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
-endif()
+    "write_flash ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
 
 if(NOT BOOTLOADER_BUILD)
     set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+endif()
+
+if(CONFIG_SECURE_BOOT_ENABLED AND
+    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+    AND NOT BOOTLOADER_BUILD)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --secure-pad)
 endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
@@ -76,7 +75,7 @@ set(PROJECT_BIN "${elf_name}.bin")
 # Add 'app.bin' target - generates with elf2image
 #
 add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
+    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
         -o "${build_dir}/${unsigned_project_binary}" "${elf}"
     COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
     COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
@@ -87,40 +86,42 @@ add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
     )
 add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
 
-if(NOT BOOTLOADER_BUILD AND
-    CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    "${build_dir}/${unsigned_project_binary}"
+    )
 
-    # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
-    add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
-        COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
-            -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
-                                "from ${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
-        DEPENDS "${build_dir}/.bin_timestamp"
-        VERBATIM
-        COMMENT "Generating signed binary image"
-        )
-    add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
-    add_dependencies(gen_project_binary gen_signed_project_binary)
-endif()
+add_custom_target(app ALL DEPENDS gen_project_binary)
 
-if(NOT BOOTLOADER_BUILD)
-    add_custom_target(app ALL DEPENDS gen_project_binary)
-else()
-    add_custom_target(bootloader ALL DEPENDS gen_project_binary)
-endif()
+if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
+        add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
+            COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
+                -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
+            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
+                                    "from ${build_dir}/${unsigned_project_binary}"
+            COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
+            DEPENDS "${build_dir}/.bin_timestamp"
+            VERBATIM
+            COMMENT "Generating signed binary image"
+            )
+        add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
+        add_dependencies(gen_project_binary gen_signed_project_binary)
 
-
-if(NOT BOOTLOADER_BUILD AND
-    CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_command(TARGET app POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "App built but not signed. Sign app before flashing"
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${build_dir}/${elf_bin}"
-        VERBATIM)
+        set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+            "${build_dir}/${PROJECT_BIN}"
+            )
+    else()
+        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
+        add_custom_command(TARGET app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "App built but not signed. Sign app before flashing"
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/${PROJECT_BIN}"
+            VERBATIM)
+    endif()
 endif()
 
 #
@@ -142,7 +143,6 @@ endfunction()
 
 esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")
-esptool_py_custom_target(bootloader-flash bootloader "bootloader")
 
 if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
     esptool_py_custom_target(encrypted-flash encrypted_project "app;partition_table;bootloader")
@@ -183,12 +183,16 @@ function(esptool_py_flash_project_args entry offset image)
     else()
         set(OFFSET ${offset})
         set(IMAGE ${image})
-        get_filename_component(template "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
-        configure_file(${template} ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2)
-        file(GENERATE OUTPUT ${entry_flash_args} INPUT ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2)
+
+        get_filename_component(template_in "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
+        get_filename_component(template_name "${template_in}" NAME)
+        set(template_partial "${CMAKE_CURRENT_BINARY_DIR}/${template_name}.in2")
+
+        configure_file("${template_in}" "${template_partial}")
+        file(GENERATE OUTPUT ${entry_flash_args} INPUT "${template_partial}")
         set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                     APPEND PROPERTY
-                    ADDITIONAL_MAKE_CLEAN_FILES ${CMAKE_CURRENT_BINARY_DIR}/${template}.in2})
+                    ADDITIONAL_MAKE_CLEAN_FILES "${template_partial}")
         unset(OFFSET)
         unset(IMAGE)
     endif()

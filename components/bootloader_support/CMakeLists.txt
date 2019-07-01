@@ -19,40 +19,6 @@ if(BOOTLOADER_BUILD)
         "src/${IDF_TARGET}/flash_encrypt.c"
         "src/${IDF_TARGET}/secure_boot_signatures.c"
         "src/${IDF_TARGET}/secure_boot.c")
-
-    if(CONFIG_SECURE_SIGNED_APPS)
-        get_filename_component(secure_boot_verification_key
-            "signature_verification_key.bin"
-            ABSOLUTE BASE_DIR "${CMAKE_BINARY_DIR}")
-        if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-            add_custom_command(OUTPUT "${secure_boot_verification_key}"
-                COMMAND ${ESPSECUREPY}
-                    extract_public_key --keyfile "${secure_boot_signing_key}"
-                    "${secure_boot_verification_key}"
-                DEPENDS gen_secure_boot_signing_key
-                VERBATIM)
-        else()
-            get_filename_component(orig_secure_boot_verification_key
-                "${CONFIG_SECURE_BOOT_VERIFICATION_KEY}"
-                ABSOLUTE BASE_DIR "${main_project_path}")
-            if(NOT EXISTS ${orig_secure_boot_verification_key})
-                message(FATAL_ERROR
-                    "Secure Boot Verification Public Key ${CONFIG_SECURE_BOOT_VERIFICATION_KEY} does not exist."
-                    "\nThis can be extracted from the private signing key."
-                    "\nSee docs/security/secure-boot.rst for details.")
-            endif()
-
-            add_custom_command(OUTPUT "${secure_boot_verification_key}"
-                COMMAND ${CMAKE_COMMAND} -E copy "${orig_secure_boot_verification_key}"
-                    "${secure_boot_verification_key}"
-                DEPENDS "${orig_secure_boot_verification_key}"
-                VERBATIM)
-        endif()
-        set(embed_files "${secure_boot_verification_key}")
-        set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-            APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-            "${secure_boot_verification_key}")
-    endif()
 else()
     list(APPEND srcs 
         "src/idf/bootloader_sha.c"
@@ -67,5 +33,33 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                     REQUIRES "${requires}"
-                    PRIV_REQUIRES "${priv_requires}"
-                    EMBED_FILES "${embed_files}")
+                    PRIV_REQUIRES "${priv_requires}")
+
+if(BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
+    # Whether CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES or not, we need verification key to embed
+    # in the library.
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # We generate the key from the signing key. The signing key is passed from the main project.
+        get_filename_component(secure_boot_signing_key
+            "${SECURE_BOOT_SIGNING_KEY}"
+            ABSOLUTE BASE_DIR "${project_dir}")
+        get_filename_component(secure_boot_verification_key
+            "signature_verification_key.bin"
+            ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+        add_custom_command(OUTPUT "${secure_boot_verification_key}"
+            COMMAND ${ESPSECUREPY}
+                extract_public_key --keyfile "${secure_boot_signing_key}"
+                "${secure_boot_verification_key}"
+            VERBATIM)
+    else()
+        # We expect to 'inherit' the verification key passed from main project.
+        get_filename_component(secure_boot_verification_key
+            ${SECURE_BOOT_VERIFICATION_KEY}
+            ABSOLUTE BASE_DIR "${project_dir}")
+    endif()
+
+    target_add_binary_data(${COMPONENT_LIB} "${secure_boot_verification_key}" "BINARY")
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+        "${secure_boot_verification_key}")
+endif()
