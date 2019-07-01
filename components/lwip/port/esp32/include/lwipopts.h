@@ -363,6 +363,19 @@
 #error "One of CONFIG_TCP_OVERSIZE_xxx options should be set by sdkconfig"
 #endif
 
+/**
+ * LWIP_WND_SCALE and TCP_RCV_SCALE:
+ * Set LWIP_WND_SCALE to 1 to enable window scaling.
+ * Set TCP_RCV_SCALE to the desired scaling factor (shift count in the
+ * range of [0..14]).
+ * When LWIP_WND_SCALE is enabled but TCP_RCV_SCALE is 0, we can use a large
+ * send window while having a small receive window only.
+ */
+#ifdef CONFIG_LWIP_WND_SCALE
+#define LWIP_WND_SCALE                  1
+#define TCP_RCV_SCALE                   CONFIG_TCP_RCV_SCALE
+#endif
+
 /*
    ----------------------------------
    ---------- Pbuf options ----------
