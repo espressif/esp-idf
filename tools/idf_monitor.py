@@ -477,7 +477,9 @@ class Monitor(object):
             self.output_enable(True)
         elif c == CTRL_F:  # Recompile & upload
             self.run_make("flash")
-        elif c == CTRL_A:  # Recompile & upload app only
+        elif c in [CTRL_A, 'a', 'A']:  # Recompile & upload app only
+            # "CTRL-A" cannot be captured with the default settings of the Windows command line, therefore, "A" can be used
+            # instead
             self.run_make("app-flash")
         elif c == CTRL_Y:  # Toggle output display
             self.output_toggle()
@@ -504,20 +506,20 @@ class Monitor(object):
 --- {exit:8} Exit program
 --- {menu:8} Menu escape key, followed by:
 --- Menu keys:
----    {menu:7} Send the menu character itself to remote
----    {exit:7} Send the exit character itself to remote
----    {reset:7} Reset target board via RTS line
----    {makecmd:7} Build & flash project
----    {appmake:7} Build & flash app only
----    {output:7} Toggle output display
----    {log:7} Toggle saving output into file
----    {pause:7} Reset target into bootloader to pause app via RTS line
+---    {menu:14} Send the menu character itself to remote
+---    {exit:14} Send the exit character itself to remote
+---    {reset:14} Reset target board via RTS line
+---    {makecmd:14} Build & flash project
+---    {appmake:14} Build & flash app only
+---    {output:14} Toggle output display
+---    {log:14} Toggle saving output into file
+---    {pause:14} Reset target into bootloader to pause app via RTS line
 """.format(version=__version__,
            exit=key_description(self.exit_key),
            menu=key_description(self.menu_key),
            reset=key_description(CTRL_R),
            makecmd=key_description(CTRL_F),
-           appmake=key_description(CTRL_A),
+           appmake=key_description(CTRL_A) + ' (or A)',
            output=key_description(CTRL_Y),
            log=key_description(CTRL_L),
            pause=key_description(CTRL_P))
