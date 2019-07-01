@@ -147,7 +147,7 @@ exclude =
         components/libsodium/libsodium,
         components/mbedtls/mbedtls,
         components/nghttp/nghttp2,
-        components/nimble/nimble,
+        components/bt/host/nimble/nimble,
         components/unity/unity,
         examples/build_system/cmake/import_lib/main/lib/tinyxml2,
     # other third-party libraries
