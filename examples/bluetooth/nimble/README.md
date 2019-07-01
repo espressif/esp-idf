@@ -1,4 +1,8 @@
-# NimBLE Examples
+# Bluetooth Examples for NimBLE host
+
+Note: To use examples in this directory, you need to have Bluetooth enabled in configuration and NimBLE selected as the host stack.
+
+# Example Layout
 
 This directory includes examples to demonstrate BLE functionality using Apache MyNewt NimBLE (https://github.com/apache/mynewt-nimble) host stack.
 
