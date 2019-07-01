@@ -904,7 +904,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S[i2s_num]->conf.rx_start = 0;
 
     if (i2s_config->mode & I2S_MODE_TX) {
-        I2S[i2s_num]->conf.tx_msb_right = 0;
+        I2S[i2s_num]->conf.tx_msb_right = 1;
         I2S[i2s_num]->conf.tx_right_first = 0;
 
         I2S[i2s_num]->conf.tx_slave_mod = 0; // Master
@@ -916,7 +916,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     }
 
     if (i2s_config->mode & I2S_MODE_RX) {
-        I2S[i2s_num]->conf.rx_msb_right = 0;
+        I2S[i2s_num]->conf.rx_msb_right = 1;
         I2S[i2s_num]->conf.rx_right_first = 0;
         I2S[i2s_num]->conf.rx_slave_mod = 0; // Master
         I2S[i2s_num]->fifo_conf.rx_fifo_mod_force_en = 1;
