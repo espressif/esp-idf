@@ -4,11 +4,11 @@
 
 [submodule "components/esptool_py/esptool"]
 	path = components/esptool_py/esptool
-	url = ../esptool.git
+	url = ../../espressif/esptool.git
 
 [submodule "components/bt/controller/lib"]
 	path = components/bt/controller/lib
-	url = ../esp32-bt-lib.git
+	url = ../../espressif/esp32-bt-lib.git
 
 [submodule "components/bootloader/subproject/components/micro-ecc/micro-ecc"]
 	path = components/bootloader/subproject/components/micro-ecc/micro-ecc
@@ -36,11 +36,11 @@
 
 [submodule "components/mbedtls/mbedtls"]
 	path = components/mbedtls/mbedtls
-	url = ../mbedtls.git
+	url = ../../espressif/mbedtls.git
 
 [submodule "components/asio/asio"]
 	path = components/asio/asio
-	url = ../asio.git
+	url = ../../espressif/asio.git
 
 [submodule "components/expat/expat"]
 	path = components/expat/expat
@@ -48,11 +48,11 @@
 
 [submodule "components/lwip/lwip"]
 	path = components/lwip/lwip
-	url = ../esp-lwip.git
+	url = ../../espressif/esp-lwip.git
 
 [submodule "components/mqtt/esp-mqtt"]
 	path = components/mqtt/esp-mqtt
-	url = ../esp-mqtt.git
+	url = ../../espressif/esp-mqtt.git
 
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
@@ -68,8 +68,8 @@
 
 [submodule "components/esp_wifi/lib_esp32"]
 	path = components/esp_wifi/lib_esp32
-	url = ../esp32-wifi-lib.git
+	url = ../../espressif/esp32-wifi-lib.git
 
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
-	url = ../esp-nimble.git
+	url = ../../espressif/esp-nimble.git
