@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef _SOC_UART_CAPS_H_
-#define _SOC_UART_CAPS_H_
+
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,5 +23,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /* _SOC_UART_CAPS_H_ */
