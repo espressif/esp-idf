@@ -447,6 +447,33 @@ ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
     return ret;
 }
 
+ssize_t esp_vfs_pread(int fd, void *dst, size_t size, off_t offset)
+{
+    struct _reent *r = __getreent();
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    ssize_t ret;
+    CHECK_AND_CALL(ret, r, vfs, pread, local_fd, dst, size, offset);
+    return ret;
+}
+
+ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset)
+{
+    struct _reent *r = __getreent();
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    ssize_t ret;
+    CHECK_AND_CALL(ret, r, vfs, pwrite, local_fd, src, size, offset);
+    return ret;
+}
 
 int esp_vfs_close(struct _reent *r, int fd)
 {
