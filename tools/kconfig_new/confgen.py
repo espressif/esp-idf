@@ -349,10 +349,8 @@ def write_cmake(deprecated_options, config, filename):
             if not isinstance(sym, kconfiglib.Symbol):
                 return
 
-            # Note: str_value calculates _write_to_conf, due to
-            # internal magic in kconfiglib...
-            val = sym.str_value
-            if sym._write_to_conf:
+            if sym.config_string:
+                val = sym.str_value
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == "n":
                     val = ""  # write unset values as empty variables
                 write("set({}{} \"{}\")\n".format(
@@ -380,8 +378,8 @@ def get_json_values(config):
         if not isinstance(sym, kconfiglib.Symbol):
             return
 
-        val = sym.str_value  # this calculates _write_to_conf, due to kconfiglib magic
-        if sym._write_to_conf:
+        if sym.config_string:
+            val = sym.str_value
             if sym.type in [kconfiglib.BOOL, kconfiglib.TRISTATE]:
                 val = (val != "n")
             elif sym.type == kconfiglib.HEX:
