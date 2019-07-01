@@ -65,6 +65,7 @@
 [submodule "components/esp_wifi/lib_esp32"]
 	path = components/esp_wifi/lib_esp32
 	url = https://github.com/espressif/esp32-wifi-lib.git
+
 [submodule "components/esp_wifi/lib_esp32s2beta"]
 	path = components/esp_wifi/lib_esp32s2beta
-	url = ssh://git@gitlab.espressif.cn:27227/idf/esp32-wifi-lib.git
+	url = https://github.com/espressif/esp32-wifi-lib.git
