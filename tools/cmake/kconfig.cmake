@@ -39,23 +39,30 @@ function(__kconfig_init)
         # Use the existing Makefile to build mconf (out of tree) when needed
         #
         set(MCONF ${CMAKE_BINARY_DIR}/kconfig_bin/mconf-idf)
+        set(src_path ${idf_path}/tools/kconfig)
 
+        # note: we preemptively remove any build files from the src dir
+        # as we're building out of tree, but don't want build system to
+        # #include any from there that were previously build with/for make
         externalproject_add(mconf-idf
-            SOURCE_DIR ${idf_path}/tools/kconfig
+            SOURCE_DIR ${src_path}
             CONFIGURE_COMMAND ""
             BINARY_DIR "kconfig_bin"
-            BUILD_COMMAND make -f ${idf_path}/tools/kconfig/Makefile mconf-idf
+            BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
+            COMMAND make -f ${src_path}/Makefile mconf-idf
             BUILD_BYPRODUCTS ${MCONF}
             INSTALL_COMMAND ""
             EXCLUDE_FROM_ALL 1
             )
 
-        file(GLOB mconf_srcfiles ${idf_path}/tools/kconfig/*.c)
+        file(GLOB mconf_srcfiles ${src_path}/*.c)
+        list(REMOVE_ITEM mconf_srcfiles "${src_path}/zconf.lex.c" "${src_path}/zconf.hash.c")
         externalproject_add_stepdependencies(mconf-idf build
             ${mconf_srcfiles}
-            ${idf_path}/tools/kconfig/Makefile
+            ${src_path}/Makefile
             ${CMAKE_CURRENT_LIST_FILE})
         unset(mconf_srcfiles)
+        unset(src_path)
 
         set(menuconfig_depends DEPENDS mconf-idf)
     endif()
