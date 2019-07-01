@@ -838,6 +838,16 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
                         esp_vfs_safe_fd_isset(fd, errorfds)) {
                     const vfs_entry_t *vfs = s_vfs[vfs_index];
                     socket_select = vfs->vfs.socket_select;
+
+                    // get_socket_select_semaphore needs to be set for a socket driver where semaphore can be
+                    // initialized outside interrupt handlers (ignoring this could result in unexpected failures)
+                    if (vfs->vfs.get_socket_select_semaphore != NULL) {
+                        vfs->vfs.get_socket_select_semaphore(); // Semaphore is returned and it was allocated if it
+                        // wasn't before. We don't use the return value just need to be sure that it doesn't get
+                        // allocated later from ISR.
+                        // Note: ESP-IDF v4.0 will start to use this callback differently with some breaking changes
+                        // in the VFS API.
+                    }
                 }
             }
             continue;
