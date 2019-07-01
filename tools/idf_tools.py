@@ -559,10 +559,10 @@ class IDFTool(object):
         expected_size = download_obj.size
         file_size, file_sha256 = get_file_size_sha256(local_path)
         if file_size != expected_size:
-            warn('file size mismatch for {0}'.format(local_path))
+            warn('file size mismatch for {}, expected {}, got {}'.format(local_path, expected_size, file_size))
             return False
         if file_sha256 != expected_sha256:
-            warn('hash mismatch for {0}'.format(local_path))
+            warn('hash mismatch for {}, expected {}, got {}'.format(local_path, expected_sha256, file_sha256))
             return False
         return True
 

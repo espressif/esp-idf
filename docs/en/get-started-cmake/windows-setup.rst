@@ -1,6 +1,6 @@
-***********************************************
-Standard Setup of Toolchain for Windows (CMake)
-***********************************************
+*************************************************
+Installation of Prerequisites for Windows (CMake)
+*************************************************
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -12,46 +12,43 @@ Standard Setup of Toolchain for Windows (CMake)
 Introduction
 ============
 
-ESP-IDF requires some prerequisite tools to be installed so you can build firmware for the ESP32. The prerequisite tools include Git, a cross-compiler and the CMake build tool. We'll go over each one in this document.
+ESP-IDF requires some prerequisite tools to be installed so you can build firmware for the ESP32. The prerequisite tools include Python, Git, cross-compilers, menuconfig tool, CMake and Ninja build tools.
 
-For this Getting Started we're going to use a command prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
+For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
 
 .. note::
    The GNU Make based build system requires the MSYS2_ Unix compatibility environment on Windows. The CMake-based build system does not require this environment.
+
+.. _get-started-cmake-windows-tools-installer:
 
 ESP-IDF Tools Installer
 =======================
 
 The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.0.exe
 
-The installer will automatically install the ESP32 Xtensa gcc toolchain, Ninja_ build tool, and a configuration tool called mconf-idf_. The installer can also download and run installers for CMake_ and Python_ 2.7 if these are not already installed on the computer.
+The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool, and a configuration tool called mconf-idf_. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
 
-By default, the installer updates the Windows ``Path`` environment variable so all of these tools can be run from anywhere. If you disable this option, you will need to configure the environment where you are using ESP-IDF (terminal or chosen IDE) with the correct paths.
+The installer also offers to download one of the ESP-IDF release versions.
 
-Note that this installer is for the ESP-IDF Tools package, it doesn't include ESP-IDF itself.
+Using the Command Prompt
+========================
 
-Installing Git
-==============
+For the remaining Getting Started steps, we're going to use the Windows Command Prompt.
 
-The ESP-IDF tools installer does not install Git. By default, the getting started guide assumes you will be using Git on the command line. You can download and install a command line Git for Windows (along with the "Git Bash" terminal) from `Git For Windows`_.
+ESP-IDF Tools Installer creates a shortcut in the Start menu to launch the ESP-IDF Command Prompt. This shortcut launches the Command Prompt (cmd.exe) and runs ``export.bat`` script to set up the environment variables (``PATH``, ``IDF_PATH`` and others). Inside this command prompt, all the installed tools are available.
 
-If you prefer to use a different graphical Git client, then you can install one such as `Github Desktop`. You will need to translate the Git commands in the Getting Started guide for use with your chosen Git client.
+Note that this shortcut is specific to the ESP-IDF directory selected in the ESP-IDF Tools Installer. If you have multiple ESP-IDF directories on the computer (for example, to work with different versions of ESP-IDF), you have two options to use them:
 
-Using a Terminal
-================
+1. Create a copy of the shortcut created by the ESP-IDF Tools Installer, and change the working directory of the new shortcut to the ESP-IDF directory you wish to use.
 
-For the remaining Getting Started steps, we're going to use a terminal command prompt. It doesn't matter which command prompt you use:
-
-- You can use the built-in Windows Command Prompt, under the Start menu. All Windows command line instructions in this documentation are "batch" commands for use with the Windows Command Prompt.
-- You can use the "Git Bash" terminal which is part of `Git for Windows`_. This uses the same "bash" command prompt syntax as is given for Mac OS or Linux. You can find it in the Start menu once installed.
-- If you have MSYS2_ installed (maybe from a previous ESP-IDF version), then you can also use the MSYS terminal.
+2. Alternatively, run ``cmd.exe``, then change to the ESP-IDF directory you wish to use, and run ``export.bat``. Note that unlike the previous option, this way requires Python and Git to be present in ``PATH``. If you get errors related to Python or Git not being found, use the first option.
 
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf-cmake`.
+If the ESP-IDF Tools Installer has finished successfully, then the development environment setup is complete. Proceed directly to :ref:`get-started-start-project-cmake`.
 
 Related Documents
 =================
@@ -62,7 +59,7 @@ For advanced users who want to customize the install process:
     :maxdepth: 1
 
     windows-setup-scratch
-
+    windows-setup-update
 
 .. _MSYS2: https://msys2.github.io/
 .. _cmake: https://cmake.org/download/

@@ -79,7 +79,7 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-macos-toolchain-add-it-to-path-cmake>` to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. To use it, you need to add ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf/bin`` to ``PATH`` environment variable.
 
 
 Next Steps
