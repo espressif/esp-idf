@@ -86,6 +86,20 @@ TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
+TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE]")
+{
+    test_setup();
+    test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
+    test_fatfs_pread_file(test_filename);
+    test_teardown();
+}
+
+TEST_CASE("(SD) pwrite() works well", "[fatfs][test_env=UT_T1_SDMODE]")
+{
+    test_setup();
+    test_fatfs_pwrite_file(test_filename);
+    test_teardown();
+}
 
 TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE]")
 {
