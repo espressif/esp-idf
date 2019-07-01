@@ -32,6 +32,10 @@ def main():
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
+    parser.add_argument('--env-file', type=argparse.FileType('r'),
+                        help='Optional file to load environment variables from. Contents '
+                             'should be a JSON object where each key/value pair is a variable.')
+
     parser.add_argument('--version', help='Set protocol version to use on initial status',
                         type=int, default=MAX_PROTOCOL_VERSION)
 
@@ -53,6 +57,10 @@ def main():
 
     for name, value in args.env:
         os.environ[name] = value
+
+    if args.env_file is not None:
+        env = json.load(args.env_file)
+        os.environ.update(env)
 
     run_server(args.kconfig, args.config)
 
