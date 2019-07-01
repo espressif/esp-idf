@@ -18,6 +18,13 @@ menu "A2DP Example Configuration"
 
     endchoice
 
+    config EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC_DITHER
+        bool "Use Dithering for 16->8 bit reduction"
+        depends on EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+        help
+            Select this to perform dithering during 16->8
+            bit sample reduction.
+
     config EXAMPLE_I2S_LRCK_PIN
         int "I2S LRCK (WS) GPIO"
         default 22
