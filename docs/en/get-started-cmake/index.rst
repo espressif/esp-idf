@@ -118,7 +118,7 @@ Linux and MacOS
 
     mkdir -p ~/esp
     cd ~/esp
-    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
+    git clone --recursive https://github.com/espressif/esp-idf.git
 
 ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
@@ -130,7 +130,7 @@ Windows Command Prompt
 
     mkdir %userprofile%\esp
     cd %userprofile%\esp
-    git clone --branch feature/cmake --recursive https://github.com/espressif/esp-idf.git
+    git clone --recursive https://github.com/espressif/esp-idf.git
 
 .. highlight:: bash
 .. note::
@@ -139,13 +139,6 @@ Windows Command Prompt
 
         cd esp-idf
         git submodule update --init
-
-.. note::
-
-   The CMake-based build system preview uses a different Git branch to the default. This branch is ``feature/cmake``. If you missed the ``--branch`` option when cloning then you can switch branches on the command line::
-
-         cd esp-idf
-         git checkout feature/cmake
 
 .. _get-started-setup-path-cmake:
 
