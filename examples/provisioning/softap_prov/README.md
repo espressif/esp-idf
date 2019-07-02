@@ -81,7 +81,7 @@ I (519482) tcpip_adapter: softAP assign IP to station,IP is: 192.168.4.2
 In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (please replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). The SoftAP endpoint corresponds to the IP and port of the device on the SoftAP network, but this is usually same as the default value and may be left out. Assuming default example configuration, the script should be run as follows :
 
 ```
-python esp_prov.py --ssid myssid --passphrase mypassword --sec_ver 1 --pop abcd1234 --transport softap --softap_endpoint 192.168.4.1:80
+python esp_prov.py --transport softap --service_name "192.168.4.1:80" --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
 ```
 
 Above command will perform the provisioning steps, and the monitor log should display something like this :
