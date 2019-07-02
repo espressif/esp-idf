@@ -114,7 +114,12 @@ INPUT = \
     ../../components/protocomm/include/transports/protocomm_console.h \
     ../../components/protocomm/include/transports/protocomm_httpd.h \
     ## WiFi Provisioning
+    ../../components/wifi_provisioning/include/wifi_provisioning/manager.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     ##
     ## Storage - API Reference
     ##

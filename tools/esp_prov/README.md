@@ -6,7 +6,7 @@
 # SYNOPSIS
 
 ```
-python esp_prov.py --transport < mode of provisioning : softap \ ble \ console > --ssid < AP SSID > --passphrase < AP Password > --sec_ver < Security version 0 / 1 > [ Optional parameters... ]
+python esp_prov.py --transport < mode of provisioning : softap \ ble \ console > --sec_ver < Security version 0 / 1 > [ Optional parameters... ]
 ```
 
 # DESCRIPTION
@@ -18,7 +18,9 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 | prov-session  | http://ip:port/prov-session  | Security endpoint used for session establishment          |
 | prov-config   | http://ip:port/prov-config   | Endpoint used for configuring Wi-Fi credentials on device |
 | proto-ver     | http://ip:port/proto-ver     | Version endpoint for checking protocol compatibility      |
+| prov-scan     | http://ip:port/prov-scan     | Endpoint used for scanning Wi-Fi APs                      |
 | custom-config | http://ip:port/custom-config | Optional endpoint for configuring custom credentials      |
+
 
 # PARAMETERS
 
@@ -37,11 +39,11 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
     * `console`
         For debugging via console based provisioning. The client->device commands are printed to STDOUT and device->client messages are accepted via STDIN. This is to be used when device is accepting provisioning commands on UART console.
 
-* `--ssid <AP SSID>`
-    For specifying the SSID of the Wi-Fi AP to which the device is to connect after provisioning
+* `--ssid <AP SSID>` (Optional)
+    For specifying the SSID of the Wi-Fi AP to which the device is to connect after provisioning. If not provided, scanning is initiated and scan results, as seen by the device, are displayed, of which an SSID can be picked and the corresponding password specified.
 
-* `--passphrase <AP Password>`
-    For specifying the password of the Wi-Fi AP to which the device is to connect after provisioning
+* `--passphrase <AP Password>` (Optional)
+    For specifying the password of the Wi-Fi AP to which the device is to connect after provisioning. Only used when corresponding SSID is provided using `--ssid`
 
 * `--sec_ver <Security version number>`
     For specifying version of protocomm endpoint security to use. For now two versions are supported:
@@ -50,9 +52,6 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 
 * `--pop <Proof of possession string>` (Optional)
     For specifying optional Proof of Possession string to use for protocomm endpoint security version 1. This option is ignored when security version 0 is in use
-
-* `--proto_ver <Provisioning application version string>` (Optional) (Default `V0.1`)
-    For specifying version string for checking compatibility with provisioning app prior to starting provisioning process
 
 * `--softap_endpoint <softap_ip:port>` (Optional) (Default `192.168.4.1:80`)
     For specifying the IP and port of the HTTP server on which provisioning app is running. The client must connect to the device SoftAP prior to running `esp_prov`

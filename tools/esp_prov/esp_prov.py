@@ -16,10 +16,13 @@
 #
 
 from __future__ import print_function
+from builtins import input
 import argparse
 import time
 import os
 import sys
+import json
+from getpass import getpass
 
 try:
     import security
@@ -67,12 +70,10 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
             # table are provided only to support devices running older firmware,
             # in which case, the automated discovery will fail and the client
             # will fallback to using the provided UUIDs instead
+            nu_lookup = {'prov-session': 'ff51', 'prov-config': 'ff52', 'proto-ver': 'ff53'}
             tp = transport.Transport_BLE(devname=ble_devname,
                                          service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
-                                         nu_lookup={'prov-session': 'ff51',
-                                                    'prov-config': 'ff52',
-                                                    'proto-ver': 'ff53'
-                                                    })
+                                         nu_lookup=nu_lookup)
         elif (sel_transport == 'console'):
             tp = transport.Transport_Console()
         return tp
@@ -81,15 +82,55 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
         return None
 
 
-def version_match(tp, protover):
+def version_match(tp, protover, verbose=False):
     try:
         response = tp.send_data('proto-ver', protover)
-        if response != protover:
-            return False
-        return True
-    except RuntimeError as e:
+
+        if verbose:
+            print("proto-ver response : ", response)
+
+        # First assume this to be a simple version string
+        if response.lower() == protover.lower():
+            return True
+
+        # Else interpret this as JSON structure containing
+        # information with versions and capabilities of both
+        # provisioning service and application
+        info = json.loads(response)
+        if info['prov']['ver'].lower() == protover.lower():
+            return True
+
+        return False
+    except Exception as e:
         on_except(e)
         return None
+
+
+def has_capability(tp, capability, verbose=False):
+    try:
+        response = tp.send_data('proto-ver', capability)
+
+        if verbose:
+            print("proto-ver response : ", response)
+
+        info = json.loads(response)
+        if capability in info['prov']['cap']:
+            return True
+
+    except Exception as e:
+        on_except(e)
+
+    return False
+
+
+def get_version(tp):
+    response = None
+    try:
+        response = tp.send_data('proto-ver', '---')
+    except RuntimeError as e:
+        on_except(e)
+        response = ''
+    return response
 
 
 def establish_session(tp, sec):
@@ -118,6 +159,56 @@ def custom_config(tp, sec, custom_info, custom_ver):
         return None
 
 
+def scan_wifi_APs(sel_transport, tp, sec):
+    APs = []
+    group_channels = 0
+    readlen = 100
+    if sel_transport == 'softap':
+        # In case of softAP we must perform the scan on individual channels, one by one,
+        # so that the Wi-Fi controller gets ample time to send out beacons (necessary to
+        # maintain connectivity with authenticated stations. As scanning one channel at a
+        # time will be slow, we can group more than one channels to be scanned in quick
+        # succession, hence speeding up the scan process. Though if too many channels are
+        # present in a group, the controller may again miss out on sending beacons. Hence,
+        # the application must should use an optimum value. The following value usually
+        # works out in most cases
+        group_channels = 5
+    elif sel_transport == 'ble':
+        # Read at most 4 entries at a time. This is because if we are using BLE transport
+        # then the response packet size should not exceed the present limit of 256 bytes of
+        # characteristic value imposed by protocomm_ble. This limit may be removed in the
+        # future
+        readlen = 4
+    try:
+        message = prov.scan_start_request(sec, blocking=True, group_channels=group_channels)
+        start_time = time.time()
+        response = tp.send_data('prov-scan', message)
+        stop_time = time.time()
+        print("++++ Scan process executed in " + str(stop_time - start_time) + " sec")
+        prov.scan_start_response(sec, response)
+
+        message = prov.scan_status_request(sec)
+        response = tp.send_data('prov-scan', message)
+        result = prov.scan_status_response(sec, response)
+        print("++++ Scan results : " + str(result["count"]))
+        if result["count"] != 0:
+            index = 0
+            remaining = result["count"]
+            while remaining:
+                count = [remaining, readlen][remaining > readlen]
+                message = prov.scan_result_request(sec, index, count)
+                response = tp.send_data('prov-scan', message)
+                APs += prov.scan_result_response(sec, response)
+                remaining -= count
+                index += count
+
+    except RuntimeError as e:
+        on_except(e)
+        return None
+
+    return APs
+
+
 def send_wifi_config(tp, sec, ssid, passphrase):
     try:
         message = prov.config_set_config_request(sec, ssid, passphrase)
@@ -132,7 +223,7 @@ def apply_wifi_config(tp, sec):
     try:
         message = prov.config_apply_config_request(sec)
         response = tp.send_data('prov-config', message)
-        return (prov.config_set_config_response(sec, response) == 0)
+        return (prov.config_apply_config_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
@@ -152,14 +243,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Generate ESP prov payload")
 
     parser.add_argument("--ssid", dest='ssid', type=str,
-                        help="SSID of Wi-Fi Network", required=True)
+                        help="SSID of Wi-Fi Network", default='')
     parser.add_argument("--passphrase", dest='passphrase', type=str,
                         help="Passphrase of Wi-Fi network", default='')
 
     parser.add_argument("--sec_ver", dest='secver', type=int,
-                        help="Security scheme version", default=1)
+                        help="Security scheme version", default=None)
     parser.add_argument("--proto_ver", dest='protover', type=str,
-                        help="Protocol version", default='V0.1')
+                        help="Protocol version", default='')
     parser.add_argument("--pop", dest='pop', type=str,
                         help="Proof of possession", default='')
 
@@ -182,23 +273,38 @@ if __name__ == '__main__':
     parser.add_argument("-v","--verbose", help="increase output verbosity", action="store_true")
     args = parser.parse_args()
 
-    print("==== Esp_Prov Version: " + args.protover + " ====")
-
-    obj_security = get_security(args.secver, args.pop, args.verbose)
-    if obj_security is None:
-        print("---- Invalid Security Version ----")
-        exit(1)
+    if args.protover != '':
+        print("==== Esp_Prov Version: " + args.protover + " ====")
 
     obj_transport = get_transport(args.provmode, args.softap_endpoint, args.ble_devname)
     if obj_transport is None:
         print("---- Invalid provisioning mode ----")
+        exit(1)
+
+    # If security version not specified check in capabilities
+    if args.secver is None:
+        # When no_sec is present, use security 0, else security 1
+        args.secver = int(not has_capability(obj_transport, 'no_sec'))
+
+    if (args.secver != 0) and not has_capability(obj_transport, 'no_pop'):
+        if len(args.pop) == 0:
+            print("---- Proof of Possession argument not provided ----")
+            exit(2)
+    elif len(args.pop) != 0:
+        print("---- Proof of Possession will be ignored ----")
+        args.pop = ''
+
+    obj_security = get_security(args.secver, args.pop, args.verbose)
+    if obj_security is None:
+        print("---- Invalid Security Version ----")
         exit(2)
 
-    print("\n==== Verifying protocol version ====")
-    if not version_match(obj_transport, args.protover):
-        print("---- Error in protocol version matching ----")
-        exit(3)
-    print("==== Verified protocol version successfully ====")
+    if args.protover != '':
+        print("\n==== Verifying protocol version ====")
+        if not version_match(obj_transport, args.protover, args.verbose):
+            print("---- Error in protocol version matching ----")
+            exit(3)
+        print("==== Verified protocol version successfully ====")
 
     print("\n==== Starting Session ====")
     if not establish_session(obj_transport, obj_security):
@@ -212,6 +318,49 @@ if __name__ == '__main__':
             print("---- Error in custom config ----")
             exit(5)
         print("==== Custom config sent successfully ====")
+
+    if args.ssid == '':
+        if not has_capability(obj_transport, 'wifi_scan'):
+            print("---- Wi-Fi Scan List is not supported by provisioning service ----")
+            print("---- Rerun esp_prov with SSID and Passphrase as argument ----")
+            exit(3)
+
+        while True:
+            print("\n==== Scanning Wi-Fi APs ====")
+            start_time = time.time()
+            APs = scan_wifi_APs(args.provmode, obj_transport, obj_security)
+            end_time = time.time()
+            print("\n++++ Scan finished in " + str(end_time - start_time) + " sec")
+            if APs is None:
+                print("---- Error in scanning Wi-Fi APs ----")
+                exit(8)
+
+            if len(APs) == 0:
+                print("No APs found!")
+                exit(9)
+
+            print("==== Wi-Fi Scan results ====")
+            print("{0: >4} {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}".format(
+                "S.N.", "SSID", "BSSID", "CHN", "RSSI", "AUTH"))
+            for i in range(len(APs)):
+                print("[{0: >2}] {1: <33} {2: <12} {3: >4} {4: <4} {5: <16}".format(
+                    i + 1, APs[i]["ssid"], APs[i]["bssid"], APs[i]["channel"], APs[i]["rssi"], APs[i]["auth"]))
+
+            while True:
+                try:
+                    select = int(input("Select AP by number (0 to rescan) : "))
+                    if select < 0 or select > len(APs):
+                        raise ValueError
+                    break
+                except ValueError:
+                    print("Invalid input! Retry")
+
+            if select != 0:
+                break
+
+        args.ssid = APs[select - 1]["ssid"]
+        prompt_str = "Enter passphrase for {0} : ".format(args.ssid)
+        args.passphrase = getpass(prompt_str)
 
     print("\n==== Sending Wi-Fi credential to esp32 ====")
     if not send_wifi_config(obj_transport, obj_security, args.ssid, args.passphrase):
