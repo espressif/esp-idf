@@ -56,15 +56,15 @@
 
 [submodule "components/protobuf-c/protobuf-c"]
 	path = components/protobuf-c/protobuf-c
-	url = ../../protobuf-c/protobuf-c
+	url = ../../protobuf-c/protobuf-c.git
 
 [submodule "components/unity/unity"]
 	path = components/unity/unity
-	url = ../../ThrowTheSwitch/Unity
+	url = ../../ThrowTheSwitch/Unity.git
 
 [submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
 	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
-	url = ../../leethomason/tinyxml2
+	url = ../../leethomason/tinyxml2.git
 
 [submodule "components/esp_wifi/lib_esp32"]
 	path = components/esp_wifi/lib_esp32
