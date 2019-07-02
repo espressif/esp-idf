@@ -98,7 +98,7 @@ def test_examples_provisioning_softap(env, extra_data):
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
-    transport = esp_prov.get_transport(provmode, softap_endpoint, None)
+    transport = esp_prov.get_transport(provmode, softap_endpoint)
     if transport is None:
         raise RuntimeError("Failed to get transport")
 
