@@ -222,6 +222,9 @@ def _ensure_build_directory(args, always_run_cmake=False):
         os.makedirs(build_dir)
     cache_path = os.path.join(build_dir, "CMakeCache.txt")
 
+    args.define_cache_entry = list(args.define_cache_entry)
+    args.define_cache_entry.append("CCACHE_ENABLE=%d" % args.ccache)
+
     if always_run_cmake or _new_cmakecache_entries(cache_path, args.define_cache_entry):
         if args.generator is None:
             args.generator = detect_cmake_generator()
@@ -235,8 +238,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
             ]
             if not args.no_warnings:
                 cmake_args += ["--warn-uninitialized"]
-            if args.ccache:
-                cmake_args += ["-DCCACHE_ENABLE=1"]
+
             if args.define_cache_entry:
                 cmake_args += ["-D" + d for d in args.define_cache_entry]
             cmake_args += [project_dir]
@@ -960,18 +962,10 @@ def init_cli():
                 "default": False,
             },
             {
-                "names": ["--ccache"],
-                "help": "Use ccache in build",
+                "names": ["--ccache/--no-ccache"],
+                "help": "Use ccache in build. Disabled by default.",
                 "is_flag": True,
                 "default": False,
-            },
-            {
-                # This is unused/ignored argument, as ccache use was originally opt-out.
-                # Use of ccache has been made opt-in using --cache arg.
-                "names": ["--no-ccache"],
-                "default": True,
-                "is_flag": True,
-                "hidden": True,
             },
             {
                 "names": ["-G", "--generator"],
