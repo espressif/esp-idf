@@ -349,6 +349,18 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
     mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
     mbedtls_mpi_uint Mprime;
 
+    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->p[0] & 1) == 0) {
+        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+    }
+
+    if (mbedtls_mpi_cmp_int(Y, 0) < 0) {
+        return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
+    }
+
+    if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
+        return mbedtls_mpi_lset(Z, 1);
+    }
+    
     /* "all numbers must be the same length", so choose longest number
        as cardinal length of operation...
     */
@@ -401,6 +413,14 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
 
     ret = mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, num_words);
     esp_mpi_release_hardware();
+
+    // Compensate for negative X
+    if (X->s == -1 && (Y->p[0] & 1) != 0) {
+        Z->s = -1;
+        MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(Z, M, Z));
+    } else {
+        Z->s = 1; 
+    }
 
  cleanup:
     if (_Rinv == NULL) {
