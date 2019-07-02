@@ -463,7 +463,7 @@ static void uart_end_select()
     _lock_release(&s_one_select_lock);
 }
 
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
 {
     if (fd < 0 || fd >= UART_NUM) {
@@ -913,7 +913,7 @@ static int uart_tcflush(int fd, int select)
 
     return 0;
 }
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 void esp_vfs_dev_uart_register()
 {
@@ -929,12 +929,12 @@ void esp_vfs_dev_uart_register()
         .access = &uart_access,
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
         .tcsetattr = &uart_tcsetattr,
         .tcgetattr = &uart_tcgetattr,
         .tcdrain = &uart_tcdrain,
         .tcflush = &uart_tcflush,
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
     };
     ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &vfs, NULL));
 }
