@@ -527,6 +527,18 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     rm -rf CMakeLists.txt
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
+    
+    print_status "Print all required argument deprecation warnings"
+    idf.py -C${IDF_PATH}/tools/test_idf_py --test-0=a --test-1=b --test-2=c --test-3=d test-0 --test-sub-0=sa --test-sub-1=sb ta test-1 > out.txt
+    ! grep -e '"test-0" is deprecated' -e '"test_0" is deprecated' out.txt || failure "Deprecation warnings are displayed for non-deprecated option/command"       
+    grep -e 'Warning: Option "test_sub_1" is deprecated and will be removed in future versions.' \
+        -e 'Warning: Command "test-1" is deprecated and will be removed in future versions. Please use alternative command.' \
+        -e 'Warning: Option "test_1" is deprecated and will be removed in future versions.' \
+        -e 'Warning: Option "test_2" is deprecated and will be removed in future versions. Please update your parameters.' \
+        -e 'Warning: Option "test_3" is deprecated and will be removed in future versions.' \
+        out.txt \
+        || failure "Deprecation warnings are not displayed"
+    rm out.txt
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
