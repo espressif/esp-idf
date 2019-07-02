@@ -208,7 +208,7 @@ esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 
 #ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 //deprecated, only used in compatible mode
-esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
+esp_err_t IRAM_ATTR spi_flash_erase_range(size_t start_addr, size_t size)
 {
     CHECK_WRITE_ADDRESS(start_addr, size);
     if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
