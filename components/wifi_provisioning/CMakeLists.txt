@@ -9,7 +9,7 @@ set(srcs "src/wifi_config.c"
         "proto-c/wifi_constants.pb-c.c")
 
 if(CONFIG_BT_ENABLED)
-    if(CONFIG_BT_BLUEDROID_ENABLED)
+    if(CONFIG_BT_BLUEDROID_ENABLED OR CONFIG_BT_NIMBLE_ENABLED)
         list(APPEND srcs
             "src/scheme_ble.c")
     endif()
