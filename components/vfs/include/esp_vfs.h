@@ -196,7 +196,7 @@ typedef struct
         int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);
         int (*utime)(const char *path, const struct utimbuf *times);
     };
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
     union {
         int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);
         int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);
@@ -225,7 +225,7 @@ typedef struct
         int (*tcsendbreak_p)(void *ctx, int fd, int duration);
         int (*tcsendbreak)(int fd, int duration);
     };
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
 
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem);
