@@ -19,7 +19,6 @@
 #include "esp_transport_tcp.h"
 #include "esp_transport_ssl.h"
 #include "esp_transport_ws.h"
-#include "esp_transport_utils.h"
 /* using uri parser */
 #include "http_parser.h"
 #include "freertos/task.h"
@@ -41,6 +40,11 @@ static const char *TAG = "WEBSOCKET_CLIENT";
 #define WEBSOCKET_PING_TIMEOUT_MS       (10*1000)
 #define WEBSOCKET_EVENT_QUEUE_SIZE      (1)
 #define WEBSOCKET_SEND_EVENT_TIMEOUT_MS (1000/portTICK_RATE_MS)
+
+#define ESP_WS_CLIENT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
+        ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
+        action;                                                                                     \
+        }
 
 const static int STOPPED_BIT = BIT0;
 
@@ -139,7 +143,7 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
 
     if (config->host) {
         cfg->host = strdup(config->host);
-        ESP_TRANSPORT_MEM_CHECK(TAG, cfg->host, return ESP_ERR_NO_MEM);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->host, return ESP_ERR_NO_MEM);
     }
 
     if (config->port) {
@@ -149,7 +153,7 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
     if (config->username) {
         free(cfg->username);
         cfg->username = strdup(config->username);
-        ESP_TRANSPORT_MEM_CHECK(TAG, cfg->username, {
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->username, {
             free(cfg->host);
             return ESP_ERR_NO_MEM;
         });
@@ -158,7 +162,7 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
     if (config->password) {
         free(cfg->password);
         cfg->password = strdup(config->password);
-        ESP_TRANSPORT_MEM_CHECK(TAG, cfg->password, {
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->password, {
             free(cfg->host);
             free(cfg->username);
             return ESP_ERR_NO_MEM;
@@ -168,7 +172,7 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
     if (config->uri) {
         free(cfg->uri);
         cfg->uri = strdup(config->uri);
-        ESP_TRANSPORT_MEM_CHECK(TAG, cfg->uri, {
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->uri, {
             free(cfg->host);
             free(cfg->username);
             free(cfg->password);
@@ -178,7 +182,7 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
     if (config->path) {
         free(cfg->path);
         cfg->path = strdup(config->path);
-        ESP_TRANSPORT_MEM_CHECK(TAG, cfg->path, {
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->path, {
             free(cfg->uri);
             free(cfg->host);
             free(cfg->username);
@@ -222,7 +226,7 @@ static esp_err_t esp_websocket_client_destroy_config(esp_websocket_client_handle
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config)
 {
     esp_websocket_client_handle_t client = calloc(1, sizeof(struct esp_websocket_client));
-    ESP_TRANSPORT_MEM_CHECK(TAG, client, return NULL);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client, return NULL);
 
     esp_event_loop_args_t event_args = {
         .queue_size = WEBSOCKET_EVENT_QUEUE_SIZE,
@@ -236,30 +240,30 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     }
 
     client->lock = xSemaphoreCreateMutex();
-    ESP_TRANSPORT_MEM_CHECK(TAG, client->lock, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->lock, goto _websocket_init_fail);
 
     client->transport_list = esp_transport_list_init();
-    ESP_TRANSPORT_MEM_CHECK(TAG, client->transport_list, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->transport_list, goto _websocket_init_fail);
 
     esp_transport_handle_t tcp = esp_transport_tcp_init();
-    ESP_TRANSPORT_MEM_CHECK(TAG, tcp, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, tcp, goto _websocket_init_fail);
 
     esp_transport_set_default_port(tcp, WEBSOCKET_TCP_DEFAULT_PORT);
     esp_transport_list_add(client->transport_list, tcp, "_tcp"); // need to save to transport list, for cleanup
 
 
     esp_transport_handle_t ws = esp_transport_ws_init(tcp);
-    ESP_TRANSPORT_MEM_CHECK(TAG, ws, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, ws, goto _websocket_init_fail);
 
     esp_transport_set_default_port(ws, WEBSOCKET_TCP_DEFAULT_PORT);
     esp_transport_list_add(client->transport_list, ws, "ws");
     if (config->transport == WEBSOCKET_TRANSPORT_OVER_TCP) {
         asprintf(&client->config->scheme, "ws");
-        ESP_TRANSPORT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
     }
 
     esp_transport_handle_t ssl = esp_transport_ssl_init();
-    ESP_TRANSPORT_MEM_CHECK(TAG, ssl, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, ssl, goto _websocket_init_fail);
 
     esp_transport_set_default_port(ssl, WEBSOCKET_SSL_DEFAULT_PORT);
     if (config->cert_pem) {
@@ -268,18 +272,18 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     esp_transport_list_add(client->transport_list, ssl, "_ssl"); // need to save to transport list, for cleanup
 
     esp_transport_handle_t wss = esp_transport_ws_init(ssl);
-    ESP_TRANSPORT_MEM_CHECK(TAG, wss, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, wss, goto _websocket_init_fail);
 
     esp_transport_set_default_port(wss, WEBSOCKET_SSL_DEFAULT_PORT);
 
     esp_transport_list_add(client->transport_list, wss, "wss");
     if (config->transport == WEBSOCKET_TRANSPORT_OVER_TCP) {
         asprintf(&client->config->scheme, "wss");
-        ESP_TRANSPORT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
     }
 
     client->config = calloc(1, sizeof(websocket_config_storage_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
 
     if (config->uri) {
         if (esp_websocket_client_set_uri(client, config->uri) != ESP_OK) {
@@ -295,7 +299,7 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
 
     if (client->config->scheme == NULL) {
         asprintf(&client->config->scheme, "ws");
-        ESP_TRANSPORT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
     }
 
     client->keepalive_tick_ms = _tick_get_ms();
@@ -307,15 +311,15 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
         buffer_size = WEBSOCKET_BUFFER_SIZE_BYTE;
     }
     client->rx_buffer = malloc(buffer_size);
-    ESP_TRANSPORT_MEM_CHECK(TAG, client->rx_buffer, {
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->rx_buffer, {
         goto _websocket_init_fail;
     });
     client->tx_buffer = malloc(buffer_size);
-    ESP_TRANSPORT_MEM_CHECK(TAG, client->tx_buffer, {
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->tx_buffer, {
         goto _websocket_init_fail;
     });
     client->status_bits = xEventGroupCreate();
-    ESP_TRANSPORT_MEM_CHECK(TAG, client->status_bits, {
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->status_bits, {
         goto _websocket_init_fail;
     });
 
@@ -366,20 +370,20 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
     if (puri.field_data[UF_SCHEMA].len) {
         free(client->config->scheme);
         asprintf(&client->config->scheme, "%.*s", puri.field_data[UF_SCHEMA].len, uri + puri.field_data[UF_SCHEMA].off);
-        ESP_TRANSPORT_MEM_CHECK(TAG, client->config->scheme, return ESP_ERR_NO_MEM);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, return ESP_ERR_NO_MEM);
     }
 
     if (puri.field_data[UF_HOST].len) {
         free(client->config->host);
         asprintf(&client->config->host, "%.*s", puri.field_data[UF_HOST].len, uri + puri.field_data[UF_HOST].off);
-        ESP_TRANSPORT_MEM_CHECK(TAG, client->config->host, return ESP_ERR_NO_MEM);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->host, return ESP_ERR_NO_MEM);
     }
 
 
     if (puri.field_data[UF_PATH].len) {
         free(client->config->path);
         asprintf(&client->config->path, "%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off);
-        ESP_TRANSPORT_MEM_CHECK(TAG, client->config->path, return ESP_ERR_NO_MEM);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->path, return ESP_ERR_NO_MEM);
 
         esp_transport_handle_t trans = esp_transport_list_get_transport(client->transport_list, "ws");
         if (trans) {
@@ -404,11 +408,11 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
                 pass ++;
                 free(client->config->password);
                 client->config->password = strdup(pass);
-                ESP_TRANSPORT_MEM_CHECK(TAG, client->config->password, return ESP_ERR_NO_MEM);
+                ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->password, return ESP_ERR_NO_MEM);
             }
             free(client->config->username);
             client->config->username = strdup(user_info);
-            ESP_TRANSPORT_MEM_CHECK(TAG, client->config->username, return ESP_ERR_NO_MEM);
+            ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->username, return ESP_ERR_NO_MEM);
             free(user_info);
         } else {
             return ESP_ERR_NO_MEM;
