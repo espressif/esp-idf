@@ -1,6 +1,6 @@
 menu "Virtual file system"
 
-    config SUPPRESS_SELECT_DEBUG_OUTPUT
+    config VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
         bool "Suppress select() related debug outputs"
         default y
         help
@@ -9,7 +9,7 @@ menu "Virtual file system"
             It is possible to suppress these debug outputs by enabling this
             option.
 
-    config SUPPORT_TERMIOS
+    config VFS_SUPPORT_TERMIOS
         bool "Add support for termios.h"
         default y
         help
