@@ -14,5 +14,5 @@
 #
 
 from .transport_console import *  # noqa: F403, F401
-from .transport_softap import *   # noqa: F403, F401
+from .transport_http import *     # noqa: F403, F401
 from .transport_ble import *      # noqa: F403, F401
