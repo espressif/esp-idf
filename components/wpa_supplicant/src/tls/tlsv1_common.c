@@ -221,9 +221,9 @@ int tls_verify_hash_init(struct tls_verify_hash *verify)
 		return -1;
 	}
 #ifdef CONFIG_TLSV12
-  verify->sha256_client = fast_crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
-  verify->sha256_server = fast_crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
-  verify->sha256_cert = fast_crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
+  verify->sha256_client = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
+  verify->sha256_server = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
+  verify->sha256_cert = crypto_hash_init(CRYPTO_HASH_ALG_SHA256, NULL, 0);
 	
 	if (verify->sha256_client == NULL ||
 		verify->sha256_server == NULL ||
@@ -253,11 +253,11 @@ void tls_verify_hash_add(struct tls_verify_hash *verify, const u8 *buf,
 	}
 #ifdef CONFIG_TLSV12
 	if (verify->sha256_client)
-	  fast_crypto_hash_update(verify->sha256_client, buf, len);
+	  crypto_hash_update(verify->sha256_client, buf, len);
 	if (verify->sha256_server)
-		fast_crypto_hash_update(verify->sha256_server, buf, len);
+		crypto_hash_update(verify->sha256_server, buf, len);
 	if (verify->sha256_cert)
-		fast_crypto_hash_update(verify->sha256_cert, buf, len);
+		crypto_hash_update(verify->sha256_cert, buf, len);
 #endif /* CONFIG_TLSV12 */
 }
 
@@ -277,9 +277,9 @@ void tls_verify_hash_free(struct tls_verify_hash *verify)
 	verify->sha1_server = NULL;
 	verify->sha1_cert = NULL;
 #ifdef CONFIG_TLSV12
-	fast_crypto_hash_finish(verify->sha256_client, NULL, NULL);
-	fast_crypto_hash_finish(verify->sha256_server, NULL, NULL);
-	fast_crypto_hash_finish(verify->sha256_cert, NULL, NULL);
+	crypto_hash_finish(verify->sha256_client, NULL, NULL);
+	crypto_hash_finish(verify->sha256_server, NULL, NULL);
+	crypto_hash_finish(verify->sha256_cert, NULL, NULL);
 	verify->sha256_client = NULL;
 	verify->sha256_server = NULL;
 	verify->sha256_cert = NULL;

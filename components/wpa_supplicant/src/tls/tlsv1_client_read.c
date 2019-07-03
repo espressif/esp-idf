@@ -816,7 +816,7 @@ static int tls_process_server_finished(struct tlsv1_client *conn, u8 ct,
 	if (conn->rl.tls_version >= TLS_VERSION_1_2) {
 		hlen = SHA256_MAC_LEN;
 	    if (conn->verify.sha256_server == NULL ||
-			fast_crypto_hash_finish(conn->verify.sha256_server, hash, &hlen) < 0) {
+			crypto_hash_finish(conn->verify.sha256_server, hash, &hlen) < 0) {
 			tls_alert(conn, TLS_ALERT_LEVEL_FATAL, TLS_ALERT_INTERNAL_ERROR);
 			conn->verify.sha256_server = NULL;
 			return -1;

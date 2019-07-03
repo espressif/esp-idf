@@ -46,7 +46,7 @@ void wps_kdf(const u8 *key, const u8 *label_prefix, size_t label_prefix_len,
 
 	for (i = 1; i <= iter; i++) {
 		WPA_PUT_BE32(i_buf, i);
-		fast_hmac_sha256_vector(key, SHA256_MAC_LEN, 4, addr, len, hash);
+		hmac_sha256_vector(key, SHA256_MAC_LEN, 4, addr, len, hash);
 		if (i < iter) {
 			os_memcpy(opos, hash, SHA256_MAC_LEN);
 			opos += SHA256_MAC_LEN;
@@ -103,7 +103,7 @@ int wps_derive_keys(struct wps_data *wps)
 	addr[0] = wpabuf_head(dh_shared);
 	len[0] = wpabuf_len(dh_shared);
 
-	fast_sha256_vector(1, addr, len, dhkey);
+	sha256_vector(1, addr, len, dhkey);
 	wpa_hexdump_key(MSG_DEBUG, "WPS: DHKey", dhkey, sizeof(dhkey));
 	wpabuf_free(dh_shared);
 
@@ -114,7 +114,7 @@ int wps_derive_keys(struct wps_data *wps)
 	len[1] = ETH_ALEN;
 	addr[2] = wps->nonce_r;
 	len[2] = WPS_NONCE_LEN;
-	fast_hmac_sha256_vector(dhkey, sizeof(dhkey), 3, addr, len, kdk);
+	hmac_sha256_vector(dhkey, sizeof(dhkey), 3, addr, len, kdk);
 	wpa_hexdump_key(MSG_DEBUG, "WPS: KDK", kdk, sizeof(kdk));
 
 	wps_kdf(kdk, NULL, 0, "Wi-Fi Easy and Secure Key Derivation",
@@ -139,10 +139,10 @@ void wps_derive_psk(struct wps_data *wps, const u8 *dev_passwd,
 {
 	u8 hash[SHA256_MAC_LEN];
 
-	fast_hmac_sha256(wps->authkey, WPS_AUTHKEY_LEN, dev_passwd,
+	hmac_sha256(wps->authkey, WPS_AUTHKEY_LEN, dev_passwd,
 		                             (dev_passwd_len + 1) / 2, hash);
 	os_memcpy(wps->psk1, hash, WPS_PSK_LEN);
-	fast_hmac_sha256(wps->authkey, WPS_AUTHKEY_LEN,
+	hmac_sha256(wps->authkey, WPS_AUTHKEY_LEN,
 		            dev_passwd + (dev_passwd_len + 1) / 2,
 		            dev_passwd_len / 2, hash);
 	os_memcpy(wps->psk2, hash, WPS_PSK_LEN);
@@ -177,7 +177,7 @@ struct wpabuf * wps_decrypt_encr_settings(struct wps_data *wps, const u8 *encr,
 	wpa_hexdump(MSG_MSGDUMP, "WPS: Encrypted Settings", encr, encr_len);
 	wpabuf_put_data(decrypted, encr + block_size, encr_len - block_size);
 	wpa_printf(MSG_DEBUG,  "WPS: AES Decrypt setting");
-	if (fast_aes_128_cbc_decrypt(wps->keywrapkey, encr, wpabuf_mhead(decrypted),
+	if (aes_128_cbc_decrypt(wps->keywrapkey, encr, wpabuf_mhead(decrypted),
 				        wpabuf_len(decrypted))) {
 		wpabuf_free(decrypted);
 		return NULL;
