@@ -475,7 +475,9 @@ def write_json_menus(deprecated_options, config, filename):
                 # should have one condition which is true
                 for min_range, max_range, cond_expr in sym.ranges:
                     if kconfiglib.expr_value(cond_expr):
-                        greatest_range = [int(min_range.str_value), int(max_range.str_value)]
+                        base = 16 if sym.type == kconfiglib.HEX else 10
+                        greatest_range = [int(min_range.str_value, base), int(max_range.str_value, base)]
+                    break
 
             new_json = {
                 "type": kconfiglib.TYPE_TO_STR[sym.type],
