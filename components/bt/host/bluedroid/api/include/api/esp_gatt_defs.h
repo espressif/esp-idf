@@ -54,7 +54,7 @@ extern "C" {
 #define ESP_GATT_UUID_CYCLING_SPEED_CADENCE_SVC     0x1816          /* Cycling Speed and Cadence Service*/
 #define ESP_GATT_UUID_CYCLING_POWER_SVC             0x1818          /* Cycling Power Service*/
 #define ESP_GATT_UUID_LOCATION_AND_NAVIGATION_SVC   0x1819          /* Location and Navigation Service*/
-#define ESP_GATT_UUID_ENVIRONMENTAL_SENSING_SVC     OX181A          /* Environmental Sensing Service*/
+#define ESP_GATT_UUID_ENVIRONMENTAL_SENSING_SVC     0x181A          /* Environmental Sensing Service*/
 #define ESP_GATT_UUID_BODY_COMPOSITION              0x181B          /* Body Composition Service*/
 #define ESP_GATT_UUID_USER_DATA_SVC                 0x181C          /* User Data Service*/
 #define ESP_GATT_UUID_WEIGHT_SCALE_SVC              0x181D          /* Weight Scale Service*/
