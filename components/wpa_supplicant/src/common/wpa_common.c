@@ -507,7 +507,7 @@ void wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 
 #ifdef CONFIG_IEEE80211W
 	if (use_sha256) {
-		fast_sha256_prf(pmk, pmk_len, label, data, sizeof(data),
+		sha256_prf(pmk, pmk_len, label, data, sizeof(data),
 			ptk, ptk_len);
 	}
 	else
@@ -549,7 +549,7 @@ void rsn_pmkid(const u8 *pmk, size_t pmk_len, const u8 *aa, const u8 *spa,
 
 #ifdef CONFIG_IEEE80211W
 	if (use_sha256) {
-		fast_hmac_sha256_vector(pmk, pmk_len, 3, addr, len, hash);
+		hmac_sha256_vector(pmk, pmk_len, 3, addr, len, hash);
 	}
 	else
 #endif /* CONFIG_IEEE80211W */

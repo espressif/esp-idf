@@ -932,7 +932,7 @@ static int wpa_gmk_to_gtk(const u8 *gmk, const char *label, const u8 *addr,
         ret = -1;
 
 #ifdef CONFIG_IEEE80211W
-    fast_sha256_prf(gmk, WPA_GMK_LEN, label, data, sizeof(data), gtk, gtk_len);
+    sha256_prf(gmk, WPA_GMK_LEN, label, data, sizeof(data), gtk, gtk_len);
 #else /* CONFIG_IEEE80211W */
     if (sha1_prf(gmk, WPA_GMK_LEN, label, data, sizeof(data), gtk, gtk_len) < 0)
         ret = -1;
@@ -1064,7 +1064,7 @@ void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
                 buf, key_data_len);
         if (version == WPA_KEY_INFO_TYPE_HMAC_SHA1_AES ||
             version == WPA_KEY_INFO_TYPE_AES_128_CMAC) {
-            if (fast_aes_wrap(sm->PTK.kek, (key_data_len - 8) / 8, buf,
+            if (aes_wrap(sm->PTK.kek, (key_data_len - 8) / 8, buf,
             		(u8 *) (key + 1))) {
             	os_free(hdr);
             	os_free(buf);

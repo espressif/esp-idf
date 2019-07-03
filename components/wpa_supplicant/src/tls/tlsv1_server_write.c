@@ -588,7 +588,7 @@ static int tls_write_server_finished(struct tlsv1_server *conn,
 	if (conn->rl.tls_version >= TLS_VERSION_1_2) {
 		hlen = SHA256_MAC_LEN;
 		if (conn->verify.sha256_server == NULL ||
-			fast_crypto_hash_finish(conn->verify.sha256_server, hash, &hlen)
+			crypto_hash_finish(conn->verify.sha256_server, hash, &hlen)
 			< 0) {
 			conn->verify.sha256_server = NULL;
 			tlsv1_server_alert(conn, TLS_ALERT_LEVEL_FATAL,
