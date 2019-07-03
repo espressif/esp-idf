@@ -82,7 +82,6 @@ void osi_alarm_init(void)
         goto end;
     }
 #if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
-xyz
     if ((alarm_cbs = (osi_alarm_t *)osi_malloc(sizeof(osi_alarm_t) * ALARM_CBS_NUM)) == NULL) {
         OSI_TRACE_ERROR("%s, malloc failed\n", __func__);
         goto end;
