@@ -1,4 +1,4 @@
-ESP-WROVER-KIT V2 Getting Started Guide (CMake)
+ESP-WROVER-KIT V2 Getting Started Guide
 ===============================================
 :link_to_translation:`zh_CN:[中文]`
 
@@ -170,7 +170,9 @@ Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
+Proceed to :doc:`../get-started-cmake/index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
+
+If you prefer using an older GNU Make build system, then proceed to respective :ref:`get-started-step-by-step` for the GNU Make.
 
 
 Related Documents

@@ -57,9 +57,9 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 .. toctree::
     :maxdepth: 1
 
-    ESP32-DevKitC <get-started-devkitc>
-    ESP-WROVER-KIT <get-started-wrover-kit>
-    ESP32-PICO-KIT <get-started-pico-kit>
+    ESP32-DevKitC <../hw-reference/get-started-devkitc>
+    ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
+    ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
     ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
 
 

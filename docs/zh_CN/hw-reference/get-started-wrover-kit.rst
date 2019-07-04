@@ -8,7 +8,7 @@ ESP-WROVER-KIT V4.1 入门指南
 准备工作
 -------------
 
-* :ref:`ESP-WROVER-KIT V4.1 开发板 <get-started-esp-wrover-kit-v4.1-board-front>`
+* :ref:`ESP-WROVER-KIT V4.1 开发板 <get-started-esp-wrover-kit-v4.1-board-front-cmake>`
 * USB 数据线（A 转 Micro-B）
 * PC（Windows、Linux 或 macOS）
 
@@ -53,7 +53,7 @@ ESP-WROVER-KIT 开发板的主要组件和连接方式如下图所示。
 
 ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-esp-wrover-kit-v4.1-board-front:
+.. _get-started-esp-wrover-kit-v4.1-board-front-cmake:
 
 .. figure:: ../../_static/esp-wrover-kit-v4.1-layout-front.png
     :align: center
@@ -62,7 +62,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
     ESP-WROVER-KIT 开发板布局 -- 俯视图
 
-.. _get-started-esp-wrover-kit-v4.1-board-back:
+.. _get-started-esp-wrover-kit-v4.1-board-back-cmake:
 
 .. figure:: ../../_static/esp-wrover-kit-v4.1-layout-back.png
     :align: center
@@ -81,8 +81,8 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 FT2232                   FT2232 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232 芯片进行控制和编程，与 ESP32 建立连接。FT2232 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。详见 `ESP-WROVER-KIT V4.1 原理图`_。
 
 32.768 kHz               外接 32.768 kHz 晶振，可提供 Deep-sleep 下使用的低功耗时钟。
- 
-0 欧电阻.                 ESP-WROVER-KIT 开发板设计了一个 0 欧电阻，可在测量 ESP32 系列模组在不同功耗模式下的电流时，直接移除或替换为分流器。
+
+0 欧电阻                   ESP-WROVER-KIT 开发板设计了一个 0 欧电阻，可在测量 ESP32 系列模组在不同功耗模式下的电流时，直接移除或替换为分流器。
 
 ESP32-WROVER-B 模组       ESP-WROVER 模组内置 64-Mbit PSRAM，可提供灵活的额外存储空间和数据处理能力。
 
@@ -112,34 +112,34 @@ Boot 按键                 下载按键。按下 **Boot** 键并保持，同时
 
 LDO                      5V-to-3.3V 低压差线型稳压器 NCP1117(1A)。NCP1117 最大电流输出为 1 A。板上 LDO 为固定输出电压，但用户也可以选用具有可变输出电压的 LDO。更多信息，请见 `ESP-WROVER-KIT V4.1 原理图`_。
 
-摄像头连接器               摄像头接口，支持标准 OV7670 摄像头模块。
+摄像头连接器              摄像头接口，支持标准 OV7670 摄像头模块。
 
 RGB LED                红绿蓝发光二极管，可由 PWM（脉冲宽度调制）控制。
 
-I/O 连接器                板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
+I/O 连接器               板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
 
-MicroSD 卡槽              适用于需要扩充数据存储空间或进行备份的应用开发场景。
+MicroSD 卡槽            适用于需要扩充数据存储空间或进行备份的应用开发场景。
 
-LCD 显示屏                支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v4.1-board-back`。
+LCD 显示屏               支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v4.1-board-back-cmake`。
 ====================  ======================================================================================================================================================================================================================================================================================================================================
 
 
-.. _get-started-esp-wrover-kit-v4.1-setup-options:
+.. _get-started-esp-wrover-kit-v4.1-setup-options-cmake:
 
 设置选项
 -------------
 
 用户可通过 3 组排针，设置开发板功能，其中常见功能见下表：
 
-=======  ================  =========================================================================
+=======  ================  =========================================================
 排针      跳线设置           功能描述
-=======  ================  =========================================================================
+=======  ================  =========================================================
 JP7      |jp7-ext_5v|      使用外部电源为 ESP-WROVER-KIT 开发板供电
 JP7      |jp7-usb_5v|      使用 USB 端口为 ESP-WROVER-KIT 开发板供电
 JP2      |jp2-jtag|        使能 JTAG 功能
 JP2      |jp2-tx-rx|       使能 UART 通信
 JP14     |jp14|            使能 RTS/CTS 串口流控
-=======  ================  =========================================================================
+=======  ================  =========================================================
 
 
 ESP32 管脚分配
@@ -166,31 +166,31 @@ n/a                    3.3V   GND    n/a
 NC/XTAL                IO32   IO33   NC/XTAL
 JTAG，MicroSD          IO12   IO13   JTAG，MicroSD
 JTAG，MicroSD          IO14   IO27   摄像头
-摄像头                  IO26   IO25   摄像头，LCD
-摄像头                  IO35   IO34   摄像头
-摄像头                  IO39   IO36   摄像头
+摄像头                 IO26   IO25   摄像头，LCD
+摄像头                 IO35   IO34   摄像头
+摄像头                 IO39   IO36   摄像头
 JTAG                   EN     IO23   摄像头，LCD
-摄像头，LCD             IO22   IO21   摄像头，LCD，MicroSD
-摄像头，LCD             IO19   IO18   摄像头，LCD
-摄像头，LCD             IO5    IO17   PSRAM
+摄像头，LCD            IO22   IO21   摄像头，LCD，MicroSD
+摄像头，LCD            IO19   IO18   摄像头，LCD
+摄像头，LCD            IO5    IO17   PSRAM
 PSRAM                  IO16   IO4    LED，摄像头，MicroSD
-摄像头，LED，Boot       IO0     IO2    LED，MicroSD
-JTAG，MicroSD          IO15    5V
+摄像头，LED，Boot      IO0    IO2    LED，MicroSD
+JTAG，MicroSD          IO15   5V
 =====================  =====  =====  =====================
 
 说明：
 
-* NC/XTAL - :ref:`32.768 kHz 晶振 <get-started-esp-wrover-kit-v4.1-xtal>`
-* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v4.1-jtag-header>`
+* NC/XTAL - :ref:`32.768 kHz 晶振 <get-started-esp-wrover-kit-v4.1-xtal-cmake>`
+* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v4.1-jtag-header-cmake>`
 * Boot - Boot 按键 / SW2
-* 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
-* LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
-* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
+* 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header-cmake>`
+* LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections-cmake>`
+* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot-cmake>`
+* LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector-cmake>`
 * PSRAM - ESP32-WROVER-B 的 PSRAM
 
 
-.. _get-started-esp-wrover-kit-v4.1-xtal:
+.. _get-started-esp-wrover-kit-v4.1-xtal-cmake:
 
 32.768 kHz 晶振
 ^^^^^^^^^^^^^^^^^^^^^
@@ -207,7 +207,7 @@ JTAG，MicroSD          IO15    5V
     默认情况下，管脚 GPIO32 和 GPIO33 已连接至晶振。因此，为了保证信号的完整性，这两个管脚并未连接至 JP1 I/O 连接器。用户可通过将 R11/R23 处的 0 欧电阻移至 R12/R24 处，以将 GP1O32 和 GPIO33 的连接从晶振移至 JP1。
 
 
-.. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
+.. _get-started-esp-wrover-kit-v4.1-spi-flash-header-cmake:
 
 SPI Flash / JP2
 ^^^^^^^^^^^^^^^
@@ -228,7 +228,8 @@ SPI Flash / JP2
     模组的 flash 总线已通过 0 欧电阻 R140 ~ R145 连接至排针 JP2。如果需要将 flash 的工作频率控制在 80 MHz，以达到保证总线信号完整性等目的，建议移除 R140 ~ R145 电阻，将模组的 flash 总线与排针 JP2 断开。
 
 
-.. _get-started-esp-wrover-kit-v4.1-jtag-header:
+
+.. _get-started-esp-wrover-kit-v4.1-jtag-header-cmake:
 
 JTAG / JP2
 ^^^^^^^^^^
@@ -244,7 +245,7 @@ JTAG / JP2
 ====  ==============  =============
 
 
-.. _get-started-esp-wrover-kit-v4.1-camera-header:
+.. _get-started-esp-wrover-kit-v4.1-camera-header-cmake:
 
 摄像头 / JP4
 ^^^^^^^^^^^^
@@ -275,7 +276,7 @@ JTAG / JP2
 * D0 到 D7 为摄像头的数据总线
 
 
-.. _get-started-esp-wrover-kit-v4.1-rgb-led-connections:
+.. _get-started-esp-wrover-kit-v4.1-rgb-led-connections-cmake:
 
 RGB LED
 ^^^^^^^
@@ -289,7 +290,7 @@ RGB LED
 ====  ==========  =========
 
 
-.. _get-started-esp-wrover-kit-v4.1-microsd-card-slot:
+.. _get-started-esp-wrover-kit-v4.1-microsd-card-slot-cmake:
 
 MicroSD 卡
 ^^^^^^^^^^^^
@@ -307,7 +308,7 @@ MicroSD 卡
 ====  ==============  ===============
 
 
-.. _get-started-esp-wrover-kit-v4.1-lcd-connector:
+.. _get-started-esp-wrover-kit-v4.1-lcd-connector-cmake:
 
 LCD / U5
 ^^^^^^^^
@@ -325,7 +326,7 @@ LCD / U5
 ====  ==============  ===============
 
 
-.. _get-started-esp-wrover-kit-start-development:
+.. _get-started-esp-wrover-kit-start-development-cmake:
 
 应用程序开发
 -----------------------------
@@ -355,7 +356,9 @@ USB 供电                   使能 UART 通信
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+
+如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
 
 
 相关文档

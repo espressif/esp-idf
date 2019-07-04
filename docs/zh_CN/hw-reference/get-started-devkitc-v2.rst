@@ -1,5 +1,5 @@
 ESP32-DevKitC V2 入门指南
-=========================================
+==================================
 
 :link_to_translation:`en: [English]`
 
@@ -7,9 +7,9 @@ ESP32-DevKitC V2 入门指南
 
 
 准备工作
--------------
+--------
 
-* ESP32-DevKitC V2 开发板
+* :ref:`ESP32-DevKitC V2 开发板 <get-started-esp32-devkitc-v2-board-front-cmake>`
 * USB A / micro USB B 数据线
 * PC（Windows、Linux 或 Mac OS）
 
@@ -17,22 +17,24 @@ ESP32-DevKitC V2 入门指南
 
 
 概述
---------
+----
 
 ESP32-DevKitC V2 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的小型开发板，板上模组的绝大部分管脚均已引出，开发人员可根据实际需求，轻松通过跳线连接多种外围器件，或将开发板插在面包板上使用。
 
 
 功能说明
-----------------------
+--------
 
 ESP32-DevKitC V2 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-esp32-devkitc-v2-board-front-make:
+.. _get-started-esp32-devkitc-v2-board-front-cmake:
 
 .. figure:: ../../_static/esp32-devkitc-v2-functional-overview.png
     :align: center
     :alt: ESP32-DevKitC V2 开发板
     :figclass: align-center
+
+
 
 ESP32-DevKitC V2 开发板
 
@@ -50,11 +52,10 @@ ESP32-DevKitC V2 开发板
 | I/O            | 板上模组的绝大部分管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。  |
 +----------------+--------------------------------------------------------------------------------------------------------------------------+
 
-
 电源选项
---------------------
+--------
 
-开发板可任一选用以下三种供电方式：
+开发板可从以下三种供电方式中任选其一：
 
 * Micro USB 供电（默认）
 * 5V / GND 管脚供电
@@ -66,16 +67,19 @@ ESP32-DevKitC V2 开发板
 
 
 应用程序开发
-------------------------------
+------------
 
 ESP32-DevKitC V2 上电前，请首先确认开发板完好无损。
 
-之后，请前往 :doc:`index` 的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+之后，请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+
+如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
 
 
 相关文档
------------------
+--------
 
 * `ESP32-DevKitC 原理图 <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`_ (PDF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
+

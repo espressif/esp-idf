@@ -31,7 +31,7 @@ ESP-WROVER-KIT 可选贴以下 ESP32 模组：
 
 .. note::
 
-    ESP-WROVER-KIT V2 板载 ESP32-WROVER 模组的 GPIO16 和 GPIO17 管脚用作 PSRAM 的片选和时钟信号。 默认情况下，为了给用户提供可靠的性能，这两个 GPIO 管脚不引出至开发板引脚。
+    ESP-WROVER-KIT V2 板载 ESP32-WROVER 模组的 GPIO16 和 GPIO17 管脚用作 PSRAM 的片选和时钟信号。默认情况下，为了给用户提供可靠的性能，这两个 GPIO 管脚不引出至开发板引脚。
 
 
 功能概述
@@ -52,7 +52,7 @@ ESP-WROVER-KIT 开发板的主要组件和连接方式如下图所示。
 
 ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-esp-wrover-kit-v2-board-front:
+.. _get-started-esp-wrover-kit-v2-board-front-cmake:
 
 .. figure:: ../../_static/esp-wrover-kit-v2-layout-front.png
     :align: center
@@ -61,7 +61,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
     ESP-WROVER-KIT 开发板布局 -- 俯视图
 
-.. _get-started-esp-wrover-kit-v2-board-back:
+.. _get-started-esp-wrover-kit-v2-board-back-cmake:
 
 .. figure:: ../../_static/esp-wrover-kit-v2-layout-back.png
     :align: center
@@ -93,11 +93,11 @@ FT2232                 FT2232 多协议 USB 转串口桥接器。开发人员可
 
 EN                     复位按键。                                                                                                                                                                      
 
-Boot                   下载按键。按下 **Boot** 键并保持，同时按一下 **EN** 键（此时不要松开 **Boot** 键）进入“固件下载”模式，通过串口下载固件。
+Boot                  下载按键。按下 **Boot** 键并保持，同时按一下 **EN** 键（此时不要松开 **Boot** 键）进入“固件下载”模式，通过串口下载固件。
 
 USB                    USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
 
-电源选择开关             ESP-WROVER-KIT 开发板可通过 USB 端口或 5V 输入接口供电。用户可使用跳线帽在两种供电模式中进行选择。更多详细信息，请见章节 `设置选项`_ 中有关 JP7 连接器的描述。
+电源选择开关            ESP-WROVER-KIT 开发板可通过 USB 端口或 5V 输入接口供电。用户可使用跳线帽在两种供电模式中进行选择。更多详细信息，请见章节 `设置选项`_ 中有关 JP7 连接器的描述。
 
 电源开关                拨向 **USB** 按键一侧，开发板上电；拨离 **USB** 按键一侧，开发板掉电。
 
@@ -110,13 +110,14 @@ LDO                    5V-to-3.3V 低压差线型稳压器 NCP1117(1A)。NCP1117
 RGB LED                红绿蓝发光二极管，可由 PWM（脉冲宽度调制）控制。
 
 I/O                    板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。 
- 
+
 MicroSD 卡槽            MicroSD 卡槽，可扩充存储空间：当 ESP32 进入下载模式时，GPIO2 不可处于高电平。然而，为了使能 MicroSD 卡功能，需为 GPIO2 增加一个上拉电阻。默认情况下，GPIO2 和上拉电阻 R153 处于断开状态。为了使能 MicroSD 卡，请按照 `设置选项`_ 章节的要求，连接 JP1 连接器。
 
-LCD 显示屏              支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v2-board-back`。
+LCD 显示屏              支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v2-board-back-cmake`。
 ====================  ======================================================================================================================================================================================================================================================================================================================================
 
-.. _get-started-esp-wrover-kit-v2-setup-options:
+
+.. _get-started-esp-wrover-kit-v2-setup-options-cmake:
 
 设置选项
 -------------
@@ -136,7 +137,7 @@ JP14     |jp14|            使能 RTS/CTS 串口流控
 =======  ================  =====================================================================================
 
 
-.. _get-started-esp-wrover-kit-v2-start-development:
+.. _get-started-esp-wrover-kit-v2-start-development-cmake:
 
 应用程序开发
 -----------------------------
@@ -166,7 +167,9 @@ USB 供电                   使能 UART 通信
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+
+如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
 
 
 相关文档
