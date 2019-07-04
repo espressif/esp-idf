@@ -34,16 +34,20 @@ def target_branch_candidates(proj_name):
     except (KeyError, TypeError):
         pass
     # branch name read from IDF
-    git_describe = subprocess.check_output(["git", "describe", "--tags", "HEAD"])
-    match = IDF_GIT_DESCRIBE_PATTERN.search(git_describe)
-    if match:
-        major_revision = match.group(1)
-        minor_revision = match.group(2)
-        # release branch
-        candidates.append("release/v{}.{}".format(major_revision, minor_revision))
-        # branch to match all major branches, like v3.x or v3
-        candidates.append("release/v{}.x".format(major_revision))
-        candidates.append("release/v{}".format(major_revision))
+    try:
+        git_describe = subprocess.check_output(["git", "describe", "--tags", "HEAD"])
+        match = IDF_GIT_DESCRIBE_PATTERN.search(git_describe.decode())
+        if match:
+            major_revision = match.group(1)
+            minor_revision = match.group(2)
+            # release branch
+            candidates.append("release/v{}.{}".format(major_revision, minor_revision))
+            # branch to match all major branches, like v3.x or v3
+            candidates.append("release/v{}.x".format(major_revision))
+            candidates.append("release/v{}".format(major_revision))
+    except subprocess.CalledProcessError:
+        # this should not happen as IDF should have describe message
+        pass
 
     return [c for c in candidates if c]  # filter out null value
 
