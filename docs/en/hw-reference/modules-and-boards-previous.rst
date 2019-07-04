@@ -27,7 +27,7 @@ Comparing to ESP32-PICO-KIT V3, this version has revised printout and reduced nu
 Documentation
 -------------
 
-* :doc:`../get-started/get-started-pico-kit`
+* :doc:`../hw-reference/get-started-pico-kit`
 * `ESP32-PICO-KIT V4 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 
@@ -48,7 +48,7 @@ The first public release of Espressif's ESP32-PICO-D4 module on a mini developme
 Documentation
 -------------
 
-* :doc:`../get-started/get-started-pico-kit-v3`
+* :doc:`../hw-reference/get-started-pico-kit-v3`
 * `ESP32-PICO-KIT V3 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 
@@ -70,7 +70,7 @@ Small and convenient development board with ESP-WROOM-32 module installed, break
 Documentation
 -------------
 
-* :doc:`../get-started/get-started-devkitc-v2`
+* :doc:`../hw-reference/get-started-devkitc-v2`
 * `ESP32 DevKitC V2 Schematic <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`__ (PDF)
 * `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
@@ -97,7 +97,7 @@ The camera header has been changed from male back to female. The board soldermas
 Documentation
 -------------
 
-* :doc:`../get-started/get-started-wrover-kit-v3`
+* :doc:`../hw-reference/get-started-wrover-kit-v3`
 * `ESP-WROVER-KIT V3 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-3.pdf>`__ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
 * `FTDI Virtual COM Port Drivers`_
@@ -121,7 +121,7 @@ Comparing to previous version, this board has a shiny black finish and a male ca
 Documentation
 -------------
 
-* :doc:`../get-started/get-started-wrover-kit-v2`
+* :doc:`../hw-reference/get-started-wrover-kit-v2`
 * `ESP-WROVER-KIT V2 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf>`__ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
 * `FTDI Virtual COM Port Drivers`_
