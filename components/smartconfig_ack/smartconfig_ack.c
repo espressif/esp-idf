@@ -24,8 +24,32 @@
 #include "tcpip_adapter.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
+#include "esp_event.h"
 #include "esp_smartconfig.h"
 #include "smartconfig_ack.h"
+
+#define SC_ACK_TASK_PRIORITY             2          /*!< Priority of sending smartconfig ACK task */
+#define SC_ACK_TASK_STACK_SIZE           2048       /*!< Stack size of sending smartconfig ACK task */
+
+#define SC_ACK_TOUCH_SERVER_PORT         18266      /*!< ESP touch UDP port of server on cellphone */
+#define SC_ACK_AIRKISS_SERVER_PORT       10000      /*!< Airkiss UDP port of server on cellphone */
+
+#define SC_ACK_TOUCH_LEN                 11         /*!< Length of ESP touch ACK context */
+#define SC_ACK_AIRKISS_LEN               7          /*!< Length of Airkiss ACK context */
+
+#define SC_ACK_MAX_COUNT                 30         /*!< Maximum count of sending smartconfig ACK */
+
+/**
+ * @brief Smartconfig parameters passed to sc_ack_send call.
+ */
+typedef struct sc_ack {
+    smartconfig_type_t type;      /*!< Smartconfig type(ESPTouch or AirKiss) */
+    struct {
+        uint8_t token;            /*!< Smartconfig token from the cellphone */
+        uint8_t mac[6];           /*!< MAC address of station */
+        uint8_t ip[4];            /*!< IP address of cellphone */
+    } ctx;
+} sc_ack_t;
 
 static const char *TAG = "smartconfig";
 
@@ -48,13 +72,13 @@ static void sc_ack_send_task(void *pvParameters)
     tcpip_adapter_ip_info_t local_ip;
     uint8_t remote_ip[4];
     memcpy(remote_ip, ack->ctx.ip, sizeof(remote_ip));
-    int remote_port = (ack->type == SC_ACK_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_SERVER_PORT : SC_ACK_AIRKISS_SERVER_PORT;
+    int remote_port = (ack->type == SC_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_SERVER_PORT : SC_ACK_AIRKISS_SERVER_PORT;
     struct sockaddr_in server_addr;
     socklen_t sin_size = sizeof(server_addr);
     int send_sock = -1;
     int optval = 1;
     int sendlen;
-    int ack_len = (ack->type == SC_ACK_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_LEN : SC_ACK_AIRKISS_LEN;
+    int ack_len = (ack->type == SC_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_LEN : SC_ACK_AIRKISS_LEN;
     uint8_t packet_count = 1;
     int err;
     int ret;
@@ -73,7 +97,7 @@ static void sc_ack_send_task(void *pvParameters)
         ret = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &local_ip);
         if ((ESP_OK == ret) && (local_ip.ip.addr != INADDR_ANY)) {
             /* If ESP touch, smartconfig ACK contains local IP address. */
-            if (ack->type == SC_ACK_TYPE_ESPTOUCH) {
+            if (ack->type == SC_TYPE_ESPTOUCH) {
                 memcpy(ack->ctx.ip, &local_ip.ip.addr, 4);
             }
 
@@ -94,12 +118,7 @@ static void sc_ack_send_task(void *pvParameters)
                 if (sendlen > 0) {
                     /* Totally send 30 smartconfig ACKs. Then smartconfig is successful. */
                     if (packet_count++ >= SC_ACK_MAX_COUNT) {
-                        if (ack->link_flag) {
-                            *ack->link_flag = 1;
-                        }
-                        if (ack->cb) {
-                            ack->cb(SC_STATUS_LINK_OVER, remote_ip);
-                        }
+                        esp_event_post(SC_EVENT, SC_EVENT_SEND_ACK_DONE, NULL, 0, portMAX_DELAY);
                         goto _end;
                     }
                 }
@@ -127,31 +146,36 @@ _end:
     vTaskDelete(NULL);
 }
 
-void sc_ack_send(sc_ack_t *param)
+esp_err_t sc_send_ack_start(smartconfig_type_t type, uint8_t token, uint8_t *cellphone_ip)
 {
     sc_ack_t *ack = NULL;
 
-    if (param == NULL) {
-        ESP_LOGE(TAG, "Smart config ack parameter error");
-        return;
+    if (cellphone_ip == NULL) {
+        ESP_LOGE(TAG, "Cellphone IP address is NULL");
+        return ESP_ERR_INVALID_ARG;
     }
 
     ack = malloc(sizeof(sc_ack_t));
     if (ack == NULL) {
-        ESP_LOGE(TAG, "Smart config ack parameter malloc fail");
-        return;
+        ESP_LOGE(TAG, "ACK parameter malloc fail");
+        return ESP_ERR_NO_MEM;
     }
-    memcpy(ack, param, sizeof(sc_ack_t));
+    ack->type = type;
+    ack->ctx.token = token;
+    memcpy(ack->ctx.ip, cellphone_ip, 4);
 
     s_sc_ack_send = true;
 
     if (xTaskCreate(sc_ack_send_task, "sc_ack_send_task", SC_ACK_TASK_STACK_SIZE, ack, SC_ACK_TASK_PRIORITY, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Create sending smartconfig ACK task fail");
         free(ack);
+        return ESP_ERR_NO_MEM;
     }
+
+    return ESP_OK;
 }
 
-void sc_ack_send_stop(void)
+void sc_send_ack_stop(void)
 {
     s_sc_ack_send = false;
 }

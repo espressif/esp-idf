@@ -19,54 +19,24 @@
 extern "C" {
 #endif
 
-#define SC_ACK_TASK_PRIORITY             2          /*!< Priority of sending smartconfig ACK task */
-#define SC_ACK_TASK_STACK_SIZE           2048       /*!< Stack size of sending smartconfig ACK task */
-
-#define SC_ACK_TOUCH_SERVER_PORT         18266      /*!< ESP touch UDP port of server on cellphone */
-#define SC_ACK_AIRKISS_SERVER_PORT       10000      /*!< Airkiss UDP port of server on cellphone */
-
-#define SC_ACK_TOUCH_LEN                 11         /*!< Length of ESP touch ACK context */
-#define SC_ACK_AIRKISS_LEN               7          /*!< Length of Airkiss ACK context */
-
-#define SC_ACK_MAX_COUNT                 30         /*!< Maximum count of sending smartconfig ACK */
-
-/**
- * @brief Smartconfig ACK type.
- */
-typedef enum {
-    SC_ACK_TYPE_ESPTOUCH = 0,                       /*!< ESP touch ACK type */
-    SC_ACK_TYPE_AIRKISS,                            /*!< Airkiss ACK type */
-} sc_ack_type_t;
-
-/**
- * @brief Smartconfig parameters passed to sc_ack_send call.
- */
-typedef struct sc_ack {
-    sc_ack_type_t type;           /*!< Smartconfig ACK type */
-    uint8_t *link_flag;           /*!< Smartconfig link flag */
-    sc_callback_t cb;             /*!< Smartconfig callback function */
-    struct {
-        uint8_t token;            /*!< Smartconfig token to be sent */
-        uint8_t mac[6];           /*!< MAC address of station */
-        uint8_t ip[4];            /*!< IP address of cellphone */
-    } ctx;
-} sc_ack_t;
-
 /**
   * @brief  Send smartconfig ACK to cellphone.
   *
-  * @attention The API is only used in libsmartconfig.a.
+  * @attention The API can only be used when receiving SC_EVENT_GOT_SSID_PSWD event.
   *
-  * @param  param: smartconfig parameters;
+  * @param  type: smartconfig type(ESPTouch or AirKiss);
+  *         token: token from the cellphone;
+  *         cellphone_ip: IP address of the cellphone;
+  *
+  * @retuen ESP_OK: succeed
+  *         others: fail
   */
-void sc_ack_send(sc_ack_t *param);
+esp_err_t sc_send_ack_start(smartconfig_type_t type, uint8_t token, uint8_t *cellphone_ip);
 
 /**
   * @brief  Stop sending smartconfig ACK to cellphone.
-  *
-  * @attention The API is only used in libsmartconfig.a.
   */
-void sc_ack_send_stop(void);
+void sc_send_ack_stop(void);
 
 #ifdef __cplusplus
 }

@@ -36,6 +36,7 @@
 #include "esp_wifi_types.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
+#include "esp_smartconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -180,6 +181,34 @@ esp_err_t esp_wifi_internal_set_sta_ip(void);
   *    - ESP_ERR_NOT_SUPPORTED : do not support to set fixed rate if TX AMPDU is enabled
   */
 esp_err_t esp_wifi_internal_set_fix_rate(wifi_interface_t ifx, bool en, wifi_phy_rate_t rate);
+
+/**
+  * @brief     Start SmartConfig, config ESP device to connect AP. You need to broadcast information by phone APP.
+  *            Device sniffer special packets from the air that containing SSID and password of target AP.
+  *
+  * @attention 1. This API can be called in station or softAP-station mode.
+  * @attention 2. Can not call esp_smartconfig_start twice before it finish, please call
+  *               esp_smartconfig_stop first.
+  *
+  * @param     config pointer to smartconfig start configure structure
+  *
+  * @return
+  *     - ESP_OK: succeed
+  *     - others: fail
+  */
+esp_err_t esp_smartconfig_internal_start(const smartconfig_start_config_t *config);
+
+/**
+  * @brief     Stop SmartConfig, free the buffer taken by esp_smartconfig_start.
+  *
+  * @attention Whether connect to AP succeed or not, this API should be called to free
+  *            memory taken by smartconfig_start.
+  *
+  * @return
+  *     - ESP_OK: succeed
+  *     - others: fail
+  */
+esp_err_t esp_smartconfig_internal_stop(void);
 
 /**
   * @brief     Check the MD5 values of the OS adapter header files in IDF and WiFi library
