@@ -12,38 +12,48 @@ The similarities on MAC layer between Ethernet and Wi-Fi make it easy to forward
 
 ### Hardware Required
 
-To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
+To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports up to four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
+
+`esp_eth` component not only supports ESP32 internal Ethernet MAC controller, but also can drive third-party Ethernet module which integrates MAC and PHY and provides SPI interface. This example also take the **DM9051** as an example, illustrating how to install the Ethernet driver with only a little different configuration.
 
 ### Project configuration in menuconfig
 
 Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system.
 
 1. In the `Example Configuration` menu:
+    * Set the SSID and password for Wi-Fi ap interface under `Wi-Fi SSID` and `Wi-Fi Password`.
+    * Set the maximum connection number under `Maximum STA connections`.
+    * Choose the kind of Ethernet this example will run on under `Ethernet Type`.
+    * If `Internal EMAC` is selected:
+        * Choose PHY device under `Ethernet PHY Device`, by default, the **ESP32-Ethernet-Kit** has an `IP101` on board.
 
-* Choose PHY device under `Ethernet PHY Device`, by default, the **ESP32-Ethernet-Kit** has an `IP101` on board.
-* Set the SSID and password for Wi-Fi ap interface under `Wi-Fi SSID` and `Wi-Fi Password`.
-* Set the maximum connection number under `Maximum STA connections`.
+    * If `SPI Ethernet Module` is selected:
+        * Set SPI specific configuration, including GPIO and clock speed.
 
 2. In the `Component config > Ethernet` menu:
+    * If `Internal EMAC` is selected:
+        * Enable `Use ESP32 internal EMAC controller`, and then go into this menu.
+        * In the `PHY interface`, it's highly recommended that you choose `Reduced Media Independent Interface (RMII)` which will cost fewer pins.
+        * In the `RMII clock mode`, you can choose the source of RMII clock (50MHz): `Input RMII clock from external` or `Output RMII clock from internal`.
+        * Once `Output RMII clock from internal` is enabled, you also have to set the number of the GPIO used for outputting the RMII clock under `RMII clock GPIO number`. In this case, you can set the GPIO number to 16 or 17.
+        * Once `Output RMII clock from GPIO0 (Experimental!)` is enabled, then you have no choice but GPIO0 to output the RMII clock.
+        * Set SMI MDC/MDIO GPIO number according to board schematic, by default these two GPIOs are set as below:
 
-* Enable `Use ESP32 internal EMAC controller`, and then go into this menu.
-* In the `PHY interface`, it's highly recommended that you choose `Reduced Media Independent Interface (RMII)` which will cost fewer pins.
-* In the `RMII clock mode`, you can choose the source of RMII clock (50MHz): `Input RMII clock from external` or `Output RMII clock from internal`.
-* Once `Output RMII clock from internal` is enabled, you also have to set the number of the GPIO used for outputting the RMII clock under `RMII clock GPIO number`. In this case, you can set the GPIO number to 16 or 17.
-* Once `Output RMII clock from GPIO0 (Experimental!)` is enabled, then you have no choice but GPIO0 to output the RMII clock.
-* Set SMI MDC/MDIO GPIO number according to board schematic, by default these two GPIOs are set as below:
+            | Default Example GPIO | RMII Signal | Notes         |
+            | -------------------- | ----------- | ------------- |
+            | GPIO23               | MDC         | Output to PHY |
+            | GPIO18               | MDIO        | Bidirectional |
 
-  | Default Example GPIO | RMII Signal | Notes         |
-  | -------------------- | ----------- | ------------- |
-  | GPIO23               | MDC         | Output to PHY |
-  | GPIO18               | MDIO        | Bidirectional |
+        * If you have connect a GPIO to the PHY chip's RST pin, then you need to enable `Use Reset Pin of PHY Chip` and set the GPIO number under `PHY RST GPIO number`.
 
-* If you have connect a GPIO to the PHY chip's RST pin, then you need to enable `Use Reset Pin of PHY Chip` and set the GPIO number under `PHY RST GPIO number`.
+    * If `SPI Ethernet Module` is selected:
+        * Set the GPIO number used by interrupt pin under `DM9051 Interrupt GPIO number`.
 
 ### Extra configuration in the code (Optional)
 
 * By default Ethernet driver will assume the PHY address to `1`, but you can alway reconfigure this value after `eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();`. The actual PHY address should depend on the hardware you use, so make sure to consult the schematic and datasheet.peripheral (e.g. I²S), you'd better choose the external clock.
 
+**Note:** DM9051 has a fixed PHY address `1`, which cannot be modified.
 
 ### Build and Flash
 
