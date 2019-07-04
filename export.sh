@@ -28,6 +28,8 @@ function idf_export_main() {
     # Call idf_tools.py to export tool paths
     export IDF_TOOLS_EXPORT_CMD=${IDF_PATH}/export.sh
     export IDF_TOOLS_INSTALL_CMD=${IDF_PATH}/install.sh
+    export IDF_PATH
+    export IDF_TOOLS_PATH
     idf_exports=$(${IDF_PATH}/tools/idf_tools.py export) || return 1
     eval "${idf_exports}"
 
