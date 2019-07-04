@@ -175,7 +175,7 @@ def run_cmd_check_output(cmd, input_text=None, extra_paths=None):
             input_text = input_text.encode()
         result = subprocess.run(cmd, capture_output=True, check=True, input=input_text)
         return result.stdout + result.stderr
-    except AttributeError:
+    except (AttributeError, TypeError):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate(input_text)
         if p.returncode != 0:
