@@ -247,7 +247,13 @@ html_redirect_pages = [('api-reference/ethernet/index', 'api-reference/network/i
                        ('api-reference/wifi/esp_wifi', 'api-reference/network/esp_wifi'),
                        ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),
                        ('get-started/idf-monitor', 'api-guides/tools/idf-monitor'),
-                       ('get-started-cmake/idf-monitor', 'api-guides/tools/idf-monitor'),]
+                       ('get-started-cmake/idf-monitor', 'api-guides/tools/idf-monitor'),
+                       ('get-started/get-started-devkitc', 'hw-reference/get-started-devkitc'),
+                       ('get-started/get-started-wrover-kit', 'hw-reference/get-started-wrover-kit'),
+                       ('get-started/get-started-pico-kit', 'hw-reference/get-started-pico-kit'),
+                       ('get-started-cmake/get-started-devkitc', 'hw-reference/get-started-devkitc'),
+                       ('get-started-cmake/get-started-wrover-kit', 'hw-reference/get-started-wrover-kit'),
+                       ('get-started-cmake/get-started-pico-kit', 'hw-reference/get-started-pico-kit')]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
