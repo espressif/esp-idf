@@ -70,6 +70,7 @@
 #include "esp_private/pm_impl.h"
 #include "trax.h"
 #include "esp_ota_ops.h"
+#include "esp_efuse.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
