@@ -13,7 +13,7 @@ list(APPEND srcs
     "src/esp_efuse_utility.c")
 
 idf_component_register(SRCS "${srcs}"
-                    PRIV_REQUIRES bootloader_support soc
+                    PRIV_REQUIRES bootloader_support soc spi_flash
                     INCLUDE_DIRS "${include_dirs}")
 
 set(GEN_EFUSE_TABLE_ARG --max_blk_len ${CONFIG_EFUSE_MAX_BLK_LEN})
