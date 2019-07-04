@@ -204,10 +204,13 @@ menu "Bootloader config"
     config BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
         int "Size of the efuse secure version field"
         depends on BOOTLOADER_APP_ANTI_ROLLBACK
-        range 1 32
-        default 32
+        range 1 32 if IDF_TARGET_ESP32
+        default 32 if IDF_TARGET_ESP32
+        range 1 16 if IDF_TARGET_ESP32S2BETA
+        default 16 if IDF_TARGET_ESP32S2BETA
         help
-            The size of the efuse secure version field. Its length is limited to 32 bits.
+            The size of the efuse secure version field.
+            Its length is limited to 32 bits for ESP32 and 16 bits for ESP32S2BETA.
             This determines how many times the security version can be increased.
 
     config BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
