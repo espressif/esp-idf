@@ -63,10 +63,7 @@
 #include "bootloader_common.h"
 #include "bootloader_utility.h"
 #include "bootloader_sha.h"
-
-#if CONFIG_IDF_TARGET_ESP32
 #include "esp_efuse.h"
-#endif
 
 static const char *TAG = "boot";
 
