@@ -425,6 +425,7 @@ menu "ESP32-specific"
 
         config ESP32_PANIC_GDBSTUB
             bool "Invoke GDBStub"
+            select ESP_GDBSTUB_ENABLED
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.
