@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@
  *          Network ID advertising will be enabled automatically by BLE Mesh
  *          stack after the device is provisioned.
  *
- * @param   None.
- *
  * @return  ESP_OK on success or error code otherwise.
  *
  */
@@ -36,8 +34,6 @@ esp_err_t esp_ble_mesh_proxy_identity_enable(void);
 
 /**
  * @brief   Enable BLE Mesh GATT Proxy Service.
- *
- * @param   None.
  *
  * @return  ESP_OK on success or error code otherwise.
  *
@@ -47,8 +43,6 @@ esp_err_t esp_ble_mesh_proxy_gatt_enable(void);
 /**
  * @brief   Disconnect the BLE Mesh GATT Proxy connection if there is any, and
  *          disable the BLE Mesh GATT Proxy Service.
- *
- * @param   None.
  *
  * @return  ESP_OK on success or error code otherwise.
  *
