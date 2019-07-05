@@ -51,6 +51,34 @@ typedef enum {
 #endif
 } esp_image_load_mode_t;
 
+typedef struct {
+    esp_partition_pos_t partition;  /*!< Partition of application which worked before goes to the deep sleep. */
+    uint16_t reboot_counter;        /*!< Reboot counter. Reset only when power is off. */
+    uint16_t reserve;               /*!< Reserve */
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+    uint8_t custom[CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE]; /*!< Reserve for custom propose */
+#endif
+    uint32_t crc;                   /*!< Check sum crc32 */
+} rtc_retain_mem_t;
+
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+_Static_assert(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE % 4 == 0, "CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE must be a multiple of 4 bytes");
+#endif
+
+#if defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP) || defined(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC)
+_Static_assert(CONFIG_BOOTLOADER_RESERVE_RTC_SIZE % 4 == 0, "CONFIG_BOOTLOADER_RESERVE_RTC_SIZE must be a multiple of 4 bytes");
+#endif
+
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#endif
+
+#if defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP) || defined(CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC)
+_Static_assert(sizeof(rtc_retain_mem_t) <= ESP_BOOTLOADER_RESERVE_RTC, "Reserved RTC area must exceed size of rtc_retain_mem_t");
+#endif
+
 /**
  * @brief Verify and (optionally, in bootloader mode) load an app image.
  *

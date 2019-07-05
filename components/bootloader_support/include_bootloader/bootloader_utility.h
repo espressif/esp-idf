@@ -54,6 +54,16 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
  */
 __attribute__((noreturn)) void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index);
 
+#ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+/**
+ * @brief Load that application which was worked before we go to the deep sleep.
+ *
+ * Checks the reboot reason if it is the deep sleep and has a valid partition in the RTC memory
+ * then try to load the application which was worked before we go to the deep sleep.
+ *
+ */
+void bootloader_utility_load_boot_image_from_deep_sleep(void);
+#endif
 
 /**
  * @brief Software reset the ESP32
