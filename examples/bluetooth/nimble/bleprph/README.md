@@ -12,6 +12,12 @@ It also demonstrates security features of NimBLE stack. SMP parameters like I/O 
 
 To test this demo, any BLE scanner app can be used.
 
+A Python based utility `bleprph_test.py` is also provided (which will run as a BLE GATT Client) and can be used to test this example.   
+
+Note :
+
+* Make sure to run `python -m pip install --user -r $IDF_PATH/requirements.txt -r $IDF_PATH/tools/ble/requirements.txt` to install the dependency packages needed.
+* Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to use example
 
@@ -73,3 +79,72 @@ peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id
 
 ```
 
+## Running Python Utility
+
+```
+python bleprph_test.py
+```
+
+## Python Utility Output
+
+This is this output seen on the python side on successful connection:
+
+```
+discovering adapter...
+bluetooth adapter discovered
+powering on adapter...
+bluetooth adapter powered on
+
+Started Discovery
+
+Connecting to device...
+
+Connected to device
+
+Services
+
+[dbus.String(u'00001801-0000-1000-8000-00805f9b34fb', variant_level=1), dbus.String(u'59462f12-9543-9999-12c8-58b459a2712d', variant_level=1)]
+
+Characteristics retrieved
+
+	Characteristic:  /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000b
+	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df6
+	Value:  dbus.Array([dbus.Byte(45), dbus.Byte(244), dbus.Byte(81), dbus.Byte(88)], signature=dbus.Signature('y'))
+	Properties: :  dbus.Array([dbus.String(u'read')], signature=dbus.Signature('s'), variant_level=1)
+
+	Characteristic:  /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000d
+	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df7
+	Value:  dbus.Array([dbus.Byte(0)], signature=dbus.Signature('y'))
+	Properties: :  dbus.Array([dbus.String(u'read'), dbus.String(u'write')], signature=dbus.Signature('s'), variant_level=1)
+
+	Characteristic:  /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service0006/char0007
+	Characteristic UUID:  00002a05-0000-1000-8000-00805f9b34fb
+	Value:  None
+	Properties: :  dbus.Array([dbus.String(u'indicate')], signature=dbus.Signature('s'), variant_level=1)
+
+Characteristics after write operation
+
+	Characteristic: /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000b
+	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df6
+	Value: dbus.Array([dbus.Byte(45), dbus.Byte(244), dbus.Byte(81), dbus.Byte(88)], signature=dbus.Signature('y'))
+	Properties: :  dbus.Array([dbus.String(u'read')], signature=dbus.Signature('s'), variant_level=1)
+
+	Characteristic: /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service000a/char000d
+	Characteristic UUID:  5c3a659e-897e-45e1-b016-007107c96df7
+	Value: dbus.Array([dbus.Byte(65)], signature=dbus.Signature('y'))
+	Properties: :  dbus.Array([dbus.String(u'read'), dbus.String(u'write')], signature=dbus.Signature('s'), variant_level=1)
+
+	Characteristic: /org/bluez/hci0/dev_xx_xx_xx_xx_xx_xx/service0006/char0007
+	Characteristic UUID:  00002a05-0000-1000-8000-00805f9b34fb
+	Value: None
+	Properties: :  dbus.Array([dbus.String(u'indicate')], signature=dbus.Signature('s'), variant_level=1)
+
+exiting from test...
+disconnecting device...
+device disconnected
+powering off adapter...
+bluetooth adapter powered off
+```
+
+## Note
+* NVS support is not yet integrated to bonding. So, for now, bonding is not persistent across reboot.
