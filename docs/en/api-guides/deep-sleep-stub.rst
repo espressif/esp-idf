@@ -88,4 +88,4 @@ For example, the equivalent example in ``rtc_wake_stub_counter.c``::
 
 The second way is a better option if you need to use strings, or write other more complex code.
 
-
+To reduce wake-up time use the `CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` Kconfig option, see more information in :doc:`Fast boot from Deep Sleep <bootloader>`.
