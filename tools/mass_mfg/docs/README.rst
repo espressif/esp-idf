@@ -127,75 +127,117 @@ An instance of an intermediate CSV file will be created for each device on an in
 Running the utility
 -------------------
 
-The mfg\_gen.py utility uses the generated CSV Configuration file and the master value CSV file to generate factory images for each device. 
-
-*A sample CSV Configuration file and a master value CSV file are both provided with this utility.* 
-
 **Usage**::
-    
-    ./mfg_gen.py [-h] [--conf CONFIG_FILE] [--values VALUES_FILE]
-                    [--prefix PREFIX] [--fileid FILEID] [--outdir OUTDIR]
-                    [--size PART_SIZE] [--version {v1,v2}]
-                    [--keygen {true,false}] [--encrypt {true,false}]
-                    [--keyfile KEYFILE]
 
-The description of the arguments is given in the table below.
+        python mfg_gen.py [-h] {generate,generate-key} ...
 
-+------------------------+------------------------------------------------------------+-------------------+
-|   Arguments            |                        Description                         |  Default Value    |
-+========================+============================================================+===================+
-| --conf CONFIG_FILE     | Path to existing CSV configuration file                    |                   |
-+------------------------+------------------------------------------------------------+-------------------+
-| --values VALUES_FILE   | Path to existing master value CSV file                     |                   |
-+------------------------+------------------------------------------------------------+-------------------+
-| --prefix PREFIX        | Unique filename prefix                                     |                   |
-+------------------------+------------------------------------------------------------+-------------------+
-| --fileid FILEID        | Unique file identifier (any key in the file with values)   | numeric value     |
-|                        | as a filename suffix                                       | (1,2,3...)        |
-+------------------------+------------------------------------------------------------+-------------------+
-| --outdir OUTDIR        | Output directory to store created files                    | current directory |
-+------------------------+------------------------------------------------------------+-------------------+
-| --size PART_SIZE       | Size of NVS Partition in bytes (must be multiple of 4096)  |                   |
-+------------------------+------------------------------------------------------------+-------------------+
-| --version {v1,v2}      | Set version                                                | v2                |
-+------------------------+------------------------------------------------------------+-------------------+
-| --keygen {true,false}  | Generate keys for encryption                               | false             |
-+------------------------+------------------------------------------------------------+-------------------+
-| --encrypt {true,false} | Set encryption mode                                        | false             |
-+------------------------+------------------------------------------------------------+-------------------+
-| --keyfile KEYFILE      | File storing key for encryption (Applicable only if        |                   |
-|                        | Encryption mode is true).                                  |                   |
-+------------------------+------------------------------------------------------------+-------------------+
+        Optional Arguments:
+        +-----+------------+----------------------------------------------------------------------+
+        | No. | Parameter  |                           Description                                |
+        +=====+============+======================================================================+
+        | 1   | -h, --help |        show this help message and exit                               |
+        +-----+------------+----------------------------------------------------------------------+
 
-*To run this utility with the provided sample files, use the commands below*::
+        Commands:
+  	        Run mfg_gen.py {command} -h for additional help
+        +-----+--------------+--------------------------------------------------------------------+
+        | No. | Parameter    |                           Description                              |
+        +=====+==============+====================================================================+
+        | 1   | generate     |      Generate NVS partition                                        |
+        +-----+--------------+--------------------------------------------------------------------+
+        | 2   | generate-key |      Generate keys for encryption                                  |
+        +-----+--------------+--------------------------------------------------------------------+
 
-    ./mfg_gen.py --conf samples/sample_config.csv --values samples/sample_values_singlepage_blob.csv --prefix Fan --size 0x3000
+**To generate factory images for each device (Default):**
+    **Usage**::
 
-    ./mfg_gen.py --conf samples/sample_config.csv --values samples/sample_values_multipage_blob.csv --prefix Fan --size 0x4000
+        python mfg_gen.py generate [-h] [--fileid FILEID] [--version {1,2}] [--keygen]
+                                        [--keyfile KEYFILE] [--inputkey INPUTKEY]
+                                        [--outdir OUTDIR]
+                                        conf values prefix size
+        
+        Positional Arguments:
+        +--------------+----------------------------------------------------------------------+
+        | Parameter    |                           Description                                |
+        +==============+======================================================================+
+        | conf         |        Path to configuration csv file to parse                       | 
+        +--------------+----------------------------------------------------------------------+
+        | values       |        Path to values csv file to parse                              |
+        +--------------+----------------------------------------------------------------------+
+        | prefix       |        Unique name for each output filename prefix                   |                          
+        +-----+--------------+----------------------------------------------------------------+
+        | size         |        Size of NVS partition in bytes                                |
+        |              |        (must be multiple of 4096)                                    |
+        +--------------+----------------------------------------------------------------------+
 
-When you use this utility to generate factory images on a per device basis, keep in mind that the arguments --conf, --values, --prefix, and --size are mandatory.
+        Optional Arguments:
+        +---------------------+--------------------------------------------------------------------+
+        | Parameter           |                           Description                              |
+        +=====================+====================================================================+
+        | -h, --help          |     show this help message and exit                                |
+        +---------------------+--------------------------------------------------------------------+
+        | --fileid FILEID     |     Unique file identifier(any key in values file)                 |
+        |                     |     for each filename suffix (Default: numeric value(1,2,3...)     |
+        +---------------------+--------------------------------------------------------------------+
+        | --version {1,2}     |     Set multipage blob version.                                    |
+        |                     |     Version 1 - Multipage blob support disabled.                   |
+        |                     |     Version 2 - Multipage blob support enabled.                    |
+        |                     |     Default: Version 2                                             |
+        +---------------------+--------------------------------------------------------------------+
+        | --keygen            |     Generates key for encrypting NVS partition                     |
+        +---------------------+--------------------------------------------------------------------+
+        | --inputkey INPUTKEY |     File having key for encrypting NVS partition                   |
+        +---------------------+--------------------------------------------------------------------+
+        | --outdir OUTDIR     |     Output directory to store files created                        |
+        |                     |     (Default: current directory)                                   |
+        +---------------------+--------------------------------------------------------------------+
 
-    ./mfg_gen.py --conf samples/sample_config.csv --values samples/sample_values_singlepage_blob.csv --prefix Fan --size 0x3000 --outdir tmp
+You can run the utility to generate factory images for each device using the command below. A sample CSV file is provided with the utility::
 
-.. note:: If the --outdir directory does not exist, it will be created.
+    python mfg_gen.py generate samples/sample_config.csmples/sample_values_singlepage_blob.csv Sample 0x3000
 
 The master value CSV file should have the path in the ``file`` type relative to the directory from which you are running the utility.
 
-    ./mfg_gen.py --conf samples/sample_config.csv --values samples/sample_values_singlepage_blob.csv --prefix Fan --size 0x3000 --encrypt true --keygen true
+**To generate encrypted factory images for each device:**
 
-.. note:: The generated ``keys/`` directory is named as the file with encryption keys of the form ``prefix-fileid-keys.bin``.
+You can run the utility to encrypt factory images for each device using the command below. A sample CSV file is provided with the utility:
 
-*If you* **only** *want to generate a binary file with encryption keys, you can run the command below.*::
+- Encrypt by allowing the utility to generate encryption keys::
 
-    ./mfg_gen.py --keygen true
+    python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000 --keygen
 
-.. note:: When you use this utility to generate encryption keys only, the --keygen argument is mandatory.
+.. note:: Encryption key of the following format ``<outdir>/keys/keys-<prefix>-<fileid>.bin`` is created.
+.. note:: This newly created file having encryption keys in ``keys/`` directory is compatible with NVS key-partition structure. Refer to :ref:`nvs_key_partition` for more details.
 
-In the following example, the 'keys/' directory will be created at the current path. This binary file can further be used to encrypt factory images created on the per device basis*.::
+- Encrypt by providing the encryption keys as input binary file::
 
-    ./mfg_gen.py --keygen true --keyfile encr_keys.bin
+    python mfg_gen.py generate samples/sample_config.csv samples/sample_values_singlepage_blob.csv Sample 0x3000 --inputkey keys/sample_keys.bin
 
-.. note:: When running the utility to generate encryption keys only, if --keyfile is given, it will generate encryption keys with the filename given in the --keyfile argument.
+**To generate only encryption keys:**
+  **Usage**::
+
+        python mfg_gen.py generate-key [-h] [--keyfile KEYFILE] [--outdir OUTDIR]
+
+        Optional Arguments:
+        +--------------------+----------------------------------------------------------------------+
+        | Parameter          |                           Description                                |
+        +====================+======================================================================+
+        | -h, --help         |      show this help message and exit                                 |
+        +--------------------+----------------------------------------------------------------------+
+        | --keyfile KEYFILE  |      Path to output encryption keys file                             |
+        +--------------------+----------------------------------------------------------------------+
+        | --outdir OUTDIR    |      Output directory to store files created.                        |
+        |                    |      (Default: current directory)                                    |
+        +--------------------+----------------------------------------------------------------------+
+    
+You can run the utility to generate only encryption keys using the command below::
+
+    python mfg_gen.py generate-key
+
+.. note:: Encryption key of the following format ``<outdir>/keys/keys-<timestamp>.bin`` is created. Timestamp format is: ``%m-%d_%H-%M``.
+.. note:: To provide custom target filename use the --keyfile argument.
+
+Generated encryption key binary file can further be used to encrypt factory images created on the per device basis.
 
 The default numeric value: 1,2,3... of the ``fileid`` argument corresponds to each line bearing device instance values in the master value CSV file.
 
@@ -203,3 +245,4 @@ While running the manufacturing utility, the following folders will be created i
 
 - ``bin/`` for storing the generated binary files
 - ``csv/`` for storing the generated intermediate CSV files
+- ``keys/`` for storing encryption keys (when generating encrypted factory images)
