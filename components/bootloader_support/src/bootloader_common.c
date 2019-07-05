@@ -213,16 +213,6 @@ void bootloader_common_vddsdio_configure()
 #endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
 }
 
-void bootloader_common_set_flash_cs_timing()
-{
-    SET_PERI_REG_MASK(SPI_USER_REG(0), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_SETUP_TIME_V, 0, SPI_SETUP_TIME_S);
-    SET_PERI_REG_MASK(SPI_USER_REG(1), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_SETUP_TIME_V, 0, SPI_SETUP_TIME_S);
-}
-
 uint8_t bootloader_common_get_chip_revision(void)
 {
     uint8_t eco_bit0, eco_bit1, eco_bit2;

@@ -66,7 +66,7 @@ else()
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # tcpip_adapter is a public requirement because esp_event.h uses tcpip_adapter types
     set(COMPONENT_PRIV_REQUIRES
-        app_trace bootloader_support ethernet log mbedtls nvs_flash
+        app_trace app_update bootloader_support ethernet log mbedtls nvs_flash
         pthread smartconfig_ack spi_flash vfs wpa_supplicant xtensa-debug-module)
 
     register_component()

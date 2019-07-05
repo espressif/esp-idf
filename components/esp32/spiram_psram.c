@@ -96,8 +96,6 @@ typedef enum {
 // WARNING: PSRAM shares all but the CS and CLK pins with the flash, so these defines
 // hardcode the flash pins as well, making this code incompatible with either a setup
 // that has the flash on non-standard pins or ESP32s with built-in flash.
-#define FLASH_CLK_IO               6
-#define FLASH_CS_IO                11
 #define PSRAM_SPIQ_SD0_IO          7
 #define PSRAM_SPID_SD1_IO          8
 #define PSRAM_SPIWP_SD3_IO         10
@@ -136,8 +134,8 @@ typedef struct {
 
 #define PSRAM_INTERNAL_IO_28       28
 #define PSRAM_INTERNAL_IO_29       29
-#define PSRAM_IO_MATRIX_DUMMY_40M   1
-#define PSRAM_IO_MATRIX_DUMMY_80M   2
+#define PSRAM_IO_MATRIX_DUMMY_40M  ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M
+#define PSRAM_IO_MATRIX_DUMMY_80M  ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M
 
 #define _SPI_CACHE_PORT             0
 #define _SPI_FLASH_PORT             1
@@ -571,7 +569,7 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_mode_t
     gpio_matrix_in(psram_io->psram_spihd_sd2_io, SPIHD_IN_IDX, 0);
     
     //select pin function gpio
-    if ((psram_io->flash_clk_io == FLASH_CLK_IO) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
+    if ((psram_io->flash_clk_io == SPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
         //flash clock signal should come from IO MUX.
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[psram_io->flash_clk_io], FUNC_SD_CLK_SPICLK);
     } else {
@@ -652,8 +650,8 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
     if (spiconfig == EFUSE_SPICONFIG_SPI_DEFAULTS) {
-        psram_io.flash_clk_io       = FLASH_CLK_IO;
-        psram_io.flash_cs_io        = FLASH_CS_IO;
+        psram_io.flash_clk_io       = SPI_IOMUX_PIN_NUM_CLK;
+        psram_io.flash_cs_io        = SPI_IOMUX_PIN_NUM_CS;
         psram_io.psram_spiq_sd0_io  = PSRAM_SPIQ_SD0_IO;
         psram_io.psram_spid_sd1_io  = PSRAM_SPID_SD1_IO;
         psram_io.psram_spiwp_sd3_io = PSRAM_SPIWP_SD3_IO;
