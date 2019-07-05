@@ -166,7 +166,7 @@ static bt_status_t btc_task_post(btc_msg_t *msg, uint32_t timeout)
 
     memcpy(lmsg, msg, sizeof(btc_msg_t));
 
-    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 2, timeout) == false) {
+    if (osi_thread_post(btc_thread, btc_thread_handler, lmsg, 0, timeout) == false) {
         return BT_STATUS_BUSY;
     }
 
@@ -359,7 +359,7 @@ void btc_deinit(void)
 
 bool btc_check_queue_is_congest(void)
 {
-    if (osi_thread_queue_wait_size(btc_thread, 2) >= BT_QUEUE_CONGEST_SIZE) {
+    if (osi_thread_queue_wait_size(btc_thread, 0) >= BT_QUEUE_CONGEST_SIZE) {
         return true;
     }
 
