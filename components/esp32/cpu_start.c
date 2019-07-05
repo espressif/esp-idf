@@ -71,7 +71,7 @@
 #include "trax.h"
 #include "esp_ota_ops.h"
 #include "esp_efuse.h"
-#include "bootloader_common.h"
+#include "bootloader_flash_config.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -173,8 +173,6 @@ void IRAM_ATTR call_start_cpu0()
         abort();
 #endif
     }
-# else  // If psram is uninitialized, we need to improve the flash cs timing.
-    bootloader_common_set_flash_cs_timing();
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
@@ -433,6 +431,17 @@ void start_cpu0_default(void)
 
 #if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
+#endif
+
+    bootloader_flash_update_id();
+#if !CONFIG_SPIRAM_BOOT_INIT  // If psram is uninitialized, we need to improve some flash configuration.
+    esp_image_header_t fhdr;
+    const esp_partition_t *partition = esp_ota_get_running_partition();
+    spi_flash_read(partition->address, &fhdr, sizeof(esp_image_header_t));
+    bootloader_flash_clock_config(&fhdr);
+    bootloader_flash_gpio_config(&fhdr);
+    bootloader_flash_dummy_config(&fhdr);
+    bootloader_flash_cs_timing_config();
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
