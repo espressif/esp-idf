@@ -70,6 +70,7 @@ tools/ldgen/ldgen.py
 tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
 tools/mass_mfg/mfg_gen.py
+tools/set-submodules-to-github.sh
 tools/test_check_kconfigs.py
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_size/test.sh
