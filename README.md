@@ -13,6 +13,14 @@ See setup guides for detailed instructions to set up the ESP-IDF:
 * [Getting Started Guide for the stable ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
 * [Getting Started Guide for the latest (master branch) ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/)
 
+### Non-GitHub forks
+
+ESP-IDF uses relative locations as its submodules URLs ([.gitmodules](.gitmodules)). So they link to GitHub.
+If ESP-IDF is forked to a Git repository which is not on GitHub, you will need to run the script
+[tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh) after git clone.
+The script sets absolute URLs for all submodules, allowing `git submodule update --init --recursive` to complete.
+If cloning ESP-IDF from GitHub, this step is not needed.
+
 ## Finding a Project
 
 As well as the [esp-idf-template](https://github.com/espressif/esp-idf-template) project mentioned in Getting Started, ESP-IDF comes with some example projects in the [examples](examples) directory.
