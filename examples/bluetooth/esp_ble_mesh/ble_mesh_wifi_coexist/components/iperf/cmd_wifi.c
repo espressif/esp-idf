@@ -17,7 +17,6 @@
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
 #include "tcpip_adapter.h"
-#include "esp_event_loop.h"
 #include "iperf.h"
 
 typedef struct {
@@ -74,22 +73,18 @@ static void scan_done_handler(void)
     free(ap_list_buffer);
 }
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
 {
-    switch (event->event_id) {
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
-        ESP_LOGI(TAG, "got ip");
-        break;
-    case SYSTEM_EVENT_SCAN_DONE:
+    switch (event_id) {
+    case WIFI_EVENT_SCAN_DONE:
         scan_done_handler();
         ESP_LOGI(TAG, "sta scan done");
         break;
-    case SYSTEM_EVENT_STA_CONNECTED:
+    case WIFI_EVENT_STA_CONNECTED:
         ESP_LOGI(TAG, "L2 connected");
         break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    case WIFI_EVENT_STA_DISCONNECTED:
         if (reconnect) {
             ESP_LOGI(TAG, "sta disconnect, reconnect...");
             esp_wifi_connect();
@@ -102,7 +97,22 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     default:
         break;
     }
-    return ESP_OK;
+    return;
+}
+
+static void ip_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    switch (event_id) {
+    case IP_EVENT_STA_GOT_IP:
+        xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
+        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        ESP_LOGI(TAG, "got ip");
+        break;
+    default:
+        break;
+    }
+    return;
 }
 
 void initialise_wifi(void)
@@ -116,7 +126,10 @@ void initialise_wifi(void)
 
     tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_ps(WIFI_PS_MIN_MODEM) ); //must call this

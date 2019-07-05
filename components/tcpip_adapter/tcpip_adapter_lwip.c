@@ -92,13 +92,18 @@ static void tcpip_adapter_api_cb(void *api_msg)
 
 static void tcpip_adapter_dhcps_cb(u8_t client_ip[4])
 {
+    int ret;
+
     ESP_LOGI(TAG, "softAP assign IP to station,IP is: %d.%d.%d.%d",
              client_ip[0], client_ip[1], client_ip[2], client_ip[3]);
-    system_event_t evt;
-    memset(&evt, 0, sizeof(system_event_t));
-    evt.event_id = SYSTEM_EVENT_AP_STAIPASSIGNED;
-    memcpy((char *)&evt.event_info.ap_staipassigned.ip.addr, (char *)client_ip, sizeof(evt.event_info.ap_staipassigned.ip.addr));
-    esp_event_send(&evt);
+    ip_event_ap_staipassigned_t evt;
+
+    memset(&evt, 0, sizeof(ip_event_ap_staipassigned_t));
+    memcpy((char *)&evt.ip.addr, (char *)client_ip, sizeof(evt.ip.addr));
+    ret = esp_event_send_internal(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &evt, sizeof(evt), 0);
+    if (ESP_OK != ret) {
+        ESP_LOGE(TAG, "dhcps cb: failed to post IP_EVENT_AP_STAIPASSIGNED (%x)", ret);
+    }
 }
 
 void tcpip_adapter_init(void)
@@ -447,23 +452,31 @@ esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_ada
         netif_set_addr(p_netif, &ip_info->ip, &ip_info->netmask, &ip_info->gw);
         if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
             if (!(ip4_addr_isany_val(ip_info->ip) || ip4_addr_isany_val(ip_info->netmask) || ip4_addr_isany_val(ip_info->gw))) {
-                system_event_t evt;
-                memset(&evt, 0, sizeof(system_event_t));
-                if (tcpip_if == TCPIP_ADAPTER_IF_STA) {
-                    evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
-                } else if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
-                    evt.event_id = SYSTEM_EVENT_ETH_GOT_IP;
-                }
-                evt.event_info.got_ip.ip_changed = false;
+
+                ip_event_t evt_id = IP_EVENT_STA_GOT_IP;
+                ip_event_got_ip_t evt;
+                int ret;
+
+                memset(&evt, 0, sizeof(ip_event_got_ip_t));
+                evt.if_index = tcpip_if;
+                evt.ip_changed = false;
 
                 if (memcmp(ip_info, &esp_ip_old[tcpip_if], sizeof(tcpip_adapter_ip_info_t))) {
-                    evt.event_info.got_ip.ip_changed = true;
+                    evt.ip_changed = true;
                 }
 
-                memcpy(&evt.event_info.got_ip.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
+                if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
+                    evt_id = IP_EVENT_ETH_GOT_IP;
+                }
+
+                memcpy(&evt.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
                 memcpy(&esp_ip_old[tcpip_if], ip_info, sizeof(tcpip_adapter_ip_info_t));
-                esp_event_send(&evt);
-                ESP_LOGD(TAG, "if%d tcpip adapter set static ip: ip changed=%d", tcpip_if, evt.event_info.got_ip.ip_changed);
+                ret = esp_event_send_internal(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
+                if (ESP_OK != ret) {
+                    ESP_LOGE(TAG, "set ip info: failed to post got ip event (%x)", ret);
+                }
+
+                ESP_LOGD(TAG, "if%d tcpip adapter set static ip: ip changed=%d", tcpip_if, evt.ip_changed);
             }
         }
     }
@@ -479,12 +492,11 @@ static esp_err_t tcpip_adapter_set_ip_info_api(tcpip_adapter_api_msg_t *msg)
 static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
 {
     tcpip_adapter_ip6_info_t *ip6_info;
+    int ret;
 
-    system_event_t evt;
-    memset(&evt, 0, sizeof(system_event_t));
+    ip_event_got_ip6_t evt;
+    memset(&evt, 0, sizeof(ip_event_got_ip6_t));
     //notify event
-
-    evt.event_id = SYSTEM_EVENT_GOT_IP6;
 
     if (!p_netif) {
         ESP_LOGD(TAG, "null p_netif=%p", p_netif);
@@ -493,21 +505,24 @@ static void tcpip_adapter_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
 
     if (p_netif == esp_netif[TCPIP_ADAPTER_IF_STA]) {
         ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_STA];
-        evt.event_info.got_ip6.if_index = TCPIP_ADAPTER_IF_STA;
+        evt.if_index = TCPIP_ADAPTER_IF_STA;
     } else if (p_netif == esp_netif[TCPIP_ADAPTER_IF_AP]) {
         ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_AP];
-        evt.event_info.got_ip6.if_index = TCPIP_ADAPTER_IF_AP;
+        evt.if_index = TCPIP_ADAPTER_IF_AP;
     } else if (p_netif == esp_netif[TCPIP_ADAPTER_IF_ETH]) {
         ip6_info = &esp_ip6[TCPIP_ADAPTER_IF_ETH];
-        evt.event_info.got_ip6.if_index = TCPIP_ADAPTER_IF_ETH;
+        evt.if_index = TCPIP_ADAPTER_IF_ETH;
     } else {
         return;
     }
 
     ip6_addr_set(&ip6_info->ip, ip_2_ip6(&p_netif->ip6_addr[ip_idex]));
 
-    memcpy(&evt.event_info.got_ip6.ip6_info, ip6_info, sizeof(tcpip_adapter_ip6_info_t));
-    esp_event_send(&evt);
+    memcpy(&evt.ip6_info, ip6_info, sizeof(tcpip_adapter_ip6_info_t));
+    ret = esp_event_send_internal(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0);
+    if (ESP_OK != ret) {
+        ESP_LOGE(TAG, "nd6 cb: failed to post IP_EVENT_GOT_IP6 (%x)", ret);
+    }
 }
 
 esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if)
@@ -921,30 +936,37 @@ static void tcpip_adapter_dhcpc_cb(struct netif *netif)
         if ( !ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), (&ip_info->ip)) ||
                 !ip4_addr_cmp(ip_2_ip4(&netif->netmask), (&ip_info->netmask)) ||
                 !ip4_addr_cmp(ip_2_ip4(&netif->gw), (&ip_info->gw)) ) {
-            system_event_t evt;
-            memset(&evt, 0, sizeof(system_event_t));
+            ip_event_got_ip_t evt;
+            ip_event_t evt_id;
+            int ret;
+
+            memset(&evt, 0, sizeof(ip_event_got_ip_t));
 
             ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
             ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
             ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
 
             //notify event
+            evt.if_index = tcpip_if;
             if (tcpip_if == TCPIP_ADAPTER_IF_ETH) {
-                evt.event_id = SYSTEM_EVENT_ETH_GOT_IP;
-                evt.event_info.got_ip.ip_changed = true;
+                evt_id = IP_EVENT_ETH_GOT_IP;
+                evt.ip_changed = true;
             } else {
-                evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
-                evt.event_info.got_ip.ip_changed = false;
+                evt_id = IP_EVENT_STA_GOT_IP;
+                evt.ip_changed = false;
             }
 
             if (memcmp(ip_info, ip_info_old, sizeof(tcpip_adapter_ip_info_t))) {
-                evt.event_info.got_ip.ip_changed = true;
+                evt.ip_changed = true;
             }
 
-            memcpy(&evt.event_info.got_ip.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
+            memcpy(&evt.ip_info, ip_info, sizeof(tcpip_adapter_ip_info_t));
             memcpy(ip_info_old, ip_info, sizeof(tcpip_adapter_ip_info_t));
-            ESP_LOGD(TAG, "if%d ip changed=%d", tcpip_if, evt.event_info.got_ip.ip_changed);
-            esp_event_send(&evt);
+            ESP_LOGD(TAG, "if%d ip changed=%d", tcpip_if, evt.ip_changed);
+            ret = esp_event_send_internal(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
+            if (ESP_OK != ret) {
+                ESP_LOGE(TAG, "dhcpc cb: failed to post got ip event (%x)", ret);
+            }
         } else {
             ESP_LOGD(TAG, "if%d ip unchanged", tcpip_if);
         }
@@ -997,13 +1019,17 @@ static void tcpip_adapter_ip_lost_timer(void *arg)
         struct netif *netif = esp_netif[tcpip_if];
 
         if ( (!netif) || (netif && ip4_addr_cmp(ip_2_ip4(&netif->ip_addr), IP4_ADDR_ANY4))) {
-            system_event_t evt;
-            memset(&evt, 0, sizeof(system_event_t));
+            ip_event_got_ip_t evt;
+            int ret;
+            memset(&evt, 0, sizeof(ip_event_got_ip_t));
 
             ESP_LOGD(TAG, "if%d ip lost tmr: raise ip lost event", tcpip_if);
+            evt.if_index = tcpip_if;
             memset(&esp_ip_old[tcpip_if], 0, sizeof(tcpip_adapter_ip_info_t));
-            evt.event_id = SYSTEM_EVENT_STA_LOST_IP;
-            esp_event_send(&evt);
+            ret = esp_event_send_internal(IP_EVENT, IP_EVENT_STA_LOST_IP, &evt, sizeof(evt), 0);
+            if (ESP_OK != ret) {
+                ESP_LOGE(TAG, "ip lost timer: failed to post lost ip event (%x)", ret);
+            }
         } else {
             ESP_LOGD(TAG, "if%d ip lost tmr: no need raise ip lost event", tcpip_if);
         }

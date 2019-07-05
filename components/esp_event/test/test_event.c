@@ -5,7 +5,7 @@
 #include "sdkconfig.h"
 
 #include "freertos/FreeRTOS.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
 #include "esp_log.h"

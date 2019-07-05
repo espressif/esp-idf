@@ -121,7 +121,11 @@ typedef struct {
 } system_event_t;
 
 /** Event handler function type */
-typedef esp_err_t (*system_event_handler_t)(system_event_t *event);
+typedef esp_err_t (*system_event_handler_t)(esp_event_base_t event_base,
+                                            int32_t event_id,
+                                            void* event_data,
+                                            size_t event_data_size,
+                                            TickType_t ticks_to_wait);
 
 /**
   * @brief  Send a event to event task
@@ -135,7 +139,29 @@ typedef esp_err_t (*system_event_handler_t)(system_event_t *event);
   * @return ESP_OK : succeed
   * @return others : fail
   */
-esp_err_t esp_event_send(system_event_t *event);
+esp_err_t esp_event_send(system_event_t *event) __attribute__ ((deprecated));
+
+/**
+  * @brief  Send a event to event task
+  *
+  * @note This API is used by WiFi Driver only.
+  *
+  * Other task/modules, such as the tcpip_adapter, can call this API to send an event to event task
+  *
+  * @param[in] event_base the event base that identifies the event
+  * @param[in] event_id the event id that identifies the event
+  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler
+  * @param[in] event_data_size the size of the event data
+  * @param[in] ticks_to_wait number of ticks to block on a full event queue
+  *
+  * @return ESP_OK : succeed
+  * @return others : fail
+  */
+esp_err_t esp_event_send_internal(esp_event_base_t event_base,
+                            int32_t event_id,
+                            void* event_data,
+                            size_t event_data_size,
+                            TickType_t ticks_to_wait);
 
 /**
  * @brief  Default event handler for system events
@@ -152,7 +178,7 @@ esp_err_t esp_event_send(system_event_t *event);
  * @param  event   pointer to event to be handled
  * @return ESP_OK if an event was handled successfully
  */
-esp_err_t esp_event_process_default(system_event_t *event);
+esp_err_t esp_event_process_default(system_event_t *event) __attribute__ ((deprecated));
 
 /**
   * @brief  Install default event handlers for Ethernet interface
@@ -167,7 +193,7 @@ void esp_event_set_default_eth_handlers(void);
   *
   * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
   */
-void esp_event_set_default_wifi_handlers(void);
+void esp_event_set_default_wifi_handlers(void) __attribute__ ((deprecated));
 
 /**
  * @brief  Application specified event callback function
@@ -198,7 +224,7 @@ typedef esp_err_t (*system_event_cb_t)(void *ctx, system_event_t *event);
  *    - ESP_OK: succeed
  *    - others: fail
  */
-esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx);
+esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx) __attribute__ ((deprecated));
 
 /**
  * @brief  Set application specified event callback function
@@ -214,7 +240,7 @@ esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx);
  *
  * @return old callback
  */
-system_event_cb_t esp_event_loop_set_cb(system_event_cb_t cb, void *ctx);
+system_event_cb_t esp_event_loop_set_cb(system_event_cb_t cb, void *ctx) __attribute__ ((deprecated));
 
 #ifdef __cplusplus
 }
