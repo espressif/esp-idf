@@ -1479,6 +1479,13 @@ esp_err_t esp_mesh_switch_channel(const uint8_t *new_bssid, int csa_newchan, int
  */
 esp_err_t esp_mesh_get_router_bssid(uint8_t *router_bssid);
 
+/**
+ * @brief      Get the TSF time
+ *
+ * @return     the TSF time
+ */
+int64_t esp_mesh_get_tsf_time(void);
+
 #ifdef __cplusplus
 }
 #endif
