@@ -48,6 +48,11 @@
 
 #define WPA2_VERSION    "v2.0"
 
+#define DATA_MUTEX_TAKE() xSemaphoreTakeRecursive(s_wpa2_data_lock,portMAX_DELAY)
+#define DATA_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wpa2_data_lock)
+
+static void *s_wpa2_data_lock = NULL;
+
 static struct eap_sm *gEapSm = NULL;
 
 static int eap_peer_sm_init(void);
@@ -134,7 +139,48 @@ struct wpa2_rx_param {
     u8 sa[WPA_ADDR_LEN];
     u8 *buf;
     int len;
+    STAILQ_ENTRY(wpa2_rx_param) bqentry;
 };
+static STAILQ_HEAD(, wpa2_rx_param) s_wpa2_rxq;
+
+static void wpa2_rxq_init(void)
+{
+    DATA_MUTEX_TAKE();
+    STAILQ_INIT(&s_wpa2_rxq);
+    DATA_MUTEX_GIVE();
+}
+
+static void wpa2_rxq_enqueue(struct wpa2_rx_param *param)
+{
+    DATA_MUTEX_TAKE();
+    STAILQ_INSERT_TAIL(&s_wpa2_rxq,param, bqentry);
+    DATA_MUTEX_GIVE();
+}
+
+static struct wpa2_rx_param * wpa2_rxq_dequeue(void)
+{
+    struct wpa2_rx_param *param = NULL;
+    DATA_MUTEX_TAKE();
+    if ((param = STAILQ_FIRST(&s_wpa2_rxq)) != NULL) {
+        STAILQ_REMOVE_HEAD(&s_wpa2_rxq, bqentry);
+        STAILQ_NEXT(param,bqentry) = NULL;
+    }
+    DATA_MUTEX_GIVE();
+    return param;
+}
+
+static void wpa2_rxq_deinit(void)
+{
+    struct wpa2_rx_param *param = NULL;
+    DATA_MUTEX_TAKE();
+    while ((param = STAILQ_FIRST(&s_wpa2_rxq)) != NULL) {
+        STAILQ_REMOVE_HEAD(&s_wpa2_rxq, bqentry);
+        STAILQ_NEXT(param,bqentry) = NULL;
+        os_free(param->buf);
+        os_free(param);
+    }
+    DATA_MUTEX_GIVE();
+}
 
 void wpa2_task(void *pvParameters )
 {
@@ -150,20 +196,26 @@ void wpa2_task(void *pvParameters )
     for (;;) {
         if ( pdPASS == xQueueReceive(s_wpa2_queue, &e, portMAX_DELAY) ) {
             sig = e->sig;
+            if (e->sig < SIG_WPA2_MAX) {
+                DATA_MUTEX_TAKE();
+                if(sm->wpa2_sig_cnt[e->sig]) {
+                    sm->wpa2_sig_cnt[e->sig]--;
+                } else {
+                    wpa_printf(MSG_ERROR, "wpa2_task: invalid sig cnt, sig=%d cnt=%d", e->sig, sm->wpa2_sig_cnt[e->sig]);
+                }
+                DATA_MUTEX_GIVE();
+            }
             switch (e->sig) {
             case SIG_WPA2_TASK_DEL:
                 task_del = true;
                 break;
             case SIG_WPA2_START:
-                sm->wpa2_sig_cnt[e->sig]--;
                 wpa2_start_eapol_internal();
                 break;
             case SIG_WPA2_RX: {
-                struct wpa2_rx_param *param;
+                struct wpa2_rx_param *param = NULL;
 
-                sm->wpa2_sig_cnt[e->sig]--;
-                param = (struct wpa2_rx_param *)(e->par);
-                if (param) {
+                while ((param = wpa2_rxq_dequeue()) != NULL){
                     wpa2_sm_rx_eapol_internal(param->sa, param->buf, param->len, param->bssid);
                     os_free(param->buf);
                     os_free(param);
@@ -211,15 +263,19 @@ int wpa2_post(uint32_t sig, uint32_t par)
         return ESP_FAIL;
     }
 
+    DATA_MUTEX_TAKE();
     if (sm->wpa2_sig_cnt[sig]) {
+        DATA_MUTEX_GIVE();
         return ESP_OK;
     } else {
         ETSEvent *evt = (ETSEvent *)os_malloc(sizeof(ETSEvent));
         if (evt == NULL) {
             wpa_printf(MSG_ERROR, "WPA2: E N M\n");
+            DATA_MUTEX_GIVE();
             return ESP_FAIL;
         }
         sm->wpa2_sig_cnt[sig]++;
+        DATA_MUTEX_GIVE();
         evt->sig = sig;
         evt->par = par;
         if ( xQueueSend(s_wpa2_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
@@ -302,8 +358,8 @@ void wpa2_sm_free_eapol(u8 *buffer)
 {
     if (buffer != NULL) {
         buffer = buffer - sizeof(struct l2_ethhdr);
+        os_free(buffer);
     }
-    os_free(buffer);
 
 }
 
@@ -480,7 +536,8 @@ static int wpa2_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
         param->len = len;
         memcpy(param->sa, src_addr, WPA_ADDR_LEN);
 
-        return wpa2_post(SIG_WPA2_RX, (uint32_t)param);
+        wpa2_rxq_enqueue(param);
+        return wpa2_post(SIG_WPA2_RX, 0);
     }
 #else
 
@@ -656,6 +713,12 @@ static int eap_peer_sm_init(void)
         return ESP_ERR_NO_MEM;
     }
 
+    s_wpa2_data_lock = xSemaphoreCreateRecursiveMutex();
+    if (!s_wpa2_data_lock) {
+        wpa_printf(MSG_ERROR, "wpa2 eap_peer_sm_init: failed to alloc data lock");
+        return ESP_ERR_NO_MEM;
+    }
+
     wpa2_set_eap_state(WPA2_ENT_EAP_STATE_NOT_START);
     sm->current_identifier = 0xff;
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
@@ -684,6 +747,7 @@ static int eap_peer_sm_init(void)
         return ESP_FAIL;
     }
 
+    wpa2_rxq_init();
 
     gEapSm = sm;
 #ifdef USE_WPA2_TASK
@@ -724,10 +788,21 @@ static void eap_peer_sm_deinit(void)
 #ifdef USE_WPA2_TASK
     wpa2_task_delete(0);
 #endif
+
+    if (STAILQ_FIRST((&s_wpa2_rxq)) != NULL) {
+        wpa2_rxq_deinit();
+    }
+
     if (s_wifi_wpa2_sync_sem) {
         vSemaphoreDelete(s_wifi_wpa2_sync_sem);
     }
     s_wifi_wpa2_sync_sem = NULL;
+
+    if (s_wpa2_data_lock) {
+        vSemaphoreDelete(s_wpa2_data_lock);
+        s_wpa2_data_lock = NULL;
+        wpa_printf(MSG_DEBUG, "wpa2 eap_peer_sm_deinit: free data lock");
+    }
 
     os_free(sm);
     gEapSm = NULL;

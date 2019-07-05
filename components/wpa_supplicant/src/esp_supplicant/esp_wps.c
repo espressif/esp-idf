@@ -52,7 +52,9 @@ struct wps_rx_param {
     u8 sa[WPS_ADDR_LEN];
     u8 *buf;
     int len;
+    STAILQ_ENTRY(wps_rx_param) bqentry;
 };
+static STAILQ_HEAD(,wps_rx_param) s_wps_rxq;
 
 typedef struct {
     void *arg;
@@ -111,6 +113,45 @@ int wps_set_status(uint32_t status)
     return esp_wifi_set_wps_status_internal(status);
 }
 
+static void wps_rxq_init(void)
+{
+    DATA_MUTEX_TAKE();
+    STAILQ_INIT(&s_wps_rxq);
+    DATA_MUTEX_GIVE();
+}
+
+static void wps_rxq_enqueue(struct wps_rx_param *param)
+{
+    DATA_MUTEX_TAKE();
+    STAILQ_INSERT_TAIL(&s_wps_rxq,param, bqentry);
+    DATA_MUTEX_GIVE();
+}
+
+static struct wps_rx_param * wps_rxq_dequeue(void)
+{
+    struct wps_rx_param *param = NULL;
+    DATA_MUTEX_TAKE();
+    if ((param = STAILQ_FIRST(&s_wps_rxq)) != NULL) {
+        STAILQ_REMOVE_HEAD(&s_wps_rxq, bqentry);
+        STAILQ_NEXT(param,bqentry) = NULL;
+    }
+    DATA_MUTEX_GIVE();
+    return param;
+}
+
+static void wps_rxq_deinit(void)
+{
+    struct wps_rx_param *param = NULL;
+    DATA_MUTEX_TAKE();
+    while ((param = STAILQ_FIRST(&s_wps_rxq)) != NULL) {
+        STAILQ_REMOVE_HEAD(&s_wps_rxq, bqentry);
+        STAILQ_NEXT(param,bqentry) = NULL;
+        os_free(param->buf);
+        os_free(param);
+    }
+    DATA_MUTEX_GIVE();
+}
+
 #ifdef USE_WPS_TASK
 void wps_task(void *pvParameters )
 {
@@ -161,10 +202,8 @@ void wps_task(void *pvParameters )
                 break;
 
             case SIG_WPS_RX: {
-                struct wps_rx_param *param;
-
-                param = (struct wps_rx_param *)(e->par);
-                if (param) {
+                struct wps_rx_param *param = NULL;
+                while ((param = wps_rxq_dequeue()) != NULL) {
                     wps_sm_rx_eapol_internal(param->sa, param->buf, param->len);
                     os_free(param->buf);
                     os_free(param);
@@ -311,9 +350,10 @@ u8 *wps_sm_alloc_eapol(struct wps_sm *sm, u8 type,
 
 void wps_sm_free_eapol(u8 *buffer)
 {
-    buffer = buffer - sizeof(struct l2_ethhdr);
-    os_free(buffer);
-
+    if (buffer != NULL) {
+        buffer = buffer - sizeof(struct l2_ethhdr);
+        os_free(buffer);
+    }
 }
 
 
@@ -658,6 +698,7 @@ int wps_send_frag_ack(u8 id)
     }
 
     ret = wps_sm_ether_send(sm, bssid, ETH_P_EAPOL, buf, len);
+    wps_sm_free_eapol(buf);
     if (ret) {
         ret = ESP_ERR_NO_MEM;
         goto _err;
@@ -835,6 +876,7 @@ int wps_send_wps_mX_rsp(u8 id)
     }
 
     ret = wps_sm_ether_send(sm, bssid, ETH_P_EAPOL, buf, len);
+    wps_sm_free_eapol(buf);
     if (ret) {
         ret = ESP_FAIL;
         goto _err;
@@ -1055,7 +1097,8 @@ int wps_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
         param->len = len;
         memcpy(param->sa, src_addr, WPS_ADDR_LEN);
 
-        return wps_post(SIG_WPS_RX, (uint32_t)param);
+        wps_rxq_enqueue(param);
+        return wps_post(SIG_WPS_RX, 0);
     }
 #else
     return wps_sm_rx_eapol_internal(src_addr, buf, len);
@@ -1828,12 +1871,6 @@ int wps_task_deinit(void)
 {
     wpa_printf(MSG_DEBUG, "wps task deinit");
 
-    if (s_wps_data_lock) {
-        vSemaphoreDelete(s_wps_data_lock);
-        s_wps_data_lock = NULL;
-        wpa_printf(MSG_DEBUG, "wps task deinit: free data lock");
-    }
-
     if (s_wps_api_sem) {
         vSemaphoreDelete(s_wps_api_sem);
         s_wps_api_sem = NULL;
@@ -1856,6 +1893,16 @@ int wps_task_deinit(void)
         vTaskDelete(s_wps_task_hdl);
         s_wps_task_hdl = NULL;
         wpa_printf(MSG_DEBUG, "wps task deinit: free task");
+    }
+
+    if (STAILQ_FIRST(&s_wps_rxq) != NULL){
+        wps_rxq_deinit();
+    }
+
+    if (s_wps_data_lock) {
+        vSemaphoreDelete(s_wps_data_lock);
+        s_wps_data_lock = NULL;
+        wpa_printf(MSG_DEBUG, "wps task deinit: free data lock");
     }
 
     return ESP_OK;
@@ -1893,6 +1940,8 @@ int wps_task_init(void)
         wpa_printf(MSG_ERROR, "wps task init: failed to alloc queue");
         goto _wps_no_mem;
     }
+
+    wps_rxq_init();
 
     ret = xTaskCreate(wps_task, "wpsT", WPS_TASK_STACK_SIZE, NULL, 2, &s_wps_task_hdl);
     if (pdPASS != ret) {
