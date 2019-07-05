@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,8 +140,6 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
  * @note          All provisioning information in this node will be deleted and the node
  *                needs to be reprovisioned. The API function esp_ble_mesh_node_prov_enable()
  *                needs to be called to start a new provisioning procedure.
- *
- * @param         None.
  *
  * @return        ESP_OK on success or error code otherwise.
  *

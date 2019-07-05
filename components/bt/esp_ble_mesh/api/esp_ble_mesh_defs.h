@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 #include "model_opcode.h"
 #include "mesh_common.h"
 
+/*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN            384
 
 /*!< The maximum length of a BLE Mesh provisioned node name */
@@ -392,7 +393,7 @@ typedef uint32_t esp_ble_mesh_generic_message_opcode_t;     /*!< esp_ble_mesh_ge
 
 typedef uint32_t esp_ble_mesh_sensor_message_opcode_t;      /*!< esp_ble_mesh_sensor_message_opcode_t belongs to esp_ble_mesh_opcode_t,
                                                               this typedef is only used to locate the opcodes used by functions
-                                                              esp_ble_mesh_sensor_client_get_state & esp_ble_mesh_sensor_client_set_state  */
+                                                              esp_ble_mesh_sensor_client_get_state & esp_ble_mesh_sensor_client_set_state */
 /*!< Sensor Message Opcode */
 #define ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET           BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET
 #define ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS        BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS
@@ -663,7 +664,7 @@ typedef uint8_t esp_ble_mesh_model_status_t;    /*!< This typedef is only used t
  */
 #define ESP_BLE_MESH_GET_PUBLISH_TRANSMIT_INTERVAL(transmit) BLE_MESH_PUB_TRANSMIT_INT(transmit)
 
-/* esp_ble_mesh_cb_t is not needed to be initialized by users (set with 0 and will be initialized internally) */
+/*!< Callbacks which are not needed to be initialized by users (set with 0 and will be initialized internally) */
 typedef uint32_t esp_ble_mesh_cb_t;
 
 typedef enum {
@@ -727,6 +728,7 @@ typedef enum {
     ESP_BLE_MESH_PROV_OOB_ON_DEV    = BIT(15),
 } esp_ble_mesh_prov_oob_info_t;
 
+/*!< Macros used to define message opcode */
 #define ESP_BLE_MESH_MODEL_OP_1(b0)            BLE_MESH_MODEL_OP_1(b0)
 #define ESP_BLE_MESH_MODEL_OP_2(b0, b1)        BLE_MESH_MODEL_OP_2(b0, b1)
 #define ESP_BLE_MESH_MODEL_OP_3(b0, cid)       BLE_MESH_MODEL_OP_3(b0, cid)
@@ -790,43 +792,43 @@ typedef enum {
 
 typedef struct esp_ble_mesh_model esp_ble_mesh_model_t;
 
-/*!< Abstraction that describes a BLE Mesh Element.
-    This structure is associated with bt_mesh_elem in mesh_access.h */
+/** Abstraction that describes a BLE Mesh Element.
+ *  This structure is associated with struct bt_mesh_elem in mesh_access.h
+ */
 typedef struct {
-    /* Element Address, assigned during provisioning. */
+    /** Element Address, assigned during provisioning. */
     uint16_t element_addr;
 
-    /* Location Descriptor (GATT Bluetooth Namespace Descriptors) */
+    /** Location Descriptor (GATT Bluetooth Namespace Descriptors) */
     const uint16_t location;
 
-    /* Model count */
-    const uint8_t sig_model_count;
-    const uint8_t vnd_model_count;
+    const uint8_t sig_model_count;      /*!< SIG Model count */
+    const uint8_t vnd_model_count;      /*!< Vendor Model count */
 
-    /* Models */
-    esp_ble_mesh_model_t *sig_models;
-    esp_ble_mesh_model_t *vnd_models;
+    esp_ble_mesh_model_t *sig_models;   /*!< SIG Models */
+    esp_ble_mesh_model_t *vnd_models;   /*!< Vendor Models */
 } esp_ble_mesh_elem_t;
 
-/*!< Model publication context.
-    This structure is associated with bt_mesh_model_pub in mesh_access.h */
+/** Abstraction that describes a model publication context.
+ *  This structure is associated with struct bt_mesh_model_pub in mesh_access.h
+ */
 typedef struct {
-    /** The model to which the context belongs. Initialized by the stack. */
+    /** Pointer to the model to which the context belongs. Initialized by the stack. */
     esp_ble_mesh_model_t *model;
 
-    uint16_t publish_addr; /**< Publish Address. */
-    uint16_t app_idx;      /**< Publish AppKey Index. */
+    uint16_t publish_addr; /*!< Publish Address. */
+    uint16_t app_idx;      /*!< Publish AppKey Index. */
 
-    uint8_t  ttl;          /**< Publish Time to Live. */
-    uint8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
+    uint8_t  ttl;          /*!< Publish Time to Live. */
+    uint8_t  retransmit;   /*!< Retransmit Count & Interval Steps. */
 
     uint8_t  period;        /*!< Publish Period. */
     uint16_t period_div: 4, /*!< Divisor for the Period. */
              cred: 1,       /*!< Friendship Credentials Flag. */
-             fast_period: 1, /**< Use FastPeriodDivisor */
+             fast_period: 1, /*!< Use FastPeriodDivisor */
              count: 3;      /*!< Retransmissions left. */
 
-    uint32_t period_start; /**< Start of the current period. */
+    uint32_t period_start; /*!< Start of the current period. */
 
     /** @brief Publication buffer, containing the publication message.
      *
@@ -837,13 +839,13 @@ typedef struct {
      */
     struct net_buf_simple *msg;
 
-    /* The callback is only used for the BLE Mesh stack, not for the app layer. */
+    /** Callback used to update publish message. Initialized by the stack. */
     esp_ble_mesh_cb_t update;
 
-    /* Role of the device that is going to publish messages */
+    /** Role of the device that is going to publish messages */
     uint8_t dev_role;
 
-    /** Publish Period Timer. Only for stack-internal use. */
+    /** Publish Period Timer. Initialized by the stack. */
     struct k_delayed_work timer;
 } esp_ble_mesh_model_pub_t;
 
@@ -863,8 +865,13 @@ typedef struct {
         .dev_role = _role, \
     }
 
-/*!< Model operation context.
-    This structure is associated with bt_mesh_model_op in mesh_access.h */
+/** @def ESP_BLE_MESH_MODEL_OP
+ *
+ *  Define a model operation context.
+ *
+ *  @param _opcode  Message opcode.
+ *  @param _min_len Message minimum length.
+ */
 #define ESP_BLE_MESH_MODEL_OP(_opcode, _min_len) \
 { \
     .opcode = _opcode, \
@@ -872,23 +879,26 @@ typedef struct {
     .param_cb = (uint32_t)NULL, \
 }
 
+/** Abstraction that describes a model operation context.
+ *  This structure is associated with struct bt_mesh_model_op in mesh_access.h
+ */
 typedef struct {
-    const uint32_t    opcode;   /* Opcode encoded with the ESP_BLE_MESH_MODEL_OP_* macro */
-    const size_t      min_len;  /* Minimum required message length */
-    esp_ble_mesh_cb_t param_cb; /* The callback is only used for BLE Mesh stack, not for the app layer. */
+    const uint32_t    opcode;   /*!< Message opcode */
+    const size_t      min_len;  /*!< Message minimum length */
+    esp_ble_mesh_cb_t param_cb; /*!< Callback used to handle message. Initialized by the stack. */
 } esp_ble_mesh_model_op_t;
 
-/** Define the terminator for the model operation table, each
- *  model operation struct array must use this terminator as
+/** Define the terminator for the model operation table.
+ *  Each model operation struct array must use this terminator as
  *  the end tag of the operation unit.
  */
 #define ESP_BLE_MESH_MODEL_OP_END {0, 0, 0}
 
 /** Abstraction that describes a Mesh Model instance.
- *  This structure is associated with bt_mesh_model in mesh_access.h
+ *  This structure is associated with struct bt_mesh_model in mesh_access.h
  */
 struct esp_ble_mesh_model {
-    /* Model ID */
+    /** Model ID */
     union {
         const uint16_t model_id;
         struct {
@@ -897,27 +907,27 @@ struct esp_ble_mesh_model {
         } vnd;
     };
 
-    /* Internal information, mainly for persistent storage */
-    uint8_t  element_idx;   /* Belongs to Nth element */
-    uint8_t  model_idx;     /* Is the Nth model in the element */
-    uint16_t flags;         /* Information about what has changed */
+    /** Internal information, mainly for persistent storage */
+    uint8_t  element_idx;   /*!< Belongs to Nth element */
+    uint8_t  model_idx;     /*!< Is the Nth model in the element */
+    uint16_t flags;         /*!< Information about what has changed */
 
-    /* The Element to which this Model belongs */
+    /** The Element to which this Model belongs */
     esp_ble_mesh_elem_t *element;
 
-    /* Model Publication */
+    /** Model Publication */
     esp_ble_mesh_model_pub_t *const pub;
 
-    /* AppKey List */
+    /** AppKey List */
     uint16_t keys[CONFIG_BLE_MESH_MODEL_KEY_COUNT];
 
-    /* Subscription List (group or virtual addresses) */
+    /** Subscription List (group or virtual addresses) */
     uint16_t groups[CONFIG_BLE_MESH_MODEL_GROUP_COUNT];
 
-    /* Model operation context */
+    /** Model operation context */
     esp_ble_mesh_model_op_t *op;
 
-    /* Model-specific user data */
+    /** Model-specific user data */
     void *user_data;
 };
 
@@ -927,7 +937,7 @@ struct esp_ble_mesh_model {
 #define ESP_BLE_MESH_MODEL_NONE ((esp_ble_mesh_model_t []){})
 
 /** Message sending context.
- *  This structure is associated with bt_mesh_msg_ctx in mesh_access.h
+ *  This structure is associated with struct bt_mesh_msg_ctx in mesh_access.h
  */
 typedef struct {
     /** NetKey Index of the subnet through which to send the message. */
@@ -962,7 +972,7 @@ typedef struct {
 } esp_ble_mesh_msg_ctx_t;
 
 /** Provisioning properties & capabilities.
- *  This structure is associated with bt_mesh_prov in mesh_access.h
+ *  This structure is associated with struct bt_mesh_prov in mesh_access.h
  */
 typedef struct {
 #if CONFIG_BLE_MESH_NODE
@@ -982,7 +992,7 @@ typedef struct {
     /** Flag indicates whether unprovisioned devices support OOB public key */
     bool oob_pub_key;
 
-    /* This callback is only used for the BLE Mesh stack, not for the app layer */
+    /** Callback used to notify to set OOB Public Key. Initialized by the stack. */
     esp_ble_mesh_cb_t oob_pub_key_cb;
 
     /** Static OOB value */
@@ -1000,136 +1010,154 @@ typedef struct {
     /** Supported Input OOB Actions */
     uint16_t       input_actions;
 
-    /* These callbacks are only used for the BLE Mesh stack, not for the app layer */
+    /** Callback used to output the number. Initialized by the stack. */
     esp_ble_mesh_cb_t  output_num_cb;
+    /** Callback used to output the string. Initialized by the stack. */
     esp_ble_mesh_cb_t  output_str_cb;
+    /** Callback used to notify to input number/string. Initialized by the stack. */
     esp_ble_mesh_cb_t  input_cb;
+    /** Callback used to indicate that link is opened. Initialized by the stack. */
     esp_ble_mesh_cb_t  link_open_cb;
+    /** Callback used to indicate that link is closed. Initialized by the stack. */
     esp_ble_mesh_cb_t  link_close_cb;
+    /** Callback used to indicate that provisioning is completed. Initialized by the stack. */
     esp_ble_mesh_cb_t  complete_cb;
+    /** Callback used to indicate that node has been reset. Initialized by the stack. */
     esp_ble_mesh_cb_t  reset_cb;
 #endif /* CONFIG_BLE_MESH_NODE */
 
 #ifdef CONFIG_BLE_MESH_PROVISIONER
-    /* Provisioner device UUID */
+    /** Provisioner device UUID */
     const uint8_t *prov_uuid;
 
-    /* Primary element address of the provisioner */
+    /** Primary element address of the provisioner */
     const uint16_t prov_unicast_addr;
 
-    /* Pre-incremental unicast address value to be assigned to the first device */
+    /** Pre-incremental unicast address value to be assigned to the first device */
     uint16_t       prov_start_address;
 
-    /* Attention timer contained in Provisioning Invite PDU */
+    /** Attention timer contained in Provisioning Invite PDU */
     uint8_t        prov_attention;
 
-    /* Provisioning Algorithm for the Provisioner */
+    /** Provisioning Algorithm for the Provisioner */
     uint8_t        prov_algorithm;
 
-    /* Provisioner public key oob */
+    /** Provisioner public key oob */
     uint8_t        prov_pub_key_oob;
 
-    /* The callback is only used for BLE Mesh stack, not for the app layer */
+    /** Callback used to notify to set device OOB Public Key. Initialized by the stack. */
     esp_ble_mesh_cb_t provisioner_prov_read_oob_pub_key;
 
-    /* Provisioner static oob value */
+    /** Provisioner static oob value */
     uint8_t        *prov_static_oob_val;
-    /* Provisioner static oob value length */
+    /** Provisioner static oob value length */
     uint8_t         prov_static_oob_len;
 
-    /* These callbacks are only used for BLE Mesh stack, not for the app layer */
+    /** Callback used to notify to input number/string. Initialized by the stack. */
     esp_ble_mesh_cb_t provisioner_prov_input;
+    /** Callback used to output number/string. Initialized by the stack. */
     esp_ble_mesh_cb_t provisioner_prov_output;
 
-    /* Key refresh and IV update flag */
+    /** Key refresh and IV update flag */
     uint8_t        flags;
 
-    /* IV index */
+    /** IV index */
     uint32_t       iv_index;
 
-    /* These callbacks are only used for BLE Mesh stack, not for the app layer */
+    /** Callback used to indicate that link is opened. Initialized by the stack. */
     esp_ble_mesh_cb_t  provisioner_link_open;
+    /** Callback used to indicate that link is closed. Initialized by the stack. */
     esp_ble_mesh_cb_t  provisioner_link_close;
+    /** Callback used to indicate that a device is provisioned. Initialized by the stack. */
     esp_ble_mesh_cb_t  provisioner_prov_comp;
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 } esp_ble_mesh_prov_t;
 
-/** Node Composition
- *  This structure is associated with bt_mesh_comp in mesh_access.h
+/** Node Composition data context.
+ *  This structure is associated with struct bt_mesh_comp in mesh_access.h
  */
 typedef struct {
-    uint16_t cid;
-    uint16_t pid;
-    uint16_t vid;
+    uint16_t cid;   /*!< 16-bit SIG-assigned company identifier */
+    uint16_t pid;   /*!< 16-bit vendor-assigned product identifier */
+    uint16_t vid;   /*!< 16-bit vendor-assigned product version identifier */
 
-    size_t element_count;
-    esp_ble_mesh_elem_t *elements;
+    size_t element_count;           /*!< Element count */
+    esp_ble_mesh_elem_t *elements;  /*!< A sequence of elements */
 } esp_ble_mesh_comp_t;
 
+/*!< This enum value is the role of the device */
 typedef enum {
     ROLE_NODE = 0,
     ROLE_PROVISIONER,
     ROLE_FAST_PROV,
 } esp_ble_mesh_dev_role_t;
 
+/** Common parameters of the messages sent by Client Model. */
 typedef struct {
     esp_ble_mesh_opcode_t opcode;   /*!< Message opcode */
     esp_ble_mesh_model_t *model;    /*!< Pointer to the client model structure */
     esp_ble_mesh_msg_ctx_t ctx;     /*!< The context used to send message */
     int32_t msg_timeout;            /*!< Timeout value (ms) to get response to the sent message */
-    /*!< Note: if using default timeout value in menuconfig, make sure to set this value to 0 */
-    uint8_t msg_role;               /*!< Role of the device - Node/Provisioner, only used for tx */
+                                    /*!< Note: if using default timeout value in menuconfig, make sure to set this value to 0 */
+    uint8_t msg_role;               /*!< Role of the device - Node/Provisioner */
 } esp_ble_mesh_client_common_param_t;
 
+/*!< Flag which will be set when device is going to be added. */
 typedef uint8_t esp_ble_mesh_dev_add_flag_t;
-#define ADD_DEV_RM_AFTER_PROV_FLAG  BIT(0)
-#define ADD_DEV_START_PROV_NOW_FLAG BIT(1)
-#define ADD_DEV_FLUSHABLE_DEV_FLAG  BIT(2)
+#define ADD_DEV_RM_AFTER_PROV_FLAG  BIT(0)  /*!< Device will be removed from queue after provisioned successfully */
+#define ADD_DEV_START_PROV_NOW_FLAG BIT(1)  /*!< Start provisioning device immediately */
+#define ADD_DEV_FLUSHABLE_DEV_FLAG  BIT(2)  /*!< Device can be remove when queue is full and new device is going to added */
+
+/** Information of the device which is going to be added for provisioning. */
 typedef struct {
-    esp_bd_addr_t addr;
-    esp_ble_addr_type_t addr_type;
-    uint8_t  uuid[16];
-    uint16_t oob_info;
+    esp_bd_addr_t addr;                 /*!< Device address */
+    esp_ble_addr_type_t addr_type;      /*!< Device address type */
+    uint8_t  uuid[16];                  /*!< Device UUID */
+    uint16_t oob_info;                  /*!< Device OOB Info */
     /*!< ADD_DEV_START_PROV_NOW_FLAG shall not be set if the bearer has both PB-ADV and PB-GATT enabled */
-    esp_ble_mesh_prov_bearer_t bearer;
+    esp_ble_mesh_prov_bearer_t bearer;  /*!< Provisioning Bearer */
 } esp_ble_mesh_unprov_dev_add_t;
 
 #define DEL_DEV_ADDR_FLAG BIT(0)
 #define DEL_DEV_UUID_FLAG BIT(1)
+/** Information of the device which is going to be deleted. */
 typedef struct {
     union {
         struct {
-            esp_bd_addr_t addr;
-            esp_ble_addr_type_t addr_type;
+            esp_bd_addr_t addr;             /*!< Device address */
+            esp_ble_addr_type_t addr_type;  /*!< Device address type */
         };
-        uint8_t uuid[16];
+        uint8_t uuid[16];                   /*!< Device UUID */
     };
-    uint8_t flag;   /*!< BIT0: device address; BIT1: device UUID */
+    uint8_t flag;                           /*!< BIT0: device address; BIT1: device UUID */
 } esp_ble_mesh_device_delete_t;
 
 #define PROV_DATA_NET_IDX_FLAG  BIT(0)
 #define PROV_DATA_FLAGS_FLAG    BIT(1)
 #define PROV_DATA_IV_INDEX_FLAG BIT(2)
+/** Information of the provisioner which is going to be updated. */
 typedef struct {
     union {
-        uint16_t net_idx;
-        uint8_t  flags;
-        uint32_t iv_index;
+        uint16_t net_idx;   /*!< NetKey Index */
+        uint8_t  flags;     /*!< Flags */
+        uint32_t iv_index;  /*!< IV Index */
     };
-    uint8_t flag;   /*!< BIT0: net_idx; BIT1: flags; BIT2: iv_index */
+    uint8_t flag;           /*!< BIT0: net_idx; BIT1: flags; BIT2: iv_index */
 } esp_ble_mesh_prov_data_info_t;
 
+/** Context of fast provisioning which need to be set. */
 typedef struct {
-    uint16_t unicast_min;   /* Minimum unicast address used for fast provisioning */
-    uint16_t unicast_max;   /* Maximum unicast address used for fast provisioning */
-    uint16_t net_idx;       /* Netkey index used for fast provisioning */
-    uint8_t  flags;         /* Flags used for fast provisioning */
-    uint32_t iv_index;      /* IV Index used for fast provisioning */
-    uint8_t  offset;        /* Offset of the UUID to be compared */
-    uint8_t  match_len;     /* Length of the UUID to be compared */
-    uint8_t  match_val[16]; /* Value of UUID to be compared */
+    uint16_t unicast_min;   /*!< Minimum unicast address used for fast provisioning */
+    uint16_t unicast_max;   /*!< Maximum unicast address used for fast provisioning */
+    uint16_t net_idx;       /*!< Netkey index used for fast provisioning */
+    uint8_t  flags;         /*!< Flags used for fast provisioning */
+    uint32_t iv_index;      /*!< IV Index used for fast provisioning */
+    uint8_t  offset;        /*!< Offset of the UUID to be compared */
+    uint8_t  match_len;     /*!< Length of the UUID to be compared */
+    uint8_t  match_val[16]; /*!< Value of UUID to be compared */
 } esp_ble_mesh_fast_prov_info_t;
 
+/*!< This enum value is the action of fast provisioning */
 typedef enum {
     FAST_PROV_ACT_NONE,
     FAST_PROV_ACT_ENTER,
@@ -1138,6 +1166,7 @@ typedef enum {
     FAST_PROV_ACT_MAX,
 } esp_ble_mesh_fast_prov_action_t;
 
+/*!< This enum value is the event of node/provisioner/fast provisioning */
 typedef enum {
     ESP_BLE_MESH_PROV_REGISTER_COMP_EVT,                        /*!< Initialize BLE Mesh provisioning capabilities and internal data information completion event */
     ESP_BLE_MESH_NODE_SET_UNPROV_DEV_NAME_COMP_EVT,             /*!< Set the unprovisioned device name completion event */
@@ -1177,11 +1206,12 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT,        /*!< Provisioner add local app key completion event */
     ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT,    /*!< Provisioner bind local model with local app key completion event */
     ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT,        /*!< Provisioner add local network key completion event */
-    ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /* !< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
-    ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /* !< Set fast provisioning action completion event */
+    ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
+    ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
 
+/*!< This enum value is the event of undefined SIG Models and Vendor Models */
 typedef enum {
     ESP_BLE_MESH_MODEL_OPERATION_EVT,               /*!< User-defined models receive messages from peer devices (e.g. get, set, status, etc) event */
     ESP_BLE_MESH_MODEL_SEND_COMP_EVT,               /*!< User-defined models send messages completion event */
@@ -1192,332 +1222,345 @@ typedef enum {
     ESP_BLE_MESH_MODEL_EVT_MAX,
 } esp_ble_mesh_model_cb_event_t;
 
+/**
+ * @brief BLE Mesh Node/Provisioner callback parameters union
+ */
 typedef union {
     /**
      * @brief ESP_BLE_MESH_PROV_REGISTER_COMP_EVT
      */
     struct ble_mesh_prov_register_comp_param {
-        int err_code;
-    } prov_register_comp;
+        int err_code;                           /*!< Indicate the result of BLE Mesh initialization */
+    } prov_register_comp;                       /*!< Event parameter of ESP_BLE_MESH_PROV_REGISTER_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_SET_UNPROV_DEV_NAME_COMP_EVT
      */
     struct ble_mesh_set_unprov_dev_name_comp_param {
-        int err_code;
-    } node_set_unprov_dev_name_comp;
+        int err_code;                           /*!< Indicate the result of setting BLE Mesh device name */
+    } node_set_unprov_dev_name_comp;            /*!< Event parameter of ESP_BLE_MESH_NODE_SET_UNPROV_DEV_NAME_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT
      */
     struct ble_mesh_prov_enable_comp_param {
-        int err_code;
-    } node_prov_enable_comp;
+        int err_code;                           /*!< Indicate the result of enabling BLE Mesh device */
+    } node_prov_enable_comp;                    /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_DISABLE_COMP_EVT
      */
     struct ble_mesh_prov_disable_comp_param {
-        int err_code;
-    } node_prov_disable_comp;
+        int err_code;                           /*!< Indicate the result of disabling BLE Mesh device */
+    } node_prov_disable_comp;                   /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_DISABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_LINK_OPEN_EVT
      */
     struct ble_mesh_link_open_evt_param {
-        esp_ble_mesh_prov_bearer_t bearer;
-    } node_prov_link_open;
+        esp_ble_mesh_prov_bearer_t bearer;      /*!< Type of the bearer used when device link is open */
+    } node_prov_link_open;                      /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_LINK_OPEN_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_LINK_CLOSE_EVT
      */
     struct ble_mesh_link_close_evt_param {
-        esp_ble_mesh_prov_bearer_t bearer;
-    } node_prov_link_close;
+        esp_ble_mesh_prov_bearer_t bearer;      /*!< Type of the bearer used when device link is closed */
+    } node_prov_link_close;                     /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_LINK_CLOSE_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_OUTPUT_NUMBER_EVT
      */
     struct ble_mesh_output_num_evt_param {
-        esp_ble_mesh_output_action_t action;
-        uint32_t number;
-    } node_prov_output_num;
+        esp_ble_mesh_output_action_t action;    /*!< Action of Output OOB Authentication */
+        uint32_t number;                        /*!< Number of Output OOB Authentication  */
+    } node_prov_output_num;                     /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_OUTPUT_NUMBER_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT
      */
     struct ble_mesh_output_str_evt_param {
-        char string[8];
-    } node_prov_output_str;
+        char string[8];                         /*!< String of Output OOB Authentication */
+    } node_prov_output_str;                     /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_INPUT_EVT
      */
     struct ble_mesh_input_evt_param {
-        esp_ble_mesh_input_action_t action;
-        uint8_t size;
-    } node_prov_input;
+        esp_ble_mesh_input_action_t action;     /*!< Action of Input OOB Authentication */
+        uint8_t size;                           /*!< Size of Input OOB Authentication */
+    } node_prov_input;                          /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_INPUT_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_COMPLETE_EVT
      */
     struct ble_mesh_provision_complete_evt_param {
-        uint16_t net_idx;
-        uint16_t addr;
-        uint8_t  flags;
-        uint32_t iv_index;
-    } node_prov_complete;
+        uint16_t net_idx;                       /*!< NetKey Index */
+        uint16_t addr;                          /*!< Primary address */
+        uint8_t  flags;                         /*!< Flags */
+        uint32_t iv_index;                      /*!< IV Index */
+    } node_prov_complete;                       /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_COMPLETE_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_RESET_EVT
      */
     struct ble_mesh_provision_reset_param {
 
-    } node_prov_reset;
+    } node_prov_reset;                          /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_RESET_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_SET_OOB_PUB_KEY_COMP_EVT
      */
     struct ble_mesh_set_oob_pub_key_comp_param {
-        int err_code;
-    } node_prov_set_oob_pub_key_comp;
+        int err_code;                           /*!< Indicate the result of setting OOB Public Key */
+    } node_prov_set_oob_pub_key_comp;           /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_SET_OOB_PUB_KEY_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_INPUT_NUM_COMP_EVT
      */
     struct ble_mesh_input_number_comp_param {
-        int err_code;
-    } node_prov_input_num_comp;
+        int err_code;                           /*!< Indicate the result of inputting number */
+    } node_prov_input_num_comp;                 /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_INPUT_NUM_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROV_INPUT_STR_COMP_EVT
      */
     struct ble_mesh_input_string_comp_param {
-        int err_code;
-    } node_prov_input_str_comp;
+        int err_code;                           /*!< Indicate the result of inputting string */
+    } node_prov_input_str_comp;                 /*!< Event parameter of ESP_BLE_MESH_NODE_PROV_INPUT_STR_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROXY_IDENTITY_ENABLE_COMP_EVT
      */
     struct ble_mesh_proxy_identity_enable_comp_param {
-        int err_code;
-    } node_proxy_identity_enable_comp;
+        int err_code;                           /*!< Indicate the result of enabling Mesh Proxy advertising */
+    } node_proxy_identity_enable_comp;          /*!< Event parameter of ESP_BLE_MESH_NODE_PROXY_IDENTITY_ENABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROXY_GATT_ENABLE_COMP_EVT
      */
     struct ble_mesh_proxy_gatt_enable_comp_param {
-        int err_code;
-    } node_proxy_gatt_enable_comp;
+        int err_code;                           /*!< Indicate the result of enabling Mesh Proxy Service */
+    } node_proxy_gatt_enable_comp;              /*!< Event parameter of ESP_BLE_MESH_NODE_PROXY_GATT_ENABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT
      */
     struct ble_mesh_proxy_gatt_disable_comp_param {
-        int err_code;
-    } node_proxy_gatt_disable_comp;
+        int err_code;                           /*!< Indicate the result of disabling Mesh Proxy Service */
+    } node_proxy_gatt_disable_comp;             /*!< Event parameter of ESP_BLE_MESH_NODE_PROXY_GATT_DISABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT
      */
     struct ble_mesh_provisioner_recv_unprov_adv_pkt_param {
-        uint8_t  dev_uuid[16];
-        uint8_t  addr[6];
-        esp_ble_addr_type_t addr_type;
-        uint16_t oob_info;
-        uint8_t  adv_type;
-        esp_ble_mesh_prov_bearer_t bearer;
-    } provisioner_recv_unprov_adv_pkt;
+        uint8_t  dev_uuid[16];                  /*!< Device UUID of the unprovisoned device */
+        uint8_t  addr[6];                       /*!< Device address of the unprovisoned device */
+        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        uint16_t oob_info;                      /*!< OOB Info of the unprovisoned device */
+        uint8_t  adv_type;                      /*!< Avertising type of the unprovisoned device */
+        esp_ble_mesh_prov_bearer_t bearer;      /*!< Bearer of the unprovisoned device */
+    } provisioner_recv_unprov_adv_pkt;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT
      */
     struct ble_mesh_provisioner_prov_enable_comp_param {
-        int err_code;
-    } provisioner_prov_enable_comp;
+        int err_code;                           /*!< Indicate the result of enabling BLE Mesh Provisioner */
+    } provisioner_prov_enable_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_DISABLE_COMP_EVT
      */
     struct ble_mesh_provisioner_prov_disable_comp_param {
-        int err_code;
-    } provisioner_prov_disable_comp;
+        int err_code;                           /*!< Indicate the result of disabling BLE Mesh Provisioner */
+    } provisioner_prov_disable_comp;            /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_DISABLE_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT
      */
     struct ble_mesh_provisioner_link_open_evt_param {
-        esp_ble_mesh_prov_bearer_t bearer;
-    } provisioner_prov_link_open;
+        esp_ble_mesh_prov_bearer_t bearer;      /*!< Type of the bearer used when Provisioner link is opened */
+    } provisioner_prov_link_open;               /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_LINK_OPEN_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_EVT
      */
     struct ble_mesh_provisioner_prov_read_oob_pub_key_evt_param {
-        uint8_t link_idx;
-    } provisioner_prov_read_oob_pub_key;
+        uint8_t link_idx;                       /*!< Index of the provisioning link */
+    } provisioner_prov_read_oob_pub_key;        /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_INPUT_EVT
      */
     struct ble_mesh_provisioner_prov_input_evt_param {
-        esp_ble_mesh_oob_method_t method;
-        esp_ble_mesh_output_action_t action;
-        uint8_t size;
-        uint8_t link_idx;
-    } provisioner_prov_input;
+        esp_ble_mesh_oob_method_t method;       /*!< Method of device Output OOB Authentication */
+        esp_ble_mesh_output_action_t action;    /*!< Action of device Output OOB Authentication */
+        uint8_t size;                           /*!< Size of device Output OOB Authentication */
+        uint8_t link_idx;                       /*!< Index of the provisioning link */
+    } provisioner_prov_input;                   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_INPUT_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_OUTPUT_EVT
      */
     struct ble_mesh_provisioner_prov_output_evt_param {
-        esp_ble_mesh_oob_method_t method;
-        esp_ble_mesh_input_action_t action;
-        uint8_t size;
-        uint8_t link_idx;
+        esp_ble_mesh_oob_method_t method;       /*!< Method of device Input OOB Authentication */
+        esp_ble_mesh_input_action_t action;     /*!< Action of device Input OOB Authentication */
+        uint8_t size;                           /*!< Size of device Input OOB Authentication */
+        uint8_t link_idx;                       /*!< Index of the provisioning link */
         union {
-            char string[8];
-            uint32_t number;
+            char string[8];                     /*!< String output by the Provisioner */
+            uint32_t number;                    /*!< Number output by the Provisioner */
         };
-    } provisioner_prov_output;
+    } provisioner_prov_output;                  /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_OUTPUT_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_LINK_CLOSE_EVT
      */
     struct ble_mesh_provisioner_link_close_evt_param {
-        esp_ble_mesh_prov_bearer_t bearer;
-        uint8_t reason;
-    } provisioner_prov_link_close;
+        esp_ble_mesh_prov_bearer_t bearer;      /*!< Type of the bearer used when Provisioner link is closed */
+        uint8_t reason;                         /*!< Reason of the closed provisioning link */
+    } provisioner_prov_link_close;              /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_LINK_CLOSE_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_COMPLETE_EVT
      */
     struct ble_mesh_provisioner_prov_comp_param {
-        int node_idx;
-        esp_ble_mesh_octet16_t device_uuid;
-        uint16_t unicast_addr;
-        uint8_t element_num;
-        uint16_t netkey_idx;
-    } provisioner_prov_complete;
+        int node_idx;                           /*!< Index of the provisioned device */
+        esp_ble_mesh_octet16_t device_uuid;     /*!< Device UUID of the provisioned device */
+        uint16_t unicast_addr;                  /*!< Primary address of the provisioned device */
+        uint8_t element_num;                    /*!< Element count of the provisioned device */
+        uint16_t netkey_idx;                    /*!< NetKey Index of the provisioned device */
+    } provisioner_prov_complete;                /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_COMPLETE_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_ADD_UNPROV_DEV_COMP_EVT
      */
     struct ble_mesh_provisioner_add_unprov_dev_comp_param {
-        int err_code;
-    } provisioner_add_unprov_dev_comp;
+        int err_code;                           /*!< Indicate the result of adding device into queue by the Provisioner */
+    } provisioner_add_unprov_dev_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_UNPROV_DEV_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_DEV_COMP_EVT
      */
     struct ble_mesh_provisioner_delete_dev_comp_param {
-        int err_code;
-    } provisioner_delete_dev_comp;
+        int err_code;                           /*!< Indicate the result of deleting device by the Provisioner */
+    } provisioner_delete_dev_comp;              /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_DEV_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_SET_DEV_UUID_MATCH_COMP_EVT
      */
     struct ble_mesh_provisioner_set_dev_uuid_match_comp_param {
-        int err_code;
-    } provisioner_set_dev_uuid_match_comp;
+        int err_code;                           /*!< Indicate the result of setting Device UUID match value by the Provisioner */
+    } provisioner_set_dev_uuid_match_comp;      /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_SET_DEV_UUID_MATCH_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_SET_PROV_DATA_INFO_COMP_EVT
      */
     struct ble_mesh_provisioner_set_prov_data_info_comp_param {
-        int err_code;
-    } provisioner_set_prov_data_info_comp;
+        int err_code;                           /*!< Indicate the result of setting provisioning info by the Provisioner */
+    } provisioner_set_prov_data_info_comp;      /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_SET_PROV_DATA_INFO_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_COMP_EVT
      */
     struct ble_mesh_provisioner_prov_read_oob_pub_key_comp_param {
-        int err_code;
-    } provisioner_prov_read_oob_pub_key_comp;
+        int err_code;                           /*!< Indicate the result of setting OOB Public Key by the Provisioner */
+    } provisioner_prov_read_oob_pub_key_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_INPUT_NUMBER_COMP_EVT
      */
     struct ble_mesh_provisioner_prov_input_num_comp_param {
-        int err_code;
-    } provisioner_prov_input_num_comp;
+        int err_code;                           /*!< Indicate the result of inputting number by the Provisioner */
+    } provisioner_prov_input_num_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_INPUT_NUMBER_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_INPUT_STRING_COMP_EVT
      */
     struct ble_mesh_provisioner_prov_input_str_comp_param {
-        int err_code;
-    } provisioner_prov_input_str_comp;
+        int err_code;                           /*!< Indicate the result of inputting string by the Provisioner */
+    } provisioner_prov_input_str_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_INPUT_STRING_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT
      */
     struct ble_mesh_provisioner_set_node_name_comp_param {
-        int err_code;
-        int node_index;
-    } provisioner_set_node_name_comp;
+        int err_code;                           /*!< Indicate the result of setting provisioned device name by the Provisioner */
+        int node_index;                         /*!< Index of the provisioned device */
+    } provisioner_set_node_name_comp;           /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT
      */
     struct ble_mesh_provisioner_add_local_app_key_comp_param {
-        int err_code;
-        uint16_t app_idx;
-    } provisioner_add_app_key_comp;
+        int err_code;                           /*!< Indicate the result of adding local AppKey by the Provisioner */
+        uint16_t app_idx;                       /*!< AppKey Index */
+    } provisioner_add_app_key_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT
      */
     struct ble_mesh_provisioner_bind_local_mod_app_comp_param {
-        int err_code;
-    } provisioner_bind_app_key_to_model_comp;
+        int err_code;                           /*!< Indicate the result of binding AppKey with model by the Provisioner */
+    } provisioner_bind_app_key_to_model_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT
      */
     struct ble_mesh_provisioner_add_local_net_key_comp_param {
-        int err_code;
-        uint16_t net_idx;
-    } provisioner_add_net_key_comp;
+        int err_code;                           /*!< Indicate the result of adding local NetKey by the Provisioner */
+        uint16_t net_idx;                       /*!< NetKey Index */
+    } provisioner_add_net_key_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT
+     */
     struct ble_mesh_set_fast_prov_info_comp_param {
-        uint8_t status_unicast;
-        uint8_t status_net_idx;
-        uint8_t status_match;
-    } set_fast_prov_info_comp;
+        uint8_t status_unicast;                 /*!< Indicate the result of setting unicast address range of fast provisioning */
+        uint8_t status_net_idx;                 /*!< Indicate the result of setting NetKey Index of fast provisioning */
+        uint8_t status_match;                   /*!< Indicate the result of setting matching Device UUID of fast provisioning */
+    } set_fast_prov_info_comp;                  /*!< Event parameter of ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT
+     */
     struct ble_mesh_set_fast_prov_action_comp_param {
-        uint8_t status_action;
-    } set_fast_prov_action_comp;
+        uint8_t status_action;                  /*!< Indicate the result of setting action of fast provisioning */
+    } set_fast_prov_action_comp;                /*!< Event parameter of ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT */
 } esp_ble_mesh_prov_cb_param_t;
 
+/**
+ * @brief BLE Mesh model callback parameters union
+ */
 typedef union {
     /**
      * @brief ESP_BLE_MESH_MODEL_OPERATION_EVT
      */
     struct ble_mesh_model_operation_evt_param {
-        uint32_t opcode;
-        esp_ble_mesh_model_t *model;
-        esp_ble_mesh_msg_ctx_t *ctx;
-        uint16_t length;
-        uint8_t *msg;
-    } model_operation;
+        uint32_t opcode;                /*!< Opcode of the recieved message */
+        esp_ble_mesh_model_t *model;    /*!< Pointer to the model which receives the message */
+        esp_ble_mesh_msg_ctx_t *ctx;    /*!< Pointer to the context of the received message */
+        uint16_t length;                /*!< Length of the received message */
+        uint8_t *msg;                   /*!< Value of the received message */
+    } model_operation;                  /*!< Event parameter of ESP_BLE_MESH_MODEL_OPERATION_EVT */
     /**
      * @brief ESP_BLE_MESH_MODEL_SEND_COMP_EVT
      */
     struct ble_mesh_model_send_comp_param {
-        int err_code;
-        uint32_t opcode;
-        esp_ble_mesh_model_t *model;
-        esp_ble_mesh_msg_ctx_t *ctx;
-    } model_send_comp;
+        int err_code;                   /*!< Indicate the result of sending a message */
+        uint32_t opcode;                /*!< Opcode of the message */
+        esp_ble_mesh_model_t *model;    /*!< Pointer to the model which sends the message */
+        esp_ble_mesh_msg_ctx_t *ctx;    /*!< Context of the message */
+    } model_send_comp;                  /*!< Event parameter of ESP_BLE_MESH_MODEL_SEND_COMP_EVT */
     /**
-    * @brief ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT
-    */
+     * @brief ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT
+     */
     struct ble_mesh_model_publish_comp_param {
-        int err_code;
-        esp_ble_mesh_model_t *model;
-    } model_publish_comp;
+        int err_code;                   /*!< Indicate the result of publishing a message */
+        esp_ble_mesh_model_t *model;    /*!< Pointer to the model which publishes the message */
+    } model_publish_comp;               /*!< Event parameter of ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT
      */
     struct ble_mesh_mod_recv_publish_msg_param {
-        uint32_t opcode;
-        esp_ble_mesh_model_t *model;
-        esp_ble_mesh_msg_ctx_t *ctx;
-        uint16_t length;
-        uint8_t *msg;
-    } client_recv_publish_msg;
+        uint32_t opcode;                /*!< Opcode of the unsoliciated received message */
+        esp_ble_mesh_model_t *model;    /*!< Pointer to the model which receives the message */
+        esp_ble_mesh_msg_ctx_t *ctx;    /*!< Pointer to the context of the message */
+        uint16_t length;                /*!< Length of the received message */
+        uint8_t *msg;                   /*!< Value of the received message */
+    } client_recv_publish_msg;          /*!< Event parameter of ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT */
     /**
      * @brief ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT
      */
     struct ble_mesh_client_model_send_timeout_param {
-        uint32_t opcode;
-        esp_ble_mesh_model_t *model;
-        esp_ble_mesh_msg_ctx_t *ctx;
-    } client_send_timeout;
+        uint32_t opcode;                /*!< Opcode of the previously sent message */
+        esp_ble_mesh_model_t *model;    /*!< Pointer to the model which sends the previous message */
+        esp_ble_mesh_msg_ctx_t *ctx;    /*!< Pointer to the context of the previous message */
+    } client_send_timeout;              /*!< Event parameter of ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT */
     /**
-    * @brief ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT
-    */
+     * @brief ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT
+     */
     struct ble_mesh_model_publish_update_evt_param {
-        esp_ble_mesh_model_t *model;
-    } model_publish_update;
+        esp_ble_mesh_model_t *model;    /*!< Pointer to the model which is going to update its publish message */
+    } model_publish_update;             /*!< Event parameter of ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT */
 } esp_ble_mesh_model_cb_param_t;
 
+/** Client Model Get/Set message opcode and corresponding Status message opcode */
 typedef struct {
     uint32_t cli_op;        /*!< The client message opcode */
     uint32_t status_op;     /*!< The server status opcode corresponding to the client message opcode */
 } esp_ble_mesh_client_op_pair_t;
 
-/*!< Mesh Client Model Context */
+/** Client Model user data context. */
 typedef struct {
-    esp_ble_mesh_model_t *model;
+    esp_ble_mesh_model_t *model;                    /*!< Pointer to the client model. Initialized by the stack. */
     int op_pair_size;                               /*!< Size of the op_pair */
     const esp_ble_mesh_client_op_pair_t *op_pair;   /*!< Table containing get/set message opcode and corresponding status message opcode */
-    uint32_t publish_status;                        /*!< This variable is reserved for BLE Mesh Stack, does not require initializing on the application layer */
-    void *internal_data;                            /*!< Pointer to the structure of the client model internal data */
+    uint32_t publish_status;                        /*!< Callback used to handle the received unsoliciated message. Initialized by the stack. */
+    void *internal_data;                            /*!< Pointer to the internal data of client model */
     uint8_t msg_role;                               /*!< Role of the device (Node/Provisioner) that is going to send messages */
 } esp_ble_mesh_client_t;
 
