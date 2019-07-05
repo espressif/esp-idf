@@ -35,6 +35,11 @@ class Transport_HTTP(Transport):
         else:
             ssl_ctx = ssl.create_default_context(cafile=certfile)
             self.conn = http.client.HTTPSConnection(hostname, context=ssl_ctx, timeout=30)
+        try:
+            print("Connecting to " + hostname)
+            self.conn.connect()
+        except Exception as err:
+            raise RuntimeError("Connection Failure : " + str(err))
         self.headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
 
     def _send_post_request(self, path, data):
