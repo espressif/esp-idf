@@ -140,40 +140,56 @@ static void transport_simple_ble_read(esp_gatts_cb_event_t event, esp_gatt_if_t 
 static esp_err_t prepare_write_event_env(esp_gatt_if_t gatts_if,
                                          esp_ble_gatts_cb_param_t *param)
 {
-    ESP_LOGD(TAG, "prepare write, handle = %d, value len = %d",
-             param->write.handle, param->write.len);
+    ESP_LOGD(TAG, "prepare write, handle = %d, value len = %d, offset = %d",
+             param->write.handle, param->write.len, param->write.offset);
     esp_gatt_status_t status = ESP_GATT_OK;
-    if (prepare_write_env.prepare_buf == NULL) {
-        prepare_write_env.prepare_buf = (uint8_t *) malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
-        if (prepare_write_env.prepare_buf == NULL) {
-            ESP_LOGE(TAG, "%s , failed tp allocate preparebuf", __func__);
-            status = ESP_GATT_NO_RESOURCES;
-        }
-        /* prepare_write_env.prepare_len = 0; */
+
+    /* Ensure that write data is not larger than max attribute length */
+    if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
+        status = ESP_GATT_INVALID_OFFSET;
+    } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
+        status = ESP_GATT_INVALID_ATTR_LEN;
     } else {
-        if (param->write.offset > PREPARE_BUF_MAX_SIZE) {
-            status = ESP_GATT_INVALID_OFFSET;
-        } else if ((param->write.offset + param->write.len) > PREPARE_BUF_MAX_SIZE) {
-            status = ESP_GATT_INVALID_ATTR_LEN;
+        /* If prepare buffer is not allocated, then allocate it */
+        if (prepare_write_env.prepare_buf == NULL) {
+            prepare_write_env.prepare_len = 0;
+            prepare_write_env.prepare_buf = (uint8_t *) malloc(PREPARE_BUF_MAX_SIZE * sizeof(uint8_t));
+            if (prepare_write_env.prepare_buf == NULL) {
+                ESP_LOGE(TAG, "%s , failed to allocate prepare buf", __func__);
+                status = ESP_GATT_NO_RESOURCES;
+            }
         }
     }
-    memcpy(prepare_write_env.prepare_buf + param->write.offset,
-           param->write.value,
-           param->write.len);
-    prepare_write_env.prepare_len += param->write.len;
-    prepare_write_env.handle = param->write.handle;
+
+    /* If prepare buffer is allocated copy incoming data into it */
+    if (status == ESP_GATT_OK) {
+        memcpy(prepare_write_env.prepare_buf + param->write.offset,
+               param->write.value,
+               param->write.len);
+        prepare_write_env.prepare_len += param->write.len;
+        prepare_write_env.handle = param->write.handle;
+    }
+
+    /* Send write response if needed */
     if (param->write.need_rsp) {
-        esp_gatt_rsp_t gatt_rsp = {0};
-        gatt_rsp.attr_value.len = param->write.len;
-        gatt_rsp.attr_value.handle = param->write.handle;
-        gatt_rsp.attr_value.offset = param->write.offset;
-        gatt_rsp.attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-        if (gatt_rsp.attr_value.len && param->write.value) {
-            memcpy(gatt_rsp.attr_value.value, param->write.value, param->write.len);
+        esp_err_t response_err;
+        /* If data was successfully appended to prepare buffer
+         * only then have it reflected in the response */
+        if (status == ESP_GATT_OK) {
+            esp_gatt_rsp_t gatt_rsp = {0};
+            gatt_rsp.attr_value.len = param->write.len;
+            gatt_rsp.attr_value.handle = param->write.handle;
+            gatt_rsp.attr_value.offset = param->write.offset;
+            gatt_rsp.attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
+            if (gatt_rsp.attr_value.len && param->write.value) {
+                memcpy(gatt_rsp.attr_value.value, param->write.value, param->write.len);
+            }
+            response_err = esp_ble_gatts_send_response(gatts_if,
+                param->write.conn_id, param->write.trans_id, status, &gatt_rsp);
+        } else {
+            response_err = esp_ble_gatts_send_response(gatts_if,
+                param->write.conn_id, param->write.trans_id, status, NULL);
         }
-        esp_err_t response_err = esp_ble_gatts_send_response(gatts_if, param->write.conn_id,
-                param->write.trans_id, status,
-                &gatt_rsp);
         if (response_err != ESP_OK) {
             ESP_LOGE(TAG, "Send response error in prep write");
         }
@@ -195,7 +211,7 @@ static void transport_simple_ble_write(esp_gatts_cb_event_t event, esp_gatt_if_t
     ssize_t outlen = 0;
     esp_err_t ret;
 
-    ESP_LOGD(TAG, "Inside write with session - %d on attr handle - %d \nLen -%d IS Prep - %d",
+    ESP_LOGD(TAG, "Inside write with session - %d on attr handle = %d \nlen = %d, is_prep = %d",
              param->write.conn_id, param->write.handle, param->write.len, param->write.is_prep);
 
     if (param->write.is_prep) {
