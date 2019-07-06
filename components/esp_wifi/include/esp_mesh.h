@@ -174,8 +174,6 @@ typedef enum {
     MESH_EVENT_ROOT_ADDRESS,            /**< the root address is obtained. It is posted by mesh stack automatically. */
     MESH_EVENT_ROOT_SWITCH_REQ,         /**< root switch request sent from a new voted root candidate */
     MESH_EVENT_ROOT_SWITCH_ACK,         /**< root switch acknowledgment responds the above request sent from current root */
-    MESH_EVENT_ROOT_GOT_IP,             /**< the root obtains the IP address. It is posted by LwIP stack automatically */
-    MESH_EVENT_ROOT_LOST_IP,            /**< the root loses the IP address. It is posted by LwIP stack automatically */
     MESH_EVENT_ROOT_ASKED_YIELD,        /**< the root is asked yield by a more powerful existing root. If self organized is disabled
                                              and this device is specified to be a root by users, users should set a new parent
                                              for this device. if self organized is enabled, this device will find a new parent
@@ -194,6 +192,9 @@ typedef enum {
                                              router with the same SSID, this event will be posted and the new router information is attached. */
     MESH_EVENT_MAX,
 } mesh_event_id_t;
+
+/** @brief ESP-MESH event base declaration */
+ESP_EVENT_DECLARE_BASE(MESH_EVENT);
 
 /**
  * @brief Device type
@@ -428,21 +429,6 @@ typedef union {
 } mesh_event_info_t;
 
 /**
- * @brief Mesh event
- */
-typedef struct {
-    mesh_event_id_t id;        /**< mesh event id */
-    mesh_event_info_t info;    /**< mesh event info */
-} mesh_event_t;
-
-/**
- * @brief  Mesh event callback handler prototype definition
- *
- * @param  event  mesh_event_t
- */
-typedef void (*mesh_event_cb_t)(mesh_event_t event);
-
-/**
  * @brief Mesh option
  */
 typedef struct {
@@ -492,7 +478,6 @@ typedef struct {
     uint8_t channel;                            /**< channel, the mesh network on */
     bool allow_channel_switch;                  /**< if this value is set, when "fail" (mesh_attempts_t) times is reached, device will change to
                                                      a full channel scan for a network that could join. The default value is false. */
-    mesh_event_cb_t event_cb;                   /**< mesh event callback */
     mesh_addr_t mesh_id;                        /**< mesh network identification */
     mesh_router_t router;                       /**< router configuration */
     mesh_ap_cfg_t mesh_ap;                      /**< mesh softAP configuration */
@@ -542,9 +527,6 @@ typedef struct {
  *******************************************************/
 /* mesh IE crypto callback function */
 extern const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs;
-
-/* mesh event callback handler */
-extern mesh_event_cb_t g_mesh_event_cb;
 
 #define MESH_INIT_CONFIG_DEFAULT() { \
     .crypto_funcs = &g_wifi_default_mesh_crypto_funcs, \
@@ -1302,16 +1284,6 @@ esp_err_t esp_mesh_set_root_healing_delay(int delay_ms);
  * @return     delay time in milliseconds
  */
 int esp_mesh_get_root_healing_delay(void);
-
-/**
- * @brief      Set mesh event callback
- *
- * @param[in]  event_cb  mesh event call back
- *
- * @return
- *    - ESP_OK
- */
-esp_err_t esp_mesh_set_event_cb(const mesh_event_cb_t event_cb);
 
 /**
  * @brief      Enable network Fixed Root Setting
