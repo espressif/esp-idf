@@ -245,8 +245,8 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
  * @param partition Pointer to partition structure obtained using
  *                  esp_partition_find_first or esp_partition_get.
  *                  Must be non-NULL.
- * @param start_addr Address where erase operation should start. Must be aligned
- *                   to 4 kilobytes.
+ * @param offset Offset from the beginning of partition where erase operation
+ *               should start. Must be aligned to 4 kilobytes.
  * @param size Size of the range which should be erased, in bytes.
  *                   Must be divisible by 4 kilobytes.
  *
@@ -256,7 +256,7 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
  *         or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
-                                    uint32_t start_addr, uint32_t size);
+                                    uint32_t offset, uint32_t size);
 
 /**
  * @brief Configure MMU to map partition into data memory
