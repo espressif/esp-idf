@@ -38,6 +38,17 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *driver)
     spi_flash_ll_reset(dev);
     spi_flash_ll_set_cs_pin(dev, drv_data->cs_num);
     spi_flash_ll_set_clock(dev, &drv_data->clock_conf);
+
+    /*
+     * workaround for the ROM: the ROM, as well as the OpenOCD, don't know the
+     * clock registers and the dummy are modified this help the ROM to read and
+     * write correctly according to the new dummy len.
+     */
+    if (dev == &SPI1) {
+        //0 for cache, 1 for SPI1
+        extern uint8_t g_rom_spiflash_dummy_len_plus[];
+        g_rom_spiflash_dummy_len_plus[1] = drv_data->extra_dummy;
+    }
     return ESP_OK;
 }
 
