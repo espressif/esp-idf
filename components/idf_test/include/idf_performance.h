@@ -15,9 +15,9 @@
 #define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME                           20000
 #define IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME_PSRAM                     25000
 // throughput performance by iperf
-#define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   50
+#define IDF_PERFORMANCE_MIN_TCP_RX_THROUGHPUT                                   45
 #define IDF_PERFORMANCE_MIN_TCP_TX_THROUGHPUT                                   40
-#define IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT                                   80
+#define IDF_PERFORMANCE_MIN_UDP_RX_THROUGHPUT                                   64
 #define IDF_PERFORMANCE_MIN_UDP_TX_THROUGHPUT                                   50
 // events dispatched per second by event loop library
 #define IDF_PERFORMANCE_MIN_EVENT_DISPATCH                                      25000
