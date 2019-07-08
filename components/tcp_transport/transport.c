@@ -15,6 +15,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <esp_tls.h>
 
 #include "sys/queue.h"
 #include "esp_log.h"
@@ -41,7 +42,8 @@ struct esp_transport_item_t {
     poll_func       _poll_write;    /*!< Poll and write */
     trans_func      _destroy;       /*!< Destroy and free transport */
     connect_async_func _connect_async;      /*!< non-blocking connect function of this transport */
-    payload_transfer_func  _parent_transfer;       /*!< Function returning underlying transport layer */
+    payload_transfer_func  _parent_transfer;        /*!< Function returning underlying transport layer */
+    esp_tls_error_handle_t     error_handle;            /*!< Pointer to esp-tls error handle */
 
     STAILQ_ENTRY(esp_transport_item_t) next;
 };
@@ -51,6 +53,14 @@ struct esp_transport_item_t {
  * This list will hold all transport available
  */
 STAILQ_HEAD(esp_transport_list_t, esp_transport_item_t);
+
+/**
+ * Internal transport structure holding list of transports and other data common to all transports
+ */
+typedef struct esp_transport_internal {
+    struct esp_transport_list_t list;                      /*!< List of transports */
+    esp_tls_error_handle_t  error_handle;                               /*!< Pointer to the error tracker if enabled  */
+} esp_transport_internal_t;
 
 static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_handle_t t)
 {
@@ -62,34 +72,37 @@ static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_han
 
 esp_transport_list_handle_t esp_transport_list_init()
 {
-    esp_transport_list_handle_t list = calloc(1, sizeof(struct esp_transport_list_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, list, return NULL);
-    STAILQ_INIT(list);
-    return list;
+    esp_transport_list_handle_t transport = calloc(1, sizeof(esp_transport_internal_t));
+    ESP_TRANSPORT_MEM_CHECK(TAG, transport, return NULL);
+    STAILQ_INIT(&transport->list);
+    transport->error_handle = calloc(1, sizeof(esp_tls_last_error_t));
+    return transport;
 }
 
-esp_err_t esp_transport_list_add(esp_transport_list_handle_t list, esp_transport_handle_t t, const char *scheme)
+esp_err_t esp_transport_list_add(esp_transport_list_handle_t h, esp_transport_handle_t t, const char *scheme)
 {
-    if (list == NULL || t == NULL) {
+    if (h == NULL || t == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     t->scheme = calloc(1, strlen(scheme) + 1);
     ESP_TRANSPORT_MEM_CHECK(TAG, t->scheme, return ESP_ERR_NO_MEM);
     strcpy(t->scheme, scheme);
-    STAILQ_INSERT_TAIL(list, t, next);
+    STAILQ_INSERT_TAIL(&h->list, t, next);
+    // Each transport in a list to share the same error tracker
+    t->error_handle = h->error_handle;
     return ESP_OK;
 }
 
-esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handle_t list, const char *scheme)
+esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handle_t h, const char *scheme)
 {
-    if (!list) {
+    if (!h) {
         return NULL;
     }
     if (scheme == NULL) {
-        return STAILQ_FIRST(list);
+        return STAILQ_FIRST(&h->list);
     }
     esp_transport_handle_t item;
-    STAILQ_FOREACH(item, list, next) {
+    STAILQ_FOREACH(item, &h->list, next) {
         if (strcasecmp(item->scheme, scheme) == 0) {
             return item;
         }
@@ -97,23 +110,24 @@ esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handl
     return NULL;
 }
 
-esp_err_t esp_transport_list_destroy(esp_transport_list_handle_t list)
+esp_err_t esp_transport_list_destroy(esp_transport_list_handle_t h)
 {
-    esp_transport_list_clean(list);
-    free(list);
+    esp_transport_list_clean(h);
+    free(h->error_handle);
+    free(h);
     return ESP_OK;
 }
 
-esp_err_t esp_transport_list_clean(esp_transport_list_handle_t list)
+esp_err_t esp_transport_list_clean(esp_transport_list_handle_t h)
 {
-    esp_transport_handle_t item = STAILQ_FIRST(list);
+    esp_transport_handle_t item = STAILQ_FIRST(&h->list);
     esp_transport_handle_t tmp;
     while (item != NULL) {
         tmp = STAILQ_NEXT(item, next);
         esp_transport_destroy(item);
         item = tmp;
     }
-    STAILQ_INIT(list);
+    STAILQ_INIT(&h->list);
     return ESP_OK;
 }
 
@@ -276,4 +290,19 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
     }
     t->_parent_transfer = _parent_transport;
     return ESP_OK;
+}
+
+esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t)
+{
+    if (t) {
+        return t->error_handle;
+    }
+    return NULL;
+}
+
+void esp_transport_set_errors(esp_transport_handle_t t, const esp_tls_error_handle_t error_handle)
+{
+    if (t)  {
+        memcpy(t->error_handle, error_handle, sizeof(esp_tls_last_error_t));
+    }
 }

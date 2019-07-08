@@ -21,6 +21,15 @@ extern "C" {
 #endif
 
 /**
+ * @brief      Utility macro to be used for NULL ptr check after malloc
+ *
+ */
+#define ESP_TRANSPORT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
+        ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
+        action;                                                                                     \
+        }
+
+/**
  * @brief      Convert milliseconds to timeval struct
  *
  * @param[in]  timeout_ms  The timeout milliseconds
@@ -28,11 +37,6 @@ extern "C" {
  */
 void esp_transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv);
 
-
-#define ESP_TRANSPORT_MEM_CHECK(TAG, a, action) if (!(a)) {                                                      \
-        ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
-        action;                                                                                         \
-        }
 
 #ifdef __cplusplus
 }
