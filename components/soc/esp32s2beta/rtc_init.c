@@ -125,7 +125,7 @@ void rtc_init(rtc_config_t cfg)
             CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PU);
         } else {
             SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BBPLL_FORCE_PU);
-            SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BBPLL_I2C_FORCE_PU);  
+            SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BBPLL_I2C_FORCE_PU);
             SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PU);
         }
         //cancel RTC REG force PU
@@ -198,7 +198,7 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config()
         result.tieh = (sdio_conf_reg & RTC_CNTL_SDIO_TIEH_M) >> RTC_CNTL_SDIO_TIEH_S;
         return result;
     }
-#warning "rtc_vddsdio_get_config: efuse part not implemented for esp32s2beta"
+// TODO: rtc_vddsdio_get_config: implement efuse part for esp32s2beta - IDF-749
 #if 0
     uint32_t efuse_reg = REG_READ(EFUSE_BLK0_RDATA4_REG);
     if (efuse_reg & EFUSE_RD_SDIO_FORCE) {
