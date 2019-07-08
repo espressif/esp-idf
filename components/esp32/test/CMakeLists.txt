@@ -28,9 +28,23 @@ execute_process(COMMAND md5sum ${IDF_PATH}/components/esp32/include/esp_coexist_
                 OUTPUT_VARIABLE COEX_ADAPTER_MD5
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+# Calculate MD5 value of header file esp_wifi_types.h
+execute_process(COMMAND md5sum ${IDF_PATH}/components/esp32/include/esp_wifi_types.h
+                COMMAND cut -c 1-7
+                OUTPUT_VARIABLE WIFI_TYPE_MD5
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+                
+# Calculate MD5 value of header file esp_wifi.h
+execute_process(COMMAND md5sum ${IDF_PATH}/components/esp32/include/esp_wifi.h
+                COMMAND cut -c 1-7
+                OUTPUT_VARIABLE WIFI_ESP_WIFI_MD5
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 add_definitions(-DWIFI_OS_ADAPTER_MD5=\"${WIFI_OS_ADAPTER_MD5}\")
 add_definitions(-DWIFI_CRYPTO_MD5=\"${WIFI_CRYPTO_MD5}\")
 add_definitions(-DCOEX_ADAPTER_MD5=\"${COEX_ADAPTER_MD5}\")
+add_definitions(-DWIFI_TYPE_MD5=\"${WIFI_TYPE_MD5}\")
+add_definitions(-DWIFI_ESP_WIFI_MD5=\"${WIFI_ESP_WIFI_MD5}\")
 
 add_custom_target(esp32_test_logo DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h")
 
