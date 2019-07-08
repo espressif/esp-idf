@@ -299,9 +299,6 @@ class Page(object):
             chunk_count = chunk_count + 1
 
             if remaining_size or (tailroom - chunk_size) < Page.SINGLE_ENTRY_SIZE:
-                if page_header[0:4] != Page.FULL:
-                    page_state_full_seq = Page.FULL
-                    struct.pack_into('<I', page_header, 0, page_state_full_seq)
                 nvs_obj.create_new_page()
                 self = nvs_obj.cur_page
 
@@ -499,6 +496,12 @@ class NVS(object):
             self.fout.write(result)
 
     def create_new_page(self, is_rsrv_page=False):
+        # Set previous page state to FULL before creating new page
+        if self.pages:
+            curr_page_state = struct.unpack('<I', self.cur_page.page_buf[0:4])[0]
+            if curr_page_state == Page.ACTIVE:
+                page_state_full_seq = Page.FULL
+                struct.pack_into('<I', self.cur_page.page_buf, 0, page_state_full_seq)
         # Update available size as each page is created
         if self.size == 0:
             raise InsufficientSizeError("Size parameter is less than the size of data in csv.Please increase size.")
