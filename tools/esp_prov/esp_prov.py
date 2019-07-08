@@ -18,6 +18,7 @@
 from __future__ import print_function
 from builtins import input
 import argparse
+import textwrap
 import time
 import os
 import sys
@@ -57,12 +58,16 @@ def get_security(secver, pop=None, verbose=False):
     return None
 
 
-def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
+def get_transport(sel_transport, service_name):
     try:
         tp = None
         if (sel_transport == 'softap'):
-            tp = transport.Transport_Softap(softap_endpoint)
+            if service_name is None:
+                service_name = '192.168.4.1:80'
+            tp = transport.Transport_HTTP(service_name)
         elif (sel_transport == 'ble'):
+            if service_name is None:
+                raise RuntimeError('"--service_name" must be specified for ble transport')
             # BLE client is now capable of automatically figuring out
             # the primary service from the advertisement data and the
             # characteristics corresponding to each endpoint.
@@ -71,7 +76,7 @@ def get_transport(sel_transport, softap_endpoint=None, ble_devname=None):
             # in which case, the automated discovery will fail and the client
             # will fallback to using the provided UUIDs instead
             nu_lookup = {'prov-session': 'ff51', 'prov-config': 'ff52', 'proto-ver': 'ff53'}
-            tp = transport.Transport_BLE(devname=ble_devname,
+            tp = transport.Transport_BLE(devname=service_name,
                                          service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
                                          nu_lookup=nu_lookup)
         elif (sel_transport == 'console'):
@@ -93,31 +98,53 @@ def version_match(tp, protover, verbose=False):
         if response.lower() == protover.lower():
             return True
 
-        # Else interpret this as JSON structure containing
-        # information with versions and capabilities of both
-        # provisioning service and application
-        info = json.loads(response)
-        if info['prov']['ver'].lower() == protover.lower():
-            return True
+        try:
+            # Else interpret this as JSON structure containing
+            # information with versions and capabilities of both
+            # provisioning service and application
+            info = json.loads(response)
+            if info['prov']['ver'].lower() == protover.lower():
+                return True
 
-        return False
+        except ValueError:
+            # If decoding as JSON fails, it means that capabilities
+            # are not supported
+            return False
+
     except Exception as e:
         on_except(e)
         return None
 
 
-def has_capability(tp, capability, verbose=False):
+def has_capability(tp, capability='none', verbose=False):
+    # Note : default value of `capability` argument cannot be empty string
+    # because protocomm_httpd expects non zero content lengths
     try:
         response = tp.send_data('proto-ver', capability)
 
         if verbose:
             print("proto-ver response : ", response)
 
-        info = json.loads(response)
-        if capability in info['prov']['cap']:
-            return True
+        try:
+            # Interpret this as JSON structure containing
+            # information with versions and capabilities of both
+            # provisioning service and application
+            info = json.loads(response)
+            supported_capabilities = info['prov']['cap']
+            if capability.lower() == 'none':
+                # No specific capability to check, but capabilities
+                # feature is present so return True
+                return True
+            elif capability in supported_capabilities:
+                return True
+            return False
 
-    except Exception as e:
+        except ValueError:
+            # If decoding as JSON fails, it means that capabilities
+            # are not supported
+            return False
+
+    except RuntimeError as e:
         on_except(e)
 
     return False
@@ -239,75 +266,123 @@ def get_wifi_config(tp, sec):
         return None
 
 
+def desc_format(*args):
+    desc = ''
+    for arg in args:
+        desc += textwrap.fill(replace_whitespace=False, text=arg) + "\n"
+    return desc
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Generate ESP prov payload")
+    parser = argparse.ArgumentParser(description=desc_format(
+                                     'ESP Provisioning tool for configuring devices '
+                                     'running protocomm based provisioning service.',
+                                     'See esp-idf/examples/provisioning for sample applications'),
+                                     formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument("--ssid", dest='ssid', type=str,
-                        help="SSID of Wi-Fi Network", default='')
-    parser.add_argument("--passphrase", dest='passphrase', type=str,
-                        help="Passphrase of Wi-Fi network", default='')
+    parser.add_argument("--transport", required=True, dest='mode', type=str,
+                        help=desc_format(
+                            'Mode of transport over which provisioning is to be performed.',
+                            'This should be one of "softap", "ble" or "console"'))
 
-    parser.add_argument("--sec_ver", dest='secver', type=int,
-                        help="Security scheme version", default=None)
-    parser.add_argument("--proto_ver", dest='protover', type=str,
-                        help="Protocol version", default='')
-    parser.add_argument("--pop", dest='pop', type=str,
-                        help="Proof of possession", default='')
+    parser.add_argument("--service_name", dest='name', type=str,
+                        help=desc_format(
+                            'This specifies the name of the provisioning service to connect to, '
+                            'depending upon the mode of transport :',
+                            '\t- transport "ble"    : The BLE Device Name',
+                            '\t- transport "softap" : HTTP Server hostname or IP',
+                            '\t                       (default "192.168.4.1:80")'))
 
-    parser.add_argument("--softap_endpoint", dest='softap_endpoint', type=str,
-                        help="<softap_ip:port>, http(s):// shouldn't be included", default='192.168.4.1:80')
+    parser.add_argument("--proto_ver", dest='version', type=str, default='',
+                        help=desc_format(
+                            'This checks the protocol version of the provisioning service running '
+                            'on the device before initiating Wi-Fi configuration'))
 
-    parser.add_argument("--ble_devname", dest='ble_devname', type=str,
-                        help="BLE Device Name", default='')
+    parser.add_argument("--sec_ver", dest='secver', type=int, default=None,
+                        help=desc_format(
+                            'Protocomm security scheme used by the provisioning service for secure '
+                            'session establishment. Accepted values are :',
+                            '\t- 0 : No security',
+                            '\t- 1 : X25519 key exchange + AES-CTR encryption',
+                            '\t      + Authentication using Proof of Possession (PoP)',
+                            'In case device side application uses IDF\'s provisioning manager, '
+                            'the compatible security version is automatically determined from '
+                            'capabilities retrieved via the version endpoint'))
 
-    parser.add_argument("--transport", dest='provmode', type=str,
-                        help="provisioning mode i.e console or softap or ble", default='softap')
+    parser.add_argument("--pop", dest='pop', type=str, default='',
+                        help=desc_format(
+                            'This specifies the Proof of possession (PoP) when security scheme 1 '
+                            'is used'))
 
-    parser.add_argument("--custom_config", help="Provision Custom Configuration",
-                        action="store_true")
-    parser.add_argument("--custom_info", dest='custom_info', type=str,
-                        help="Custom Config Info String", default='<some custom info string>')
-    parser.add_argument("--custom_ver", dest='custom_ver', type=int,
-                        help="Custom Config Version Number", default=2)
+    parser.add_argument("--ssid", dest='ssid', type=str, default='',
+                        help=desc_format(
+                            'This configures the device to use SSID of the Wi-Fi network to which '
+                            'we would like it to connect to permanently, once provisioning is complete. '
+                            'If Wi-Fi scanning is supported by the provisioning service, this need not '
+                            'be specified'))
 
-    parser.add_argument("-v","--verbose", help="increase output verbosity", action="store_true")
+    parser.add_argument("--passphrase", dest='passphrase', type=str, default='',
+                        help=desc_format(
+                            'This configures the device to use Passphrase for the Wi-Fi network to which '
+                            'we would like it to connect to permanently, once provisioning is complete. '
+                            'If Wi-Fi scanning is supported by the provisioning service, this need not '
+                            'be specified'))
+
+    parser.add_argument("--custom_config", action="store_true",
+                        help=desc_format(
+                            'This is an optional parameter, only intended for use with '
+                            '"examples/provisioning/custom_config"'))
+    parser.add_argument("--custom_info", dest='custom_info', type=str, default='<some custom info string>',
+                        help=desc_format(
+                            'Custom Config Info String. "--custom_config" must be specified for using this'))
+    parser.add_argument("--custom_ver", dest='custom_ver', type=int, default=2,
+                        help=desc_format(
+                            'Custom Config Version Number. "--custom_config" must be specified for using this'))
+
+    parser.add_argument("-v","--verbose", help="Increase output verbosity", action="store_true")
+
     args = parser.parse_args()
 
-    if args.protover != '':
-        print("==== Esp_Prov Version: " + args.protover + " ====")
-
-    obj_transport = get_transport(args.provmode, args.softap_endpoint, args.ble_devname)
+    obj_transport = get_transport(args.mode.lower(), args.name)
     if obj_transport is None:
-        print("---- Invalid provisioning mode ----")
+        print("---- Failed to establish connection ----")
         exit(1)
 
     # If security version not specified check in capabilities
     if args.secver is None:
+        # First check if capabilities are supported or not
+        if not has_capability(obj_transport):
+            print('Security capabilities could not be determined. Please specify "--sec_ver" explicitly')
+            print("---- Invalid Security Version ----")
+            exit(2)
+
         # When no_sec is present, use security 0, else security 1
         args.secver = int(not has_capability(obj_transport, 'no_sec'))
+        print("Security scheme determined to be :", args.secver)
 
-    if (args.secver != 0) and not has_capability(obj_transport, 'no_pop'):
-        if len(args.pop) == 0:
-            print("---- Proof of Possession argument not provided ----")
-            exit(2)
-    elif len(args.pop) != 0:
-        print("---- Proof of Possession will be ignored ----")
-        args.pop = ''
+        if (args.secver != 0) and not has_capability(obj_transport, 'no_pop'):
+            if len(args.pop) == 0:
+                print("---- Proof of Possession argument not provided ----")
+                exit(2)
+        elif len(args.pop) != 0:
+            print("---- Proof of Possession will be ignored ----")
+            args.pop = ''
 
     obj_security = get_security(args.secver, args.pop, args.verbose)
     if obj_security is None:
         print("---- Invalid Security Version ----")
         exit(2)
 
-    if args.protover != '':
+    if args.version != '':
         print("\n==== Verifying protocol version ====")
-        if not version_match(obj_transport, args.protover, args.verbose):
+        if not version_match(obj_transport, args.version, args.verbose):
             print("---- Error in protocol version matching ----")
             exit(3)
         print("==== Verified protocol version successfully ====")
 
     print("\n==== Starting Session ====")
     if not establish_session(obj_transport, obj_security):
+        print("Failed to establish session. Ensure that security scheme and proof of possession are correct")
         print("---- Error in establishing session ----")
         exit(4)
     print("==== Session Established ====")
@@ -328,7 +403,7 @@ if __name__ == '__main__':
         while True:
             print("\n==== Scanning Wi-Fi APs ====")
             start_time = time.time()
-            APs = scan_wifi_APs(args.provmode, obj_transport, obj_security)
+            APs = scan_wifi_APs(args.mode.lower(), obj_transport, obj_security)
             end_time = time.time()
             print("\n++++ Scan finished in " + str(end_time - start_time) + " sec")
             if APs is None:

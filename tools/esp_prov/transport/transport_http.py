@@ -16,14 +16,30 @@
 from __future__ import print_function
 from future.utils import tobytes
 
+import socket
 import http.client
+import ssl
 
 from .transport import Transport
 
 
-class Transport_Softap(Transport):
-    def __init__(self, url):
-        self.conn = http.client.HTTPConnection(url, timeout=30)
+class Transport_HTTP(Transport):
+    def __init__(self, hostname, certfile=None):
+        try:
+            socket.gethostbyname(hostname.split(':')[0])
+        except socket.gaierror:
+            raise RuntimeError("Unable to resolve hostname :" + hostname)
+
+        if certfile is None:
+            self.conn = http.client.HTTPConnection(hostname, timeout=30)
+        else:
+            ssl_ctx = ssl.create_default_context(cafile=certfile)
+            self.conn = http.client.HTTPSConnection(hostname, context=ssl_ctx, timeout=30)
+        try:
+            print("Connecting to " + hostname)
+            self.conn.connect()
+        except Exception as err:
+            raise RuntimeError("Connection Failure : " + str(err))
         self.headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
 
     def _send_post_request(self, path, data):
