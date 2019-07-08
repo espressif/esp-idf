@@ -1831,7 +1831,6 @@ void wifi_wps_scan(void)
 #endif
 }
 
-uint8_t wps_start = 0;
 int wifi_station_wps_start(void)
 {
     struct wps_sm *sm = wps_sm_get();
@@ -1862,8 +1861,7 @@ int wifi_station_wps_start(void)
     default:
         break;
     }
-    wps_start = 1;
-
+    esp_wifi_set_wps_start_flag_internal(true);
     return ESP_OK;
 }
 
@@ -2125,7 +2123,7 @@ int esp_wifi_wps_disable(void)
     }
 
     esp_wifi_disconnect();
-    wps_start = 0;
+    esp_wifi_set_wps_start_flag_internal(false);
     wps_task_deinit();
     s_wps_enabled = false;
     API_MUTEX_GIVE();

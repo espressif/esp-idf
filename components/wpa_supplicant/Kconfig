@@ -1,32 +1,5 @@
 menu "Supplicant"
 
-    config WPA_ENTERPRISE
-        bool "Enable WPA/WPA2-Enterprise"
-        default n
-        help
-            Select this option to enable WiFi WPA/WPA2-Enterprise authentication.
-
-    config WPA_EAP_TLS
-        bool "Enable EAP-TLS"
-        depends on WPA_ENTERPRISE
-        default y
-        help
-            Select this option to support EAP-TLS.
-
-    config WPA_EAP_TTLS
-        bool "Enable EAP-TTLS"
-        depends on WPA_ENTERPRISE
-        default y
-        help
-            Select this option to support EAP-TTLS.
-
-    config WPA_EAP_PEAP
-        bool "Enable EAP-PEAP"
-        depends on WPA_ENTERPRISE
-        default y
-        help
-            Select this option to support EAP-PEAP.
-
     config WPA_MBEDTLS_CRYPTO
         bool "Use MbedTLS crypto API's"
         default y
