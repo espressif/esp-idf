@@ -1778,18 +1778,19 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     if (esp_wifi_sta_get_reset_param_internal() != 0) {
         // check it's psk
         if (strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
-            hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(), esp_wifi_sta_get_prof_pmk_internal(), PMK_LEN);
+            hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(), esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         } else {
         pbkdf2_sha1((char *)esp_wifi_sta_get_prof_password_internal(), (char *)sta_ssid->ssid, (size_t)sta_ssid->len,
-            4096, esp_wifi_sta_get_prof_pmk_internal(), PMK_LEN);
+            4096, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         }
+        esp_wifi_sta_update_ap_info_internal();
         esp_wifi_sta_set_reset_param_internal(0);
     }
 
     if (sm->key_mgmt == WPA_KEY_MGMT_IEEE8021X) {
     /* TODO nothing */
     } else {
-        memcpy(sm->pmk, esp_wifi_sta_get_prof_pmk_internal(), PMK_LEN);
+        memcpy(sm->pmk, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
     }
     sm->pmk_len = PMK_LEN;
 }
