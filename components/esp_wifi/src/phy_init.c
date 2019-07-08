@@ -596,7 +596,8 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
 }
 
 #if CONFIG_ESP32_REDUCE_PHY_TX_POWER
-static void esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
+// TODO: fix the esp_phy_reduce_tx_power unused warning for esp32s2beta - IDF-759
+static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
 {
     uint8_t i;
 

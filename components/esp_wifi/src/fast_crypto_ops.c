@@ -29,19 +29,17 @@
 #include "wpa2/eap_peer/eap_common.h"
 #include "esp_wifi_crypto_types.h"
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#warning "TODO: fix hardware crypto support for esp32s2beta"
-#endif
+// TODO: fix hardware crypto support for esp32s2beta - IDF-757
 
-/* 
+/*
  * The parameters is used to set the cyrpto callback function for station connect when in security mode,
- * every callback function can register as fast_xxx or normal one, i.e, fast_aes_wrap or aes_wrap, the 
- * difference between them is the normal API is calculate by software, the fast one use the hardware 
+ * every callback function can register as fast_xxx or normal one, i.e, fast_aes_wrap or aes_wrap, the
+ * difference between them is the normal API is calculate by software, the fast one use the hardware
  * crypto in it, can be faster than the normal one, so the callback function register in default is which
  * we recommend, so as the API in WPS default and WPA2 default.
  */
 const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
-    .size = sizeof(wpa_crypto_funcs_t), 
+    .size = sizeof(wpa_crypto_funcs_t),
     .version = ESP_WIFI_CRYPTO_VERSION,
 #if CONFIG_IDF_TARGET_ESP32
     .aes_wrap = (esp_aes_wrap_t)fast_aes_wrap,
@@ -72,7 +70,7 @@ const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
 };
 
 const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs = {
-    .size = sizeof(wps_crypto_funcs_t), 
+    .size = sizeof(wps_crypto_funcs_t),
     .version = ESP_WIFI_CRYPTO_VERSION,
 #if CONFIG_IDF_TARGET_ESP32
     .aes_128_encrypt = (esp_aes_128_encrypt_t)fast_aes_128_cbc_encrypt,
@@ -105,8 +103,8 @@ const wps_crypto_funcs_t g_wifi_default_wps_crypto_funcs = {
 
 /*
  * What should notice is that the cyrpto hash type function and crypto cipher type function can not register
- * as different, i.e, if you use fast_crypto_hash_init, you should use fast_crypto_hash_update and 
- * fast_crypto_hash_finish for finish hash calculate, rather than call crypto_hash_update and 
+ * as different, i.e, if you use fast_crypto_hash_init, you should use fast_crypto_hash_update and
+ * fast_crypto_hash_finish for finish hash calculate, rather than call crypto_hash_update and
  * crypto_hash_finish, so do crypto_cipher.
  */
 const wpa2_crypto_funcs_t g_wifi_default_wpa2_crypto_funcs = {
