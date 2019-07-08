@@ -127,7 +127,7 @@ SOC_RESERVE_MEMORY_REGION(0x3ffb8000, 0x3FFD0000, dram_mapped_to_iram);
 //ROM data region
 SOC_RESERVE_MEMORY_REGION(0x3fff8000, (intptr_t)&_data_start_xtos, rom_data_region);
 
-#warning "soc_memory_layout: trace memory regions not handled"
+// TODO: soc_memory_layout: handle trace memory regions - IDF-750
 
 #ifdef CONFIG_SPIRAM
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now

@@ -40,7 +40,7 @@
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[ portNUM_PROCESSORS ];
 
-#warning "crosscore_int: TODO: simplify for esp32s2beta"
+// TODO: crosscore_int: simplify for esp32s2beta - IDF-754
 
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but

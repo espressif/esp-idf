@@ -48,7 +48,7 @@ static void rtc_brownout_isr_handler()
 
 void esp_brownout_init()
 {
-#warning "TODO: implement brownout threshold configuration for esp32s2beta"
+// TODO: implement brownout threshold configuration for esp32s2beta - IDF-751
 
     ESP_ERROR_CHECK( rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M) );
 

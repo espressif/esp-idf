@@ -57,6 +57,62 @@
       ]
     },
     {
+      "description": "Toolchain for Xtensa (ESP32-S2) based on GCC",
+      "export_paths": [
+        [
+          "xtensa-esp32s2-elf",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/crosstool-NG",
+      "install": "always",
+      "license": "GPL-3.0-with-GCC-exception",
+      "name": "xtensa-esp32s2-elf",
+      "version_cmd": [
+        "xtensa-esp32s2-elf-gcc",
+        "--version"
+      ],
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex_replace": "\\1-\\2",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "014f13cbaef62b1b2edb42d6c49fc9e277005c30a4b48d8216568b76762101d2",
+            "size": 63081098,
+            "url": "https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-linux-amd64.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "5a7eb91937f3d4f93d1830ca62d93db995cd7ce06b07e76d6b58d34f7b8acf50",
+            "size": 61288049,
+            "url": "https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-linux-armel.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "ce85ccde5b42f5dc31d41eca3111bf61a056a38ab6e43b70b76b53fed042709f",
+            "size": 65070186,
+            "url": "https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-linux-i686.tar.gz"
+          },
+          "macos": {
+            "sha256": "e566b9f1288ef3bd89b08e9807e88c37f760d48e74b84eee9e9642bb5c0a0bbd",
+            "size": 69793197,
+            "url": " https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-macos.tar.gz "
+          },
+          "name": "esp32s2-dev-4-g3a626e9-8.2.0",
+          "status": "recommended",
+          "win32": {
+            "sha256": "6ebdcd01de2c8c50ac38446dd4421bb44d320b30b85727c49db26a703ac2c381",
+            "size": 73352955,
+            "url": " https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-win32.zip"
+          },
+          "win64": {
+            "sha256": "6ebdcd01de2c8c50ac38446dd4421bb44d320b30b85727c49db26a703ac2c381",
+            "size": 73352955,
+            "url": "https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-win32.zip"
+          }
+        }
+      ]
+    },
+    {
       "description": "Toolchain for ESP32 ULP coprocessor",
       "export_paths": [
         [
