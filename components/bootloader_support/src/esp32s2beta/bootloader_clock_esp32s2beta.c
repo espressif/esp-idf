@@ -3,7 +3,7 @@
 
 int bootloader_clock_get_rated_freq_mhz()
 {
-    #warning "TODO: bootloader_clock_get_rated_freq_mhz implementation in esp32s2"
+// TODO: implement bootloader_clock_get_rated_freq_mhz for esp32s2beta - IDF-758
     return 999;
 }
 

@@ -302,16 +302,14 @@ build_esp_idf_tests_cmake:
   artifacts:
     when: always
     paths:
-      - build_examples_cmake/*/*/*/build/*.bin
-      - build_examples_cmake/*/*/*/sdkconfig
-      - build_examples_cmake/*/*/*/build/*.elf
-      - build_examples_cmake/*/*/*/build/*.map
-      - build_examples_cmake/*/*/*/build/flasher_args.json
-      - build_examples_cmake/*/*/*/build/bootloader/*.bin
+      - build_examples_cmake/*/*/*/*/build/*.bin
+      - build_examples_cmake/*/*/*/*/sdkconfig
+      - build_examples_cmake/*/*/*/*/build/*.elf
+      - build_examples_cmake/*/*/*/*/build/*.map
+      - build_examples_cmake/*/*/*/*/build/flasher_args.json
+      - build_examples_cmake/*/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
     expire_in: 2 days
-  variables:
-    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -328,6 +326,18 @@ build_esp_idf_tests_cmake:
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh "${CI_JOB_NAME}"
+
+.build_examples_cmake_esp32_template: &build_examples_cmake_esp32_template
+  <<: *build_examples_cmake_template
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
+    IDF_TARGET: "esp32"
+
+.build_examples_cmake_esp32s2_template: &build_examples_cmake_esp32s2_template
+  <<: *build_examples_cmake_template
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
+    IDF_TARGET: "esp32s2beta"
 
 build_examples_make_00:
   <<: *build_examples_make_template
@@ -354,28 +364,41 @@ build_examples_make_07:
   <<: *build_examples_make_template
 
 build_examples_cmake_00:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_01:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_02:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_03:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_04:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_05:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_06:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
 
 build_examples_cmake_07:
-  <<: *build_examples_cmake_template
+  <<: *build_examples_cmake_esp32_template
+
+build_examples_cmake_s2_00:
+  <<: *build_examples_cmake_esp32s2_template
+
+build_examples_cmake_s2_01:
+  <<: *build_examples_cmake_esp32s2_template
+
+build_examples_cmake_s2_02:
+  <<: *build_examples_cmake_esp32s2_template
+
+build_examples_cmake_s2_03:
+  <<: *build_examples_cmake_esp32s2_template
+
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
@@ -691,6 +714,7 @@ push_to_github:
     - deploy
   only:
     - master
+    - feature/esp32s2beta
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
   when: on_success
@@ -935,8 +959,7 @@ check_submodule_sync:
   script:
     # check if all submodules are correctly synced to public repostory
     # disable this test temporarily because the esptool branch is on gitlab
-    # TODO: revert it before release esp32s2
-    # - git submodule update --init --recursive
+    - git submodule update --init --recursive
     - git submodule
 
 check_artifacts_expire_time:
@@ -1027,6 +1050,10 @@ assign_test:
     - build_examples_cmake_05
     - build_examples_cmake_06
     - build_examples_cmake_07
+    - build_examples_cmake_s2_00
+    - build_examples_cmake_s2_01
+    - build_examples_cmake_s2_02
+    - build_examples_cmake_s2_03
   artifacts:
     when: always
     paths:

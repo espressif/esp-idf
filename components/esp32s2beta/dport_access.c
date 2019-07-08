@@ -41,7 +41,7 @@
 
 #include "xtensa/core-macros.h"
 
-#warning "dport_access: TODO: simplify for esp32s2beta"
+// TODO: dport_access: simplify for esp32s2beta - IDF-755
 
 #ifndef CONFIG_FREERTOS_UNICORE
 static portMUX_TYPE g_dport_mux = portMUX_INITIALIZER_UNLOCKED;
