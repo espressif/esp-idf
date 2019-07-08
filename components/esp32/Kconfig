@@ -239,16 +239,84 @@ menu "ESP32-specific"
                 bool "VSPI host (SPI3)"
         endchoice
 
-        config PICO_PSRAM_CS_IO
-            int "PSRAM CS IO for ESP32-PICO chip"
-            depends on SPIRAM_SUPPORT
-            range 0 33
-            default 10
-            help
-                When ESP32-PICO chip connect a external psram, the clock IO and data IO is fixed, but the CS IO can be
-                any unused GPIO, user can config it based on hardware design.
+        menu "PSRAM clock and cs IO for ESP32-DOWD"
 
-    endmenu
+            config D0WD_PSRAM_CLK_IO
+                int "PSRAM CLK IO number"
+                depends on SPIRAM_SUPPORT
+                range 0 33
+                default 17
+                help
+                    The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design. If user use
+                    1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+            config D0WD_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                depends on SPIRAM_SUPPORT
+                range 0 33
+                default 16
+                help
+                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design. If user use
+                    1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+        endmenu
+
+        menu "PSRAM clock and cs IO for ESP32-D2WD"
+
+            config D2WD_PSRAM_CLK_IO
+                int "PSRAM CLK IO number"
+                depends on SPIRAM_SUPPORT
+                range 0 33
+                default 9
+                help
+                    User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+                    so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+            config D2WD_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                depends on SPIRAM_SUPPORT
+                range 0 33
+                default 10
+                help
+                    User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+                    so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+        endmenu
+
+        menu "PSRAM clock and cs IO for ESP32-PICO"
+
+            config PICO_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                depends on SPIRAM_SUPPORT
+                range 0 33
+                default 10
+                help
+                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+
+                    For ESP32-PICO chip, the psram share clock with flash, so user do not need to configure the clock
+                    IO.
+                    For the reference hardware design, please refer to
+                    https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
+
+        endmenu
+
+        config SPIRAM_SPIWP_SD3_PIN
+            int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
+            depends on FLASHMODE_DIO || FLASHMODE_DOUT
+            range 0 33
+            default 7
+            help
+                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
+                overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
+
+                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. And the psram only has QPI
+                mode, the WP pin is necessary, so we need to configure this value here.
+
+                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set as the value configured in
+                bootloader.
+
+                For ESP32-PICO chip, the default value of this config should be 7.
+
+    endmenu # "SPI RAM config"
 
     config MEMMAP_TRACEMEM
         bool
