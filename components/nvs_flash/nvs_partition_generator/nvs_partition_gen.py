@@ -651,6 +651,8 @@ def nvs_part_gen(input_filename=None, output_filename=None, key_gen=None, encryp
         reader = csv.DictReader(input_file, delimiter=',')
         for row in reader:
             try:
+                if len(row["key"]) > 15:
+                    raise InputError("Error: Length of key `%s` should be <= 15 characters." % row["key"])
                 write_entry(nvs_obj, row["key"], row["type"], row["encoding"], row["value"])
             except (InputError) as e:
                 print(e)
