@@ -127,12 +127,22 @@ cov-data-clean:
 .PHONY: lcov-report cov-data-clean
 ```
 
+For CMake-based build system, add the following lines to you project's `CMakeLists.txt` after the line including `project.cmake`:
+
+```
+include($ENV{IDF_PATH}/tools/cmake/gcov.cmake)
+idf_create_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+idf_clean_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+```
+
 Those lines add two build targets:
 * `lcov-report` - generates html coverage report in `$(BUILD_DIR_BASE)/coverage_report/html` directory.
 * `cov-data-clean` - removes all coverage data files and reports.
 
 To generate report type the following command:
 `make lcov-report`
+
+  For CMake-based build system, type `cmake --build build/ --target lcov-report`
 
 The sample output of the command is below:
 
