@@ -487,6 +487,7 @@ Python 2.7 安装程序将尝试配置 Windows，将 ``.py`` 文件与 Python 2 
     eclipse-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
+    ../get-started-legacy/index
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases
