@@ -14,6 +14,7 @@
 
 #include "esp_event.h"
 #include "esp_event_internal.h"
+#include "esp_task.h"
 
 /* ------------------------- Static Variables ------------------------------- */
 
