@@ -18,7 +18,6 @@
 #include <stdarg.h>
 
 #define LINESIZE 1024
-#define VERSION "1.0"
 
 static void fail(LPCSTR message, ...) __attribute__((noreturn));
 
