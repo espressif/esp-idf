@@ -20,6 +20,12 @@ This example aims at understanding BLE service discovery, connection and charact
 
 To test this demo, use any BLE GATT server app that advertises support for the Alert Notification service (0x1811) and includes it in the GATT database.
 
+A Python based utility `blecent_test.py` is also provided (which will run as a BLE GATT server) and can be used to test this example.   
+
+Note :
+
+* Make sure to run `python -m pip install --user -r $IDF_PATH/requirements.txt -r $IDF_PATH/tools/ble/requirements.txt` to install the dependency packages needed.
+* Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to use example
 
@@ -45,7 +51,8 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-There is this console output on successful connection:
+This is the console output on successful connection:
+
 ```
 I (202) BTDM_INIT: BT controller compile version [0b60040]
 I (202) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
@@ -71,7 +78,8 @@ Write complete; status=0 conn_handle=0 attr_handle=47
 Subscribe complete; status=0 conn_handle=0 attr_handle=43
 ```
 
-There is this console output on failure (or peripheral does not support New Alert Service category):
+This is the console output on failure (or peripheral does not support New Alert Service category):
+
 ```
 I (180) BTDM_INIT: BT controller compile version [8e87ec7]
 I (180) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
@@ -91,4 +99,61 @@ Service discovery complete; status=0 conn_handle=0
 Error: Peer doesn't support the Supported New Alert Category characteristic
 GAP procedure initiated: terminate connection; conn_handle=0 hci_reason=19
 disconnect; reason=534
+```
+
+## Running Python Utility
+
+```
+python blecent_test.py
+```
+
+## Python Utility Output
+
+This is this output seen on the python side on successful connection:
+
+```
+discovering adapter...
+bluetooth adapter discovered
+powering on adapter...
+bluetooth adapter powered on
+Advertising started
+GATT Data created
+GATT Application registered
+Advertising data created
+Advertisement registered
+Read Request received
+ 	SupportedNewAlertCategoryCharacteristic
+	Value: 	 [dbus.Byte(2)]
+Write Request received
+ 	AlertNotificationControlPointCharacteristic
+	Current value: 	 [dbus.Byte(0)]
+	New value: 	 [dbus.Byte(99), dbus.Byte(100)]
+
+Notify Started
+New value on write: 	 [dbus.Byte(1), dbus.Byte(0)]
+	Value on read: 	 [dbus.Byte(1), dbus.Byte(0)]
+
+Notify Stopped
+
+exiting from test...
+GATT Data removed
+GATT Application unregistered
+Advertising data removed
+Advertisement unregistered
+Stop Advertising status:  True
+disconnecting device...
+device disconnected
+powering off adapter...
+bluetooth adapter powered off
+Service discovery passed
+	Service Discovery Status: 0
+Read passed
+	SupportedNewAlertCategoryCharacteristic
+	Read Status: 0
+Write passed
+	AlertNotificationControlPointCharacteristic
+	Write Status: 0
+Subscribe passed
+	ClientCharacteristicConfigurationDescriptor
+	Subscribe Status: 0
 ```

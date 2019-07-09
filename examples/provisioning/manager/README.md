@@ -74,10 +74,10 @@ I (1045) wifi_prov_mgr: Provisioning started with service name : PROV_261FCC
 
 Make sure to note down the BLE device name (starting with `PROV_`) displayed in the serial monitor log (eg. PROV_261FCC). This will depend on the MAC ID and will be unique for every device.
 
-In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (please replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration :
+In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (make sure to replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, which uses protocomm security scheme 1 and proof of possession PoP based authentication :
 
 ```
-python esp_prov.py --ssid myssid --passphrase mypassword --sec_ver 1 --pop abcd1234 --transport ble --ble_devname PROV_261FCC
+python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
 ```
 
 Above command will perform the provisioning steps, and the monitor log should display something like this :
@@ -107,6 +107,54 @@ I (52355) app: Hello World!
 I (53355) app: Hello World!
 I (54355) app: Hello World!
 I (55355) app: Hello World!
+```
+
+### Wi-Fi Scanning
+
+Provisioning manager also supports providing real-time Wi-Fi scan results (performed on the device) during provisioning. This allows the client side applications to choose the AP for which the device Wi-Fi station is to be configured. Various information about the visible APs is available, like signal strength (RSSI) and security type, etc. Also, the manager now provides capabilities information which can be used by client applications to determine the security type and availability of specific features (like `wifi_scan`).
+
+When using the scan based provisioning, we don't need to specify the `--ssid` and `--passphrase` fields explicitly:
+
+```
+python esp_prov.py --transport ble --service_name PROV_261FCC --pop abcd1234
+```
+
+See below the sample output from `esp_prov` tool on running above command:
+
+```
+Connecting...
+Connected
+Getting Services...
+Security scheme determined to be : 1
+
+==== Starting Session ====
+==== Session Established ====
+
+==== Scanning Wi-Fi APs ====
+++++ Scan process executed in 1.9967520237 sec
+++++ Scan results : 5
+
+++++ Scan finished in 2.7374596596 sec
+==== Wi-Fi Scan results ====
+S.N. SSID                              BSSID         CHN RSSI AUTH
+[ 1] MyHomeWiFiAP                      788a20841996    1 -45  WPA2_PSK
+[ 2] MobileHotspot                     7a8a20841996   11 -46  WPA2_PSK
+[ 3] MyHomeWiFiAP                      788a208daa26   11 -54  WPA2_PSK
+[ 4] NeighborsWiFiAP                   8a8a20841996    6 -61  WPA2_PSK
+[ 5] InsecureWiFiAP                    dca4caf1227c    7 -74  Open
+
+Select AP by number (0 to rescan) : 1
+Enter passphrase for MyHomeWiFiAP :
+
+==== Sending Wi-Fi credential to esp32 ====
+==== Wi-Fi Credentials sent successfully ====
+
+==== Applying config to esp32 ====
+==== Apply config sent successfully ====
+
+==== Wi-Fi connection state  ====
+++++ WiFi state: connected ++++
+==== Provisioning was successful ====
 ```
 
 ## Troubleshooting

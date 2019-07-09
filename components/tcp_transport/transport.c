@@ -110,9 +110,6 @@ esp_err_t esp_transport_list_clean(esp_transport_list_handle_t list)
     esp_transport_handle_t tmp;
     while (item != NULL) {
         tmp = STAILQ_NEXT(item, next);
-        if (item->_destroy) {
-            item->_destroy(item);
-        }
         esp_transport_destroy(item);
         item = tmp;
     }
@@ -137,6 +134,9 @@ esp_transport_handle_t esp_transport_get_payload_transport_handle(esp_transport_
 
 esp_err_t esp_transport_destroy(esp_transport_handle_t t)
 {
+    if (t->_destroy) {
+        t->_destroy(t);
+    }
     if (t->scheme) {
         free(t->scheme);
     }

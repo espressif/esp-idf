@@ -16,6 +16,13 @@
 #include <esp_bt.h>
 #include <esp_event.h>
 
+#ifdef CONFIG_BT_NIMBLE_ENABLED
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#endif
+
 #include <protocomm.h>
 #include <protocomm_ble.h>
 #include <protocomm_security0.h>

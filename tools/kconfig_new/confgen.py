@@ -198,6 +198,10 @@ def main():
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
+    parser.add_argument('--env-file', type=argparse.FileType('r'),
+                        help='Optional file to load environment variables from. Contents '
+                             'should be a JSON object where each key/value pair is a variable.')
+
     args = parser.parse_args()
 
     for fmt, filename in args.output:
@@ -213,6 +217,10 @@ def main():
 
     for name, value in args.env:
         os.environ[name] = value
+
+    if args.env_file is not None:
+        env = json.load(args.env_file)
+        os.environ.update(env)
 
     config = kconfiglib.Kconfig(args.kconfig)
     config.disable_redun_warnings()
@@ -341,10 +349,8 @@ def write_cmake(deprecated_options, config, filename):
             if not isinstance(sym, kconfiglib.Symbol):
                 return
 
-            # Note: str_value calculates _write_to_conf, due to
-            # internal magic in kconfiglib...
-            val = sym.str_value
-            if sym._write_to_conf:
+            if sym.config_string:
+                val = sym.str_value
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == "n":
                     val = ""  # write unset values as empty variables
                 write("set({}{} \"{}\")\n".format(
@@ -372,8 +378,8 @@ def get_json_values(config):
         if not isinstance(sym, kconfiglib.Symbol):
             return
 
-        val = sym.str_value  # this calculates _write_to_conf, due to kconfiglib magic
-        if sym._write_to_conf:
+        if sym.config_string:
+            val = sym.str_value
             if sym.type in [kconfiglib.BOOL, kconfiglib.TRISTATE]:
                 val = (val != "n")
             elif sym.type == kconfiglib.HEX:
@@ -467,7 +473,9 @@ def write_json_menus(deprecated_options, config, filename):
                 # should have one condition which is true
                 for min_range, max_range, cond_expr in sym.ranges:
                     if kconfiglib.expr_value(cond_expr):
-                        greatest_range = [int(min_range.str_value), int(max_range.str_value)]
+                        base = 16 if sym.type == kconfiglib.HEX else 10
+                        greatest_range = [int(min_range.str_value, base), int(max_range.str_value, base)]
+                    break
 
             new_json = {
                 "type": kconfiglib.TYPE_TO_STR[sym.type],

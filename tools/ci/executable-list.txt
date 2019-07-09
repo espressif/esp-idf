@@ -26,6 +26,7 @@ examples/storage/parttool/parttool_example.sh
 examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
+install.sh
 tools/check_kconfigs.py
 tools/check_python_dependencies.py
 tools/ci/apply_bot_filter.py
@@ -69,6 +70,7 @@ tools/ldgen/ldgen.py
 tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
 tools/mass_mfg/mfg_gen.py
+tools/set-submodules-to-github.sh
 tools/test_check_kconfigs.py
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_size/test.sh

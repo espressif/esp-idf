@@ -76,7 +76,7 @@ def test_examples_wifi_prov_mgr(env, extra_data):
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
-    transport = esp_prov.get_transport(provmode, None, devname)
+    transport = esp_prov.get_transport(provmode, devname)
     if transport is None:
         raise RuntimeError("Failed to get transport")
 

@@ -243,17 +243,17 @@
       "version_regex": "mconf-idf version mconf-([a-z0-9.-]+)-win32",
       "versions": [
         {
-          "name": "v4.6.0.0-idf-20190313",
+          "name": "v4.6.0.0-idf-20190628",
           "status": "recommended",
           "win32": {
-            "sha256": "051bef09c782bc31b737b047808d1b6588b0965101b77dc979af9139773c4b4f",
-            "size": 826167,
-            "url": "https://github.com/espressif/kconfig-frontends/releases/download/v4.6.0.0-idf-20190313/mconf-v4.6.0.0-idf-20190313-win32.zip"
+            "sha256": "1b8f17f48740ab669c13bd89136e8cc92efe0cd29872f0d6c44148902a2dc40c",
+            "size": 826114,
+            "url": "https://github.com/espressif/kconfig-frontends/releases/download/v4.6.0.0-idf-20190628/mconf-v4.6.0.0-idf-20190628-win32.zip"
           },
           "win64": {
-            "sha256": "051bef09c782bc31b737b047808d1b6588b0965101b77dc979af9139773c4b4f",
-            "size": 826167,
-            "url": "https://github.com/espressif/kconfig-frontends/releases/download/v4.6.0.0-idf-20190313/mconf-v4.6.0.0-idf-20190313-win32.zip"
+            "sha256": "1b8f17f48740ab669c13bd89136e8cc92efe0cd29872f0d6c44148902a2dc40c",
+            "size": 826114,
+            "url": "https://github.com/espressif/kconfig-frontends/releases/download/v4.6.0.0-idf-20190628/mconf-v4.6.0.0-idf-20190628-win32.zip"
           }
         }
       ]
@@ -302,6 +302,49 @@
             "sha256": "2d70010633ddaacc3af4ffbd21e22fae90d158674a09e132e06424ba3ab036e9",
             "size": 254497,
             "url": "https://dl.espressif.com/dl/ninja-1.9.0-win64.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "IDF wrapper tool for Windows",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/esp-idf/tree/master/tools/windows/idf_exe",
+      "install": "never",
+      "license": "Apache-2.0",
+      "name": "idf-exe",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win32",
+            "win64"
+          ]
+        }
+      ],
+      "version_cmd": [
+        "idf.py.exe",
+        "-v"
+      ],
+      "version_regex": "([0-9.]+)",
+      "versions": [
+        {
+          "name": "1.0",
+          "status": "recommended",
+          "win32": {
+            "sha256": "83a83ac7a246cbae93884db7c5f2ef9a7607d602340b1cf1e64ec2a925071748",
+            "size": 11289,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.zip"
+          },
+          "win64": {
+            "sha256": "83a83ac7a246cbae93884db7c5f2ef9a7607d602340b1cf1e64ec2a925071748",
+            "size": 11289,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.zip"
           }
         }
       ]

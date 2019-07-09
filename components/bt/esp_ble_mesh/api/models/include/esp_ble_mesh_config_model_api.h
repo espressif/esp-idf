@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,142 +45,143 @@
         ESP_BLE_MESH_SIG_MODEL(ESP_BLE_MESH_MODEL_ID_CONFIG_CLI,          \
                   NULL, NULL, cli_data)
 
+/** Configuration Server Model context */
 typedef struct esp_ble_mesh_cfg_srv {
-    esp_ble_mesh_model_t *model;
+    esp_ble_mesh_model_t *model;    /*!< Pointer to Configuration Server Model */
 
-    uint8_t net_transmit;         /*!< Network Transmit state */
-    uint8_t relay;                /*!< Relay Mode state */
-    uint8_t relay_retransmit;     /*!< Relay Retransmit state */
-    uint8_t beacon;               /*!< Secure Network Beacon state */
-    uint8_t gatt_proxy;           /*!< GATT Proxy state */
-    uint8_t friend_state;         /*!< Friend state */
-    uint8_t default_ttl;          /*!< Default TTL */
+    uint8_t net_transmit;           /*!< Network Transmit state */
+    uint8_t relay;                  /*!< Relay Mode state */
+    uint8_t relay_retransmit;       /*!< Relay Retransmit state */
+    uint8_t beacon;                 /*!< Secure Network Beacon state */
+    uint8_t gatt_proxy;             /*!< GATT Proxy state */
+    uint8_t friend_state;           /*!< Friend state */
+    uint8_t default_ttl;            /*!< Default TTL */
 
     /** Heartbeat Publication */
     struct {
-        struct k_delayed_work timer;
+        struct k_delayed_work timer;    /*!< Heartbeat Publication timer */
 
-        uint16_t dst;
-        uint16_t count;
-        uint8_t  period;
-        uint8_t  ttl;
-        uint16_t feature;
-        uint16_t net_idx;
+        uint16_t dst;                   /*!< Destination address for Heartbeat messages */
+        uint16_t count;                 /*!< Number of Heartbeat messages to be sent */
+        uint8_t  period;                /*!< Period for sending Heartbeat messages */
+        uint8_t  ttl;                   /*!< TTL to be used when sending Heartbeat messages */
+        uint16_t feature;               /*!< Bit field indicating features that trigger Heartbeat messages when changed */
+        uint16_t net_idx;               /*!< NetKey Index used by Heartbeat Publication */
     } heartbeat_pub;
 
     /** Heartbeat Subscription */
     struct {
-        int64_t  expiry;
+        int64_t  expiry;                /*!< Timestamp when Heartbeat subscription period is expired */
 
-        uint16_t src;
-        uint16_t dst;
-        uint16_t count;
-        uint8_t  min_hops;
-        uint8_t  max_hops;
+        uint16_t src;                   /*!< Source address for Heartbeat messages */
+        uint16_t dst;                   /*!< Destination address for Heartbeat messages */
+        uint16_t count;                 /*!< Number of Heartbeat messages received */
+        uint8_t  min_hops;              /*!< Minimum hops when receiving Heartbeat messages */
+        uint8_t  max_hops;              /*!< Maximum hops when receiving Heartbeat messages */
 
         /** Optional subscription tracking function */
         void (*func)(uint8_t hops, uint16_t feature);
     } heartbeat_sub;
 } esp_ble_mesh_cfg_srv_t;
 
-/** Parameters of Composition Data Get. */
+/** Parameters of Config Composition Data Get. */
 typedef struct {
     uint8_t page;                   /*!< Page number of the Composition Data. */
 } esp_ble_mesh_cfg_composition_data_get_t;
 
-/** Parameters of Model Publication Get. */
+/** Parameters of Config Model Publication Get. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_id;              /*!< The model id */
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_pub_get_t;
 
-/** Parameters of SIG Model Subscription Get. */
+/** Parameters of Config SIG Model Subscription Get. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_id;              /*!< The model id */
 } esp_ble_mesh_cfg_sig_model_sub_get_t;
 
-/** Parameters of Vendor Model Subscription Get. */
+/** Parameters of Config Vendor Model Subscription Get. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_id;              /*!< The model id */
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_vnd_model_sub_get_t;
 
-/** Parameters of Application Key Get. */
+/** Parameters of Config AppKey Get. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
 } esp_ble_mesh_cfg_app_key_get_t;
 
-/** Parameters of Node Identity Get. */
+/** Parameters of Config Node Identity Get. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
 } esp_ble_mesh_cfg_node_identity_get_t;
 
-/** Parameters of SIG Model App Get. */
+/** Parameters of Config SIG Model App Get. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_id;              /*!< The model id */
 } esp_ble_mesh_cfg_sig_model_app_get_t;
 
-/** Parameters of Vendor Model App Get. */
+/** Parameters of Config Vendor Model App Get. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_id;              /*!< The model id */
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_vnd_model_app_get_t;
 
-/** Parameters of Key Refresh Phase Get. */
+/** Parameters of Config Key Refresh Phase Get. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
 } esp_ble_mesh_cfg_kr_phase_get_t;
 
-/** Parameters of Low Power Node PollTimeout Get. */
+/** Parameters of Config Low Power Node PollTimeout Get. */
 typedef struct {
     uint16_t lpn_addr;              /*!< The unicast address of the Low Power node */
 } esp_ble_mesh_cfg_lpn_polltimeout_get_t;
 
-/** Parameters of Beacon Set. */
+/** Parameters of Config Beacon Set. */
 typedef struct {
-    uint8_t beacon;
+    uint8_t beacon;                 /*!< New Secure Network Beacon state */
 } esp_ble_mesh_cfg_beacon_set_t;
 
-/** Parameters of Default TTL Set. */
+/** Parameters of Config Default TTL Set. */
 typedef struct {
     uint8_t ttl;                    /*!< The default TTL state value */
 } esp_ble_mesh_cfg_default_ttl_set_t;
 
-/** Parameters of Friend Set. */
+/** Parameters of Config Friend Set. */
 typedef struct {
     uint8_t friend_state;           /*!< The friend state value */
 } esp_ble_mesh_cfg_friend_set_t;
 
-/** Parameters of GATT Proxy Set. */
+/** Parameters of Config GATT Proxy Set. */
 typedef struct {
     uint8_t gatt_proxy;             /*!< The GATT Proxy state value */
 } esp_ble_mesh_cfg_gatt_proxy_set_t;
 
-/** Parameters of Relay Set. */
+/** Parameters of Config Relay Set. */
 typedef struct {
     uint8_t relay;                  /*!< The relay value */
     uint8_t relay_retransmit;       /*!< The relay retransmit value */
 } esp_ble_mesh_cfg_relay_set_t;
 
-/** Parameters of Network Key Add. */
+/** Parameters of Config NetKey Add. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint8_t  net_key[16];           /*!< The network key value */
 } esp_ble_mesh_cfg_net_key_add_t;
 
-/** Parameters of Application Key Add. */
+/** Parameters of Config AppKey Add. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint16_t app_idx;               /*!< The app key index */
     uint8_t  app_key[16];           /*!< The app key value */
 } esp_ble_mesh_cfg_app_key_add_t;
 
-/** Parameters of Model Application Key Bind. */
+/** Parameters of Config Model App Bind. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_app_idx;         /*!< Index of the app key to bind with the model */
@@ -188,7 +189,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_app_bind_t;
 
-/** Parameters of Model Publication Set. */
+/** Parameters of Config Model Publication Set. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t publish_addr;          /*!< Value of the publish address */
@@ -201,7 +202,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_pub_set_t;
 
-/** Parameters of Model Subscription Add. */
+/** Parameters of Config Model Subscription Add. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t sub_addr;              /*!< The address to be added to the Subscription List */
@@ -209,7 +210,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_add_t;
 
-/** Parameters of Model Subscription Delete. */
+/** Parameters of Config Model Subscription Delete. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t sub_addr;              /*!< The address to be removed from the Subscription List */
@@ -217,7 +218,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_delete_t;
 
-/** Parameters of Model Subscription Overwrite. */
+/** Parameters of Config Model Subscription Overwrite. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t sub_addr;              /*!< The address to be added to the Subscription List */
@@ -225,7 +226,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_overwrite_t;
 
-/** Parameters of Model Subscription Virtual Address Add. */
+/** Parameters of Config Model Subscription Virtual Address Add. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint8_t  label_uuid[16];        /*!< The Label UUID of the virtual address to be added to the Subscription List */
@@ -233,7 +234,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_va_add_t;
 
-/** Parameters of Model Subscription Virtual Address Delete. */
+/** Parameters of Config Model Subscription Virtual Address Delete. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint8_t  label_uuid[16];        /*!< The Label UUID of the virtual address to be removed from the Subscription List */
@@ -241,7 +242,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_va_delete_t;
 
-/** Parameters of Model Subscription Virtual Address Overwrite. */
+/** Parameters of Config Model Subscription Virtual Address Overwrite. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint8_t  label_uuid[16];        /*!< The Label UUID of the virtual address to be added to the Subscription List */
@@ -249,7 +250,7 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_va_overwrite_t;
 
-/** Parameters of Model Publication Virtual Address Set. */
+/** Parameters of Config Model Publication Virtual Address Set. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint8_t  label_uuid[16];        /*!< Value of the Label UUID publish address */
@@ -262,44 +263,44 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_pub_va_set_t;
 
-/** Parameters of Model Subscription Delete All. */
+/** Parameters of Config Model Subscription Delete All. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_id;              /*!< The model id */
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_sub_delete_all_t;
 
-/** Parameters of Network Key Update. */
+/** Parameters of Config NetKey Update. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint8_t  net_key[16];           /*!< The network key value */
 } esp_ble_mesh_cfg_net_key_update_t;
 
-/** Parameters of Network Key Delete. */
+/** Parameters of Config NetKey Delete. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
 } esp_ble_mesh_cfg_net_key_delete_t;
 
-/** Parameters of Application Key Update. */
+/** Parameters of Config AppKey Update. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint16_t app_idx;               /*!< The app key index */
     uint8_t  app_key[16];           /*!< The app key value */
 } esp_ble_mesh_cfg_app_key_update_t;
 
-/** Parameters of Application Key Delete. */
+/** Parameters of Config AppKey Delete. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint16_t app_idx;               /*!< The app key index */
 } esp_ble_mesh_cfg_app_key_delete_t;
 
-/** Parameters of Node Identity Set. */
+/** Parameters of Config Node Identity Set. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint8_t  identity;              /*!< New Node Identity state */
 } esp_ble_mesh_cfg_node_identity_set_t;
 
-/** Parameters of Model Application Key Unbind. */
+/** Parameters of Config Model App Unbind. */
 typedef struct {
     uint16_t element_addr;          /*!< The element address */
     uint16_t model_app_idx;         /*!< Index of the app key to bind with the model */
@@ -307,32 +308,32 @@ typedef struct {
     uint16_t company_id;            /*!< The company id, if not a vendor model, shall set to 0xFFFF */
 } esp_ble_mesh_cfg_model_app_unbind_t;
 
-/** Parameters of Key Refresh Phase Set. */
+/** Parameters of Config Key Refresh Phase Set. */
 typedef struct {
     uint16_t net_idx;               /*!< The network key index */
     uint8_t  transition;            /*!< New Key Refresh Phase Transition */
 } esp_ble_mesh_cfg_kr_phase_set_t;
 
-/** Parameters of Network Transmit Set. */
+/** Parameters of Config Network Transmit Set. */
 typedef struct {
     uint8_t net_transmit;           /*!< Network Transmit State */
 } esp_ble_mesh_cfg_net_transmit_set_t;
 
-/** Parameters of Model Heartbeat Publication Set. */
+/** Parameters of Config Model Heartbeat Publication Set. */
 typedef struct  {
-    uint16_t dst;
-    uint8_t  count;
-    uint8_t  period;
-    uint8_t  ttl;
-    uint16_t feature;
-    uint16_t net_idx;
+    uint16_t dst;                   /*!< Destination address for Heartbeat messages */
+    uint8_t  count;                 /*!< Number of Heartbeat messages to be sent */
+    uint8_t  period;                /*!< Period for sending Heartbeat messages */
+    uint8_t  ttl;                   /*!< TTL to be used when sending Heartbeat messages */
+    uint16_t feature;               /*!< Bit field indicating features that trigger Heartbeat messages when changed */
+    uint16_t net_idx;               /*!< NetKey Index */
 } esp_ble_mesh_cfg_heartbeat_pub_set_t;
 
-/** Parameters of Model Heartbeat Subscription Set. */
+/** Parameters of Config Model Heartbeat Subscription Set. */
 typedef struct {
-    uint16_t src;
-    uint16_t dst;
-    uint8_t  period;
+    uint16_t src;                   /*!< Source address for Heartbeat messages */
+    uint16_t dst;                   /*!< Destination address for Heartbeat messages */
+    uint8_t  period;                /*!< Period for receiving Heartbeat messages */
 } esp_ble_mesh_cfg_heartbeat_sub_set_t;
 
 /**
@@ -411,28 +412,34 @@ typedef union {
     esp_ble_mesh_cfg_net_transmit_set_t       net_transmit_set;       /*!< For ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_SET */
 } esp_ble_mesh_cfg_client_set_state_t;
 
+/** Parameter of Config Beacon Status */
 typedef struct {
     uint8_t beacon;                     /*!< Secure Network Beacon state value */
 } esp_ble_mesh_cfg_beacon_status_cb_t;
 
+/** Parameters of Config Composition Data Status */
 typedef struct {
     uint8_t page;                              /*!< Page number of the Composition Data */
     struct net_buf_simple *composition_data;   /*!< Pointer to Composition Data for the identified page */
 } esp_ble_mesh_cfg_comp_data_status_cb_t;
 
+/** Parameter of Config Default TTL Status */
 typedef struct {
     uint8_t default_ttl;                /*!< Default TTL state value */
 } esp_ble_mesh_cfg_default_ttl_status_cb_t;
 
+/** Parameter of Config GATT Proxy Status */
 typedef struct {
     uint8_t gatt_proxy;                 /*!< GATT Proxy state value */
 } esp_ble_mesh_cfg_gatt_proxy_status_cb_t;
 
+/** Parameters of Config Relay Status */
 typedef struct {
     uint8_t relay;                      /*!< Relay state value */
     uint8_t retransmit;                 /*!< Relay retransmit value(number of retransmissions and number of 10-millisecond steps between retransmissions) */
 } esp_ble_mesh_cfg_relay_status_cb_t;
 
+/** Parameters of Config Model Publication Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t element_addr;              /*!< Address of the element */
@@ -446,6 +453,7 @@ typedef struct {
     uint16_t model_id;                  /*!< Model ID */
 } esp_ble_mesh_cfg_model_pub_status_cb_t;
 
+/** Parameters of Config Model Subscription Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t element_addr;              /*!< Address of the element */
@@ -454,17 +462,20 @@ typedef struct {
     uint16_t model_id;                  /*!< Model ID */
 } esp_ble_mesh_cfg_model_sub_status_cb_t;
 
+/** Parameters of Config NetKey Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t net_idx;                   /*!< Index of the NetKey */
 } esp_ble_mesh_cfg_net_key_status_cb_t;
 
+/** Parameters of Config AppKey Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t net_idx;                   /*!< Index of the NetKey */
     uint16_t app_idx;                   /*!< Index of the application key */
 } esp_ble_mesh_cfg_app_key_status_cb_t;
 
+/** Parameters of Config Model App Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t element_addr;              /*!< Address of the element */
@@ -473,10 +484,12 @@ typedef struct {
     uint16_t model_id;                  /*!< Model ID */
 } esp_ble_mesh_cfg_mod_app_status_cb_t;
 
+/** Parameter of Config Friend Status */
 typedef struct {
     uint8_t friend_state;               /*!< Friend state value */
 } esp_ble_mesh_cfg_friend_status_cb_t;
 
+/** Parameters of Config Heartbeat Publication Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t dst;                       /*!< Destination address for Heartbeat messages */
@@ -487,6 +500,7 @@ typedef struct {
     uint16_t net_idx;                   /*!< Index of the NetKey */
 } esp_ble_mesh_cfg_hb_pub_status_cb_t;
 
+/** Parameters of Config Heartbeat Subscription Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t src;                       /*!< Source address for Heartbeat messages */
@@ -497,11 +511,13 @@ typedef struct {
     uint8_t  max_hops;                  /*!< Maximum hops when receiving Heartbeat messages */
 } esp_ble_mesh_cfg_hb_sub_status_cb_t;
 
+/** Parameters of Config Network Transmit Status */
 typedef struct {
     uint8_t net_trans_count:3;          /*!< Number of transmissions for each Network PDU originating from the node */
     uint8_t net_trans_step :5;          /*!< Maximum hops when receiving Heartbeat messages */
 } esp_ble_mesh_cfg_net_trans_status_cb_t;
 
+/** Parameters of Config SIG/Vendor Subscription List */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t element_addr;              /*!< Address of the element */
@@ -510,41 +526,50 @@ typedef struct {
     struct net_buf_simple *sub_addr;    /*!< A block of all addresses from the Subscription List */
 } esp_ble_mesh_cfg_model_sub_list_cb_t;
 
+/** Parameter of Config NetKey List */
 typedef struct {
     struct net_buf_simple *net_idx;     /*!< A list of NetKey Indexes known to the node */
 } esp_ble_mesh_cfg_net_key_list_cb_t;
 
+/** Parameters of Config AppKey List */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t net_idx;                   /*!< NetKey Index of the NetKey that the AppKeys are bound to */
     struct net_buf_simple *app_idx;     /*!< A list of AppKey indexes that are bound to the NetKey identified by NetKeyIndex */
 } esp_ble_mesh_cfg_app_key_list_cb_t;
 
+/** Parameters of Config Node Identity Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t net_idx;                   /*!< Index of the NetKey */
     uint8_t  identity;                  /*!< Node Identity state */
 } esp_ble_mesh_cfg_node_id_status_cb_t;
 
+/** Parameters of Config SIG/Vendor Model App List */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t element_addr;              /*!< Address of the element */
     uint16_t company_id;                /*!< Company ID */
     uint16_t model_id;                  /*!< Model ID */
-    struct net_buf_simple *app_idx;    /*!< All AppKey indexes bound to the Model */
+    struct net_buf_simple *app_idx;     /*!< All AppKey indexes bound to the Model */
 } esp_ble_mesh_cfg_model_app_list_cb_t;
 
+/** Parameters of Config Key Refresh Phase Status */
 typedef struct {
     uint8_t  status;                    /*!< Status Code for the request message */
     uint16_t net_idx;                   /*!< Index of the NetKey */
     uint8_t  phase;                     /*!< Key Refresh Phase state */
 } esp_ble_mesh_cfg_kr_phase_status_cb_t;
 
+/** Parameters of Config Low Power Node PollTimeout Status */
 typedef struct {
     uint16_t lpn_addr;                  /*!< The unicast address of the Low Power node */
     int32_t  poll_timeout;              /*!< The current value of the PollTimeout timer of the Low Power node */
 } esp_ble_mesh_cfg_lpn_pollto_status_cb_t;
 
+/**
+ * @brief Configuration Client Model received message union
+ */
 typedef union {
     esp_ble_mesh_cfg_beacon_status_cb_t      beacon_status;         /*!< The beacon status value */
     esp_ble_mesh_cfg_comp_data_status_cb_t   comp_data_status;      /*!< The composition data status value */
@@ -569,12 +594,14 @@ typedef union {
     esp_ble_mesh_cfg_lpn_pollto_status_cb_t  lpn_timeout_status;    /*!< The low power node poll timeout status value */
 } esp_ble_mesh_cfg_client_common_cb_param_t;
 
+/** Configuration Client Model callback parameters */
 typedef struct {
     int error_code;                                         /*!< Appropriate error code */
     esp_ble_mesh_client_common_param_t       *params;       /*!< The client common parameters */
     esp_ble_mesh_cfg_client_common_cb_param_t status_cb;    /*!< The config status message callback values */
 } esp_ble_mesh_cfg_client_cb_param_t;
 
+/** This enum value is the event of Configuration Client Model */
 typedef enum {
     ESP_BLE_MESH_CFG_CLIENT_GET_STATE_EVT,
     ESP_BLE_MESH_CFG_CLIENT_SET_STATE_EVT,
@@ -583,20 +610,26 @@ typedef enum {
     ESP_BLE_MESH_CFG_CLIENT_EVT_MAX,
 } esp_ble_mesh_cfg_client_cb_event_t;
 
+/** Parameter of Config AppKey Add */
 typedef struct {
-    uint16_t app_idx;   /* AppKey Index of the Config AppKey Add */
+    uint16_t app_idx;   /*!< AppKey Index of the Config AppKey Add */
 } esp_ble_mesh_cfg_srv_app_key_add_cb_t;
 
+/**
+ * @brief Configuration Server Model received message union
+ */
 typedef union {
-    esp_ble_mesh_cfg_srv_app_key_add_cb_t   app_key_add;    /* !< The Config AppKey Add event value */
+    esp_ble_mesh_cfg_srv_app_key_add_cb_t   app_key_add;    /*!< The Config AppKey Add event value */
 } esp_ble_mesh_cfg_server_common_cb_param_t;
 
+/** Configuration Server Model callback parameters */
 typedef struct {
     esp_ble_mesh_model_t *model;    /*!< Pointer to the server model structure */
     esp_ble_mesh_msg_ctx_t ctx;     /*!< The context of the received message */
     esp_ble_mesh_cfg_server_common_cb_param_t status_cb;    /*!< The received configuration message callback values */
 } esp_ble_mesh_cfg_server_cb_param_t;
 
+/** This enum value is the event of Configuration Server Model */
 typedef enum {
     ESP_BLE_MESH_CFG_SERVER_RECV_MSG_EVT,
     ESP_BLE_MESH_CFG_SERVER_EVT_MAX,
@@ -606,11 +639,19 @@ typedef enum {
  *  @brief Bluetooth Mesh Config Client and Server Model functions.
  */
 
-/** @brief: event, event code of Config Client Model events; param, parameters of Config Client Model events */
+/**
+ * @brief   Configuration Client Model callback function type
+ * @param   event: Event type
+ * @param   param: Pointer to callback parameter
+ */
 typedef void (* esp_ble_mesh_cfg_client_cb_t)(esp_ble_mesh_cfg_client_cb_event_t event,
         esp_ble_mesh_cfg_client_cb_param_t *param);
 
-/** @brief: event, event code of Config Client Model events; param, parameters of Config Client Model events */
+/**
+ * @brief   Configuration Server Model callback function type
+ * @param   event: Event type
+ * @param   param: Pointer to callback parameter
+ */
 typedef void (* esp_ble_mesh_cfg_server_cb_t)(esp_ble_mesh_cfg_server_cb_event_t event,
         esp_ble_mesh_cfg_server_cb_param_t *param);
 
@@ -638,7 +679,7 @@ esp_err_t esp_ble_mesh_register_config_server_callback(esp_ble_mesh_cfg_server_c
  * @brief         Get the value of Config Server Model states using the Config Client Model get messages.
  *
  * @note          If you want to find the opcodes and corresponding meanings accepted by this API,
- *                please refer to (@ref esp_ble_mesh_opcode_config_client_get_t).
+ *                please refer to esp_ble_mesh_opcode_config_client_get_t in esp_ble_mesh_defs.h
  *
  * @param[in]     params:    Pointer to BLE Mesh common client parameters.
  * @param[in]     get_state: Pointer to a union, each kind of opcode corresponds to one structure inside.
@@ -654,7 +695,7 @@ esp_err_t esp_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param_
  * @brief         Set the value of the Configuration Server Model states using the Config Client Model set messages.
  *
  * @note          If you want to find the opcodes and corresponding meanings accepted by this API,
- *                please refer to (@ref esp_ble_mesh_opcode_config_client_set_t).
+ *                please refer to esp_ble_mesh_opcode_config_client_set_t in esp_ble_mesh_defs.h
  *
  * @param[in]     params:    Pointer to BLE Mesh common client parameters.
  * @param[in]     set_state: Pointer to a union, each kind of opcode corresponds to one structure inside.

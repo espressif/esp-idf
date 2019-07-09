@@ -68,7 +68,7 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow `instructions for standard setup <setup-linux-toolchain-add-it-to-path-cmake>`_ to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. To use it, you need to add ``~/esp/crosstool-NG/builds/xtensa-esp32-elf/bin`` to ``PATH`` environment variable.
 
 
 Next Steps

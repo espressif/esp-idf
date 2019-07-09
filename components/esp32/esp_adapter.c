@@ -33,6 +33,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
@@ -46,7 +47,6 @@
 #include "nvs.h"
 #include "os.h"
 #include "esp_smartconfig.h"
-#include "smartconfig_ack.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
 
@@ -373,6 +373,15 @@ static int32_t task_get_max_priority_wrapper(void)
     return (int32_t)(configMAX_PRIORITIES);
 }
 
+static int32_t esp_event_post_wrapper(const char* event_base, int32_t event_id, void* event_data, size_t event_data_size, uint32_t ticks_to_wait)
+{
+    if (ticks_to_wait == OSI_FUNCS_TIME_BLOCKING) {
+        return (int32_t)esp_event_post(event_base, event_id, event_data, event_data_size, portMAX_DELAY);
+    } else {
+        return (int32_t)esp_event_post(event_base, event_id, event_data, event_data_size, ticks_to_wait);
+    }
+}
+
 static void IRAM_ATTR timer_arm_wrapper(void *timer, uint32_t tmout, bool repeat)
 {
     ets_timer_arm(timer, tmout, repeat);
@@ -425,11 +434,6 @@ static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
         memset(ptr, 0, size);
     }
     return ptr;
-}
-
-static void sc_ack_send_wrapper(void *param)
-{
-    return sc_ack_send((sc_ack_t *)param);
 }
 
 static uint32_t coex_status_get_wrapper(void)
@@ -544,6 +548,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._task_get_max_priority = task_get_max_priority_wrapper,
     ._malloc = malloc,
     ._free = free,
+    ._event_post = esp_event_post_wrapper,
     ._get_free_heap_size = esp_get_free_heap_size,
     ._rand = esp_random,
     ._dport_access_stall_other_cpu_start_wrap = esp_dport_access_stall_other_cpu_start_wrap,
@@ -590,8 +595,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._modem_sleep_exit = esp_modem_sleep_exit,
     ._modem_sleep_register = esp_modem_sleep_register,
     ._modem_sleep_deregister = esp_modem_sleep_deregister,
-    ._sc_ack_send = sc_ack_send_wrapper,
-    ._sc_ack_send_stop = sc_ack_send_stop,
     ._coex_status_get = coex_status_get_wrapper,
     ._coex_wifi_request = coex_wifi_request_wrapper,
     ._coex_wifi_release = coex_wifi_release_wrapper,

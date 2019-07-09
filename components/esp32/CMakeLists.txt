@@ -16,7 +16,6 @@ else()
         "esp_adapter.c"
         "esp_timer_esp32.c"
         "esp_himem.c"
-        "gdbstub.c"
         "hw_random.c"
         "int_wdt.c"
         "intr_alloc.c"
@@ -36,7 +35,7 @@ else()
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(priv_requires app_trace app_update bootloader_support log mbedtls nvs_flash pthread
-        smartconfig_ack spi_flash vfs wpa_supplicant espcoredump esp_common esp_wifi)
+        spi_flash vfs wpa_supplicant espcoredump esp_common esp_wifi)
     set(fragments linker.lf ld/esp32_fragments.lf)
 
     idf_component_register(SRCS "${srcs}"

@@ -621,6 +621,8 @@ inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,ui
     Adapter layer to original api before IDF v4.0
 ------------------------------------------------------------------------------*/
 
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+
 static esp_err_t spi_flash_translate_rc(esp_err_t err)
 {
     switch (err) {
@@ -644,7 +646,6 @@ static esp_err_t spi_flash_translate_rc(esp_err_t err)
     return ESP_OK;
 }
 
-#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 esp_err_t spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
     esp_err_t err = esp_flash_erase_region(NULL, start_addr, size);
@@ -655,8 +656,6 @@ esp_err_t spi_flash_write(size_t dst, const void *srcv, size_t size)
 {
     esp_err_t err = esp_flash_write(NULL, srcv, dst, size);
     return spi_flash_translate_rc(err);
-
-    //CHECK_WRITE_ADDRESS(dst, size);
 }
 
 esp_err_t spi_flash_read(size_t src, void *dstv, size_t size)
@@ -671,4 +670,4 @@ esp_err_t spi_flash_unlock()
     return spi_flash_translate_rc(err);
 }
 
-#endif
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL

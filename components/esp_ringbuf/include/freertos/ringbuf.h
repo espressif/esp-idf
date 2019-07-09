@@ -1,9 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -73,7 +73,7 @@ typedef struct xSTATIC_RINGBUFFER {
     size_t xDummy1[2];
     UBaseType_t uxDummy2;
     BaseType_t xDummy3;
-    void *pvDummy4[10];
+    void *pvDummy4[11];
     StaticSemaphore_t xDummy5[2];
     portMUX_TYPE muxDummy;
     /** @endcond */
@@ -180,6 +180,50 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer,
                                   const void *pvItem,
                                   size_t xItemSize,
                                   BaseType_t *pxHigherPriorityTaskWoken);
+
+/**
+ * @brief Acquire memory from the ring buffer to be written to by an external
+ *        source and to be sent later.
+ *
+ * Attempt to allocate buffer for an item to be sent into the ring buffer. This
+ * function will block until enough free space is available or until it
+ * timesout.
+ *
+ * The item, as well as the following items ``SendAcquire`` or ``Send`` after it,
+ * will not be able to be read from the ring buffer until this item is actually
+ * sent into the ring buffer.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to allocate the memory
+ * @param[out]  ppvItem         Double pointer to memory acquired (set to NULL if no memory were retrieved)
+ * @param[in]   xItemSize       Size of item to acquire.
+ * @param[in]   xTicksToWait    Ticks to wait for room in the ring buffer.
+ *
+ * @note Only applicable for no-split ring buffers now, the actual size of
+ *       memory that the item will occupy will be rounded up to the nearest 32-bit
+ *       aligned size. This is done to ensure all items are always stored in 32-bit
+ *       aligned fashion.
+ *
+ * @return
+ *      - pdTRUE if succeeded
+ *      - pdFALSE on time-out or when the data is larger than the maximum permissible size of the buffer
+ */
+BaseType_t xRingbufferSendAcquire(RingbufHandle_t xRingbuffer, void **ppvItem, size_t xItemSize, TickType_t xTicksToWait);
+
+/**
+ * @brief       Actually send an item into the ring buffer allocated before by
+ *              ``xRingbufferSendAcquire``.
+ *
+ * @param[in]   xRingbuffer     Ring buffer to insert the item into
+ * @param[in]   pvItem          Pointer to item in allocated memory to insert.
+ *
+ * @note Only applicable for no-split ring buffers. Only call for items
+ *       allocated by ``xRingbufferSendAcquire``.
+ *
+ * @return
+ *      - pdTRUE if succeeded
+ *      - pdFALSE if fail for some reason.
+ */
+BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem);
 
 /**
  * @brief   Retrieve an item from the ring buffer
@@ -453,12 +497,14 @@ BaseType_t xRingbufferRemoveFromQueueSetRead(RingbufHandle_t xRingbuffer, QueueS
  * @param[out]  uxFree          Pointer use to store free pointer position
  * @param[out]  uxRead          Pointer use to store read pointer position
  * @param[out]  uxWrite         Pointer use to store write pointer position
+ * @param[out]  uxAcquire       Pointer use to store acquire pointer position
  * @param[out]  uxItemsWaiting  Pointer use to store number of items (bytes for byte buffer) waiting to be retrieved
  */
 void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
                         UBaseType_t *uxFree,
                         UBaseType_t *uxRead,
                         UBaseType_t *uxWrite,
+                        UBaseType_t *uxAcquire,
                         UBaseType_t *uxItemsWaiting);
 
 /**

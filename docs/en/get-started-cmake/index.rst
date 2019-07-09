@@ -62,9 +62,9 @@ If you have one of ESP32 development boards listed below, you can click on the l
 .. toctree::
     :maxdepth: 1
 
-    ESP32-DevKitC <get-started-devkitc>
-    ESP-WROVER-KIT <get-started-wrover-kit>
-    ESP32-PICO-KIT <get-started-pico-kit>
+    ESP32-DevKitC <../hw-reference/get-started-devkitc>
+    ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
+    ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
     ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
     
 
@@ -78,10 +78,10 @@ This is a detailed roadmap to walk you through the installation process.
 Setting up Development Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-setup-toolchain-cmake` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`MacOS <macos-setup>`
+* :ref:`get-started-get-prerequisites-cmake` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`macOS <macos-setup>`
 * :ref:`get-started-get-esp-idf-cmake`
-* :ref:`get-started-setup-path-cmake`
-* :ref:`get-started-get-packages-cmake`
+* :ref:`get-started-set-up-tools-cmake`
+* :ref:`get-started-set-up-env-cmake`
 
 Creating Your First Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,60 +94,40 @@ Creating Your First Project
 * :ref:`get-started-build-monitor-cmake`
 
 
-.. _get-started-setup-toolchain-cmake:
+.. _get-started-get-prerequisites-cmake:
 
-Step 1. Set up the Toolchain
-============================
+Step 1. Install prerequisites
+=============================
 
-The toolchain is a set of programs for compiling code and building applications.
-
-The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow the provided instructions. 
+Some tools need to be installed on the computer before proceeding to the next steps. Follow the links below for the instructions for your OS:
 
 .. toctree::
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup> 
-    MacOS <macos-setup> 
+    Linux <linux-setup>
+    macOS <macos-setup>
 
-+-------------------+-------------------+-------------------+
-| |windows-logo|    | |linux-logo|      | |macos-logo|      |
-+-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
-+-------------------+-------------------+-------------------+
-
-.. |windows-logo| image:: ../../_static/windows-logo.png
-    :target: ../get-started-cmake/windows-setup.html
-
-.. |linux-logo| image:: ../../_static/linux-logo.png
-    :target: ../get-started-cmake/linux-setup.html
-
-.. |macos-logo| image:: ../../_static/macos-logo.png
-    :target: ../get-started-cmake/macos-setup.html
-
-.. _Windows: ../get-started-cmake/windows-setup.html
-.. _Linux: ../get-started-cmake/linux-setup.html
-.. _Mac OS: ../get-started-cmake/macos-setup.html
-
-.. note::
-
-    This guide uses the directory ``~/esp`` on Linux and macOS or ``%userprofile%\esp`` on Windows as an installation folder for ESP-IDF. You can use any directory, but you will need to adjust paths for the commands respectively. Keep in mind that ESP-IDF does not support spaces in paths.
-
-Depending on your experience and preferences, you may want to customize your environment instead of using a prebuilt toolchain. To set up the system your own way go to Section :ref:`get-started-customized-setup-cmake`.
-
+* :doc:`windows-setup`
+* :doc:`linux-setup`
+* :doc:`macos-setup`
 
 .. _get-started-get-esp-idf-cmake:
 
 Step 2. Get ESP-IDF
 ===================
 
-Besides the toolchain, you also need ESP32-specific API (software libraries and source code). They are provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
+To build applications for the ESP32, you need the software libraries provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
 
 Get ESP-IDF in accordance with your operating system.
 
 To get ESP-IDF, navigate to your installation directory and clone the repository with ``git clone``.
 
-Linux and MacOS
+.. note::
+
+    This guide uses the directory ``~/esp`` on Linux and macOS or ``%userprofile%\esp`` on Windows as an installation folder for ESP-IDF. You can use any directory, but you will need to adjust paths for the commands respectively. Keep in mind that ESP-IDF does not support spaces in paths.
+
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 Open Terminal, and run the following commands:
@@ -161,60 +141,76 @@ Consult :doc:`/versions` for information about which ESP-IDF version to use in a
 Windows
 ~~~~~~~
 
-.. note::
-
-        Previous versions of ESP-IDF used the **MSYS2 bash terminal** command line. The current cmake-based build system can run in the regular **Windows Command Prompt** which is used here.
-
-        If you use a bash-based terminal or PowerShell, please note that some command syntax will be different to what is shown below.
-
-Open Command Prompt and run the following commands:
-
-.. include:: /_build/inc/git-clone-windows.inc
-
-ESP-IDF will be downloaded into ``%userprofile%\esp\esp-idf``.
+In addition to installing the tools, :ref:`get-started-cmake-windows-tools-installer` for Windows introduced in Step 1 can also download a copy of ESP-IDF.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+If you wish to download ESP-IDF without the help of ESP-IDF Tools Installer, refer to these :ref:`instructions <get-esp-idf-windows-command-line-cmake>`.
 
-.. note::
+.. _get-started-set-up-tools-cmake:
 
-    Do not miss the ``--recursive`` option. If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
+Step 3. Set up the tools
+========================
 
-        cd esp-idf
-        git submodule update --init
+Aside from the ESP-IDF, you also need to install the tools used by ESP-IDF, such as the compiler, debugger, Python packages, etc.
 
+Windows
+~~~~~~~
 
-.. _get-started-setup-path-cmake:
+:ref:`get-started-cmake-windows-tools-installer` for Windows introduced in Step 1 installs all the required tools.
 
-Step 3. Set Environment Variables
-=================================
+If you want to install the tools without the help of ESP-IDF Tools Installer, open the Command Prompt and follow these steps:
 
-Set the following environment variables on your computer, so that projects can be built:
+.. code-block:: batch
 
-- Create ``IDF_PATH`` and assign it the path to the ESP-IDF directory.
-- Add to ``PATH`` the path to the ``tools`` directory inside the ``IDF_PATH`` directory.
+    cd %userprofile%\esp\esp-idf
+    install.bat
 
-These variables can be set temporarily (per session) or permanently. Please follow the instructions specific to :ref:`Windows <add-paths-to-profile-windows-cmake>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-cmake>` in Section :doc:`add-idf_path-to-profile`.
+Linux and macOS
+~~~~~~~~~~~~~~~
 
+.. code-block:: bash
 
-.. _get-started-get-packages-cmake:
+    cd ~/esp/esp-idf
+    ./install.sh
 
-Step 4. Install the Required Python Packages
-============================================
+Customizing the tools installation path
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The python packages required by ESP-IDF are located in ``IDF_PATH/requirements.txt``. You can install them by running::
+The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux and macOS, ``%USERPROFILE%\.espressif`` on Windows. If you wish to install the tools into a different directory, set the environment variable ``IDF_TOOLS_PATH`` before running the installation scripts. Make sure that your user has sufficient permissions to read and write this path.
 
-    python -m pip install --user -r $IDF_PATH/requirements.txt
+If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the ``install.bat``/``install.sh`` and ``export.bat``/``export.sh`` scripts are executed.
 
-.. note::
+.. _get-started-set-up-env-cmake:
 
-    Please check the version of the Python interpreter that you will be using with ESP-IDF. For this, run 
-    the command ``python --version`` and depending on the result, you might want to use ``python2``, ``python2.7``
-    or similar instead of just ``python``, e.g.::
+Step 4. Set up the environment variables
+========================================
 
-        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
+The installed tools are not yet added to the PATH environment variable. To make the tools usable from the command line, some environment variables must be set. ESP-IDF provides another script which does that.
 
+Windows
+~~~~~~~
+
+:ref:`get-started-cmake-windows-tools-installer` for Windows creates an "ESP-IDF Command Prompt" shortcut in the Start Menu. This shortcut opens the Command Prompt and sets up all the required environment variables. You can open this shortcut and proceed to the next step.
+
+Alternatively, if you want to use ESP-IDF in an existing Command Prompt window, you can run:
+
+.. code-block:: batch
+
+    %userprofile%\esp\esp-idf\export.bat
+
+Linux and macOS
+~~~~~~~~~~~~~~~
+
+In the terminal where you are going to use ESP-IDF, run:
+
+.. code-block:: bash
+
+    . $HOME/esp/esp-idf/export.sh
+
+Note the space between the leading dot and the path!
+
+You can also automate this step, making ESP-IDF tools available in every terminal, by adding this line to your ``.profile`` or ``.bash_profile`` script.
 
 .. _get-started-start-project-cmake:
 
@@ -225,7 +221,7 @@ Now you are ready to prepare your application for ESP32. You can start with :exa
 
 Copy :example:`get-started/hello_world` to ``~/esp`` directory:
 
-Linux and MacOS
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -247,7 +243,7 @@ It is also possible to build examples in-place, without copying them first.
 
 .. important::
 
-    The esp-idf build system does not support spaces in the paths to either esp-idf or to projects.
+    The ESP-IDF build system does not support spaces in the paths to either ESP-IDF or to projects.
 
 .. _get-started-connect-cmake:
 
@@ -276,7 +272,7 @@ Step 7. Configure
 
 Navigate to your ``hello_world`` directory from :ref:`get-started-start-project-cmake` and run the project configuration utility ``menuconfig``.
 
-Linux and MacOS
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -293,12 +289,6 @@ Windows
 
     cd %userprofile%\esp\hello_world
     idf.py menuconfig
-
-The Python 2.7 installer will try to configure Windows to associate ``.py`` files with Python 2. If a separately installed program, such as Visual Studio Python Tools, has created an association with a different version of Python, then running ``idf.py`` may not work (it opens the file in Visual Studio instead). You can either run ``C:\Python27\python idf.py`` each time instead, or change the association that Windows uses for ``.py`` files.
-
-.. note::
-
-    If you get an error ``idf.py not found``, make sure that the ``PATH`` environment variable was set correctly in :ref:`get-started-setup-path-cmake`. If there is no ``idf.py`` in ``tools``, make sure you have the correct branch for the CMake preview as shown under :ref:`get-started-get-esp-idf-cmake`.
 
 If the previous steps have been done correctly, the following menu appears:
 
@@ -480,9 +470,11 @@ Updating ESP-IDF
 
 You should update ESP-IDF from time to time, as newer versions fix bugs and provide new features. The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf-cmake`.
 
-If downloading to a new path, remember to :doc:`add-idf_path-to-profile` so that the toolchain scripts can find ESP-IDF in its release specific location.
-
 Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
+
+After updating ESP-IDF, execute ``install.sh`` (``install.bat`` on Windows) again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools-cmake`.
+
+Once the new tools are installed, update the environment using ``export.sh`` (``export.bat`` on Windows). See instructions at :ref:`get-started-set-up-env-cmake`.
 
 Related Documents
 =================
@@ -490,7 +482,6 @@ Related Documents
 .. toctree::
     :maxdepth: 1
 
-    add-idf_path-to-profile
     establish-serial-connection
     eclipse-setup
     ../api-guides/tools/idf-monitor

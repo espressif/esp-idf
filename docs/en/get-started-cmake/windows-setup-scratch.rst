@@ -1,6 +1,6 @@
-********************************************
-Setup Windows Toolchain from Scratch (CMake)
-********************************************
+**********************************
+Windows Setup from Scratch (CMake)
+**********************************
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -10,9 +10,37 @@ This is a step-by-step alternative to running the :doc:`ESP-IDF Tools Installer 
 
 To quickly setup the toolchain and other tools in standard way, using the ESP-IDF Tools installer, proceed to section :doc:`windows-setup`.
 
-
 .. note::
    The GNU Make based build system requires the MSYS2_ Unix compatibility environment on Windows. The CMake-based build system does not require this environment.
+
+.. _get-esp-idf-windows-command-line-cmake:
+
+Get ESP-IDF
+===========
+
+.. note::
+
+        Previous versions of ESP-IDF used the **MSYS2 bash terminal** command line. The current cmake-based build system can run in the regular **Windows Command Prompt** which is used here.
+
+        If you use a bash-based terminal or PowerShell, please note that some command syntax will be different to what is shown below.
+
+Open Command Prompt and run the following commands:
+
+.. include:: /_build/inc/git-clone-windows.inc
+
+ESP-IDF will be downloaded into ``%userprofile%\esp\esp-idf``.
+
+Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
+
+.. include:: /_build/inc/git-clone-notes.inc
+
+.. note::
+
+    Do not miss the ``--recursive`` option. If you have already cloned ESP-IDF without this option, run another command to get all the submodules::
+
+        cd esp-idf
+        git submodule update --init
+
 
 Tools
 =====
@@ -90,4 +118,5 @@ To carry on with development environment setup, proceed to :ref:`get-started-get
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
 .. _MSYS2: https://msys2.github.io/
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 

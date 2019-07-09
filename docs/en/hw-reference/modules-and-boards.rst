@@ -202,7 +202,7 @@ Comparing to ESP32-PICO-KIT V4, this version features the CP2102N USB-UART bridg
 Documentation
 ^^^^^^^^^^^^^
 
-* :doc:`../get-started-cmake/get-started-pico-kit`
+* :doc:`../hw-reference/get-started-pico-kit`
 * `ESP32-PICO-KIT V4.1 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerber and BOM files
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
@@ -239,7 +239,7 @@ Comparing to the previous :ref:`esp-modules-and-boards-esp32-devkitc-v2`, this v
 Documentation
 ^^^^^^^^^^^^^
 
-* :doc:`../get-started-cmake/get-started-devkitc`
+* :doc:`../hw-reference/get-started-devkitc`
 * `ESP32-DevKitC schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ (PDF)
 * `ESP32-DevKitC Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-DevKitC-V4+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerber and BOM files
 * `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
@@ -288,7 +288,7 @@ The board in the picture above integrates the ESP32-WROVER-B module.
 Documentation
 ^^^^^^^^^^^^^
 
-* :doc:`../get-started-cmake/get-started-wrover-kit`
+* :doc:`../hw-reference/get-started-wrover-kit`
 * `ESP-WROVER-KIT V4.1 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf>`__ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
 * `FTDI Virtual COM Port Drivers`_

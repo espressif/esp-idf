@@ -2,7 +2,7 @@ menu "Ethernet"
 
     menuconfig ETH_USE_ESP32_EMAC
         depends on IDF_TARGET_ESP32
-        bool "Use ESP32 internal EMAC controller"
+        bool "Support ESP32 internal EMAC controller"
         default y
         help
             ESP32 integrates a 10/100M Ethernet MAC controller.
@@ -127,5 +127,30 @@ menu "Ethernet"
             help
                 Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
                 Larger number of buffers could increase throughput somehow.
+    endif
+
+    menuconfig ETH_USE_SPI_ETHERNET
+        bool "Support SPI to Ethernet Module"
+        default y
+        help
+            ESP-IDF can also support some SPI-Ethernet module.
+
+    if ETH_USE_SPI_ETHERNET
+        menuconfig ETH_SPI_ETHERNET_DM9051
+            bool "Use DM9051"
+            default y
+            help
+                DM9051 is a fast Ethernet controller with an SPI interface.
+                It's also integrated with a 10/100M PHY and MAC.
+                Set true to enable DM9051 driver.
+
+        if ETH_SPI_ETHERNET_DM9051
+            config ETH_DM9051_INT_GPIO
+                int "DM9051 Interrupt GPIO number"
+                default 4
+                range 0 33
+                help
+                    Set the GPIO number used by DM9051's Interrupt pin.
+        endif
     endif
 endmenu

@@ -6,7 +6,7 @@
 # SYNOPSIS
 
 ```
-python esp_prov.py --transport < mode of provisioning : softap \ ble \ console > --sec_ver < Security version 0 / 1 > [ Optional parameters... ]
+python esp_prov.py --transport < mode of provisioning : softap \ ble \ console > [ Optional parameters... ]
 ```
 
 # DESCRIPTION
@@ -53,11 +53,9 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 * `--pop <Proof of possession string>` (Optional)
     For specifying optional Proof of Possession string to use for protocomm endpoint security version 1. This option is ignored when security version 0 is in use
 
-* `--softap_endpoint <softap_ip:port>` (Optional) (Default `192.168.4.1:80`)
-    For specifying the IP and port of the HTTP server on which provisioning app is running. The client must connect to the device SoftAP prior to running `esp_prov`
-
-* `--ble_devname <BLE device name>` (Optional)
-    For specifying name of the BLE device to which connection is to be established prior to starting provisioning process. This is only used when `--transport ble` is specified, else it is ignored. Since connection with BLE is supported only on Linux, so this option is again ignored for other platforms
+* `--service_name <name> (Optional)
+    When transport mode is ble, this specifies the BLE device name to which connection is to be established for provisioned.
+    When transport mode is softap, this specifies the HTTP server hostname / IP which is running the provisioning service, on the SoftAP network of the device which is to be provisioned. This defaults to `192.168.4.1:80` if not specified
 
 * `--custom_config` (Optional)
     This flag assumes the provisioning app has an endpoint called `custom-config`. Use `--custom_info` and `--custom_ver` options to specify the fields accepted by this endpoint

@@ -175,7 +175,7 @@ def run_cmd_check_output(cmd, input_text=None, extra_paths=None):
             input_text = input_text.encode()
         result = subprocess.run(cmd, capture_output=True, check=True, input=input_text)
         return result.stdout + result.stderr
-    except AttributeError:
+    except (AttributeError, TypeError):
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = p.communicate(input_text)
         if p.returncode != 0:
@@ -559,10 +559,10 @@ class IDFTool(object):
         expected_size = download_obj.size
         file_size, file_sha256 = get_file_size_sha256(local_path)
         if file_size != expected_size:
-            warn('file size mismatch for {0}'.format(local_path))
+            warn('file size mismatch for {}, expected {}, got {}'.format(local_path, expected_size, file_size))
             return False
         if file_sha256 != expected_sha256:
-            warn('hash mismatch for {0}'.format(local_path))
+            warn('hash mismatch for {}, expected {}, got {}'.format(local_path, expected_sha256, file_sha256))
             return False
         return True
 

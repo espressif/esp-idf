@@ -163,8 +163,6 @@ void emac_hal_reset_desc_chain(emac_hal_context_t *hal)
         hal->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
         /* Enable Ethernet DMA Tx Descriptor interrupt */
         hal->tx_desc[1].TDES0.InterruptOnComplete = 1;
-        /* Set the DMA Tx descriptors checksum insertion */
-        hal->tx_desc[i].TDES0.ChecksumInsertControl = EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPFULL;
         /* Enable Transmit Timestamp */
         hal->tx_desc[i].TDES0.TransmitTimestampEnable = 1;
         /* point to the buffer */
