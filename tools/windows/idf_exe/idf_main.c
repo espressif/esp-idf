@@ -48,7 +48,8 @@ int main(int argc, LPTSTR argv[])
             (StrCmp(argv[1], TEXT("--version")) == 0 ||
              StrCmp(argv[1], TEXT("-v")) == 0)) {
         LPCSTR msg = VERSION "\n";
-        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), msg, lstrlen(msg), NULL, NULL);
+        DWORD written;
+        WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), msg, lstrlen(msg), &written, NULL);
         return 0;
     }
 
