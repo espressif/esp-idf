@@ -138,8 +138,8 @@ static void gpio_test_signal(void *arg)
  */
 static void disp_captured_signal(void *arg)
 {
-    uint32_t *current_cap_value = (uint32_t *)malloc(sizeof(CAP_SIG_NUM));
-    uint32_t *previous_cap_value = (uint32_t *)malloc(sizeof(CAP_SIG_NUM));
+    uint32_t *current_cap_value = (uint32_t *)malloc(CAP_SIG_NUM*sizeof(uint32_t));
+    uint32_t *previous_cap_value = (uint32_t *)malloc(CAP_SIG_NUM*sizeof(uint32_t));
     capture evt;
     while (1) {
         xQueueReceive(cap_queue, &evt, portMAX_DELAY);
