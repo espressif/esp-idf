@@ -18,6 +18,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import sys
 import os
+import re
 import subprocess
 
 # Note: If extensions (or modules to document with autodoc) are in another directory,
@@ -235,25 +236,14 @@ pygments_style = 'sphinx'
 
 # Custom added feature to allow redirecting old URLs
 #
-# list of tuples (old_url, new_url) for pages to redirect
-# (URLs should be relative to document root, only)
-html_redirect_pages = [('api-reference/ethernet/index', 'api-reference/network/index'),
-                       ('api-reference/ethernet/esp_eth', 'api-reference/network/esp_eth'),
-                       ('api-reference/mesh/index', 'api-reference/network/index'),
-                       ('api-reference/mesh/esp_mesh', 'api-reference/network/esp_mesh'),
-                       ('api-reference/wifi/index', 'api-reference/network/index'),
-                       ('api-reference/wifi/esp_now', 'api-reference/network/esp_now'),
-                       ('api-reference/wifi/esp_smartconfig', 'api-reference/network/esp_smartconfig'),
-                       ('api-reference/wifi/esp_wifi', 'api-reference/network/esp_wifi'),
-                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),
-                       ('get-started/idf-monitor', 'api-guides/tools/idf-monitor'),
-                       ('get-started-cmake/idf-monitor', 'api-guides/tools/idf-monitor'),
-                       ('get-started/get-started-devkitc', 'hw-reference/get-started-devkitc'),
-                       ('get-started/get-started-wrover-kit', 'hw-reference/get-started-wrover-kit'),
-                       ('get-started/get-started-pico-kit', 'hw-reference/get-started-pico-kit'),
-                       ('get-started-cmake/get-started-devkitc', 'hw-reference/get-started-devkitc'),
-                       ('get-started-cmake/get-started-wrover-kit', 'hw-reference/get-started-wrover-kit'),
-                       ('get-started-cmake/get-started-pico-kit', 'hw-reference/get-started-pico-kit')]
+# Redirects should be listed in page_redirects.xt
+#
+with open("../page_redirects.txt") as f:
+    lines = [re.sub(" +", " ", l.strip()) for l in f.readlines() if l.strip() != "" and not l.startswith("#")]
+    for line in lines:  # check for well-formed entries
+        if len(line.split(' ')) != 2:
+            raise RuntimeError("Invalid line in page_redirects.txt: %s" % line)
+html_redirect_pages = [tuple(l.split(' ')) for l in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

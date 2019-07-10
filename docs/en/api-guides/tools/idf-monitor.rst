@@ -6,11 +6,9 @@ IDF Monitor
 
 The IDF monitor tool is mainly a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
 
-This tool can be launched by invoking in IDF the following target:
+This tool can be launched from an IDF project by running ``idf.py monitor``.
 
-- **For make**: ``make monitor``
-- **For cmake**: ``idf.py monitor``
-
+(For the legacy GNU Make system, run ``make monitor``.)
 
 Keyboard Shortcuts
 ==================
@@ -32,7 +30,7 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
 +-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  - Ctrl+R         | Reset target board via RTS                             | Resets the target board and re-starts the application via the RTS line (if connected).                                                                           |
 +-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-|  - Ctrl+F         | Build and flash the project                            | Pauses idf_monitor to run the ``make flash`` (``idf.py flash``) target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed.   |
+|  - Ctrl+F         | Build and flash the project                            | Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed.                   |
 +-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 |  - Ctrl+A (or A)  | Build and flash the app only                           | Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed.    |
 +-------------------+--------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -103,7 +101,7 @@ By default, if esp-idf crashes, the panic handler prints relevant registers and 
 
 Optionally, the panic handler can be configured to run GDBStub, the tool which can communicate with  GDB_ project debugger. GDBStub allows to read memory, examine call stack frames and variables, etc. It is not as versatile as JTAG debugging, but this method does not require any special hardware.
 
-To enable GDBStub, run ``make menuconfig`` (for make) or ``idf.py menuconfig`` (for cmake) and set :ref:`CONFIG_ESP32_PANIC` to ``Invoke GDBStub``.
+To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP32_PANIC` to ``Invoke GDBStub``.
 
 In this case, if the panic handler is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
 
@@ -115,7 +113,7 @@ In the background, IDF Monitor runs the following command::
 Output Filtering
 ~~~~~~~~~~~~~~~~
 
-IDF monitor can be invoked as ``make monitor PRINT_FILTER=""`` (for make) or ``idf.py monitor --print-filter=""`` (for cmake), where ``PRINT_FILTER`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed.
+IDF monitor can be invoked as ``idf.py monitor --print-filter="xyz"``, where ``--print-filter`` is the parameter for output filtering. The default value is an empty string, which means that everything is printed.
 
 Restrictions on what to print can be specified as a series of ``<tag>:<log_level>`` items where ``<tag>`` is the tag string and ``<log_level>`` is a character from the set ``{N, E, W, I, D, V, *}`` referring to a level for :doc:`logging <../../api-reference/system/log>`.
 
@@ -186,18 +184,6 @@ The captured output for the filtering options ``PRINT_FILTER="wifi esp_image:E l
     entry 0x40078d4c
     I (569) heap_init: Initializing. RAM available for dynamic allocation:
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
-
-
-Simple Monitor
-==============
-
-The earlier versions of ESP-IDF used the pySerial_ command line program miniterm_ as a serial console program.
-
-.. note:: This target only works in a build system based on GNU Make and cannot work in a CMake-based system.
-
-This program can still be run with the command ``make simple_monitor``.
-
-IDF Monitor is based on miniterm and shares the same basic keyboard shortcuts.
 
 
 Known Issues with IDF Monitor

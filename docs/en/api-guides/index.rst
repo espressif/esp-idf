@@ -7,7 +7,7 @@ API Guides
 
    General Notes <general-notes>
    Build System <build-system>
-   Build System (CMake) <build-system-cmake>
+   Build System (Legacy GNU Make) <build-system-legacy>
    Error Handling <error-handling>
    Fatal Errors <fatal-errors>
    Event Handling <event-handling>
@@ -22,9 +22,9 @@ API Guides
    Partition Tables <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP Coprocessor <ulp>
-   ULP Coprocessor (CMake) <ulp-cmake>
+   ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
    Unit Testing <unit-tests>
-   Unit Testing (CMake) <unit-tests-cmake>
+   Unit Testing (Legacy GNU Make) <unit-tests-legacy>
    Application Level Tracing <app_trace>
    Console Component <console>
    ROM debug console <romconsole>

@@ -52,7 +52,7 @@ ESP-WROVER-KIT 开发板的主要组件和连接方式如下图所示。
 
 ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-esp-wrover-kit-v2-board-front-cmake:
+.. _get-started-esp-wrover-kit-v2-board-front:
 
 .. figure:: ../../_static/esp-wrover-kit-v2-layout-front.png
     :align: center
@@ -61,7 +61,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
     ESP-WROVER-KIT 开发板布局 -- 俯视图
 
-.. _get-started-esp-wrover-kit-v2-board-back-cmake:
+.. _get-started-esp-wrover-kit-v2-board-back:
 
 .. figure:: ../../_static/esp-wrover-kit-v2-layout-back.png
     :align: center
@@ -113,11 +113,11 @@ I/O                    板上模组的所有管脚均已引出至开发板的排
 
 MicroSD 卡槽            MicroSD 卡槽，可扩充存储空间：当 ESP32 进入下载模式时，GPIO2 不可处于高电平。然而，为了使能 MicroSD 卡功能，需为 GPIO2 增加一个上拉电阻。默认情况下，GPIO2 和上拉电阻 R153 处于断开状态。为了使能 MicroSD 卡，请按照 `设置选项`_ 章节的要求，连接 JP1 连接器。
 
-LCD 显示屏              支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v2-board-back-cmake`。
+LCD 显示屏              支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v2-board-back`。
 ====================  ======================================================================================================================================================================================================================================================================================================================================
 
 
-.. _get-started-esp-wrover-kit-v2-setup-options-cmake:
+.. _get-started-esp-wrover-kit-v2-setup-options:
 
 设置选项
 -------------
@@ -137,7 +137,7 @@ JP14     |jp14|            使能 RTS/CTS 串口流控
 =======  ================  =====================================================================================
 
 
-.. _get-started-esp-wrover-kit-v2-start-development-cmake:
+.. _get-started-esp-wrover-kit-v2-start-development:
 
 应用程序开发
 -----------------------------
@@ -167,9 +167,7 @@ USB 供电                   使能 UART 通信
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
-
-如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
+请前往 :doc:`../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 相关文档

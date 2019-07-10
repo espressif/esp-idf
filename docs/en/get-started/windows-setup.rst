@@ -1,70 +1,68 @@
-***************************************
+***********************************************
 Standard Setup of Toolchain for Windows
-***************************************
+***********************************************
+
 :link_to_translation:`zh_CN:[中文]`
+
+.. note::
+      Currently only 64-bit versions of Windows are supported. 32-bit Windows can use the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>`.
 
 Introduction
 ============
 
-Windows doesn't have a built-in "make" environment, so as well as installing the toolchain you will need a GNU-compatible environment. We use the MSYS2_ environment to provide this. You don't need to use this environment all the time (you can use :doc:`Eclipse <eclipse-setup>` or some other front-end), but it runs behind the scenes.
+ESP-IDF requires some prerequisite tools to be installed so you can build firmware for the ESP32. The prerequisite tools include Python, Git, cross-compilers, menuconfig tool, CMake and Ninja build tools.
 
+For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
 
-Toolchain Setup 
-===============
+.. note::
+   Previous versions of ESP-IDF used the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>` and MSYS2_ Unix compatibility environment. This is no longer required, ESP-IDF can be used from the Windows Command Prompt.
 
-The quick setup is to download the Windows all-in-one toolchain & MSYS2 zip file from dl.espressif.com:
+.. _get-started-windows-tools-installer:
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20190611.zip
+ESP-IDF Tools Installer
+=======================
 
-Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``C:\``) and it will create an ``msys32`` directory with a pre-prepared environment.
+The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.0.exe
 
-Check it Out
-============
+The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool, and a configuration tool called mconf-idf_. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
 
-Open a MSYS2 MINGW32 terminal window by running ``C:\msys32\mingw32.exe``. The environment in this window is a bash shell. Create a directory named ``esp`` that is a default location to develop ESP32 applications. To do so, run the following shell command::
+The installer also offers to download one of the ESP-IDF release versions.
 
-    mkdir -p ~/esp
+Using the Command Prompt
+========================
 
-By typing ``cd ~/esp`` you can then move to the newly created directory. If there are no error messages you are done with this step.
+For the remaining Getting Started steps, we're going to use the Windows Command Prompt.
 
-.. figure:: ../../_static/msys2-terminal-window.png
-    :align: center
-    :alt: MSYS2 MINGW32 shell window
-    :figclass: align-center
+ESP-IDF Tools Installer creates a shortcut in the Start menu to launch the ESP-IDF Command Prompt. This shortcut launches the Command Prompt (cmd.exe) and runs ``export.bat`` script to set up the environment variables (``PATH``, ``IDF_PATH`` and others). Inside this command prompt, all the installed tools are available.
 
-    MSYS2 MINGW32 shell window
+Note that this shortcut is specific to the ESP-IDF directory selected in the ESP-IDF Tools Installer. If you have multiple ESP-IDF directories on the computer (for example, to work with different versions of ESP-IDF), you have two options to use them:
 
-Use this window in the following steps setting up development environment for ESP32.
+1. Create a copy of the shortcut created by the ESP-IDF Tools Installer, and change the working directory of the new shortcut to the ESP-IDF directory you wish to use.
 
+2. Alternatively, run ``cmd.exe``, then change to the ESP-IDF directory you wish to use, and run ``export.bat``. Note that unlike the previous option, this way requires Python and Git to be present in ``PATH``. If you get errors related to Python or Git not being found, use the first option.
 
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf`.
-
-Updating The Environment
-========================
-
-When IDF is updated, sometimes new toolchains are required or new requirements are added to the Windows MSYS2 environment. To move any data from an old version of the precompiled environment to a new one:
-
-- Take the old MSYS2 environment (ie ``C:\msys32``) and move/rename it to a different directory (ie ``C:\msys32_old``).
-- Download the new precompiled environment using the steps above.
-- Unzip the new MSYS2 environment to ``C:\msys32`` (or another location).
-- Find the old ``C:\msys32_old\home`` directory and move this into ``C:\msys32``.
-- You can now delete the ``C:\msys32_old`` directory if you no longer need it.
-
-You can have independent different MSYS2 environments on your system, as long as they are in different directories.
-
-There are :ref:`also steps to update the existing environment without downloading a new one <updating-existing-windows-environment>`, although this is more complex.
+If the ESP-IDF Tools Installer has finished successfully, then the development environment setup is complete. Proceed directly to :ref:`get-started-start-project`.
 
 Related Documents
 =================
+
+For advanced users who want to customize the install process:
 
 .. toctree::
     :maxdepth: 1
 
     windows-setup-scratch
-
+    windows-setup-update
 
 .. _MSYS2: https://msys2.github.io/
+.. _cmake: https://cmake.org/download/
+.. _ninja: https://ninja-build.org/
+.. _Python: https://www.python.org/downloads/windows/
+.. _Git for Windows: https://gitforwindows.org/
+.. _mconf-idf: https://github.com/espressif/kconfig-frontends/releases/
+.. _Github Desktop: https://desktop.github.com/

@@ -9,14 +9,14 @@ ESP32-DevKitC V4 入门指南
 准备工作
 -----------
 
-* :ref:`ESP32-DevKitC V4 开发板 <get-started-esp32-devkitc-board-front-cmake>`
+* :ref:`ESP32-DevKitC V4 开发板 <get-started-esp32-devkitc-board-front>`
 * USB A / micro USB B 数据线
 * PC（Windows、Linux 或 Mac OS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 
-.. _DevKitC-Overview-cmake:
+.. _DevKitC-Overview:
 
 概述
 ----
@@ -46,7 +46,7 @@ ESP32-DevKitC V4 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的小
 
 ESP32-DevKitC V4 开发板的主要组件、接口及控制方式见下。
 
-.. _get-started-esp32-devkitc-board-front-cmake:
+.. _get-started-esp32-devkitc-board-front:
 
 .. figure:: ../../_static/esp32-devkitc-functional-overview.jpg
 	:align: center
@@ -121,10 +121,7 @@ C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
 
 ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 
-之后，请前往 :doc:`../get-started-cmake/index` 中的 :ref:`get-started-step-by-step-cmake` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
-
-如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
-
+之后，请前往 :doc:`../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 开发板尺寸
 -------------
