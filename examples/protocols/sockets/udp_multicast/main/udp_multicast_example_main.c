@@ -170,7 +170,7 @@ err:
 static int create_multicast_ipv6_socket()
 {
     struct sockaddr_in6 saddr = { 0 };
-    u8_t  netif_index = EXAMPLE_INTERFACE;
+    int  netif_index;
     struct in6_addr if_inaddr = { 0 };
     struct ip6_addr if_ipaddr = { 0 };
     struct ipv6_mreq v6imreq = { 0 };
@@ -211,6 +211,12 @@ static int create_multicast_ipv6_socket()
     }
 #endif // LISTEN_ALL_IF
 
+    // search for netif index
+    netif_index = tcpip_adapter_get_netif_index(EXAMPLE_INTERFACE);
+    if(netif_index < 0) {
+        ESP_LOGE(V6TAG, "Failed to get netif index");
+        goto err;
+    }
     // Assign the multicast source interface, via its IP
     err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &netif_index,sizeof(uint8_t));
     if (err < 0) {
@@ -240,14 +246,6 @@ static int create_multicast_ipv6_socket()
 
     // this is also a listening socket, so add it to the multicast
     // group for listening...
-
-    // Configure source interface
-#if LISTEN_ALL_IF
-    v6imreq.imr_interface.s_addr = IPADDR_ANY;
-#else
-    v6imreq.ipv6mr_interface = EXAMPLE_INTERFACE;
-   /*  inet6_addr_from_ip6addr(&v6imreq.ipv6mr_interface, &if_ipaddr);*/
-#endif // LISTEN_ALL_IF
 #ifdef CONFIG_EXAMPLE_IPV6
     // Configure multicast address to listen to
     err = inet6_aton(MULTICAST_IPV6_ADDR, &v6imreq.ipv6mr_multiaddr);
@@ -261,7 +259,8 @@ static int create_multicast_ipv6_socket()
     if (!ip6_addr_ismulticast(&multi_addr)) {
         ESP_LOGW(V6TAG, "Configured IPV6 multicast address '%s' is not a valid multicast address. This will probably not work.", MULTICAST_IPV6_ADDR);
     }
-
+    // Configure source interface
+    v6imreq.ipv6mr_interface = (unsigned int)netif_index;
     err = setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
                      &v6imreq, sizeof(struct ipv6_mreq));
     if (err < 0) {
