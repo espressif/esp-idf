@@ -127,12 +127,21 @@ build_examples_make:
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
   only:
+    # Here both 'variables' and 'refs' conditions are given. They are combined with "AND" logic.
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+      - pipelines
+      - web
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
