@@ -50,10 +50,10 @@ class OtatoolTarget():
 
     OTADATA_PARTITION = PartitionType("data", "ota")
 
-    def __init__(self, port=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None,
+    def __init__(self, port=None, baud=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None,
                  spi_flash_sec_size=SPI_FLASH_SEC_SIZE, esptool_args=[], esptool_write_args=[],
                  esptool_read_args=[], esptool_erase_args=[]):
-        self.target = ParttoolTarget(port, None, partition_table_offset, partition_table_file, esptool_args,
+        self.target = ParttoolTarget(port, baud, partition_table_offset, partition_table_file, esptool_args,
                                      esptool_write_args, esptool_read_args, esptool_erase_args)
         self.spi_flash_sec_size = spi_flash_sec_size
 
@@ -263,6 +263,8 @@ def main():
     # or a partition table CSV/binary file. These sources are mutually exclusive.
     parser.add_argument("--port", "-p", help="port where the device to read the partition table from is attached")
 
+    parser.add_argument("--baud", "-b", help="baudrate to use", type=int)
+
     parser.add_argument("--partition-table-offset", "-o", help="offset to read the partition table from",  type=str)
 
     parser.add_argument("--partition-table-file", "-f", help="file (CSV/binary) to read the partition table from; \
@@ -330,6 +332,9 @@ def main():
 
     if args.esptool_erase_args:
         target_args["esptool_erase_args"] = args.esptool_erase_args
+
+    if args.baud:
+        target_args["baud"] = args.baud
 
     target = OtatoolTarget(**target_args)
 
