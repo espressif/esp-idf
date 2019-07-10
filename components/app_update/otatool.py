@@ -53,7 +53,7 @@ class OtatoolTarget():
     def __init__(self, port=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None,
                  spi_flash_sec_size=SPI_FLASH_SEC_SIZE, esptool_args=[], esptool_write_args=[],
                  esptool_read_args=[], esptool_erase_args=[]):
-        self.target = ParttoolTarget(port, partition_table_offset, partition_table_file, esptool_args,
+        self.target = ParttoolTarget(port, None, partition_table_offset, partition_table_file, esptool_args,
                                      esptool_write_args, esptool_read_args, esptool_erase_args)
         self.spi_flash_sec_size = spi_flash_sec_size
 
