@@ -43,6 +43,7 @@ class Parser(object):
     UT_CONFIG_FOLDER = os.path.join("tools", "unit-test-app", "configs")
     ELF_FILE = "unit-test-app.elf"
     SDKCONFIG_FILE = "sdkconfig"
+    STRIP_CONFIG_PATTERN = re.compile(r"(.+?)(_\d+)?$")
 
     def __init__(self, idf_path=os.getenv("IDF_PATH")):
         self.test_env_tags = {}
@@ -73,6 +74,12 @@ class Parser(object):
         table = CreateSectionTable.SectionTable("section_table.tmp")
         tags = self.parse_tags(os.path.join(config_output_folder, self.SDKCONFIG_FILE))
         test_cases = []
+
+        # we could split cases of same config into multiple binaries as we have limited rom space
+        # we should regard those configs like `default` and `default_2` as the same config
+        match = self.STRIP_CONFIG_PATTERN.match(config_name)
+        stripped_config_name = match.group(1)
+
         with open("case_address.tmp", "rb") as f:
             for line in f:
                 # process symbol table like: "3ffb4310 l     O .dram0.data	00000018 test_desc_33$5010"
@@ -87,17 +94,17 @@ class Parser(object):
                 name = table.get_string("any", name_addr)
                 desc = table.get_string("any", desc_addr)
                 file_name = table.get_string("any", file_name_addr)
-                tc = self.parse_one_test_case(name, desc, file_name, config_name, tags)
+                tc = self.parse_one_test_case(name, desc, file_name, config_name, stripped_config_name, tags)
 
                 # check if duplicated case names
                 # we need to use it to select case,
                 # if duplicated IDs, Unity could select incorrect case to run
                 # and we need to check all cases no matter if it's going te be executed by CI
                 # also add app_name here, we allow same case for different apps
-                if (tc["summary"] + config_name) in self.test_case_names:
+                if (tc["summary"] + stripped_config_name) in self.test_case_names:
                     self.parsing_errors.append("duplicated test case ID: " + tc["summary"])
                 else:
-                    self.test_case_names.add(tc["summary"] + config_name)
+                    self.test_case_names.add(tc["summary"] + stripped_config_name)
 
                 test_group_included = True
                 if test_groups is not None and tc["group"] not in test_groups:
@@ -226,13 +233,14 @@ class Parser(object):
                     return match.group(1).split(' ')
         return None
 
-    def parse_one_test_case(self, name, description, file_name, config_name, tags):
+    def parse_one_test_case(self, name, description, file_name, config_name, stripped_config_name, tags):
         """
         parse one test case
         :param name: test case name (summary)
         :param description: test case description (tag string)
         :param file_name: the file defines this test case
         :param config_name: built unit test app name
+        :param stripped_config_name: strip suffix from config name because they're the same except test components
         :param tags: tags to select runners
         :return: parsed test case
         """
@@ -243,7 +251,7 @@ class Parser(object):
                           "module": self.module_map[prop["module"]]['module'],
                           "group": prop["group"],
                           "CI ready": "No" if prop["ignore"] == "Yes" else "Yes",
-                          "ID": name,
+                          "ID": "[{}] {}".format(stripped_config_name, name),
                           "test point 2": prop["module"],
                           "steps": name,
                           "test environment": prop["test_env"],
