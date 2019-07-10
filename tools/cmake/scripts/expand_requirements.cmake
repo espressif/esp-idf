@@ -85,46 +85,44 @@ endfunction()
 # earlier in the component_dirs list take precedence.
 function(components_find_all component_dirs component_paths component_names)
     # component_dirs entries can be files or lists of files
-    set(paths "")
-    set(names "")
+    set(_paths "")
+    set(_names "")
 
     # start by expanding the component_dirs list with all subdirectories
     foreach(dir ${component_dirs})
-        # Iterate any subdirectories for values
-        file(GLOB subdirs LIST_DIRECTORIES true "${dir}/*")
-        foreach(subdir ${subdirs})
-            set(component_dirs "${component_dirs};${subdir}")
-        endforeach()
-    endforeach()
-
-    # Look for a component in each component_dirs entry
-    foreach(dir ${component_dirs})
-        debug("Looking for CMakeLists.txt in ${dir}")
-        file(GLOB component "${dir}/CMakeLists.txt")
-        if(component)
-            debug("CMakeLists.txt file ${component}")
-            get_filename_component(component "${component}" DIRECTORY)
-            get_filename_component(name "${component}" NAME)
+        if(EXISTS ${dir}/CMakeLists.txt)
+            get_filename_component(_path "${dir}" ABSOLUTE)
+            get_filename_component(_name "${_path}" NAME)
             if(NOT name IN_LIST names)
-                set(names "${names};${name}")
-                set(paths "${paths};${component}")
+                list(APPEND _names "${_name}")
+                list(APPEND _paths "${_path}")
             endif()
-
-        else()  # no CMakeLists.txt file
-            # test for legacy component.mk and warn
-            file(GLOB legacy_component "${dir}/component.mk")
-            if(legacy_component)
+        else()
+            if(EXISTS ${dir}/component.mk)
                 get_filename_component(legacy_component "${legacy_component}" DIRECTORY)
                 message(WARNING "Component ${legacy_component} contains old-style component.mk but no CMakeLists.txt. "
                     "Component will be skipped.")
+            else()
+                if(NOT __recursing) # recurse only once
+                    file(GLOB subdirs LIST_DIRECTORIES true "${dir}/*")
+
+                    set(__recursing 1)
+                    components_find_all("${subdirs}" __paths __names)
+                    set(__recursing 0)
+
+                    if(__paths)
+                        list(APPEND _paths "${__paths}")
+                        list(APPEND _names "${__names}")
+                    endif()
+                endif()
             endif()
         endif()
-
     endforeach()
 
-    set(${component_paths} ${paths} PARENT_SCOPE)
-    set(${component_names} ${names} PARENT_SCOPE)
+    set(${component_paths} "${_paths}" PARENT_SCOPE)
+    set(${component_names} "${_names}" PARENT_SCOPE)
 endfunction()
+
 
 # expand_component_requirements: Recursively expand a component's requirements,
 # setting global properties BUILD_COMPONENTS & BUILD_COMPONENT_PATHS and
