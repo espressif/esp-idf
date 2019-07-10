@@ -135,8 +135,9 @@ menu "Serial flasher config"
         bool "Detect flash size when flashing bootloader"
         default y
         help
-            If this option is set, 'make flash' targets will automatically detect
-            the flash size and update the bootloader image when flashing.
+            If this option is set, flashing the project will automatically detect
+            the flash size of the target chip and update the bootloader image
+            before it is flashed.
 
     choice ESPTOOLPY_BEFORE
         prompt "Before flashing"
@@ -181,11 +182,11 @@ menu "Serial flasher config"
         default "no_reset" if ESPTOOLPY_AFTER_NORESET
 
     choice ESPTOOLPY_MONITOR_BAUD
-        prompt "'make monitor' baud rate"
+        prompt "'idf.py monitor' baud rate"
         default ESPTOOLPY_MONITOR_BAUD_115200B
         help
-            Baud rate to use when running 'make monitor' to view serial output
-            from a running chip.
+            Baud rate to use when running 'idf.py monitor' or 'make monitor'
+            to view serial output from a running chip.
 
             Can override by setting the MONITORBAUD environment variable.
 

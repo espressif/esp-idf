@@ -72,7 +72,7 @@ The flash encryption operation is controlled by various eFuses available on ESP3
                               encrypt flash at boot time
                               Odd number of bits set (1, 3, 5, 7): do
                               not encrypt flash at boot time
-                                                              
+
 
 Read and write access to above bits is controlled by appropriate bits in ``efuse_wr_disable`` and ``efuse_rd_disable`` registers. More information about ESP32 eFuse can be found at :doc:`eFuse manager <../api-reference/system/efuse>`.
 
@@ -116,9 +116,9 @@ As mentioned above :ref:`flash_enc_development_mode` allows user to download as 
 
 - Navigate to flash encryption sample application in ``$IDF_PATH/examples/security/flash_encryption`` folder. This sample application will print the status of flash encryption: enabled or disabled. It will print the ``FLASH_CRYPT_CNT`` eFuse value.   
 
-- Enable flash encryption support in second stage bootloader. In make menuconfig, navigate to “Security Features”.
+- Enable flash encryption support in second stage bootloader. In :ref:`project-configuration-menu`, navigate to "Security Features".
 
-- Select “Enable flash encryption on boot”.
+- Select :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
 
 - By default the mode is set for **Development**.
 
@@ -132,7 +132,7 @@ Build and flash the complete image including: bootloader, partition table and ap
 
   ::
 
-	make -j4 flash monitor
+	idf.py flash monitor
 
 Once the flashing is complete device will reset and on next boot second stage bootloader will encrypt the flash app partition and then reset. Now the sample application would get decrypted at runtime and executed. Below is a sample output when ESP32 boots after flash encryption is enabled for the first time.
 
@@ -281,7 +281,7 @@ At this stage if user wants to update modified plaintext application image to fl
 
  ::
 
-	make -j4 encrypted-app-flash monitor
+	idf.py encrypted-app-flash monitor
 
 .. _encrypt_partitions:
 
@@ -292,7 +292,7 @@ If all partitions needs to be updated in encrypted format, it can be done as
 
  ::
 
-  make -j4 encrypted-flash monitor
+  idf.py encrypted-flash monitor
 
 .. _pregenerated-flash-encryption-key:
 
@@ -310,9 +310,9 @@ It is possible to pregenerate the flash encryption key on the host computer and 
 
       espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
 
-- Enable flash encryption support in second stage bootloader. In make menuconfig, navigate to “Security Features”.
+- Enable flash encryption support in second stage bootloader. In :ref:`project-configuration-menu`, navigate to "Security Features".
 
-- Select “Enable flash encryption on boot”.
+- Select :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
 
 - By default the mode is set for **Development**.
 
@@ -327,7 +327,7 @@ Build and flash the complete image including: bootloader, partition table and ap
 
   ::
 
-	make -j4 flash monitor
+	idf.py flash monitor
 
 On next boot second stage bootloader will encrypt the flash app partition and then reset. Now the sample application would get decrypted at runtime and executed.
 
@@ -335,7 +335,7 @@ At this stage if user wants to update new plaintext application image to flash t
 
   ::
 
-	make -j4 encrypted-app-flash monitor
+	idf.py encrypted-app-flash monitor
 
 For reprogramming all partitions in encrypted format follow :ref:`encrypt_partitions`.
 
@@ -348,10 +348,10 @@ Release Mode
 In Release mode UART bootloader can not perform flash encryption operations and new plaintext images can be downloaded ONLY using OTA scheme which will encrypt the plaintext image before writing to flash.
 
 - Ensure you have a ESP32 device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
- 
-- Enable flash encryption support in second stage bootloader. In make menuconfig, navigate to “Security Features”.  
 
-- Select “Enable flash encryption on boot”.
+- Enable flash encryption support in second stage bootloader. In :ref:`project-configuration-menu`, navigate to "Security Features".
+
+- Select :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
 
 - Select **Release Mode**, by default the mode is set for **Development**. Please note **once the Release mode is selected the ``download_dis_encrypt`` and ``download_dis_decrypt`` eFuse bits will be programmed to disable UART bootloader access to flash contents**.
 
@@ -365,7 +365,7 @@ Build and flash the complete image including: bootloader, partition table and ap
 
   ::
 
-    make -j4 flash monitor
+    idf.py flash monitor
 
 On next boot second stage bootloader will encrypt the flash app partition and then reset. Now the sample application should execute correctly.
 
@@ -549,12 +549,11 @@ If you've accidentally enabled flash encryption for some reason, the next flash 
 
 You can disable flash encryption again by writing ``FLASH_CRYPT_CNT`` eFuse (only in Development mode):
 
-- First, run ``make menuconfig`` and uncheck "Enable flash encryption boot" under "Security Features".
+- First, open :ref:`project-configuration-menu` and disable :ref:`Enable flash encryption boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` under "Security Features".
 - Exit menuconfig and save the new configuration.
-- Run ``make menuconfig`` again and double-check you really disabled this option! *If this option is left enabled, the bootloader will immediately re-enable encryption when it boots*.
-- Run ``make flash`` to build and flash a new bootloader and app, without flash encryption enabled.
+- Run ``idf.py menuconfig`` again and double-check you really disabled this option! *If this option is left enabled, the bootloader will immediately re-enable encryption when it boots*.
+- Run ``idf.py flash`` to build and flash a new bootloader and app, without flash encryption enabled.
 - Run ``espefuse.py`` (in ``components/esptool_py/esptool``) to disable the FLASH_CRYPT_CNT::
-
     espefuse.py burn_efuse FLASH_CRYPT_CNT
 
 Reset the ESP32 and flash encryption should be disabled, the bootloader will boot as normal.
@@ -584,7 +583,7 @@ Flash Encryption and Secure Boot
 It is recommended to use flash encryption and secure boot together. However, if Secure Boot is enabled then additional restrictions apply to reflashing the device:
 
 - :ref:`updating-encrypted-flash-ota` are not restricted (provided the new app is signed correctly with the Secure Boot signing key).
-- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``make bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
+- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
 - :ref:`Reflashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
 
 .. _flash-encryption-without-secure-boot:

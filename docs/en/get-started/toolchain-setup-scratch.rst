@@ -1,10 +1,12 @@
 .. _get-started-customized-setup:
 
-*****************************
+*************************************
 Customized Setup of Toolchain
-*****************************
+*************************************
 
-Instead of downloading binary toolchain from Espressif website (see :ref:`get-started-setup-toolchain`) you may build the toolchain yourself.
+:link_to_translation:`zh_CN:[中文]`
+
+Instead of downloading binary toolchain from Espressif website (see :ref:`get-started-set-up-tools`) you may build the toolchain yourself.
 
 If you can't think of a reason why you need to build it yourself, then probably it's better to stick with the binary version. However, here are some of the reasons why you might want to compile it from source:
 

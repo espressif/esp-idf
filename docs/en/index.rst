@@ -39,7 +39,6 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    :hidden:
 
    Get Started <get-started/index>
-   Get Started (CMake Preview) <get-started-cmake/index>
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>

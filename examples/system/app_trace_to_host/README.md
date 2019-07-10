@@ -99,7 +99,7 @@ To run this example, you need an ESP32 dev board (e.g. [ESP-WROVER-KIT](https://
 
 ### Configure the project
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
+Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
 
 - By default, the DAC will generate 130 Hz signal within 0V..3.1V. To get 50Hz, you need to set non-standard driver of RTC 8MHz clock to lower minimum CW (Cosine Waveform) generator's frequency in `Set custom RTC 8 MHz clock divider to lower CW frequency`.
 
@@ -107,7 +107,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
 
 ### Build, Flash and Run
 
-1. Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system. (To exit the serial monitor, type ``Ctrl-]``.)
+1. Run `idf.py -p PORT flash monitor` to build and flash the project.. (To exit the serial monitor, type ``Ctrl-]``.)
 See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
 
 2. In the telnet session window, run the following command. This command will collect 9000 bytes of log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.

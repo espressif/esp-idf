@@ -14,7 +14,7 @@ The simple `example_connect()` function does not handle timeouts, does not grace
 
 ### Configuring the Example
 
-To configure the example to use Wi-Fi or Ethernet connection, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system) and navigate to "Example Connection Configuration" menu. Select either "Wi-Fi" or "Ethernet" in the "Connect using" choice.
+To configure the example to use Wi-Fi or Ethernet connection, open the project configuration menu (`idf.py menuconfig`) and navigate to "Example Connection Configuration" menu. Select either "Wi-Fi" or "Ethernet" in the "Connect using" choice.
 
 When connecting using Wi-Fi, enter SSID and password of your Wi-Fi access point into the corresponding fields. If connecting to an open Wi-Fi network, keep the password field empty.
 

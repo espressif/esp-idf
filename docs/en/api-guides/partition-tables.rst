@@ -11,12 +11,12 @@ Partition table length is 0xC00 bytes (maximum 95 partition table entries). An M
 
 Each entry in the partition table has a name (label), type (app, data, or something else), subtype and the offset in flash where the partition is loaded.
 
-The simplest way to use the partition table is to `make menuconfig` and choose one of the simple predefined partition tables:
+The simplest way to use the partition table is to open the project configuration menu (``idf.py menuconfig``) and choose one of the simple predefined partition tables under :ref:`CONFIG_PARTITION_TABLE_TYPE`:
 
 * "Single factory app, no OTA"
 * "Factory app, two OTA definitions"
 
-In both cases the factory app is flashed at offset 0x10000. If you `make partition_table` then it will print a summary of the partition table.
+In both cases the factory app is flashed at offset 0x10000. If you execute `idf.py partition_table` then it will print a summary of the partition table.
 
 Built-in Partition Tables
 -------------------------
@@ -100,7 +100,7 @@ The 8-bit subtype field is specific to a given partition type. esp-idf currently
   - phy (1) is for storing PHY initialisation data. This allows PHY to be configured per-device, instead of in firmware.
 
     - In the default configuration, the phy partition is not used and PHY initialisation data is compiled into the app itself. As such, this partition can be removed from the partition table to save space.
-    - To load PHY data from this partition, run ``make menuconfig`` and enable :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` option. You will also need to flash your devices with phy init data as the esp-idf build system does not do this automatically.
+    - To load PHY data from this partition, open the project configuration menu (``idf.py menuconfig``) and enable :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` option. You will also need to flash your devices with phy init data as the esp-idf build system does not do this automatically.
   - nvs (2) is for the :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>`.
 
     - NVS is used to store per-device PHY calibration data (different to initialisation data).
@@ -138,7 +138,7 @@ Generating Binary Partition Table
 
 The partition table which is flashed to the ESP32 is in a binary format, not CSV. The tool :component_file:`partition_table/gen_esp32part.py` is used to convert between CSV and binary formats.
 
-If you configure the partition table CSV name in ``make menuconfig`` and then ``make partition_table``, this conversion is done as part of the build process.
+If you configure the partition table CSV name in the project configuration (``idf.py menuconfig``) and then build the project or run ``idf.py partition_table``, this conversion is done as part of the build process.
 
 To convert CSV to Binary manually::
 
@@ -148,7 +148,7 @@ To convert binary format back to CSV manually::
 
   python gen_esp32part.py binary_partitions.bin input_partitions.csv
 
-To display the contents of a binary partition table on stdout (this is how the summaries displayed when running `make partition_table` are generated::
+To display the contents of a binary partition table on stdout (this is how the summaries displayed when running ``idf.py partition_table`` are generated::
 
   python gen_esp32part.py binary_partitions.bin
 
@@ -162,12 +162,12 @@ The MD5 checksum generation can be disabled by the ``--disable-md5sum`` option o
 Flashing the partition table
 ----------------------------
 
-* ``make partition_table-flash``: will flash the partition table with esptool.py.
-* ``make flash``: Will flash everything including the partition table.
+* ``idf.py partition_table-flash``: will flash the partition table with esptool.py.
+* ``idf.py flash``: Will flash everything including the partition table.
 
-A manual flashing command is also printed as part of ``make partition_table``.
+A manual flashing command is also printed as part of ``idf.py partition_table`` output.
 
-Note that updating the partition table doesn't erase data that may have been stored according to the old partition table. You can use ``make erase_flash`` (or ``esptool.py erase_flash``) to erase the entire flash contents.
+Note that updating the partition table doesn't erase data that may have been stored according to the old partition table. You can use ``idf.py erase_flash`` (or ``esptool.py erase_flash``) to erase the entire flash contents.
 
 Partition Tool (parttool.py)
 ----------------------------

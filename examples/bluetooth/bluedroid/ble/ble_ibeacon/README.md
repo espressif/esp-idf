@@ -21,10 +21,10 @@ Which demo will be run depends on the menuconfig, developers can set it in `iBea
 The default mode is iBeacon Sender.
 
 ### Menuconfig
-Before compiling the demo，developers also need to configure the menuconfig:
+Before compiling the demo，developers also need to configure the project:
 
 ```c
-make menuconfig
+idf.py menuconfig
 ```
 And then enter `Component config->Bluetooth->Bluedroid Enable`
 
@@ -49,7 +49,7 @@ switch (scan_result->scan_rst.search_evt) {
 Build each project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idp.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

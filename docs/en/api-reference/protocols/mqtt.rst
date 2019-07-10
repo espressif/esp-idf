@@ -94,12 +94,12 @@ SSL
 
 For more options on ``esp_mqtt_client_config_t``, please refer to API reference below
 
-Change settings in ``menuconfig``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Change settings in Project Configuration Menu
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
-    make menuconfig 
-    -> Component config -> ESP-MQTT Configuration 
+    idf.py menuconfig
+    -> Component config -> ESP-MQTT Configuration
 
 
 - :ref:`CONFIG_MQTT_PROTOCOL_311`: Enables 3.1.1 version of MQTT protocol
