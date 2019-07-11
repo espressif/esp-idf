@@ -24,19 +24,19 @@ To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit)
 |                  | SDA    | SCL    |
 | ---------------- | ------ | ------ |
 | ESP32 I2C Master | GPIO18 | GPIO19 |
-| ESP32 I2C Slave  | GPIO25 | GPIO26 |
+| ESP32 I2C Slave  | GPIO4  | GPIO5  |
 | BH1750 Sensor    | SDA    | SCL    |
 
 - slave:
-  - GPIO25 is assigned as the data signal of I2C slave port
-  - GPIO26 is assigned as the clock signal of I2C slave port
+  - GPIO4 is assigned as the data signal of I2C slave port
+  - GPIO5 is assigned as the clock signal of I2C slave port
 - master:
   - GPIO18 is assigned as the data signal of I2C master port
   - GPIO19 is assigned as the clock signal of I2C master port
 
 - Connection:
-  - connect GPIO18 with GPIO25
-  - connect GPIO19 with GPIO26
+  - connect GPIO18 with GPIO4
+  - connect GPIO19 with GPIO5
   - connect SDA/SCL of BH1750 sensor with GPIO18/GPIO19
 
 **Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors.
