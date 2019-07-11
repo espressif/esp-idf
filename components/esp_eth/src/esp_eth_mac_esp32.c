@@ -55,6 +55,7 @@ typedef struct {
     uint8_t addr[6];
     uint8_t *rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM];
     uint8_t *tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM];
+    bool isr_need_yield;
 } emac_esp32_t;
 
 static esp_err_t emac_esp32_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
@@ -343,6 +344,17 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+void emac_esp32_isr_handler(void *args)
+{
+    emac_hal_context_t *hal = (emac_hal_context_t *)args;
+    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
+    emac_hal_isr(args);
+    if (emac->isr_need_yield) {
+        emac->isr_need_yield = false;
+        portYIELD_FROM_ISR();
+    }
+}
+
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
 {
     esp_eth_mac_t *ret = NULL;
@@ -401,7 +413,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.transmit = emac_esp32_transmit;
     emac->parent.receive = emac_esp32_receive;
     /* Interrupt configuration */
-    MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_hal_isr,
+    MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_esp32_isr_handler,
                              &emac->hal, &(emac->intr_hdl)) == ESP_OK,
               "alloc emac interrupt failed", err_intr, NULL);
     /* create counting semaphore */
@@ -438,8 +450,8 @@ void emac_hal_rx_complete_cb(void *arg)
     BaseType_t high_task_wakeup;
     /* send message to rx thread */
     xSemaphoreGiveFromISR(emac->rx_counting_sem, &high_task_wakeup);
-    if (high_task_wakeup != pdFALSE) {
-        portYIELD_FROM_ISR();
+    if (high_task_wakeup == pdTRUE) {
+        emac->isr_need_yield = true;
     }
 }
 
@@ -450,7 +462,7 @@ void emac_hal_rx_unavail_cb(void *arg)
     BaseType_t high_task_wakeup;
     /* send message to rx thread */
     xSemaphoreGiveFromISR(emac->rx_counting_sem, &high_task_wakeup);
-    if (high_task_wakeup != pdFALSE) {
-        portYIELD_FROM_ISR();
+    if (high_task_wakeup == pdTRUE) {
+        emac->isr_need_yield = true;
     }
 }
