@@ -521,7 +521,7 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
 
 void emac_hal_isr(void *arg)
 {
-    emac_hal_context_t *hal = *(emac_hal_context_t **)arg;
+    emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     typeof(hal->dma_regs->dmastatus) dma_status = hal->dma_regs->dmastatus;
     /* DMA Normal Interrupt */
     if (dma_status.norm_int_summ) {
