@@ -14,9 +14,12 @@
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "hal/emac.h"
+
+static const char *TAG = "emac_hal";
 
 #define ETH_CRC_LENGTH (4)
 
@@ -29,6 +32,28 @@ void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
     hal->descriptors = descriptors;
     hal->rx_buf = rx_buf;
     hal->tx_buf = tx_buf;
+}
+
+void enable_rmii_output_clock(void)
+{
+    rtc_xtal_freq_t rtc_xtal_freq = rtc_clk_xtal_freq_get();
+    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
+
+    switch(rtc_xtal_freq) {
+        case RTC_XTAL_FREQ_40M:
+            /* 50 MHz = 40MHz * (4 + 6) / (2 * (2 + 2)) = 400MHz / 8 */
+            /* sdm2 = 6, sdm1 = 0, sdm0 = 0, o_div = 2 */
+            rtc_clk_apll_enable(true, 0, 0, 6, 2);
+            break;
+        case RTC_XTAL_FREQ_26M:
+            /* 50 MHz = 26MHz * (4 + 15 + 59 / 256) / (2 * (2 + 3)) = 499.99MHz / 10 */
+            /* sdm2 = 15, sdm1 = 59, sdm0 = 0, o_div = 3 */
+            rtc_clk_apll_enable(1, 0, 59, 15, 3);
+            break;
+        default:
+            ESP_LOGE(TAG, "unsupported rtc xtal frequency: %dMHz", rtc_xtal_freq);
+    }
+
 }
 
 void emac_hal_lowlevel_init(emac_hal_context_t *hal)
@@ -91,10 +116,7 @@ void emac_hal_lowlevel_init(emac_hal_context_t *hal)
     hal->ext_regs->ex_clk_ctrl.ext_en = 0;
     hal->ext_regs->ex_clk_ctrl.int_en = 1;
     hal->ext_regs->ex_oscclk_conf.clk_sel = 0;
-    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
-    /* 50 MHz = 40MHz * (4 + 6) / (2 * (2 + 2) = 400MHz / 8 */
-    /* sdm2 = 6, sdm1 = 0, sdm0 = 0, o_div = 2 */
-    rtc_clk_apll_enable(true, 0, 0, 6, 2);
+    enable_rmii_output_clock();
     hal->ext_regs->ex_clkout_conf.div_num = 0;
     hal->ext_regs->ex_clkout_conf.h_div_num = 0;
 #if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
