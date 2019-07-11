@@ -1179,7 +1179,7 @@ failed:
             #endif      
             return -1;
         }
-        if (fast_aes_unwrap(sm->ptk.kek, maxkeylen / 8,
+        if (aes_unwrap(sm->ptk.kek, maxkeylen / 8,
         				    (const u8 *) (key + 1), gd->gtk)) {
             #ifdef DEBUG_PRINT                       
         	wpa_printf(MSG_DEBUG, "WPA: AES unwrap "
@@ -1424,7 +1424,7 @@ failed:
             return -1;
         }
         */
-        if (fast_aes_unwrap(sm->ptk.kek, keydatalen / 8,
+        if (aes_unwrap(sm->ptk.kek, keydatalen / 8,
         				    (u8 *) (key + 1), buf)) {
             #ifdef DEBUG_PRINT    
         	wpa_printf(MSG_DEBUG, "WPA: AES unwrap failed - "

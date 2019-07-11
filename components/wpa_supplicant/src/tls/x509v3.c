@@ -1688,7 +1688,7 @@ skip_digest_oid:
 			    hash, hash_len);
 		break;
 	case 11: /* sha256WithRSAEncryption */
-		fast_sha256_vector(1, &cert->tbs_cert_start, &cert->tbs_cert_len,
+		sha256_vector(1, &cert->tbs_cert_start, &cert->tbs_cert_len,
 				                    hash);
 		hash_len = 32;
 		wpa_hexdump(MSG_MSGDUMP, "X509: Certificate hash (SHA256)",

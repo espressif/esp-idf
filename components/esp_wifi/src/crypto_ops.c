@@ -22,19 +22,18 @@
 #include "crypto/dh_group5.h"
 #include "esp_wifi_crypto_types.h"
 /* 
- * The parameters is used to set the cyrpto callback function for station connect when in security mode,
- * every callback function can register as fast_xxx or normal one, i.e, fast_aes_wrap or aes_wrap, the 
- * difference between them is the normal API is calculate by software, the fast one use the hardware 
- * crypto in it, can be faster than the normal one, so the callback function register in default is which
- * we recommend, so as the API in WPS default and WPA2 default.
+ * This structure is used to set the cyrpto callback function for station to connect when in security mode.
+ * These functions either call MbedTLS API's if USE_MBEDTLS_CRYPTO flag is set through Kconfig, or native
+ * API's otherwise. We recommend setting the flag since MbedTLS API's utilize hardware acceleration while
+ * native API's are use software implementations.
  */
 const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
     .size = sizeof(wpa_crypto_funcs_t), 
     .version = ESP_WIFI_CRYPTO_VERSION,
-    .aes_wrap = (esp_aes_wrap_t)fast_aes_wrap,
-    .aes_unwrap = (esp_aes_unwrap_t)fast_aes_unwrap,
-    .hmac_sha256_vector = (esp_hmac_sha256_vector_t)fast_hmac_sha256_vector,
-    .sha256_prf = (esp_sha256_prf_t)fast_sha256_prf,
+    .aes_wrap = (esp_aes_wrap_t)aes_wrap,
+    .aes_unwrap = (esp_aes_unwrap_t)aes_unwrap,
+    .hmac_sha256_vector = (esp_hmac_sha256_vector_t)hmac_sha256_vector,
+    .sha256_prf = (esp_sha256_prf_t)sha256_prf,
     .hmac_md5 = (esp_hmac_md5_t)hmac_md5,
     .hamc_md5_vector = (esp_hmac_md5_vector_t)hmac_md5_vector,
     .hmac_sha1 = (esp_hmac_sha1_t)hmac_sha1,
@@ -53,6 +52,6 @@ const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
 };
 
 const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs = {
-    .aes_128_encrypt = (esp_aes_128_encrypt_t)fast_aes_128_cbc_encrypt,
-    .aes_128_decrypt = (esp_aes_128_decrypt_t)fast_aes_128_cbc_decrypt,
+    .aes_128_encrypt = (esp_aes_128_encrypt_t)aes_128_cbc_encrypt,
+    .aes_128_decrypt = (esp_aes_128_decrypt_t)aes_128_cbc_decrypt,
 };

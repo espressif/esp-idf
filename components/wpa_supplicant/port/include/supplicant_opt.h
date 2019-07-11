@@ -29,4 +29,8 @@
 #define EAP_PEAP 1
 #endif
 
+#if CONFIG_WPA_MBEDTLS_CRYPTO
+#define USE_MBEDTLS_CRYPTO 1
+#endif
+
 #endif /* _SUPPLICANT_OPT_H */
