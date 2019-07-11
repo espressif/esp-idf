@@ -20,6 +20,34 @@
 
 #define ETH_CRC_LENGTH (4)
 
+#if CONFIG_ETH_RMII_CLK_OUTPUT
+static void emac_config_apll_clock(void)
+{
+    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
+    rtc_xtal_freq_t rtc_xtal_freq = rtc_clk_xtal_freq_get();
+    switch (rtc_xtal_freq) {
+    case RTC_XTAL_FREQ_40M: // Recommended
+        /* 50 MHz = 40MHz * (4 + 6) / (2 * (2 + 2) = 50.000 */
+        /* sdm0 = 0, sdm1 = 0, sdm2 = 6, o_div = 2 */
+        rtc_clk_apll_enable(true, 0, 0, 6, 2);
+        break;
+    case RTC_XTAL_FREQ_26M:
+        /* 50 MHz = 26MHz * (4 + 15 + 118 / 256 + 39/65536) / ((3 + 2) * 2) = 49.999992 */
+        /* sdm0 = 39, sdm1 = 118, sdm2 = 15, o_div = 3 */
+        rtc_clk_apll_enable(true, 39, 118, 15, 3);
+        break;
+    case RTC_XTAL_FREQ_24M:
+        /* 50 MHz = 24MHz * (4 + 12 + 255 / 256 + 255/65536) / ((2 + 2) * 2) = 49.499977 */
+        /* sdm0 = 255, sdm1 = 255, sdm2 = 12, o_div = 2 */
+        rtc_clk_apll_enable(true, 255, 255, 12, 2);
+        break;
+    default: // Assume we have a 40M xtal
+        rtc_clk_apll_enable(true, 0, 0, 6, 2);
+        break;
+    }
+}
+#endif
+
 void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
                    uint8_t **rx_buf, uint8_t **tx_buf)
 {
@@ -91,10 +119,7 @@ void emac_hal_lowlevel_init(emac_hal_context_t *hal)
     hal->ext_regs->ex_clk_ctrl.ext_en = 0;
     hal->ext_regs->ex_clk_ctrl.int_en = 1;
     hal->ext_regs->ex_oscclk_conf.clk_sel = 0;
-    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
-    /* 50 MHz = 40MHz * (4 + 6) / (2 * (2 + 2) = 400MHz / 8 */
-    /* sdm2 = 6, sdm1 = 0, sdm0 = 0, o_div = 2 */
-    rtc_clk_apll_enable(true, 0, 0, 6, 2);
+    emac_config_apll_clock();
     hal->ext_regs->ex_clkout_conf.div_num = 0;
     hal->ext_regs->ex_clkout_conf.h_div_num = 0;
 #if CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0
