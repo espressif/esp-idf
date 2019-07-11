@@ -81,12 +81,12 @@ int tlsv1_record_change_write_cipher(struct tlsv1_record_layer *rl)
 	os_memset(rl->write_seq_num, 0, TLS_SEQ_NUM_LEN);
 
 	if (rl->write_cbc) {
-		fast_crypto_cipher_deinit(rl->write_cbc);
+		crypto_cipher_deinit(rl->write_cbc);
 		rl->write_cbc = NULL;
 		
 	}
 	if (rl->cipher_alg != CRYPTO_CIPHER_NULL) {
-		rl->write_cbc = fast_crypto_cipher_init(rl->cipher_alg,
+		rl->write_cbc = crypto_cipher_init(rl->cipher_alg,
 									rl->write_iv, rl->write_key,
 									rl->key_material_len);
 
@@ -117,12 +117,12 @@ int tlsv1_record_change_read_cipher(struct tlsv1_record_layer *rl)
 	os_memset(rl->read_seq_num, 0, TLS_SEQ_NUM_LEN);
 
 	if (rl->read_cbc) {
-		fast_crypto_cipher_deinit(rl->read_cbc);
+		crypto_cipher_deinit(rl->read_cbc);
 		rl->read_cbc =  NULL;
 	}
 
 	if (rl->cipher_alg != CRYPTO_CIPHER_NULL) {
-		rl->read_cbc = fast_crypto_cipher_init(rl->cipher_alg,
+		rl->read_cbc = crypto_cipher_init(rl->cipher_alg,
 									rl->read_iv, rl->read_key,
 									rl->key_material_len);
 		if (rl->read_cbc == NULL) {
@@ -208,26 +208,26 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 		 * TLSCompressed.version + TLSCompressed.length +
 		 * TLSCompressed.fragment
 		 */
-		hmac = fast_crypto_hash_init(rl->hash_alg, rl->write_mac_secret, rl->hash_size);
+		hmac = crypto_hash_init(rl->hash_alg, rl->write_mac_secret, rl->hash_size);
 		if (hmac == NULL) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Failed "
 				   "to initialize HMAC");
 			return -1;
 		}
-		fast_crypto_hash_update(hmac, rl->write_seq_num, TLS_SEQ_NUM_LEN);
+		crypto_hash_update(hmac, rl->write_seq_num, TLS_SEQ_NUM_LEN);
 		/* type + version + length + fragment */
-		fast_crypto_hash_update(hmac, ct_start, TLS_RECORD_HEADER_LEN);
-		fast_crypto_hash_update(hmac, payload, payload_len);
+		crypto_hash_update(hmac, ct_start, TLS_RECORD_HEADER_LEN);
+		crypto_hash_update(hmac, payload, payload_len);
 		clen = buf + buf_size - pos;
 		if (clen < rl->hash_size) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Not "
 				   "enough room for MAC");
-			fast_crypto_hash_finish(hmac, NULL, NULL);
+			crypto_hash_finish(hmac, NULL, NULL);
 			
 			return -1;
 		}
 
-		if ((int)fast_crypto_hash_finish(hmac, pos, &clen) < 0) {
+		if ((int)crypto_hash_finish(hmac, pos, &clen) < 0) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Failed to calculate HMAC");
 			return -1;
 		}
@@ -250,7 +250,7 @@ int tlsv1_record_send(struct tlsv1_record_layer *rl, u8 content_type, u8 *buf,
 			pos += pad + 1;
 		}
 
-		if ((int)fast_crypto_cipher_encrypt(rl->write_cbc, cpayload,
+		if ((int)crypto_cipher_encrypt(rl->write_cbc, cpayload,
 							cpayload, pos - cpayload) < 0)
 			return -1;
 	}
@@ -358,7 +358,7 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 
 	if (rl->read_cipher_suite != TLS_NULL_WITH_NULL_NULL) {
 		size_t plen;
-		if ((int)fast_crypto_cipher_decrypt(rl->read_cbc, in_data,
+		if ((int)crypto_cipher_decrypt(rl->read_cbc, in_data,
 					                        out_data, in_len) < 0) {
 			*alert = TLS_ALERT_DECRYPTION_FAILED;
 			return -1;
@@ -438,7 +438,7 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 
 		plen -= rl->hash_size;
 
-		hmac = fast_crypto_hash_init(rl->hash_alg, rl->read_mac_secret, rl->hash_size);		
+		hmac = crypto_hash_init(rl->hash_alg, rl->read_mac_secret, rl->hash_size);
 
 		if (hmac == NULL) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Failed "
@@ -447,15 +447,15 @@ int tlsv1_record_receive(struct tlsv1_record_layer *rl,
 			return -1;
 		}
 
-		fast_crypto_hash_update(hmac, rl->read_seq_num, TLS_SEQ_NUM_LEN);
+		crypto_hash_update(hmac, rl->read_seq_num, TLS_SEQ_NUM_LEN);
 		/* type + version + length + fragment */
-		fast_crypto_hash_update(hmac, in_data - TLS_RECORD_HEADER_LEN, 3);
+		crypto_hash_update(hmac, in_data - TLS_RECORD_HEADER_LEN, 3);
 		WPA_PUT_BE16(len, plen);
-		fast_crypto_hash_update(hmac, len, 2);
-		fast_crypto_hash_update(hmac, out_data, plen);
+		crypto_hash_update(hmac, len, 2);
+		crypto_hash_update(hmac, out_data, plen);
 		
 		hlen = sizeof(hash);
-		if ((int)fast_crypto_hash_finish(hmac, hash, &hlen) < 0) {
+		if ((int)crypto_hash_finish(hmac, hash, &hlen) < 0) {
 			wpa_printf(MSG_DEBUG, "TLSv1: Record Layer - Failed to calculate HMAC");
 			*alert = TLS_ALERT_INTERNAL_ERROR;
 			return -1;

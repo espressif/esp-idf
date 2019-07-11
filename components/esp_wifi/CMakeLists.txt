@@ -5,7 +5,7 @@ if(NOT CONFIG_ESP32_NO_BLOBS)
 endif()
 
 idf_component_register(SRCS "src/coexist.c"
-                            "src/fast_crypto_ops.c"
+                            "src/crypto_ops.c"
                             "src/lib_printf.c"
                             "src/mesh_event.c"
                             "src/phy_init.c"

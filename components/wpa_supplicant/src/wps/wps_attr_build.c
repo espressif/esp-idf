@@ -166,7 +166,7 @@ int wps_build_authenticator(struct wps_data *wps, struct wpabuf *msg)
 	len[0] = wpabuf_len(wps->last_msg);
 	addr[1] = wpabuf_head(msg);
 	len[1] = wpabuf_len(msg);
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 2, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 2, addr, len, hash);
 	wpa_printf(MSG_DEBUG,  "WPS:  * Authenticator");
 	wpabuf_put_be16(msg, ATTR_AUTHENTICATOR);
 	wpabuf_put_be16(msg, WPS_AUTHENTICATOR_LEN);
@@ -324,7 +324,7 @@ int wps_build_key_wrap_auth(struct wps_data *wps, struct wpabuf *msg)
 	u8 hash[SHA256_MAC_LEN];
 
 	wpa_printf(MSG_DEBUG,  "WPS:  * Key Wrap Authenticator");
-	fast_hmac_sha256(wps->authkey, WPS_AUTHKEY_LEN, wpabuf_head(msg),
+	hmac_sha256(wps->authkey, WPS_AUTHKEY_LEN, wpabuf_head(msg),
 		            wpabuf_len(msg), hash);
 	wpabuf_put_be16(msg, ATTR_KEY_WRAP_AUTH);
 	wpabuf_put_be16(msg, WPS_KWA_LEN);
@@ -356,7 +356,7 @@ int wps_build_encr_settings(struct wps_data *wps, struct wpabuf *msg,
 	data = wpabuf_put(msg, 0);
 	wpabuf_put_buf(msg, plain);
 	wpa_printf(MSG_DEBUG,  "WPS:  * AES 128 Encrypted Settings");
-	if (fast_aes_128_cbc_encrypt(wps->keywrapkey, iv, data, wpabuf_len(plain)))
+	if (aes_128_cbc_encrypt(wps->keywrapkey, iv, data, wpabuf_len(plain)))
 		return -1;
 	return 0;
 }
@@ -373,7 +373,7 @@ int wps_build_oob_dev_pw(struct wpabuf *msg, u16 dev_pw_id,
 
 	addr[0] = wpabuf_head(pubkey);
 	hash_len = wpabuf_len(pubkey);
-	fast_sha256_vector(1, addr, &hash_len, pubkey_hash);
+	sha256_vector(1, addr, &hash_len, pubkey_hash);
 	wpabuf_put_be16(msg, ATTR_OOB_DEVICE_PASSWORD);
 	wpabuf_put_be16(msg, WPS_OOB_PUBKEY_HASH_LEN + 2 + dev_pw_len);
 	wpabuf_put_data(msg, pubkey_hash, WPS_OOB_PUBKEY_HASH_LEN);

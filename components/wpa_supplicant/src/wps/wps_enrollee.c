@@ -74,7 +74,7 @@ static int wps_build_e_hash(struct wps_data *wps, struct wpabuf *msg)
 	len[2] = wpabuf_len(wps->dh_pubkey_e);
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	wpa_hexdump(MSG_DEBUG, "WPS: E-Hash1", hash, SHA256_MAC_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS:  * E-Hash2");
@@ -84,7 +84,7 @@ static int wps_build_e_hash(struct wps_data *wps, struct wpabuf *msg)
 	/* E-Hash2 = HMAC_AuthKey(E-S2 || PSK2 || PK_E || PK_R) */
 	addr[0] = wps->snonce + WPS_SECRET_NONCE_LEN;
 	addr[1] = wps->psk2;
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	wpa_hexdump(MSG_DEBUG, "WPS: E-Hash2", hash, SHA256_MAC_LEN);
 
 	return 0;
@@ -593,7 +593,7 @@ static int wps_process_r_snonce1(struct wps_data *wps, const u8 *r_snonce1)
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
 
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	if (os_memcmp(wps->peer_hash1, hash, WPS_HASH_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: R-Hash1 derived from R-S1 does "
 			   "not match with the pre-committed value");
@@ -633,7 +633,7 @@ static int wps_process_r_snonce2(struct wps_data *wps, const u8 *r_snonce2)
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
 
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 
 	if (os_memcmp(wps->peer_hash2, hash, WPS_HASH_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: R-Hash2 derived from R-S2 does "
