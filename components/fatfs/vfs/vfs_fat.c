@@ -68,6 +68,8 @@ static const char* TAG = "vfs_fat";
 static ssize_t vfs_fat_write(void* p, int fd, const void * data, size_t size);
 static off_t vfs_fat_lseek(void* p, int fd, off_t size, int mode);
 static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size);
+static ssize_t vfs_fat_pread(void *ctx, int fd, void *dst, size_t size, off_t offset);
+static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, off_t offset);
 static int vfs_fat_open(void* ctx, const char * path, int flags, int mode);
 static int vfs_fat_close(void* ctx, int fd);
 static int vfs_fat_fstat(void* ctx, int fd, struct stat * st);
@@ -129,6 +131,8 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .write_p = &vfs_fat_write,
         .lseek_p = &vfs_fat_lseek,
         .read_p = &vfs_fat_read,
+        .pread_p = &vfs_fat_pread,
+        .pwrite_p = &vfs_fat_pwrite,
         .open_p = &vfs_fat_open,
         .close_p = &vfs_fat_close,
         .fstat_p = &vfs_fat_fstat,
@@ -371,6 +375,84 @@ static ssize_t vfs_fat_read(void* ctx, int fd, void * dst, size_t size)
         }
     }
     return read;
+}
+
+static ssize_t vfs_fat_pread(void *ctx, int fd, void *dst, size_t size, off_t offset)
+{
+    ssize_t ret = -1;
+    vfs_fat_ctx_t *fat_ctx = (vfs_fat_ctx_t *) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    FIL *file = &fat_ctx->files[fd];
+    const off_t prev_pos = f_tell(file);
+
+    FRESULT f_res = f_lseek(file, offset);
+    if (f_res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+        errno = fresult_to_errno(f_res);
+        goto pread_release;
+    }
+
+    unsigned read = 0;
+    f_res = f_read(file, dst, size, &read);
+    if (f_res == FR_OK) {
+        ret = read;
+    } else {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+        errno = fresult_to_errno(f_res);
+        // No return yet - need to restore previous position
+    }
+
+    f_res = f_lseek(file, prev_pos);
+    if (f_res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+        if (ret >= 0) {
+            errno = fresult_to_errno(f_res);
+        } // else f_read failed so errno shouldn't be overwritten
+        ret = -1; // in case the read was successful but the seek wasn't
+    }
+
+pread_release:
+    _lock_release(&fat_ctx->lock);
+    return ret;
+}
+
+static ssize_t vfs_fat_pwrite(void *ctx, int fd, const void *src, size_t size, off_t offset)
+{
+    ssize_t ret = -1;
+    vfs_fat_ctx_t *fat_ctx = (vfs_fat_ctx_t *) ctx;
+    _lock_acquire(&fat_ctx->lock);
+    FIL *file = &fat_ctx->files[fd];
+    const off_t prev_pos = f_tell(file);
+
+    FRESULT f_res = f_lseek(file, offset);
+    if (f_res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+        errno = fresult_to_errno(f_res);
+        goto pwrite_release;
+    }
+
+    unsigned wr = 0;
+    f_res = f_write(file, src, size, &wr);
+    if (f_res == FR_OK) {
+        ret = wr;
+    } else {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+        errno = fresult_to_errno(f_res);
+        // No return yet - need to restore previous position
+    }
+
+    f_res = f_lseek(file, prev_pos);
+    if (f_res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, f_res);
+        if (ret >= 0) {
+            errno = fresult_to_errno(f_res);
+        } // else f_write failed so errno shouldn't be overwritten
+        ret = -1; // in case the write was successful but the seek wasn't
+    }
+
+pwrite_release:
+    _lock_release(&fat_ctx->lock);
+    return ret;
 }
 
 static int vfs_fat_fsync(void* ctx, int fd)
