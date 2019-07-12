@@ -242,6 +242,18 @@ static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
 		return NULL;
 	}
 
+	if (res == 2) {
+		/* Application data included in the handshake message (used by
+		 * EAP-TLS 1.3 to indicate conclusion of the exchange). */
+		wpa_hexdump_buf(MSG_DEBUG, "EAP-TLS: Received Application Data",
+				resp);
+		wpa_hexdump_buf(MSG_DEBUG, "EAP-TLS: Remaining tls_out data",
+				data->ssl.tls_out);
+		eap_peer_tls_reset_output(&data->ssl);
+		/* Send an ACK to allow the server to complete exchange */
+		res = 1;
+	}
+
 	if (tls_connection_established(data->ssl_ctx, data->ssl.conn))
 		eap_tls_success(sm, data, ret);
 
