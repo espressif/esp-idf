@@ -70,7 +70,7 @@ foreach(component_target ${build_component_targets})
     set(COMPONENT_NAME ${_name})
     set(COMPONENT_DIR ${dir})
     set(COMPONENT_ALIAS ${alias})
-    set(COMPONENT_PATH ${dir}) # also deprecated, see comment in previous loop
+    set(COMPONENT_PATH ${dir}) # for backward compatibility only, COMPONENT_DIR is preferred
     idf_build_get_property(build_prefix __PREFIX)
     set(__idf_component_context 1)
     if(NOT prefix STREQUAL build_prefix)
