@@ -15,6 +15,8 @@ For most purposes, the standard libc ``malloc()`` and ``free()`` functions can b
 However, in order to fully make use of all of the memory types and their characteristics, ESP-IDF also has a
 capabilities-based heap memory allocator. If you want to have memory with certain properties (for example, :ref:`dma-capable-memory` or executable-memory), you can create an OR-mask of the required capabilities and pass that to :cpp:func:`heap_caps_malloc`.
 
+.. note:: It is technically possible to malloc() or free() from an ISR but it is not recommended to call malloc() or free() from an ISR as they can take a long time to run, especially if PSRAM with lots of small allocations in it is used. It's better to structure your code in a way that any buffer that is needed by the ISR is pre-allocated.
+
 Memory Capabilities
 -------------------
 
