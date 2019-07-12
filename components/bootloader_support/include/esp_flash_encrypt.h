@@ -133,6 +133,21 @@ void esp_flash_write_protect_crypt_cnt(void);
  */
 esp_flash_enc_mode_t esp_get_flash_encryption_mode(void);
 
+
+/** @brief Check the flash encryption mode during startup
+ *
+ * @note This function is called automatically during app startup,
+ * it doesn't need to be called from the app.
+ *
+ * Verifies the flash encryption config during startup:
+ *
+ * - Correct any insecure flash encryption settings if hardware
+ *   Secure Boot is enabled.
+ * - Log warnings if the efuse config doesn't match the project
+ *  config in any way
+ */
+void esp_flash_encryption_init_checks(void);
+
 #ifdef __cplusplus
 }
 #endif
