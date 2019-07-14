@@ -488,6 +488,11 @@ def main():
                         action="store_true",
                         default=True)
 
+    parser.add_argument("--follow-symlinks",
+                        help="Take into account symbolic links during partition image creation.",
+                        action="store_true",
+                        default=False)
+
     parser.add_argument("--use-magic-len",
                         help="Use position in memory to create different magic numbers for each block. Specify if CONFIG_SPIFFS_USE_MAGIC_LENGTH.",
                         action="store_true",
@@ -513,7 +518,7 @@ def main():
 
         spiffs = SpiffsFS(image_size, spiffs_build_default)
 
-        for root, dirs, files in os.walk(args.base_dir):
+        for root, dirs, files in os.walk(args.base_dir, followlinks=args.follow_symlinks):
             for f in files:
                 full_path = os.path.join(root, f)
                 spiffs.create_file("/" + os.path.relpath(full_path, args.base_dir).replace("\\", "/"), full_path)
