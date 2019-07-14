@@ -25,6 +25,10 @@ function(spiffs_create_partition_image partition base_dir)
         set(use_magic_len "--use-magic-len")
     endif()
 
+    if(CONFIG_SPIFFS_FOLLOW_SYMLINKS)
+        set(follow_symlinks "--follow-symlinks")
+    endif()
+
     # Execute SPIFFS image generation; this always executes as there is no way to specify for CMake to watch for
     # contents of the base dir changing.
     add_custom_target(spiffs_${partition}_bin ALL
@@ -32,6 +36,7 @@ function(spiffs_create_partition_image partition base_dir)
         --page-size=${CONFIG_SPIFFS_PAGE_SIZE}
         --obj-name-len=${CONFIG_SPIFFS_OBJ_NAME_LEN}
         --meta-len=${CONFIG_SPIFFS_META_LENGTH}
+        ${follow_symlinks}
         ${use_magic}
         ${use_magic_len}
         DEPENDS ${arg_DEPENDS}
