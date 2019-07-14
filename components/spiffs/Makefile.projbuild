@@ -13,6 +13,12 @@ else
 USE_MAGIC_LEN = ""
 endif
 
+ifdef CONFIG_SPIFFS_FOLLOW_SYMLINKS
+FOLLOW_SYMLINKS = "--follow-symlinks" 
+else
+FOLLOW_SYMLINKS = ""
+endif
+
 # spiffs_create_partition_image
 #
 # Create a spiffs image of the specified directory on the host during build and optionally
@@ -27,6 +33,7 @@ $(1)_bin: $(PARTITION_TABLE_BIN) $(SPIFFS_IMAGE_DEPENDS) | check_python_dependen
 	--page-size=$(CONFIG_SPIFFS_PAGE_SIZE) \
 	--obj-name-len=$(CONFIG_SPIFFS_OBJ_NAME_LEN) \
 	--meta-len=$(CONFIG_SPIFFS_META_LENGTH) \
+	$(FOLLOW_SYMLINKS) \
 	$(USE_MAGIC) \
 	$(USE_MAGIC_LEN) 
 
