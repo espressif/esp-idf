@@ -16,12 +16,7 @@
 #ifndef __ESP_WIFI_TYPES_H__
 #define __ESP_WIFI_TYPES_H__
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "sys/queue.h"
-#include "esp_err.h"
-#include "esp_interface.h"
-#include "esp_event_base.h"
+#include "esp_private/esp_wifi_types_private.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -582,34 +577,6 @@ typedef struct {
     int rssi;                 /**< Received probe request signal strength */
     uint8_t mac[6];           /**< MAC address of the station which send probe request */
 } wifi_event_ap_probe_req_rx_t;
-
-/**
-  * @brief WiFi ioctl command type
-  *
-  */
-typedef enum {
-    WIFI_IOCTL_SET_STA_HT2040_COEX = 1, /**< Set the configuration of STA's HT2040 coexist management */
-    WIFI_IOCTL_GET_STA_HT2040_COEX,     /**< Get the configuration of STA's HT2040 coexist management */
-    WIFI_IOCTL_MAX,
-} wifi_ioctl_cmd_t;
-
-/**
- * @brief Configuration for STA's HT2040 coexist management
- *
- */
-typedef struct {
-    int enable;                         /**< Indicate whether STA's HT2040 coexist management is enabled or not */
-} wifi_ht2040_coex_t;
-
-/**
-  * @brief Configuration for WiFi ioctl
-  *
-  */
-typedef struct {
-    union {
-        wifi_ht2040_coex_t ht2040_coex; /**< Configuration of STA's HT2040 coexist management */
-    } data;                             /**< Configuration of ioctl command */
-} wifi_ioctl_config_t;
 
 #ifdef __cplusplus
 }
