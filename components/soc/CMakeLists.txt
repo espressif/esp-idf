@@ -17,6 +17,7 @@ list(APPEND srcs
     "src/hal/spi_slave_hal.c"
     "src/hal/spi_slave_hal_iram.c"
     "src/soc_include_legacy_warn.c"
+    "src/hal/pcnt_hal.c"
     )
 
 # TODO: SPI Flash HAL for ESP32S2Beta also
