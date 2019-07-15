@@ -41,7 +41,7 @@ typedef struct {
     const periph_module_t module;
 } i2s_signal_conn_t;
 
-extern const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_PERIPH_NUM];
+extern const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM];
 
 #ifdef __cplusplus
 }
