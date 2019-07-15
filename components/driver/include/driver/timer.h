@@ -19,6 +19,7 @@
 #include "soc/soc.h"
 #include "soc/timer_periph.h"
 #include "esp_intr_alloc.h"
+#include "hal/timer_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,15 +38,6 @@ typedef enum {
 } timer_group_t;
 
 /**
- * @brief Select a hardware timer from timer groups
- */
-typedef enum {
-    TIMER_0 = 0, /*!<Select timer0 of GROUPx*/
-    TIMER_1 = 1, /*!<Select timer1 of GROUPx*/
-    TIMER_MAX,
-} timer_idx_t;
-
-/**
  * @brief Decides the direction of counter
  */
 typedef enum {
@@ -53,14 +45,6 @@ typedef enum {
     TIMER_COUNT_UP = 1,   /*!< Ascending Count from Zero*/
     TIMER_COUNT_MAX
 } timer_count_dir_t;
-
-/**
- * @brief Decides whether timer is on or paused
- */
-typedef enum {
-    TIMER_PAUSE = 0, /*!<Pause timer counter*/
-    TIMER_START = 1, /*!<Start timer counter*/
-} timer_start_t;
 
 /**
  * @brief Decides whether to enable alarm mode
