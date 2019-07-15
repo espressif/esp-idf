@@ -31,6 +31,7 @@
  * This is an enum of possible power modes supported by the implementation
  */
 typedef enum {
+    PM_MODE_DEEP_SLEEP, //!< Deep sleep
     PM_MODE_LIGHT_SLEEP,//!< Light sleep
     PM_MODE_APB_MIN,    //!< Idle (no CPU frequency or APB frequency locks)
     PM_MODE_APB_MAX,    //!< Maximum APB frequency mode
@@ -109,6 +110,16 @@ void esp_pm_impl_dump_stats(FILE* out);
  */
 void esp_pm_impl_waiti();
 
+/**
+ * @brief Hook function implementing user instruction before going into sleep mode
+ */
+bool enter_hook_function();
+
+/**
+ * @brief Hook function implementing user instruction when exiting sleep mode
+ */
+void exit_hook_function();
+
 #ifdef CONFIG_PM_PROFILING
 #define WITH_PROFILING
 #endif
@@ -119,3 +130,4 @@ static inline pm_time_t IRAM_ATTR pm_get_time()
     return esp_timer_get_time();
 }
 #endif // WITH_PROFILING
+
