@@ -15,7 +15,7 @@
 #pragma once
 #include <stdint.h>
 #include "rtc_io_periph.h"
-#include "soc/gpio_pins.h"
+#include "soc/gpio_caps.h"
 
 #ifdef __cplusplus
 extern "C"
