@@ -90,22 +90,28 @@ typedef struct esp_tls_cfg {
                                                  - where 'h2' is the protocol name */
  
     const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer.
-                                                 This buffer should be NULL terminated */
+                                                 Format may be PEM or DER, depending on mbedtls-support
+                                                 This buffer should be NULL terminated in case of PEM */
  
     unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
-                                                 pointed to by cacert_pem_buf */
+                                                 pointed to by cacert_pem_buf
+                                                 (including NULL-terminator in case of PEM format) */
 
     const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer
-                                                 This buffer should be NULL terminated */
+                                                 Format may be PEM or DER, depending on mbedtls-support
+                                                 This buffer should be NULL terminated in case of PEM */
 
     unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
-                                                 clientcert_pem_buf */
+                                                 clientcert_pem_buf
+                                                 (including NULL-terminator in case of PEM format) */
 
     const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer
-                                                 This buffer should be NULL terminated */
+                                                 Format may be PEM or DER, depending on mbedtls-support
+                                                 This buffer should be NULL terminated in case of PEM */
 
     unsigned int clientkey_pem_bytes;       /*!< Size of client key pointed to by
-                                                 clientkey_pem_buf */
+                                                 clientkey_pem_buf
+                                                 (including NULL-terminator in case of PEM format) */
 
     const unsigned char *clientkey_password;/*!< Client key decryption password string */
 
