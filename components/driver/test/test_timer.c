@@ -38,13 +38,13 @@ static void test_timer_group_isr(void *para)
     uint64_t alarm_value;
     alarm_flag = true;
     if (timer_group_get_auto_reload_in_isr(timer_group, timer_idx)) {
-        timer_group_intr_clr_in_isr(timer_group, timer_idx);
+        timer_group_clr_intr_status_in_isr(timer_group, timer_idx);
         ets_printf("This is TG%d timer[%d] reload-timer alarm!\n", timer_group, timer_idx);
         timer_get_counter_value(timer_group, timer_idx, &timer_val);
         timer_get_counter_time_sec(timer_group, timer_idx, &time);
         ets_printf("time: %.8f S\n", time);
     } else {
-        timer_group_intr_clr_in_isr(timer_group, timer_idx);
+        timer_group_clr_intr_status_in_isr(timer_group, timer_idx);
         ets_printf("This is TG%d timer[%d] count-up-timer alarm!\n", timer_group, timer_idx);
         timer_get_counter_value(timer_group, timer_idx, &timer_val);
         timer_get_counter_time_sec(timer_group, timer_idx, &time);

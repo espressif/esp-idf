@@ -304,7 +304,7 @@ void IRAM_ATTR test_event_on_timer_alarm(void* para)
        from the timer that reported the interrupt */
     uint64_t timer_counter_value =
         timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
     timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
 

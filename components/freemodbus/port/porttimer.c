@@ -71,7 +71,7 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
     assert((int)param == usTimerIndex);
     // Retrieve the counter value from the timer that reported the interrupt
-    timer_group_intr_clr_in_isr(usTimerGroupIndex, usTimerIndex);
+    timer_group_clr_intr_status_in_isr(usTimerGroupIndex, usTimerIndex);
     (void)pxMBPortCBTimerExpired(); // Timer callback function
     // Enable alarm
     timer_group_enable_alarm_in_isr(usTimerGroupIndex, usTimerIndex);

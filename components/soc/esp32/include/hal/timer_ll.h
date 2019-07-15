@@ -21,71 +21,71 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
 #include "hal/timer_types.h"
 #include "soc/timer_periph.h"
-
-//Helper macro to get corresponding interrupt of a timer
-#define TIMER_LL_GET_INTR(TIMER_IDX) ((TIMER_IDX)==TIMER_0? TIMER_INTR_T0: TIMER_INTR_T1)
-
-#define TIMER_LL_GET_HW(TIMER_GROUP) ((TIMER_GROUP)==0? &TIMERG0: &TIMERG1)
 
 _Static_assert(TIMER_INTR_T0 == TIMG_T0_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 _Static_assert(TIMER_INTR_T1 == TIMG_T1_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 _Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 
+typedef struct {
+    timg_dev_t *dev;
+    timer_idx_t idx;
+} timer_ll_context_t;
+
+// Get timer group instance with giving group number
+#define TIMER_LL_GET_HW(num) ((num == 0) ? (&TIMERG0) : (&TIMERG1))
+
 /**
- * @brief Enable timer interrupt.
+ * @brief Set timer clock prescale value
  *
  * @param hw Beginning address of the peripheral registers.
- * @param intr_mask Interrupt enable mask
+ * @param timer_num The timer number
+ * @param divider Prescale value
  *
  * @return None
  */
-static inline void timer_ll_intr_enable(timg_dev_t *hw, timer_intr_t intr_mask)
+static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint16_t divider)
 {
-    hw->int_ena.val |= intr_mask;
+    int timer_en = hw->hw_timer[timer_num].config.enable;
+    hw->hw_timer[timer_num].config.enable = 0;
+    hw->hw_timer[timer_num].config.divider = divider;
+    hw->hw_timer[timer_num].config.enable = timer_en;
 }
 
 /**
- * @brief Disable timer interrupt.
+ * @brief Get timer clock prescale value
  *
  * @param hw Beginning address of the peripheral registers.
- * @param intr_mask Interrupt disable mask
+ * @param timer_num The timer number
+ * @param divider Pointer to accept the prescale value
  *
  * @return None
  */
-static inline void timer_ll_intr_disable(timg_dev_t *hw, timer_intr_t intr_mask)
+static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, uint16_t *divider)
 {
-    hw->int_ena.val &= (~intr_mask);
+    *divider = hw->hw_timer[timer_num].config.divider;
 }
 
 /**
- * @brief Get timer interrupt status.
+ * @brief Load counter value into time-base counter
  *
  * @param hw Beginning address of the peripheral registers.
- *
- * @return Masked interrupt status
- */
-static inline timer_intr_t timer_ll_intr_status_get(timg_dev_t *hw)
-{
-    return hw->int_raw.val;
-}
-
-/**
- * @brief Clear timer interrupt.
- *
- * @param hw Beginning address of the peripheral registers.
- * @param intr_mask Interrupt mask to clear
+ * @param timer_num The timer number
+ * @param load_val Counter value
  *
  * @return None
  */
-static inline void timer_ll_intr_status_clear(timg_dev_t *hw, timer_intr_t intr_mask)
+static inline void timer_ll_set_counter_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t load_val)
 {
-    hw->int_clr_timers.val = intr_mask;
+    hw->hw_timer[timer_num].load_high = (uint32_t) (load_val >> 32);
+    hw->hw_timer[timer_num].load_low = (uint32_t) load_val;
+    hw->hw_timer[timer_num].reload = 1;
 }
 
 /**
- * @brief Get counter vaule from time-base counter
+ * @brief Get counter value from time-base counter
  *
  * @param hw Beginning address of the peripheral registers.
  * @param timer_num The timer number
@@ -93,10 +93,39 @@ static inline void timer_ll_intr_status_clear(timg_dev_t *hw, timer_intr_t intr_
  *
  * @return None
  */
-static inline void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t *timer_val)
+FORCE_INLINE_ATTR void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t *timer_val)
 {
     hw->hw_timer[timer_num].update = 1;
     *timer_val = ((uint64_t) hw->hw_timer[timer_num].cnt_high << 32) | (hw->hw_timer[timer_num].cnt_low);
+}
+
+/**
+ * @brief Set counter mode, include increment mode and decrement mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ * @param increase_en True to increment mode, fasle to decrement mode
+ *
+ * @return None
+ */
+static inline void timer_ll_set_counter_increase(timg_dev_t *hw, timer_idx_t timer_num, bool increase_en)
+{
+    hw->hw_timer[timer_num].config.increase = increase_en;
+}
+
+/**
+ * @brief Get counter mode, include increment mode and decrement mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ *
+ * @return
+ *     - true Increment mode
+ *     - false Decrement mode
+ */
+static inline bool timer_ll_get_counter_increase(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    return hw->hw_timer[timer_num].config.increase;
 }
 
 /**
@@ -104,13 +133,42 @@ static inline void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t timer_
  *
  * @param hw Beginning address of the peripheral registers.
  * @param timer_num The timer number
- * @param counter_en Counter enable status
+ * @param counter_en True to enable counter, false to disable counter
  *
  * @return None
  */
-static inline void timer_ll_set_counter_enable(timg_dev_t *hw, timer_idx_t timer_num, timer_start_t counter_en)
+FORCE_INLINE_ATTR void timer_ll_set_counter_enable(timg_dev_t *hw, timer_idx_t timer_num, bool counter_en)
 {
     hw->hw_timer[timer_num].config.enable = counter_en;
+}
+
+/**
+ * @brief Get counter status.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ *
+ * @return
+ *     - true Enable counter
+ *     - false Disable conuter
+ */
+static inline bool timer_ll_get_counter_enable(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    return hw->hw_timer[timer_num].config.enable;
+}
+
+/**
+ * @brief Set auto reload mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ * @param auto_reload_en True to enable auto reload mode, flase to disable auto reload mode
+ *
+ * @return None
+ */
+static inline void timer_ll_set_auto_reload(timg_dev_t *hw, timer_idx_t timer_num, bool auto_reload_en)
+{
+    hw->hw_timer[timer_num].config.autoreload = auto_reload_en;
 }
 
 /**
@@ -118,11 +176,12 @@ static inline void timer_ll_set_counter_enable(timg_dev_t *hw, timer_idx_t timer
  *
  * @param hw Beginning address of the peripheral registers.
  * @param timer_num The timer number
- * @param reload Pointer to accept the auto reload mode
  *
- * @return None
+ * @return
+ *     - true Enable auto reload mode
+ *     - false Disable auto reload mode
  */
-static inline bool timer_ll_get_auto_reload(timg_dev_t *hw, timer_idx_t timer_num)
+FORCE_INLINE_ATTR bool timer_ll_get_auto_reload(timg_dev_t *hw, timer_idx_t timer_num)
 {
     return hw->hw_timer[timer_num].config.autoreload;
 }
@@ -136,7 +195,7 @@ static inline bool timer_ll_get_auto_reload(timg_dev_t *hw, timer_idx_t timer_nu
  *
  * @return None
  */
-static inline void timer_ll_set_alarm_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t alarm_value)
+FORCE_INLINE_ATTR void timer_ll_set_alarm_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t alarm_value)
 {
     hw->hw_timer[timer_num].alarm_high = (uint32_t) (alarm_value >> 32);
     hw->hw_timer[timer_num].alarm_low = (uint32_t) alarm_value;
@@ -161,11 +220,11 @@ static inline void timer_ll_get_alarm_value(timg_dev_t *hw, timer_idx_t timer_nu
  *
  * @param hw Beginning address of the peripheral registers.
  * @param timer_num The timer number
- * @param alarm_en true to enable, false to disable
+ * @param alarm_en True to enable alarm, false to disable alarm
  *
  * @return None
  */
-static inline void timer_ll_set_alarm_enable(timg_dev_t *hw, timer_idx_t timer_num, bool alarm_en)
+FORCE_INLINE_ATTR void timer_ll_set_alarm_enable(timg_dev_t *hw, timer_idx_t timer_num, bool alarm_en)
 {
     hw->hw_timer[timer_num].config.alarm_en = alarm_en;
 }
@@ -175,35 +234,158 @@ static inline void timer_ll_set_alarm_enable(timg_dev_t *hw, timer_idx_t timer_n
  *
  * @param hw Beginning address of the peripheral registers.
  * @param timer_num The timer number
- * @param alarm_en Pointer to accept the alarm status
+ *
+ * @return
+ *     - true Enable alarm
+ *     - false Disable alarm
+ */
+static inline bool timer_ll_get_alarm_enable(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    return hw->hw_timer[timer_num].config.alarm_en;
+}
+
+/**
+ * @brief Enable timer interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
  *
  * @return None
  */
-static inline void timer_ll_get_alarm_enable(timg_dev_t *hw, timer_idx_t timer_num, bool *alarm_en)
+FORCE_INLINE_ATTR void timer_ll_intr_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    *alarm_en = hw->hw_timer[timer_num].config.alarm_en;
+    hw->int_ena.val |= BIT(timer_num);
+}
+
+/**
+ * @brief Disable timer interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ *
+ * @return None
+ */
+FORCE_INLINE_ATTR void timer_ll_intr_disable(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    hw->int_ena.val &= (~BIT(timer_num));
+}
+
+/**
+ * @brief Disable timer interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ *
+ * @return None
+ */
+FORCE_INLINE_ATTR void timer_ll_clear_intr_status(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    hw->int_clr_timers.val |= BIT(timer_num);
+}
+
+/**
+ * @brief Get interrupt status.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param intr_status Interrupt status
+ *
+ * @return None
+ */
+FORCE_INLINE_ATTR void timer_ll_get_intr_status(timg_dev_t *hw, uint32_t *intr_status)
+{
+    *intr_status = hw->int_st_timers.val;
+}
+
+/**
+ * @brief Set the level interrupt status, enable or disable the level interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ * @param level_int_en True to enable level interrupt, false to disable level interrupt
+ *
+ * @return None
+ */
+static inline void timer_ll_set_level_int_enable(timg_dev_t *hw, timer_idx_t timer_num, bool level_int_en)
+{
+    hw->hw_timer[timer_num].config.level_int_en = level_int_en;
+}
+
+/**
+ * @brief Get the level interrupt status.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ *
+ * @return
+ *     - true Enable level interrupt
+ *     - false Disable level interrupt
+ */
+static inline bool timer_ll_get_level_int_enable(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    return hw->hw_timer[timer_num].config.level_int_en;
+}
+
+/**
+ * @brief Set the edge interrupt status, enable or disable the edge interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ * @param edge_int_en True to enable edge interrupt, false to disable edge interrupt
+ *
+ * @return None
+ */
+static inline void timer_ll_set_edge_int_enable(timg_dev_t *hw, timer_idx_t timer_num, bool edge_int_en)
+{
+    hw->hw_timer[timer_num].config.edge_int_en = edge_int_en;
+}
+
+/**
+ * @brief Get the edge interrupt status.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param timer_num The timer number
+ *
+ * @return
+ *     - true Enable edge interrupt
+ *     - false Disable edge interrupt
+ */
+static inline bool timer_ll_get_edge_int_enable(timg_dev_t *hw, timer_idx_t timer_num)
+{
+    return hw->hw_timer[timer_num].config.edge_int_en;
+}
+
+/**
+ * @brief Get interrupt status register address.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param intr_status_reg Interrupt status register address
+ *
+ * @return None
+ */
+static inline void timer_ll_get_intr_status_reg(timg_dev_t *hw, uint32_t *intr_status_reg)
+{
+    *intr_status_reg = (uint32_t)&(hw->int_st_timers.val);
 }
 
 /* WDT operations */
 
 /**
- * Unlock/lock the WDT register in case of mis-operations.
+ * @brief Unlock/lock the WDT register in case of mis-operations.
  *
  * @param hw Beginning address of the peripheral registers.
  * @param protect true to lock, false to unlock before operations.
  */
-
 FORCE_INLINE_ATTR void timer_ll_wdt_set_protect(timg_dev_t* hw, bool protect)
 {
     hw->wdt_wprotect=(protect? 0: TIMG_WDT_WKEY_VALUE);
 }
 
 /**
- * Initialize WDT.
+ * @brief Initialize WDT.
  *
  * @param hw Beginning address of the peripheral registers.
  *
- * @note Call ``timer_ll_wdt_set_protect first``
+ * @note Call `timer_ll_wdt_set_protect` first
  */
 FORCE_INLINE_ATTR void timer_ll_wdt_init(timg_dev_t* hw)
 {
@@ -214,16 +396,34 @@ FORCE_INLINE_ATTR void timer_ll_wdt_init(timg_dev_t* hw)
     hw->wdt_config0.edge_int_en = 0;
 }
 
+/**
+ * @brief Set the WDT tick time.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param tick_time_us Tick time.
+ */
 FORCE_INLINE_ATTR void timer_ll_wdt_set_tick(timg_dev_t* hw, int tick_time_us)
 {
     hw->wdt_config1.clk_prescale=80*tick_time_us;
 }
 
+/**
+ * @brief Feed the WDT.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
 FORCE_INLINE_ATTR void timer_ll_wdt_feed(timg_dev_t* hw)
 {
     hw->wdt_feed = 1;
 }
 
+/**
+ * @brief Set the WDT timeout.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param stage Stage number of WDT.
+ * @param timeout_Tick tick threshold of timeout.
+ */
 FORCE_INLINE_ATTR void timer_ll_wdt_set_timeout(timg_dev_t* hw, int stage, uint32_t timeout_tick)
 {
     switch (stage) {
@@ -249,6 +449,13 @@ _Static_assert(TIMER_WDT_INT == TIMG_WDT_STG_SEL_INT, "Add mapping to LL watchdo
 _Static_assert(TIMER_WDT_RESET_CPU == TIMG_WDT_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with the timer_wdt_behavior_t");
 _Static_assert(TIMER_WDT_RESET_SYSTEM == TIMG_WDT_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with the timer_wdt_behavior_t");
 
+/**
+ * @brief Set the WDT timeout behavior.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param stage Stage number of WDT.
+ * @param behavior Behavior of WDT, please see enum timer_wdt_behavior_t.
+ */
 FORCE_INLINE_ATTR void timer_ll_wdt_set_timeout_behavior(timg_dev_t* hw, int stage, timer_wdt_behavior_t behavior)
 {
     switch (stage) {
@@ -269,16 +476,47 @@ FORCE_INLINE_ATTR void timer_ll_wdt_set_timeout_behavior(timg_dev_t* hw, int sta
     }
 }
 
+/**
+ * @brief Enable/Disable the WDT enable.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param enable True to enable WDT, false to disable WDT.
+ */
 FORCE_INLINE_ATTR void timer_ll_wdt_set_enable(timg_dev_t* hw, bool enable)
 {
     hw->wdt_config0.en = enable;
 }
 
+/**
+ * @brief Enable/Disable the WDT flashboot mode.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param enable True to enable WDT flashboot mode, false to disable WDT flashboot mode.
+ */
 FORCE_INLINE_ATTR void timer_ll_wdt_flashboot_en(timg_dev_t* hw, bool enable)
 {
     hw->wdt_config0.flashboot_mod_en = enable;
 }
 
+/**
+ * @brief Clear the WDT interrupt status.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+FORCE_INLINE_ATTR void timer_ll_wdt_clear_intr_status(timg_dev_t* hw)
+{
+    hw->int_clr_timers.wdt = 1;
+}
+
+/**
+ * @brief Enable the WDT interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ */
+FORCE_INLINE_ATTR void timer_ll_wdt_enable_intr(timg_dev_t* hw)
+{
+    hw->int_ena.wdt = 1;
+}
 
 #ifdef __cplusplus
 }
