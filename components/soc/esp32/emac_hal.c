@@ -48,7 +48,7 @@ void enable_rmii_output_clock(void)
         case RTC_XTAL_FREQ_26M:
             /* 50 MHz = 26MHz * (4 + 15 + 59 / 256) / (2 * (2 + 3)) = 499.99MHz / 10 */
             /* sdm2 = 15, sdm1 = 59, sdm0 = 0, o_div = 3 */
-            rtc_clk_apll_enable(1, 0, 59, 15, 3);
+            rtc_clk_apll_enable(true, 0, 59, 15, 3);
             break;
         default:
             ESP_LOGE(TAG, "unsupported rtc xtal frequency: %dMHz", rtc_xtal_freq);
