@@ -10,6 +10,15 @@ if(NOT BOOTLOADER_BUILD)
         set(ESPTOOLPY_FLASH_PROJECT_OPTIONS "")
     endif()
 
+    # FLASH_PROJECT_ARGS, FLASH_PROJECT_ARGS_JSON, FLASH_PROJECT_ARGS_ENTRY_JSON
+    # are used in the flasher args input files (flash_project_args.in, flasher_args.json.in)
+    idf_component_get_property(FLASH_PROJECT_ARGS ${COMPONENT_NAME} 
+                            FLASH_PROJECT_ARGS GENERATOR_EXPRESSION)
+    idf_component_get_property(FLASH_PROJECT_ARGS_JSON ${COMPONENT_NAME}  
+                            FLASH_PROJECT_ARGS_JSON GENERATOR_EXPRESSION)
+    idf_component_get_property(FLASH_PROJECT_ARGS_ENTRY_JSON ${COMPONENT_NAME} 
+                            FLASH_PROJECT_ARGS_ENTRY_JSON GENERATOR_EXPRESSION)
+
     # Generate the flash project args and the flasher args json file using the accumulated values
     # from esptool_py_flash_project_args calls. The file is first configured using configure_file() for all variable values,
     # and then generated using file(GENERATE... for generator expressions.
