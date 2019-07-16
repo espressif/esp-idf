@@ -29,6 +29,7 @@
 #include "lwip/netif.h"
 #if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
 #include "lwip/dns.h"
+#include "lwip/netif.h"
 #endif
 #include "netif/wlanif.h"
 #include "netif/ethernetif.h"
@@ -1256,6 +1257,14 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if)
     } else {
         return false;
     }
+}
+
+int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if)
+{
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || esp_netif[tcpip_if] == NULL) {
+        return -1;
+    }
+    return netif_get_index(esp_netif[tcpip_if]);
 }
 
 #endif /* CONFIG_TCPIP_LWIP */
