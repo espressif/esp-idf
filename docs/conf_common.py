@@ -93,13 +93,16 @@ temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
 
 kconfigs = find_component_files("../../components", "Kconfig")
 kconfig_projbuilds = find_component_files("../../components", "Kconfig.projbuild")
+sdkconfig_renames = find_component_files("../../components", "sdkconfig.rename")
 
 confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
+                "--sdkconfig-rename", "../../sdkconfig.rename",
                 "--config", temp_sdkconfig_path,
                 "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
+                "--env", "COMPONENT_SDKCONFIG_RENAMES={}".format(" ".join(sdkconfig_renames)),
                 "--env", "IDF_PATH={}".format(idf_path),
                 "--output", "docs", kconfig_inc_path + '.in'
                 ]
