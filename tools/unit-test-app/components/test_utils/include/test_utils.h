@@ -54,7 +54,7 @@
 /* Return the 'flash_test' custom data partition (type 0x55)
    defined in the custom partition table.
 */
-const esp_partition_t *get_test_data_partition();
+const esp_partition_t *get_test_data_partition(void);
 
 /**
  * @brief Initialize reference clock
@@ -62,26 +62,26 @@ const esp_partition_t *get_test_data_partition();
  * Reference clock provides timestamps at constant 1 MHz frequency, even when
  * the APB frequency is changing.
  */
-void ref_clock_init();
+void ref_clock_init(void);
 
 /**
  * @brief Deinitialize reference clock
  */
-void ref_clock_deinit();
+void ref_clock_deinit(void);
 
 
 /**
  * @brief Get reference clock timestamp
  * @return number of microseconds since the reference clock was initialized
  */
-uint64_t ref_clock_get();
+uint64_t ref_clock_get(void);
 
 /**
  * @brief Entry point of the test application
  *
  * Starts Unity test runner in a separate task and returns.
  */
-void test_main();
+void test_main(void);
 
 /**
  * @brief Reset automatic leak checking which happens in unit tests.

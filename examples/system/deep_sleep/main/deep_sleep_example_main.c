@@ -45,7 +45,7 @@ _Static_assert(ULP_DATA_OFFSET < CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
  * The program monitors on-chip temperature sensor and wakes up the SoC when
  * the temperature goes lower or higher than certain thresholds.
  */
-static void start_ulp_temperature_monitoring();
+static void start_ulp_temperature_monitoring(void);
 
 /**
  * @brief Utility function which reads data written by ULP program
@@ -76,7 +76,7 @@ static inline void ulp_data_write(size_t offset, uint16_t value)
 static void calibrate_touch_pad(touch_pad_t pad);
 #endif
 
-void app_main()
+void app_main(void)
 {
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -210,7 +210,7 @@ static void calibrate_touch_pad(touch_pad_t pad)
 #endif // CONFIG_ENABLE_TOUCH_WAKEUP
 
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
-static void start_ulp_temperature_monitoring()
+static void start_ulp_temperature_monitoring(void)
 {
     /*
      * This ULP program monitors the on-chip temperature sensor and wakes the chip up when

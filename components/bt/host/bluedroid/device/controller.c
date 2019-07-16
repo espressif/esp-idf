@@ -544,7 +544,7 @@ static const controller_t interface = {
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE) */
 };
 
-const controller_t *controller_get_interface()
+const controller_t *controller_get_interface(void)
 {
     static bool loaded = false;
     if (!loaded) {

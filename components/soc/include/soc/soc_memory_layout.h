@@ -138,7 +138,7 @@ size_t soc_get_available_memory_regions(soc_memory_region_t *regions);
  * returned by soc_get_available_memory_regions(). Used to size the
  * array passed to that function.
  */
-size_t soc_get_available_memory_region_max_count();
+size_t soc_get_available_memory_region_max_count(void);
 
 inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
 {

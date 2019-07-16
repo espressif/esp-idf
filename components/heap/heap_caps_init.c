@@ -39,7 +39,7 @@ static void register_heap(heap_t *region)
     }
 }
 
-void heap_caps_enable_nonos_stack_heaps()
+void heap_caps_enable_nonos_stack_heaps(void)
 {
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
@@ -57,7 +57,7 @@ void heap_caps_enable_nonos_stack_heaps()
 /* Initialize the heap allocator to use all of the memory not
    used by static data or reserved for other purposes
  */
-void heap_caps_init()
+void heap_caps_init(void)
 {
     /* Get the array of regions that we can use for heaps
        (with reserved memory removed already.)

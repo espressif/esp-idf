@@ -39,12 +39,12 @@ extern "C" {
  *
  * @return ESP_OK on successful connection
  */
-esp_err_t example_connect();
+esp_err_t example_connect(void);
 
 /**
  * Counterpart to example_connect, de-initializes Wi-Fi or Ethernet
  */
-esp_err_t example_disconnect();
+esp_err_t example_disconnect(void);
 
 /**
  * @brief Configure stdin and stdout to use blocking I/O
@@ -52,7 +52,7 @@ esp_err_t example_disconnect();
  * This helper function is used in ASIO examples. It wraps installing the
  * UART driver and configuring VFS layer to use UART driver for console I/O.
  */
-esp_err_t example_configure_stdin_stdout();
+esp_err_t example_configure_stdin_stdout(void);
 
 #ifdef __cplusplus
 }

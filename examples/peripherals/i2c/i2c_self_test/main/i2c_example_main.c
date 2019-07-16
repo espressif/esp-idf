@@ -141,7 +141,7 @@ static esp_err_t i2c_master_sensor_test(i2c_port_t i2c_num, uint8_t *data_h, uin
 /**
  * @brief i2c master initialization
  */
-static esp_err_t i2c_master_init()
+static esp_err_t i2c_master_init(void)
 {
     int i2c_master_port = I2C_MASTER_NUM;
     i2c_config_t conf;
@@ -160,7 +160,7 @@ static esp_err_t i2c_master_init()
 /**
  * @brief i2c slave initialization
  */
-static esp_err_t i2c_slave_init()
+static esp_err_t i2c_slave_init(void)
 {
     int i2c_slave_port = I2C_SLAVE_NUM;
     i2c_config_t conf_slave;
@@ -281,7 +281,7 @@ static void i2c_test_task(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     print_mux = xSemaphoreCreateMutex();
     ESP_ERROR_CHECK(i2c_slave_init());

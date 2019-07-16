@@ -10,9 +10,9 @@
 
    Does nothing in unicore mode.
 */
-void start_apb_access_loop();
+void start_apb_access_loop(void);
 
 /* verify_apb_access_loop() kills the task started by start_apb_access_loop()
    and verifies that none of the APB reads were corrupted by unsafe DPORT reads.
 */
-void verify_apb_access_loop();
+void verify_apb_access_loop(void);

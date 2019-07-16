@@ -31,7 +31,7 @@ void unity_putc(int c)
     }
 }
 
-void unity_flush()
+void unity_flush(void)
 {
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }

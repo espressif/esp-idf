@@ -27,14 +27,14 @@ extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
 /* This function is called once after power-on reset, to load ULP program into
  * RTC memory and configure the ADC.
  */
-static void init_ulp_program();
+static void init_ulp_program(void);
 
 /* This function is called every time before going into deep sleep.
  * It starts the ULP program and resets measurement counter.
  */
-static void start_ulp_program();
+static void start_ulp_program(void);
 
-void app_main()
+void app_main(void)
 {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause != ESP_SLEEP_WAKEUP_ULP) {
@@ -54,7 +54,7 @@ void app_main()
     esp_deep_sleep_start();
 }
 
-static void init_ulp_program()
+static void init_ulp_program(void)
 {
     esp_err_t err = ulp_load_binary(0, ulp_main_bin_start,
             (ulp_main_bin_end - ulp_main_bin_start) / sizeof(uint32_t));
@@ -83,7 +83,7 @@ static void init_ulp_program()
     esp_deep_sleep_disable_rom_logging(); // suppress boot messages
 }
 
-static void start_ulp_program()
+static void start_ulp_program(void)
 {
     /* Reset sample counter */
     ulp_sample_counter = 0;

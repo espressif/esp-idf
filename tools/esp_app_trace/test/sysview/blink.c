@@ -82,7 +82,7 @@ void blink_task(void *pvParameter)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreatePinnedToCore(&blink_task, "blink_task", 2048, NULL, 5, NULL, 0);
 }

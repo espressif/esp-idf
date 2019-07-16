@@ -183,12 +183,12 @@ typedef struct esp_local_ctrl_transport esp_local_ctrl_transport_t;
 /**
  * @brief   Function for obtaining BLE transport mode
  */
-const esp_local_ctrl_transport_t *esp_local_ctrl_get_transport_ble();
+const esp_local_ctrl_transport_t *esp_local_ctrl_get_transport_ble(void);
 
 /**
  * @brief   Function for obtaining HTTPD transport mode
  */
-const esp_local_ctrl_transport_t *esp_local_ctrl_get_transport_httpd();
+const esp_local_ctrl_transport_t *esp_local_ctrl_get_transport_httpd(void);
 
 #define ESP_LOCAL_CTRL_TRANSPORT_BLE   esp_local_ctrl_get_transport_ble()
 #define ESP_LOCAL_CTRL_TRANSPORT_HTTPD esp_local_ctrl_get_transport_httpd()

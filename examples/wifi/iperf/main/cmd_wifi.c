@@ -369,7 +369,7 @@ static int wifi_cmd_iperf(int argc, char** argv)
     return 0;
 }
 
-void register_wifi()
+void register_wifi(void)
 {
     sta_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
     sta_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");

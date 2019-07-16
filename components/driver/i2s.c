@@ -740,7 +740,7 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
     return ESP_OK;
 }
 
-static esp_err_t _i2s_adc_mode_recover()
+static esp_err_t _i2s_adc_mode_recover(void)
 {
     I2S_CHECK(((_i2s_adc_unit != -1) && (_i2s_adc_channel != -1)), "i2s ADC recover error, not initialized...", ESP_ERR_INVALID_ARG);
     return adc_i2s_mode_init(_i2s_adc_unit, _i2s_adc_channel);

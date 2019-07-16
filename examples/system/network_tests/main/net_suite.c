@@ -130,7 +130,7 @@ static size_t process_line(char* line, char* packet)
     return count;
 }
 
-void app_main()
+void app_main(void)
 {
     char packet[128];
 

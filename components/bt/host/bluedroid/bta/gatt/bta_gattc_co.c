@@ -48,7 +48,7 @@ static void getFilename(char *buffer, BD_ADDR bda)
             , bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
 }
 
-static void cacheClose()
+static void cacheClose(void)
 {
     if (sCacheFD != 0) {
         fclose(sCacheFD);

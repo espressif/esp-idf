@@ -25,4 +25,4 @@
  *  @return ESP_OK   - If the setting is successful.
  *          ESP_FAIL - If the setting is not successful.
  */
-esp_err_t bootloader_init();
+esp_err_t bootloader_init(void);

@@ -77,7 +77,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-static void wifi_init_sta()
+static void wifi_init_sta(void)
 {
     /* Start Wi-Fi in station mode */
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -93,7 +93,7 @@ static void get_device_service_name(char *service_name, size_t max)
              ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize NVS partition */
     esp_err_t ret = nvs_flash_init();

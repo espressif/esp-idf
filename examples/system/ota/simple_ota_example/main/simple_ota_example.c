@@ -95,7 +95,7 @@ void simple_ota_example_task(void *pvParameter)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS.
     esp_err_t err = nvs_flash_init();

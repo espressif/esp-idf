@@ -107,7 +107,7 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
 #endif /* CONFIG_EXAMPLE_IPV4 */
 
 #ifdef CONFIG_EXAMPLE_IPV4_ONLY
-static int create_multicast_ipv4_socket()
+static int create_multicast_ipv4_socket(void)
 {
     struct sockaddr_in saddr = { 0 };
     int sock = -1;
@@ -167,7 +167,7 @@ err:
 #endif /* CONFIG_EXAMPLE_IPV4_ONLY */
 
 #ifdef CONFIG_EXAMPLE_IPV6
-static int create_multicast_ipv6_socket()
+static int create_multicast_ipv6_socket(void)
 {
     struct sockaddr_in6 saddr = { 0 };
     int  netif_index;
@@ -481,7 +481,7 @@ static void mcast_example_task(void *pvParameters)
 
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();

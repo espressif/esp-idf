@@ -158,7 +158,7 @@ err_freeaddr:
     return ret;
 }
 
-esp_err_t esp_tls_init_global_ca_store()
+esp_err_t esp_tls_init_global_ca_store(void)
 {
     if (global_cacert == NULL) {
         global_cacert = (mbedtls_x509_crt *)calloc(1, sizeof(mbedtls_x509_crt));
@@ -197,12 +197,12 @@ esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const
     return ESP_OK;
 }
 
-mbedtls_x509_crt *esp_tls_get_global_ca_store()
+mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 {
     return global_cacert;
 }
 
-void esp_tls_free_global_ca_store()
+void esp_tls_free_global_ca_store(void)
 {
     if (global_cacert) {
         mbedtls_x509_crt_free(global_cacert);
@@ -797,7 +797,7 @@ void esp_tls_server_session_delete(esp_tls_t *tls)
 };
 #endif /* ! CONFIG_ESP_TLS_SERVER */
 
-esp_tls_t *esp_tls_init()
+esp_tls_t *esp_tls_init(void)
 {
     esp_tls_t *tls = (esp_tls_t *)calloc(1, sizeof(esp_tls_t));
     if (!tls) {

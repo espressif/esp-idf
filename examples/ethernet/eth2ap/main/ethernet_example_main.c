@@ -226,7 +226,7 @@ static esp_err_t initialize_flow_control(void)
     return ESP_OK;
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

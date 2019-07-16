@@ -386,7 +386,7 @@ static void display_pretty_colors(spi_device_handle_t spi)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
     spi_device_handle_t spi;

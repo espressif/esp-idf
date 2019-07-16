@@ -27,7 +27,7 @@
  *
  * @note  Should be called at system startup.
  */
-void esp_core_dump_init();
+void esp_core_dump_init(void);
 
 /**
  * @brief  Saves core dump to flash.

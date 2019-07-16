@@ -122,7 +122,7 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length);
  * serial re-flashing of an unauthorised code in absence of secure boot.
  *
  */
-void esp_flash_write_protect_crypt_cnt();
+void esp_flash_write_protect_crypt_cnt(void);
 
 /** @brief Return the flash encryption mode
  *
@@ -131,7 +131,7 @@ void esp_flash_write_protect_crypt_cnt();
  *
  * @return
  */
-esp_flash_enc_mode_t esp_get_flash_encryption_mode();
+esp_flash_enc_mode_t esp_get_flash_encryption_mode(void);
 
 #ifdef __cplusplus
 }

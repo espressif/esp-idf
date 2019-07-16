@@ -48,6 +48,6 @@ typedef struct {
     BT_HDR *(*make_write_default_erroneous_data_report)(uint8_t enable);
 } hci_packet_factory_t;
 
-const hci_packet_factory_t *hci_packet_factory_get_interface();
+const hci_packet_factory_t *hci_packet_factory_get_interface(void);
 
 #endif /*_HCI_PACKET_FACTORY_H_*/

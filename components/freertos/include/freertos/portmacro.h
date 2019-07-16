@@ -177,7 +177,7 @@ typedef struct {
 
 
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
-void vPortAssertIfInISR();
+void vPortAssertIfInISR(void);
 
 #define portCRITICAL_NESTING_IN_TCB 1
 
@@ -320,7 +320,7 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux);
 // Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
 // WARNING: Only applies to current CPU. See notes above.
-static inline unsigned portENTER_CRITICAL_NESTED() {
+static inline unsigned portENTER_CRITICAL_NESTED(void) {
 	unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 	portbenchmarkINTERRUPT_DISABLE();
 	return state;
@@ -385,7 +385,7 @@ void _frxt_setup_switch( void );
 #define portYIELD()					vPortYield()
 #define portYIELD_FROM_ISR()        {traceISR_EXIT_TO_SCHEDULER(); _frxt_setup_switch();}
 
-static inline uint32_t xPortGetCoreID();
+static inline uint32_t xPortGetCoreID(void);
 
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
    until interrupts are re-enabled.

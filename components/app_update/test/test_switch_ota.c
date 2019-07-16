@@ -118,7 +118,7 @@ static void reboot_as_deep_sleep(void)
 
 /* @brief Copies a current app to next partition (OTA0-15), after that ESP is rebooting and run this (the next) OTAx.
  */
-static void copy_current_app_to_next_part_and_reboot()
+static void copy_current_app_to_next_part_and_reboot(void)
 {
     const esp_partition_t *cur_app = esp_ota_get_running_partition();
     copy_current_app_to_next_part(cur_app, get_next_update_partition());

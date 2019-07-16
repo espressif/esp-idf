@@ -163,7 +163,7 @@ static void timer_example_evt_task(void *arg)
 /*
  * In this example, we will test hardware timer0 and timer1 of timer group0.
  */
-void app_main()
+void app_main(void)
 {
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);

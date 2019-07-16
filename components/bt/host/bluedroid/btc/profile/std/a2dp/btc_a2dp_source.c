@@ -424,7 +424,7 @@ static void btc_a2dp_source_data_post(void)
     osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 2, OSI_THREAD_MAX_TIMEOUT);
 }
 
-static UINT64 time_now_us()
+static UINT64 time_now_us(void)
 {
 #if _POSIX_TIMERS
     struct timespec ts_now;

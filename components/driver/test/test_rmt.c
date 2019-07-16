@@ -262,7 +262,7 @@ static int get_rx_data(RingbufHandle_t rb)
 /**
  * @brief RMT transmitter initialization
  */
-static void tx_init()
+static void tx_init(void)
 {
     // the sender once it send something, its frq is 38kHz, and the duty cycle is 50%
     rmt_tx_config_t tx_cfg = {
@@ -289,7 +289,7 @@ static void tx_init()
 /**
  * @brief RMT receiver initialization
  */
-static void rx_init()
+static void rx_init(void)
 {
     rmt_rx_config_t rx_cfg = {
         .filter_en = true,

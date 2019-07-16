@@ -71,7 +71,7 @@ void  wpa_deauthenticate(u8 reason_code)
     esp_wifi_deauthenticate_internal(reason_code);
 }
 
-void  wpa_config_profile()
+void  wpa_config_profile(void)
 {
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
@@ -102,7 +102,7 @@ void  wpa_config_assoc_ie(u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len)
     }
 }
 
-void  wpa_neg_complete()
+void  wpa_neg_complete(void)
 {
     esp_wifi_auth_done_internal();
 }

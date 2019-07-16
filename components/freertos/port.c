@@ -331,7 +331,7 @@ void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
  * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
  * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
  */
-BaseType_t xPortInIsrContext()
+BaseType_t xPortInIsrContext(void)
 {
 	unsigned int irqStatus;
 	BaseType_t ret;
@@ -345,12 +345,12 @@ BaseType_t xPortInIsrContext()
  * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
  * before calling into high prio ISR context.
  */
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext()
+BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 {
 	return (port_interruptNesting[xPortGetCoreID()] != 0);
 }
 
-void vPortAssertIfInISR()
+void vPortAssertIfInISR(void)
 {
 	configASSERT(xPortInIsrContext());
 }

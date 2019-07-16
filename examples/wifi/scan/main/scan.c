@@ -109,7 +109,7 @@ static void wifi_scan(void)
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();

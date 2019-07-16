@@ -535,7 +535,7 @@ static waiting_command_t *get_waiting_command(command_opcode_t opcode)
     return NULL;
 }
 
-static void init_layer_interface()
+static void init_layer_interface(void)
 {
     if (!interface_created) {
         interface.transmit_command = transmit_command;
@@ -555,7 +555,7 @@ static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     fragmenter_transmit_finished
 };
 
-const hci_t *hci_layer_get_interface()
+const hci_t *hci_layer_get_interface(void)
 {
     hal = hci_hal_h4_get_interface();
     packet_fragmenter = packet_fragmenter_get_interface();

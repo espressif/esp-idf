@@ -112,7 +112,7 @@ static void smartconfig_example_task(void * parm)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
     initialise_wifi();

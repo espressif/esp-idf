@@ -80,7 +80,7 @@ void coap_free_endpoint(coap_endpoint_t *ep);
 static int ep_initialized = 0;
 
 struct coap_endpoint_t *
-  coap_malloc_endpoint() {
+  coap_malloc_endpoint(void) {
   static struct coap_endpoint_t ep;
 
   if (ep_initialized) {

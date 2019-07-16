@@ -33,7 +33,7 @@ typedef struct {
 
 static const char message[] = "Hello world!";
 
-static int open_dummy_socket()
+static int open_dummy_socket(void)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,
@@ -51,7 +51,7 @@ static int open_dummy_socket()
     return dummy_socket_fd;
 }
 
-static int socket_init()
+static int socket_init(void)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,
@@ -83,7 +83,7 @@ static int socket_init()
     return socket_fd;
 }
 
-static void uart1_init()
+static void uart1_init(void)
 {
     uart_config_t uart_config = {
         .baud_rate = 115200,

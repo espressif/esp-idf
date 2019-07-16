@@ -43,7 +43,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void wifi_init_softap()
+void wifi_init_softap(void)
 {
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -74,7 +74,7 @@ void wifi_init_softap()
              EXAMPLE_ESP_WIFI_SSID, EXAMPLE_ESP_WIFI_PASS);
 }
 
-void app_main()
+void app_main(void)
 {
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();

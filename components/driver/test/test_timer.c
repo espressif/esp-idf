@@ -127,7 +127,7 @@ static void all_timer_init(timer_config_t config, bool flag)
 }
 
 // start all of timer
-static void all_timer_start()
+static void all_timer_start(void)
 {
     esp_err_t ret;
     ret = timer_start(TIMER_GROUP_0, TIMER_0);
@@ -153,7 +153,7 @@ static void all_timer_set_counter_value(uint64_t set_timer_val)
     TEST_ASSERT(ret == ESP_OK);
 }
 
-static void all_timer_pause()
+static void all_timer_pause(void)
 {
     esp_err_t ret;
     ret = timer_pause(TIMER_GROUP_0, TIMER_0);
