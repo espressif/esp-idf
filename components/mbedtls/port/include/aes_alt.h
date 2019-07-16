@@ -47,6 +47,9 @@ typedef esp_aes_context mbedtls_aes_context;
 #if defined(MBEDTLS_CIPHER_MODE_CTR)
 #define mbedtls_aes_crypt_ctr       esp_aes_crypt_ctr
 #endif
+#if defined(MBEDTLS_CIPHER_MODE_OFB)
+#define mbedtls_aes_crypt_ofb       esp_aes_crypt_ofb
+#endif
 #if defined(MBEDTLS_CIPHER_MODE_XTS)
 typedef esp_aes_xts_context mbedtls_aes_xts_context;
 #define mbedtls_aes_xts_init            esp_aes_xts_init
