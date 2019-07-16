@@ -512,6 +512,10 @@ static void prov_stop_task(void *arg)
         if (app_cb) {
             app_cb(app_data, WIFI_PROV_END, NULL);
         }
+        if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_END, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post event WIFI_PROV_END");
+        }
+
         vTaskDelete(NULL);
     }
 }
@@ -1346,6 +1350,9 @@ void wifi_prov_mgr_deinit(void)
         if (app_cb) {
             app_cb(app_data, WIFI_PROV_END, NULL);
         }
+        if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_END, NULL, 0, portMAX_DELAY) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to post event WIFI_PROV_END");
+        }
     }
 
     ESP_LOGD(TAG, "execute_event_cb : %d", WIFI_PROV_DEINIT);
@@ -1357,7 +1364,9 @@ void wifi_prov_mgr_deinit(void)
     if (app_cb) {
         app_cb(app_data, WIFI_PROV_DEINIT, NULL);
     }
-    esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_DEINIT, NULL, 0, portMAX_DELAY);
+    if (esp_event_post(WIFI_PROV_EVENT, WIFI_PROV_DEINIT, NULL, 0, portMAX_DELAY) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post event WIFI_PROV_DEINIT");
+    }
 }
 
 esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const char *pop,
