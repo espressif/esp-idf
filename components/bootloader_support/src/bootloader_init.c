@@ -335,6 +335,10 @@ static void IRAM_ATTR flash_gpio_configure(const esp_image_header_t* pfhdr)
             SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_40M,
                     SPI_USR_DUMMY_CYCLELEN_S);  //DUMMY
             break;
+        case ESP_IMAGE_SPI_SPEED_26M:
+        case ESP_IMAGE_SPI_SPEED_20M:
+            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN_V, spi_cache_dummy, SPI_USR_DUMMY_CYCLELEN_S); //DUMMY
+            break;
         default:
             break;
     }
