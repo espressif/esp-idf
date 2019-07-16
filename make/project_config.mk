@@ -3,6 +3,7 @@
 #Find all Kconfig files for all components
 COMPONENT_KCONFIGS := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig))
 COMPONENT_KCONFIGS_PROJBUILD := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig.projbuild))
+COMPONENT_SDKCONFIG_RENAMES := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/sdkconfig.rename))
 
 ifeq ($(OS),Windows_NT)
 # kconfiglib requires Windows-style paths for kconfig files
@@ -16,6 +17,8 @@ KCONFIG_TOOL_DIR=$(IDF_PATH)/tools/kconfig
 # set SDKCONFIG to the project's sdkconfig,
 # unless it's overriden (happens for bootloader)
 SDKCONFIG ?= $(PROJECT_PATH)/sdkconfig
+
+SDKCONFIG_RENAME ?= $(IDF_PATH)/sdkconfig.rename
 
 # SDKCONFIG_DEFAULTS is an optional file containing default
 # overrides (usually used for esp-idf examples)
@@ -48,8 +51,10 @@ define RunConfGen
 	$(PYTHON) $(IDF_PATH)/tools/kconfig_new/confgen.py \
 		--kconfig $(IDF_PATH)/Kconfig \
 		--config $(SDKCONFIG) \
+		--sdkconfig-rename $(SDKCONFIG_RENAME) \
 		--env "COMPONENT_KCONFIGS=$(strip $(COMPONENT_KCONFIGS))" \
 		--env "COMPONENT_KCONFIGS_PROJBUILD=$(strip $(COMPONENT_KCONFIGS_PROJBUILD))" \
+		--env "COMPONENT_SDKCONFIG_RENAMES=$(strip $(COMPONENT_SDKCONFIG_RENAMES))" \
 		--env "IDF_CMAKE=n" \
 		--output config ${SDKCONFIG} \
 		--output makefile $(SDKCONFIG_MAKEFILE) \
