@@ -274,9 +274,6 @@ void IRAM_ATTR esp_restart_noos()
     esp_cpu_stall(other_core_id);
 #endif
 
-    // Other core is now stalled, can access DPORT registers directly
-    esp_dport_access_int_abort();
-
     // Disable TG0/TG1 watchdogs
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.en = 0;

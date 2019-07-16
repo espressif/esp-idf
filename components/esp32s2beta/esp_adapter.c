@@ -53,10 +53,6 @@
 #include "esp32s2beta/clk.h"
 #endif
 
-
-extern void esp_dport_access_stall_other_cpu_start_wrap(void);
-extern void esp_dport_access_stall_other_cpu_end_wrap(void);
-
 #define TAG "esp_adapter"
 
 /*
@@ -505,6 +501,11 @@ void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
 #endif
 }
 
+static void IRAM_ATTR esp_empty_wrapper(void)
+{
+
+}
+
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._set_isr = set_isr_wrapper,
@@ -549,8 +550,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._free = free,
     ._get_free_heap_size = esp_get_free_heap_size,
     ._rand = esp_random,
-    ._dport_access_stall_other_cpu_start_wrap = esp_dport_access_stall_other_cpu_start_wrap,
-    ._dport_access_stall_other_cpu_end_wrap = esp_dport_access_stall_other_cpu_end_wrap,
+    ._dport_access_stall_other_cpu_start_wrap = esp_empty_wrapper,
+    ._dport_access_stall_other_cpu_end_wrap = esp_empty_wrapper,
     ._phy_rf_deinit = esp_phy_rf_deinit,
     ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
     ._read_mac = esp_read_mac,

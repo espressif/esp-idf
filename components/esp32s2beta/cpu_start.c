@@ -395,9 +395,6 @@ void start_cpu0_default(void)
 #endif
     //esp_cache_err_int_init();
     esp_crosscore_int_init();
-#ifndef CONFIG_FREERTOS_UNICORE
-    esp_dport_access_int_init();
-#endif
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
@@ -449,7 +446,6 @@ void start_cpu1_default(void)
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
     esp_crosscore_int_init();
-    esp_dport_access_int_init();
 
     ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
     xPortStartScheduler();
