@@ -414,10 +414,10 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
         return -1;
     }
     struct timeval tv;
-    _gettimeofday_r(NULL, &tv, NULL);
     uint64_t monotonic_time_us = 0;
     switch (clock_id) {
         case CLOCK_REALTIME:
+            _gettimeofday_r(NULL, &tv, NULL);
             tp->tv_sec = tv.tv_sec;
             tp->tv_nsec = tv.tv_usec * 1000L;
             break;
