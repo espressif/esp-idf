@@ -236,7 +236,6 @@ void panicHandler(XtExcFrame *frame)
 #endif //!CONFIG_FREERTOS_UNICORE
 
     haltOtherCore();
-    esp_dport_access_int_abort();
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(core_id);
     panicPutStr(" panic'ed (");
@@ -306,7 +305,6 @@ void panicHandler(XtExcFrame *frame)
 void xt_unhandled_exception(XtExcFrame *frame)
 {
     haltOtherCore();
-    esp_dport_access_int_abort();
     if (!abort_called) {
         panicPutStr("Guru Meditation Error: Core ");
         panicPutDec(xPortGetCoreID());
