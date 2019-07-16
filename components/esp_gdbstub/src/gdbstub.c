@@ -205,7 +205,7 @@ static void handle_H_command(const unsigned char* cmd, int len)
         } else if (requested_task_index > s_scratch.task_count) {
             ret = "E00";
         } else {
-            TaskHandle_t handle;
+            TaskHandle_t handle = { 0 };
             get_task_handle(requested_task_index, &handle);
             /* FIXME: for the task currently running on the other CPU, extracting the registers from TCB
              * isn't valid. Need to use some IPC mechanism to obtain the registers of the other CPU
