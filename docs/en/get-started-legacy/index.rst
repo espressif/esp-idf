@@ -103,13 +103,13 @@ The quickest way to start development with ESP32 is by installing a prebuilt too
 
     Windows <windows-setup>
     Linux <linux-setup>
-    MacOS <macos-setup>
+    macOS <macos-setup>
 
-+-----------------------------+-------------------------+----------------------------------+
-| |windows-logo|              | |linux-logo|            | |macos-logo|                     |
-+-----------------------------+-------------------------+----------------------------------+
-| `Windows <windows-legacy>`_ | `Linux <linux-legacy>`_ | `Mac OS <macos-legacy>`_         |
-+-----------------------------+-------------------------+----------------------------------+
++-----------------+---------------+---------------+
+| |windows-logo|  | |linux-logo|  | |macos-logo|  |
++-----------------+---------------+---------------+
+| Windows_        | Linux_        | `macOS`_      |
++-----------------+---------------+---------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
     :target: ../get-started-legacy/windows-setup.html
@@ -120,9 +120,9 @@ The quickest way to start development with ESP32 is by installing a prebuilt too
 .. |macos-logo| image:: ../../_static/macos-logo.png
     :target: ../get-started-legacy/macos-setup.html
 
-.. _Windows-legacy: ../get-started-legacy/windows-setup.html
-.. _Linux-legacy: ../get-started-legacy/linux-setup.html
-.. _Mac OS-legacy: ../get-started-legacy/macos-setup.html
+.. _Windows: ../get-started-legacy/windows-setup.html
+.. _Linux: ../get-started-legacy/linux-setup.html
+.. _macOS: ../get-started-legacy/macos-setup.html
 
 .. note::
 
