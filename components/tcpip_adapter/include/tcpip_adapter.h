@@ -714,7 +714,7 @@ esp_err_t tcpip_adapter_test_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_inf
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_set_default_eth_handlers();
+esp_err_t tcpip_adapter_set_default_eth_handlers(void);
 
 /**
  * @brief Uninstall default event handlers for Ethernet interface
@@ -722,7 +722,7 @@ esp_err_t tcpip_adapter_set_default_eth_handlers();
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_clear_default_eth_handlers();
+esp_err_t tcpip_adapter_clear_default_eth_handlers(void);
 
 /**
  * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
@@ -730,7 +730,7 @@ esp_err_t tcpip_adapter_clear_default_eth_handlers();
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_set_default_wifi_handlers();
+esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
 
 /**
  * @brief  Uninstall default event handlers for Wi-Fi interfaces (station and AP)
@@ -738,7 +738,7 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers();
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_clear_default_wifi_handlers();
+esp_err_t tcpip_adapter_clear_default_wifi_handlers(void);
 
 /**
  * @brief  Search nefit index through netif interface

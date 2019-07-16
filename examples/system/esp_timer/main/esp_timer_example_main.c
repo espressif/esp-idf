@@ -20,7 +20,7 @@ static void oneshot_timer_callback(void* arg);
 
 static const char* TAG = "example";
 
-void app_main()
+void app_main(void)
 {
     /* Create two timers:
      * 1. a periodic timer which will run every 0.5s, and print a message

@@ -104,7 +104,7 @@ static twdt_task_t *find_task_in_twdt_list(TaskHandle_t handle, bool *all_reset)
  * Resets the hardware timer and has_reset flags of each task on the list.
  * Called within critical
  */
-static void reset_hw_timer()
+static void reset_hw_timer(void)
 {
     //All tasks have reset; time to reset the hardware timer.
     TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
@@ -229,7 +229,7 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
     return ESP_OK;
 }
 
-esp_err_t esp_task_wdt_deinit()
+esp_err_t esp_task_wdt_deinit(void)
 {
     portENTER_CRITICAL(&twdt_spinlock);
     //TWDT must already be initialized
@@ -297,7 +297,7 @@ esp_err_t esp_task_wdt_add(TaskHandle_t handle)
     return ESP_OK;
 }
 
-esp_err_t esp_task_wdt_reset()
+esp_err_t esp_task_wdt_reset(void)
 {
     portENTER_CRITICAL(&twdt_spinlock);
     //TWDT must already be initialized
@@ -385,7 +385,7 @@ esp_err_t esp_task_wdt_status(TaskHandle_t handle)
     return ESP_ERR_NOT_FOUND;
 }
 
-void esp_task_wdt_feed()
+void esp_task_wdt_feed(void)
 {
     portENTER_CRITICAL(&twdt_spinlock);
     //Return immediately if TWDT has not been initialized

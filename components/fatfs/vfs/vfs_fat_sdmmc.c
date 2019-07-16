@@ -162,7 +162,7 @@ fail:
     return err;
 }
 
-esp_err_t esp_vfs_fat_sdmmc_unmount()
+esp_err_t esp_vfs_fat_sdmmc_unmount(void)
 {
     if (s_card == NULL) {
         return ESP_ERR_INVALID_STATE;

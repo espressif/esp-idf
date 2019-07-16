@@ -250,7 +250,7 @@ static const hci_packet_parser_t interface = {
     parse_ble_read_suggested_default_data_length_response
 };
 
-const hci_packet_parser_t *hci_packet_parser_get_interface()
+const hci_packet_parser_t *hci_packet_parser_get_interface(void)
 {
     return &interface;
 }

@@ -13,7 +13,7 @@
 #include "driver/uart.h"
 #include "sdkconfig.h"
 
-esp_err_t example_configure_stdin_stdout()
+esp_err_t example_configure_stdin_stdout(void)
 {
     // Initialize VFS & UART so we can use std::cout/cin
     setvbuf(stdin, NULL, _IONBF, 0);

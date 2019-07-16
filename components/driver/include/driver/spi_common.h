@@ -381,7 +381,7 @@ bool spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void 
  *
  * @return True when a DMA reset is requested but hasn't completed yet. False otherwise.
  */
-bool spicommon_dmaworkaround_reset_in_progress();
+bool spicommon_dmaworkaround_reset_in_progress(void);
 
 
 /**

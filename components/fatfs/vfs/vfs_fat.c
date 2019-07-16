@@ -104,7 +104,7 @@ static size_t find_context_index_by_path(const char* base_path)
     return FF_VOLUMES;
 }
 
-static size_t find_unused_context_index()
+static size_t find_unused_context_index(void)
 {
     for(size_t i=0; i<FF_VOLUMES; i++) {
         if (!s_fat_ctxs[i]) {
@@ -205,7 +205,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_fat_unregister()
+esp_err_t esp_vfs_fat_unregister(void)
 {
     if (s_fat_ctx == NULL) {
         return ESP_ERR_INVALID_STATE;

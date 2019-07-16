@@ -14,7 +14,7 @@ static void verify_erased_flash(size_t offset, size_t length);
 
 static size_t start;
 
-static void setup_tests()
+static void setup_tests(void)
 {
     if (start == 0) {
         const esp_partition_t *part = get_test_data_partition();

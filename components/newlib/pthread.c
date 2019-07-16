@@ -14,7 +14,7 @@ int pthread_setcancelstate(int state, int *oldstate)
     return 0;
 }
 
-void newlib_include_pthread_impl()
+void newlib_include_pthread_impl(void)
 {
     // Linker hook, exists for no other purpose
 }

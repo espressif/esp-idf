@@ -18,21 +18,21 @@
 #define MAC2STR(a) (a)[0], (a)[1], (a)[2], (a)[3], (a)[4], (a)[5]
 #define MACSTR "%02x:%02x:%02x:%02x:%02x:%02x"
 
-void register_ble_address();
+void register_ble_address(void);
 
-void register_bluetooth()
+void register_bluetooth(void)
 {
     register_ble_address();
 }
 
-int bt_mac()
+int bt_mac(void)
 {
     const uint8_t *mac = esp_bt_dev_get_address();
     printf("+BTMAC:"MACSTR"\n", MAC2STR(mac));
     return 0;
 }
 
-void register_ble_address()
+void register_ble_address(void)
 {
     const esp_console_cmd_t cmd = {
         .command = "btmac",

@@ -35,7 +35,7 @@ struct proc_instance_s {
 };
 
 #ifdef WITH_DEBUG
-static void print_last_error()
+static void print_last_error(void)
 {
     DWORD dw;
     TCHAR errmsg[LINESIZE];
@@ -51,7 +51,7 @@ static void print_last_error()
 #define PRINT_LAST_ERROR()
 #endif
 
-static proc_instance_t *proc_instance_allocate()
+static proc_instance_t *proc_instance_allocate(void)
 {
     return (proc_instance_t*) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(proc_instance_t));
 }

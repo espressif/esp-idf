@@ -1249,7 +1249,7 @@ int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout)
     return ret;
 }
 
-void vfs_include_syscalls_impl()
+void vfs_include_syscalls_impl(void)
 {
     // Linker hook function, exists to make the linker examine this fine
 }

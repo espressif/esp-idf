@@ -244,7 +244,7 @@ static void _cbSendSystemDesc(void) {
 *
 **********************************************************************
 */
-static void SEGGER_SYSVIEW_TS_Init()
+static void SEGGER_SYSVIEW_TS_Init(void)
 {
     /* We only need to initialize something if we use Timer Group.
      * esp_timer and ccount can be used as is.
@@ -316,7 +316,7 @@ void SEGGER_SYSVIEW_Conf(void) {
   SEGGER_SYSVIEW_DisableEvents(disable_evts);
 }
 
-U32 SEGGER_SYSVIEW_X_GetTimestamp()
+U32 SEGGER_SYSVIEW_X_GetTimestamp(void)
 {
 #if TS_USE_TIMERGROUP
     uint64_t ts = 0;
@@ -329,15 +329,15 @@ U32 SEGGER_SYSVIEW_X_GetTimestamp()
 #endif
 }
 
-void SEGGER_SYSVIEW_X_RTT_Lock()
+void SEGGER_SYSVIEW_X_RTT_Lock(void)
 {
 }
 
-void SEGGER_SYSVIEW_X_RTT_Unlock()
+void SEGGER_SYSVIEW_X_RTT_Unlock(void)
 {
 }
 
-unsigned SEGGER_SYSVIEW_X_SysView_Lock()
+unsigned SEGGER_SYSVIEW_X_SysView_Lock(void)
 {
     esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, SEGGER_LOCK_WAIT_TMO);

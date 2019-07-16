@@ -86,6 +86,6 @@ typedef struct controller_t {
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
 } controller_t;
 
-const controller_t *controller_get_interface();
+const controller_t *controller_get_interface(void);
 
 #endif /*_CONTROLLER_H_*/

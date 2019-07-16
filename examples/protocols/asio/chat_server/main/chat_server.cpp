@@ -202,7 +202,7 @@ private:
 
 //----------------------------------------------------------------------
 
-extern "C" void app_main()
+extern "C" void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();

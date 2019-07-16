@@ -596,7 +596,7 @@ void init_timer(void)
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

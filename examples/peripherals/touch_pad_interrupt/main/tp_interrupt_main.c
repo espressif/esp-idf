@@ -137,7 +137,7 @@ static void tp_example_rtc_intr(void * arg)
 /*
  * Before reading touch pad, we need to initialize the RTC IO.
  */
-static void tp_example_touch_pad_init()
+static void tp_example_touch_pad_init(void)
 {
     for (int i = 0;i< TOUCH_PAD_MAX;i++) {
         //init RTC IO and mode for touch pad.
@@ -145,7 +145,7 @@ static void tp_example_touch_pad_init()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize touch pad peripheral, it will start a timer to run a filter
     ESP_LOGI(TAG, "Initializing touch pad");

@@ -229,7 +229,7 @@ typedef struct esp_tls {
  * @return      tls     Pointer to esp-tls as esp-tls handle if successfully initialized,
  *                      NULL if allocation error
  */
-esp_tls_t *esp_tls_init();
+esp_tls_t *esp_tls_init(void);
 
 
 
@@ -402,7 +402,7 @@ ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls);
  *             - ESP_OK             if creating global CA store was successful.
  *             - ESP_ERR_NO_MEM     if an error occured when allocating the mbedTLS resources.
  */
-esp_err_t esp_tls_init_global_ca_store();
+esp_err_t esp_tls_init_global_ca_store(void);
 
 /**
  * @brief      Set the global CA store with the buffer provided in pem format.
@@ -435,7 +435,7 @@ esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const
  *             - Pointer to the global CA store currently being used    if successful.
  *             - NULL                                                   if there is no global CA store set.
  */
-mbedtls_x509_crt *esp_tls_get_global_ca_store();
+mbedtls_x509_crt *esp_tls_get_global_ca_store(void);
 
 /**
  * @brief      Free the global CA store currently being used.
@@ -443,7 +443,7 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store();
  * The memory being used by the global CA store to store all the parsed certificates is
  * freed up. The application can call this API if it no longer needs the global CA store.
  */
-void esp_tls_free_global_ca_store();
+void esp_tls_free_global_ca_store(void);
 
 /**
  * @brief      Returns last error in esp_tls with detailed mbedtls related error codes.

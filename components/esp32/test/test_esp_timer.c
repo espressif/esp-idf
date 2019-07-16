@@ -16,12 +16,12 @@
 #define WITH_PROFILING 1
 #endif
 
-extern uint32_t esp_timer_impl_get_overflow_val();
+extern uint32_t esp_timer_impl_get_overflow_val(void);
 extern void esp_timer_impl_set_overflow_val(uint32_t overflow_val);
 
 static uint32_t s_old_overflow_val;
 
-static void setup_overflow()
+static void setup_overflow(void)
 {
     s_old_overflow_val = esp_timer_impl_get_overflow_val();
     /* Overflow every 0.1 sec.
@@ -31,7 +31,7 @@ static void setup_overflow()
     esp_timer_impl_set_overflow_val(8000000);
 }
 
-static void teardown_overflow()
+static void teardown_overflow(void)
 {
     esp_timer_impl_set_overflow_val(s_old_overflow_val);
 }
@@ -409,7 +409,7 @@ TEST_CASE("esp_timer_get_time call takes less than 1us", "[esp_timer]")
     TEST_PERFORMANCE_LESS_THAN(ESP_TIMER_GET_TIME_PER_CALL, "%dns", ns_per_call);
 }
 
-static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff()
+static int64_t IRAM_ATTR __attribute__((noinline)) get_clock_diff(void)
 {
     uint64_t hs_time = esp_timer_get_time();
     uint64_t ref_time = ref_clock_get();

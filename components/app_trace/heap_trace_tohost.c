@@ -32,7 +32,7 @@
 
 static bool s_tracing;
 
-esp_err_t heap_trace_init_tohost()
+esp_err_t heap_trace_init_tohost(void)
 {
     if (s_tracing) {
         return ESP_ERR_INVALID_STATE;

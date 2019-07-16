@@ -137,13 +137,13 @@ static void trigger_operation_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void sense_device_init()
+static void sense_device_init(void)
 {
     // Initialize and start Modbus controller
     sense_modbus_init();
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t result = ESP_OK;
 

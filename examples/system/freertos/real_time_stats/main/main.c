@@ -165,7 +165,7 @@ static void stats_task(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     //Allow other core to finish initialization
     vTaskDelay(pdMS_TO_TICKS(100));

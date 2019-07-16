@@ -70,7 +70,7 @@ static esp_transport_handle_t esp_transport_get_default_parent(esp_transport_han
     return t;
 }
 
-esp_transport_list_handle_t esp_transport_list_init()
+esp_transport_list_handle_t esp_transport_list_init(void)
 {
     esp_transport_list_handle_t transport = calloc(1, sizeof(esp_transport_internal_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, transport, return NULL);
@@ -131,7 +131,7 @@ esp_err_t esp_transport_list_clean(esp_transport_list_handle_t h)
     return ESP_OK;
 }
 
-esp_transport_handle_t esp_transport_init()
+esp_transport_handle_t esp_transport_init(void)
 {
     esp_transport_handle_t t = calloc(1, sizeof(struct esp_transport_item_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, t, return NULL);

@@ -32,7 +32,7 @@ static const char* TAG = "example";
 #define MOUNT_PATH "/data"
 #define HISTORY_PATH MOUNT_PATH "/history.txt"
 
-static void initialize_filesystem()
+static void initialize_filesystem(void)
 {
     static wl_handle_t wl_handle;
     const esp_vfs_fat_mount_config_t mount_config = {
@@ -47,7 +47,7 @@ static void initialize_filesystem()
 }
 #endif // CONFIG_STORE_HISTORY
 
-static void initialize_nvs()
+static void initialize_nvs(void)
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -57,7 +57,7 @@ static void initialize_nvs()
     ESP_ERROR_CHECK(err);
 }
 
-static void initialize_console()
+static void initialize_console(void)
 {
     /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
@@ -115,7 +115,7 @@ static void initialize_console()
 #endif
 }
 
-void app_main()
+void app_main(void)
 {
     initialize_nvs();
 

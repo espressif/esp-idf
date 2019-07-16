@@ -62,7 +62,7 @@ static uint8_t s_mmap_page_refcnt[REGIONS_COUNT * PAGES_PER_REGION] = {0};
 static uint32_t s_mmap_last_handle = 0;
 
 
-static void IRAM_ATTR spi_flash_mmap_init()
+static void IRAM_ATTR spi_flash_mmap_init(void)
 {
     if (s_mmap_page_refcnt[0] != 0) {
         return; /* mmap data already initialised */
@@ -268,7 +268,7 @@ void IRAM_ATTR spi_flash_munmap(spi_flash_mmap_handle_t handle)
     free(it);
 }
 
-static void IRAM_ATTR NOINLINE_ATTR spi_flash_protected_mmap_init()
+static void IRAM_ATTR NOINLINE_ATTR spi_flash_protected_mmap_init(void)
 {
     spi_flash_disable_interrupts_caches_and_other_cpu();
     spi_flash_mmap_init();
@@ -284,7 +284,7 @@ static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int i
     return value;
 }
 
-void spi_flash_mmap_dump()
+void spi_flash_mmap_dump(void)
 {
     spi_flash_protected_mmap_init();
 

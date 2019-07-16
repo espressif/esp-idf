@@ -204,7 +204,7 @@ void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
     }
 }
 
-esp_transport_handle_t esp_transport_ssl_init()
+esp_transport_handle_t esp_transport_ssl_init(void)
 {
     esp_transport_handle_t t = esp_transport_init();
     transport_ssl_t *ssl = calloc(1, sizeof(transport_ssl_t));

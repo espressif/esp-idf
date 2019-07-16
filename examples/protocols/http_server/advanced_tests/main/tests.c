@@ -270,7 +270,7 @@ static void register_basic_handlers(httpd_handle_t hd)
     ESP_LOGI(TAG, "Success");
 }
 
-static httpd_handle_t test_httpd_start()
+static httpd_handle_t test_httpd_start(void)
 {
     pre_start_mem = esp_get_free_heap_size();
     httpd_handle_t hd;
@@ -299,7 +299,7 @@ static void test_httpd_stop(httpd_handle_t hd)
     ESP_LOGI(TAG, "HTTPD Stop: Current free memory: %d", post_stop_mem);
 }
 
-httpd_handle_t start_tests()
+httpd_handle_t start_tests(void)
 {
     httpd_handle_t hd = test_httpd_start();
     if (hd) {

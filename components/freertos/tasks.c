@@ -2117,7 +2117,7 @@ void vTaskEndScheduler( void )
 
 #if ( configUSE_NEWLIB_REENTRANT == 1 )
 //Return global reent struct if FreeRTOS isn't running,
-struct _reent* __getreent() {
+struct _reent* __getreent(void) {
 	//No lock needed because if this changes, we won't be running anymore.
 	TCB_t *currTask=xTaskGetCurrentTaskHandle();
 	if (currTask==NULL) {

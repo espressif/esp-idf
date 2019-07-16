@@ -95,7 +95,7 @@ static void mqtt_app_start(void)
     esp_mqtt_client_start(client);
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());

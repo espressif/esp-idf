@@ -21,7 +21,7 @@ static int **allocatedMem;
 static int noAllocated;
 
 
-static int tryAllocMem() {
+static int tryAllocMem(void) {
     int i, j;
     const int allocateMaxK=1024*5; //try to allocate a max of 5MiB
 
@@ -38,7 +38,7 @@ static int tryAllocMem() {
 }
 
 
-static void tryAllocMemFree() {
+static void tryAllocMemFree(void) {
     int i, j;
     for (i=0; i<noAllocated; i++) {
         for (j=0; j<1024/4; j++) {

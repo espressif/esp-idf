@@ -107,7 +107,7 @@ static char *bda2str(esp_bd_addr_t bda, char *str, size_t size)
     return str;
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS.
     esp_err_t ret = nvs_flash_init();

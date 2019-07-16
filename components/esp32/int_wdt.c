@@ -69,7 +69,7 @@ static void IRAM_ATTR tick_hook(void) {
 #endif
 
 
-void esp_int_wdt_init() {
+void esp_int_wdt_init(void) {
     periph_module_enable(PERIPH_TIMG1_MODULE);
     TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config0.sys_reset_length=7;                 //3.2uS
@@ -89,7 +89,7 @@ void esp_int_wdt_init() {
     timer_group_intr_enable(TIMER_GROUP_1, TIMG_WDT_INT_ENA_M);
 }
 
-void esp_int_wdt_cpu_init()
+void esp_int_wdt_cpu_init(void)
 {
     esp_register_freertos_tick_hook_for_cpu(tick_hook, xPortGetCoreID());
     ESP_INTR_DISABLE(WDT_INT_NUM);

@@ -212,7 +212,7 @@ extern void bta_hf_client_sm_execute(UINT16 event,
 extern void bta_hf_client_slc_seq(BOOLEAN error);
 extern void bta_hf_client_collision_cback (tBTA_SYS_CONN_STATUS status, UINT8 id,
         UINT8 app_id, BD_ADDR peer_addr);
-extern void bta_hf_client_resume_open ();
+extern void bta_hf_client_resume_open (void);
 
 /* SDP functions */
 extern BOOLEAN bta_hf_client_add_record(char *p_service_name,

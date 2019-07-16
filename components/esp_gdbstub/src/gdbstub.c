@@ -19,12 +19,12 @@
 
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
-static void init_task_info();
-static void find_paniced_task_index();
+static void init_task_info(void);
+static void find_paniced_task_index(void);
 static int handle_task_commands(unsigned char *cmd, int len);
 #endif
 
-static void send_reason();
+static void send_reason(void);
 
 
 static esp_gdbstub_scratch_t s_scratch;
@@ -77,7 +77,7 @@ void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame)
 }
 
 
-static void send_reason()
+static void send_reason(void)
 {
     esp_gdbstub_send_start();
     esp_gdbstub_send_char('T');
@@ -162,7 +162,7 @@ int esp_gdbstub_handle_command(unsigned char *cmd, int len)
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 
-static void init_task_info()
+static void init_task_info(void)
 {
     unsigned tcb_size;
     s_scratch.task_count = uxTaskGetSnapshotAll(s_scratch.tasks, GDBSTUB_TASKS_NUM, &tcb_size);
@@ -178,7 +178,7 @@ static bool get_task_handle(size_t index, TaskHandle_t *handle)
 }
 
 /** Get the index of the task running on the current CPU, and save the result */
-static void find_paniced_task_index()
+static void find_paniced_task_index(void)
 {
     TaskHandle_t cur_handle = xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID());
     TaskHandle_t handle;

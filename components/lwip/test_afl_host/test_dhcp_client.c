@@ -22,7 +22,7 @@ ip4_addr_t server_ip;
 //
 // Dependency injected test functions
 void dhcp_test_dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
-void dhcp_test_init_di();
+void dhcp_test_init_di(void);
 
 //
 // Test starts here

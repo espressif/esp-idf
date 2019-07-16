@@ -166,7 +166,7 @@ void __wrap_vPortCleanUpTCB(void *tcb)
 #endif
 
 /* this function called from pthread_task_func for "early" cleanup of TLS in a pthread */
-void pthread_internal_local_storage_destructor_callback()
+void pthread_internal_local_storage_destructor_callback(void)
 {
     void *tls = pvTaskGetThreadLocalStoragePointer(NULL, PTHREAD_TLS_INDEX);
     if (tls != NULL) {
@@ -257,6 +257,6 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 }
 
 /* Hook function to force linking this file */
-void pthread_include_pthread_local_storage_impl()
+void pthread_include_pthread_local_storage_impl(void)
 {
 }

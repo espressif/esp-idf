@@ -35,7 +35,7 @@
  *
  * @return Number of free pages
  */
-uint32_t bootloader_mmap_get_free_pages();
+uint32_t bootloader_mmap_get_free_pages(void);
 
 /**
  * @brief Map a region of flash to data memory

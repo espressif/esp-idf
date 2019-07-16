@@ -23,7 +23,7 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
 /**
  * @brief  Low level UDP PCB Initialize
  */
-static esp_err_t _udp_pcb_main_init()
+static esp_err_t _udp_pcb_main_init(void)
 {
     if(_pcb_main) {
         return ESP_OK;
@@ -47,7 +47,7 @@ static esp_err_t _udp_pcb_main_init()
 /**
  * @brief  Low level UDP PCB Free
  */
-static void _udp_pcb_main_deinit()
+static void _udp_pcb_main_deinit(void)
 {
     if(_pcb_main){
         udp_recv(_pcb_main, NULL, NULL);
@@ -177,7 +177,7 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
 /**
  * @brief  Check if any of the interfaces is up
  */
-static bool _udp_pcb_is_in_use(){
+static bool _udp_pcb_is_in_use(void){
     int i, p;
     for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
         for (p=0; p<MDNS_IP_PROTOCOL_MAX; p++) {

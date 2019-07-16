@@ -92,7 +92,7 @@ struct esp_websocket_client {
     int                         buffer_size;
 };
 
-static uint64_t _tick_get_ms()
+static uint64_t _tick_get_ms(void)
 {
     return esp_timer_get_time()/1000;
 }

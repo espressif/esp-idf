@@ -58,7 +58,7 @@ esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler)
 /**
  * Modbus controller destroy function
  */
-esp_err_t mbc_master_destroy()
+esp_err_t mbc_master_destroy(void)
 {
     esp_err_t error = ESP_OK;
     MB_MASTER_CHECK((master_interface_ptr != NULL),
@@ -195,7 +195,7 @@ esp_err_t mbc_master_setup(void* comm_info)
 /**
  * Modbus controller stack start function
  */
-esp_err_t mbc_master_start()
+esp_err_t mbc_master_start(void)
 {
     esp_err_t error = ESP_OK;
     MB_MASTER_CHECK((master_interface_ptr != NULL),

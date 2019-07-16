@@ -30,7 +30,7 @@
 /** @brief Read current stack pointer address
  *
  */
-static inline void *get_sp()
+static inline void *get_sp(void)
 {
     void *sp;
     asm volatile ("mov %0, sp;" : "=r" (sp));
@@ -52,7 +52,7 @@ static inline void cpu_write_itlb(unsigned vpn, unsigned attr)
     asm volatile ("witlb  %1, %0; isync\n" :: "r" (vpn), "r" (attr));
 }
 
-static inline void cpu_init_memctl()
+static inline void cpu_init_memctl(void)
 {
 #if XCHAL_ERRATUM_572
     uint32_t memctl = XCHAL_CACHE_MEMCTL_DEFAULT;
@@ -71,7 +71,7 @@ static inline void cpu_init_memctl()
  * 15 — no access, raise exception
  */
 
-static inline void cpu_configure_region_protection()
+static inline void cpu_configure_region_protection(void)
 {
     const uint32_t pages_to_protect[] = {0x00000000, 0x80000000, 0xa0000000, 0xc0000000, 0xe0000000};
     for (int i = 0; i < sizeof(pages_to_protect)/sizeof(pages_to_protect[0]); ++i) {
@@ -108,7 +108,7 @@ void esp_cpu_reset(int cpu_id);
  * @note If "Make exception and panic handlers JTAG/OCD aware"
  * is disabled, this function always returns false.
  */
-bool esp_cpu_in_ocd_debug_mode();
+bool esp_cpu_in_ocd_debug_mode(void);
 
 /**
  * @brief Convert the PC register value to its true address

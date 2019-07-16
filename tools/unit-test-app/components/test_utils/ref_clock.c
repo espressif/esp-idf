@@ -54,7 +54,7 @@ static intr_handle_t s_intr_handle;
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t s_milliseconds;
 
-void ref_clock_init()
+void ref_clock_init(void)
 {
     assert(s_intr_handle == NULL && "already initialized");
 
@@ -134,7 +134,7 @@ static void IRAM_ATTR pcnt_isr(void* arg)
     portEXIT_CRITICAL_ISR(&s_lock);
 }
 
-void ref_clock_deinit()
+void ref_clock_deinit(void)
 {
     assert(s_intr_handle && "deinit called without init");
 
@@ -153,7 +153,7 @@ void ref_clock_deinit()
     periph_module_disable(PERIPH_PCNT_MODULE);
 }
 
-uint64_t ref_clock_get()
+uint64_t ref_clock_get(void)
 {
     portENTER_CRITICAL(&s_lock);
     uint32_t microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;

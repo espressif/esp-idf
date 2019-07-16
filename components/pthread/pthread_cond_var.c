@@ -200,6 +200,6 @@ int pthread_cond_destroy(pthread_cond_t *cv)
 }
 
 /* Hook function to force linking this file */
-void pthread_include_pthread_cond_var_impl()
+void pthread_include_pthread_cond_var_impl(void)
 {
 }

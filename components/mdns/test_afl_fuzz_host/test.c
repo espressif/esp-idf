@@ -34,7 +34,7 @@ mdns_srv_item_t * mdns_test_mdns_get_service_item(const char * service, const ch
 mdns_search_once_t * mdns_test_search_init(const char * name, const char * service, const char * proto, uint16_t type, uint32_t timeout, uint8_t max_results);
 esp_err_t mdns_test_send_search_action(mdns_action_type_t type, mdns_search_once_t * search);
 void mdns_test_search_free(mdns_search_once_t * search);
-void mdns_test_init_di();
+void mdns_test_init_di(void);
 
 //
 // mdns function wrappers for mdns setup in test mode
@@ -98,7 +98,7 @@ static mdns_result_t* mdns_test_query(const char * service_name, const char * pr
     return NULL;
 }
 
-static void mdns_test_query_free()
+static void mdns_test_query_free(void)
 {
     mdns_test_search_free(search);
 }
