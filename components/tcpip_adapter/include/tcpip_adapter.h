@@ -740,6 +740,14 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers();
  */
 esp_err_t tcpip_adapter_clear_default_wifi_handlers();
 
+/**
+ * @brief  Search nefit index through netif interface
+ * @param[in]   tcpip_if Interface to search for netif index
+ * @return
+ *      - netif_index on success 
+ *      - -1 if an invalid parameter is supplied
+ */
+int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if);
 
 #ifdef __cplusplus
 }
