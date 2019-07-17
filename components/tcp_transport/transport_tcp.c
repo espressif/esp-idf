@@ -101,13 +101,21 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
                 FD_ZERO(&fdset);
                 FD_SET(tcp->sock, &fdset);
                 res = select(tcp->sock+1, NULL, &fdset, NULL, &tv);
-                if (res < 0 && errno != EINTR) {
-                    ESP_LOGE(TAG, "[sock=%d] select() error: %s", tcp->sock, strerror(errno));
+                if (res < 0) {
+                    if(errno != EINTR) {
+                        ESP_LOGE(TAG, "[sock=%d] select() error: %s", tcp->sock, strerror(errno));
+                        close(tcp->sock);
+                        tcp->sock = -1;
+                        return -1;
+                    }
+                }
+                else if (res == 0) {
+                    ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
                     close(tcp->sock);
                     tcp->sock = -1;
                     return -1;
                 }
-                else if (res > 0) {
+                else {
                     int sockerr;
                     socklen_t len = (socklen_t)sizeof(int);
                     if (getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
@@ -123,12 +131,6 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
                         return -1;
                     }
                     break; 
-                }
-                else {
-                    ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
-                    close(tcp->sock);
-                    tcp->sock = -1;
-                    return -1;
                 }
             } while (1);
         }
