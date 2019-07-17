@@ -52,15 +52,18 @@ void esp_cache_err_int_init(void)
     // interrupt is connected to PRO CPU and invalid access happens on the APP
     // CPU.
 
-// TODO: implement cache error access interrupt for esp32s2beta - IDF-752
-#if 0
     DPORT_SET_PERI_REG_MASK(DPORT_PRO_CACHE_IA_INT_EN_REG,
-        DPORT_CACHE_IA_INT_PRO_DRAM1 |
-        DPORT_CACHE_IA_INT_PRO_DROM0 |
-        DPORT_CACHE_IA_INT_PRO_IROM0 |
-        DPORT_CACHE_IA_INT_PRO_IRAM0 |
-        DPORT_CACHE_IA_INT_PRO_IRAM1);
-#endif
+        DPORT_MMU_ENTRY_FAULT_INT_ENA |
+        DPORT_DCACHE_REJECT_INT_ENA |
+        DPORT_DCACHE_WRITE_FLASH_INT_ENA |
+        DPORT_DC_PRELOAD_SIZE_FAULT_INT_ENA |
+        DPORT_DC_SYNC_SIZE_FAULT_INT_ENA |
+        DPORT_ICACHE_REJECT_INT_ENA |
+        DPORT_IC_PRELOAD_SIZE_FAULT_INT_ENA |
+        DPORT_IC_SYNC_SIZE_FAULT_INT_ENA |
+        DPORT_CACHE_DBG_INT_CLR |
+        DPORT_CACHE_DBG_EN);
+
     ESP_INTR_ENABLE(ETS_CACHEERR_INUM);
 }
 
