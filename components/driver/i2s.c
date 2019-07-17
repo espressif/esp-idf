@@ -90,6 +90,7 @@ typedef struct {
     bool use_apll;               /*!< I2S use APLL clock */
     bool tx_desc_auto_clear;    /*!< I2S auto clear tx descriptor on underflow */
     int fixed_mclk;             /*!< I2S fixed MLCK clock */
+    double real_rate;
 } i2s_obj_t;
 
 static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
@@ -176,6 +177,12 @@ esp_err_t i2s_enable_tx_intr(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
+float i2s_get_clk(i2s_port_t i2s_num)
+{
+    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
+    return p_i2s_obj[i2s_num]->real_rate;
+}
+
 static esp_err_t i2s_isr_register(i2s_port_t i2s_num, int intr_alloc_flags, void (*fn)(void*), void * arg, i2s_isr_handle_t *handle)
 {
     return esp_intr_alloc(ETS_I2S0_INTR_SOURCE + i2s_num, intr_alloc_flags, fn, arg, handle);
@@ -251,7 +258,7 @@ static esp_err_t i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm
         max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, _sdm2, 0);
         min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, _sdm2, 31);
         avg = (max_rate + min_rate)/2;
-        if(abs(avg - rate) < min_diff) {
+        if (abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *sdm2 = _sdm2;
         }
@@ -261,9 +268,19 @@ static esp_err_t i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm
         max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, *sdm2, _odir);
         min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, *sdm2, _odir);
         avg = (max_rate + min_rate)/2;
-        if(abs(avg - rate) < min_diff) {
+        if (abs(avg - rate) < min_diff) {
             min_diff = abs(avg - rate);
             *odir = _odir;
+        }
+    }
+    min_diff = APLL_MAX_FREQ;
+    for (_sdm2 = 4; _sdm2 < 9; _sdm2 ++) {
+        max_rate = i2s_apll_get_fi2s(bits_per_sample, 255, 255, _sdm2, *odir);
+        min_rate = i2s_apll_get_fi2s(bits_per_sample, 0, 0, _sdm2, *odir);
+        avg = (max_rate + min_rate)/2;
+        if (abs(avg - rate) < min_diff) {
+            min_diff = abs(avg - rate);
+            *sdm2 = _sdm2;
         }
     }
 
@@ -453,6 +470,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = m_scale;
         I2S[i2s_num]->clkm_conf.clka_en = 1;
         double fi2s_rate = i2s_apll_get_fi2s(bits, sdm0, sdm1, sdm2, odir);
+        p_i2s_obj[i2s_num]->real_rate = fi2s_rate/bits/channel/m_scale;
         ESP_LOGI(I2S_TAG, "APLL: Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK_M: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
             rate, fi2s_rate/bits/channel/m_scale, bits, 1, m_scale, fi2s_rate, fi2s_rate/8, 1, 0);
     } else {
@@ -463,6 +481,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         I2S[i2s_num]->sample_rate_conf.tx_bck_div_num = bck;
         I2S[i2s_num]->sample_rate_conf.rx_bck_div_num = bck;
         double real_rate = (double) (I2S_BASE_CLK / (bck * bits * clkmInteger) / 2);
+        p_i2s_obj[i2s_num]->real_rate = real_rate;
         ESP_LOGI(I2S_TAG, "PLL_D2: Req RATE: %d, real rate: %0.3f, BITS: %u, CLKM: %u, BCK: %u, MCLK: %0.3f, SCLK: %f, diva: %d, divb: %d",
             rate, real_rate, bits, clkmInteger, bck, (double)I2S_BASE_CLK / mclk, real_rate*bits*channel, 64, clkmDecimals);
     }
