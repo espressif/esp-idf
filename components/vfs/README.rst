@@ -66,9 +66,29 @@ Case 2: API functions are declared with an extra context pointer (the FS driver 
 Synchronous input/output multiplexing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you want to use synchronous input/output multiplexing by :cpp:func:`select`
-then you need to register VFS with the functions :cpp:func:`start_select` and
-:cpp:func:`end_select` similar to the following example:
+Synchronous input/output multiplexing by :cpp:func:`select` is supported in the VFS component. The implementation
+works in the following way.
+
+1. :cpp:func:`select` is called with file descriptors which could belong to various VFS drivers.
+2. The file descriptors are divided into groups each belonging to one VFS driver.
+3. The file descriptors belonging to non-socket VFS drivers are handed over to the given VFS drivers by :cpp:func:`start_select`
+   described later on this page. This function represents the driver-specific implementation of :cpp:func:`select` for
+   the given driver. This should be a non-blocking call which means the function should immediately return after setting up
+   the environment for checking events related to the given file descriptors.
+4. The file descriptors belonging to the socket VFS driver are handed over to the socket driver by
+   :cpp:func:`socket_select` described later on this page. This is a blocking call which means that it will return only
+   if there is an event related to socket file descriptors or a non-socket driver signals :cpp:func:`socket_select`
+   to exit.
+5. Results are collected from each VFS driver and all drivers are stopped by deinitiazation
+   of the environment for checking events.
+6. The :cpp:func:`select` call ends and returns the appropriate results.
+
+Non-socket VFS drivers
+""""""""""""""""""""""
+
+If you want to use :cpp:func:`select` with a file descriptor belonging to a non-socket VFS driver
+then you need to register the driver with functions :cpp:func:`start_select` and
+:cpp:func:`end_select` similarly to the following example:
 
 .. highlight:: c
 
@@ -81,25 +101,57 @@ then you need to register VFS with the functions :cpp:func:`start_select` and
 
 :cpp:func:`start_select` is called for setting up the environment for
 detection of read/write/error conditions on file descriptors belonging to the
-given VFS. :cpp:func:`end_select` is called to stop/deinitialize/free the
-environment which was setup by :cpp:func:`start_select`. Please refer to the
+given VFS driver.
+
+:cpp:func:`end_select` is called to stop/deinitialize/free the
+environment which was setup by :cpp:func:`start_select`.
+
+Please refer to the
 reference implementation for the UART peripheral in
 :component_file:`vfs/vfs_uart.c` and most particularly to the functions
 :cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and
-:cpp:func:`uart_end_select`.
+:cpp:func:`uart_end_select` for more information.
 
 Please check the following examples that demonstrate the use of :cpp:func:`select` with VFS file descriptors:
-- :example:`peripherals/uart_select`
-- :example:`system/select`
+    - :example:`peripherals/uart/uart_select`
+    - :example:`system/select`
 
-<<<<<<< HEAD
-If :cpp:func:`select` is used for socket file descriptors only then one can
-enable the :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` option which can reduce the code
-=======
-If you use :cpp:func:`select` for socket file descriptors, you can enable the :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` option to reduce the code
->>>>>>> afc2fdf27... Review all the files in the esp-idf's api_ref/storage directory
-size and improve performance.
+Socket VFS drivers
+""""""""""""""""""
 
+A socket VFS driver is using its own internal implementation of :cpp:func:`select` and non-socket VFS drivers notify
+it upon read/write/error conditions.
+
+A socket VFS driver needs to be registered with the following functions defined:
+
+.. highlight:: c
+
+::
+
+    // In definition of esp_vfs_t:
+        .socket_select = &lwip_select,
+        .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
+        .stop_socket_select = &lwip_stop_socket_select,
+        .stop_socket_select_isr = &lwip_stop_socket_select_isr,
+    // ... other members initialized
+
+:cpp:func:`socket_select` is the internal implementation of :cpp:func:`select` for the socket driver. It works only
+with file descriptors belonging to the socket VFS.
+
+:cpp:func:`get_socket_select_semaphore` returns the signalization object (semaphore) which will be used in non-socket
+drivers to stop the waiting in :cpp:func:`socket_select`.
+
+:cpp:func:`stop_socket_select` call is used to stop the waiting in :cpp:func:`socket_select` by passing the object
+returned by :cpp:func:`get_socket_select_semaphore`.
+
+:cpp:func:`stop_socket_select_isr` has the same functionality as :cpp:func:`stop_socket_select` but it can be used
+from ISR.
+
+Please see :component_file:`lwip/port/esp32/vfs_lwip.c` for a reference socket driver implementation using LWIP.
+
+.. note::
+    If you use :cpp:func:`select` for socket file descriptors only then you can enable the
+    :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` option to reduce the code size and improve performance.
 
 Paths
 -----

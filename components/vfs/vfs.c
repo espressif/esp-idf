@@ -858,6 +858,8 @@ static void esp_vfs_log_fd_set(const char *fds_name, const fd_set *fds)
 
 int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
 {
+    // NOTE: Please see the "Synchronous input/output multiplexing" section of the ESP-IDF Programming Guide
+    // (API Reference -> Storage -> Virtual Filesystem) for a general overview of the implementation of VFS select().
     int ret = 0;
     struct _reent* r = __getreent();
 
