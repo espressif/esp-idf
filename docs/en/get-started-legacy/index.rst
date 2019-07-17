@@ -74,7 +74,7 @@ This is a detailed roadmap to walk you through the installation process.
 Setting up Development Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-setup-toolchain-legacy` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`MacOS <macos-setup>`
+* :ref:`get-started-setup-toolchain-legacy` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`macOS <macos-setup>`
 * :ref:`get-started-get-esp-idf-legacy`
 * :ref:`get-started-setup-path-legacy`
 * :ref:`get-started-get-packages-legacy`
@@ -165,7 +165,7 @@ Step 3. Set Environment Variables
 
 The toolchain uses the environment variable ``IDF_PATH`` to access the ESP-IDF directory. This variable should be set up on your computer, otherwise projects will not build.
 
-These variables can be set temporarily (per session) or permanently. Please follow the instructions specific to :ref:`Windows <add-idf_path-to-profile-windows-legacy>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-legacy>` in Section :doc:`add-idf_path-to-profile`.
+These variables can be set temporarily (per session) or permanently. Please follow the instructions specific to :ref:`Windows <add-idf_path-to-profile-windows-legacy>` , :ref:`Linux and macOS <add-idf_path-to-profile-linux-macos-legacy>` in Section :doc:`add-idf_path-to-profile`.
 
 
 .. _get-started-get-packages-legacy:
@@ -195,7 +195,7 @@ Now you are ready to prepare your application for ESP32. You can start with :exa
 
 Copy :example:`get-started/hello_world` to the ``~/esp`` directory:
 
-Linux and MacOS
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -246,7 +246,7 @@ Step 7. Configure
 
 Navigate to your ``hello_world`` directory from :ref:`get-started-start-project-legacy` and run the project configuration utility ``menuconfig``.
 
-Linux and MacOS
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 .. code-block:: bash
