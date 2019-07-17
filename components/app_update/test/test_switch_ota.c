@@ -295,7 +295,7 @@ static void test_flow1(void)
 // 3 Stage: run OTA0    -> check it -> copy OTA0 to OTA1                -> reboot  --//--
 // 4 Stage: run OTA1    -> check it -> copy OTA1 to OTA0                -> reboot  --//--
 // 5 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, OTA0", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow1, test_flow1, test_flow1, test_flow1);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, OTA0", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow1, test_flow1, test_flow1, test_flow1);
 
 static void test_flow2(void)
 {
@@ -332,7 +332,7 @@ static void test_flow2(void)
 // 2 Stage: run factory -> check it -> copy factory to OTA0             -> reboot  --//--
 // 3 Stage: run OTA0    -> check it -> corrupt ota data                 -> reboot  --//--
 // 4 Stage: run factory -> check it -> erase OTA_DATA for next tests    -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, corrupt ota_sec1, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow2, test_flow2, test_flow2);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, corrupt ota_sec1, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow2, test_flow2, test_flow2);
 
 static void test_flow3(void)
 {
@@ -376,7 +376,7 @@ static void test_flow3(void)
 // 3 Stage: run OTA0    -> check it -> copy OTA0 to OTA1                -> reboot  --//--
 // 3 Stage: run OTA1    -> check it -> corrupt ota sector2              -> reboot  --//--
 // 4 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, currupt ota_sec2, OTA0", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow3, test_flow3, test_flow3, test_flow3);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, OTA1, currupt ota_sec2, OTA0", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow3, test_flow3, test_flow3, test_flow3);
 
 #ifdef CONFIG_BOOTLOADER_FACTORY_RESET
 #define STORAGE_NAMESPACE "update_ota"
@@ -443,7 +443,7 @@ static void test_flow4(void)
 // 2 Stage: run factory -> check it -> copy factory to OTA0          -> reboot  --//--
 // 3 Stage: run OTA0    -> check it -> set_pin_factory_reset         -> reboot  --//--
 // 4 Stage: run factory -> check it -> erase OTA_DATA for next tests -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_APP_TEST
@@ -486,7 +486,7 @@ static void test_flow5(void)
 // 2 Stage: run factory    -> check it -> copy factory to Test and set pin_test_app -> reboot  --//--
 // 3 Stage: run test       -> check it -> reset pin_test_app                        -> reboot  --//--
 // 4 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
 #endif
 
 static const esp_partition_t* app_update(void)
@@ -580,7 +580,7 @@ static void test_rollback1_1(void)
 // 3 Stage: run OTA0       -> check it -> esp_ota_mark_app_valid_cancel_rollback()                 -> reboot  --//--
 // 4 Stage: run OTA0       -> check it -> esp_ota_mark_app_invalid_rollback_and_reboot()         -> reboot
 // 5 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
-TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA0, rollback -> factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback1, test_rollback1, test_rollback1, test_rollback1_1);
+TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA0, rollback -> factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback1, test_rollback1, test_rollback1, test_rollback1_1);
 
 static void test_rollback2(void)
 {
@@ -678,7 +678,7 @@ static void test_rollback2_1(void)
 // 3 Stage: run OTA0           -> check it -> esp_ota_mark_app_valid_cancel_rollback(), copy to next app slot -> reboot  --//--
 // 4 Stage: run OTA1           -> check it -> PENDING_VERIFY/esp_ota_mark_app_invalid_rollback_and_reboot() -> reboot
 // 5 Stage: run OTA0(rollback) -> check it -> erase OTA_DATA for next tests                    -> PASS
-TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA1, rollback -> OTA0", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback2, test_rollback2, test_rollback2, test_rollback2_1);
+TEST_CASE_MULTIPLE_STAGES("Test rollback. factory, OTA0, OTA1, rollback -> OTA0", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback2, test_rollback2, test_rollback2, test_rollback2_1);
 
 static void test_erase_last_app_flow(void)
 {
@@ -729,4 +729,4 @@ static void test_erase_last_app_rollback(void)
 // 3 Stage: run OTA0           -> check it -> copy factory to OTA1                             -> reboot  --//--
 // 4 Stage: run OTA1           -> check it -> erase OTA0 and rollback                          -> reboot
 // 5 Stage: run factory        -> check it -> erase OTA_DATA for next tests                    -> PASS
-TEST_CASE_MULTIPLE_STAGES("Test erase_last_boot_app_partition. factory, OTA1, OTA0, factory", "[app_update][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_rollback);
+TEST_CASE_MULTIPLE_STAGES("Test erase_last_boot_app_partition. factory, OTA1, OTA0, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_flow, test_erase_last_app_rollback);
