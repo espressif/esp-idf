@@ -53,6 +53,7 @@ import zipfile
 import errno
 import shutil
 import functools
+import copy
 from collections import OrderedDict, namedtuple
 
 try:
@@ -372,12 +373,19 @@ class IDFTool(object):
         self.options = IDFToolOptions(version_cmd, version_regex, version_regex_replace,
                                       [], OrderedDict(), install, info_url, license, strip_container_dirs)
         self.platform_overrides = []
+        self._platform = CURRENT_PLATFORM
         self._update_current_options()
+
+    def copy_for_platform(self, platform):
+        result = copy.deepcopy(self)
+        result._platform = platform
+        result._update_current_options()
+        return result
 
     def _update_current_options(self):
         self._current_options = IDFToolOptions(*self.options)
         for override in self.platform_overrides:
-            if CURRENT_PLATFORM not in override['platforms']:
+            if self._platform not in override['platforms']:
                 continue
             override_dict = override.copy()
             del override_dict['platforms']
@@ -422,6 +430,8 @@ class IDFTool(object):
         Returns 'unknown' if tool returns something from which version string
         can not be extracted.
         """
+        # this function can not be called for a different platform
+        assert self._platform == CURRENT_PLATFORM
         cmd = self._current_options.version_cmd
         try:
             version_cmd_result = run_cmd_check_output(cmd, None, extra_paths)
@@ -447,7 +457,7 @@ class IDFTool(object):
     def get_recommended_version(self):
         recommended_versions = [k for k, v in self.versions.items()
                                 if v.status == IDFToolVersion.STATUS_RECOMMENDED
-                                and v.compatible_with_platform()]
+                                and v.compatible_with_platform(self._platform)]
         assert len(recommended_versions) <= 1
         if recommended_versions:
             return recommended_versions[0]
@@ -456,7 +466,7 @@ class IDFTool(object):
     def get_preferred_installed_version(self):
         recommended_versions = [k for k in self.versions_installed
                                 if self.versions[k].status == IDFToolVersion.STATUS_RECOMMENDED
-                                and self.versions[k].compatible_with_platform()]
+                                and self.versions[k].compatible_with_platform(self._platform)]
         assert len(recommended_versions) <= 1
         if recommended_versions:
             return recommended_versions[0]
@@ -467,6 +477,8 @@ class IDFTool(object):
         Checks whether the tool can be found in PATH and in global_idf_tools_path.
         Writes results to self.version_in_path and self.versions_installed.
         """
+        # this function can not be called for a different platform
+        assert self._platform == CURRENT_PLATFORM
         # First check if the tool is in system PATH
         try:
             ver_str = self.check_version()
@@ -504,9 +516,9 @@ class IDFTool(object):
 
     def download(self, version):
         assert(version in self.versions)
-        download_obj = self.versions[version].get_download_for_platform(PYTHON_PLATFORM)
+        download_obj = self.versions[version].get_download_for_platform(self._platform)
         if not download_obj:
-            fatal('No packages for tool {} platform {}!'.format(self.name, PYTHON_PLATFORM))
+            fatal('No packages for tool {} platform {}!'.format(self.name, self._platform))
             raise DownloadError()
 
         url = download_obj.url
@@ -543,7 +555,7 @@ class IDFTool(object):
         # Currently this is called after calling 'download' method, so here are a few asserts
         # for the conditions which should be true once that method is done.
         assert (version in self.versions)
-        download_obj = self.versions[version].get_download_for_platform(PYTHON_PLATFORM)
+        download_obj = self.versions[version].get_download_for_platform(self._platform)
         assert (download_obj is not None)
         archive_name = os.path.basename(download_obj.url)
         archive_path = os.path.join(global_idf_tools_path, 'dist', archive_name)
@@ -985,7 +997,7 @@ def action_export(args):
         raise SystemExit(1)
 
 
-def apply_mirror_prefix_map(args, tool_obj, tool_version):
+def apply_mirror_prefix_map(args, tool_download_obj):
     """Rewrite URL for given tool_obj, given tool_version, and current platform,
        if --mirror-prefix-map flag or IDF_MIRROR_PREFIX_MAP environment variable is given.
     """
@@ -998,19 +1010,60 @@ def apply_mirror_prefix_map(args, tool_obj, tool_version):
             warn('Both IDF_MIRROR_PREFIX_MAP environment variable and --mirror-prefix-map flag are specified, ' +
                  'will use the value from the command line.')
         mirror_prefix_map = args.mirror_prefix_map
-    download_obj = tool_obj.versions[tool_version].get_download_for_platform(PYTHON_PLATFORM)
-    if mirror_prefix_map and download_obj:
+    if mirror_prefix_map and tool_download_obj:
         for item in mirror_prefix_map:
             if URL_PREFIX_MAP_SEPARATOR not in item:
                 warn('invalid mirror-prefix-map item (missing \'{}\') {}'.format(URL_PREFIX_MAP_SEPARATOR, item))
                 continue
             search, replace = item.split(URL_PREFIX_MAP_SEPARATOR, 1)
-            old_url = download_obj.url
+            old_url = tool_download_obj.url
             new_url = re.sub(search, replace, old_url)
             if new_url != old_url:
                 info('Changed download URL: {} => {}'.format(old_url, new_url))
-                download_obj.url = new_url
+                tool_download_obj.url = new_url
                 break
+
+
+def action_download(args):
+    tools_info = load_tools_info()
+    tools_spec = args.tools
+
+    if args.platform not in PLATFORM_FROM_NAME:
+        fatal('unknown platform: {}' % args.platform)
+        raise SystemExit(1)
+    platform = PLATFORM_FROM_NAME[args.platform]
+
+    tools_info_for_platform = OrderedDict()
+    for name, tool_obj in tools_info.items():
+        tool_for_platform = tool_obj.copy_for_platform(platform)
+        tools_info_for_platform[name] = tool_for_platform
+
+    if 'all' in tools_spec:
+        tools_spec = [k for k, v in tools_info_for_platform.items() if v.get_install_type() != IDFTool.INSTALL_NEVER]
+        info('Downloading tools for {}: {}'.format(platform, ', '.join(tools_spec)))
+
+    for tool_spec in tools_spec:
+        if '@' not in tool_spec:
+            tool_name = tool_spec
+            tool_version = None
+        else:
+            tool_name, tool_version = tool_spec.split('@', 1)
+        if tool_name not in tools_info_for_platform:
+            fatal('unknown tool name: {}'.format(tool_name))
+            raise SystemExit(1)
+        tool_obj = tools_info_for_platform[tool_name]
+        if tool_version is not None and tool_version not in tool_obj.versions:
+            fatal('unknown version for tool {}: {}'.format(tool_name, tool_version))
+            raise SystemExit(1)
+        if tool_version is None:
+            tool_version = tool_obj.get_recommended_version()
+        assert tool_version is not None
+        tool_spec = '{}@{}'.format(tool_name, tool_version)
+
+        info('Downloading {}'.format(tool_spec))
+        apply_mirror_prefix_map(args, tool_obj.versions[tool_version].get_download_for_platform(platform))
+
+        tool_obj.download(tool_version)
 
 
 def action_install(args):
@@ -1049,7 +1102,7 @@ def action_install(args):
             continue
 
         info('Installing {}'.format(tool_spec))
-        apply_mirror_prefix_map(args, tool_obj, tool_version)
+        apply_mirror_prefix_map(args, tool_obj.versions[tool_version].get_download_for_platform(PYTHON_PLATFORM))
 
         tool_obj.download(tool_version)
         tool_obj.install(tool_version)
@@ -1174,13 +1227,21 @@ def main(argv):
                                                 'will be used instead. If this flag is given, the version in PATH ' +
                                                 'will be used.', action='store_true')
     install = subparsers.add_parser('install', help='Download and install tools into the tools directory')
-    if IDF_MAINTAINER:
-        install.add_argument('--mirror-prefix-map', nargs='*',
-                             help='Pattern to rewrite download URLs, with source and replacement separated by comma.' +
-                                  ' E.g. http://foo.com,http://test.foo.com')
     install.add_argument('tools', nargs='*', help='Tools to install. ' +
                                                   'To install a specific version use tool_name@version syntax.' +
                                                   'Use \'all\' to install all tools, including the optional ones.')
+
+    download = subparsers.add_parser('download', help='Download the tools into the dist directory')
+    download.add_argument('--platform', help='Platform to download the tools for')
+    download.add_argument('tools', nargs='+', help='Tools to download. ' +
+                                                   'To download a specific version use tool_name@version syntax.' +
+                                                   'Use \'all\' to download all tools, including the optional ones.')
+
+    if IDF_MAINTAINER:
+        for subparser in [download, install]:
+            subparser.add_argument('--mirror-prefix-map', nargs='*',
+                                   help='Pattern to rewrite download URLs, with source and replacement separated by comma.' +
+                                        ' E.g. http://foo.com,http://test.foo.com')
 
     install_python_env = subparsers.add_parser('install-python-env',
                                                help='Create Python virtual environment and install the ' +
