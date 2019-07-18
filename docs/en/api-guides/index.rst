@@ -34,3 +34,4 @@ API Guides
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
    Linker Script Generation <linker-script-generation>
+   Tools <tools/index>
