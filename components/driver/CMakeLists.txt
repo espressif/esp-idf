@@ -1,5 +1,6 @@
 set(srcs
     "can.c"
+    "dac.c"
     "gpio.c"
     "i2c.c"
     "i2s.c"

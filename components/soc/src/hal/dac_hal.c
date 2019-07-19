@@ -12,27 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "hal/dac_hal.h"
 
-#include "soc/sens_reg.h"
-#include "soc/sens_struct.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_io_struct.h"
-#include "soc/rtc.h"
-#include "soc/dac_channel.h"
-#include "soc/dac_caps.h"
-
-#ifdef __cplusplus
-extern "C"
+void dac_hal_cw_generator_config(dac_cw_config_t *cw)
 {
-#endif
-
-typedef struct {
-    const uint8_t dac_channel_io_num[SOC_DAC_PERIPH_NUM];
-} dac_signal_conn_t;
-
-extern const dac_signal_conn_t dac_periph_signal;
-
-#ifdef __cplusplus
+    dac_ll_cw_set_freq(cw->freq);
+    dac_ll_cw_set_scale(cw->en_ch, cw->scale);
+    dac_ll_cw_set_phase(cw->en_ch, cw->phase);
+    dac_ll_cw_set_dc_offset(cw->en_ch, cw->offset);
+    dac_ll_cw_set_channel(cw->en_ch, true);
 }
-#endif

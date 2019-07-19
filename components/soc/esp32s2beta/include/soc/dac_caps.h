@@ -12,27 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef _SOC_RTC_DAC_CAPS_H_
+#define _SOC_RTC_DAC_CAPS_H_
 
-#include "soc/sens_reg.h"
-#include "soc/sens_struct.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_io_struct.h"
-#include "soc/rtc.h"
-#include "soc/dac_channel.h"
-#include "soc/dac_caps.h"
+#define SOC_DAC_PERIPH_NUM      2
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+#define SOC_DAC_RESOLUTION      8 // DAC resolution ratio 8 bit
 
-typedef struct {
-    const uint8_t dac_channel_io_num[SOC_DAC_PERIPH_NUM];
-} dac_signal_conn_t;
-
-extern const dac_signal_conn_t dac_periph_signal;
-
-#ifdef __cplusplus
-}
 #endif
