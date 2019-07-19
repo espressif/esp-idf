@@ -808,8 +808,6 @@ static void eap_peer_sm_deinit(void)
     gEapSm = NULL;
 }
 
-uint8_t wpa2_machine_start = 0;
-
 esp_err_t esp_wifi_sta_wpa2_ent_enable_fn(void *arg)
 {
     struct wpa2_funcs *wpa2_cb;
@@ -837,7 +835,6 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable_fn(void *arg)
         wpa_printf(MSG_ERROR, "Register EAP Peer methods Failure\n");
     }
 #endif
-    wpa2_machine_start = 1;
     return ESP_OK;
 }
 
@@ -886,7 +883,6 @@ esp_err_t esp_wifi_sta_wpa2_ent_disable_fn(void *param)
     eap_peer_unregister_methods();
 #endif
 
-    wpa2_machine_start = 0;
     return ESP_OK;
 }
 
