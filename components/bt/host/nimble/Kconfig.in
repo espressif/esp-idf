@@ -7,6 +7,20 @@ config BT_NIMBLE_MAX_CONNECTIONS
     help
         Defines maximum number of concurrent BLE connections
 
+config BT_NIMBLE_MAX_BONDS
+    int "Maximum number of bonds to save across reboots"
+    default 3
+    depends on BT_NIMBLE_ENABLED
+    help
+        Defines maximum number of bonds to save for peer security and our security
+
+config BT_NIMBLE_MAX_CCCDS
+    int "Maximum number of CCC descriptors to save across reboots"
+    default 8
+    depends on BT_NIMBLE_ENABLED
+    help
+        Defines maximum number of CCC descriptors to save
+
 config BT_NIMBLE_L2CAP_COC_MAX_NUM
     int "Maximum number of connection oriented channels"
     range 0 10
