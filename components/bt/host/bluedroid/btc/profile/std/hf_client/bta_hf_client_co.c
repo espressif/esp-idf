@@ -254,12 +254,13 @@ void bta_hf_client_sco_co_close(void)
 
     if (hf_air_mode == BTM_SCO_AIR_MODE_TRANSPNT) {
 #if (PLC_INCLUDED == TRUE)
-        sbc_plc_deinit(&(bta_hf_ct_plc.plc_state));
-        bta_hf_ct_plc.first_good_frame_found = FALSE;
 
 #if (HFP_DYNAMIC_MEMORY == TRUE)
         osi_free(bta_hf_ct_plc_ptr);
         bta_hf_ct_plc_ptr = NULL;
+#else
+        sbc_plc_deinit(&(bta_hf_ct_plc.plc_state));
+        bta_hf_ct_plc.first_good_frame_found = FALSE;
 #endif  /// (HFP_DYNAMIC_MEMORY == TRUE)
 
 #endif  ///(PLC_INCLUDED == TRUE)
