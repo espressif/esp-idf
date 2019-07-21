@@ -79,52 +79,51 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
         ESP_LOGE(TAG, "[sock=%d] set nonblocking error: %s", tcp->sock, strerror(errno));
         goto error;
     }
-    else {
-        ESP_LOGD(TAG, "[sock=%d] Connecting to server. IP: %s, Port: %d",
-                tcp->sock, ipaddr_ntoa((const ip_addr_t*)&remote_ip.sin_addr.s_addr), port); 
+    
+    ESP_LOGD(TAG, "[sock=%d] Connecting to server. IP: %s, Port: %d",
+            tcp->sock, ipaddr_ntoa((const ip_addr_t*)&remote_ip.sin_addr.s_addr), port); 
 
-        if (connect(tcp->sock, (struct sockaddr *)(&remote_ip), sizeof(struct sockaddr)) < 0) {
-            if (errno == EINPROGRESS) {
-                struct timeval tv;
-                fd_set fdset;
+    if (connect(tcp->sock, (struct sockaddr *)(&remote_ip), sizeof(struct sockaddr)) < 0) {
+        if (errno == EINPROGRESS) {
+            struct timeval tv;
+            fd_set fdset;
 
-                esp_transport_utils_ms_to_timeval(timeout_ms, &tv);
-                FD_ZERO(&fdset);
-                FD_SET(tcp->sock, &fdset);
+            esp_transport_utils_ms_to_timeval(timeout_ms, &tv);
+            FD_ZERO(&fdset);
+            FD_SET(tcp->sock, &fdset);
 
-                int res = select(tcp->sock+1, NULL, &fdset, NULL, &tv);
-                if (res < 0) {
-                    ESP_LOGE(TAG, "[sock=%d] select() error: %s", tcp->sock, strerror(errno));
-                    goto error;
-                }
-                else if (res == 0) {
-                    ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
-                    goto error;
-                }
-                else {
-                    int sockerr;
-                    socklen_t len = (socklen_t)sizeof(int);
-
-                    if (getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
-                        ESP_LOGE(TAG, "[sock=%d] getsockopt() error: %s", tcp->sock, strerror(errno));
-                        goto error;
-                    }
-                    else if (sockerr) {
-                        ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", tcp->sock, strerror(sockerr));
-                        goto error;
-                    }
-                }
-            }
-            else { 
-                ESP_LOGE(TAG, "[sock=%d] connect() error: %s", tcp->sock, strerror(errno));
+            int res = select(tcp->sock+1, NULL, &fdset, NULL, &tv);
+            if (res < 0) {
+                ESP_LOGE(TAG, "[sock=%d] select() error: %s", tcp->sock, strerror(errno));
                 goto error;
             }
+            else if (res == 0) {
+                ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
+                goto error;
+            }
+            else {
+                int sockerr;
+                socklen_t len = (socklen_t)sizeof(int);
+
+                if (getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
+                    ESP_LOGE(TAG, "[sock=%d] getsockopt() error: %s", tcp->sock, strerror(errno));
+                    goto error;
+                }
+                else if (sockerr) {
+                    ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", tcp->sock, strerror(sockerr));
+                    goto error;
+                }
+            }
         }
-        // Reset socket to blocking
-        if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-            ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
+        else { 
+            ESP_LOGE(TAG, "[sock=%d] connect() error: %s", tcp->sock, strerror(errno));
             goto error;
         }
+    }
+    // Reset socket to blocking
+    if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+        ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
+        goto error;
     }
     return tcp->sock;
 error:
