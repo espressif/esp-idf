@@ -53,7 +53,6 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 {
     struct sockaddr_in remote_ip;
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
-    bool connerr = false;
 
     bzero(&remote_ip, sizeof(struct sockaddr_in));
 
@@ -78,7 +77,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     int flags;
     if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags |= O_NONBLOCK) < 0) {
         ESP_LOGE(TAG, "[sock=%d] set nonblocking error: %s", tcp->sock, strerror(errno));
-        connerr = true;
+        goto error;
     }
     else {
         ESP_LOGD(TAG, "[sock=%d] Connecting to server. IP: %s, Port: %d",
@@ -96,11 +95,11 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
                 int res = select(tcp->sock+1, NULL, &fdset, NULL, &tv);
                 if (res < 0) {
                     ESP_LOGE(TAG, "[sock=%d] select() error: %s", tcp->sock, strerror(errno));
-                    connerr = true;
+                    goto error;
                 }
                 else if (res == 0) {
                     ESP_LOGE(TAG, "[sock=%d] select() timeout", tcp->sock);
-                    connerr = true;
+                    goto error;
                 }
                 else {
                     int sockerr;
@@ -108,34 +107,30 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
 
                     if (getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, (void*)(&sockerr), &len) < 0) {
                         ESP_LOGE(TAG, "[sock=%d] getsockopt() error: %s", tcp->sock, strerror(errno));
-                        connerr = true;
+                        goto error;
                     }
                     else if (sockerr) {
                         ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", tcp->sock, strerror(sockerr));
-                        connerr = true;
+                        goto error;
                     }
                 }
             }
             else { 
                 ESP_LOGE(TAG, "[sock=%d] connect() error: %s", tcp->sock, strerror(errno));
-                connerr = true;
+                goto error;
             }
         }
-        if(!connerr) {
-            // Reset socket to blocking
-            if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
-                ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
-                connerr = true;
-            }
+        // Reset socket to blocking
+        if ((flags = fcntl(tcp->sock, F_GETFL, NULL)) < 0 || fcntl(tcp->sock, F_SETFL, flags & ~O_NONBLOCK) < 0) {
+            ESP_LOGE(TAG, "[sock=%d] reset blocking error: %s", tcp->sock, strerror(errno));
+            goto error;
         }
-    }
-
-    if(connerr) {
-        close(tcp->sock);
-        tcp->sock = -1;
-        return -1;
     }
     return tcp->sock;
+error:
+    close(tcp->sock);
+    tcp->sock = -1;
+    return -1;
 }
 
 static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)
