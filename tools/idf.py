@@ -924,6 +924,10 @@ def init_cli(verbose_output=None):
                 print("Done")
                 return
 
+            if not os.path.exists(os.path.join(args.build_dir, "flasher_args.json")):
+                print("Done")
+                return
+
             # Otherwise, if we built any binaries print a message about
             # how to flash them
             def print_flashing_message(title, key):
