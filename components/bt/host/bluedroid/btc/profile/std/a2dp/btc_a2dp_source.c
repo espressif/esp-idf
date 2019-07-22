@@ -249,7 +249,7 @@ static bool btc_a2dp_source_ctrl_post(uint32_t sig, void *param)
     evt->sig = sig;
     evt->param = param;
 
-    return osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 0, OSI_THREAD_MAX_TIMEOUT);
+    return osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_ctrl_handler, evt, 1, OSI_THREAD_MAX_TIMEOUT);
 }
 
 static void btc_a2dp_source_ctrl_handler(void *arg)
@@ -421,7 +421,7 @@ void btc_a2dp_source_on_suspended(tBTA_AV_SUSPEND *p_av)
 
 static void btc_a2dp_source_data_post(void)
 {
-    osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
+    osi_thread_post(a2dp_source_local_param.btc_aa_src_task_hdl, btc_a2dp_source_handle_timer, NULL, 2, OSI_THREAD_MAX_TIMEOUT);
 }
 
 static UINT64 time_now_us()

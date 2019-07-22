@@ -44,4 +44,10 @@ void bt_app_task_start_up(void);
 
 void bt_app_task_shut_down(void);
 
+void bt_i2s_task_start_up(void);
+
+void bt_i2s_task_shut_down(void);
+
+size_t write_ringbuf(const uint8_t *data, size_t size);
+
 #endif /* __BT_APP_CORE_H__ */

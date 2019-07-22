@@ -182,7 +182,7 @@ static bool btc_a2dp_sink_ctrl_post(uint32_t sig, void *param)
     evt->sig = sig;
     evt->param = param;
 
-    return osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl,  btc_a2dp_sink_ctrl_handler, evt, 0, OSI_THREAD_MAX_TIMEOUT);
+    return osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl,  btc_a2dp_sink_ctrl_handler, evt, 1, OSI_THREAD_MAX_TIMEOUT);
 }
 
 static void btc_a2dp_sink_ctrl_handler(void *arg)
@@ -322,7 +322,7 @@ void btc_a2dp_sink_on_suspended(tBTA_AV_SUSPEND *p_av)
 
 static void btc_a2dp_sink_data_post(void)
 {
-    osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl, btc_a2dp_sink_data_ready, NULL, 1, OSI_THREAD_MAX_TIMEOUT);
+    osi_thread_post(a2dp_sink_local_param.btc_aa_snk_task_hdl, btc_a2dp_sink_data_ready, NULL, 2, OSI_THREAD_MAX_TIMEOUT);
 }
 
 /*******************************************************************************
