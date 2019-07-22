@@ -738,6 +738,11 @@ menu "ESP32-specific"
 
             Enabling this setting adds approximately 1KB to the app's IRAM usage.
 
+    config ESP32_APP_INIT_CLK
+        bool
+        default y if ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+        default y if APP_BUILD_TYPE_ELF_RAM
+
     config ESP32_RTCDATA_IN_FAST_MEM
         bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
         default n
