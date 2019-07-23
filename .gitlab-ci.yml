@@ -1237,6 +1237,12 @@ UT_001_41:
     - ESP32_IDF
     - UT_T1_1
 
+UT_001_42:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 UT_002_01:
   <<: *unit_test_template
   tags:

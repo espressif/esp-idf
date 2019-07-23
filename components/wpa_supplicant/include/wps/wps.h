@@ -1009,9 +1009,9 @@ enum wps_cb_status {
 typedef void (*wps_st_cb_t)(int status);
 
 #ifdef USE_WPS_TASK
-#define SIG_WPS_START	0
-#define	SIG_WPS_RX	1
-#define	SIG_WPS_NUM	2
+#define SIG_WPS_START	2
+#define	SIG_WPS_RX	3
+#define	SIG_WPS_NUM	9
 #endif
 
 #define WPS_EAP_EXT_VENDOR_TYPE "WFA-SimpleConfig-Enrollee-1-0"
