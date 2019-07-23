@@ -69,6 +69,15 @@
       "install": "always",
       "license": "GPL-2.0-or-later",
       "name": "esp32ulp-elf",
+      "platform_overrides": [
+        {
+          "install": "on_request",
+          "platforms": [
+            "linux-armel",
+            "linux-i686"
+          ]
+        }
+      ],
       "version_cmd": [
         "esp32ulp-elf-as",
         "--version"
@@ -182,6 +191,15 @@
       "install": "always",
       "license": "GPL-2.0-only",
       "name": "openocd-esp32",
+      "platform_overrides": [
+        {
+          "install": "on_request",
+          "platforms": [
+            "linux-armel",
+            "linux-i686"
+          ]
+        }
+      ],
       "version_cmd": [
         "openocd",
         "--version"
