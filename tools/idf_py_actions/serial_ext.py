@@ -78,7 +78,7 @@ def action_extensions(base_actions, project_path):
         if not os.path.exists(elf_file):
             raise FatalError("ELF file '%s' not found. You need to build & flash the project before running 'monitor', "
                              "and the binary on the device must match the one in the build directory exactly. "
-                             "Try '%s flash monitor'." % (elf_file, ctx.info_name))
+                             "Try '%s flash monitor'." % (elf_file, ctx.info_name), ctx)
         idf_monitor = os.path.join(os.environ["IDF_PATH"], "tools/idf_monitor.py")
         monitor_args = [PYTHON, idf_monitor]
         if args.port is not None:
