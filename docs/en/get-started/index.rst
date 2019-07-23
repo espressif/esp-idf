@@ -447,10 +447,10 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
 
 If IDF monitor fails shortly after the upload, or, if instead of the messages above, you see random garbage similar to what is given below, your board is likely using a 26MHz crystal. Most development board designs use 40MHz, so ESP-IDF uses this frequency as a default value.
 
-.. code-block:: none
-
-    e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
-    ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
+.. figure:: ../../_static/get-started-garbled-output.png
+    :align: center
+    :alt: Garbled output
+    :figclass: align-center
 
 If you have such a problem, do the following:
 
