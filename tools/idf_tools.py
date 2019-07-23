@@ -441,6 +441,9 @@ class IDFTool(object):
     def get_install_type(self):
         return self._current_options.install
 
+    def compatible_with_platform(self):
+        return any([v.compatible_with_platform() for v in self.versions.values()])
+
     def get_recommended_version(self):
         recommended_versions = [k for k, v in self.versions.items()
                                 if v.status == IDFToolVersion.STATUS_RECOMMENDED
@@ -1030,6 +1033,9 @@ def action_install(args):
             fatal('unknown tool name: {}'.format(tool_name))
             raise SystemExit(1)
         tool_obj = tools_info[tool_name]
+        if not tool_obj.compatible_with_platform():
+            fatal('tool {} does not have versions compatible with platform {}'.format(tool_name, CURRENT_PLATFORM))
+            raise SystemExit(1)
         if tool_version is not None and tool_version not in tool_obj.versions:
             fatal('unknown version for tool {}: {}'.format(tool_name, tool_version))
             raise SystemExit(1)
