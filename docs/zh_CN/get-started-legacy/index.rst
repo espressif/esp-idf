@@ -369,10 +369,10 @@ Windows 操作系统
 
 如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（见下），很有可能是因为您的开发板选用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
 
-.. code-block:: none
-
-    e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
-    ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
+.. figure:: ../../_static/get-started-garbled-output.png
+    :align: center
+    :alt: 乱码输出
+    :figclass: align-center
 
 此时，请您：
 
