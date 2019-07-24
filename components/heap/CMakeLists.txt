@@ -13,6 +13,9 @@ endif()
 
 if(CONFIG_HEAP_TRACING_STANDALONE)
     list(APPEND srcs "heap_trace_standalone.c")
+    set_source_files_properties(heap_trace_standalone.c
+        PROPERTIES COMPILE_FLAGS
+        -Wno-frame-address)
 endif()
 
 idf_component_register(SRCS "${srcs}"
