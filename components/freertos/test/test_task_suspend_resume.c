@@ -118,7 +118,7 @@ volatile bool timer_isr_fired;
 void IRAM_ATTR timer_group0_isr(void *vp_arg)
 {
     // Clear interrupt
-    TIMERG0.int_clr_timers.val = TIMERG0.int_st_timers.val;
+    timer_group_clr_intr_sta_in_isr(TIMER_GROUP_0, TIMER_0|TIMER_1);
 
     timer_isr_fired = true;
     TaskHandle_t handle = vp_arg;

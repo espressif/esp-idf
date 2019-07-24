@@ -38,6 +38,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#include "hal/timer_ll.h"
 
 static const char* TAG = "system_api";
 
@@ -204,7 +205,7 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         ESP_LOGW(TAG, "incorrect mac type");
         break;
     }
-  
+
     return ESP_OK;
 }
 
@@ -281,12 +282,13 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_dport_access_int_abort();
 
     // Disable TG0/TG1 watchdogs
-    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect=0;
-    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect=0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_set_enable(&TIMERG0, false);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 
     // Flush any data left in UART FIFOs
     uart_tx_wait_idle(0);
@@ -307,10 +309,10 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
          DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
          DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST | 
+         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
          DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
@@ -370,7 +372,7 @@ static void get_chip_info_esp32(esp_chip_info_t* out_info)
 {
     uint32_t reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
     memset(out_info, 0, sizeof(*out_info));
-    
+
     out_info->model = CHIP_ESP32;
     if ((reg & EFUSE_RD_CHIP_VER_REV1_M) != 0) {
         out_info->revision = 1;

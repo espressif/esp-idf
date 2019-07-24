@@ -280,11 +280,12 @@ static void timer_group_test_first_stage(void)
     //Start timer
     timer_start(TIMER_GROUP_0, TIMER_0);
     //Waiting for timer_group to generate an interrupt
-    while( !TIMERG0.int_raw.t0 && loop_cnt++ < 100) {
+    while( !(timer_group_intr_get_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0) &&
+            loop_cnt++ < 100) {
         vTaskDelay(200);
     }
     //TIMERG0.int_raw.t0 == 1 means an interruption has occurred
-    TEST_ASSERT_EQUAL(1, TIMERG0.int_raw.t0);
+    TEST_ASSERT(timer_group_intr_get_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
     esp_restart();
 }
 
