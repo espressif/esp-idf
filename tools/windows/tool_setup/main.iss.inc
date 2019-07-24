@@ -17,6 +17,23 @@ begin
   idpDownloadAfter(wpReady);
 end;
 
+{ If IDF_TOOLS_PATH is set in the environment,
+  set the default installation directory accordingly.
+  Note: here we read IDF_TOOLS_PATH using GetEnv rather than
+  by getting it from registry, in case the user has set 
+  IDF_TOOLS_PATH as a system environment variable manually. }
+<event('InitializeWizard')>
+procedure UpdateInstallDir();
+var
+  EnvToolsPath: String;
+begin
+  EnvToolsPath := GetEnv('IDF_TOOLS_PATH');
+  if EnvToolsPath <> '' then
+  begin
+    WizardForm.DirEdit.Text := EnvToolsPath;
+  end;
+end;
+
 <event('NextButtonClick')>
 function PreInstallSteps(CurPageID: Integer): Boolean;
 var
@@ -74,6 +91,11 @@ begin
   EnvPath := PythonPath + ';' + GitPath + ';' + EnvPath;
   Log('Setting PATH for this process: ' + EnvPath);
   SetEnvironmentVariable('PATH', EnvPath);
+
+  { Set IDF_TOOLS_PATH variable, in case it was set to a different value in the environment.
+    The installer will set the variable to the new value in the registry, but we also need the
+    new value to be visible to this process. }
+  SetEnvironmentVariable('IDF_TOOLS_PATH', ExpandConstant('{app}'))
 
   { Log and clear PYTHONPATH variable, as it might point to libraries of another Python version}
   PythonLibPath := GetEnv('PYTHONPATH')

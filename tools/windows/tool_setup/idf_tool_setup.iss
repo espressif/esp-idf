@@ -35,6 +35,7 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
 DefaultDirName={%USERPROFILE}\.espressif
+UsePreviousAppDir=no
 DirExistsWarning=no
 DefaultGroupName=ESP-IDF
 DisableProgramGroupPage=yes
@@ -78,7 +79,7 @@ Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Desc
 
 [Registry]
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "IDF_TOOLS_PATH"; \
-    ValueData: "{app}"; Flags: preservestringtype createvalueifdoesntexist;
+    ValueData: "{app}"; Flags: preservestringtype createvalueifdoesntexist uninsdeletevalue deletevalue;
 
 [Code]
 
