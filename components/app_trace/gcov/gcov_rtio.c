@@ -21,6 +21,7 @@
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
+#include "hal/timer_ll.h"
 
 #if CONFIG_ESP32_GCOV_ENABLE
 
@@ -124,13 +125,13 @@ void esp_gcov_dump(void)
 #endif
     while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {
         // to avoid complains that task watchdog got triggered for other tasks
-        TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-        TIMERG0.wdt_feed=1;
-        TIMERG0.wdt_wprotect=0;
+        timer_ll_wdt_set_protect(&TIMERG0, false);
+        timer_ll_wdt_feed(&TIMERG0);
+        timer_ll_wdt_set_protect(&TIMERG0, true);
         // to avoid reboot on INT_WDT
-        TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-        TIMERG1.wdt_feed=1;
-        TIMERG1.wdt_wprotect=0;
+        timer_ll_wdt_set_protect(&TIMERG1, false);
+        timer_ll_wdt_feed(&TIMERG1);
+        timer_ll_wdt_set_protect(&TIMERG1, true);
     }
 
     esp_dbg_stub_gcov_dump_do();
