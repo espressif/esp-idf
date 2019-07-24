@@ -4,7 +4,7 @@ set(esp_eth_srcs "src/esp_eth.c"
                  "src/esp_eth_phy_lan8720.c"
                  "src/esp_eth_phy_rtl8201.c")
 
-if(CONFIG_IDF_TARGET_ESP32)
+if(CONFIG_ETH_USE_ESP32_EMAC)
     list(APPEND esp_eth_srcs "src/esp_eth_mac_esp32.c")
 endif()
 
