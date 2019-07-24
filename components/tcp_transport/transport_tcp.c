@@ -77,6 +77,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     esp_transport_utils_ms_to_timeval(timeout_ms, &tv);
 
     setsockopt(tcp->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(tcp->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
 
     ESP_LOGD(TAG, "[sock=%d],connecting to server IP:%s,Port:%d...",
              tcp->sock, ipaddr_ntoa((const ip_addr_t*)&remote_ip.sin_addr.s_addr), port);
@@ -129,7 +130,7 @@ static int tcp_poll_read(esp_transport_handle_t t, int timeout_ms)
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
         getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
-        ESP_LOGE(TAG, "Poll read catch a error, errno = %s, fd = %d", strerror(sock_errno), tcp->sock);
+        ESP_LOGE(TAG, "tcp_poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), tcp->sock);
         ret = -1;
     }
     return ret;
@@ -152,7 +153,7 @@ static int tcp_poll_write(esp_transport_handle_t t, int timeout_ms)
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
         getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
-        ESP_LOGE(TAG, "Poll write catch a error, errno = %s, fd = %d", strerror(sock_errno), tcp->sock);
+        ESP_LOGE(TAG, "tcp_poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), tcp->sock);
         ret = -1;
     }
     return ret;
