@@ -899,10 +899,13 @@ if os.name == 'nt':
                     self.output.write(data.decode())
                 else:
                     self.output.write(data)
-            except IOError:
+            except (IOError, OSError):
                 # Windows 10 bug since the Fall Creators Update, sometimes writing to console randomly throws
                 # an exception (however, the character is still written to the screen)
-                # Ref https://github.com/espressif/esp-idf/issues/1136
+                # Ref https://github.com/espressif/esp-idf/issues/1163
+                #
+                # Also possible for Windows to throw an OSError error if the data is invalid for the console
+                # (garbage bytes, etc)
                 pass
 
         def write(self, data):
@@ -939,7 +942,12 @@ if os.name == 'nt':
                     self.matched = b''
 
         def flush(self):
-            self.output.flush()
+            try:
+                self.output.flush()
+            except OSError:
+                # Account for Windows Console refusing to accept garbage bytes (serial noise, etc)
+                pass
+
 
 if __name__ == "__main__":
     main()
