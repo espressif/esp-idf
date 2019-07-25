@@ -24,6 +24,65 @@ extern "C" {
 #include "hal/timer_types.h"
 #include "soc/timer_periph.h"
 
+//Helper macro to get corresponding interrupt of a timer
+#define TIMER_LL_GET_INTR(TIMER_IDX) ((TIMER_IDX)==TIMER_0? TIMER_INTR_T0: TIMER_INTR_T1)
+
+#define TIMER_LL_GET_HW(TIMER_GROUP) ((TIMER_GROUP)==0? &TIMERG0: &TIMERG1)
+
+_Static_assert(TIMER_INTR_T0 == TIMG_T0_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
+_Static_assert(TIMER_INTR_T1 == TIMG_T1_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
+_Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
+
+/**
+ * @brief Enable timer interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param intr_mask Interrupt enable mask
+ *
+ * @return None
+ */
+static inline void timer_ll_intr_enable(timg_dev_t *hw, timer_intr_t intr_mask)
+{
+    hw->int_ena.val |= intr_mask;
+}
+
+/**
+ * @brief Disable timer interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param intr_mask Interrupt disable mask
+ *
+ * @return None
+ */
+static inline void timer_ll_intr_disable(timg_dev_t *hw, timer_intr_t intr_mask)
+{
+    hw->int_ena.val &= (~intr_mask);
+}
+
+/**
+ * @brief Get timer interrupt status.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ *
+ * @return Masked interrupt status
+ */
+static inline timer_intr_t timer_ll_intr_status_get(timg_dev_t *hw)
+{
+    return hw->int_raw.val;
+}
+
+/**
+ * @brief Clear timer interrupt.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param intr_mask Interrupt mask to clear
+ *
+ * @return None
+ */
+static inline void timer_ll_intr_status_clear(timg_dev_t *hw, timer_intr_t intr_mask)
+{
+    hw->int_clr_timers.val = intr_mask;
+}
 
 /**
  * @brief Get counter vaule from time-base counter
@@ -40,8 +99,6 @@ static inline void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t timer_
     *timer_val = ((uint64_t) hw->hw_timer[timer_num].cnt_high << 32) | (hw->hw_timer[timer_num].cnt_low);
 }
 
-
-
 /**
  * @brief Set counter status, enable or disable counter.
  *
@@ -55,7 +112,6 @@ static inline void timer_ll_set_counter_enable(timg_dev_t *hw, timer_idx_t timer
 {
     hw->hw_timer[timer_num].config.enable = counter_en;
 }
-
 
 /**
  * @brief Get auto reload mode.

@@ -20,6 +20,8 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <esp_bit_defs.h>
+
 
 /**
  * @brief Select a hardware timer from timer groups
@@ -38,6 +40,16 @@ typedef enum {
     TIMER_START = 1, /*!<Start timer counter*/
 } timer_start_t;
 
+
+/**
+ * @brief Interrupt types of the timer.
+ */
+//this is compatible with the value of esp32.
+typedef enum {
+    TIMER_INTR_T0 = BIT(0), /*!< interrupt of timer 0 */
+    TIMER_INTR_T1 = BIT(1), /*!< interrupt of timer 1 */
+    TIMER_INTR_WDT = BIT(2), /*!< interrupt of watchdog */
+} timer_intr_t;
 
 #ifdef __cplusplus
 }
