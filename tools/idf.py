@@ -180,8 +180,6 @@ def _new_cmakecache_entries(cache_path, new_cache_entries):
     if not os.path.exists(cache_path):
         return True
 
-    current_cache = parse_cmakecache(cache_path)
-
     if new_cache_entries:
         current_cache = parse_cmakecache(cache_path)
 

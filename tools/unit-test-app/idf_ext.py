@@ -22,29 +22,34 @@ def action_extensions(base_actions, project_path=os.getcwd()):
     BUILDS_DIR = os.path.join(project_path, "builds")
     BINARIES_DIR = os.path.join(project_path, "output")
 
+    def parse_file_to_dict(path, regex):
+        """
+        Parse the config file at 'path'
+
+        Returns a dict of name:value.
+        """
+        compiled_regex = re.compile(regex)
+        result = {}
+        with open(path) as f:
+            for line in f:
+                m = compiled_regex.match(line)
+                if m:
+                    result[m.group(1)] = m.group(2)
+        return result
+
+    def parse_config(path):
+        """
+        Expected format with default regex is "key=value"
+        """
+
+        return parse_file_to_dict(path, r"^([^=]+)=(.+)$")
+
     def ut_apply_config(ut_apply_config_name, ctx, args):
         config_name = re.match(r"ut-apply-config-(.*)", ut_apply_config_name).group(1)
-
-        def set_config_build_variables(prop, defval=None):
-            property_value = re.findall(r"^%s=(.+)" % prop, config_file_content, re.MULTILINE)
-            if property_value:
-                property_value = property_value[0]
-            else:
-                property_value = defval
-
-            if property_value:
-                try:
-                    args.define_cache_entry.append("%s=" % prop + property_value)
-                except AttributeError:
-                    args.define_cache_entry = ["%s=" % prop + property_value]
-
-            return property_value
-
-        sdkconfig_set = None
-
-        if args.define_cache_entry:
-            sdkconfig_set = filter(lambda s: "SDKCONFIG=" in s, args.define_cache_entry)
-
+        # Make sure that define_cache_entry is list
+        args.define_cache_entry = list(args.define_cache_entry)
+        new_cache_values = {}
+        sdkconfig_set = list(filter(lambda s: "SDKCONFIG=" in s, args.define_cache_entry))
         sdkconfig_path = os.path.join(args.project_dir, "sdkconfig")
 
         if sdkconfig_set:
@@ -58,27 +63,13 @@ def action_extensions(base_actions, project_path=os.getcwd()):
 
         if config_name in CONFIG_NAMES:
             # Parse the sdkconfig for components to be included/excluded and tests to be run
-            config = os.path.join(project_path, "configs", config_name)
+            config_path = os.path.join(project_path, "configs", config_name)
+            config = parse_config(config_path)
 
-            with open(config, "r") as config_file:
-                config_file_content = config_file.read()
-
-                set_config_build_variables("EXCLUDE_COMPONENTS", "''")
-
-                test_components = set_config_build_variables("TEST_COMPONENTS", "''")
-
-                tests_all = None
-                if test_components == "''":
-                    tests_all = "TESTS_ALL=1"
-                else:
-                    tests_all = "TESTS_ALL=0"
-
-                try:
-                    args.define_cache_entry.append(tests_all)
-                except AttributeError:
-                    args.define_cache_entry = [tests_all]
-
-                set_config_build_variables("TEST_EXCLUDE_COMPONENTS", "''")
+            new_cache_values["EXCLUDE_COMPONENTS"] = config.get("EXCLUDE_COMPONENTS", "''")
+            new_cache_values["TEST_EXCLUDE_COMPONENTS"] = config.get("TEST_EXCLUDE_COMPONENTS", "''")
+            new_cache_values["TEST_COMPONENTS"] = config.get("TEST_COMPONENTS", "''")
+            new_cache_values["TESTS_ALL"] = int(new_cache_values["TEST_COMPONENTS"] == "''")
 
             with tempfile.NamedTemporaryFile() as sdkconfig_temp:
                 # Use values from the combined defaults and the values from
@@ -94,17 +85,12 @@ def action_extensions(base_actions, project_path=os.getcwd()):
                     sdkconfig_temp.write(sdkconfig_config_file.read())
 
                 sdkconfig_temp.flush()
+                new_cache_values["SDKCONFIG_DEFAULTS"] = sdkconfig_temp.name
 
-                try:
-                    args.define_cache_entry.append("SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name)
-                except AttributeError:
-                    args.define_cache_entry = ["SDKCONFIG_DEFAULTS=" + sdkconfig_temp.name]
+                args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in new_cache_values.items()])
 
                 reconfigure = base_actions["actions"]["reconfigure"]["callback"]
                 reconfigure(None, ctx, args)
-        else:
-            if not config_name == "all-configs":
-                print("unknown unit test app config for action '%s'" % ut_apply_config_name)
 
     # This target builds the configuration. It does not currently track dependencies,
     # but is good enough for CI builds if used together with clean-all-configs.
@@ -177,46 +163,33 @@ def action_extensions(base_actions, project_path=os.getcwd()):
             for binary in binaries:
                 shutil.copyfile(os.path.join(src, binary), os.path.join(dest, binary))
 
-        else:
-            if not config_name == "all-configs":
-                print("unknown unit test app config for action '%s'" % ut_build_name)
-
     def ut_clean(ut_clean_name, ctx, args):
         config_name = re.match(r"ut-clean-(.*)", ut_clean_name).group(1)
         if config_name in CONFIG_NAMES:
             shutil.rmtree(os.path.join(BUILDS_DIR, config_name), ignore_errors=True)
             shutil.rmtree(os.path.join(BINARIES_DIR, config_name), ignore_errors=True)
-        else:
-            if not config_name == "all-configs":
-                print("unknown unit test app config for action '%s'" % ut_clean_name)
 
     def test_component_callback(ctx, global_args, tasks):
         """ Convert the values passed to the -T and -E parameter to corresponding cache entry definitions TESTS_ALL and TEST_COMPONENTS """
         test_components = global_args.test_components
         test_exclude_components = global_args.test_exclude_components
 
-        cache_entries = []
+        cache_entries = {}
 
         if test_components:
             if "all" in test_components:
-                cache_entries.append("TESTS_ALL=1")
-                cache_entries.append("TEST_COMPONENTS=''")
+                cache_entries["TESTS_ALL"] = 1
+                cache_entries["TEST_COMPONENTS"] = "''"
             else:
-                cache_entries.append("TESTS_ALL=0")
-                cache_entries.append("TEST_COMPONENTS='%s'" % " ".join(test_components))
+                cache_entries["TESTS_ALL"] = 0
+                cache_entries["TEST_COMPONENTS"] = " ".join(test_components)
 
         if test_exclude_components:
-            cache_entries.append("TEST_EXCLUDE_COMPONENTS='%s'" % " ".join(test_exclude_components))
+            cache_entries["TEST_EXCLUDE_COMPONENTS"] = " ".join(test_exclude_components)
 
         if cache_entries:
             global_args.define_cache_entry = list(global_args.define_cache_entry)
-            global_args.define_cache_entry.extend(cache_entries)
-
-            # Brute force add reconfigure at the very beginning
-            reconfigure_task = ctx.invoke(ctx.command.get_command(ctx, "reconfigure"))
-            # Strip arguments from the task
-            reconfigure_task.action_args = {}
-            tasks.insert(0, reconfigure_task)
+            global_args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in cache_entries.items()])
 
     # Add global options
     extensions = {
@@ -248,8 +221,9 @@ def action_extensions(base_actions, project_path=os.getcwd()):
             "callback":
             ut_build,
             "help":
-            ("Build unit-test-app with configuration provided in configs/%s. "
-             "Build directory will be builds/%s/, output binaries will be under output/%s/" % (config, config, config)),
+            "Build unit-test-app with configuration provided in configs/NAME. " +
+            "Build directory will be builds/%s/, " % config_build_action_name +
+            "output binaries will be under output/%s/" % config_build_action_name,
         }
 
         extensions["actions"][config_clean_action_name] = {
@@ -261,7 +235,7 @@ def action_extensions(base_actions, project_path=os.getcwd()):
             "callback":
             ut_apply_config,
             "help":
-            "Generates configuration based on configs/%s in sdkconfig file. " % config_apply_config_action_name +
+            "Generates configuration based on configs/%s in sdkconfig file." % config_apply_config_action_name +
             "After this, normal all/flash targets can be used. Useful for development/debugging.",
         }
 
