@@ -440,6 +440,7 @@ CFLAGS ?=
 EXTRA_CFLAGS ?=
 CFLAGS := $(strip \
 	-std=gnu99 \
+  -fplan9-extensions \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) -Wno-old-style-declaration \
