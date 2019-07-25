@@ -102,6 +102,7 @@ var
   Page: TInputOptionWizardPage;
   IDFPath: String;
 begin
+  Result := False;
   Page := TInputOptionWizardPage(Sender);
   Log('OnIDFDownloadPageValidate index=' + IntToStr(Page.SelectedValueIndex));
 
@@ -110,7 +111,13 @@ begin
   begin
     MsgBox('Directory already exists and is not empty:' + #13#10 +
            IDFPath + #13#10 + 'Please choose a different directory.', mbError, MB_OK);
-    Result := False;
+    exit;
+  end;
+
+  if Pos(' ', IDFPath) <> 0 then
+  begin
+    MsgBox('ESP-IDF build system does not support spaces in paths.' + #13#10
+           'Please choose a different directory.', mbError, MB_OK);
     exit;
   end;
 
