@@ -75,6 +75,13 @@ begin
       exit;
     end;
 
+    if Pos(' ', IDFPath) <> 0 then
+    begin
+      MsgBox('ESP-IDF build system does not support spaces in paths.' + #13#10
+             'Please choose a different directory.', mbError, MB_OK);
+      exit;
+    end;
+
     IDFPyPath := IDFPath + '\tools\idf.py';
     if not FileExists(IDFPyPath) then
     begin
