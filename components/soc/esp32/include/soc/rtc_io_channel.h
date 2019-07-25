@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_RTC_GPIO_CHANNEL_H
-#define _SOC_RTC_GPIO_CHANNEL_H
+#ifndef _SOC_RTC_IO_CHANNEL_H
+#define _SOC_RTC_IO_CHANNEL_H
 
 #define RTC_GPIO_NUMBER             18
 

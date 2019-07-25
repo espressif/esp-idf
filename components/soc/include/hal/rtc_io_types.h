@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,4 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "soc/rtc_periph.h"
+#pragma once
+
+/** RTCIO output/input mode type. */
+typedef enum {
+    RTC_GPIO_MODE_INPUT_ONLY ,  /*!< Pad input */
+    RTC_GPIO_MODE_OUTPUT_ONLY,  /*!< Pad output */
+    RTC_GPIO_MODE_INPUT_OUTPUT, /*!< Pad input + output */
+    RTC_GPIO_MODE_DISABLED,     /*!< Pad (output + input) disable */
+    RTC_GPIO_MODE_OUTPUT_OD,    /*!< Pad open-drain output */
+    RTC_GPIO_MODE_INPUT_OUTPUT_OD, /*!< Pad input + open-drain output */
+} rtc_gpio_mode_t;

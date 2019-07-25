@@ -107,11 +107,12 @@ INPUT = \
     ../../components/soc/include/hal/spi_types.h \
     ../../components/soc/include/hal/pcnt_types.h \
     ../../components/soc/include/hal/i2s_types.h \
+    ../../components/soc/include/hal/rtc_io_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
     ../../components/soc/esp32/include/soc/touch_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
-    ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
+    ../../components/soc/esp32/include/soc/rtc_io_channel.h \
     ## esp_netif - API Reference
     ../../components/esp_netif/include/esp_netif.h \
     ##

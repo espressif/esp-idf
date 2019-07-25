@@ -7,6 +7,7 @@ set(srcs
     "pcnt.c"
     "periph_ctrl.c"
     "rmt.c"
+    "rtc_io.c"
     "rtc_module.c"
     "sdspi_crc.c"
     "sdspi_host.c"
