@@ -366,4 +366,9 @@ void BTE_DeinitStack(void)
 #if (defined(A2D_INCLUDED) && A2D_INCLUDED == TRUE)
     A2D_Deinit();
 #endif
+
+#if (defined(RFCOMM_INCLUDED) && RFCOMM_INCLUDED == TRUE)
+    RFCOMM_Deinit();
+#endif
+
 }
