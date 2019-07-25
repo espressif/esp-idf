@@ -28,7 +28,7 @@
 #include "esp_event.h"
 #include "nvs_flash.h"
 
-/*Set the SSID and Password via "make menuconfig"*/
+/* Set the SSID and Password via project configuration, or can set directly here */
 #define DEFAULT_SSID CONFIG_EXAMPLE_WIFI_SSID
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 

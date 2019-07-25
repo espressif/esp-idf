@@ -476,7 +476,7 @@ static int tls_write_client_certificate_verify(struct tlsv1_client *conn,
 	if (conn->rl.tls_version == TLS_VERSION_1_2) {
 		hlen = SHA256_MAC_LEN;
 		if (conn->verify.sha256_cert == NULL ||
-		    fast_crypto_hash_finish(conn->verify.sha256_cert, hpos, &hlen) <
+		    crypto_hash_finish(conn->verify.sha256_cert, hpos, &hlen) <
 		    0) {
 			conn->verify.sha256_cert = NULL;
 			tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
@@ -654,7 +654,7 @@ static int tls_write_client_finished(struct tlsv1_client *conn,
 	if (conn->rl.tls_version >= TLS_VERSION_1_2) {
 		hlen = SHA256_MAC_LEN;
 		if (conn->verify.sha256_client == NULL ||
-		    fast_crypto_hash_finish(conn->verify.sha256_client, hash, &hlen)
+		    crypto_hash_finish(conn->verify.sha256_client, hash, &hlen)
 		    < 0) {
 			tls_alert(conn, TLS_ALERT_LEVEL_FATAL,
 				    TLS_ALERT_INTERNAL_ERROR);

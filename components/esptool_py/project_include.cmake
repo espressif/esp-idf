@@ -149,9 +149,6 @@ if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
     esptool_py_custom_target(encrypted-app-flash encrypted_app "app")
 endif()
 
-
-add_custom_target(flash_project_args_target)
-
 # esptool_py_flash_project_args
 #
 # Add file to the flasher args list, to be flashed at a particular offset.
@@ -164,17 +161,14 @@ function(esptool_py_flash_project_args entry offset image)
                                         # flash the image individually using esptool
     cmake_parse_arguments(_ "${options}" "${single_value}" "" "${ARGN}")
 
-    idf_build_get_property(build_dir BUILD_DIR)
-    get_property(flash_project_entries TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ENTRIES)
-
     if(${entry} IN_LIST flash_project_entries)
         message(FATAL_ERROR "entry '${entry}' has already been added to flash project entries")
     endif()
 
-    list(APPEND flash_project_entries "${entry}")
-    set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ENTRIES "${flash_project_entries}")
+    idf_component_set_property(esptool_py FLASH_PROJECT_ENTRIES "${entry}" APPEND)
 
-    file(RELATIVE_PATH image ${CMAKE_BINARY_DIR} ${image})
+    idf_build_get_property(build_dir BUILD_DIR)
+    file(RELATIVE_PATH image ${build_dir} ${image})
 
     # Generate the standalone flash file to flash the image individually using esptool
     set(entry_flash_args ${build_dir}/flash_${entry}_args)
@@ -201,21 +195,15 @@ function(esptool_py_flash_project_args entry offset image)
                 APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${entry_flash_args})
 
     # Generate standalone entries in the flasher args json file
-    get_property(flash_project_args_entry_json TARGET
-                flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_ENTRY_JSON)
-    list(APPEND flash_project_args_entry_json
-                "\"${entry}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
-    set_property(TARGET flash_project_args_target
-                PROPERTY FLASH_PROJECT_ARGS_ENTRY_JSON "${flash_project_args_entry_json}")
+    idf_component_set_property(esptool_py FLASH_PROJECT_ARGS_ENTRY_JSON
+                "\"${entry}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }" APPEND)
 
     # Generate entries in the flasher args json file
     if(__FLASH_IN_PROJECT)
-        get_property(flash_project_args TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS)
-        list(APPEND flash_project_args "${offset} ${image}")
-        set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS "${flash_project_args}")
+        idf_component_set_property(esptool_py FLASH_PROJECT_ARGS
+                                "${offset} ${image}" APPEND)
 
-        get_property(flash_project_args_json TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_JSON)
-        list(APPEND flash_project_args_json "\"${offset}\" : \"${image}\"")
-        set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_JSON "${flash_project_args_json}")
+        idf_component_set_property(esptool_py FLASH_PROJECT_ARGS_JSON
+                                "\"${offset}\" : \"${image}\"" APPEND)
     endif()
 endfunction()

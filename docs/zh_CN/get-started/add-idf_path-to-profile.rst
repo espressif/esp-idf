@@ -1,64 +1,73 @@
-在用户配置文件中添加 IDF_PATH
-==============================
-:link_to_translation:`en:[English]`
+在用户配置文件中添加 IDF_PATH 和 idf.py PATH
+==========================================================================================================
 
-为了在系统多次重新启动时保留 “IDF_PATH” 环境变量的设置，请按照以下说明将其添加到用户配置文件中。
+:link_to_translation:`en:[英文]`
 
-.. _add-idf_path-to-profile-windows:
+使用基于 CMake 的构建系统和 idf.py 工具，用户需修改两处系统环境变量：
 
+- ``IDF_PATH`` 需设置为含有 ESP-IDF 目录的路径
+- 系统 ``PATH`` 变量需包括含有 ``idf.py`` 工具 （属于 ESP-IDF 一部分）的目录
 
-Windows
--------
+为确保系统重启后仍保存之前的变量设置，请参照以下说明将变量设置添加到用户配置文件中。
 
-用户配置文件脚本存放在 ``C:/msys32/etc/profile.d/`` 目录中。每次打开 MSYS2 窗口时，系统都执行这些脚本。
+.. note:: 使用 IDE 工具的情况下，你可以选择在 IDE 项目环境中设置环境变量，而不使用如下命令行。
 
+.. note:: 如果你从未用过 ``idf.py`` 命令行工具，而是直接运行 cmake 或通过 IDE 工具运行 cmake，则无需设置 ``PATH`` 变量，只需设置 ``IDF_PATH`` 变量。不过，你也可以两个都设置。
 
-#. 在 ``C:/msys32/etc/profile.d/`` 目录下创建一个新的脚本文件。将其命名为 ``export_idf_path.sh``。
+.. note:: 如果你只用过 ``idf.py`` 命令行工具，从未直接运行 cmake 或通过 IDE 工具运行 cmake，则无需设置 ``IDF_PATH`` 变量。``idf.py`` 会搜索自身包含的目录，如果没有发现 ``IDF_PATH``，则会自行进行有关设置。
 
-#. 确定 ESP-IDF 目录的路径。路径与系统配置有关，例如 ``C:\msys32\home\user-name\esp\esp-idf``。
-#. 在脚本中加入 ``export`` 命令，e.g.::
+.. _add-paths-to-profile-windows:
 
-       export IDF_PATH="C:/msys32/home/user-name/esp/esp-idf"
+Windows 操作系统
+-----------------------------------
 
-  请将原始 Windows 路径中将反斜杠替换为正斜杠。
+在 Windows 10 操作系统下设置环境变量，用户应在开始菜单下搜索 "Edit Environment Variables"。
 
-#. 保存脚本。
+在较早版本的 Windows 操作系统下设置环境变量，用户应打开系统控制面板，选择“高级”，找到环境变量按钮。
 
-#. 关闭 MSYS2 窗口并再次打开。输入以下命令检查是否设置了 ``IDF_PATH``::
+你可以为本台电脑上的“所有用户”或“当前用户”设置环境变量，这取决于其他用户是否也需要使用 ESP-IDF。
 
-       printenv IDF_PATH
+- 点击 ``New...`` （新建...） 添加名为 ``IDF_PATH`` 的新系统变量，具体设置为包含 ESP-IDF 的目录，例如，``C:\Users\user-name\esp\esp-idf``。
+- 找到 ``Path`` 环境变量，双击进行编辑。在末尾添加 ``;%IDF_PATH%\tools``，这样你就可以通过 Windows 命令窗口运行 ``idf.py`` 等其他工具了。
 
-将此前在脚本文件中输入的路径打印出来。
+如果你在安装 ESP32 硬件开发的软件环境时，从 :ref:`get-started-setup-path` 小节跳到了这里，请返回 :ref:`get-started-start-project` 小节开始阅读。
 
-如果您不想在用户配置文件中永久设置 ``IDF_PATH``，则应在打开 MSYS2 窗口时手动输入::
-    
-    export IDF_PATH="C:/msys32/home/user-name/esp/esp-idf"
-
-如您在安装用于 ESP32 开发的软件时，从 :ref:`get-started-setup-path` 小节跳转到了这里，请返回到 :ref:`get-started-start-project` 小节。
 
 .. _add-idf_path-to-profile-linux-macos:
 
-Linux and MacOS
----------------
+Linux 和 MacOS 操作系统
+------------------------------------
 
-在 ``~/.profile`` 文件中加入以下指令，创建 ``IDF_PATH``：
+要设置 ``IDF_PATH``，并在 PATH 中添加 ``idf.py``，请将以下两行代码添加至你的 ``~/.profile`` 文件中::
 
     export IDF_PATH=~/esp/esp-idf
-
-注销并重新登录以使此更改生效。
+    export PATH="$IDF_PATH/tools:$PATH"
 
 .. note::
 
-    如果将 ``/bin/bash``  已设为登录 shell，并且 ``.bash_profile`` 和 ``.profile`` 同时存在，则更新 ``.bash_profile``。
-    
-运行以下命令以确保 ``IDF_PATH`` 已经设置好::
+   ``~/.profile`` 表示在你的电脑用户主目录中，后缀为 ``.profile`` 的文件。(``~`` 为 shell 中的缩写)。
+
+请退出，并重新登录使更改生效。
+
+.. note::
+
+    并非所有 shell 都使用 ``.profile``，但是如果同时存在 ``/bin/bash`` 和 ``.bash_profile``，请更新此配置文件。如果存在 ``zsh``，请更新 ``.zprofile``。其他 shell 可能使用其他配置文件（详询有关 shell 的文档）。
+
+运行以下命令来检查 ``IDF_PATH`` 设置是否正确::
 
     printenv IDF_PATH
 
-此前在 ``~/.profile`` 文件中输入（或者手动设置）的路径应该被打印出来。
+此处应打印出此前在 ``~/.profile`` 文件中输入（或手动设置）的路径。
 
-如果不想永久设置 ``IDF_PATH``，每次重启或者注销时在终端窗口中手动输入::
+为确认 ``idf.py`` 目前是否在 ``PATH`` 中，你可以运行以下命令::
+
+  which idf.py
+
+这里，应打印出类似 ``${IDF_PATH}/tools/idf.py`` 的路径。
+
+如果不想修改 ``IDF_PATH`` 或 ``PATH``，你可以在每次重启或退出后在终端中手动输入::
 
     export IDF_PATH=~/esp/esp-idf
+    export PATH="$IDF_PATH/tools:$PATH"
 
-如果您从 :ref:`get-started-setup-path` 小节跳转到了这里，在安装用于 ESP32 开发的软件时，返回到 :ref:`get-started-start-project` 小节。
+如果你在安装 ESP32 硬件开发的软件环境时，从 :ref:`get-started-setup-path` 小节跳到了这里，请返回 :ref:`get-started-start-project` 小节开始阅读。

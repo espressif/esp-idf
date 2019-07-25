@@ -34,7 +34,7 @@ set -o pipefail # Exit if pipe failed.
 # Remove the initial space and instead use '\n'.
 IFS=$'\n\t'
 
-export PATH="$IDF_PATH/tools:$PATH"  # for idf.py
+export PATH="$IDF_PATH/tools/ci:$IDF_PATH/tools:$PATH"
 
 # -----------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ die() {
 
 set -o nounset # Exit if variable not set.
 
-echo "build_examples running in ${PWD}"
+echo "build_examples running in ${PWD} for target $IDF_TARGET"
 
 # only 0 or 1 arguments
 [ $# -le 1 ] || die "Have to run as $(basename $0) [<JOB_NAME>]"
@@ -66,7 +66,9 @@ LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
 SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
-EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/common_components/" | grep -v "/main/" | grep -v "/idf_as_lib/stubs/" | sort )
+EXAMPLE_PATHS=$( get_supported_examples.sh $IDF_TARGET | sed "s#^#${IDF_PATH}\/examples\/#g" | awk '{print $0"/CmakeLists.txt"}' )
+echo "All examples found for target $IDF_TARGET:"
+echo $EXAMPLE_PATHS
 
 if [ -z {CI_NODE_TOTAL} ]
 then
@@ -103,10 +105,10 @@ build_example () {
     local EXAMPLE_DIR=$(dirname "${CMAKELISTS}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
 
-    echo "Building ${EXAMPLE_NAME} as ${ID}..."
-    mkdir -p "example_builds/${ID}"
-    cp -r "${EXAMPLE_DIR}" "example_builds/${ID}"
-    pushd "example_builds/${ID}/${EXAMPLE_NAME}"
+    echo "Building ${EXAMPLE_NAME} for ${IDF_TARGET} as ${ID}..."
+    mkdir -p "example_builds/${IDF_TARGET}/${ID}"
+    cp -r "${EXAMPLE_DIR}" "example_builds/${IDF_TARGET}/${ID}"
+    pushd "example_builds/${IDF_TARGET}/${ID}/${EXAMPLE_NAME}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
         export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}

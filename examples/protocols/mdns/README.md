@@ -4,15 +4,15 @@ Shows how to use mDNS to advertise lookup services and hosts
 
 ## Example workflow
 
-- mDNS is initialized with host name and instance name defined through `make menuconfig` and `_http._tcp` service is added to be advertised
-- WiFi STA is started and trying to connect to the access point defined through `make menuconfig`
+- mDNS is initialized with host name and instance name defined through the project configuration and `_http._tcp` service is added to be advertised
+- WiFi STA is started and trying to connect to the access point defined through the project configuration
 - The system event handler is used to pass the network events to mDNS so the service is aware when the interface comes up or down
 - GPIO0 (BOOT Button) is initialized as pulled-up input that can be monitored for button press
 - Example task is started to check if the button is pressed so it can execute the mDNS queries defined
 
 ### Configure the project
 
-* Run `make menuconfig` (or `idf.py menuconfig` if using CMake build system)
+* Open the project configuration menu (`idf.py menuconfig`)
 
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
 * When using Make build system, set `Default serial port` under `Serial flasher config`.

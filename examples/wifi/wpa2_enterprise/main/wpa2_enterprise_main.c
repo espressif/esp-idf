@@ -30,12 +30,12 @@
 #include "tcpip_adapter.h"
 
 /* The examples use simple WiFi configuration that you can set via
-   'make menuconfig'.
+   project configuration menu.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
 
-   You can choose EAP method via 'make menuconfig' according to the
+   You can choose EAP method via project configuration according to the
    configuration of AP.
 */
 #define EXAMPLE_WIFI_SSID CONFIG_EXAMPLE_WIFI_SSID

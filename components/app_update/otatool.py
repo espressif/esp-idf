@@ -50,8 +50,11 @@ class OtatoolTarget():
 
     OTADATA_PARTITION = PartitionType("data", "ota")
 
-    def __init__(self, port=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None, spi_flash_sec_size=SPI_FLASH_SEC_SIZE):
-        self.target = ParttoolTarget(port, partition_table_offset, partition_table_file)
+    def __init__(self, port=None, baud=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None,
+                 spi_flash_sec_size=SPI_FLASH_SEC_SIZE, esptool_args=[], esptool_write_args=[],
+                 esptool_read_args=[], esptool_erase_args=[]):
+        self.target = ParttoolTarget(port, baud, partition_table_offset, partition_table_file, esptool_args,
+                                     esptool_write_args, esptool_read_args, esptool_erase_args)
         self.spi_flash_sec_size = spi_flash_sec_size
 
         temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -214,11 +217,11 @@ class OtatoolTarget():
 def _read_otadata(target):
     target._check_otadata_partition()
 
-    otadata_info = target._get_otadata_info(target.otadata)
+    otadata_info = target._get_otadata_info()
 
-    print("\t\t{:11}\t{:8s}|\t{:8s}\t{:8s}".format("OTA_SEQ", "CRC", "OTA_SEQ", "CRC"))
-    print("Firmware:  0x{:8x}  \t 0x{:8x} |\t0x{:8x} \t 0x{:8x}".format(otadata_info[0].seq, otadata_info[0].crc,
-                                                                        otadata_info[1].seq, otadata_info[1].crc))
+    print("             {:8s} \t  {:8s} | \t  {:8s} \t   {:8s}".format("OTA_SEQ", "CRC", "OTA_SEQ", "CRC"))
+    print("Firmware:  0x{:8x} \t0x{:8x} | \t0x{:8x} \t 0x{:8x}".format(otadata_info[0].seq, otadata_info[0].crc,
+          otadata_info[1].seq, otadata_info[1].crc))
 
 
 def _erase_otadata(target):
@@ -251,10 +254,16 @@ def main():
     parser = argparse.ArgumentParser("ESP-IDF OTA Partitions Tool")
 
     parser.add_argument("--quiet", "-q", help="suppress stderr messages", action="store_true")
+    parser.add_argument("--esptool-args", help="additional main arguments for esptool", nargs="+")
+    parser.add_argument("--esptool-write-args", help="additional subcommand arguments for esptool write_flash", nargs="+")
+    parser.add_argument("--esptool-read-args", help="additional subcommand arguments for esptool read_flash", nargs="+")
+    parser.add_argument("--esptool-erase-args", help="additional subcommand arguments for esptool erase_region", nargs="+")
 
     # There are two possible sources for the partition table: a device attached to the host
     # or a partition table CSV/binary file. These sources are mutually exclusive.
     parser.add_argument("--port", "-p", help="port where the device to read the partition table from is attached")
+
+    parser.add_argument("--baud", "-b", help="baudrate to use", type=int)
 
     parser.add_argument("--partition-table-offset", "-o", help="offset to read the partition table from",  type=str)
 
@@ -311,6 +320,21 @@ def main():
             target_args["spi_flash_sec_size"] = int(args.spi_flash_sec_size, 0)
     except AttributeError:
         pass
+
+    if args.esptool_args:
+        target_args["esptool_args"] = args.esptool_args
+
+    if args.esptool_write_args:
+        target_args["esptool_write_args"] = args.esptool_write_args
+
+    if args.esptool_read_args:
+        target_args["esptool_read_args"] = args.esptool_read_args
+
+    if args.esptool_erase_args:
+        target_args["esptool_erase_args"] = args.esptool_erase_args
+
+    if args.baud:
+        target_args["baud"] = args.baud
 
     target = OtatoolTarget(**target_args)
 

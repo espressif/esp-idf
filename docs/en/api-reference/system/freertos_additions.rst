@@ -420,7 +420,7 @@ Interrupt respectively.
 
 Vanilla FreeRTOS hooks are referred to as **Legacy Hooks** in ESP-IDF FreeRTOS. 
 To enable legacy hooks, :ref:`CONFIG_FREERTOS_LEGACY_HOOKS` should be enabled
-in ``make menuconfig``.
+in :doc:`project configuration menu </api-reference/kconfig>`.
 
 Due to vanilla FreeRTOS being designed for single core, ``vApplicationIdleHook()``
 and ``vApplicationTickHook()`` can only be defined once. However, the ESP32 is dual core

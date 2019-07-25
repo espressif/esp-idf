@@ -31,7 +31,7 @@
 #define COAP_LOGGING_LEVEL 0
 
 /* The examples use uri "coap://californium.eclipse.org" that
-   you can set via 'make menuconfig'.
+   you can set via the project configuration (idf.py menuconfig)
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define COAP_DEFAULT_DEMO_URI "coap://californium.eclipse.org"

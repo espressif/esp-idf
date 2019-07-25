@@ -586,7 +586,7 @@ dh_init(const struct dh_group *dh, struct wpabuf **priv)
 	if (pv == NULL)
 		return NULL;
 
-	if (fast_crypto_mod_exp(dh->generator, dh->generator_len,
+	if (crypto_mod_exp(dh->generator, dh->generator_len,
 						wpabuf_head(*priv), wpabuf_len(*priv),
 						dh->prime, dh->prime_len, wpabuf_mhead(pv),
 						&pv_len)) {
@@ -624,7 +624,7 @@ dh_derive_shared(const struct wpabuf *peer_public,
 	if (shared == NULL)
 		return NULL;
 
-	if (fast_crypto_mod_exp(wpabuf_head(peer_public), wpabuf_len(peer_public),
+	if (crypto_mod_exp(wpabuf_head(peer_public), wpabuf_len(peer_public),
 						wpabuf_head(own_private), wpabuf_len(own_private),
 						dh->prime, dh->prime_len,
 						wpabuf_mhead(shared), &shared_len)) {

@@ -53,6 +53,10 @@ function(__component_get_requirements)
     # and set by the included CMakeLists.txt does not bleed into the next inclusion.
     # We are only interested in the public and private requirements of components
     __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
+    __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
+    set(COMPONENT_NAME ${__component_name})
+    set(COMPONENT_DIR ${__component_dir})
+    set(COMPONENT_PATH ${__component_dir}) # for backward compatibility only, COMPONENT_DIR is preferred
     include(${__component_dir}/CMakeLists.txt OPTIONAL)
 
     spaces2list(__component_requires)

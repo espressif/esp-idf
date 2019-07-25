@@ -348,9 +348,7 @@ Initial Setup
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Proceed to :doc:`../get-started-cmake/index`, where Section :ref:`get-started-step-by-step-cmake` will quickly help you set up the development environment and then flash an example project onto your board.
-
-If you prefer using an older GNU Make build system, then proceed to respective :ref:`get-started-step-by-step` for the GNU Make.
+Proceed to :doc:`../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 Move on to the next section only if you have successfully completed all the above steps.
 

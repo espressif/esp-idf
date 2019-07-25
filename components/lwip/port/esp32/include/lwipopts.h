@@ -766,13 +766,18 @@
 #define ESP_STATS_MEM                   CONFIG_LWIP_STATS
 #define ESP_STATS_DROP                  CONFIG_LWIP_STATS
 #define ESP_STATS_TCP                   0
-#define ESP_DHCP_TIMER                  1
 #define ESP_DHCPS_TIMER                 1
 #define ESP_LWIP_LOGI(...)              ESP_LOGI("lwip", __VA_ARGS__)
 #define ESP_PING                        1
 #define ESP_HAS_SELECT                  1
 #define ESP_AUTO_RECV                   1
 #define ESP_GRATUITOUS_ARP              CONFIG_LWIP_ESP_GRATUITOUS_ARP
+#define ESP_IP4_ROUTE                   1
+#define ESP_AUTO_IP                     1
+#define ESP_PBUF                        1
+#define ESP_PPP                         1
+#define ESP_IPV6                        1
+#define ESP_SOCKET                      1
 
 #ifdef ESP_IRAM_ATTR
 #undef ESP_IRAM_ATTR
@@ -787,43 +792,8 @@
 #define ESP_LWIP_MLD6_TIMERS_ONDEMAND            0
 #endif
 
-#if ESP_PERF
-#define DBG_PERF_PATH_SET(dir, point)
-#define DBG_PERF_FILTER_LEN             1000
-
-enum {
-  DBG_PERF_DIR_RX = 0,
-  DBG_PERF_DIR_TX,
-};
-
-enum {
-  DBG_PERF_POINT_INT       = 0,
-  DBG_PERF_POINT_WIFI_IN   = 1,
-  DBG_PERF_POINT_WIFI_OUT  = 2,
-  DBG_PERF_POINT_LWIP_IN   = 3,
-  DBG_PERF_POINT_LWIP_OUT  = 4,
-  DBG_PERF_POINT_SOC_IN    = 5,
-  DBG_PERF_POINT_SOC_OUT   = 6,
-};
-
-#else
-#define DBG_PERF_PATH_SET(dir, point)
-#define DBG_PERF_FILTER_LEN             1000
-#endif
-
 #define TCP_SND_BUF                     CONFIG_LWIP_TCP_SND_BUF_DEFAULT
 #define TCP_WND                         CONFIG_LWIP_TCP_WND_DEFAULT
-
-#if ESP_PER_SOC_TCP_WND
-#define TCP_WND_DEFAULT                 CONFIG_LWIP_TCP_WND_DEFAULT
-#define TCP_SND_BUF_DEFAULT             CONFIG_LWIP_TCP_SND_BUF_DEFAULT
-#define TCP_WND(pcb)                    (pcb->per_soc_tcp_wnd)
-#define TCP_SND_BUF(pcb)                (pcb->per_soc_tcp_snd_buf)
-#define TCP_SND_QUEUELEN(pcb)           ((4 * (TCP_SND_BUF((pcb))) + (TCP_MSS - 1))/(TCP_MSS))
-#define TCP_SNDLOWAT(pcb)               LWIP_MIN(LWIP_MAX(((TCP_SND_BUF((pcb)))/2), (2 * TCP_MSS) + 1), (TCP_SND_BUF((pcb))) - 1)
-#define TCP_SNDQUEUELOWAT(pcb)          LWIP_MAX(((TCP_SND_QUEUELEN((pcb)))/2), 5)
-#define TCP_WND_UPDATE_THRESHOLD(pcb)   LWIP_MIN((TCP_WND((pcb)) / 4), (TCP_MSS * 4))
-#endif
 
 /**
  * DHCP_DEBUG: Enable debugging in dhcp.c.
@@ -849,6 +819,12 @@ enum {
 /*
  * SNTP update delay - in milliseconds
  */
+/** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
+ * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:
+ * \#define SNTP_SERVER_ADDRESS "pool.ntp.org"
+ */
+#define SNTP_SERVER_DNS            1
+
 #define SNTP_UPDATE_DELAY              CONFIG_LWIP_SNTP_UPDATE_DELAY
 
 #define SNTP_SET_SYSTEM_TIME_US(sec, us)  \

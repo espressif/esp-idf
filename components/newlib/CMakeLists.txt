@@ -2,6 +2,8 @@ set(srcs
     "heap.c"
     "locks.c"
     "poll.c"
+    "pread.c"
+    "pwrite.c"
     "pthread.c"
     "random.c"
     "reent_init.c"

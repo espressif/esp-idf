@@ -22,7 +22,7 @@
   dependencies:
     - assign_test
     - build_examples_make
-    - build_examples_cmake
+    - build_examples_cmake_esp32
   artifacts:
     when: always
     paths:
@@ -202,6 +202,9 @@ UT_001:
   tags:
     - ESP32_IDF
     - UT_T1_1
+
+# Max. allowed value of 'parallel' is 50.
+# See UT_030 below if you want to add more unit test jobs.
 
 UT_002:
   extends: .unit_test_template
@@ -404,7 +407,7 @@ UT_029:
 # Gitlab parallel max value is 50. We need to create another UT job if parallel is larger than 50.
 UT_030:
   extends: .unit_test_template
-  parallel: 5
+  parallel: 6
   tags:
     - ESP32_IDF
     - UT_T1_1

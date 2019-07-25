@@ -387,27 +387,26 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
 }
 
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
-                                    size_t start_addr, size_t size)
+                                    size_t offset, size_t size)
 {
     assert(partition != NULL);
-    if (start_addr > partition->size) {
+    if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (start_addr + size > partition->size) {
+    if (offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (size % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
-    if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
+    if (offset % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
     }
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-    return esp_flash_erase_region(partition->flash_chip, partition->address + start_addr, size);
+    return esp_flash_erase_region(partition->flash_chip, partition->address + offset, size);
 #else
-    return spi_flash_erase_range(partition->address + start_addr, size);
+    return spi_flash_erase_range(partition->address + offset, size);
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
-
 }
 
 /*

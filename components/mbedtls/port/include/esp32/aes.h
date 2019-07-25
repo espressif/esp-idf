@@ -282,6 +282,31 @@ int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
                                 unsigned int keybits );
 
 /**
+ * \brief       This function performs an AES-OFB (Output Feedback Mode)
+ *              encryption or decryption operation.
+ *
+ * \param ctx      The AES context to use for encryption or decryption.
+ *                 It must be initialized and bound to a key.
+ * \param length   The length of the input data.
+ * \param iv_off   The offset in IV (updated after use).
+ *                 It must point to a valid \c size_t.
+ * \param iv       The initialization vector (updated after use).
+ *                 It must be a readable and writeable buffer of \c 16 Bytes.
+ * \param input    The buffer holding the input data.
+ *                 It must be readable and of size \p length Bytes.
+ * \param output   The buffer holding the output data.
+ *                 It must be writeable and of size \p length Bytes.
+ *
+ * \return         \c 0 on success.
+ */
+int esp_aes_crypt_ofb( esp_aes_context *ctx,
+                       size_t length,
+                       size_t *iv_off,
+                       unsigned char iv[16],
+                       const unsigned char *input,
+                       unsigned char *output );
+
+/**
  * \brief          This function prepares an XTS context for decryption and
  *                 sets the decryption key.
  *

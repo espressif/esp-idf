@@ -1427,7 +1427,7 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 	len[2] = wpabuf_len(wps->dh_pubkey_e);
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash1", hash, SHA256_MAC_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS:  * R-Hash2");
@@ -1437,7 +1437,7 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 	/* R-Hash2 = HMAC_AuthKey(R-S2 || PSK2 || PK_E || PK_R) */
 	addr[0] = wps->snonce + WPS_SECRET_NONCE_LEN;
 	addr[1] = wps->psk2;
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash2", hash, SHA256_MAC_LEN);
 
 	return 0;
@@ -2170,7 +2170,7 @@ static int wps_process_e_snonce1(struct wps_data *wps, const u8 *e_snonce1)
 	len[2] = wpabuf_len(wps->dh_pubkey_e);
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	if (os_memcmp(wps->peer_hash1, hash, WPS_HASH_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: E-Hash1 derived from E-S1 does "
 			   "not match with the pre-committed value");
@@ -2210,7 +2210,7 @@ static int wps_process_e_snonce2(struct wps_data *wps, const u8 *e_snonce2)
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
 
-	fast_hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	if (os_memcmp(wps->peer_hash2, hash, WPS_HASH_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: E-Hash2 derived from E-S2 does "
 			   "not match with the pre-committed value");
@@ -2547,7 +2547,7 @@ static enum wps_process_res wps_process_m1(struct wps_data *wps,
 			wps->nfc_pw_token = token;
 
 			addr[0] = attr->public_key;
-			fast_sha256_vector(1, addr, &attr->public_key_len, hash);
+			sha256_vector(1, addr, &attr->public_key_len, hash);
 			if (os_memcmp(hash, wps->nfc_pw_token->pubkey_hash,
 				      WPS_OOB_PUBKEY_HASH_LEN) != 0) {
 				wpa_printf(MSG_ERROR,  "WPS: Public Key hash "

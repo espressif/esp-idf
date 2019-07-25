@@ -110,7 +110,8 @@ struct esp_http_client {
     esp_http_state_t            state;
     http_event_handle_cb        event_handler;
     int                         timeout_ms;
-    int                         buffer_size;
+    int                         buffer_size_rx;
+    int                         buffer_size_tx;
     bool                        disable_auto_redirect;
     esp_http_client_event_t     event;
     int                         data_written_index;
@@ -312,11 +313,16 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     client->timeout_ms = config->timeout_ms;
     client->max_redirection_count = config->max_redirection_count;
     client->user_data = config->user_data;
-    client->buffer_size = config->buffer_size;
+    client->buffer_size_rx = config->buffer_size;
+    client->buffer_size_tx = config->buffer_size_tx;
     client->disable_auto_redirect = config->disable_auto_redirect;
 
     if (config->buffer_size == 0) {
-        client->buffer_size = DEFAULT_HTTP_BUF_SIZE;
+        client->buffer_size_rx = DEFAULT_HTTP_BUF_SIZE;
+    }
+
+    if (config->buffer_size_tx == 0) {
+        client->buffer_size_tx = DEFAULT_HTTP_BUF_SIZE;
     }
 
     if (client->max_redirection_count == 0) {
@@ -517,8 +523,8 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         goto error;
     }
     _success = (
-                   (client->request->buffer->data  = malloc(client->buffer_size))  &&
-                   (client->response->buffer->data = malloc(client->buffer_size))
+                   (client->request->buffer->data  = malloc(client->buffer_size_tx))  &&
+                   (client->response->buffer->data = malloc(client->buffer_size_rx))
                );
 
     if (!_success) {
@@ -762,7 +768,7 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
 
     ESP_LOGD(TAG, "data_process=%d, content_length=%d", client->response->data_process, client->response->content_length);
 
-    int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size, client->timeout_ms);
+    int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size_rx, client->timeout_ms);
     if (rlen >= 0) {
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
     }
@@ -797,8 +803,8 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
             break;
         }
         int byte_to_read = need_read;
-        if (byte_to_read > client->buffer_size) {
-            byte_to_read = client->buffer_size;
+        if (byte_to_read > client->buffer_size_rx) {
+            byte_to_read = client->buffer_size_rx;
         }
         rlen = esp_transport_read(client->transport, res_buffer->data, byte_to_read, client->timeout_ms);
         ESP_LOGD(TAG, "need_read=%d, byte_to_read=%d, rlen=%d, ridx=%d", need_read, byte_to_read, rlen, ridx);
@@ -915,7 +921,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
     client->response->status_code = -1;
 
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
-        buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
+        buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size_rx, client->timeout_ms);
         if (buffer->len <= 0) {
             return ESP_FAIL;
         }
@@ -993,26 +999,26 @@ static int http_client_prepare_first_line(esp_http_client_handle_t client, int w
     const char *method = HTTP_METHOD_MAPPING[client->connection_info.method];
 
     int first_line_len = snprintf(client->request->buffer->data,
-                                  client->buffer_size, "%s %s",
+                                  client->buffer_size_tx, "%s %s",
                                   method,
                                   client->connection_info.path);
-    if (first_line_len >= client->buffer_size) {
+    if (first_line_len >= client->buffer_size_tx) {
         ESP_LOGE(TAG, "Out of buffer");
         return -1;
     }
 
     if (client->connection_info.query) {
         first_line_len += snprintf(client->request->buffer->data + first_line_len,
-                                   client->buffer_size - first_line_len, "?%s", client->connection_info.query);
-        if (first_line_len >= client->buffer_size) {
+                                   client->buffer_size_tx - first_line_len, "?%s", client->connection_info.query);
+        if (first_line_len >= client->buffer_size_tx) {
             ESP_LOGE(TAG, "Out of buffer");
             return -1;
 
         }
     }
     first_line_len += snprintf(client->request->buffer->data + first_line_len,
-                               client->buffer_size - first_line_len, " %s\r\n", DEFAULT_HTTP_PROTOCOL);
-    if (first_line_len >= client->buffer_size) {
+                               client->buffer_size_tx - first_line_len, " %s\r\n", DEFAULT_HTTP_PROTOCOL);
+    if (first_line_len >= client->buffer_size_tx) {
         ESP_LOGE(TAG, "Out of buffer");
         return -1;
     }
@@ -1047,7 +1053,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
         }
     }
 
-    int wlen = client->buffer_size - first_line_len;
+    int wlen = client->buffer_size_tx - first_line_len;
     while ((client->header_index = http_header_generate_string(client->request->headers, client->header_index, client->request->buffer->data + first_line_len, &wlen))) {
         if (wlen <= 0) {
             break;
@@ -1071,7 +1077,7 @@ static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, i
             client->data_write_left -= wret;
             client->data_written_index += wret;
         }
-        wlen = client->buffer_size;
+        wlen = client->buffer_size_tx;
     }
 
     client->data_written_index = 0;
@@ -1145,7 +1151,7 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
 esp_err_t esp_http_client_close(esp_http_client_handle_t client)
 {
     if (client->state >= HTTP_STATE_INIT) {
-        http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, NULL, 0);
+        http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, esp_transport_get_error_handle(client->transport), 0);
         client->state = HTTP_STATE_INIT;
         return esp_transport_close(client->transport);
     }

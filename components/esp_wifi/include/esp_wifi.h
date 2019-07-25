@@ -59,15 +59,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "sys/queue.h"
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
-#include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
-#include "esp_private/wifi_os_adapter.h"
+#include "esp_private/esp_wifi_private.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,6 +83,10 @@ extern "C" {
 #define ESP_ERR_WIFI_WAKE_FAIL   (ESP_ERR_WIFI_BASE + 13)  /*!< WiFi is in sleep state(RF closed) and wakeup fail */
 #define ESP_ERR_WIFI_WOULD_BLOCK (ESP_ERR_WIFI_BASE + 14)  /*!< The caller would block */
 #define ESP_ERR_WIFI_NOT_CONNECT (ESP_ERR_WIFI_BASE + 15)  /*!< Station still in disconnect status */
+
+#define ESP_ERR_WIFI_POST        (ESP_ERR_WIFI_BASE + 18)  /*!< Failed to post the event to WiFi task */
+#define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalod WiFi state when init/deinit is called */
+#define ESP_ERR_WIFI_STOP_STATE  (ESP_ERR_WIFI_BASE + 20)  /*!< Returned when WiFi is stopping */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
@@ -841,6 +840,16 @@ esp_err_t esp_wifi_set_auto_connect(bool en) __attribute__ ((deprecated));
 esp_err_t esp_wifi_get_auto_connect(bool *en) __attribute__ ((deprecated));
 
 /**
+  * @brief     Function signature for received Vendor-Specific Information Element callback.
+  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
+  * @param     type Information element type, based on frame type received.
+  * @param     sa Source 802.11 address.
+  * @param     vnd_ie Pointer to the vendor specific element data received.
+  * @param     rssi Received signal strength indication.
+  */
+typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
+
+/**
   * @brief     Set 802.11 Vendor-Specific Information Element
   *
   * @param     enable If true, specified IE is enabled. If false, specified IE is removed.
@@ -857,16 +866,6 @@ esp_err_t esp_wifi_get_auto_connect(bool *en) __attribute__ ((deprecated));
   *    - ESP_ERR_NO_MEM: Out of memory
   */
 esp_err_t esp_wifi_set_vendor_ie(bool enable, wifi_vendor_ie_type_t type, wifi_vendor_ie_id_t idx, const void *vnd_ie);
-
-/**
-  * @brief     Function signature for received Vendor-Specific Information Element callback.
-  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
-  * @param     type Information element type, based on frame type received.
-  * @param     sa Source 802.11 address.
-  * @param     vnd_ie Pointer to the vendor specific element data received.
-  * @param     rssi Received signal strength indication.
-  */
-typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
 
 /**
   * @brief     Register Vendor-Specific Information Element monitoring callback.

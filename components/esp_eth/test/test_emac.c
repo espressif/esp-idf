@@ -76,7 +76,7 @@ TEST_CASE("esp32 emac io test", "[ethernet][ignore]")
 
 TEST_CASE("ethernet tcpip_adapter", "[ethernet][ignore]")
 {
-    tcpip_adapter_init();
+    test_case_uses_tcpip();
     TEST_ESP_OK(esp_event_loop_create_default());
     TEST_ESP_OK(tcpip_adapter_set_default_eth_handlers());
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));

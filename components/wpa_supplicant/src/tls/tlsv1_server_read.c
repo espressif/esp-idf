@@ -871,7 +871,7 @@ static int tls_process_certificate_verify(struct tlsv1_server *conn, u8 ct,
 
 		hlen = SHA256_MAC_LEN;
 		if (conn->verify.sha256_cert == NULL ||
-			fast_crypto_hash_finish(conn->verify.sha256_cert, hpos, &hlen) <
+			crypto_hash_finish(conn->verify.sha256_cert, hpos, &hlen) <
 			0) {
 			conn->verify.sha256_cert = NULL;
 			tlsv1_server_alert(conn, TLS_ALERT_LEVEL_FATAL,

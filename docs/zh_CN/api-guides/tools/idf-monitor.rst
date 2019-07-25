@@ -8,8 +8,9 @@ IDF 监视器是一个串行终端程序，用于收发目标设备串口的串�
 
 在 IDF 中调用以下目标函数可以启用此监视器：
 
-- **若使用 Make 编译系统，请调用**：``make monitor``
 - **若使用 CMake 编译系统，则请调用**：``idf.py monitor``
+- **若使用传统 GNU Make 编译系统，请调用**：``make monitor``
+
 
 
 操作快捷键
@@ -26,7 +27,7 @@ Ctrl+T              菜单退出键                                             
 - Ctrl+]            将 exit 字符发送至远程
 - Ctrl+P            重置目标设备，进入 Bootloader，通过 RTS 线暂停应用程序                         重置目标设备，通过 RTS 线（如已连接）进入 Bootloader，此时开发板不运行任何程序。等待其他设备启动时可以使用此操作。
 - Ctrl+R            通过 RTS 线重置目标设备                                                     重置设备，并通过 RTS 线（如已连接）重新启动应用程序。
-- Ctrl+F            编译并烧录此项目                                                            暂停 idf_monitor，运行 ``make flash`` (``idf.py flash``) 目标，然后恢复 idf_monitor。任何改动的源文件都会被重新编译，然后重新烧录。
+- Ctrl+F            编译并烧录此项目                                                            暂停 idf_monitor，运行 ``idf.py flash`` 目标，然后恢复 idf_monitor。任何改动的源文件都会被重新编译，然后重新烧录。
 - Ctrl+A (A)        仅编译及烧录应用程序                                                        暂停 idf_monitor，运行 ``app-flash`` 目标，然后恢复 idf_monitor。 这与 ``flash`` 类似，但只有主应用程序被编译并被重新烧录。
 - Ctrl+Y            停止/恢复日志输出在屏幕上打印                                                激活时，会丢弃所有传入的串行数据。允许在不退出监视器的情况下快速暂停和检查日志输出。
 - Ctrl+L            停止/恢复向文件写入日志输出                                                  在工程目录下创建一个文件，用于写入日志输出。可使用快捷键停止/恢复该功能（退出 IDF 监视器也会终止该功能）
@@ -91,7 +92,7 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 或者选择配置 panic 处理器以运行 GDBStub，GDBStub 工具可以与 GDB_ 项目调试器进行通信，允许读取内存、检查调用堆栈帧和变量等。GDBStub 虽然没有 JTAG 通用，但不需要使用特殊硬件。
 
-如需启用 GDBStub，请运行 ``make menuconfig`` （适用于 Make 编译系统）或 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_ESP32_PANIC` 选项设置为 ``Invoke GDBStub``。
+如需启用 GDBStub，请运行 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_ESP32_PANIC` 选项设置为 ``Invoke GDBStub``。
 
 在这种情况下，如果 panic 处理器被触发，只要 IDF 监视器监控到 GDBStub 已经加载，panic 处理器就会自动暂停串行监控并使用必要的参数运行 GDB。GDB 退出后，通过 RTS 串口线复位开发板。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
 
@@ -103,7 +104,7 @@ IDF 监控器在后台运行如下命令::
 输出筛选
 ~~~~~~~~~~~~~~~~
 
-IDF 监视器有两种启用方式：运行 ``make monitor PRINT_FILTER=""`` （适用于 Make）或者 ``idf.py monitor --print-filter=""`` （适用于 CMake），其中，``PRINT_FILTER`` 是输出筛选的参数。参数默认值为空字符串，可打印任何内容。
+IDF 监视器有两种启用方式：运行 ``idf.py monitor PRINT_FILTER=""`` （适用于 CMake） 或者 ``make monitor PRINT_FILTER=""`` （适用于传统 GNU Make），其中，``--print-filter`` 是输出筛选的参数。参数默认值为空字符串，可打印任何内容。
 
 若需对打印内容设置限制，可指定 ``<tag>:<log_level>`` 等选项，其中 ``<tag>`` 是标签字符串，``<log_level>`` 是 ``{N, E, W, I, D, V, *}`` 集合中的一个字母，指的是 :doc:`日志 <../../api-reference/system/log>` 级别。
 
@@ -157,18 +158,6 @@ IDF 监视器有两种启用方式：运行 ``make monitor PRINT_FILTER=""`` （
     entry 0x40078d4c
     I (569) heap_init: Initializing. RAM available for dynamic allocation:
     D (309) light_driver: [light_init, 74]:status: 1, mode: 2
-
-
-简单监视器
-==============
-
-较早版本的 ESP-IDF 使用 pySerial_ 命令行工具 miniterm_ 作为串行控制台程序。
-
-.. note:: 仅适用于 Make 编译系统，不适用于 CMake 编译系统。
-
-此程序仍然可以通过 ``make simple_monitor`` 运行。
-
-IDF 监视器基于 miniterm，可使用相同的快捷键。
 
 
 IDF 监视器已知问题

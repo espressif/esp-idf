@@ -127,12 +127,21 @@ build_examples_make:
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
   only:
+    # Here both 'variables' and 'refs' conditions are given. They are combined with "AND" logic.
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_REGULAR_TEST
       - $BOT_LABEL_WEEKEND_TEST
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+      - pipelines
+      - web
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
@@ -144,18 +153,18 @@ build_examples_make:
     - ${IDF_PATH}/tools/ci/build_examples.sh
 
 # same as above, but for CMake
-build_examples_cmake:
+.build_examples_cmake: &build_examples_cmake
   extends: .build_template
   parallel: 5
   artifacts:
     when: always
     paths:
-      - build_examples_cmake/*/*/*/build/*.bin
-      - build_examples_cmake/*/*/*/sdkconfig
-      - build_examples_cmake/*/*/*/build/*.elf
-      - build_examples_cmake/*/*/*/build/*.map
-      - build_examples_cmake/*/*/*/build/flasher_args.json
-      - build_examples_cmake/*/*/*/build/bootloader/*.bin
+      - build_examples_cmake/*/*/*/*/build/*.bin
+      - build_examples_cmake/*/*/*/*/sdkconfig
+      - build_examples_cmake/*/*/*/*/build/*.elf
+      - build_examples_cmake/*/*/*/*/build/*.map
+      - build_examples_cmake/*/*/*/*/build/flasher_args.json
+      - build_examples_cmake/*/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
     expire_in: 3 days
   variables:
@@ -176,6 +185,11 @@ build_examples_cmake:
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
+
+build_examples_cmake_esp32:
+  extends: .build_examples_cmake
+  variables:
+    IDF_TARGET: esp32
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
@@ -245,3 +259,26 @@ test_build_system_cmake:
     - mkdir test_build_system
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+
+build_docker:
+  stage: build
+  image: espressif/docker-builder:1
+  tags:
+    - build_docker_amd64_brno
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+  variables:
+    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
+  before_script: []
+  script:
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    # Build
+    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
+    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
+    # Therefore, build a copy of the example located inside the container.
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build

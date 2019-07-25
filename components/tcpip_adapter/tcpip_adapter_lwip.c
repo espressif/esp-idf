@@ -29,6 +29,7 @@
 #include "lwip/netif.h"
 #if LWIP_DNS /* don't build if not configured for use in lwipopts.h */
 #include "lwip/dns.h"
+#include "lwip/netif.h"
 #endif
 #include "netif/wlanif.h"
 #include "netif/ethernetif.h"
@@ -157,13 +158,13 @@ static int tcpip_adapter_ipc_check(tcpip_adapter_api_msg_t *msg)
 
 static esp_err_t tcpip_adapter_update_default_netif(void)
 {
-    if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
+    if (esp_netif[TCPIP_ADAPTER_IF_STA] != NULL && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_STA])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_STA]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
+    } else if (esp_netif[TCPIP_ADAPTER_IF_ETH] != NULL && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_ETH])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_ETH]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
+    } else if (esp_netif[TCPIP_ADAPTER_IF_AP] != NULL && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
-    } else if (netif_is_up(esp_netif[TCPIP_ADAPTER_IF_TEST])) {
+    } else if(esp_netif[TCPIP_ADAPTER_IF_TEST] != NULL && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_TEST])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_TEST]);
     }
 
@@ -193,6 +194,7 @@ static esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, 
         netif_init = tcpip_if_to_netif_init_fn(tcpip_if);
         assert(netif_init != NULL);
         netif_add(esp_netif[tcpip_if], &ip_info->ip, &ip_info->netmask, &ip_info->gw, args, netif_init, tcpip_input);
+       
 #if ESP_GRATUITOUS_ARP
         if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
             netif_set_garp_flag(esp_netif[tcpip_if]);
@@ -767,6 +769,8 @@ esp_err_t tcpip_adapter_get_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_
 
     dns_param.dns_type =  type;
     dns_param.dns_info =  dns;
+    const ip_addr_t*  dns_ip = NULL;
+    
 
     TCPIP_ADAPTER_IPC_CALL(tcpip_if, type,  0, &dns_param, tcpip_adapter_get_dns_info_api);
     if (!dns) {
@@ -785,7 +789,10 @@ esp_err_t tcpip_adapter_get_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_
     }
 
     if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
-        dns->ip = dns_getserver(type);
+        dns_ip = dns_getserver(type);
+        if(dns_ip != NULL){
+            dns->ip = *dns_ip;
+        }
     } else {
         dns->ip.u_addr.ip4 = dhcps_dns_getserver();
     }
@@ -1250,6 +1257,14 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if)
     } else {
         return false;
     }
+}
+
+int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if)
+{
+    if (tcpip_if >= TCPIP_ADAPTER_IF_MAX || esp_netif[tcpip_if] == NULL) {
+        return -1;
+    }
+    return netif_get_index(esp_netif[tcpip_if]);
 }
 
 #endif /* CONFIG_TCPIP_LWIP */

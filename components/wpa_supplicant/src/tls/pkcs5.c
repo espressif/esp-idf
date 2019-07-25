@@ -165,7 +165,7 @@ static struct crypto_cipher * pkcs5_crypto_init(struct pkcs5_params *params,
 	wpa_hexdump_key(MSG_DEBUG, "PKCS #5: DES key", hash, 8);
 	wpa_hexdump_key(MSG_DEBUG, "PKCS #5: DES IV", hash + 8, 8);
 
-	return fast_crypto_cipher_init(CRYPTO_CIPHER_ALG_DES, hash + 8, hash, 8);
+	return crypto_cipher_init(CRYPTO_CIPHER_ALG_DES, hash + 8, hash, 8);
 	
 }
 
@@ -194,24 +194,24 @@ u8 * pkcs5_decrypt(const u8 *enc_alg, size_t enc_alg_len,
 	if (enc_data_len < 16 || enc_data_len % 8) {
 		wpa_printf(MSG_INFO, "PKCS #5: invalid length of ciphertext "
 			   "%d", (int) enc_data_len);
-		fast_crypto_cipher_deinit(ctx);
+		crypto_cipher_deinit(ctx);
 		return NULL;
 	}
 
 	eb = os_malloc(enc_data_len);
 	if (eb == NULL) {
-		fast_crypto_cipher_deinit(ctx);
+		crypto_cipher_deinit(ctx);
 		return NULL;
 	}
 
-	if ((int)fast_crypto_cipher_decrypt(ctx, enc_data, eb, enc_data_len) < 0) {
+	if ((int)crypto_cipher_decrypt(ctx, enc_data, eb, enc_data_len) < 0) {
 		wpa_printf(MSG_DEBUG, "PKCS #5: Failed to decrypt EB");
-		fast_crypto_cipher_deinit(ctx);
+		crypto_cipher_deinit(ctx);
 		os_free(eb);
 		return NULL;
 	}
 
-	fast_crypto_cipher_deinit(ctx);
+	crypto_cipher_deinit(ctx);
 
 	pad = eb[enc_data_len - 1];
 	if (pad > 8) {

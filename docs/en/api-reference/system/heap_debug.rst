@@ -38,7 +38,7 @@ Heap corruption detection allows you to detect various types of heap memory erro
 Assertions
 ^^^^^^^^^^
 
-The heap implementation (``multi_heap.c``, etc.) includes a lot of assertions which will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in ``make menuconfig`` under ``Compiler options``.
+The heap implementation (``multi_heap.c``, etc.) includes a lot of assertions which will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in the project configuration menu under ``Compiler options`` -> :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL`.
 
 If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c``. The memory address which is printed is the address of the heap structure which has corrupt content.
 
@@ -62,7 +62,7 @@ Configuration
 
 Temporarily increasing the heap corruption detection level can give more detailed information about heap corruption errors.
 
-In ``make menuconfig``, under ``Component config`` there is a menu ``Heap memory debugging``. The setting :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of three levels:
+In the project configuration menu, under ``Component config`` there is a menu ``Heap memory debugging``. The setting :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of three levels:
 
 Basic (no poisoning)
 ++++++++++++++++++++
@@ -143,7 +143,7 @@ Standalone Mode
 
 Once you've identified the code which you think is leaking:
 
-- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> ``Heap tracing`` and select ``Standalone`` option (see :ref:`CONFIG_HEAP_TRACING_DEST`).
+- In the project configuration menu, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> ``Heap tracing`` and select ``Standalone`` option (see :ref:`CONFIG_HEAP_TRACING_DEST`).
 - Call the function :cpp:func:`heap_trace_init_standalone` early in the program, to register a buffer which can be used to record the memory trace.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 - Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing.
@@ -205,7 +205,7 @@ In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation which has not al
 - ``caller 0x...`` gives the call stack of the call to malloc()/free(), as a list of PC addresses.
   These can be decoded to source files and line numbers, as shown above.
 
-The depth of the call stack recorded for each trace entry can be configured in ``make menuconfig``, under ``Heap Memory Debugging`` -> ``Enable heap tracing`` -> ``Heap tracing stack depth``. Up to 10 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` -> ``Enable heap tracing`` -> ``Heap tracing stack depth``. Up to 10 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of 'leaked' bytes (bytes allocated but not freed while trace was running) is printed, and the total number of allocations this represents.
 
@@ -217,9 +217,9 @@ Host-Based Mode
 
 Once you've identified the code which you think is leaking:
 
-- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> ``Heap tracing`` and select ``Host-Based`` option (see :ref:`CONFIG_HEAP_TRACING_DEST`).
-- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``Data Destination``  and select ``Trace memory``.
-- Under ``make menuconfig``, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and check ``SystemView Tracing Enable``.
+- In the project configuration menu, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
+- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> :ref:`CONFIG_ESP32_APPTRACE_DESTINATION` and select ``Trace memory``.
+- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_SYSVIEW_ENABLE`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
   In host-based mode argument to this function is ignored and heap tracing module behaves like ``HEAP_TRACE_ALL`` was passed: all allocations and deallocations are sent to the host.
@@ -250,7 +250,7 @@ An example::
 
 To gather and analyse heap trace do the following on the host:
 
-1.  Build the program and download it to the target as described in :doc:`Build and Flash </get-started/make-project>`.
+1.  Build the program and download it to the target as described in :ref:`Getting Started Guide <get-started-build>`.
 
 2.  Run OpenOCD (see :doc:`JTAG Debugging </api-guides/jtag-debugging/index>`).
 

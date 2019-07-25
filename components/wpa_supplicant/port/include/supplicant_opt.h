@@ -17,16 +17,8 @@
 
 #include "sdkconfig.h"
 
-#if CONFIG_WPA_EAP_TLS
-#define EAP_TLS 1
-#endif
-
-#if CONFIG_WPA_EAP_TTLS
-#define EAP_TTLS 1
-#endif
-
-#if CONFIG_WPA_EAP_PEAP
-#define EAP_PEAP 1
+#if CONFIG_WPA_MBEDTLS_CRYPTO
+#define USE_MBEDTLS_CRYPTO 1
 #endif
 
 #endif /* _SUPPLICANT_OPT_H */

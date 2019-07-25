@@ -1,5 +1,16 @@
 # This script should be sourced, not executed.
 
+function realpath_int() {
+    wdir="$PWD"; [ "$PWD" = "/" ] && wdir=""
+    case "$0" in
+        /*) scriptdir="${0}";;
+        *) scriptdir="$wdir/${0#./}";;
+    esac
+    scriptdir="${scriptdir%/*}"
+    echo "$scriptdir"
+}
+
+
 function idf_export_main() {
     # The file doesn't have executable permissions, so this shouldn't really happen.
     # Doing this in case someone tries to chmod +x it and execute...
@@ -14,8 +25,13 @@ function idf_export_main() {
         # If using bash, try to guess IDF_PATH from script location
         if [[ -n "${BASH_SOURCE}" ]]
         then
-            script_name="$(readlink -f $BASH_SOURCE)"
-            export IDF_PATH="$(dirname ${script_name})"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                script_dir="$(realpath_int $BASH_SOURCE)"
+            else
+                script_name="$(readlink -f $BASH_SOURCE)"
+                script_dir="$(dirname $script_name)"
+            fi
+            export IDF_PATH="${script_dir}"
         else
             echo "IDF_PATH must be set before sourcing this script"
             return 1
@@ -67,6 +83,7 @@ function idf_export_main() {
     unset path_entry
     unset IDF_ADD_PATHS_EXTRAS
     unset idf_exports
+
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment
 
@@ -79,4 +96,5 @@ function idf_export_main() {
 
 idf_export_main
 
+unset realpath_int
 unset idf_export_main

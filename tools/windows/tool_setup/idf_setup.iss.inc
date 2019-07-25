@@ -142,7 +142,7 @@ begin
     end;
 
     ExtractTemporaryFile('7za.exe')
-    CmdLine := ExpandConstant('{tmp}\7za.exe x -o' + ExpandConstant('{tmp}') + ' -r -aoa ' + IDFZIPFileName);
+    CmdLine := ExpandConstant('{tmp}\7za.exe x -o' + ExpandConstant('{tmp}') + ' -r -aoa "' + IDFZIPFileName + '"');
     IDFTempPath := ExpandConstant('{tmp}\esp-idf-') + IDFZIPFileVersion;
     Log('Extracting ESP-IDF reference repository: ' + CmdLine);
     Log('Reference repository path: ' + IDFTempPath);
@@ -212,9 +212,9 @@ begin
   end else begin
     Log('idf_tools.py does not exist in IDF directory, using a fallback version');
     IDFToolsPyCmd := ExpandConstant(PythonExecutablePath
-                                    + ' {app}\idf_tools_fallback.py'
+                                    + ' "{app}\idf_tools_fallback.py"'
                                     + ' --idf-path ' + IDFPath
-                                    + ' --tools {app}\tools_fallback.json');
+                                    + ' --tools "{app}\tools_fallback.json"');
   end;
 
   Log('idf_tools.py command: ' + IDFToolsPyCmd);
@@ -238,7 +238,9 @@ begin
   ForceDirectories(ExpandConstant('{group}'));
   Destination := ExpandConstant('{group}\{#IDFCmdExeShortcutFile}');
   Description := '{#IDFCmdExeShortcutDescription}';
-  Command := ExpandConstant('/k {app}\idf_cmd_init.bat "') + PythonPath + '" "' + GitPath + '"';
+  { If cmd.exe command argument starts with a quote, the first and last quote chars in the command
+    will be removed by cmd.exe; each argument needs to be surrounded by quotes as well. }
+  Command := ExpandConstant('/k ""{app}\idf_cmd_init.bat" "') + PythonPath + '" "' + GitPath + '""';
   Log('CreateShellLink Destination=' + Destination + ' Description=' + Description + ' Command=' + Command)
   try
     CreateShellLink(
