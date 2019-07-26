@@ -14,6 +14,7 @@ menu "Supplicant"
             this includes handshake information and key hex dumps depending 
             on the project logging level.
 
-            Enabling this will increase the build size.
+            Enabling this could increase the build size ~60kb 
+            depending on the project logging level.
 
 endmenu
