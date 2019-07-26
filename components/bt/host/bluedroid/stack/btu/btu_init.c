@@ -129,12 +129,12 @@ void btu_free_core(void)
 #if (defined(GATT_INCLUDED) && GATT_INCLUDED == true)
     gatt_free();
 #endif
-    btm_ble_free();
-#endif
-    btm_free();
 #if SMP_INCLUDED == TRUE
     SMP_Free();
 #endif
+    btm_ble_free();
+#endif
+    btm_free();
 }
 
 /*****************************************************************************
