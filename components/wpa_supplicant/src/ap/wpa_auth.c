@@ -500,7 +500,7 @@ static int ICACHE_FLASH_ATTR ft_check_msg_2_of_4(struct wpa_authenticator *wpa_a
     }
 
     memcpy(sm->sup_pmk_r1_name, ie.pmkid, PMKID_LEN);
-    wpa_hexdump(MSG_MSGDUMP, "FT: PMKR1Name from Supplicant",
+    wpa_hexdump(MSG_DEBUG, "FT: PMKR1Name from Supplicant",
             sm->sup_pmk_r1_name, PMKID_LEN);
 
     if (!kde->mdie || !kde->ftie) {
@@ -522,9 +522,9 @@ static int ICACHE_FLASH_ATTR ft_check_msg_2_of_4(struct wpa_authenticator *wpa_a
         memcmp(kde->ftie, sm->assoc_resp_ftie,
                2 + sm->assoc_resp_ftie[1]) != 0)) {
         wpa_printf( MSG_DEBUG, "FT: FTIE mismatch");
-        wpa_hexdump(MSG_MSGDUMP, "FT: FTIE in EAPOL-Key msg 2/4",
+        wpa_hexdump(MSG_DEBUG, "FT: FTIE in EAPOL-Key msg 2/4",
                 kde->ftie, kde->ftie_len);
-        wpa_hexdump(MSG_MSGDUMP, "FT: FTIE in (Re)AssocResp",
+        wpa_hexdump(MSG_DEBUG, "FT: FTIE in (Re)AssocResp",
                 sm->assoc_resp_ftie, 2 + sm->assoc_resp_ftie[1]);
         return -1;
     }
@@ -608,9 +608,9 @@ void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *s
         }
     }
 
-    wpa_hexdump(MSG_MSGDUMP, "WPA: Received Key Nonce", key->key_nonce,
+    wpa_hexdump(MSG_DEBUG, "WPA: Received Key Nonce", key->key_nonce,
             WPA_NONCE_LEN);
-    wpa_hexdump(MSG_MSGDUMP, "WPA: Received Replay Counter",
+    wpa_hexdump(MSG_DEBUG, "WPA: Received Replay Counter",
             key->replay_counter, WPA_REPLAY_COUNTER_LEN);
 
     /* FIX: verify that the EAPOL-Key frame was encrypted if pairwise keys
@@ -693,11 +693,11 @@ void wpa_receive(struct wpa_authenticator *wpa_auth, struct wpa_state_machine *s
         for (i = 0; i < RSNA_MAX_EAPOL_RETRIES; i++) {
             if (!sm->key_replay[i].valid)
                 break;
-            wpa_hexdump(MSG_MSGDUMP, "pending replay counter",
+            wpa_hexdump(MSG_DEBUG, "pending replay counter",
                     sm->key_replay[i].counter,
                     WPA_REPLAY_COUNTER_LEN);
         }
-        wpa_hexdump(MSG_MSGDUMP, "received replay counter",
+        wpa_hexdump(MSG_DEBUG, "received replay counter",
                 key->replay_counter, WPA_REPLAY_COUNTER_LEN);
         return;
     }
@@ -747,10 +747,10 @@ continue_processing:
                        sm->wpa_ie, sm->wpa_ie_len,
                        eapol_key_ie, eapol_key_ie_len)) {
             if (sm->wpa_ie) {
-                wpa_hexdump(MSG_MSGDUMP, "WPA IE in AssocReq",
+                wpa_hexdump(MSG_DEBUG, "WPA IE in AssocReq",
                         sm->wpa_ie, sm->wpa_ie_len);
             }
-            wpa_hexdump(MSG_MSGDUMP, "WPA IE in msg 2/4",
+            wpa_hexdump(MSG_DEBUG, "WPA IE in msg 2/4",
                     eapol_key_ie, eapol_key_ie_len);
             /* MLME-DEAUTHENTICATE.request */
             wpa_sta_disconnect(wpa_auth, sm->addr);
@@ -1397,7 +1397,7 @@ SM_STATE(WPA_PTK, AUTHENTICATION2)
         wpa_sta_disconnect(sm->wpa_auth, sm->addr);
         return;
     }
-    wpa_hexdump(MSG_MSGDUMP, "WPA: Assign ANonce", sm->ANonce,
+    wpa_hexdump(MSG_DEBUG, "WPA: Assign ANonce", sm->ANonce,
             WPA_NONCE_LEN);
     sm->ReAuthenticationRequest = FALSE;
     /* IEEE 802.11i does not clear TimeoutCtr here, but this is more
@@ -1577,10 +1577,10 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
          */
         if (memcmp(sm->sup_pmk_r1_name, sm->pmk_r1_name,
                   WPA_PMK_NAME_LEN) != 0) {
-            wpa_hexdump(MSG_MSGDUMP, "FT: PMKR1Name from "
+            wpa_hexdump(MSG_DEBUG, "FT: PMKR1Name from "
                     "Supplicant",
                     sm->sup_pmk_r1_name, WPA_PMK_NAME_LEN);
-            wpa_hexdump(MSG_MSGDUMP, "FT: Derived PMKR1Name",
+            wpa_hexdump(MSG_DEBUG, "FT: Derived PMKR1Name",
                     sm->pmk_r1_name, WPA_PMK_NAME_LEN);
             return;
         }

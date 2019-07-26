@@ -168,7 +168,7 @@ static int tls_process_server_hello(struct tlsv1_client *conn, u8 ct,
 
 	if (end != pos) {
 		/* TODO: ServerHello extensions */
-		wpa_hexdump(MSG_MSGDUMP, "TLSv1: Unexpected extra data in the "
+		wpa_hexdump(MSG_DEBUG, "TLSv1: Unexpected extra data in the "
 			    "end of ServerHello", pos, end - pos);
 		goto decode_error;
 	}
@@ -432,7 +432,7 @@ static int tlsv1_process_diffie_hellman(struct tlsv1_client *conn,
 		goto fail;
 	os_memcpy(conn->dh_p, pos, conn->dh_p_len);
 	pos += conn->dh_p_len;
-	wpa_hexdump(MSG_MSGDUMP, "TLSv1: DH p (prime)",
+	wpa_hexdump(MSG_DEBUG, "TLSv1: DH p (prime)",
 		    conn->dh_p, conn->dh_p_len);
 
 	if (end - pos < 3)
@@ -446,7 +446,7 @@ static int tlsv1_process_diffie_hellman(struct tlsv1_client *conn,
 		goto fail;
 	os_memcpy(conn->dh_g, pos, conn->dh_g_len);
 	pos += conn->dh_g_len;
-	wpa_hexdump(MSG_MSGDUMP, "TLSv1: DH g (generator)",
+	wpa_hexdump(MSG_DEBUG, "TLSv1: DH g (generator)",
 		    conn->dh_g, conn->dh_g_len);
 	if (conn->dh_g_len == 1 && conn->dh_g[0] < 2)
 		goto fail;
@@ -462,7 +462,7 @@ static int tlsv1_process_diffie_hellman(struct tlsv1_client *conn,
 		goto fail;
 	os_memcpy(conn->dh_ys, pos, conn->dh_ys_len);
 	pos += conn->dh_ys_len;
-	wpa_hexdump(MSG_MSGDUMP, "TLSv1: DH Ys (server's public value)",
+	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Ys (server's public value)",
 		    conn->dh_ys, conn->dh_ys_len);
 
 	return 0;
@@ -540,7 +540,7 @@ static int tls_process_server_key_exchange(struct tlsv1_client *conn, u8 ct,
 		return -1;
 	}
 
-	wpa_hexdump(MSG_MSGDUMP, "TLSv1: ServerKeyExchange", pos, len);
+	wpa_hexdump(MSG_DEBUG, "TLSv1: ServerKeyExchange", pos, len);
 	suite = tls_get_cipher_suite(conn->rl.cipher_suite);
 	if (suite && suite->key_exchange == TLS_KEY_X_DH_anon) {
 		if (tlsv1_process_diffie_hellman(conn, pos, len) < 0) {
@@ -897,7 +897,7 @@ static int tls_process_application_data(struct tlsv1_client *conn, u8 ct,
 	pos = in_data;
 	left = *in_len;
 
-	wpa_hexdump(MSG_MSGDUMP, "TLSv1: Application Data included in Handshake",
+	wpa_hexdump(MSG_DEBUG, "TLSv1: Application Data included in Handshake",
 		    pos, left);
 
 	*out_data = os_malloc(left);

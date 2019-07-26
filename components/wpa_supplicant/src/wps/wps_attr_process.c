@@ -211,7 +211,7 @@ static int wps_process_cred_eap_type(struct wps_credential *cred,
 	if (eap_type == NULL)
 		return 0; /* optional attribute */
 
-	wpa_hexdump(MSG_MSGDUMP, "WPS: EAP Type", eap_type, eap_type_len);
+	wpa_hexdump(MSG_DEBUG, "WPS: EAP Type", eap_type, eap_type_len);
 
 	return 0;
 }

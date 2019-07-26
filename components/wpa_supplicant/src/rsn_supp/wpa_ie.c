@@ -57,7 +57,7 @@ static int  wpa_parse_generic(const u8 *pos, const u8 *end,
 	    pos[2 + WPA_SELECTOR_LEN + 1] == 0) {
 		ie->wpa_ie = pos;
 		ie->wpa_ie_len = pos[1] + 2;
-		wpa_hexdump(MSG_MSGDUMP, "WPA: WPA IE in EAPOL-Key",
+		wpa_hexdump(MSG_DEBUG, "WPA: WPA IE in EAPOL-Key",
 			    ie->wpa_ie, ie->wpa_ie_len);
 		return 0;
 	}
@@ -66,7 +66,7 @@ static int  wpa_parse_generic(const u8 *pos, const u8 *end,
 	    pos[1] >= RSN_SELECTOR_LEN + PMKID_LEN &&
 	    RSN_SELECTOR_GET(pos + 2) == RSN_KEY_DATA_PMKID) {
 		ie->pmkid = pos + 2 + RSN_SELECTOR_LEN;
-		wpa_hexdump(MSG_MSGDUMP, "WPA: PMKID in EAPOL-Key",
+		wpa_hexdump(MSG_DEBUG, "WPA: PMKID in EAPOL-Key",
 			    pos, pos[1] + 2);
 		return 0;
 	}
@@ -75,7 +75,7 @@ static int  wpa_parse_generic(const u8 *pos, const u8 *end,
 	    RSN_SELECTOR_GET(pos + 2) == RSN_KEY_DATA_GROUPKEY) {
 		ie->gtk = pos + 2 + RSN_SELECTOR_LEN;
 		ie->gtk_len = pos[1] - RSN_SELECTOR_LEN;
-		wpa_hexdump(MSG_MSGDUMP, "WPA: GTK in EAPOL-Key",
+		wpa_hexdump(MSG_DEBUG, "WPA: GTK in EAPOL-Key",
 				pos, pos[1] + 2);
 		return 0;
 	}
@@ -84,7 +84,7 @@ static int  wpa_parse_generic(const u8 *pos, const u8 *end,
 	    RSN_SELECTOR_GET(pos + 2) == RSN_KEY_DATA_MAC_ADDR) {
 		ie->mac_addr = pos + 2 + RSN_SELECTOR_LEN;
 		ie->mac_addr_len = pos[1] - RSN_SELECTOR_LEN;
-		wpa_hexdump(MSG_MSGDUMP, "WPA: MAC Address in EAPOL-Key",
+		wpa_hexdump(MSG_DEBUG, "WPA: MAC Address in EAPOL-Key",
 			    pos, pos[1] + 2);
 		return 0;
 	}
@@ -118,7 +118,7 @@ int  wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 				   "underflow (ie=%d len=%d pos=%d)",
 				   pos[0], pos[1], (int) (pos - buf));
 		    #endif	
-			wpa_hexdump(MSG_MSGDUMP, "WPA: Key Data",
+			wpa_hexdump(MSG_DEBUG, "WPA: Key Data",
 					buf, len);
 			ret = -1;
 			break;
@@ -126,7 +126,7 @@ int  wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 		if (*pos == WLAN_EID_RSN) {
 			ie->rsn_ie = pos;
 			ie->rsn_ie_len = pos[1] + 2;
-			wpa_hexdump(MSG_MSGDUMP, "WPA: RSN IE in EAPOL-Key",
+			wpa_hexdump(MSG_DEBUG, "WPA: RSN IE in EAPOL-Key",
 				    ie->rsn_ie, ie->rsn_ie_len);
 		} else if (*pos == WLAN_EID_VENDOR_SPECIFIC) {
 			ret = wpa_parse_generic(pos, end, ie);
@@ -137,7 +137,7 @@ int  wpa_supplicant_parse_ies(const u8 *buf, size_t len,
 				break;
 			}
 		} else {
-			wpa_hexdump(MSG_MSGDUMP, "WPA: Unrecognized EAPOL-Key "
+			wpa_hexdump(MSG_DEBUG, "WPA: Unrecognized EAPOL-Key "
 				    "Key Data IE", pos, 2 + pos[1]);
 		}
 	}

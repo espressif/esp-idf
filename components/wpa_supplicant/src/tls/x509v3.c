@@ -430,7 +430,7 @@ static int x509_parse_name(const u8 *buf, size_t len, struct x509_name *name,
 		}
 
 		if (type == X509_NAME_ATTR_NOT_USED) {
-			wpa_hexdump(MSG_MSGDUMP, "X509: Unrecognized OID",
+			wpa_hexdump(MSG_DEBUG, "X509: Unrecognized OID",
 				    (u8 *) oid.oid,
 				    oid.len * sizeof(oid.oid[0]));
 			wpa_hexdump_ascii(MSG_MSGDUMP, "X509: Attribute Data",
@@ -1331,7 +1331,7 @@ static int x509_parse_tbs_certificate(const u8 *buf, size_t len,
 
 	pos = hdr.payload + hdr.length;
 	if (pos < end) {
-		wpa_hexdump(MSG_MSGDUMP,
+		wpa_hexdump(MSG_DEBUG,
 			    "X509: Ignored extra tbsCertificate data",
 			    pos, end - pos);
 	}

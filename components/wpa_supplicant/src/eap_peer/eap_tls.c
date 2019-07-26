@@ -130,7 +130,7 @@ static void eap_tls_success(struct eap_sm *sm, struct eap_tls_data *data,
 							  EAP_TYPE_TLS,
 			                                  &data->id_len);
 	if (data->session_id) {
-		wpa_hexdump(MSG_MSGDUMP, "EAP-TLS: Derived Session-Id",
+		wpa_hexdump(MSG_DEBUG, "EAP-TLS: Derived Session-Id",
 			    data->session_id, data->id_len);
 	} else {
 		wpa_printf(MSG_ERROR, "EAP-TLS: Failed to derive Session-Id");

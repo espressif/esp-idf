@@ -434,7 +434,7 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	if (res) {
 		wpa_printf( MSG_DEBUG, "Failed to parse WPA/RSN IE from "
 			   MACSTR " (res=%d)", MAC2STR(sm->addr), res);
-		wpa_hexdump(MSG_MSGDUMP, "WPA/RSN IE", wpa_ie, wpa_ie_len);
+		wpa_hexdump(MSG_DEBUG, "WPA/RSN IE", wpa_ie, wpa_ie_len);
 		return WPA_INVALID_IE;
 	}
 
@@ -524,7 +524,7 @@ int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		}
 		if (memcmp(mdie, wpa_auth->conf.mobility_domain,
 			      MOBILITY_DOMAIN_ID_LEN) != 0) {
-			wpa_hexdump(MSG_MSGDUMP, "RSN: Attempted to use unknown "
+			wpa_hexdump(MSG_DEBUG, "RSN: Attempted to use unknown "
 				    "MDIE", mdie, MOBILITY_DOMAIN_ID_LEN);
 			return WPA_INVALID_MDIE;
 		}
@@ -690,7 +690,7 @@ int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie)
 				break;
 			}
 		} else {
-			wpa_hexdump(MSG_MSGDUMP, "WPA: Unrecognized EAPOL-Key "
+			wpa_hexdump(MSG_DEBUG, "WPA: Unrecognized EAPOL-Key "
 				    "Key Data IE", pos, 2 + pos[1]);
 		}
 	}
