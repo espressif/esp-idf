@@ -36,7 +36,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example output
 
-Here is an typical example console output. 
+Here is a typical example console output. 
 
 ```
 I (280) example: Mounting FAT filesystem
