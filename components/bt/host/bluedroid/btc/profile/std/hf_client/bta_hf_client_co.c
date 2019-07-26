@@ -73,8 +73,8 @@ static bta_hf_client_co_cb_t *bta_hf_client_co_cb_ptr;
 #define bta_hf_client_co_cb (*bta_hf_client_co_cb_ptr)
 #endif /* HFP_DYNAMIC_MEMORY == FALSE */
 
-static UINT8 hf_air_mode;
-static UINT8 hf_inout_pkt_size;
+static UINT8 hf_air_mode = BTM_SCO_AIR_MODE_UNKNOWN;
+static UINT8 hf_inout_pkt_size = 0;
 
 /*******************************************************************************
 **
@@ -223,6 +223,9 @@ void bta_hf_client_sco_co_open(UINT16 handle, UINT8 air_mode, UINT8 inout_pkt_si
 
 #if (HFP_DYNAMIC_MEMORY == TRUE)
 error_exit:;
+    hf_air_mode = BTM_SCO_AIR_MODE_UNKNOWN;
+    hf_inout_pkt_size = 0;
+
     if (bta_hf_client_co_cb_ptr) {
         osi_free(bta_hf_client_co_cb_ptr);
         bta_hf_client_co_cb_ptr = NULL;
@@ -271,6 +274,9 @@ void bta_hf_client_sco_co_close(void)
     } else {
         // Nothing to do
     }
+
+    hf_air_mode = BTM_SCO_AIR_MODE_UNKNOWN;
+    hf_inout_pkt_size = 0;
 }
 
 /*******************************************************************************
