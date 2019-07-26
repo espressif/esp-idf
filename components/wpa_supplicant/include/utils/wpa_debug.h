@@ -58,7 +58,6 @@ void wpa_debug_print_timestamp(void);
  *
  * Note: New line '\n' is added to the end of the text when printing to stdout.
  */
-#define  DEBUG_PRINT
 #define   MSG_PRINT
 
 /**
@@ -151,6 +150,7 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #else
 #define wpa_printf(level,fmt, args...)
 #define wpa_hexdump(...)
+#define wpa_dump_mem(...)
 #define wpa_hexdump_buf(...)
 #define wpa_hexdump_key(...)
 #define wpa_hexdump_buf_key(...)
