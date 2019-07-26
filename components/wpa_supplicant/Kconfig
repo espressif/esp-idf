@@ -18,4 +18,15 @@ menu "Supplicant"
             which will cause M2 validation fail, bypassing WPS-Config method
             validation.
 
+    config WPA_DEBUG_PRINT
+        bool "Print debug messages from WPA Supplicant"
+        default n
+        help
+            Select this option to print logging information from WPA supplicant,
+            this includes handshake information and key hex dumps depending
+            on the project logging level.
+
+            Enabling this could increase the build size ~60kb
+            depending on the project logging level.
+
 endmenu
