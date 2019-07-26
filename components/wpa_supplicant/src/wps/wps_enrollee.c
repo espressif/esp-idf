@@ -51,8 +51,8 @@ static int wps_build_e_hash(struct wps_data *wps, struct wpabuf *msg)
 
 	if (random_get_bytes(wps->snonce, 2 * WPS_SECRET_NONCE_LEN) < 0)
 		return -1;
-	wpa_hexdump(MSG_DEBUG, "WPS: E-S1", wps->snonce, WPS_SECRET_NONCE_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: E-S2",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: E-S1", wps->snonce, WPS_SECRET_NONCE_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: E-S2",
 		    wps->snonce + WPS_SECRET_NONCE_LEN, WPS_SECRET_NONCE_LEN);
 
 	if (wps->dh_pubkey_e == NULL || wps->dh_pubkey_r == NULL) {
@@ -75,7 +75,7 @@ static int wps_build_e_hash(struct wps_data *wps, struct wpabuf *msg)
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
 	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
-	wpa_hexdump(MSG_DEBUG, "WPS: E-Hash1", hash, SHA256_MAC_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: E-Hash1", hash, SHA256_MAC_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS:  * E-Hash2");
 	wpabuf_put_be16(msg, ATTR_E_HASH2);
@@ -85,7 +85,7 @@ static int wps_build_e_hash(struct wps_data *wps, struct wpabuf *msg)
 	addr[0] = wps->snonce + WPS_SECRET_NONCE_LEN;
 	addr[1] = wps->psk2;
 	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
-	wpa_hexdump(MSG_DEBUG, "WPS: E-Hash2", hash, SHA256_MAC_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: E-Hash2", hash, SHA256_MAC_LEN);
 
 	return 0;
 }
@@ -119,7 +119,7 @@ static struct wpabuf * wps_build_m1(struct wps_data *wps)
 
 	if (random_get_bytes(wps->nonce_e, WPS_NONCE_LEN) < 0)
 		return NULL;
-	wpa_hexdump(MSG_DEBUG, "WPS: Enrollee Nonce",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Enrollee Nonce",
 		    wps->nonce_e, WPS_NONCE_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS: Building Message M1");
@@ -479,7 +479,7 @@ static int wps_process_registrar_nonce(struct wps_data *wps, const u8 *r_nonce)
 	}
 
 	os_memcpy(wps->nonce_r, r_nonce, WPS_NONCE_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: Registrar Nonce",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Registrar Nonce",
 		    wps->nonce_r, WPS_NONCE_LEN);
 
 	return 0;
@@ -510,7 +510,7 @@ static int wps_process_uuid_r(struct wps_data *wps, const u8 *uuid_r)
 	}
 
 	os_memcpy(wps->uuid_r, uuid_r, WPS_UUID_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: UUID-R", wps->uuid_r, WPS_UUID_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: UUID-R", wps->uuid_r, WPS_UUID_LEN);
 
 	return 0;
 }
@@ -549,7 +549,7 @@ static int wps_process_r_hash1(struct wps_data *wps, const u8 *r_hash1)
 	}
 
 	os_memcpy(wps->peer_hash1, r_hash1, WPS_HASH_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash1", wps->peer_hash1, WPS_HASH_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: R-Hash1", wps->peer_hash1, WPS_HASH_LEN);
 
 	return 0;
 }
@@ -563,7 +563,7 @@ static int wps_process_r_hash2(struct wps_data *wps, const u8 *r_hash2)
 	}
 
 	os_memcpy(wps->peer_hash2, r_hash2, WPS_HASH_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash2", wps->peer_hash2, WPS_HASH_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: R-Hash2", wps->peer_hash2, WPS_HASH_LEN);
 
 	return 0;
 }
@@ -1451,9 +1451,9 @@ static enum wps_process_res wps_process_wsc_nack(struct wps_data *wps,
 	    os_memcmp(wps->nonce_r, attr->registrar_nonce, WPS_NONCE_LEN) != 0)
 	{
 		wpa_printf(MSG_DEBUG,  "WPS: Mismatch in registrar nonce");
-		wpa_hexdump(MSG_DEBUG, "WPS: Received Registrar Nonce",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: Received Registrar Nonce",
 			    attr->registrar_nonce, WPS_NONCE_LEN);
-		wpa_hexdump(MSG_DEBUG, "WPS: Expected Registrar Nonce",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: Expected Registrar Nonce",
 			    wps->nonce_r, WPS_NONCE_LEN);
 		res = WPS_FAILURE;
 		goto _out;
@@ -1462,9 +1462,9 @@ static enum wps_process_res wps_process_wsc_nack(struct wps_data *wps,
 	if (attr->enrollee_nonce == NULL ||
 	    os_memcmp(wps->nonce_e, attr->enrollee_nonce, WPS_NONCE_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: Mismatch in enrollee nonce");
-		wpa_hexdump(MSG_DEBUG, "WPS: Received Enrollee Nonce",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: Received Enrollee Nonce",
 			    attr->enrollee_nonce, WPS_NONCE_LEN);
-		wpa_hexdump(MSG_DEBUG, "WPS: Expected Enrollee Nonce",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: Expected Enrollee Nonce",
 			    wps->nonce_e, WPS_NONCE_LEN);
 		res = WPS_FAILURE;
 		goto _out;

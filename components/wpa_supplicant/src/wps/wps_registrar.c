@@ -209,7 +209,7 @@ static void wps_registrar_add_authorized_mac(struct wps_registrar *reg,
 		os_memcpy(reg->authorized_macs[i], reg->authorized_macs[i - 1],
 			  ETH_ALEN);
 	os_memcpy(reg->authorized_macs[0], addr, ETH_ALEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: Authorized MACs",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Authorized MACs",
 		    (u8 *) reg->authorized_macs, sizeof(reg->authorized_macs));
 }
 
@@ -234,7 +234,7 @@ static void wps_registrar_remove_authorized_mac(struct wps_registrar *reg,
 			  ETH_ALEN);
 	os_memset(reg->authorized_macs[WPS_MAX_AUTHORIZED_MACS - 1], 0,
 		  ETH_ALEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: Authorized MACs",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Authorized MACs",
 		    (u8 *) reg->authorized_macs, sizeof(reg->authorized_macs));
 }
 
@@ -376,7 +376,7 @@ static void wps_registrar_remove_pbc_session(struct wps_registrar *reg,
 			pbc = pbc->next;
 			wpa_printf(MSG_DEBUG,  "WPS: Removing PBC session for "
 				   "addr=" MACSTR, MAC2STR(tmp->addr));
-			wpa_hexdump(MSG_DEBUG, "WPS: Removed UUID-E",
+			wpa_hexdump(MSG_MSGDUMP, "WPS: Removed UUID-E",
 				    tmp->uuid_e, WPS_UUID_LEN);
 			os_free(tmp);
 			continue;
@@ -401,7 +401,7 @@ int wps_registrar_pbc_overlap(struct wps_registrar *reg,
 
 	if (uuid_e) {
 		wpa_printf(MSG_DEBUG,  "WPS: Add one for the requested UUID");
-		wpa_hexdump(MSG_DEBUG, "WPS: Requested UUID",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: Requested UUID",
 			    uuid_e, WPS_UUID_LEN);
 		count++;
 	}
@@ -409,7 +409,7 @@ int wps_registrar_pbc_overlap(struct wps_registrar *reg,
 	for (pbc = reg->pbc_sessions; pbc; pbc = pbc->next) {
 		wpa_printf(MSG_DEBUG,  "WPS: Consider PBC session with " MACSTR,
 			   MAC2STR(pbc->addr));
-		wpa_hexdump(MSG_DEBUG, "WPS: UUID-E",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: UUID-E",
 			    pbc->uuid_e, WPS_UUID_LEN);
 		if (now.sec > pbc->timestamp.sec + WPS_PBC_WALK_TIME) {
 			wpa_printf(MSG_DEBUG,  "WPS: PBC walk time has "
@@ -764,7 +764,7 @@ int wps_registrar_add_pin(struct wps_registrar *reg, const u8 *addr,
 
 	wpa_printf(MSG_DEBUG,  "WPS: A new PIN configured (timeout=%d)",
 		   timeout);
-	wpa_hexdump(MSG_DEBUG, "WPS: UUID", uuid, WPS_UUID_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: UUID", uuid, WPS_UUID_LEN);
 	wpa_hexdump_ascii_key(MSG_DEBUG, "WPS: PIN", pin, pin_len);
 	reg->selected_registrar = 1;
 	reg->pbc = 0;
@@ -805,7 +805,7 @@ static void wps_registrar_expire_pins(struct wps_registrar *reg)
 	{
 		if ((pin->flags & PIN_EXPIRES) &&
 		    os_time_before(&pin->expiration, &now)) {
-			wpa_hexdump(MSG_DEBUG, "WPS: Expired PIN for UUID",
+			wpa_hexdump(MSG_MSGDUMP, "WPS: Expired PIN for UUID",
 				    pin->uuid, WPS_UUID_LEN);
 			wps_registrar_remove_pin(reg, pin);
 		}
@@ -833,7 +833,7 @@ static int wps_registrar_invalidate_wildcard_pin(struct wps_registrar *reg,
 		     os_memcmp(dev_pw, pin->pin, dev_pw_len) != 0))
 			continue; /* different PIN */
 		if (pin->wildcard_uuid) {
-			wpa_hexdump(MSG_DEBUG, "WPS: Invalidated PIN for UUID",
+			wpa_hexdump(MSG_MSGDUMP, "WPS: Invalidated PIN for UUID",
 				    pin->uuid, WPS_UUID_LEN);
 			wps_registrar_remove_pin(reg, pin);
 			return 0;
@@ -857,7 +857,7 @@ int wps_registrar_invalidate_pin(struct wps_registrar *reg, const u8 *uuid)
 	dl_list_for_each_safe(pin, prev, &reg->pins, struct wps_uuid_pin, list)
 	{
 		if (os_memcmp(pin->uuid, uuid, WPS_UUID_LEN) == 0) {
-			wpa_hexdump(MSG_DEBUG, "WPS: Invalidated PIN for UUID",
+			wpa_hexdump(MSG_MSGDUMP, "WPS: Invalidated PIN for UUID",
 				    pin->uuid, WPS_UUID_LEN);
 			wps_registrar_remove_pin(reg, pin);
 			return 0;
@@ -1135,7 +1135,7 @@ void wps_registrar_probe_req_rx(struct wps_registrar *reg, const u8 *addr,
 			   "UUID-E included");
 		return;
 	}
-	wpa_hexdump(MSG_DEBUG, "WPS: UUID-E from Probe Request", attr.uuid_e,
+	wpa_hexdump(MSG_MSGDUMP, "WPS: UUID-E from Probe Request", attr.uuid_e,
 		    WPS_UUID_LEN);
 
 #ifdef WPS_WORKAROUNDS
@@ -1404,8 +1404,8 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 
 	if (random_get_bytes(wps->snonce, 2 * WPS_SECRET_NONCE_LEN) < 0)
 		return -1;
-	wpa_hexdump(MSG_DEBUG, "WPS: R-S1", wps->snonce, WPS_SECRET_NONCE_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: R-S2",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: R-S1", wps->snonce, WPS_SECRET_NONCE_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: R-S2",
 		    wps->snonce + WPS_SECRET_NONCE_LEN, WPS_SECRET_NONCE_LEN);
 
 	if (wps->dh_pubkey_e == NULL || wps->dh_pubkey_r == NULL) {
@@ -1428,7 +1428,7 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
 	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
-	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash1", hash, SHA256_MAC_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: R-Hash1", hash, SHA256_MAC_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS:  * R-Hash2");
 	wpabuf_put_be16(msg, ATTR_R_HASH2);
@@ -1438,7 +1438,7 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 	addr[0] = wps->snonce + WPS_SECRET_NONCE_LEN;
 	addr[1] = wps->psk2;
 	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
-	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash2", hash, SHA256_MAC_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: R-Hash2", hash, SHA256_MAC_LEN);
 
 	return 0;
 }
@@ -1776,9 +1776,9 @@ static struct wpabuf * wps_build_m2(struct wps_data *wps)
 
 	if (random_get_bytes(wps->nonce_r, WPS_NONCE_LEN) < 0)
 		return NULL;
-	wpa_hexdump(MSG_DEBUG, "WPS: Registrar Nonce",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Registrar Nonce",
 		    wps->nonce_r, WPS_NONCE_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: UUID-R", wps->uuid_r, WPS_UUID_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: UUID-R", wps->uuid_r, WPS_UUID_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS: Building Message M2");
 	msg = wpabuf_alloc(1000);
@@ -2068,7 +2068,7 @@ static int wps_process_enrollee_nonce(struct wps_data *wps, const u8 *e_nonce)
 	}
 
 	os_memcpy(wps->nonce_e, e_nonce, WPS_NONCE_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: Enrollee Nonce",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Enrollee Nonce",
 		    wps->nonce_e, WPS_NONCE_LEN);
 
 	return 0;
@@ -2099,7 +2099,7 @@ static int wps_process_uuid_e(struct wps_data *wps, const u8 *uuid_e)
 	}
 
 	os_memcpy(wps->uuid_e, uuid_e, WPS_UUID_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: UUID-E", wps->uuid_e, WPS_UUID_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: UUID-E", wps->uuid_e, WPS_UUID_LEN);
 
 	return 0;
 }
@@ -2127,7 +2127,7 @@ static int wps_process_e_hash1(struct wps_data *wps, const u8 *e_hash1)
 	}
 
 	os_memcpy(wps->peer_hash1, e_hash1, WPS_HASH_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: E-Hash1", wps->peer_hash1, WPS_HASH_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: E-Hash1", wps->peer_hash1, WPS_HASH_LEN);
 
 	return 0;
 }
@@ -2141,7 +2141,7 @@ static int wps_process_e_hash2(struct wps_data *wps, const u8 *e_hash2)
 	}
 
 	os_memcpy(wps->peer_hash2, e_hash2, WPS_HASH_LEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: E-Hash2", wps->peer_hash2, WPS_HASH_LEN);
+	wpa_hexdump(MSG_MSGDUMP, "WPS: E-Hash2", wps->peer_hash2, WPS_HASH_LEN);
 
 	return 0;
 }
@@ -3310,7 +3310,7 @@ static void wps_registrar_sel_reg_add(struct wps_registrar *reg,
 			  s->authorized_macs[j], ETH_ALEN);
 		i++;
 	}
-	wpa_hexdump(MSG_DEBUG, "WPS: Authorized MACs union",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Authorized MACs union",
 		    (u8 *) reg->authorized_macs_union,
 		    sizeof(reg->authorized_macs_union));
 }
@@ -3360,7 +3360,7 @@ void wps_registrar_selected_registrar_changed(struct wps_registrar *reg)
 	reg->sel_reg_config_methods_override = -1;
 	os_memcpy(reg->authorized_macs_union, reg->authorized_macs,
 		  WPS_MAX_AUTHORIZED_MACS * ETH_ALEN);
-	wpa_hexdump(MSG_DEBUG, "WPS: Authorized MACs union (start with own)",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Authorized MACs union (start with own)",
 		    (u8 *) reg->authorized_macs_union,
 		    sizeof(reg->authorized_macs_union));
 	if (reg->selected_registrar) {
@@ -3524,7 +3524,7 @@ int wps_registrar_add_nfc_password_token(struct wps_registrar *reg,
 	wpa_printf(MSG_DEBUG,  "WPS: Add NFC Password Token for Password ID %u",
 		   id);
 
-	wpa_hexdump(MSG_DEBUG, "WPS: Public Key Hash",
+	wpa_hexdump(MSG_MSGDUMP, "WPS: Public Key Hash",
 		    hash, WPS_OOB_PUBKEY_HASH_LEN);
 	wpa_hexdump_key(MSG_DEBUG, "WPS: Device Password", dev_pw, dev_pw_len);
 

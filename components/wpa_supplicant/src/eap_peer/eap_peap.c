@@ -430,16 +430,16 @@ eap_tlv_validate_cryptobinding(struct eap_sm *sm,
 	os_memcpy(buf, crypto_tlv, 60);
 	os_memset(buf + 4 + 4 + 32, 0, 20); /* Compound_MAC */
 	buf[60] = EAP_TYPE_PEAP;
-	wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Compound_MAC data",
+	wpa_hexdump(MSG_MSGDUMP, "EAP-PEAP: Compound_MAC data",
 		    buf, sizeof(buf));
 	hmac_sha1(data->cmk, 20, buf, sizeof(buf), mac);
 
 	if (os_memcmp(mac, pos, SHA1_MAC_LEN) != 0) {
 		wpa_printf(MSG_DEBUG, "EAP-PEAP: Invalid Compound_MAC in "
 			   "cryptobinding TLV");
-		wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Received MAC",
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PEAP: Received MAC",
 			    pos, SHA1_MAC_LEN);
-		wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Expected MAC",
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PEAP: Expected MAC",
 			    mac, SHA1_MAC_LEN);
 		return -1;
 	}
@@ -480,7 +480,7 @@ eap_tlv_process(struct eap_sm *sm, struct eap_peap_data *data,
 	pos = eap_hdr_validate(EAP_VENDOR_IETF, EAP_TYPE_TLV, req, &left);
 	if (pos == NULL)
 		return -1;
-	wpa_hexdump(MSG_DEBUG, "EAP-TLV: Received TLVs", pos, left);
+	wpa_hexdump(MSG_MSGDUMP, "EAP-TLV: Received TLVs", pos, left);
 	while (left >= 4) {
 		mandatory = !!(pos[0] & 0x80);
 		tlv_type = WPA_GET_BE16(pos) & 0x3fff;
@@ -530,7 +530,7 @@ eap_tlv_process(struct eap_sm *sm, struct eap_peap_data *data,
 
 	/* Process supported TLVs */
 	if (crypto_tlv && data->crypto_binding != NO_BINDING) {
-		wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Cryptobinding TLV",
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PEAP: Cryptobinding TLV",
 			    crypto_tlv, crypto_tlv_len);
 		if (eap_tlv_validate_cryptobinding(sm, data, crypto_tlv - 4,
 						   crypto_tlv_len + 4) < 0) {
@@ -548,7 +548,7 @@ eap_tlv_process(struct eap_sm *sm, struct eap_peap_data *data,
 
 	if (result_tlv) {
 		int status, resp_status;
-		wpa_hexdump(MSG_DEBUG, "EAP-TLV: Result TLV",
+		wpa_hexdump(MSG_MSGDUMP, "EAP-TLV: Result TLV",
 			    result_tlv, result_tlv_len);
 		if (result_tlv_len < 2) {
 			wpa_printf(MSG_INFO, "EAP-TLV: Too short Result TLV "
@@ -1132,7 +1132,7 @@ eap_peap_process(struct eap_sm *sm, void *priv,
 							       EAP_TYPE_PEAP,
 							       &data->id_len);
 			if (data->session_id) {
-				wpa_hexdump(MSG_DEBUG,
+				wpa_hexdump(MSG_MSGDUMP,
 					    "EAP-PEAP: Derived Session-Id",
 					    data->session_id, data->id_len);
 			} else {
@@ -1292,7 +1292,7 @@ eap_peap_getKey(struct eap_sm *sm, void *priv, size_t *len)
 		}
 		wpa_hexdump_key(MSG_DEBUG, "EAP-PEAP: CSK", csk, sizeof(csk));
 		os_memcpy(key, csk, EAP_TLS_KEY_LEN);
-		wpa_hexdump(MSG_DEBUG, "EAP-PEAP: Derived key",
+		wpa_hexdump(MSG_MSGDUMP, "EAP-PEAP: Derived key",
 			    key, EAP_TLS_KEY_LEN);
 	} else
 		os_memcpy(key, data->key_data, EAP_TLS_KEY_LEN);

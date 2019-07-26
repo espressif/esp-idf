@@ -101,7 +101,7 @@ crypto_rsa_import_public_key(const u8 *buf, size_t len)
 		goto error;
 
 	if (pos != end) {
-		wpa_hexdump(MSG_DEBUG,
+		wpa_hexdump(MSG_MSGDUMP,
 			    "RSA: Extra data in public key SEQUENCE",
 			    pos, end - pos);
 		goto error;
@@ -203,7 +203,7 @@ crypto_rsa_import_private_key(const u8 *buf, size_t len)
 		goto error;
 
 	if (pos != end) {
-		wpa_hexdump(MSG_DEBUG,
+		wpa_hexdump(MSG_MSGDUMP,
 			    "RSA: Extra data in public key SEQUENCE",
 			    pos, end - pos);
 		goto error;

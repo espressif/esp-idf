@@ -630,7 +630,7 @@ static int tls_process_client_key_exchange_dh_anon(
 		return -1;
 	}
 
-	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Yc (client's public value)",
+	wpa_hexdump(MSG_MSGDUMP, "TLSv1: DH Yc (client's public value)",
 		    dh_yc, dh_yc_len);
 
 	if (conn->cred == NULL || conn->cred->dh_p == NULL ||
@@ -740,7 +740,7 @@ static int tls_process_client_key_exchange(struct tlsv1_server *conn, u8 ct,
 
 	wpa_printf(MSG_DEBUG, "TLSv1: Received ClientKeyExchange");
 
-	wpa_hexdump(MSG_DEBUG, "TLSv1: ClientKeyExchange", pos, len);
+	wpa_hexdump(MSG_MSGDUMP, "TLSv1: ClientKeyExchange", pos, len);
 
 	suite = tls_get_cipher_suite(conn->rl.cipher_suite);
 	if (suite == NULL)

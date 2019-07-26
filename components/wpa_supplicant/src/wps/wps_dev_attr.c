@@ -141,7 +141,7 @@ int wps_build_req_dev_type(struct wps_device_data *dev, struct wpabuf *msg,
 	unsigned int i;
 
 	for (i = 0; i < num_req_dev_types; i++) {
-		wpa_hexdump(MSG_DEBUG, "WPS: * Requested Device Type",
+		wpa_hexdump(MSG_MSGDUMP, "WPS: * Requested Device Type",
 			    req_dev_types + i * WPS_DEV_TYPE_LEN,
 			    WPS_DEV_TYPE_LEN);
 		wpabuf_put_be16(msg, ATTR_REQUESTED_DEV_TYPE);
@@ -204,7 +204,7 @@ int wps_build_os_version(struct wps_device_data *dev, struct wpabuf *msg)
 int wps_build_vendor_ext_m1(struct wps_device_data *dev, struct wpabuf *msg)
 {
 	if (dev->vendor_ext_m1 != NULL) {
-		wpa_hexdump(MSG_DEBUG, "WPS:  * Vendor Extension M1",
+		wpa_hexdump(MSG_MSGDUMP, "WPS:  * Vendor Extension M1",
 			    wpabuf_head_u8(dev->vendor_ext_m1),
 			    wpabuf_len(dev->vendor_ext_m1));
 		wpabuf_put_be16(msg, ATTR_VENDOR_EXT);
@@ -232,7 +232,7 @@ int wps_build_vendor_ext(struct wps_device_data *dev, struct wpabuf *msg)
 	for (i = 0; i < MAX_WPS_VENDOR_EXTENSIONS; i++) {
 		if (dev->vendor_ext[i] == NULL)
 			continue;
-		wpa_hexdump(MSG_DEBUG, "WPS:  * Vendor Extension",
+		wpa_hexdump(MSG_MSGDUMP, "WPS:  * Vendor Extension",
 			    wpabuf_head_u8(dev->vendor_ext[i]),
 			    wpabuf_len(dev->vendor_ext[i]));
 		wpabuf_put_be16(msg, ATTR_VENDOR_EXT);

@@ -332,7 +332,7 @@ static int tls_write_server_key_exchange(struct tlsv1_server *conn,
 	}
 
 
-	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Ys (server's public value)",
+	wpa_hexdump(MSG_MSGDUMP, "TLSv1: DH Ys (server's public value)",
 		    dh_ys, dh_ys_len);
 
 	/*

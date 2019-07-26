@@ -338,7 +338,7 @@ void   wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
         wpa_hexdump(MSG_MSGDUMP, "RSN: msg 1/4 key data", _buf, len);
         wpa_supplicant_parse_ies(_buf, len, &ie);
         if (ie.pmkid) {
-            wpa_hexdump(MSG_DEBUG, "RSN: PMKID from "
+            wpa_hexdump(MSG_MSGDUMP, "RSN: PMKID from "
                     "Authenticator", ie.pmkid, PMKID_LEN);
         }
     }
@@ -364,7 +364,7 @@ void   wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
         }
          
         sm->renew_snonce = 0;
-        wpa_hexdump(MSG_DEBUG, "WPA: Renewed SNonce",
+        wpa_hexdump(MSG_MSGDUMP, "WPA: Renewed SNonce",
                 sm->snonce, WPA_NONCE_LEN);
     }
 
@@ -553,14 +553,14 @@ int   wpa_supplicant_install_gtk(struct wpa_sm *sm,
     u8 gtk_buf[32];
        u8 *key_rsc=(sm->install_gtk).seq;
        
-    wpa_hexdump(MSG_DEBUG, "WPA: Group Key", gd->gtk, gd->gtk_len);
+    wpa_hexdump(MSG_MSGDUMP, "WPA: Group Key", gd->gtk, gd->gtk_len);
 
     #ifdef DEBUG_PRINT    
     wpa_printf(MSG_DEBUG, "WPA: Installing GTK to the driver "
            "(keyidx=%d tx=%d len=%d).\n", gd->keyidx, gd->tx,
            gd->gtk_len);
     #endif    
-    wpa_hexdump(MSG_DEBUG, "WPA: RSC", key_rsc, gd->key_rsc_len);
+    wpa_hexdump(MSG_MSGDUMP, "WPA: RSC", key_rsc, gd->key_rsc_len);
     if (sm->group_cipher == WPA_CIPHER_TKIP) {
         /* Swap Tx/Rx keys for Michael MIC */
         memcpy(gtk_buf, gd->gtk, 16);
@@ -606,7 +606,7 @@ bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd)
     u8 bssid[6];
     int keyidx;
 
-    wpa_hexdump(MSG_DEBUG, "WPA: Group Key", gd->gtk, gd->gtk_len);
+    wpa_hexdump(MSG_MSGDUMP, "WPA: Group Key", gd->gtk, gd->gtk_len);
 
     #ifdef DEBUG_PRINT
     wpa_printf(MSG_DEBUG, "WPA: Judge GTK: (keyidx=%d len=%d).", gd->keyidx, gd->gtk_len);
@@ -674,7 +674,7 @@ int wpa_supplicant_pairwise_gtk(struct wpa_sm *sm,
      */
 
     memset(gd, 0, sizeof(struct wpa_gtk_data));
-    wpa_hexdump(MSG_DEBUG, "RSN: received GTK in pairwise handshake",
+    wpa_hexdump(MSG_MSGDUMP, "RSN: received GTK in pairwise handshake",
             gtk, gtk_len);
 
     if (gtk_len < 2 || gtk_len - 2 > sizeof(gd->gtk))
@@ -857,7 +857,7 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
     u8 *rbuf;
 
     if (kde)
-        wpa_hexdump(MSG_DEBUG, "WPA: KDE for msg 4/4", kde, kde_len);
+        wpa_hexdump(MSG_MSGDUMP, "WPA: KDE for msg 4/4", kde, kde_len);
 
     rbuf = wpa_sm_alloc_eapol(sm, IEEE802_1X_TYPE_EAPOL_KEY, NULL,
                   sizeof(*reply) + kde_len,
@@ -903,7 +903,7 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
         key_rsc = null_rsc;
     } else {
         key_rsc = key->key_rsc;
-        wpa_hexdump(MSG_DEBUG, "WPA: RSC", key_rsc, WPA_KEY_RSC_LEN);
+        wpa_hexdump(MSG_MSGDUMP, "WPA: RSC", key_rsc, WPA_KEY_RSC_LEN);
     }
 
     seq=(isptk) ? (sm->install_ptk).seq : (sm->install_gtk).seq;  
@@ -925,7 +925,7 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
 
     pos = (const u8 *) (key + 1);
     len = WPA_GET_BE16(key->key_data_length);
-    wpa_hexdump(MSG_DEBUG, "WPA: IE KeyData", pos, len);
+    wpa_hexdump(MSG_MSGDUMP, "WPA: IE KeyData", pos, len);
     wpa_supplicant_parse_ies(pos, len, &ie);
     if (ie.gtk && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
         #ifdef DEBUG_PRINT    
@@ -1062,7 +1062,7 @@ failed:
     int maxkeylen;
     struct wpa_eapol_ie_parse ie;
 
-    wpa_hexdump(MSG_DEBUG, "RSN: msg 1/2 key data", keydata, keydatalen);
+    wpa_hexdump(MSG_MSGDUMP, "RSN: msg 1/2 key data", keydata, keydatalen);
     wpa_supplicant_parse_ies(keydata, keydatalen, &ie);
     if (ie.gtk && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
         #ifdef DEBUG_PRINT    
@@ -1083,7 +1083,7 @@ failed:
                           &gd->key_rsc_len, &gd->alg))
         return -1;
 
-    wpa_hexdump(MSG_DEBUG, "RSN: received GTK in group key handshake",
+    wpa_hexdump(MSG_MSGDUMP, "RSN: received GTK in group key handshake",
             ie.gtk, ie.gtk_len);
     gd->keyidx = ie.gtk[0] & 0x3;
     gd->tx = wpa_supplicant_gtk_tx_bit_workaround(sm,
@@ -1378,7 +1378,7 @@ failed:
 {
     u16 keydatalen = WPA_GET_BE16(key->key_data_length);
 
-    wpa_hexdump(MSG_DEBUG, "RSN: encrypted key data",
+    wpa_hexdump(MSG_MSGDUMP, "RSN: encrypted key data",
             (u8 *) (key + 1), keydatalen);
     if (!sm->ptk_set) {
         #ifdef DEBUG_PRINT    
@@ -1441,7 +1441,7 @@ failed:
          #endif    
         return -1;
     }
-    wpa_hexdump(MSG_DEBUG, "WPA: decrypted EAPOL-Key key data",
+    wpa_hexdump(MSG_MSGDUMP, "WPA: decrypted EAPOL-Key key data",
             (u8 *) (key + 1), keydatalen);
     return 0;
 }

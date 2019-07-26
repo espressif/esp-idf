@@ -263,7 +263,7 @@ static int tlsv1_key_x_anon_dh(struct tlsv1_client *conn, u8 **pos, u8 *end)
 		return -1;
 	}
 
-	wpa_hexdump(MSG_DEBUG, "TLSv1: DH Yc (client's public value)",
+	wpa_hexdump(MSG_MSGDUMP, "TLSv1: DH Yc (client's public value)",
 		    dh_yc, dh_yc_len);
 
 	WPA_PUT_BE16(*pos, dh_yc_len);
