@@ -1731,6 +1731,26 @@ void RFCOMM_Init (void)
 
 /*******************************************************************************
 **
+** Function         RFCOMM_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+void RFCOMM_Deinit(void)
+{
+#if RFC_DYNAMIC_MEMORY == TRUE
+    if (rfc_cb_ptr){
+        osi_free(rfc_cb_ptr);
+        rfc_cb_ptr = NULL;
+    }
+#endif
+}
+
+/*******************************************************************************
+**
 ** Function         PORT_SetTraceLevel
 **
 ** Description      This function sets the trace level for RFCOMM. If called with
