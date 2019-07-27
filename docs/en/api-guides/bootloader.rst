@@ -33,7 +33,7 @@ Partitions of type "app" cannot be specified here.
 Partition table.::
 
 	# Name,   Type, SubType, Offset,   Size, Flags
-	# Note: if you change the phy_init or app partition offset, make sure to change the offset in Kconfig.projbuild
+	# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
 	nvs,      data, nvs,     0x9000,   0x4000
 	otadata,  data, ota,     0xd000,   0x2000
 	phy_init, data, phy,     0xf000,   0x1000
