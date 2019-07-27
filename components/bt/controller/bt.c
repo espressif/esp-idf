@@ -203,7 +203,8 @@ extern void btdm_controller_enable_sleep(bool enable);
 extern void btdm_controller_set_sleep_mode(uint8_t mode);
 extern uint8_t btdm_controller_get_sleep_mode(void);
 extern bool btdm_power_state_active(void);
-extern void btdm_wakeup_request(void);
+extern void btdm_wakeup_request(bool request_lock);
+extern void btdm_wakeup_request_end(void);
 /* Low Power Clock */
 extern bool btdm_lpclk_select_src(uint32_t sel);
 extern bool btdm_lpclk_set_div(uint32_t div);
@@ -893,6 +894,8 @@ bool esp_vhci_host_check_send_available(void)
 
 void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
 {
+    bool do_wakeup_request = false;
+
     if (!btdm_power_state_active()) {
 #if CONFIG_PM_ENABLE
         if (semphr_take_wrapper(s_pm_lock_sem, 0)) {
@@ -900,9 +903,15 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len)
         }
         esp_timer_stop(s_btdm_slp_tmr);
 #endif
-        btdm_wakeup_request();
+        do_wakeup_request = true;
+        btdm_wakeup_request(true);
     }
+
     API_vhci_host_send_packet(data, len);
+
+    if (do_wakeup_request) {
+        btdm_wakeup_request_end();
+    }
 }
 
 esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback)
@@ -1328,7 +1337,7 @@ esp_err_t esp_bt_controller_disable(void)
     if (btdm_controller_get_sleep_mode() == BTDM_MODEM_SLEEP_MODE_ORIG) {
         btdm_controller_enable_sleep(false);
         if (!btdm_power_state_active()) {
-            btdm_wakeup_request();
+            btdm_wakeup_request(false);
         }
         while (!btdm_power_state_active()) {
             ets_delay_us(1000);
@@ -1466,7 +1475,7 @@ void esp_bt_controller_wakeup_request(void)
         return;
     }
 
-    btdm_wakeup_request();
+    btdm_wakeup_request(false);
 }
 
 esp_err_t esp_bredr_sco_datapath_set(esp_sco_data_path_t data_path)
