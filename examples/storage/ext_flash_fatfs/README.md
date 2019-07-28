@@ -8,7 +8,7 @@ The flow of the example is as follows:
 
 1. Initialize the SPI bus and configure the pins. In this example, VSPI peripheral is used. The pins chosen in this example correspond to IOMUX pins for the VSPI peripheral. If the pin assignment is changed, SPI driver will instead connect the peripheral to the pins using the GPIO Matrix.
 
-2. Initialize the SPI flash chip. This involves creating a run-time object which describes the flash chip (`esp_flash_t`), probing the flash chip, and configuring it for the selected read mode. By default this example uses "Fast Read" mode, which only requires 4 pins (MOSI, MISO, SCLK, CS). For modes such as DIO, QIO, additional pins must be connected.
+2. Initialize the SPI flash chip. This involves creating a run-time object which describes the flash chip (`esp_flash_t`), probing the flash chip, and configuring it for the selected read mode. By default this example uses DIO mode, which only requires 4 pins (MOSI, MISO, SCLK, CS). For modes such as QIO and QOUT, additional pins must be connected.
 
 3. Register the entire area of the Flash chip as a *partition* (`esp_partition_t`). This allows other components (FATFS, SPIFFS, NVS, etc) to use the storage provided by the external flash chip.
 
@@ -56,7 +56,7 @@ I (328) example: Initializing external SPI Flash
 I (338) example: Pin assignments:
 I (338) example: MOSI: 23   MISO: 19   SCLK: 18   CS:  5
 I (348) spi_flash: detected chip: generic
-I (348) spi_flash: flash io: fastrd
+I (348) spi_flash: flash io: dio
 I (348) example: Initialized external Flash, size=4096 KB, ID=0xef4016
 I (358) example: Adding external Flash as a partition, label="storage", size=4096 KB
 I (368) example: Mounting FAT filesystem
