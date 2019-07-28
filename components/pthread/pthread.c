@@ -820,3 +820,8 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
     }
     return EINVAL;
 }
+
+/* Hook function to force linking this file */
+void pthread_include_pthread_impl()
+{
+}
