@@ -7,7 +7,6 @@ version: 2
 
 # Optionally build your docs in additional formats such as PDF and ePub
 formats:
-  - htmlzip
   - pdf
 
 # Optionally set the version of Python and requirements required to build your docs
@@ -16,7 +15,7 @@ python:
   install:
     - requirements: docs/requirements.txt
 
-# We need to list all the submodules included in documenation build by Doxygen
+# We need to list all the submodules included in documentation build by Doxygen
 submodules: 
   include:
     - components/mqtt/esp-mqtt
