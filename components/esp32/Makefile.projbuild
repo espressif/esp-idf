@@ -2,6 +2,7 @@
 ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
 CFLAGS+=-mfix-esp32-psram-cache-issue
 CXXFLAGS+=-mfix-esp32-psram-cache-issue
+LDFLAGS+=-mfix-esp32-psram-cache-issue
 endif
 
 # Enable dynamic esp_timer overflow value if building unit tests
