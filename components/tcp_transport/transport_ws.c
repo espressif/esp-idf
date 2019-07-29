@@ -208,7 +208,17 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
     if (len == 0) {
         return 0;
     }
-    return esp_transport_write(ws->parent, buffer, len, timeout_ms);
+
+    int ret = esp_transport_write(ws->parent, buffer, len, timeout_ms);
+    // in case of masked transport we have to revert back to the original data, as ws layer
+    // does not create its own copy of data to be sent
+    if (mask_flag) {
+        mask = &ws_header[header_len-4];
+        for (i = 0; i < len; ++i) {
+            buffer[i] = (buffer[i] ^ mask[i % 4]);
+        }
+    }    
+    return ret;
 }
 
 static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeout_ms)
