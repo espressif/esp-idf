@@ -6,7 +6,7 @@
 ##########################################################################
 # *) The value MAX_BLK_LEN depends on CONFIG_EFUSE_MAX_BLK_LEN, will be replaced with "None" - 256. "3/4" - 192. "REPEAT" - 128.
 # !!!!!!!!!!! #
-# After editing this file, run the command manually "make efuse_common_table" or "idf.py efuse_common_table" 
+# After editing this file, run the command manually "make efuse_common_table" or "idf.py efuse_common_table"
 # this will generate new source files, next rebuild all the sources.
 # !!!!!!!!!!! #
 
@@ -36,11 +36,11 @@ ABS_DONE_0,             EFUSE_BLK0,    196,   1,     Secure boot is enabled for 
 ENCRYPT_FLASH_KEY,      EFUSE_BLK1,    0,     MAX_BLK_LEN,  Flash encrypt. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
 ENCRYPT_CONFIG,         EFUSE_BLK0,    188,   4,    Flash encrypt. EFUSE_FLASH_CRYPT_CONFIG_M
 
-DISABLE_DL_ENCRYPT,     EFUSE_BLK0,    199,   1,    Flash encrypt. Disable UART bootloader encryption. EFUSE_DISABLE_DL_ENCRYPT. 
-DISABLE_DL_DECRYPT,     EFUSE_BLK0,    200,   1,    Flash encrypt. Disable UART bootloader decryption. EFUSE_DISABLE_DL_DECRYPT. 
-DISABLE_DL_CACHE,       EFUSE_BLK0,    201,   1,    Flash encrypt. Disable UART bootloader MMU cache. EFUSE_DISABLE_DL_CACHE. 
-DISABLE_JTAG,           EFUSE_BLK0,    198,   1,    Flash encrypt. Disable JTAG. EFUSE_RD_DISABLE_JTAG. 
-CONSOLE_DEBUG_DISABLE,  EFUSE_BLK0,    194,   1,    Flash encrypt. Disable ROM BASIC interpreter fallback. EFUSE_RD_CONSOLE_DEBUG_DISABLE. 
+DISABLE_DL_ENCRYPT,     EFUSE_BLK0,    199,   1,    Flash encrypt. Disable UART bootloader encryption. EFUSE_DISABLE_DL_ENCRYPT.
+DISABLE_DL_DECRYPT,     EFUSE_BLK0,    200,   1,    Flash encrypt. Disable UART bootloader decryption. EFUSE_DISABLE_DL_DECRYPT.
+DISABLE_DL_CACHE,       EFUSE_BLK0,    201,   1,    Flash encrypt. Disable UART bootloader MMU cache. EFUSE_DISABLE_DL_CACHE.
+DISABLE_JTAG,           EFUSE_BLK0,    198,   1,    Flash encrypt. Disable JTAG. EFUSE_RD_DISABLE_JTAG.
+CONSOLE_DEBUG_DISABLE,  EFUSE_BLK0,    194,   1,    Flash encrypt. Disable ROM BASIC interpreter fallback. EFUSE_RD_CONSOLE_DEBUG_DISABLE.
 FLASH_CRYPT_CNT,        EFUSE_BLK0,    20,    7,    Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.
 
 # Write protection #
@@ -53,7 +53,7 @@ WR_DIS_BLK3,            EFUSE_BLK0,    9,     1,    Write protection for EFUSE_B
 # Read protection #
 ###################
 RD_DIS_BLK1,            EFUSE_BLK0,    16,    1,    Flash encrypt. efuse_key_read_protected. EFUSE_RD_DIS_BLK1
-RD_DIS_BLK2,            EFUSE_BLK0,    17,    1,    Security boot. efuse_key_read_protected. EFUSE_RD_DIS_BLK2  
+RD_DIS_BLK2,            EFUSE_BLK0,    17,    1,    Security boot. efuse_key_read_protected. EFUSE_RD_DIS_BLK2
 RD_DIS_BLK3,            EFUSE_BLK0,    18,    1,    Read protection for EFUSE_BLK3. EFUSE_RD_DIS_BLK3
 
 # Chip info #
@@ -64,6 +64,7 @@ CHIP_VER_PKG,           EFUSE_BLK0,    105,   3,    EFUSE_RD_CHIP_VER_PKG
 CHIP_CPU_FREQ_LOW,      EFUSE_BLK0,    108,   1,    EFUSE_RD_CHIP_CPU_FREQ_LOW
 CHIP_CPU_FREQ_RATED,    EFUSE_BLK0,    109,   1,    EFUSE_RD_CHIP_CPU_FREQ_RATED
 CHIP_VER_REV1,          EFUSE_BLK0,    111,   1,    EFUSE_RD_CHIP_VER_REV1
+CHIP_VER_REV2,          EFUSE_BLK0,    180,   1,    EFUSE_RD_CHIP_VER_REV2
 XPD_SDIO_REG,           EFUSE_BLK0,    142,   1,    EFUSE_RD_XPD_SDIO_REG
 SDIO_TIEH,              EFUSE_BLK0,    143,   1,    EFUSE_RD_SDIO_TIEH
 SDIO_FORCE,             EFUSE_BLK0,    144,   1,    EFUSE_RD_SDIO_FORCE
