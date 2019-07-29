@@ -153,42 +153,24 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
     if (config->username) {
         free(cfg->username);
         cfg->username = strdup(config->username);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->username, {
-            free(cfg->host);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->username, return ESP_ERR_NO_MEM);
     }
 
     if (config->password) {
         free(cfg->password);
         cfg->password = strdup(config->password);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->password, {
-            free(cfg->host);
-            free(cfg->username);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->password, return ESP_ERR_NO_MEM);
     }
 
     if (config->uri) {
         free(cfg->uri);
         cfg->uri = strdup(config->uri);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->uri, {
-            free(cfg->host);
-            free(cfg->username);
-            free(cfg->password);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->uri, return ESP_ERR_NO_MEM);
     }
     if (config->path) {
         free(cfg->path);
         cfg->path = strdup(config->path);
-        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->path, {
-            free(cfg->uri);
-            free(cfg->host);
-            free(cfg->username);
-            free(cfg->password);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->path, return ESP_ERR_NO_MEM);
     }
 
     cfg->network_timeout_ms = WEBSOCKET_NETWORK_TIMEOUT_MS;
