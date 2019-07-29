@@ -174,7 +174,7 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
     size_t index = 0;
     while (start[index]) {
         if (name->parts == 4) {
-            return NULL;
+            name->invalid = true;
         }
         uint8_t len = start[index++];
         if (len < 0xC0) {
@@ -195,7 +195,7 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
                 strlcat(name->host, buf, sizeof(name->host));
             } else if (strcasecmp(buf, MDNS_SUB_STR) == 0) {
                 name->sub = 1;
-            } else {
+            } else if (!name->invalid) {
                 char* mdns_name_ptrs[]={name->host, name->service, name->proto, name->domain};
                 memcpy(mdns_name_ptrs[name->parts++], buf, len+1);
             }
@@ -2316,6 +2316,7 @@ static const uint8_t * _mdns_parse_fqdn(const uint8_t * packet, const uint8_t * 
     name->service[0] = 0;
     name->proto[0] = 0;
     name->domain[0] = 0;
+    name->invalid = false;
 
     static char buf[MDNS_NAME_BUF_LEN];
 
@@ -2323,7 +2324,7 @@ static const uint8_t * _mdns_parse_fqdn(const uint8_t * packet, const uint8_t * 
     if (!next_data) {
         return 0;
     }
-    if (!name->parts) {
+    if (!name->parts || name->invalid) {
         return next_data;
     }
     if (name->parts == 3) {
@@ -2621,7 +2622,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
             clas &= 0x7FFF;
             content = content + 4;
 
-            if (clas != 0x0001) {//bad class
+            if (clas != 0x0001 || name->invalid) {//bad class or invalid name for this question entry
                 continue;
             }
 

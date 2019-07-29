@@ -184,6 +184,7 @@ typedef struct {
     char domain[MDNS_NAME_BUF_LEN];
     uint8_t parts;
     uint8_t sub;
+    bool    invalid;
 } mdns_name_t;
 
 typedef struct mdns_parsed_question_s {
