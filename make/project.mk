@@ -418,7 +418,7 @@ endif
 
 # Optimization flags are set based on menuconfig choice
 ifdef CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE
-OPTIMIZATION_FLAGS = -Os
+OPTIMIZATION_FLAGS = -Os -freorder-blocks
 else
 OPTIMIZATION_FLAGS = -Og
 endif

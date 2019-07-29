@@ -11,6 +11,7 @@ unset(compile_definitions)
 
 if(CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE)
     list(APPEND compile_options "-Os")
+    list(APPEND compile_options "-freorder-blocks")
 else()
     list(APPEND compile_options "-Og")
 endif()
