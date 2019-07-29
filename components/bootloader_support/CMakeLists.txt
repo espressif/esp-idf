@@ -2,6 +2,7 @@ set(srcs
     "src/bootloader_clock.c"
     "src/bootloader_common.c"
     "src/bootloader_flash.c"
+    "src/bootloader_flash_config.c"
     "src/bootloader_random.c"
     "src/bootloader_utility.c"
     "src/esp_image_format.c"

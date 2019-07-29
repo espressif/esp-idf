@@ -146,14 +146,6 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
  */
 void bootloader_common_vddsdio_configure();
 
-/**
- * @brief Set the flash CS setup and hold time.
- *
- * CS setup time is recomemded to be 1.5T, and CS hold time is recommended to be 2.5T.
- * cs_setup = 1, cs_setup_time = 0; cs_hold = 1, cs_hold_time = 1
- */
-void bootloader_common_set_flash_cs_timing();
-
 #ifdef __cplusplus
 }
 #endif
