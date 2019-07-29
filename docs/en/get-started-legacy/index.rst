@@ -74,7 +74,7 @@ This is a detailed roadmap to walk you through the installation process.
 Setting up Development Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-setup-toolchain-legacy` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`MacOS <macos-setup>`
+* :ref:`get-started-setup-toolchain-legacy` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`macOS <macos-setup>`
 * :ref:`get-started-get-esp-idf-legacy`
 * :ref:`get-started-setup-path-legacy`
 * :ref:`get-started-get-packages-legacy`
@@ -103,13 +103,13 @@ The quickest way to start development with ESP32 is by installing a prebuilt too
 
     Windows <windows-setup>
     Linux <linux-setup>
-    MacOS <macos-setup>
+    macOS <macos-setup>
 
-+-----------------------------+-------------------------+----------------------------------+
-| |windows-logo|              | |linux-logo|            | |macos-logo|                     |
-+-----------------------------+-------------------------+----------------------------------+
-| `Windows <windows-legacy>`_ | `Linux <linux-legacy>`_ | `Mac OS <macos-legacy>`_         |
-+-----------------------------+-------------------------+----------------------------------+
++-----------------+---------------+---------------+
+| |windows-logo|  | |linux-logo|  | |macos-logo|  |
++-----------------+---------------+---------------+
+| Windows_        | Linux_        | `macOS`_      |
++-----------------+---------------+---------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
     :target: ../get-started-legacy/windows-setup.html
@@ -120,9 +120,9 @@ The quickest way to start development with ESP32 is by installing a prebuilt too
 .. |macos-logo| image:: ../../_static/macos-logo.png
     :target: ../get-started-legacy/macos-setup.html
 
-.. _Windows-legacy: ../get-started-legacy/windows-setup.html
-.. _Linux-legacy: ../get-started-legacy/linux-setup.html
-.. _Mac OS-legacy: ../get-started-legacy/macos-setup.html
+.. _Windows: ../get-started-legacy/windows-setup.html
+.. _Linux: ../get-started-legacy/linux-setup.html
+.. _macOS: ../get-started-legacy/macos-setup.html
 
 .. note::
 
@@ -165,7 +165,7 @@ Step 3. Set Environment Variables
 
 The toolchain uses the environment variable ``IDF_PATH`` to access the ESP-IDF directory. This variable should be set up on your computer, otherwise projects will not build.
 
-These variables can be set temporarily (per session) or permanently. Please follow the instructions specific to :ref:`Windows <add-idf_path-to-profile-windows-legacy>` , :ref:`Linux and MacOS <add-idf_path-to-profile-linux-macos-legacy>` in Section :doc:`add-idf_path-to-profile`.
+These variables can be set temporarily (per session) or permanently. Please follow the instructions specific to :ref:`Windows <add-idf_path-to-profile-windows-legacy>` , :ref:`Linux and macOS <add-idf_path-to-profile-linux-macos-legacy>` in Section :doc:`add-idf_path-to-profile`.
 
 
 .. _get-started-get-packages-legacy:
@@ -195,7 +195,7 @@ Now you are ready to prepare your application for ESP32. You can start with :exa
 
 Copy :example:`get-started/hello_world` to the ``~/esp`` directory:
 
-Linux and MacOS
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 .. code-block:: bash
@@ -246,7 +246,7 @@ Step 7. Configure
 
 Navigate to your ``hello_world`` directory from :ref:`get-started-start-project-legacy` and run the project configuration utility ``menuconfig``.
 
-Linux and MacOS
+Linux and macOS
 ~~~~~~~~~~~~~~~
 
 .. code-block:: bash
