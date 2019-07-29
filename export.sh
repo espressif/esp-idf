@@ -2,9 +2,10 @@
 
 function realpath_int() {
     wdir="$PWD"; [ "$PWD" = "/" ] && wdir=""
-    case "$0" in
-        /*) scriptdir="${0}";;
-        *) scriptdir="$wdir/${0#./}";;
+    arg=$1
+    case "$arg" in
+        /*) scriptdir="${arg}";;
+        *) scriptdir="$wdir/${arg#./}";;
     esac
     scriptdir="${scriptdir%/*}"
     echo "$scriptdir"
