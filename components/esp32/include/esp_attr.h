@@ -34,6 +34,9 @@
 // Forces data to be placed to DMA-capable places
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
 
+// Forces a function to be inlined
+#define FORCE_INLINE_ATTR static inline __attribute__((always_inline))
+
 // Forces a string into DRAM instead of flash
 // Use as ets_printf(DRAM_STR("Hello world!\n"));
 #define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
@@ -45,7 +48,7 @@
 // Forces bss variable into external memory. "
 #define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__)
 #else
-#define EXT_RAM_ATTR 
+#define EXT_RAM_ATTR
 #endif
 
 // Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst"
