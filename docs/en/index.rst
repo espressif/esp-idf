@@ -14,22 +14,22 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 `API Guides`_       `Contribute`_       `Resources`_
 ==================  ==================  ==================
 
-.. |Get Started| image:: ../_static/get-started.gif
+.. |Get Started| image:: ../_static/get-started.png
 .. _Get Started: get-started/index.html
 
-.. |API Reference| image:: ../_static/api-reference.gif
+.. |API Reference| image:: ../_static/api-reference.png
 .. _API Reference: api-reference/index.html
 
-.. |H/W Reference| image:: ../_static/hw-reference.gif
+.. |H/W Reference| image:: ../_static/hw-reference.png
 .. _H/W Reference: hw-reference/index.html
 
-.. |API Guides| image:: ../_static/api-guides.gif
+.. |API Guides| image:: ../_static/api-guides.png
 .. _API Guides: api-guides/index.html
 
-.. |Contribute| image:: ../_static/contribute.gif
+.. |Contribute| image:: ../_static/contribute.png
 .. _Contribute: contribute/index.html
 
-.. |Resources| image:: ../_static/resources.gif
+.. |Resources| image:: ../_static/resources.png
 .. _Resources: resources.html
 
 
