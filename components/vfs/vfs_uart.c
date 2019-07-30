@@ -32,10 +32,26 @@
 #endif
 
 // TODO: make the number of UARTs chip dependent
-#define UART_NUM 3
+#define UART_NUM SOC_UART_NUM
 
 // Token signifying that no character is available
 #define NONE -1
+
+#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CRLF
+#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CR
+#else
+#   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_LF
+#endif
+
+#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CRLF
+#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
+#else
+#   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
+#endif
 
 // UART write bytes function type
 typedef void (*tx_func_t)(int, int);
@@ -50,17 +66,54 @@ static int uart_rx_char(int fd);
 static void uart_tx_char_via_driver(int fd, int c);
 static int uart_rx_char_via_driver(int fd);
 
-// Pointers to UART peripherals
-static uart_dev_t* s_uarts[UART_NUM] = {&UART0, &UART1, &UART2};
-// per-UART locks, lazily initialized
-static _lock_t s_uart_read_locks[UART_NUM];
-static _lock_t s_uart_write_locks[UART_NUM];
-// One-character buffer used for newline conversion code, per UART
-static int s_peek_char[UART_NUM] = { NONE, NONE, NONE };
-// Per-UART non-blocking flag. Note: default implementation does not honor this
-// flag, all reads are non-blocking. This option becomes effective if UART
-// driver is used.
-static bool s_non_blocking[UART_NUM];
+typedef struct {
+    // Pointers to UART peripherals
+    uart_dev_t* uart;
+    // One-character buffer used for newline conversion code, per UART
+    int peek_char;
+    // per-UART locks, lazily initialized
+    _lock_t read_lock;
+    _lock_t write_lock;
+    // Per-UART non-blocking flag. Note: default implementation does not honor this
+    // flag, all reads are non-blocking. This option becomes effective if UART
+    // driver is used.
+    bool non_blocking;
+    // Newline conversion mode when transmitting
+    esp_line_endings_t tx_mode;
+    // Newline conversion mode when receiving
+    esp_line_endings_t rx_mode;
+    // Functions used to write bytes to UART. Default to "basic" functions.
+    tx_func_t tx_func;
+    // Functions used to read bytes from UART. Default to "basic" functions.
+    rx_func_t rx_func;
+} vfs_uart_context_t;
+
+#define VFS_CTX_DEFAULT_VAL(uart_dev) (vfs_uart_context_t) {\
+    .uart = (uart_dev),\
+    .peek_char = NONE,\
+    .tx_mode = DEFAULT_TX_MODE,\
+    .rx_mode = DEFAULT_RX_MODE,\
+    .tx_func = uart_tx_char,\
+    .rx_func = uart_rx_char,\
+}
+
+//If the context should be dynamically initialized, remove this structure
+//and point s_ctx to allocated data.
+static vfs_uart_context_t s_context[UART_NUM] = {
+    VFS_CTX_DEFAULT_VAL(&UART0),
+    VFS_CTX_DEFAULT_VAL(&UART1),
+#if UART_NUM > 2
+    VFS_CTX_DEFAULT_VAL(&UART2),
+#endif
+};
+
+static vfs_uart_context_t* s_ctx[UART_NUM] = {
+    &s_context[0],
+    &s_context[1],
+#if UART_NUM > 2
+    &s_context[2],
+#endif
+};
 
 /* Lock ensuring that uart_select is used from only one task at the time */
 static _lock_t s_one_select_lock;
@@ -73,38 +126,8 @@ static fd_set *_readfds_orig = NULL;
 static fd_set *_writefds_orig = NULL;
 static fd_set *_errorfds_orig = NULL;
 
-// Newline conversion mode when transmitting
-static esp_line_endings_t s_tx_mode =
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
-        ESP_LINE_ENDINGS_CRLF;
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
-        ESP_LINE_ENDINGS_CR;
-#else
-        ESP_LINE_ENDINGS_LF;
-#endif
-
-// Newline conversion mode when receiving
-static esp_line_endings_t s_rx_mode[UART_NUM] = { [0 ... UART_NUM-1] =
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
-        ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
-        ESP_LINE_ENDINGS_CR
-#else
-        ESP_LINE_ENDINGS_LF
-#endif
-};
 
 static void uart_end_select();
-
-// Functions used to write bytes to UART. Default to "basic" functions.
-static tx_func_t s_uart_tx_func[UART_NUM] = {
-        &uart_tx_char, &uart_tx_char, &uart_tx_char
-};
-
-// Functions used to read bytes from UART. Default to "basic" functions.
-static rx_func_t s_uart_rx_func[UART_NUM] = {
-        &uart_rx_char, &uart_rx_char, &uart_rx_char
-};
 
 
 static int uart_open(const char * path, int flags, int mode)
@@ -124,14 +147,14 @@ static int uart_open(const char * path, int flags, int mode)
         return fd;
     }
 
-    s_non_blocking[fd] = ((flags & O_NONBLOCK) == O_NONBLOCK);
+    s_ctx[fd]->non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
 
     return fd;
 }
 
 static void uart_tx_char(int fd, int c)
 {
-    uart_dev_t* uart = s_uarts[fd];
+    uart_dev_t* uart = s_ctx[fd]->uart;
     while (uart->status.txfifo_cnt >= 127) {
         ;
     }
@@ -150,7 +173,7 @@ static void uart_tx_char_via_driver(int fd, int c)
 
 static int uart_rx_char(int fd)
 {
-    uart_dev_t* uart = s_uarts[fd];
+    uart_dev_t* uart = s_ctx[fd]->uart;
     if (uart->status.rxfifo_cnt == 0) {
         return NONE;
     }
@@ -164,7 +187,7 @@ static int uart_rx_char(int fd)
 static int uart_rx_char_via_driver(int fd)
 {
     uint8_t c;
-    int timeout = s_non_blocking[fd] ? 0 : portMAX_DELAY;
+    int timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
     int n = uart_read_bytes(fd, &c, 1, timeout);
     if (n <= 0) {
         return NONE;
@@ -180,18 +203,18 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
      *  same UART.
      */
-    _lock_acquire_recursive(&s_uart_write_locks[fd]);
+    _lock_acquire_recursive(&s_ctx[fd]->write_lock);
     for (size_t i = 0; i < size; i++) {
         int c = data_c[i];
-        if (c == '\n' && s_tx_mode != ESP_LINE_ENDINGS_LF) {
-            s_uart_tx_func[fd](fd, '\r');
-            if (s_tx_mode == ESP_LINE_ENDINGS_CR) {
+        if (c == '\n' && s_ctx[fd]->tx_mode != ESP_LINE_ENDINGS_LF) {
+            s_ctx[fd]->tx_func(fd, '\r');
+            if (s_ctx[fd]->tx_mode == ESP_LINE_ENDINGS_CR) {
                 continue;
             }
         }
-        s_uart_tx_func[fd](fd, c);
+        s_ctx[fd]->tx_func(fd, c);
     }
-    _lock_release_recursive(&s_uart_write_locks[fd]);
+    _lock_release_recursive(&s_ctx[fd]->write_lock);
     return size;
 }
 
@@ -202,19 +225,19 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
 static int uart_read_char(int fd)
 {
     /* return character from peek buffer, if it is there */
-    if (s_peek_char[fd] != NONE) {
-        int c = s_peek_char[fd];
-        s_peek_char[fd] = NONE;
+    if (s_ctx[fd]->peek_char != NONE) {
+        int c = s_ctx[fd]->peek_char;
+        s_ctx[fd]->peek_char = NONE;
         return c;
     }
-    return s_uart_rx_func[fd](fd);
+    return s_ctx[fd]->rx_func(fd);
 }
 
 /* Push back a character; it will be returned by next call to uart_read_char */
 static void uart_return_char(int fd, int c)
 {
-    assert(s_peek_char[fd] == NONE);
-    s_peek_char[fd] = c;
+    assert(s_ctx[fd]->peek_char == NONE);
+    s_ctx[fd]->peek_char = c;
 }
 
 static ssize_t uart_read(int fd, void* data, size_t size)
@@ -222,13 +245,13 @@ static ssize_t uart_read(int fd, void* data, size_t size)
     assert(fd >=0 && fd < 3);
     char *data_c = (char *) data;
     size_t received = 0;
-    _lock_acquire_recursive(&s_uart_read_locks[fd]);
+    _lock_acquire_recursive(&s_ctx[fd]->read_lock);
     while (received < size) {
         int c = uart_read_char(fd);
         if (c == '\r') {
-            if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CR) {
+            if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CR) {
                 c = '\n';
-            } else if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CRLF) {
+            } else if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CRLF) {
                 /* look ahead */
                 int c2 = uart_read_char(fd);
                 if (c2 == NONE) {
@@ -255,7 +278,7 @@ static ssize_t uart_read(int fd, void* data, size_t size)
             break;
         }
     }
-    _lock_release_recursive(&s_uart_read_locks[fd]);
+    _lock_release_recursive(&s_ctx[fd]->read_lock);
     if (received > 0) {
         return received;
     }
@@ -281,11 +304,11 @@ static int uart_fcntl(int fd, int cmd, int arg)
     assert(fd >=0 && fd < 3);
     int result = 0;
     if (cmd == F_GETFL) {
-        if (s_non_blocking[fd]) {
+        if (s_ctx[fd]->non_blocking) {
             result |= O_NONBLOCK;
         }
     } else if (cmd == F_SETFL) {
-        s_non_blocking[fd] = (arg & O_NONBLOCK) != 0;
+        s_ctx[fd]->non_blocking = (arg & O_NONBLOCK) != 0;
     } else {
         // unsupported operation
         result = -1;
@@ -318,9 +341,9 @@ static int uart_access(const char *path, int amode)
 static int uart_fsync(int fd)
 {
     assert(fd >= 0 && fd < 3);
-    _lock_acquire_recursive(&s_uart_write_locks[fd]);
+    _lock_acquire_recursive(&s_ctx[fd]->write_lock);
     uart_tx_wait_idle((uint8_t) fd);
-    _lock_release_recursive(&s_uart_write_locks[fd]);
+    _lock_release_recursive(&s_ctx[fd]->write_lock);
     return 0;
 }
 
@@ -489,11 +512,11 @@ static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
     }
 
     if (p->c_iflag & IGNCR) {
-        s_rx_mode[fd] = ESP_LINE_ENDINGS_CRLF;
+        s_ctx[fd]->rx_mode = ESP_LINE_ENDINGS_CRLF;
     } else if (p->c_iflag & ICRNL) {
-        s_rx_mode[fd] = ESP_LINE_ENDINGS_CR;
+        s_ctx[fd]->rx_mode = ESP_LINE_ENDINGS_CR;
     } else {
-        s_rx_mode[fd] = ESP_LINE_ENDINGS_LF;
+        s_ctx[fd]->rx_mode = ESP_LINE_ENDINGS_LF;
     }
 
     // output line endings are not supported because there is no alternative in termios for converting LF to CR
@@ -672,9 +695,9 @@ static int uart_tcgetattr(int fd, struct termios *p)
 
     memset(p, 0, sizeof(struct termios));
 
-    if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CRLF) {
+    if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CRLF) {
         p->c_iflag |= IGNCR;
-    } else if (s_rx_mode[fd] == ESP_LINE_ENDINGS_CR) {
+    } else if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CR) {
         p->c_iflag |= ICRNL;
     }
 
@@ -931,31 +954,33 @@ void esp_vfs_dev_uart_register()
 void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode)
 {
     for (int i = 0; i < UART_NUM; ++i) {
-        s_rx_mode[i] = mode;
+        s_ctx[i]->rx_mode = mode;
     }
 }
 
 void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode)
 {
-    s_tx_mode = mode;
+    for (int i = 0; i < UART_NUM; ++i) {
+        s_ctx[i]->tx_mode = mode;
+    }
 }
 
 void esp_vfs_dev_uart_use_nonblocking(int uart_num)
 {
-    _lock_acquire_recursive(&s_uart_read_locks[uart_num]);
-    _lock_acquire_recursive(&s_uart_write_locks[uart_num]);
-    s_uart_tx_func[uart_num] = uart_tx_char;
-    s_uart_rx_func[uart_num] = uart_rx_char;
-    _lock_release_recursive(&s_uart_write_locks[uart_num]);
-    _lock_release_recursive(&s_uart_read_locks[uart_num]);
+    _lock_acquire_recursive(&s_ctx[uart_num]->read_lock);
+    _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
+    s_ctx[uart_num]->tx_func = uart_tx_char;
+    s_ctx[uart_num]->rx_func = uart_rx_char;
+    _lock_release_recursive(&s_ctx[uart_num]->write_lock);
+    _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
 
 void esp_vfs_dev_uart_use_driver(int uart_num)
 {
-    _lock_acquire_recursive(&s_uart_read_locks[uart_num]);
-    _lock_acquire_recursive(&s_uart_write_locks[uart_num]);
-    s_uart_tx_func[uart_num] = uart_tx_char_via_driver;
-    s_uart_rx_func[uart_num] = uart_rx_char_via_driver;
-    _lock_release_recursive(&s_uart_write_locks[uart_num]);
-    _lock_release_recursive(&s_uart_read_locks[uart_num]);
+    _lock_acquire_recursive(&s_ctx[uart_num]->read_lock);
+    _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
+    s_ctx[uart_num]->tx_func = uart_tx_char_via_driver;
+    s_ctx[uart_num]->rx_func = uart_rx_char_via_driver;
+    _lock_release_recursive(&s_ctx[uart_num]->write_lock);
+    _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
