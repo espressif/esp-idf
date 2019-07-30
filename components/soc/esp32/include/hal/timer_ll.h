@@ -184,6 +184,102 @@ static inline void timer_ll_get_alarm_enable(timg_dev_t *hw, timer_idx_t timer_n
     *alarm_en = hw->hw_timer[timer_num].config.alarm_en;
 }
 
+/* WDT operations */
+
+/**
+ * Unlock/lock the WDT register in case of mis-operations.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param protect true to lock, false to unlock before operations.
+ */
+
+FORCE_INLINE_ATTR void timer_ll_wdt_set_protect(timg_dev_t* hw, bool protect)
+{
+    hw->wdt_wprotect=(protect? 0: TIMG_WDT_WKEY_VALUE);
+}
+
+/**
+ * Initialize WDT.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ *
+ * @note Call ``timer_ll_wdt_set_protect first``
+ */
+FORCE_INLINE_ATTR void timer_ll_wdt_init(timg_dev_t* hw)
+{
+    hw->wdt_config0.sys_reset_length=7;                 //3.2uS
+    hw->wdt_config0.cpu_reset_length=7;                 //3.2uS
+    //currently only level interrupt is supported
+    hw->wdt_config0.level_int_en = 1;
+    hw->wdt_config0.edge_int_en = 0;
+}
+
+FORCE_INLINE_ATTR void timer_ll_wdt_set_tick(timg_dev_t* hw, int tick_time_us)
+{
+    hw->wdt_config1.clk_prescale=80*tick_time_us;
+}
+
+FORCE_INLINE_ATTR void timer_ll_wdt_feed(timg_dev_t* hw)
+{
+    hw->wdt_feed = 1;
+}
+
+FORCE_INLINE_ATTR void timer_ll_wdt_set_timeout(timg_dev_t* hw, int stage, uint32_t timeout_tick)
+{
+    switch (stage) {
+    case 0:
+        hw->wdt_config2=timeout_tick;
+        break;
+    case 1:
+        hw->wdt_config3=timeout_tick;
+        break;
+    case 2:
+        hw->wdt_config4=timeout_tick;
+        break;
+    case 3:
+        hw->wdt_config5=timeout_tick;
+        break;
+    default:
+        abort();
+    }
+}
+
+_Static_assert(TIMER_WDT_OFF == TIMG_WDT_STG_SEL_OFF, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with the timer_wdt_behavior_t");
+_Static_assert(TIMER_WDT_INT == TIMG_WDT_STG_SEL_INT, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with the timer_wdt_behavior_t");
+_Static_assert(TIMER_WDT_RESET_CPU == TIMG_WDT_STG_SEL_RESET_CPU, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with the timer_wdt_behavior_t");
+_Static_assert(TIMER_WDT_RESET_SYSTEM == TIMG_WDT_STG_SEL_RESET_SYSTEM, "Add mapping to LL watchdog timeout behavior, since it's no longer naturally compatible with the timer_wdt_behavior_t");
+
+FORCE_INLINE_ATTR void timer_ll_wdt_set_timeout_behavior(timg_dev_t* hw, int stage, timer_wdt_behavior_t behavior)
+{
+    switch (stage) {
+    case 0:
+        hw->wdt_config0.stg0 = behavior;
+        break;
+    case 1:
+        hw->wdt_config0.stg1 = behavior;
+        break;
+    case 2:
+        hw->wdt_config0.stg2 = behavior;
+        break;
+    case 3:
+        hw->wdt_config0.stg3 = behavior;
+        break;
+    default:
+        abort();
+    }
+}
+
+FORCE_INLINE_ATTR void timer_ll_wdt_set_enable(timg_dev_t* hw, bool enable)
+{
+    hw->wdt_config0.en = enable;
+}
+
+FORCE_INLINE_ATTR void timer_ll_wdt_flashboot_en(timg_dev_t* hw, bool enable)
+{
+    hw->wdt_config0.flashboot_mod_en = enable;
+}
+
+
 #ifdef __cplusplus
 }
 #endif
