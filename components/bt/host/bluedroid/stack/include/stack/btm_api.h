@@ -983,6 +983,7 @@ typedef UINT16 tBTM_SCO_CODEC_TYPE;
 #define BTM_SCO_AIR_MODE_A_LAW          1
 #define BTM_SCO_AIR_MODE_CVSD           2
 #define BTM_SCO_AIR_MODE_TRANSPNT       3
+#define BTM_SCO_AIR_MODE_UNKNOWN        0xFF
 typedef UINT8 tBTM_SCO_AIR_MODE_TYPE;
 
 /*******************
