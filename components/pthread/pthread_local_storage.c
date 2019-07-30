@@ -255,3 +255,8 @@ int pthread_setspecific(pthread_key_t key, const void *value)
 
     return 0;
 }
+
+/* Hook function to force linking this file */
+void pthread_include_pthread_local_storage_impl()
+{
+}
