@@ -57,7 +57,7 @@ menu "mbedTLS"
 
     config MBEDTLS_ASYMMETRIC_CONTENT_LEN
         bool "Asymmetric in/out fragment length"
-        default n
+        default y
         help
             If enabled, this option allows customizing TLS in/out fragment length
             in asymmetric way. Please note that enabling this with default values
