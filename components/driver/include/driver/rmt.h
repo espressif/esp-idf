@@ -35,15 +35,18 @@ typedef enum {
     RMT_CHANNEL_1,     /*!< RMT Channel 1 */
     RMT_CHANNEL_2,     /*!< RMT Channel 2 */
     RMT_CHANNEL_3,     /*!< RMT Channel 3 */
+//ESP32-S2 only have 4 channel
+#ifdef CONFIG_IDF_TARGET_ESP32
     RMT_CHANNEL_4,     /*!< RMT Channel 4 */
     RMT_CHANNEL_5,     /*!< RMT Channel 5 */
     RMT_CHANNEL_6,     /*!< RMT Channel 6 */
     RMT_CHANNEL_7,     /*!< RMT Channel 7 */
+#endif
     RMT_CHANNEL_MAX
 } rmt_channel_t;
 
 typedef enum {
-    RMT_MEM_OWNER_TX = 0,  /*!< RMT RX mode, RMT transmitter owns the memory block*/
+    RMT_MEM_OWNER_TX = 0,  /*!< RMT TX mode, RMT transmitter owns the memory block*/
     RMT_MEM_OWNER_RX = 1,  /*!< RMT RX mode, RMT receiver owns the memory block*/
     RMT_MEM_OWNER_MAX,
 }rmt_mem_owner_t;
