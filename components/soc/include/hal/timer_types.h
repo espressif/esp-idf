@@ -51,6 +51,17 @@ typedef enum {
     TIMER_INTR_WDT = BIT(2), /*!< interrupt of watchdog */
 } timer_intr_t;
 
+/**
+ * @brief Behavior of the watchdog if a stage times out.
+ */
+//this is compatible with the value of esp32.
+typedef enum {
+    TIMER_WDT_OFF = 0,          ///< The stage is turned off
+    TIMER_WDT_INT = 1,          ///< The stage will trigger an interrupt
+    TIMER_WDT_RESET_CPU = 2,    ///< The stage will reset the CPU
+    TIMER_WDT_RESET_SYSTEM = 3, ///< The stage will reset the whole system
+} timer_wdt_behavior_t;
+
 #ifdef __cplusplus
 }
 #endif
