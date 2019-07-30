@@ -20,7 +20,7 @@
 
 static const char* TAG = "uart_select_example";
 
-static void uart_select_task(void)
+static void uart_select_task(void *arg)
 {
     uart_config_t uart_config = {
         .baud_rate = 115200,

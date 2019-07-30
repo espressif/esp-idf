@@ -25,7 +25,7 @@ void register_bluetooth(void)
     register_ble_address();
 }
 
-int bt_mac(void)
+int bt_mac(int argc, char** argv)
 {
     const uint8_t *mac = esp_bt_dev_get_address();
     printf("+BTMAC:"MACSTR"\n", MAC2STR(mac));
@@ -38,7 +38,7 @@ void register_ble_address(void)
         .command = "btmac",
         .help = "get BT mac address",
         .hint = NULL,
-        .func = (esp_console_cmd_func_t)&bt_mac,
+        .func = &bt_mac,
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&cmd));
 }

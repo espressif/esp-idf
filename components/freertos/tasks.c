@@ -2149,7 +2149,7 @@ void vTaskSuspendAll( void )
 
 #if ( portNUM_PROCESSORS > 1 )
 
-	static BaseType_t xHaveReadyTasks()
+	static BaseType_t xHaveReadyTasks( void )
 	{
 		for (int i = tskIDLE_PRIORITY + 1; i < configMAX_PRIORITIES; ++i)
 		{

@@ -81,7 +81,7 @@ struct wpa_sm {
     int (*get_ppkey) (uint8_t *ifx, int *alg, uint8_t *addr, int *key_idx,
                uint8_t *key, size_t key_len, int key_entry_valid);
     void (*wpa_deauthenticate)(u8 reason_code);
-    void (*wpa_neg_complete)();
+    void (*wpa_neg_complete)(void);
     struct wpa_gtk_data gd; //used for calllback save param
     u16 key_info;       //used for txcallback param
     u16 txcb_flags;
@@ -145,7 +145,7 @@ typedef int (*WPA_GET_KEY) (u8 *ifx, int *alg, u8 *addt, int *keyidx, u8 *key, s
 
 typedef void (*WPA_DEAUTH_FUNC)(u8 reason_code);
 
-typedef void (*WPA_NEG_COMPLETE)();
+typedef void (*WPA_NEG_COMPLETE)(void);
 
 void wpa_register(char * payload, WPA_SEND_FUNC snd_func, \
                                                       WPA_SET_ASSOC_IE set_assoc_ie_func, \

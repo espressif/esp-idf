@@ -101,7 +101,7 @@ void ble_mesh_prov_adv_cb(const esp_bd_addr_t addr, const esp_ble_addr_type_t ad
     ESP_LOGD(TAG, "exit %s\n", __func__);
 }
 
-int ble_mesh_provisioner_register(void)
+int ble_mesh_provisioner_register(int argc, char** argv)
 {
     ESP_LOGD(TAG, "enter %s \n", __func__);
     // esp_ble_mesh_register_unprov_adv_pkt_callback(ble_mesh_prov_adv_cb);
