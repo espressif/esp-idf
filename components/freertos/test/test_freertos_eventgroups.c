@@ -135,7 +135,7 @@ static timer_isr_handle_t isr_handle;
 static bool test_set_bits;
 static bool test_clear_bits;
 
-static void IRAM_ATTR event_group_isr(void)
+static void IRAM_ATTR event_group_isr(void *arg)
 {
     portBASE_TYPE task_woken = pdFALSE;
     TIMERG0.int_clr_timers.t0 = 1;

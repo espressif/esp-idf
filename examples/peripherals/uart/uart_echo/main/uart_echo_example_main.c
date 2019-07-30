@@ -31,7 +31,7 @@
 
 #define BUF_SIZE (1024)
 
-static void echo_task(void)
+static void echo_task(void *arg)
 {
     /* Configure parameters of an UART driver,
      * communication pins and install the driver */

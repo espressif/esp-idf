@@ -41,7 +41,7 @@ int sendData(const char* logName, const char* data)
     return txBytes;
 }
 
-static void tx_task(void)
+static void tx_task(void *arg)
 {
     static const char *TX_TASK_TAG = "TX_TASK";
     esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
@@ -51,7 +51,7 @@ static void tx_task(void)
     }
 }
 
-static void rx_task(void)
+static void rx_task(void *arg)
 {
     static const char *RX_TASK_TAG = "RX_TASK";
     esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);

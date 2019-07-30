@@ -97,7 +97,7 @@ void ble_mesh_register_mesh_node(void)
     ble_mesh_register_node_cmd();
 }
 
-int ble_mesh_register_node_cb(void)
+int ble_mesh_register_node_cb(int argc, char** argv)
 {
     ESP_LOGD(TAG, "enter %s\n", __func__);
     ble_mesh_node_init();
@@ -364,7 +364,7 @@ int ble_mesh_node_enable_bearer(int argc, char **argv)
     return err;
 }
 
-int ble_mesh_node_reset(void)
+int ble_mesh_node_reset(int argc, char** argv)
 {
     esp_err_t err;
     ESP_LOGD(TAG, "enter %s\n", __func__);

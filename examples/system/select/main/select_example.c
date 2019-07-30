@@ -128,7 +128,7 @@ static void uart1_write_task(void *param)
         }
     }
 
-    uart1_deinit(uart_fd);
+    uart1_deinit();
     vTaskDelete(NULL);
 }
 

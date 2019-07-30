@@ -276,7 +276,7 @@ static void nec_rx_init(void)
  * @brief RMT receiver demo, this task will print each received NEC data.
  *
  */
-static void rmt_example_nec_rx_task(void)
+static void rmt_example_nec_rx_task(void *arg)
 {
     int channel = RMT_RX_CHANNEL;
     nec_rx_init();
@@ -317,7 +317,7 @@ static void rmt_example_nec_rx_task(void)
  * @brief RMT transmitter demo, this task will periodically send NEC data. (100 * 32 bits each time.)
  *
  */
-static void rmt_example_nec_tx_task(void)
+static void rmt_example_nec_tx_task(void *arg)
 {
     vTaskDelay(10);
     nec_tx_init();

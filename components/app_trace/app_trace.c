@@ -379,10 +379,10 @@ static inline void esp_apptrace_log_unlock(void)
 #endif
 }
 
-static inline esp_err_t esp_apptrace_lock_initialize(void)
+static inline esp_err_t esp_apptrace_lock_initialize(esp_apptrace_lock_t *lock)
 {
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
-    esp_apptrace_lock_init(&s_trace_buf.lock);
+    esp_apptrace_lock_init(lock);
 #endif
     return ESP_OK;
 }
