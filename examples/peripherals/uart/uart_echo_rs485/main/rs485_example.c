@@ -47,7 +47,7 @@
 #define PACKET_READ_TICS        (100 / portTICK_RATE_MS)
 #define ECHO_TASK_STACK_SIZE    (2048)
 #define ECHO_TASK_PRIO          (10)
-#define ECHO_UART_PORT          (UART_NUM_2)
+#define ECHO_UART_PORT          (UART_NUM_MAX - 1)
 
 static const char *TAG = "RS485_ECHO_APP";
 

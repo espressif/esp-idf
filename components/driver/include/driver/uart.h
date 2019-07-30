@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _DRIVER_UART_H_
-#define _DRIVER_UART_H_
-
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "soc/uart_periph.h"
+#include "soc/uart_caps.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
@@ -82,7 +81,9 @@ typedef enum {
 typedef enum {
     UART_NUM_0 = 0x0,  /*!< UART base address 0x3ff40000*/
     UART_NUM_1 = 0x1,  /*!< UART base address 0x3ff50000*/
+#if SOC_UART_NUM > 2
     UART_NUM_2 = 0x2,  /*!< UART base address 0x3ff6e000*/
+#endif
     UART_NUM_MAX,
 } uart_port_t;
 
@@ -257,7 +258,7 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
  *
  * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
  * @param inverse_mask Choose the wires that need to be inverted.
- *        Inverse_mask should be chosen from 
+ *        Inverse_mask should be chosen from
  *        UART_INVERSE_RXD / UART_INVERSE_TXD / UART_INVERSE_RTS / UART_INVERSE_CTS,
  *        combined with OR operation.
  *
@@ -401,7 +402,7 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  * @param fn  Interrupt handler function.
  * @param arg parameter for handler function
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. 
+ *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
  * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
  *        be returned here.
  *
@@ -429,7 +430,7 @@ esp_err_t uart_isr_free(uart_port_t uart_num);
  * @note Internal signal can be output to multiple GPIO pads.
  *       Only one GPIO pad can connect with input signal.
  *
- * @note Instead of GPIO number a macro 'UART_PIN_NO_CHANGE' may be provided 
+ * @note Instead of GPIO number a macro 'UART_PIN_NO_CHANGE' may be provided
          to keep the currently allocated pin.
  *
  * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
@@ -556,7 +557,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
 
 /**
  * @brief Send data to the UART port from a given buffer and length.
- * 
+ *
  * This function will not wait for enough space in TX FIFO. It will just fill the available TX FIFO and return when the FIFO is full.
  * @note This function should only be used when UART TX buffer is not enabled.
  *
@@ -674,26 +675,51 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
  */
 esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
 
+#if CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief UART enable pattern detect function.
+ *        Designed for applications like 'AT commands'.
+ *        When the hardware detect a series of one same character, the interrupt will be triggered.
+ * @note  This function only works for esp32. And this function is deprecated, please use
+ *        uart_enable_pattern_det_baud_intr instead.
+ *
+ * @param uart_num UART port number.
+ * @param pattern_chr character of the pattern.
+ * @param chr_num number of the character, 8bit value.
+ * @param chr_tout timeout of the interval between each pattern characters, 24bit value, unit is APB (80Mhz) clock cycle.
+ *        When the duration is less than this value, it will not take this data as at_cmd char.
+ * @param post_idle idle time after the last pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
+ *        When the duration is less than this value, it will not take the previous data as the last at_cmd char
+ * @param pre_idle idle time before the first pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
+ *        When the duration is less than this value, it will not take this data as the first at_cmd char.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle) __attribute__((deprecated));
+#endif
+
 /**
  * @brief UART enable pattern detect function.
  *        Designed for applications like 'AT commands'.
  *        When the hardware detect a series of one same character, the interrupt will be triggered.
  *
  * @param uart_num UART port number.
- * @param pattern_chr character of the pattern
+ * @param pattern_chr character of the pattern.
  * @param chr_num number of the character, 8bit value.
- * @param chr_tout timeout of the interval between each pattern characters, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take this data as at_cmd char
- * @param post_idle idle time after the last pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
+ * @param chr_tout timeout of the interval between each pattern characters, 16bit value, unit is the baud-rate cycle you configured.
+ *        When the duration is more than this value, it will not take this data as at_cmd char.
+ * @param post_idle idle time after the last pattern character, 16bit value, unit is the baud-rate cycle you configured.
  *        When the duration is less than this value, it will not take the previous data as the last at_cmd char
- * @param pre_idle idle time before the first pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take this data as the first at_cmd char
+ * @param pre_idle idle time before the first pattern character, 16bit value, unit is the baud-rate cycle you configured.
+ *        When the duration is less than this value, it will not take this data as the first at_cmd char.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
+esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
 
 /**
  * @brief Return the nearest detected pattern position in buffer.
@@ -748,10 +774,10 @@ int uart_pattern_get_pos(uart_port_t uart_num);
 esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length);
 
 /**
- * @brief UART set communication mode 
+ * @brief UART set communication mode
  * @note  This function must be executed after uart_driver_install(), when the driver object is initialized.
  * @param uart_num     Uart number to configure
- * @param mode UART    UART mode to set 
+ * @param mode UART    UART mode to set
  *
  * @return
  *     - ESP_OK Success
@@ -763,8 +789,8 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
  * @brief UART set threshold timeout for TOUT feature
  *
  * @param uart_num     Uart number to configure
- * @param tout_thresh  This parameter defines timeout threshold in uart symbol periods. The maximum value of threshold is 126. 
- *        tout_thresh = 1, defines TOUT interrupt timeout equal to transmission time of one symbol (~11 bit) on current baudrate. 
+ * @param tout_thresh  This parameter defines timeout threshold in uart symbol periods. The maximum value of threshold is 126.
+ *        tout_thresh = 1, defines TOUT interrupt timeout equal to transmission time of one symbol (~11 bit) on current baudrate.
  *        If the time is expired the UART_RXFIFO_TOUT_INT interrupt is triggered. If tout_thresh == 0,
  *        the TOUT feature is disabled.
  *
@@ -785,7 +811,7 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
  * @param collision_flag Pointer to variable of type bool to return collision flag.
  *
  * @return
- *     - ESP_OK Success 
+ *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
@@ -844,4 +870,3 @@ esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_thresh
 }
 #endif
 
-#endif /*_DRIVER_UART_H_*/

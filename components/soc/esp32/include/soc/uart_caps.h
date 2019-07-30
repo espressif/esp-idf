@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,12 @@
 
 #pragma once
 
-#include "soc/uart_caps.h"
-#include "soc/uart_reg.h"
-#include "soc/uart_struct.h"
-#include "soc/uart_channel.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define SOC_UART_NUM  3
+
+#ifdef __cplusplus
+}
+#endif

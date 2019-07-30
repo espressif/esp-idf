@@ -83,7 +83,7 @@ static esp_err_t mbc_serial_master_setup(void* comm_info)
     MB_MASTER_CHECK(((comm_info_ptr->mode == MB_MODE_RTU) || (comm_info_ptr->mode == MB_MODE_ASCII)),
                 ESP_ERR_INVALID_ARG, "mb incorrect mode = (0x%x).",
                 (uint32_t)comm_info_ptr->mode);
-    MB_MASTER_CHECK((comm_info_ptr->port <= UART_NUM_2), ESP_ERR_INVALID_ARG,
+    MB_MASTER_CHECK((comm_info_ptr->port < UART_NUM_MAX), ESP_ERR_INVALID_ARG,
                 "mb wrong port to set = (0x%x).", (uint32_t)comm_info_ptr->port);
     MB_MASTER_CHECK((comm_info_ptr->parity <= UART_PARITY_EVEN), ESP_ERR_INVALID_ARG,
                 "mb wrong parity option = (0x%x).", (uint32_t)comm_info_ptr->parity);
