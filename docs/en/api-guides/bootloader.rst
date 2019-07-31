@@ -1,5 +1,6 @@
 Bootloader
-=====================
+==========
+
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_BOOTLOADER_OFFSET:default="0x0", esp32="0x1000", esp32s2="0x1000"}
@@ -51,58 +52,74 @@ The :ref:`first-stage-bootloader` in ROM reads the :ref:`second-stage-bootloader
 
    Bootloaders prior to ESP-IDF V4.0 used the bootloader's own header to configure the SPI flash, meaning these values could not be changed in an update. To maintain compatibility with older bootloaders, the app re-initializes the flash settings during app startup using the configuration found in the app header.
 
+Log Level
+---------
+
+The default bootloader log level is "Info". By setting the :ref:`CONFIG_BOOTLOADER_LOG_LEVEL` option, it's possible to increase or decrease this level. This log level is separate from the log level used in the app (see :doc:`/api-reference/system/log`).
+
+Reducing bootloader log verbosity can improve the overall project boot time by a small amount.
 
 Factory reset
 -------------
-The user can write a basic working firmware and load it into the factory app partition.
 
-Next, update the firmware via OTA (over the air). The updated firmware will be loaded into an OTA app partition slot and the OTA data partition is updated to boot from this partition.
+Sometimes it is desirable to have a way for the device to fall back to a known-good state, in case of some problem with an update.
 
-If you want to be able to roll back to the factory firmware and clear the settings, then you need to set :ref:`CONFIG_BOOTLOADER_FACTORY_RESET`. The factory reset mechanism allows to reset the device to factory settings:
+To roll back to the original factory firmware and clear any user settings, configure the config item :ref:`CONFIG_BOOTLOADER_FACTORY_RESET` in the bootloader.
 
-- Clear one or more data partitions.
-- Boot from "factory" partition.
+The factory reset mechanism allows to reset the device to factory settings in two ways:
 
-:ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET` allows customers to select which data partitions will be erased when the factory reset is executed. 
-Can specify the names of partitions through comma-delimited with optional spaces for readability. (Like this: "nvs, phy_init, nvs_custom, ..."). 
-Make sure that the name specified in the partition table and here are the same. 
-Partitions of type "app" cannot be specified here.
+- Clear one or more data partitions. :ref:`CONFIG_BOOTLOADER_DATA_FACTORY_RESET` allows customers to select which data partitions will be erased when the factory reset is executed.
 
-:ref:`CONFIG_BOOTLOADER_OTA_DATA_ERASE` - the device will boot from "factory" partition after a factory reset. The OTA data partition will be cleared.
+  Can specify the names of partitions as a comma-delimited list with optional spaces for readability. (Like this: ``nvs, phy_init, nvs_custom``).
 
-:ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- number of the GPIO input for factory reset uses to trigger a factory reset, this GPIO must be pulled low or high (configurable) on reset to trigger this.
+  Make sure that the names of partitions specified in the partition table and here are the same. Partitions of type "app" cannot be specified here.
 
-:ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+- Boot from "factory" app partition. :ref:`CONFIG_BOOTLOADER_OTA_DATA_ERASE` - the device will boot from the default "factory" app partition (or if there is no factory app partition in the partition table then the default ota app partition) after a factory reset. This is done by erasing the OTA data partition which holds the currently selected OTA partition slot. The "factory" app partition slot (if it exists) is never updated via OTA, so resetting to this allows reverting to a "known good" firmware application.
 
-:ref:`CONFIG_BOOTLOADER_FACTORY_RESET_PIN_LEVEL` - configure whether a factory reset should trigger on a high or low level of the GPIO. If the GPIO has an internal pullup then this is enabled before the pin is sampled, consult the {IDF_TARGET_NAME} datasheet for details on pin internal pullups.
+Either or both of these configuration options can be enabled independently.
 
-Partition table.::
+In addition, the following configuration options control the reset condition:
 
-	# Name,   Type, SubType, Offset,   Size, Flags
-	# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
-	nvs,      data, nvs,     0x9000,   0x4000
-	otadata,  data, ota,     0xd000,   0x2000
-	phy_init, data, phy,     0xf000,   0x1000
-	factory,  0,    0,       0x10000,  1M
-	test,     0,    test,    ,         512K
-	ota_0,    0,    ota_0,   ,         512K
-	ota_1,    0,    ota_1,   ,         512K
+- :ref:`CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET`- number of the GPIO input for factory reset uses to trigger a factory reset, this GPIO must be pulled low or high (configurable) on reset to trigger this.
+
+- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO`- this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+
+- :ref:`CONFIG_BOOTLOADER_FACTORY_RESET_PIN_LEVEL` - configure whether a factory reset should trigger on a high or low level of the GPIO. If the GPIO has an internal pullup then this is enabled before the pin is sampled, consult the {IDF_TARGET_NAME} datasheet for details on pin internal pullups.
 
 .. _bootloader_boot_from_test_firmware:
 
-Boot from test app partition
-----------------------------
-The user can write a special firmware for testing in production, and run it as needed. The partition table also needs a dedicated partition for this testing firmware (See `partition table`). 
-To trigger a test app you need to set :ref:`CONFIG_BOOTLOADER_APP_TEST`. 
+Boot from Test Firmware
+------------------------
+The user can write a special firmware for testing in production, and boot this firmware when needed. The partition table will need a dedicated app partition entry for this testing firmware (see `partition table`).
 
-:ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - GPIO number to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset. 
-After the GPIO input is deactivated and the device reboots, the normally configured application will boot (factory or any OTA slot). 
+To support this functionality in the bootloader, set the configuration item :ref:`CONFIG_BOOTLOADER_APP_TEST` and configure the following two items:
 
-:ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+- :ref:`CONFIG_BOOTLOADER_NUM_PIN_APP_TEST` - GPIO number to boot TEST partition. The selected GPIO will be configured as an input with internal pull-up enabled. To trigger a test app, this GPIO must be pulled low on reset.
+
+  After the GPIO input is deactivated and the device reboots, the normally configured application will boot (factory or any OTA app partition slot).
+
+- :ref:`CONFIG_BOOTLOADER_HOLD_TIME_GPIO` - this is hold time of GPIO for reset/test mode (by default 5 seconds). The GPIO must be held low continuously for this period of time after reset before a factory reset or test partition boot (as applicable) is performed.
+
+Rollback
+--------
+
+Rollback and anti-rollback features must be configured in the bootloader as well.
+
+Consult the :ref:`app_rollback` and :ref:`anti-rollback` sections in the :doc:`OTA API reference document </api-reference/system/ota>`.
+
+Watchdog
+--------
+
+By default, the hardware RTC Watchdog timer remains running while the bootloader is running and will automatically reset the chip if no app has successfully started after 9 seconds.
+
+- The timeout period can be adjusted by setting :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` and recompiling the bootloader.
+- The app's behaviour can be adjusted so the RTC Watchdog remains enabled after app startup. The Watchdog would need to be explicitly reset or "fed" by the app to avoid a reset. To do this, set the :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` option, modify the app as needed, and then recompile the app.
+- The RTC Watchdog can be disabled in the bootloader by disabling the :ref:`CONFIG_BOOTLOADER_WDT_ENABLE` setting and recompiling the bootloader. This is not recommended.
 
 Fast boot from Deep Sleep
 -------------------------
-The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows to reduce the wake-up time (useful to reduce consumption). This option is available when the :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
+
+The bootloader has the :ref:`CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP` option which allows to reduce the wake-up time (useful to reduce consumption). This option is available when :ref:`CONFIG_SECURE_BOOT` option is disabled. Reduction of time is achieved due to the lack of image verification. During the first boot, the bootloader stores the address of the application being launched in the RTC FAST memory. And during the awakening, this address is used for booting without any checks, thus fast loading is achieved.
 
 Custom bootloader
 -----------------

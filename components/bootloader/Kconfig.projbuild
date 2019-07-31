@@ -211,8 +211,11 @@ menu "Bootloader config"
         depends on BOOTLOADER_WDT_ENABLE
         default n
         help
-            If it is set, the client must itself reset or disable rtc_wdt in their code (app_main()).
-            Otherwise rtc_wdt will be disabled before calling app_main function.
+            If this option is set, the ESP-IDF app must explicitly reset, feed, or disable the rtc_wdt in
+            the app's own code.
+            If this option is not set (default), then rtc_wdt will be disabled by ESP-IDF before calling
+            the app_main() function.
+
             Use function rtc_wdt_feed() for resetting counter of rtc_wdt.
             Use function rtc_wdt_disable() for disabling rtc_wdt.
 
