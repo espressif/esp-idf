@@ -35,18 +35,11 @@ Example Connection Configuration  --->
  * Set WiFi SSID under Example Configuration
  * Set WiFi Password under Example Configuration
 Example CoAP Client Configuration  --->
- * Set CoAP Target Uri
- * Set encryption method definitions (None, PSK or PKI)
-  * If PSK Set CoAP Preshared Key to use in connection to the server
-  * If PSK Set CoAP PSK Client identity (username)
- Enable CoAP debugging if required
+ * If PSK, Set CoAP Preshared Key to use in connection to the server
 Component config  --->
- mbedTLS  --->
-  [*]   Enable mbedtls certificate expiry check
-       TLS Key Exchange Methods  --->
-        [*] Enable pre-shared-key ciphersuites
-        [*]   Enable PSK based ciphersuite modes
-  [*] Support DTLS protocol (all versions)
+  CoAP Configuration  --->
+    * Set encryption method definition, PSK (default) or PKI
+    * Enable CoAP debugging if required
 
 ### Build and Flash
 
@@ -90,7 +83,4 @@ This can be found at https://libcoap.net/doc/reference/4.2.0/
 * Please make sure CoAP client fetchs or puts data under path: `/Espressif` or
 fetches `/.well-known/core`
 
-* CoAP logging can be enabled by running 'make menuconfig' and enable debugging
-
-* Encryption (MbedTLS) can be enabled by running 'make menuconfig' and enable debugging
-
+* CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration' and setting appropriate log level
