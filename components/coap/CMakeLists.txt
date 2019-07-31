@@ -21,11 +21,9 @@ set(srcs
     "libcoap/src/coap_io.c"
     "port/coap_mbedtls.c")
 
-set(COMPONENT_REQUIRES lwip)
-
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
-                    REQUIRES lwip)
+                    REQUIRES lwip mbedtls)
 
 # Silence format truncation warning, until it is fixed upstream
 set_source_files_properties(port/coap_debug.c PROPERTIES COMPILE_FLAGS -Wno-format-truncation)
