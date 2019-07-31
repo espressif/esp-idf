@@ -37,7 +37,7 @@
 #include "sys/unistd.h"
 
 #define SPP_TAG "SPP_INITIATOR_DEMO"
-#define EXCAMPLE_DEVICE_NAME "ESP_SPP_INITIATOR"
+#define EXAMPLE_DEVICE_NAME "ESP_SPP_INITIATOR"
 
 static const esp_spp_mode_t esp_spp_mode = ESP_SPP_MODE_VFS;
 
@@ -113,7 +113,7 @@ static void esp_spp_cb(uint16_t e, void *p)
     switch (event) {
     case ESP_SPP_INIT_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
-        esp_bt_dev_set_device_name(EXCAMPLE_DEVICE_NAME);
+        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
 
