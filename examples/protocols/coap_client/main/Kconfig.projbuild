@@ -1,96 +1,27 @@
 menu "Example CoAP Client Configuration"
 
-    config TARGET_DOMAIN_URI
+    config EXAMPLE_TARGET_DOMAIN_URI
         string "Target Uri"
-        default "coap://californium.eclipse.org"
+        default "coaps://californium.eclipse.org"
         help
             Target uri for the example to use. Use coaps:// prefix for encrypted traffic
             using Pre-Shared Key (PSK) or Public Key Infrastructure (PKI).
 
-    choice MBEDTLS_COAP_ENCRYPTION_MODE
-        prompt "CoAP Encryption method"
-        default MBEDTLS_COAP_PKI_NONE
-        help
-            If the CoAP information is to be encrypted, the encryption environment
-            can be set up in one of three ways
-
-            - None defined (will use PKI if coaps:// used)
-            - Encrypt using defined Pre-Shared Keys (PSK)
-            - Encrypt using defined Public Key Infrastructure (PKI)
-
-        config MBEDTLS_COAP_NONE
-            bool "None defined"
-
-        config MBEDTLS_COAP_PSK
-            bool "Pre-Shared Keys"
-
-        config MBEDTLS_COAP_PKI
-            bool "PKI Certificates"
-
-    endchoice #MBEDTLS_COAP_ENCRYPTION_MODE
-
-    config COAP_PSK_KEY
+    config EXAMPLE_COAP_PSK_KEY
         string "Preshared Key (PSK) to used in the connection to the CoAP server"
-        depends on MBEDTLS_COAP_PSK
-        default "secret-key"
+        depends on COAP_MBEDTLS_PSK
+        default "sesame"
         help
-            The Preshared Key to use to encrypt the communicatons. The same key must be 
-            used at both ends of the CoAP connection, and the CoaP client must request 
+            The Preshared Key to use to encrypt the communicatons. The same key must be
+            used at both ends of the CoAP connection, and the CoaP client must request
             an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
 
-    config COAP_PSK_IDENTITY
+    config EXAMPLE_COAP_PSK_IDENTITY
         string "PSK Client identity (username)"
-        depends on MBEDTLS_COAP_PSK
-        default "coap-client"
+        depends on COAP_MBEDTLS_PSK
+        default "password"
         help
             The identity (or username) to use to identify to the CoAP server which
             PSK key to use.
-
-    config MBEDTLS_COAP_DEBUG
-        bool "Enable CoAP debugging"
-        default n
-        help
-            Enable CoAP debugging functions at compile time for the example code.
-
-            If this option is enabled, call coap_set_log_level()
-            at runtime in order to enable CoAP debug output via the ESP
-            log mechanism.
-
-    choice MBEDTLS_COAP_DEBUG_LEVEL
-        bool "Set CoAP debugging level"
-        depends on MBEDTLS_COAP_DEBUG
-        default COAP_LOG_WARNING
-        help
-            Set CoAP debugging level
-
-        config COAP_LOG_EMERG
-            bool "Emergency"
-        config COAP_LOG_ALERT
-            bool "Alert"
-        config COAP_LOG_CRIT
-            bool "Critical"
-        config COAP_LOG_ERROR
-            bool "Error"
-        config COAP_LOG_WARNING
-            bool "Warning"
-        config COAP_LOG_NOTICE
-            bool "Notice"
-        config COAP_LOG_INFO
-            bool "Info"
-        config COAP_LOG_DEBUG
-            bool "Debug"
-    endchoice
-
-    config COAP_LOG_DEFAULT_LEVEL
-        int
-        default 0 if !MBEDTLS_COAP_DEBUG
-        default 0 if COAP_LOG_EMERG
-        default 1 if COAP_LOG_ALERT
-        default 2 if COAP_LOG_CRIT
-        default 3 if COAP_LOG_ERROR
-        default 4 if COAP_LOG_WARNING
-        default 5 if COAP_LOG_NOTICE
-        default 6 if COAP_LOG_INFO
-        default 7 if COAP_LOG_DEBUG
 
 endmenu
