@@ -47,6 +47,7 @@
 #include "bootloader_random.h"
 #include "bootloader_config.h"
 #include "bootloader_clock.h"
+#include "bootloader_common.h"
 
 #include "flash_qio_mode.h"
 
@@ -398,6 +399,9 @@ static void IRAM_ATTR flash_gpio_configure(const esp_image_header_t* pfhdr)
             #endif
         }
     }
+
+    // improve the flash cs timing.
+    bootloader_common_set_flash_cs_timing();
 }
 
 static void uart_console_configure(void)
