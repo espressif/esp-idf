@@ -136,9 +136,13 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 /* "mux" data structure (spinlock) */
 typedef struct {
 	/* owner field values:
-	 * 0                - Uninitialized (invalid)
+	 * 0				- Uninitialized (invalid)
 	 * portMUX_FREE_VAL - Mux is free, can be locked by either CPU
 	 * CORE_ID_PRO / CORE_ID_APP - Mux is locked to the particular core
+	 *
+	 * Note that for performance reasons we use the full Xtensa CORE ID values
+	 * (CORE_ID_PRO, CORE_ID_APP) and not the 0,1 values which are used in most
+	 * other FreeRTOS code.
 	 *
 	 * Any value other than portMUX_FREE_VAL, CORE_ID_PRO, CORE_ID_APP indicates corruption
 	 */
