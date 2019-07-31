@@ -1,74 +1,11 @@
 menu "Example CoAP Server Configuration"
 
-    config MBEDTLS_COAP_PSK
-        bool "Pre-Shared Keys (PSK)"
-        default n
-        help
-            Use Pre-Shared Keys to encrypt the communications between the
-            CoAP Server and CoAP Client. Both ends need the same
-            Pre-Shared Key.
-
-    config COAP_PSK_KEY
+    config EXAMPLE_COAP_PSK_KEY
         string "Preshared Key (PSK) to used in the connection from the CoAP client"
-        depends on MBEDTLS_COAP_PSK
+        depends on COAP_MBEDTLS_PSK
         default "secret-key"
         help
-            The Preshared Key to use to encrypt the communicatons. The same key must be 
-            used at both ends of the CoAP connection, and the CoaP client must request 
+            The Preshared Key to use to encrypt the communicatons. The same key must be
+            used at both ends of the CoAP connection, and the CoaP client must request
             an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
-
-    config MBEDTLS_COAP_PKI
-        bool "Public Key Infrastructure (PKI)"
-        default n
-        help
-            Use PKI Certificates and Private Keys to encrypt the communications
-            between the CoAP Server and CoAP Client.
-
-    config MBEDTLS_COAP_DEBUG
-        bool "Enable CoAP debugging"
-        default n
-        help
-            Enable CoAP debugging functions at compile time for the example code.
-
-            If this option is enabled, call coap_set_log_level()
-            at runtime in order to enable CoAP debug output via the ESP
-            log mechanism.
-
-    choice MBEDTLS_COAP_DEBUG_LEVEL
-        bool "Set CoAP debugging level"
-        depends on MBEDTLS_COAP_DEBUG
-        default COAP_LOG_WARNING
-        help
-            Set CoAP debugging level
-
-        config COAP_LOG_EMERG
-            bool "Emergency"
-        config COAP_LOG_ALERT
-            bool "Alert"
-        config COAP_LOG_CRIT
-            bool "Critical"
-        config COAP_LOG_ERROR
-            bool "Error"
-        config COAP_LOG_WARNING
-            bool "Warning"
-        config COAP_LOG_NOTICE
-            bool "Notice"
-        config COAP_LOG_INFO
-            bool "Info"
-        config COAP_LOG_DEBUG
-            bool "Debug"
-    endchoice
-
-    config COAP_LOG_DEFAULT_LEVEL
-        int
-        default 0 if !MBEDTLS_COAP_DEBUG
-        default 0 if COAP_LOG_EMERG
-        default 1 if COAP_LOG_ALERT
-        default 2 if COAP_LOG_CRIT
-        default 3 if COAP_LOG_ERROR
-        default 4 if COAP_LOG_WARNING
-        default 5 if COAP_LOG_NOTICE
-        default 6 if COAP_LOG_INFO
-        default 7 if COAP_LOG_DEBUG
-
 endmenu
