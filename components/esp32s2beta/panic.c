@@ -197,7 +197,7 @@ static inline void printCacheError(void)
     status[0] = REG_READ(DPORT_CACHE_DBG_STATUS0_REG);
     status[1] = REG_READ(DPORT_CACHE_DBG_STATUS1_REG);
     for (int i = 0; i < 32; i++) {
-        switch (status[0] & (1 << (i&0x1f)))
+        switch (status[0] & BIT(i))
         {
         case DPORT_IC_SYNC_SIZE_FAULT_ST:
             vaddr = REG_READ(DPORT_PRO_ICACHE_MEM_SYNC0_REG);
@@ -230,7 +230,7 @@ static inline void printCacheError(void)
         default:
             break;
         }
-        switch (status[1] & (1 << (i&0x1f)))
+        switch (status[1] & BIT(i))
         {
         case DPORT_DC_SYNC_SIZE_FAULT_ST:
             vaddr = REG_READ(DPORT_PRO_DCACHE_MEM_SYNC0_REG);
@@ -369,8 +369,7 @@ void panicHandler(XtExcFrame *frame)
             panicPutStr("DebugIntr ");
         }
         panicPutStr("\r\n");
-    }
-    else if (frame->exccause == PANIC_RSN_CACHEERR) {
+    } else if (frame->exccause == PANIC_RSN_CACHEERR) {
         panicPutStr("                                         ^~~~~~~~~~~~~~~\r\n");
         printCacheError();
     }
