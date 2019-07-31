@@ -38,9 +38,7 @@
 #define REASON_FREQ_SWITCH      BIT(1)
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
-static volatile uint32_t reason[ portNUM_PROCESSORS ];
-
-// TODO: crosscore_int: simplify for esp32s2beta - IDF-754
+static volatile uint32_t reason;
 
 /*
 ToDo: There is a small chance the CPU already has yielded when this ISR is serviced. In that case, it's running the intended task but
@@ -53,15 +51,11 @@ static inline void IRAM_ATTR esp_crosscore_isr_handle_yield()
 
 static void IRAM_ATTR esp_crosscore_isr(void *arg) {
     uint32_t my_reason_val;
-    //A pointer to the correct reason array item is passed to this ISR.
+    //A pointer to the correct reason item is passed to this ISR.
     volatile uint32_t *my_reason=arg;
 
     //Clear the interrupt first.
-    if (xPortGetCoreID()==0) {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
-    } else {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
-    }
+    DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
     //Grab the reason and clear it.
     portENTER_CRITICAL_ISR(&reason_spinlock);
     my_reason_val=*my_reason;
@@ -80,33 +74,22 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
     }
 }
 
-//Initialize the crosscore interrupt on this core. Call this once
-//on each active core.
+//Initialize the crosscore interrupt on this core.
 void esp_crosscore_int_init() {
     portENTER_CRITICAL(&reason_spinlock);
-    reason[xPortGetCoreID()]=0;
+    reason = 0;
     portEXIT_CRITICAL(&reason_spinlock);
-    esp_err_t err;
-    if (xPortGetCoreID()==0) {
-        err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
-    } else {
-        err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
-    }
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason, NULL));
 }
 
 static void IRAM_ATTR esp_crosscore_int_send(int core_id, uint32_t reason_mask) {
     assert(core_id<portNUM_PROCESSORS);
-    //Mark the reason we interrupt the other CPU
+    //Mark the reason we interrupt the current CPU
     portENTER_CRITICAL(&reason_spinlock);
-    reason[core_id] |= reason_mask;
+    reason |= reason_mask;
     portEXIT_CRITICAL(&reason_spinlock);
-    //Poke the other CPU.
-    if (core_id==0) {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
-    } else {
-        DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
-    }
+    //Poke the current CPU.
+    DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
 }
 
 void IRAM_ATTR esp_crosscore_int_send_yield(int core_id)
