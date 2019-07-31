@@ -134,7 +134,7 @@ blehr_tx_hrate_stop(void)
     xTimerStop( blehr_tx_timer, 1000 / portTICK_PERIOD_MS );
 }
 
-/* Reset heartrate measurment */
+/* Reset heart rate measurement */
 static void
 blehr_tx_hrate_reset(void)
 {
