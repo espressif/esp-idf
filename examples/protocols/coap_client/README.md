@@ -37,17 +37,12 @@ Example Connection Configuration  --->
  * Set WiFi Password under Example Configuration
 Example CoAP Client Configuration  --->
  * Set CoAP Target Uri
- * Set encryption method definitions (None, PSK or PKI)
-  * If PSK Set CoAP Preshared Key to use in connection to the server
-  * If PSK Set CoAP PSK Client identity (username)
- Enable CoAP debugging if required
+ * If PSK, Set CoAP Preshared Key to use in connection to the server
+ * If PSK, Set CoAP PSK Client identity (username)
 Component config  --->
- mbedTLS  --->
-  [*]   Enable mbedtls certificate expiry check
-       TLS Key Exchange Methods  --->
-        [*] Enable pre-shared-key ciphersuites
-        [*]   Enable PSK based ciphersuite modes
-  [*] Support DTLS protocol (all versions)
+  CoAP Configuration  --->
+    * Set encryption method definition, PSK (default) or PKI
+    * Enable CoAP debugging if required
 
 ### Build and Flash
 
@@ -103,6 +98,4 @@ optional `path`, and begins with `coap://`, `coaps://` or `coap+tcp://`
 for a coap server that supports TCP
 (not all do including coap+tcp://californium.eclipse.org).
 
-* CoAP logging can be enabled by running 'make menuconfig' and enable debugging
-
-* Encryption (MbedTLS) can be enabled by running 'make menuconfig' and enable debugging
+* CoAP logging can be enabled by running 'idf.py menuconfig -> Component config -> CoAP Configuration' and setting appropriate log level

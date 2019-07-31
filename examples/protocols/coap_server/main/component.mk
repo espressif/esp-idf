@@ -5,6 +5,4 @@
 
 # embed files from the "certs" directory as binary data symbols
 # in the app
-COMPONENT_EMBED_TXTFILES := coap_ca.pem
-COMPONENT_EMBED_TXTFILES += coap_server.crt
-COMPONENT_EMBED_TXTFILES += coap_server.key
+COMPONENT_EMBED_TXTFILES := certs/coap_ca.pem certs/coap_server.crt certs/coap_server.key

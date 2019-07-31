@@ -46,7 +46,7 @@
    instead of coap:// and the PSK must be one that the server supports
    (potentially associated with the IDENTITY)
 */
-#define EXAMPLE_COAP_PSK_KEY CONFIG_COAP_PSK_KEY
+#define EXAMPLE_COAP_PSK_KEY CONFIG_EXAMPLE_COAP_PSK_KEY
 
 /* The examples use CoAP Logging Level that
    you can set via 'make menuconfig'.
@@ -57,8 +57,29 @@
 */
 #define EXAMPLE_COAP_LOG_DEFAULT_LEVEL CONFIG_COAP_LOG_DEFAULT_LEVEL
 
+const static char *TAG = "CoAP_server";
+
 static char espressif_data[100];
 static int espressif_data_len = 0;
+
+#ifdef CONFIG_COAP_MBEDTLS_PKI
+/* CA cert, taken from coap_ca.pem
+   Server cert, taken from coap_server.crt
+   Server key, taken from coap_server.key
+
+   The PEM, CRT and KEY file are examples taken from the wpa2 enterprise
+   example.
+
+   To embed it in the app binary, the PEM, CRT and KEY file is named
+   in the component.mk COMPONENT_EMBED_TXTFILES variable.
+ */
+extern uint8_t ca_pem_start[] asm("_binary_coap_ca_pem_start");
+extern uint8_t ca_pem_end[]   asm("_binary_coap_ca_pem_end");
+extern uint8_t server_crt_start[] asm("_binary_coap_server_crt_start");
+extern uint8_t server_crt_end[]   asm("_binary_coap_server_crt_end");
+extern uint8_t server_key_start[] asm("_binary_coap_server_key_start");
+extern uint8_t server_key_end[]   asm("_binary_coap_server_key_end");
+#endif /* CONFIG_COAP_MBEDTLS_PKI */
 
 #define INITIAL_DATA "Hello World!"
 
@@ -93,8 +114,7 @@ hnd_espressif_put(coap_context_t *ctx,
 
     if (strcmp (espressif_data, INITIAL_DATA) == 0) {
         response->code = COAP_RESPONSE_CODE(201);
-    }
-    else {
+    } else {
         response->code = COAP_RESPONSE_CODE(204);
     }
 
@@ -125,32 +145,23 @@ hnd_espressif_delete(coap_context_t *ctx,
     response->code = COAP_RESPONSE_CODE(202);
 }
 
-#ifdef CONFIG_MBEDTLS_COAP_PKI
-
-#ifdef __GNUC__
-#define UNUSED_PARAM __attribute__ ((unused))
-#else /* not a GCC */
-#define UNUSED_PARAM
-#endif /* GCC */
-
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
+#ifdef CONFIG_COAP_MBEDTLS_PKI
 
 static int
 verify_cn_callback(const char *cn,
-                   const uint8_t *asn1_public_cert UNUSED_PARAM,
-                   size_t asn1_length UNUSED_PARAM,
-                   coap_session_t *session UNUSED_PARAM,
+                   const uint8_t *asn1_public_cert,
+                   size_t asn1_length,
+                   coap_session_t *session,
                    unsigned depth,
-                   int validated UNUSED_PARAM,
-                   void *arg UNUSED_PARAM
-) {
-  coap_log(LOG_INFO, "CN '%s' presented by server (%s)\n",
-           cn, depth ? "CA" : "Certificate");
-  return 1;
+                   int validated,
+                   void *arg
+                  )
+{
+    coap_log(LOG_INFO, "CN '%s' presented by server (%s)\n",
+             cn, depth ? "CA" : "Certificate");
+    return 1;
 }
-#endif /* CONFIG_MBEDTLS_COAP_PKI */
+#endif /* CONFIG_COAP_MBEDTLS_PKI */
 
 static void coap_example_server(void *p)
 {
@@ -174,96 +185,85 @@ static void coap_example_server(void *p)
 
         ctx = coap_new_context(NULL);
         if (!ctx) {
-           continue;
+            ESP_LOGE(TAG, "coap_new_context() failed");
+            continue;
         }
-#ifdef CONFIG_MBEDTLS_COAP_PSK
+#ifdef CONFIG_COAP_MBEDTLS_PSK
         /* Need PSK setup before we set up endpoints */
         coap_context_set_psk(ctx, "CoAP",
-                             (const uint8_t*)EXAMPLE_COAP_PSK_KEY,
-                             sizeof(EXAMPLE_COAP_PSK_KEY)-1);
-#endif /* CONFIG_MBEDTLS_COAP_PSK */
+                             (const uint8_t *)EXAMPLE_COAP_PSK_KEY,
+                             sizeof(EXAMPLE_COAP_PSK_KEY) - 1);
+#endif /* CONFIG_COAP_MBEDTLS_PSK */
 
-#ifdef CONFIG_MBEDTLS_COAP_PKI
-/* CA cert, taken from coap_ca.pem
-   Server cert, taken from coap_server.crt
-   Server key, taken from coap_server.key
+#ifdef CONFIG_COAP_MBEDTLS_PKI
+        unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
+        unsigned int server_crt_bytes = server_crt_end - server_crt_start;
+        unsigned int server_key_bytes = server_key_end - server_key_start;
+        coap_dtls_pki_t dtls_pki;
 
-   The PEM, CRT and KEY file are examples taken from the wpa2 enterprise
-   example.
+        memset (&dtls_pki, 0, sizeof(dtls_pki));
+        dtls_pki.version = COAP_DTLS_PKI_SETUP_VERSION;
+        if (ca_pem_bytes) {
+            /*
+             * Add in additional certificate checking.
+             * This list of enabled can be tuned for the specific
+             * requirements - see 'man coap_encryption'.
+             *
+             * Note: A list of root ca file can be setup separately using
+             * coap_context_set_pki_root_cas(), but the below is used to
+             * define what checking actually takes place.
+             */
+            dtls_pki.verify_peer_cert        = 1;
+            dtls_pki.require_peer_cert       = 1;
+            dtls_pki.allow_self_signed       = 1;
+            dtls_pki.allow_expired_certs     = 1;
+            dtls_pki.cert_chain_validation   = 1;
+            dtls_pki.cert_chain_verify_depth = 2;
+            dtls_pki.check_cert_revocation   = 1;
+            dtls_pki.allow_no_crl            = 1;
+            dtls_pki.allow_expired_crl       = 1;
+            dtls_pki.allow_bad_md_hash       = 1;
+            dtls_pki.allow_short_rsa_length  = 1;
+            dtls_pki.validate_cn_call_back   = verify_cn_callback;
+            dtls_pki.cn_call_back_arg        = NULL;
+            dtls_pki.validate_sni_call_back  = NULL;
+            dtls_pki.sni_call_back_arg       = NULL;
+        }
+        dtls_pki.pki_key.key_type = COAP_PKI_KEY_PEM_BUF;
+        dtls_pki.pki_key.key.pem_buf.public_cert = server_crt_start;
+        dtls_pki.pki_key.key.pem_buf.public_cert_len = server_crt_bytes;
+        dtls_pki.pki_key.key.pem_buf.private_key = server_key_start;
+        dtls_pki.pki_key.key.pem_buf.private_key_len = server_key_bytes;
+        dtls_pki.pki_key.key.pem_buf.ca_cert = ca_pem_start;
+        dtls_pki.pki_key.key.pem_buf.ca_cert_len = ca_pem_bytes;
 
-   To embed it in the app binary, the PEM, CRT and KEY file is named
-   in the component.mk COMPONENT_EMBED_TXTFILES variable.
-*/
-extern uint8_t ca_pem_start[] asm("_binary_coap_ca_pem_start");
-extern uint8_t ca_pem_end[]   asm("_binary_coap_ca_pem_end");
-extern uint8_t server_crt_start[] asm("_binary_coap_server_crt_start");
-extern uint8_t server_crt_end[]   asm("_binary_coap_server_crt_end");
-extern uint8_t server_key_start[] asm("_binary_coap_server_key_start");
-extern uint8_t server_key_end[]   asm("_binary_coap_server_key_end");
-            unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
-            unsigned int server_crt_bytes = server_crt_end - server_crt_start;
-            unsigned int server_key_bytes = server_key_end - server_key_start;
-            coap_dtls_pki_t dtls_pki;
-
-            memset (&dtls_pki, 0, sizeof(dtls_pki));
-            dtls_pki.version = COAP_DTLS_PKI_SETUP_VERSION;
-            if (ca_pem_bytes) {
-                /*
-                 * Add in additional certificate checking.
-                 * This list of enabled can be tuned for the specific
-                 * requirements - see 'man coap_encryption'.
-                 *
-                 * Note: A list of root ca file can be setup separately using
-                 * coap_context_set_pki_root_cas(), but the below is used to
-                 * define what checking actually takes place.
-                 */
-                dtls_pki.verify_peer_cert        = 1;
-                dtls_pki.require_peer_cert       = 1;
-                dtls_pki.allow_self_signed       = 1;
-                dtls_pki.allow_expired_certs     = 1;
-                dtls_pki.cert_chain_validation   = 1;
-                dtls_pki.cert_chain_verify_depth = 2;
-                dtls_pki.check_cert_revocation   = 1;
-                dtls_pki.allow_no_crl            = 1;
-                dtls_pki.allow_expired_crl       = 1;
-                dtls_pki.allow_bad_md_hash       = 1;
-                dtls_pki.allow_short_rsa_length  = 1;
-                dtls_pki.validate_cn_call_back   = verify_cn_callback;
-                dtls_pki.cn_call_back_arg        = NULL;
-                dtls_pki.validate_sni_call_back  = NULL;
-                dtls_pki.sni_call_back_arg       = NULL;
-            }
-            dtls_pki.pki_key.key_type = COAP_PKI_KEY_PEM_BUF;
-            dtls_pki.pki_key.key.pem_buf.public_cert = server_crt_start;
-            dtls_pki.pki_key.key.pem_buf.public_cert_len = server_crt_bytes;
-            dtls_pki.pki_key.key.pem_buf.private_key = server_key_start;
-            dtls_pki.pki_key.key.pem_buf.private_key_len = server_key_bytes;
-            dtls_pki.pki_key.key.pem_buf.ca_cert = ca_pem_start;
-            dtls_pki.pki_key.key.pem_buf.ca_cert_len = ca_pem_bytes;
-
-            coap_context_set_pki(ctx, &dtls_pki);
-#endif /* CONFIG_MBEDTLS_COAP_PKI */
+        coap_context_set_pki(ctx, &dtls_pki);
+#endif /* CONFIG_COAP_MBEDTLS_PKI */
 
         ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_UDP);
         if (!ep) {
-           goto clean_up;
+            ESP_LOGE(TAG, "udp: coap_new_endpoint() failed");
+            goto clean_up;
         }
         ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_TCP);
         if (!ep) {
-           goto clean_up;
+            ESP_LOGE(TAG, "tcp: coap_new_endpoint() failed");
+            goto clean_up;
         }
-#if defined(CONFIG_MBEDTLS_COAP_PSK) || defined(CONFIG_MBEDTLS_COAP_PKI)
-	if (coap_dtls_is_supported()) {
+#if defined(CONFIG_COAP_MBEDTLS_PSK) || defined(CONFIG_COAP_MBEDTLS_PKI)
+        if (coap_dtls_is_supported()) {
             serv_addr.addr.sin.sin_port = htons(COAPS_DEFAULT_PORT);
             ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_DTLS);
             if (!ep) {
-               goto clean_up;
+                ESP_LOGE(TAG, "dtls: coap_new_endpoint() failed");
+                goto clean_up;
             }
         }
-#endif /* CONFIG_MBEDTLS_COAP_PSK CONFIG_MBEDTLS_COAP_PKI */
+#endif /* CONFIG_COAP_MBEDTLS_PSK CONFIG_COAP_MBEDTLS_PKI */
         resource = coap_resource_init(coap_make_str_const("Espressif"), 0);
         if (!resource) {
-           goto clean_up;
+            ESP_LOGE(TAG, "coap_resource_init() failed");
+            goto clean_up;
         }
         coap_register_handler(resource, COAP_REQUEST_GET, hnd_espressif_get);
         coap_register_handler(resource, COAP_REQUEST_PUT, hnd_espressif_put);
@@ -301,14 +301,6 @@ void app_main(void)
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-#if 0
-/* See https://github.com/Ebiroll/qemu_esp32 for further information */
-#include "emul_ip.h"
-    if (is_running_qemu()) {
-        xTaskCreate(task_lwip_init, "task_lwip_init", 2*4096, NULL, 20, NULL); 
-    }
-    else
-#endif
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.

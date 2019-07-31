@@ -17,6 +17,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <sys/param.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -49,8 +50,8 @@
    instead of coap:// and the PSK must be one that the server supports
    (potentially associated with the IDENTITY)
 */
-#define EXAMPLE_COAP_PSK_KEY CONFIG_COAP_PSK_KEY
-#define EXAMPLE_COAP_PSK_IDENTITY CONFIG_COAP_PSK_IDENTITY
+#define EXAMPLE_COAP_PSK_KEY CONFIG_EXAMPLE_COAP_PSK_KEY
+#define EXAMPLE_COAP_PSK_IDENTITY CONFIG_EXAMPLE_COAP_PSK_IDENTITY
 
 /* The examples use uri Logging Level that
    you can set via 'make menuconfig'.
@@ -65,9 +66,9 @@
    you can set via the project configuration (idf.py menuconfig)
 
    If you'd rather not, just change the below entries to strings with
-   the config you want - ie #define COAP_DEFAULT_DEMO_URI "coap://californium.eclipse.org"
+   the config you want - ie #define COAP_DEFAULT_DEMO_URI "coaps://californium.eclipse.org"
 */
-#define COAP_DEFAULT_DEMO_URI CONFIG_TARGET_DOMAIN_URI
+#define COAP_DEFAULT_DEMO_URI CONFIG_EXAMPLE_TARGET_DOMAIN_URI
 
 const static char *TAG = "CoAP_client";
 
@@ -75,11 +76,30 @@ static int resp_wait = 1;
 static coap_optlist_t *optlist = NULL;
 static int wait_ms;
 
+#ifdef CONFIG_COAP_MBEDTLS_PKI
+/* CA cert, taken from coap_ca.pem
+   Client cert, taken from coap_client.crt
+   Client key, taken from coap_client.key
+
+   The PEM, CRT and KEY file are examples taken from the wpa2 enterprise
+   example.
+
+   To embed it in the app binary, the PEM, CRT and KEY file is named
+   in the component.mk COMPONENT_EMBED_TXTFILES variable.
+ */
+extern uint8_t ca_pem_start[] asm("_binary_coap_ca_pem_start");
+extern uint8_t ca_pem_end[]   asm("_binary_coap_ca_pem_end");
+extern uint8_t client_crt_start[] asm("_binary_coap_client_crt_start");
+extern uint8_t client_crt_end[]   asm("_binary_coap_client_crt_end");
+extern uint8_t client_key_start[] asm("_binary_coap_client_key_start");
+extern uint8_t client_key_end[]   asm("_binary_coap_client_key_end");
+#endif /* CONFIG_COAP_MBEDTLS_PKI */
+
 static void message_handler(coap_context_t *ctx, coap_session_t *session,
-              coap_pdu_t *sent, coap_pdu_t *received,
-                const coap_tid_t id)
+                            coap_pdu_t *sent, coap_pdu_t *received,
+                            const coap_tid_t id)
 {
-    unsigned char* data = NULL;
+    unsigned char *data = NULL;
     size_t data_len;
     coap_pdu_t *pdu = NULL;
     coap_opt_t *block_opt;
@@ -106,8 +126,8 @@ static void message_handler(coap_context_t *ctx, coap_session_t *session,
                 /* create pdu with request for next block */
                 pdu = coap_new_pdu(session);
                 if (!pdu) {
-                     ESP_LOGE(TAG, "coap_new_pdu() failed");
-                     goto clean_up;
+                    ESP_LOGE(TAG, "coap_new_pdu() failed");
+                    goto clean_up;
                 }
                 pdu->type = COAP_MESSAGE_CON;
                 pdu->tid = coap_new_message_id(session);
@@ -121,7 +141,7 @@ static void message_handler(coap_context_t *ctx, coap_session_t *session,
                     case COAP_OPTION_URI_PATH :
                     case COAP_OPTION_URI_QUERY :
                         coap_add_option(pdu, option->number, option->length,
-                                  option->data);
+                                        option->data);
                         break;
                     default:
                         ;     /* skip other options */
@@ -133,8 +153,8 @@ static void message_handler(coap_context_t *ctx, coap_session_t *session,
                 coap_add_option(pdu,
                                 blktype,
                                 coap_encode_var_safe(buf, sizeof(buf),
-                                     ((coap_opt_block_num(block_opt) + 1) << 4) |
-                                      COAP_OPT_BLOCK_SZX(block_opt)), buf);
+                                                     ((coap_opt_block_num(block_opt) + 1) << 4) |
+                                                     COAP_OPT_BLOCK_SZX(block_opt)), buf);
 
                 tid = coap_send(session, pdu);
 
@@ -155,41 +175,31 @@ clean_up:
     resp_wait = 0;
 }
 
-#ifdef CONFIG_MBEDTLS_COAP_PKI
-
-#ifdef __GNUC__
-#define UNUSED_PARAM __attribute__ ((unused))
-#else /* not a GCC */
-#define UNUSED_PARAM
-#endif /* GCC */
-
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
+#ifdef CONFIG_COAP_MBEDTLS_PKI
 
 static int
 verify_cn_callback(const char *cn,
-                   const uint8_t *asn1_public_cert UNUSED_PARAM,
-                   size_t asn1_length UNUSED_PARAM,
-                   coap_session_t *session UNUSED_PARAM,
+                   const uint8_t *asn1_public_cert,
+                   size_t asn1_length,
+                   coap_session_t *session,
                    unsigned depth,
-                   int validated UNUSED_PARAM,
-                   void *arg UNUSED_PARAM
-) {
-  coap_log(LOG_INFO, "CN '%s' presented by server (%s)\n",
-           cn, depth ? "CA" : "Certificate");
-  return 1;
+                   int validated,
+                   void *arg
+                  )
+{
+    coap_log(LOG_INFO, "CN '%s' presented by server (%s)\n",
+             cn, depth ? "CA" : "Certificate");
+    return 1;
 }
-#endif /* CONFIG_MBEDTLS_COAP_PKI */
+#endif /* CONFIG_COAP_MBEDTLS_PKI */
 
 static void coap_example_client(void *p)
 {
     struct hostent *hp;
-
     coap_address_t    dst_addr;
     static coap_uri_t uri;
-    const char*       server_uri = COAP_DEFAULT_DEMO_URI;
-    char* phostname = NULL;
+    const char       *server_uri = COAP_DEFAULT_DEMO_URI;
+    char *phostname = NULL;
 
     coap_set_log_level(EXAMPLE_COAP_LOG_DEFAULT_LEVEL);
 
@@ -209,17 +219,16 @@ static void coap_example_client(void *p)
             break;
         }
 
-        if ((uri.scheme==COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) ||
-            (uri.scheme==COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported())) {
+        if ((uri.scheme == COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) ||
+                (uri.scheme == COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported())) {
             ESP_LOGE(TAG, "CoAP server uri scheme is not supported");
             break;
         }
 
         phostname = (char *)calloc(1, uri.host.length + 1);
-
         if (phostname == NULL) {
             ESP_LOGE(TAG, "calloc failed");
-            continue;
+            break;
         }
 
         memcpy(phostname, uri.host.s, uri.host.length);
@@ -230,12 +239,11 @@ static void coap_example_client(void *p)
             ESP_LOGE(TAG, "DNS lookup failed");
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             free(phostname);
-            goto clean_up;
+            continue;
         }
-        {
         char tmpbuf[INET6_ADDRSTRLEN];
-            coap_address_init(&dst_addr);
-            switch (hp->h_addrtype) {
+        coap_address_init(&dst_addr);
+        switch (hp->h_addrtype) {
             case AF_INET:
                 dst_addr.addr.sin.sin_family      = AF_INET;
                 dst_addr.addr.sin.sin_port        = htons(uri.port);
@@ -253,7 +261,6 @@ static void coap_example_client(void *p)
             default:
                 ESP_LOGE(TAG, "DNS lookup response failed");
                 goto clean_up;
-            }
         }
 
         if (uri.path.length) {
@@ -263,9 +270,9 @@ static void coap_example_client(void *p)
 
             while (res--) {
                 coap_insert_optlist(&optlist,
-                    coap_new_optlist(COAP_OPTION_URI_PATH,
-                    coap_opt_length(buf),
-                    coap_opt_value(buf)));
+                                    coap_new_optlist(COAP_OPTION_URI_PATH,
+                                                     coap_opt_length(buf),
+                                                     coap_opt_value(buf)));
 
                 buf += coap_opt_size(buf);
             }
@@ -278,9 +285,9 @@ static void coap_example_client(void *p)
 
             while (res--) {
                 coap_insert_optlist(&optlist,
-                    coap_new_optlist(COAP_OPTION_URI_QUERY,
-                    coap_opt_length(buf),
-                    coap_opt_value(buf)));
+                                    coap_new_optlist(COAP_OPTION_URI_QUERY,
+                                                     coap_opt_length(buf),
+                                                     coap_opt_value(buf)));
 
                 buf += coap_opt_size(buf);
             }
@@ -288,8 +295,8 @@ static void coap_example_client(void *p)
 
         ctx = coap_new_context(NULL);
         if (!ctx) {
-           ESP_LOGE(TAG, "coap_new_context() failed");
-           goto clean_up;
+            ESP_LOGE(TAG, "coap_new_context() failed");
+            goto clean_up;
         }
 
         /*
@@ -300,32 +307,16 @@ static void coap_example_client(void *p)
          * so COAP_URI_SCHEME_COAPS_TCP will have failed in a test above,
          * but the code is left in for completeness.
          */
-        if (uri.scheme==COAP_URI_SCHEME_COAPS || uri.scheme==COAP_URI_SCHEME_COAPS_TCP) {
-#ifdef CONFIG_MBEDTLS_COAP_PSK
+        if (uri.scheme == COAP_URI_SCHEME_COAPS || uri.scheme == COAP_URI_SCHEME_COAPS_TCP) {
+#ifdef CONFIG_COAP_MBEDTLS_PSK
             session = coap_new_client_session_psk(ctx, NULL, &dst_addr,
-               uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
-               EXAMPLE_COAP_PSK_IDENTITY,
-               (const uint8_t*)EXAMPLE_COAP_PSK_KEY,
-               sizeof(EXAMPLE_COAP_PSK_KEY)-1);
-#endif /* CONFIG_MBEDTLS_COAP_PSK */
+                                                  uri.scheme == COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
+                                                  EXAMPLE_COAP_PSK_IDENTITY,
+                                                  (const uint8_t *)EXAMPLE_COAP_PSK_KEY,
+                                                  sizeof(EXAMPLE_COAP_PSK_KEY) - 1);
+#endif /* CONFIG_COAP_MBEDTLS_PSK */
 
-#ifdef CONFIG_MBEDTLS_COAP_PKI
-/* CA cert, taken from coap_ca.pem
-   Client cert, taken from coap_client.crt
-   Client key, taken from coap_client.key
-
-   The PEM, CRT and KEY file are examples taken from the wpa2 enterprise
-   example.
-
-   To embed it in the app binary, the PEM, CRT and KEY file is named
-   in the component.mk COMPONENT_EMBED_TXTFILES variable.
-*/
-extern uint8_t ca_pem_start[] asm("_binary_coap_ca_pem_start");
-extern uint8_t ca_pem_end[]   asm("_binary_coap_ca_pem_end");
-extern uint8_t client_crt_start[] asm("_binary_coap_client_crt_start");
-extern uint8_t client_crt_end[]   asm("_binary_coap_client_crt_end");
-extern uint8_t client_key_start[] asm("_binary_coap_client_key_start");
-extern uint8_t client_key_end[]   asm("_binary_coap_client_key_end");
+#ifdef CONFIG_COAP_MBEDTLS_PKI
             unsigned int ca_pem_bytes = ca_pem_end - ca_pem_start;
             unsigned int client_crt_bytes = client_crt_end - client_crt_start;
             unsigned int client_key_bytes = client_key_end - client_key_start;
@@ -360,10 +351,11 @@ extern uint8_t client_key_end[]   asm("_binary_coap_client_key_end");
                 dtls_pki.validate_sni_call_back  = NULL;
                 dtls_pki.sni_call_back_arg       = NULL;
                 memset(client_sni, 0, sizeof(client_sni));
-                if (uri.host.length)
-                    memcpy(client_sni, uri.host.s, min(uri.host.length, sizeof(client_sni)));
-                else
+                if (uri.host.length) {
+                    memcpy(client_sni, uri.host.s, MIN(uri.host.length, sizeof(client_sni)));
+                } else {
                     memcpy(client_sni, "localhost", 9);
+                }
                 dtls_pki.client_sni = client_sni;
             }
             dtls_pki.pki_key.key_type = COAP_PKI_KEY_PEM_BUF;
@@ -375,30 +367,25 @@ extern uint8_t client_key_end[]   asm("_binary_coap_client_key_end");
             dtls_pki.pki_key.key.pem_buf.ca_cert_len = ca_pem_bytes;
 
             session = coap_new_client_session_pki(ctx, NULL, &dst_addr,
-               uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
-               &dtls_pki);
-#endif /* CONFIG_MBEDTLS_COAP_PKI */
-
-#ifdef CONFIG_MBEDTLS_COAP_NONE
-            session = coap_new_client_session(ctx, NULL, &dst_addr,
-               uri.scheme==COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS);
-#endif /* CONFIG_MBEDTLS_COAP_NONE */
+                                                  uri.scheme == COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
+                                                  &dtls_pki);
+#endif /* CONFIG_COAP_MBEDTLS_PKI */
         } else {
             session = coap_new_client_session(ctx, NULL, &dst_addr,
-               uri.scheme==COAP_URI_SCHEME_COAP_TCP ? COAP_PROTO_TCP :
-               COAP_PROTO_UDP);
+                                              uri.scheme == COAP_URI_SCHEME_COAP_TCP ? COAP_PROTO_TCP :
+                                              COAP_PROTO_UDP);
         }
         if (!session) {
-           ESP_LOGE(TAG, "coap_new_client_session() failed");
-           goto clean_up;
+            ESP_LOGE(TAG, "coap_new_client_session() failed");
+            goto clean_up;
         }
 
         coap_register_response_handler(ctx, message_handler);
 
         request = coap_new_pdu(session);
         if (!request) {
-           ESP_LOGE(TAG, "coap_new_pdu() failed");
-           goto clean_up;
+            ESP_LOGE(TAG, "coap_new_pdu() failed");
+            goto clean_up;
         }
         request->type = COAP_MESSAGE_CON;
         request->tid = coap_new_message_id(session);
@@ -413,12 +400,12 @@ extern uint8_t client_key_end[]   asm("_binary_coap_client_key_end");
         while (resp_wait) {
             int result = coap_run_once(ctx, wait_ms > 1000 ? 1000 : wait_ms);
             if (result >= 0) {
-               if (result >= wait_ms) {
-                  ESP_LOGE(TAG, "select timeout");
-                  break;
-               } else {
-                  wait_ms -= result;
-               } 
+                if (result >= wait_ms) {
+                    ESP_LOGE(TAG, "select timeout");
+                    break;
+                } else {
+                    wait_ms -= result;
+                }
             }
         }
 clean_up:
@@ -426,8 +413,12 @@ clean_up:
             coap_delete_optlist(optlist);
             optlist = NULL;
         }
-        if (session) coap_session_release(session);
-        if (ctx) coap_free_context(ctx);
+        if (session) {
+            coap_session_release(session);
+        }
+        if (ctx) {
+            coap_free_context(ctx);
+        }
         coap_cleanup();
         /*
          * change the following line to something like sleep(2)
@@ -445,14 +436,6 @@ void app_main(void)
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-#if 0
-/* See https://github.com/Ebiroll/qemu_esp32 for further information */
-#include "emul_ip.h"
-    if (is_running_qemu()) {
-        xTaskCreate(task_lwip_init, "task_lwip_init", 2*4096, NULL, 20, NULL); 
-    }
-    else
-#endif
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
