@@ -15,22 +15,22 @@ ESP-IDF 编程指南
 ==================  ==================  ==================
 
 
-.. |快速入门| image:: ../_static/get-started.gif
+.. |快速入门| image:: ../_static/get-started.png
 .. _快速入门: get-started/index.html
 
-.. |API 参考| image:: ../_static/api-reference.gif
+.. |API 参考| image:: ../_static/api-reference.png
 .. _API 参考: api-reference/index.html
 
-.. |H/W 参考| image:: ../_static/hw-reference.gif
+.. |H/W 参考| image:: ../_static/hw-reference.png
 .. _H/W 参考: hw-reference/index.html
 
-.. |API 指南| image:: ../_static/api-guides.gif
+.. |API 指南| image:: ../_static/api-guides.png
 .. _API 指南: api-guides/index.html
 
-.. |贡献代码| image:: ../_static/contribute.gif
+.. |贡献代码| image:: ../_static/contribute.png
 .. _贡献代码: contribute/index.html
 
-.. |相关资源| image:: ../_static/resources.gif
+.. |相关资源| image:: ../_static/resources.png
 .. _相关资源: resources.html
 
 
