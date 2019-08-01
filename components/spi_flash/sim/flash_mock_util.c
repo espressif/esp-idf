@@ -4,13 +4,6 @@
 #include "esp_err.h"
 #include "esp32/rom/spi_flash.h"
 
-extern void _spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
-
-void spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin)
-{
-    _spi_flash_init(chip_size, block_size, sector_size, page_size, partition_bin);
-}
-
 bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
 {
     return true;
