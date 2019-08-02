@@ -16,7 +16,7 @@ please refer to [RFC7252](https://www.rfc-editor.org/rfc/pdfrfc/rfc7252.txt.pdf)
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set default serial port under Serial Flasher config
@@ -28,7 +28,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

@@ -27,9 +27,9 @@ $ tree examples/bluetooth/esp_ble_mesh/ble_mesh/ble_mesh_node
 ├── README.md   /* Quick start guide */
 ├── build
 ├── main        /* Stores the `.c` and `.h` application code files for this demo */
-├── sdkconfig      /* Current parameters of `make menuconfig` */
-├── sdkconfig.defaults   /* Default parameters of `make menuconfig` */
-├── sdkconfig.old      /* Previously saved parameters of `make menuconfig` */
+├── sdkconfig      /* Current parameters of `idf.py menuconfig` */
+├── sdkconfig.defaults   /* Default parameters of `idf.py menuconfig` */
+├── sdkconfig.old      /* Previously saved parameters of `idf.py menuconfig` */
 └── tutorial         /* More in-depth information about the demo */
 ```
 
@@ -381,7 +381,7 @@ These variables should be set to `0` for this demo, as it uses the most basic au
 
 To be functional across different applications, the BLE Mesh menuconfig is specifically designed to offer a variety of configuration options, which can be helpful in tailoring your own configuration.
 
-The list of configuration options in BLE Mesh menuconfig is stored in `Component config`  ---> `[]Bluetooth Mesh support` and can be accessed with the command `make menuconfig`. This configuration option list is shown below.
+The list of configuration options in BLE Mesh menuconfig is stored in `Component config`  ---> `[]Bluetooth Mesh support` and can be accessed with the command `idf.py menuconfig`. This configuration option list is shown below.
 
 ```
 —— Bluetooth Mesh support
