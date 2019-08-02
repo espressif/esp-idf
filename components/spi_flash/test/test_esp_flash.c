@@ -366,6 +366,36 @@ TEST_CASE("SPI flash erase large region", "[esp_flash]")
 #endif
 }
 
+static void test_write_protection(esp_flash_t* chip)
+{
+    bool wp = true;
+    esp_err_t ret = ESP_OK;
+    ret = esp_flash_get_chip_write_protect(chip, &wp);
+    TEST_ESP_OK(ret);
+
+    for (int i = 0; i < 4; i ++) {
+        bool wp_write = !wp;
+        ret = esp_flash_set_chip_write_protect(chip, wp_write);
+        TEST_ESP_OK(ret);
+
+        bool wp_read;
+        ret = esp_flash_get_chip_write_protect(chip, &wp_read);
+        TEST_ESP_OK(ret);
+        TEST_ASSERT(wp_read == wp_write);
+        wp = wp_read;
+    }
+}
+
+TEST_CASE("Test esp_flash can enable/disable write protetion", "[esp_flash]")
+{
+    test_write_protection(NULL);
+#ifndef SKIP_EXTENDED_CHIP_TEST
+    setup_new_chip(TEST_SPI_READ_MODE, TEST_SPI_SPEED);
+    test_write_protection(test_chip);
+    teardown_test_chip();
+#endif
+}
+
 static const uint8_t large_const_buffer[16400] = {
     203, // first byte
     1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -492,4 +522,3 @@ static void test_write_large_buffer(esp_flash_t *chip, const uint8_t *source, si
     write_large_buffer(chip, part, source, length);
     read_and_check(chip, part, source, length);
 }
-

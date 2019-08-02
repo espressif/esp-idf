@@ -173,7 +173,19 @@ spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *buffer, ui
  *      - ESP_OK if success
  *      - or other error passed from the ``wait_idle``, ``read_status`` or ``set_write_protect`` function of host driver
  */
-esp_err_t spi_flash_chip_generic_write_enable(esp_flash_t *chip, bool write_protect);
+esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write_protect);
+
+/**
+ * @brief Check whether WEL (write enable latch) bit is set in the Status Register read from RDSR (05h).
+ *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param out_write_protect Output of whether the write protect is set.
+ *
+ * @return
+ *      - ESP_OK if success
+ *      - or other error passed from the ``read_status`` function of host driver
+ */
+esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_write_protect);
 
 /**
  * @brief Read flash status via the RDSR command (05h) and wait for bit 0 (write
