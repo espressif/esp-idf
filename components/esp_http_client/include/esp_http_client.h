@@ -470,6 +470,17 @@ esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client);
  */
 void esp_http_client_add_auth(esp_http_client_handle_t client);
 
+/**
+ * @brief      Checks if entire data in the response has been read without any error.
+ *
+ * @param[in]  client   The esp_http_client handle
+ * 
+ * @return
+ *     - true
+ *     - false
+ */
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client);
+
 #ifdef __cplusplus
 }
 #endif
