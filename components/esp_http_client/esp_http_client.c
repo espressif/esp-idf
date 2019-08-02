@@ -808,6 +808,22 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
     return rlen;
 }
 
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
+{
+    if (client->response->is_chunked) {
+        if (!client->is_chunk_complete) {
+            ESP_LOGI(TAG, "Chunks were not completely read");
+            return false;
+        }
+    } else {
+        if (client->response->data_process != client->response->content_length) {
+            ESP_LOGI(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
+            return false;
+        }
+    }
+    return true;
+}
+
 int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 {
     esp_http_buffer_t *res_buffer = client->response->buffer;
@@ -831,7 +847,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         } else {
             is_data_remain = client->response->data_process < client->response->content_length;
         }
-        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d", is_data_remain, client->response->is_chunked);
+        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d, content_length=%d", is_data_remain, client->response->is_chunked, client->response->content_length);
         if (!is_data_remain) {
             break;
         }
