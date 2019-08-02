@@ -30,7 +30,7 @@ ESP32 WROVER KIT 1  |               |   RS-485 side |               |    Modbus 
 ### Configure the application
 Configure the UART pins used for modbus communication using command and table below.
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 ```
@@ -53,7 +53,7 @@ As an example the Modbus Poll application can be used with this example.
 ### Build and flash software
 Build the project and flash it to the board, then run monitor tool to view serial output:
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

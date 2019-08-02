@@ -1,7 +1,7 @@
 # ESP-MQTT sample application
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example connects to the broker URI selected using `make menuconfig` (using mqtt tcp transport) and as a demonstration subscribes/unsubscribes and send a message on certain topic.
+This example connects to the broker URI selected using `idf.py menuconfig` (using mqtt tcp transport) and as a demonstration subscribes/unsubscribes and send a message on certain topic.
 (Please note that the public broker is maintained by the community so may not be always available, for details please see this [disclaimer](https://iot.eclipse.org/getting-started/#sandboxes))
 
 Note: If the URI equals `FROM_STDIN` then the broker address is read from stdin upon application startup (used for testing)
@@ -25,7 +25,7 @@ This example can be executed on any ESP32 board, the only required interface is 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

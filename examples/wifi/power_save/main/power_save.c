@@ -20,7 +20,7 @@
 #include "esp_pm.h"
 #include "nvs_flash.h"
 
-/*set the ssid and password via "make menuconfig"*/
+/*set the ssid and password via "idf.py menuconfig"*/
 #define DEFAULT_SSID CONFIG_EXAMPLE_WIFI_SSID
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 
