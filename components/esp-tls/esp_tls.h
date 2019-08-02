@@ -78,6 +78,16 @@ typedef enum esp_tls_role {
 
 /**
  * @brief      ESP-TLS configuration parameters 
+ * 
+ * @note       Note about format of certificates:
+ *             - This structure includes certificates of a Certificate Authority, of client or server as well
+ *             as private keys, which may be of PEM or DER format. In case of PEM format, the buffer must be
+ *             NULL terminated (with NULL character included in certificate size).
+ *             - Certificate Authority's certificate may be a chain of certificates in case of PEM format,
+ *             but could be only one certificate in case of DER format
+ *             - Variables names of certificates and private key buffers and sizes are defined as unions providing
+ *             backward compatibility for legacy *_pem_buf and *_pem_bytes names which suggested only PEM format
+ *             was supported. It is encouraged to use generic names such as cacert_buf and cacert_bytes.
  */ 
 typedef struct esp_tls_cfg {
     const char **alpn_protos;               /*!< Application protocols required for HTTP2.
@@ -89,29 +99,47 @@ typedef struct esp_tls_cfg {
                                                  const char **alpn_protos = { "h2", NULL };
                                                  - where 'h2' is the protocol name */
  
-    const unsigned char *cacert_pem_buf;    /*!< Certificate Authority's certificate in a buffer.
+    union {
+    const unsigned char *cacert_buf;        /*!< Certificate Authority's certificate in a buffer.
                                                  Format may be PEM or DER, depending on mbedtls-support
                                                  This buffer should be NULL terminated in case of PEM */
- 
-    unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate
-                                                 pointed to by cacert_pem_buf
+    const unsigned char *cacert_pem_buf;    /*!< CA certificate buffer legacy name */
+    };
+
+    union {
+    unsigned int cacert_bytes;              /*!< Size of Certificate Authority certificate
+                                                 pointed to by cacert_buf
                                                  (including NULL-terminator in case of PEM format) */
+    unsigned int cacert_pem_bytes;          /*!< Size of Certificate Authority certificate legacy name */
+    };
 
-    const unsigned char *clientcert_pem_buf;/*!< Client certificate in a buffer
+    union {
+    const unsigned char *clientcert_buf;    /*!< Client certificate in a buffer
                                                  Format may be PEM or DER, depending on mbedtls-support
                                                  This buffer should be NULL terminated in case of PEM */
+    const unsigned char *clientcert_pem_buf;     /*!< Client certificate legacy name */
+    };
 
-    unsigned int clientcert_pem_bytes;      /*!< Size of client certificate pointed to by
+    union {
+    unsigned int clientcert_bytes;          /*!< Size of client certificate pointed to by
                                                  clientcert_pem_buf
                                                  (including NULL-terminator in case of PEM format) */
+    unsigned int clientcert_pem_bytes;      /*!< Size of client certificate legacy name */
+    };
 
-    const unsigned char *clientkey_pem_buf; /*!< Client key in a buffer
+    union {
+    const unsigned char *clientkey_buf;     /*!< Client key in a buffer
                                                  Format may be PEM or DER, depending on mbedtls-support
                                                  This buffer should be NULL terminated in case of PEM */
+    const unsigned char *clientkey_pem_buf; /*!< Client key legacy name */
+    };
 
-    unsigned int clientkey_pem_bytes;       /*!< Size of client key pointed to by
+    union {
+    unsigned int clientkey_bytes;           /*!< Size of client key pointed to by
                                                  clientkey_pem_buf
                                                  (including NULL-terminator in case of PEM format) */
+    unsigned int clientkey_pem_bytes;       /*!< Size of client key legacy name */
+    };
 
     const unsigned char *clientkey_password;/*!< Client key decryption password string */
 
@@ -144,23 +172,41 @@ typedef struct esp_tls_cfg_server {
                                                      const char **alpn_protos = { "h2", NULL };
                                                      - where 'h2' is the protocol name */
 
-    const unsigned char *cacert_pem_buf;    /*!< Client CA certificate in a buffer.
+    union {
+    const unsigned char *cacert_buf;        /*!< Client CA certificate in a buffer.
                                                      This buffer should be NULL terminated */
+    const unsigned char *cacert_pem_buf;    /*!< Client CA certificate legacy name */
+    };
 
-    unsigned int cacert_pem_bytes;          /*!< Size of client CA certificate
+    union {
+    unsigned int cacert_bytes;              /*!< Size of client CA certificate
                                                      pointed to by cacert_pem_buf */
+    unsigned int cacert_pem_bytes;          /*!< Size of client CA certificate legacy name */
+    };
 
-    const unsigned char *servercert_pem_buf;    /*!< Server certificate in a buffer
+    union {
+    const unsigned char *servercert_buf;        /*!< Server certificate in a buffer
                                                      This buffer should be NULL terminated */
+    const unsigned char *servercert_pem_buf;    /*!< Server certificate legacy name */
+    };
 
-    unsigned int servercert_pem_bytes;          /*!< Size of server certificate pointed to by
+    union {
+    unsigned int servercert_bytes;             /*!< Size of server certificate pointed to by
                                                      servercert_pem_buf */
+    unsigned int servercert_pem_bytes;          /*!< Size of server certificate legacy name */
+    };
 
-    const unsigned char *serverkey_pem_buf;     /*!< Server key in a buffer
+    union {
+    const unsigned char *serverkey_buf;         /*!< Server key in a buffer
                                                      This buffer should be NULL terminated */
+    const unsigned char *serverkey_pem_buf;     /*!< Server key legacy name */
+    };
 
-    unsigned int serverkey_pem_bytes;           /*!< Size of server key pointed to by
+    union {
+    unsigned int serverkey_bytes;               /*!< Size of server key pointed to by
                                                      serverkey_pem_buf */
+    unsigned int serverkey_pem_bytes;           /*!< Size of server key legacy name */
+    };
 
     const unsigned char *serverkey_password;    /*!< Server key decryption password string */
 

@@ -182,8 +182,8 @@ void esp_transport_ssl_set_cert_data_der(esp_transport_handle_t t, const char *d
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (t && ssl) {
-        ssl->cfg.cacert_pem_buf = (void *)data;
-        ssl->cfg.cacert_pem_bytes = len;
+        ssl->cfg.cacert_buf = (void *)data;
+        ssl->cfg.cacert_bytes = len;
     }
 }
 
@@ -200,8 +200,8 @@ void esp_transport_ssl_set_client_cert_data_der(esp_transport_handle_t t, const 
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (t && ssl) {
-        ssl->cfg.clientcert_pem_buf = (void *)data;
-        ssl->cfg.clientcert_pem_bytes = len;
+        ssl->cfg.clientcert_buf = (void *)data;
+        ssl->cfg.clientcert_bytes = len;
     }
 }
 
@@ -218,8 +218,8 @@ void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const c
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (t && ssl) {
-        ssl->cfg.clientkey_pem_buf = (void *)data;
-        ssl->cfg.clientkey_pem_bytes = len;
+        ssl->cfg.clientkey_buf = (void *)data;
+        ssl->cfg.clientkey_bytes = len;
     }
 }
 
