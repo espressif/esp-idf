@@ -75,7 +75,7 @@ Once Python is installed, open a Windows Command Prompt from the Start menu and 
 MConf for IDF
 ^^^^^^^^^^^^^
 
-Download the configuration tool mconf-idf from the `kconfig-frontends releases page <mconf-idf>`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
+Download the configuration tool mconf-idf from the `kconfig-frontends releases page`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
 
 This tool will also need to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>`.
 
@@ -113,9 +113,11 @@ Next Steps
 
 To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
 
+.. _CMake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
 .. _MSYS2: https://msys2.github.io/
+.. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 
