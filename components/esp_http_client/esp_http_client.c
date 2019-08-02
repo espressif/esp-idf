@@ -775,6 +775,22 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
     return rlen;
 }
 
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
+{
+    if (client->response->is_chunked) {
+        if (!client->is_chunk_complete) {
+            ESP_LOGI(TAG, "Chunks were not completely read");
+            return false;
+        }
+    } else {
+        if (client->response->data_process != client->response->content_length) {
+            ESP_LOGI(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
+            return false;
+        }
+    }
+    return true;
+}
+
 int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 {
     esp_http_buffer_t *res_buffer = client->response->buffer;
@@ -798,7 +814,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         } else {
             is_data_remain = client->response->data_process < client->response->content_length;
         }
-        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d", is_data_remain, client->response->is_chunked);
+        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d, content_length=%d", is_data_remain, client->response->is_chunked, client->response->content_length);
         if (!is_data_remain) {
             break;
         }
@@ -806,10 +822,14 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         if (byte_to_read > client->buffer_size_rx) {
             byte_to_read = client->buffer_size_rx;
         }
+        errno = 0;
         rlen = esp_transport_read(client->transport, res_buffer->data, byte_to_read, client->timeout_ms);
         ESP_LOGD(TAG, "need_read=%d, byte_to_read=%d, rlen=%d, ridx=%d", need_read, byte_to_read, rlen, ridx);
 
         if (rlen <= 0) {
+            if (errno != 0) {
+                ESP_LOGW(TAG, "esp_transport_read returned : %d and errno : %d ", rlen, errno);
+            }
             return ridx;
         }
         res_buffer->output_ptr = buffer + ridx;
