@@ -4,7 +4,7 @@ This example creates a `esp_local_ctrl` service over HTTPS transport, for secure
 
 See the `esp_local_ctrl` component documentation for details.
 
-Before using the example, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+Before using the example, run `idf.py menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
 
 ## Client Side Implementation
 

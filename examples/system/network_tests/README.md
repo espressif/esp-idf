@@ -23,9 +23,8 @@ Note: TTCN3 engine works reliably only on Linux and Windows.
 
 ```
 cd $IDF_PATH/examples/system/network_tests
-make defconfig
-make -j4
-make flash
+idf.py build
+idf.py -p PORT flash
 ```
 
 ## Run test
