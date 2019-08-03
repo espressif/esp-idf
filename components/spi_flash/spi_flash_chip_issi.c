@@ -57,7 +57,6 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .sector_size = 4 * 1024,
     .block_erase_size = 64 * 1024,
 
-    // TODO: support get/set chip write protect for ISSI flash
     .get_chip_write_protect = spi_flash_chip_generic_get_write_protect,
     .set_chip_write_protect = spi_flash_chip_generic_set_write_protect,
 
