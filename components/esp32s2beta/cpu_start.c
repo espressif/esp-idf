@@ -311,9 +311,9 @@ void start_cpu0_default(void)
 
     do_global_ctors();
 #if CONFIG_ESP_INT_WDT
-    //esp_int_wdt_init();
-    //Initialize the interrupt watch dog for CPU0.
-    //esp_int_wdt_cpu_init();
+    esp_int_wdt_init();
+    //Initialize the interrupt watch dog
+    esp_int_wdt_cpu_init();
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
