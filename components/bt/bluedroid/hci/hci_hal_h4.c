@@ -189,10 +189,10 @@ task_post_status_t hci_hal_h4_task_post(task_post_t timeout)
     evt.par = 0;
 
     if (xQueueSend(xHciH4Queue, &evt, timeout) != pdTRUE) {
-        return TASK_POST_SUCCESS;
+        return TASK_POST_FAIL;
     }
 
-    return TASK_POST_FAIL;
+    return TASK_POST_SUCCESS;
 }
 
 #if (C2H_FLOW_CONTROL_INCLUDED == TRUE)
