@@ -56,9 +56,9 @@ Ninja build
 .. note::
     Ninja currently only provides binaries for 64-bit Windows. It is possible to use CMake and ``idf.py`` with other build tools, such as mingw-make, on 32-bit windows. However this is currently undocumented.
 
-Download the ninja_ latest stable Windows release from the (`download page <ninja-dl>`_).
+Download the ninja_ latest stable Windows release from the (`download page <ninja-dl_>`_).
 
-The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory which is then `added to your Path <add-directory-windows-path>`_ (or you can choose a directory which is already on your Path).
+The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>` (or you can choose a directory which is already on your Path).
 
 
 Python 2.x
@@ -75,9 +75,9 @@ Once Python is installed, open a Windows Command Prompt from the Start menu and 
 MConf for IDF
 ^^^^^^^^^^^^^
 
-Download the configuration tool mconf-idf from the `kconfig-frontends releases page <mconf-idf>`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
+Download the configuration tool mconf-idf from the `kconfig-frontends releases page`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
 
-This tool will also need to be unzipped to a directory which is then `added to your Path <add-directory-windows-path>`_.
+This tool will also need to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>`.
 
 Toolchain Setup
 ===============
@@ -90,7 +90,7 @@ Download the precompiled Windows toolchain:
 
 Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-esp32-elf``.
 
-Next, the ``bin`` subdirectory of this directory must be `added to your Path <add-directory-windows-path>`_. For example, the directory to add may be ``C:\Program Files\xtensa-esp32-elf\bin``.
+Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-esp32-elf\bin``.
 
 .. note::
    If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-esp32-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
@@ -113,8 +113,11 @@ Next Steps
 
 To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.
 
+.. _CMake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
+.. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
 .. _MSYS2: https://msys2.github.io/
+.. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 
