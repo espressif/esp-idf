@@ -75,8 +75,8 @@ static void https_get_task(void *pvParameters)
 
     while(1) {
         esp_tls_cfg_t cfg = {
-            .cacert_pem_buf  = server_root_cert_pem_start,
-            .cacert_pem_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
+            .cacert_buf  = server_root_cert_pem_start,
+            .cacert_bytes = server_root_cert_pem_end - server_root_cert_pem_start,
         };
         
         struct esp_tls *tls = esp_tls_conn_http_new(WEB_URL, &cfg);
