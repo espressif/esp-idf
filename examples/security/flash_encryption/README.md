@@ -8,7 +8,7 @@ The example checks if the flash encryption feature is enabled/disabled and if en
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set serial port under Serial Flasher Options.
@@ -24,7 +24,7 @@ make menuconfig
 When building the project and flashing it to the board FOR THE FIRST TIME after enabling flash encryption feature in menuconfig, run following command to program ESP32 and monitor the output
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
@@ -34,13 +34,13 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 When reprogramming the device subsequently use following command for encrypted write of new plaintext application
 
 ```
-make -j4 encrypted-app-flash monitor
+idf.py encrypted-app-flash monitor
 ```
 
 Please note above command programs only the app partition. In order to reprogram all partitions (bootloader, partition table and application) in encrypted form use
 
 ```
-make -j4 encrypted-flash monitor
+idf.py encrypted-flash monitor
 ```
 
 ## Example Output

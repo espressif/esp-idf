@@ -24,7 +24,7 @@ Shows how to use mDNS to advertise lookup services and hosts
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 - Wait for WiFi to connect to your access point

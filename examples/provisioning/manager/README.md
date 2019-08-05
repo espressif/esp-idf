@@ -47,7 +47,7 @@ There are various applications, specific to Windows and macOS platform which can
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set serial port under Serial Flasher Options.
@@ -57,7 +57,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

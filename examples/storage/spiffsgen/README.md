@@ -4,7 +4,7 @@
 
 This example demonstrates how to use the SPIFFS image generation tool [spiffsgen.py](../../../components/spiffs/spiffsgen.py) to automatically create a SPIFFS
 filesystem image from the contents of a host folder during build, with an option of
-automatically flashing the created image on invocation of `idf.py flash`.
+automatically flashing the created image on invocation of `idf.py -p PORT flash`.
 For more information, see description of `spiffsgen.py` on the ESP-IDF Programming Guide under API Reference > Storage > SPIFFS Filesystem.
 
 The following gives an overview of the example:
@@ -14,10 +14,10 @@ The following gives an overview of the example:
 2. The function `spiffs_create_partition_image` is used to specify that a SPIFFS image
 should be created during build for the `storage` partition. For CMake, it is called from [the main component's CMakeLists.txt](./main/CMakeLists.txt);
 for Make, from the [project Makefile](./Makefile). `FLASH_IN_PROJECT` specifies that the created image
-should be flashed on invocation of `idf.py flash` together with app, bootloader, partition table, etc.
+should be flashed on invocation of `idf.py -p PORT flash` together with app, bootloader, partition table, etc.
 For both build systems, the image is created on the example's build directory with the output filename `storage.bin`.
 
-3. Upon invocation of `idf.py flash monitor`, application loads and
+3. Upon invocation of `idf.py -p PORT flash monitor`, application loads and
 finds there is already a valid SPIFFS filesystem in the `storage` partition with files same as those in `spiffs_image` directory. The application is then
 able to read those files.
 
@@ -34,7 +34,7 @@ make flash monitor
 or 
 ```CMake
 # CMake
-idf.py flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
