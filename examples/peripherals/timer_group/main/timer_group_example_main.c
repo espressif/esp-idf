@@ -6,7 +6,6 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-
 #include <stdio.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
@@ -60,8 +59,13 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
+#ifdef CONFIG_IDF_TARGET_ESP32
     uint32_t intr_status = TIMERG0.int_st_timers.val;
     TIMERG0.hw_timer[timer_idx].update = 1;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t intr_status = TIMERG0.int_st.val;
+    TIMERG0.hw_timer[timer_idx].update.update = 1;
+#endif
     uint64_t timer_counter_value = 
         ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
         | TIMERG0.hw_timer[timer_idx].cnt_low;
@@ -77,13 +81,21 @@ void IRAM_ATTR timer_group0_isr(void *para)
        and update the alarm time for the timer with without reload */
     if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
         evt.type = TEST_WITHOUT_RELOAD;
+#ifdef CONFIG_IDF_TARGET_ESP32
         TIMERG0.int_clr_timers.t0 = 1;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        TIMERG0.int_clr.t0 = 1;
+#endif
         timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
         TIMERG0.hw_timer[timer_idx].alarm_high = (uint32_t) (timer_counter_value >> 32);
         TIMERG0.hw_timer[timer_idx].alarm_low = (uint32_t) timer_counter_value;
     } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
         evt.type = TEST_WITH_RELOAD;
+#ifdef CONFIG_IDF_TARGET_ESP32
         TIMERG0.int_clr_timers.t1 = 1;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        TIMERG0.int_clr.t1 = 1;
+#endif
     } else {
         evt.type = -1; // not supported even type
     }
@@ -114,6 +126,9 @@ static void example_tg0_timer_init(int timer_idx,
     config.alarm_en = TIMER_ALARM_EN;
     config.intr_type = TIMER_INTR_LEVEL;
     config.auto_reload = auto_reload;
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    config.clk_sel = TIMER_SRC_CLK_APB;
+#endif
     timer_init(TIMER_GROUP_0, timer_idx, &config);
 
     /* Timer's counter will initially start from value below.

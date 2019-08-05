@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,42 +23,30 @@ typedef volatile struct {
         struct {
             union {
                 struct {
-                    uint32_t htimer_sel:       2;
-                    uint32_t hsig_out_en:      1;
-                    uint32_t hidle_lv:         1;
-                    uint32_t hovf_num:         10;
-                    uint32_t hovf_cnt_en:       1;
-                    uint32_t reserved15:      16;
-                    uint32_t clk_en:           1;
-                };
-                struct {
-                    uint32_t ltimer_sel:        2;
-                    uint32_t lsig_out_en:       1;
-                    uint32_t lidle_lv:          1;
-                    uint32_t low_speed_update: 1;
-                    uint32_t lovf_num:         10;
-                    uint32_t lovf_cnt_en:       1;
-                    uint32_t reserved16:      16;
-                };
-                struct {
                     uint32_t timer_sel:  2;              /*There are four high speed timers  the two bits are used to select one of them for high speed channel.  2'b00: seletc hstimer0.   2'b01: select hstimer1.  2'b10: select hstimer2.    2'b11: select hstimer3.*/
                     uint32_t sig_out_en: 1;              /*This is the output enable control bit for high speed channel*/
                     uint32_t idle_lv:    1;              /*This bit is used to control the output value when high speed channel is off.*/
-                    uint32_t reserved28:   28;
+                    uint32_t low_speed_update: 1;        /*This bit is only useful for low speed timer channels, reserved for high speed timers*/
+                    uint32_t ovf_num:   10;
+                    uint32_t ovf_cnt_en: 1;
+                    uint32_t ovf_cnt_rst: 1;
+                    uint32_t ovf_cnt_rst_st: 1;
+                    uint32_t reserved18: 13;
+                    uint32_t clk_en:     1;              /*This bit is clock gating control signal. when software configure LED_PWM internal registers  it controls the register clock.*/
                 };
                 uint32_t val;
             } conf0;
             union {
                 struct {
-                    uint32_t hpoint:     20;             /*The output value changes to high when htimerx(x=[0 3]) selected by high speed channel has reached reg_hpoint_hsch0[19:0]*/
-                    uint32_t reserved20: 12;
+                    uint32_t hpoint:     14;             /*The output value changes to high when htimerx(x=[0 3]) selected by high speed channel has reached reg_hpoint_hsch0[19:0]*/
+                    uint32_t reserved14: 16;
                 };
                 uint32_t val;
             } hpoint;
             union {
                 struct {
-                    uint32_t duty:      25;              /*The register is used to control output duty. When hstimerx(x=[0 3]) chosen by high speed channel  has reached reg_lpoint_hsch0 the output signal changes to low. reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4])          (1)  reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
-                    uint32_t reserved25: 7;
+                    uint32_t duty:      19;              /*The register is used to control output duty. When hstimerx(x=[0 3]) chosen by high speed channel  has reached reg_lpoint_hsch0 the output signal changes to low. reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4])          (1)  reg_lpoint_hsch0=(reg_hpoint_hsch0[19:0]+reg_duty_hsch0[24:4] +1)     (2)  The least four bits in this register represent the decimal part and determines when to choose (1) or (2)*/
+                    uint32_t reserved19: 11;
                 };
                 uint32_t val;
             } duty;
@@ -74,54 +62,42 @@ typedef volatile struct {
             } conf1;
             union {
                 struct {
-                    uint32_t duty_read: 25;              /*This register represents the current duty of the output signal for high speed channel.*/
-                    uint32_t reserved25: 7;
+                    uint32_t duty_read: 19;              /*This register represents the current duty of the output signal for high speed channel.*/
+                    uint32_t reserved19: 11;
                 };
                 uint32_t val;
             } duty_rd;
         } channel[8];
-    } channel_group[2];                                /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
+    } channel_group[1];                                /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
     struct {
         struct {
             union {
                 struct {
-                    uint32_t duty_resolution:          5;
-                    uint32_t clock_divider:          18;
+                    uint32_t duty_resolution:   4;
+                    uint32_t clock_divider:     18;
                     uint32_t pause:             1;
                     uint32_t rst:               1;
                     uint32_t tick_sel:          1;
                     uint32_t low_speed_update:  1;
-                    uint32_t reserved27:        5;
+                    uint32_t reserved26:        6;
                 };
                 uint32_t val;
             } conf;
             union {
                 struct {
-                    uint32_t timer_cnt:  20;               /*software can read this register to get the current counter value in high speed timer*/
-                    uint32_t reserved20: 12;
+                    uint32_t timer_cnt:  14;               /*software can read this register to get the current counter value in high speed timer*/
+                    uint32_t reserved14: 16;
                 };
                 uint32_t val;
             } value;
         } timer[4];
-    } timer_group[2];                                    /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
+    } timer_group[1];                                    /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
     union {
         struct {
-            uint32_t hstimer0_ovf:        1;           /*The interrupt raw bit for high speed channel0  counter overflow.*/
-            uint32_t hstimer1_ovf:        1;           /*The interrupt raw bit for high speed channel1  counter overflow.*/
-            uint32_t hstimer2_ovf:        1;           /*The interrupt raw bit for high speed channel2  counter overflow.*/
-            uint32_t hstimer3_ovf:        1;           /*The interrupt raw bit for high speed channel3  counter overflow.*/
             uint32_t lstimer0_ovf:        1;           /*The interrupt raw bit for low speed channel0  counter overflow.*/
             uint32_t lstimer1_ovf:        1;           /*The interrupt raw bit for low speed channel1  counter overflow.*/
             uint32_t lstimer2_ovf:        1;           /*The interrupt raw bit for low speed channel2  counter overflow.*/
             uint32_t lstimer3_ovf:        1;           /*The interrupt raw bit for low speed channel3  counter overflow.*/
-            uint32_t duty_chng_end_hsch0: 1;           /*The interrupt raw bit for high speed channel 0 duty change done.*/
-            uint32_t duty_chng_end_hsch1: 1;           /*The interrupt raw bit for high speed channel 1 duty change done.*/
-            uint32_t duty_chng_end_hsch2: 1;           /*The interrupt raw bit for high speed channel 2 duty change done.*/
-            uint32_t duty_chng_end_hsch3: 1;           /*The interrupt raw bit for high speed channel 3 duty change done.*/
-            uint32_t duty_chng_end_hsch4: 1;           /*The interrupt raw bit for high speed channel 4 duty change done.*/
-            uint32_t duty_chng_end_hsch5: 1;           /*The interrupt raw bit for high speed channel 5 duty change done.*/
-            uint32_t duty_chng_end_hsch6: 1;           /*The interrupt raw bit for high speed channel 6 duty change done.*/
-            uint32_t duty_chng_end_hsch7: 1;           /*The interrupt raw bit for high speed channel 7 duty change done.*/
             uint32_t duty_chng_end_lsch0: 1;           /*The interrupt raw bit for low speed channel 0 duty change done.*/
             uint32_t duty_chng_end_lsch1: 1;           /*The interrupt raw bit for low speed channel 1 duty change done.*/
             uint32_t duty_chng_end_lsch2: 1;           /*The interrupt raw bit for low speed channel 2 duty change done.*/
@@ -130,97 +106,93 @@ typedef volatile struct {
             uint32_t duty_chng_end_lsch5: 1;           /*The interrupt raw bit for low speed channel 5 duty change done.*/
             uint32_t duty_chng_end_lsch6: 1;           /*The interrupt raw bit for low speed channel 6 duty change done.*/
             uint32_t duty_chng_end_lsch7: 1;           /*The interrupt raw bit for low speed channel 7 duty change done.*/
-            uint32_t reserved24:          8;
+            uint32_t ovf_cnt_lsch0:       1;
+            uint32_t ovf_cnt_lsch1:       1;
+            uint32_t ovf_cnt_lsch2:       1;
+            uint32_t ovf_cnt_lsch3:       1;
+            uint32_t ovf_cnt_lsch4:       1;
+            uint32_t ovf_cnt_lsch5:       1;
+            uint32_t ovf_cnt_lsch6:       1;
+            uint32_t ovf_cnt_lsch7:       1;
+            uint32_t reserved20:          12;
         };
         uint32_t val;
     } int_raw;
     union {
         struct {
-            uint32_t hstimer0_ovf:        1;            /*The interrupt status bit for high speed channel0  counter overflow event.*/
-            uint32_t hstimer1_ovf:        1;            /*The interrupt status bit for high speed channel1  counter overflow event.*/
-            uint32_t hstimer2_ovf:        1;            /*The interrupt status bit for high speed channel2  counter overflow event.*/
-            uint32_t hstimer3_ovf:        1;            /*The interrupt status bit for high speed channel3  counter overflow event.*/
-            uint32_t lstimer0_ovf:        1;            /*The interrupt status bit for low speed channel0  counter overflow event.*/
-            uint32_t lstimer1_ovf:        1;            /*The interrupt status bit for low speed channel1  counter overflow event.*/
-            uint32_t lstimer2_ovf:        1;            /*The interrupt status bit for low speed channel2  counter overflow event.*/
-            uint32_t lstimer3_ovf:        1;            /*The interrupt status bit for low speed channel3  counter overflow event.*/
-            uint32_t duty_chng_end_hsch0: 1;            /*The interrupt enable bit for high speed channel 0 duty change done event.*/
-            uint32_t duty_chng_end_hsch1: 1;            /*The interrupt status bit for high speed channel 1 duty change done event.*/
-            uint32_t duty_chng_end_hsch2: 1;            /*The interrupt status bit for high speed channel 2 duty change done event.*/
-            uint32_t duty_chng_end_hsch3: 1;            /*The interrupt status bit for high speed channel 3 duty change done event.*/
-            uint32_t duty_chng_end_hsch4: 1;            /*The interrupt status bit for high speed channel 4 duty change done event.*/
-            uint32_t duty_chng_end_hsch5: 1;            /*The interrupt status bit for high speed channel 5 duty change done event.*/
-            uint32_t duty_chng_end_hsch6: 1;            /*The interrupt status bit for high speed channel 6 duty change done event.*/
-            uint32_t duty_chng_end_hsch7: 1;            /*The interrupt status bit for high speed channel 7 duty change done event.*/
-            uint32_t duty_chng_end_lsch0: 1;            /*The interrupt status bit for low speed channel 0 duty change done event.*/
-            uint32_t duty_chng_end_lsch1: 1;            /*The interrupt status bit for low speed channel 1 duty change done event.*/
-            uint32_t duty_chng_end_lsch2: 1;            /*The interrupt status bit for low speed channel 2 duty change done event.*/
-            uint32_t duty_chng_end_lsch3: 1;            /*The interrupt status bit for low speed channel 3 duty change done event.*/
-            uint32_t duty_chng_end_lsch4: 1;            /*The interrupt status bit for low speed channel 4 duty change done event.*/
-            uint32_t duty_chng_end_lsch5: 1;            /*The interrupt status bit for low speed channel 5 duty change done event.*/
-            uint32_t duty_chng_end_lsch6: 1;            /*The interrupt status bit for low speed channel 6 duty change done event.*/
-            uint32_t duty_chng_end_lsch7: 1;            /*The interrupt status bit for low speed channel 7 duty change done event*/
-            uint32_t reserved24:          8;
+            uint32_t lstimer0_ovf:        1;
+            uint32_t lstimer1_ovf:        1;
+            uint32_t lstimer2_ovf:        1;
+            uint32_t lstimer3_ovf:        1;
+            uint32_t duty_chng_end_lsch0: 1;
+            uint32_t duty_chng_end_lsch1: 1;
+            uint32_t duty_chng_end_lsch2: 1;
+            uint32_t duty_chng_end_lsch3: 1;
+            uint32_t duty_chng_end_lsch4: 1;
+            uint32_t duty_chng_end_lsch5: 1;
+            uint32_t duty_chng_end_lsch6: 1;
+            uint32_t duty_chng_end_lsch7: 1;
+            uint32_t ovf_cnt_lsch0:       1;
+            uint32_t ovf_cnt_lsch1:       1;
+            uint32_t ovf_cnt_lsch2:       1;
+            uint32_t ovf_cnt_lsch3:       1;
+            uint32_t ovf_cnt_lsch4:       1;
+            uint32_t ovf_cnt_lsch5:       1;
+            uint32_t ovf_cnt_lsch6:       1;
+            uint32_t ovf_cnt_lsch7:       1;
+            uint32_t reserved20:          12;
         };
         uint32_t val;
     } int_st;
     union {
         struct {
-            uint32_t hstimer0_ovf:        1;           /*The interrupt enable bit for high speed channel0  counter overflow interrupt.*/
-            uint32_t hstimer1_ovf:        1;           /*The interrupt enable bit for high speed channel1  counter overflow interrupt.*/
-            uint32_t hstimer2_ovf:        1;           /*The interrupt enable bit for high speed channel2  counter overflow interrupt.*/
-            uint32_t hstimer3_ovf:        1;           /*The interrupt enable bit for high speed channel3  counter overflow interrupt.*/
-            uint32_t lstimer0_ovf:        1;           /*The interrupt enable bit for low speed channel0  counter overflow interrupt.*/
-            uint32_t lstimer1_ovf:        1;           /*The interrupt enable bit for low speed channel1  counter overflow interrupt.*/
-            uint32_t lstimer2_ovf:        1;           /*The interrupt enable bit for low speed channel2  counter overflow interrupt.*/
-            uint32_t lstimer3_ovf:        1;           /*The interrupt enable bit for low speed channel3  counter overflow interrupt.*/
-            uint32_t duty_chng_end_hsch0: 1;           /*The interrupt enable bit for high speed channel 0 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch1: 1;           /*The interrupt enable bit for high speed channel 1 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch2: 1;           /*The interrupt enable bit for high speed channel 2 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch3: 1;           /*The interrupt enable bit for high speed channel 3 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch4: 1;           /*The interrupt enable bit for high speed channel 4 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch5: 1;           /*The interrupt enable bit for high speed channel 5 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch6: 1;           /*The interrupt enable bit for high speed channel 6 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch7: 1;           /*The interrupt enable bit for high speed channel 7 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch0: 1;           /*The interrupt enable bit for low speed channel 0 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch1: 1;           /*The interrupt enable bit for low speed channel 1 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch2: 1;           /*The interrupt enable bit for low speed channel 2 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch3: 1;           /*The interrupt enable bit for low speed channel 3 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch4: 1;           /*The interrupt enable bit for low speed channel 4 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch5: 1;           /*The interrupt enable bit for low speed channel 5 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch6: 1;           /*The interrupt enable bit for low speed channel 6 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch7: 1;           /*The interrupt enable bit for low speed channel 7 duty change done interrupt.*/
-            uint32_t reserved24:          8;
+            uint32_t lstimer0_ovf:        1;
+            uint32_t lstimer1_ovf:        1;
+            uint32_t lstimer2_ovf:        1;
+            uint32_t lstimer3_ovf:        1;
+            uint32_t duty_chng_end_lsch0: 1;
+            uint32_t duty_chng_end_lsch1: 1;
+            uint32_t duty_chng_end_lsch2: 1;
+            uint32_t duty_chng_end_lsch3: 1;
+            uint32_t duty_chng_end_lsch4: 1;
+            uint32_t duty_chng_end_lsch5: 1;
+            uint32_t duty_chng_end_lsch6: 1;
+            uint32_t duty_chng_end_lsch7: 1;
+            uint32_t ovf_cnt_lsch0:       1;
+            uint32_t ovf_cnt_lsch1:       1;
+            uint32_t ovf_cnt_lsch2:       1;
+            uint32_t ovf_cnt_lsch3:       1;
+            uint32_t ovf_cnt_lsch4:       1;
+            uint32_t ovf_cnt_lsch5:       1;
+            uint32_t ovf_cnt_lsch6:       1;
+            uint32_t ovf_cnt_lsch7:       1;
+            uint32_t reserved20:          12;
         };
         uint32_t val;
     } int_ena;
     union {
         struct {
-            uint32_t hstimer0_ovf:        1;           /*Set this  bit to clear  high speed channel0  counter overflow interrupt.*/
-            uint32_t hstimer1_ovf:        1;           /*Set this  bit to clear  high speed channel1  counter overflow interrupt.*/
-            uint32_t hstimer2_ovf:        1;           /*Set this  bit to clear  high speed channel2  counter overflow interrupt.*/
-            uint32_t hstimer3_ovf:        1;           /*Set this  bit to clear  high speed channel3  counter overflow interrupt.*/
-            uint32_t lstimer0_ovf:        1;           /*Set this  bit to clear  low speed channel0  counter overflow interrupt.*/
-            uint32_t lstimer1_ovf:        1;           /*Set this  bit to clear  low speed channel1  counter overflow interrupt.*/
-            uint32_t lstimer2_ovf:        1;           /*Set this  bit to clear  low speed channel2  counter overflow interrupt.*/
-            uint32_t lstimer3_ovf:        1;           /*Set this  bit to clear  low speed channel3  counter overflow interrupt.*/
-            uint32_t duty_chng_end_hsch0: 1;           /*Set this  bit to clear  high speed channel 0 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch1: 1;           /*Set this  bit to clear  high speed channel 1 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch2: 1;           /*Set this  bit to clear  high speed channel 2 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch3: 1;           /*Set this  bit to clear  high speed channel 3 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch4: 1;           /*Set this  bit to clear  high speed channel 4 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch5: 1;           /*Set this  bit to clear  high speed channel 5 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch6: 1;           /*Set this  bit to clear  high speed channel 6 duty change done interrupt.*/
-            uint32_t duty_chng_end_hsch7: 1;           /*Set this  bit to clear  high speed channel 7 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch0: 1;           /*Set this  bit to clear  low speed channel 0 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch1: 1;           /*Set this  bit to clear  low speed channel 1 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch2: 1;           /*Set this  bit to clear  low speed channel 2 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch3: 1;           /*Set this  bit to clear  low speed channel 3 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch4: 1;           /*Set this  bit to clear  low speed channel 4 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch5: 1;           /*Set this  bit to clear  low speed channel 5 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch6: 1;           /*Set this  bit to clear  low speed channel 6 duty change done interrupt.*/
-            uint32_t duty_chng_end_lsch7: 1;           /*Set this  bit to clear  low speed channel 7 duty change done interrupt.*/
-            uint32_t reserved24:          8;
+            uint32_t lstimer0_ovf:        1;
+            uint32_t lstimer1_ovf:        1;
+            uint32_t lstimer2_ovf:        1;
+            uint32_t lstimer3_ovf:        1;
+            uint32_t duty_chng_end_lsch0: 1;
+            uint32_t duty_chng_end_lsch1: 1;
+            uint32_t duty_chng_end_lsch2: 1;
+            uint32_t duty_chng_end_lsch3: 1;
+            uint32_t duty_chng_end_lsch4: 1;
+            uint32_t duty_chng_end_lsch5: 1;
+            uint32_t duty_chng_end_lsch6: 1;
+            uint32_t duty_chng_end_lsch7: 1;
+            uint32_t ovf_cnt_lsch0:       1;
+            uint32_t ovf_cnt_lsch1:       1;
+            uint32_t ovf_cnt_lsch2:       1;
+            uint32_t ovf_cnt_lsch3:       1;
+            uint32_t ovf_cnt_lsch4:       1;
+            uint32_t ovf_cnt_lsch5:       1;
+            uint32_t ovf_cnt_lsch6:       1;
+            uint32_t ovf_cnt_lsch7:       1;
+            uint32_t reserved20:          12;
         };
         uint32_t val;
     } int_clr;
@@ -229,100 +201,8 @@ typedef volatile struct {
             uint32_t apb_clk_sel: 2;
             uint32_t reserved2:  30;
         };
-        struct {
-            uint32_t slow_clk_sel: 1;                  /*This bit is used to set the frequency of slow_clk. 1'b1:80mhz  1'b0:8mhz, (only used by LEDC low speed channels/timers)*/
-            uint32_t reserved:  31;
-        };
         uint32_t val;
     } conf;
-    union {
-        struct {
-            uint32_t ovf_cnt_hsch0:         1;
-            uint32_t ovf_cnt_hsch1:         1;
-            uint32_t ovf_cnt_hsch2:         1;
-            uint32_t ovf_cnt_hsch3:         1;
-            uint32_t ovf_cnt_hsch4:         1;
-            uint32_t ovf_cnt_hsch5:         1;
-            uint32_t ovf_cnt_hsch6:         1;
-            uint32_t ovf_cnt_hsch7:         1;
-            uint32_t ovf_cnt_lsch0:         1;
-            uint32_t ovf_cnt_lsch1:         1;
-            uint32_t ovf_cnt_lsch2:         1;
-            uint32_t ovf_cnt_lsch3:         1;
-            uint32_t ovf_cnt_lsch4:         1;
-            uint32_t ovf_cnt_lsch5:         1;
-            uint32_t ovf_cnt_lsch6:         1;
-            uint32_t ovf_cnt_lsch7:         1;
-            uint32_t reserved16:           16;
-        };
-        uint32_t val;
-    } int1_raw;
-    union {
-        struct {
-            uint32_t ovf_cnt_hsch0:        1;
-            uint32_t ovf_cnt_hsch1:        1;
-            uint32_t ovf_cnt_hsch2:        1;
-            uint32_t ovf_cnt_hsch3:        1;
-            uint32_t ovf_cnt_hsch4:        1;
-            uint32_t ovf_cnt_hsch5:        1;
-            uint32_t ovf_cnt_hsch6:        1;
-            uint32_t ovf_cnt_hsch7:        1;
-            uint32_t ovf_cnt_lsch0:        1;
-            uint32_t ovf_cnt_lsch1:        1;
-            uint32_t ovf_cnt_lsch2:        1;
-            uint32_t ovf_cnt_lsch3:        1;
-            uint32_t ovf_cnt_lsch4:        1;
-            uint32_t ovf_cnt_lsch5:        1;
-            uint32_t ovf_cnt_lsch6:        1;
-            uint32_t ovf_cnt_lsch7:        1;
-            uint32_t reserved16:          16;
-        };
-        uint32_t val;
-    } int1_st;
-    union {
-        struct {
-            uint32_t ovf_cnt_hsch0:         1;
-            uint32_t ovf_cnt_hsch1:         1;
-            uint32_t ovf_cnt_hsch2:         1;
-            uint32_t ovf_cnt_hsch3:         1;
-            uint32_t ovf_cnt_hsch4:         1;
-            uint32_t ovf_cnt_hsch5:         1;
-            uint32_t ovf_cnt_hsch6:         1;
-            uint32_t ovf_cnt_hsch7:         1;
-            uint32_t ovf_cnt_lsch0:         1;
-            uint32_t ovf_cnt_lsch1:         1;
-            uint32_t ovf_cnt_lsch2:         1;
-            uint32_t ovf_cnt_lsch3:         1;
-            uint32_t ovf_cnt_lsch4:         1;
-            uint32_t ovf_cnt_lsch5:         1;
-            uint32_t ovf_cnt_lsch6:         1;
-            uint32_t ovf_cnt_lsch7:         1;
-            uint32_t reserved16:           16;
-        };
-        uint32_t val;
-    } int1_ena;
-    union {
-        struct {
-            uint32_t ovf_cnt_hsch0:         1;
-            uint32_t ovf_cnt_hsch1:         1;
-            uint32_t ovf_cnt_hsch2:         1;
-            uint32_t ovf_cnt_hsch3:         1;
-            uint32_t ovf_cnt_hsch4:         1;
-            uint32_t ovf_cnt_hsch5:         1;
-            uint32_t ovf_cnt_hsch6:         1;
-            uint32_t ovf_cnt_hsch7:         1;
-            uint32_t ovf_cnt_lsch0:         1;
-            uint32_t ovf_cnt_lsch1:         1;
-            uint32_t ovf_cnt_lsch2:         1;
-            uint32_t ovf_cnt_lsch3:         1;
-            uint32_t ovf_cnt_lsch4:         1;
-            uint32_t ovf_cnt_lsch5:         1;
-            uint32_t ovf_cnt_lsch6:         1;
-            uint32_t ovf_cnt_lsch7:         1;
-            uint32_t reserved16:           16;
-        };
-        uint32_t val;
-    } int1_clr;
     uint32_t reserved_1a4;
     uint32_t reserved_1a8;
     uint32_t reserved_1ac;
