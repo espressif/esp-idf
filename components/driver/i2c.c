@@ -942,7 +942,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, gpio_p
     return ESP_OK;
 }
 
-i2c_cmd_handle_t i2c_cmd_link_create()
+i2c_cmd_handle_t i2c_cmd_link_create(void)
 {
 #if !CONFIG_SPIRAM_USE_MALLOC
     i2c_cmd_desc_t* cmd_desc = (i2c_cmd_desc_t*) calloc(1, sizeof(i2c_cmd_desc_t));

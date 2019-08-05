@@ -79,7 +79,7 @@ static void wifi_power_save(void)
     esp_wifi_set_ps(DEFAULT_PS_MODE);
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();

@@ -109,7 +109,7 @@ static int connect(int argc, char **argv)
     return 0;
 }
 
-void register_wifi()
+void register_wifi(void)
 {
     join_args.timeout = arg_int0(NULL, "timeout", "<t>", "Connection timeout, ms");
     join_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");

@@ -26,7 +26,7 @@
 
 #define WIFI_CONNECTED_BIT BIT0
 
-static void initialize_console()
+static void initialize_console(void)
 {
     /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);

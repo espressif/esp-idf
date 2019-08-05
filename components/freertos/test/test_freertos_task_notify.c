@@ -94,7 +94,7 @@ static void receiver_task (void* arg){
     vTaskDelete(NULL);
 }
 
-static void IRAM_ATTR sender_ISR ()
+static void IRAM_ATTR sender_ISR (void *arg)
 {
     int curcore = xPortGetCoreID();
     if(curcore == 0){      //Clear timer interrupt

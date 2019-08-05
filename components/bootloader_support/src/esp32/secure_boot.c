@@ -95,7 +95,7 @@ static bool secure_boot_generate(uint32_t image_len){
 }
 
 /* Burn values written to the efuse write registers */
-static inline void burn_efuses()
+static inline void burn_efuses(void)
 {
     esp_efuse_burn_new_values();
 }

@@ -712,7 +712,7 @@ esp_err_t ledc_fade_func_install(int intr_alloc_flags)
     return ledc_isr_register(ledc_fade_isr, NULL, intr_alloc_flags | ESP_INTR_FLAG_IRAM, &s_ledc_fade_isr_handle);
 }
 
-void ledc_fade_func_uninstall()
+void ledc_fade_func_uninstall(void)
 {
     if (s_ledc_fade_rec == NULL) {
         return;

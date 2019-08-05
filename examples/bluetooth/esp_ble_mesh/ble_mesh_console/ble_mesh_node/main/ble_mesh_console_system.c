@@ -28,11 +28,11 @@
 #define CONFIG_ESPTOOLPY_PORT "Which is choosen by Users for CMake"
 #endif
 
-static void register_free();
-static void register_restart();
-static void register_make();
+static void register_free(void);
+static void register_restart(void);
+static void register_make(void);
 
-void register_system()
+void register_system(void)
 {
     register_free();
     register_restart();
@@ -47,7 +47,7 @@ static int restart(int argc, char **argv)
     esp_restart();
 }
 
-static void register_restart()
+static void register_restart(void)
 {
     const esp_console_cmd_t cmd = {
         .command = "restart",
@@ -66,7 +66,7 @@ static int free_mem(int argc, char **argv)
     return 0;
 }
 
-static void register_free()
+static void register_free(void)
 {
     const esp_console_cmd_t cmd = {
         .command = "free",
@@ -169,7 +169,7 @@ R"(MONITOR
     return 0;
 }
 
-static void register_make()
+static void register_make(void)
 {
     const esp_console_cmd_t cmd = {
         .command = "make",

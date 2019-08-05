@@ -47,7 +47,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-static void wifi_init_sta()
+static void wifi_init_sta(void)
 {
     /* Set our event handling */
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, event_handler, NULL));
@@ -58,7 +58,7 @@ static void wifi_init_sta()
     ESP_ERROR_CHECK(esp_wifi_start());
 }
 
-static void start_console_provisioning()
+static void start_console_provisioning(void)
 {
     /* Security version */
     int security = 0;
@@ -81,7 +81,7 @@ static void start_console_provisioning()
     ESP_ERROR_CHECK(app_prov_start_console_provisioning(security, pop));
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize networking stack */
     tcpip_adapter_init();

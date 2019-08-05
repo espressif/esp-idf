@@ -70,7 +70,7 @@ esp_err_t esp_event_isr_post(esp_event_base_t event_base, int32_t event_id,
 #endif
 
 
-esp_err_t esp_event_loop_create_default()
+esp_err_t esp_event_loop_create_default(void)
 {
     if (s_default_loop) {
         return ESP_ERR_INVALID_STATE;
@@ -94,7 +94,7 @@ esp_err_t esp_event_loop_create_default()
     return ESP_OK;
 }
 
-esp_err_t esp_event_loop_delete_default()
+esp_err_t esp_event_loop_delete_default(void)
 {
     if (!s_default_loop) {
         return ESP_ERR_INVALID_STATE;

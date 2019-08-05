@@ -155,7 +155,7 @@ static BOOL xMBMasterPortTimersEnable(USHORT usTimerTics50us)
     return TRUE;
 }
 
-void vMBMasterPortTimersT35Enable()
+void vMBMasterPortTimersT35Enable(void)
 {
     USHORT usTimerTicks = usT35TimeOut50us;
 
@@ -165,7 +165,7 @@ void vMBMasterPortTimersT35Enable()
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersConvertDelayEnable()
+void vMBMasterPortTimersConvertDelayEnable(void)
 {
     // Covert time in milliseconds into ticks
     USHORT usTimerTicks = ((MB_MASTER_DELAY_MS_CONVERT * 1000) / MB_TICK_TIME_US);
@@ -176,7 +176,7 @@ void vMBMasterPortTimersConvertDelayEnable()
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersRespondTimeoutEnable()
+void vMBMasterPortTimersRespondTimeoutEnable(void)
 {
     USHORT usTimerTicks = (MB_MASTER_TIMEOUT_MS_RESPOND * 1000 / MB_TICK_TIME_US);
 
@@ -185,7 +185,7 @@ void vMBMasterPortTimersRespondTimeoutEnable()
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersDisable()
+void vMBMasterPortTimersDisable(void)
 {
     // Stop timer and then reload timer counter value
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
@@ -194,7 +194,7 @@ void vMBMasterPortTimersDisable()
     ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
 }
 
-void vMBMasterPortTimerClose()
+void vMBMasterPortTimerClose(void)
 {
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));

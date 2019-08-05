@@ -220,6 +220,6 @@ void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
 /* No-op function, used to force linking this file,
    instead of the dummy locks implementation from newlib.
  */
-void newlib_include_locks_impl()
+void newlib_include_locks_impl(void)
 {
 }

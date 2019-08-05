@@ -837,7 +837,7 @@ static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
     return item_size;
 }
 
-esp_err_t btc_spp_vfs_register()
+esp_err_t btc_spp_vfs_register(void)
 {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,

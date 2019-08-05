@@ -69,7 +69,7 @@ void my_post_trans_cb(spi_slave_transaction_t *trans) {
 }
 
 //Main application
-void app_main()
+void app_main(void)
 {
     int n=0;
     esp_err_t ret;

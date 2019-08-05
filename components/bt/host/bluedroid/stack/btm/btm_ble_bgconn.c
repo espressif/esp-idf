@@ -60,7 +60,7 @@ static bool bdaddr_equality_fn(const void *x, const void *y)
     return bdaddr_equals((bt_bdaddr_t *)x, (bt_bdaddr_t *)y);
 }
 
-static void background_connections_lazy_init()
+static void background_connections_lazy_init(void)
 {
     if (!background_connections) {
         background_connections = hash_map_new(background_connection_buckets,
@@ -91,7 +91,7 @@ static BOOLEAN background_connection_remove(bt_bdaddr_t *address)
     return FALSE;
 }
 
-static void background_connections_clear()
+static void background_connections_clear(void)
 {
     if (background_connections) {
         hash_map_clear(background_connections);
@@ -110,7 +110,7 @@ static bool background_connections_pending_cb(hash_map_entry_t *hash_entry, void
     return true;
 }
 
-static bool background_connections_pending()
+static bool background_connections_pending(void)
 {
     bool pending_connections = false;
     if (background_connections) {

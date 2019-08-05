@@ -144,7 +144,7 @@ void int_timer_handler(void *arg) {
     int_timer_ctr++;
 }
 
-void local_timer_test()
+void local_timer_test(void)
 {
     intr_handle_t ih;
     esp_err_t r;

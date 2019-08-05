@@ -683,7 +683,7 @@ void bta_jv_disable (tBTA_JV_MSG *p_data)
  * list.
  * If no free PSMs exist, 0 will be returned.
  */
-static UINT16 bta_jv_get_free_psm()
+static UINT16 bta_jv_get_free_psm(void)
 {
     const int cnt = sizeof(bta_jv_cb.free_psm_list) / sizeof(bta_jv_cb.free_psm_list[0]);
     for (int i = 0; i < cnt; i++) {

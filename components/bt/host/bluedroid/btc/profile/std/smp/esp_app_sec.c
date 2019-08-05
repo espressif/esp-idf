@@ -79,7 +79,7 @@ void app_ble_sec_gen_ltk(UINT8 key_size)
 ** Returns          NULL
 **
 *******************************************************************************/
-void app_ble_sec_init()
+void app_ble_sec_init(void)
 {
     // Reset Security Environment
     memset(&app_sec_env, 0, sizeof(app_sec_env));

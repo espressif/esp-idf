@@ -1205,7 +1205,7 @@ extern void BTA_GATTC_ConfigureMTU (UINT16 conn_id);
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_GATTS_Init();
+extern void BTA_GATTS_Init(void);
 
 /*******************************************************************************
 **

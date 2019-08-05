@@ -84,7 +84,7 @@ static void IRAM_ATTR u8_to_rmt(const void* src, rmt_item32_t* dest, size_t src_
 /*
  * Initialize the RMT Tx channel
  */
-static void rmt_tx_int()
+static void rmt_tx_int(void)
 {
     rmt_config_t config;
     config.rmt_mode = RMT_MODE_TX;

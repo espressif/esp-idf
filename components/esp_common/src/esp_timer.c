@@ -60,12 +60,12 @@ struct esp_timer {
     LIST_ENTRY(esp_timer) list_entry;
 };
 
-static bool is_initialized();
+static bool is_initialized(void);
 static esp_err_t timer_insert(esp_timer_handle_t timer);
 static esp_err_t timer_remove(esp_timer_handle_t timer);
 static bool timer_armed(esp_timer_handle_t timer);
-static void timer_list_lock();
-static void timer_list_unlock();
+static void timer_list_lock(void);
+static void timer_list_unlock(void);
 
 #if WITH_PROFILING
 static void timer_insert_inactive(esp_timer_handle_t timer);
@@ -247,12 +247,12 @@ static IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
     return timer->alarm > 0;
 }
 
-static IRAM_ATTR void timer_list_lock()
+static IRAM_ATTR void timer_list_lock(void)
 {
     portENTER_CRITICAL(&s_timer_lock);
 }
 
-static IRAM_ATTR void timer_list_unlock()
+static IRAM_ATTR void timer_list_unlock(void)
 {
     portEXIT_CRITICAL(&s_timer_lock);
 }
@@ -323,7 +323,7 @@ static void IRAM_ATTR timer_alarm_handler(void* arg)
     }
 }
 
-static IRAM_ATTR bool is_initialized()
+static IRAM_ATTR bool is_initialized(void)
 {
     return s_timer_task != NULL;
 }
@@ -474,7 +474,7 @@ esp_err_t esp_timer_dump(FILE* stream)
     return ESP_OK;
 }
 
-int64_t IRAM_ATTR esp_timer_get_next_alarm()
+int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
 {
     int64_t next_alarm = INT64_MAX;
     timer_list_lock();
@@ -486,7 +486,7 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm()
     return next_alarm;
 }
 
-int64_t IRAM_ATTR esp_timer_get_time()
+int64_t IRAM_ATTR esp_timer_get_time(void)
 {
     return (int64_t) esp_timer_impl_get_time();
 }

@@ -256,7 +256,7 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
     return ESP_OK;
 }
 
-void bootloader_common_vddsdio_configure()
+void bootloader_common_vddsdio_configure(void)
 {
 #if CONFIG_BOOTLOADER_VDDSDIO_BOOST_1_9V
     rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();

@@ -115,7 +115,7 @@ static void start_wps(void)
     ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();

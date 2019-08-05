@@ -130,7 +130,7 @@ void esp_efuse_init(uint32_t offset, uint32_t size)
     esp_efuse_flash_size = size;
 }
 
-static uint32_t emulate_secure_version_read()
+static uint32_t emulate_secure_version_read(void)
 {
     uint32_t secure_version;
     uint32_t offset = esp_efuse_flash_offset;
@@ -170,7 +170,7 @@ static void emulate_secure_version_write(uint32_t secure_version)
 #define EFUSE_BLK_RD_ANTI_ROLLBACK EFUSE_BLK3_RDATA4_REG
 #define EFUSE_BLK_WR_ANTI_ROLLBACK EFUSE_BLK3_WDATA4_REG
 
-uint32_t esp_efuse_read_secure_version()
+uint32_t esp_efuse_read_secure_version(void)
 {
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     uint32_t secure_version;

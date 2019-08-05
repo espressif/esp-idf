@@ -13,4 +13,4 @@
 // limitations under the License.
 #pragma once
 
-void pthread_internal_local_storage_destructor_callback();
+void pthread_internal_local_storage_destructor_callback(void);

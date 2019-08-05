@@ -34,7 +34,7 @@ typedef enum {
  *
  * This function is called from startup code to enable serial output
  */
-void esp_vfs_dev_uart_register();
+void esp_vfs_dev_uart_register(void);
 
 /**
  * @brief Set the line endings expected to be received on UART

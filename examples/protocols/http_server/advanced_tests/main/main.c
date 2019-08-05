@@ -41,7 +41,7 @@ static void connect_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void app_main()
+void app_main(void)
 {
     static httpd_handle_t server = NULL;
 

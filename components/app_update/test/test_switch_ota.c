@@ -118,7 +118,7 @@ static void reboot_as_deep_sleep(void)
 
 /* @brief Copies a current app to next partition (OTA0-15), after that ESP is rebooting and run this (the next) OTAx.
  */
-static void copy_current_app_to_next_part_and_reboot()
+static void copy_current_app_to_next_part_and_reboot(void)
 {
     const esp_partition_t *cur_app = esp_ota_get_running_partition();
     copy_current_app_to_next_part(cur_app, get_next_update_partition());
@@ -264,19 +264,19 @@ static void test_flow1(void)
         case 2:
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             mark_app_valid();
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 4:
             ESP_LOGI(TAG, "OTA1");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
             mark_app_valid();
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 5:
             ESP_LOGI(TAG, "OTA0");
@@ -307,7 +307,7 @@ static void test_flow2(void)
         case 2:
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");
@@ -344,13 +344,13 @@ static void test_flow3(void)
         case 2:
             ESP_LOGI(TAG, "Factory");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");
             TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
             mark_app_valid();
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 4:
             ESP_LOGI(TAG, "OTA1");
@@ -402,7 +402,7 @@ static void test_flow4(void)
             nvs_close(handle);
             nvs_flash_deinit();
 
-            copy_current_app_to_next_part_and_reboot(cur_app);
+            copy_current_app_to_next_part_and_reboot();
             break;
         case 3:
             ESP_LOGI(TAG, "OTA0");

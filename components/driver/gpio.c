@@ -419,7 +419,7 @@ esp_err_t gpio_install_isr_service(int intr_alloc_flags)
     return ret;
 }
 
-void gpio_uninstall_isr_service()
+void gpio_uninstall_isr_service(void)
 {
     if (gpio_isr_func == NULL) {
         return;

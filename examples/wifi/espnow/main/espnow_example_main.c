@@ -361,7 +361,7 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param)
     esp_now_deinit();
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();

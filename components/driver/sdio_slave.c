@@ -215,17 +215,17 @@ static void sdio_intr_host(void*);
 static void sdio_intr_send(void*);
 static void sdio_intr_recv(void*);
 
-static esp_err_t send_flush_data();
-static esp_err_t send_reset_counter();
-static void recv_flush_data();
-static void recv_reset_counter();
+static esp_err_t send_flush_data(void);
+static esp_err_t send_reset_counter(void);
+static void recv_flush_data(void);
+static void recv_reset_counter(void);
 
-static esp_err_t send_start();
-static void send_stop();
-static esp_err_t recv_start();
-static void recv_stop();
+static esp_err_t send_start(void);
+static void send_stop(void);
+static esp_err_t recv_start(void);
+static void recv_stop(void);
 
-static void deinit_context();
+static void deinit_context(void);
 
 
 /**************** Ring buffer for SDIO use *****************/
@@ -395,7 +395,7 @@ static void __attribute((unused)) dump_ll(lldesc_t *queue)
     ESP_EARLY_LOGI(TAG, "total: %d", cnt);
 }
 
-static inline void deinit_context()
+static inline void deinit_context(void)
 {
     context.config = (sdio_slave_config_t){};
     for(int i = 0; i < 9; i++) {
@@ -417,7 +417,7 @@ esp_err_t link_desc_to_last(uint8_t* desc, void* arg)
     return ESP_OK;
 }
 
-static esp_err_t init_ringbuf()
+static esp_err_t init_ringbuf(void)
 {
     esp_err_t ret = sdio_ringbuf_init(&context.sendbuf, sizeof(buf_desc_t), context.config.send_queue_size);
     if (ret != ESP_OK) return ret;
@@ -591,7 +591,7 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
     return ESP_OK;
 }
 
-void sdio_slave_deinit()
+void sdio_slave_deinit(void)
 {
     esp_err_t ret = esp_intr_free(context.intr_handle);
     assert(ret==ESP_OK);
@@ -599,7 +599,7 @@ void sdio_slave_deinit()
     deinit_context();
 }
 
-esp_err_t sdio_slave_start()
+esp_err_t sdio_slave_start(void)
 {
     esp_err_t ret;
     HOST.slc0_int_clr.val = UINT32_MAX;//clear all interrupts
@@ -611,7 +611,7 @@ esp_err_t sdio_slave_start()
     return ESP_OK;
 }
 
-esp_err_t sdio_slave_reset()
+esp_err_t sdio_slave_reset(void)
 {
     send_flush_data();
     send_reset_counter();
@@ -620,7 +620,7 @@ esp_err_t sdio_slave_reset()
     return ESP_OK;
 }
 
-void sdio_slave_stop()
+void sdio_slave_stop(void)
 {
     HINF.cfg_data1.sdio_ioready1 = 0;   //set IO ready to 1 to stop host from using
     send_stop();
@@ -696,7 +696,7 @@ esp_err_t sdio_slave_write_reg(int pos, uint8_t reg)
     return ESP_OK;
 }
 
-sdio_slave_hostint_t sdio_slave_get_host_intena()
+sdio_slave_hostint_t sdio_slave_get_host_intena(void)
 {
     return HOST.slc0_func1_int_ena.val;
 }
@@ -742,12 +742,12 @@ static inline void send_start_transmission(const void* desc)
     SLC.slc0_rx_link.start = 1;
 }
 
-static inline void send_stop_ll_operation()
+static inline void send_stop_ll_operation(void)
 {
     SLC.slc0_rx_link.stop = 1;
 }
 
-static inline uint32_t send_length_read()
+static inline uint32_t send_length_read(void)
 {
     return HOST.pkt_len.reg_slc0_len;
 }
@@ -760,7 +760,7 @@ DMA_ATTR static const buf_desc_t start_desc = {
     .eof = 1,
 };
 
-static inline void send_isr_invoker_enable()
+static inline void send_isr_invoker_enable(void)
 {
     //force trigger rx_done interrupt. the interrupt is abused to invoke ISR from the app by the enable bit and never cleared.
     send_start_transmission(&start_desc);
@@ -770,29 +770,29 @@ static inline void send_isr_invoker_enable()
     send_stop_ll_operation();
 }
 
-static inline void send_isr_invoker_disable()
+static inline void send_isr_invoker_disable(void)
 {
     SLC.slc0_int_clr.rx_done = 1;
 }
 
-static inline void send_intr_enable()
+static inline void send_intr_enable(void)
 {
     SLC.slc0_int_ena.rx_eof = 1;
     send_isr_invoker_enable();
 }
 
-static inline void send_intr_disable()
+static inline void send_intr_disable(void)
 {
     send_isr_invoker_disable();
     SLC.slc0_int_ena.rx_eof = 0;
 }
 
-static inline void send_isr_invoke()
+static inline void send_isr_invoke(void)
 {
     SLC.slc0_int_ena.rx_done = 1;
 }
 
-static inline send_state_t send_get_state()
+static inline send_state_t send_get_state(void)
 {
     return context.send_state;
 }
@@ -803,7 +803,7 @@ static inline void send_set_state(send_state_t state)
 }
 
 //start hw operation with existing data (if exist)
-static esp_err_t send_start()
+static esp_err_t send_start(void)
 {
     SDIO_SLAVE_CHECK(send_get_state() == STATE_IDLE,
         "already started", ESP_ERR_INVALID_STATE);
@@ -814,7 +814,7 @@ static esp_err_t send_start()
 }
 
 //only stop hw operations, no touch to data as well as counter
-static void send_stop()
+static void send_stop(void)
 {
     SLC.slc0_rx_link.stop = 1;
     send_intr_disable();
@@ -866,7 +866,7 @@ static inline esp_err_t send_isr_check_new_pkt(portBASE_TYPE *yield)
     return ESP_OK;
 }
 
-static inline esp_err_t send_isr_new_packet()
+static inline esp_err_t send_isr_new_packet(void)
 {
     // since eof is changed, we have to stop and reset the link list,
     // and restart new link list operation
@@ -973,7 +973,7 @@ esp_err_t sdio_slave_transmit(uint8_t* addr, size_t len)
 }
 
 //clear data but keep counter
-static esp_err_t send_flush_data()
+static esp_err_t send_flush_data(void)
 {
     //only works in idle state / wait to send state
     SDIO_SLAVE_CHECK(send_get_state() == STATE_IDLE,
@@ -1019,7 +1019,7 @@ static esp_err_t send_flush_data()
 }
 
 //clear counter but keep data
-static esp_err_t send_reset_counter()
+static esp_err_t send_reset_counter(void)
 {
     SDIO_SLAVE_CHECK(send_get_state() == STATE_IDLE,
         "reset counter when transmission started", ESP_ERR_INVALID_STATE);
@@ -1061,28 +1061,28 @@ static esp_err_t send_reset_counter()
 #define CHECK_HANDLE_IDLE(desc) do { if (desc == NULL || !desc->not_receiving) {\
     return ESP_ERR_INVALID_ARG; } } while(0)
 
-static inline void critical_enter_recv()
+static inline void critical_enter_recv(void)
 {
     portENTER_CRITICAL(&context.recv_spinlock);
 }
 
-static inline void critical_exit_recv()
+static inline void critical_exit_recv(void)
 {
     portEXIT_CRITICAL(&context.recv_spinlock);
 }
 
-static inline void recv_size_inc()
+static inline void recv_size_inc(void)
 {
     // fields wdata and inc_more should be written by the same instruction.
     SLC.slc0_token1.val = FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_WDATA, 1) | FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_INC_MORE, 1);
 }
 
-static inline void recv_size_reset()
+static inline void recv_size_reset(void)
 {
     SLC.slc0_token1.val = FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_WDATA, 0) | FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_WR, 1);
 }
 
-static inline buf_desc_t* recv_get_first_empty_buf()
+static inline buf_desc_t* recv_get_first_empty_buf(void)
 {
     buf_stailq_t *const queue = &context.recv_link_list;
     buf_desc_t *desc = STAILQ_FIRST(queue);
@@ -1092,7 +1092,7 @@ static inline buf_desc_t* recv_get_first_empty_buf()
     return desc;
 }
 
-static esp_err_t recv_start()
+static esp_err_t recv_start(void)
 {
     SLC.conf0.slc0_tx_rst = 1;
     SLC.conf0.slc0_tx_rst = 0;
@@ -1113,14 +1113,14 @@ static esp_err_t recv_start()
     return ESP_OK;
 }
 
-static void recv_stop()
+static void recv_stop(void)
 {
     SLC.slc0_tx_link.stop = 1;
     SLC.slc0_int_ena.tx_done = 0;
 }
 
 // reset the counter, but keep the data
-static void recv_reset_counter()
+static void recv_reset_counter(void)
 {
     recv_size_reset();
 
@@ -1135,7 +1135,7 @@ static void recv_reset_counter()
 }
 
 // remove data, still increase the counter
-static void recv_flush_data()
+static void recv_flush_data(void)
 {
     buf_stailq_t *const queue = &context.recv_link_list;
 
@@ -1276,7 +1276,7 @@ uint8_t* sdio_slave_recv_get_buf(sdio_slave_buf_handle_t handle, size_t *len_o)
     return desc->buf;
 }
 
-static void __attribute((unused)) sdio_slave_recv_get_loaded_buffer_num()
+static void __attribute((unused)) sdio_slave_recv_get_loaded_buffer_num(void)
 {
     buf_stailq_t *const queue = &context.recv_link_list;
     dump_queue(queue);

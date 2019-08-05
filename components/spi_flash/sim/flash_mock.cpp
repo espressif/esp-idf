@@ -65,7 +65,7 @@ extern "C" void spi_flash_munmap(spi_flash_mmap_handle_t handle)
     return;
 }
 
-extern "C" int spi_flash_get_total_erase_cycles()
+extern "C" int spi_flash_get_total_erase_cycles(void)
 {
     return spiflash.get_total_erase_cycles();
 }

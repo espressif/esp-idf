@@ -321,7 +321,7 @@ esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t* status)
     return ESP_OK;
 }
 
-rmt_data_mode_t rmt_get_data_mode()
+rmt_data_mode_t rmt_get_data_mode(void)
 {
     return (rmt_data_mode_t) (RMT.apb_conf.fifo_mask);
 }

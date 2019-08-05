@@ -54,7 +54,7 @@ esp_err_t esp_spp_init(esp_spp_mode_t mode)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_spp_deinit()
+esp_err_t esp_spp_deinit(void)
 {
     btc_msg_t msg;
     btc_spp_args_t arg;
@@ -164,7 +164,7 @@ esp_err_t esp_spp_write(uint32_t handle, int len, uint8_t *p_data)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_spp_args_t), btc_spp_arg_deep_copy) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_spp_vfs_register()
+esp_err_t esp_spp_vfs_register(void)
 {
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 

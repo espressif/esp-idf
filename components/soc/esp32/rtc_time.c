@@ -140,7 +140,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
     return (rtc_cycles * period) >> RTC_CLK_CAL_FRACT;
 }
 
-uint64_t rtc_time_get()
+uint64_t rtc_time_get(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
     while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
@@ -152,7 +152,7 @@ uint64_t rtc_time_get()
     return t;
 }
 
-void rtc_clk_wait_for_slow_cycle()
+void rtc_clk_wait_for_slow_cycle(void)
 {
     REG_CLR_BIT(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING | TIMG_RTC_CALI_START);
     REG_CLR_BIT(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY);

@@ -36,7 +36,7 @@
 #define MOUNT_PATH "/data"
 #define HISTORY_PATH MOUNT_PATH "/history.txt"
 
-static void initialize_filesystem()
+static void initialize_filesystem(void)
 {
     static wl_handle_t wl_handle;
     const esp_vfs_fat_mount_config_t mount_config = {
@@ -51,7 +51,7 @@ static void initialize_filesystem()
 }
 #endif // CONFIG_STORE_HISTORY
 
-static void initialize_console()
+static void initialize_console(void)
 {
     /* Disable buffering on stdin and stdout */
     setvbuf(stdin, NULL, _IONBF, 0);

@@ -183,7 +183,7 @@ void hid_demo_task(void *pvParameters)
 }
 
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

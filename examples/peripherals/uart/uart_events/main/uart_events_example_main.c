@@ -117,7 +117,7 @@ static void uart_event_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
 

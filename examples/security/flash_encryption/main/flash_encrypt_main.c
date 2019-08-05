@@ -16,7 +16,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_efuse_table.h"
 
-void app_main()
+void app_main(void)
 {
     uint32_t flash_crypt_cnt = 0;
     esp_flash_enc_mode_t mode;

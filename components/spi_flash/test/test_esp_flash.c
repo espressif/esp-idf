@@ -147,7 +147,7 @@ static void setup_new_chip(esp_flash_read_mode_t io_mode, esp_flash_speed_t spee
     TEST_ESP_OK(err);
 }
 
-void teardown_test_chip()
+void teardown_test_chip(void)
 {
     spi_bus_remove_flash_device(test_chip);
     test_chip = NULL;

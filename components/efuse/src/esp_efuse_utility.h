@@ -112,17 +112,17 @@ void esp_efuse_utility_reset(void);
 /**
  * @brief   Fills the virt_blocks array by values from efuse_Rdata.
  */
-void esp_efuse_utility_update_virt_blocks();
+void esp_efuse_utility_update_virt_blocks(void);
 
 /**
  * @brief   Prints efuse values for all registers.
  */
-void esp_efuse_utility_debug_dump_blocks();
+void esp_efuse_utility_debug_dump_blocks(void);
 
 /**
  * @brief   Erase the virt_blocks array.
  */
-void esp_efuse_utility_erase_virt_blocks();
+void esp_efuse_utility_erase_virt_blocks(void);
 
 /**
  * @brief   Apply coding_scheme to write registers.
@@ -131,7 +131,7 @@ void esp_efuse_utility_erase_virt_blocks();
  *         - ESP_OK: The operation was successfully completed.
  *         - ESP_ERR_CODING: Error range of data does not match the coding scheme.
  */
-esp_err_t esp_efuse_utility_apply_new_coding_scheme();
+esp_err_t esp_efuse_utility_apply_new_coding_scheme(void);
 
 #ifdef __cplusplus
 }
