@@ -4,6 +4,8 @@
 ESP32 Modules and Boards
 ************************
 
+:link_to_translation:`zh_CN:[中文]`
+
 Espressif designs and manufactures different modules and development boards to help users evaluate the potential of the ESP32 family of chips.
 
 This document provides description of modules and development boards currently available from Espressif.
@@ -22,8 +24,6 @@ This is a family of ESP32-based modules with some integrated key components, inc
 The key characteristics of these modules are summarized in the table below. Some additional details are covered in the following sections.
 
 ===================  ============  ===========  =========  ====  ===============
-                     Key Components                                          
--------------------  ------------------------------------------  ---------------
 Module               Chip          Flash, MB    PSRAM, MB  Ant.  Dimensions, mm 
 ===================  ============  ===========  =========  ====  ===============
 ESP32-WROOM-32       ESP32-D0WDQ6  4            --         MIFA  18 × 25.5 × 3.1
@@ -133,7 +133,7 @@ This series consists of a few modifications of ESP32-WROOM-32x modules, which am
 For details, see the table in Section :ref:`esp-wroom-solo-wrover-modules` and `Espressif Products Ordering Information`_.
 
 * **ESP32-WROVER (PCB)** and **ESP32-WROVER (IPEX)** have PSRAM that operates at 1.8 V and supports up to 144 MHz clock rate.
-* **ESP32-WROVER-B** and **ESP32-WROVER-IB** have PSRAM that operates at 3.3 V and can supports up to 133 MHz clock rate.
+* **ESP32-WROVER-B** and **ESP32-WROVER-IB** have PSRAM that operates at 3.3 V and supports up to 133 MHz clock rate.
 
 The picture below shows an ESP32-WROVER module with a PCB antenna.
 
@@ -179,7 +179,7 @@ Depending on the intended functionality, different development boards feature:
 
 - Access to different ESP32 GPIO pins.
 - Different interfaces: USB, JTAG.
-- Different peripherals: touchpads, LCD screens, SD card slots, headers for camera modules, etc.
+- Different peripherals: touchpads, LCD screens, SD card slots, female headers for camera modules, etc.
 
 .. _esp-modules-and-boards-esp32-pico-kit:
 
@@ -257,12 +257,12 @@ ESP-WROVER-KIT V4.1
 
 This board features:
 
-- dual port USB-to-serial converter for programming
+- Dual port USB-to-serial converter for programming
 - JTAG interface for debugging
 - MicroSD card slot
 - 3.2” SPI LCD screen
-- header for a camera module
-- RGB diode for diagnostics
+- Female headers for a camera module
+- RGB LED for diagnostics
 - 32.768 kHz XTAL for internal RTC to operate it in low power modes
 
 Power can be supplied either via USB or via a standard 5 mm power supply jack. A power source can be selected with a jumper and can be turned on/off with a separate switch. 
