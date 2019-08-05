@@ -199,7 +199,7 @@ static int fd_is_valid(int fd)
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
 }
 
-static inline uint64_t httpd_sess_get_lru_counter()
+static inline uint64_t httpd_sess_get_lru_counter(void)
 {
     static uint64_t lru_counter = 0;
     return lru_counter++;

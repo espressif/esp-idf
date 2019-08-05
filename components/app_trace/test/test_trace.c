@@ -125,7 +125,7 @@ typedef struct {
 static SemaphoreHandle_t s_print_lock;
 #endif
 
-static uint64_t esp_apptrace_test_ts_get();
+static uint64_t esp_apptrace_test_ts_get(void);
 
 static void esp_apptrace_test_timer_isr(void *arg)
 {
@@ -383,7 +383,7 @@ static void esp_apptrace_test_task_crash(void *p)
 
 static int s_ts_timer_group, s_ts_timer_idx;
 
-static uint64_t esp_apptrace_test_ts_get()
+static uint64_t esp_apptrace_test_ts_get(void)
 {
     uint64_t ts = 0;
     timer_get_counter_value(s_ts_timer_group, s_ts_timer_idx, &ts);
@@ -413,7 +413,7 @@ static void esp_apptrace_test_ts_init(int timer_group, int timer_idx)
     timer_start(timer_group, timer_idx);
 }
 
-static void esp_apptrace_test_ts_cleanup()
+static void esp_apptrace_test_ts_cleanup(void)
 {
     timer_config_t config;
 

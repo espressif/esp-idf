@@ -55,14 +55,14 @@ static void init(const packet_fragmenter_callbacks_t *result_callbacks)
     partial_packets = hash_map_new(NUMBER_OF_BUCKETS, hash_function_naive, NULL, NULL, NULL);
 }
 
-static void cleanup()
+static void cleanup(void)
 {
     if (partial_packets) {
         hash_map_free(partial_packets);
     }
 }
 
-static BT_HDR *fragment_get_current_packet()
+static BT_HDR *fragment_get_current_packet(void)
 {
     return current_fragment_packet;
 }
@@ -224,7 +224,7 @@ static const packet_fragmenter_t interface = {
     reassemble_and_dispatch
 };
 
-const packet_fragmenter_t *packet_fragmenter_get_interface()
+const packet_fragmenter_t *packet_fragmenter_get_interface(void)
 {
     controller = controller_get_interface();
     return &interface;

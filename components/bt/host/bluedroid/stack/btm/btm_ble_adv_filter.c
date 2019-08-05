@@ -90,7 +90,7 @@ static UINT8 btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action,
 ** Returns          status
 **
 *******************************************************************************/
-tBTM_STATUS btm_ble_obtain_vsc_details()
+tBTM_STATUS btm_ble_obtain_vsc_details(void)
 {
     tBTM_STATUS st = BTM_SUCCESS;
 

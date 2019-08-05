@@ -62,7 +62,7 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "~~~~~~~~~~~");
 }
 
-void app_main()
+void app_main(void)
 {
     tcpip_adapter_init();
 

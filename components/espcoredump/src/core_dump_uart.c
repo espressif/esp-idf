@@ -81,7 +81,7 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
     return err;
 }
 
-static int esp_core_dump_uart_get_char() {
+static int esp_core_dump_uart_get_char(void) {
     int i;
     uint32_t reg = (READ_PERI_REG(UART_STATUS_REG(0)) >> UART_RXFIFO_CNT_S) & UART_RXFIFO_CNT;
     if (reg) {

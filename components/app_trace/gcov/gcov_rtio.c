@@ -114,7 +114,7 @@ static int esp_dbg_stub_gcov_entry(void)
 #endif
 }
 
-void esp_gcov_dump()
+void esp_gcov_dump(void)
 {
     // disable IRQs on this CPU, other CPU is halted by OpenOCD
     unsigned irq_state = portENTER_CRITICAL_NESTED();

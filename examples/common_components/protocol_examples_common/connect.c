@@ -41,10 +41,10 @@ static ip6_addr_t s_ipv6_addr;
 static const char *TAG = "example_connect";
 
 /* set up connection, Wi-Fi or Ethernet */
-static void start();
+static void start(void);
 
 /* tear down connection, release resources */
-static void stop();
+static void stop(void);
 
 static void on_got_ip(void *arg, esp_event_base_t event_base,
                       int32_t event_id, void *event_data)
@@ -66,7 +66,7 @@ static void on_got_ipv6(void *arg, esp_event_base_t event_base,
 
 #endif // CONFIG_EXAMPLE_CONNECT_IPV6
 
-esp_err_t example_connect()
+esp_err_t example_connect(void)
 {
     if (s_connect_event_group != NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -82,7 +82,7 @@ esp_err_t example_connect()
     return ESP_OK;
 }
 
-esp_err_t example_disconnect()
+esp_err_t example_disconnect(void)
 {
     if (s_connect_event_group == NULL) {
         return ESP_ERR_INVALID_STATE;
@@ -114,7 +114,7 @@ static void on_wifi_connect(void *arg, esp_event_base_t event_base,
 
 #endif // CONFIG_EXAMPLE_CONNECT_IPV6
 
-static void start()
+static void start(void)
 {
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -141,7 +141,7 @@ static void start()
     s_connection_name = CONFIG_EXAMPLE_WIFI_SSID;
 }
 
-static void stop()
+static void stop(void)
 {
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &on_wifi_disconnect));
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &on_got_ip));
@@ -178,7 +178,7 @@ static esp_eth_handle_t s_eth_handle = NULL;
 static esp_eth_mac_t *s_mac = NULL;
 static esp_eth_phy_t *s_phy = NULL;
 
-static void start()
+static void start(void)
 {
     ESP_ERROR_CHECK(tcpip_adapter_set_default_eth_handlers());
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &on_got_ip, NULL));
@@ -229,7 +229,7 @@ static void start()
     s_connection_name = "Ethernet";
 }
 
-static void stop()
+static void stop(void)
 {
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, &on_got_ip));
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6

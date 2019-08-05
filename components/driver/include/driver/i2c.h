@@ -224,7 +224,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num,
  *
  * @return i2c command link handler
  */
-i2c_cmd_handle_t i2c_cmd_link_create();
+i2c_cmd_handle_t i2c_cmd_link_create(void);
 
 /**
  * @brief Free I2C command link

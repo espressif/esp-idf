@@ -14,7 +14,7 @@ void dhcp_test_dhcps_cb (u8_t client_ip[4]) {}
 
 // Dependency injected static function to pass the packet into parser
 void dhcp_test_handle_dhcp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
-void dhcp_test_init_di();
+void dhcp_test_init_di(void);
 
 //
 // Test starts here

@@ -394,7 +394,7 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     return ret;
 }
 
-bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress()
+bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress(void)
 {
     return (dmaworkaround_waiting_for_chan != 0);
 }

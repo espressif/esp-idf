@@ -38,11 +38,13 @@ build_template_app:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
     - git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
     - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
     - cd esp-idf-template
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default
-    # branch
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     - make defconfig
     # Test debug build (default)
     - make all V=1
@@ -51,10 +53,17 @@ build_template_app:
     - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
     - make all V=1
     # Check if there are any stray printf/ets_printf references in WiFi libs
-    - cd ../components/esp_wifi/lib_esp32
+    - pushd ../components/esp_wifi/lib_esp32
     - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
     - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
-
+    - popd
+    # Repeat the build using CMake
+    - rm -rf build sdkconfig
+    # Debug build
+    - idf.py build
+    # Release build
+    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
+    - idf.py build
 
 build_ssc:
   extends: .build_template
@@ -81,7 +90,7 @@ build_esp_idf_tests_make:
   extends: .build_esp_idf_unit_test_template
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     - cd $CI_PROJECT_DIR/tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
     - make ut-clean-all-configs
@@ -97,7 +106,7 @@ build_esp_idf_tests_cmake:
   script:
     - export PATH="$IDF_PATH/tools:$PATH"
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     - cd $CI_PROJECT_DIR/tools/unit-test-app
     - idf.py ut-clean-all-configs
     - idf.py ut-build-all-configs

@@ -77,7 +77,7 @@ esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id)
     return comp;
 }
 
-void ble_mesh_node_init()
+void ble_mesh_node_init(void)
 {
     uint16_t i;
 
@@ -129,7 +129,7 @@ void ble_mesh_create_send_data(char *data, uint16_t byte_num, uint16_t sequence_
     }
 }
 
-void ble_mesh_test_performance_client_model_get()
+void ble_mesh_test_performance_client_model_get(void)
 {
     uint32_t i, j;
     uint32_t sum_time = 0;
@@ -155,7 +155,7 @@ void ble_mesh_test_performance_client_model_get()
     xSemaphoreGive(ble_mesh_test_perf_sema);
 }
 
-void ble_mesh_test_performance_client_model_get_received_percent()
+void ble_mesh_test_performance_client_model_get_received_percent(void)
 {
     uint32_t i, j;
     uint32_t max_time = 1400;
@@ -283,7 +283,7 @@ int ble_mesh_test_performance_client_model_init(uint16_t node_num, uint32_t test
     return 0;
 }
 
-void ble_mesh_test_performance_client_model_destroy()
+void ble_mesh_test_performance_client_model_destroy(void)
 {
     if (test_perf_statistics.time != NULL) {
         free(test_perf_statistics.time);

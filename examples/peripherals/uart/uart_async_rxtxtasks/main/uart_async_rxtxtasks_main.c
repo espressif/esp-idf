@@ -19,7 +19,7 @@ static const int RX_BUF_SIZE = 1024;
 #define TXD_PIN (GPIO_NUM_4)
 #define RXD_PIN (GPIO_NUM_5)
 
-void init() {
+void init(void) {
     const uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -41,7 +41,7 @@ int sendData(const char* logName, const char* data)
     return txBytes;
 }
 
-static void tx_task()
+static void tx_task(void *arg)
 {
     static const char *TX_TASK_TAG = "TX_TASK";
     esp_log_level_set(TX_TASK_TAG, ESP_LOG_INFO);
@@ -51,7 +51,7 @@ static void tx_task()
     }
 }
 
-static void rx_task()
+static void rx_task(void *arg)
 {
     static const char *RX_TASK_TAG = "RX_TASK";
     esp_log_level_set(RX_TASK_TAG, ESP_LOG_INFO);
@@ -67,7 +67,7 @@ static void rx_task()
     free(data);
 }
 
-void app_main()
+void app_main(void)
 {
     init();
     xTaskCreate(rx_task, "uart_rx_task", 1024*2, NULL, configMAX_PRIORITIES, NULL);

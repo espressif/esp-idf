@@ -596,7 +596,7 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_mode_t
     }
 }
 
-psram_size_t psram_get_size()
+psram_size_t psram_get_size(void)
 {
     if ((PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_64MBITS) || PSRAM_IS_64MBIT_TRIAL(s_psram_id)) {
         return PSRAM_SIZE_64MBITS;

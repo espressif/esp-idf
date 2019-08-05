@@ -62,7 +62,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void wifi_init_sta()
+void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
 
@@ -95,7 +95,7 @@ void wifi_init_sta()
  * See local_ctrl_service.c for implementation */
 extern void start_esp_local_ctrl_service(void);
 
-void app_main()
+void app_main(void)
 {
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();

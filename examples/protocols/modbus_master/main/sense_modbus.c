@@ -81,14 +81,14 @@ static void* sense_modbus_get_param_data(const mb_parameter_descriptor_t* param_
 }
 
 // The helper function to get time stamp in microseconds
-static uint64_t sense_modbus_get_time_stamp_us()
+static uint64_t sense_modbus_get_time_stamp_us(void)
 {
     uint64_t time_stamp = esp_timer_get_time();
     return time_stamp;
 }
 
 // Initialization of Modbus stack
-esp_err_t sense_modbus_init()
+esp_err_t sense_modbus_init(void)
 {
     mb_communication_info_t comm = {
             .port = MB_PORTNUM,

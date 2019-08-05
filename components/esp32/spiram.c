@@ -69,12 +69,12 @@ static bool spiram_inited=false;
 //If no function in esp_himem.c is used, this function will be linked into the
 //binary instead of the one in esp_himem.c, automatically making sure no memory
 //is reserved if no himem function is used.
-size_t __attribute__((weak)) esp_himem_reserved_area_size() {
+size_t __attribute__((weak)) esp_himem_reserved_area_size(void) {
     return 0;
 }
 
 
-static int spiram_size_usable_for_malloc()
+static int spiram_size_usable_for_malloc(void)
 {
     int s=esp_spiram_get_size();
     if (s>4*1024*1024) s=4*1024*1024; //we can map at most 4MiB
@@ -87,7 +87,7 @@ static int spiram_size_usable_for_malloc()
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
  initialized (in a two-core system) or after the heap allocator has taken ownership of the memory.
 */
-bool esp_spiram_test()
+bool esp_spiram_test(void)
 {
     volatile int *spiram=(volatile int*)SOC_EXTRAM_DATA_LOW;
     size_t p;
@@ -112,7 +112,7 @@ bool esp_spiram_test()
     }
 }
 
-void IRAM_ATTR esp_spiram_init_cache()
+void IRAM_ATTR esp_spiram_init_cache(void)
 {
     //Enable external RAM in MMU
     cache_sram_mmu_set( 0, 0, SOC_EXTRAM_DATA_LOW, 0, 32, 128 );
@@ -123,7 +123,7 @@ void IRAM_ATTR esp_spiram_init_cache()
 #endif
 }
 
-esp_spiram_size_t esp_spiram_get_chip_size()
+esp_spiram_size_t esp_spiram_get_chip_size(void)
 {
     if (!spiram_inited) {
         ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
@@ -142,7 +142,7 @@ esp_spiram_size_t esp_spiram_get_chip_size()
     }
 }
 
-esp_err_t esp_spiram_init()
+esp_err_t esp_spiram_init(void)
 {
     esp_err_t r;
     r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
@@ -174,7 +174,7 @@ esp_err_t esp_spiram_init()
 }
 
 
-esp_err_t esp_spiram_add_to_heapalloc()
+esp_err_t esp_spiram_add_to_heapalloc(void)
 {
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
@@ -213,7 +213,7 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
     return ESP_OK;
 }
 
-size_t esp_spiram_get_size()
+size_t esp_spiram_get_size(void)
 {
     psram_size_t size=esp_spiram_get_chip_size();
     if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
@@ -228,7 +228,7 @@ size_t esp_spiram_get_size()
  Note that this routine assumes some unique mapping for the first 2 banks of the PSRAM memory range, as well as the
  2 banks after the 2 MiB mark.
 */
-void IRAM_ATTR esp_spiram_writeback_cache()
+void IRAM_ATTR esp_spiram_writeback_cache(void)
 {
     int x;
     volatile int i=0;
@@ -289,7 +289,7 @@ void IRAM_ATTR esp_spiram_writeback_cache()
  * @return true SPI RAM has been initialized successfully
  * @return false SPI RAM hasn't been initialized or initialized failed
  */
-bool esp_spiram_is_initialized()
+bool esp_spiram_is_initialized(void)
 {
     return spiram_inited;
 }

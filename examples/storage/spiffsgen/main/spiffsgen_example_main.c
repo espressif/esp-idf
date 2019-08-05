@@ -18,7 +18,7 @@
 
 static const char *TAG = "example";
 
-static void read_hello_txt()
+static void read_hello_txt(void)
 {
     ESP_LOGI(TAG, "Reading hello.txt");
 
@@ -38,7 +38,7 @@ static void read_hello_txt()
     ESP_LOGI(TAG, "Read from hello.txt: %s", buf);
 }
 
-static void compute_alice_txt_md5()
+static void compute_alice_txt_md5(void)
 {
     ESP_LOGI(TAG, "Computing alice.txt MD5 hash");
 

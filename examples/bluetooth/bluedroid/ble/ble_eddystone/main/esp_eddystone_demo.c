@@ -160,7 +160,7 @@ void esp_eddystone_init(void)
     esp_eddystone_appRegister();
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));

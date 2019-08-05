@@ -322,7 +322,7 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg);
 /* @brief Return secure_version from efuse field.
  * @return Secure version from efuse field
  */
-uint32_t esp_efuse_read_secure_version();
+uint32_t esp_efuse_read_secure_version(void);
 
 /* @brief Check secure_version from app and secure_version and from efuse field.
  *

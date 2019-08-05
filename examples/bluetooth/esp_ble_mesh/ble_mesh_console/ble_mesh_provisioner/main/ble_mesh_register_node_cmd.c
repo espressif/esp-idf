@@ -65,18 +65,18 @@ ble_mesh_node_status node_status = {
 
 SemaphoreHandle_t ble_mesh_node_sema;
 
-void ble_mesh_register_node_cmd();
+void ble_mesh_register_node_cmd(void);
 // Register callback function
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
 void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param);
 
 
-void ble_mesh_register_mesh_node()
+void ble_mesh_register_mesh_node(void)
 {
     ble_mesh_register_node_cmd();
 }
 
-int ble_mesh_register_node_cb()
+int ble_mesh_register_node_cb(int argc, char** argv)
 {
     ESP_LOGD(TAG, "enter %s\n", __func__);
     ble_mesh_node_init();
@@ -405,7 +405,7 @@ int ble_mesh_provisioner_enable_bearer(int argc, char **argv)
     return err;
 }
 
-void ble_mesh_register_node_cmd()
+void ble_mesh_register_node_cmd(void)
 {
     const esp_console_cmd_t register_cmd = {
         .command  = "bmreg",

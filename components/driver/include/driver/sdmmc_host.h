@@ -91,7 +91,7 @@ typedef struct {
  *      - ESP_ERR_INVALID_STATE if sdmmc_host_init was already called
  *      - ESP_ERR_NO_MEM if memory can not be allocated
  */
-esp_err_t sdmmc_host_init();
+esp_err_t sdmmc_host_init(void);
 
 /**
  * @brief Initialize given slot of SDMMC peripheral
@@ -218,7 +218,7 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if sdmmc_host_init function has not been called
  */
-esp_err_t sdmmc_host_deinit();
+esp_err_t sdmmc_host_deinit(void);
 
 /**
  * @brief Enable the pull-ups of sd pins.

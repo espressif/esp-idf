@@ -80,7 +80,7 @@ static esp_console_cmd_t cmds[] = {
     },
 };
 
-static int ble_register_cli()
+static int ble_register_cli(void)
 {
     int cmds_num = sizeof(cmds) / sizeof(esp_console_cmd_t);
     int i;
@@ -144,7 +144,7 @@ static void scli_task(void *arg)
     vTaskDelete(NULL);
 }
 
-int scli_init()
+int scli_init(void)
 {
     /* Register CLI "key <value>" to accept input from user during pairing */
     ble_register_cli();

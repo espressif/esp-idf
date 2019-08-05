@@ -29,7 +29,7 @@ extern "C" {
  * This is an internal function called by esp_restart. It is called directly
  * by the panic handler and brownout detector interrupt.
  */
-void esp_restart_noos() __attribute__ ((noreturn));
+void esp_restart_noos(void) __attribute__ ((noreturn));
 
 /**
  * @brief  Internal function to set reset reason hint

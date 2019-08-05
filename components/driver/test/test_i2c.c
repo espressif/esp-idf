@@ -75,7 +75,7 @@ static void disp_buf(uint8_t *buf, int len)
     printf("\n");
 }
 
-static i2c_config_t i2c_master_init()
+static i2c_config_t i2c_master_init(void)
 {
     i2c_config_t conf_master = {
         .mode = I2C_MODE_MASTER,
@@ -88,7 +88,7 @@ static i2c_config_t i2c_master_init()
     return conf_master;
 }
 
-static i2c_config_t i2c_slave_init()
+static i2c_config_t i2c_slave_init(void)
 {
     i2c_config_t conf_slave = {
         .mode = I2C_MODE_SLAVE,
@@ -252,7 +252,7 @@ TEST_CASE("I2C driver memory leaking check", "[i2c]")
     TEST_ASSERT_INT_WITHIN(100, size, esp_get_free_heap_size());
 }
 
-static void i2c_master_write_test()
+static void i2c_master_write_test(void)
 {
     uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
     int i;
@@ -276,7 +276,7 @@ static void i2c_master_write_test()
     TEST_ESP_OK(i2c_driver_delete(I2C_MASTER_NUM));
 }
 
-static void i2c_slave_read_test()
+static void i2c_slave_read_test(void)
 {
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
     int size_rd = 0;
@@ -308,7 +308,7 @@ static void i2c_slave_read_test()
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_write_test, i2c_slave_read_test);
 
-static void master_read_slave_test()
+static void master_read_slave_test(void)
 {
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
     memset(data_rd, 0, DATA_LENGTH);
@@ -340,7 +340,7 @@ static void master_read_slave_test()
     i2c_driver_delete(I2C_MASTER_NUM);
 }
 
-static void slave_write_buffer_test()
+static void slave_write_buffer_test(void)
 {
     uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
     int size_rd;
@@ -367,7 +367,7 @@ static void slave_write_buffer_test()
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", master_read_slave_test, slave_write_buffer_test);
 
-static void i2c_master_write_read_test()
+static void i2c_master_write_read_test(void)
 {
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
     memset(data_rd, 0, DATA_LENGTH);
@@ -409,7 +409,7 @@ static void i2c_master_write_read_test()
     i2c_driver_delete(I2C_MASTER_NUM);
 }
 
-static void i2c_slave_read_write_test()
+static void i2c_slave_read_write_test(void)
 {
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
     memset(data_rd, 0, DATA_LENGTH);
@@ -445,7 +445,7 @@ static void i2c_slave_read_write_test()
 
 TEST_CASE_MULTIPLE_DEVICES("I2C read and write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
 
-static void i2c_master_repeat_write()
+static void i2c_master_repeat_write(void)
 {
     uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
     int times = 3;
@@ -471,7 +471,7 @@ static void i2c_master_repeat_write()
     i2c_driver_delete(I2C_MASTER_NUM);
 }
 
-static void i2c_slave_repeat_read()
+static void i2c_slave_repeat_read(void)
 {
     int size_rd = 0;
     int times = 3;

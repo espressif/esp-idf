@@ -80,7 +80,7 @@ static uint32_t hash_func(const char *str, uint32_t max_num)
     return ret % max_num;
 }
 
-static void create_wifi_filter_hashtable()
+static void create_wifi_filter_hashtable(void)
 {
     char *wifi_filter_keys[SNIFFER_WLAN_FILTER_MAX] = {"mgmt", "data", "ctrl", "misc", "mpdu", "ampdu"};
     uint32_t wifi_filter_values[SNIFFER_WLAN_FILTER_MAX] = {WIFI_PROMIS_FILTER_MASK_MGMT, WIFI_PROMIS_FILTER_MASK_DATA,
@@ -372,7 +372,7 @@ static int do_sniffer_cmd(int argc, char **argv)
     return 0;
 }
 
-void register_sniffer()
+void register_sniffer(void)
 {
     sniffer_args.file = arg_str0("f", "file", "<file>",
                                  "name of the file storing the packets in pcap format");

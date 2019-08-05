@@ -27,7 +27,7 @@
 #define EXAMPLE_BUTTON_GPIO     0
 
 static const char *TAG = "mdns-test";
-static char* generate_hostname();
+static char* generate_hostname(void);
 
 static void initialise_mdns(void)
 {
@@ -176,7 +176,7 @@ static void mdns_example_task(void *pvParameters)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();
@@ -197,7 +197,7 @@ void app_main()
 /** Generate host name based on sdkconfig, optionally adding a portion of MAC address to it.
  *  @return host name string allocated from the heap
  */
-static char* generate_hostname()
+static char* generate_hostname(void)
 {
 #ifndef CONFIG_MDNS_ADD_MAC_TO_HOSTNAME
     return strdup(CONFIG_MDNS_HOSTNAME);

@@ -123,7 +123,7 @@ static fd_set *_writefds_orig = NULL;
 static fd_set *_errorfds_orig = NULL;
 
 
-static void uart_end_select();
+static void uart_end_select(void);
 
 
 static int uart_open(const char * path, int flags, int mode)
@@ -432,7 +432,7 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     return ESP_OK;
 }
 
-static void uart_end_select()
+static void uart_end_select(void)
 {
     portENTER_CRITICAL(uart_get_selectlock());
     for (int i = 0; i < UART_NUM; ++i) {
@@ -915,7 +915,7 @@ static int uart_tcflush(int fd, int select)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-void esp_vfs_dev_uart_register()
+void esp_vfs_dev_uart_register(void)
 {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,

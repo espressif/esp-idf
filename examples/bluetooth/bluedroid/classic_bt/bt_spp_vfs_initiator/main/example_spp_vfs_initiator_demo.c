@@ -223,7 +223,7 @@ static void esp_spp_stack_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param
     spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     for (int i = 0; i < SPP_DATA_LEN; ++i) {
         spp_data[i] = i;

@@ -46,7 +46,7 @@ static void bta_dm_pm_timer_cback(void *p_tle);
 static void bta_dm_pm_btm_cback(BD_ADDR bd_addr, tBTM_PM_STATUS status, UINT16 value, UINT8 hci_status);
 static BOOLEAN bta_dm_pm_park(BD_ADDR peer_addr);
 static BOOLEAN bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE *p_peer_dev, UINT8 index);
-static BOOLEAN bta_dm_pm_is_sco_active ();
+static BOOLEAN bta_dm_pm_is_sco_active (void);
 static void bta_dm_pm_hid_check(BOOLEAN bScoActive);
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE *p_dev, BOOLEAN bDisable);
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER *p_timer,
@@ -1001,7 +1001,7 @@ void bta_dm_pm_timer(tBTA_DM_MSG *p_data)
 ** Returns          BOOLEAN. TRUE if SCO active, else FALSE
 **
 *******************************************************************************/
-static BOOLEAN bta_dm_pm_is_sco_active ()
+static BOOLEAN bta_dm_pm_is_sco_active (void)
 {
     int j;
     BOOLEAN bScoActive = FALSE;

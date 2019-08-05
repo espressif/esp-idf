@@ -375,7 +375,7 @@ static void example_gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_
     }
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

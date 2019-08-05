@@ -39,7 +39,7 @@ static void fwrite_str_loopback(const char* str, size_t size)
     UART0.conf0.loopback = 0;
 }
 
-static void flush_stdin_stdout()
+static void flush_stdin_stdout(void)
 {
     vTaskDelay(10 / portTICK_PERIOD_MS);
     char *bitbucket = (char*) 0x3f000000;

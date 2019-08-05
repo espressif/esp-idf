@@ -769,7 +769,7 @@ void btm_ble_multi_adv_vse_cback(UINT8 len, UINT8 *p)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_ble_multi_adv_init()
+void btm_ble_multi_adv_init(void)
 {
 #if BTM_DYNAMIC_MEMORY == TRUE
     btm_multi_adv_cb_ptr = (tBTM_BLE_MULTI_ADV_CB *)osi_malloc(sizeof(tBTM_BLE_MULTI_ADV_CB));

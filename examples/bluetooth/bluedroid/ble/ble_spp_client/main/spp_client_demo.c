@@ -604,7 +604,7 @@ static void spp_uart_init(void)
     xTaskCreate(uart_task, "uTask", 2048, (void*)UART_NUM_0, 8, NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

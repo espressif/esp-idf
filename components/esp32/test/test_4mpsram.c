@@ -7,7 +7,7 @@
 static const char TAG[] = "test_psram";
 
 #ifdef CONFIG_ESP32_SPIRAM_SUPPORT
-static void test_psram_content()
+static void test_psram_content(void)
 {
     const int test_size = 2048;
     uint32_t *test_area = heap_caps_malloc(test_size, MALLOC_CAP_SPIRAM);

@@ -79,7 +79,7 @@
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
 void start_cpu0_default(void) IRAM_ATTR __attribute__((noreturn));
 #if !CONFIG_FREERTOS_UNICORE
-static void IRAM_ATTR call_start_cpu1() __attribute__((noreturn));
+static void IRAM_ATTR call_start_cpu1(void) __attribute__((noreturn));
 void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default"))) __attribute__((noreturn));
 void start_cpu1_default(void) IRAM_ATTR __attribute__((noreturn));
 static bool app_cpu_started = false;
@@ -117,7 +117,7 @@ static bool s_spiram_okay=true;
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
  */
 
-void IRAM_ATTR call_start_cpu0()
+void IRAM_ATTR call_start_cpu0(void)
 {
 #if CONFIG_FREERTOS_UNICORE
     RESET_REASON rst_reas[1];
@@ -277,7 +277,7 @@ static void wdt_reset_cpu1_info_enable(void)
     DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
 }
 
-void IRAM_ATTR call_start_cpu1()
+void IRAM_ATTR call_start_cpu1(void)
 {
     asm volatile (\
                   "wsr    %0, vecbase\n" \
@@ -484,7 +484,7 @@ void start_cpu1_default(void)
 #endif //!CONFIG_FREERTOS_UNICORE
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
-size_t __cxx_eh_arena_size_get()
+size_t __cxx_eh_arena_size_get(void)
 {
     return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
 }

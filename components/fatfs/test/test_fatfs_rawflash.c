@@ -60,7 +60,7 @@ static void test_setup(size_t max_files)
     TEST_ESP_OK(esp_vfs_fat_rawflash_mount("/spiflash", "flash_test", &mount_config));
 }
 
-static void test_teardown()
+static void test_teardown(void)
 {
     TEST_ESP_OK(esp_vfs_fat_rawflash_unmount("/spiflash","flash_test"));
 }

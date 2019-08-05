@@ -210,7 +210,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     esp_clk_slowclk_cal_set(cal_val);
 }
 
-void rtc_clk_select_rtc_slow_clk()
+void rtc_clk_select_rtc_slow_clk(void)
 {
     select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
 }

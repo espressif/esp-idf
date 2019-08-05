@@ -81,7 +81,7 @@ static void IRAM_ATTR gpio_handshake_isr_handler(void* arg)
 }
 
 //Main application
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
     spi_device_handle_t handle;

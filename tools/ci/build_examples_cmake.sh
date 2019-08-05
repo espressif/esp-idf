@@ -52,7 +52,7 @@ set -o nounset # Exit if variable not set.
 echo "build_examples running in ${PWD} for target $IDF_TARGET"
 
 # only 0 or 1 arguments
-[ $# -le 1 ] || die "Have to run as $(basename $0) [<JOB_NAME>]"
+[ $# -le 1 ] || die "Have to run as $(basename $0) [<START_EXAMPLE_NUMBER>]"
 
 export BATCH_BUILD=1
 export V=0 # only build verbose if there's an error
@@ -67,21 +67,25 @@ touch ${LOG_SUSPECTED}
 SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( get_supported_examples.sh $IDF_TARGET | sed "s#^#${IDF_PATH}\/examples\/#g" | awk '{print $0"/CmakeLists.txt"}' )
+NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
+# just a plausibility check
+[ ${NUM_OF_EXAMPLES} -lt 100 ] && die "NUM_OF_EXAMPLES is bad"
+
 echo "All examples found for target $IDF_TARGET:"
 echo $EXAMPLE_PATHS
+echo "Number of examples: $NUM_OF_EXAMPLES"
 
-if [ -z {CI_NODE_TOTAL} ]
+if [ -z "${CI_NODE_TOTAL:-}" ]
 then
     START_NUM=0
-    END_NUM=999
+    if [ "${1:-}" ]; then
+        START_NUM=$1
+    fi
+    END_NUM=${NUM_OF_EXAMPLES}
 else
     JOB_NUM=${CI_NODE_INDEX}
     # count number of the jobs
     NUM_OF_JOBS=${CI_NODE_TOTAL}
-
-    # count number of examples
-    NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
-    [ ${NUM_OF_EXAMPLES} -lt 100 ] && die "NUM_OF_EXAMPLES is bad"
 
     # separate intervals
     #57 / 5 == 12
@@ -111,7 +115,7 @@ build_example () {
     pushd "example_builds/${IDF_TARGET}/${ID}/${EXAMPLE_NAME}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-        export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+        export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
         # sdkconfig files are normally not checked into git, but may be present when
         # a developer runs this script locally

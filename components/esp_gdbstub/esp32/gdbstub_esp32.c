@@ -19,11 +19,11 @@
 
 #define UART_NUM CONFIG_CONSOLE_UART_NUM
 
-void esp_gdbstub_target_init()
+void esp_gdbstub_target_init(void)
 {
 }
 
-int esp_gdbstub_getchar()
+int esp_gdbstub_getchar(void)
 {
     while (REG_GET_FIELD(UART_STATUS_REG(UART_NUM), UART_RXFIFO_CNT) == 0) {
         ;

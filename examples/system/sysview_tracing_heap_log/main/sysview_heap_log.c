@@ -57,7 +57,7 @@ static void alloc_task(void *p)
     while(1);
 }
 
-void app_main()
+void app_main(void)
 {
     // redirect log messages to the host using SystemView tracing module
     esp_log_set_vprintf(&esp_sysview_vprintf);

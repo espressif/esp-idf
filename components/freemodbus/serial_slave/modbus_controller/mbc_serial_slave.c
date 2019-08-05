@@ -156,7 +156,7 @@ esp_err_t mbc_serial_slave_set_descriptor(const mb_register_area_descriptor_t de
 }
 
 // The helper function to get time stamp in microseconds
-static uint64_t get_time_stamp()
+static uint64_t get_time_stamp(void)
 {
     uint64_t time_stamp = esp_timer_get_time();
     return time_stamp;
