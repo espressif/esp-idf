@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,25 +53,21 @@ typedef volatile struct {
             };
             uint32_t val;
         } conf2;
-    } conf_unit[8];
+    } conf_unit[4];
     union {
         struct {
             uint32_t cnt_val   : 16;                /*This register stores the current pulse count value for unit0.*/
             uint32_t reserved16: 16;
         };
         uint32_t val;
-    } cnt_unit[8];
+    } cnt_unit[4];
     union {
         struct {
             uint32_t cnt_thr_event_u0: 1;           /*This is the interrupt raw bit for channel0 event.*/
             uint32_t cnt_thr_event_u1: 1;           /*This is the interrupt raw bit for channel1 event.*/
             uint32_t cnt_thr_event_u2: 1;           /*This is the interrupt raw bit for channel2 event.*/
             uint32_t cnt_thr_event_u3: 1;           /*This is the interrupt raw bit for channel3 event.*/
-            uint32_t cnt_thr_event_u4: 1;           /*This is the interrupt raw bit for channel4 event.*/
-            uint32_t cnt_thr_event_u5: 1;           /*This is the interrupt raw bit for channel5 event.*/
-            uint32_t cnt_thr_event_u6: 1;           /*This is the interrupt raw bit for channel6 event.*/
-            uint32_t cnt_thr_event_u7: 1;           /*This is the interrupt raw bit for channel7 event.*/
-            uint32_t reserved8:       24;
+            uint32_t reserved4:       28;
         };
         uint32_t val;
     } int_raw;
@@ -81,11 +77,7 @@ typedef volatile struct {
             uint32_t cnt_thr_event_u1: 1;            /*This is the  interrupt status bit for channel1 event.*/
             uint32_t cnt_thr_event_u2: 1;            /*This is the  interrupt status bit for channel2 event.*/
             uint32_t cnt_thr_event_u3: 1;            /*This is the  interrupt status bit for channel3 event.*/
-            uint32_t cnt_thr_event_u4: 1;            /*This is the  interrupt status bit for channel4 event.*/
-            uint32_t cnt_thr_event_u5: 1;            /*This is the  interrupt status bit for channel5 event.*/
-            uint32_t cnt_thr_event_u6: 1;            /*This is the  interrupt status bit for channel6 event.*/
-            uint32_t cnt_thr_event_u7: 1;            /*This is the  interrupt status bit for channel7 event.*/
-            uint32_t reserved8:       24;
+            uint32_t reserved4:       28;
         };
         uint32_t val;
     } int_st;
@@ -95,11 +87,7 @@ typedef volatile struct {
             uint32_t cnt_thr_event_u1: 1;           /*This is the  interrupt enable bit for channel1 event.*/
             uint32_t cnt_thr_event_u2: 1;           /*This is the  interrupt enable bit for channel2 event.*/
             uint32_t cnt_thr_event_u3: 1;           /*This is the  interrupt enable bit for channel3 event.*/
-            uint32_t cnt_thr_event_u4: 1;           /*This is the  interrupt enable bit for channel4 event.*/
-            uint32_t cnt_thr_event_u5: 1;           /*This is the  interrupt enable bit for channel5 event.*/
-            uint32_t cnt_thr_event_u6: 1;           /*This is the  interrupt enable bit for channel6 event.*/
-            uint32_t cnt_thr_event_u7: 1;           /*This is the  interrupt enable bit for channel7 event.*/
-            uint32_t reserved8:       24;
+            uint32_t reserved4:       28;
         };
         uint32_t val;
     } int_ena;
@@ -109,11 +97,7 @@ typedef volatile struct {
             uint32_t cnt_thr_event_u1: 1;           /*Set this bit to clear channel1 event interrupt.*/
             uint32_t cnt_thr_event_u2: 1;           /*Set this bit to clear channel2 event interrupt.*/
             uint32_t cnt_thr_event_u3: 1;           /*Set this bit to clear channel3 event interrupt.*/
-            uint32_t cnt_thr_event_u4: 1;           /*Set this bit to clear channel4 event interrupt.*/
-            uint32_t cnt_thr_event_u5: 1;           /*Set this bit to clear channel5 event interrupt.*/
-            uint32_t cnt_thr_event_u6: 1;           /*Set this bit to clear channel6 event interrupt.*/
-            uint32_t cnt_thr_event_u7: 1;           /*Set this bit to clear channel7 event interrupt.*/
-            uint32_t reserved8:       24;
+            uint32_t reserved4:       28;
         };
         uint32_t val;
     } int_clr;
@@ -128,7 +112,7 @@ typedef volatile struct {
             uint32_t reserved7:25;
         };
         uint32_t val;
-    } status_unit[8];
+    } status_unit[4];
     union {
         struct {
             uint32_t cnt_rst_u0:   1;               /*Set this bit to clear unit0's counter.*/
@@ -139,16 +123,8 @@ typedef volatile struct {
             uint32_t cnt_pause_u2: 1;               /*Set this bit to pause unit2's counter.*/
             uint32_t cnt_rst_u3:   1;               /*Set this bit to clear unit3's counter.*/
             uint32_t cnt_pause_u3: 1;               /*Set this bit to pause unit3's counter.*/
-            uint32_t cnt_rst_u4:   1;               /*Set this bit to clear unit4's counter.*/
-            uint32_t cnt_pause_u4: 1;               /*Set this bit to pause unit4's counter.*/
-            uint32_t cnt_rst_u5:   1;               /*Set this bit to clear unit5's counter.*/
-            uint32_t cnt_pause_u5: 1;               /*Set this bit to pause unit5's counter.*/
-            uint32_t cnt_rst_u6:   1;               /*Set this bit to clear unit6's counter.*/
-            uint32_t cnt_pause_u6: 1;               /*Set this bit to pause unit6's counter.*/
-            uint32_t cnt_rst_u7:   1;               /*Set this bit to clear unit7's counter.*/
-            uint32_t cnt_pause_u7: 1;               /*Set this bit to pause unit7's counter.*/
             uint32_t clk_en:       1;
-            uint32_t reserved17:  15;
+            uint32_t reserved9:  13;
         };
         uint32_t val;
     } ctrl;
