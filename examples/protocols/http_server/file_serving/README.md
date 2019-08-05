@@ -27,7 +27,7 @@ File server implementation can be found under `main/file_server.c` which uses SP
 
 * In order to test the file server demo :
     1. compile and burn the firmware `idf.py -p PORT flash`
-    2. run `idf.py monitor` and note down the IP assigned to your ESP module. The default port is 80
+    2. run `idf.py -p PORT monitor` and note down the IP assigned to your ESP module. The default port is 80
     3. test the example interactively on a web browser (assuming IP is 192.168.43.130):
         1. open path `http://192.168.43.130/` or `http://192.168.43.130/index.html` to see an HTML web page with list of files on the server (initially empty)
         2. use the file upload form on the webpage to select and upload a file to the server

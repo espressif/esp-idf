@@ -29,7 +29,7 @@ To provision the device running this example, the `esp_prov.py` script needs to 
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set serial port under Serial Flasher Options.
@@ -45,7 +45,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
@@ -138,7 +138,7 @@ It means the Wi-Fi credentials were already set by some other application flashe
 
 ```
 make erase_flash
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 Or, enable `Reset Provisioning` option under `Example Configuration` under menuconfig. But this will erase the saved Wi-Fi credentials every time the device boots, so this is not the preferred solution.
