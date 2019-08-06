@@ -15,10 +15,10 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/sha1.h"
-#include "crypto/sha1_i.h"
-#include "crypto/md5.h"
-#include "crypto/crypto.h"
+#include "sha1.h"
+#include "sha1_i.h"
+#include "md5.h"
+#include "crypto.h"
 
 typedef struct SHA1Context SHA1_CTX;
 
