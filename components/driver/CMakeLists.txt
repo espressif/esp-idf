@@ -1,6 +1,7 @@
 set(COMPONENT_SRCS "can.c"
                    "gpio.c"
                    "i2c.c"
+                   "i2s.c"
                    "ledc.c"
                    "pcnt.c"
                    "periph_ctrl.c"
@@ -17,9 +18,8 @@ set(COMPONENT_SRCS "can.c"
                    "uart.c")
 
 if(CONFIG_IDF_TARGET_ESP32)
-    # SDMMC and MCPWM are in ESP32 only, I2S not ported yet.
-    list(APPEND COMPONENT_SRCS "i2s.c"
-                               "mcpwm.c"
+    # SDMMC and MCPWM are in ESP32 only.
+    list(APPEND COMPONENT_SRCS "mcpwm.c"
                                "sdio_slave.c"
                                "sdmmc_host.c"
                                "sdmmc_transaction.c")
