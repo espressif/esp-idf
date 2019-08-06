@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -408,18 +408,19 @@ typedef volatile struct {
     } pd_conf;
     union {
         struct {
-            uint32_t camera_en:              1;           /*Set this bit to enable camera mode*/
-            uint32_t lcd_tx_wrx2_en:         1;           /*LCD WR double for one datum.*/
-            uint32_t lcd_tx_sdx2_en:         1;           /*Set this bit to duplicate data pairs (Frame Form 2) in LCD mode.*/
-            uint32_t data_enable_test_en:    1;           /*for debug camera mode enable*/
-            uint32_t data_enable:            1;           /*for debug camera mode enable*/
-            uint32_t lcd_en:                 1;           /*Set this bit to enable LCD mode*/
-            uint32_t ext_adc_start_en:       1;           /*Set this bit to enable the function that ADC mode is triggered by external signal.*/
-            uint32_t inter_valid_en:         1;           /*Set this bit to enable camera internal valid*/
-            uint32_t cam_sync_fifo_reset:    1;           /*Set this bit to reset cam_sync_fifo*/
-            uint32_t cam_clk_loopback:       1;           /*Set this bit to loopback cam_clk from i2s_rx*/
-            uint32_t cam_sync_fifo_reset_st: 1;
-            uint32_t reserved11:            21;
+            uint32_t camera_en:             1;            /*Set this bit to enable camera mode*/
+            uint32_t lcd_tx_wrx2_en:        1;            /*LCD WR double for one datum.*/
+            uint32_t lcd_tx_sdx2_en:        1;            /*Set this bit to duplicate data pairs (Frame Form 2) in LCD mode.*/
+            uint32_t data_enable_test_en:   1;            /*for debug camera mode enable*/
+            uint32_t data_enable:           1;            /*for debug camera mode enable*/
+            uint32_t lcd_en:                1;            /*Set this bit to enable LCD mode*/
+            uint32_t ext_adc_start_en:      1;            /*Set this bit to enable the function that ADC mode is triggered by external signal.*/
+            uint32_t inter_valid_en:        1;            /*Set this bit to enable camera internal valid*/
+            uint32_t cam_sync_fifo_reset:   1;            /*Set this bit to reset cam_sync_fifo*/
+            uint32_t cam_clk_loopback:      1;            /*Set this bit to loopback cam_clk from i2s_rx*/
+            uint32_t i_v_sync_filter_en:    1;
+            uint32_t i_v_sync_filter_thres: 3;
+            uint32_t reserved14:           18;
         };
         uint32_t val;
     } conf2;
