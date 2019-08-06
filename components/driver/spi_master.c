@@ -1174,7 +1174,7 @@ static SPI_MASTER_ISR_ATTR esp_err_t setup_priv_desc(spi_transaction_t *trans_de
     }
     if (send_ptr && isdma && !esp_ptr_dma_capable( send_ptr )) {
         //if txbuf in the desc not DMA-capable, malloc a new one
-        ESP_LOGI( SPI_TAG, "Allocate TX buffer for DMA" );
+        ESP_LOGD( SPI_TAG, "Allocate TX buffer for DMA" );
         uint32_t *temp = heap_caps_malloc((trans_desc->length + 7) / 8, MALLOC_CAP_DMA);
         if (temp == NULL) goto clean_up;
 
