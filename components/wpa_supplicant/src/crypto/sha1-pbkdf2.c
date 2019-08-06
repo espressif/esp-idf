@@ -14,9 +14,9 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
-#include "crypto/sha1.h"
-#include "crypto/md5.h"
-#include "crypto/crypto.h"
+#include "sha1.h"
+#include "md5.h"
+#include "crypto.h"
 
 #ifdef USE_MBEDTLS_CRYPTO
 #include "mbedtls/pkcs5.h"
