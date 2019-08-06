@@ -19,7 +19,7 @@ struct flash_test_ctx {
 /* Base offset in flash for tests. */
 static size_t start;
 
-static void setup_tests()
+static void setup_tests(void)
 {
     if (start == 0) {
         const esp_partition_t *part = get_test_data_partition();
