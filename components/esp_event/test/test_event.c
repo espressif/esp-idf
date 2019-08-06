@@ -278,44 +278,6 @@ static void test_teardown(void)
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define TIMER_INTERVAL0_SEC   (2.0) // sample test interval for the first timer
 
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
-static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
-{
-    SemaphoreHandle_t *sem = (SemaphoreHandle_t*) event_handler_arg;
-    // Event data is just the address value (maybe have been truncated due to casting).
-    int *data = (int*) event_data;
-    TEST_ASSERT_EQUAL(*data, (int) (*sem));
-    xSemaphoreGive(*sem);
-}
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#warning "test_event_on_timer_alarm not ported to esp32s2beta"
-#else
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
-void IRAM_ATTR test_event_on_timer_alarm(void* para)
-{
-    /* Retrieve the interrupt status and the counter value
-       from the timer that reported the interrupt */
-    uint64_t timer_counter_value =
-        timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
-
-    int data = (int) para;
-    // Posting events with data more than 4 bytes should fail.
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, 5, NULL));
-    // This should succeedd, as data is int-sized. The handler for the event checks that the passed event data
-    // is correct.
-    BaseType_t task_unblocked;
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, sizeof(data), &task_unblocked));
-    if (task_unblocked == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
-}
-#endif //CONFIG_ESP_EVENT_POST_FROM_ISR
-#endif //CONFIG_IDF_TARGET_ESP32S2BETA
 
 TEST_CASE("can create and delete event loops", "[event]")
 {
@@ -1188,45 +1150,6 @@ TEST_CASE("can properly prepare event data posted to loop", "[event]")
     TEST_TEARDOWN();
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#warning "can post events from interrupt handler not ported to esp32s2beta"
-#else
-TEST_CASE("can post events from interrupt handler", "[event]")
-{
-    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
-
-    /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
-    config.divider = TIMER_DIVIDER;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.counter_en = TIMER_PAUSE;
-    config.alarm_en = TIMER_ALARM_EN;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.auto_reload = false;
-    timer_init(TIMER_GROUP_0, TIMER_0, &config);
-
-    /* Timer's counter will initially start from value below.
-       Also, if auto_reload is set, this value will be automatically reload on alarm */
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-
-    /* Configure the alarm value and the interrupt on alarm. */
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, test_event_on_timer_alarm,
-        (void *) sem, ESP_INTR_FLAG_IRAM, NULL);
-
-    timer_start(TIMER_GROUP_0, TIMER_0);
-
-    TEST_SETUP();
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register(s_test_base1, TEST_EVENT_BASE1_EV1,
-                                                        test_handler_post_from_isr, &sem));
-
-    xSemaphoreTake(sem, portMAX_DELAY);
-
-    TEST_TEARDOWN();
-}
-#endif // CONFIG_IDF_TARGET_ESP32S2BETA
 #endif // CONFIG_ESP_EVENT_POST_FROM_ISR
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING

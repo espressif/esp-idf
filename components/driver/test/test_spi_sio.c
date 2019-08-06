@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -23,6 +22,7 @@
 #include "test/test_common_spi.h"
 #include "soc/gpio_periph.h"
 #include "sdkconfig.h"
+#include "hal/spi_ll.h"
 
 
 /********************************************************************************
@@ -34,10 +34,12 @@ TEST_CASE("local test sio", "[spi]")
     WORD_ALIGNED_ATTR uint8_t master_rx_buffer[320];
     WORD_ALIGNED_ATTR uint8_t slave_rx_buffer[320];
 
-    for (int i = 0; i < 16; i++) {
-        SPI1.data_buf[0] = 0xcccccccc;
-        SPI2.data_buf[0] = 0xcccccccc;
-    }
+    uint32_t padding[16];
+    for (int i = 0; i < 16; i++)
+        padding[i] = 0xcccccccc;;
+
+    spi_ll_write_buffer(SPI_LL_GET_HW(TEST_SPI_HOST), (uint8_t*)&padding, 8*64);
+    spi_ll_write_buffer(SPI_LL_GET_HW(TEST_SLAVE_HOST), (uint8_t*)&padding, 8*64);
 
     /* This test use a strange connection to test the SIO mode:
      * master spid -> slave spid

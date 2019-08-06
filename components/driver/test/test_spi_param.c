@@ -55,20 +55,20 @@ static void local_test_start(spi_device_handle_t *spi, int freq, const spitest_p
     assert(!pset->master_iomux || !pset->slave_iomux);
     if (pset->slave_iomux) {
         //only in this case, use VSPI iomux pins
-        buscfg.miso_io_num = VSPI_IOMUX_PIN_NUM_MISO;
-        buscfg.mosi_io_num = VSPI_IOMUX_PIN_NUM_MOSI;
-        buscfg.sclk_io_num = VSPI_IOMUX_PIN_NUM_CLK;
-        devcfg.spics_io_num = VSPI_IOMUX_PIN_NUM_CS;
-        slvcfg.spics_io_num = VSPI_IOMUX_PIN_NUM_CS;
+        buscfg.miso_io_num = spi_periph_signal[VSPI_HOST].spiq_iomux_pin;
+        buscfg.mosi_io_num = spi_periph_signal[VSPI_HOST].spid_iomux_pin;
+        buscfg.sclk_io_num = spi_periph_signal[VSPI_HOST].spiclk_iomux_pin;
+        devcfg.spics_io_num = spi_periph_signal[VSPI_HOST].spics0_iomux_pin;
+        slvcfg.spics_io_num = spi_periph_signal[VSPI_HOST].spics0_iomux_pin;
     } else {
-        buscfg.miso_io_num = HSPI_IOMUX_PIN_NUM_MISO;
-        buscfg.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI;
-        buscfg.sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK;
-        devcfg.spics_io_num = HSPI_IOMUX_PIN_NUM_CS;
-        slvcfg.spics_io_num = HSPI_IOMUX_PIN_NUM_CS;
+        buscfg.miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin;
+        buscfg.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin;
+        buscfg.sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin;
+        devcfg.spics_io_num = spi_periph_signal[HSPI_HOST].spics0_iomux_pin;
+        slvcfg.spics_io_num = spi_periph_signal[HSPI_HOST].spics0_iomux_pin;
     }
     //this does nothing, but avoid the driver from using iomux pins if required
-    buscfg.quadhd_io_num = (!pset->master_iomux && !pset->slave_iomux ? VSPI_IOMUX_PIN_NUM_MISO : -1);
+    buscfg.quadhd_io_num = (!pset->master_iomux && !pset->slave_iomux ? spi_periph_signal[VSPI_HOST].spiq_iomux_pin : -1);
     devcfg.mode = pset->mode;
     const int cs_pretrans_max = 15;
     if (pset->dup == HALF_DUPLEX_MISO) {
@@ -100,20 +100,20 @@ static void local_test_start(spi_device_handle_t *spi, int freq, const spitest_p
 
     //initialize master and slave on the same pins break some of the output configs, fix them
     if (pset->master_iomux) {
-        spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_SPI, HSPID_OUT_IDX);
-        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, VSPIQ_OUT_IDX);
-        spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_SPI, HSPICS0_OUT_IDX);
-        spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_SPI, HSPICLK_OUT_IDX);
+        spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_SPI, spi_periph_signal[HSPI_HOST].spid_out);
+        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[VSPI_HOST].spiq_out);
+        spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_SPI, spi_periph_signal[HSPI_HOST].spics_out[0]);
+        spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_SPI, spi_periph_signal[HSPI_HOST].spiclk_out);
     } else if (pset->slave_iomux) {
-        spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
-        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_SPI, VSPIQ_OUT_IDX);
-        spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, HSPICS0_OUT_IDX);
-        spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, HSPICLK_OUT_IDX);
+        spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[HSPI_HOST].spid_out);
+        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_SPI, spi_periph_signal[VSPI_HOST].spiq_out);
+        spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, spi_periph_signal[HSPI_HOST].spics_out[0]);
+        spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[HSPI_HOST].spiclk_out);
     } else {
-        spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, HSPID_OUT_IDX);
-        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, VSPIQ_OUT_IDX);
-        spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, HSPICS0_OUT_IDX);
-        spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, HSPICLK_OUT_IDX);
+        spitest_gpio_output_sel(buscfg.mosi_io_num, FUNC_GPIO, spi_periph_signal[HSPI_HOST].spid_out);
+        spitest_gpio_output_sel(buscfg.miso_io_num, FUNC_GPIO, spi_periph_signal[VSPI_HOST].spiq_out);
+        spitest_gpio_output_sel(devcfg.spics_io_num, FUNC_GPIO, spi_periph_signal[HSPI_HOST].spics_out[0]);
+        spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[HSPI_HOST].spiclk_out);
     }
 
     //prepare slave tx data
@@ -491,13 +491,13 @@ static void test_master_start(spi_device_handle_t *spi, int freq, const spitest_
 {
     //master config
     spi_bus_config_t buspset=SPI_BUS_TEST_DEFAULT_CONFIG();
-    buspset.miso_io_num = HSPI_IOMUX_PIN_NUM_MISO;
-    buspset.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI;
-    buspset.sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK;
+    buspset.miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin;
+    buspset.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin;
+    buspset.sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin;
     //this does nothing, but avoid the driver from using native pins
-    if (!pset->master_iomux) buspset.quadhd_io_num = VSPI_IOMUX_PIN_NUM_MISO;
+    if (!pset->master_iomux) buspset.quadhd_io_num = spi_periph_signal[VSPI_HOST].spiq_iomux_pin;
     spi_device_interface_config_t devpset=SPI_DEVICE_TEST_DEFAULT_CONFIG();
-    devpset.spics_io_num = HSPI_IOMUX_PIN_NUM_CS;
+    devpset.spics_io_num = spi_periph_signal[HSPI_HOST].spics0_iomux_pin;
     devpset.mode = pset->mode;
     const int cs_pretrans_max = 15;
     if (pset->dup==HALF_DUPLEX_MISO) {
@@ -623,13 +623,13 @@ static void timing_slave_start(int speed, const spitest_param_set_t* pset, spite
 {
     //slave config
     spi_bus_config_t slv_buscfg=SPI_BUS_TEST_DEFAULT_CONFIG();
-    slv_buscfg.miso_io_num = VSPI_IOMUX_PIN_NUM_MISO;
-    slv_buscfg.mosi_io_num = VSPI_IOMUX_PIN_NUM_MOSI;
-    slv_buscfg.sclk_io_num = VSPI_IOMUX_PIN_NUM_CLK;
+    slv_buscfg.miso_io_num = spi_periph_signal[VSPI_HOST].spiq_iomux_pin;
+    slv_buscfg.mosi_io_num = spi_periph_signal[VSPI_HOST].spid_iomux_pin;
+    slv_buscfg.sclk_io_num = spi_periph_signal[VSPI_HOST].spiclk_iomux_pin;
     //this does nothing, but avoid the driver from using native pins
-    if (!pset->slave_iomux) slv_buscfg.quadhd_io_num = HSPI_IOMUX_PIN_NUM_CLK;
+    if (!pset->slave_iomux) slv_buscfg.quadhd_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin;
     spi_slave_interface_config_t slvcfg=SPI_SLAVE_TEST_DEFAULT_CONFIG();
-    slvcfg.spics_io_num = VSPI_IOMUX_PIN_NUM_CS;
+    slvcfg.spics_io_num = spi_periph_signal[VSPI_HOST].spics0_iomux_pin;
     slvcfg.mode = pset->mode;
     //Enable pull-ups on SPI lines so we don't detect rogue pulses when no master is connected.
     slave_pull_up(&slv_buscfg, slvcfg.spics_io_num);

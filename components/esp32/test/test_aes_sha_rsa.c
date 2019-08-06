@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_types.h"
-#include "esp32/clk.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

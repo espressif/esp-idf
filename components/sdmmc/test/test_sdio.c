@@ -40,7 +40,6 @@
 
 /* TODO: add SDIO slave header files, remove these definitions */
 
-#define DR_REG_SLC_BASE 0x3ff58000
 #define DR_REG_SLC_MASK 0xfffffc00
 
 #define SLCCONF1 (DR_REG_SLC_BASE + 0x60)
@@ -52,7 +51,6 @@
 #define SLC_SLC0_TXLINK_RESTART (BIT(30))
 #define SLC_SLC0_TXLINK_START (BIT(29))
 
-#define DR_REG_SLCHOST_BASE 0x3ff55000
 #define DR_REG_SLCHOST_MASK 0xfffffc00
 #define SLCHOST_STATE_W0 (DR_REG_SLCHOST_BASE + 0x64)
 #define SLCHOST_CONF_W0 (DR_REG_SLCHOST_BASE + 0x6C)
