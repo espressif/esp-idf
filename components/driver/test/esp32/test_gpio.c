@@ -4,7 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
-#include "esp32/rom/uart.h"
+
 #include "esp_system.h"
 #include "esp_sleep.h"
 #include "unity.h"
@@ -12,6 +12,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/uart.h"
+#endif
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
 #define GPIO_OUTPUT_IO   18  // default output GPIO

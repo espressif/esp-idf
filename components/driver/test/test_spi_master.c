@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -54,10 +53,12 @@ static void check_spi_pre_n_for(int clk, int pre, int n)
     t.tx_buffer=sendbuf;
     ret=spi_device_transmit(handle, &t);
 
-    printf("Checking clk rate %dHz. expect pre %d n %d, got pre %d n %d\n", clk, pre, n, SPI2.clock.clkdiv_pre+1, SPI2.clock.clkcnt_n+1);
+    spi_dev_t* hw = spi_periph_signal[TEST_SPI_HOST].hw;
 
-    TEST_ASSERT(SPI2.clock.clkcnt_n+1==n);
-    TEST_ASSERT(SPI2.clock.clkdiv_pre+1==pre);
+    printf("Checking clk rate %dHz. expect pre %d n %d, got pre %d n %d\n", clk, pre, n, hw->clock.clkdiv_pre+1, hw->clock.clkcnt_n+1);
+
+    TEST_ASSERT(hw->clock.clkcnt_n+1==n);
+    TEST_ASSERT(hw->clock.clkdiv_pre+1==pre);
 
     ret=spi_bus_remove_device(handle);
     TEST_ASSERT(ret==ESP_OK);
@@ -330,7 +331,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
 
     ESP_LOGI(TAG, "test 6 iomux output pins...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO | SPICOMMON_BUSFLAG_IOMUX_PINS | SPICOMMON_BUSFLAG_QUAD;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
@@ -339,7 +340,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
 
     ESP_LOGI(TAG, "test 4 iomux output pins...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO | SPICOMMON_BUSFLAG_IOMUX_PINS | SPICOMMON_BUSFLAG_DUAL;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
@@ -349,7 +350,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     ESP_LOGI(TAG, "test 6 output pins...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO | SPICOMMON_BUSFLAG_QUAD;
     //swap MOSI and MISO
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MISO, .miso_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
@@ -359,7 +360,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     ESP_LOGI(TAG, "test 4 output pins...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO |  SPICOMMON_BUSFLAG_DUAL;
     //swap MOSI and MISO
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MISO, .miso_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
@@ -368,14 +369,14 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
 
     ESP_LOGI(TAG, "test master 5 output pins and MOSI on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO | SPICOMMON_BUSFLAG_WPHD;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = 34, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = 34, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
 
     ESP_LOGI(TAG, "test slave 5 output pins and MISO on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO | SPICOMMON_BUSFLAG_WPHD;
-    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
@@ -383,14 +384,14 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     ESP_LOGI(TAG, "test master 3 output pins and MOSI on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO;
 
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = 34, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = 34, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
 
     ESP_LOGI(TAG, "test slave 3 output pins and MISO on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK | SPICOMMON_BUSFLAG_MOSI | SPICOMMON_BUSFLAG_MISO;
-    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ESP_OK(spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
     TEST_ASSERT_EQUAL_HEX32( flags_expected, flags_o );
@@ -398,7 +399,7 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     ESP_LOGI(TAG, "check native flag for 6 output pins...");
     flags_expected = SPICOMMON_BUSFLAG_IOMUX_PINS;
     //swap MOSI and MISO
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MISO, .miso_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
@@ -406,61 +407,61 @@ TEST_CASE("spi bus setting with different pin configs", "[spi]")
     ESP_LOGI(TAG, "check native flag for 4 output pins...");
     flags_expected = SPICOMMON_BUSFLAG_IOMUX_PINS;
     //swap MOSI and MISO
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MISO, .miso_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
     ESP_LOGI(TAG, "check dual flag for master 5 output pins and MISO/MOSI on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_DUAL;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = 34, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = 34, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
-    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
     ESP_LOGI(TAG, "check dual flag for master 3 output pins and MISO/MOSI on input-only pin...");
     flags_expected = SPICOMMON_BUSFLAG_DUAL;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = 34, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = 34, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
-    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = 34, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
     ESP_LOGI(TAG, "check sclk flag...");
     flags_expected = SPICOMMON_BUSFLAG_SCLK;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = -1, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = -1, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
     ESP_LOGI(TAG, "check mosi flag...");
     flags_expected = SPICOMMON_BUSFLAG_MOSI;
-    cfg = (spi_bus_config_t){.mosi_io_num = -1, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = -1, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
     ESP_LOGI(TAG, "check miso flag...");
     flags_expected = SPICOMMON_BUSFLAG_MISO;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = -1, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = -1, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
 
     ESP_LOGI(TAG, "check quad flag...");
     flags_expected = SPICOMMON_BUSFLAG_QUAD;
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = -1, .quadwp_io_num = HSPI_IOMUX_PIN_NUM_WP,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = -1, .quadwp_io_num = spi_periph_signal[HSPI_HOST].spiwp_iomux_pin,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));
-    cfg = (spi_bus_config_t){.mosi_io_num = HSPI_IOMUX_PIN_NUM_MOSI, .miso_io_num = HSPI_IOMUX_PIN_NUM_MISO, .sclk_io_num = HSPI_IOMUX_PIN_NUM_CLK, .quadhd_io_num = HSPI_IOMUX_PIN_NUM_HD, .quadwp_io_num = -1,
+    cfg = (spi_bus_config_t){.mosi_io_num = spi_periph_signal[HSPI_HOST].spid_iomux_pin, .miso_io_num = spi_periph_signal[HSPI_HOST].spiq_iomux_pin, .sclk_io_num = spi_periph_signal[HSPI_HOST].spiclk_iomux_pin, .quadhd_io_num = spi_periph_signal[HSPI_HOST].spihd_iomux_pin, .quadwp_io_num = -1,
         .max_transfer_sz = 8, .flags = flags_expected};
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_MASTER, &flags_o));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, spicommon_bus_initialize_io(TEST_SPI_HOST, &cfg, 0, flags_expected|SPICOMMON_BUSFLAG_SLAVE, &flags_o));

@@ -9,7 +9,6 @@
 #include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "soc/rtc.h"
-#include "esp32/clk.h"
 #include "esp_system.h"
 #include "test_utils.h"
 
