@@ -1,4 +1,3 @@
-set(COMPONENT_SRCS "tp_read_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(COMPONENT_SRCS "${CONFIG_IDF_TARGET}/tp_read_main.c")
 
 register_component()

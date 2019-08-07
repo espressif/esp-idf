@@ -9,13 +9,15 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/queue.h"
 #include "esp_log.h"
 
 #include "driver/touch_pad.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 
-static const char* TAG = "Touch pad";
+static const char *TAG = "Touch pad";
+
 #define TOUCH_THRESH_NO_USE   (0)
 #define TOUCH_THRESH_PERCENT  (80)
 #define TOUCHPAD_FILTER_TOUCH_PERIOD (10)
@@ -35,7 +37,7 @@ static uint32_t s_pad_init_val[TOUCH_PAD_MAX];
 static void tp_example_set_thresholds(void)
 {
     uint16_t touch_value;
-    for (int i = 0; i<TOUCH_PAD_MAX; i++) {
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
         //read filtered value
         touch_pad_read_filtered(i, &touch_value);
         s_pad_init_val[i] = touch_value;
@@ -113,7 +115,7 @@ static void tp_example_read_task(void *pvParameter)
         // We can compare the two different mode.
         if (change_mode++ % 2000 == 0) {
             filter_mode = !filter_mode;
-            ESP_LOGW(TAG, "Change mode...%s", filter_mode == 0? "interrupt mode": "filter mode");
+            ESP_LOGW(TAG, "Change mode...%s", filter_mode == 0 ? "interrupt mode" : "filter mode");
         }
     }
 }
@@ -122,7 +124,7 @@ static void tp_example_read_task(void *pvParameter)
   Handle an interrupt triggered when a pad is touched.
   Recognize what pad has been touched and save it in a table.
  */
-static void tp_example_rtc_intr(void * arg)
+static void tp_example_rtc_intr(void *arg)
 {
     uint32_t pad_intr = touch_pad_get_status();
     //clear interrupt
@@ -139,7 +141,7 @@ static void tp_example_rtc_intr(void * arg)
  */
 static void tp_example_touch_pad_init()
 {
-    for (int i = 0;i< TOUCH_PAD_MAX;i++) {
+    for (int i = 0; i < TOUCH_PAD_MAX; i++) {
         //init RTC IO and mode for touch pad.
         touch_pad_config(i, TOUCH_THRESH_NO_USE);
     }

@@ -316,6 +316,9 @@ typedef enum {
     GPIO_NUM_26 = 26,   /*!< GPIO26, input and output */
     GPIO_NUM_27 = 27,   /*!< GPIO27, input and output */
     GPIO_NUM_28 = 28,   /*!< GPIO28, input and output */
+    GPIO_NUM_29 = 29,   /*!< GPIO29, input and output */
+    GPIO_NUM_30 = 30,   /*!< GPIO30, input and output */
+    GPIO_NUM_31 = 31,   /*!< GPIO31, input and output */
     GPIO_NUM_32 = 32,   /*!< GPIO32, input and output */
     GPIO_NUM_33 = 33,   /*!< GPIO33, input and output */
     GPIO_NUM_34 = 34,   /*!< GPIO34, input and output */

@@ -91,14 +91,8 @@ typedef volatile struct {
     } saradc_fsm_wait;
     uint32_t saradc_sar1_status;                    /**/
     uint32_t saradc_sar2_status;                    /**/
-    uint32_t saradc_sar1_patt_tab1;                 /*item 0 ~ 3 for pattern table 1 (each item one byte)*/
-    uint32_t saradc_sar1_patt_tab2;                 /*Item 4 ~ 7 for pattern table 1 (each item one byte)*/
-    uint32_t saradc_sar1_patt_tab3;                 /*Item 8 ~ 11 for pattern table 1 (each item one byte)*/
-    uint32_t saradc_sar1_patt_tab4;                 /*Item 12 ~ 15 for pattern table 1 (each item one byte)*/
-    uint32_t saradc_sar2_patt_tab1;                 /*item 0 ~ 3 for pattern table 2 (each item one byte)*/
-    uint32_t saradc_sar2_patt_tab2;                 /*Item 4 ~ 7 for pattern table 2 (each item one byte)*/
-    uint32_t saradc_sar2_patt_tab3;                 /*Item 8 ~ 11 for pattern table 2 (each item one byte)*/
-    uint32_t saradc_sar2_patt_tab4;                 /*Item 12 ~ 15 for pattern table 2 (each item one byte)*/
+    uint32_t saradc_sar1_patt_tab[4];                 /*item 0 ~ 15 for pattern table 1 (each item one byte)*/
+    uint32_t saradc_sar2_patt_tab[4];                 /*item 0 ~ 15 for pattern table 2 (each item one byte)*/
     union {
         struct {
             uint32_t reserved0:             2;
@@ -310,11 +304,22 @@ typedef volatile struct {
         };
         uint32_t val;
     } redcy_sig1;
-    uint32_t reserved_cc;
-    uint32_t reserved_d0;
-    uint32_t reserved_d4;
-    uint32_t reserved_d8;
-    uint32_t reserved_dc;
+    uint32_t wifi_bb_cfg;                               /**/
+    uint32_t wifi_bb_cfg_2;                             /**/
+    uint32_t wifi_clk_en;                               /**/
+    uint32_t wifi_rst_en;                               /**/
+    union {
+        struct {
+            uint32_t agc_mem_force_pu:  1;
+            uint32_t agc_mem_force_pd:  1;
+            uint32_t pbus_mem_force_pu: 1;
+            uint32_t pbus_mem_force_pd: 1;
+            uint32_t dc_mem_force_pu:   1;
+            uint32_t dc_mem_force_pd:   1;
+            uint32_t reserved6:        26;
+        };
+        uint32_t val;
+    } front_end_mem_pd;
     uint32_t reserved_e0;
     uint32_t reserved_e4;
     uint32_t reserved_e8;
