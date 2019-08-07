@@ -244,6 +244,18 @@ typedef esp_err_t (* wifi_mac_time_update_cb_t)( uint32_t time_delta );
   */
 esp_err_t esp_wifi_internal_update_mac_time( uint32_t time_delta );
 
+/**
+ * @brief     A general API to set/get WiFi internal configuration, it's for debug only
+ *
+ * @param     cmd : ioctl command type
+ * @param     cfg : configuration for the command
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - others: failed
+ */
+esp_err_t esp_wifi_internal_ioctl(int cmd, wifi_ioctl_config_t *cfg);
+
 #ifdef __cplusplus
 }
 #endif
