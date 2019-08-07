@@ -429,6 +429,7 @@ static inline void disableAllWdts(void)
     TIMERG1.wdt_wprotect = 0;
 }
 
+#if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
 static void esp_panic_dig_reset(void) __attribute__((noreturn));
 
 static void esp_panic_dig_reset(void)
@@ -444,6 +445,7 @@ static void esp_panic_dig_reset(void)
         ;
     }
 }
+#endif
 
 static void putEntry(uint32_t pc, uint32_t sp)
 {
