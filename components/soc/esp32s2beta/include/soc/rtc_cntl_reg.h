@@ -336,7 +336,7 @@ extern "C" {
 #define RTC_CNTL_XTL_BUF_WAIT_M  ((RTC_CNTL_XTL_BUF_WAIT_V)<<(RTC_CNTL_XTL_BUF_WAIT_S))
 #define RTC_CNTL_XTL_BUF_WAIT_V  0x3FF
 #define RTC_CNTL_XTL_BUF_WAIT_S  14
-#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  20
+#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
 /* RTC_CNTL_CK8M_WAIT : R/W ;bitpos:[13:6] ;default: 8'h10 ; */
 /*description: CK8M wait cycles in slow_clk_rtc*/
 #define RTC_CNTL_CK8M_WAIT  0x000000FF
@@ -1451,7 +1451,7 @@ extern "C" {
 #define RTC_CNTL_DBG_ATTEN_V  0xF
 #define RTC_CNTL_DBG_ATTEN_S  22
 /* reserved for driver to check */
-#define RTC_CNTL_DBG_ATTEN_DEFAULT  3
+#define RTC_CNTL_DBG_ATTEN_DEFAULT  15
 
 #define RTC_CNTL_REG          (DR_REG_RTCCNTL_BASE + 0x0084)
 /* RTC_CNTL_REGULATOR_FORCE_PU : R/W ;bitpos:[31] ;default: 1'd1 ; */

@@ -628,7 +628,6 @@ esp_err_t gpio_force_unhold_all()
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
     return ESP_OK;
 }
-
 #endif
 
 void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)

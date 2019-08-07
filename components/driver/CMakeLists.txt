@@ -29,6 +29,13 @@ set(COMPONENT_ADD_INCLUDEDIRS "include")
 set(COMPONENT_PRIV_INCLUDEDIRS "include/driver")
 set(COMPONENT_REQUIRES esp_ringbuf soc) #cannot totally hide soc headers, since there are a lot arguments in the driver are chip-dependent
 
+if(CONFIG_IDF_TARGET_ESP32S2BETA)
+    list(APPEND COMPONENT_SRCS "${CONFIG_IDF_TARGET}/rtc_tempsensor.c"
+                               "${CONFIG_IDF_TARGET}/rtc_touchpad.c")
+
+    list(APPEND COMPONENT_ADD_INCLUDEDIRS "${CONFIG_IDF_TARGET}/include")
+endif()
+
 register_component()
 
 
