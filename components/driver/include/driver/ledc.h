@@ -52,6 +52,13 @@ typedef enum  {
 } ledc_clk_src_t;
 
 typedef enum {
+    LEDC_AUTO_CLK,        /*!< The driver will automatically select the source clock(REF_TICK or APB) based on the giving resolution and duty parameter when init the timer*/  
+    LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
+    LEDC_USE_APB_CLK,     /*!< LEDC timer select APB clock as source clock*/
+    LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
+} ledc_clk_cfg_t;
+
+typedef enum {
     LEDC_TIMER_0 = 0, /*!< LEDC timer 0 */
     LEDC_TIMER_1,     /*!< LEDC timer 1 */
     LEDC_TIMER_2,     /*!< LEDC timer 2 */
@@ -125,6 +132,9 @@ typedef struct {
     };
     ledc_timer_t  timer_num;               /*!< The timer source of channel (0 - 3) */
     uint32_t freq_hz;                      /*!< LEDC timer frequency (Hz) */
+    ledc_clk_cfg_t clk_cfg;                /*!< Configure LEDC source clock.
+                                                For low speed channels and high speed channels, you can specify the source clock using LEDC_USE_REF_TICK, LEDC_USE_APB_CLK or LEDC_AUTO_CLK.
+                                                For low speed channels, you can also specify the source clock using LEDC_USE_RTC8M_CLK, in this case, all low speed channel's source clock must be RTC8M_CLK*/
 } ledc_timer_config_t;
 
 typedef intr_handle_t ledc_isr_handle_t;

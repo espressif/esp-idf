@@ -55,6 +55,7 @@ static void produce_pulse(void)
         .timer_num  = LEDC_TIMER_1,
         .duty_resolution = LEDC_TIMER_10_BIT,
         .freq_hz = 1,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     ledc_timer_config(&ledc_timer);
 
@@ -160,6 +161,7 @@ static void count_mode_test(gpio_num_t ctl_io)
         .timer_num  = LEDC_TIMER_1,
         .duty_resolution = LEDC_TIMER_10_BIT,
         .freq_hz = 100,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     ledc_timer_config(&ledc_timer);
 
