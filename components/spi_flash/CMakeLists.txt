@@ -13,13 +13,16 @@ else()
         "spi_flash_chip_generic.c"
         "spi_flash_chip_issi.c"
         )
-    if(NOT CONFIG_SPI_FLASH_USE_LEGACY_IMPL)
-        list(APPEND srcs "esp_flash_api.c"
-                         "esp_flash_spi_init.c"
+    if (NOT CONFIG_IDF_TARGET_ESP32S2BETA)
+        # TODO: workaround until ESP32-S2 supports new API, can be always included
+        list(APPEND srcs "esp_flash_spi_init.c"
                          "memspi_host_driver.c"
                          "spi_flash_os_func_app.c"
-                         "spi_flash_os_func_noos.c"
-                         )
+                         "spi_flash_os_func_noos.c")
+    endif()
+
+    if(NOT CONFIG_SPI_FLASH_USE_LEGACY_IMPL)
+        list(APPEND srcs "esp_flash_api.c")
     endif()
     set(priv_requires bootloader_support app_update soc)
 endif()
