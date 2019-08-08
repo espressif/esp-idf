@@ -442,7 +442,7 @@ class IDFTool(object):
             raise ToolExecError('Command {} has returned non-zero exit code ({})\n'.format(
                 ' '.join(self._current_options.version_cmd), e.returncode))
 
-        in_str = version_cmd_result.decode()
+        in_str = version_cmd_result.decode("utf-8")
         match = re.search(self._current_options.version_regex, in_str)
         if not match:
             return UNKNOWN_VERSION

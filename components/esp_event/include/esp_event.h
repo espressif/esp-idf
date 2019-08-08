@@ -74,7 +74,7 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop);
  *  - ESP_FAIL: Failed to create task loop
  *  - Others: Fail
  */
-esp_err_t esp_event_loop_create_default();
+esp_err_t esp_event_loop_create_default(void);
 
 /**
  * @brief Delete the default event loop
@@ -83,7 +83,7 @@ esp_err_t esp_event_loop_create_default();
  *  - ESP_OK: Success
  *  - Others: Fail
  */
-esp_err_t esp_event_loop_delete_default();
+esp_err_t esp_event_loop_delete_default(void);
 
 /**
  * @brief Dispatch events posted to an event loop.

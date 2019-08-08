@@ -160,14 +160,14 @@ esp_err_t esp_event_process_default(system_event_t *event);
   * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
   *
   */
-void esp_event_set_default_eth_handlers();
+void esp_event_set_default_eth_handlers(void);
 
 /**
   * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
   *
   * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
   */
-void esp_event_set_default_wifi_handlers();
+void esp_event_set_default_wifi_handlers(void);
 
 /**
  * @brief  Application specified event callback function

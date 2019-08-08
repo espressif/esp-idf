@@ -439,7 +439,7 @@ esp_err_t ledc_fade_func_install(int intr_alloc_flags);
  * @brief Uninstall LEDC fade function.
  *
  */
-void ledc_fade_func_uninstall();
+void ledc_fade_func_uninstall(void);
 
 /**
  * @brief Start LEDC fading.

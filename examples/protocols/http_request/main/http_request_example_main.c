@@ -119,7 +119,7 @@ static void http_get_task(void *pvParameters)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
     tcpip_adapter_init();

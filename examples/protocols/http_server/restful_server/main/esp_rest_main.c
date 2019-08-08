@@ -121,7 +121,7 @@ esp_err_t init_fs(void)
 }
 #endif
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();

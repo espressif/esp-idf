@@ -51,7 +51,7 @@ static void master_init_nodma( spi_device_handle_t* spi)
     TEST_ASSERT(ret==ESP_OK);
 }
 
-static void slave_init()
+static void slave_init(void)
 {
     //Configuration for the SPI bus
     spi_bus_config_t buscfg={

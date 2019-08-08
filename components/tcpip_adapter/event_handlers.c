@@ -202,7 +202,7 @@ static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t ev
 }
 
 
-esp_err_t tcpip_adapter_set_default_wifi_handlers()
+esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
 {
     esp_err_t err;
     err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_START, handle_sta_start, NULL);
@@ -252,7 +252,7 @@ fail:
     return err;
 }
 
-esp_err_t tcpip_adapter_clear_default_wifi_handlers()
+esp_err_t tcpip_adapter_clear_default_wifi_handlers(void)
 {
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_START, handle_sta_start);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, handle_sta_stop);
@@ -265,8 +265,9 @@ esp_err_t tcpip_adapter_clear_default_wifi_handlers()
 
     return ESP_OK;
 }
+
 #if CONFIG_IDF_TARGET_ESP32
-esp_err_t tcpip_adapter_set_default_eth_handlers()
+esp_err_t tcpip_adapter_set_default_eth_handlers(void)
 {
     esp_err_t err;
     err = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, handle_eth_start, NULL);
@@ -301,7 +302,7 @@ fail:
     return err;
 }
 
-esp_err_t tcpip_adapter_clear_default_eth_handlers()
+esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
 {
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_START, handle_eth_start);
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_STOP, handle_eth_stop);

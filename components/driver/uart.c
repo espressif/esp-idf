@@ -947,7 +947,11 @@ static void uart_rx_intr_handler_default(void *param)
             if (p_uart->rx_buffer_full_flg == false) {
                 //We have to read out all data in RX FIFO to clear the interrupt signal
                 for(buf_idx = 0; buf_idx < rx_fifo_len; buf_idx++) {
-                    p_uart->rx_data_buf[buf_idx] = uart_reg->fifo.rw_byte;
+#if CONFIG_IDF_TARGET_ESP32
+                    p_uart->rx_data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+                    p_uart->rx_data_buf[buf_idx++] = READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
+#endif
                 }
                 uint8_t pat_chr = uart_reg->at_cmd_char.data;
                 int pat_num = uart_reg->at_cmd_char.char_num;
@@ -1123,7 +1127,11 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, 0);
     typeof(UART0.status) status = UART[uart_num]->status;
     //Wait txfifo_cnt = 0, and the transmitter state machine is in idle state.
-    if(status.txfifo_cnt == 0 && status.st_utx_out == 0) {
+#ifdef CONFIG_IDF_TARGET_ESP32
+    if (status.txfifo_cnt == 0 && status.st_utx_out == 0) {
+#else /* TODO: check transmitter state machine on ESP32S2Beta */
+    if (status.txfifo_cnt == 0) {
+#endif
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
@@ -1558,7 +1566,7 @@ void uart_set_select_notif_callback(uart_port_t uart_num, uart_select_notif_call
     }
 }
 
-portMUX_TYPE *uart_get_selectlock()
+portMUX_TYPE *uart_get_selectlock(void)
 {
     return &uart_selectlock;
 }

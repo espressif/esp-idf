@@ -17,7 +17,7 @@
 #include "esp_efuse_table.h"
 #include "esp_flash_encrypt.h"
 
-void esp_flash_write_protect_crypt_cnt()
+void esp_flash_write_protect_crypt_cnt(void)
 {
     uint8_t flash_crypt_cnt_wr_dis = 0;
     esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
@@ -26,7 +26,7 @@ void esp_flash_write_protect_crypt_cnt()
     }
 }
 
-esp_flash_enc_mode_t esp_get_flash_encryption_mode()
+esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
 {
     uint8_t efuse_flash_crypt_cnt_wr_protected = 0;
     uint8_t dis_dl_enc = 0, dis_dl_dec = 0, dis_dl_cache = 0;

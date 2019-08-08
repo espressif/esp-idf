@@ -1626,7 +1626,7 @@ BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type);
 **                     BTM_BLE_GENRAL_DISCOVERABLE
 **
 *******************************************************************************/
-UINT16 BTM_BleReadDiscoverability();
+UINT16 BTM_BleReadDiscoverability(void);
 
 /*******************************************************************************
 **
@@ -1639,7 +1639,7 @@ UINT16 BTM_BleReadDiscoverability();
 **
 *******************************************************************************/
 //extern
-UINT16 BTM_BleReadConnectability ();
+UINT16 BTM_BleReadConnectability (void);
 
 void BTM_Recovery_Pre_State(void);
 
@@ -1755,7 +1755,7 @@ void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on);
 **
 *******************************************************************************/
 //extern
-UINT8  BTM_BleMaxMultiAdvInstanceCount();
+UINT8  BTM_BleMaxMultiAdvInstanceCount(void);
 
 /*******************************************************************************
 **

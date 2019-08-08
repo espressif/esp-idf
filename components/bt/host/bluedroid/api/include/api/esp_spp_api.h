@@ -205,7 +205,7 @@ esp_err_t esp_spp_init(esp_spp_mode_t mode);
  *              - ESP_OK: success
  *              - other: failed
  */
-esp_err_t esp_spp_deinit();
+esp_err_t esp_spp_deinit(void);
 
 
 /**

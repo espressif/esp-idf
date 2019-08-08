@@ -23,5 +23,6 @@ PROVIDE ( esp_rom_spiflash_config_clk = SPIClkConfig );
 PROVIDE ( esp_rom_spiflash_select_qio_pins = SelectSpiQIO );
 PROVIDE ( esp_rom_spiflash_unlock = SPIUnlock );
 PROVIDE ( esp_rom_spiflash_erase_sector = SPIEraseSector );
+PROVIDE ( esp_rom_spiflash_erase_block = SPIEraseBlock );
 PROVIDE ( esp_rom_spiflash_wait_idle = SPI_Wait_Idle );
 PROVIDE ( esp_rom_spiflash_config_readmode = SPIReadModeCnfig );

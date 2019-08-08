@@ -60,7 +60,7 @@ static void queue_int_add(connect_node_t *p_param)
     list_append(connect_queue, p_node);
 }
 
-static void queue_int_advance()
+static void queue_int_advance(void)
 {
     if (connect_queue && !list_is_empty(connect_queue)) {
         list_remove(connect_queue, list_front(connect_queue));

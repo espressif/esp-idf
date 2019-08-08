@@ -151,7 +151,7 @@ static void get_string(char *line, size_t size)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     char line[256];
     char pattern[32];

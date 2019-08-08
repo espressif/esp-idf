@@ -106,18 +106,18 @@ extern SemaphoreHandle_t ble_mesh_test_perf_sema;
     } \
 }while(0) \
 
-void ble_mesh_node_init();
+void ble_mesh_node_init(void);
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr);
 
 esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id);
 esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id);
 void ble_mesh_create_send_data(char *data, uint16_t byte_num, uint16_t sequence_num, uint32_t opcode);
 
-void ble_mesh_test_performance_client_model_get();
-void ble_mesh_test_performance_client_model_get_received_percent();
+void ble_mesh_test_performance_client_model_get(void);
+void ble_mesh_test_performance_client_model_get_received_percent(void);
 void ble_mesh_test_performance_client_model_accumulate_statistics(uint32_t value);
 int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_t *data, uint8_t ack_ttl, uint16_t length);
 int ble_mesh_test_performance_client_model_init(uint16_t node_num, uint32_t test_num, uint8_t ttl);
-void ble_mesh_test_performance_client_model_destroy();
+void ble_mesh_test_performance_client_model_destroy(void);
 
 #endif //_BLE_MESH_ADAPTER_H_

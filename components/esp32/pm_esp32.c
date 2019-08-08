@@ -145,9 +145,9 @@ static const char* s_mode_names[] = {
 
 static const char* TAG = "pm_esp32";
 
-static void update_ccompare();
+static void update_ccompare(void);
 static void do_switch(pm_mode_t new_mode);
-static void leave_idle();
+static void leave_idle(void);
 static void on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_per_us);
 
 
@@ -246,7 +246,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
     return ESP_OK;
 }
 
-static pm_mode_t IRAM_ATTR get_lowest_allowed_mode()
+static pm_mode_t IRAM_ATTR get_lowest_allowed_mode(void)
 {
     /* TODO: optimize using ffs/clz */
     if (s_mode_mask >= BIT(PM_MODE_CPU_MAX)) {
@@ -418,7 +418,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
  * would happen without the frequency change.
  * Assumes that the new_frequency = old_frequency * s_ccount_mul / s_ccount_div.
  */
-static void IRAM_ATTR update_ccompare()
+static void IRAM_ATTR update_ccompare(void)
 {
     uint32_t ccount = XTHAL_GET_CCOUNT();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
@@ -432,7 +432,7 @@ static void IRAM_ATTR update_ccompare()
     }
 }
 
-static void IRAM_ATTR leave_idle()
+static void IRAM_ATTR leave_idle(void)
 {
     int core_id = xPortGetCoreID();
     if (s_core_idle[core_id]) {
@@ -442,7 +442,7 @@ static void IRAM_ATTR leave_idle()
     }
 }
 
-void esp_pm_impl_idle_hook()
+void esp_pm_impl_idle_hook(void)
 {
     int core_id = xPortGetCoreID();
     uint32_t state = portENTER_CRITICAL_NESTED();
@@ -454,7 +454,7 @@ void esp_pm_impl_idle_hook()
     ESP_PM_TRACE_ENTER(IDLE, core_id);
 }
 
-void IRAM_ATTR esp_pm_impl_isr_hook()
+void IRAM_ATTR esp_pm_impl_isr_hook(void)
 {
     int core_id = xPortGetCoreID();
     ESP_PM_TRACE_ENTER(ISR_HOOK, core_id);
@@ -476,7 +476,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook()
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 
-void esp_pm_impl_waiti()
+void esp_pm_impl_waiti(void)
 {
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
     int core_id = xPortGetCoreID();
@@ -595,7 +595,7 @@ void esp_pm_impl_dump_stats(FILE* out)
 }
 #endif // WITH_PROFILING
 
-void esp_pm_impl_init()
+void esp_pm_impl_init(void)
 {
 #ifdef CONFIG_PM_TRACE
     esp_pm_trace_init();

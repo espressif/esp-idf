@@ -396,14 +396,24 @@ static void IRAM_ATTR gpio_intr_service(void* arg)
         return;
     }
     //read status to get interrupt status for GPIO0-31
-    const uint32_t gpio_intr_status = (isr_core_id == 0) ? GPIO.pcpu_int : GPIO.acpu_int;
+    uint32_t gpio_intr_status;
+#ifdef CONFIG_IDF_TARGET_ESP32
+    gpio_intr_status = (isr_core_id == 0) ? GPIO.pcpu_int : GPIO.acpu_int;
+#else
+    gpio_intr_status = GPIO.pcpu_int;
+#endif
     if (gpio_intr_status) {
         gpio_isr_loop(gpio_intr_status, 0);
         GPIO.status_w1tc = gpio_intr_status;
     }
 
     //read status1 to get interrupt status for GPIO32-39
-    const uint32_t gpio_intr_status_h = (isr_core_id == 0) ? GPIO.pcpu_int1.intr : GPIO.acpu_int1.intr;
+    uint32_t gpio_intr_status_h;
+#ifdef CONFIG_IDF_TARGET_ESP32
+    gpio_intr_status_h = (isr_core_id == 0) ? GPIO.pcpu_int1.intr : GPIO.acpu_int1.intr;
+#else
+    gpio_intr_status_h = GPIO.pcpu_int1.intr;
+#endif
     if (gpio_intr_status_h) {
         gpio_isr_loop(gpio_intr_status_h, 32);
         GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
@@ -454,7 +464,7 @@ esp_err_t gpio_install_isr_service(int intr_alloc_flags)
     return ret;
 }
 
-void gpio_uninstall_isr_service()
+void gpio_uninstall_isr_service(void)
 {
     if (gpio_isr_func == NULL) {
         return;

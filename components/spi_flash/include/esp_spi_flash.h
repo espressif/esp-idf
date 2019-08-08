@@ -59,7 +59,7 @@ esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode);
  *  no need to call it from application code.
  *
  */
-void spi_flash_init();
+void spi_flash_init(void);
 
 /**
  * @brief  Get flash chip size, as set in binary image header
@@ -68,7 +68,7 @@ void spi_flash_init();
  *
  * @return size of flash chip, in bytes
  */
-size_t spi_flash_get_chip_size();
+size_t spi_flash_get_chip_size(void);
 
 /**
  * @brief  Erase the Flash sector.
@@ -256,7 +256,7 @@ void spi_flash_munmap(spi_flash_mmap_handle_t handle);
  * of pages allocated to each handle. It also lists all non-zero entries of
  * MMU table and corresponding reference counts.
  */
-void spi_flash_mmap_dump();
+void spi_flash_mmap_dump(void);
 
 /**
  * @brief get free pages number which can be mmap
@@ -311,7 +311,7 @@ const void *spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memor
  *
  * @return true if both CPUs have flash cache enabled, false otherwise.
  */
-bool spi_flash_cache_enabled();
+bool spi_flash_cache_enabled(void);
 
 /**
  * @brief SPI flash critical section enter function.
@@ -392,7 +392,7 @@ void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
  * @return The guard functions that were set via spi_flash_guard_set(). These functions
  * can be called if implementing custom low-level SPI flash operations.
  */
-const spi_flash_guard_funcs_t *spi_flash_guard_get();
+const spi_flash_guard_funcs_t *spi_flash_guard_get(void);
 
 /**
  * @brief Default OS-aware flash access guard functions
@@ -427,12 +427,12 @@ typedef struct {
 /**
  * @brief  Reset SPI flash operation counters
  */
-void spi_flash_reset_counters();
+void spi_flash_reset_counters(void);
 
 /**
  * @brief  Print SPI flash operation counters
  */
-void spi_flash_dump_counters();
+void spi_flash_dump_counters(void);
 
 /**
  * @brief  Return current SPI flash operation counters
@@ -440,7 +440,7 @@ void spi_flash_dump_counters();
  * @return  pointer to the spi_flash_counters_t structure holding values
  *          of the operation counters
  */
-const spi_flash_counters_t* spi_flash_get_counters();
+const spi_flash_counters_t* spi_flash_get_counters(void);
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 

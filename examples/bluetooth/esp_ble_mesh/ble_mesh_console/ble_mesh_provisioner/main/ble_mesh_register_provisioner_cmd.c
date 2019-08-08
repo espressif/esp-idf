@@ -80,12 +80,12 @@ typedef struct {
 } ble_mesh_provisioner_add_key_t;
 ble_mesh_provisioner_add_key_t provisioner_add_key;
 
-void ble_mesh_regist_provisioner_cmd();
+void ble_mesh_regist_provisioner_cmd(void);
 
 void ble_mesh_prov_adv_cb(const esp_bd_addr_t addr, const esp_ble_addr_type_t addr_type, const uint8_t adv_type,
                           const uint8_t *dev_uuid, uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
 
-void ble_mesh_register_mesh_provisioner()
+void ble_mesh_register_mesh_provisioner(void)
 {
     ble_mesh_regist_provisioner_cmd();
 }
@@ -101,7 +101,7 @@ void ble_mesh_prov_adv_cb(const esp_bd_addr_t addr, const esp_ble_addr_type_t ad
     ESP_LOGD(TAG, "exit %s\n", __func__);
 }
 
-int ble_mesh_provisioner_register()
+int ble_mesh_provisioner_register(int argc, char** argv)
 {
     ESP_LOGD(TAG, "enter %s \n", __func__);
     // esp_ble_mesh_register_unprov_adv_pkt_callback(ble_mesh_prov_adv_cb);
@@ -322,7 +322,7 @@ int ble_mesh_provision_bind_local_model(int argc, char **argv)
     return err;
 }
 
-void ble_mesh_regist_provisioner_cmd()
+void ble_mesh_regist_provisioner_cmd(void)
 {
     const esp_console_cmd_t prov_register = {
         .command = "bmpreg",

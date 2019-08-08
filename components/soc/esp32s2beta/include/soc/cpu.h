@@ -108,4 +108,25 @@ void esp_cpu_reset(int cpu_id);
  */
 bool esp_cpu_in_ocd_debug_mode();
 
+/**
+ * @brief Convert the PC register value to its true address
+ *
+ * The address of the current instruction is not stored as an exact uint32_t
+ * representation in PC register. This function will convert the value stored in
+ * the PC register to a uint32_t address.
+ *
+ * @param pc_raw The PC as stored in register format.
+ *
+ * @return Address in uint32_t format
+ */
+static inline uint32_t esp_cpu_process_stack_pc(uint32_t pc)
+{
+    if (pc & 0x80000000) {
+        //Top two bits of a0 (return address) specify window increment. Overwrite to map to address space.
+        pc = (pc & 0x3fffffff) | 0x40000000;
+    }
+    //Minus 3 to get PC of previous instruction (i.e. instruction executed before return address)
+    return pc - 3;
+}
+
 #endif

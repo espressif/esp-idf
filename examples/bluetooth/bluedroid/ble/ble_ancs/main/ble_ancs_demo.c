@@ -24,7 +24,7 @@
 #include "ble_ancs.h"
 
 #define BLE_ANCS_TAG                              "BLE_ANCS"
-#define EXCAMPLE_DEVICE_NAME                      "ESP_BLE_ANCS"
+#define EXAMPLE_DEVICE_NAME                       "ESP_BLE_ANCS"
 #define PROFILE_A_APP_ID                          0
 #define PROFILE_NUM                               1
 #define ADV_CONFIG_FLAG                           (1 << 0)
@@ -331,7 +331,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     switch (event) {
     case ESP_GATTC_REG_EVT:
         ESP_LOGI(BLE_ANCS_TAG, "REG_EVT");
-        esp_ble_gap_set_device_name(EXCAMPLE_DEVICE_NAME);
+        esp_ble_gap_set_device_name(EXAMPLE_DEVICE_NAME);
         esp_ble_gap_config_local_icon (ESP_BLE_APPEARANCE_GENERIC_WATCH);
         //generate a resolvable random address
         esp_ble_gap_config_local_privacy(true);
@@ -596,7 +596,7 @@ void init_timer(void)
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

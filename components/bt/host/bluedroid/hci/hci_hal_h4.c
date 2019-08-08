@@ -121,7 +121,7 @@ static bool hal_open(const hci_hal_callbacks_t *upper_callbacks, void *task_thre
     return true;
 }
 
-static void hal_close()
+static void hal_close(void)
 {
     hci_hal_env_deinit();
 
@@ -367,7 +367,7 @@ static const hci_hal_t interface = {
     transmit_data,
 };
 
-const hci_hal_t *hci_hal_h4_get_interface()
+const hci_hal_t *hci_hal_h4_get_interface(void)
 {
     return &interface;
 }

@@ -29,7 +29,7 @@ static const adc_atten_t atten = ADC_ATTEN_DB_0;
 static const adc_unit_t unit = ADC_UNIT_1;
 
 #if CONFIG_IDF_TARGET_ESP32
-static void check_efuse()
+static void check_efuse(void)
 {
     //Check TP is burned into eFuse
     if (esp_adc_cal_check_efuse(ESP_ADC_CAL_VAL_EFUSE_TP) == ESP_OK) {
@@ -58,7 +58,7 @@ static void print_char_val_type(esp_adc_cal_value_t val_type)
 }
 #endif
 
-void app_main()
+void app_main(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
     //Check if Two Point or Vref are burned into eFuse

@@ -139,7 +139,7 @@ esp_reset_reason_t __attribute__((weak)) esp_reset_reason_get_hint(void)
 
 static bool abort_called;
 
-static __attribute__((noreturn)) inline void invoke_abort()
+static __attribute__((noreturn)) inline void invoke_abort(void)
 {
     abort_called = true;
 #if CONFIG_ESP32_APPTRACE_ENABLE
@@ -158,7 +158,7 @@ static __attribute__((noreturn)) inline void invoke_abort()
     }
 }
 
-void abort()
+void abort(void)
 {
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
@@ -189,12 +189,12 @@ static const char *edesc[] = {
 #define NUM_EDESCS (sizeof(edesc) / sizeof(char *))
 
 static void commonErrorHandler(XtExcFrame *frame);
-static inline void disableAllWdts();
+static inline void disableAllWdts(void);
 static void illegal_instruction_helper(XtExcFrame *frame);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
-static void haltOtherCore()
+static void haltOtherCore(void)
 {
     esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
 }
@@ -399,7 +399,7 @@ static void illegal_instruction_helper(XtExcFrame *frame)
   all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
   one second.
 */
-static void reconfigureAllWdts()
+static void reconfigureAllWdts(void)
 {
     TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_feed = 1;
@@ -419,7 +419,7 @@ static void reconfigureAllWdts()
 /*
   This disables all the watchdogs for when we call the gdbstub.
 */
-static inline void disableAllWdts()
+static inline void disableAllWdts(void)
 {
     TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.en = 0;
@@ -429,9 +429,9 @@ static inline void disableAllWdts()
     TIMERG1.wdt_wprotect = 0;
 }
 
-static void esp_panic_dig_reset() __attribute__((noreturn));
+static void esp_panic_dig_reset(void) __attribute__((noreturn));
 
-static void esp_panic_dig_reset()
+static void esp_panic_dig_reset(void)
 {
     // make sure all the panic handler output is sent from UART FIFO
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);

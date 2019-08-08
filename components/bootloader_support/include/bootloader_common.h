@@ -151,7 +151,7 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
 /**
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
  */
-void bootloader_common_vddsdio_configure();
+void bootloader_common_vddsdio_configure(void);
 
 #ifdef __cplusplus
 }

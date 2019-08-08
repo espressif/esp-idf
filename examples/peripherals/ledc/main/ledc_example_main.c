@@ -58,7 +58,7 @@
 #define LEDC_TEST_DUTY         (4000)
 #define LEDC_TEST_FADE_TIME    (3000)
 
-void app_main()
+void app_main(void)
 {
     int ch;
 

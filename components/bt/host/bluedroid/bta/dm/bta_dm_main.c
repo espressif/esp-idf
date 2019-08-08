@@ -360,7 +360,7 @@ const tBTA_DM_ST_TBL bta_dm_search_st_tbl[] = {
 ** Returns          void
 **
 *******************************************************************************/
-void bta_dm_sm_disable( )
+void bta_dm_sm_disable(void)
 {
     bta_sys_deregister( BTA_ID_DM );
 }
@@ -412,7 +412,7 @@ BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg)
 ** Returns          void
 **
 *******************************************************************************/
-void bta_dm_search_sm_disable( )
+void bta_dm_search_sm_disable(void)
 {
     bta_sys_deregister( BTA_ID_DM_SEARCH );
 

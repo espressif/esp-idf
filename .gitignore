@@ -63,8 +63,12 @@ test_multi_heap_host
 # VS Code Settings
 .vscode/
 
+# Clion IDE CMake build & config
+.idea/
+cmake-build-*/
+
 # Results for the checking of the Python coding style
 flake8_output.txt
 
-# ESP-IDF library 
+# ESP-IDF default build directory name
 build

@@ -18,7 +18,7 @@
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 
-void bootloader_clock_configure()
+void bootloader_clock_configure(void)
 {
     // ROM bootloader may have put a lot of text into UART0 FIFO.
     // Wait for it to be printed.

@@ -167,7 +167,7 @@ static void pcnt_example_init(void)
     pcnt_counter_resume(PCNT_TEST_UNIT);
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize LEDC to generate sample pulse signal */
     ledc_init();

@@ -65,7 +65,7 @@ void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
 }
 
 
-esp_err_t pretty_effect_init()
+esp_err_t pretty_effect_init(void)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     return decode_image(&pixels);

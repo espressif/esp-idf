@@ -27,7 +27,7 @@ extern "C" {
  *
  * @return      the allocated esp_transport_handle_t, or NULL if the handle can not be allocated
  */
-esp_transport_handle_t esp_transport_ssl_init();
+esp_transport_handle_t esp_transport_ssl_init(void);
 
 /**
  * @brief      Set SSL certificate data (as PEM format).
@@ -39,6 +39,17 @@ esp_transport_handle_t esp_transport_ssl_init();
  * @param[in]  len   The length
  */
 void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data, int len);
+
+/**
+ * @brief      Set SSL certificate data (as DER format).
+ *             Note that, this function stores the pointer to data, rather than making a copy.
+ *             So this data must remain valid until after the connection is cleaned up
+ *
+ * @param      t     ssl transport
+ * @param[in]  data  The der data
+ * @param[in]  len   The length
+ */
+void esp_transport_ssl_set_cert_data_der(esp_transport_handle_t t, const char *data, int len);
 
 /**
  * @brief      Enable global CA store for SSL connection
@@ -59,6 +70,17 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t);
 void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char *data, int len);
 
 /**
+ * @brief      Set SSL client certificate data for mutual authentication (as DER format).
+ *             Note that, this function stores the pointer to data, rather than making a copy.
+ *             So this data must remain valid until after the connection is cleaned up
+ *
+ * @param      t     ssl transport
+ * @param[in]  data  The der data
+ * @param[in]  len   The length
+ */
+void esp_transport_ssl_set_client_cert_data_der(esp_transport_handle_t t, const char *data, int len);
+
+/**
  * @brief      Set SSL client key data for mutual authentication (as PEM format).
  *             Note that, this function stores the pointer to data, rather than making a copy.
  *             So this data must remain valid until after the connection is cleaned up
@@ -68,6 +90,17 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
  * @param[in]  len   The length
  */
 void esp_transport_ssl_set_client_key_data(esp_transport_handle_t t, const char *data, int len);
+
+/**
+ * @brief      Set SSL client key data for mutual authentication (as DER format).
+ *             Note that, this function stores the pointer to data, rather than making a copy.
+ *             So this data must remain valid until after the connection is cleaned up
+ *
+ * @param      t     ssl transport
+ * @param[in]  data  The der data
+ * @param[in]  len   The length
+ */
+void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const char *data, int len);
 
 /**
  * @brief      Skip validation of certificate's common name field

@@ -98,13 +98,13 @@ void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst
  * Do target-specific initialization before gdbstub can start communicating.
  * This may involve, for example, configuring the UART.
  */
-void esp_gdbstub_target_init();
+void esp_gdbstub_target_init(void);
 
 /**
  * Receive a byte from the GDB client. Blocks until a byte is available.
  * @return received byte
  */
-int esp_gdbstub_getchar();
+int esp_gdbstub_getchar(void);
 
 /**
  * Send a byte to the GDB client
@@ -123,7 +123,7 @@ int esp_gdbstub_readmem(intptr_t addr);
 /**** GDB packet related functions ****/
 
 /** Begin a packet */
-void esp_gdbstub_send_start();
+void esp_gdbstub_send_start(void);
 
 /** Send a character as part of the packet */
 void esp_gdbstub_send_char(char c);
@@ -135,7 +135,7 @@ void esp_gdbstub_send_str(const char *s);
 void esp_gdbstub_send_hex(int val, int bits);
 
 /** Finish sending the packet */
-void esp_gdbstub_send_end();
+void esp_gdbstub_send_end(void);
 
 /** Send a packet with a string as content */
 void esp_gdbstub_send_str_packet(const char* str);

@@ -21,7 +21,7 @@ static uint32_t end;
 
 static spi_flash_mmap_handle_t handle1, handle2, handle3;
 
-static void setup_mmap_tests()
+static void setup_mmap_tests(void)
 {
     if (start == 0) {
         const esp_partition_t *part = get_test_data_partition();

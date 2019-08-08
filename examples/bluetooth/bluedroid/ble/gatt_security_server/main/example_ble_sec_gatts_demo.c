@@ -25,7 +25,7 @@
 #define HEART_PROFILE_NUM                         1
 #define HEART_PROFILE_APP_IDX                     0
 #define ESP_HEART_RATE_APP_ID                     0x55
-#define EXCAMPLE_DEVICE_NAME                      "ESP_BLE_SECURITY"
+#define EXAMPLE_DEVICE_NAME                       "ESP_BLE_SECURITY"
 #define HEART_RATE_SVC_INST_ID                    0
 
 #define GATTS_DEMO_CHAR_VAL_LEN_MAX               0x40
@@ -400,7 +400,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event,
     ESP_LOGV(GATTS_TABLE_TAG, "event = %x\n",event);
     switch (event) {
         case ESP_GATTS_REG_EVT:
-            esp_ble_gap_set_device_name(EXCAMPLE_DEVICE_NAME);
+            esp_ble_gap_set_device_name(EXAMPLE_DEVICE_NAME);
             //generate a resolvable random address
             esp_ble_gap_config_local_privacy(true);
             esp_ble_gatts_create_attr_tab(heart_rate_gatt_db, gatts_if,
@@ -497,7 +497,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     } while (0);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

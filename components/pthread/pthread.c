@@ -168,12 +168,12 @@ esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p)
     return ESP_ERR_NOT_FOUND;
 }
 
-static int get_default_pthread_core()
+static int get_default_pthread_core(void)
 {
     return CONFIG_PTHREAD_TASK_CORE_DEFAULT == -1 ? tskNO_AFFINITY : CONFIG_PTHREAD_TASK_CORE_DEFAULT;
 }
 
-esp_pthread_cfg_t esp_pthread_get_default_config()
+esp_pthread_cfg_t esp_pthread_get_default_config(void)
 {
     esp_pthread_cfg_t cfg = {
         .stack_size = CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT,
@@ -822,6 +822,6 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 }
 
 /* Hook function to force linking this file */
-void pthread_include_pthread_impl()
+void pthread_include_pthread_impl(void)
 {
 }

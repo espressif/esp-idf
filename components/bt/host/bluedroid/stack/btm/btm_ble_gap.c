@@ -2017,7 +2017,7 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT8 type, UINT8 *p_length)
 **                     BTM_BLE_GENRAL_DISCOVERABLE
 **
 *******************************************************************************/
-UINT16 BTM_BleReadDiscoverability()
+UINT16 BTM_BleReadDiscoverability(void)
 {
     BTM_TRACE_API("%s\n", __FUNCTION__);
 
@@ -2034,7 +2034,7 @@ UINT16 BTM_BleReadDiscoverability()
 ** Returns          BTM_BLE_NON_CONNECTABLE or BTM_BLE_CONNECTABLE
 **
 *******************************************************************************/
-UINT16 BTM_BleReadConnectability()
+UINT16 BTM_BleReadConnectability(void)
 {
     BTM_TRACE_API ("%s\n", __FUNCTION__);
 

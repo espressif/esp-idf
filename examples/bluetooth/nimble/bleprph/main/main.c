@@ -93,7 +93,7 @@ bleprph_advertise(void)
                    BLE_HS_ADV_F_BREDR_UNSUP;
 
     /* Indicate that the TX power level field should be included; have the
-     * stack fill this value automatically.  This is done by assiging the
+     * stack fill this value automatically.  This is done by assigning the
      * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
      */
     fields.tx_pwr_lvl_is_present = 1;
@@ -135,7 +135,7 @@ bleprph_advertise(void)
  *
  * @param event                 The type of event being signalled.
  * @param ctxt                  Various information pertaining to the event.
- * @param arg                   Application-specified argument; unuesd by
+ * @param arg                   Application-specified argument; unused by
  *                                  bleprph.
  *
  * @return                      0 if the application successfully handled the

@@ -271,7 +271,7 @@ extern esp_flash_t *esp_flash_default_chip;
  *
  * Called by OS startup code. You do not need to call this in your own applications.
  */
-esp_err_t esp_flash_init_default_chip();
+esp_err_t esp_flash_init_default_chip(void);
 
 /**
  *  Enable OS-level SPI flash protections in IDF
@@ -280,7 +280,7 @@ esp_err_t esp_flash_init_default_chip();
  *
  * @return ESP_OK if success, otherwise failed. See return value of ``esp_flash_init_os_functions``.
  */
-esp_err_t esp_flash_app_init();
+esp_err_t esp_flash_app_init(void);
 
 /**
  *  Enable OS-level SPI flash for a specific chip.

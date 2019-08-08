@@ -40,9 +40,9 @@ $ tree examples/bluetooth/esp_ble_mesh/ble_mesh/ble_mesh_wifi_coexist
 ├── Makefile    /* Compiling parameters for the demo */
 ├── README.md   /* Quick start guide */
 ├── build
-├── sdkconfig      /* Current parameters of `make menuconfig` */
-├── sdkconfig.defaults   /* Default parameters of `make menuconfig` */
-├── sdkconfig.old      /* Previously saved parameters of `make menuconfig` */
+├── sdkconfig      /* Current parameters of `idf.py menuconfig` */
+├── sdkconfig.defaults   /* Default parameters of `idf.py menuconfig` */
+├── sdkconfig.old      /* Previously saved parameters of `idf.py menuconfig` */
 └── tutorial         /* More in-depth information about the demo */
 ```
 

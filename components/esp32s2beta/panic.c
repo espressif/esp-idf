@@ -29,6 +29,7 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 #include "soc/cpu.h"
+#include "soc/soc_memory_layout.h"
 #include "soc/rtc.h"
 #include "soc/rtc_wdt.h"
 

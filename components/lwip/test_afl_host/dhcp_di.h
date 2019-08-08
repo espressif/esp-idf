@@ -23,7 +23,7 @@ static void dhcp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_a
 
 void (*dhcp_test_static_dhcp_recv)(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) = NULL;
 
-void dhcp_test_init_di()
+void dhcp_test_init_di(void)
 {
     dhcp_test_static_dhcp_recv = dhcp_recv;
 }

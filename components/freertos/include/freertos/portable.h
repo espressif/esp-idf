@@ -181,13 +181,13 @@ void vPortSetStackWatchpoint( void* pxStackStart );
  * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
  * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
  */
-BaseType_t xPortInIsrContext();
+BaseType_t xPortInIsrContext(void);
 
 /*
  * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
  * before calling into high prio ISR context.
  */
-BaseType_t xPortInterruptedFromISRContext();
+BaseType_t xPortInterruptedFromISRContext(void);
 
 /*
  * The structures and methods of manipulating the MPU are contained within the
@@ -203,7 +203,7 @@ BaseType_t xPortInterruptedFromISRContext();
 #endif
 
 /* Multi-core: get current core ID */
-static inline uint32_t IRAM_ATTR xPortGetCoreID() {
+static inline uint32_t IRAM_ATTR xPortGetCoreID(void) {
     uint32_t id;
     __asm__ __volatile__ (
         "rsr.prid %0\n"

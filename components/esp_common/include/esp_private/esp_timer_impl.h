@@ -38,7 +38,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler);
 /**
  * @brief Deinitialize platform specific layer of esp_timer
  */
-void esp_timer_impl_deinit();
+void esp_timer_impl_deinit(void);
 
 /**
  * @brief Set up the timer interrupt to fire at a particular time
@@ -73,7 +73,7 @@ void esp_timer_impl_advance(int64_t time_us);
  * @brief Get time, in microseconds, since esp_timer_impl_init was called
  * @return timestamp in microseconds
  */
-uint64_t esp_timer_impl_get_time();
+uint64_t esp_timer_impl_get_time(void);
 
 /**
  * @brief Get minimal timer period, in microseconds
@@ -83,7 +83,7 @@ uint64_t esp_timer_impl_get_time();
  * callback, preventing other tasks from running.
  * @return minimal period of periodic timer, in microseconds
  */
-uint64_t esp_timer_impl_get_min_period_us();
+uint64_t esp_timer_impl_get_min_period_us(void);
 
 /**
  * @brief obtain internal critical section used esp_timer implementation
@@ -92,10 +92,10 @@ uint64_t esp_timer_impl_get_min_period_us();
  * the calls. Should be treated in the same way as a spinlock.
  * Call esp_timer_impl_unlock to release the lock
  */
-void esp_timer_impl_lock();
+void esp_timer_impl_lock(void);
 
 
 /**
  * @brief counterpart of esp_timer_impl_lock
  */
-void esp_timer_impl_unlock();
+void esp_timer_impl_unlock(void);

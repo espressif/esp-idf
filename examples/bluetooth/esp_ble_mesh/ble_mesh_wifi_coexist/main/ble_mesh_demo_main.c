@@ -829,7 +829,7 @@ static esp_err_t bluetooth_init(void)
 
 #define WIFI_CONNECTED_BIT BIT0
 
-static void initialize_console()
+static void initialize_console(void)
 {
     /* Disable buffering on stdin and stdout */
     setvbuf(stdin, NULL, _IONBF, 0);

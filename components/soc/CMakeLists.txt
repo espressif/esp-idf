@@ -17,10 +17,16 @@ list(APPEND srcs
     "src/hal/spi_slave_hal.c"
     "src/hal/spi_slave_hal_iram.c"
     "src/soc_include_legacy_warn.c"
-    "src/hal/spi_flash_hal.c"
-    "src/hal/spi_flash_hal_iram.c"
     )
 
+# TODO: SPI Flash HAL for ESP32S2Beta also
+if(CONFIG_IDF_TARGET_ESP32)
+    list(APPEND srcs "src/hal/spi_flash_hal.c"
+                     "src/hal/spi_flash_hal_iram.c"
+                     )
+endif()
+
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "${include_dirs}"
-                    LDFRAGMENTS linker.lf)
+                       INCLUDE_DIRS "${include_dirs}"
+                       priv_requires ${soc_name}
+                       LDFRAGMENTS linker.lf)

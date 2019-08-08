@@ -28,7 +28,7 @@ static const char *TAG = "bootloader_mmap";
 
 static spi_flash_mmap_handle_t map;
 
-uint32_t bootloader_mmap_get_free_pages()
+uint32_t bootloader_mmap_get_free_pages(void)
 {
     return spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
 }
@@ -127,7 +127,7 @@ static bool mapped;
 // Current bootloader mapping (ab)used for bootloader_read()
 static uint32_t current_read_mapping = UINT32_MAX;
 
-uint32_t bootloader_mmap_get_free_pages()
+uint32_t bootloader_mmap_get_free_pages(void)
 {
     /**
      * Allow mapping up to 50 of the 51 available MMU blocks (last one used for reads)

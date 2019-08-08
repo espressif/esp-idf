@@ -174,7 +174,7 @@ static DRAM_ATTR esp_flash_t default_chip = {
 
 esp_flash_t *esp_flash_default_chip = NULL;
 
-esp_err_t esp_flash_init_default_chip()
+esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
     //the host is already initialized, only do init for the data and load it to the host
@@ -200,7 +200,7 @@ esp_err_t esp_flash_init_default_chip()
     return ESP_OK;
 }
 
-esp_err_t esp_flash_app_init()
+esp_err_t esp_flash_app_init(void)
 {
     return esp_flash_init_os_functions(&default_chip, 0);
 }

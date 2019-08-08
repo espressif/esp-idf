@@ -39,7 +39,7 @@ static void lwip_stop_socket_select_isr(void *sem, BaseType_t *woken)
     }
 }
 
-static void *lwip_get_socket_select_semaphore()
+static void *lwip_get_socket_select_semaphore(void)
 {
     /* Calling this from the same process as select() will ensure that the semaphore won't be allocated from
      * ISR (lwip_stop_socket_select_isr).
@@ -57,7 +57,7 @@ static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
     return lwip_ioctl(fd, cmd, va_arg(args, void *));
 }
 
-void esp_vfs_lwip_sockets_register()
+void esp_vfs_lwip_sockets_register(void)
 {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,

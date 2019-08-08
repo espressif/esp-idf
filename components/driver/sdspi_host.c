@@ -225,12 +225,12 @@ static esp_err_t init_spi_dev(int slot, int clock_speed_hz)
     return spi_bus_add_device((spi_host_device_t) slot, &devcfg, &s_slots[slot].handle);
 }
 
-esp_err_t sdspi_host_init()
+esp_err_t sdspi_host_init(void)
 {
     return ESP_OK;
 }
 
-esp_err_t sdspi_host_deinit()
+esp_err_t sdspi_host_deinit(void)
 {
     for (size_t i = 0; i < sizeof(s_slots)/sizeof(s_slots[0]); ++i) {
         if (s_slots[i].handle) {

@@ -97,6 +97,6 @@ typedef struct {
     );
 } hci_packet_parser_t;
 
-const hci_packet_parser_t *hci_packet_parser_get_interface();
+const hci_packet_parser_t *hci_packet_parser_get_interface(void);
 
 #endif /*_HCI_PACKET_PARSER_H_*/
