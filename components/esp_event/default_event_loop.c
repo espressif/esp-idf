@@ -14,6 +14,7 @@
 
 #include "esp_event.h"
 #include "esp_event_internal.h"
+#include "esp_task.h"
 
 /* ------------------------- Static Variables ------------------------------- */
 
@@ -100,7 +101,7 @@ esp_err_t esp_event_loop_delete_default()
     }
 
     esp_err_t err;
-    
+
     err = esp_event_loop_delete(s_default_loop);
 
     if (err != ESP_OK) {

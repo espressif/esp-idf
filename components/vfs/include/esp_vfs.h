@@ -113,6 +113,14 @@ typedef struct
         ssize_t (*read)(int fd, void * dst, size_t size);
     };
     union {
+        ssize_t (*pread_p)(void *ctx, int fd, void * dst, size_t size, off_t offset);
+        ssize_t (*pread)(int fd, void * dst, size_t size, off_t offset);
+    };
+    union {
+        ssize_t (*pwrite_p)(void *ctx, int fd, const void *src, size_t size, off_t offset);
+        ssize_t (*pwrite)(int fd, const void *src, size_t size, off_t offset);
+    };
+    union {
         int (*open_p)(void* ctx, const char * path, int flags, int mode);
         int (*open)(const char * path, int flags, int mode);
     };
@@ -196,7 +204,7 @@ typedef struct
         int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);
         int (*utime)(const char *path, const struct utimbuf *times);
     };
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
     union {
         int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);
         int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);
@@ -225,7 +233,7 @@ typedef struct
         int (*tcsendbreak_p)(void *ctx, int fd, int duration);
         int (*tcsendbreak)(int fd, int duration);
     };
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
 
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem);
@@ -413,6 +421,35 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken);
  *
  */
 int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout);
+
+
+/**
+ *
+ * @brief Implements the VFS layer of POSIX pread()
+ *
+ * @param fd         File descriptor used for read
+ * @param dst        Pointer to the buffer where the output will be written
+ * @param size       Number of bytes to be read
+ * @param offset     Starting offset of the read
+ *
+ * @return           A positive return value indicates the number of bytes read. -1 is return on failure and errno is
+ *                   set accordingly.
+ */
+ssize_t esp_vfs_pread(int fd, void *dst, size_t size, off_t offset);
+
+/**
+ *
+ * @brief Implements the VFS layer of POSIX pwrite()
+ *
+ * @param fd         File descriptor used for write
+ * @param src        Pointer to the buffer from where the output will be read
+ * @param size       Number of bytes to write
+ * @param offset     Starting offset of the write
+ *
+ * @return           A positive return value indicates the number of bytes written. -1 is return on failure and errno is
+ *                   set accordingly.
+ */
+ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset);
 
 #ifdef __cplusplus
 } // extern "C"

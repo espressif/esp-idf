@@ -14,24 +14,10 @@
 
 #include <string.h>
 #include "esp_event.h"
-#include "esp_mesh.h"
 
-/* mesh event callback handler */
-mesh_event_cb_t g_mesh_event_cb = NULL;
+ESP_EVENT_DEFINE_BASE(MESH_EVENT);
 
-esp_err_t esp_event_mesh_hook(system_event_t *event)
+esp_err_t esp_mesh_send_event_internal(int32_t event_id, void* event_data, size_t event_data_size)
 {
-    if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_LOST_IP) {
-        if (g_mesh_event_cb) {
-            mesh_event_t mevent;
-            if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) {
-                mevent.id = MESH_EVENT_ROOT_GOT_IP;
-                memcpy(&mevent.info.got_ip, &event->event_info.got_ip, sizeof(system_event_sta_got_ip_t));
-            } else {
-                mevent.id = MESH_EVENT_ROOT_LOST_IP;
-            }
-            g_mesh_event_cb(mevent);
-        }
-    }
-    return ESP_OK;
+    return esp_event_post(MESH_EVENT, event_id, event_data, event_data_size, 0);
 }

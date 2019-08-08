@@ -714,11 +714,6 @@ struct in6_pktinfo {
   unsigned int ipi6_ifindex;        /* send/recv interface index */
 };
 
-struct in_pktinfo {
-  int ipi_ifindex;
-  struct in_addr ipi_spec_dst;
-  struct in_addr ipi_addr;
-};
 #endif
 
 #if !defined(WITH_CONTIKI) && !defined(SOL_IP)

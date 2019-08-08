@@ -36,6 +36,8 @@
 
 #define UART_NUM SOC_UART_NUM
 
+#define UART_NUM SOC_UART_NUM
+
 #define XOFF (char)0x13
 #define XON (char)0x11
 
@@ -596,19 +598,19 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void *), void *arg,
     int ret;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    switch (uart_num) {
-    case UART_NUM_1:
-        ret = esp_intr_alloc(ETS_UART1_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
-        break;
+    switch(uart_num) {
+        case UART_NUM_1:
+            ret=esp_intr_alloc(ETS_UART1_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
+            break;
 #if UART_NUM > 2
-    case UART_NUM_2:
-        ret = esp_intr_alloc(ETS_UART2_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
-        break;
+        case UART_NUM_2:
+            ret=esp_intr_alloc(ETS_UART2_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
+            break;
 #endif
-    case UART_NUM_0:
-    default:
-        ret = esp_intr_alloc(ETS_UART0_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
-        break;
+        case UART_NUM_0:
+            default:
+            ret=esp_intr_alloc(ETS_UART0_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
+            break;
     }
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ret;
@@ -640,34 +642,34 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     UART_CHECK((cts_io_num < 0 || (GPIO_IS_VALID_GPIO(cts_io_num))), "cts_io_num error", ESP_FAIL);
 
     int tx_sig, rx_sig, rts_sig, cts_sig;
-    switch (uart_num) {
-    case UART_NUM_0:
-        tx_sig = U0TXD_OUT_IDX;
-        rx_sig = U0RXD_IN_IDX;
-        rts_sig = U0RTS_OUT_IDX;
-        cts_sig = U0CTS_IN_IDX;
-        break;
-    case UART_NUM_1:
-        tx_sig = U1TXD_OUT_IDX;
-        rx_sig = U1RXD_IN_IDX;
-        rts_sig = U1RTS_OUT_IDX;
-        cts_sig = U1CTS_IN_IDX;
-        break;
+    switch(uart_num) {
+        case UART_NUM_0:
+            tx_sig = U0TXD_OUT_IDX;
+            rx_sig = U0RXD_IN_IDX;
+            rts_sig = U0RTS_OUT_IDX;
+            cts_sig = U0CTS_IN_IDX;
+            break;
+        case UART_NUM_1:
+            tx_sig = U1TXD_OUT_IDX;
+            rx_sig = U1RXD_IN_IDX;
+            rts_sig = U1RTS_OUT_IDX;
+            cts_sig = U1CTS_IN_IDX;
+            break;
 #if UART_NUM > 2
-    case UART_NUM_2:
-        tx_sig = U2TXD_OUT_IDX;
-        rx_sig = U2RXD_IN_IDX;
-        rts_sig = U2RTS_OUT_IDX;
-        cts_sig = U2CTS_IN_IDX;
-        break;
+        case UART_NUM_2:
+            tx_sig = U2TXD_OUT_IDX;
+            rx_sig = U2RXD_IN_IDX;
+            rts_sig = U2RTS_OUT_IDX;
+            cts_sig = U2CTS_IN_IDX;
+            break;
 #endif
-    case UART_NUM_MAX:
-    default:
-        tx_sig = U0TXD_OUT_IDX;
-        rx_sig = U0RXD_IN_IDX;
-        rts_sig = U0RTS_OUT_IDX;
-        cts_sig = U0CTS_IN_IDX;
-        break;
+        case UART_NUM_MAX:
+            default:
+            tx_sig = U0TXD_OUT_IDX;
+            rx_sig = U0RXD_IN_IDX;
+            rts_sig = U0RTS_OUT_IDX;
+            cts_sig = U0CTS_IN_IDX;
+            break;
     }
     if (tx_io_num >= 0) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
@@ -735,7 +737,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     } else if (uart_num == UART_NUM_1) {
         periph_module_enable(PERIPH_UART1_MODULE);
 #if UART_NUM > 2
-    } else if (uart_num == UART_NUM_2) {
+    } else if(uart_num == UART_NUM_2) {
         periph_module_enable(PERIPH_UART2_MODULE);
 #endif
     }
@@ -775,10 +777,10 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
 #if CONFIG_IDF_TARGET_ESP32
         //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
         //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
-        if (UART[uart_num]->conf0.tick_ref_always_on == 0) {
-            UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh * UART_TOUT_REF_FACTOR_DEFAULT) & UART_RX_TOUT_THRHD_V);
+        if(UART[uart_num]->conf0.tick_ref_always_on == 0) {
+            UART[uart_num]->conf1.rx_tout_thrhd = (intr_conf->rx_timeout_thresh * UART_TOUT_REF_FACTOR_DEFAULT);
         } else {
-            UART[uart_num]->conf1.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
+            UART[uart_num]->conf1.rx_tout_thrhd = intr_conf->rx_timeout_thresh;
         }
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
         UART[uart_num]->mem_conf.rx_tout_thrhd = ((intr_conf->rx_timeout_thresh) & UART_RX_TOUT_THRHD_V);
@@ -822,14 +824,19 @@ static void uart_rx_intr_handler_default(void *param)
     uart_obj_t *p_uart = (uart_obj_t *) param;
     uint8_t uart_num = p_uart->uart_num;
     uart_dev_t *uart_reg = UART[uart_num];
-    int rx_fifo_len = uart_reg->status.rxfifo_cnt;
+    int rx_fifo_len = 0;
     uint8_t buf_idx = 0;
-    uint32_t uart_intr_status = UART[uart_num]->int_st.val;
+    uint32_t uart_intr_status = 0;
     uart_event_t uart_event;
     portBASE_TYPE HPTaskAwoken = 0;
     static uint8_t pat_flg = 0;
-    while (uart_intr_status != 0x0) {
-        buf_idx = 0;
+    while(1) {
+        uart_intr_status = uart_reg->int_st.val;
+        // The `continue statement` may cause the interrupt to loop infinitely
+        // we exit the interrupt here
+        if(uart_intr_status == 0) {
+            break;
+        }
         uart_event.type = UART_EVENT_MAX;
         if (uart_intr_status & UART_TXFIFO_EMPTY_INT_ST_M) {
             uart_clear_intr_status(uart_num, UART_TXFIFO_EMPTY_INT_CLR_M);
@@ -841,15 +848,12 @@ static void uart_rx_intr_handler_default(void *param)
             if (p_uart->tx_waiting_fifo == true && p_uart->tx_buf_size == 0) {
                 p_uart->tx_waiting_fifo = false;
                 xSemaphoreGiveFromISR(p_uart->tx_fifo_sem, &HPTaskAwoken);
-                if (HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR();
-                }
             } else {
                 //We don't use TX ring buffer, because the size is zero.
                 if (p_uart->tx_buf_size == 0) {
                     continue;
                 }
-                int tx_fifo_rem = UART_FIFO_LEN - UART[uart_num]->status.txfifo_cnt;
+                int tx_fifo_rem = UART_FIFO_LEN - uart_reg->status.txfifo_cnt;
                 bool en_tx_flg = false;
                 //We need to put a loop here, in case all the buffer items are very short.
                 //That would cause a watch_dog reset because empty interrupt happens so often.
@@ -870,10 +874,7 @@ static void uart_rx_intr_handler_default(void *param)
                                 }
                                 //We have saved the data description from the 1st item, return buffer.
                                 vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
-                                if (HPTaskAwoken == pdTRUE) {
-                                    portYIELD_FROM_ISR();
-                                }
-                            } else if (p_uart->tx_ptr == NULL) {
+                            }else if(p_uart->tx_ptr == NULL) {
                                 //Update the TX item pointer, we will need this to return item to buffer.
                                 p_uart->tx_ptr =  (uint8_t *) p_uart->tx_head;
                                 en_tx_flg = true;
@@ -904,9 +905,6 @@ static void uart_rx_intr_handler_default(void *param)
                         if (p_uart->tx_len_cur == 0) {
                             //Return item to ring buffer.
                             vRingbufferReturnItemFromISR(p_uart->tx_ring_buf, p_uart->tx_head, &HPTaskAwoken);
-                            if (HPTaskAwoken == pdTRUE) {
-                                portYIELD_FROM_ISR();
-                            }
                             p_uart->tx_head = NULL;
                             p_uart->tx_ptr = NULL;
                             //Sending item done, now we need to send break if there is a record.
@@ -948,12 +946,8 @@ static void uart_rx_intr_handler_default(void *param)
             }
             if (p_uart->rx_buffer_full_flg == false) {
                 //We have to read out all data in RX FIFO to clear the interrupt signal
-                while (buf_idx < rx_fifo_len) {
-#if CONFIG_IDF_TARGET_ESP32
-                    p_uart->rx_data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-                    p_uart->rx_data_buf[buf_idx++] = READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
-#endif
+                for(buf_idx = 0; buf_idx < rx_fifo_len; buf_idx++) {
+                    p_uart->rx_data_buf[buf_idx] = uart_reg->fifo.rw_byte;
                 }
                 uint8_t pat_chr = uart_reg->at_cmd_char.data;
                 int pat_num = uart_reg->at_cmd_char.char_num;
@@ -1013,9 +1007,6 @@ static void uart_rx_intr_handler_default(void *param)
                     p_uart->rx_buffered_len += p_uart->rx_stash_len;
                     UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                 }
-                if (HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR();
-                }
             } else {
                 uart_disable_intr_mask_from_isr(uart_num, UART_RXFIFO_FULL_INT_ENA_M | UART_RXFIFO_TOUT_INT_ENA_M);
                 uart_clear_intr_status(uart_num, UART_RXFIFO_FULL_INT_CLR_M | UART_RXFIFO_TOUT_INT_CLR_M);
@@ -1071,9 +1062,6 @@ static void uart_rx_intr_handler_default(void *param)
                 p_uart->tx_waiting_brk = 0;
             } else {
                 xSemaphoreGiveFromISR(p_uart->tx_brk_sem, &HPTaskAwoken);
-                if (HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR();
-                }
             }
         } else if (uart_intr_status & UART_TX_BRK_IDLE_DONE_INT_ST_M) {
             uart_disable_intr_mask_from_isr(uart_num, UART_TX_BRK_IDLE_DONE_INT_ENA_M);
@@ -1104,9 +1092,6 @@ static void uart_rx_intr_handler_default(void *param)
                 UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             }
             xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
-            if (HPTaskAwoken == pdTRUE) {
-                portYIELD_FROM_ISR();
-            }
         } else {
             uart_reg->int_clr.val = uart_intr_status; /*simply clear all other intr status*/
             uart_event.type = UART_EVENT_MAX;
@@ -1116,11 +1101,10 @@ static void uart_rx_intr_handler_default(void *param)
             if (pdFALSE == xQueueSendFromISR(p_uart->xQueueUart, (void * )&uart_event, &HPTaskAwoken)) {
                 ESP_EARLY_LOGV(UART_TAG, "UART event queue full");
             }
-            if (HPTaskAwoken == pdTRUE) {
-                portYIELD_FROM_ISR();
-            }
         }
-        uart_intr_status = uart_reg->int_st.val;
+    }
+    if(HPTaskAwoken == pdTRUE) {
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -1137,7 +1121,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         return ESP_ERR_TIMEOUT;
     }
     xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, 0);
-    if (UART[uart_num]->status.txfifo_cnt == 0) {
+    typeof(UART0.status) status = UART[uart_num]->status;
+    //Wait txfifo_cnt = 0, and the transmitter state machine is in idle state.
+    if(status.txfifo_cnt == 0 && status.st_utx_out == 0) {
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
@@ -1552,15 +1538,15 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     p_uart_obj[uart_num] = NULL;
 
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM ) {
-        if (uart_num == UART_NUM_0) {
-            periph_module_disable(PERIPH_UART0_MODULE);
-        } else if (uart_num == UART_NUM_1) {
-            periph_module_disable(PERIPH_UART1_MODULE);
+       if(uart_num == UART_NUM_0) {
+           periph_module_disable(PERIPH_UART0_MODULE);
+       } else if(uart_num == UART_NUM_1) {
+           periph_module_disable(PERIPH_UART1_MODULE);
 #if UART_NUM > 2
-        } else if (uart_num == UART_NUM_2) {
-            periph_module_disable(PERIPH_UART2_MODULE);
+       } else if(uart_num == UART_NUM_2) {
+           periph_module_disable(PERIPH_UART2_MODULE);
 #endif
-        }
+       }
     }
     return ESP_OK;
 }
@@ -1646,6 +1632,8 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
     // transmission time of one symbol (~11 bit) on current baudrate
     if (tout_thresh > 0) {
 #if CONFIG_IDF_TARGET_ESP32
+        //ESP32 hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
+        //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
         if (UART[uart_num]->conf0.tick_ref_always_on == 0) {
             UART[uart_num]->conf1.rx_tout_thrhd = ((tout_thresh * UART_TOUT_REF_FACTOR_DEFAULT) & UART_RX_TOUT_THRHD_V);
         } else {

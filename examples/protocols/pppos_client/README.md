@@ -32,7 +32,7 @@ You can also try other modules as long as they embedded PPP protocol.
 
 ### Configure the project
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
+Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
 
 - Choose the modem module in `Choose supported modem device(DCE)` option, currently we only support BG96 and SIM800L.
 - Set the access point name in `Set Access Point Name(APN)` option, which should depend on the operator of your SIM card.
@@ -44,7 +44,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
 
 ### Build and Flash
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system.
+Run `idf.py -p PORT flash monitor` to build and flash the project..
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

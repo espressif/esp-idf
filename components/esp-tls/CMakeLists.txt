@@ -1,7 +1,5 @@
-set(COMPONENT_SRCS "esp_tls.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_REQUIRES mbedtls)
-set(COMPONENT_PRIV_REQUIRES lwip nghttp)
-
-register_component()
+idf_component_register(SRCS "esp_tls.c"
+                    INCLUDE_DIRS "."
+                    PRIVATE_INCLUDE_DIRS "private_include"
+                    REQUIRES mbedtls
+                    PRIV_REQUIRES lwip nghttp)

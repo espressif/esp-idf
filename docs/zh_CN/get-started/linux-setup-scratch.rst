@@ -1,63 +1,63 @@
-**********************************
+******************************************
 从零开始设置 Linux 环境下的工具链
-**********************************
+******************************************
+
 :link_to_translation:`en:[English]`
 
-.. note::
+除了从乐鑫官网直接下载已编译好的二进制工具链外，你还可以按照本文介绍，从头开始设置你自己的工具链。如需快速使用已编译好的二进制工具链，可回到 :doc:`linux-setup` 章节。
 
-    安装工具链的标准流程可以通过阅读文档 :doc:`Linux 平台工具链的标准设置 <linux-setup>` 来获得，:ref:`工具链的自定义设置 <get-started-customized-setup>` 章节会介绍哪些情况下我们必须要重新定义工具链。
+安装准备
+=====================
 
+编译 ESP-IDF 需要以下软件包：
 
-安装必要的工具
-==============
+- CentOS 7::
 
-要想使用 ESP-IDF 进行编译，您需要获取以下软件包：
+    sudo yum install git wget ncurses-devel flex bison gperf python pyserial python-pyelftools cmake ninja-build ccache
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-click python-cryptography python-future python-pyparsing python-pyelftools cmake ninja-build ccache
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
+    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-click python2-cryptography python2-future python2-pyparsing python2-pyelftools cmake ninja ccache
+
 
 .. note::
-
-    一些旧的（2014年之前）Linux 发行版中使用的 ``pyserial`` 版本可能是 2.x ， ESP-IDF并不支持。
-    在这种情况下，请参考 :ref:`安装依赖的 Python 软件包 <get-started-get-packages>` 章节，通过 ``pip`` 工具来安装支持的版本。
+    使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早版本的 Linux 可能需要升级才能向后移植仓库，或安装 "cmake3" 软件包，而不是安装 "cmake"。
 
 从源代码编译工具链
-==================
+=================================
 
-- 安装依赖:
+- 安装依赖：
 
   - CentOS 7::
 
-        sudo yum install gawk gperf grep gettext ncurses-devel python python-devel automake bison flex texinfo help2man libtool
+        sudo yum install gawk gperf grep gettext ncurses-devel python python-devel automake bison flex texinfo help2man libtool make
 
   - Ubuntu pre-16.04::
 
-        sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool
+        sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool make
 
-  - Ubuntu 16.04::
+  - Ubuntu 16.04 及以上::
 
-        sudo apt-get install gawk gperf grep gettext python python-dev automake bison flex texinfo help2man libtool libtool-bin
+        sudo apt-get install gawk gperf grep gettext python python-dev automake bison flex texinfo help2man libtool libtool-bin make
 
   - Debian 9::
 
-        sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool libtool-bin
+        sudo apt-get install gawk gperf grep gettext libncurses-dev python python-dev automake bison flex texinfo help2man libtool libtool-bin make
 
   - Arch::
 
         TODO
 
-新建工作目录，然后进入::
+创建工作目录，并进入该目录::
 
   mkdir -p ~/esp
   cd ~/esp
 
-
-下载 ``crosstool-NG`` 然后编译:
+下载并编译 ``crosstool-NG`` ：
 
 .. include:: /_build/inc/scratch-build-code.inc
 
@@ -67,10 +67,11 @@
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-编译得到的工具链会被保存到 ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``。根据 :ref:`Linux 下设置环境变量的标准方法 <setup-linux-toolchain-add-it-to-path>` 中的介绍，将工具链添加到 ``PATH`` 中。
+编译得到的工具链会被保存到 ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``。请按照 :ref:`标准设置指南 <setup-linux-toolchain-add-it-to-path>` 的介绍，将工具链添加到 ``PATH``。
 
 
-下一步
-======
+后续步骤
+==========
 
-继续设置开发环境，请前往 :ref:`获取 ESP-IDF <get-started-get-esp-idf>` 章节。
+继续设置开发环境，请前往 :ref:`get-started-get-esp-idf` 章节。
+

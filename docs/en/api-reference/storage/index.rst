@@ -15,4 +15,4 @@ Storage API
    Mass Manufacturing Utility <mass_mfg.rst>
 
 
-Example code for this API section is provided in :example:`storage` directory of ESP-IDF examples.
+Code examples for this API section are provided in the :example:`storage` directory of ESP-IDF examples.

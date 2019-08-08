@@ -1,24 +1,21 @@
 idf_build_get_property(soc_name IDF_TARGET)
 
 # TODO: add esp32sbeta support for efuse component
-if(NOT CONFIG_IDF_TARGET_ESP32)
-    return()
-endif()
+require_idf_targets(esp32)
 
-if(EXISTS "${COMPONENT_DIR}/${soc_name}")
-    include(${COMPONENT_DIR}/${soc_name}/sources.cmake)
-    spaces2list(EFUSE_SOC_SRCS)
-    add_prefix(COMPONENT_SRCS "${soc_name}/" ${EFUSE_SOC_SRCS})
-    set(COMPONENT_ADD_INCLUDEDIRS include ${soc_name}/include)
-endif()
+include(${COMPONENT_DIR}/${soc_name}/sources.cmake)
+spaces2list(EFUSE_SOC_SRCS)
+add_prefix(srcs "${soc_name}/" ${EFUSE_SOC_SRCS})
+set(include_dirs include ${soc_name}/include)
 
-list(APPEND COMPONENT_ADD_INCLUDEDIRS include)
-list(APPEND COMPONENT_SRCS "src/esp_efuse_api.c"
-                           "src/esp_efuse_fields.c"
-                           "src/esp_efuse_utility.c")
+list(APPEND srcs
+    "src/esp_efuse_api.c"
+    "src/esp_efuse_fields.c"
+    "src/esp_efuse_utility.c")
 
-set(COMPONENT_PRIV_REQUIRES bootloader_support soc)
-register_component()
+idf_component_register(SRCS "${srcs}"
+                    PRIV_REQUIRES bootloader_support soc spi_flash
+                    INCLUDE_DIRS "${include_dirs}")
 
 set(GEN_EFUSE_TABLE_ARG --max_blk_len ${CONFIG_EFUSE_MAX_BLK_LEN})
 

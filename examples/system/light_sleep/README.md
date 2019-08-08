@@ -17,17 +17,15 @@ The example also prints time spent in light sleep mode to illustrate that timeke
 
 This example can be used with any ESP32 development board. Most boards have a button attached to GPIO0, often labelled "BOOT". If the board does not have such button, an external button can be connected, along with a 10k pull-up resistor, and a 100nF capacitor to ground for debouncing.
 
-### Configure the Project
-
-Run `make menuconfig` and set serial port under Serial Flasher Options.
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
+
+(Replace PORT with the name of the serial port to use.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

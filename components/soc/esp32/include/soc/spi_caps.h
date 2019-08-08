@@ -28,6 +28,15 @@
 #define SPI_IOMUX_PIN_NUM_HD    9
 
 #define HSPI_FUNC_NUM           1
+
+//For D2WD and PICO-D4 chip
+#define SPI_D2WD_PIN_NUM_MISO  17
+#define SPI_D2WD_PIN_NUM_MOSI  8
+#define SPI_D2WD_PIN_NUM_CLK   6
+#define SPI_D2WD_PIN_NUM_CS    16
+#define SPI_D2WD_PIN_NUM_WP    7
+#define SPI_D2WD_PIN_NUM_HD    11
+
 #define HSPI_IOMUX_PIN_NUM_MISO 12
 #define HSPI_IOMUX_PIN_NUM_MOSI 13
 #define HSPI_IOMUX_PIN_NUM_CLK  14
@@ -46,6 +55,8 @@
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 
 #define SOC_SPI_SUPPORT_AS_CS   1   //Support to toggle the CS while the clock toggles
+
 //#define SOC_SPI_SUPPORT_DDRCLK
 //#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
 //#define SOC_SPI_SUPPORT_CD_SIG
+

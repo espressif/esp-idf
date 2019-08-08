@@ -154,7 +154,6 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 #if (ESP_L2_TO_L3_COPY == 1)
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
-    ESP_STATS_DROP_INC(esp.wlanif_input_pbuf_fail);
     esp_wifi_internal_free_rx_buffer(eb);
     return;
   }
@@ -164,7 +163,6 @@ wlanif_input(struct netif *netif, void *buffer, u16_t len, void* eb)
 #else
   p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
   if (p == NULL){
-    ESP_STATS_DROP_INC(esp.wlanif_input_pbuf_fail);
     esp_wifi_internal_free_rx_buffer(eb);
     return;
   }
@@ -202,7 +200,7 @@ wlanif_init(struct netif *netif)
   /* Initialize interface hostname */
 
 #if ESP_LWIP
-  netif->hostname = "espressif";
+  netif->hostname = CONFIG_LWIP_LOCAL_HOSTNAME;
 #else
   netif->hostname = "lwip";
 #endif

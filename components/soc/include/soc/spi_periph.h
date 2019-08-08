@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
+
+//include soc related (generated) definitions
 #include "soc/spi_caps.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"

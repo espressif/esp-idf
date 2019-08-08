@@ -163,12 +163,14 @@ endfunction()
 
 # idf_build_component
 #
-# @brief Specify component directory for the build system to process.
+# @brief Present a directory that contains a component to the build system.
 #        Relative paths are converted to absolute paths with respect to current directory.
-#        Any component that needs to be processed has to be specified using this
-#        command before calling idf_build_process.
+#        All calls to this command must be performed before idf_build_process.
 #
-# @param[in] component_dir directory of the component to process
+# @note  This command does not guarantee that the component will be processed
+#        during build (see the COMPONENTS argument description for command idf_build_process)
+#
+# @param[in] component_dir directory of the component
 function(idf_build_component component_dir)
     idf_build_get_property(prefix __PREFIX)
     __component_add(${component_dir} ${prefix} 0)
@@ -195,7 +197,8 @@ function(__build_expand_requirements component_target)
     # Since there are circular dependencies, make sure that we do not infinitely
     # expand requirements for each component.
     idf_build_get_property(component_targets_seen __COMPONENT_TARGETS_SEEN)
-    if(component_target IN_LIST component_targets_seen)
+    __component_get_property(component_registered ${component_target} __COMPONENT_REGISTERED)
+    if(component_target IN_LIST component_targets_seen OR NOT component_registered)
         return()
     endif()
 
@@ -334,7 +337,16 @@ endfunction()
 # @param[in, optional] SDKCONFIG_DEFAULTS (single value) config defaults file to use for the build; defaults
 #                       to none (Kconfig defaults or previously generated config are used)
 # @param[in, optional] BUILD_DIR (single value) directory for build artifacts; defautls to CMAKE_BINARY_DIR
-# @param[in, optional] COMPONENTS (multivalue) starting components for trimming build
+# @param[in, optional] COMPONENTS (multivalue) select components to process among the components
+#                       known by the build system
+#                       (added via `idf_build_component`). This argument is used to trim the build.
+#                       Other components are automatically added if they are required
+#                       in the dependency chain, i.e.
+#                       the public and private requirements of the components in this list
+#                       are automatically added, and in
+#                       turn the public and private requirements of those requirements,
+#                       so on and so forth. If not specified, all components known to the build system
+#                       are processed.
 macro(idf_build_process target)
     set(options)
     set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG SDKCONFIG_DEFAULTS)
@@ -365,59 +377,21 @@ macro(idf_build_process target)
     # Check for required Python modules
     __build_check_python()
 
-    # Generate config values in different formats
-    idf_build_get_property(sdkconfig SDKCONFIG)
-    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
-    __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
-    __build_import_configs()
-
-    # Write the partial build properties to a temporary file.
-    # The path to this generated file is set to a short-lived build
-    # property BUILD_PROPERTIES_FILE.
-    idf_build_get_property(build_dir BUILD_DIR)
-    set(build_properties_file ${build_dir}/build_properties.temp.cmake)
-    idf_build_set_property(BUILD_PROPERTIES_FILE ${build_properties_file})
-    __build_write_properties(${build_properties_file})
+    idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
 
     # Perform early expansion of component CMakeLists.txt in CMake scripting mode.
     # It is here we retrieve the public and private requirements of each component.
     # It is also here we add the common component requirements to each component's
     # own requirements.
+    __component_get_requirements()
+
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
-    idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
-    idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
-    foreach(component_target ${component_targets})
-        get_property(component_dir TARGET ${component_target} PROPERTY COMPONENT_DIR)
-        __component_get_requirements(error reqs priv_reqs ${component_dir})
-        if(error)
-            message(FATAL_ERROR "${error}")
-        endif()
-
-        list(APPEND reqs "${common_reqs}")
-
-        # Remove duplicates and the component itself from its requirements
-        __component_get_property(alias ${component_target} COMPONENT_ALIAS)
-        __component_get_property(_name ${component_target} COMPONENT_NAME)
-
-        # Prevent component from linking to itself.
-        if(reqs)
-            list(REMOVE_DUPLICATES reqs)
-            list(REMOVE_ITEM reqs ${alias} ${_name})
-        endif()
-
-        if(priv_reqs)
-            list(REMOVE_DUPLICATES priv_reqs)
-            list(REMOVE_ITEM priv_reqs ${alias} ${_name})
-        endif()
-
-        __component_set_property(${component_target} REQUIRES "${reqs}")
-        __component_set_property(${component_target} PRIV_REQUIRES "${priv_reqs}")
-    endforeach()
-    idf_build_unset_property(BUILD_PROPERTIES_FILE)
-    file(REMOVE ${build_properties_file})
 
     # Finally, do component expansion. In this case it simply means getting a final list
     # of build component targets given the requirements set by each component.
+
+    # Check if we need to trim the components first, and build initial components list
+    # from that.
     if(__COMPONENTS)
         unset(component_targets)
         foreach(component ${__COMPONENTS})
@@ -432,15 +406,22 @@ macro(idf_build_process target)
     foreach(component_target ${component_targets})
         __build_expand_requirements(${component_target})
     endforeach()
-    unset(__COMPONENT_TARGETS_SEEN)
+    idf_build_unset_property(__COMPONENT_TARGETS_SEEN)
 
     # Get a list of common component requirements in component targets form (previously
     # we just have a list of component names)
+    idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
     foreach(common_req ${common_reqs})
         __component_get_target(component_target ${common_req})
         __component_get_property(lib ${component_target} COMPONENT_LIB)
         idf_build_set_property(___COMPONENT_REQUIRES_COMMON ${lib} APPEND)
     endforeach()
+
+    # Generate config values in different formats
+    idf_build_get_property(sdkconfig SDKCONFIG)
+    idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
+    __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
+    __build_import_configs()
 
     # Temporary trick to support both gcc5 and gcc8 builds
     if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
@@ -471,29 +452,8 @@ endmacro()
 # generating additional binary files, generating files related to flashing, etc.)
 function(idf_build_executable elf)
     # Propagate link dependencies from component library targets to the executable
-    idf_build_get_property(build_components BUILD_COMPONENTS)
-    foreach(build_component ${build_components})
-        get_target_property(type ${build_component} TYPE)
-        if(type STREQUAL "INTERFACE_LIBRARY")
-            get_target_property(iface_link_depends ${build_component} INTERFACE_LINK_DEPENDS)
-        else()
-            get_target_property(link_depends ${build_component} LINK_DEPENDS)
-            get_target_property(iface_link_depends ${build_component} INTERFACE_LINK_DEPENDS)
-        endif()
-        if(iface_link_depends)
-            list(APPEND _link_depends ${iface_link_depends})
-        endif()
-        if(link_depends)
-            list(APPEND _link_depends ${link_depends})
-        endif()
-    endforeach()
-
-    idf_build_get_property(link_depends LINK_DEPENDS)
-    if(link_depends)
-        list(APPEND _link_depends ${link_depends})
-    endif()
-
-    set_property(TARGET ${elf} APPEND PROPERTY LINK_DEPENDS "${_link_depends}")
+    idf_build_get_property(link_depends __LINK_DEPENDS)
+    set_property(TARGET ${elf} APPEND PROPERTY LINK_DEPENDS "${link_depends}")
 
     # Set the EXECUTABLE_NAME and EXECUTABLE properties since there are generator expression
     # from components that depend on it

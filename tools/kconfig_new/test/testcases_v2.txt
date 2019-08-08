@@ -1,6 +1,6 @@
 * Set TEST_BOOL, showing child items
 > { "TEST_BOOL" : true }
-< { "values" : { "TEST_BOOL" : true, "TEST_CHILD_STR" : "OHAI!", "TEST_CHILD_BOOL" : true }, "ranges": {"TEST_CONDITIONAL_RANGES": [0, 100]}, "visible": {"TEST_CHILD_BOOL" : true, "TEST_CHILD_STR" : true} }
+< { "values" : { "TEST_BOOL" : true, "TEST_CHILD_STR" : "OHAI!", "TEST_CHILD_BOOL" : true }, "ranges": {"TEST_CONDITIONAL_RANGES": [0, 100], "TEST_CONDITIONAL_HEX_RANGES": [0, 175]}, "visible": {"TEST_CHILD_BOOL" : true, "TEST_CHILD_STR" : true} }
 
 * Set TEST_CHILD_STR
 > { "TEST_CHILD_STR" : "Other value" }
@@ -8,7 +8,7 @@
 
 * Clear TEST_BOOL, hiding child items
 > { "TEST_BOOL" : false }
-< { "values" : { "TEST_BOOL" : false },  "ranges": {"TEST_CONDITIONAL_RANGES": [0, 10]}, "visible": { "TEST_CHILD_BOOL" : false, "TEST_CHILD_STR" : false } }
+< { "values" : { "TEST_BOOL" : false },  "ranges": {"TEST_CONDITIONAL_RANGES": [0, 10], "TEST_CONDITIONAL_HEX_RANGES": [16, 175]}, "visible": { "TEST_CHILD_BOOL" : false, "TEST_CHILD_STR" : false } }
 
 * Set TEST_CHILD_BOOL, invalid as parent is disabled
 > { "TEST_CHILD_BOOL" : false }

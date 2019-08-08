@@ -67,4 +67,4 @@ or
 
 ---
 
-There is a discussion on using ESP-IDF in custom CMake projects in the programming guide under `API Guides` -> `Build System (CMake)` -> `Using ESP-IDF in Custom CMake Projects`
+There is a discussion on using ESP-IDF in custom CMake projects in the programming guide under `API Guides` -> `Build System` -> `Using ESP-IDF in Custom CMake Projects`

@@ -380,24 +380,22 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     }
 #endif // BOOTLOADER_BUILD
 
-#ifndef BOOTLOADER_BUILD
-    uint32_t free_page_count = spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+    uint32_t free_page_count = bootloader_mmap_get_free_pages();
     ESP_LOGD(TAG, "free data page_count 0x%08x", free_page_count);
-    uint32_t offset_page = 0;
-    while (data_len >= free_page_count * SPI_FLASH_MMU_PAGE_SIZE) {
-        offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
-        err = process_segment_data(load_addr, data_addr, (free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE, do_load, sha_handle, checksum);
+
+    int32_t data_len_remain = data_len;
+    while (data_len_remain > 0) {
+        uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
+        /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
+        data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
+        err = process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum);
         if (err != ESP_OK) {
             return err;
         }
-        data_addr += (free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE;
-        data_len -= (free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE;
+        data_addr += data_len;
+        data_len_remain -= data_len;
     }
-#endif
-    err = process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum);
-    if (err != ESP_OK) {
-        return err;
-    }
+
     return ESP_OK;
 
 err:

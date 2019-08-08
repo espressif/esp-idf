@@ -1,4 +1,3 @@
-set(COMPONENT_SRCS "ulp.c"
-                   "ulp_macro.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-register_component()
+idf_component_register(SRCS "ulp.c"
+                            "ulp_macro.c"
+                    INCLUDE_DIRS include)

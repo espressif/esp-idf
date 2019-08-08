@@ -70,6 +70,21 @@ TEST_CASE("(WL) can read file", "[fatfs][wear_levelling]")
     test_teardown();
 }
 
+TEST_CASE("(WL) can read file with pread", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_create_file_with_text("/spiflash/hello.txt", fatfs_test_hello_str);
+    test_fatfs_pread_file("/spiflash/hello.txt");
+    test_teardown();
+}
+
+TEST_CASE("(WL) pwrite() works well", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_pwrite_file("/spiflash/hello.txt");
+    test_teardown();
+}
+
 TEST_CASE("(WL) can open maximum number of files", "[fatfs][wear_levelling]")
 {
     size_t max_files = FOPEN_MAX - 3; /* account for stdin, stdout, stderr */

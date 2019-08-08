@@ -12,7 +12,7 @@
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
-/* Can run 'make menuconfig' to choose the GPIO to blink,
+/* Can use project configuration menu (idf.py menuconfig) to choose the GPIO to blink,
    or you can edit the following line and set a number here.
 */
 #define BLINK_GPIO CONFIG_BLINK_GPIO

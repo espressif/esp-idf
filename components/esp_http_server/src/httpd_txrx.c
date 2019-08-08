@@ -553,16 +553,9 @@ int httpd_req_to_sockfd(httpd_req_t *r)
 static int httpd_sock_err(const char *ctx, int sockfd)
 {
     int errval;
-    int sock_err;
-    size_t sock_err_len = sizeof(sock_err);
+    ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, errno);
 
-    if (getsockopt(sockfd, SOL_SOCKET, SO_ERROR, &sock_err, &sock_err_len) < 0) {
-        ESP_LOGE(TAG, LOG_FMT("error calling getsockopt : %d"), errno);
-        return HTTPD_SOCK_ERR_FAIL;
-    }
-    ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, sock_err);
-
-    switch(sock_err) {
+    switch(errno) {
     case EAGAIN:
     case EINTR:
         errval = HTTPD_SOCK_ERR_TIMEOUT;

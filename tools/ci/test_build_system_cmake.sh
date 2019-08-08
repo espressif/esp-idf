@@ -299,6 +299,13 @@ function run_tests()
     grep "CONFIG_IDF_TARGET=\"${fake_target}\"" sdkconfig || failure "Project not configured correctly using idf.py -D"
     grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py -D"
 
+    print_status "Can set target using -D as subcommand parameter for idf.py"
+    clean_build_dir
+    rm sdkconfig
+    idf.py reconfigure -DIDF_TARGET=$fake_target || failure "Failed to set target via idf.py subcommand -D parameter"
+    grep "CONFIG_IDF_TARGET=\"${fake_target}\"" sdkconfig || failure "Project not configured correctly using idf.py reconfigure -D"
+    grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py reconfigure -D"
+
     # Clean up modifications for the fake target
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf components
@@ -421,11 +428,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     print_status "Confserver can be invoked by idf.py"
     echo '{"version": 1}' | idf.py confserver || failure "Couldn't load confserver"
 
-    print_status "Check ccache is used to build when present"
+    print_status "Check ccache is used to build"
     touch ccache && chmod +x ccache  # make sure that ccache is present for this test
-    (export PATH=$PWD:$PATH && idf.py reconfigure | grep "ccache will be used for faster builds") || failure "ccache should be used when present"
-    (export PATH=$PWD:$PATH && idf.py  --no-ccache reconfigure| grep -c "ccache will be used for faster builds" | grep -wq 0) \
-        || failure "ccache should not be used even when present if --no-ccache is specified"
+    (export PATH=$PWD:$PATH && idf.py --ccache reconfigure | grep "ccache will be used for faster builds") || failure "ccache should be used when --cache is specified"
+    idf.py fullclean
+    (export PATH=$PWD:$PATH && idf.py reconfigure| grep -c "ccache will be used for faster builds" | grep -wq 0) \
+        || failure "ccache should not be used even when present if --ccache is not specified"
+    (export PATH=$PWD:$PATH && idf.py --no-ccache reconfigure| grep -c "ccache will be used for faster builds" | grep -wq 0) \
+        || failure "--no-ccache causes no issue for backward compatibility"
     rm -f ccache
 
     print_status "Custom bootloader overrides original"
@@ -470,6 +480,36 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     grep "$PWD/mycomponents/mycomponent" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS valid sibling directory should be in the build"
     rm -rf esp32
     rm -rf mycomponents
+
+    # idf.py global and subcommand parameters
+    print_status "Cannot set -D twice: for command and subcommand of idf.py (with different values)"
+    idf.py -DAAA=BBB build -DAAA=BBB -DCCC=EEE
+    if [ $? -eq 0 ]; then
+        failure "It shouldn't be allowed to set -D twice (globally and for subcommand) with different set of options"
+    fi
+
+    print_status "Can set -D twice: globally and for subcommand, only if values are the same"
+    idf.py -DAAA=BBB -DCCC=EEE build -DAAA=BBB -DCCC=EEE || failure "It should be allowed to set -D twice (globally and for subcommand) if values are the same"
+
+    # idf.py subcommand options, (using monitor with as example)
+    print_status "Can set options to subcommands: print_filter for monitor"
+    mv ${IDF_PATH}/tools/idf_monitor.py ${IDF_PATH}/tools/idf_monitor.py.tmp
+    echo "import sys;print(sys.argv[1:])" > ${IDF_PATH}/tools/idf_monitor.py
+    idf.py build || "Failed to build project"
+    idf.py monitor --print-filter="*:I" -p tty.fake | grep "'--print_filter', '\*:I'" || failure "It should process options for subcommands (and pass print-filter to idf_monitor.py)"
+    mv ${IDF_PATH}/tools/idf_monitor.py.tmp ${IDF_PATH}/tools/idf_monitor.py
+
+    print_status "Fail on build time works"
+    clean_build_dir
+    cp CMakeLists.txt CMakeLists.txt.bak
+    printf "\nif(NOT EXISTS \"\${CMAKE_CURRENT_LIST_DIR}/hello.txt\") \nfail_at_build_time(test_file \"hello.txt does not exists\") \nendif()" >> CMakeLists.txt
+    ! idf.py build || failure "Build should fail if requirements are not satisfied"
+    touch hello.txt
+    idf.py build || failure "Build succeeds once requirements are satisfied"
+    rm -rf hello.txt CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
+    rm -rf CMakeLists.txt.bak
+
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

@@ -1,20 +1,19 @@
-set(COMPONENT_SRCS "default_event_loop.c"
-                   "esp_event.c"
-                   "esp_event_private.c"
-                   "event_loop_legacy.c"
-                   "event_send.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-set(COMPONENT_PRIV_INCLUDEDIRS "private_include")
-
-set(COMPONENT_REQUIRES log tcpip_adapter)
 if(IDF_TARGET STREQUAL "esp32")
-    set(COMPONENT_PRIV_REQUIRES ethernet)
+    set(priv_requires esp_eth)
+else()
+    set(priv_requires)
 endif()
 
-set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
-
-register_component()
+idf_component_register(SRCS "default_event_loop.c"
+                            "esp_event.c"
+                            "esp_event_private.c"
+                            "event_loop_legacy.c"
+                            "event_send.c"
+                    INCLUDE_DIRS "include"
+                    PRIV_INCLUDE_DIRS "private_include"
+                    REQUIRES log tcpip_adapter
+                    PRIV_REQUIRES ${priv_requires}
+                    LDFRAGMENTS linker.lf)
 
 if(GCC_NOT_5_2_0 AND CONFIG_ESP_EVENT_LOOP_PROFILING)
     # uses C11 atomic feature
