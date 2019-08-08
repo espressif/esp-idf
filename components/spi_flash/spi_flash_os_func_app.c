@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <stdarg.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp_attr.h"
 #include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"

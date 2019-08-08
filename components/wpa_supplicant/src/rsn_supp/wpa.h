@@ -15,7 +15,13 @@
 #ifndef WPA_H
 #define WPA_H
 
+#include "sdkconfig.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#else
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include "utils/common.h"
 #include "common/defs.h"
 #include "common/wpa_common.h"
