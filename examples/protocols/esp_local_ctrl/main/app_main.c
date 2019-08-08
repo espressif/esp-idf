@@ -20,7 +20,7 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
-/* The examples use WiFi configuration that you can set via 'make menuconfig'.
+/* The examples use WiFi configuration that you can set via 'idf.py menuconfig'.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define EXAMPLE_WIFI_SSID "mywifissid"
@@ -62,7 +62,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
-void wifi_init_sta()
+void wifi_init_sta(void)
 {
     s_wifi_event_group = xEventGroupCreate();
 
@@ -95,7 +95,7 @@ void wifi_init_sta()
  * See local_ctrl_service.c for implementation */
 extern void start_esp_local_ctrl_service(void);
 
-void app_main()
+void app_main(void)
 {
     //Initialize NVS
     esp_err_t ret = nvs_flash_init();

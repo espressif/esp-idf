@@ -6,7 +6,7 @@ Simple Asio chat client using WiFi STA or Ethernet.
 
 - Wi-Fi or Ethernet connection is established, and IP address is obtained.
 - Asio chat client connects to the corresponding server whose port number and IP are defined through the project configuration menu.
-- Chat client receives all messages from other chat clients, also it sends message received from stdin using `idf.py monitor`.
+- Chat client receives all messages from other chat clients, also it sends message received from stdin using `idf.py -p PORT monitor`.
 
 ## Running the example
 

@@ -15,8 +15,8 @@
 
 //Function just extern, need not test
 extern void bt_bb_init_cmplx(void);
-extern void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu();
-extern void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu();
+extern void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void);
+extern void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void);
 
 //Functions in librtc.a called by WIFI or Blutooth directly in ISR
 extern void bt_bb_init_cmplx_reg(void);

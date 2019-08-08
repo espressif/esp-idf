@@ -30,7 +30,7 @@ static esp_err_t external_storage_mac_get(uint8_t *mac)
 }
 #endif//CONFIG_BASE_MAC_STORED_OTHER_EXTERNAL_STORAGE
 
-void app_main()
+void app_main(void)
 {
 #if defined(CONFIG_BASE_MAC_STORED_EFUSE_BLK3) || defined(CONFIG_BASE_MAC_STORED_OTHER_EXTERNAL_STORAGE)
     uint8_t mac_addr[8] = {0};

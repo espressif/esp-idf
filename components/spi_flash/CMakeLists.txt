@@ -12,11 +12,14 @@ else()
         "spi_flash_chip_drivers.c"
         "spi_flash_chip_generic.c"
         "spi_flash_chip_issi.c"
-        "spi_flash_os_func_app.c"
-        "spi_flash_os_func_noos.c"
-        "memspi_host_driver.c")
+        )
     if(NOT CONFIG_SPI_FLASH_USE_LEGACY_IMPL)
-        list(APPEND srcs "esp_flash_api.c" "esp_flash_spi_init.c")
+        list(APPEND srcs "esp_flash_api.c"
+                         "esp_flash_spi_init.c"
+                         "memspi_host_driver.c"
+                         "spi_flash_os_func_app.c"
+                         "spi_flash_os_func_noos.c"
+                         )
     endif()
     set(priv_requires bootloader_support app_update soc)
 endif()

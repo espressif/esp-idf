@@ -26,7 +26,7 @@
 
 static const char *TAG = "protocomm";
 
-protocomm_t *protocomm_new()
+protocomm_t *protocomm_new(void)
 {
     protocomm_t *pc;
 

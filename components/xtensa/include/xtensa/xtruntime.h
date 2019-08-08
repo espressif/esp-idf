@@ -58,7 +58,7 @@ extern "C" {
 #ifdef __cplusplus
 typedef void (_xtos_handler_func)(...);
 #else
-typedef void (_xtos_handler_func)();
+typedef void (_xtos_handler_func)(void);
 #endif
 typedef _xtos_handler_func *_xtos_handler;
 

@@ -129,7 +129,7 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
     return TRUE;
 }
 
-void vMBPortTimersEnable()
+void vMBPortTimersEnable(void)
 {
 #ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
@@ -139,7 +139,7 @@ void vMBPortTimersEnable()
 #endif
 }
 
-void vMBPortTimersDisable()
+void vMBPortTimersDisable(void)
 {
 #ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
@@ -149,7 +149,7 @@ void vMBPortTimersDisable()
 #endif
 }
 
-void vMBPortTimerClose()
+void vMBPortTimerClose(void)
 {
 #ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));

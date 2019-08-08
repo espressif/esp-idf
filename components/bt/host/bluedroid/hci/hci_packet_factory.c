@@ -273,7 +273,7 @@ static const hci_packet_factory_t interface = {
     make_write_default_erroneous_data_report,
 };
 
-const hci_packet_factory_t *hci_packet_factory_get_interface()
+const hci_packet_factory_t *hci_packet_factory_get_interface(void)
 {
     return &interface;
 }

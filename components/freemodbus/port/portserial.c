@@ -130,7 +130,7 @@ static void vMBPortSerialRxPoll(size_t xEventSize)
     }
 }
 
-BOOL xMBPortSerialTxPoll()
+BOOL xMBPortSerialTxPoll(void)
 {
     BOOL bStatus = FALSE;
     USHORT usCount = 0;
@@ -271,7 +271,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
     return TRUE;
 }
 
-void vMBPortSerialClose()
+void vMBPortSerialClose(void)
 {
     (void)vTaskSuspend(xMbTaskHandle);
     (void)vTaskDelete(xMbTaskHandle);

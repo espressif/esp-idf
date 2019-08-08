@@ -21,7 +21,7 @@ To run this example, it's recommended that you have an official ESP32 Ethernet d
 
 ### Project configuration in menuconfig
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system.
+Enter `idf.py menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you' are using CMake based build system.
 
 1. In the `Example Configuration` menu:
     * Choose the kind of Ethernet this example will run on under `Ethernet Type`.
@@ -59,7 +59,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
   
 ### Build and Flash
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you' are using CMake based build system.
+Enter `idf.py -p PORT flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you' are using CMake based build system.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

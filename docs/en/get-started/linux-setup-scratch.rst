@@ -66,7 +66,7 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow `instructions for standard setup <setup-linux-toolchain-add-it-to-path>`_ to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-linux-toolchain-add-it-to-path-legacy>` to add the toolchain to your ``PATH``.
 
 
 Next Steps

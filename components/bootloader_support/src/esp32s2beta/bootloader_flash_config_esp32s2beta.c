@@ -23,6 +23,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
+#include "soc/spi_mem_reg.h"
 #include "soc/spi_caps.h"
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
@@ -35,11 +36,11 @@ void bootloader_flash_update_id()
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
     SET_PERI_REG_MASK(SPI_USER_REG(0), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_SETUP_TIME_V, 0, SPI_SETUP_TIME_S);
+    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_CS_HOLD_TIME_V, 1, SPI_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_CS_SETUP_TIME_V, 0, SPI_CS_SETUP_TIME_S);
     SET_PERI_REG_MASK(SPI_USER_REG(1), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_SETUP_TIME_V, 0, SPI_SETUP_TIME_S);
+    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_CS_HOLD_TIME_V, 1, SPI_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_CS_SETUP_TIME_V, 0, SPI_CS_SETUP_TIME_S);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t* pfhdr)
@@ -73,10 +74,10 @@ void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
 {
     int spi_cache_dummy = 0;
     uint32_t modebit = READ_PERI_REG(SPI_CTRL_REG(0));
-    if (modebit & SPI_FASTRD_MODE) {
-        if (modebit & SPI_FREAD_QIO) {    //SPI mode is QIO
+    if (modebit & SPI_FAST_RD_MODE) {
+        if (modebit & SPI_FREAD_QUAD) {    //SPI mode is QIO
             spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
-        } else if (modebit & SPI_FREAD_DIO) {    //SPI mode is DIO
+        } else if (modebit & SPI_FREAD_DUAL) {    //SPI mode is DIO
             spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;
             SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_ADDR_BITLEN_V, SPI0_R_DIO_ADDR_BITSLEN, SPI_USR_ADDR_BITLEN_S);
         } else if(modebit & (SPI_FREAD_QUAD | SPI_FREAD_DUAL))  {    //SPI mode is QOUT or DIO
@@ -103,7 +104,11 @@ void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
             break;
     }
 
-        SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M,
-                          SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
+
+#define FLASH_IO_MATRIX_DUMMY_40M   0
+#define FLASH_IO_MATRIX_DUMMY_80M   0
+
+    SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M,
+                      SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
 
 }

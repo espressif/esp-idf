@@ -171,7 +171,7 @@ void AVDT_Deregister(void)
 ** Returns          void.
 **
 *******************************************************************************/
-void AVDT_SINK_Activate()
+void AVDT_SINK_Activate(void)
 {
     tAVDT_SCB           *p_scb = &avdt_cb.scb[0];
     int                 i;
@@ -200,7 +200,7 @@ void AVDT_SINK_Activate()
 ** Returns          void.
 **
 *******************************************************************************/
-void AVDT_SINK_Deactivate()
+void AVDT_SINK_Deactivate(void)
 {
     tAVDT_SCB           *p_scb = &avdt_cb.scb[0];
     int                 i;

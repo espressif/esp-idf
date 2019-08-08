@@ -82,7 +82,7 @@ esp_pthread_cfg_t create_config(const char *name, int core_id, int stack, int pr
     return cfg;
 }
 
-extern "C" void app_main()
+extern "C" void app_main(void)
 {
     // Create a thread using deafult values that can run on any core
     auto cfg = esp_pthread_get_default_config();

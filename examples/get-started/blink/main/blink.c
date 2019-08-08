@@ -17,7 +17,7 @@
 */
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 
-void app_main()
+void app_main(void)
 {
     /* Configure the IOMUX register for pad BLINK_GPIO (some pads are
        muxed to GPIO on reset already, but some default to other

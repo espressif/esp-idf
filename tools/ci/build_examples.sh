@@ -62,9 +62,12 @@ SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
 
-if [ -z {CI_NODE_TOTAL} ]
+if [ -z "${CI_NODE_TOTAL:-}" ]
 then
     START_NUM=0
+    if [ "${1:-}" ]; then
+        START_NUM=$1
+    fi
     END_NUM=999
 else
     JOB_NUM=${CI_NODE_INDEX}
@@ -116,7 +119,7 @@ build_example () {
     pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-        export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+        export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
         # sdkconfig files are normally not checked into git, but may be present when
         # a developer runs this script locally

@@ -26,8 +26,8 @@ Building an example is the same as building any other project:
 * Follow the Getting Started instructions which include building the "Hello World" example.
 * Change into the directory of the new example you'd like to build.
 * Run `idf.py menuconfig` to open the project configuration menu. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
-* `make` to build the example.
-* Follow the printed instructions to flash, or run `idf.py flash`.
+* `idf.py build` to build the example.
+* Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
 
 # Copying Examples
 

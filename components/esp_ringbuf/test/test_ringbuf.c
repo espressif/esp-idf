@@ -395,7 +395,7 @@ static void ringbuffer_isr(void *arg)
     }
 }
 
-static void setup_timer()
+static void setup_timer(void)
 {
     //Setup timer for ISR
     int timer_group = TIMER_GROUP;
@@ -416,7 +416,7 @@ static void setup_timer()
     timer_isr_register(timer_group, timer_idx, ringbuffer_isr, NULL, 0, &ringbuffer_isr_handle);    //Set ISR handler
 }
 
-static void cleanup_timer()
+static void cleanup_timer(void)
 {
     timer_disable_intr(TIMER_GROUP, TIMER_NUMBER);
     esp_intr_free(ringbuffer_isr_handle);
@@ -570,7 +570,7 @@ static void rec_task(void *args)
     vTaskDelete(NULL);
 }
 
-static void setup()
+static void setup(void)
 {
     ets_printf("Size of test data: %d\n", CONT_DATA_LEN);
     tx_done = xSemaphoreCreateBinary();                 //Semaphore to indicate send is done for a particular iteration
@@ -579,7 +579,7 @@ static void setup()
     srand(SRAND_SEED);                                  //Seed RNG
 }
 
-static void cleanup()
+static void cleanup(void)
 {
     //Cleanup
     vSemaphoreDelete(tx_done);
@@ -669,7 +669,7 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
 
 /* -------------------------- Test ring buffer IRAM ------------------------- */
 
-static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test()
+static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test(void)
 {
     bool result = true;
 

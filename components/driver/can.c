@@ -142,7 +142,7 @@ static portMUX_TYPE can_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 /* ------------------- Configuration Register Functions---------------------- */
 
-static inline esp_err_t can_enter_reset_mode()
+static inline esp_err_t can_enter_reset_mode(void)
 {
     /* Enter reset mode (required to write to configuration registers). Reset mode
        also prevents all CAN activity on the current module and is automatically
@@ -152,7 +152,7 @@ static inline esp_err_t can_enter_reset_mode()
     return ESP_OK;
 }
 
-static inline esp_err_t can_exit_reset_mode()
+static inline esp_err_t can_exit_reset_mode(void)
 {
     /* Exiting reset mode will return the CAN module to operating mode. Reset mode
        must also be exited in order to trigger BUS-OFF recovery sequence. */
@@ -161,7 +161,7 @@ static inline esp_err_t can_exit_reset_mode()
     return ESP_OK;
 }
 
-static inline void can_config_pelican()
+static inline void can_config_pelican(void)
 {
     //Use PeliCAN address layout. Exposes extra registers
     CAN.clock_divider_reg.can_mode = 1;
@@ -287,23 +287,23 @@ static void can_set_tx_buffer_and_transmit(can_frame_t *frame)
     can_set_command(command);
 }
 
-static inline uint32_t can_get_status()
+static inline uint32_t can_get_status(void)
 {
     return CAN.status_reg.val;
 }
 
-static inline uint32_t can_get_interrupt_reason()
+static inline uint32_t can_get_interrupt_reason(void)
 {
     return CAN.interrupt_reg.val;
 }
 
-static inline uint32_t can_get_arbitration_lost_capture()
+static inline uint32_t can_get_arbitration_lost_capture(void)
 {
     return CAN.arbitration_lost_captue_reg.val;
     //Todo: ALC read only to re-arm arb lost interrupt. Add function to decode ALC
 }
 
-static inline uint32_t can_get_error_code_capture()
+static inline uint32_t can_get_error_code_capture(void)
 {
     return CAN.error_code_capture_reg.val;
     //Todo: ECC read only to re-arm bus error interrupt. Add function to decode ECC
@@ -329,7 +329,7 @@ static inline void can_get_rx_buffer_and_clear(can_frame_t *frame)
     can_set_command(CMD_RELEASE_RX_BUFF);
 }
 
-static inline uint32_t can_get_rx_message_counter()
+static inline uint32_t can_get_rx_message_counter(void)
 {
     return CAN.rx_message_counter_reg.val;
 }
@@ -726,7 +726,7 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     return ret;
 }
 
-esp_err_t can_driver_uninstall()
+esp_err_t can_driver_uninstall(void)
 {
     can_obj_t *p_can_obj_dummy;
 
@@ -762,7 +762,7 @@ esp_err_t can_driver_uninstall()
     return ESP_OK;
 }
 
-esp_err_t can_start()
+esp_err_t can_start(void)
 {
     //Check state
     CAN_ENTER_CRITICAL();
@@ -792,7 +792,7 @@ esp_err_t can_start()
     return ESP_OK;
 }
 
-esp_err_t can_stop()
+esp_err_t can_stop(void)
 {
     //Check state
     CAN_ENTER_CRITICAL();
@@ -929,7 +929,7 @@ esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_aler
     return ESP_OK;
 }
 
-esp_err_t can_initiate_recovery()
+esp_err_t can_initiate_recovery(void)
 {
     CAN_ENTER_CRITICAL();
     //Check state
@@ -983,7 +983,7 @@ esp_err_t can_get_status_info(can_status_info_t *status_info)
     return ESP_OK;
 }
 
-esp_err_t can_clear_transmit_queue()
+esp_err_t can_clear_transmit_queue(void)
 {
     //Check State
     CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
@@ -998,7 +998,7 @@ esp_err_t can_clear_transmit_queue()
     return ESP_OK;
 }
 
-esp_err_t can_clear_receive_queue()
+esp_err_t can_clear_receive_queue(void)
 {
     //Check State
     CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);

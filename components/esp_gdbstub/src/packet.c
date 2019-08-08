@@ -21,7 +21,7 @@ static unsigned char s_cmd[GDBSTUB_CMD_BUFLEN];
 static char s_chsum;
 
 // Send the start of a packet; reset checksum calculation.
-void esp_gdbstub_send_start()
+void esp_gdbstub_send_start(void)
 {
     s_chsum = 0;
     esp_gdbstub_putchar('$');
@@ -60,7 +60,7 @@ void esp_gdbstub_send_hex(int val, int bits)
 }
 
 // Finish sending a packet.
-void esp_gdbstub_send_end()
+void esp_gdbstub_send_end(void)
 {
     esp_gdbstub_putchar('#');
     esp_gdbstub_send_hex(s_chsum, 8);

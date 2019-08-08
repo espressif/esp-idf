@@ -1,3 +1,5 @@
+idf_build_get_property(target IDF_TARGET)
+
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp_common is headers
     idf_component_register(INCLUDE_DIRS include)
@@ -12,8 +14,9 @@ else()
                                 "src/ipc.c"
                                 "src/pm_locks.c"
                                 "src/stack_check.c"
-                        INCLUDE_DIRS include
-                        PRIV_REQUIRES soc)
+                                INCLUDE_DIRS include
+                                REQUIRES ${target}
+                                PRIV_REQUIRES soc)
 
     set_source_files_properties(
         "src/stack_check.c"

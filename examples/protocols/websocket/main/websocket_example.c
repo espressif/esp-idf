@@ -80,7 +80,7 @@ static void websocket_app_start(void)
     esp_websocket_client_destroy(client);
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());

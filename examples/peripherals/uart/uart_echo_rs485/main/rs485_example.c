@@ -52,7 +52,7 @@
 static const char *TAG = "RS485_ECHO_APP";
 
 // An example of echo test with hardware flow control on UART
-static void echo_task()
+static void echo_task(void *arg)
 {
     const int uart_num = ECHO_UART_PORT;
     uart_config_t uart_config = {
@@ -118,7 +118,7 @@ static void echo_task()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     //A uart read/write example without event queue;
     xTaskCreate(echo_task, "uart_echo_task", ECHO_TASK_STACK_SIZE, NULL, ECHO_TASK_PRIO, NULL);

@@ -103,7 +103,7 @@ enum {
     TEST_EVENT_BASE2_MAX
 };
 
-static BaseType_t test_event_get_core()
+static BaseType_t test_event_get_core(void)
 {
     static int calls = 0;
 
@@ -114,7 +114,7 @@ static BaseType_t test_event_get_core()
     }
 }
 
-static esp_event_loop_args_t test_event_get_default_loop_args()
+static esp_event_loop_args_t test_event_get_default_loop_args(void)
 {
     esp_event_loop_args_t loop_config = {
         .queue_size = CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE,
@@ -263,13 +263,13 @@ static void test_post_from_handler_loop_task(void* args)
     }
 }
 
-static void test_setup()
+static void test_setup(void)
 {
     TEST_ASSERT_TRUE(TEST_CONFIG_TASKS_TO_SPAWN >= 2);
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create_default());
 }
 
-static void test_teardown()
+static void test_teardown(void)
 {
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete_default());
 }

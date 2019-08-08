@@ -123,7 +123,7 @@ esp_err_t slave_reset(esp_slave_context_t *context)
 }
 
 #ifdef CONFIG_EXAMPLE_SDIO_OVER_SPI
-static void gpio_d2_set_high()
+static void gpio_d2_set_high(void)
 {
     gpio_config_t d2_config = {
         .pin_bit_mask = BIT(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
@@ -257,7 +257,7 @@ esp_err_t slave_init(esp_slave_context_t *context)
 }
 
 
-void slave_power_on()
+void slave_power_on(void)
 {
 #ifdef SLAVE_PWR_GPIO
     int level_active;
@@ -410,7 +410,7 @@ void job_getint(esp_slave_context_t *context)
     slave_inform_job(context, JOB_SEND_INT);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_slave_context_t context;
     esp_err_t err;

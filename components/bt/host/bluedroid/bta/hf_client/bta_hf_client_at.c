@@ -94,7 +94,7 @@ UINT32 service_index = 0;
 BOOLEAN service_availability = TRUE;
 /* helper functions for handling AT commands queueing */
 
-static void bta_hf_client_handle_ok();
+static void bta_hf_client_handle_ok(void);
 
 static void bta_hf_client_clear_queued_at(void)
 {
@@ -268,7 +268,7 @@ static void bta_hf_client_start_at_hold_timer(void)
 **   No buffer parsing is being done here.
 *******************************************************************************/
 
-static void bta_hf_client_handle_ok()
+static void bta_hf_client_handle_ok(void)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
@@ -342,7 +342,7 @@ static void bta_hf_client_handle_error(tBTA_HF_CLIENT_AT_RESULT_TYPE type, UINT1
     bta_hf_client_send_queued_at();
 }
 
-static void bta_hf_client_handle_ring()
+static void bta_hf_client_handle_ring(void)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
     bta_hf_client_evt_val(BTA_HF_CLIENT_RING_INDICATION, 0);

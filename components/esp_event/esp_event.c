@@ -60,7 +60,7 @@ static portMUX_TYPE s_event_loops_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 
 
-static int esp_event_dump_prepare()
+static int esp_event_dump_prepare(void)
 {
     esp_event_loop_instance_t* loop_it;
     esp_event_loop_node_t *loop_node_it;

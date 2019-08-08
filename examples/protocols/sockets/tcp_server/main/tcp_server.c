@@ -128,7 +128,7 @@ static void tcp_server_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();

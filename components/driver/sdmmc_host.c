@@ -30,7 +30,7 @@
 
 
 static void sdmmc_isr(void* arg);
-static void sdmmc_host_dma_init();
+static void sdmmc_host_dma_init(void);
 
 
 static const char* TAG = "sdmmc_periph";
@@ -40,7 +40,7 @@ static SemaphoreHandle_t s_io_intr_event;
 
 size_t s_slot_width[2] = {1,1};
 
-void sdmmc_host_reset()
+void sdmmc_host_reset(void)
 {
     // Set reset bits
     SDMMC.ctrl.controller_reset = 1;
@@ -97,7 +97,7 @@ static void sdmmc_host_set_clk_div(int div)
     ets_delay_us(10);
 }
 
-static void sdmmc_host_input_clk_disable()
+static void sdmmc_host_input_clk_disable(void)
 {
     SDMMC.clock.val = 0;
 }
@@ -216,7 +216,7 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg) {
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_init()
+esp_err_t sdmmc_host_init(void)
 {
     if (s_intr_handle) {
         return ESP_ERR_INVALID_STATE;
@@ -402,7 +402,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     return ESP_OK;
 }
 
-esp_err_t sdmmc_host_deinit()
+esp_err_t sdmmc_host_deinit(void)
 {
     if (!s_intr_handle) {
         return ESP_ERR_INVALID_STATE;
@@ -490,7 +490,7 @@ esp_err_t sdmmc_host_set_bus_ddr_mode(int slot, bool ddr_enabled)
     return ESP_OK;
 }
 
-static void sdmmc_host_dma_init()
+static void sdmmc_host_dma_init(void)
 {
     SDMMC.ctrl.dma_enable = 1;
     SDMMC.bmod.val = 0;
@@ -501,7 +501,7 @@ static void sdmmc_host_dma_init()
 }
 
 
-void sdmmc_host_dma_stop()
+void sdmmc_host_dma_stop(void)
 {
     SDMMC.ctrl.use_internal_dma = 0;
     SDMMC.ctrl.dma_reset = 1;
@@ -524,12 +524,12 @@ void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_s
     sdmmc_host_dma_resume();
 }
 
-void sdmmc_host_dma_resume()
+void sdmmc_host_dma_resume(void)
 {
     SDMMC.pldmnd = 1;
 }
 
-bool sdmmc_host_card_busy()
+bool sdmmc_host_card_busy(void)
 {
     return SDMMC.status.data_busy == 1;
 }

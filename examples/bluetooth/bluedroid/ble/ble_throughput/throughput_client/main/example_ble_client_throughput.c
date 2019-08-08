@@ -510,7 +510,7 @@ static void throughput_client_task(void *param)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS.
     esp_err_t ret = nvs_flash_init();

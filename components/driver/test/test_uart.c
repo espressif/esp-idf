@@ -244,7 +244,7 @@ static uint16_t buffer_fill_random(uint8_t *buffer, size_t length)
     return crc;
 }
 
-static void rs485_init()
+static void rs485_init(void)
 {
     uart_config_t uart_config = {
         .baud_rate = UART_BAUD_115200,
@@ -288,7 +288,7 @@ static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t bu
 }
 
 // Slave test case for multi device
-static void rs485_slave()
+static void rs485_slave(void)
 {
     rs485_init();
     uint8_t* slave_data = (uint8_t*) malloc(BUF_SIZE);
@@ -327,7 +327,7 @@ static void rs485_slave()
 // Master test of multi device test case.
 // It forms packet with random data, apply generated CRC16 and sends to slave.
 // If response recieved correctly from slave means RS485 channel works.
-static void rs485_master()
+static void rs485_master(void)
 {
     uint16_t err_count = 0, good_count = 0;
     rs485_init();

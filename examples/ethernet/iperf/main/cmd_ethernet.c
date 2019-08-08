@@ -173,7 +173,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-void register_ethernet()
+void register_ethernet(void)
 {
     eth_event_group = xEventGroupCreate();
     tcpip_adapter_init();

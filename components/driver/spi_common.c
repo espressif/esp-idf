@@ -482,7 +482,7 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
 #endif
 }
 
-bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress()
+bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
     return (dmaworkaround_waiting_for_chan != 0);

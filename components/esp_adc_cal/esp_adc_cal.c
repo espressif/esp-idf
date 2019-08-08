@@ -110,13 +110,13 @@ static const uint32_t lut_adc2_high[LUT_POINTS] = {2657, 2698, 2738, 2774, 2807,
                                                    2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185};
 
 /* ----------------------- EFuse Access Functions --------------------------- */
-static bool check_efuse_vref()
+static bool check_efuse_vref(void)
 {
     //Check if Vref is burned in eFuse
     return (REG_GET_FIELD(VREF_REG, EFUSE_RD_ADC_VREF) != 0) ? true : false;
 }
 
-static bool check_efuse_tp()
+static bool check_efuse_tp(void)
 {
     //Check if Two Point values are burned in eFuse
     if (CHECK_BLK3_FLAG && (REG_GET_FIELD(BLK3_RESERVED_REG, EFUSE_RD_BLK3_PART_RESERVE) == 0)) {
@@ -150,7 +150,7 @@ static inline int decode_bits(uint32_t bits, uint32_t mask, bool is_twos_compl)
     return ret;
 }
 
-static uint32_t read_efuse_vref()
+static uint32_t read_efuse_vref(void)
 {
     //eFuse stores deviation from ideal reference voltage
     uint32_t ret = VREF_OFFSET;       //Ideal vref

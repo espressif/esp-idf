@@ -92,7 +92,7 @@ typedef struct hci_t {
     void (*transmit_downward)(uint16_t type, void *data);
 } hci_t;
 
-const hci_t *hci_layer_get_interface();
+const hci_t *hci_layer_get_interface(void);
 
 int hci_start_up(void);
 void hci_shut_down(void);

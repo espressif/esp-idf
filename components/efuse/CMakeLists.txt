@@ -1,7 +1,12 @@
 idf_build_get_property(soc_name IDF_TARGET)
 
 # TODO: add esp32sbeta support for efuse component
-require_idf_targets(esp32)
+#require_idf_targets(esp32)
+
+idf_build_get_property(target IDF_TARGET)
+if(NOT "${target}" STREQUAL "esp32")
+    return()
+endif()
 
 include(${COMPONENT_DIR}/${soc_name}/sources.cmake)
 spaces2list(EFUSE_SOC_SRCS)

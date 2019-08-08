@@ -77,7 +77,7 @@ esp_err_t mbc_slave_init(mb_port_type_t port_type, void** handler)
 /**
  * Modbus controller destroy function
  */
-esp_err_t mbc_slave_destroy()
+esp_err_t mbc_slave_destroy(void)
 {
     esp_err_t error = ESP_OK;
     // Is initialization done?
@@ -118,7 +118,7 @@ esp_err_t mbc_slave_setup(void* comm_info)
 /**
  * Start Modbus controller start function
  */
-esp_err_t mbc_slave_start()
+esp_err_t mbc_slave_start(void)
 {
     esp_err_t error = ESP_OK;
     MB_SLAVE_CHECK((slave_interface_ptr != NULL),

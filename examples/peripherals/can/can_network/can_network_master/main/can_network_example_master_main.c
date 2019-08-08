@@ -205,7 +205,7 @@ static void can_control_task(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     //Create tasks, queues, and semaphores
     rx_task_queue = xQueueCreate(1, sizeof(rx_task_action_t));

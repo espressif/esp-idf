@@ -5,11 +5,15 @@ set(srcs
     "src/bootloader_random.c"
     "src/bootloader_utility.c"
     "src/esp_image_format.c"
-    "src/flash_encrypt.c"
     "src/flash_partitions.c"
     "src/flash_qio_mode.c"
     "src/${IDF_TARGET}/bootloader_flash_config_${IDF_TARGET}.c"
     )
+
+if(CONFIG_IDF_TARGET_ESP32)
+    # Not supported on ESP32S2Beta yet
+    list(APPEND srcs "src/flash_encrypt.c")
+endif()
 
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "include_bootloader")

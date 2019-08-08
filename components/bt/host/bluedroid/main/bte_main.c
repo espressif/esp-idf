@@ -195,7 +195,7 @@ void bte_main_enable_lpm(BOOLEAN enable)
 ** Returns          None
 **
 ******************************************************************************/
-void bte_main_lpm_allow_bt_device_sleep()
+void bte_main_lpm_allow_bt_device_sleep(void)
 {
     /**/
     //hci->send_low_power_command(LPM_WAKE_DEASSERT);
@@ -210,7 +210,7 @@ void bte_main_lpm_allow_bt_device_sleep()
 ** Returns          None
 **
 ******************************************************************************/
-void bte_main_lpm_wake_bt_device()
+void bte_main_lpm_wake_bt_device(void)
 {
     //hci->send_low_power_command(LPM_WAKE_ASSERT);
 }

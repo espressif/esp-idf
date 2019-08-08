@@ -204,7 +204,7 @@ extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
     return esp_partition_erase_range(partition, 0, partition->size);
 }
 
-extern "C" esp_err_t nvs_flash_erase()
+extern "C" esp_err_t nvs_flash_erase(void)
 {
     return nvs_flash_erase_partition(NVS_DEFAULT_PART_NAME);
 }

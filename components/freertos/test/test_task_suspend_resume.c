@@ -196,7 +196,7 @@ static void IRAM_ATTR suspend_scheduler_while_block_set(void* arg)
     xTaskResumeAll();
 }
 
-static void IRAM_ATTR suspend_scheduler_on_both_cpus()
+static void IRAM_ATTR suspend_scheduler_on_both_cpus(void)
 {
     block = true;
     if (suspend_both_cpus) {
@@ -206,7 +206,7 @@ static void IRAM_ATTR suspend_scheduler_on_both_cpus()
     vTaskSuspendAll();
 }
 
-static void IRAM_ATTR resume_scheduler_on_both_cpus()
+static void IRAM_ATTR resume_scheduler_on_both_cpus(void)
 {
     block = false;
     xTaskResumeAll();
@@ -291,7 +291,7 @@ TEST_CASE("Test the waiting task not missed due to scheduler suspension on one C
 
 static uint32_t count_tick[2];
 
-static void IRAM_ATTR tick_hook()
+static void IRAM_ATTR tick_hook(void)
 {
     ++count_tick[xPortGetCoreID()];
 }

@@ -18,7 +18,7 @@
 #include <sys/param.h>
 #include <mbedtls/sha256.h>
 
-bootloader_sha256_handle_t bootloader_sha256_start()
+bootloader_sha256_handle_t bootloader_sha256_start(void)
 {
     mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)malloc(sizeof(mbedtls_sha256_context));
     if (!ctx) {

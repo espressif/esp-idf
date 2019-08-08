@@ -143,18 +143,6 @@ esp_err_t spi_bus_free(spi_host_device_t host);
  */
 bool spicommon_periph_claim(spi_host_device_t host, const char* source);
 
-// The macro is to keep the back-compatibility of IDF v3.2 and before
-// In this way we can call spicommon_periph_claim with two arguments, or the host with the source set to the calling function name
-// When two arguments (host, func) are given, __spicommon_periph_claim2 is called
-// or if only one arguments (host) is given, __spicommon_periph_claim1 is called
-#define spicommon_periph_claim(host...) __spicommon_periph_claim(host, 2, 1)
-#define __spicommon_periph_claim(host, source, n, ...) __spicommon_periph_claim ## n(host, source)
-#define __spicommon_periph_claim1(host, _)    ({ \
-    char* warning_str = "calling spicommon_periph_claim without source string is deprecated.";\
-    spicommon_periph_claim(host, __FUNCTION__); })
-
-#define __spicommon_periph_claim2(host, func) spicommon_periph_claim(host, func)
-
 /**
  * @brief Check whether the spi periph is in use.
  *
@@ -390,7 +378,7 @@ bool spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void 
  *
  * @return True when a DMA reset is requested but hasn't completed yet. False otherwise.
  */
-bool spicommon_dmaworkaround_reset_in_progress();
+bool spicommon_dmaworkaround_reset_in_progress(void);
 
 
 /**
