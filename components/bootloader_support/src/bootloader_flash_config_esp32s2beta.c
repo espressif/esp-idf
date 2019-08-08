@@ -17,9 +17,9 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/spi_flash.h"
-#include "esp32/rom/efuse.h"
+#include "esp32s2beta/rom/gpio.h"
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/efuse.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
@@ -27,6 +27,12 @@
 #include "soc/spi_caps.h"
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
+#include "bootloader_common.h"
+
+#define FLASH_IO_MATRIX_DUMMY_40M   0
+#define FLASH_IO_MATRIX_DUMMY_80M   0
+
+#define FLASH_IO_DRIVE_GD_WITH_1V8PSRAM    3
 
 void bootloader_flash_update_id()
 {
@@ -73,42 +79,40 @@ void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
 void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
 {
     int spi_cache_dummy = 0;
-    uint32_t modebit = READ_PERI_REG(SPI_CTRL_REG(0));
-    if (modebit & SPI_FAST_RD_MODE) {
-        if (modebit & SPI_FREAD_QUAD) {    //SPI mode is QIO
-            spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
-        } else if (modebit & SPI_FREAD_DUAL) {    //SPI mode is DIO
-            spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;
-            SET_PERI_REG_BITS(SPI_USER1_REG(0), SPI_USR_ADDR_BITLEN_V, SPI0_R_DIO_ADDR_BITSLEN, SPI_USR_ADDR_BITLEN_S);
-        } else if(modebit & (SPI_FREAD_QUAD | SPI_FREAD_DUAL))  {    //SPI mode is QOUT or DIO
-            spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
-        }
+    int drv = 2;
+    switch (pfhdr->spi_mode) {
+    case ESP_IMAGE_SPI_MODE_QIO:
+        spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
+        break;
+    case ESP_IMAGE_SPI_MODE_DIO:
+        spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;   //qio 3
+        break;
+    case ESP_IMAGE_SPI_MODE_QOUT:
+    case ESP_IMAGE_SPI_MODE_DOUT:
+    default:
+        spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
+        break;
     }
 
+    /* dummy_len_plus values defined in ROM for SPI flash configuration */
     extern uint8_t g_rom_spiflash_dummy_len_plus[];
     switch (pfhdr->spi_speed) {
-        case ESP_IMAGE_SPI_SPEED_80M:
-            g_rom_spiflash_dummy_len_plus[0] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;
-            g_rom_spiflash_dummy_len_plus[1] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;
-            break;
-        case ESP_IMAGE_SPI_SPEED_40M:
-            g_rom_spiflash_dummy_len_plus[0] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M;
-            g_rom_spiflash_dummy_len_plus[1] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M;
-            break;
-        case ESP_IMAGE_SPI_SPEED_26M:
-        case ESP_IMAGE_SPI_SPEED_20M:
-            g_rom_spiflash_dummy_len_plus[0] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M;
-            g_rom_spiflash_dummy_len_plus[1] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M;
-            break;
-        default:
-            break;
+    case ESP_IMAGE_SPI_SPEED_80M:
+        g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_80M;
+        g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_80M;
+        SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M,
+                          SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
+        drv = 3;
+        break;
+    case ESP_IMAGE_SPI_SPEED_40M:
+        g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_40M;
+        g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_40M;
+        SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_40M,
+                          SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
+        break;
+    default:
+        break;
     }
 
-
-#define FLASH_IO_MATRIX_DUMMY_40M   0
-#define FLASH_IO_MATRIX_DUMMY_80M   0
-
-    SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M,
-                      SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
-
+    bootloader_configure_spi_pins(drv);
 }
