@@ -61,7 +61,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
 
         add_dependencies(${COMPONENT_LIB} ${app_name}_artifacts)
 
-        target_linker_script(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.ld)
+        target_linker_script(${COMPONENT_LIB} INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.ld)
         target_add_binary_data(${COMPONENT_LIB} ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}.bin BINARY)
     endif()
 endfunction()

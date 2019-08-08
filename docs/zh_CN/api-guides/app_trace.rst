@@ -151,7 +151,7 @@
           return res;
       }
 
-2. 下一步是编译应用程序的镜像并将其下载到目标板上，这一步可以参考文档 :doc:`构建并烧写 <../get-started/make-project>`。
+2. 下一步是编译应用程序的镜像并将其下载到目标板上，这一步可以参考文档 :ref:`构建并烧写 <get-started-build>`。
 3. 运行 OpenOCD（参见 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`）。
 4. 连接到 OpenOCD 的 telnet 服务器，在终端执行如下命令 ``telnet <oocd_host> 4444``。如果在运行 OpenOCD 的同一台机器上打开
    telnet 会话，您可以使用 ``localhost`` 替换上面命令中的 ``<oocd_host>``。

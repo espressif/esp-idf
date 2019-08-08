@@ -41,6 +41,12 @@ menu "Test config"
         range 0 10
         default 1
 
+    config TEST_CONDITIONAL_HEX_RANGES
+        hex "Something with a hex range"
+        range 0x00 0xaf if TEST_BOOL
+        range 0x10 0xaf
+        default 0xa0
+
     config SUBMENU_TRIGGER
         bool "I enable/disable some submenu items"
         default y

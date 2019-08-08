@@ -84,6 +84,23 @@ class BaseChecker(object):
         pass
 
 
+class SourceChecker(BaseChecker):
+    # allow to source only files which will be also checked by the script
+    # Note: The rules are complex and the LineRuleChecker cannot be used
+    def process_line(self, line, line_number):
+        m = re.search(r'^\s*source(\s*)"([^"]+)"', line)
+        if m:
+            if len(m.group(1)) == 0:
+                raise InputError(self.path_in_idf, line_number, '"source" has to been followed by space',
+                                 line.replace('source', 'source '))
+            path = m.group(2)
+            if path in ['$COMPONENT_KCONFIGS_PROJBUILD', '$COMPONENT_KCONFIGS']:
+                pass
+            elif not path.endswith('/Kconfig.in') and path != 'Kconfig.in':
+                raise InputError(self.path_in_idf, line_number, "only Kconfig.in can be sourced",
+                                 line.replace(path, os.path.join(os.path.dirname(path), 'Kconfig.in')))
+
+
 class LineRuleChecker(BaseChecker):
     """
     checks LINE_ERROR_RULES for each line
@@ -134,6 +151,7 @@ class IndentAndNameChecker(BaseChecker):
                                               |(menuconfig)
                                               |(help)
                                               |(if)
+                                              |(source)
                                           )
                                        ''', re.X)
 
@@ -193,7 +211,7 @@ class IndentAndNameChecker(BaseChecker):
             print('level+', new_item, ': ', self.level_stack, end=' -> ')
         # "config" and "menuconfig" don't have a closing pair. So if new_item is an item which need to be indented
         # outside the last "config" or "menuconfig" then we need to find to a parent where it belongs
-        if new_item in ['config', 'menuconfig', 'menu', 'choice', 'if']:
+        if new_item in ['config', 'menuconfig', 'menu', 'choice', 'if', 'source']:
             # item is not belonging to a previous "config" or "menuconfig" so need to indent to parent
             for i, item in enumerate(reversed(self.level_stack)):
                 if item in ['menu', 'mainmenu', 'choice', 'if']:
@@ -328,7 +346,7 @@ class IndentAndNameChecker(BaseChecker):
                 new_item = m.group(1)
                 current_level = self.update_level_for_dec_pattern(new_item)
                 if new_item not in ['endif']:
-                    # endif doesn't require to check the prefix because the items in inside if/endif belong to the
+                    # endif doesn't require to check the prefix because the items inside if/endif belong to the
                     # same prefix level
                     self.check_common_prefix(line, line_number)
 
@@ -384,11 +402,12 @@ def main():
                 with open(full_path, 'r', encoding='utf-8') as f, \
                         open(suggestions_full_path, 'w', encoding='utf-8', newline='\n') as f_o, \
                         LineRuleChecker(path_in_idf) as line_checker, \
+                        SourceChecker(path_in_idf) as source_checker, \
                         IndentAndNameChecker(path_in_idf, debug=args.verbose) as indent_and_name_checker:
                     try:
                         for line_number, line in enumerate(f, start=1):
                             try:
-                                for checker in [line_checker, indent_and_name_checker]:
+                                for checker in [line_checker, indent_and_name_checker, source_checker]:
                                     checker.process_line(line, line_number)
                                 # The line is correct therefore we echo it to the output file
                                 f_o.write(line)

@@ -134,6 +134,19 @@ class AssignTest(object):
         self.jobs = self._parse_gitlab_ci_config(ci_config_file)
         self.case_group = case_group
 
+    @staticmethod
+    def _handle_parallel_attribute(job_name, job):
+        jobs_out = []
+        try:
+            for i in range(job["parallel"]):
+                jobs_out.append(GitlabCIJob.Job(job, job_name + "_{}".format(i + 1)))
+        except KeyError:
+            # Gitlab don't allow to set parallel to 1.
+            # to make test job name same ($CI_JOB_NAME_$CI_NODE_INDEX),
+            # we append "_" to jobs don't have parallel attribute
+            jobs_out.append(GitlabCIJob.Job(job, job_name + "_"))
+        return jobs_out
+
     def _parse_gitlab_ci_config(self, ci_config_file):
 
         with open(ci_config_file, "r") as f:
@@ -142,7 +155,7 @@ class AssignTest(object):
         job_list = list()
         for job_name in ci_config:
             if self.CI_TEST_JOB_PATTERN.search(job_name) is not None:
-                job_list.append(GitlabCIJob.Job(ci_config[job_name], job_name))
+                job_list.extend(self._handle_parallel_attribute(job_name, ci_config[job_name]))
         job_list.sort(key=lambda x: x["name"])
         return job_list
 

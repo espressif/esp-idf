@@ -130,29 +130,22 @@ endfunction()
 # Automatically adds a -L search path for the containing directory (if found),
 # and then adds -T with the filename only. This allows INCLUDE directives to be
 # used to include other linker scripts in the same directory.
-#
-# TODO: currently multiple linker scripts must be supplied as a single list for "scriptfiles"
-# arg, cannot be supplied as list of args
-function(target_linker_script target scriptfiles)
-    cmake_parse_arguments(_ "PROCESS" "" "" ${ARGN})
+function(target_linker_script target deptype scriptfiles)
+    cmake_parse_arguments(_ "" "PROCESS" "" ${ARGN})
     foreach(scriptfile ${scriptfiles})
         get_filename_component(abs_script "${scriptfile}" ABSOLUTE)
         message(STATUS "Adding linker script ${abs_script}")
 
         if(__PROCESS)
-            __ldgen_process_template(output ${abs_script})
+            get_filename_component(output "${__PROCESS}" ABSOLUTE)
+            __ldgen_process_template(${abs_script} ${output})
             set(abs_script ${output})
         endif()
 
         get_filename_component(search_dir "${abs_script}" DIRECTORY)
         get_filename_component(scriptname "${abs_script}" NAME)
 
-        get_target_property(type ${target} TYPE)
-        if(type STREQUAL "INTERFACE_LIBRARY")
-            set(is_interface "INTERFACE")
-        endif()
-
-        if(is_interface)
+        if(deptype STREQUAL INTERFACE OR deptype STREQUAL PUBLIC)
             get_target_property(link_libraries "${target}" INTERFACE_LINK_LIBRARIES)
         else()
             get_target_property(link_libraries "${target}" LINK_LIBRARIES)
@@ -160,10 +153,10 @@ function(target_linker_script target scriptfiles)
 
         list(FIND "${link_libraries}" "-L ${search_dir}" found_search_dir)
         if(found_search_dir EQUAL "-1")  # not already added as a search path
-            target_link_libraries("${target}" "${is_interface}" "-L ${search_dir}")
+            target_link_libraries("${target}" "${deptype}" "-L ${search_dir}")
         endif()
 
-        target_link_libraries("${target}" "${is_interface}" "-T ${scriptname}")
+        target_link_libraries("${target}" "${deptype}" "-T ${scriptname}")
 
         # Note: In ESP-IDF, most targets are libraries and libary LINK_DEPENDS don't propagate to
         # executable(s) the library is linked to. Attach manually to executable once it is known.
@@ -171,11 +164,7 @@ function(target_linker_script target scriptfiles)
         # Property INTERFACE_LINK_DEPENDS is available in CMake 3.13 which should propagate link
         # dependencies.
         if(NOT __PROCESS)
-            if(is_interface)
-                set_property(TARGET ${target} APPEND PROPERTY INTERFACE_LINK_DEPENDS ${abs_script})
-            else()
-                set_property(TARGET ${target} APPEND PROPERTY LINK_DEPENDS ${abs_script})
-            endif()
+            idf_build_set_property(__LINK_DEPENDS ${abs_script} APPEND)
         endif()
     endforeach()
 endfunction()
@@ -212,9 +201,15 @@ function(fail_at_build_time target_name message_line0)
     foreach(message_line ${ARGN})
         set(message_lines ${message_lines} COMMAND ${CMAKE_COMMAND} -E echo "${message_line}")
     endforeach()
+    # Generate a timestamp file that gets included. When deleted on build, this forces CMake
+    # to rerun.
+    string(RANDOM filename)
+    set(filename "${CMAKE_CURRENT_BINARY_DIR}/${filename}.cmake")
+    file(WRITE "${filename}" "")
+    include("${filename}")
     add_custom_target(${target_name} ALL
         ${message_lines}
-        COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/CMakeCache.txt"
+        COMMAND ${CMAKE_COMMAND} -E remove "${filename}"
         COMMAND ${CMAKE_COMMAND} -P ${idf_path}/tools/cmake/scripts/fail.cmake
         VERBATIM)
 endfunction()

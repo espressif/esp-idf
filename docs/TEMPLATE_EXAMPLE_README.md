@@ -23,20 +23,20 @@ _If any other items (server, BLE device, app, second chip, whatever) are needed,
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
-* _If there is any menuconfig configuration that the user user must set for this example, mention this here._
+* _If there is any project configuration that the user must set for this example, mention this here._
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
+
+(Replace PORT with the name of the serial port to use.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

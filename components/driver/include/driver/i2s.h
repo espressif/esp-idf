@@ -510,6 +510,16 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num);
 esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t bits, i2s_channel_t ch);
 
 /**
+ * @brief get clock set on particular port number.
+ *
+ * @param i2s_num  I2S_NUM_0, I2S_NUM_1
+ *
+ * @return
+ *     - actual clock set by i2s driver
+ */
+float i2s_get_clk(i2s_port_t i2s_num);
+
+/**
  * @brief Set built-in ADC mode for I2S DMA, this function will initialize ADC pad,
  *        and set ADC parameters.
  * @param adc_unit    SAR ADC unit index

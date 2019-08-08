@@ -3,29 +3,29 @@
 NVS Partition Generator Utility
 -------------------------------
 
-This utility helps in generating NVS-esque partition binary file which can be flashed separately on a dedicated partition via a flashing utility. Key-value pairs to be flashed onto the partition can be provided via a CSV file. Refer to :doc:`NVS Partition Generator Utility <nvs_partition_gen>` for more details.
+This utility helps generate NVS partition binary files which can be flashed separately on a dedicated partition via a flashing utility. Key-value pairs to be flashed onto the partition can be provided via a CSV file. For more details, please refer to :doc:`NVS Partition Generator Utility <nvs_partition_gen>`.
 
 Application Example
 -------------------
 
-Two examples are provided in :example:`storage` directory of ESP-IDF examples:
+You can find two code examples in the :example:`storage` directory of ESP-IDF examples:
 
 :example:`storage/nvs_rw_value`
 
-  Demonstrates how to read and write a single integer value using NVS.
+  Demonstrates how to read a single integer value from, and write it to NVS.
 
-  The value holds the number of ESP32 module restarts. Since it is written to NVS, the value is preserved between restarts.
+  The value checked in this example holds the number of the ESP32 module restarts. The value's function as a counter is only possible due to its storing in NVS.
 
-  Example also shows how to check if read / write operation was successful, or certain value is not initialized in NVS. Diagnostic is provided in plain text to help track program flow and capture any issues on the way.
+  The example also shows how to check if a read / write operation was successful, or if a certain value has not been initialized in NVS. The diagnostic procedure is provided in plain text to help you track the program flow and capture any issues on the way.
 
 :example:`storage/nvs_rw_blob`
 
-  Demonstrates how to read and write a single integer value and a blob (binary large object) using NVS to preserve them between ESP32 module restarts.
+  Demonstrates how to read a single integer value and a blob (binary large object), and write them to NVS to preserve this value between ESP32 module restarts.
 
-    * value - tracks number of ESP32 module soft and hard restarts.
-    * blob - contains a table with module run times. The table is read from NVS to dynamically allocated RAM. New run time is added to the table on each manually triggered soft restart and written back to NVS. Triggering is done by pulling down GPIO0.
+    * value - tracks the number of the ESP32 module soft and hard restarts.
+    * blob - contains a table with module run times. The table is read from NVS to dynamically allocated RAM. A new run time is added to the table on each manually triggered soft restart, and then the added run time is written to NVS. Triggering is done by pulling down GPIO0.
 
-  Example also shows how to implement diagnostics if read / write operation was successful.
+  The example also shows how to implement the diagnostic procedure to check if the read / write operation was successful.
 
 
 API Reference

@@ -6,6 +6,7 @@
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
 #include "driver/timer.h"
+#include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
 #include "unity.h"
 #include "test_utils.h"
@@ -165,7 +166,7 @@ static void receive_check_and_return_item_byte_buffer(RingbufHandle_t handle, co
  * 4) Receive and check the wrapped item
  */
 
-TEST_CASE("Test ring buffer No-Split", "[freertos]")
+TEST_CASE("Test ring buffer No-Split", "[esp_ringbuf]")
 {
     //Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
@@ -184,19 +185,19 @@ TEST_CASE("Test ring buffer No-Split", "[freertos]")
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL, NULL);
     //Send large item that causes wrap around
     send_item_and_check(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     //Receive wrapped item
     receive_check_and_return_item_no_split(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
 
     //Cleanup
     vRingbufferDelete(buffer_handle);
 }
 
-TEST_CASE("Test ring buffer Allow-Split", "[freertos]")
+TEST_CASE("Test ring buffer Allow-Split", "[esp_ringbuf]")
 {
     //Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
@@ -215,19 +216,19 @@ TEST_CASE("Test ring buffer Allow-Split", "[freertos]")
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL, NULL);
     //Send large item that causes wrap around
     send_item_and_check(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     //Receive wrapped item
     receive_check_and_return_item_allow_split(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
 
     //Cleanup
     vRingbufferDelete(buffer_handle);
 }
 
-TEST_CASE("Test ring buffer Byte Buffer", "[freertos]")
+TEST_CASE("Test ring buffer Byte Buffer", "[esp_ringbuf]")
 {
     //Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_BYTEBUF);
@@ -246,12 +247,12 @@ TEST_CASE("Test ring buffer Byte Buffer", "[freertos]")
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_before, NULL, NULL);
     //Send large item that causes wrap around
     send_item_and_check(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     //Receive wrapped item
     receive_check_and_return_item_byte_buffer(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
-    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL);
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
 
     //Cleanup
@@ -304,7 +305,7 @@ static void queue_set_receiving_task(void *queue_set_handle)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Test ring buffer with queue sets", "[freertos]")
+TEST_CASE("Test ring buffer with queue sets", "[esp_ringbuf]")
 {
     QueueSetHandle_t queue_set = xQueueCreateSet(NO_OF_RB_TYPES);
     done_sem = xSemaphoreCreateBinary();
@@ -421,7 +422,7 @@ static void cleanup_timer()
     esp_intr_free(ringbuffer_isr_handle);
 }
 
-TEST_CASE("Test ring buffer ISR", "[freertos]")
+TEST_CASE("Test ring buffer ISR", "[esp_ringbuf]")
 {
     for (int i = 0; i < NO_OF_RB_TYPES; i++) {
         buffer_handles[i] = xRingbufferCreate(BUFFER_SIZE, i);
@@ -461,11 +462,12 @@ static const char continuous_data[] = {"A_very_long_string_that_will_be_split_in
                                        "be_increased_over_multiple_iterations_in_this"
                                        "_test"};
 #define CONT_DATA_LEN                   sizeof(continuous_data)
-#define CONT_DATA_TEST_BUFF_LEN         (CONT_DATA_LEN/2)   //This will guarantee that the buffer must do a wrap around at some point
+//32-bit aligned size that guarantees a wrap around at some point
+#define CONT_DATA_TEST_BUFF_LEN         (((CONT_DATA_LEN/2) + 0x03) & ~0x3)
 
 typedef struct {
     RingbufHandle_t buffer;
-    ringbuf_type_t type;
+    RingbufferType_t type;
 } task_args_t;
 
 static SemaphoreHandle_t tasks_done;
@@ -494,7 +496,7 @@ static void send_to_buffer(RingbufHandle_t buffer, size_t max_item_size)
     }
 }
 
-static void read_from_buffer(RingbufHandle_t buffer, ringbuf_type_t buf_type, size_t max_rec_size)
+static void read_from_buffer(RingbufHandle_t buffer, RingbufferType_t buf_type, size_t max_rec_size)
 {
     for (int iter = 0; iter < SMP_TEST_ITERATIONS; iter++) {
         size_t bytes_rec = 0;      //Number of data bytes received in this iteration
@@ -568,20 +570,33 @@ static void rec_task(void *args)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("Test ring buffer SMP", "[freertos]")
+static void setup()
 {
-    ets_printf("size of buf %d\n", CONT_DATA_LEN);
+    ets_printf("Size of test data: %d\n", CONT_DATA_LEN);
     tx_done = xSemaphoreCreateBinary();                 //Semaphore to indicate send is done for a particular iteration
     rx_done = xSemaphoreCreateBinary();                 //Semaphore to indicate receive is done for a particular iteration
-    tasks_done = xSemaphoreCreateBinary();                //Semaphore used to to indicate send and receive tasks completed running
+    tasks_done = xSemaphoreCreateBinary();              //Semaphore used to to indicate send and receive tasks completed running
     srand(SRAND_SEED);                                  //Seed RNG
+}
 
+static void cleanup()
+{
+    //Cleanup
+    vSemaphoreDelete(tx_done);
+    vSemaphoreDelete(rx_done);
+    vSemaphoreDelete(tasks_done);
+}
+
+TEST_CASE("Test ring buffer SMP", "[esp_ringbuf]")
+{
+    setup();
     //Iterate through buffer types (No split, split, then byte buff)
-    for (ringbuf_type_t buf_type = 0; buf_type <= RINGBUF_TYPE_BYTEBUF; buf_type++) {
+    for (RingbufferType_t buf_type = 0; buf_type < RINGBUF_TYPE_MAX; buf_type++) {
         //Create buffer
         task_args_t task_args;
         task_args.buffer = xRingbufferCreate(CONT_DATA_TEST_BUFF_LEN, buf_type); //Create buffer of selected type
         task_args.type = buf_type;
+        TEST_ASSERT_MESSAGE(task_args.buffer != NULL, "Failed to create ring buffer");
 
         for (int prior_mod = -1; prior_mod < 2; prior_mod++) {  //Test different relative priorities
             //Test every permutation of core affinity
@@ -600,12 +615,59 @@ TEST_CASE("Test ring buffer SMP", "[freertos]")
         vRingbufferDelete(task_args.buffer);
         vTaskDelay(10);
     }
-
-    //Cleanup
-    vSemaphoreDelete(tx_done);
-    vSemaphoreDelete(rx_done);
-    vSemaphoreDelete(tasks_done);
+    cleanup();
 }
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
+{
+    setup();
+    //Iterate through buffer types (No split, split, then byte buff)
+    for (RingbufferType_t buf_type = 0; buf_type < RINGBUF_TYPE_MAX; buf_type++) {
+        StaticRingbuffer_t *buffer_struct;
+        uint8_t *buffer_storage;
+        //Allocate memory and create semaphores
+#if CONFIG_SPIRAM_USE_CAPS_ALLOC   //When SPIRAM can only be allocated using heap_caps_malloc()
+        buffer_struct = (StaticRingbuffer_t *)heap_caps_malloc(sizeof(StaticRingbuffer_t), MALLOC_CAP_SPIRAM);
+        buffer_storage = (uint8_t *)heap_caps_malloc(sizeof(uint8_t)*CONT_DATA_TEST_BUFF_LEN, MALLOC_CAP_SPIRAM);
+#else   //Case where SPIRAM is disabled or when SPIRAM is allocatable through malloc()
+        buffer_struct = (StaticRingbuffer_t *)malloc(sizeof(StaticRingbuffer_t));
+        buffer_storage = (uint8_t *)malloc(sizeof(uint8_t)*CONT_DATA_TEST_BUFF_LEN);
+#endif
+        TEST_ASSERT(buffer_struct != NULL && buffer_storage != NULL);
+
+        //Create buffer
+        task_args_t task_args;
+        task_args.buffer = xRingbufferCreateStatic(CONT_DATA_TEST_BUFF_LEN, buf_type, buffer_storage, buffer_struct); //Create buffer of selected type
+        task_args.type = buf_type;
+        TEST_ASSERT_MESSAGE(task_args.buffer != NULL, "Failed to create ring buffer");
+
+        for (int prior_mod = -1; prior_mod < 2; prior_mod++) {  //Test different relative priorities
+            //Test every permutation of core affinity
+            for (int send_core = 0; send_core < portNUM_PROCESSORS; send_core++) {
+                for (int rec_core = 0; rec_core < portNUM_PROCESSORS; rec_core ++) {
+                    ets_printf("Type: %d, PM: %d, SC: %d, RC: %d\n", buf_type, prior_mod, send_core, rec_core);
+                    xTaskCreatePinnedToCore(send_task, "send tsk", 2048, (void *)&task_args, 10 + prior_mod, NULL, send_core);
+                    xTaskCreatePinnedToCore(rec_task, "rec tsk", 2048, (void *)&task_args, 10, NULL, rec_core);
+                    xSemaphoreTake(tasks_done, portMAX_DELAY);
+                    vTaskDelay(5);  //Allow idle to clean up
+                }
+            }
+        }
+
+        //Delete ring buffer
+        vRingbufferDelete(task_args.buffer);
+
+        //Deallocate memory
+        free(buffer_storage);
+        free(buffer_struct);
+        vTaskDelay(10);
+    }
+    cleanup();
+}
+#endif
+
+/* -------------------------- Test ring buffer IRAM ------------------------- */
 
 static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test()
 {
@@ -621,7 +683,7 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_ringbuf_test()
     return result;
 }
 
-TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[freertos]")
+TEST_CASE("Test ringbuffer functions work with flash cache disabled", "[esp_ringbuf]")
 {
     TEST_ASSERT( iram_ringbuf_test() );
 }

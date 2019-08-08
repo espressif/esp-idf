@@ -27,9 +27,9 @@
 #include "esp_vfs.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#ifdef CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
 #define LOG_LOCAL_LEVEL ESP_LOG_NONE
-#endif //CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#endif //CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
 #include "esp_log.h"
 
 static const char *TAG = "vfs";
@@ -447,6 +447,33 @@ ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
     return ret;
 }
 
+ssize_t esp_vfs_pread(int fd, void *dst, size_t size, off_t offset)
+{
+    struct _reent *r = __getreent();
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    ssize_t ret;
+    CHECK_AND_CALL(ret, r, vfs, pread, local_fd, dst, size, offset);
+    return ret;
+}
+
+ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset)
+{
+    struct _reent *r = __getreent();
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    ssize_t ret;
+    CHECK_AND_CALL(ret, r, vfs, pwrite, local_fd, src, size, offset);
+    return ret;
+}
 
 int esp_vfs_close(struct _reent *r, int fd)
 {
@@ -1032,7 +1059,7 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
     }
 }
 
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
 int tcgetattr(int fd, struct termios *p)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
@@ -1130,7 +1157,7 @@ int tcsendbreak(int fd, int duration)
     CHECK_AND_CALL(ret, r, vfs, tcsendbreak, local_fd, duration);
     return ret;
 }
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 int esp_vfs_utime(const char *path, const struct utimbuf *times)
 {

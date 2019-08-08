@@ -94,7 +94,7 @@ struct pbuf * pbuf_alloc(pbuf_layer layer, u16_t length, pbuf_type type)
     p = (struct pbuf *)malloc(MEMP_PBUF_POOL);
     p->tot_len = length;
     p->next = NULL;
-    p->type = PBUF_POOL;
+    p->type_internal = PBUF_POOL;
     p->len = length;
     p->payload = malloc(length);
     return p;

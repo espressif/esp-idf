@@ -1,0 +1,9 @@
+menu "ESP HTTPS server"
+
+    config ESP_HTTPS_SERVER_ENABLE
+        bool "Enable ESP_HTTPS_SERVER component"
+        select ESP_TLS_SERVER
+        help
+            Enable ESP HTTPS server component
+
+endmenu

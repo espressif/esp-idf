@@ -16,6 +16,10 @@
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Type of hold a GPIO in low state
 typedef enum {
     GPIO_LONG_HOLD  = 1,    /*!< The long hold GPIO */
@@ -148,3 +152,7 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
  */
 void bootloader_common_vddsdio_configure();
+
+#ifdef __cplusplus
+}
+#endif

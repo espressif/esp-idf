@@ -4,14 +4,14 @@
 #include "esp_spi_flash.h"
 #include "esp_ota_ops.h"
 
-#if CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ABORTS || CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_FAILS
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ABORTS || CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
 
 static const char *data = "blah blah blah";
 
-#if CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_FAILS
-#define TEST_TAGS "[spi_flash]"
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
+#define TEST_TAGS "[spi_flash][esp_flash]"
 #else // ABORTS
-#define TEST_TAGS "[spi_flash][ignore]"
+#define TEST_TAGS "[spi_flash][esp_flash][ignore]"
 #endif
 
 TEST_CASE("can't overwrite bootloader", TEST_TAGS)

@@ -1,5 +1,5 @@
 ESP32 中的单元测试
-==================
+==========================
 :link_to_translation:`en:[English]`
 
 ESP-IDF
@@ -32,12 +32,19 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
 来声明主函数的区域， ``unity_platform.c`` 会自动调用
 ``UNITY_BEGIN()``\ ， 然后运行测试用例，最后调用 ``UNITY_END()``\ 。
 
-每一个测试子目录下都应该包含一个
-``component.mk``\ ，并且里面至少要包含如下的一行内容：
+``test`` 子目录需要包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了 
+``unity`` 测试框架，需要将其指定为组件的依赖项。通常，组件
+：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽了，仅仅是建议使用 “COMPONENT_SRCDIRS”。
 
-.. code:: makefile
+总的来说，``test`` 子目录下最简单的 CMakeLists.txt 文件可能如下所示:
 
-   COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-archive
+.. code:: cmake
+
+    set(COMPONENT_SRCDIRS ".")
+    set(COMPONENT_ADD_INCLUDEDIRS ".")
+    set(COMPONENT_REQUIRES unity)
+
+    register_component()
 
 更多关于如何在 Unity 下编写测试用例的信息，请查阅
 http://www.throwtheswitch.org/unity 。
@@ -110,21 +117,6 @@ DUT2（slave）终端：
 一旦 DUT2 发送了该信号，您需要在 DUT2 的终端输入回车，然后 DUT1 会从
 ``unity_wait_for_signal`` 函数中解除阻塞，并开始更改 GPIO 的电平。
 
-信号也可以用来在不同 DUT 之间传递参数。例如，DUT1 希望能够拿到 DUT2 的 MAC 地址，来进行蓝牙连接。
-这时，我们可以使用 ``unity_wait_for_signal_param`` 以及 ``unity_send_signal_param``。
-
-DUT1 终端::
-
-    Waiting for signal: [dut2 mac address]!
-    Please input parameter value from any board send this signal and press "Enter" key.
-    
-
-DUT2 终端:: 
-
-    Send signal: [dut2 mac address][10:20:30:40:50:60]!
-
-一旦 DUT2 发送信号，您需要在 DUT1 输入 ``10:20:30:40:50:60`` 及回车，然后 DUT1 会从 ``unity_wait_for_signal_param`` 中获取到蓝牙地址的字符串，并解除阻塞开始蓝牙连接。
-
 
 添加多阶段测试用例
 ------------------
@@ -158,23 +150,23 @@ DUT2 终端::
 
 切换到 ``tools/unit-test-app`` 目录下进行配置和编译：
 
--  ``make menuconfig`` - 配置单元测试程序。
+-  ``idf.py menuconfig`` - 配置单元测试程序。
 
--  ``make TESTS_ALL=1`` - 编译单元测试程序，测试每个组件 ``test``
+-  ``idf.py -T all build`` - 编译单元测试程序，测试每个组件 ``test``
    子目录下的用例。
 
--  ``make TEST_COMPONENTS='xxx'`` - 编译单元测试程序，测试指定的组件。
+-  ``idf.py -T xxx build`` - 编译单元测试程序，测试指定的组件。
 
--  ``make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='xxx'`` -
+-  ``idf.py -T all -E xxx build`` -
    编译单元测试程序，测试所有（除开指定）的组件。例如
-   ``make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='ulp mbedtls'`` -
+   ``idf.py -T all -E ulp mbedtls build`` -
    编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls``\ 组件。
 
-当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``make flash``
+当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``idf.py flash``
 即可烧写所有编译输出的文件。
 
-您还可以运行 ``make flash TESTS_ALL=1`` 或者
-``make TEST_COMPONENTS='xxx'``
+您还可以运行 ``idf.py -T all flash`` 或者
+``idf.py -T xxx flash``
 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
 
 使用 ``menuconfig`` 可以设置烧写测试程序所使用的串口。
@@ -219,13 +211,13 @@ DUT2 终端::
 
 可以输入以下任意一项来运行测试用例：
 
--  引号中的测试用例的名字（例如 ``"esp_ota_begin() verifies arguments"``），运行单个测试用例。
+-  引号中的测试用例的名字，运行单个测试用例。
 
--  测试用例的序号（例如 ``1``），运行单个测试用例。
+-  测试用例的序号，运行单个测试用例。
 
--  方括号中的模块名字（例如 ``[cxx]``），运行指定模块所有的测试用例。
+-  方括号中的模块名字，运行指定模块所有的测试用例。
 
--  星号 (``*``)，运行所有测试用例。
+-  星号，运行所有测试用例。
 
 ``[multi_device]`` 和 ``[multi_stage]``
 标签告诉测试运行者该用例是多设备测试还是多阶段测试。这些标签由

@@ -82,6 +82,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT(WIFI, STA_WPS_ER_TIMEOUT);
         HANDLE_SYS_EVENT_ARG(WIFI, STA_WPS_ER_FAILED, sta_er_fail_reason);
         HANDLE_SYS_EVENT_ARG(WIFI, STA_WPS_ER_PIN, sta_er_pin);
+        HANDLE_SYS_EVENT(WIFI, STA_WPS_ER_PBC_OVERLAP);
 
         /* AP events */
         HANDLE_SYS_EVENT(WIFI, AP_START);
@@ -233,6 +234,10 @@ static void esp_system_event_debug(const system_event_t* event)
         }
         case SYSTEM_EVENT_STA_WPS_ER_PIN: {
             ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PIN");
+            break;
+        }
+        case SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP: {
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP");
             break;
         }
         case SYSTEM_EVENT_AP_START: {

@@ -19,63 +19,13 @@
 #include "iperf.h"
 #include "sdkconfig.h"
 
-#if CONFIG_PHY_LAN8720
-#include "eth_phy/phy_lan8720.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_lan8720_default_ethernet_config
-#elif CONFIG_PHY_TLK110
-#include "eth_phy/phy_tlk110.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_tlk110_default_ethernet_config
-#elif CONFIG_PHY_IP101
-#include "eth_phy/phy_ip101.h"
-#define DEFAULT_ETHERNET_PHY_CONFIG phy_ip101_default_ethernet_config
-#endif
-
 static tcpip_adapter_ip_info_t ip;
 static bool started = false;
 static EventGroupHandle_t eth_event_group;
 static const int GOTIP_BIT = BIT0;
-
-#define PIN_PHY_POWER CONFIG_PHY_POWER_PIN
-#define PIN_SMI_MDC CONFIG_PHY_SMI_MDC_PIN
-#define PIN_SMI_MDIO CONFIG_PHY_SMI_MDIO_PIN
-
-#ifdef CONFIG_PHY_USE_POWER_PIN
-
-static void phy_device_power_enable_via_gpio(bool enable)
-{
-    assert(DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable);
-
-    if (!enable) {
-        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(false);
-    }
-
-    gpio_pad_select_gpio(PIN_PHY_POWER);
-    gpio_set_direction(PIN_PHY_POWER, GPIO_MODE_OUTPUT);
-    if (enable == true) {
-        gpio_set_level(PIN_PHY_POWER, 1);
-        ESP_LOGI(__func__, "Power On Ethernet PHY");
-    } else {
-        gpio_set_level(PIN_PHY_POWER, 0);
-        ESP_LOGI(__func__, "Power Off Ethernet PHY");
-    }
-
-    vTaskDelay(1); // Allow the power up/down to take effect, min 300us
-
-    if (enable) {
-        /* call the default PHY-specific power on function */
-        DEFAULT_ETHERNET_PHY_CONFIG.phy_power_enable(true);
-    }
-}
-#endif
-
-static void eth_gpio_config_rmii(void)
-{
-    phy_rmii_configure_data_interface_pins();
-    phy_rmii_smi_configure_pins(PIN_SMI_MDC, PIN_SMI_MDIO);
-}
+static esp_eth_handle_t eth_handle = NULL;
 
 /* "ethernet" command */
-
 static struct {
     struct arg_str *control;
     struct arg_end *end;
@@ -89,17 +39,9 @@ static int eth_cmd_control(int argc, char **argv)
         return 1;
     }
 
-    if (!strncmp(eth_control_args.control->sval[0], "start", 5) && !started) {
-        ESP_ERROR_CHECK(esp_eth_enable());
-        started = true;
-    }
-    if (!strncmp(eth_control_args.control->sval[0], "stop", 4) && started) {
-        ESP_ERROR_CHECK(esp_eth_disable());
-        started = false;
-    }
     if (!strncmp(eth_control_args.control->sval[0], "info", 4)) {
         uint8_t mac_addr[6];
-        esp_eth_get_mac(mac_addr);
+        esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
         printf("HW ADDR: " MACSTR "\r\n", MAC2STR(mac_addr));
         tcpip_adapter_get_ip_info(ESP_IF_ETH, &ip);
         printf("ETHIP: " IPSTR "\r\n", IP2STR(&ip.ip));
@@ -216,8 +158,8 @@ static int eth_cmd_iperf(int argc, char **argv)
     return 0;
 }
 
-static void event_handler(void* arg, esp_event_base_t event_base, 
-                          int32_t event_id, void* event_data)
+static void event_handler(void *arg, esp_event_base_t event_base,
+                          int32_t event_id, void *event_data)
 {
     if (event_base == ETH_EVENT && event_id == ETHERNET_EVENT_START) {
         started = true;
@@ -225,7 +167,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         xEventGroupClearBits(eth_event_group, GOTIP_BIT);
         started = false;
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_ETH_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
         memcpy(&ip, &event->ip_info, sizeof(ip));
         xEventGroupSetBits(eth_event_group, GOTIP_BIT);
     }
@@ -236,27 +178,56 @@ void register_ethernet()
     eth_event_group = xEventGroupCreate();
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    eth_config_t config = DEFAULT_ETHERNET_PHY_CONFIG;
-    config.phy_addr = CONFIG_PHY_ADDRESS;
-    config.gpio_config = eth_gpio_config_rmii;
-    config.tcpip_input = tcpip_adapter_eth_input;
-    config.clock_mode = CONFIG_PHY_CLOCK_MODE;
-#ifdef CONFIG_PHY_USE_POWER_PIN
-    /* Replace the default 'power enable' function with an example-specific one
-     that toggles a power GPIO. */
-    config.phy_power_enable = phy_device_power_enable_via_gpio;
-#endif
-
-    ESP_ERROR_CHECK(esp_eth_init(&config));
+    ESP_ERROR_CHECK(tcpip_adapter_set_default_eth_handlers());
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &event_handler, NULL));
 
-    eth_control_args.control = arg_str1(NULL, NULL, "<start|stop|info>", "Start/Stop Ethernet or Get info of Ethernet");
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+#if CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+#if CONFIG_EXAMPLE_ETH_PHY_IP101
+    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
+    esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_LAN8720
+    esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_DP83848
+    esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+#endif
+#elif CONFIG_EXAMPLE_USE_SPI_ETHERNET
+    gpio_install_isr_service(0);
+    spi_device_handle_t spi_handle = NULL;
+    spi_bus_config_t buscfg = {
+        .miso_io_num = CONFIG_EXAMPLE_ETH_MISO_GPIO,
+        .mosi_io_num = CONFIG_EXAMPLE_ETH_MOSI_GPIO,
+        .sclk_io_num = CONFIG_EXAMPLE_ETH_SCLK_GPIO,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+    };
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 1,
+        .address_bits = 7,
+        .mode = 0,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_CS_GPIO,
+        .queue_size = 20
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
+    /* dm9051 ethernet driver is based on spi driver, so need to specify the spi handle */
+    mac_config.spi_hdl = spi_handle;
+    esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
+#endif
+    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
+    ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
+
+    eth_control_args.control = arg_str1(NULL, NULL, "<info>", "Get info of Ethernet");
     eth_control_args.end = arg_end(1);
     const esp_console_cmd_t cmd = {
         .command = "ethernet",
-        .help = "Control Ethernet interface",
+        .help = "Ethernet interface IO control",
         .hint = NULL,
         .func = eth_cmd_control,
         .argtable = &eth_control_args

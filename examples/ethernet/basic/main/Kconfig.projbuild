@@ -1,0 +1,99 @@
+menu "Example Configuration"
+    choice EXAMPLE_USE_ETHERNET
+        prompt "Ethernet Type"
+        default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
+        default EXAMPLE_USE_SPI_ETHERNET if !IDF_TARGET_ESP32
+        help
+            Select which kind of Ethernet will be used in the example.
+
+        config EXAMPLE_USE_INTERNAL_ETHERNET
+            depends on IDF_TARGET_ESP32
+            select ETH_USE_ESP32_EMAC
+            bool "Internal EMAC"
+            help
+                Select internal Ethernet MAC controller.
+
+        config EXAMPLE_USE_SPI_ETHERNET
+            bool "SPI Ethernet Module"
+            select ETH_USE_SPI_ETHERNET
+            help
+                Select external SPI-Ethernet module.
+    endchoice
+
+    if EXAMPLE_USE_INTERNAL_ETHERNET
+        choice EXAMPLE_ETH_PHY_MODEL
+            prompt "Ethernet PHY Device"
+            default EXAMPLE_ETH_PHY_IP101
+            help
+                Select the Ethernet PHY device to use in the example.
+
+            config EXAMPLE_ETH_PHY_IP101
+                bool "IP101"
+                help
+                    IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
+                    Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
+
+            config EXAMPLE_ETH_PHY_RTL8201
+                bool "RTL8201/SR8201"
+                help
+                    RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
+                    Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
+
+            config EXAMPLE_ETH_PHY_LAN8720
+                bool "LAN8720"
+                help
+                    LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
+                    Goto https://www.microchip.com/LAN8720A for more information about it.
+
+            config EXAMPLE_ETH_PHY_DP83848
+                bool "DP83848"
+                help
+                    DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
+                    Goto http://www.ti.com/product/DP83848J for more information about it.
+        endchoice
+    endif
+
+    if EXAMPLE_USE_SPI_ETHERNET
+        config EXAMPLE_ETH_SPI_HOST
+            int "SPI Host Number"
+            range 0 2
+            default 1
+            help
+                Set the SPI host used to communicate with DM9051.
+
+        config EXAMPLE_ETH_SCLK_GPIO
+            int "SPI SCLK GPIO number"
+            range 0 33
+            default 19
+            help
+                Set the GPIO number used by SPI SCLK.
+
+        config EXAMPLE_ETH_MOSI_GPIO
+            int "SPI MOSI GPIO number"
+            range 0 33
+            default 23
+            help
+                Set the GPIO number used by SPI MOSI.
+
+        config EXAMPLE_ETH_MISO_GPIO
+            int "SPI MISO GPIO number"
+            range 0 33
+            default 25
+            help
+                Set the GPIO number used by SPI MISO.
+
+        config EXAMPLE_ETH_CS_GPIO
+            int "SPI CS GPIO number"
+            range 0 33
+            default 22
+            help
+                Set the GPIO number used by SPI CS.
+
+        config EXAMPLE_ETH_SPI_CLOCK_MHZ
+            int "SPI clock speed (MHz)"
+            range 20 80
+            default 20
+            help
+                Set the clock speed (MHz) of SPI interface.
+    endif
+endmenu

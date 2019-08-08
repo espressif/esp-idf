@@ -6,7 +6,7 @@
 IDF 工具安装程序
 ================
 
-如果您正在使用 CMake 构建系统，并遵循 :doc:`/get-started-cmake/windows-setup` 章节的指导使用了 ``ESP-IDF Tools Installer`` 的 V1.2 及其以上版本，那么默认情况下您已经安装好了 ``OpenOCD`` 软件。
+如果您正在使用 CMake 构建系统，并遵循 :doc:`/get-started/windows-setup` 章节的指导使用了 ``ESP-IDF Tools Installer`` 的 V1.2 及其以上版本，那么默认情况下您已经安装好了 ``OpenOCD`` 软件。
 
 ``ESP-IDF Tools Installer`` 会将 ``OpenOCD`` 添加到环境变量 ``PATH`` 中，这样你就可以在任何目录运行它。
 

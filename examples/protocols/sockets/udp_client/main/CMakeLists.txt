@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "udp_client.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "udp_client.c"
+                    INCLUDE_DIRS ".")

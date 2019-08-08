@@ -5,9 +5,9 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-#include "wpa/includes.h"
+#include "utils/includes.h"
 
-#include "wpa/common.h"
+#include "utils/common.h"
 #include "wps/wps_i.h"
 #include "wps/wps.h"
 

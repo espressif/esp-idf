@@ -32,6 +32,10 @@ def main():
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
+    parser.add_argument('--env-file', type=argparse.FileType('r'),
+                        help='Optional file to load environment variables from. Contents '
+                             'should be a JSON object where each key/value pair is a variable.')
+
     parser.add_argument('--version', help='Set protocol version to use on initial status',
                         type=int, default=MAX_PROTOCOL_VERSION)
 
@@ -53,6 +57,10 @@ def main():
 
     for name, value in args.env:
         os.environ[name] = value
+
+    if args.env_file is not None:
+        env = json.load(args.env_file)
+        os.environ.update(env)
 
     run_server(args.kconfig, args.config)
 
@@ -82,6 +90,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         # V2 onwards: separate visibility from version
         json.dump({"version": default_version, "values": config_dict, "ranges": ranges_dict, "visible": visible_dict}, sys.stdout)
     print("\n")
+    sys.stdout.flush()
 
     while True:
         line = sys.stdin.readline()
@@ -93,6 +102,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             response = {"version": default_version, "error": ["JSON formatting error: %s" % e]}
             json.dump(response, sys.stdout)
             print("\n")
+            sys.stdout.flush()
             continue
         before = confgen.get_json_values(config)
         before_ranges = get_ranges(config)
@@ -142,6 +152,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             response["error"] = error
         json.dump(response, sys.stdout)
         print("\n")
+        sys.stdout.flush()
 
 
 def handle_request(deprecated_options, config, req):

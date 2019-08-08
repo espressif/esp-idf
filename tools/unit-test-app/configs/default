@@ -1,1 +1,1 @@
-TEST_EXCLUDE_COMPONENTS=libsodium bt app_update
+TEST_COMPONENTS=freertos esp32 driver heap pthread soc spi_flash vfs

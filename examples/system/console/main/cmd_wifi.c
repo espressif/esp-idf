@@ -26,7 +26,7 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 
 
-static void event_handler(void* arg, esp_event_base_t event_base, 
+static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -61,9 +61,9 @@ static bool wifi_join(const char *ssid, const char *pass, int timeout_ms)
 {
     initialise_wifi();
     wifi_config_t wifi_config = { 0 };
-    strncpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strlcpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strncpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strlcpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );

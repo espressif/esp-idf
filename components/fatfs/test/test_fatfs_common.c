@@ -16,8 +16,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <fcntl.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <utime.h>
 #include "unity.h"
@@ -96,6 +98,88 @@ void test_fatfs_read_file_utf_8(const char* filename)
     TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str_utf), cb);
     TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str_utf, buf));
     TEST_ASSERT_EQUAL(0, fclose(f));
+}
+
+void test_fatfs_pread_file(const char* filename)
+{
+    char buf[32] = { 0 };
+    const int fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    int r = pread(fd, buf, sizeof(buf), 0); // it is a regular read() with offset==0
+    TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str, buf));
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str), r);
+
+    memset(buf, 0, sizeof(buf));
+    r = pread(fd, buf, sizeof(buf), 1); // offset==1
+    TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str + 1, buf));
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str) - 1, r);
+
+    memset(buf, 0, sizeof(buf));
+    r = pread(fd, buf, sizeof(buf), 5); // offset==5
+    TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str + 5, buf));
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str) - 5, r);
+
+    // regular read() should work now because pread() should not affect the current position in file
+
+    memset(buf, 0, sizeof(buf));
+    r = read(fd, buf, sizeof(buf)); // note that this is read() and not pread()
+    TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str, buf));
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str), r);
+
+    memset(buf, 0, sizeof(buf));
+    r = pread(fd, buf, sizeof(buf), 10); // offset==10
+    TEST_ASSERT_EQUAL(0, strcmp(fatfs_test_hello_str + 10, buf));
+    TEST_ASSERT_EQUAL(strlen(fatfs_test_hello_str) - 10, r);
+
+    memset(buf, 0, sizeof(buf));
+    r = pread(fd, buf, sizeof(buf), strlen(fatfs_test_hello_str) + 1); // offset to EOF
+    TEST_ASSERT_EQUAL(0, r);
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+}
+
+static void test_pwrite(const char *filename, off_t offset, const char *msg)
+{
+    const int fd = open(filename, O_WRONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    const off_t current_pos = lseek(fd, 0, SEEK_END); // O_APPEND is not the same - jumps to the end only before write()
+
+    const int r = pwrite(fd, msg, strlen(msg), offset);
+    TEST_ASSERT_EQUAL(strlen(msg), r);
+
+    TEST_ASSERT_EQUAL(current_pos, lseek(fd, 0, SEEK_CUR)); // pwrite should not move the pointer
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+}
+
+static void test_file_content(const char *filename, const char *msg)
+{
+    char buf[32] = { 0 };
+    const int fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    int r = read(fd, buf, sizeof(buf));
+    TEST_ASSERT_NOT_EQUAL(-1, r);
+    TEST_ASSERT_EQUAL(0, strcmp(msg, buf));
+
+    TEST_ASSERT_EQUAL(0, close(fd));
+}
+
+void test_fatfs_pwrite_file(const char *filename)
+{
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    test_pwrite(filename, 0, "Hello");
+    test_file_content(filename, "Hello");
+
+    test_pwrite(filename, strlen("Hello"), ", world!");
+    test_file_content(filename, "Hello, world!");
+    test_pwrite(filename, strlen("Hello, "), "Dolly");
+    test_file_content(filename, "Hello, Dolly!");
 }
 
 void test_fatfs_open_max_files(const char* filename_prefix, size_t files_count)

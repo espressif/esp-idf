@@ -128,7 +128,7 @@ static void read_task(void* varg) {
     vTaskDelete(NULL);
 }
 
-TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]")
+TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash][esp_flash]")
 {
     const size_t size = 128;
     read_task_arg_t read_arg = {
@@ -174,7 +174,7 @@ TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]
 
 
 #if portNUM_PROCESSORS > 1
-TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash]")
+TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")
 {
     typedef struct {
         QueueHandle_t queue;

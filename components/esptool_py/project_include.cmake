@@ -31,7 +31,7 @@ else()
     set(ESPTOOLPY_COMPRESSED_OPT -u)
 endif()
 
-set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
+set(ESPTOOLPY_FLASH_OPTIONS
     --flash_mode ${ESPFLASHMODE}
     --flash_freq ${ESPFLASHFREQ}
     --flash_size ${ESPFLASHSIZE}
@@ -40,17 +40,16 @@ set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
 # String for printing flash command
 string(REPLACE ";" " " ESPTOOLPY_WRITE_FLASH_STR
     "${ESPTOOLPY} --port (PORT) --baud (BAUD) --before ${ESPTOOLPY_BEFORE} --after ${ESPTOOLPY_AFTER} "
-    "write_flash ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
-
-if(CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
-    NOT BOOTLOADER_BUILD)
-    set(ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS
-        ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} --secure-pad)
-endif()
+    "write_flash ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
 
 if(NOT BOOTLOADER_BUILD)
     # set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+endif()
+
+if(CONFIG_SECURE_BOOT_ENABLED AND
+    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
+    AND NOT BOOTLOADER_BUILD)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --secure-pad)
 endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
@@ -75,46 +74,54 @@ set(PROJECT_BIN "${elf_name}.bin")
 #
 # Add 'app.bin' target - generates with elf2image
 #
-add_custom_command(OUTPUT "${build_dir}/.app_hash"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_ELF2IMAGE_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
+add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
+    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
         -o "${build_dir}/${unsigned_project_binary}" "${elf}"
-    COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.app_hash"
+    COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
+    COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
     DEPENDS ${elf}
     VERBATIM
     WORKING_DIRECTORY ${build_dir}
+    COMMENT "Generating binary image from built executable"
     )
-add_custom_target(gen_project_binary DEPENDS "${build_dir}/.app_hash")
+add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
 
-if(NOT BOOTLOADER_BUILD AND
-    CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+    "${build_dir}/${unsigned_project_binary}"
+    )
 
-    # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
-    add_custom_command(OUTPUT "${build_dir}/.signed_app_hash"
-        COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
-            -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
-        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_app_hash"
-        DEPENDS "${build_dir}/.app_hash"
-        VERBATIM
-        )
-    add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_app_hash")
-    add_dependencies(gen_project_binary gen_signed_project_binary)
-endif()
+add_custom_target(app ALL DEPENDS gen_project_binary)
 
-if(NOT BOOTLOADER_BUILD)
-    add_custom_target(app ALL DEPENDS gen_project_binary)
-else()
-    add_custom_target(bootloader ALL DEPENDS gen_project_binary)
-endif()
+if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
+        add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
+            COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
+                -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
+            COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
+                                    "from ${build_dir}/${unsigned_project_binary}"
+            COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${PROJECT_BIN}" > "${build_dir}/.signed_bin_timestamp"
+            DEPENDS "${build_dir}/.bin_timestamp"
+            VERBATIM
+            COMMENT "Generating signed binary image"
+            )
+        add_custom_target(gen_signed_project_binary DEPENDS "${build_dir}/.signed_bin_timestamp")
+        add_dependencies(gen_project_binary gen_signed_project_binary)
 
-if(NOT BOOTLOADER_BUILD AND
-    CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_command(TARGET app POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "App built but not signed. Sign app before flashing"
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${build_dir}/${elf_bin}"
-        VERBATIM)
+        set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
+            "${build_dir}/${PROJECT_BIN}"
+            )
+    else()
+        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
+        add_custom_command(TARGET app POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "App built but not signed. Sign app before flashing"
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/${PROJECT_BIN}"
+            VERBATIM)
+    endif()
 endif()
 
 #
@@ -136,59 +143,67 @@ endfunction()
 
 esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")
-esptool_py_custom_target(bootloader-flash bootloader "bootloader")
 
-add_custom_target(flash_project_args_target)
+if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+    esptool_py_custom_target(encrypted-flash encrypted_project "app;partition_table;bootloader")
+    esptool_py_custom_target(encrypted-app-flash encrypted_app "app")
+endif()
 
 # esptool_py_flash_project_args
 #
-# Add file to the flasher args list, to be flashed at a particular offset
+# Add file to the flasher args list, to be flashed at a particular offset.
+#
+# When a template FLASH_FILE_TEMPLATE is given, the variables OFFSET and IMAGE
+# hold the value of arguments offset and image, respectively.
 function(esptool_py_flash_project_args entry offset image)
     set(options FLASH_IN_PROJECT)  # flash the image when flashing the project
     set(single_value FLASH_FILE_TEMPLATE) # template file to use to be able to
                                         # flash the image individually using esptool
     cmake_parse_arguments(_ "${options}" "${single_value}" "" "${ARGN}")
 
-    idf_build_get_property(build_dir BUILD_DIR)
-    get_property(flash_project_entries TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ENTRIES)
-
     if(${entry} IN_LIST flash_project_entries)
         message(FATAL_ERROR "entry '${entry}' has already been added to flash project entries")
     endif()
 
-    list(APPEND flash_project_entries "${entry}")
-    set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ENTRIES "${flash_project_entries}")
+    idf_component_set_property(esptool_py FLASH_PROJECT_ENTRIES "${entry}" APPEND)
 
-    file(RELATIVE_PATH image ${CMAKE_BINARY_DIR} ${image})
+    idf_build_get_property(build_dir BUILD_DIR)
+    file(RELATIVE_PATH image ${build_dir} ${image})
 
     # Generate the standalone flash file to flash the image individually using esptool
     set(entry_flash_args ${build_dir}/flash_${entry}_args)
     if(NOT __FLASH_FILE_TEMPLATE)
         file(GENERATE OUTPUT ${entry_flash_args} CONTENT "${offset} ${image}")
     else()
-        get_filename_component(template "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
-        file(GENERATE OUTPUT ${entry_flash_args} INPUT ${template})
+        set(OFFSET ${offset})
+        set(IMAGE ${image})
+
+        get_filename_component(template_in "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
+        get_filename_component(template_name "${template_in}" NAME)
+        set(template_partial "${CMAKE_CURRENT_BINARY_DIR}/${template_name}.in2")
+
+        configure_file("${template_in}" "${template_partial}")
+        file(GENERATE OUTPUT ${entry_flash_args} INPUT "${template_partial}")
+        set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                    APPEND PROPERTY
+                    ADDITIONAL_MAKE_CLEAN_FILES "${template_partial}")
+        unset(OFFSET)
+        unset(IMAGE)
     endif()
 
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${entry_flash_args})
 
     # Generate standalone entries in the flasher args json file
-    get_property(flash_project_args_entry_json TARGET
-                flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_ENTRY_JSON)
-    list(APPEND flash_project_args_entry_json
-                "\"${entry}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
-    set_property(TARGET flash_project_args_target
-                PROPERTY FLASH_PROJECT_ARGS_ENTRY_JSON "${flash_project_args_entry_json}")
+    idf_component_set_property(esptool_py FLASH_PROJECT_ARGS_ENTRY_JSON
+                "\"${entry}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }" APPEND)
 
     # Generate entries in the flasher args json file
     if(__FLASH_IN_PROJECT)
-        get_property(flash_project_args TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS)
-        list(APPEND flash_project_args "${offset} ${image}")
-        set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS "${flash_project_args}")
+        idf_component_set_property(esptool_py FLASH_PROJECT_ARGS
+                                "${offset} ${image}" APPEND)
 
-        get_property(flash_project_args_json TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_JSON)
-        list(APPEND flash_project_args_json "\"${offset}\" : \"${image}\"")
-        set_property(TARGET flash_project_args_target PROPERTY FLASH_PROJECT_ARGS_JSON "${flash_project_args_json}")
+        idf_component_set_property(esptool_py FLASH_PROJECT_ARGS_JSON
+                                "\"${offset}\" : \"${image}\"" APPEND)
     endif()
 endfunction()

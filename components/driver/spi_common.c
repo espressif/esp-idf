@@ -103,11 +103,6 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
     return spi_periph_signal[host].irq_dma;
 }
 
-spi_dev_t *spicommon_hw_for_host(spi_host_device_t host)
-{
-    return spi_periph_signal[host].hw;
-}
-
 static inline uint32_t get_dma_periph(int dma_chan)
 {
 #ifdef CONFIG_IDF_TARGET_ESP32S2BETA
@@ -137,6 +132,7 @@ bool spicommon_dma_chan_claim (int dma_chan)
         spi_dma_chan_enabled |= DMA_CHANNEL_ENABLED(dma_chan);
         ret = true;
     }
+
 #if CONFIG_IDF_TARGET_ESP32
     periph_module_enable(get_dma_periph(dma_chan));
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
@@ -393,32 +389,6 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     return ESP_OK;
 }
 
-
-//Find any pin with output muxed to ``func`` and reset it to GPIO
-static void reset_func_to_gpio(int func)
-{
-    for (int x = 0; x < GPIO_PIN_COUNT; x++) {
-        if (GPIO_IS_VALID_GPIO(x) && (READ_PERI_REG(GPIO_FUNC0_OUT_SEL_CFG_REG + (x * 4))&GPIO_FUNC0_OUT_SEL_M) == func)  {
-            gpio_matrix_out(x, SIG_GPIO_OUT_IDX, false, false);
-        }
-    }
-}
-
-esp_err_t spicommon_bus_free_io(spi_host_device_t host)
-{
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spid_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spid_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiq_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiq_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiclk_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiclk_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiwp_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiwp_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spihd_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spihd_iomux_pin], PIN_FUNC_GPIO);
-    reset_func_to_gpio(spi_periph_signal[host].spid_out);
-    reset_func_to_gpio(spi_periph_signal[host].spiq_out);
-    reset_func_to_gpio(spi_periph_signal[host].spiclk_out);
-    reset_func_to_gpio(spi_periph_signal[host].spiwp_out);
-    reset_func_to_gpio(spi_periph_signal[host].spihd_out);
-    return ESP_OK;
-}
-
 esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg)
 {
     int pin_array[] = {
@@ -459,26 +429,22 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
     }
 }
 
-void spicommon_cs_free(spi_host_device_t host, int cs_io_num)
-{
-    if (cs_io_num == 0 && REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], MCU_SEL) == 1) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], PIN_FUNC_GPIO);
-    }
-    reset_func_to_gpio(spi_periph_signal[host].spics_out[cs_io_num]);
-}
-
 void spicommon_cs_free_io(int cs_gpio_num)
 {
     assert(cs_gpio_num>=0 && GPIO_IS_VALID_GPIO(cs_gpio_num));
     gpio_reset_pin(cs_gpio_num);
 }
 
-//Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.
-void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const uint8_t *data, bool isrx)
+bool spicommon_bus_using_iomux(spi_host_device_t host)
 {
-    lldesc_setup_link(dmadesc, data, len, isrx);
-}
+#define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
 
+    CHECK_IOMUX_PIN(host, spid);
+    CHECK_IOMUX_PIN(host, spiq);
+    CHECK_IOMUX_PIN(host, spiwp);
+    CHECK_IOMUX_PIN(host, spihd);
+    return true;
+}
 
 /*
 Code for workaround for DMA issue in ESP32 v0/v1 silicon

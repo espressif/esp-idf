@@ -126,7 +126,7 @@ export PROJECT_PATH
 endif
 
 # A list of the "common" makefiles, to use as a target dependency
-COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/version.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
 export COMMON_MAKEFILES
 
 # The directory where we put all objects/libraries/binaries. The project Makefile can
@@ -418,7 +418,7 @@ endif
 
 # Optimization flags are set based on menuconfig choice
 ifdef CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE
-OPTIMIZATION_FLAGS = -Os
+OPTIMIZATION_FLAGS = -Os -freorder-blocks
 else
 OPTIMIZATION_FLAGS = -Og
 endif
@@ -502,7 +502,9 @@ $(eval $(call ldgen_create_commands))
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
-$(if $(V),$$(info including $(1)/Makefile.projbuild...))
+ifeq ("$(V)","1")
+$$(info including $(1)/Makefile.projbuild...)
+endif
 COMPONENT_PATH := $(1)
 include $(1)/Makefile.projbuild
 endef

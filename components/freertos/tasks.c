@@ -77,7 +77,6 @@ all the API functions to use the MPU wrappers.  That should only be done when
 task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 #include "esp_newlib.h"
-#include "esp_debug_helpers.h"
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"

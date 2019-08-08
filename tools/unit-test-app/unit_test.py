@@ -63,8 +63,9 @@ MULTI_DEVICE_ID = 2
 
 DEFAULT_TIMEOUT = 20
 
+DUT_DELAY_AFTER_RESET = 2
 DUT_STARTUP_CHECK_RETRY_COUNT = 5
-TEST_HISTORY_CHECK_TIMEOUT = 1
+TEST_HISTORY_CHECK_TIMEOUT = 2
 
 
 class TestCaseFailed(AssertionError):
@@ -164,6 +165,11 @@ def reset_dut(dut):
     # now use input cmd `-` and check test history to check if DUT is bootup.
     # we'll retry this step for a few times,
     # in case `dut.reset` returns during DUT bootup (when DUT can't process any command).
+    #
+    # during bootup, DUT might only receive part of the first `-` command.
+    # If it only receive `\n`, then it will print all cases. It could take more than 5 seconds, reset check will fail.
+    # To solve this problem, we will add a delay between reset and input `-` command. And we'll also enlarge expect timeout.
+    time.sleep(DUT_DELAY_AFTER_RESET)
     for _ in range(DUT_STARTUP_CHECK_RETRY_COUNT):
         dut.write("-")
         try:
