@@ -52,7 +52,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     not_satisfied = []
-    with open(args.requirements) as f:
+
+    absolute_path = os.path.expanduser(args.requirements)
+    with open(absolute_path) as f:
         for line in f:
             line = line.strip()
             try:
