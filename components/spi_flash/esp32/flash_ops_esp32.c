@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <string.h>
-#include "esp_spi_flash_chip.h"
 #include "esp_spi_flash.h"
-#include "cache_utils.h"
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 
@@ -38,7 +36,7 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
 {
     const uint8_t *ssrc = (const uint8_t *)src;
     esp_rom_spiflash_result_t rc;
-    rc = spi_flash_unlock();
+    rc = esp_rom_spiflash_unlock();
     if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
         return rc;
     }

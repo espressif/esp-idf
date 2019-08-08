@@ -700,3 +700,8 @@ void spi_flash_dump_counters(void)
 }
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
+#if defined(CONFIG_SPI_FLASH_USE_LEGACY_IMPL) && defined(CONFIG_IDF_TARGET_ESP32S2BETA)
+// TODO esp32s2beta: Remove once ESP32S2Beta has new SPI Flash API support
+esp_flash_t *esp_flash_default_chip = NULL;
+#endif

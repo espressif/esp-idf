@@ -77,6 +77,15 @@ menu "SPI Flash driver"
             bool "Allowed"
     endchoice
 
+    # Force the Legacy implementation to be used on ESP32S2Beta
+    #
+    # TODO esp32s2beta: Remove once SPI Flash HAL available on S2 Beta
+    config SPI_FLASH_FORCE_LEGACY_ESP32S2BETA
+        bool
+        default y
+        depends on IDF_TARGET_ESP32S2BETA
+        select SPI_FLASH_USE_LEGACY_IMPL
+
     config SPI_FLASH_USE_LEGACY_IMPL
         bool "Use the legacy implementation before IDF v4.0"
         default n
