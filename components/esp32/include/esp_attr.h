@@ -76,6 +76,30 @@
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))
 
+// This allows using enum as flags in C++
+// Format: FLAG_ATTR(flag_enum_t)
+#ifdef __cplusplus
+
+#define FLAG_ATTR_IMPL(TYPE, INT_TYPE) \
+constexpr TYPE operator~ (TYPE a) { return (TYPE)~(INT_TYPE)a; } \
+constexpr TYPE operator| (TYPE a, TYPE b) { return (TYPE)((INT_TYPE)a | (INT_TYPE)b); } \
+constexpr TYPE operator& (TYPE a, TYPE b) { return (TYPE)((INT_TYPE)a & (INT_TYPE)b); } \
+constexpr TYPE operator^ (TYPE a, TYPE b) { return (TYPE)((INT_TYPE)a ^ (INT_TYPE)b); } \
+constexpr TYPE operator>> (TYPE a, int b) { return (TYPE)((INT_TYPE)a >> b); } \
+constexpr TYPE operator<< (TYPE a, int b) { return (TYPE)((INT_TYPE)a << b); } \
+TYPE& operator|=(TYPE& a, TYPE b) { a = a | b; return a; } \
+TYPE& operator&=(TYPE& a, TYPE b) { a = a & b; return a; } \
+TYPE& operator^=(TYPE& a, TYPE b) { a = a ^ b; return a; } \
+TYPE& operator>>=(TYPE& a, int b) { a >>= b; return a; } \
+TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
+
+#define FLAG_ATTR_U32(TYPE) FLAG_ATTR_IMPL(TYPE, uint32_t)
+#define FLAG_ATTR FLAG_ATTR_U32
+
+#else
+#define FLAG_ATTR(TYPE)
+#endif
+
 // Implementation for a unique custom section
 //
 // This prevents gcc producing "x causes a section type conflict with y"

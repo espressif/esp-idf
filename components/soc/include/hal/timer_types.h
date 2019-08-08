@@ -40,7 +40,6 @@ typedef enum {
     TIMER_START = 1, /*!<Start timer counter*/
 } timer_start_t;
 
-
 /**
  * @brief Interrupt types of the timer.
  */
@@ -50,6 +49,7 @@ typedef enum {
     TIMER_INTR_T1 = BIT(1), /*!< interrupt of timer 1 */
     TIMER_INTR_WDT = BIT(2), /*!< interrupt of watchdog */
 } timer_intr_t;
+FLAG_ATTR(timer_intr_t)
 
 /**
  * @brief Behavior of the watchdog if a stage times out.
