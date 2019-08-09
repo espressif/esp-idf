@@ -23,6 +23,8 @@ list(APPEND srcs
     "src/hal/i2s_hal.c"
     "src/hal/sigmadelta_hal.c"
     "src/hal/timer_hal.c"
+    "src/hal/ledc_hal.c"
+    "src/hal/ledc_hal_iram.c"
     )
 
 # TODO: SPI Flash HAL for ESP32S2Beta also

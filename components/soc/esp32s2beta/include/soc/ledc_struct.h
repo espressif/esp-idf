@@ -198,7 +198,7 @@ typedef volatile struct {
     } int_clr;
     union {
         struct {
-            uint32_t apb_clk_sel: 2;
+            uint32_t apb_clk_sel: 2; // 0:invalid; 1:80MHz APB clock; 2:8MHz RTC clock; 3:XTAL clock
             uint32_t reserved2:  30;
         };
         uint32_t val;

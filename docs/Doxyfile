@@ -110,6 +110,7 @@ INPUT = \
     ../../components/soc/include/hal/rtc_io_types.h \
     ../../components/soc/include/hal/sigmadelta_types.h \
     ../../components/soc/include/hal/timer_types.h \
+    ../../components/soc/include/hal/ledc_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
     ../../components/soc/esp32/include/soc/touch_channel.h \
