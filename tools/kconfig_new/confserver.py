@@ -29,6 +29,10 @@ def main():
                         help='KConfig file with config item definitions',
                         required=True)
 
+    parser.add_argument('--sdkconfig-rename',
+                        help='File with deprecated Kconfig options',
+                        required=False)
+
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
@@ -62,12 +66,14 @@ def main():
         env = json.load(args.env_file)
         os.environ.update(env)
 
-    run_server(args.kconfig, args.config)
+    run_server(args.kconfig, args.config, args.sdkconfig_rename)
 
 
-def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
+def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCOL_VERSION):
     config = kconfiglib.Kconfig(kconfig)
-    deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
+    sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
+    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
+    deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
     with tempfile.NamedTemporaryFile(mode='w+b') as f_o:
         with open(sdkconfig, mode='rb') as f_i:
             f_o.write(f_i.read())
