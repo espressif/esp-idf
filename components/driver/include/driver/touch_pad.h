@@ -14,6 +14,7 @@
 
 #ifndef _DRIVER_TOUCH_PAD_H_
 #define _DRIVER_TOUCH_PAD_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -309,6 +310,31 @@ esp_err_t touch_pad_isr_deregister(void(*fn)(void *), void *arg);
  */
 esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num);
 
+/**
+ * @brief Get the touch sensor status, usually used in ISR to decide which pads are 'touched'.
+ * @return
+ *      - touch status
+ */
+uint32_t touch_pad_get_status(void);
+
+/**
+ * @brief Set touch sensor FSM mode, the test action can be triggered by the timer,
+ *        as well as by the software.
+ * @param mode FSM mode
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if argument is wrong
+ */
+esp_err_t touch_pad_set_fsm_mode(touch_fsm_mode_t mode);
+
+/**
+ * @brief Get touch sensor FSM mode
+ * @param mode pointer to accept FSM mode
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
+
 #if CONFIG_IDF_TARGET_ESP32
 
 /**
@@ -342,7 +368,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Touch pad parameter error
  *     - ESP_ERR_INVALID_STATE This touch pad hardware connection is error, the value of "touch_value" is 0.
- *     - ESP_FAIL Touch pad not initialized
+p *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
 
@@ -514,24 +540,6 @@ esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope
 esp_err_t touch_pad_io_init(touch_pad_t touch_num);
 
 /**
- * @brief Set touch sensor FSM mode, the test action can be triggered by the timer,
- *        as well as by the software.
- * @param mode FSM mode
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if argument is wrong
- */
-esp_err_t touch_pad_set_fsm_mode(touch_fsm_mode_t mode);
-
-/**
- * @brief Get touch sensor FSM mode
- * @param mode pointer to accept FSM mode
- * @return
- *      - ESP_OK on success
- */
-esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
-
-/**
  * @brief Trigger a touch sensor measurement, only support in SW mode of FSM
  * @return
  *      - ESP_OK on success
@@ -641,13 +649,6 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
  *      - ESP_OK on success
  */
 esp_err_t touch_pad_clear_status(void);
-
-/**
- * @brief Get the touch sensor status, usually used in ISR to decide which pads are 'touched'.
- * @return
- *      - touch status
- */
-uint32_t touch_pad_get_status(void);
 
 /**
  * @brief To enable touch pad interrupt

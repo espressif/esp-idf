@@ -5,7 +5,8 @@ else()
     set(priv_requires soc freertos)
     set(srcs "debug_helpers.c"
              "debug_helpers_asm.S"
-             "eri.c")
+             "eri.c"
+             "stdatomic.c")
 
     if(CONFIG_IDF_TARGET_ESP32)
         list(APPEND srcs "trax.c")
