@@ -16,7 +16,7 @@ A video of this demo can be seen
 > 1. Please flash the [`ble_mesh_fast_prov_server`](https://glab.espressif.cn/ble_mesh/esp-ble-mesh-v0.6/tree/ble_mesh_release/esp-ble-mesh-v0.6/examples/bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server) to your boards first;
 > 2. To have a better understanding of the performance of the BLE Mesh network, we recommend that at least 3 devices should be added in your network.
 > 3. We recommend that you solder LED indicators if your development board does not come with lights. 
-> 4. Please check the type of board and LED pin definition enabled in `Example BLE Mesh Config` by running `make menuconfig`
+> 4. Please check the type of board and LED pin definition enabled in `Example BLE Mesh Config` by running `idf.py menuconfig`
 
 ![Board](images/device.png)
 
@@ -30,7 +30,7 @@ examples/bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_serve
  
 ![Checkenvironment](images/picture1.png)
 
-4. Run `make -j4 flash` to compile codes and flash the codes to the device.
+4. Run `idf.py -p PORT flash` to compile codes and flash the codes to the device.
 
 ![compiledcode](images/picture2.png)
 
