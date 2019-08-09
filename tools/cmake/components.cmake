@@ -108,8 +108,11 @@ function(register_component)
     endforeach()
 
     if(${COMPONENT_NAME} IN_LIST BUILD_TEST_COMPONENTS)
-        target_link_libraries(${COMPONENT_TARGET} "-L${CMAKE_CURRENT_BINARY_DIR}")
-        target_link_libraries(${COMPONENT_TARGET} "-Wl,--whole-archive -l${COMPONENT_NAME} -Wl,--no-whole-archive")
+        set_property(TARGET ${IDF_PROJECT_EXECUTABLE} APPEND PROPERTY
+                LINK_LIBRARIES "-L${CMAKE_CURRENT_BINARY_DIR}")
+
+        set_property(TARGET ${IDF_PROJECT_EXECUTABLE} APPEND PROPERTY
+                LINK_LIBRARIES "-Wl,--whole-archive -l${COMPONENT_NAME} -Wl,--no-whole-archive")
     endif()
 
     if(COMPONENT_SRCS OR embed_binaries)
