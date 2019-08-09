@@ -42,13 +42,13 @@ Connections
     pulled up by 10 KOhm resistors. This should be ensured even in 1-bit mode
     or SPI mode. Most official modules don't offer these pullups internally.
     If you are using official development boards, check
-    :ref:`existing_issues_official_modules_sdio` to see whether your
+    :ref:`compatibility_overview_espressif_hw_sdio` to see whether your
     development boards have such pullups.
 
 .. note:: Most official modules have conflicts on strapping pins with the
     SDIO slave function. If you are using a ESP32 module with 3.3 V flash
     inside, you have to burn the EFUSE when you are developing on the module
-    for the first time. See :ref:`existing_issues_official_modules_sdio` to
+    for the first time. See :ref:`compatibility_overview_espressif_hw_sdio` to
     see how to make your modules compatible with the SDIO.
 
     Here is a list for modules/kits with 3.3 V flash:
