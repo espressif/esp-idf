@@ -18,6 +18,12 @@
 #include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#else
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
+
 /*
  * OS functions providing delay service and arbitration among chips, and with the cache.
  *
