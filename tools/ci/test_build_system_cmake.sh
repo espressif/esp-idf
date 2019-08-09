@@ -510,6 +510,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
 
+    print_status "Component properties are set"
+    clean_build_dir
+    cp CMakeLists.txt CMakeLists.txt.bak
+    printf "\nidf_component_get_property(srcs main SRCS)\nmessage(STATUS SRCS:\${srcs})" >> CMakeLists.txt
+    (idf.py reconfigure | grep "SRCS:$(realpath main/main.c)") || failure "Component properties should be set"
+    rm -rf CMakeLists.txt
+    mv CMakeLists.txt.bak CMakeLists.txt
+    rm -rf CMakeLists.txt.bak
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
