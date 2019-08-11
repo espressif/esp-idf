@@ -41,16 +41,12 @@ extern "C" {
 /**
  * \brief          AES context structure
  *
- * \note           buf is able to hold 32 extra bytes, which can be used:
- *                 - for alignment purposes if VIA padlock is used, and/or
- *                 - to simplify key expansion in the 256-bit case by
- *                 generating an extra round key
  */
 typedef struct {
     uint8_t key_bytes;
+    volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
     uint8_t key[32];
 } esp_aes_context;
-
 
 /**
  * \brief The AES XTS context-type definition.
