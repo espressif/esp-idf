@@ -28,20 +28,20 @@ test cases:
   - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 1
-    - - R SSC1 C +SAP:OK
+    - - R SSC1 C +SAP:ERROR
   - - SSC SSC2 sta -D
     - - R SSC2 C +QAP:OK
   - - SSC SSC2 sta -S
     - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
-  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 5
-    - - R SSC1 C +SAP:OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 6
+    - - R SSC1 C +SAP:ERROR
   - - SSC SSC2 sta -S
     - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
   execution time: 0.0
   expected result: "1.target1 set AP,open, \n2.target 2 jap succeed\n3.target1 set
     AP,wpa_psk \n4.target 2 jap succeed\n5.target1 set AP, wpa2_psk \n6.target 2 jap
     succeed\n7.target1 set AP,wap_wpa2_psk\n8.target 2 jap succeed\n9.target1 set
-    AP,加密方式为t 1\n10.target 2 上查询到target_ssid\n11.target1 set AP,加密方式为t 5\n12.target
+    AP,加密方式为t 1\n10.target 2 上查询到target_ssid\n11.target1 set AP,加密方式为t 6\n12.target
     2 上查询到target_ssid"
   initial condition: T2_1
   level: Integration
@@ -50,7 +50,7 @@ test cases:
     和pwd,加密方式 wpa_psk \n4.target2 jap target1\n5.target1下设置ssid 和pwd,加密方式 wpa2_psk
     \n6.target 2 jap target1\n7.target1下设置ssid 和pwd,加密方式 wap_wpa2_psk\n8.target2 jap
     target1\n9.target1下设置ssid 和pwd,加密方式 wep \n10.target2上查询target_ssid\n11.target1下设置ssid
-    和pwd,加密方式 t 5 错误的加密方式\n12.target2上查询 target_ssid"
+    和pwd,加密方式 t 6 错误的加密方式\n12.target2上查询 target_ssid"
   sub module: WIFI Connect
   summary: station SAP+JAP test, different encryption
   test environment: SSC_T2_5
