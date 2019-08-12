@@ -325,11 +325,17 @@ STRUCT_END(XtSolFrame)
 	.endm
 #endif
 
-/* Note: These are different to xCoreID used in ESP-IDF FreeRTOS, we just use
+/* Note: These are different to xCoreID used in ESP-IDF FreeRTOS, most places use
    0 and 1 which are determined by checking bit 13 (see previous comment)
 */
-#define CORE_ID_PRO 0xCDCD
-#define CORE_ID_APP 0xABAB
+#define CORE_ID_REGVAL_PRO 0xCDCD
+#define CORE_ID_REGVAL_APP 0xABAB
+
+/* Included for compatibility, recommend using CORE_ID_REGVAL_PRO instead */
+#define CORE_ID_PRO CORE_ID_REGVAL_PRO
+
+/* Included for compatibility, recommend using CORE_ID_REGVAL_APP instead */
+#define CORE_ID_APP CORE_ID_REGVAL_APP
 
 /*
 -------------------------------------------------------------------------------

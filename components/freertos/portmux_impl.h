@@ -49,7 +49,7 @@
 #include "soc/soc_memory_layout.h"
 
 /* XOR one core ID with this value to get the other core ID */
-#define CORE_ID_XOR_SWAP (CORE_ID_PRO ^ CORE_ID_APP)
+#define CORE_ID_REGVAL_XOR_SWAP (CORE_ID_REGVAL_PRO ^ CORE_ID_REGVAL_APP)
 
 
 
