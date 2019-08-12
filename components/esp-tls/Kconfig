@@ -5,5 +5,16 @@ menu "ESP-TLS"
         help
             Enable support for creating server side SSL/TLS session
 
+    config ESP_TLS_PSK_VERIFICATION
+        bool "Enable PSK verification"
+        select MBEDTLS_PSK_MODES
+        select MBEDTLS_KEY_EXCHANGE_PSK
+        select MBEDTLS_KEY_EXCHANGE_DHE_PSK
+        select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
+        select MBEDTLS_KEY_EXCHANGE_RSA_PSK
+        default n
+        help
+            Enable support for pre shared key ciphers
+
 endmenu
 
