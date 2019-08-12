@@ -41,4 +41,4 @@ void esp_perip_clk_init(void);
 /* Selects an external clock source (32 kHz) for RTC.
  * Only internal use in unit test.
  */
-void rtc_clk_select_rtc_slow_clk();
+void rtc_clk_select_rtc_slow_clk(void);

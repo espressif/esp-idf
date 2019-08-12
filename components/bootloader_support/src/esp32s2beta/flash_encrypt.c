@@ -31,7 +31,7 @@ static const char *TAG = "flash_encrypt";
 /* Static functions for stages of flash encryption */
 static esp_err_t initialise_flash_encryption(void);
 static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_crypt_wr_dis);
-static esp_err_t encrypt_bootloader();
+static esp_err_t encrypt_bootloader(void);
 static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partition_table, int *num_partitions);
 static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partition);
 
@@ -184,7 +184,7 @@ static esp_err_t encrypt_flash_contents(uint32_t spi_boot_crypt_cnt, bool flash_
     return ESP_OK;
 }
 
-static esp_err_t encrypt_bootloader()
+static esp_err_t encrypt_bootloader(void)
 {
     esp_err_t err;
     uint32_t image_length;

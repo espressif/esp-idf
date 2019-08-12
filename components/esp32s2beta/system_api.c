@@ -44,7 +44,7 @@ static uint8_t base_mac_addr[6] = { 0 };
 #define SHUTDOWN_HANDLERS_NO 2
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
-void system_init()
+void system_init(void)
 {
 }
 
@@ -227,7 +227,7 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
     return ESP_ERR_INVALID_STATE;
 }
 
-void esp_restart_noos() __attribute__ ((noreturn));
+void esp_restart_noos(void) __attribute__ ((noreturn));
 
 void IRAM_ATTR esp_restart(void)
 {
@@ -248,7 +248,7 @@ void IRAM_ATTR esp_restart(void)
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
 */
-void IRAM_ATTR esp_restart_noos()
+void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
     xt_ints_off(0xFFFFFFFF);

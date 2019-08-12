@@ -126,7 +126,7 @@ uint64_t rtc_time_slowclk_to_us(uint64_t rtc_cycles, uint32_t period)
     return (rtc_cycles * period) >> RTC_CLK_CAL_FRACT;
 }
 
-uint64_t rtc_time_get()
+uint64_t rtc_time_get(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_UPDATE);
     while (GET_PERI_REG_MASK(RTC_CNTL_TIME_UPDATE_REG, RTC_CNTL_TIME_VALID) == 0) {
@@ -138,7 +138,7 @@ uint64_t rtc_time_get()
     return t;
 }
 
-uint64_t rtc_light_slp_time_get()
+uint64_t rtc_light_slp_time_get(void)
 {
     uint64_t t_wake = READ_PERI_REG(RTC_CNTL_TIME_LOW0_REG);
     t_wake |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME_HIGH0_REG)) << 32;
@@ -147,7 +147,7 @@ uint64_t rtc_light_slp_time_get()
     return (t_wake - t_slp);
 }
 
-uint64_t rtc_deep_slp_time_get()
+uint64_t rtc_deep_slp_time_get(void)
 {
     uint64_t t_slp = READ_PERI_REG(RTC_CNTL_TIME_LOW1_REG);
     t_slp |= ((uint64_t) READ_PERI_REG(RTC_CNTL_TIME_HIGH1_REG)) << 32;
@@ -155,7 +155,7 @@ uint64_t rtc_deep_slp_time_get()
     return (t_wake - t_slp);
 }
 
-void rtc_clk_wait_for_slow_cycle() //This function may not by useful any more
+void rtc_clk_wait_for_slow_cycle(void) //This function may not by useful any more
 {
     SET_PERI_REG_MASK(RTC_CNTL_SLOW_CLK_CONF_REG, RTC_CNTL_SLOW_CLK_NEXT_EDGE);
     while (GET_PERI_REG_MASK(RTC_CNTL_SLOW_CLK_CONF_REG, RTC_CNTL_SLOW_CLK_NEXT_EDGE)) {

@@ -106,7 +106,7 @@ static bool s_spiram_okay=true;
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
  */
 
-void IRAM_ATTR call_start_cpu0()
+void IRAM_ATTR call_start_cpu0(void)
 {
     RESET_REASON rst_reas;
 
@@ -347,7 +347,7 @@ void start_cpu0_default(void)
 }
 
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
-size_t __cxx_eh_arena_size_get()
+size_t __cxx_eh_arena_size_get(void)
 {
     return CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE;
 }
