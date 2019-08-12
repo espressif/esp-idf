@@ -616,3 +616,128 @@ TEST_CASE("GPIO drive capability test", "[gpio][ignore]")
     drive_capability_set_get(GPIO_OUTPUT_IO, GPIO_DRIVE_CAP_3);
     prompt_to_continue("If this test finishes");
 }
+
+#if !CONFIG_FREERTOS_UNICORE
+void gpio_enable_task(void *param)
+{
+    int gpio_num = (int)param;
+    TEST_ESP_OK(gpio_intr_enable(gpio_num));
+    vTaskDelete(NULL);
+}
+
+/** Test the GPIO Interrupt Enable API with dual core enabled. The GPIO ISR service routine is registered on one core.
+ * When the GPIO interrupt on another core is enabled, the GPIO interrupt will be lost.
+ * First on the core 0, Do the following steps:
+ *     1. Configure the GPIO18 input_output mode, and enable the rising edge interrupt mode.
+ *     2. Trigger the GPIO18 interrupt and check if the interrupt responds correctly.
+ *     3. Disable the GPIO18 interrupt
+ * Then on the core 1, Do the following steps:
+ *     1. Enable the GPIO18 interrupt again.
+ *     2. Trigger the GPIO18 interrupt and check if the interrupt responds correctly.
+ *
+ */
+TEST_CASE("GPIO Enable/Disable interrupt on multiple cores", "[gpio][ignore]")
+{
+    const int test_io18 = GPIO_NUM_18;
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_NEGEDGE;
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << test_io18);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 1;
+    TEST_ESP_OK(gpio_config(&io_conf));
+    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    TEST_ESP_OK(gpio_install_isr_service(0));
+    TEST_ESP_OK(gpio_isr_handler_add(test_io18, gpio_isr_edge_handler, (void*) test_io18));
+    vTaskDelay(1000 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_set_level(test_io18, 1));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_intr_disable(test_io18));
+    TEST_ASSERT(edge_intr_times == 1);
+    xTaskCreatePinnedToCore(gpio_enable_task, "gpio_enable_task", 1024*4, (void*)test_io18, 8, NULL, (xPortGetCoreID() == 0));
+    vTaskDelay(1000 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_set_level(test_io18, 1));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_intr_disable(test_io18));
+    TEST_ESP_OK(gpio_isr_handler_remove(test_io18));
+    gpio_uninstall_isr_service();
+    TEST_ASSERT(edge_intr_times == 2);
+}
+#endif
+
+typedef struct {
+    int gpio_num;
+    int isr_cnt;
+} gpio_isr_param_t;
+
+static void gpio_isr_handler(void* arg)
+{
+    gpio_isr_param_t *param = (gpio_isr_param_t *)arg;
+    ets_printf("GPIO[%d] intr, val: %d\n", param->gpio_num, gpio_get_level(param->gpio_num));
+    param->isr_cnt++;
+}
+
+/** The previous GPIO interrupt service routine polls the interrupt raw status register to find the GPIO that triggered the interrupt. 
+ * But this will incorrectly handle the interrupt disabled GPIOs, because the raw interrupt status register can still be set when
+ * the trigger signal arrives, even if the interrupt is disabled.
+ * First on the core 0:
+ *     1. Configure the GPIO18 and GPIO19 input_output mode.
+ *     2. Enable GPIO18 dual edge triggered interrupt, enable GPIO19 falling edge triggered interrupt.
+ *     3. Trigger GPIO18 interrupt, then disable the GPIO8 interrupt, and then trigger GPIO18 again(This time will not respond to the interrupt).
+ *     4. Trigger GPIO19 interrupt.
+ * If the bug is not fixed, you will see, in the step 4, the interrupt of GPIO18 will also respond.
+ */
+TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
+{
+    const int test_io18 = GPIO_NUM_18;
+    const int test_io19 = GPIO_NUM_19;
+    static gpio_isr_param_t io18_param = {
+        .gpio_num =  GPIO_NUM_18,
+        .isr_cnt = 0,
+    };
+    static gpio_isr_param_t io19_param = {
+        .gpio_num =  GPIO_NUM_19,
+        .isr_cnt = 0,
+    };
+    gpio_config_t io_conf;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
+    io_conf.pin_bit_mask = (1ULL << test_io18) | (1ULL << test_io19);
+    io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 1;
+    TEST_ESP_OK(gpio_config(&io_conf));
+    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+    TEST_ESP_OK(gpio_set_level(test_io19, 0));
+    TEST_ESP_OK(gpio_install_isr_service(0));
+    TEST_ESP_OK(gpio_set_intr_type(test_io18, GPIO_INTR_ANYEDGE));
+    TEST_ESP_OK(gpio_set_intr_type(test_io19, GPIO_INTR_NEGEDGE));
+    TEST_ESP_OK(gpio_isr_handler_add(test_io18, gpio_isr_handler, (void*)&io18_param));
+    TEST_ESP_OK(gpio_isr_handler_add(test_io19, gpio_isr_handler, (void*)&io19_param));
+    printf("Triggering the interrupt of GPIO18\n");
+    vTaskDelay(1000 / portTICK_RATE_MS);
+    //Rising edge
+    TEST_ESP_OK(gpio_set_level(test_io18, 1));
+    printf("Disable the interrupt of GPIO18");
+    vTaskDelay(100 / portTICK_RATE_MS);
+    //Disable GPIO18 interrupt, GPIO18 will not respond to the next falling edge interrupt.
+    TEST_ESP_OK(gpio_intr_disable(test_io18));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    //Falling edge
+    TEST_ESP_OK(gpio_set_level(test_io18, 0));
+
+    printf("Triggering the interrupt of GPIO19\n");
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_set_level(test_io19, 1));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    //Falling edge
+    TEST_ESP_OK(gpio_set_level(test_io19, 0));
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(gpio_isr_handler_remove(test_io18));
+    TEST_ESP_OK(gpio_isr_handler_remove(test_io19));
+    gpio_uninstall_isr_service();
+    TEST_ASSERT((io18_param.isr_cnt == 1) && (io19_param.isr_cnt == 1));
+}
