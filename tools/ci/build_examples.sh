@@ -99,7 +99,7 @@ build_example () {
 
     local EXAMPLE_DIR=$(dirname "${MAKE_FILE}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
-    
+
     # Check if the example needs a different base directory.
     # Path of the Makefile relative to $IDF_PATH
     local MAKE_FILE_REL=${MAKE_FILE#"${IDF_PATH}/"}
@@ -182,7 +182,8 @@ echo -e "\nFound issues:"
 IGNORE_WARNS="\
 library/error\.o\
 \|\ -Werror\
-\|error\.d\
+\|.*error.*\.o\
+\|.*error.*\.d\
 \|reassigning to symbol\
 \|changes choice state\
 \|Compiler version is not supported\
