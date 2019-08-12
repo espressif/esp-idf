@@ -53,7 +53,7 @@ typedef enum {
  *     - PSRAM_SIZE_MAX if psram not enabled or not valid
  *     - PSRAM size
  */
-psram_size_t psram_get_size();
+psram_size_t psram_get_size(void);
 
 /**
  * @brief psram cache enable function

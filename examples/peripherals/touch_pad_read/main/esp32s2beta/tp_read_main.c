@@ -54,7 +54,7 @@ static void tp_example_read_task(void *pvParameter)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize touch pad peripheral. */
     touch_pad_init();

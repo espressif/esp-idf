@@ -94,7 +94,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
-esp_err_t esp_sleep_enable_ulp_wakeup();
+esp_err_t esp_sleep_enable_ulp_wakeup(void);
 
 /**
  * @brief Enable wakeup by timer
@@ -120,7 +120,7 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
-esp_err_t esp_sleep_enable_touchpad_wakeup();
+esp_err_t esp_sleep_enable_touchpad_wakeup(void);
 
 /**
  * @brief Get the touch pad which caused wakeup
@@ -129,7 +129,7 @@ esp_err_t esp_sleep_enable_touchpad_wakeup();
  *
  * @return touch pad which caused wakeup
  */
-touch_pad_t esp_sleep_get_touchpad_wakeup_status();
+touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
 
 /**
  * @brief Enable wakeup using a pin
@@ -197,7 +197,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
  *
  * @return bit mask, if GPIOn caused wakeup, BIT(n) will be set
  */
-uint64_t esp_sleep_get_ext1_wakeup_status();
+uint64_t esp_sleep_get_ext1_wakeup_status(void);
 
 /**
  * @brief Set power down mode for an RTC power domain in sleep mode
@@ -218,7 +218,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
  *
  * This function does not return.
  */
-void esp_deep_sleep_start() __attribute__((noreturn));
+void esp_deep_sleep_start(void) __attribute__((noreturn));
 
 /**
  * @brief Enter light sleep with the configured wakeup options
@@ -227,7 +227,7 @@ void esp_deep_sleep_start() __attribute__((noreturn));
  *  - ESP_OK on success (returned after wakeup)
  *  - ESP_ERR_INVALID_STATE if WiFi or BT is not stopped
  */
-esp_err_t esp_light_sleep_start();
+esp_err_t esp_light_sleep_start(void);
 
 /**
  * @brief Enter deep-sleep mode
@@ -269,7 +269,7 @@ void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated)
  *
  * @return wakeup cause, or ESP_DEEP_SLEEP_WAKEUP_UNDEFINED if reset happened for reason other than deep sleep wakeup
  */
-esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause();
+esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void);
 
 
 /**

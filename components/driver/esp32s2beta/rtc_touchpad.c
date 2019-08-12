@@ -187,13 +187,13 @@ esp_err_t touch_pad_io_init(touch_pad_t touch_num)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_wait_init_done()
+esp_err_t touch_pad_wait_init_done(void)
 {
     // TODO
     return ESP_FAIL;
 }
 
-esp_err_t touch_pad_fsm_start()
+esp_err_t touch_pad_fsm_start(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_ctrl2.touch_clkgate_en = 1; //enable touch clock for FSM. or force enable.
@@ -202,7 +202,7 @@ esp_err_t touch_pad_fsm_start()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_fsm_stop()
+esp_err_t touch_pad_fsm_stop(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_ctrl2.touch_start_en = 0; //stop touch fsm
@@ -338,7 +338,7 @@ esp_err_t touch_pad_intr_disable(touch_pad_intr_mask_t int_mask)
     return ESP_OK;
 }
 
-uint32_t touch_pad_intr_status_get_mask()
+uint32_t touch_pad_intr_status_get_mask(void)
 {
     return ((REG_READ(RTC_CNTL_INT_ST_REG) >> (RTC_CNTL_TOUCH_DONE_INT_ST_S)) & TOUCH_PAD_INTR_MASK_ALL);
 }
@@ -354,7 +354,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_init()
+esp_err_t touch_pad_init(void)
 {
     if (rtc_touch_mux == NULL) {
         rtc_touch_mux = xSemaphoreCreateMutex();
@@ -372,7 +372,7 @@ esp_err_t touch_pad_init()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_deinit()
+esp_err_t touch_pad_deinit(void)
 {
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
@@ -451,7 +451,7 @@ esp_err_t touch_pad_filter_get_config(touch_filter_config_t *filter_info)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_filter_enable()
+esp_err_t touch_pad_filter_enable(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_filter_ctrl.touch_filter_en = 1;
@@ -459,7 +459,7 @@ esp_err_t touch_pad_filter_enable()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_filter_disable()
+esp_err_t touch_pad_filter_disable(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_filter_ctrl.touch_filter_en = 0;
@@ -467,7 +467,7 @@ esp_err_t touch_pad_filter_disable()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_denoise_enable()
+esp_err_t touch_pad_denoise_enable(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_scan_ctrl.touch_scan_pad_map  &= ~(BIT(TOUCH_DENOISE_CHANNEL));
@@ -476,7 +476,7 @@ esp_err_t touch_pad_denoise_enable()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_denoise_disable()
+esp_err_t touch_pad_denoise_disable(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_scan_ctrl.touch_denoise_en = 0;
@@ -532,7 +532,7 @@ esp_err_t touch_pad_waterproof_get_config(touch_pad_waterproof_t *waterproof)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_waterproof_enable()
+esp_err_t touch_pad_waterproof_enable(void)
 {
     touch_pad_io_init(TOUCH_SHIELD_CHANNEL);
     RTC_TOUCH_ENTER_CRITICAL();
@@ -542,7 +542,7 @@ esp_err_t touch_pad_waterproof_enable()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_waterproof_disable()
+esp_err_t touch_pad_waterproof_disable(void)
 {
     RTC_TOUCH_ENTER_CRITICAL();
     RTCCNTL.touch_scan_ctrl.touch_shield_pad_en = 0;

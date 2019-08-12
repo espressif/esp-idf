@@ -16,7 +16,7 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 
-static inline void IRAM_ATTR spi_flash_guard_start()
+static inline void IRAM_ATTR spi_flash_guard_start(void)
 {
     const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
     if (ops && ops->start) {
@@ -24,7 +24,7 @@ static inline void IRAM_ATTR spi_flash_guard_start()
     }
 }
 
-static inline void IRAM_ATTR spi_flash_guard_end()
+static inline void IRAM_ATTR spi_flash_guard_end(void)
 {
     const spi_flash_guard_funcs_t *ops = spi_flash_guard_get();
     if (ops && ops->end) {

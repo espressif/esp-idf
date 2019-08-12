@@ -31,7 +31,7 @@
 #define BROWNOUT_DET_LVL 0
 #endif //CONFIG_ESP32S2_BROWNOUT_DET_LVL
 
-static void rtc_brownout_isr_handler()
+static void rtc_brownout_isr_handler(void *arg)
 {
     /* Normally RTC ISR clears the interrupt flag after the application-supplied
      * handler returns. Since restart is called here, the flag needs to be
@@ -46,7 +46,7 @@ static void rtc_brownout_isr_handler()
     esp_restart_noos();
 }
 
-void esp_brownout_init()
+void esp_brownout_init(void)
 {
 // TODO: implement brownout threshold configuration for esp32s2beta - IDF-751
 

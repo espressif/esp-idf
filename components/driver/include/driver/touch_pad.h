@@ -732,14 +732,14 @@ esp_err_t touch_pad_filter_delete(void);
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_fsm_start();
+esp_err_t touch_pad_fsm_start(void);
 
 /**
  * @brief Stop touch sensor FSM.
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_fsm_stop();
+esp_err_t touch_pad_fsm_stop(void);
 
 /**
  * @brief Set touch sensor measurement and sleep time
@@ -859,7 +859,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_reset();
+esp_err_t touch_pad_reset(void);
 
 /**
  * @brief Check touch sensor measurement status.
@@ -878,7 +878,7 @@ bool touch_pad_meas_is_done(void);
  * @return
  *      - touch channel number
  */
-touch_pad_t touch_pad_get_scan_curr();
+touch_pad_t touch_pad_get_scan_curr(void);
 
 /**
  * @brief Get the touch sensor interrupt status mask. usually used in ISR to decide interrupt type.
@@ -886,7 +886,7 @@ touch_pad_t touch_pad_get_scan_curr();
  * @return
  *      - touch intrrupt bit 
  */
-uint32_t touch_pad_intr_status_get_mask();
+uint32_t touch_pad_intr_status_get_mask(void);
 
 /**
  * @brief Enable touch sensor interrupt.
@@ -984,7 +984,7 @@ esp_err_t touch_pad_filter_get_config(touch_filter_config_t *filter_info);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_filter_enable();
+esp_err_t touch_pad_filter_enable(void);
 
 /**
  * @brief diaable touch sensor filter and detection algorithm.
@@ -992,7 +992,7 @@ esp_err_t touch_pad_filter_enable();
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_filter_disable();
+esp_err_t touch_pad_filter_disable(void);
 
 /**
  * @brief set parameter of denoise pad (TOUCH_PAD_NUM0).
@@ -1025,14 +1025,14 @@ esp_err_t touch_pad_denoise_get_config(touch_pad_denoise_t *denoise);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_denoise_enable();
+esp_err_t touch_pad_denoise_enable(void);
 
 /**
  * @brief disable denoise function.
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_denoise_disable();
+esp_err_t touch_pad_denoise_disable(void);
 
 /**
  * @brief get denoise measure value (TOUCH_PAD_NUM0).
@@ -1073,7 +1073,7 @@ esp_err_t touch_pad_waterproof_get_config(touch_pad_waterproof_t *waterproof);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_waterproof_enable();
+esp_err_t touch_pad_waterproof_enable(void);
 
 /**
  * @brief Enable parameter of waterproof function.
@@ -1085,7 +1085,7 @@ esp_err_t touch_pad_waterproof_enable();
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_waterproof_disable();
+esp_err_t touch_pad_waterproof_disable(void);
 
 /**
  * @brief Set parameter of proximity channel. Three proximity sensing channels can be set. 
