@@ -97,7 +97,7 @@ TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
 
 static void test_clock_switching(void (*switch_func)(rtc_cpu_freq_t))
 {
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     const int test_duration_sec = 10;
     ref_clock_init();
