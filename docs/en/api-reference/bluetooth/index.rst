@@ -4,13 +4,13 @@ Bluetooth API
 :link_to_translation:`zh_CN:[中文]`
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
 
-   Bluetooth Controller && VHCI <controller_vhci>
-   Bluetooth Common <bt_common>
-   Bluetooth LE <bt_le>
-   Bluetooth Classic <classic_bt>
-   NimBLE <nimble/index>
+    Bluetooth Controller && VHCI <controller_vhci>
+    Bluetooth Common <bt_common>
+    Bluetooth LE <bt_le>
+    Bluetooth Classic <classic_bt>
+    NimBLE <nimble/index>
 
 ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) supports classic Bluetooth as well as BLE. On the other hand, Apache NimBLE based stack is BLE only. For users to make a choice:
 * For usecases involving classic Bluetooth as well as BLE, Bluedroid should be used.
