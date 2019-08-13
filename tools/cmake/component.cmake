@@ -490,6 +490,8 @@ function(idf_component_register)
     # COMPONENT_TARGET is deprecated but is made available with same function
     # as COMPONENT_LIB for compatibility.
     set(COMPONENT_TARGET ${component_lib} PARENT_SCOPE)
+
+    __component_set_properties()
 endfunction()
 
 #
