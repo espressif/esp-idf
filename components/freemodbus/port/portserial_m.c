@@ -14,51 +14,44 @@
  */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
- * Copyright (C) 2010 Christian Walter <cwalter@embedded-solutions.at>
+ * Copyright (C) 2013 Armink <armink.ztl@gmail.com>
  *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *   notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in the
- *   documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *   derived from this software without specific prior written permission.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * IF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
- * File: $Id: portother.c,v 1.1 2010/06/06 13:07:20 wolti Exp $
+ * File: $Id: portserial.c,v 1.60 2013/08/13 15:07:05 Armink add Master Functions $
  */
-#include "port.h"
-#include "driver/uart.h"
-#include "freertos/queue.h" // for queue support
-#include "soc/uart_periph.h"
-#include "driver/gpio.h"
-#include "esp_log.h"        // for esp_log
-#include "esp_err.h"        // for ESP_ERROR_CHECK macro
-   
-/* ----------------------- Modbus includes ----------------------------------*/
-#include "mb.h"
-#include "mbport.h"
-#include "sdkconfig.h"              // for KConfig options
-#include "port_serial_slave.h"
 
-// Definitions of UART default pin numbers
-#define MB_UART_RXD   (CONFIG_MB_UART_RXD)
-#define MB_UART_TXD   (CONFIG_MB_UART_TXD)
-#define MB_UART_RTS   (CONFIG_MB_UART_RTS)
+#include "port.h"
+
+/* ----------------------- Modbus includes ----------------------------------*/
+#include "mb_m.h"
+#include "mbport.h"
+#include "mbrtu.h"
+#include "mbconfig.h"
+
+#include <string.h>
+#include "driver/uart.h"
+#include "soc/dport_access.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "esp_log.h"
+#include "sdkconfig.h"
+#include "port_serial_master.h"
+
+/* ----------------------- Defines ------------------------------------------*/
 
 #define MB_BAUD_RATE_DEFAULT        (115200)
 #define MB_QUEUE_LENGTH             (CONFIG_FMB_QUEUE_LENGTH)
@@ -69,13 +62,15 @@
 
 // Set buffer size for transmission
 #define MB_SERIAL_BUF_SIZE          (CONFIG_FMB_SERIAL_BUF_SIZE)
+#define MB_SERIAL_TX_TOUT_MS        (100)
+#define MB_SERIAL_TX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS) // timeout for transmission
 
-// Note: This code uses mixed coding standard from legacy IDF code and used freemodbus stack
+/* ----------------------- Static variables ---------------------------------*/
+static const CHAR *TAG = "MB_MASTER_SERIAL";
 
 // A queue to handle UART event.
 static QueueHandle_t xMbUartQueue;
 static TaskHandle_t  xMbTaskHandle;
-static const CHAR *TAG = "MB_SERIAL";
 
 // The UART hardware port number
 static UCHAR ucUartNumber = UART_NUM_MAX - 1;
@@ -86,51 +81,47 @@ static BOOL bTxStateEnabled = FALSE; // Transmitter enabled flag
 static UCHAR ucBuffer[MB_SERIAL_BUF_SIZE]; // Temporary buffer to transfer received data to modbus stack
 static USHORT uiRxBufferPos = 0;    // position in the receiver buffer
 
-void vMBPortSerialEnable(BOOL bRxEnable, BOOL bTxEnable)
+void vMBMasterPortSerialEnable(BOOL bRxEnable, BOOL bTxEnable)
 {
     // This function can be called from xMBRTUTransmitFSM() of different task
+    if (bTxEnable) {
+        bTxStateEnabled = TRUE;
+    } else {
+        bTxStateEnabled = FALSE;
+    }
     if (bRxEnable) {
-        //uart_enable_rx_intr(ucUartNumber);
         bRxStateEnabled = TRUE;
         vTaskResume(xMbTaskHandle); // Resume receiver task
     } else {
         vTaskSuspend(xMbTaskHandle); // Block receiver task
         bRxStateEnabled = FALSE;
     }
-    if (bTxEnable) {
-        bTxStateEnabled = TRUE;
-    } else {
-        bTxStateEnabled = FALSE;
-    }
 }
 
-static void vMBPortSerialRxPoll(size_t xEventSize)
+static void vMBMasterPortSerialRxPoll(size_t xEventSize)
 {
     USHORT usLength;
 
     if (bRxStateEnabled) {
         if (xEventSize > 0) {
             xEventSize = (xEventSize > MB_SERIAL_BUF_SIZE) ?  MB_SERIAL_BUF_SIZE : xEventSize;
-            uiRxBufferPos = ((uiRxBufferPos + xEventSize) >= MB_SERIAL_BUF_SIZE) ? 0 : uiRxBufferPos;
             // Get received packet into Rx buffer
-            usLength = uart_read_bytes(ucUartNumber, &ucBuffer[uiRxBufferPos], xEventSize, portMAX_DELAY);
+            usLength = uart_read_bytes(ucUartNumber, &ucBuffer[0], xEventSize, portMAX_DELAY);
+            uiRxBufferPos = 0;
             for(USHORT usCnt = 0; usCnt < usLength; usCnt++ ) {
-                // Call the Modbus stack callback function and let it fill the buffers.
-                ( void )pxMBFrameCBByteReceived(); // calls callback xMBRTUReceiveFSM() to execute MB state machine
+                // Call the Modbus stack callback function and let it fill the stack buffers.
+                ( void )pxMBMasterFrameCBByteReceived(); // calls callback xMBRTUReceiveFSM()
             }
             // The buffer is transferred into Modbus stack and is not needed here any more
             uart_flush_input(ucUartNumber);
-            // Send event EV_FRAME_RECEIVED to allow stack process packet
-#ifndef MB_TIMER_PORT_ENABLED
-            // Let the stack know that T3.5 time is expired and data is received
-            (void)pxMBPortCBTimerExpired(); // calls callback xMBRTUTimerT35Expired();
-#endif
             ESP_LOGD(TAG, "RX_T35_timeout: %d(bytes in buffer)\n", (uint32_t)usLength);
         }
+    } else {
+        ESP_LOGE(TAG, "%s: bRxState disabled but junk data (%d bytes) received. ", __func__, (uint16_t)xEventSize);
     }
 }
 
-BOOL xMBPortSerialTxPoll(void)
+BOOL xMBMasterPortSerialTxPoll(void)
 {
     BOOL bStatus = FALSE;
     USHORT usCount = 0;
@@ -140,53 +131,57 @@ BOOL xMBPortSerialTxPoll(void)
         // Continue while all response bytes put in buffer or out of buffer
         while((bNeedPoll == FALSE) && (usCount++ < MB_SERIAL_BUF_SIZE)) {
             // Calls the modbus stack callback function to let it fill the UART transmit buffer.
-            bNeedPoll = pxMBFrameCBTransmitterEmpty( ); // calls callback xMBRTUTransmitFSM();
+            bNeedPoll = pxMBMasterFrameCBTransmitterEmpty( ); // calls callback xMBRTUTransmitFSM();
         }
-        ESP_LOGD(TAG, "MB_TX_buffer sent: (%d) bytes\n", (uint16_t)usCount);
+        ESP_LOGD(TAG, "MB_TX_buffer sent: (%d) bytes.", (uint16_t)(usCount - 1));
+        // Waits while UART sending the packet
+        esp_err_t xTxStatus = uart_wait_tx_done(ucUartNumber, MB_SERIAL_TX_TOUT_TICKS);
+        bTxStateEnabled = FALSE;
+        MB_PORT_CHECK((xTxStatus == ESP_OK), FALSE, "mb serial sent buffer failure.");
         bStatus = TRUE;
     }
     return bStatus;
 }
 
-static void vUartTask(void *pvParameters)
+// UART receive event task
+static void vUartTask(void* pvParameters)
 {
     uart_event_t xEvent;
     for(;;) {
-        if (xQueueReceive(xMbUartQueue, (void*)&xEvent, portMAX_DELAY) == pdTRUE) {
+        if (xQueueReceive(xMbUartQueue, (void*)&xEvent, portMAX_DELAY) == pdTRUE) { // portMAX_DELAY
             ESP_LOGD(TAG, "MB_uart[%d] event:", ucUartNumber);
-            //vMBPortTimersEnable();
             switch(xEvent.type) {
-                //Event of UART receving data
+                //Event of UART receiving data
                 case UART_DATA:
-                    ESP_LOGD(TAG,"Receive data, len: %d", xEvent.size);
+                    ESP_LOGD(TAG,"Receive data, len: %d.", xEvent.size);
                     // Read received data and send it to modbus stack
-                    vMBPortSerialRxPoll(xEvent.size);
+                    vMBMasterPortSerialRxPoll(xEvent.size);
                     break;
                 //Event of HW FIFO overflow detected
                 case UART_FIFO_OVF:
-                    ESP_LOGD(TAG, "hw fifo overflow\n");
+                    ESP_LOGD(TAG, "hw fifo overflow.");
                     xQueueReset(xMbUartQueue);
                     break;
                 //Event of UART ring buffer full
                 case UART_BUFFER_FULL:
-                    ESP_LOGD(TAG, "ring buffer full\n");
+                    ESP_LOGD(TAG, "ring buffer full.");
                     xQueueReset(xMbUartQueue);
                     uart_flush_input(ucUartNumber);
                     break;
                 //Event of UART RX break detected
                 case UART_BREAK:
-                    ESP_LOGD(TAG, "uart rx break\n");
+                    ESP_LOGD(TAG, "uart rx break.");
                     break;
                 //Event of UART parity check error
                 case UART_PARITY_ERR:
-                    ESP_LOGD(TAG, "uart parity error\n");
+                    ESP_LOGD(TAG, "uart parity error.");
                     break;
                 //Event of UART frame error
                 case UART_FRAME_ERR:
-                    ESP_LOGD(TAG, "uart frame error\n");
+                    ESP_LOGD(TAG, "uart frame error.");
                     break;
                 default:
-                    ESP_LOGD(TAG, "uart event type: %d\n", xEvent.type);
+                    ESP_LOGD(TAG, "uart event type: %d.", xEvent.type);
                     break;
             }
         }
@@ -194,8 +189,8 @@ static void vUartTask(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
-                        UCHAR ucDataBits, eMBParity eParity)
+/* ----------------------- Start implementation -----------------------------*/
+BOOL xMBMasterPortSerialInit( UCHAR ucPORT, ULONG ulBaudRate, UCHAR ucDataBits, eMBParity eParity )
 {
     esp_err_t xErr = ESP_OK;
     MB_PORT_CHECK((eParity <= MB_PAR_EVEN), FALSE, "mb serial set parity failure.");
@@ -249,12 +244,10 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
             MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LEVEL3);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
-#ifndef MB_TIMER_PORT_ENABLED
     // Set timeout for TOUT interrupt (T3.5 modbus time)
     xErr = uart_set_rx_timeout(ucUartNumber, MB_SERIAL_TOUT);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial set rx timeout failure, uart_set_rx_timeout() returned (0x%x).", (uint32_t)xErr);
-#endif
     // Create a task to handle UART events
     BaseType_t xStatus = xTaskCreate(vUartTask, "uart_queue_task", MB_SERIAL_TASK_STACK_SIZE,
                                         NULL, MB_SERIAL_TASK_PRIO, &xMbTaskHandle);
@@ -268,17 +261,17 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
         vTaskSuspend(xMbTaskHandle); // Suspend serial task while stack is not started
     }
     uiRxBufferPos = 0;
+    ESP_LOGD(MB_PORT_TAG,"%s Init serial.", __func__);
     return TRUE;
 }
 
-void vMBPortSerialClose(void)
+void vMBMasterPortSerialClose(void)
 {
-    (void)vTaskSuspend(xMbTaskHandle);
     (void)vTaskDelete(xMbTaskHandle);
     ESP_ERROR_CHECK(uart_driver_delete(ucUartNumber));
 }
 
-BOOL xMBPortSerialPutByte(CHAR ucByte)
+BOOL xMBMasterPortSerialPutByte(CHAR ucByte)
 {
     // Send one byte to UART transmission buffer
     // This function is called by Modbus stack
@@ -287,7 +280,7 @@ BOOL xMBPortSerialPutByte(CHAR ucByte)
 }
 
 // Get one byte from intermediate RX buffer
-BOOL xMBPortSerialGetByte(CHAR* pucByte)
+BOOL xMBMasterPortSerialGetByte(CHAR* pucByte)
 {
     assert(pucByte != NULL);
     MB_PORT_CHECK((uiRxBufferPos < MB_SERIAL_BUF_SIZE),
@@ -296,4 +289,3 @@ BOOL xMBPortSerialGetByte(CHAR* pucByte)
     uiRxBufferPos++;
     return TRUE;
 }
-

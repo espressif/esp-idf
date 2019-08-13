@@ -1,3 +1,17 @@
+/* Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
  * Copyright (C) 2010 Christian Walter <cwalter@embedded-solutions.at>
@@ -35,8 +49,9 @@
 #include "mbport.h"
 #include "driver/timer.h"
 #include "sdkconfig.h"
+#include "port_serial_slave.h"
 
-#ifdef CONFIG_MB_TIMER_PORT_ENABLED
+#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
 
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_DISCR_TIME_US        (50)    // 50uS = one discreet for timer
@@ -46,8 +61,8 @@
 #define MB_TIMER_DIVIDER        ((TIMER_BASE_CLK / 1000000UL) * MB_DISCR_TIME_US - 1) // divider for 50uS
 #define MB_TIMER_WITH_RELOAD    (1)
 
-static const USHORT usTimerIndex = CONFIG_MB_TIMER_INDEX; // Modbus Timer index used by stack
-static const USHORT usTimerGroupIndex = CONFIG_MB_TIMER_GROUP; // Modbus Timer group index used by stack
+static const USHORT usTimerIndex = CONFIG_FMB_TIMER_INDEX; // Modbus Timer index used by stack
+static const USHORT usTimerGroupIndex = CONFIG_FMB_TIMER_GROUP; // Modbus Timer group index used by stack
 
 static timg_dev_t *MB_TG[2] = {&TIMERG0, &TIMERG1};
 
@@ -67,7 +82,7 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 
 BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
 {
-#ifdef CONFIG_MB_TIMER_PORT_ENABLED
+#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     MB_PORT_CHECK((usTim1Timerout50us > 0), FALSE,
             "Modbus timeout discreet is incorrect.");
     esp_err_t xErr;
@@ -106,9 +121,9 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
     return TRUE;
 }
 
-void vMBPortTimersEnable()
+void vMBPortTimersEnable(void)
 {
-#ifdef CONFIG_MB_TIMER_PORT_ENABLED
+#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));
     ESP_ERROR_CHECK(timer_enable_intr(usTimerGroupIndex, usTimerIndex));
@@ -116,9 +131,9 @@ void vMBPortTimersEnable()
 #endif
 }
 
-void vMBPortTimersDisable()
+void vMBPortTimersDisable(void)
 {
-#ifdef CONFIG_MB_TIMER_PORT_ENABLED
+#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));
     // Disable timer interrupt
@@ -126,9 +141,9 @@ void vMBPortTimersDisable()
 #endif
 }
 
-void vMBPortTimerClose()
+void vMBPortTimerClose(void)
 {
-#ifdef CONFIG_MB_TIMER_PORT_ENABLED
+#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
 #endif
