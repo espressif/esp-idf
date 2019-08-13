@@ -1,9 +1,11 @@
 /* Tests for FreeRTOS task suspend & resume */
 #include <stdio.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/timers.h"
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 #include "unity.h"
@@ -11,6 +13,11 @@
 #include "test_utils.h"
 
 #include "driver/timer.h"
+
+#include "esp_ipc.h"
+#include "esp_freertos_hooks.h"
+#include "sdkconfig.h"
+
 
 /* Counter task counts a target variable forever */
 static void task_count(void *vp_counter)
@@ -171,4 +178,189 @@ TEST_CASE("Resume task from ISR (other core)", "[freertos]")
 {
     test_resume_task_from_isr(!UNITY_FREERTOS_CPU);
 }
-#endif
+
+static volatile bool block;
+static bool suspend_both_cpus;
+
+static void IRAM_ATTR suspend_scheduler_while_block_set(void* arg)
+{
+    vTaskSuspendAll();
+
+    while (block) { };
+    ets_delay_us(1);
+    xTaskResumeAll();
+}
+
+static void IRAM_ATTR suspend_scheduler_on_both_cpus()
+{
+    block = true;
+    if (suspend_both_cpus) {
+        TEST_ESP_OK(esp_ipc_call((xPortGetCoreID() == 0) ? 1 : 0, &suspend_scheduler_while_block_set, NULL));
+    }
+
+    vTaskSuspendAll();
+}
+
+static void IRAM_ATTR resume_scheduler_on_both_cpus()
+{
+    block = false;
+    xTaskResumeAll();
+}
+
+static const int waiting_ms = 2000;
+static const int delta_ms = 100;
+static int duration_wait_task_ms;
+static int duration_ctrl_task_ms;
+
+static void waiting_task(void *pvParameters)
+{
+    int cpu_id = xPortGetCoreID();
+    int64_t start_time = esp_timer_get_time();
+    printf("Start waiting_task cpu=%d\n", cpu_id);
+
+    vTaskDelay(waiting_ms / portTICK_PERIOD_MS);
+
+    duration_wait_task_ms = (esp_timer_get_time() - start_time) / 1000;
+    printf("Finish waiting_task cpu=%d, time=%d ms\n", cpu_id, duration_wait_task_ms);
+    vTaskDelete(NULL);
+}
+
+static void control_task(void *pvParameters)
+{
+    int cpu_id = xPortGetCoreID();
+    ets_delay_us(2000); // let to start the waiting_task first
+    printf("Start control_task cpu=%d\n", cpu_id);
+    int64_t start_time = esp_timer_get_time();
+
+    suspend_scheduler_on_both_cpus();
+    ets_delay_us(waiting_ms * 1000 + delta_ms * 1000);
+    resume_scheduler_on_both_cpus();
+
+    duration_ctrl_task_ms = (esp_timer_get_time() - start_time) / 1000;
+    printf("Finish control_task cpu=%d, time=%d ms\n", cpu_id, duration_ctrl_task_ms);
+    vTaskDelete(NULL);
+}
+
+static void test_scheduler_suspend1(int cpu)
+{
+    /* This test tests a case then both CPUs were in suspend state and then resume CPUs back.
+     * A task for which a wait time has been set and this time has elapsed in the suspended state should in any case be ready to start.
+     * (In an old implementation of xTaskIncrementTick function the counting for waiting_task() will be continued
+     * (excluding time in suspended) after control_task() is finished.)
+     */
+    duration_wait_task_ms = 0;
+    duration_ctrl_task_ms = 0;
+
+    printf("Test for CPU%d\n", cpu);
+    int other_cpu = (cpu == 0) ? 1 : 0;
+    xTaskCreatePinnedToCore(&waiting_task, "waiting_task", 8192, NULL, 5, NULL, other_cpu);
+    xTaskCreatePinnedToCore(&control_task, "control_task", 8192, NULL, 5, NULL, cpu);
+
+    vTaskDelay(waiting_ms * 2 / portTICK_PERIOD_MS);
+    TEST_ASSERT_INT_WITHIN(4, waiting_ms + delta_ms + 4, duration_ctrl_task_ms);
+    if (suspend_both_cpus == false && cpu == 1) {
+        // CPU0 continues to increase the TickCount and the wait_task does not depend on Suspended Scheduler on CPU1
+        TEST_ASSERT_INT_WITHIN(2, waiting_ms, duration_wait_task_ms);
+    } else {
+        TEST_ASSERT_INT_WITHIN(4, waiting_ms + delta_ms + 4, duration_wait_task_ms);
+    }
+
+    printf("\n");
+}
+
+TEST_CASE("Test the waiting task not missed due to scheduler suspension on both CPUs", "[freertos]")
+{
+    printf("Suspend both CPUs:\n");
+    suspend_both_cpus = true;
+    test_scheduler_suspend1(0);
+    test_scheduler_suspend1(1);
+}
+
+TEST_CASE("Test the waiting task not missed due to scheduler suspension on one CPU", "[freertos]")
+{
+    printf("Suspend only one CPU:\n");
+    suspend_both_cpus = false;
+    test_scheduler_suspend1(0);
+    test_scheduler_suspend1(1);
+}
+
+static uint32_t count_tick[2];
+
+static void IRAM_ATTR tick_hook()
+{
+    ++count_tick[xPortGetCoreID()];
+}
+
+static void test_scheduler_suspend2(int cpu)
+{
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, 0);
+    esp_register_freertos_tick_hook_for_cpu(tick_hook, 1);
+
+    memset(count_tick, 0, sizeof(count_tick));
+
+    printf("Test for CPU%d\n", cpu);
+    xTaskCreatePinnedToCore(&control_task, "control_task", 8192, NULL, 5, NULL, cpu);
+
+    vTaskDelay(waiting_ms * 2 / portTICK_PERIOD_MS);
+    esp_deregister_freertos_tick_hook(tick_hook);
+
+    printf("count_tick[cpu0] = %d, count_tick[cpu1] = %d\n", count_tick[0], count_tick[1]);
+
+    TEST_ASSERT_INT_WITHIN(1, waiting_ms * 2, count_tick[0]);
+    TEST_ASSERT_INT_WITHIN(1, waiting_ms * 2, count_tick[1]);
+    printf("\n");
+}
+
+TEST_CASE("Test suspend-resume CPU. The number of tick_hook should be the same for both CPUs", "[freertos]")
+{
+    printf("Suspend both CPUs:\n");
+    suspend_both_cpus = true;
+    test_scheduler_suspend2(0);
+    test_scheduler_suspend2(1);
+
+    printf("Suspend only one CPU:\n");
+    suspend_both_cpus = false;
+    test_scheduler_suspend2(0);
+    test_scheduler_suspend2(1);
+}
+
+static int duration_timer_ms;
+
+static void timer_callback(void *arg)
+{
+    ++duration_timer_ms;
+}
+
+static void test_scheduler_suspend3(int cpu)
+{
+    duration_timer_ms = 0;
+    duration_ctrl_task_ms = 0;
+
+    printf("Test for CPU%d\n", cpu);
+    TimerHandle_t count_time = xTimerCreate("count_time", 1, pdTRUE, NULL, timer_callback);
+    xTimerStart( count_time, portMAX_DELAY);
+    xTaskCreatePinnedToCore(&control_task, "control_task", 8192, NULL, 5, NULL, cpu);
+
+    vTaskDelay(waiting_ms * 2 / portTICK_PERIOD_MS);
+    xTimerDelete(count_time, portMAX_DELAY);
+    printf("Finish duration_timer_ms=%d ms\n", duration_timer_ms);
+
+    TEST_ASSERT_INT_WITHIN(2, waiting_ms * 2, duration_timer_ms);
+    TEST_ASSERT_INT_WITHIN(5, waiting_ms + delta_ms, duration_ctrl_task_ms);
+
+    printf("\n");
+}
+
+TEST_CASE("Test suspend-resume CPU works with xTimer", "[freertos]")
+{
+    printf("Suspend both CPUs:\n");
+    suspend_both_cpus = true;
+    test_scheduler_suspend3(0);
+    test_scheduler_suspend3(1);
+
+    printf("Suspend only one CPU:\n");
+    suspend_both_cpus = false;
+    test_scheduler_suspend3(0);
+    test_scheduler_suspend3(1);
+}
+#endif // CONFIG_FREERTOS_UNICORE
