@@ -39,7 +39,7 @@ See the Getting Started guide links above for a detailed setup guide. This is a 
 
 * Install host build dependencies mentioned in Getting Started guide.
 * Add `tools/` directory to the PATH
-* Run `python -m pip install requirements.txt` to install Python dependencies
+* Run `python -m pip install -r requirements.txt` to install Python dependencies
 
 ## Configuring the Project
 
