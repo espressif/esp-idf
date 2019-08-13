@@ -17,7 +17,7 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
 #endif
 #include "esp_err.h"
@@ -43,7 +43,7 @@ static void handle_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, 
 static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
 static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
@@ -266,7 +266,7 @@ esp_err_t tcpip_adapter_clear_default_wifi_handlers(void)
     return ESP_OK;
 }
 
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
 esp_err_t tcpip_adapter_set_default_eth_handlers(void)
 {
     esp_err_t err;

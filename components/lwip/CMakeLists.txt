@@ -87,7 +87,6 @@ set(srcs
     "port/esp32/freertos/sys_arch.c"
     "port/esp32/netif/dhcp_state.c"
     "port/esp32/netif/nettestif.c"
-    "port/esp32/netif/ethernetif.c"
     "port/esp32/netif/wlanif.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
@@ -122,6 +121,10 @@ if(CONFIG_LWIP_PPP_SUPPORT)
         "lwip/src/netif/ppp/polarssl/md4.c"
         "lwip/src/netif/ppp/polarssl/md5.c"
         "lwip/src/netif/ppp/polarssl/sha1.c")
+endif()
+
+if(CONFIG_ETH_ENABLED)
+    list(APPEND srcs "port/esp32/netif/ethernetif.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
