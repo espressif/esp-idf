@@ -21,7 +21,7 @@ SOURCE_FILES = \
 	crc.cpp \
 	main.cpp
 
-CPPFLAGS += -I../include -I../src -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../soc/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage
+CPPFLAGS += -I../include -I../src -I./ -I../../esp_common/include -I../../esp32/include -I ../../mbedtls/mbedtls/include -I ../../spi_flash/include -I ../../soc/include -I ../../xtensa/include -I ../../../tools/catch -fprofile-arcs -ftest-coverage
 CFLAGS += -fprofile-arcs -ftest-coverage
 CXXFLAGS += -std=c++11 -Wall -Werror
 LDFLAGS += -lstdc++ -Wall -fprofile-arcs -ftest-coverage
