@@ -1,5 +1,33 @@
 menu "ESP32-specific"
 
+    choice ESP32_REV_MIN
+        prompt "Minimum Supported ESP32 Revision"
+        default ESP32_REV_MIN_0
+        help
+            Minimum revision that ESP-IDF would support.
+            ESP-IDF performs different strategy on different esp32 revision.
+
+        config ESP32_REV_MIN_0
+            bool "Rev 0"
+        config ESP32_REV_MIN_1
+            bool "Rev 1"
+        config ESP32_REV_MIN_2
+            bool "Rev 2"
+        config ESP32_REV_MIN_3
+            bool "Rev 3"
+    endchoice
+
+    config ESP32_REV_MIN
+        int
+        default 0 if ESP32_REV_MIN_0
+        default 1 if ESP32_REV_MIN_1
+        default 2 if ESP32_REV_MIN_2
+        default 3 if ESP32_REV_MIN_3
+
+    config ESP32_DPORT_WORKAROUND
+        bool
+        default "y" if !FREERTOS_UNICORE  && ESP32_REV_MIN < 2
+
     choice ESP32_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
         default ESP32_DEFAULT_CPU_FREQ_160
