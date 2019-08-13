@@ -18,7 +18,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "i2c_rtc_clk.h"
@@ -197,31 +197,26 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config()
         result.enable = (sdio_conf_reg & RTC_CNTL_XPD_SDIO_REG_M) >> RTC_CNTL_XPD_SDIO_REG_S;
         result.tieh = (sdio_conf_reg & RTC_CNTL_SDIO_TIEH_M) >> RTC_CNTL_SDIO_TIEH_S;
         return result;
-    }
-// TODO: rtc_vddsdio_get_config: implement efuse part for esp32s2beta - IDF-749
-#if 0
-    uint32_t efuse_reg = REG_READ(EFUSE_BLK0_RDATA4_REG);
-    if (efuse_reg & EFUSE_RD_SDIO_FORCE) {
-        // Get configuration from EFUSE
+    } else {
         result.force = 0;
-        result.enable = (efuse_reg & EFUSE_RD_XPD_SDIO_REG_M) >> EFUSE_RD_XPD_SDIO_REG_S;
-        result.tieh = (efuse_reg & EFUSE_RD_SDIO_TIEH_M) >> EFUSE_RD_SDIO_TIEH_S;
-        //DREFH/M/L eFuse are used for EFUSE_ADC_VREF instead. Therefore tuning
-        //will only be available on older chips that don't have EFUSE_ADC_VREF
-        if(REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG ,EFUSE_RD_BLK3_PART_RESERVE) == 0){
-            //BLK3_PART_RESERVE indicates the presence of EFUSE_ADC_VREF
-            // in this case, DREFH/M/L are also set from EFUSE
-            result.drefh = (efuse_reg & EFUSE_RD_SDIO_DREFH_M) >> EFUSE_RD_SDIO_DREFH_S;
-            result.drefm = (efuse_reg & EFUSE_RD_SDIO_DREFM_M) >> EFUSE_RD_SDIO_DREFM_S;
-            result.drefl = (efuse_reg & EFUSE_RD_SDIO_DREFL_M) >> EFUSE_RD_SDIO_DREFL_S;
-        }
+    }
+    uint32_t efuse_reg = REG_READ(EFUSE_RD_REPEAT_DATA1_REG);
+    if (efuse_reg & EFUSE_SDIO_FORCE) {
+        // Get configuration from EFUSE
+        result.enable = (efuse_reg & EFUSE_SDIO_XPD_M) >> EFUSE_SDIO_XPD_S;
+        result.tieh = (efuse_reg & EFUSE_SDIO_TIEH_M) >> EFUSE_SDIO_TIEH_S;
+
+        result.drefm = (efuse_reg & EFUSE_SDIO_DREFM_M) >> EFUSE_SDIO_DREFM_S;
+        result.drefl = (efuse_reg & EFUSE_SDIO_DREFL_M) >> EFUSE_SDIO_DREFL_S;
+
+        efuse_reg = REG_READ(EFUSE_RD_REPEAT_DATA0_REG);
+        result.drefh = (efuse_reg & EFUSE_SDIO_DREFH_M) >> EFUSE_SDIO_DREFH_S;
+
         return result;
     }
-#endif
 
     // Otherwise, VDD_SDIO is controlled by bootstrapping pin
     uint32_t strap_reg = REG_READ(GPIO_STRAP_REG);
-    result.force = 0;
     result.tieh = (strap_reg & BIT(5)) ? RTC_VDDSDIO_TIEH_1_8V : RTC_VDDSDIO_TIEH_3_3V;
     result.enable = 1;
     return result;
