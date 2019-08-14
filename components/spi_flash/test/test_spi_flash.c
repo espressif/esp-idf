@@ -108,8 +108,8 @@ typedef struct {
 
 static void IRAM_ATTR timer_isr(void* varg) {
     block_task_arg_t* arg = (block_task_arg_t*) varg;
-    TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[0].config.alarm_en = 1;
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
     ets_delay_us(arg->delay_time_us);
     arg->repeat_count++;
 }

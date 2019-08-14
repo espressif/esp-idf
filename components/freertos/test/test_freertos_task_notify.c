@@ -97,16 +97,10 @@ static void receiver_task (void* arg){
 static void IRAM_ATTR sender_ISR (void *arg)
 {
     int curcore = xPortGetCoreID();
-    if(curcore == 0){      //Clear timer interrupt
-        //Clear intr and pause via direct reg access as IRAM ISR cannot access timer APIs
-        TIMERG0.int_clr_timers.t0 = 1;
-        TIMERG0.hw_timer[0].config.enable = 0;
-    }else{
-        TIMERG0.int_clr_timers.t1 = 1;
-        TIMERG0.hw_timer[1].config.enable = 0;
-    }
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, curcore);
+    timer_group_set_counter_enable_in_isr(TIMER_GROUP_0, curcore, TIMER_PAUSE);
     //Re-enable alarm
-    TIMERG0.hw_timer[curcore].config.alarm_en = 1;
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, curcore);
 
     if(isr_give){   //Test vTaskNotifyGiveFromISR() on same core
         notifs_sent++;

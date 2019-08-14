@@ -64,19 +64,15 @@
 static const USHORT usTimerIndex = CONFIG_FMB_TIMER_INDEX; // Modbus Timer index used by stack
 static const USHORT usTimerGroupIndex = CONFIG_FMB_TIMER_GROUP; // Modbus Timer group index used by stack
 
-static timg_dev_t *MB_TG[2] = {&TIMERG0, &TIMERG1};
-
 /* ----------------------- Start implementation -----------------------------*/
 static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
-    // Retrieve the interrupt status and the counter value
-    // from the timer that reported the interrupt
-    uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st_timers.val;
-    if (intr_status & BIT(usTimerIndex)) {
-        MB_TG[usTimerGroupIndex]->int_clr_timers.val |= BIT(usTimerIndex);
-        (void)pxMBPortCBTimerExpired(); // Timer callback function
-        MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].config.alarm_en = TIMER_ALARM_EN;
-    }
+    assert((int)param == usTimerIndex);
+    // Retrieve the counter value from the timer that reported the interrupt
+    timer_group_intr_clr_in_isr(usTimerGroupIndex, usTimerIndex);
+    (void)pxMBPortCBTimerExpired(); // Timer callback function
+    // Enable alarm
+    timer_group_enable_alarm_in_isr(usTimerGroupIndex, usTimerIndex);
 }
 #endif
 
@@ -113,7 +109,7 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
                     "failure to set alarm failure, timer_set_alarm_value() returned (0x%x).",
                     (uint32_t)xErr);
     // Register ISR for timer
-    xErr = timer_isr_register(usTimerGroupIndex, usTimerIndex, vTimerGroupIsr, NULL, ESP_INTR_FLAG_IRAM, NULL);
+    xErr = timer_isr_register(usTimerGroupIndex, usTimerIndex, vTimerGroupIsr, (void*)(uint32_t)usTimerIndex, ESP_INTR_FLAG_IRAM, NULL);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                     "timer set value failure, timer_isr_register() returned (0x%x).",
                     (uint32_t)xErr);

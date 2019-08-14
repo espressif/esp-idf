@@ -38,6 +38,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#include "hal/timer_ll.h"
 
 static const char* TAG = "system_api";
 
@@ -281,12 +282,13 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_dport_access_int_abort();
 
     // Disable TG0/TG1 watchdogs
-    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect=0;
-    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect=0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_set_enable(&TIMERG0, false);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 
     // Flush any data left in UART FIFOs
     uart_tx_wait_idle(0);
