@@ -125,7 +125,7 @@ const OI_UINT32 dequant_long_unscaled[17];
 
 #include <math.h>
 
-INLINE float dequant_float(OI_UINT32 raw, OI_UINT scale_factor, OI_UINT bits)
+static INLINE float dequant_float(OI_UINT32 raw, OI_UINT scale_factor, OI_UINT bits)
 {
     float result = (1 << (scale_factor + 1)) * ((raw * 2.0f + 1.0f) / ((1 << bits) - 1.0f) - 1.0f);
 
