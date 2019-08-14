@@ -39,12 +39,16 @@ possible. This should optimize the amount of RAM accessible to the code without 
 IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 {
     uintptr_t dstart = (uintptr_t)addr; //First word
-    uintptr_t dend = dstart + len - 4; //Last word
+    uintptr_t dend = dstart + len; //Last word + 4
     assert(esp_ptr_in_diram_dram((void *)dstart));
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t istart = SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - dend);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t istart = SOC_DIRAM_IRAM_LOW + (dstart - SOC_DIRAM_DRAM_LOW);
+#endif
     uint32_t *iptr = (uint32_t *)istart;
     *iptr = dstart;
     return iptr + 1;

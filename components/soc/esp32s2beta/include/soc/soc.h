@@ -201,9 +201,9 @@
 
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x40020000
-#define SOC_DIRAM_IRAM_HIGH   0x4006FFFC
+#define SOC_DIRAM_IRAM_HIGH   0x40070000
 #define SOC_DIRAM_DRAM_LOW    0x3FFB0000
-#define SOC_DIRAM_DRAM_HIGH   0x3FFFFFFC
+#define SOC_DIRAM_DRAM_HIGH   0x40000000
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FFB0000
