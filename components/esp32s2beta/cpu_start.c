@@ -34,7 +34,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/periph_defs.h"
-
+#include "soc/rtc_wdt.h"
 #include "driver/rtc_io.h"
 
 #include "freertos/FreeRTOS.h"
@@ -368,10 +368,6 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
-    // Now that the application is about to start, disable boot watchdogs
-    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
-
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
 
@@ -393,6 +389,10 @@ static void main_task(void* args)
 #endif
 #endif
 
+    // Now that the application is about to start, disable boot watchdog
+#ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+    rtc_wdt_disable();
+#endif
     app_main();
     vTaskDelete(NULL);
 }
