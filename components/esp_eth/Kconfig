@@ -1,9 +1,9 @@
 menu "Ethernet"
 
-     # Invisible item that is enabled if any Ethernet
-     # selection is made
-     config ETH_ENABLED
-     bool
+    # Invisible item that is enabled if any Ethernet
+    # selection is made
+    config ETH_ENABLED
+        bool
 
     menuconfig ETH_USE_ESP32_EMAC
         depends on IDF_TARGET_ESP32
