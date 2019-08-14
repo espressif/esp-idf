@@ -189,7 +189,7 @@ static esp_err_t bootloader_main(void)
     ets_set_appcpu_boot_addr(0);
 #endif
 
-#if CONFIG_BOOTLOADER_WDT_ENABLE && CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
     rtc_wdt_protect_off();
     rtc_wdt_disable();
@@ -199,7 +199,7 @@ static esp_err_t bootloader_main(void)
     rtc_wdt_set_time(RTC_WDT_STAGE0, CONFIG_BOOTLOADER_WDT_TIME_MS);
     rtc_wdt_enable();
     rtc_wdt_protect_on();
-#elif CONFIG_IDF_TARGET_ESP32
+#else
     /* disable watch dog here */
     rtc_wdt_disable();
 #endif
