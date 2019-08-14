@@ -75,21 +75,21 @@ const soc_memory_region_t soc_memory_regions[] = {
 #endif
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
-    { 0x3FFB2000, 0x2000, 0, 0x400B2000}, //Block 1, can be use as I/D cache memory
-    { 0x3FFB4000, 0x2000, 0, 0x400B4000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
+    { 0x3FFB2000, 0x2000, 0, 0x40022000}, //Block 1, can be use as I/D cache memory
+    { 0x3FFB4000, 0x2000, 0, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
 #elif CONFIG_ESP32S2_DATA_CACHE_8KB
-    { 0x3FFB4000, 0x2000, 0, 0x400B4000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
+    { 0x3FFB4000, 0x2000, 0, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
 #else
-    { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
 #endif
 #else
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
-    { 0x3FFB4000, 0x2000, 0, 0x400B4000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
+    { 0x3FFB4000, 0x2000, 0, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
 #elif CONFIG_ESP32S2_DATA_CACHE_8KB
-    { 0x3FFB6000, 0x2000, 0, 0x400B6000}, //Block 3, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
 #endif
 #endif
     { 0x3FFB8000, 0x4000, 0, 0x40028000}, //Block 4,  can be remapped to ROM, can be used as trace memory
@@ -121,9 +121,6 @@ extern int _data_start_xtos;
 
    These are removed from the soc_memory_regions array when heaps are created.
  */
-// DRAM counterpart of the of the region reserved for IRAM in the linker script
-SOC_RESERVE_MEMORY_REGION(0x3ffb8000, 0x3FFD0000, dram_mapped_to_iram);
-
 //ROM data region
 SOC_RESERVE_MEMORY_REGION(0x3fff8000, (intptr_t)&_data_start_xtos, rom_data_region);
 

@@ -127,13 +127,14 @@ size_t soc_get_available_memory_regions(soc_memory_region_t *regions)
         bool move_to_next = true;
 
         for (size_t i = 0; i < num_reserved; i++) {
-            if (reserved[i].end <= in_start) {
-                /* reserved region ends before 'in' starts */
-                continue;
+            if (reserved[i].start >= SOC_DRAM_HIGH && in_end < SOC_DRAM_HIGH && in.iram_address != 0) {
+                reserved[i].start = reserved[i].start - (in.iram_address - in.start);
+                reserved[i].end = reserved[i].end - (in.iram_address - in.start);
             }
-            else if (reserved[i].start >= in_end) {
-                /* reserved region starts after 'in' ends */
-                break;
+
+            if (reserved[i].end <= in_start || reserved[i].start >= in_end) {
+                /* reserved region ends before 'in' starts or reserved region starts after 'in' ends */
+                continue;
             }
             else if (reserved[i].start <= in_start &&
                      reserved[i].end >= in_end) { /* reserved covers all of 'in' */

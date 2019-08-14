@@ -22,6 +22,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include "esp_err.h"
+#include "soc/soc.h"
 
 #define ESP_WATCHPOINT_LOAD 0x40000000
 #define ESP_WATCHPOINT_STORE 0x80000000
@@ -125,7 +126,6 @@ bool esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame);
  *      - ESP_FAIL  Backtrace is corrupted
  */
 esp_err_t esp_backtrace_print(int depth);
-
 
 #endif
 #ifdef __cplusplus
