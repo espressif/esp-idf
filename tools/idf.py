@@ -81,6 +81,8 @@ GENERATORS = [
 GENERATOR_CMDS = dict((a[0], a[1]) for a in GENERATORS)
 GENERATOR_VERBOSE = dict((a[0], a[3]) for a in GENERATORS)
 
+SUPPORTED_TARGETS = ["esp32"]
+
 
 def _run_tool(tool_name, args, cwd):
     def quote_arg(arg):
@@ -220,7 +222,6 @@ def _ensure_build_directory(args, always_run_cmake=False):
         os.makedirs(build_dir)
     cache_path = os.path.join(build_dir, "CMakeCache.txt")
 
-    args.define_cache_entry = list(args.define_cache_entry)
     args.define_cache_entry.append("CCACHE_ENABLE=%d" % args.ccache)
 
     if always_run_cmake or _new_cmakecache_entries(cache_path, args.define_cache_entry):
@@ -404,6 +405,17 @@ def clean(action, ctx, args):
         print("Build directory '%s' not found. Nothing to clean." % args.build_dir)
         return
     build_target("clean", ctx, args)
+
+
+def set_target(action, ctx, args, idf_target):
+    args.define_cache_entry.append("IDF_TARGET=" + idf_target)
+    sdkconfig_path = os.path.join(args.project_dir, 'sdkconfig')
+    sdkconfig_old = sdkconfig_path + ".old"
+    if os.path.exists(sdkconfig_old):
+        os.remove(sdkconfig_old)
+    if os.path.exists(sdkconfig_path):
+        os.rename(sdkconfig_path, sdkconfig_old)
+    print("Set Target to: %s, new sdkconfig created. Existing sdkconfig renamed to sdkconfig.old." % idf_target)
 
 
 def reconfigure(action, ctx, args):
@@ -828,24 +840,21 @@ def init_cli():
             for action_callback in ctx.command.global_action_callbacks:
                 action_callback(ctx, global_args, tasks)
 
-            # very simple dependency management
-            completed_tasks = set()
-
             if not tasks:
                 print(ctx.get_help())
                 ctx.exit()
 
-            while tasks:
-                task = tasks[0]
-                tasks_dict = dict([(t.name, t) for t in tasks])
+            # Make sure that define_cache_entry is list
+            global_args.define_cache_entry = list(global_args.define_cache_entry)
 
-                name_with_aliases = task.name
-                if task.aliases:
-                    name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
-
-                ready_to_run = True
+            # Go through the task and create depended but missing tasks
+            all_tasks = [t.name for t in tasks]
+            tasks, tasks_to_handle = [], tasks
+            while tasks_to_handle:
+                task = tasks_to_handle.pop()
+                tasks.append(task)
                 for dep in task.dependencies:
-                    if dep not in completed_tasks:
+                    if dep not in all_tasks:
                         print(
                             'Adding %s\'s dependency "%s" to list of actions'
                             % (task.name, dep)
@@ -858,8 +867,20 @@ def init_cli():
                             if option and (option.scope.is_global or option.scope.is_shared):
                                 dep_task.action_args.pop(key)
 
-                        tasks.insert(0, dep_task)
-                        ready_to_run = False
+                        tasks_to_handle.append(dep_task)
+                        all_tasks.append(dep_task.name)
+
+            # very simple dependency management
+            completed_tasks = set()
+            while tasks:
+                task = tasks[0]
+                tasks_dict = dict([(t.name, t) for t in tasks])
+
+                name_with_aliases = task.name
+                if task.aliases:
+                    name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
+
+                ready_to_run = True
 
                 for dep in task.order_dependencies:
                     if dep in tasks_dict.keys() and dep not in completed_tasks:
@@ -1080,7 +1101,22 @@ def init_cli():
                 + "For example, \"idf.py -DNAME='VALUE' reconfigure\" "
                 + 'can be used to set variable "NAME" in CMake cache to value "VALUE".',
                 "options": global_options,
-                "order_dependencies": ["menuconfig"],
+                "order_dependencies": ["menuconfig", "set-target", "fullclean"],
+            },
+            "set-target": {
+                "callback": set_target,
+                "short_help": "Set the chip target to build.",
+                "help": "Set the chip target to build. This will remove the "
+                + "existing sdkconfig file and corresponding CMakeCache and "
+                + "create new ones according to the new target.\nFor example, "
+                + "\"idf.py set-target esp32\" will select esp32 as the new chip "
+                + "target.",
+                "arguments": [{
+                    "names": ["idf-target"],
+                    "nargs": 1,
+                    "type": click.Choice(SUPPORTED_TARGETS),
+                }],
+                "dependencies": ["fullclean", "reconfigure"],
             },
             "clean": {
                 "callback": clean,
