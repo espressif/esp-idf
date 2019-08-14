@@ -80,10 +80,10 @@ class TestSourceChecker(unittest.TestCase, ApplyLine):
         pass
 
     def test_source_file_name(self):
-        self.expect_error('source "Kconfig.test"', expect='source "Kconfig.in"')
-        self.expect_error('source "/tmp/Kconfig.test"', expect='source "/tmp/Kconfig.in"')
-        self.expect_error('source "Kconfig"', expect='source "Kconfig.in"')
+        self.expect_error('source "notKconfig.test"', expect='source "Kconfig.notKconfig.test"')
+        self.expect_error('source "Kconfig"', expect='source "Kconfig.Kconfig"')
         self.expt_success('source "Kconfig.in"')
+        self.expt_success('source "/tmp/Kconfig.test"')
         self.expt_success('source "/tmp/Kconfig.in"')
         self.expect_error('source"Kconfig.in"', expect='source "Kconfig.in"')
         self.expt_success('source "/tmp/Kconfig.in"  # comment')
