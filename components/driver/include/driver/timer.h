@@ -19,6 +19,7 @@
 #include "soc/soc.h"
 #include "soc/timer_periph.h"
 #include "esp_intr_alloc.h"
+#include "hal/timer_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,15 +38,6 @@ typedef enum {
 } timer_group_t;
 
 /**
- * @brief Select a hardware timer from timer groups
- */
-typedef enum {
-    TIMER_0 = 0, /*!<Select timer0 of GROUPx*/
-    TIMER_1 = 1, /*!<Select timer1 of GROUPx*/
-    TIMER_MAX,
-} timer_idx_t;
-
-/**
  * @brief Decides the direction of counter
  */
 typedef enum {
@@ -53,14 +45,6 @@ typedef enum {
     TIMER_COUNT_UP = 1,   /*!< Ascending Count from Zero*/
     TIMER_COUNT_MAX
 } timer_count_dir_t;
-
-/**
- * @brief Decides whether timer is on or paused
- */
-typedef enum {
-    TIMER_PAUSE = 0, /*!<Pause timer counter*/
-    TIMER_START = 1, /*!<Start timer counter*/
-} timer_start_t;
 
 /**
  * @brief Decides whether to enable alarm mode
@@ -262,9 +246,9 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
  * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
  *        be returned here.
  *
- * @note If the intr_alloc_flags value ESP_INTR_FLAG_IRAM is set, 
- *       the handler function must be declared with IRAM_ATTR attribute 
- *       and can only call functions in IRAM or ROM. It cannot call other timer APIs. 
+ * @note If the intr_alloc_flags value ESP_INTR_FLAG_IRAM is set,
+ *       the handler function must be declared with IRAM_ATTR attribute
+ *       and can only call functions in IRAM or ROM. It cannot call other timer APIs.
  *       Use direct register access to configure timers from inside the ISR in this case.
  *
  * @return
@@ -274,7 +258,7 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
 esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, void (*fn)(void*), void * arg, int intr_alloc_flags, timer_isr_handle_t *handle);
 
 /** @brief Initializes and configure the timer.
- * 
+ *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index, 0 for hw_timer[0] & 1 for hw_timer[1]
  * @param config Pointer to timer initialization parameters.
@@ -300,28 +284,30 @@ esp_err_t timer_get_config(timer_group_t group_num, timer_idx_t timer_num, timer
 /** @brief Enable timer group interrupt, by enable mask
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- * @param en_mask Timer interrupt enable mask.
- *        Use TIMG_T0_INT_ENA_M to enable t0 interrupt
- *        Use TIMG_T1_INT_ENA_M to enable t1 interrupt
+ * @param intr_mask Timer interrupt enable mask.
+ *          - TIMER_INTR_T0: t0 interrupt
+ *          - TIMER_INTR_T1: t1 interrupt
+ *          - TIMER_INTR_WDT: watchdog interrupt
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_group_intr_enable(timer_group_t group_num, uint32_t en_mask);
+esp_err_t timer_group_intr_enable(timer_group_t group_num, timer_intr_t intr_mask);
 
 /** @brief Disable timer group interrupt, by disable mask
  *
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
- * @param disable_mask Timer interrupt disable mask.
- *        Use TIMG_T0_INT_ENA_M to disable t0 interrupt
- *        Use TIMG_T1_INT_ENA_M to disable t1 interrupt
+ * @param intr_mask Timer interrupt disable mask.
+ *          - TIMER_INTR_T0: t0 interrupt
+ *          - TIMER_INTR_T1: t1 interrupt
+ *          - TIMER_INTR_WDT: watchdog interrupt
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t timer_group_intr_disable(timer_group_t group_num, uint32_t disable_mask);
+esp_err_t timer_group_intr_disable(timer_group_t group_num, timer_intr_t intr_mask);
 
 /** @brief Enable timer interrupt
  *
@@ -344,6 +330,52 @@ esp_err_t timer_enable_intr(timer_group_t group_num, timer_idx_t timer_num);
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t timer_disable_intr(timer_group_t group_num, timer_idx_t timer_num);
+
+/** @cond */
+/* Utilities functions that can be used in the ISR */
+/* Preview, don't treat them as stable API. */
+
+/**
+ * Clear interrupt status bit.
+ */
+void timer_group_intr_clr_in_isr(timer_group_t group_num, timer_idx_t timer_num);
+
+/**
+ * Enable alarm.
+ */
+void timer_group_enable_alarm_in_isr(timer_group_t group_num, timer_idx_t timer_num);
+
+/**
+ * Get the current counter value.
+ */
+uint64_t timer_group_get_counter_value_in_isr(timer_group_t group_num, timer_idx_t timer_num);
+
+/**
+ * Set the alarm threshold for the timer.
+ */
+void timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t timer_num, uint64_t alarm_val);
+
+/**
+ * Enable/disable a counter.
+ */
+void timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en);
+
+/**
+ * Get the masked interrupt status.
+ */
+timer_intr_t timer_group_intr_get_in_isr(timer_group_t group_num);
+
+/**
+ * Clear interrupt.
+ */
+void timer_group_clr_intr_sta_in_isr(timer_group_t group_num, timer_intr_t intr_mask);
+
+/**
+ * Get auto reload enable status.
+ */
+bool timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer_idx_t timer_num);
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

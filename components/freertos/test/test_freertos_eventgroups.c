@@ -138,8 +138,8 @@ static bool test_clear_bits;
 static void IRAM_ATTR event_group_isr(void *arg)
 {
     portBASE_TYPE task_woken = pdFALSE;
-    TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[xPortGetCoreID()].config.alarm_en = 1;
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, xPortGetCoreID());
 
     if(test_set_bits){
         xEventGroupSetBitsFromISR(eg, BITS, &task_woken);

@@ -53,6 +53,7 @@
 #include "bootloader_flash_config.h"
 
 #include "flash_qio_mode.h"
+#include "hal/timer_ll.h"
 
 extern int _bss_start;
 extern int _bss_end;
@@ -158,8 +159,8 @@ static esp_err_t bootloader_main(void)
     /* disable watch dog here */
     rtc_wdt_disable();
 #endif
-    REG_SET_FIELD(TIMG_WDTWPROTECT_REG(0), TIMG_WDT_WKEY,  TIMG_WDT_WKEY_VALUE);
-    REG_CLR_BIT( TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN );
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_flashboot_en(&TIMERG0, false);
 
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
     const uint32_t spiconfig = ets_efuse_get_spiconfig();

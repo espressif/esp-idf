@@ -30,14 +30,14 @@ static const char* TAG = "test_event";
 
 #define TEST_CONFIG_WAIT_MULTIPLIER          5
 
-// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed 
-// during teardown. 
+// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed
+// during teardown.
 #define TEST_SETUP() \
         ESP_LOGI(TAG, "initializing test"); \
         size_t free_mem_before = heap_caps_get_free_size(MALLOC_CAP_DEFAULT); \
         test_setup(); \
         s_test_core_id = xPortGetCoreID(); \
-        s_test_priority = uxTaskPriorityGet(NULL); 
+        s_test_priority = uxTaskPriorityGet(NULL);
 
 #define TEST_TEARDOWN() \
         test_teardown(); \
@@ -294,15 +294,11 @@ void IRAM_ATTR test_event_on_timer_alarm(void* para)
 {
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
-    TIMERG0.hw_timer[TIMER_0].update = 1;
     uint64_t timer_counter_value =
-        ((uint64_t) TIMERG0.hw_timer[TIMER_0].cnt_high) << 32
-        | TIMERG0.hw_timer[TIMER_0].cnt_low;
-
-    TIMERG0.int_clr_timers.t0 = 1;
+        timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    TIMERG0.hw_timer[TIMER_0].alarm_high = (uint32_t) (timer_counter_value >> 32);
-    TIMERG0.hw_timer[TIMER_0].alarm_low = (uint32_t) timer_counter_value;
+    timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
 
     int data = (int) para;
     // Posting events with data more than 4 bytes should fail.
