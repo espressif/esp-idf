@@ -20,7 +20,9 @@
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "esp_log.h"
+#if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
+#endif
 
 #define GPIO_CHECK(a, str, ret_val) \
     if (!(a)) { \
@@ -454,7 +456,13 @@ esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
         isr_core_id = xPortGetCoreID();
     }
     portEXIT_CRITICAL(&gpio_spinlock);
-    esp_err_t ret = esp_ipc_call_blocking(isr_core_id, gpio_isr_register_on_core_static, (void *)&p);
+    esp_err_t ret;
+#if CONFIG_FREERTOS_UNICORE
+    gpio_isr_register_on_core_static(&p);
+    ret = ESP_OK;
+#else /* CONFIG_FREERTOS_UNICORE */
+    ret = esp_ipc_call_blocking(isr_core_id, gpio_isr_register_on_core_static, (void *)&p);
+#endif /* !CONFIG_FREERTOS_UNICORE */
     if(ret != ESP_OK || p.ret != ESP_OK) {
         return ESP_ERR_NOT_FOUND;
     }
