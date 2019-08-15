@@ -121,8 +121,13 @@ def check_environment():
 
     (cmake will check a lot of other things)
     """
+    checks_output = []
+
     if not executable_exists(["cmake", "--version"]):
+        print_idf_version()
         raise FatalError("'cmake' must be available on the PATH to use %s" % PROG)
+
+    # verify that IDF_PATH env variable is set
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
     detected_idf_path = _realpath(os.path.join(os.path.dirname(__file__), ".."))
     if "IDF_PATH" in os.environ:
@@ -138,9 +143,9 @@ def check_environment():
         os.environ["IDF_PATH"] = detected_idf_path
 
     # check Python dependencies
-    print("Checking Python dependencies...")
+    checks_output.append("Checking Python dependencies...")
     try:
-        subprocess.check_call(
+        out = subprocess.check_output(
             [
                 os.environ["PYTHON"],
                 os.path.join(
@@ -149,8 +154,14 @@ def check_environment():
             ],
             env=os.environ,
         )
-    except subprocess.CalledProcessError:
+
+        checks_output.append(out.decode('utf-8','ignore').strip())
+    except subprocess.CalledProcessError as e:
+        print(e.output.decode('utf-8','ignore'))
+        print_idf_version()
         raise SystemExit(1)
+
+    return checks_output
 
 
 def executable_exists(args):
@@ -494,6 +505,71 @@ def _safe_relpath(path, start=None):
         return os.path.abspath(path)
 
 
+def _idf_version_from_cmake():
+    version_path = os.path.join(os.environ["IDF_PATH"], "tools/cmake/version.cmake")
+    regex = re.compile(r"^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)")
+    ver = {}
+    try:
+        with open(version_path) as f:
+            for line in f:
+                m = regex.match(line)
+
+                if m:
+                    ver[m.group(1)] = m.group(2)
+
+        return "v%s.%s.%s" % (ver["MAJOR"], ver["MINOR"], ver["PATCH"])
+    except (KeyError, OSError):
+        sys.stderr.write("WARNING: Cannot find ESP-IDF version in version.cmake\n")
+        return None
+
+
+def idf_version():
+    """Print version of ESP-IDF"""
+
+    #  Try to get version from git:
+    try:
+        version = subprocess.check_output([
+            "git",
+            "--git-dir=%s" % os.path.join(os.environ["IDF_PATH"], '.git'),
+            "--work-tree=%s" % os.environ["IDF_PATH"], "describe", "--tags", "--dirty"
+        ]).decode('utf-8', 'ignore').strip()
+    except (subprocess.CalledProcessError, UnicodeError):
+        # if failed, then try to parse cmake.version file
+        sys.stderr.write("WARNING: Git version unavailable, reading from source\n")
+        version = _idf_version_from_cmake()
+
+    return version
+
+
+def print_idf_version():
+    version = idf_version()
+    if version:
+        print("ESP-IDF %s" % version)
+    else:
+        print("ESP-IDF version unknown")
+
+
+def idf_version_callback(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+
+    version = idf_version()
+
+    if not version:
+        raise FatalError("ESP-IDF version cannot be determined")
+
+    print("ESP-IDF %s" % version)
+    sys.exit(0)
+
+
+def verbose_callback(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+
+    for line in ctx.command.verbose_output:
+        print(line)
+
+
 def get_commandline_options(ctx):
     """ Return all the command line options up to first action """
     # This approach ignores argument parsing done Click
@@ -547,7 +623,7 @@ class PropertyDict(dict):
             raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
 
 
-def init_cli():
+def init_cli(verbose_output=None):
     # Click is imported here to run it after check_environment()
     import click
 
@@ -750,7 +826,7 @@ def init_cli():
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
 
-        def __init__(self, action_lists=None, help=None):
+        def __init__(self, action_lists=None, verbose_output=None, help=None):
             super(CLI, self).__init__(
                 chain=True,
                 invoke_without_command=True,
@@ -761,6 +837,11 @@ def init_cli():
             self._actions = {}
             self.global_action_callbacks = []
             self.commands_with_aliases = {}
+
+            if verbose_output is None:
+                verbose_output = []
+
+            self.verbose_output = verbose_output
 
             if action_lists is None:
                 action_lists = []
@@ -1043,6 +1124,12 @@ def init_cli():
     root_options = {
         "global_options": [
             {
+                "names": ["--version"],
+                "help": "Show IDF version and exit.",
+                "is_flag": True,
+                "callback": idf_version_callback
+            },
+            {
                 "names": ["-C", "--project-dir"],
                 "help": "Project directory.",
                 "type": click.Path(),
@@ -1064,7 +1151,9 @@ def init_cli():
                 "names": ["-v", "--verbose"],
                 "help": "Verbose build output.",
                 "is_flag": True,
+                "is_eager": True,
                 "default": False,
+                "callback": verbose_callback
             },
             {
                 "names": ["--ccache/--no-ccache"],
@@ -1337,12 +1426,12 @@ def init_cli():
     except NameError:
         pass
 
-    return CLI(help="ESP-IDF build management", action_lists=all_actions)
+    return CLI(help="ESP-IDF build management", verbose_output=verbose_output, action_lists=all_actions)
 
 
 def main():
-    check_environment()
-    cli = init_cli()
+    checks_output = check_environment()
+    cli = init_cli(verbose_output=checks_output)
     cli(prog_name=PROG)
 
 

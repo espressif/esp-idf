@@ -57,10 +57,9 @@ ESP-IDF 采用了 `语义版本管理方法 <http://semver.org/>`_，即您可�
 查看当前版本
 ----------------------------
 
-查看 ESP-IDF 本地副本的版本，请使用 git 命令::
+查看 ESP-IDF 本地副本的版本，请使用 idf.py 命令::
 
-    cd $IDF_PATH
-    git describe --tags --dirty
+    idf.py --version
 
 此外，由于 ESP-IDF 的版本也已编译至固件中，因此您也可以使用宏 ``IDF_VER`` 查看 ESP-IDF 的版本（以字符串的格式）。ESP-IDF 默认引导程序可以在设备启动时打印 ESP-IDF 的版本，但注意代码中的版本信息仅会在源代码重新编译时才会更新，因此打印出来的版本可能并不是最新的。
 
