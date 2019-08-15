@@ -287,7 +287,7 @@ gatt_svr_dsc_access(uint16_t conn_handle, uint16_t attr_handle, struct
     char *temp_outbuf = strdup(ctxt->dsc->arg);
     if (temp_outbuf == NULL) {
         ESP_LOGE(TAG, "Error duplicating user description of characteristic");
-        return ESP_ERR_NO_MEM;
+        return BLE_ATT_ERR_INSUFFICIENT_RES;
     }
 
     ssize_t temp_outlen = strlen(temp_outbuf);
@@ -308,6 +308,9 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
     ssize_t temp_outlen = 0;
     uint8_t *temp_outbuf = NULL;
     uint8_t *uuid = NULL;
+    uint8_t *data_buf = NULL;
+    uint16_t data_len = 0;
+    uint16_t data_buf_len = 0;
 
     switch (ctxt->op) {
     case BLE_GATT_ACCESS_OP_READ_CHR:
@@ -328,7 +331,7 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         uuid = (uint8_t *) calloc(BLE_UUID128_VAL_LENGTH, sizeof(uint8_t));
         if (!uuid) {
             ESP_LOGE(TAG, "Error allocating memory for 128 bit UUID");
-            return ESP_ERR_NO_MEM;
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
         }
 
         rc = ble_uuid_flat(ctxt->chr->uuid, uuid);
@@ -338,16 +341,32 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
             return rc;
         }
 
-        ESP_LOGD(TAG, "Write attempt for uuid = %s, attr_handle = %d, om_len = %d",
-                 ble_uuid_to_str(ctxt->chr->uuid, buf), attr_handle, ctxt->om->om_len);
+        /* Save the length of entire data */
+        data_len = OS_MBUF_PKTLEN(ctxt->om);
+        ESP_LOGD(TAG, "Write attempt for uuid = %s, attr_handle = %d, data_len = %d",
+                 ble_uuid_to_str(ctxt->chr->uuid, buf), attr_handle, data_len);
+
+        data_buf = calloc(1, data_len);
+        if (data_buf == NULL) {
+            ESP_LOGE(TAG, "Error allocating memory for characteristic value");
+            return BLE_ATT_ERR_INSUFFICIENT_RES;
+        }
+
+        rc = ble_hs_mbuf_to_flat(ctxt->om, data_buf, data_len, &data_buf_len);
+        if (rc != 0) {
+            ESP_LOGE(TAG, "Error getting data from memory buffers");
+            return BLE_ATT_ERR_UNLIKELY;
+        }
+
         ret = protocomm_req_handle(protoble_internal->pc_ble,
                                    uuid128_to_handler(uuid),
                                    conn_handle,
-                                   ctxt->om->om_data,
-                                   ctxt->om->om_len,
+                                   data_buf,
+                                   data_buf_len,
                                    &temp_outbuf, &temp_outlen);
         /* Release the 16 bytes allocated for uuid*/
         free(uuid);
+        free(data_buf);
         if (ret == ESP_OK) {
 
             /* Save data address and length outbuf and outlen internally */
