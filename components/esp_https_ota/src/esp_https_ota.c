@@ -85,17 +85,21 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
 static esp_err_t _http_connect(esp_http_client_handle_t http_client)
 {
     esp_err_t err = ESP_FAIL;
-    int status_code;
+    int status_code, header_ret;
     do {
         err = esp_http_client_open(http_client, 0);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to open HTTP connection: %s", esp_err_to_name(err));
             return err;
         }
-        esp_http_client_fetch_headers(http_client);
+        header_ret = esp_http_client_fetch_headers(http_client);
+        if (header_ret < 0) {
+            return header_ret;
+        }
         status_code = esp_http_client_get_status_code(http_client);
-        if (_http_handle_response_code(http_client, status_code) != ESP_OK) {
-            return ESP_FAIL;
+        err = _http_handle_response_code(http_client, status_code);
+        if (err != ESP_OK) {
+            return err;
         }
     } while (process_again(status_code));
     return err;
@@ -274,6 +278,12 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             break;
     }
     return ESP_OK;
+}
+
+bool esp_https_ota_is_complete_data_received(esp_https_ota_handle_t https_ota_handle)
+{
+    esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
+    return esp_http_client_is_complete_data_received(handle->http_client);
 }
 
 esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
