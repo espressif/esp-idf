@@ -90,10 +90,10 @@ struct spi_flash_chip_t {
     uint32_t block_erase_size; /* Optimal (fastest) block size for multi-sector erases on this chip */
 
     /* Read the write protect status of the entire chip. */
-    esp_err_t (*get_chip_write_protect)(esp_flash_t *chip, bool *write_protected);
+    esp_err_t (*get_chip_write_protect)(esp_flash_t *chip, bool *out_write_protected);
 
     /* Set the write protect status of the entire chip. */
-    esp_err_t (*set_chip_write_protect)(esp_flash_t *chip, bool write_protect_chip);
+    esp_err_t (*set_chip_write_protect)(esp_flash_t *chip, bool chip_write_protect);
 
     /* Number of individually write protectable regions on this chip. Range 0-63. */
     uint8_t num_protectable_regions;
@@ -135,9 +135,6 @@ struct spi_flash_chip_t {
     /* Perform an encrypted write to the chip, using internal flash encryption hardware. */
     esp_err_t (*write_encrypted)(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length);
 
-    /* Set the write enable flag. This function is called internally by other functions in this structure, before a destructive
-       operation takes place. */
-    esp_err_t (*set_write_protect)(esp_flash_t *chip, bool write_protect);
 
     /* Wait for the SPI flash chip to be idle (any write operation to be complete.) This function is both called from the higher-level API functions, and from other functions in this structure.
 
