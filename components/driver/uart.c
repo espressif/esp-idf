@@ -81,7 +81,7 @@ typedef struct {
     intr_handle_t intr_handle;          /*!< UART interrupt handle*/
     uart_mode_t uart_mode;              /*!< UART controller actual mode set by uart_set_mode() */
     bool coll_det_flg;                  /*!< UART collision detection flag */
-    
+
     //rx parameters
     int rx_buffered_len;                  /*!< UART cached data length */
     SemaphoreHandle_t rx_mux;           /*!< UART RX data mutex*/
@@ -1007,13 +1007,13 @@ static void uart_rx_intr_handler_default(void *param)
             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_reset_rx_fifo(uart_num);
             // Set collision detection flag
-            p_uart_obj[uart_num]->coll_det_flg = true; 
+            p_uart_obj[uart_num]->coll_det_flg = true;
             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
             uart_event.type = UART_EVENT_MAX;
         } else if(uart_intr_status & UART_TX_DONE_INT_ST_M) {
             uart_disable_intr_mask_from_isr(uart_num, UART_TX_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);
-            // If RS485 half duplex mode is enable then reset FIFO and 
+            // If RS485 half duplex mode is enable then reset FIFO and
             // reset RTS pin to start receiver driver
             if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                 UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
@@ -1489,11 +1489,11 @@ portMUX_TYPE *uart_get_selectlock(void)
     return &uart_selectlock;
 }
 // Set UART mode
-esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode) 
+esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_ERR_INVALID_STATE);
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
-    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL) 
+    if ((mode == UART_MODE_RS485_COLLISION_DETECT) || (mode == UART_MODE_RS485_APP_CTRL)
             || (mode == UART_MODE_RS485_HALF_DUPLEX)) {
         UART_CHECK((UART[uart_num]->conf1.rx_flow_en != 1),
                 "disable hw flowctrl before using RS485 mode", ESP_ERR_INVALID_ARG);
@@ -1548,13 +1548,13 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
     return ESP_OK;
 }
 
-esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh) 
+esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_ERR_INVALID_ARG);
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
-    // The tout_thresh = 1, defines TOUT interrupt timeout equal to  
-    // transmission time of one symbol (~11 bit) on current baudrate  
+    // The tout_thresh = 1, defines TOUT interrupt timeout equal to
+    // transmission time of one symbol (~11 bit) on current baudrate
     if (tout_thresh > 0) {
         //Hardware issue workaround: when using ref_tick, the rx timeout threshold needs increase to 10 times.
         //T_ref = T_apb * APB_CLK/(REF_TICK << CLKDIV_FRAG_BIT_WIDTH)
@@ -1575,8 +1575,8 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_ERR_INVALID_ARG);
-    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX) 
-                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)), 
+    UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)
+                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)),
                     "wrong mode", ESP_ERR_INVALID_ARG);
     *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
     return ESP_OK;
@@ -1600,4 +1600,13 @@ esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_thresh
 
     *out_wakeup_threshold = UART[uart_num]->sleep_conf.active_threshold + UART_MIN_WAKEUP_THRESH;
     return ESP_OK;
+}
+
+void uart_wait_tx_idle_polling(uart_port_t uart_num)
+{
+    uint32_t status;
+    do {
+        status = READ_PERI_REG(UART_STATUS_REG(uart_num));
+        /* either tx count or state is non-zero */
+    } while ((status & (UART_ST_UTX_OUT_M | UART_TXFIFO_CNT_M)) != 0);
 }

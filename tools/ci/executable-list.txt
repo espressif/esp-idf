@@ -35,6 +35,7 @@ tools/ci/build_examples_cmake.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/check_examples_cmake_make.sh
+tools/ci/check_examples_rom_header.sh
 tools/ci/check_idf_version.sh
 tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
