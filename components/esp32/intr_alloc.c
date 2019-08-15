@@ -28,9 +28,11 @@
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
-#include "esp_ipc.h"
 #include <limits.h>
 #include <assert.h>
+#if !CONFIG_FREERTOS_UNICORE
+#include "esp_ipc.h"
+#endif
 
 static const char* TAG = "intr_alloc";
 
@@ -705,20 +707,26 @@ esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
     return ESP_OK;
 }
 
+#if !CONFIG_FREERTOS_UNICORE
 static void esp_intr_free_cb(void *arg)
 {
     (void)esp_intr_free((intr_handle_t)arg);
 }
+#endif /* !CONFIG_FREERTOS_UNICORE */
 
 esp_err_t esp_intr_free(intr_handle_t handle)
 {
     bool free_shared_vector=false;
     if (!handle) return ESP_ERR_INVALID_ARG;
+
+#if !CONFIG_FREERTOS_UNICORE
     //Assign this routine to the core where this interrupt is allocated on.
     if (handle->vector_desc->cpu!=xPortGetCoreID()) {
         esp_err_t ret = esp_ipc_call_blocking(handle->vector_desc->cpu, &esp_intr_free_cb, (void *)handle);
         return ret == ESP_OK ? ESP_OK : ESP_FAIL;
     }
+#endif /* !CONFIG_FREERTOS_UNICORE */
+
     portENTER_CRITICAL(&spinlock);
     esp_intr_disable(handle);
     if (handle->vector_desc->flags&VECDESC_FL_SHARED) {
