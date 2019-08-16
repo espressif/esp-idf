@@ -72,6 +72,7 @@ function(__kconfig_init)
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_set_property(__ROOT_KCONFIG ${idf_path}/Kconfig)
+    idf_build_set_property(__ROOT_SDKCONFIG_RENAME ${idf_path}/sdkconfig.rename)
     idf_build_set_property(__OUTPUT_SDKCONFIG 1)
 endfunction()
 
@@ -86,6 +87,8 @@ function(__kconfig_component_init component_target)
     __component_set_property(${component_target} KCONFIG "${kconfig}")
     file(GLOB kconfig "${component_dir}/Kconfig.projbuild")
     __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig}")
+    file(GLOB sdkconfig_rename "${component_dir}/sdkconfig.rename")
+    __component_set_property(${component_target} SDKCONFIG_RENAME "${sdkconfig_rename}")
 endfunction()
 
 #
@@ -100,11 +103,15 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         if(component_target IN_LIST build_component_targets)
             __component_get_property(kconfig ${component_target} KCONFIG)
             __component_get_property(kconfig_projbuild ${component_target} KCONFIG_PROJBUILD)
+            __component_get_property(sdkconfig_rename ${component_target} SDKCONFIG_RENAME)
             if(kconfig)
                 list(APPEND kconfigs ${kconfig})
             endif()
             if(kconfig_projbuild)
                 list(APPEND kconfig_projbuilds ${kconfig_projbuild})
+            endif()
+            if(sdkconfig_rename)
+                list(APPEND sdkconfig_renames ${sdkconfig_rename})
             endif()
         endif()
     endforeach()
@@ -118,6 +125,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     string(REPLACE ";" " " kconfigs "${kconfigs}")
     string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
+    string(REPLACE ";" " " sdkconfig_renames "${sdkconfig_renames}")
 
     # Place config-related environment arguments into config.env file
     # to work around command line length limits for execute_process
@@ -135,11 +143,13 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     endif()
 
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
+    idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
     idf_build_get_property(python PYTHON)
 
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
         --kconfig ${root_kconfig}
+        --sdkconfig-rename ${root_sdkconfig_rename}
         --config ${sdkconfig}
         ${defaults_arg}
         --env-file ${config_env_path})
@@ -232,6 +242,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
         --env-file ${config_env_path}
         --kconfig ${IDF_PATH}/Kconfig
+        --sdkconfig-rename ${root_sdkconfig_rename}
         --config ${sdkconfig}
         VERBATIM
         USES_TERMINAL)

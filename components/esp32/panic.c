@@ -44,6 +44,8 @@
 #include "esp_private/system_internal.h"
 #include "sdkconfig.h"
 #include "esp_ota_ops.h"
+#include "driver/timer.h"
+#include "hal/timer_ll.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -311,7 +313,7 @@ void panicHandler(XtExcFrame *frame)
         disableAllWdts();
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
             frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-            TIMERG1.int_clr_timers.wdt = 1;
+            timer_group_clr_intr_sta_in_isr(TIMER_GROUP_1, TIMER_INTR_WDT);
         }
 #if CONFIG_ESP32_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
@@ -401,19 +403,21 @@ static void illegal_instruction_helper(XtExcFrame *frame)
 */
 static void reconfigureAllWdts(void)
 {
-    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_feed = 1;
-    TIMERG0.wdt_config0.sys_reset_length = 7;           //3.2uS
-    TIMERG0.wdt_config0.cpu_reset_length = 7;           //3.2uS
-    TIMERG0.wdt_config0.stg0 = TIMG_WDT_STG_SEL_RESET_SYSTEM; //1st stage timeout: reset system
-    TIMERG0.wdt_config1.clk_prescale = 80 * 500;        //Prescaler: wdt counts in ticks of 0.5mS
-    TIMERG0.wdt_config2 = 2000;                         //1 second before reset
-    TIMERG0.wdt_config0.en = 1;
-    TIMERG0.wdt_wprotect = 0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_feed(&TIMERG0);
+    timer_ll_wdt_init(&TIMERG0);
+    timer_ll_wdt_set_tick(&TIMERG0, TG0_WDT_TICK_US); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
+    //1st stage timeout: reset system
+    timer_ll_wdt_set_timeout_behavior(&TIMERG0, 0, TIMER_WDT_RESET_SYSTEM);
+    //1 second before reset
+    timer_ll_wdt_set_timeout(&TIMERG0, 0, 1000*1000/TG0_WDT_TICK_US);
+    timer_ll_wdt_set_enable(&TIMERG0, true);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
     //Disable wdt 1
-    TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect = 0;
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 }
 
 /*
@@ -421,14 +425,16 @@ static void reconfigureAllWdts(void)
 */
 static inline void disableAllWdts(void)
 {
-    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect = 0;
-    TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect = 0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_set_enable(&TIMERG0, false);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 }
 
+#if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
 static void esp_panic_dig_reset(void) __attribute__((noreturn));
 
 static void esp_panic_dig_reset(void)
@@ -444,6 +450,7 @@ static void esp_panic_dig_reset(void)
         ;
     }
 }
+#endif
 
 static void putEntry(uint32_t pc, uint32_t sp)
 {

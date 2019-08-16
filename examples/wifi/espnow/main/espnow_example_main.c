@@ -26,8 +26,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_now.h"
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/crc.h"
+#include "esp_crc.h"
 #include "espnow_example.h"
 
 static const char *TAG = "espnow_example";
@@ -123,7 +122,7 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
     *magic = buf->magic;
     crc = buf->crc;
     buf->crc = 0;
-    crc_cal = crc16_le(UINT16_MAX, (uint8_t const *)buf, data_len);
+    crc_cal = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, data_len);
 
     if (crc_cal == crc) {
         return buf->type;
@@ -146,7 +145,7 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
     buf->magic = send_param->magic;
     /* Fill all remaining bytes after the data with random values */
     esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
-    buf->crc = crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
 
 static void example_espnow_task(void *pvParameter)

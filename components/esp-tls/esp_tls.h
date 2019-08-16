@@ -48,6 +48,7 @@ extern "C" {
 #define ESP_ERR_MBEDTLS_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0E)  /*!< mbedtls api returned error */
 #define ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x0F)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x11)  /*!< mbedtls api returned failed  */
 
 typedef struct esp_tls_last_error* esp_tls_error_handle_t;
 
@@ -75,6 +76,15 @@ typedef enum esp_tls_role {
     ESP_TLS_CLIENT = 0,
     ESP_TLS_SERVER,
 } esp_tls_role_t;
+
+/**
+ *  @brief ESP-TLS preshared key and hint structure
+ */
+typedef struct psk_key_hint {
+    const uint8_t* key;                     /*!< key in PSK authentication mode in binary format */
+    const size_t   key_size;                /*!< length of the key */
+    const char* hint;                       /*!< hint in PSK authentication mode in string format */
+} psk_hint_key_t;
 
 /**
  * @brief      ESP-TLS configuration parameters 
@@ -159,6 +169,11 @@ typedef struct esp_tls_cfg {
                                                  If NULL, server certificate CN must match hostname. */
 
     bool skip_common_name;                  /*!< Skip any validation of server certificate CN field */
+
+    const psk_hint_key_t* psk_hint_key;     /*!< Pointer to PSK hint and key. if not NULL (and certificates are NULL)
+                                                 then PSK authentication is enabled with configured setup.
+                                                 Important note: the pointer must be valid for connection */
+
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER

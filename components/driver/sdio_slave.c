@@ -533,6 +533,7 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 
     SLC.rx_dscr_conf.slc0_token_no_replace = 1;
     HINF.cfg_data1.highspeed_enable = 1;
+    HINF.cfg_data1.sdio_ver = 0x232;
 
     switch(config->timing) {
         case SDIO_SLAVE_TIMING_PSEND_PSAMPLE:

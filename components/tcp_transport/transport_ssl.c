@@ -169,6 +169,14 @@ void esp_transport_ssl_enable_global_ca_store(esp_transport_handle_t t)
     }
 }
 
+void esp_transport_ssl_set_psk_key_hint(esp_transport_handle_t t, const psk_hint_key_t* psk_hint_key)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.psk_hint_key =  psk_hint_key;
+    }
+}
+
 void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data, int len)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);

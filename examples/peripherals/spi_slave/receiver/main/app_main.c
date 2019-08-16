@@ -27,7 +27,6 @@
 #include "esp_event_loop.h"
 #include "nvs_flash.h"
 #include "soc/rtc_periph.h"
-#include "esp32/rom/cache.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
 #include "esp_spi_flash.h"

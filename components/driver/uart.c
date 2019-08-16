@@ -1663,8 +1663,8 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool *collision_flag)
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     UART_CHECK((collision_flag != NULL), "wrong parameter pointer", ESP_ERR_INVALID_ARG);
     UART_CHECK((UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)
-                || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)),
-               "wrong mode", ESP_ERR_INVALID_ARG);
+                    || UART_IS_MODE_SET(uart_num, UART_MODE_RS485_COLLISION_DETECT)),
+                    "wrong mode", ESP_ERR_INVALID_ARG);
     *collision_flag = p_uart_obj[uart_num]->coll_det_flg;
     return ESP_OK;
 }
@@ -1687,4 +1687,13 @@ esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int *out_wakeup_thresh
 
     *out_wakeup_threshold = UART[uart_num]->sleep_conf.active_threshold + UART_MIN_WAKEUP_THRESH;
     return ESP_OK;
+}
+
+void uart_wait_tx_idle_polling(uart_port_t uart_num)
+{
+    uint32_t status;
+    do {
+        status = READ_PERI_REG(UART_STATUS_REG(uart_num));
+        /* either tx count or state is non-zero */
+    } while ((status & (UART_ST_UTX_OUT_M | UART_TXFIFO_CNT_M)) != 0);
 }

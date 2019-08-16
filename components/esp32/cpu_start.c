@@ -204,7 +204,7 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
     }
     ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
-    
+
     esp_flash_enc_mode_t mode;
     mode = esp_get_flash_encryption_mode();
     if (mode == ESP_FLASH_ENC_MODE_DEVELOPMENT) {
@@ -408,6 +408,16 @@ void start_cpu0_default(void)
     esp_flash_app_init();
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
+
+    uint8_t revision = esp_efuse_get_chip_ver();
+    ESP_LOGI(TAG, "Chip Revision: %d", revision);
+    if (revision > CONFIG_ESP32_REV_MIN) {
+        ESP_LOGW(TAG, "Chip revision is higher than the one configured in menuconfig. Suggest to upgrade it.");
+    } else if(revision != CONFIG_ESP32_REV_MIN) {
+        ESP_LOGE(TAG, "ESP-IDF can't support this chip revision. Modify minimum supported revision in menuconfig");
+        abort();
+    }
+
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO
