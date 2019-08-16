@@ -490,7 +490,7 @@ class Monitor(object):
                     item = self.cmd_queue.get_nowait()
                 except queue.Empty:
                     try:
-                        item = self.event_queue.get(False, 0.001)
+                        item = self.event_queue.get(True, 0.03)
                     except queue.Empty:
                         continue
 
