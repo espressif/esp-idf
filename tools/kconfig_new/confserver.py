@@ -74,12 +74,14 @@ def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCO
     sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
     sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
     deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
-    with tempfile.NamedTemporaryFile(mode='w+b') as f_o:
+    f_o = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
+    try:
         with open(sdkconfig, mode='rb') as f_i:
             f_o.write(f_i.read())
-        f_o.flush()
-        f_o.seek(0)
+        f_o.close()  # need to close as DeprecatedOptions will reopen, and Windows only allows one open file
         deprecated_options.replace(sdkconfig_in=f_o.name, sdkconfig_out=sdkconfig)
+    finally:
+        os.unlink(f_o.name)
     config.load_config(sdkconfig)
 
     print("Server running, waiting for requests on stdin...", file=sys.stderr)
