@@ -57,7 +57,7 @@ static void produce_pulse(void)
         .freq_hz = 1,
         .clk_cfg = LEDC_AUTO_CLK,
     };
-    ledc_timer_config(&ledc_timer);
+    ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
 
     ledc_channel_config_t ledc_channel = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
@@ -68,7 +68,7 @@ static void produce_pulse(void)
         .duty = 100,
         .hpoint = 0,
     };
-    ledc_channel_config(&ledc_channel);
+    ESP_ERROR_CHECK(ledc_channel_config(&ledc_channel));
 }
 
 static void IRAM_ATTR pcnt_intr_handler(void *arg)

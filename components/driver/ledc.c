@@ -314,7 +314,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
         ESP_LOGE(LEDC_TAG, "invalid timer #%u", timer_num);
         return ESP_ERR_INVALID_ARG;
     }
-    return ledc_set_timer_div(timer_num, timer_num, timer_conf->clk_cfg, freq_hz, duty_resolution);
+    return ledc_set_timer_div(speed_mode, timer_num, timer_conf->clk_cfg, freq_hz, duty_resolution);
 }
 
 esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel)
