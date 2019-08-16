@@ -18,6 +18,8 @@ set(srcs
     "timer.c"
     "uart.c")
 
+set(includes "include")
+
 if(CONFIG_IDF_TARGET_ESP32)
     # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "mcpwm.c"
@@ -27,12 +29,14 @@ if(CONFIG_IDF_TARGET_ESP32)
 endif()
 
 if(CONFIG_IDF_TARGET_ESP32S2BETA)
-    list(APPEND srcs "${CONFIG_IDF_TARGET}/rtc_tempsensor.c"
-                     "${CONFIG_IDF_TARGET}/rtc_touchpad.c")
+    list(APPEND srcs "esp32s2beta/rtc_tempsensor.c"
+                     "esp32s2beta/rtc_touchpad.c")
+    # currently only S2 beta has its own target-specific includes
+    list(APPEND includes "esp32s2beta/include")
 endif()
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "include" "${CONFIG_IDF_TARGET}/include"
+                    INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS "include/driver"
                     REQUIRES esp_ringbuf soc) #cannot totally hide soc headers, since there are a lot arguments in the driver are chip-dependent
 

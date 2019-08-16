@@ -28,5 +28,5 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
-                       priv_requires ${soc_name}
+                       PRIV_REQUIRES ${soc_name}
                        LDFRAGMENTS linker.lf)

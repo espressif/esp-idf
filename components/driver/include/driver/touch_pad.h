@@ -368,7 +368,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Touch pad parameter error
  *     - ESP_ERR_INVALID_STATE This touch pad hardware connection is error, the value of "touch_value" is 0.
-p *     - ESP_FAIL Touch pad not initialized
+ *     - ESP_FAIL Touch pad not initialized
  */
 esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
 

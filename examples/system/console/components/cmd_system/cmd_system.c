@@ -20,7 +20,6 @@
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp32/rom/uart.h"
 #include "cmd_system.h"
 #include "sdkconfig.h"
 
@@ -292,7 +291,7 @@ static int light_sleep(int argc, char **argv)
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);
-    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
     esp_light_sleep_start();
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     const char *cause_str;

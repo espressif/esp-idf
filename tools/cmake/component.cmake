@@ -232,10 +232,10 @@ function(__component_get_requirements)
     file(REMOVE ${component_requires_file})
 endfunction()
 
-# __component_add_sources, __component_check_target
+# __component_add_sources, __component_check_target, __component_add_include_dirs
 #
-# Utility macros for component registration. Adds source files and checks target requirements
-# respectively.
+# Utility macros for component registration. Adds source files and checks target requirements,
+# and adds include directories respectively.
 macro(__component_add_sources sources)
     set(sources "")
     if(__SRCS)
@@ -277,6 +277,16 @@ macro(__component_add_sources sources)
     endif()
 
     list(REMOVE_DUPLICATES sources)
+endmacro()
+
+macro(__component_add_include_dirs lib dirs type)
+    foreach(dir ${dirs})
+        get_filename_component(_dir ${dir} ABSOLUTE BASE_DIR ${CMAKE_CURRENT_LIST_DIR})
+        if(NOT IS_DIRECTORY ${_dir})
+            message(FATAL_ERROR "Include directory '${_dir}' is not a directory.")
+        endif()
+        target_include_directories(${lib} ${type} ${_dir})
+    endforeach()
 endmacro()
 
 macro(__component_check_target)
@@ -323,6 +333,7 @@ macro(__component_set_all_dependencies)
         __component_set_dependencies("${reqs}" INTERFACE)
     endif()
 endmacro()
+
 
 # idf_component_get_property
 #
@@ -436,16 +447,16 @@ function(idf_component_register)
     if(sources OR __EMBED_FILES OR __EMBED_TXTFILES)
         add_library(${component_lib} STATIC ${sources})
         __component_set_property(${component_target} COMPONENT_TYPE LIBRARY)
-        target_include_directories(${component_lib} PUBLIC ${__INCLUDE_DIRS})
-        target_include_directories(${component_lib} PRIVATE ${__PRIV_INCLUDE_DIRS})
-        target_include_directories(${component_lib} PUBLIC ${config_dir})
+        __component_add_include_dirs(${component_lib} "${__INCLUDE_DIRS}" PUBLIC)
+        __component_add_include_dirs(${component_lib} "${__PRIV_INCLUDE_DIRS}" PRIVATE)
+        __component_add_include_dirs(${component_lib} "${config_dir}" PUBLIC)
         set_target_properties(${component_lib} PROPERTIES OUTPUT_NAME ${COMPONENT_NAME})
         __ldgen_add_component(${component_lib})
     else()
         add_library(${component_lib} INTERFACE)
         __component_set_property(${component_target} COMPONENT_TYPE CONFIG_ONLY)
-        target_include_directories(${component_lib} INTERFACE ${__INCLUDE_DIRS})
-        target_include_directories(${component_lib} INTERFACE ${config_dir})
+        __component_add_include_dirs(${component_lib} "${__INCLUDE_DIRS}" INTERFACE)
+        __component_add_include_dirs(${component_lib} "${config_dir}" INTERFACE)
     endif()
 
     # Alias the static/interface library created for linking to external targets.
@@ -479,6 +490,8 @@ function(idf_component_register)
     # COMPONENT_TARGET is deprecated but is made available with same function
     # as COMPONENT_LIB for compatibility.
     set(COMPONENT_TARGET ${component_lib} PARENT_SCOPE)
+
+    __component_set_properties()
 endfunction()
 
 #

@@ -31,6 +31,16 @@ typedef struct {
     xSemaphoreHandle sem;
 } test_task_param_t;
 
+typedef struct {
+    fd_set *rdfds;
+    fd_set *wrfds;
+    fd_set *errfds;
+    int maxfds;
+    struct timeval *tv;
+    int select_ret;
+    xSemaphoreHandle sem;
+} test_select_task_param_t;
+
 static const char message[] = "Hello world!";
 
 static int open_dummy_socket(void)
@@ -420,73 +430,121 @@ TEST_CASE("poll() timeout", "[vfs]")
     deinit(uart_fd, socket_fd);
 }
 
-static void select_task(void *param)
+static void select_task(void *task_param)
 {
-    const test_task_param_t *test_task_param = param;
-    struct timeval tv = {
-        .tv_sec = 0,
-        .tv_usec = 100000,
-    };
+    const test_select_task_param_t *param = task_param;
 
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(test_task_param->fd, &rfds);
+    int s = select(param->maxfds, param->rdfds, param->wrfds, param->errfds, param->tv);
+    TEST_ASSERT_EQUAL(param->select_ret, s);
 
-    int s = select(test_task_param->fd + 1, &rfds, NULL, NULL, &tv);
-    TEST_ASSERT_EQUAL(0, s); //timeout
-
-    if (test_task_param->sem) {
-        xSemaphoreGive(test_task_param->sem);
+    if (param->sem) {
+        xSemaphoreGive(param->sem);
     }
     vTaskDelete(NULL);
 }
 
-TEST_CASE("concurent selects work", "[vfs]")
+static void inline start_select_task(test_select_task_param_t *param)
 {
-    struct timeval tv = {
-        .tv_sec = 0,
-        .tv_usec = 100000,//irrelevant
-    };
+    xTaskCreate(select_task, "select_task", 4*1024, (void *) param, 5, NULL);
+}
 
+TEST_CASE("concurrent selects work", "[vfs]")
+{
     int uart_fd, socket_fd;
     init(&uart_fd, &socket_fd);
-
     const int dummy_socket_fd = open_dummy_socket();
 
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(uart_fd, &rfds);
+    {
+        // Two tasks will wait for the same UART FD for reading and they will time-out
 
-    test_task_param_t test_task_param = {
-        .fd = uart_fd,
-        .sem = xSemaphoreCreateBinary(),
-    };
-    TEST_ASSERT_NOT_NULL(test_task_param.sem);
+        struct timeval tv = {
+            .tv_sec = 0,
+            .tv_usec = 100000,
+        };
 
-    xTaskCreate(select_task, "select_task", 4*1024, (void *) &test_task_param, 5, NULL);
-    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+        fd_set rdfds1;
+        FD_ZERO(&rdfds1);
+        FD_SET(uart_fd, &rdfds1);
 
-    int s = select(uart_fd + 1, &rfds, NULL, NULL, &tv);
-    TEST_ASSERT_EQUAL(-1, s); //this select should fail because two selects are accessing UART
-                              //(the other one is waiting for the timeout)
-    TEST_ASSERT_EQUAL(EINTR, errno);
+        test_select_task_param_t param = {
+            .rdfds = &rdfds1,
+            .wrfds = NULL,
+            .errfds = NULL,
+            .maxfds = uart_fd + 1,
+            .tv = &tv,
+            .select_ret = 0, // expected timeout
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(param.sem);
 
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS));
+        fd_set rdfds2;
+        FD_ZERO(&rdfds2);
+        FD_SET(uart_fd, &rdfds2);
+        FD_SET(socket_fd, &rdfds2);
+        FD_SET(dummy_socket_fd, &rdfds2);
 
-    FD_ZERO(&rfds);
-    FD_SET(socket_fd, &rfds);
+        start_select_task(&param);
+        vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    test_task_param.fd = dummy_socket_fd;
+        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
+        TEST_ASSERT_EQUAL(0, s); // timeout here as well
 
-    xTaskCreate(select_task, "select_task", 4*1024, (void *) &test_task_param, 5, NULL);
-    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(param.sem);
+    }
 
-    s = select(socket_fd + 1, &rfds, NULL, NULL, &tv);
-    TEST_ASSERT_EQUAL(0, s); //this select should timeout as well as the concurrent one because
-                             //concurrent socket select should work
+    {
+        // One tasks waits for UART reading and one for writing. The former will be successful and latter will
+        // time-out.
 
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS));
-    vSemaphoreDelete(test_task_param.sem);
+        struct timeval tv = {
+            .tv_sec = 0,
+            .tv_usec = 100000,
+        };
+
+        fd_set wrfds1;
+        FD_ZERO(&wrfds1);
+        FD_SET(uart_fd, &wrfds1);
+
+        test_select_task_param_t param = {
+            .rdfds = NULL,
+            .wrfds = &wrfds1,
+            .errfds = NULL,
+            .maxfds = uart_fd + 1,
+            .tv = &tv,
+            .select_ret = 0, // expected timeout
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(param.sem);
+
+        start_select_task(&param);
+
+        fd_set rdfds2;
+        FD_ZERO(&rdfds2);
+        FD_SET(uart_fd, &rdfds2);
+        FD_SET(socket_fd, &rdfds2);
+        FD_SET(dummy_socket_fd, &rdfds2);
+
+        const test_task_param_t send_param = {
+            .fd = uart_fd,
+            .delay_ms = 50,
+            .sem = xSemaphoreCreateBinary(),
+        };
+        TEST_ASSERT_NOT_NULL(send_param.sem);
+        start_task(&send_param);        // This task will write to UART which will be detected by select()
+
+        int s = select(MAX(MAX(uart_fd, dummy_socket_fd), socket_fd) + 1, &rdfds2, NULL, NULL, &tv);
+        TEST_ASSERT_EQUAL(1, s);
+        TEST_ASSERT(FD_ISSET(uart_fd, &rdfds2));
+        TEST_ASSERT_UNLESS(FD_ISSET(socket_fd, &rdfds2));
+        TEST_ASSERT_UNLESS(FD_ISSET(dummy_socket_fd, &rdfds2));
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(param.sem);
+
+        TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(send_param.sem, 1000 / portTICK_PERIOD_MS));
+        vSemaphoreDelete(send_param.sem);
+    }
 
     deinit(uart_fd, socket_fd);
     close(dummy_socket_fd);

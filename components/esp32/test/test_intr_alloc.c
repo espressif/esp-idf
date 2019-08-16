@@ -55,24 +55,20 @@ static void timer_isr(void *arg)
     int timer_idx = (int)arg;
     count[timer_idx]++;
     if (timer_idx==0) {
-        TIMERG0.int_clr_timers.t0 = 1;
-        TIMERG0.hw_timer[0].update=1;
-        TIMERG0.hw_timer[0].config.alarm_en = 1;
+        timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+        timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
     }
     if (timer_idx==1) {
-        TIMERG0.int_clr_timers.t1 = 1;
-        TIMERG0.hw_timer[1].update=1;
-        TIMERG0.hw_timer[1].config.alarm_en = 1;
+        timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_1);
+        timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_1);
     }
     if (timer_idx==2) {
-        TIMERG1.int_clr_timers.t0 = 1;
-        TIMERG1.hw_timer[0].update=1;
-        TIMERG1.hw_timer[0].config.alarm_en = 1;
+        timer_group_intr_clr_in_isr(TIMER_GROUP_1, TIMER_0);
+        timer_group_enable_alarm_in_isr(TIMER_GROUP_1, TIMER_0);
     }
     if (timer_idx==3) {
-        TIMERG1.int_clr_timers.t1 = 1;
-        TIMERG1.hw_timer[1].update=1;
-        TIMERG1.hw_timer[1].config.alarm_en = 1;
+        timer_group_intr_clr_in_isr(TIMER_GROUP_1, TIMER_1);
+        timer_group_enable_alarm_in_isr(TIMER_GROUP_1, TIMER_1);
     }
 //  ets_printf("int %d\n", timer_idx);
 }
@@ -280,7 +276,7 @@ TEST_CASE("allocate 2 handlers for a same source and remove the later one","[esp
     r=esp_intr_alloc(ETS_SPI2_INTR_SOURCE, ESP_INTR_FLAG_SHARED, int_handler2, &ctx, &handle2);
     TEST_ESP_OK(r);
     SPI2.slave.trans_inten = 1;
-    
+
     printf("trigger first time.\n");
     SPI2.slave.trans_done = 1;
 
