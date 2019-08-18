@@ -20,7 +20,6 @@
 #include "sdmmc_types.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
-#include "driver/sdmmc_host.h"
 
 #ifdef __cplusplus
 extern "C" {
