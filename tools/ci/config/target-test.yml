@@ -3,8 +3,8 @@
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
     JOB_NAME_PREFIX=$(echo ${CI_JOB_NAME} | awk '{print $1}')
-    JOG_FULL_NAME="${JOB_NAME_PREFIX}_${CI_NODE_INDEX}"
-    CONFIG_FILE="${CONFIG_FILE_PATH}/${JOG_FULL_NAME}.yml"
+    JOB_FULL_NAME="${JOB_NAME_PREFIX}_${CI_NODE_INDEX}"
+    CONFIG_FILE="${CONFIG_FILE_PATH}/${JOB_FULL_NAME}.yml"
 
 .example_test_template:
   stage: target_test
@@ -113,7 +113,7 @@
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
     # run test
-    - python CIRunner.py -l "$LOG_PATH/$JOG_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
+    - python CIRunner.py -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
 
 test_weekend_mqtt:
   extends: .example_test_template
@@ -412,6 +412,48 @@ UT_030:
     - ESP32_IDF
     - UT_T1_1
 
+UT_031:
+  extends: .unit_test_template
+  parallel: 34
+  tags:
+    - 7.2.2
+    - UT_T1_1
+
+UT_032:
+  extends: .unit_test_template
+  parallel: 3
+  tags:
+    - 7.2.2
+    - UT_T2_1
+
+UT_033:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - 7.2.2
+    - Example_SPI_Multi_device
+
+UT_034:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - 7.2.2
+    - UT_T1_RMT
+
+UT_035:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - 7.2.2
+    - UT_T2_I2C
+
+UT_036:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - 7.2.2
+    - UT_T2_RS485
+
 nvs_compatible_test:
   extends: .test_template
   artifacts:
@@ -437,7 +479,7 @@ nvs_compatible_test:
     # prepare nvs bins
     - ./Tools/prepare_nvs_bin.sh
     # run test
-    - python CIRunner.py -l "$LOG_PATH/$JOG_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
+    - python CIRunner.py -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
 
 IT_001:
   extends: .test_template
