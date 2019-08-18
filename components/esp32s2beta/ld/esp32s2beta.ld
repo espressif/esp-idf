@@ -67,11 +67,10 @@ MEMORY
      Start of RTC slow memory is reserved for ULP co-processor code + data, if enabled.
   */
   rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM,
-                                     len = 0x1000 - CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM
+                                     len = 0x2000 - CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM
 
-  /* RTC fast memory (same block as above), viewed from data bus
-   * TODO: check whether rtc_data_seg address is correct - IDF-760 */
-  rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0
+  /* RTC fast memory (same block as above), viewed from data bus */
+  rtc_data_seg(RW) :                 org = 0x3ff9e000, len = 0x2000
 }
 
 _static_data_end = _bss_end;
