@@ -18,7 +18,7 @@
 #include "sys/lock.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
-#include "driver/sdmmc_host.h"
+#include "driver/sdmmc_types.h"
 #include "sdspi_private.h"
 #include "sdspi_crc.h"
 

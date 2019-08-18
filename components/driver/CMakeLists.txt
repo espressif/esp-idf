@@ -20,7 +20,7 @@ set(srcs
 
 set(includes "include")
 
-if(CONFIG_IDF_TARGET_ESP32)
+if(IDF_TARGET STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "mcpwm.c"
                      "sdio_slave.c"
@@ -28,7 +28,7 @@ if(CONFIG_IDF_TARGET_ESP32)
                      "sdmmc_transaction.c")
 endif()
 
-if(CONFIG_IDF_TARGET_ESP32S2BETA)
+if(IDF_TARGET STREQUAL "esp32s2beta")
     list(APPEND srcs "esp32s2beta/rtc_tempsensor.c"
                      "esp32s2beta/rtc_touchpad.c")
     # currently only S2 beta has its own target-specific includes

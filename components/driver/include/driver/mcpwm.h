@@ -20,6 +20,11 @@
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
+#include "soc/soc_caps.h"
+
+#ifndef SOC_MCPWM_SUPPORTED
+#error MCPWM is not supported in this chip target
+#endif
 
 #ifdef __cplusplus
 extern "C" {
