@@ -6,9 +6,12 @@ else()
     set(srcs "debug_helpers.c"
              "debug_helpers_asm.S"
              "eri.c"
-             "stdatomic.c")
+             )
 
-    if(CONFIG_IDF_TARGET_ESP32)
+    if(IDF_TARGET STREQUAL "esp32s2beta")
+        list(APPEND srcs "stdatomic.c")
+    endif()
+    if(IDF_TARGET STREQUAL "esp32")
         list(APPEND srcs "trax.c")
     endif()
 endif()
