@@ -61,7 +61,7 @@ static IRAM_ATTR void rsa_complete_isr(void *arg)
     }
 }
 
-static void rsa_isr_initialise()
+static void rsa_isr_initialise(void)
 {
     if (op_complete_sem == NULL) {
         op_complete_sem = xSemaphoreCreateBinary();
