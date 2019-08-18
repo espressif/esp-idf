@@ -36,6 +36,7 @@ import re
 import shutil
 import subprocess
 import sys
+import platform
 
 
 class FatalError(RuntimeError):
@@ -64,6 +65,9 @@ if "MSYSTEM" in os.environ:  # MSYS
 elif os.name == "nt":  # other Windows
     MAKE_CMD = "mingw32-make"
     MAKE_GENERATOR = "MinGW Makefiles"
+elif platform.system() == "FreeBSD":
+    MAKE_CMD = "gmake"
+    MAKE_GENERATOR = "Unix Makefiles"
 else:
     MAKE_CMD = "make"
     MAKE_GENERATOR = "Unix Makefiles"
