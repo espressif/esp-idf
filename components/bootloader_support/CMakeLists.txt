@@ -1,4 +1,4 @@
-set(srcs 
+set(srcs
     "src/bootloader_clock.c"
     "src/bootloader_common.c"
     "src/bootloader_flash.c"
@@ -10,7 +10,7 @@ set(srcs
     "src/bootloader_flash_config_${IDF_TARGET}.c"
     )
 
-if(CONFIG_IDF_TARGET_ESP32)
+if(IDF_TARGET STREQUAL "esp32")
     # Not supported on ESP32S2Beta yet
     list(APPEND srcs "src/flash_encrypt.c")
 endif()
