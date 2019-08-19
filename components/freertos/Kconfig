@@ -1,12 +1,5 @@
 menu "FreeRTOS"
 
-    config FREERTOS_SINGLE_CORE_ONLY
-        # invisible config item to always select FREERTOS_UNICORE on single core IDF_TARGET
-        bool
-        default y
-        depends on IDF_TARGET_ESP32S2BETA
-        select FREERTOS_UNICORE
-
     config FREERTOS_UNICORE
         # This config variable is also checked in the ESP32 startup code, not only in FreeRTOS.
         bool "Run FreeRTOS only on first core"
