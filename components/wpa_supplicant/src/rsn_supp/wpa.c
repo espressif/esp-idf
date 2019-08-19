@@ -26,7 +26,6 @@
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
-#include "crypto/wepkey.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger

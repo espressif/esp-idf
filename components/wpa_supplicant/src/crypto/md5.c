@@ -15,8 +15,8 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/md5.h"
-#include "crypto/crypto.h"
+#include "md5.h"
+#include "crypto.h"
 
 
 /**
