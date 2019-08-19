@@ -15,8 +15,8 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/dh_groups.h"
-#include "crypto/dh_group5.h"
+#include "dh_groups.h"
+#include "dh_group5.h"
 
 
 void * 
