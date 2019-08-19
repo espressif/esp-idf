@@ -8,7 +8,6 @@
 #include "esp_transport_tcp.h"
 #include "esp_transport_ws.h"
 #include "esp_transport_utils.h"
-#include "transport_strcasestr.h"
 #include "mbedtls/base64.h"
 #include "mbedtls/sha1.h"
 
@@ -64,7 +63,7 @@ static char *trimwhitespace(const char *str)
 
 static char *get_http_header(const char *buffer, const char *key)
 {
-    char *found = transport_strcasestr(buffer, key);
+    char *found = strcasestr(buffer, key);
     if (found) {
         found += strlen(key);
         char *found_end = strstr(found, "\r\n");
