@@ -38,6 +38,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "y" if IDF_TARGET="esp32s2beta"
         default "n"
+        select FREERTOS_UNICORE
 
     menu "SDK tool configuration"
         config SDK_TOOLPREFIX
