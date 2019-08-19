@@ -35,9 +35,9 @@ function(__kconfig_init)
         endif()
     endif()
     if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "FreeBSD")
-        set(MAKE_CONMMAND "gmake")
+        set(MAKE_COMMMAND "gmake")
     else()
-        set(MAKE_CONMMAND "make")
+        set(MAKE_COMMMAND "make")
     endif()
 
     if(NOT MCONF)
@@ -54,7 +54,7 @@ function(__kconfig_init)
             CONFIGURE_COMMAND ""
             BINARY_DIR "kconfig_bin"
             BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
-            COMMAND ${MAKE_CONMMAND} -f ${src_path}/Makefile mconf-idf
+            COMMAND ${MAKE_COMMMAND} -f ${src_path}/Makefile mconf-idf
             BUILD_BYPRODUCTS ${MCONF}
             INSTALL_COMMAND ""
             EXCLUDE_FROM_ALL 1
