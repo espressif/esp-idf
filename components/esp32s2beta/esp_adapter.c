@@ -38,20 +38,13 @@
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
-#include "crypto/md5.h"
-#include "crypto/sha1.h"
-#include "crypto/crypto.h"
-#include "crypto/aes.h"
-#include "crypto/dh_group5.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/clk.h"
-#endif
 
 #define TAG "esp_adapter"
 
@@ -583,9 +576,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._get_random = os_get_random,
     ._get_time = get_time_wrapper,
     ._random = os_random,
-#if CONFIG_IDF_TARGET_ESP32S2BETA
     ._slowclk_cal_get = esp_clk_slowclk_cal_get,
-#endif
     ._log_write = esp_log_write,
     ._log_timestamp = esp_log_timestamp,
     ._malloc_internal =  malloc_internal_wrapper,

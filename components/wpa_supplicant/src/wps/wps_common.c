@@ -12,9 +12,9 @@
 
 #include "crypto/aes_wrap.h"
 #include "crypto/crypto.h"
-#include "crypto/dh_group5.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"
+#include "crypto/dh_group5.h"
 #include "crypto/random.h"
 
 #include "wps/wps_i.h"
