@@ -236,7 +236,7 @@ typedef struct
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
-    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem);
+    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
     int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
     /** called by VFS to interrupt the socket_select call when select is activated from a non-socket VFS driver; set only for the socket driver */
@@ -246,7 +246,7 @@ typedef struct
     /** end_select is called to stop the I/O multiplexing and deinitialize the environment created by start_select for the given VFS */
     void* (*get_socket_select_semaphore)();
     /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
-    void (*end_select)();
+    esp_err_t (*end_select)(void *end_select_args);
 } esp_vfs_t;
 
 
