@@ -64,8 +64,7 @@ static void ip_event_handler(void* arg, esp_event_base_t event_base,
         case IP_EVENT_STA_GOT_IP:
             event = (ip_event_got_ip_t*)event_data;
             ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n",
-            ip4addr_ntoa(&event->ip_info.ip));
+            ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
             if (wifi_events) {
                 xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
             }
