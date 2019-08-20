@@ -121,19 +121,13 @@ Manually unloading the driver
 
     sudo kextunload -b com.apple.driver.AppleUSBFTDI
 
-4. Run OpenOCD (paths are given for downloadable OpenOCD archive)::
+4. Run OpenOCD::
 
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
-
-   Or, if OpenOCD was built from source::
-
-    src/openocd -s tcl -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    bin/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
 
 5. In another terminal window, load FTDI serial port driver again::
 
     sudo kextload -b com.FTDI.driver.FTDIUSBSerialDriver
-
-.. include:: ./windows-openocd-note.rst
 
 .. note::
 
