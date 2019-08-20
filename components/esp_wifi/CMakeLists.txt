@@ -9,7 +9,6 @@ else()
 endif()
 
 idf_component_register(SRCS "src/coexist.c"
-                            "src/crypto_ops.c"
                             "src/lib_printf.c"
                             "src/mesh_event.c"
                             "src/phy_init.c"

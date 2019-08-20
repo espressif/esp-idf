@@ -23,10 +23,10 @@
 
 #include "utils/common.h"
 #include "utils/includes.h"
-#include "crypto/crypto.h"
-#include "crypto/aes.h"
+#include "crypto.h"
+#include "aes.h"
 #if defined(CONFIG_DES) || defined(CONFIG_DES3)
-#include "crypto/des_i.h"
+#include "des_i.h"
 #endif
 #ifdef USE_MBEDTLS_CRYPTO
 #include "mbedtls/aes.h"

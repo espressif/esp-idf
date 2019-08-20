@@ -10,7 +10,6 @@
 
 #ifdef EAP_TTLS
 #include "utils/common.h"
-#include "crypto/ms_funcs.h"
 #include "crypto/sha1.h"
 #include "tls/tls.h"
 #include "eap_peer/eap.h"

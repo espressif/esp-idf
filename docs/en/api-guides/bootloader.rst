@@ -1,5 +1,6 @@
 Bootloader
 =====================
+:link_to_translation:`zh_CN:[中文]`
 
 Bootloader performs the following functions:
 
