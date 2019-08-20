@@ -119,7 +119,17 @@ begin
 
     IDFToolsSetup();
 
+
+  if WizardIsTaskSelected('createlnk') then
+  begin
     CreateIDFCommandPromptShortcut();
+  end;
+   
+  if WizardIsTaskSelected('wdexcl') then
+  begin
+    RegisterIDFToolsExecutablesInWD();
+  end;	
+
   except
     SetupAborted := True;
     if MsgBox('Installation log has been created, it may contain more information about the problem.' + #13#10
