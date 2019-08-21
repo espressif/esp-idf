@@ -814,32 +814,6 @@ esp_err_t esp_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
 
 /**
-  * @brief     Set auto connect
-  *            The default value is true
-  *
-  * @param     en : true - enable auto connect / false - disable auto connect
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_MODE: WiFi internal error, the station/soft-AP control block is invalid
-  *    - others: refer to error code in esp_err.h
-  */
-esp_err_t esp_wifi_set_auto_connect(bool en) __attribute__ ((deprecated));
-
-/**
-  * @brief     Get the auto connect flag
-  *
-  * @param[out] en  store current auto connect configuration
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument
-  */
-esp_err_t esp_wifi_get_auto_connect(bool *en) __attribute__ ((deprecated));
-
-/**
   * @brief     Function signature for received Vendor-Specific Information Element callback.
   * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
   * @param     type Information element type, based on frame type received.
