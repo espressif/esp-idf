@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Check ncurses compatibility
 
 # What library to link
