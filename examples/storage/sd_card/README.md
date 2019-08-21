@@ -68,12 +68,6 @@ This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG`
 
 ## How to use example
 
-### Configure the project
-
-If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
-
-If using CMake based build system, no configuration is required.
-
 SD card can be used in various modes. See below on choosing the mode to be used.
 
 ### 4-line and 1-line SD modes
@@ -97,14 +91,10 @@ By default, the example uses SDMMC Host peripheral to access the card using SD p
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
-```
-
-Or, for CMake based build system (replace PORT with serial port name):
-
-```
 idf.py -p PORT flash monitor
 ```
+
+(Replace PORT with serial port name.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

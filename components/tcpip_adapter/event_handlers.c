@@ -17,7 +17,7 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
 #endif
 #include "esp_err.h"
@@ -43,7 +43,7 @@ static void handle_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, 
 static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
 static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
@@ -54,10 +54,10 @@ static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id,
 {
     tcpip_adapter_ip_info_t eth_ip;
     uint8_t eth_mac[6];
-
-    esp_eth_get_mac(eth_mac);
+    esp_eth_handle_t eth_handle = *(esp_eth_handle_t*)data;
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, eth_mac);
     tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
-    tcpip_adapter_eth_start(eth_mac, &eth_ip);
+    tcpip_adapter_eth_start(eth_mac, &eth_ip, eth_handle);
 }
 
 static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
@@ -202,7 +202,7 @@ static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t ev
 }
 
 
-esp_err_t tcpip_adapter_set_default_wifi_handlers()
+esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
 {
     esp_err_t err;
     err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_START, handle_sta_start, NULL);
@@ -252,7 +252,7 @@ fail:
     return err;
 }
 
-esp_err_t tcpip_adapter_clear_default_wifi_handlers()
+esp_err_t tcpip_adapter_clear_default_wifi_handlers(void)
 {
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_START, handle_sta_start);
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_STOP, handle_sta_stop);
@@ -265,8 +265,9 @@ esp_err_t tcpip_adapter_clear_default_wifi_handlers()
 
     return ESP_OK;
 }
-#if CONFIG_IDF_TARGET_ESP32
-esp_err_t tcpip_adapter_set_default_eth_handlers()
+
+#if CONFIG_ETH_ENABLED
+esp_err_t tcpip_adapter_set_default_eth_handlers(void)
 {
     esp_err_t err;
     err = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, handle_eth_start, NULL);
@@ -301,7 +302,7 @@ fail:
     return err;
 }
 
-esp_err_t tcpip_adapter_clear_default_eth_handlers()
+esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
 {
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_START, handle_eth_start);
     esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_STOP, handle_eth_stop);

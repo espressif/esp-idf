@@ -240,7 +240,7 @@ struct pbuf {
 
 #include "esp32_mock.h"
 
-uint32_t xTaskGetTickCount();
+uint32_t xTaskGetTickCount(void);
 
 
 #endif //MDNS_TEST_MODE

@@ -25,7 +25,7 @@
 #include <lwip/netdb.h>
 
 /* The examples use simple configuration that you can set via
-   'make menuconfig'.
+   project configuration.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define UDP_PORT 3333
@@ -107,7 +107,7 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
 #endif /* CONFIG_EXAMPLE_IPV4 */
 
 #ifdef CONFIG_EXAMPLE_IPV4_ONLY
-static int create_multicast_ipv4_socket()
+static int create_multicast_ipv4_socket(void)
 {
     struct sockaddr_in saddr = { 0 };
     int sock = -1;
@@ -167,12 +167,13 @@ err:
 #endif /* CONFIG_EXAMPLE_IPV4_ONLY */
 
 #ifdef CONFIG_EXAMPLE_IPV6
-static int create_multicast_ipv6_socket()
+static int create_multicast_ipv6_socket(void)
 {
     struct sockaddr_in6 saddr = { 0 };
+    int  netif_index;
     struct in6_addr if_inaddr = { 0 };
     struct ip6_addr if_ipaddr = { 0 };
-    struct ip6_mreq v6imreq = { 0 };
+    struct ipv6_mreq v6imreq = { 0 };
     int sock = -1;
     int err = 0;
 
@@ -210,9 +211,14 @@ static int create_multicast_ipv6_socket()
     }
 #endif // LISTEN_ALL_IF
 
+    // search for netif index
+    netif_index = tcpip_adapter_get_netif_index(EXAMPLE_INTERFACE);
+    if(netif_index < 0) {
+        ESP_LOGE(V6TAG, "Failed to get netif index");
+        goto err;
+    }
     // Assign the multicast source interface, via its IP
-    err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &if_inaddr,
-                     sizeof(struct in6_addr));
+    err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &netif_index,sizeof(uint8_t));
     if (err < 0) {
         ESP_LOGE(V6TAG, "Failed to set IPV6_MULTICAST_IF. Error %d", errno);
         goto err;
@@ -240,13 +246,6 @@ static int create_multicast_ipv6_socket()
 
     // this is also a listening socket, so add it to the multicast
     // group for listening...
-
-    // Configure source interface
-#if LISTEN_ALL_IF
-    v6imreq.imr_interface.s_addr = IPADDR_ANY;
-#else
-    inet6_addr_from_ip6addr(&v6imreq.ipv6mr_interface, &if_ipaddr);
-#endif // LISTEN_ALL_IF
 #ifdef CONFIG_EXAMPLE_IPV6
     // Configure multicast address to listen to
     err = inet6_aton(MULTICAST_IPV6_ADDR, &v6imreq.ipv6mr_multiaddr);
@@ -260,9 +259,10 @@ static int create_multicast_ipv6_socket()
     if (!ip6_addr_ismulticast(&multi_addr)) {
         ESP_LOGW(V6TAG, "Configured IPV6 multicast address '%s' is not a valid multicast address. This will probably not work.", MULTICAST_IPV6_ADDR);
     }
-
+    // Configure source interface
+    v6imreq.ipv6mr_interface = (unsigned int)netif_index;
     err = setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
-                     &v6imreq, sizeof(struct ip6_mreq));
+                     &v6imreq, sizeof(struct ipv6_mreq));
     if (err < 0) {
         ESP_LOGE(V6TAG, "Failed to set IPV6_ADD_MEMBERSHIP. Error %d", errno);
         goto err;
@@ -481,7 +481,7 @@ static void mcast_example_task(void *pvParameters)
 
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();

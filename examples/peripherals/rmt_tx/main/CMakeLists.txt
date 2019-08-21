@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "rmt_tx_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "rmt_tx_main.c"
+                    INCLUDE_DIRS ".")

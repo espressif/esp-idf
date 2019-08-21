@@ -7,6 +7,7 @@ components/espcoredump/test/test_espcoredump.sh
 components/heap/test_multi_heap_host/test_all_configs.sh
 components/idf_test/unit_test/TestCaseScript/IDFUnitTest/__init__.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
+components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
 components/partition_table/parttool.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
@@ -21,7 +22,11 @@ examples/build_system/cmake/idf_as_lib/build.sh
 examples/build_system/cmake/idf_as_lib/run-esp32.sh
 examples/build_system/cmake/idf_as_lib/run.sh
 examples/storage/parttool/parttool_example.py
+examples/storage/parttool/parttool_example.sh
+examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
+examples/system/ota/otatool/otatool_example.sh
+install.sh
 tools/check_kconfigs.py
 tools/check_python_dependencies.py
 tools/ci/apply_bot_filter.py
@@ -30,13 +35,15 @@ tools/ci/build_examples_cmake.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/check_examples_cmake_make.sh
+tools/ci/check_examples_rom_header.sh
+tools/ci/check_idf_version.sh
 tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
 tools/ci/envsubst.py
+tools/ci/fix_empty_prototypes.sh
 tools/ci/get-full-sources.sh
 tools/ci/get_supported_examples.sh
 tools/ci/mirror-submodule-update.sh
-tools/ci/mirror-synchronize.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
 tools/ci/test_build_system.sh
@@ -44,6 +51,7 @@ tools/ci/test_build_system_cmake.sh
 tools/ci/test_configure_ci_environment.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
+tools/docker/entrypoint.sh
 tools/elf_to_ld.sh
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py
@@ -66,6 +74,7 @@ tools/ldgen/ldgen.py
 tools/ldgen/test/test_fragments.py
 tools/ldgen/test/test_generation.py
 tools/mass_mfg/mfg_gen.py
+tools/set-submodules-to-github.sh
 tools/test_check_kconfigs.py
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_size/test.sh

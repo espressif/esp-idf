@@ -80,7 +80,7 @@ typedef struct sys_mbox_s {
  * However, if the sys_mbox_set_invalid() is not called after sys_mbox_free(), e.g. in netconn_alloc(),
  * we need to initialize the mbox to invalid explicitly since sys_mbox_set_invalid() now is empty.
  */
-#define sys_mbox_set_invalid( x ) 
+#define sys_mbox_set_invalid( x )  *x = NULL
 
 #define sys_sem_valid( x ) ( ( ( *x ) == NULL) ? pdFALSE : pdTRUE )
 #define sys_sem_set_invalid( x ) ( ( *x ) = NULL )

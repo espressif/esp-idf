@@ -184,7 +184,7 @@ void rtc_init(rtc_config_t cfg)
 }
 #endif
 
-rtc_vddsdio_config_t rtc_vddsdio_get_config()
+rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
 {
     rtc_vddsdio_config_t result;
     uint32_t sdio_conf_reg = REG_READ(RTC_CNTL_SDIO_CONF_REG);

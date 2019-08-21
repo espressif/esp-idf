@@ -22,10 +22,10 @@
 #define MB_CONTROLLER_PRIORITY              (CONFIG_FMB_SERIAL_TASK_PRIO - 1)    // priority of MB controller task
 
 // Default port defines
-#define MB_DEVICE_ADDRESS   (1)                 // Default slave device address in Modbus
-#define MB_DEVICE_SPEED     (115200)            // Default Modbus speed for now hard defined
+#define MB_DEVICE_ADDRESS   (1)             // Default slave device address in Modbus
+#define MB_DEVICE_SPEED     (115200)        // Default Modbus speed for now hard defined
 #define MB_UART_PORT        (UART_NUM_MAX - 1)  // Default UART port number
-#define MB_PAR_INFO_TOUT    (10)                // Timeout for get parameter info
+#define MB_PAR_INFO_TOUT    (10)            // Timeout for get parameter info
 #define MB_PARITY_NONE      (UART_PARITY_DISABLE)
 
 // The Macros below handle the endianness while transfer N byte data into buffer

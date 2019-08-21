@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/system/app_image_format.rst

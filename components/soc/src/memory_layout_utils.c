@@ -34,14 +34,14 @@ extern int _data_start, _static_data_end, _iram_start, _iram_end;
 /* static DRAM & IRAM chunks */
 static const size_t EXTRA_RESERVED_REGIONS = 2;
 
-static size_t s_get_num_reserved_regions()
+static size_t s_get_num_reserved_regions(void)
 {
     return ( ( &soc_reserved_memory_region_end
                - &soc_reserved_memory_region_start ) +
              EXTRA_RESERVED_REGIONS );
 }
 
-size_t soc_get_available_memory_region_max_count()
+size_t soc_get_available_memory_region_max_count(void)
 {
     /* Worst-case: each reserved memory region splits an available
        region in two, so the maximum possible number of regions

@@ -680,7 +680,7 @@ static void set_cache_and_start_app(
                                 64, drom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
-#if !CONFIG_FREERTOS_UNICORE
+#if CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
     rc = cache_flash_mmu_set(1, 0, drom_load_addr_aligned, drom_addr & MMU_FLASH_MASK, 64, drom_page_count);
     ESP_LOGV(TAG, "rc=%d", rc);
 #endif
@@ -713,11 +713,11 @@ static void set_cache_and_start_app(
     rc = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
+#if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_FREERTOS_UNICORE
     rc = cache_flash_mmu_set(1, 0, irom_load_addr_aligned, irom_addr & MMU_FLASH_MASK, 64, irom_page_count);
     ESP_LOGV(TAG, "rc=%d", rc);
 #endif
-#if CONFIG_IDF_TARGET_ESP32
     DPORT_REG_CLR_BIT( DPORT_PRO_CACHE_CTRL1_REG,
                        (DPORT_PRO_CACHE_MASK_IRAM0) | (DPORT_PRO_CACHE_MASK_IRAM1 & 0) |
                        (DPORT_PRO_CACHE_MASK_IROM0 & 0) | DPORT_PRO_CACHE_MASK_DROM0 |
@@ -730,9 +730,6 @@ static void set_cache_and_start_app(
 #endif
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     DPORT_REG_CLR_BIT( DPORT_PRO_ICACHE_CTRL1_REG, (DPORT_PRO_ICACHE_MASK_IRAM0) | (DPORT_PRO_ICACHE_MASK_IRAM1 & 0) | (DPORT_PRO_ICACHE_MASK_IROM0 & 0) | DPORT_PRO_ICACHE_MASK_DROM0 );
-#if !CONFIG_FREERTOS_UNICORE
-    DPORT_REG_CLR_BIT( DPORT_APP_ICACHE_CTRL1_REG, (DPORT_APP_ICACHE_MASK_IRAM0) | (DPORT_APP_ICACHE_MASK_IRAM1 & 0) | (DPORT_APP_ICACHE_MASK_IROM0 & 0) | DPORT_APP_ICACHE_MASK_DROM0 );
-#endif
 #endif
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);

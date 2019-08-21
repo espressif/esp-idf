@@ -409,7 +409,8 @@ menu "Security features"
             Note: After first boot, the system will be permanently encrypted. Re-flashing an encrypted
             system is complicated and not always possible.
 
-            Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html before enabling.
+            Read https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html
+            before enabling.
 
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
@@ -431,31 +432,40 @@ menu "Security features"
             bool "AES-256 (512-bit key)"
     endchoice
 
-    config SECURE_FLASH_ENC_INSECURE
-        bool "Allow potentially insecure options"
+    choice SECURE_FLASH_ENCRYPTION_MODE
+        bool "Enable usage mode"
         depends on SECURE_FLASH_ENC_ENABLED
-        default N
+        default SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
         help
-            You can disable some of the default protections offered by flash encryption, in order to enable testing or
-            a custom combination of security features.
+            By default Development mode is enabled which allows UART bootloader to perform flash encryption operations
 
-            Only enable these options if you are very sure.
+            Select Release mode only for production or manufacturing. Once enabled you can not reflash using UART
+            bootloader
 
             Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html and
             https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html for details.
 
+        config SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+            bool "Development(NOT SECURE)"
+            select SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
+
+        config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+            bool "Release"
+
+    endchoice
+
     menu "Potentially insecure options"
-        visible if SECURE_FLASH_ENC_INSECURE || SECURE_BOOT_INSECURE
+        visible if SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT || SECURE_BOOT_INSECURE
 
         # NOTE: Options in this menu NEED to have SECURE_BOOT_INSECURE
-        # and/or SECURE_FLASH_ENC_INSECURE in "depends on", as the menu
+        # and/or SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT in "depends on", as the menu
         # itself doesn't enable/disable its children (if it's not set,
         # it's possible for the insecure menu to be disabled but the insecure option
         # to remain on which is very bad.)
 
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
-            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENC_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             default N
             help
                 By default, the BASIC ROM Console starts on reset if no valid bootloader is
@@ -469,7 +479,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_JTAG
             bool "Allow JTAG Debugging"
-            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENC_INSECURE
+            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             default N
             help
                 If not set (default), the bootloader will permanently disable JTAG (across entire chip) on first boot
@@ -496,7 +506,7 @@ menu "Security features"
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
-            depends on SECURE_FLASH_ENC_INSECURE
+            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader encryption access on
@@ -506,7 +516,7 @@ menu "Security features"
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
             bool "Leave UART bootloader decryption enabled"
-            depends on SECURE_FLASH_ENC_INSECURE
+            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader decryption access on
@@ -517,7 +527,7 @@ menu "Security features"
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
             bool "Leave UART bootloader flash cache enabled"
-            depends on SECURE_FLASH_ENC_INSECURE
+            depends on SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
             default N
             help
                 If not set (default), the bootloader will permanently disable UART bootloader flash cache access on
@@ -527,3 +537,4 @@ menu "Security features"
 
     endmenu  # Potentially Insecure
 endmenu  # Security features
+

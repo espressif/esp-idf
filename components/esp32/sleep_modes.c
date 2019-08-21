@@ -89,10 +89,10 @@ static _lock_t lock_rtc_memory_crc;
 
 static const char* TAG = "sleep";
 
-static uint32_t get_power_down_flags();
-static void ext0_wakeup_prepare();
-static void ext1_wakeup_prepare();
-static void timer_wakeup_prepare();
+static uint32_t get_power_down_flags(void);
+static void ext0_wakeup_prepare(void);
+static void ext1_wakeup_prepare(void);
+static void timer_wakeup_prepare(void);
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
@@ -148,14 +148,14 @@ void esp_deep_sleep(uint64_t time_in_us)
     esp_deep_sleep_start();
 }
 
-static void IRAM_ATTR flush_uarts()
+static void IRAM_ATTR flush_uarts(void)
 {
     for (int i = 0; i < 3; ++i) {
         uart_tx_wait_idle(i);
     }
 }
 
-static void IRAM_ATTR suspend_uarts()
+static void IRAM_ATTR suspend_uarts(void)
 {
     for (int i = 0; i < 3; ++i) {
         REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
@@ -165,7 +165,7 @@ static void IRAM_ATTR suspend_uarts()
     }
 }
 
-static void IRAM_ATTR resume_uarts()
+static void IRAM_ATTR resume_uarts(void)
 {
     for (int i = 0; i < 3; ++i) {
         REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
@@ -222,7 +222,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     return result;
 }
 
-void IRAM_ATTR esp_deep_sleep_start()
+void IRAM_ATTR esp_deep_sleep_start(void)
 {
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
@@ -277,7 +277,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     return err;
 }
 
-esp_err_t esp_light_sleep_start()
+esp_err_t esp_light_sleep_start(void)
 {
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
@@ -399,7 +399,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     return ESP_OK;
 }
 
-esp_err_t esp_sleep_enable_ulp_wakeup()
+esp_err_t esp_sleep_enable_ulp_wakeup(void)
 {
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     return ESP_ERR_NOT_SUPPORTED;
@@ -423,7 +423,7 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
-static void timer_wakeup_prepare()
+static void timer_wakeup_prepare(void)
 {
     uint32_t period = esp_clk_slowclk_cal_get();
     int64_t sleep_duration = (int64_t) s_config.sleep_duration - (int64_t) s_config.sleep_time_adjustment;
@@ -435,7 +435,7 @@ static void timer_wakeup_prepare()
     rtc_sleep_set_wakeup_time(s_config.rtc_ticks_at_sleep_start + rtc_count_delta);
 }
 
-esp_err_t esp_sleep_enable_touchpad_wakeup()
+esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
     return ESP_ERR_NOT_SUPPORTED;
@@ -448,7 +448,7 @@ esp_err_t esp_sleep_enable_touchpad_wakeup()
     return ESP_OK;
 }
 
-touch_pad_t esp_sleep_get_touchpad_wakeup_status()
+touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
 {
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TOUCHPAD) {
         return TOUCH_PAD_MAX;
@@ -477,7 +477,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
     return ESP_OK;
 }
 
-static void ext0_wakeup_prepare()
+static void ext0_wakeup_prepare(void)
 {
     int rtc_gpio_num = s_config.ext0_rtc_gpio_num;
     // Set GPIO to be used for wakeup
@@ -520,7 +520,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
     return ESP_OK;
 }
 
-static void ext1_wakeup_prepare()
+static void ext1_wakeup_prepare(void)
 {
     // Configure all RTC IOs selected as ext1 wakeup inputs
     uint32_t rtc_gpio_mask = s_config.ext1_rtc_gpio_mask;
@@ -556,7 +556,7 @@ static void ext1_wakeup_prepare()
             s_config.ext1_trigger_mode, RTC_CNTL_EXT_WAKEUP1_LV_S);
 }
 
-uint64_t esp_sleep_get_ext1_wakeup_status()
+uint64_t esp_sleep_get_ext1_wakeup_status(void)
 {
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_EXT1) {
         return 0;
@@ -577,7 +577,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status()
     return gpio_mask;
 }
 
-esp_err_t esp_sleep_enable_gpio_wakeup()
+esp_err_t esp_sleep_enable_gpio_wakeup(void)
 {
     if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
         ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
@@ -600,7 +600,7 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
     return ESP_OK;
 }
 
-esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause()
+esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
     if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
@@ -636,7 +636,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
     return ESP_OK;
 }
 
-static uint32_t get_power_down_flags()
+static uint32_t get_power_down_flags(void)
 {
     // Where needed, convert AUTO options to ON. Later interpret AUTO as OFF.
 

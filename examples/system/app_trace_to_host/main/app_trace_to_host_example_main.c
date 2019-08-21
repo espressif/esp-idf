@@ -85,7 +85,7 @@ static int adc1_sample_and_show(int sampling_period)
  * and logging results with application tracing to the host
  * as well as for comparison printing out sampling result to UART
  */
-void app_main()
+void app_main(void)
 {
     ESP_LOGI(TAG, "Enabling ADC1 on channel 6 / GPIO34.");
     adc1_config_width(ADC_WIDTH_BIT_12);

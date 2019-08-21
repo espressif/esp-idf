@@ -12,12 +12,12 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
-#include "crypto/md5.h"
-#include "crypto/md5_i.h"
-#include "crypto/crypto.h"
+#include "utils/common.h"
+#include "md5.h"
+#include "md5_i.h"
+#include "crypto.h"
 
 
 static void MD5Transform(u32 buf[4], u32 const in[16]);

@@ -112,8 +112,8 @@ typedef struct {
 
 static void IRAM_ATTR timer_isr(void* varg) {
     block_task_arg_t* arg = (block_task_arg_t*) varg;
-    TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[0].config.alarm_en = 1;
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
     ets_delay_us(arg->delay_time_us);
     arg->repeat_count++;
 }
@@ -128,7 +128,7 @@ static void read_task(void* varg) {
     vTaskDelete(NULL);
 }
 
-TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]")
+TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash][esp_flash]")
 {
     const size_t size = 128;
     read_task_arg_t read_arg = {
@@ -174,7 +174,7 @@ TEST_CASE("spi flash functions can run along with IRAM interrupts", "[spi_flash]
 
 
 #if portNUM_PROCESSORS > 1
-TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash]")
+TEST_CASE("spi_flash deadlock with high priority busy-waiting task", "[spi_flash][esp_flash]")
 {
     typedef struct {
         QueueHandle_t queue;

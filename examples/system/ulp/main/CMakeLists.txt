@@ -1,10 +1,6 @@
-# Set usual component variables
-set(COMPONENT_SRCS "ulp_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS "")
-set(COMPONENT_REQUIRES soc nvs_flash ulp)
-
-register_component()
-
+idf_component_register(SRCS "ulp_example_main.c"
+                    INCLUDE_DIRS ""
+                    REQUIRES soc nvs_flash ulp)
 #
 # ULP support additions to component CMakeLists.txt.
 #

@@ -63,7 +63,7 @@ def test_examples_wifi_prov_mgr(env, extra_data):
 
     print("Starting Provisioning")
     verbose = False
-    protover = "v1.0"
+    protover = "v1.1"
     secver = 1
     pop = "abcd1234"
     provmode = "ble"
@@ -76,13 +76,17 @@ def test_examples_wifi_prov_mgr(env, extra_data):
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
-    transport = esp_prov.get_transport(provmode, None, devname)
+    transport = esp_prov.get_transport(provmode, devname)
     if transport is None:
         raise RuntimeError("Failed to get transport")
 
     print("Verifying protocol version")
     if not esp_prov.version_match(transport, protover):
         raise RuntimeError("Mismatch in protocol version")
+
+    print("Verifying scan list capability")
+    if not esp_prov.has_capability(transport, 'wifi_scan'):
+        raise RuntimeError("Capability not present")
 
     print("Starting Session")
     if not esp_prov.establish_session(transport, security):

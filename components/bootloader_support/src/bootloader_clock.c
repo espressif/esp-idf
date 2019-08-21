@@ -11,14 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "esp32/rom/uart.h"
-#include "esp32/rom/rtc.h"
+#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 
-void bootloader_clock_configure()
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/uart.h"
+#include "esp32/rom/rtc.h"
+#else
+#include "esp32s2beta/rom/uart.h"
+#include "esp32s2beta/rom/rtc.h"
+#endif
+
+void bootloader_clock_configure(void)
 {
     // ROM bootloader may have put a lot of text into UART0 FIFO.
     // Wait for it to be printed.

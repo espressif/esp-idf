@@ -189,13 +189,14 @@ void tcpip_adapter_init(void);
  *
  * @param[in]  mac Set MAC address of this interface
  * @param[in]  ip_info Set IP address of this interface
+ * @param[in]  args extra args passed to tcpip_adapter
  *
  * @return
  *         - ESP_OK
  *         - ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
  *         - ESP_ERR_NO_MEM
  */
-esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info, void *args);
 
 /**
  * @brief  Cause the TCP/IP stack to start the Wi-Fi station interface with specified MAC and IP
@@ -713,7 +714,7 @@ esp_err_t tcpip_adapter_test_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_inf
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_set_default_eth_handlers();
+esp_err_t tcpip_adapter_set_default_eth_handlers(void);
 
 /**
  * @brief Uninstall default event handlers for Ethernet interface
@@ -721,7 +722,7 @@ esp_err_t tcpip_adapter_set_default_eth_handlers();
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_clear_default_eth_handlers();
+esp_err_t tcpip_adapter_clear_default_eth_handlers(void);
 
 /**
  * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
@@ -729,7 +730,7 @@ esp_err_t tcpip_adapter_clear_default_eth_handlers();
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_set_default_wifi_handlers();
+esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
 
 /**
  * @brief  Uninstall default event handlers for Wi-Fi interfaces (station and AP)
@@ -737,8 +738,16 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers();
  *      - ESP_OK on success
  *      - one of the errors from esp_event on failure
  */
-esp_err_t tcpip_adapter_clear_default_wifi_handlers();
+esp_err_t tcpip_adapter_clear_default_wifi_handlers(void);
 
+/**
+ * @brief  Search nefit index through netif interface
+ * @param[in]   tcpip_if Interface to search for netif index
+ * @return
+ *      - netif_index on success 
+ *      - -1 if an invalid parameter is supplied
+ */
+int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if);
 
 #ifdef __cplusplus
 }

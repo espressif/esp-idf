@@ -19,6 +19,12 @@
 
 #include "soc/soc.h"
 
+#include "sdkconfig.h"
+
+#ifndef CONFIG_IDF_TARGET_ESP32S2BETA
+#error "This header should only be included when building for esp32s2beta"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

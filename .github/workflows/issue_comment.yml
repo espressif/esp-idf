@@ -1,0 +1,16 @@
+on: issue_comment
+name: Sync issue and PR comments to JIRA
+jobs:
+  syncToJIRA:
+    name: Sync to JIRA
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Sync to JIRA
+      uses: espressif/github-actions/sync_issues_to_jira@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        JIRA_PASS: ${{ secrets.JIRA_PASS }}
+        JIRA_PROJECT: IDFGH
+        JIRA_URL: ${{ secrets.JIRA_URL }}
+        JIRA_USER: ${{ secrets.JIRA_USER }}

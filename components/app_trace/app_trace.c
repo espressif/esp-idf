@@ -360,7 +360,7 @@ static esp_apptrace_hw_t s_trace_hw[ESP_APPTRACE_HW_MAX] = {
     }
 };
 
-static inline int esp_apptrace_log_lock()
+static inline int esp_apptrace_log_lock(void)
 {
 #if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_tmo_t tmo;
@@ -372,22 +372,22 @@ static inline int esp_apptrace_log_lock()
 #endif
 }
 
-static inline void esp_apptrace_log_unlock()
+static inline void esp_apptrace_log_unlock(void)
 {
  #if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_lock_give(&s_log_lock);
 #endif
 }
 
-static inline esp_err_t esp_apptrace_lock_initialize()
+static inline esp_err_t esp_apptrace_lock_initialize(esp_apptrace_lock_t *lock)
 {
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
-    esp_apptrace_lock_init(&s_trace_buf.lock);
+    esp_apptrace_lock_init(lock);
 #endif
     return ESP_OK;
 }
 
-static inline esp_err_t esp_apptrace_lock_cleanup()
+static inline esp_err_t esp_apptrace_lock_cleanup(void)
 {
     return ESP_OK;
 }
@@ -403,7 +403,7 @@ esp_err_t esp_apptrace_lock(esp_apptrace_tmo_t *tmo)
     return ESP_OK;
 }
 
-esp_err_t esp_apptrace_unlock()
+esp_err_t esp_apptrace_unlock(void)
 {
     esp_err_t ret = ESP_OK;
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
@@ -413,7 +413,7 @@ esp_err_t esp_apptrace_unlock()
 }
 
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-static void esp_apptrace_trax_init()
+static void esp_apptrace_trax_init(void)
 {
     // Stop trace, if any (on the current CPU)
     eri_write(ERI_TRAX_TRAXCTRL, TRAXCTRL_TRSTP);
@@ -449,7 +449,7 @@ static void esp_apptrace_trax_pend_chunk_sz_update(uint16_t size)
     }
 }
 
-static uint16_t esp_apptrace_trax_pend_chunk_sz_get()
+static uint16_t esp_apptrace_trax_pend_chunk_sz_get(void)
 {
     uint16_t ch_sz;
     ESP_APPTRACE_LOGD("Get chunk enter %d w-r-s %d-%d-%d", s_trace_buf.trax.cur_pending_chunk_sz,
@@ -467,7 +467,7 @@ static uint16_t esp_apptrace_trax_pend_chunk_sz_get()
 #endif
 
 // assumed to be protected by caller from multi-core/thread access
-static esp_err_t esp_apptrace_trax_block_switch()
+static esp_err_t esp_apptrace_trax_block_switch(void)
 {
     int prev_block_num = s_trace_buf.trax.state.in_block % 2;
     int new_block_num = prev_block_num ? (0) : (1);
@@ -845,7 +845,7 @@ static esp_err_t esp_apptrace_trax_status_reg_get(uint32_t *val)
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_trax_dest_init()
+static esp_err_t esp_apptrace_trax_dest_init(void)
 {
     for (int i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
         s_trace_buf.trax.blocks[i].start = (uint8_t *)s_trax_blocks[i];
@@ -874,7 +874,7 @@ static esp_err_t esp_apptrace_trax_dest_init()
 }
 #endif
 
-esp_err_t esp_apptrace_init()
+esp_err_t esp_apptrace_init(void)
 {
     int res;
 

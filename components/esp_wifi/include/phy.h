@@ -44,7 +44,7 @@ int register_chipv7_phy(const esp_phy_init_data_t* init_data, esp_phy_calibratio
  * @brief Get the format version of calibration data used by PHY library.
  * @return Format version number, OR'ed with BIT(16) if PHY is in WIFI only mode.
  */
-uint32_t phy_get_rf_cal_version();
+uint32_t phy_get_rf_cal_version(void);
 
 /**
  * @brief Set RF/BB for only WIFI mode or coexist(WIFI & BT) mode

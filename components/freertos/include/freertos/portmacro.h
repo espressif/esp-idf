@@ -136,11 +136,15 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 /* "mux" data structure (spinlock) */
 typedef struct {
 	/* owner field values:
-	 * 0                - Uninitialized (invalid)
+	 * 0				- Uninitialized (invalid)
 	 * portMUX_FREE_VAL - Mux is free, can be locked by either CPU
-	 * CORE_ID_PRO / CORE_ID_APP - Mux is locked to the particular core
+	 * CORE_ID_REGVAL_PRO / CORE_ID_REGVAL_APP - Mux is locked to the particular core
 	 *
-	 * Any value other than portMUX_FREE_VAL, CORE_ID_PRO, CORE_ID_APP indicates corruption
+	 * Note that for performance reasons we use the full Xtensa CORE ID values
+	 * (CORE_ID_REGVAL_PRO, CORE_ID_REGVAL_APP) and not the 0,1 values which are used in most
+	 * other FreeRTOS code.
+	 *
+	 * Any value other than portMUX_FREE_VAL, CORE_ID_REGVAL_PRO, CORE_ID_REGVAL_APP indicates corruption
 	 */
 	uint32_t owner;
 	/* count field:
@@ -177,7 +181,7 @@ typedef struct {
 
 
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
-void vPortAssertIfInISR();
+void vPortAssertIfInISR(void);
 
 #define portCRITICAL_NESTING_IN_TCB 1
 
@@ -320,7 +324,7 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux);
 // Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
 // WARNING: Only applies to current CPU. See notes above.
-static inline unsigned portENTER_CRITICAL_NESTED() {
+static inline unsigned portENTER_CRITICAL_NESTED(void) {
 	unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 	portbenchmarkINTERRUPT_DISABLE();
 	return state;
@@ -387,7 +391,7 @@ void _frxt_setup_switch( void );
 #define portYIELD()					vPortYield()
 #define portYIELD_FROM_ISR()        {traceISR_EXIT_TO_SCHEDULER(); _frxt_setup_switch();}
 
-static inline uint32_t xPortGetCoreID();
+static inline uint32_t xPortGetCoreID(void);
 
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
    until interrupts are re-enabled.

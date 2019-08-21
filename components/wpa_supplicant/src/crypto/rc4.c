@@ -12,10 +12,10 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
-#include "crypto/crypto.h"
+#include "utils/common.h"
+#include "crypto.h"
 
 #define S_SWAP(a,b) do { u8 t = S[a]; S[a] = S[b]; S[b] = t; } while(0)
 

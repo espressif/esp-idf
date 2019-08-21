@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include "driver/i2s.h"
 #include "unity.h"
+#include "math.h"
 
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)
@@ -18,6 +19,7 @@
 #define SLAVE_WS_IO 26
 #define DATA_IN_IO 21
 #define DATA_OUT_IO 22
+#define PERCENT_DIFF 0.0001
 
 /**
  * i2s initialize test
@@ -264,6 +266,57 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
         i2s_driver_uninstall(I2S_NUM_0);
         TEST_ASSERT(initial_size == esp_get_free_heap_size());
     }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    TEST_ASSERT(initial_size == esp_get_free_heap_size());
+}
+
+/*
+ *   The I2S APLL clock variation test used to test the difference between the different sample rates, different bits per sample
+ *   and the APLL clock generate for it. The TEST_CASE passes PERCENT_DIFF variation from the provided sample rate in APLL generated clock
+ *   The percentage difference calculated as (mod((obtained clock rate - desired clock rate)/(desired clock rate))) * 100.
+ */
+TEST_CASE("I2S APLL clock variation test", "[i2s]")
+{
+    i2s_pin_config_t pin_config = {
+        .bck_io_num = MASTER_BCK_IO,
+        .ws_io_num = MASTER_WS_IO,
+        .data_out_num = DATA_OUT_IO,
+        .data_in_num = -1
+    };
+
+    i2s_config_t i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
+        .sample_rate = SAMPLE_RATE,
+        .bits_per_sample = SAMPLE_BITS,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .communication_format = I2S_COMM_FORMAT_I2S,
+        .dma_buf_count = 6,
+        .dma_buf_len = 60,
+        .use_apll = true,
+        .intr_alloc_flags = 0,
+    };
+
+    TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
+    TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
+    TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
+    int initial_size = esp_get_free_heap_size();
+
+    uint32_t sample_rate_arr[8] = { 10675, 11025, 16000, 22050, 32000, 44100, 48000, 96000 };
+    int bits_per_sample_arr[3] = { 16, 24, 32 };
+
+    for (int i = 0; i < (sizeof(sample_rate_arr)/sizeof(sample_rate_arr[0])); i++) {
+        for (int j = 0; j < (sizeof(bits_per_sample_arr)/sizeof(bits_per_sample_arr[0])); j++) {
+            i2s_config.sample_rate = sample_rate_arr[i];
+            i2s_config.bits_per_sample = bits_per_sample_arr[j];
+
+            TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
+            TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
+            TEST_ASSERT((fabs((i2s_get_clk(I2S_NUM_0) - sample_rate_arr[i]))/(sample_rate_arr[i]))*100 < PERCENT_DIFF);
+            TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
+            TEST_ASSERT(initial_size == esp_get_free_heap_size());
+        }
+    }
+
     vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT(initial_size == esp_get_free_heap_size());
 }

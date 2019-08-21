@@ -1,0 +1,1213 @@
+.GAP_CASE: &GAP_CASE
+  SDK: ESP32_IDF
+  Test App: SSC_BLE
+  auto test: 'Yes'
+  category: Function
+  test point 1: basic function
+  initial condition: BLE_INIT2
+  test environment: SSC_T2_5
+  execution time: 0
+  module: BLUEDROID
+  sub module: GAP
+  version: v1 (2016-12-31)
+  CI ready: 'Yes'
+  level: Integration
+  allow fail: ''
+
+.set_default_ble_name: &set_default_ble_name
+  LIST_MERGE:
+    - - "SSC SSC1 ble -S -z name -n <dut1_ble_name>"
+      - ["R SSC1 C +BLE:OK"]
+
+.open_capture_nic: &open_capture_nic
+  LIST_MERGE:
+    - - "NIC BLENIC START <bt_capture_nic> bt+capture"
+      - ['R PC_COM C +NIC_START:OK']
+
+.dut1_stop_adv: &dut1_stop_adv
+  LIST_MERGE:
+    - - "SSC SSC1 bleadv -D -z stop"
+      - ["R SSC1 C +BLEADV:"]
+
+.dut1_start_adv: &dut1_start_adv
+  LIST_MERGE:
+    - - "SSC SSC1 bleadv -D -z start"
+      - ["R SSC1 C +BLEADV:Start,OK"]
+
+.dut1_connect_to_dut2: &dut1_connect_to_dut2
+  LIST_MERGE:
+    - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+      - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC2 C +BLECONN:GapConnect,OK']
+
+.set_default_adv_data: &set_default_adv_data
+  LIST_MERGE:
+    - - "SSC SSC1 bleadv -D -z stop"
+      - ["R SSC1 C +BLEADV:"]
+    - - "SSC SSC1 bleadv -L -c 0 -t 3"
+      - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+    - - "SSC SSC1 bleadv -D -z start"
+      - ["R SSC1 C +BLEADV:Start,OK"]
+
+.dut2_stop_adv: &dut2_stop_adv
+  LIST_MERGE:
+    - - "SSC SSC2 bleadv -D -z stop"
+      - ["R SSC2 C +BLEADV:"]
+
+test cases:
+- ID: BLUEDROID_GAP_01003
+  <<: *GAP_CASE
+  test point 2: BLE GAP param device name test
+  summary: ble set long device name for BLUEDROID
+  steps: |
+    1. DUT1 set 32 byte device name A
+    2. stop advertising
+    3. config scan response and start advertising
+    4. DUT2 do active scan
+    5. DUT1 set 33 bytes device name
+    6. stop advertising
+    7. config scan response and start advertising
+    8. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. DUT1 mac in scan result (device name is too long)
+    5. failed
+    6. succeed
+    7. succeed
+    8. DUT1 mac in scan result (device name is too long)
+  cmd set:
+  - ""
+  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name_32>"
+    - ["R SSC1 C +BLE:OK"]
+  - *set_default_adv_data
+  - *dut2_stop_adv
+  - - "SSC SSC2 blescan -D -z start -t 3 -c 0 -s 1"
+    - ["R SSC2 P <dut1_bt_mac> C Complete"]
+  - - "SSC SSC1 ble -S -z name -n 123456789012345678901234567890123"
+    - ["R SSC1 C +BLE:ERROR"]
+  - *set_default_adv_data
+  - - "SSC SSC2 blescan -D -z start -t 3 -c 0 -s 1"
+    - ["R SSC2 P <dut1_bt_mac> C Complete"]
+- ID: BLUEDROID_GAP_03003
+  <<: *GAP_CASE
+  test point 2: BLE GAP set advertise param
+  summary: ble set adv parameter own address type for BLUEDROID
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 start adv with own address type public
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with own address type random, rpa_public, rpa_random
+    5. repeat step 1-3 with channel map not valid
+  expected result: |
+    1. succeed
+    2. succeed
+    3. get ADV_IND with DUT1 BT MAC
+    4. get ADV_IND with DUT1 BT MAC
+    5. can not get ADV_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  cmd set:
+  - ""
+  - *set_default_ble_name
+  - - "SSC SSC1 bleadv -L -c 0 -t 3 -n 1"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - *open_capture_nic
+  - - LOOP 4 3 "[0,2,1,3]" "['PDU','PDU','NPDU','NPDU']"
+  - *dut1_stop_adv
+  - - "SSC SSC1 bleadv -D -z start -t 0 -o {%d}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.data_0.NameComplete=<dut1_ble_name>)(HCIEvent.address_0=<dut1_bt_mac>)'
+- ID: BLUEDROID_GAP_03006
+  <<: *GAP_CASE
+  test point 2: BLE GAP set advertise param
+  summary: ble set paramters for SCAN_IND for BLUEDROID
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 set incorrect adv interval for SCAN_IND
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with correct adv interval
+  expected result: |
+    1. succeed
+    2. succeed
+    3. can not get SCAN_IND with DUT1 BT MAC
+    4. get SCAN_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  cmd set:
+  - ""
+  - *set_default_ble_name
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - *open_capture_nic
+  - *dut1_stop_adv
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
+    - [""]
+  - - "SSC SSC1 bleadv -D -z start -t 2 -i {%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+- ID: BLUEDROID_GAP_03007
+  <<: *GAP_CASE
+  test point 2: BLE GAP set advertise param
+  summary: ble set paramters for NONCONN_IND for BLUEDROID
+  steps: |
+    1. DUT1 stop advertise
+    2. DUT1 set incorrect adv interval for NONCONN_IND
+    3. PC do active scan and capture advertising report
+    4. repeat step 1-3 with correct adv interval
+  expected result: |
+    1. succeed
+    2. succeed
+    3. can not get SCAN_IND with DUT1 BT MAC
+    4. get SCAN_IND with DUT1 BT MAC
+  initial condition: BLE_INIT1
+  test environment: SSC_T1_3
+  cmd set:
+  - ""
+  - *set_default_ble_name
+  - - "SSC SSC1 bleadv -L -c 0 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - *open_capture_nic
+  - *dut1_stop_adv
+  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
+    - [""]
+  - - "SSC SSC1 bleadv -D -z start -t 3 -i {%s}"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "HCITOOL 2 -i <hci_nic> lescan"
+    - - 'P PC_COM C +HCITOOL:OK'
+      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="NONCONN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+- ID: BLUEDROID_GAP_06001
+  <<: *GAP_CASE
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect as "client" and "server" for BLUEDROID
+  allow fail: 1/2
+  steps: |
+    1. DUT1 connect to DUT2 as "client"
+    2. DUT1 disconnected with DUT2
+    3. DUT1 start gatt server app
+    4. DUT1 connect to DUT2 as "server"
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  cmd set:
+  - ""
+  - *dut1_connect_to_dut2
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 bleconn -C -p 0xA0 -a <dut2_bt_mac> -z server"
+    - ['R SSC1 C +BLECONN:GapConnect']
+- ID: BLUEDROID_GAP_06002
+  <<: *GAP_CASE
+  test point 2: BLE GAP connect / disconnect
+  summary: ble disconnect as "client" and "server" for BLUEDROID
+  steps: |
+    1. DUT1 connect to DUT2 as "client"
+    2. DUT1 disconnected with DUT2 as "client"
+    3. DUT1 start gatt server app
+    4. DUT1 connect to DUT2 as client
+    5. DUT1 disconnect with DUT2 as "server"
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  cmd set:
+  - ""
+  - *dut1_connect_to_dut2
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+  - - "SSC SSC2 bleadv -D -z start"
+    - ['R SSC2 C +BLEADV:OK']
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - *dut1_connect_to_dut2
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+- ID: BLUEDROID_GAP_06003
+  <<: *GAP_CASE
+  allow fail: 1/2
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect/disconnect to same connection multiple times for BLUEDROID
+  steps: |
+    1. DUT1 connect to DUT2 as "client"
+    2. DUT1 start gatt server app
+    3. DUT1 connect to DUT2 as "client" again
+    4. DUT1 connect to DUT2 as "server"
+    5. DUT1 disconnected with DUT2 as "client"
+    6. DUT1 disconnected with DUT2 as "server"
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+    6. succeed
+  cmd set:
+  - ""
+  - *dut1_connect_to_dut2
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLE:GattcOpen,OK']
+  - - "SSC SSC1 bleconn -C -p 0xA0 -a <dut2_bt_mac> -z server"
+    - ['R SSC1 C +BLE:GattsOpen,OK,00A0']
+  - - "SSC SSC1 bleconn -D -p 0x10"
+    - ['R SSC1 C +BLE:CLOSE,OK']
+  - - "SSC SSC1 bleconn -D -p 0xA0 -z server"
+    - ['R SSC1 C +BLE:GattsClose,OK']
+- ID: BLUEDROID_GAP_06004
+  <<: *GAP_CASE
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect to invalid address for BLUEDROID
+  allow fail: 2/3
+  steps: |
+    1. DUT1 connect to invalid address
+    2. DUT1 connect to DUT2
+  expected result: |
+    1. failed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a 24:0a:c4:04:26:50"
+    - ['R SSC1 C +BLECONN:OK']
+  - - DELAY 30
+    - ['R SSC1 C +BLE:GattcOpen,ERROR']
+  - *dut1_connect_to_dut2
+- ID: BLUEDROID_GAP_06005
+  <<: *GAP_CASE
+  test point 2: BLE GAP connect / disconnect
+  summary: ble connect/disconnect event to active app for BLUEDROID
+  steps: |
+    1. DUT1 create gatts app
+    2. DUT1 connect to DUT2 as "client"
+    3. DUT1 do disconnect as "server"
+  expected result: |
+    1. succeed
+    2. succeed, DUT1 and DUT2 gatts get connect event
+    3. DUT1 and DUT2 gatts get disconnect event
+  cmd set:
+  - ""
+  - - "SSC SSC1 gatts -S -z load -p 0xA0"
+    - ['R SSC1 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['P SSC1 C +BLECONN:GapConnect', 'P SSC2 C +BLECONN:GapConnect']
+  - - "SSC SSC1 bleconn -D -p 0xA0 -z server"
+    - ['P SSC1 C +BLE:GattsClose']
+- ID: BLUEDROID_GAP_07001
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters by master for BLUEDROID
+  steps: |
+    1. update connect parameters by master
+  expected result: |
+    1. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["32-64"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["32"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07002
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters by slave for BLUEDROID
+  steps: |
+    1. update connect parameters by slave
+  expected result: |
+    1. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["32-64"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["32"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07003
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25) for BLUEDROID
+  steps: |
+    1. update invalid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25)
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["7-90"]
+    - ['']
+  - - latency=["1"]
+    - ['']
+  - - supervision_timeout=["41"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07004
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connnect parameters and interval within allowed range for BLUEDROID
+  steps: |
+    1. DUT1 update connection parametres and interval is 6-128
+    2. DUT1 update connection parametres and interval is 33-3200
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC1"]
+    - ['']
+  - - interval=["6-128","33-3200"]
+    - ['']
+  - - latency=["0","0"]
+    - ['']
+  - - supervision_timeout=["50","1000"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07005
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters interval and interval out of allowed range for BLUEDROID
+  steps: |
+    1. DUT1 update invalid interval and interval is 16-3201
+    2. DUT1 update invalid interval and interval is 5-64
+  expected result: |
+    1. fail
+    2. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC1"]
+    - ['']
+  - - interval=["16-3201","5-64"]
+    - ['']
+  - - latency=["0","0"]
+    - ['']
+  - - supervision_timeout=["32","32"]
+    - ['']
+  - - expect_result=["ERROR","ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07006
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters latency and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25 for BLUEDROID
+  steps: |
+    1. DUT1 update connect parameters latency and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["32-64"]
+    - ['']
+  - - latency=["8"]
+    - ['']
+  - - supervision_timeout=["32"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07007
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters latency and latency = 501
+  steps: |
+    1. DUT1 uupdate connect parameters latency and latency = 501
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["6-8"]
+    - ['']
+  - - latency=["501"]
+    - ['']
+  - - supervision_timeout=["1003"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07008
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters latency and latency = 500 for BLUEDROID
+  steps: |
+    1. DUT1 update connect parameters latency and latency = 500
+  expected result: |
+    1. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["6-8"]
+    - ['']
+  - - latency=["500"]
+    - ['']
+  - - supervision_timeout=["1003"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07009
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout within allowed range and timeout<(1+latency)*2*MAX_interval*1.25 for BLUEDROID
+  steps: |
+    1. DUT1 update connect parameters timeout and timeout within allowed range and timeout<(1+latency)*2*MAX_interval*1.25
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["32-64"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["12"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07010
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout = 9 for BLUEDROID
+  steps: |
+    1. DUT1 update connect parameters timeout and timeout = 9
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["8-10"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["9"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07011
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout within allowed range for BLUEDROID
+  steps: |
+    1. DUT1 update timeout = 10
+    2. DUT1 update timeout = 3200
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC1"]
+    - ['']
+  - - interval=["8-10","8-10"]
+    - ['']
+  - - latency=["0","0"]
+    - ['']
+  - - supervision_timeout=["10","3200"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07012
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout = 3201 for BLUEDROID
+  steps: |
+    1. DUT1 update timeout = 3201
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["8-10"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["3201"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07013
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect parameters before configure connect param event back for BLUEDROID
+  steps: |
+    1. DUT1 update valid interval
+    2. DUT1 update valid interval
+  expected result: |
+    1.
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac>"
+    - ['']
+  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -t 0x40"
+    - ['R SSC1 C pending']
+- ID: BLUEDROID_GAP_07014
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect param and unpdate valid connect params by master for BLUEDROID
+  steps: |
+    1. DUT1 update invalid connect parameters
+    2. DUT2 update valid connect
+  expected result: |
+    1. fail
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC1"]
+    - ['']
+  - - interval=["32-64","32-64"]
+    - ['']
+  - - latency=["9","0"]
+    - ['']
+  - - supervision_timeout=["32","32"]
+    - ['']
+  - - expect_result=["ERROR","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07015
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update valid connect parameters twice for BLUEDROID
+  allow fail: 1/2
+  steps: |
+    1. DUT1 update valid connect parameters
+    2. DUT1 update valid connect parameters
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC1"]
+    - ['']
+  - - interval=["7-80","10-100"]
+    - ['']
+  - - latency=["1","0"]
+    - ['']
+  - - supervision_timeout=["41","30"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07016
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update valid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25) by slave for BLUEDROID
+  steps: |
+    1. DUT2 update valid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25) by slave
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["7-90"]
+    - ['']
+  - - latency=["1"]
+    - ['']
+  - - supervision_timeout=["41"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07017
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connnect parameters interval within allowed range by slave for BLUEDROID
+  steps: |
+    1. DUT2 update interval 6-128
+    2. DUT2 update interval 21-3200
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2","SSC2"]
+    - ['']
+  - - interval=["6-128","21-3200"]
+    - ['']
+  - - latency=["0","0"]
+    - ['']
+  - - supervision_timeout=["50","1000"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07018
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connnect parameters interval out of allowed range by slave for BLUEDROID
+  steps: |
+    1. DUT2 update invalid interval 10-3201
+    2. DUT2 update invalid interval 5-64
+  expected result: |
+    1. fail
+    2. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2","SSC2"]
+    - ['']
+  - - interval=["10-3201","5-64"]
+    - ['']
+  - - latency=["0","0"]
+    - ['']
+  - - supervision_timeout=["32","32"]
+    - ['']
+  - - expect_result=["ERROR","ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07019
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connnect parameters and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25 by slave for BLUEDROID
+  steps: |
+    1. DUT2 update connnect parameters and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25 by slave
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["32-64"]
+    - ['']
+  - - latency=["8"]
+    - ['']
+  - - supervision_timeout=["32"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07020
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters latency and latency out of allowed range by slave for BLUEDROID
+  steps: |
+    1. DUT2 update invalid latency = 501
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["6-8"]
+    - ['']
+  - - latency=["501"]
+    - ['']
+  - - supervision_timeout=["1003"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07021
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update valid connect parameters and latency = 500 by slave for BLUEDROID
+  steps: |
+    1. DUT2 update latency = 500
+  expected result: |
+    1. success
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["6-8"]
+    - ['']
+  - - latency=["500"]
+    - ['']
+  - - supervision_timeout=["1003"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07022
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout = 9 by slave for BLUEDROID
+  steps: |
+    1. DUT2 update connect parameters timeout and timeout = 9
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["8-10"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["9"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07023
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout = 10 by slave for BLUEDROID
+  steps: |
+    1. DUT2 update connect parameters timeout and timeout = 10 by slave
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["8-10"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["10"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07024
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout = 3200 by slave for BLUEDROID
+  steps: |
+    1. DUT2 update connect parameters timeout and timeout = 3200 by slave
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["8-10"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["3200"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07025
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters timeout and timeout = 3201 by slave for BLUEDROID
+  steps: |
+    1. DUT2 update connect parameters timeout and timeout = 3201 by slave
+  expected result: |
+    1. fail
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2"]
+    - ['']
+  - - interval=["8-10"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["3201"]
+    - ['']
+  - - expect_result=["ERROR"]
+    - ['']
+- ID: BLUEDROID_GAP_07026
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect parameters before configure connect param event back by slave for BLUEDROID
+  steps: |
+    1. DUT2 update valid interval
+    2. DUT2 update valid interval
+  expected result: |
+    1.
+    2. pending
+  initial condition: BLE_CONN2
+  cmd set:
+  - ""
+  - - "SSC SSC2 bleconn -S -z ConnParam -a <dut1_bt_mac>"
+    - ['']
+  - - "SSC SSC2 bleconn -S -z ConnParam -a <dut1_bt_mac> -t 0x40"
+    - ['R SSC2 C pending']
+- ID: BLUEDROID_GAP_07027
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect param and update valid connect params by slave for BLUEDROID
+  steps: |
+    1. DUT2 update invalid connect
+    2. DUT2 update valid connect
+  expected result: |
+    1. fail
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2","SSC2"]
+    - ['']
+  - - interval=["32-64","32-64"]
+    - ['']
+  - - latency=["0","0"]
+    - ['']
+  - - supervision_timeout=["9","21"]
+    - ['']
+  - - expect_result=["ERROR","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07028
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update valid connect parameters twice by slave for BLUEDROID
+  allow fail: 1/2
+  steps: |
+    1. DUT2 update valid interval
+    2. DUT2 update valid interval
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2","SSC2"]
+    - ['']
+  - - interval=["7-80","10-100"]
+    - ['']
+  - - latency=["1","0"]
+    - ['']
+  - - supervision_timeout=["41","30"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07029
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect param by master and update valid connect params by slave for BLUEDROID
+  steps: |
+    1. DUT1 update invalid connect
+    2. DUT2 update valid connect
+  expected result: |
+    1. fail
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC2"]
+    - ['']
+  - - interval=["32-64","32-64"]
+    - ['']
+  - - latency=["9","0"]
+    - ['']
+  - - supervision_timeout=["32","32"]
+    - ['']
+  - - expect_result=["ERROR","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07030
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update valid connect param by master and update valid connect params by slave for BLUEDROID
+  steps: |
+    1. DUT1 update valid interval
+    2. DUT2 update valid interval
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1","SSC2"]
+    - ['']
+  - - interval=["7-80","10-100"]
+    - ['']
+  - - latency=["1","0"]
+    - ['']
+  - - supervision_timeout=["41","30"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07031
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update invalid connect param by slave and update valid connect params by master for BLUEDROID
+  steps: |
+    1. DUT1 update invalid connect
+    2. DUT2 update valid connect
+  expected result: |
+    1. fail
+    2. success
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2","SSC1"]
+    - ['']
+  - - interval=["32-64","32-64"]
+    - ['']
+  - - latency=["9","0"]
+    - ['']
+  - - supervision_timeout=["32","32"]
+    - ['']
+  - - expect_result=["ERROR","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07032
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update valid connect param by slave and update valid connect params by master for BLUEDROID
+  allow fail: 1/2
+  steps: |
+    1. DUT2 update valid interval
+    2. DUT1 update valid interval
+  expected result: |
+    1. succeed
+    2. succeed
+  initial condition: BLE_CONN2
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC2","SSC1"]
+    - ['']
+  - - interval=["7-80","10-100"]
+    - ['']
+  - - latency=["1","0"]
+    - ['']
+  - - supervision_timeout=["41","30"]
+    - ['']
+  - - expect_result=["OK","OK"]
+    - ['']
+- ID: BLUEDROID_GAP_07033
+  <<: *GAP_CASE
+  test point 2: BLE GAP update connect parameters
+  summary: update connect parameters by master after pairing for BLUEDROID
+  steps: |
+    1. DUT1 update connection parameters
+  expected result: |
+    1. succeed
+  initial condition: BLE_CONN_SMP
+  cmd set:
+  - "BLEFunction/ConnParamUpdate"
+  - - dut = ["SSC1"]
+    - ['']
+  - - interval=["32-64"]
+    - ['']
+  - - latency=["0"]
+    - ['']
+  - - supervision_timeout=["32"]
+    - ['']
+  - - expect_result=["OK"]
+    - ['']
+- ID: BLUEDROID_GAP_09001
+  <<: *GAP_CASE
+  test point 2: BLE GAP processing scan data
+  summary: process scan data txp, manufacturer data, interval range, appearence, flag
+  steps: |
+    1. DUT1 set raw adv data tx power, manufacturer data, interval range, apperaence, flag
+    2. DUT1 start adv
+    3. DUT2 do active scan with extended scan data
+  expected result: |
+    1. succeed
+    2. succeed
+    3. scan with the correct adv data
+  cmd set:
+  - ""
+  - *dut1_stop_adv
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x020AEB06FF1112131415051220004000021901020106"
+    - ["R SSC1 C +BLEADV:OK"]
+  - *dut1_start_adv
+  - *dut2_stop_adv
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1112131415"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x01"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,flag,0x06"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BLUEDROID_GAP_09004
+  <<: *GAP_CASE
+  test point 2: BLE GAP processing scan data
+  summary: process combined adv data and scan response data
+  steps: |
+    1. DUT1 set raw adv data manufacturer data
+    2. DUT1 set scan response data tx power, interval range, apperaence, flag
+    2. DUT1 start adv
+    3. DUT2 do active scan with extended scan data 19
+  expected result: |
+    1. succeed
+    2. succeed
+    3. scan with the correct adv data
+  cmd set:
+  - ""
+  - *dut1_stop_adv
+  - - "SSC SSC1 bleadv -R -t 1 -r 0x15FF1011121314151617181910111213141516171819"
+    - ["R SSC1 C +BLEADV:OK"]
+  - - "SSC SSC1 bleadv -R -t 2 -r 0x020AEB051220004000021901020106"
+    - ["R SSC1 C +BLEADV:OK"]
+  - *dut1_start_adv
+  - *dut2_stop_adv
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -d 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x01"%%(<dut1_bt_mac>)'
+      - 'P SSC2 RE "\+BTSCANEXT:%%s,flag,0x06"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BLUEDROID_GAP_09007
+  <<: *GAP_CASE
+  test point 2: BLE GAP processing scan data
+  summary: proccess scan data included adv interval
+  steps: |
+    1. DUT1 stop advertise and set short device name
+    2. DUT1 set max interval 0x40 min interval 0x20 for adv data and scan response
+    3. DUT1 start advertising
+    4. DUT2 start scan and processing scan data
+    5. DUT1 stop advertising
+    6. DUT1 set max interval 0x400 min interval 0x200 for adv data and scan response
+    7. DUT1 start advertising
+    8. DUT2 start scan and processing scan data
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. scan with the correct adv data
+    5. succeed
+    6. succeed
+    7. succeed
+    8. scan with the correct adv data
+  cmd set:
+  - ""
+  - *dut1_stop_adv
+  - *set_default_ble_name
+  - - "SSC SSC1 bleadv -L -c 0 -i 0x20-0x40 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - *dut1_start_adv
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+  - *dut1_stop_adv
+  - - "SSC SSC1 bleadv -L -c 0 -i 0x200-0x400 -t 3"
+    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+  - *dut1_start_adv
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x00020004"%%(<dut1_bt_mac>)'
+      - 'R SSC2 C Complete'
+- ID: BLUEDROID_GAP_13001
+  <<: *GAP_CASE
+  test point 2: BLE GAP param packet data length test
+  summary: gattc set packet data length at valid length (27-251) for BLUEDROID
+  steps: |
+    1. DUT1 connect DUT2
+    2. DUT1 set packet data length
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - - LOOP 3 1 "[27,200,251]" "[27,200,251]"
+  - - "SSC SSC1 ble -S -z pktLen -a <dut2_bt_mac> -l {%d}"
+    - ["R SSC1 C +BLECONN:UpdatePktLen,OK,{%d}"]
+- ID: BLUEDROID_GAP_13002
+  <<: *GAP_CASE
+  test point 2: BLE GAP param packet data length test
+  summary: gattc set packet data length at invalid length for BLUEDROID
+  steps: |
+    1. DUT1 connect DUT2
+    2. DUT1 set packet data length
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - - LOOP 2 1 "[26,252]" "[27,251]"
+  - - "SSC SSC1 ble -S -z pktLen -a <dut2_bt_mac> -l {%d}"
+    - ["R SSC1 C +BLECONN:UpdatePktLen,OK,{%d}"]
+- ID: BLUEDROID_GAP_13003
+  <<: *GAP_CASE
+  test point 2: BLE GAP param packet data length test
+  summary: gatts set packet data length at valid length (27-251) for BLUEDROID
+  steps: |
+    1. DUT1 connect DUT2
+    2. DUT1 set packet data length
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - - LOOP 3 1 "[27,200,251]" "[27,200,251]"
+  - - "SSC SSC2 ble -S -z pktLen -a <dut1_bt_mac> -l {%d}"
+    - ["R SSC2 C +BLECONN:UpdatePktLen,OK,{%d}"]
+- ID: BLUEDROID_GAP_13004
+  <<: *GAP_CASE
+  test point 2: BLE GAP param packet data length test
+  summary: gatts set packet data length at invalid length for BLUEDROID
+  steps: |
+    1. DUT1 connect DUT2
+    2. DUT1 set packet data length
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC2 C +BLECONN:GapConnect']
+  - - LOOP 2 1 "[26,252]" "[27,251]"
+  - - "SSC SSC2 ble -S -z pktLen -a <dut1_bt_mac> -l {%d}"
+    - ["R SSC2 C +BLECONN:UpdatePktLen,OK,{%d}"]
+- ID: BLUEDROID_GAP_40001
+  <<: *GAP_CASE
+  auto test: 'No'
+  test point 2: test if BLE work after switch off some sub modules
+  summary: GAP only test for BLUEDROID
+  steps: |
+    1. download GAP only SSC bin on both DUT
+    2. DUT1 set ascii device name
+    3. stop advertising
+    4. config scan response and start advertising
+    5. DUT2 do active scan
+  expected result: |
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. device name in scan result
+  initial condition: None
+  version: v1 (2017-05-19)
+  cmd set:
+  - ""
+  - - "SSC SSC[1-2] reboot"
+    - ['R SSC[1-2] C !!!ready!!!']
+  - - "SSC SSC[1-2] ble -R"
+    - ["R SSC[1-2] C +BLE:OK"]
+  - *set_default_ble_name
+  - *set_default_adv_data
+  - *dut2_stop_adv
+  - - "SSC SSC2 blescan -D -z start -t 3 -c 0"
+    - ["R SSC2 P <dut1_ble_name>"]
+

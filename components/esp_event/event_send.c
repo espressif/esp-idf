@@ -20,7 +20,6 @@ esp_err_t esp_event_send_noop(system_event_t *event);
 
 extern esp_err_t esp_event_send_legacy(system_event_t *event) __attribute__((weak, alias("esp_event_send_noop")));
 extern esp_err_t esp_event_send_to_default_loop(system_event_t *event) __attribute((weak, alias("esp_event_send_noop")));
-extern esp_err_t esp_event_mesh_hook(system_event_t* event) __attribute__((weak, alias("esp_event_send_noop")));
 
 
 esp_err_t esp_event_send_noop(system_event_t *event)
@@ -38,12 +37,6 @@ esp_err_t esp_event_send(system_event_t *event)
 
     // send the event to the legacy event loop
     err = esp_event_send_legacy(event);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    // send the event to mesh hook
-    err = esp_event_mesh_hook(event);
     if (err != ESP_OK) {
         return err;
     }

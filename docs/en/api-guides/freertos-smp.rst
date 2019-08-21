@@ -74,8 +74,9 @@ used to free memory pointed to by TLSP. Call
 Callbacks.
 
 :ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be 
-configured using ``make meunconfig`` such as running ESP-IDF in Unicore Mode,
-or configuring the number of Thread Local Storage Pointers each task will have.
+set in the project configuration (``idf.py menuconfig``) such as running ESP-IDF in
+Unicore (single core) Mode, or configuring the number of Thread Local Storage Pointers
+each task will have.
 
 
 .. _backported-features:
@@ -478,10 +479,10 @@ For more details see :doc:`FreeRTOS API reference<../api-reference/system/freert
 Configuring ESP-IDF FreeRTOS
 ----------------------------
 
-The ESP-IDF FreeRTOS can be configured using ``make menuconfig`` under 
-``Component_Config/FreeRTOS``. The following section highlights some of the
-ESP-IDF FreeRTOS configuration options. For a full list of ESP-IDF
-FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
+The ESP-IDF FreeRTOS can be configured in the project configuration menu
+(``idf.py menuconfig``) under ``Component Config/FreeRTOS``. The following section
+highlights some of the ESP-IDF FreeRTOS configuration options. For a full list of
+ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
 
 :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
 on **PRO_CPU**. Note that this is **not equivalent to running vanilla 

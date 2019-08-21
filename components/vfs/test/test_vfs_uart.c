@@ -39,7 +39,7 @@ static void fwrite_str_loopback(const char* str, size_t size)
     UART0.conf0.loopback = 0;
 }
 
-static void flush_stdin_stdout()
+static void flush_stdin_stdout(void)
 {
     vTaskDelay(10 / portTICK_PERIOD_MS);
     char *bitbucket = (char*) 0x3f000000;
@@ -202,7 +202,7 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
     vSemaphoreDelete(write_arg.done);
 }
 
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
     uart_config_t uart_config = {
@@ -328,4 +328,4 @@ TEST_CASE("Can use termios for UART", "[vfs]")
     close(uart_fd);
     uart_driver_delete(UART_NUM_1);
 }
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS

@@ -13,8 +13,8 @@
 #include "esp_app_trace.h"
 #include "sdkconfig.h"
 
-/* Can run 'make menuconfig' to choose the GPIO to blink,
-   or you can edit the following line and set a number here.
+/* Can use project configuration menu (idf.py menuconfig) to choose the GPIO
+   to blink, or you can edit the following line and set a number here.
 */
 #define BLINK_GPIO CONFIG_BLINK_GPIO
 
@@ -52,7 +52,7 @@ static void blink_task(void *pvParameter)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(&blink_task, "blink_task", configMINIMAL_STACK_SIZE, NULL, 5, NULL);
 }

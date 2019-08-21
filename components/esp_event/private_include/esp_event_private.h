@@ -45,7 +45,7 @@ bool esp_event_is_handler_registered(esp_event_loop_handle_t event_loop, esp_eve
  *  - ESP_OK: Success
  *  - Others: Fail
  */
-esp_err_t esp_event_loop_deinit();
+esp_err_t esp_event_loop_deinit(void);
 
 #ifdef __cplusplus
 } // extern "C"

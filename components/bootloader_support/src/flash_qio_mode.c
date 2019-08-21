@@ -53,7 +53,7 @@
 
 static const char *TAG = "qio_mode";
 
-typedef unsigned (*read_status_fn_t)();
+typedef unsigned (*read_status_fn_t)(void);
 typedef void (*write_status_fn_t)(unsigned);
 
 typedef struct __attribute__((packed))
@@ -68,11 +68,11 @@ typedef struct __attribute__((packed))
 } qio_info_t;
 
 /* Read 8 bit status using RDSR command */
-static unsigned read_status_8b_rdsr();
+static unsigned read_status_8b_rdsr(void);
 /* Read 8 bit status (second byte) using RDSR2 command */
-static unsigned read_status_8b_rdsr2();
+static unsigned read_status_8b_rdsr2(void);
 /* read 16 bit status using RDSR & RDSR2 (low and high bytes) */
-static unsigned read_status_16b_rdsr_rdsr2();
+static unsigned read_status_16b_rdsr_rdsr2(void);
 
 /* Write 8 bit status using WRSR */
 static void write_status_8b_wrsr(unsigned new_status);
@@ -82,7 +82,7 @@ static void write_status_8b_wrsr2(unsigned new_status);
 static void write_status_16b_wrsr(unsigned new_status);
 
 /* Read 8 bit status of XM25QU64A  */
-static unsigned read_status_8b_xmc25qu64a();
+static unsigned read_status_8b_xmc25qu64a(void);
 /* Write 8 bit status of XM25QU64A */
 static void write_status_8b_xmc25qu64a(unsigned new_status);
 
@@ -136,7 +136,7 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
 
 /* dummy_len_plus values defined in ROM for SPI flash configuration */
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
-uint32_t bootloader_read_flash_id()
+uint32_t bootloader_read_flash_id(void)
 {
     uint32_t id = execute_flash_command(CMD_RDID, 0, 0, 24);
     id = ((id & 0xff) << 16) | ((id >> 16) & 0xff) | (id & 0xff00);
@@ -289,17 +289,17 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
     return ESP_OK;
 }
 
-static unsigned read_status_8b_rdsr()
+static unsigned read_status_8b_rdsr(void)
 {
     return execute_flash_command(CMD_RDSR, 0, 0, 8);
 }
 
-static unsigned read_status_8b_rdsr2()
+static unsigned read_status_8b_rdsr2(void)
 {
     return execute_flash_command(CMD_RDSR2, 0, 0, 8);
 }
 
-static unsigned read_status_16b_rdsr_rdsr2()
+static unsigned read_status_16b_rdsr_rdsr2(void)
 {
     return execute_flash_command(CMD_RDSR, 0, 0, 8) | (execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 }
@@ -319,7 +319,7 @@ static void write_status_16b_wrsr(unsigned new_status)
     execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
-static unsigned read_status_8b_xmc25qu64a()
+static unsigned read_status_8b_xmc25qu64a(void)
 {
     execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);

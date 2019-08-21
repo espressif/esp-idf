@@ -64,7 +64,7 @@ static esp_err_t init_spiffs(void)
  * file_server.c */
 esp_err_t start_file_server(const char *base_path);
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     tcpip_adapter_init();

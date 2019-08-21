@@ -16,7 +16,6 @@
 #include "nvs_flash.h"
 #include "esp_heap_caps.h"
 #include "esp32/spiram.h"
-#include "esp32/rom/cache.h"
 #include "sdkconfig.h"
 #include "esp32/himem.h"
 
@@ -87,7 +86,7 @@ static bool test_region(int check_size, int seed)
 }
 
 
-void app_main()
+void app_main(void)
 {
     size_t memcnt=esp_himem_get_phys_size();
     size_t memfree=esp_himem_get_free_size();

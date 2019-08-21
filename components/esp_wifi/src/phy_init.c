@@ -390,7 +390,7 @@ esp_err_t esp_modem_sleep_deregister(modem_sleep_module_t module)
 #if CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
 #include "esp_partition.h"
 
-const esp_phy_init_data_t* esp_phy_get_init_data()
+const esp_phy_init_data_t* esp_phy_get_init_data(void)
 {
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
@@ -430,7 +430,7 @@ void esp_phy_release_init_data(const esp_phy_init_data_t* init_data)
 
 // phy_init_data.h will declare static 'phy_init_data' variable initialized with default init data
 
-const esp_phy_init_data_t* esp_phy_get_init_data()
+const esp_phy_init_data_t* esp_phy_get_init_data(void)
 {
     ESP_LOGD(TAG, "loading PHY init data from application binary");
     return &phy_init_data;

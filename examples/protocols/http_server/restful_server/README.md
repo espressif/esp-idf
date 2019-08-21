@@ -57,7 +57,7 @@ Only if you deploy the website to SD card, then the following pin connection is 
 
 ### Configure the project
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. 
+Open the project configuration menu (`idf.py menuconfig`). 
 
 In the `Example Connection Configuration` menu:
 
@@ -88,7 +88,7 @@ npm run build
 
 After a while, you will see a `dist` directory which contains all the website files (e.g. html, js, css, images).
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system.
+Run `idf.py -p PORT flash monitor` to build and flash the project..
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

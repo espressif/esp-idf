@@ -138,7 +138,7 @@ size_t soc_get_available_memory_regions(soc_memory_region_t *regions);
  * returned by soc_get_available_memory_regions(). Used to size the
  * array passed to that function.
  */
-size_t soc_get_available_memory_region_max_count();
+size_t soc_get_available_memory_region_max_count(void);
 
 inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
 {
@@ -204,4 +204,11 @@ inline static bool IRAM_ATTR esp_ptr_in_diram_dram(const void *p) {
 
 inline static bool IRAM_ATTR esp_ptr_in_diram_iram(const void *p) {
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
+}
+
+
+inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
+{
+    //Check if stack ptr is in between SOC_DRAM_LOW and SOC_DRAM_HIGH, and 16 byte aligned.
+    return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }

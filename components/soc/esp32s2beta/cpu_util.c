@@ -50,7 +50,7 @@ void IRAM_ATTR esp_cpu_reset(int cpu_id)
             cpu_id == 0 ? RTC_CNTL_SW_PROCPU_RST_M : RTC_CNTL_SW_APPCPU_RST_M);
 }
 
-bool IRAM_ATTR esp_cpu_in_ocd_debug_mode()
+bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 {
 #if CONFIG_ESP32S2_DEBUG_OCDAWARE
     int dcr;

@@ -22,7 +22,6 @@
 # limitations under the License.
 from __future__ import print_function
 import argparse
-import fnmatch
 import json
 import os
 import os.path
@@ -46,15 +45,15 @@ class DeprecatedOptions(object):
     _RE_DEP_OP_BEGIN = re.compile(_DEP_OP_BEGIN)
     _RE_DEP_OP_END = re.compile(_DEP_OP_END)
 
-    def __init__(self, config_prefix, path_rename_files, ignore_dirs=()):
+    def __init__(self, config_prefix, path_rename_files=[]):
         self.config_prefix = config_prefix
         # r_dic maps deprecated options to new options; rev_r_dic maps in the opposite direction
-        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files, ignore_dirs)
+        self.r_dic, self.rev_r_dic = self._parse_replacements(path_rename_files)
 
         # note the '=' at the end of regex for not getting partial match of configs
         self._RE_CONFIG = re.compile(r'{}(\w+)='.format(self.config_prefix))
 
-    def _parse_replacements(self, repl_dir, ignore_dirs):
+    def _parse_replacements(self, repl_paths):
         rep_dic = {}
         rev_rep_dic = {}
 
@@ -64,31 +63,24 @@ class DeprecatedOptions(object):
             raise RuntimeError('Error in {} (line {}): Config {} is not prefixed with {}'
                                ''.format(rep_path, line_number, string, self.config_prefix))
 
-        for root, dirnames, filenames in os.walk(repl_dir):
-            for filename in fnmatch.filter(filenames, self._REN_FILE):
-                rep_path = os.path.join(root, filename)
+        for rep_path in repl_paths:
+            with open(rep_path) as f_rep:
+                for line_number, line in enumerate(f_rep, start=1):
+                    sp_line = line.split()
+                    if len(sp_line) == 0 or sp_line[0].startswith('#'):
+                        # empty line or comment
+                        continue
+                    if len(sp_line) != 2 or not all(x.startswith(self.config_prefix) for x in sp_line):
+                        raise RuntimeError('Syntax error in {} (line {})'.format(rep_path, line_number))
+                    if sp_line[0] in rep_dic:
+                        raise RuntimeError('Error in {} (line {}): Replacement {} exist for {} and new '
+                                           'replacement {} is defined'.format(rep_path, line_number,
+                                                                              rep_dic[sp_line[0]], sp_line[0],
+                                                                              sp_line[1]))
 
-                if rep_path.startswith(ignore_dirs):
-                    print('Ignoring: {}'.format(rep_path))
-                    continue
-
-                with open(rep_path) as f_rep:
-                    for line_number, line in enumerate(f_rep, start=1):
-                        sp_line = line.split()
-                        if len(sp_line) == 0 or sp_line[0].startswith('#'):
-                            # empty line or comment
-                            continue
-                        if len(sp_line) != 2 or not all(x.startswith(self.config_prefix) for x in sp_line):
-                            raise RuntimeError('Syntax error in {} (line {})'.format(rep_path, line_number))
-                        if sp_line[0] in rep_dic:
-                            raise RuntimeError('Error in {} (line {}): Replacement {} exist for {} and new '
-                                               'replacement {} is defined'.format(rep_path, line_number,
-                                                                                  rep_dic[sp_line[0]], sp_line[0],
-                                                                                  sp_line[1]))
-
-                        (dep_opt, new_opt) = (remove_config_prefix(x) for x in sp_line)
-                        rep_dic[dep_opt] = new_opt
-                        rev_rep_dic[new_opt] = dep_opt
+                    (dep_opt, new_opt) = (remove_config_prefix(x) for x in sp_line)
+                    rep_dic[dep_opt] = new_opt
+                    rev_rep_dic[new_opt] = dep_opt
         return rep_dic, rev_rep_dic
 
     def get_deprecated_option(self, new_option):
@@ -195,6 +187,10 @@ def main():
                         help='KConfig file with config item definitions',
                         required=True)
 
+    parser.add_argument('--sdkconfig-rename',
+                        help='File with deprecated Kconfig options',
+                        required=False)
+
     parser.add_argument('--output', nargs=2, action='append',
                         help='Write output file (format and output filename)',
                         metavar=('FORMAT', 'FILENAME'),
@@ -202,6 +198,10 @@ def main():
 
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
+
+    parser.add_argument('--env-file', type=argparse.FileType('r'),
+                        help='Optional file to load environment variables from. Contents '
+                             'should be a JSON object where each key/value pair is a variable.')
 
     args = parser.parse_args()
 
@@ -219,6 +219,10 @@ def main():
     for name, value in args.env:
         os.environ[name] = value
 
+    if args.env_file is not None:
+        env = json.load(args.env_file)
+        os.environ.update(env)
+
     config = kconfiglib.Kconfig(args.kconfig)
     config.disable_redun_warnings()
     config.disable_override_warnings()
@@ -232,10 +236,9 @@ def main():
                 raise RuntimeError("Defaults file not found: %s" % name)
             config.load_config(name, replace=False)
 
-    # don't collect rename options from examples because those are separate projects and no need to "stay compatible"
-    # with example projects
-    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"],
-                                           ignore_dirs=(os.path.join(os.environ["IDF_PATH"], 'examples')))
+    sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
+    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
+    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
 
     # If config file previously exists, load it
     if args.config and os.path.exists(args.config):
@@ -346,10 +349,8 @@ def write_cmake(deprecated_options, config, filename):
             if not isinstance(sym, kconfiglib.Symbol):
                 return
 
-            # Note: str_value calculates _write_to_conf, due to
-            # internal magic in kconfiglib...
-            val = sym.str_value
-            if sym._write_to_conf:
+            if sym.config_string:
+                val = sym.str_value
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == "n":
                     val = ""  # write unset values as empty variables
                 write("set({}{} \"{}\")\n".format(
@@ -377,8 +378,8 @@ def get_json_values(config):
         if not isinstance(sym, kconfiglib.Symbol):
             return
 
-        val = sym.str_value  # this calculates _write_to_conf, due to kconfiglib magic
-        if sym._write_to_conf:
+        if sym.config_string:
+            val = sym.str_value
             if sym.type in [kconfiglib.BOOL, kconfiglib.TRISTATE]:
                 val = (val != "n")
             elif sym.type == kconfiglib.HEX:
@@ -472,7 +473,9 @@ def write_json_menus(deprecated_options, config, filename):
                 # should have one condition which is true
                 for min_range, max_range, cond_expr in sym.ranges:
                     if kconfiglib.expr_value(cond_expr):
-                        greatest_range = [int(min_range.str_value), int(max_range.str_value)]
+                        base = 16 if sym.type == kconfiglib.HEX else 10
+                        greatest_range = [int(min_range.str_value, base), int(max_range.str_value, base)]
+                        break
 
             new_json = {
                 "type": kconfiglib.TYPE_TO_STR[sym.type],

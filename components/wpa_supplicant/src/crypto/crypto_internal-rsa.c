@@ -6,16 +6,16 @@
  * See README for more details.
  */
 
-#include "crypto/common.h"
-#include "crypto/crypto.h"
+#include "utils/common.h"
+#include "crypto.h"
 
-#include "wpa/includes.h"
-#include "wpa/common.h"
-#include "wpa/wpa_debug.h"
+#include "utils/includes.h"
+#include "utils/common.h"
+#include "utils/wpa_debug.h"
 
-#include "wpa2/tls/rsa.h"
-#include "wpa2/tls/pkcs1.h"
-#include "wpa2/tls/pkcs8.h"
+#include "tls/rsa.h"
+#include "tls/pkcs1.h"
+#include "tls/pkcs8.h"
 
 /* Dummy structures; these are just typecast to struct crypto_rsa_key */
 struct crypto_public_key;

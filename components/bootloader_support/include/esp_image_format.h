@@ -16,6 +16,11 @@
 #include <stdbool.h>
 #include <esp_err.h>
 #include "esp_flash_partitions.h"
+#include "esp_app_format.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ESP_ERR_IMAGE_BASE       0x2000
 #define ESP_ERR_IMAGE_FLASH_FAIL (ESP_ERR_IMAGE_BASE + 1)
@@ -25,90 +30,7 @@
    Can be compiled as part of app or bootloader code.
 */
 
-/* SPI flash mode, used in esp_image_header_t */
-typedef enum {
-    ESP_IMAGE_SPI_MODE_QIO,
-    ESP_IMAGE_SPI_MODE_QOUT,
-    ESP_IMAGE_SPI_MODE_DIO,
-    ESP_IMAGE_SPI_MODE_DOUT,
-    ESP_IMAGE_SPI_MODE_FAST_READ,
-    ESP_IMAGE_SPI_MODE_SLOW_READ
-} esp_image_spi_mode_t;
-
-/* SPI flash clock frequency */
-typedef enum {
-    ESP_IMAGE_SPI_SPEED_40M,
-    ESP_IMAGE_SPI_SPEED_26M,
-    ESP_IMAGE_SPI_SPEED_20M,
-    ESP_IMAGE_SPI_SPEED_80M = 0xF
-} esp_image_spi_freq_t;
-
-/* Supported SPI flash sizes */
-typedef enum {
-    ESP_IMAGE_FLASH_SIZE_1MB = 0,
-    ESP_IMAGE_FLASH_SIZE_2MB,
-    ESP_IMAGE_FLASH_SIZE_4MB,
-    ESP_IMAGE_FLASH_SIZE_8MB,
-    ESP_IMAGE_FLASH_SIZE_16MB,
-    ESP_IMAGE_FLASH_SIZE_MAX
-} esp_image_flash_size_t;
-
-#define ESP_IMAGE_HEADER_MAGIC 0xE9
-
-/* Main header of binary image */
-typedef struct {
-    uint8_t magic;
-    uint8_t segment_count;
-    /* flash read mode (esp_image_spi_mode_t as uint8_t) */
-    uint8_t spi_mode;
-    /* flash frequency (esp_image_spi_freq_t as uint8_t) */
-    uint8_t spi_speed: 4;
-    /* flash chip size (esp_image_flash_size_t as uint8_t) */
-    uint8_t spi_size: 4;
-    uint32_t entry_addr;
-    /* WP pin when SPI pins set via efuse (read by ROM bootloader, the IDF bootloader uses software to configure the WP
-     * pin and sets this field to 0xEE=disabled) */
-    uint8_t wp_pin;
-    /* Drive settings for the SPI flash pins (read by ROM bootloader) */
-    uint8_t spi_pin_drv[3];
-    /* Reserved bytes in ESP32 additional header space, currently unused */
-    uint8_t reserved[11];
-    /* If 1, a SHA256 digest "simple hash" (of the entire image) is appended after the checksum. Included in image length. This digest
-     * is separate to secure boot and only used for detecting corruption. For secure boot signed images, the signature
-     * is appended after this (and the simple hash is included in the signed data). */
-    uint8_t hash_appended;
-} __attribute__((packed))  esp_image_header_t;
-
-_Static_assert(sizeof(esp_image_header_t) == 24, "binary image header should be 24 bytes");
-
 #define ESP_IMAGE_HASH_LEN 32 /* Length of the appended SHA-256 digest */
-
-/* Header of binary image segment */
-typedef struct {
-    uint32_t load_addr;
-    uint32_t data_len;
-} esp_image_segment_header_t;
-
-#define ESP_APP_DESC_MAGIC_WORD 0xABCD5432 /*!< The magic word for the esp_app_desc structure that is in DROM. */
-
-/**
- * @brief Description about application.
- */
-typedef struct {
-    uint32_t magic_word;        /*!< Magic word ESP_APP_DESC_MAGIC_WORD */
-    uint32_t secure_version;    /*!< Secure version */
-    uint32_t reserv1[2];        /*!< --- */
-    char version[32];           /*!< Application version */
-    char project_name[32];      /*!< Project name */
-    char time[16];              /*!< Compile time */
-    char date[16];              /*!< Compile date*/
-    char idf_ver[32];           /*!< Version IDF */
-    uint8_t app_elf_sha256[32]; /*!< sha256 of elf file */
-    uint32_t reserv2[20];       /*!< --- */
-} esp_app_desc_t;
-_Static_assert(sizeof(esp_app_desc_t) == 256, "esp_app_desc_t should be 256 bytes");
-
-#define ESP_IMAGE_MAX_SEGMENTS 16
 
 /* Structure to hold on-flash image metadata */
 typedef struct {
@@ -240,3 +162,7 @@ typedef struct {
     uint32_t irom_load_addr;
     uint32_t irom_size;
 } esp_image_flash_mapping_t;
+
+#ifdef __cplusplus
+}
+#endif

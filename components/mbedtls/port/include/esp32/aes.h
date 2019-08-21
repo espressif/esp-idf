@@ -41,16 +41,12 @@ extern "C" {
 /**
  * \brief          AES context structure
  *
- * \note           buf is able to hold 32 extra bytes, which can be used:
- *                 - for alignment purposes if VIA padlock is used, and/or
- *                 - to simplify key expansion in the 256-bit case by
- *                 generating an extra round key
  */
 typedef struct {
     uint8_t key_bytes;
+    volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
     uint8_t key[32];
 } esp_aes_context;
-
 
 /**
  * \brief The AES XTS context-type definition.
@@ -280,6 +276,31 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
 int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
                                 const unsigned char *key,
                                 unsigned int keybits );
+
+/**
+ * \brief       This function performs an AES-OFB (Output Feedback Mode)
+ *              encryption or decryption operation.
+ *
+ * \param ctx      The AES context to use for encryption or decryption.
+ *                 It must be initialized and bound to a key.
+ * \param length   The length of the input data.
+ * \param iv_off   The offset in IV (updated after use).
+ *                 It must point to a valid \c size_t.
+ * \param iv       The initialization vector (updated after use).
+ *                 It must be a readable and writeable buffer of \c 16 Bytes.
+ * \param input    The buffer holding the input data.
+ *                 It must be readable and of size \p length Bytes.
+ * \param output   The buffer holding the output data.
+ *                 It must be writeable and of size \p length Bytes.
+ *
+ * \return         \c 0 on success.
+ */
+int esp_aes_crypt_ofb( esp_aes_context *ctx,
+                       size_t length,
+                       size_t *iv_off,
+                       unsigned char iv[16],
+                       const unsigned char *input,
+                       unsigned char *output );
 
 /**
  * \brief          This function prepares an XTS context for decryption and

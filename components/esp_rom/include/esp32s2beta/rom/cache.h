@@ -798,7 +798,7 @@ void Cache_Resume_DCache(uint32_t autoload);
   *
   * @return None
   */
-void Cache_Drom0_Source_ICache();
+void Cache_Drom0_Source_ICache(void);
 
 /**
   * @brief Make Drom0 bus access from DCache.
@@ -807,7 +807,7 @@ void Cache_Drom0_Source_ICache();
   *
   * @return None
   */
-void Cache_Drom0_Source_DCache();
+void Cache_Drom0_Source_DCache(void);
 
 /**
   * @brief Return if Drom0 bus access from ICache.
@@ -816,7 +816,7 @@ void Cache_Drom0_Source_DCache();
   *
   * @return uint32_t: 0 for no, other for yes
   */
-uint32_t Cache_Drom0_Using_ICache();
+uint32_t Cache_Drom0_Using_ICache(void);
 
 /**
   * @brief Return if Drom0 bus access from DCache.
@@ -825,7 +825,7 @@ uint32_t Cache_Drom0_Using_ICache();
   *
   * @return uint32_t: 0 for no, other for yes
   */
-uint32_t Cache_Drom0_Using_DCache();
+uint32_t Cache_Drom0_Using_DCache(void);
 
 /**
   * @brief Get ICache cache line size
@@ -834,7 +834,7 @@ uint32_t Cache_Drom0_Using_DCache();
   *
   * @return uint32_t: 16, 32, 64 Byte
   */
-uint32_t Cache_Get_ICache_Line_Size();
+uint32_t Cache_Get_ICache_Line_Size(void);
 
 /**
   * @brief Get DCache cache line size
@@ -843,7 +843,7 @@ uint32_t Cache_Get_ICache_Line_Size();
   *
   * @return uint32_t: 16, 32, 64 Byte
   */
-uint32_t Cache_Get_DCache_Line_Size();
+uint32_t Cache_Get_DCache_Line_Size(void);
 
 /**
   * @brief Set default mode from boot.

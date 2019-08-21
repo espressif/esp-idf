@@ -4,16 +4,16 @@
 #include "ff.h"
 #include "esp_partition.h"
 #include "wear_levelling.h"
-#include "diskio.h"
+#include "diskio_impl.h"
 #include "diskio_wl.h"
 
 #include "catch.hpp"
 
-extern "C" void init_spi_flash(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
+extern "C" void _spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
 
 TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
 {
-    init_spi_flash(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
+    _spi_flash_init(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
 
     FRESULT fr_result;
     BYTE pdrv;

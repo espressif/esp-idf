@@ -141,7 +141,7 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 #define COUNT_TEST      3
 #define TIMEOUT_TEST_MS (5 + CONFIG_ESP32_RTC_CLK_CAL_CYCLES / 16)
 
-void stop_rtc_external_quartz(){
+void stop_rtc_external_quartz(void){
     const uint8_t pin_32 = 32;
     const uint8_t pin_33 = 33;
     const uint8_t mask_32 = (1 << (pin_32 - 32));

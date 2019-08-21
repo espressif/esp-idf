@@ -56,8 +56,8 @@ typedef short   SHORT;
 typedef unsigned long ULONG;
 typedef long    LONG;
 
-void vMBPortEnterCritical( );
-void vMBPortExitCritical( );
+void vMBPortEnterCritical(void);
+void vMBPortExitCritical(void);
 
 #define ENTER_CRITICAL_SECTION( ) { ESP_LOGD(MB_PORT_TAG,"%s: Port enter critical.", __func__); \
                                     vMBPortEnterCritical(); }

@@ -16,9 +16,12 @@
 #
 
 import argparse
+import json
 import sys
 import tempfile
 import subprocess
+import os
+import errno
 
 from fragments import FragmentFile
 from sdkconfig import SDKConfig
@@ -26,6 +29,17 @@ from generation import GenerationModel, TemplateModel, SectionsInfo
 from ldgen_common import LdGenFailure
 from pyparsing import ParseException, ParseFatalException
 from io import StringIO
+
+
+def _update_environment(args):
+    env = [(name, value) for (name,value) in (e.split("=",1) for e in args.env)]
+    for name, value in env:
+        value = " ".join(value.split())
+        os.environ[name] = value
+
+    if args.env_file is not None:
+        env = json.load(args.env_file)
+        os.environ.update(env)
 
 
 def main():
@@ -66,6 +80,10 @@ def main():
         action='append', default=[],
         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
 
+    argparser.add_argument('--env-file', type=argparse.FileType('r'),
+                           help='Optional file to load environment variables from. Contents '
+                           'should be a JSON object where each key/value pair is a variable.')
+
     argparser.add_argument(
         "--objdump",
         help="Path to toolchain objdump")
@@ -91,7 +109,9 @@ def main():
 
         generation_model = GenerationModel()
 
-        sdkconfig = SDKConfig(kconfig_file, config_file, args.env)
+        _update_environment(args)  # assign args.env and args.env_file to os.environ
+
+        sdkconfig = SDKConfig(kconfig_file, config_file)
 
         for fragment_file in fragment_files:
             try:
@@ -111,6 +131,14 @@ def main():
         with tempfile.TemporaryFile("w+") as output:
             script_model.write(output)
             output.seek(0)
+
+            if not os.path.exists(os.path.dirname(output_path)):
+                try:
+                    os.makedirs(os.path.dirname(output_path))
+                except OSError as exc:
+                    if exc.errno != errno.EEXIST:
+                        raise
+
             with open(output_path, "w") as f:  # only create output file after generation has suceeded
                 f.write(output.read())
     except LdGenFailure as e:

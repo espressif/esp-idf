@@ -285,12 +285,12 @@ Revision: $Rev: 5626 $
 *       RTT lock configuration fallback
 */
 #ifndef   SEGGER_RTT_LOCK
-  void SEGGER_SYSVIEW_X_RTT_Lock();
+  void SEGGER_SYSVIEW_X_RTT_Lock(void);
   #define SEGGER_RTT_LOCK()                SEGGER_SYSVIEW_X_RTT_Lock() // Lock RTT (nestable)   (i.e. disable interrupts)
 #endif
 
 #ifndef   SEGGER_RTT_UNLOCK
-  void SEGGER_SYSVIEW_X_RTT_Unlock();
+  void SEGGER_SYSVIEW_X_RTT_Unlock(void);
   #define SEGGER_RTT_UNLOCK()              SEGGER_SYSVIEW_X_RTT_Unlock() // Unlock RTT (nestable) (i.e. enable previous interrupt lock state)
 #endif
 

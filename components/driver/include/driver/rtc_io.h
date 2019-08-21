@@ -230,7 +230,7 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
  * Force hold signal is enabled before going into deep sleep for pins which
  * are used for EXT1 wakeup.
  */
-void rtc_gpio_force_hold_dis_all();
+void rtc_gpio_force_hold_dis_all(void);
 
 /**
  * @brief Set RTC GPIO pad drive capability
@@ -340,7 +340,7 @@ esp_err_t rtc_gpio_sleep_mode_disable(gpio_num_t gpio_num);
  * Force hold signal is enabled before going into deep sleep for pins which
  * are used for EXT1 wakeup.
  */
-esp_err_t rtc_gpio_force_hold_all();
+esp_err_t rtc_gpio_force_hold_all(void);
 #endif
 
 #ifdef __cplusplus

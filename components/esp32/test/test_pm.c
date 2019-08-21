@@ -58,7 +58,7 @@ TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-static void light_sleep_enable()
+static void light_sleep_enable(void)
 {
     const esp_pm_config_esp32_t pm_config = {
         .max_cpu_freq = rtc_clk_cpu_freq_get(),
@@ -68,7 +68,7 @@ static void light_sleep_enable()
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 }
 
-static void light_sleep_disable()
+static void light_sleep_disable(void)
 {
     const esp_pm_config_esp32_t pm_config = {
         .max_cpu_freq = rtc_clk_cpu_freq_get(),

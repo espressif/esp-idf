@@ -25,7 +25,7 @@
  *
  * @return ESP_OK on success
  */
-esp_err_t esp_spiram_init();
+esp_err_t esp_spiram_init(void);
 
 /**
  * @brief Configure Cache/MMU for access to external SPI RAM.
@@ -36,7 +36,7 @@ esp_err_t esp_spiram_init();
  *
  * @attention this function must be called with flash cache disabled.
  */
-void esp_spiram_init_cache();
+void esp_spiram_init_cache(void);
 
 
 /**
@@ -47,13 +47,13 @@ void esp_spiram_init_cache();
  *
  * @return true on success, false on failed memory test
  */
-bool esp_spiram_test();
+bool esp_spiram_test(void);
 
 
 /**
  * @brief Add the initialized SPI RAM to the heap allocator.
  */
-esp_err_t esp_spiram_add_to_heapalloc();
+esp_err_t esp_spiram_add_to_heapalloc(void);
 
 
 /**
@@ -61,7 +61,7 @@ esp_err_t esp_spiram_add_to_heapalloc();
  *
  * @return Size in bytes, or 0 if no external RAM chip support compiled in.
  */
-size_t esp_spiram_get_size();
+size_t esp_spiram_get_size(void);
 
 
 /**
@@ -71,7 +71,7 @@ size_t esp_spiram_get_size();
  *
  * This is meant for use from within the SPI flash code.
  */
-void esp_spiram_writeback_cache();
+void esp_spiram_writeback_cache(void);
 
 
 

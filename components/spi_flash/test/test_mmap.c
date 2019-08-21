@@ -21,7 +21,7 @@ static uint32_t end;
 
 static spi_flash_mmap_handle_t handle1, handle2, handle3;
 
-static void setup_mmap_tests()
+static void setup_mmap_tests(void)
 {
     if (start == 0) {
         const esp_partition_t *part = get_test_data_partition();
@@ -200,7 +200,7 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash]")
         pages[i]=startpage+(nopages-1)-i;
         printf("Offset %x page %d\n", i*0x10000, pages[i]);
     }
-    
+
     printf("Attempting mapping of unordered pages to contiguous memory area\n");
 
     spi_flash_mmap_handle_t handle1;
@@ -277,7 +277,7 @@ TEST_CASE("flash_mmap invalidates just-written data", "[spi_flash]")
 
 TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash]")
 {
-    //this test case should make flash size >= 4MB, because max size of Dcache can mapped is 4MB 
+    //this test case should make flash size >= 4MB, because max size of Dcache can mapped is 4MB
     setup_mmap_tests();
 
     printf("Mapping %x (+%x)\n", start, end - start);

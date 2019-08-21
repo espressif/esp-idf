@@ -37,7 +37,7 @@ static void unity_task(void *pvParameters)
     unity_run_menu(); /* Doesn't return */
 }
 
-void test_main()
+void test_main(void)
 {
     // Note: if unpinning this task, change the way run times are calculated in
     // unity_port_esp32.c
@@ -95,7 +95,7 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
     TEST_ASSERT_MESSAGE(leaked <= critical_leak_threshold, "The test leaked too much memory");
 }
 
-static bool leak_check_required()
+static bool leak_check_required(void)
 {
     warn_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_WARNING, COMP_LEAK_ALL);
     critical_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_CRITICAL, COMP_LEAK_ALL);

@@ -2,4 +2,4 @@
 
 #include <stddef.h>
 
-int spi_flash_get_chip_size();
+int spi_flash_get_chip_size(void);

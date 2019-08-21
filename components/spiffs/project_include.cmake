@@ -4,7 +4,8 @@
 # have the created image flashed using `idf.py flash`
 function(spiffs_create_partition_image partition base_dir)
     set(options FLASH_IN_PROJECT)
-    cmake_parse_arguments(arg "${options}" "" "" "${ARGN}")
+    set(multi DEPENDS)
+    cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
 
     idf_build_get_property(idf_path IDF_PATH)
     set(spiffsgen_py ${PYTHON} ${idf_path}/components/spiffs/spiffsgen.py)
@@ -33,6 +34,7 @@ function(spiffs_create_partition_image partition base_dir)
         --meta-len=${CONFIG_SPIFFS_META_LENGTH}
         ${use_magic}
         ${use_magic_len}
+        DEPENDS ${arg_DEPENDS}
         )
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY

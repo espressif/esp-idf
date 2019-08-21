@@ -40,6 +40,7 @@ typedef enum {
     SYSTEM_EVENT_STA_WPS_ER_FAILED,        /*!< ESP32 station wps fails in enrollee mode */
     SYSTEM_EVENT_STA_WPS_ER_TIMEOUT,       /*!< ESP32 station wps timeout in enrollee mode */
     SYSTEM_EVENT_STA_WPS_ER_PIN,           /*!< ESP32 station wps pin code in enrollee mode */
+    SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP,   /*!< ESP32 station wps overlap in enrollee mode */
     SYSTEM_EVENT_AP_START,                 /*!< ESP32 soft-AP start */
     SYSTEM_EVENT_AP_STOP,                  /*!< ESP32 soft-AP stop */
     SYSTEM_EVENT_AP_STACONNECTED,          /*!< a station connected to ESP32 soft-AP */
@@ -159,14 +160,14 @@ esp_err_t esp_event_process_default(system_event_t *event);
   * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
   *
   */
-void esp_event_set_default_eth_handlers();
+void esp_event_set_default_eth_handlers(void);
 
 /**
   * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
   *
   * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
   */
-void esp_event_set_default_wifi_handlers();
+void esp_event_set_default_wifi_handlers(void);
 
 /**
  * @brief  Application specified event callback function

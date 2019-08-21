@@ -101,7 +101,7 @@ If you are not quite sure how to use GDB, check :ref:`jtag-debugging-examples-ec
 Command Line
 ^^^^^^^^^^^^
 
-1.  Begin with completing steps described under :ref:``jtag-debugging-configuring-esp32-target``. This is prerequisite to start a debugging session.
+1.  Begin with completing steps described under :ref:`jtag-debugging-configuring-esp32-target`. This is prerequisite to start a debugging session.
 
 .. highlight:: bash
 

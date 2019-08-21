@@ -6,12 +6,30 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Hardware crypto support Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
-#include "crypto/aes.h"
-#include "crypto/aes_wrap.h"
+#include "utils/common.h"
+#include "aes.h"
+#include "aes_wrap.h"
+#ifdef USE_MBEDTLS_CRYPTO
+#include "mbedtls/aes.h"
+#endif /* USE_MBEDTLS_CRYPTO */
 
 /**
  * aes_wrap - Wrap keys with AES Key Wrap Algorithm (128-bit KEK) (RFC3394)
@@ -26,7 +44,12 @@ int  aes_wrap(const u8 *kek, int n, const u8 *plain, u8 *cipher)
 {
 	u8 *a, *r, b[16];
 	int i, j;
+#ifdef USE_MBEDTLS_CRYPTO
+	int32_t ret = 0;
+	mbedtls_aes_context ctx;
+#else /* USE_MBEDTLS_CRYPTO */
 	void *ctx;
+#endif /* USE_MBEDTLS_CRYPTO */
 
 	a = cipher;
 	r = cipher + 8;
@@ -35,9 +58,18 @@ int  aes_wrap(const u8 *kek, int n, const u8 *plain, u8 *cipher)
 	os_memset(a, 0xa6, 8);
 	os_memcpy(r, plain, 8 * n);
 
+#ifdef USE_MBEDTLS_CRYPTO
+	mbedtls_aes_init(&ctx);
+	ret = mbedtls_aes_setkey_enc(&ctx, kek, 128);
+	if (ret < 0) {
+		mbedtls_aes_free(&ctx);
+		return ret;
+	}
+#else /* USE_MBEDTLS_CRYPTO */
 	ctx = aes_encrypt_init(kek, 16);
 	if (ctx == NULL)
 		return -1;
+#endif /* USE_MBEDTLS_CRYPTO */
 
 	/* 2) Calculate intermediate values.
 	 * For j = 0 to 5
@@ -51,14 +83,24 @@ int  aes_wrap(const u8 *kek, int n, const u8 *plain, u8 *cipher)
 		for (i = 1; i <= n; i++) {
 			os_memcpy(b, a, 8);
 			os_memcpy(b + 8, r, 8);
+#ifdef USE_MBEDTLS_CRYPTO
+			ret = mbedtls_internal_aes_encrypt(&ctx, b, b);
+			if (ret != 0)
+				break;
+#else /* USE_MBEDTLS_CRYPTO */
 			aes_encrypt(ctx, b, b);
+#endif /* USE_MBEDTLS_CRYPTO */
 			os_memcpy(a, b, 8);
 			a[7] ^= n * j + i;
 			os_memcpy(r, b + 8, 8);
 			r += 8;
 		}
 	}
+#ifdef USE_MBEDTLS_CRYPTO
+	mbedtls_aes_free(&ctx);
+#else /* USE_MBEDTLS_CRYPTO */
 	aes_encrypt_deinit(ctx);
+#endif /* USE_MBEDTLS_CRYPTO */
 
 	/* 3) Output the results.
 	 *

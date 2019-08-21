@@ -1,7 +1,10 @@
-set(COMPONENT_ADD_INCLUDEDIRS include)
-set(COMPONENT_SRCS "src/https_server.c")
+if (CONFIG_ESP_HTTPS_SERVER_ENABLE)
+    set(src "src/https_server.c")
+    set(inc "include")    
+endif()
 
-set(COMPONENT_REQUIRES esp_http_server openssl)
-set(COMPONENT_PRIV_REQUIRES lwip)
+idf_component_register(SRCS ${src}
+                    INCLUDE_DIRS ${inc}
+                    REQUIRES esp_http_server esp-tls
+                    PRIV_REQUIRES lwip)
 
-register_component()

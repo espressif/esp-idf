@@ -25,7 +25,6 @@
 extern "C" {
 #endif
 
-#define ESP_ERR_FLASH_BASE       0x10010
 #define ESP_ERR_FLASH_OP_FAIL    (ESP_ERR_FLASH_BASE + 1)
 #define ESP_ERR_FLASH_OP_TIMEOUT (ESP_ERR_FLASH_BASE + 2)
 
@@ -60,7 +59,7 @@ esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode);
  *  no need to call it from application code.
  *
  */
-void spi_flash_init();
+void spi_flash_init(void);
 
 /**
  * @brief  Get flash chip size, as set in binary image header
@@ -69,7 +68,7 @@ void spi_flash_init();
  *
  * @return size of flash chip, in bytes
  */
-size_t spi_flash_get_chip_size();
+size_t spi_flash_get_chip_size(void);
 
 /**
  * @brief  Erase the Flash sector.
@@ -257,7 +256,7 @@ void spi_flash_munmap(spi_flash_mmap_handle_t handle);
  * of pages allocated to each handle. It also lists all non-zero entries of
  * MMU table and corresponding reference counts.
  */
-void spi_flash_mmap_dump();
+void spi_flash_mmap_dump(void);
 
 /**
  * @brief get free pages number which can be mmap
@@ -312,7 +311,7 @@ const void *spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memor
  *
  * @return true if both CPUs have flash cache enabled, false otherwise.
  */
-bool spi_flash_cache_enabled();
+bool spi_flash_cache_enabled(void);
 
 /**
  * @brief SPI flash critical section enter function.
@@ -354,7 +353,7 @@ typedef bool (*spi_flash_is_safe_write_address_t)(size_t addr, size_t size);
  *   - 'op_unlock' unlocks access to flash API internal data.
  *   These two functions are recursive and can be used around the outside of multiple calls to
  *   'start' & 'end', in order to create atomic multi-part flash operations.
- * 3) When CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED is disabled, flash writing/erasing
+ * 3) When CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED is disabled, flash writing/erasing
  *    API checks for addresses provided by user to avoid corruption of critical flash regions
  *    (bootloader, partition table, running application etc.).
  *
@@ -372,7 +371,7 @@ typedef struct {
     spi_flash_guard_end_func_t          end;        /**< critical section end function. */
     spi_flash_op_lock_func_t            op_lock;    /**< flash access API lock function.*/
     spi_flash_op_unlock_func_t          op_unlock;  /**< flash access API unlock function.*/
-#if !CONFIG_SPI_FLASH_WRITING_DANGEROUS_REGIONS_ALLOWED
+#if !CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
     spi_flash_is_safe_write_address_t   is_safe_write_address; /**< checks flash write addresses.*/
 #endif
 } spi_flash_guard_funcs_t;
@@ -393,7 +392,7 @@ void spi_flash_guard_set(const spi_flash_guard_funcs_t* funcs);
  * @return The guard functions that were set via spi_flash_guard_set(). These functions
  * can be called if implementing custom low-level SPI flash operations.
  */
-const spi_flash_guard_funcs_t *spi_flash_guard_get();
+const spi_flash_guard_funcs_t *spi_flash_guard_get(void);
 
 /**
  * @brief Default OS-aware flash access guard functions
@@ -428,12 +427,12 @@ typedef struct {
 /**
  * @brief  Reset SPI flash operation counters
  */
-void spi_flash_reset_counters();
+void spi_flash_reset_counters(void);
 
 /**
  * @brief  Print SPI flash operation counters
  */
-void spi_flash_dump_counters();
+void spi_flash_dump_counters(void);
 
 /**
  * @brief  Return current SPI flash operation counters
@@ -441,7 +440,7 @@ void spi_flash_dump_counters();
  * @return  pointer to the spi_flash_counters_t structure holding values
  *          of the operation counters
  */
-const spi_flash_counters_t* spi_flash_get_counters();
+const spi_flash_counters_t* spi_flash_get_counters(void);
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
 

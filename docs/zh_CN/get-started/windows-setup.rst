@@ -1,63 +1,59 @@
-***************************************
+**********************************************************
 Windows 平台工具链的标准设置
-***************************************
-:link_to_translation:`en:[English]`
+**********************************************************
 
-.. important:: 对不起，CMake-based Build System Preview 还没有中文翻译。
+:link_to_translation:`en:[英文]`
+
+.. note::
+      基于 CMake 的构建系统仅支持 64 位版本 Windows。
 
 引言
 ============
 
-Windows 没有内置的 "make" 环境，因此如果要安装工具链，你需要一个 GNU 兼容环境。我们这里使用 MSYS2_ 来提供该环境。你不需要一直使用这个环境（你可以使用 :doc:`Eclipse <eclipse-setup>` 或其它前端工具），但是它是在后台运行的。
+ESP-IDF 需要安装必要的工具，以编译 ESP32 固件，包括：Git，交叉编译器，以及 CMake 构建工具。本文将对这些工具一一说明。
 
-工具链的设置
-===============
+在此入门指南中，我们通过命令提示符进行有关操作。不过，安装 ESP-IDF 后你还可以使用 :doc:`Eclipse <eclipse-setup>` 或支持 CMake 的图形化工具 IDE。
 
-快速设置的方法是从 dl.espressif.com 下载集成在一起的工具链和 MSYS2 压缩文件：
+https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20190611.zip
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip
+ESP-IDF 工具安装器
+=======================
 
-将 zip 压缩文件解压到 ``C:\`` (或其它路径，这里假设是 ``C:\``)，它会使用预先准备的环境创建一个 ``msys32`` 目录。
+安装 ESP-IDF 必备工具最简易的方式是下载 ESP-IDF 工具安装器，地址如下：
 
-检出
-============
+https://dl.espressif.com/dl/esp-idf-tools-setup-1.2.exe
 
-运行 ``C:\msys32\mingw32.exe`` 打开一个 MSYS2 的终端窗口。该窗口的环境是一个 bash shell。创建一个 ``esp`` 目录作为开发 ESP32 应用的默认地址。运行指令 ::
+安装器会自动安装 ESP32 Xtensa gcc 工具链，Ninja_ 编译工具，以及名为 mconf-idf_ 的配置工具。此外，如果你的电脑还未安装有关 CMake_ 和 Python_ 2.7 的安装器，它还可以下载和运行与之对应的安装器。
 
-    mkdir -p ~/esp  
-    
-输入 ``cd ~/esp`` 就进入到新创建的目录。如果没有错误信息出现则表明此步骤已完成。
+安装器默认更新 Windows ``Path`` 环境变量，因而上述工具也可在其他环境中运行。如果禁止该选项，则需自行设置 ESP-IDF 所使用的环境（终端或所选 IDE），并配置正确的路径。 
 
+请注意，此安装器仅针对 ESP-IDF 工具包，并不包括 ESP-IDF。
 
-.. figure:: ../../_static/msys2-terminal-window.png
-    :align: center
-    :alt: MSYS2 MINGW32 shell window
-    :figclass: align-center
+安装 Git
+==============
 
-    MSYS2 终端窗口
+ESP-IDF 工具安装器并不会安装 Git，因为快速入门指南默认你将以命令行的模式使用它。你可以通过 `Git For Windows`_ 下载和安装 Windows 平台的命令行 Git 工具（包括 "Git Bash" 终端）。
 
-后续步骤将会使用这个窗口来为 ESP32 设置开发环境。
+如果你想使用其他图形化 Git 客户端，如 `Github Desktop`， 你可以自行安装，但需要对本《入门指南》中相应的 Git 命令进行转换，以便用于你所选的 Git 客户端。
+
+使用终端
+================
+
+在本《入门指南》接下来的步骤说明中，我们将使用终端命令提示符进行有关操作。你也可以使用任何其他形式的命令提示符：
+
+- 比如，Windows 开始菜单下内置的命令提示符。本文档中的所有 Windows 命令行指令均为 Windows 命令提示符中所使用的 "batch" 命令。
+- 你还可以使用 `Git for Windows`_ 中的 "Git Bash" 终端，其所使用的 "bash" 命令提示符语法与 Mac OS 或 Linux 的既定语法相同。安装此终端后，你可以在开始菜单下找到命令提示符窗口。
+- 如果你已安装 MSYS2_ （通过 ESP-IDF 之前版本），你还可以使用 MSYS 终端。
 
 后续步骤
 ==========
 
-要继续设置开发环境，请参考 :ref:`get-started-get-esp-idf` 一节。
-
-更新环境
-========================
-
-当 IDF 更新时，有时需要新的工具链，或者将新的需求添加到 Windows MSYS2 环境中。要将旧版本的预编译环境中的数据移动到新版本：
-
-- 把旧的 MSYS2 环境（即 ``C:\msys32``）移动/重命名为不同的目录（即 ``C:\msys32_old``）。
-- 按照前文所述步骤下载新的预编译环境。
-- 将新的 MSYS2 环境解压缩到 ``C:\msys32`` （或其他位置）。
-- 找到旧的 ``C:\msys32_old\home`` 目录并把它移到 ``C:\msys32``。
-- 如果你不再需要 ``C:\msys32_old`` 可以将它删除。
-
-你可以在系统上拥有独立的不同的 MSYS2 环境，前提是在不同的目录中。
+要继续设置开发环境，请参照 :ref:`get-started-get-esp-idf`。
 
 相关文档
 =================
+
+想要自定义安装流程的高阶用户可参照：
 
 .. toctree::
     :maxdepth: 1
@@ -66,4 +62,9 @@ https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001
 
 
 .. _MSYS2: https://msys2.github.io/
-
+.. _cmake: https://cmake.org/download/
+.. _ninja: https://ninja-build.org/
+.. _Python: https://www.python.org/downloads/windows/
+.. _Git for Windows: https://gitforwindows.org/
+.. _mconf-idf: https://github.com/espressif/kconfig-frontends/releases/
+.. _Github Desktop: https://desktop.github.com/
