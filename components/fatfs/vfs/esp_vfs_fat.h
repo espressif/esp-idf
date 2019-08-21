@@ -56,20 +56,6 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
  *
  * @note FATFS structure returned by esp_vfs_fat_register is destroyed after
  *       this call. Make sure to call f_mount function to unmount it before
- *       calling esp_vfs_fat_unregister.
- *       This function is left for compatibility and will be changed in
- *       future versions to accept base_path and replace the method below
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if FATFS is not registered in VFS
- */
-esp_err_t esp_vfs_fat_unregister() __attribute__((deprecated));
-
-/**
- * @brief Un-register FATFS from VFS
- *
- * @note FATFS structure returned by esp_vfs_fat_register is destroyed after
- *       this call. Make sure to call f_mount function to unmount it before
  *       calling esp_vfs_fat_unregister_ctx.
  *       Difference between this function and the one above is that this one
  *       will release the correct drive, while the one above will release
