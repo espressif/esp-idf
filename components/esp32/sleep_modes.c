@@ -360,8 +360,6 @@ esp_err_t esp_light_sleep_start()
     return err;
 }
 
-void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
-
 esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 {
     // For most of sources it is enough to set trigger mask in local

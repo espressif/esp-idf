@@ -295,16 +295,6 @@ esp_err_t esp_light_sleep_start();
  */
 void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
 
-/**
- * @brief Enter deep-sleep mode
- *
- * Function has been renamed to esp_deep_sleep.
- * This name is deprecated and will be removed in a future version.
- *
- * @param time_in_us  deep-sleep time, unit: microsecond
- */
-void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated));
-
 
 /**
  * @brief Get the wakeup source which caused wakeup from sleep
