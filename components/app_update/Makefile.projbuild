@@ -40,9 +40,6 @@ read_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_pytho
 	--partition-table-offset $(partition_table_offset) \ 
 	read_otadata
 
-erase_ota: erase_otadata
-	@echo "WARNING: erase_ota is deprecated. Use erase_otadata instead."
-
 all: blank_ota_data
 flash: blank_ota_data
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
