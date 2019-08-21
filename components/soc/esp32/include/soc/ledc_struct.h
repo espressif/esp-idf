@@ -79,11 +79,6 @@ typedef volatile struct ledc_dev_s {
                     uint32_t low_speed_update:  1;     /*This bit is only useful for low speed timer channels, reserved for high speed timers*/
                     uint32_t reserved26:        5;
                 };
-                struct {
-                    uint32_t bit_num:           5 __attribute__((deprecated));  /*Deprecated in ESP-IDF 3.0. This is an alias to 'duty_resolution' for backward compatibility with ESP-IDF 2.1.*/
-                    uint32_t div_num:          18 __attribute__((deprecated));  /*Deprecated in ESP-IDF 3.0. This is an alias to 'clock_divider' for backward compatibility with ESP-IDF 2.1.*/
-                    uint32_t place_holder:      9 __attribute__((deprecated));  /*A place holder to accommodate deprecated members*/
-                };
                 uint32_t val;
             } conf;
             union {
