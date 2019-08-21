@@ -213,7 +213,6 @@ bool esp_wifi_get_sniffer_internal(void);
 int esp_wifi_set_wps_cb_internal(struct wps_funcs *wps_cb);
 bool esp_wifi_enable_sta_privacy_internal(void);
 uint8_t esp_wifi_get_user_init_flag_internal(void);
-esp_err_t esp_wifi_send_event_internal(system_event_t *evt);
 esp_err_t esp_wifi_internal_supplicant_header_md5_check(const char *md5);
 int esp_wifi_sta_update_ap_info_internal(void);
 uint8_t *esp_wifi_sta_get_ap_info_prof_pmk_internal(void);

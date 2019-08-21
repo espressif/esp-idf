@@ -6,7 +6,6 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-#include "esp_event_loop.h"
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "esp_vfs_semihost.h"

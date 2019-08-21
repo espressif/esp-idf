@@ -32,8 +32,6 @@ do{\
     }\
 } while(0)
 
-typedef esp_err_t (*system_event_handler_t)(system_event_t *e);
-
 static void handle_ap_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_ap_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
@@ -79,13 +77,12 @@ static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event
         tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_ETH, &eth_ip);
 
         if (!(ip4_addr_isany_val(eth_ip.ip) || ip4_addr_isany_val(eth_ip.netmask))) {
-            system_event_t evt;
+            ip_event_got_ip_t evt;
 
             //notify event
-            evt.event_id = SYSTEM_EVENT_ETH_GOT_IP;
-            memcpy(&evt.event_info.got_ip.ip_info, &eth_ip, sizeof(tcpip_adapter_ip_info_t));
-
-            esp_event_send(&evt);
+            evt.if_index = TCPIP_ADAPTER_IF_ETH;
+            memcpy(&evt.ip_info, &eth_ip, sizeof(tcpip_adapter_ip_info_t));
+            API_CALL_CHECK("handle_eth_connected", esp_event_send_internal(IP_EVENT, IP_EVENT_ETH_GOT_IP, &evt, sizeof(evt), 0), ESP_OK);
         } else {
             ESP_LOGE(TAG, "invalid static ip");
         }
@@ -171,20 +168,21 @@ static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event
         tcpip_adapter_get_old_ip_info(TCPIP_ADAPTER_IF_STA, &sta_old_ip);
 
         if (!(ip4_addr_isany_val(sta_ip.ip) || ip4_addr_isany_val(sta_ip.netmask))) {
-            system_event_t evt;
+            
+            ip_event_got_ip_t evt;
 
-            evt.event_id = SYSTEM_EVENT_STA_GOT_IP;
-            evt.event_info.got_ip.ip_changed = false;
+            evt.if_index = TCPIP_ADAPTER_IF_STA;
+            evt.ip_changed = false;
 
             if (memcmp(&sta_ip, &sta_old_ip, sizeof(sta_ip))) {
-                evt.event_info.got_ip.ip_changed = true;
+                evt.ip_changed = true;
             }
 
-            memcpy(&evt.event_info.got_ip.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
+            memcpy(&evt.ip_info, &sta_ip, sizeof(tcpip_adapter_ip_info_t));
             tcpip_adapter_set_old_ip_info(TCPIP_ADAPTER_IF_STA, &sta_ip);
 
-            esp_event_send(&evt);
-            ESP_LOGD(TAG, "static ip: ip changed=%d", evt.event_info.got_ip.ip_changed);
+            API_CALL_CHECK("handle_sta_connected", esp_event_send_internal(IP_EVENT, IP_EVENT_STA_GOT_IP, &evt, sizeof(evt), 0), ESP_OK);
+            ESP_LOGD(TAG, "static ip: ip changed=%d", evt.ip_changed);
         } else {
             ESP_LOGE(TAG, "invalid static ip");
         }

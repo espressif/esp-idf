@@ -6,7 +6,7 @@
 #include "driver/dac.h"
 #include "unity.h"
 #include "esp_system.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -17,27 +17,56 @@ static const char* TAG = "test_adc2";
 #define DEFAULT_SSID "TEST_SSID"
 #define DEFAULT_PWD "TEST_PASS"
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
 {
     printf("ev_handle_called.\n");
-    switch(event->event_id) {
-        case SYSTEM_EVENT_STA_START:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+    switch(event_id) {
+        case WIFI_EVENT_STA_START:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
     //do not actually connect in test case
             //;
             break;
-        case SYSTEM_EVENT_STA_GOT_IP:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n",
-            ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-            break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
+        case WIFI_EVENT_STA_DISCONNECTED:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
             TEST_ESP_OK(esp_wifi_connect());
             break;
         default:
             break;
     }
+    return ;
+}
+
+static void ip_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    ip_event_got_ip_t *event;
+    printf("ev_handle_called.\n");
+    switch(event_id) {
+        case IP_EVENT_STA_GOT_IP:
+            event = (ip_event_got_ip_t*)event_data;
+            ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
+            ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
+            break;
+        default:
+            break;
+    }
+
+    return ;
+}
+
+static int event_init(void)
+{
+    TEST_ESP_OK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &ip_event_handler, NULL));
+    return ESP_OK;
+}
+
+static int event_deinit(void)
+{
+    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler));
+    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &ip_event_handler));
     return ESP_OK;
 }
 
@@ -66,7 +95,7 @@ TEST_CASE("adc2 work with wifi","[adc]")
     } 
     TEST_ESP_OK( r);
     tcpip_adapter_init();
-    TEST_ESP_OK(esp_event_loop_init(event_handler, NULL));
+    event_init();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config = {
@@ -100,6 +129,7 @@ TEST_CASE("adc2 work with wifi","[adc]")
     printf("wifi stop...\n");
     TEST_ESP_OK( esp_wifi_stop() );
     TEST_ESP_OK(esp_wifi_deinit());
+    event_deinit();
     nvs_flash_deinit();
 
     //test read value
