@@ -281,7 +281,7 @@ typedef struct {
  * @brief Parent connected information
  */
 typedef struct {
-    system_event_sta_connected_t connected; /**< parent information, same as Wi-Fi event SYSTEM_EVENT_STA_CONNECTED does */
+    wifi_event_sta_connected_t connected; /**< parent information, same as Wi-Fi event SYSTEM_EVENT_STA_CONNECTED does */
     uint8_t self_layer;                     /**< layer */
 } mesh_event_connected_t;
 
@@ -325,11 +325,6 @@ typedef struct {
 } mesh_event_find_network_t;
 
 /**
- * @brief IP settings from LwIP stack
- */
-typedef system_event_sta_got_ip_t mesh_event_root_got_ip_t;
-
-/**
  * @brief Root address
  */
 typedef mesh_addr_t mesh_event_root_address_t;
@@ -337,17 +332,17 @@ typedef mesh_addr_t mesh_event_root_address_t;
 /**
  * @brief Parent disconnected information
  */
-typedef system_event_sta_disconnected_t mesh_event_disconnected_t;
+typedef wifi_event_sta_disconnected_t mesh_event_disconnected_t;
 
 /**
  * @brief Child connected information
  */
-typedef system_event_ap_staconnected_t mesh_event_child_connected_t;
+typedef wifi_event_ap_staconnected_t mesh_event_child_connected_t;
 
 /**
  * @brief Child disconnected information
  */
-typedef system_event_ap_stadisconnected_t mesh_event_child_disconnected_t;
+typedef wifi_event_ap_stadisconnected_t mesh_event_child_disconnected_t;
 
 /**
  * @brief Root switch request information
@@ -398,7 +393,7 @@ typedef struct {
 /**
  * @brief New router information
  */
-typedef system_event_sta_connected_t mesh_event_router_switch_t;
+typedef wifi_event_sta_connected_t mesh_event_router_switch_t;
 
 /**
  * @brief Mesh event information
@@ -417,7 +412,7 @@ typedef union {
                                                                 packets out. If not, devices had better to wait until this state changes to be
                                                                 MESH_TODS_REACHABLE. */
     mesh_event_vote_started_t vote_started;                /**< vote started */
-    mesh_event_root_got_ip_t got_ip;                       /**< root obtains IP address */
+    //mesh_event_root_got_ip_t got_ip;                       /**< root obtains IP address */
     mesh_event_root_address_t root_addr;                   /**< root address */
     mesh_event_root_switch_req_t switch_req;               /**< root switch request */
     mesh_event_root_conflict_t root_conflict;              /**< other powerful root */
