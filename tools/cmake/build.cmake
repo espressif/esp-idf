@@ -295,7 +295,7 @@ endmacro()
 #
 macro(__build_set_default var default)
     set(_var __${var})
-    if(${_var})
+    if(NOT "${_var}" STREQUAL "")
         idf_build_set_property(${var} "${${_var}}")
     else()
         idf_build_set_property(${var} "${default}")
