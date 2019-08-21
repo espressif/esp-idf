@@ -490,16 +490,6 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     rm -rf esp32
     rm -rf mycomponents
 
-    # idf.py global and subcommand parameters
-    print_status "Cannot set -D twice: for command and subcommand of idf.py (with different values)"
-    idf.py -DAAA=BBB build -DAAA=BBB -DCCC=EEE
-    if [ $? -eq 0 ]; then
-        failure "It shouldn't be allowed to set -D twice (globally and for subcommand) with different set of options"
-    fi
-
-    print_status "Can set -D twice: globally and for subcommand, only if values are the same"
-    idf.py -DAAA=BBB -DCCC=EEE build -DAAA=BBB -DCCC=EEE || failure "It should be allowed to set -D twice (globally and for subcommand) if values are the same"
-
     # idf.py subcommand options, (using monitor with as example)
     print_status "Can set options to subcommands: print_filter for monitor"
     mv ${IDF_PATH}/tools/idf_monitor.py ${IDF_PATH}/tools/idf_monitor.py.tmp
