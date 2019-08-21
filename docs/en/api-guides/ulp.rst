@@ -17,10 +17,9 @@ Installing the toolchain
 
 ULP coprocessor code is written in assembly and compiled using the `binutils-esp32ulp toolchain`_.
 
-1. Download pre-built binaries of the latest toolchain release from:
-https://github.com/espressif/binutils-esp32ulp/releases.
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then the ULP toolchain is already installed.
 
-2. Extract the toolchain into a directory, and add the path to the ``bin/`` directory of the toolchain to the ``PATH`` environment variable.
+If you are using ESP-IDF with the legacy GNU Make based build system, refer to the instructions on this page: :doc:`ulp-legacy`.
 
 Compiling ULP code
 ------------------
