@@ -198,20 +198,6 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
   */
 esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
 
-/** @cond */
-/**
-  * @brief  Read hardware MAC address from efuse.
-  *
-  * Function has been renamed to esp_efuse_mac_get_default.
-  * This name will be removed in a future release.
-  *
-  * @param  mac  hardware MAC address, length: 6 bytes.
-  *
-  * @return ESP_OK on success
-  */
-esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__ ((deprecated));
-/** @endcond */
-
 /**
   * @brief  Read base MAC address and set MAC address of the interface.
   *

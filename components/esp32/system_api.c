@@ -117,8 +117,6 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
     return ESP_OK;
 }
 
-esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
-
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
     uint8_t idx;
