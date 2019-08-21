@@ -141,23 +141,6 @@ esp_err_t esp_task_wdt_delete(TaskHandle_t handle);
   */
 esp_err_t esp_task_wdt_status(TaskHandle_t handle);
 
-/**
-  * @brief      Reset the TWDT on behalf of the current running task, or
-  *             subscribe the TWDT to if it has not done so already
-  *
-  * @warning    This function is deprecated, use esp_task_wdt_add() and
-  *             esp_task_wdt_reset() instead
-  *
-  * This function is similar to esp_task_wdt_reset() and will reset the TWDT on
-  * behalf of the current running task. However if this task has not subscribed
-  * to the TWDT, this function will automatically subscribe the task. Therefore,
-  * an unsubscribed task will subscribe to the TWDT on its first call to this
-  * function, then proceed to reset the TWDT on subsequent calls of this
-  * function.
-  */
-void esp_task_wdt_feed() __attribute__ ((deprecated));
-
-
 #ifdef __cplusplus
 }
 #endif
