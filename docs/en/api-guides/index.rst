@@ -34,4 +34,5 @@ API Guides
     ULP Coprocessor <ulp>
     Unit Testing (Legacy GNU Make) <unit-tests-legacy>
     Unit Testing <unit-tests>
+    LwIP <lwip>
     WiFi Driver <wifi>
