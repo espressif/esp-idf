@@ -208,13 +208,6 @@ int esp_internal_aes_encrypt( esp_aes_context *ctx,
     return r;
 }
 
-void esp_aes_encrypt( esp_aes_context *ctx,
-        const unsigned char input[16],
-        unsigned char output[16] )
-{
-    esp_internal_aes_encrypt(ctx, input, output);
-}
-
 /*
  * AES-ECB block decryption
  */
@@ -235,13 +228,6 @@ int esp_internal_aes_decrypt( esp_aes_context *ctx,
     r = esp_aes_block(ctx, input, output);
     esp_aes_release_hardware();
     return r;
-}
-
-void esp_aes_decrypt( esp_aes_context *ctx,
-                      const unsigned char input[16],
-                      unsigned char output[16] )
-{
-    esp_internal_aes_decrypt(ctx, input, output);
 }
 
 /*

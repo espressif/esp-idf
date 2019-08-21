@@ -332,9 +332,6 @@ int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
  */
 int esp_internal_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
 
-/** Deprecated, see esp_aes_internal_encrypt */
-void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
-
 /**
  * \brief           Internal AES block decryption function
  *                  (Only exposed to allow overriding it,
@@ -345,9 +342,6 @@ void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsig
  * \param output    Output (plaintext) block
  */
 int esp_internal_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
-
-/** Deprecated, see esp_aes_internal_decrypt */
-void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
 
 /** AES-XTS buffer encryption/decryption */
 int esp_aes_crypt_xts( esp_aes_xts_context *ctx, int mode, size_t length, const unsigned char data_unit[16], const unsigned char *input, unsigned char *output );
