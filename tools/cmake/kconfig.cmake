@@ -30,8 +30,28 @@ function(__kconfig_init)
                     "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf-idf. "
                     "Consult the setup docs for ESP-IDF on Windows.")
             endif()
-        elseif(WINPTY)
-            set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
+        else()
+            execute_process(COMMAND "${MCONF}" -v
+                RESULT_VARIABLE mconf_res
+                OUTPUT_VARIABLE mconf_out
+                ERROR_VARIABLE mconf_err)
+            if(${mconf_res})
+                message(WARNING "Failed to detect version of mconf-idf. Return code was ${mconf_res}.")
+            else()
+                string(STRIP "${mconf_out}" mconf_out)
+                set(mconf_expected_ver "mconf-v4.6.0.0-idf-20190628-win32")
+                if(NOT ${mconf_out} STREQUAL "mconf-idf version ${mconf_expected_ver}")
+                    message(WARNING "Unexpected ${mconf_out}. Expected ${mconf_expected_ver}. "
+                                    "Please check the ESP-IDF Getting Started guide for version "
+                                    "${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH} "
+                                    "to correct this issue")
+                else()
+                    message(STATUS "${mconf_out}")   # prints: mconf-idf version ....
+                endif()
+            endif()
+            if(WINPTY)
+                set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
+            endif()
         endif()
     endif()
 
@@ -47,7 +67,7 @@ function(__kconfig_init)
         externalproject_add(mconf-idf
             SOURCE_DIR ${src_path}
             CONFIGURE_COMMAND ""
-            BINARY_DIR "kconfig_bin"
+            BINARY_DIR "${CMAKE_BINARY_DIR}/kconfig_bin"
             BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
             COMMAND make -f ${src_path}/Makefile mconf-idf
             BUILD_BYPRODUCTS ${MCONF}
@@ -72,6 +92,7 @@ function(__kconfig_init)
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_set_property(__ROOT_KCONFIG ${idf_path}/Kconfig)
+    idf_build_set_property(__ROOT_SDKCONFIG_RENAME ${idf_path}/sdkconfig.rename)
     idf_build_set_property(__OUTPUT_SDKCONFIG 1)
 endfunction()
 
@@ -86,6 +107,8 @@ function(__kconfig_component_init component_target)
     __component_set_property(${component_target} KCONFIG "${kconfig}")
     file(GLOB kconfig "${component_dir}/Kconfig.projbuild")
     __component_set_property(${component_target} KCONFIG_PROJBUILD "${kconfig}")
+    file(GLOB sdkconfig_rename "${component_dir}/sdkconfig.rename")
+    __component_set_property(${component_target} SDKCONFIG_RENAME "${sdkconfig_rename}")
 endfunction()
 
 #
@@ -100,11 +123,15 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         if(component_target IN_LIST build_component_targets)
             __component_get_property(kconfig ${component_target} KCONFIG)
             __component_get_property(kconfig_projbuild ${component_target} KCONFIG_PROJBUILD)
+            __component_get_property(sdkconfig_rename ${component_target} SDKCONFIG_RENAME)
             if(kconfig)
                 list(APPEND kconfigs ${kconfig})
             endif()
             if(kconfig_projbuild)
                 list(APPEND kconfig_projbuilds ${kconfig_projbuild})
+            endif()
+            if(sdkconfig_rename)
+                list(APPEND sdkconfig_renames ${sdkconfig_rename})
             endif()
         endif()
     endforeach()
@@ -118,6 +145,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     string(REPLACE ";" " " kconfigs "${kconfigs}")
     string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
+    string(REPLACE ";" " " sdkconfig_renames "${sdkconfig_renames}")
 
     # Place config-related environment arguments into config.env file
     # to work around command line length limits for execute_process
@@ -135,11 +163,13 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     endif()
 
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
+    idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
     idf_build_get_property(python PYTHON)
 
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
         --kconfig ${root_kconfig}
+        --sdkconfig-rename ${root_sdkconfig_rename}
         --config ${sdkconfig}
         ${defaults_arg}
         --env-file ${config_env_path})
@@ -231,6 +261,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
         --env-file ${config_env_path}
         --kconfig ${IDF_PATH}/Kconfig
+        --sdkconfig-rename ${root_sdkconfig_rename}
         --config ${sdkconfig}
         VERBATIM
         USES_TERMINAL)

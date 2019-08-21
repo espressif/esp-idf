@@ -19,17 +19,19 @@ set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
 # Add port files to mbedtls targets
-target_sources(mbedtls PRIVATE "${COMPONENT_DIR}/port/esp_bignum.c"
+target_sources(mbedtls PRIVATE  "${COMPONENT_DIR}/port/mbedtls_debug.c"
+                                "${COMPONENT_DIR}/port/net_sockets.c")
+
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_bignum.c"
                                 "${COMPONENT_DIR}/port/esp_hardware.c"
-                                "${COMPONENT_PATH}/port/esp_sha.c"
+                                "${COMPONENT_DIR}/port/esp_mem.c"
+                                "${COMPONENT_DIR}/port/esp_sha.c"
                                 "${COMPONENT_DIR}/port/esp_sha1.c"
                                 "${COMPONENT_DIR}/port/esp_sha256.c"
                                 "${COMPONENT_DIR}/port/esp_sha512.c"
-                                "${COMPONENT_DIR}/port/mbedtls_debug.c"
-                                "${COMPONENT_DIR}/port/net_sockets.c"
+                                "${COMPONENT_DIR}/port/esp_timing.c"
                                 "${COMPONENT_DIR}/port/esp32/aes.c"
                                 "${COMPONENT_DIR}/port/esp32/sha.c")
-target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_mem.c")
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")

@@ -15,16 +15,22 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/sha1.h"
-#include "crypto/sha1_i.h"
-#include "crypto/md5.h"
-#include "crypto/crypto.h"
+#include "sha1.h"
+#include "sha1_i.h"
+#include "md5.h"
+#include "crypto.h"
+
+#ifdef USE_MBEDTLS_CRYPTO
+#include "mbedtls/sha1.h"
+#endif
 
 typedef struct SHA1Context SHA1_CTX;
 
 void SHA1Transform(u32 state[5], const unsigned char buffer[64]);
 
 
+
+#ifndef USE_MBEDTLS_CRYPTO
 /**
  * sha1_vector - SHA-1 hash for data vector
  * @num_elem: Number of elements in the data vector
@@ -45,7 +51,49 @@ sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 	SHA1Final(mac, &ctx);
 	return 0;
 }
+#else 
+/**
+ * sha1_vector - SHA-1 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 of failure
+ */
+int
+sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
+{
+    mbedtls_sha1_context ctx;
+	size_t i;
+    int ret;
 
+    mbedtls_sha1_init( &ctx );
+
+    if ((ret = mbedtls_sha1_starts_ret( &ctx)) != 0) {
+        goto exit;
+    }
+
+
+    for (i = 0; i < num_elem; i++) {
+        if ((ret = mbedtls_sha1_update_ret(&ctx, addr[i], len[i])) != 0) {
+            goto exit;
+        }
+    }
+ 
+    if ((ret = mbedtls_sha1_finish_ret( &ctx, mac)) != 0) {
+        goto exit;
+    }
+
+exit:
+    mbedtls_sha1_free( &ctx );
+
+    if (ret) {
+        return -1;
+    }
+
+    return 0;
+}
+#endif
 
 /* ===== start - public domain SHA1 implementation ===== */
 
@@ -309,5 +357,4 @@ SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 	os_memset(context->count, 0, 8);
 	os_memset(finalcount, 0, 8);
 }
-
 /* ===== end - public domain SHA1 implementation ===== */

@@ -46,20 +46,22 @@ extern "C" {
  * @{
  */
 
-#define OPCODE_WR_REG 1         /*!< Instruction: write peripheral register (RTC_CNTL/RTC_IO/SARADC) (not implemented yet) */
+#define OPCODE_WR_REG 1         /*!< Instruction: write peripheral register (RTC_CNTL/RTC_IO/SARADC) */
 
-#define OPCODE_RD_REG 2         /*!< Instruction: read peripheral register (RTC_CNTL/RTC_IO/SARADC) (not implemented yet) */
+#define OPCODE_RD_REG 2         /*!< Instruction: read peripheral register (RTC_CNTL/RTC_IO/SARADC) */
 
 #define RD_REG_PERIPH_RTC_CNTL 0    /*!< Identifier of RTC_CNTL peripheral for RD_REG and WR_REG instructions */
 #define RD_REG_PERIPH_RTC_IO   1    /*!< Identifier of RTC_IO peripheral for RD_REG and WR_REG instructions */
 #define RD_REG_PERIPH_SENS     2    /*!< Identifier of SARADC peripheral for RD_REG and WR_REG instructions */
 #define RD_REG_PERIPH_RTC_I2C  3    /*!< Identifier of RTC_I2C peripheral for RD_REG and WR_REG instructions */
 
-#define OPCODE_I2C 3            /*!< Instruction: read/write I2C (not implemented yet) */
+#define OPCODE_I2C 3            /*!< Instruction: read/write I2C */
+#define SUB_OPCODE_I2C_RD 0     /*!< I2C read */
+#define SUB_OPCODE_I2C_WR 1     /*!< I2C write */
 
 #define OPCODE_DELAY 4          /*!< Instruction: delay (nop) for a given number of cycles */
 
-#define OPCODE_ADC 5            /*!< Instruction: SAR ADC measurement (not implemented yet) */
+#define OPCODE_ADC 5            /*!< Instruction: SAR ADC measurement */
 
 #define OPCODE_ST 6             /*!< Instruction: store indirect to RTC memory */
 #define SUB_OPCODE_ST 4         /*!< Store 32 bits, 16 MSBs contain PC, 16 LSBs contain value from source register */
@@ -67,7 +69,7 @@ extern "C" {
 #define OPCODE_ALU 7            /*!< Arithmetic instructions */
 #define SUB_OPCODE_ALU_REG 0    /*!< Arithmetic instruction, both source values are in register */
 #define SUB_OPCODE_ALU_IMM 1    /*!< Arithmetic instruction, one source value is an immediate */
-#define SUB_OPCODE_ALU_CNT 2    /*!< Arithmetic instruction between counter register and an immediate (not implemented yet)*/
+#define SUB_OPCODE_ALU_CNT 2    /*!< Arithmetic instruction, stage counter and an immediate */
 #define ALU_SEL_ADD 0           /*!< Addition */
 #define ALU_SEL_SUB 1           /*!< Subtraction */
 #define ALU_SEL_AND 2           /*!< Logical AND */
@@ -75,21 +77,29 @@ extern "C" {
 #define ALU_SEL_MOV 4           /*!< Copy value (immediate to destination register or source register to destination register */
 #define ALU_SEL_LSH 5           /*!< Shift left by given number of bits */
 #define ALU_SEL_RSH 6           /*!< Shift right by given number of bits */
+#define ALU_SEL_SINC  0         /*!< Increment the stage counter */
+#define ALU_SEL_SDEC  1         /*!< Decrement the stage counter */
+#define ALU_SEL_SRST  2         /*!< Reset the stage counter */
 
 #define OPCODE_BRANCH 8         /*!< Branch instructions */
 #define SUB_OPCODE_BX  0        /*!< Branch to absolute PC (immediate or in register) */
+#define SUB_OPCODE_BR  1        /*!< Branch to relative PC, conditional on R0 */
+#define SUB_OPCODE_BS  2        /*!< Branch to relative PC, conditional on the stage counter */
 #define BX_JUMP_TYPE_DIRECT 0   /*!< Unconditional jump */
 #define BX_JUMP_TYPE_ZERO 1     /*!< Branch if last ALU result is zero */
 #define BX_JUMP_TYPE_OVF 2      /*!< Branch if last ALU operation caused and overflow */
 #define SUB_OPCODE_B  1         /*!< Branch to a relative offset */
 #define B_CMP_L 0               /*!< Branch if R0 is less than an immediate */
 #define B_CMP_GE 1              /*!< Branch if R0 is greater than or equal to an immediate */
+#define JUMPS_LT 0              /*!< Branch if the stage counter < */
+#define JUMPS_GE 1              /*!< Branch if the stage counter >= */
+#define JUMPS_LE 2              /*!< Branch if the stage counter <= */
 
 #define OPCODE_END 9            /*!< Stop executing the program */
 #define SUB_OPCODE_END 0        /*!< Stop executing the program and optionally wake up the chip */
 #define SUB_OPCODE_SLEEP 1      /*!< Stop executing the program and run it again after selected interval */
 
-#define OPCODE_TSENS 10         /*!< Instruction: temperature sensor measurement (not implemented yet) */
+#define OPCODE_TSENS 10         /*!< Instruction: temperature sensor measurement */
 
 #define OPCODE_HALT 11          /*!< Halt the coprocessor */
 
@@ -98,6 +108,7 @@ extern "C" {
 #define OPCODE_MACRO 15         /*!< Not a real opcode. Used to identify labels and branches in the program */
 #define SUB_OPCODE_MACRO_LABEL 0    /*!< Label macro */
 #define SUB_OPCODE_MACRO_BRANCH 1   /*!< Branch macro */
+#define SUB_OPCODE_MACRO_LABELPC 2  /*!< Label pointer macro */
 /**@}*/
 
 /**@{*/
@@ -173,7 +184,17 @@ typedef union {
         uint32_t sign : 1;          /*!< Sign of target PC offset: 0: positive, 1: negative */
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_B) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
-    } b;                            /*!< Format of BRANCH instruction (relative address) */
+    } b;                            /*!< Format of BRANCH instruction (relative address, conditional on R0) */
+
+    struct {
+        uint32_t imm : 8;           /*!< Immediate value to compare against */
+        uint32_t unused : 7;        /*!< Unused */
+        uint32_t cmp : 2;           /*!< Comparison to perform: JUMPS_LT, JUMPS_GE or JUMPS_LE */
+        uint32_t offset : 7;        /*!< Absolute value of target PC offset w.r.t. current PC, expressed in words */
+        uint32_t sign : 1;          /*!< Sign of target PC offset: 0: positive, 1: negative */
+        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_BS) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
+    } bs;                           /*!< Format of BRANCH instruction (relative address, conditional on the stage counter) */
 
     struct {
         uint32_t dreg : 2;          /*!< Destination register */
@@ -184,6 +205,15 @@ typedef union {
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_REG) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
     } alu_reg;                      /*!< Format of ALU instruction (both sources are registers) */
+
+    struct {
+        uint32_t unused1 : 4;       /*!< Unused */
+        uint32_t imm : 8;           /*!< Immediate value of operand */
+        uint32_t unused2 : 9;       /*!< Unused */
+        uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_Sxxx */
+        uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_CNT) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
+    } alu_reg_s;                    /*!< Format of ALU instruction (stage counter and an immediate) */
 
     struct {
         uint32_t dreg : 2;          /*!< Destination register */
@@ -232,10 +262,10 @@ typedef union {
 
     struct {
         uint32_t i2c_addr : 8;      /*!< I2C slave address */
-        uint32_t data : 8;          /*!< Data to read or write */
-        uint32_t low_bits : 3;      /*!< TBD */
-        uint32_t high_bits : 3;     /*!< TBD */
-        uint32_t i2c_sel : 4;       /*!< TBD, select reg_i2c_slave_address[7:0] */
+        uint32_t data : 8;          /*!< 8 bits of data for write operation */
+        uint32_t low_bits : 3;      /*!< low bit of range for write operation (lower bits are masked) */
+        uint32_t high_bits : 3;     /*!< high bit of range for write operation (higher bits are masked) */
+        uint32_t i2c_sel : 4;       /*!< index of slave address register [7:0] */
         uint32_t unused : 1;        /*!< Unused */
         uint32_t rw : 1;            /*!< Write (1) or read (0) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_I2C) */
@@ -256,11 +286,14 @@ typedef union {
     } sleep;                        /*!< Format of END instruction with sleep */
 
     struct {
+        uint32_t dreg : 2;          /*!< Destination register (for SUB_OPCODE_MACRO_LABELPC) > */
         uint32_t label : 16;        /*!< Label number */
-        uint32_t unused : 8;        /*!< Unused */
-        uint32_t sub_opcode : 4;    /*!< SUB_OPCODE_MACRO_LABEL or SUB_OPCODE_MACRO_BRANCH */
+        uint32_t unused : 6;        /*!< Unused */
+        uint32_t sub_opcode : 4;    /*!< SUB_OPCODE_MACRO_LABEL or SUB_OPCODE_MACRO_BRANCH or SUB_OPCODE_MACRO_LABELPC */
         uint32_t opcode: 4;         /*!< Opcode (OPCODE_MACRO) */
-    } macro;                        /*!< Format of tokens used by LABEL and BRANCH macros */
+    } macro;                        /*!< Format of tokens used by MACROs */
+
+    uint32_t instruction;           /*!< Encoded instruction for ULP coprocessor */
 
 } ulp_insn_t;
 
@@ -763,6 +796,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * below.
  */
 #define M_LABEL(label_num) { .macro = { \
+    .dreg = 0, \
     .label = label_num, \
     .unused = 0, \
     .sub_opcode = SUB_OPCODE_MACRO_LABEL, \
@@ -772,10 +806,34 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * Token macro used by M_B and M_BX macros. Not to be used directly.
  */
 #define M_BRANCH(label_num) { .macro = { \
+    .dreg = 0, \
     .label = label_num, \
     .unused = 0, \
     .sub_opcode = SUB_OPCODE_MACRO_BRANCH, \
     .opcode = OPCODE_MACRO } }
+
+/**
+ * Token macro used by M_MOVL macro. Not to be used directly.
+ */
+#define M_LABELPC(label_num) { .macro = { \
+    .dreg = 0, \
+    .label = label_num, \
+    .unused = 0, \
+    .sub_opcode = SUB_OPCODE_MACRO_LABELPC, \
+    .opcode = OPCODE_MACRO } }
+
+/**
+ * Macro: Move the program counter at the given label into the register.
+ * This address can then be used with I_BXR, I_BXZR, I_BXFR, etc.
+ *
+ * This macro generates two ulp_insn_t values separated by a comma, and should
+ * be used when defining contents of ulp_insn_t arrays. First value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_MOVL(reg_dest, label_num) \
+    M_LABELPC(label_num), \
+    I_MOVI(reg_dest, 0)
 
 /**
  * Macro: branch to label label_num if R0 is less than immediate value.
@@ -837,7 +895,154 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     M_BRANCH(label_num), \
     I_BXFI(0)
 
+/**
+ * Increment the stage counter by immediate value
+ */
+#define I_STAGE_INC(imm_) { .alu_reg_s = { \
+    .unused1 = 0, \
+    .imm = imm_, \
+    .unused2 = 0, \
+    .sel = ALU_SEL_SINC, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
 
+/**
+ * Decrement the stage counter by immediate value
+ */
+#define I_STAGE_DEC(imm_) { .alu_reg_s = { \
+    .unused1 = 0, \
+    .imm = imm_, \
+    .unused2 = 0, \
+    .sel = ALU_SEL_SDEC, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+
+/**
+ * Reset the stage counter
+ */
+#define I_STAGE_RST() { .alu_reg_s = { \
+    .unused1 = 0, \
+    .imm = 0, \
+    .unused2 = 0, \
+    .sel = ALU_SEL_SRST, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+
+/**
+ * Macro: branch to label if the stage counter is less than immediate value
+ *
+ * This macro generates two ulp_insn_t values separated by a comma, and should
+ * be used when defining contents of ulp_insn_t arrays. First value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_BSLT(label_num, imm_value) \
+    M_BRANCH(label_num), \
+    I_JUMPS(0, imm_value, JUMPS_LT)
+
+/**
+ * Macro: branch to label if the stage counter is greater than or equal to immediate value
+ *
+ * This macro generates two ulp_insn_t values separated by a comma, and should
+ * be used when defining contents of ulp_insn_t arrays. First value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_BSGE(label_num, imm_value) \
+    M_BRANCH(label_num), \
+    I_JUMPS(0, imm_value, JUMPS_GE)
+
+/**
+ * Macro: branch to label if the stage counter is less than or equal to immediate value
+ *
+ * This macro generates two ulp_insn_t values separated by a comma, and should
+ * be used when defining contents of ulp_insn_t arrays. First value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_BSLE(label_num, imm_value) \
+    M_BRANCH(label_num), \
+    I_JUMPS(0, imm_value, JUMPS_LE)
+
+/**
+ * Macro: branch to label if the stage counter is equal to immediate value.
+ *  Implemented using two JUMPS instructions:
+ *      JUMPS next, imm_value, LT
+ *      JUMPS label_num, imm_value, LE
+ *
+ * This macro generates three ulp_insn_t values separated by commas, and should
+ * be used when defining contents of ulp_insn_t arrays. Second value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_BSEQ(label_num, imm_value) \
+    I_JUMPS(2, imm_value, JUMPS_LT), \
+    M_BRANCH(label_num), \
+    I_JUMPS(0, imm_value, JUMPS_LE)
+
+/**
+ * Macro: branch to label if the stage counter is greater than immediate value.
+ *  Implemented using two instructions:
+ *      JUMPS next, imm_value, LE
+ *      JUMPS label_num, imm_value, GE
+ *
+ * This macro generates three ulp_insn_t values separated by commas, and should
+ * be used when defining contents of ulp_insn_t arrays. Second value is not a
+ * real instruction; it is a token which is removed by ulp_process_macros_and_load
+ * function.
+ */
+#define M_BSGT(label_num, imm_value) \
+    I_JUMPS(2, imm_value, JUMPS_LE), \
+    M_BRANCH(label_num), \
+    I_JUMPS(0, imm_value, JUMPS_GE)
+
+/**
+ *  Branch relative if (stage counter [comp_type] [imm_value]) evaluates to true.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is an 8-bit value to compare the stage counter against
+ *  comp_type is the type of comparison to perform: JUMPS_LT (<), JUMPS_GE (>=) or JUMPS_LE (<=)
+ */
+#define I_JUMPS(pc_offset, imm_value, comp_type) { .bs = { \
+    .imm = imm_value, \
+    .unused = 0, \
+    .cmp = comp_type, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_BS, \
+    .opcode = OPCODE_BRANCH } }
+
+/**
+ *  Perform an I2C transaction with a slave device.
+ *  I_I2C_READ and I_I2C_WRITE are provided for convenience, instead of using this directly.
+ * 
+ *  Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
+ *  For read operations, 8 bits of read result is stored into R0 register.
+ *  For write operations, val will be written to sub_addr at [high_bit:low_bit]. Bits outside of this range are masked.
+ */
+#define I_I2C_RW(sub_addr, val, low_bit, high_bit, slave_sel, rw_bit) { .i2c = {\
+        .i2c_addr = sub_addr, \
+        .data = val, \
+        .low_bits = low_bit, \
+        .high_bits = high_bit, \
+        .i2c_sel = slave_sel, \
+        .unused = 0, \
+        .rw = rw_bit, \
+        .opcode = OPCODE_I2C } }
+
+/**
+ * Read a byte from the sub address of an I2C slave, and store the result in R0.
+ * 
+ * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel. 
+ */
+#define I_I2C_READ(slave_sel, sub_addr) I_I2C_RW(sub_addr, 0, 0, 0, slave_sel, SUB_OPCODE_I2C_RD)
+
+/**
+ * Write a byte to the sub address of an I2C slave.
+ * 
+ * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel.
+ */
+#define I_I2C_WRITE(slave_sel, sub_addr, val) I_I2C_RW(sub_addr, val, 0, 7, slave_sel, SUB_OPCODE_I2C_WR)
 
 #define RTC_SLOW_MEM ((uint32_t*) 0x50000000)       /*!< RTC slow memory, 8k size */
 

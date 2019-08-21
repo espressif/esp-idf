@@ -62,6 +62,8 @@ esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_d
  ******************************************************************************/
 
 /**
+ * @brief Read the Status Register read from RDSR (05h).
+ *
  * High speed implementation of RDID through memspi interface relying on the
  * ``common_command``.
  *

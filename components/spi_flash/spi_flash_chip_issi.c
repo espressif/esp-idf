@@ -57,9 +57,8 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .sector_size = 4 * 1024,
     .block_erase_size = 64 * 1024,
 
-    // TODO: support get/set chip write protect for ISSI flash
-    .get_chip_write_protect = NULL,
-    .set_chip_write_protect = NULL,
+    .get_chip_write_protect = spi_flash_chip_generic_get_write_protect,
+    .set_chip_write_protect = spi_flash_chip_generic_set_write_protect,
 
     // TODO support protected regions on ISSI flash
     .num_protectable_regions = 0,
@@ -73,7 +72,6 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .page_size = 256,
     .write_encrypted = spi_flash_chip_generic_write_encrypted,
 
-    .set_write_protect = spi_flash_chip_generic_write_enable,
     .wait_idle = spi_flash_chip_generic_wait_idle,
     .set_read_mode = spi_flash_chip_issi_set_read_mode,
 };

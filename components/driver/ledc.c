@@ -19,6 +19,7 @@
 #include "soc/gpio_periph.h"
 #include "driver/ledc.h"
 #include "soc/ledc_periph.h"
+#include "soc/rtc.h"
 #include "esp_log.h"
 
 static const char* LEDC_TAG = "ledc";
@@ -51,11 +52,16 @@ static ledc_isr_handle_t s_ledc_fade_isr_handle = NULL;
 #define LEDC_VAL_NO_CHANGE        (-1)
 #define LEDC_STEP_NUM_MAX         (1023)
 #define LEDC_DUTY_DECIMAL_BIT_NUM (4)
+#define DELAY_CLK8M_CLK_SWITCH    (5)
+#define SLOW_CLK_CYC_CALIBRATE    (13)
 #define LEDC_HPOINT_VAL_MAX       (LEDC_HPOINT_HSCH1_V)
 #define LEDC_FADE_TOO_SLOW_STR    "LEDC FADE TOO SLOW"
 #define LEDC_FADE_TOO_FAST_STR    "LEDC FADE TOO FAST"
 static const char *LEDC_FADE_SERVICE_ERR_STR = "LEDC fade service not installed";
 static const char *LEDC_FADE_INIT_ERROR_STR = "LEDC fade channel init error, not enough memory or service not installed";
+
+//This value will be calibrated when in use.
+static uint32_t s_ledc_slow_clk_8M = 0;
 
 static void ledc_ls_timer_update(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
 {
@@ -69,6 +75,23 @@ static IRAM_ATTR void ledc_ls_channel_update(ledc_mode_t speed_mode, ledc_channe
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
         LEDC.channel_group[speed_mode].channel[channel_num].conf0.low_speed_update = 1;
     }
+}
+
+//We know that CLK8M is about 8M, but don't know the actual value. So we need to do a calibration.
+static bool ledc_slow_clk_calibrate(void)
+{
+    //Enable CLK8M for LEDC
+    SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+    //Waiting for CLK8M to turn on
+    ets_delay_us(DELAY_CLK8M_CLK_SWITCH);
+    uint32_t cal_val = rtc_clk_cal(RTC_CAL_8MD256, SLOW_CLK_CYC_CALIBRATE);
+    if(cal_val == 0) {
+        ESP_LOGE(LEDC_TAG, "CLK8M_CLK calibration failed");
+        return false;
+    }
+    s_ledc_slow_clk_8M = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / cal_val;
+    ESP_LOGD(LEDC_TAG, "Calibrate CLK8M_CLK : %d Hz", s_ledc_slow_clk_8M);
+    return true;
 }
 
 static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, uint32_t channel, ledc_intr_type_t type)
@@ -219,6 +242,60 @@ esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
     return ret;
 }
 
+// Setting the LEDC timer divisor with the given source clock, frequency and resolution.
+static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_clk_cfg_t clk_cfg, int freq_hz, int duty_resolution)
+{
+    uint32_t div_param = 0;
+    uint32_t precision = ( 0x1 << duty_resolution );
+    ledc_clk_src_t timer_clk_src = LEDC_APB_CLK;
+
+    // Calculate the divisor
+    // User specified source clock(RTC8M_CLK) for low speed channel
+    if ((speed_mode == LEDC_LOW_SPEED_MODE) && (clk_cfg == LEDC_USE_RTC8M_CLK)) {
+        if(s_ledc_slow_clk_8M == 0) {
+            if (ledc_slow_clk_calibrate() == false) {
+                goto error;    
+            }
+        }
+        div_param = ( (uint64_t) s_ledc_slow_clk_8M << 8 ) / freq_hz / precision;
+    } else {
+        // Automatically select APB or REF_TICK as the source clock.
+        if (clk_cfg == LEDC_AUTO_CLK) {
+            // Try calculating divisor based on LEDC_APB_CLK
+            div_param = ( (uint64_t) LEDC_APB_CLK_HZ << 8 ) / freq_hz / precision;
+            if (div_param > LEDC_DIV_NUM_HSTIMER0_V) {
+                // APB_CLK results in divisor which too high. Try using REF_TICK as clock source.
+                timer_clk_src = LEDC_REF_TICK;
+                div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
+            } else if (div_param < 256) {
+                // divisor is too low
+                goto error;
+            }
+        // User specified source clock(LEDC_APB_CLK_HZ or LEDC_REF_TICK)
+        } else {
+            timer_clk_src = (clk_cfg == LEDC_USE_APB_CLK) ? LEDC_APB_CLK : LEDC_REF_TICK;
+            uint32_t sclk_freq = (clk_cfg == LEDC_USE_APB_CLK) ? LEDC_APB_CLK_HZ : LEDC_REF_CLK_HZ;
+            div_param = ( (uint64_t) sclk_freq << 8 ) / freq_hz / precision;
+        }
+    }
+    if (div_param < 256 || div_param > LEDC_DIV_NUM_LSTIMER0_V) {
+        goto error;
+    }
+    // For low speed channels, if RTC_8MCLK is used as the source clock, the `slow_clk_sel` register should be cleared, otherwise it should be set.
+    if (speed_mode == LEDC_LOW_SPEED_MODE) {
+        LEDC.conf.slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? 0 : 1;
+    }
+    //Set the divisor
+    ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
+    // reset the timer
+    ledc_timer_rst(speed_mode, timer_num);
+    return ESP_OK;
+error:
+    ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%d",
+        (uint32_t ) div_param);
+    return ESP_FAIL;
+}
+
 esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
 {
     LEDC_ARG_CHECK(timer_conf != NULL, "timer_conf");
@@ -227,6 +304,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
     uint32_t timer_num = timer_conf->timer_num;
     uint32_t speed_mode = timer_conf->speed_mode;
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(!((timer_conf->clk_cfg == LEDC_USE_RTC8M_CLK) && (speed_mode != LEDC_LOW_SPEED_MODE)), "Only low speed channel support RTC8M_CLK");
     periph_module_enable(PERIPH_LEDC_MODULE);
     if (freq_hz == 0 || duty_resolution == 0 || duty_resolution >= LEDC_TIMER_BIT_MAX) {
         ESP_LOGE(LEDC_TAG, "freq_hz=%u duty_resolution=%u", freq_hz, duty_resolution);
@@ -236,38 +314,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
         ESP_LOGE(LEDC_TAG, "invalid timer #%u", timer_num);
         return ESP_ERR_INVALID_ARG;
     }
-    esp_err_t ret = ESP_OK;
-    uint32_t precision = ( 0x1 << duty_resolution );  // 2**depth
-    // Try calculating divisor based on LEDC_APB_CLK
-    ledc_clk_src_t timer_clk_src = LEDC_APB_CLK;
-    // div_param is a Q10.8 fixed point value
-    uint64_t div_param = ( (uint64_t) LEDC_APB_CLK_HZ << 8 ) / freq_hz / precision;
-    if (div_param < 256) {
-        // divisor is too low
-        ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%d",
-            (uint32_t ) div_param);
-        ret = ESP_FAIL;
-    }
-    if (div_param > LEDC_DIV_NUM_HSTIMER0_V) {
-        // APB_CLK results in divisor which too high. Try using REF_TICK as clock source.
-        timer_clk_src = LEDC_REF_TICK;
-        div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
-        if (div_param < 256 || div_param > LEDC_DIV_NUM_HSTIMER0_V) {
-            ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try increasing freq_hz or duty_resolution. div_param=%d",
-                (uint32_t ) div_param);
-            ret = ESP_FAIL;
-        }
-    } else {
-        if (speed_mode == LEDC_LOW_SPEED_MODE) {
-            //for now, we only select 80mhz for slow clk of LEDC low speed channels.
-            LEDC.conf.slow_clk_sel = 1;
-        }
-    }
-    // set timer parameters
-    ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
-    // reset timer
-    ledc_timer_rst(speed_mode, timer_num);
-    return ret;
+    return ledc_set_timer_div(speed_mode, timer_num, timer_conf->clk_cfg, freq_hz, duty_resolution);
 }
 
 esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel)
