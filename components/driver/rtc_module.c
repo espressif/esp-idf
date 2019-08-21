@@ -429,12 +429,6 @@ inline static touch_pad_t touch_pad_num_wrap(touch_pad_t touch_num)
     return touch_num;
 }
 
-esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
-{
-    RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
-    return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
-}
-
 esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
@@ -1548,11 +1542,6 @@ int adc1_get_raw(adc1_channel_t channel)
     return adc_value;
 }
 
-int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw() instead
-{
-    return adc1_get_raw(channel);
-}
-
 void adc1_ulp_enable(void)
 {
     adc_power_on();
@@ -1849,36 +1838,7 @@ esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
     return ESP_OK;
 }
 
-esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&rtc_spinlock);
-    //Disable Tone
-    CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_SW_TONE_EN);
-
-    //Disable Channel Tone
-    if (channel == DAC_CHANNEL_1) {
-        CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN1_M);
-    } else if (channel == DAC_CHANNEL_2) {
-        CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
-    }
-
-    //Set the Dac value
-    if (channel == DAC_CHANNEL_1) {
-        SET_PERI_REG_BITS(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC, dac_value, RTC_IO_PDAC1_DAC_S);   //dac_output
-    } else if (channel == DAC_CHANNEL_2) {
-        SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, dac_value, RTC_IO_PDAC2_DAC_S);   //dac_output
-    }
-
-    portEXIT_CRITICAL(&rtc_spinlock);
-    //dac pad init
-    dac_rtc_pad_init(channel);
-    dac_output_enable(channel);
-
-    return ESP_OK;
-}
-
-esp_err_t dac_i2s_enable()
+esp_err_t dac_i2s_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
