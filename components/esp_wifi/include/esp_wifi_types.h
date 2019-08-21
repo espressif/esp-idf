@@ -191,8 +191,6 @@ typedef enum {
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
 
-#define WIFI_PS_MODEM WIFI_PS_MIN_MODEM /**< @deprecated Use WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM instead */
-
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2
 #define WIFI_PROTOCOL_11N         4
