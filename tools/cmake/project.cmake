@@ -40,7 +40,7 @@ function(__project_get_revision var)
             else()
                 message(STATUS "Project is not inside a git repository, or git repository has no commits;"
                         " will not use 'git describe' to determine PROJECT_VER.")
-                set(PROJECT_VER 0)
+                set(PROJECT_VER 1)
             endif()
         endif()
     endif()
