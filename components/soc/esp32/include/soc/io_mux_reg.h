@@ -77,40 +77,6 @@
 #define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
 #define PIN_SET_DRV(PIN_NAME, drv)            REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
 
-/*
- * @attention
- *     The PIN_PULL[UP|DWN]_[EN|DIS]() functions used to exist as macros in previous SDK versions. 
- *     Unfortunately, however, they do not work for some GPIOs on the ESP32 chip, which needs pullups 
- *     and -downs turned on and off through RTC registers. The functions still exist for compatibility 
- *     with older code, but are marked as deprecated in order to generate a warning.
- *     Please replace them in this fashion: (make sure to include driver/gpio.h as well)
- *     PIN_PULLUP_EN(GPIO_PIN_MUX_REG[x])   ->  gpio_pullup_en(x)
- *     PIN_PULLUP_DIS(GPIO_PIN_MUX_REG[x])  ->  gpio_pullup_dis(x)
- *     PIN_PULLDWN_EN(GPIO_PIN_MUX_REG[x])  ->  gpio_pulldown_en(x)
- *     PIN_PULLDWN_DIS(GPIO_PIN_MUX_REG[x]) ->  gpio_pulldown_dis(x)
- *
-*/
-static inline void __attribute__ ((deprecated)) PIN_PULLUP_DIS(uint32_t PIN_NAME) 
-{
-    REG_CLR_BIT(PIN_NAME, FUN_PU);
-}
-
-static inline void __attribute__ ((deprecated)) PIN_PULLUP_EN(uint32_t PIN_NAME)
-{
-    REG_SET_BIT(PIN_NAME, FUN_PU);
-}
-
-static inline void __attribute__ ((deprecated)) PIN_PULLDWN_DIS(uint32_t PIN_NAME)
-{
-    REG_CLR_BIT(PIN_NAME, FUN_PD);
-}
-
-static inline void __attribute__ ((deprecated)) PIN_PULLDWN_EN(uint32_t PIN_NAME)
-{
-    REG_SET_BIT(PIN_NAME, FUN_PD);
-}
-
-
 #define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
 
 #define PIN_FUNC_GPIO                               2
