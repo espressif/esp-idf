@@ -104,7 +104,6 @@ static void rtc_clk_cpu_freq_to_8m(void);
 static void rtc_clk_bbpll_disable(void);
 static void rtc_clk_bbpll_enable(void);
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz);
-static bool rtc_clk_cpu_freq_from_mhz_internal(int mhz, rtc_cpu_freq_t* out_val);
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
 static int s_cur_pll_freq;
@@ -501,21 +500,6 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     rtc_clk_wait_for_slow_cycle();
 }
 
-
-void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
-{
-    rtc_cpu_freq_config_t config;
-    rtc_clk_cpu_freq_to_config(cpu_freq, &config);
-    rtc_clk_cpu_freq_set_config(&config);
-}
-
-void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq)
-{
-    rtc_cpu_freq_config_t config;
-    rtc_clk_cpu_freq_to_config(cpu_freq, &config);
-    rtc_clk_cpu_freq_set_config_fast(&config);
-}
-
 void rtc_clk_cpu_freq_set_xtal(void)
 {
     int freq_mhz = (int) rtc_clk_xtal_freq_get();
@@ -523,57 +507,6 @@ void rtc_clk_cpu_freq_set_xtal(void)
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
     rtc_clk_wait_for_slow_cycle();
     rtc_clk_bbpll_disable();
-}
-
-rtc_cpu_freq_t rtc_clk_cpu_freq_get(void)
-{
-    rtc_cpu_freq_config_t config;
-    rtc_clk_cpu_freq_get_config(&config);
-    rtc_cpu_freq_t freq = RTC_CPU_FREQ_XTAL;
-    rtc_clk_cpu_freq_from_mhz_internal(config.freq_mhz, &freq);
-    return freq;
-}
-
-uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq)
-{
-    switch (cpu_freq) {
-        case RTC_CPU_FREQ_XTAL:
-            return ((uint32_t) rtc_clk_xtal_freq_get()) * MHZ;
-        case RTC_CPU_FREQ_2M:
-            return 2 * MHZ;
-        case RTC_CPU_FREQ_80M:
-            return 80 * MHZ;
-        case RTC_CPU_FREQ_160M:
-            return 160 * MHZ;
-        case RTC_CPU_FREQ_240M:
-            return 240 * MHZ;
-        default:
-            SOC_LOGE(TAG, "invalid rtc_cpu_freq_t value");
-            return 0;
-    }
-}
-
-static bool rtc_clk_cpu_freq_from_mhz_internal(int mhz, rtc_cpu_freq_t* out_val)
-{
-    if (mhz == 240) {
-        *out_val = RTC_CPU_FREQ_240M;
-    } else if (mhz == 160) {
-        *out_val = RTC_CPU_FREQ_160M;
-    } else if (mhz == 80) {
-        *out_val = RTC_CPU_FREQ_80M;
-    } else if (mhz == (int) rtc_clk_xtal_freq_get()) {
-        *out_val = RTC_CPU_FREQ_XTAL;
-    } else if (mhz == 2) {
-        *out_val = RTC_CPU_FREQ_2M;
-    } else {
-        return false;
-    }
-    return true;
-}
-
-bool rtc_clk_cpu_freq_from_mhz(int mhz, rtc_cpu_freq_t* out_val)
-{
-    return rtc_clk_cpu_freq_from_mhz_internal(mhz, out_val);
 }
 
 void rtc_clk_cpu_freq_to_config(rtc_cpu_freq_t cpu_freq, rtc_cpu_freq_config_t* out_config)

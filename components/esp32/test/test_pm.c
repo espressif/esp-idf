@@ -61,8 +61,8 @@ TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 static void light_sleep_enable(void)
 {
     const esp_pm_config_esp32_t pm_config = {
-        .max_cpu_freq = rtc_clk_cpu_freq_get(),
-        .min_cpu_freq = RTC_CPU_FREQ_XTAL,
+        .max_freq_mhz = esp_clk_cpu_freq() / 1000000,
+        .min_freq_mhz = esp_clk_xtal_freq() / MHZ,
         .light_sleep_enable = true
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
@@ -71,8 +71,8 @@ static void light_sleep_enable(void)
 static void light_sleep_disable(void)
 {
     const esp_pm_config_esp32_t pm_config = {
-        .max_cpu_freq = rtc_clk_cpu_freq_get(),
-        .min_cpu_freq = rtc_clk_cpu_freq_get(),
+        .max_freq_mhz = esp_clk_cpu_freq() / 1000000,
+        .min_freq_mhz = esp_clk_cpu_freq() / 1000000,
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 }
