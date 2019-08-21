@@ -182,15 +182,6 @@ esp_err_t esp_pm_configure(const void* vconfig)
     int min_freq_mhz = config->min_freq_mhz;
     int max_freq_mhz = config->max_freq_mhz;
 
-    if (min_freq_mhz == 0 && max_freq_mhz == 0) {
-        /* For compatibility, handle deprecated fields, min_cpu_freq and max_cpu_freq. */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        min_freq_mhz = rtc_clk_cpu_freq_value(config->min_cpu_freq) / MHZ;
-        max_freq_mhz = rtc_clk_cpu_freq_value(config->max_cpu_freq) / MHZ;
-#pragma GCC diagnostic pop
-    }
-
     if (min_freq_mhz > max_freq_mhz) {
         return ESP_ERR_INVALID_ARG;
     }
