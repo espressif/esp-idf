@@ -12,17 +12,13 @@ Example source code declares a class which can throw exception from the construc
 
 ## How to use example
 
-### Configure the project
-
-Run `make menuconfig` and set serial port under Serial Flasher Options.
-
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+```
+idf.py -p PORT flash monitor
+```
 
-```
-make -j4 flash monitor
-```
+(Replace PORT with the name of the serial port.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

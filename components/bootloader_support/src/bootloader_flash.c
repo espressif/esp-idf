@@ -28,6 +28,11 @@ static const char *TAG = "bootloader_mmap";
 
 static spi_flash_mmap_handle_t map;
 
+uint32_t bootloader_mmap_get_free_pages(void)
+{
+    return spi_flash_mmap_get_free_pages(SPI_FLASH_MMAP_DATA);
+}
+
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 {
     if (map) {
@@ -104,6 +109,7 @@ static const char *TAG = "bootloader_flash";
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
 #define MMU_SIZE          (0x320000)
 #define MMU_BLOCK50_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#define FLASH_READ_VADDR MMU_BLOCK50_VADDR
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 /* Use first 63 blocks in MMU for bootloader_mmap,
    63th block for bootloader_flash_read
@@ -111,12 +117,24 @@ static const char *TAG = "bootloader_flash";
 #define MMU_BLOCK0_VADDR  SOC_DROM_LOW
 #define MMU_SIZE          (0x3f0000)
 #define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#define FLASH_READ_VADDR MMU_BLOCK63_VADDR
 #endif
 
+#define MMU_FREE_PAGES    (MMU_SIZE / FLASH_BLOCK_SIZE)
+    
 static bool mapped;
 
 // Current bootloader mapping (ab)used for bootloader_read()
 static uint32_t current_read_mapping = UINT32_MAX;
+
+uint32_t bootloader_mmap_get_free_pages(void)
+{
+    /**
+     * Allow mapping up to 50 of the 51 available MMU blocks (last one used for reads)
+     * Since, bootloader_mmap function below assumes it to be 0x320000 (50 pages), we can safely do this.
+     */
+    return MMU_FREE_PAGES;
+}
 
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 {
@@ -235,9 +253,9 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #endif
             ESP_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
-            int e = cache_flash_mmu_set(0, 0, MMU_BLOCK50_VADDR, map_at, 64, 1);
+            int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-            int e = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
+            int e = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, FLASH_READ_VADDR, map_at, 64, 1, 0);
 #endif
             if (e != 0) {
                 ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
@@ -255,11 +273,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
             Cache_Resume_ICache(autoload);
 #endif
         }
-#if CONFIG_IDF_TARGET_ESP32
-        map_ptr = (uint32_t *)(MMU_BLOCK50_VADDR + (word_src - map_at));
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-        map_ptr = (uint32_t *)(MMU_BLOCK63_VADDR + (word_src - map_at));
-#endif
+        map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
         dest_words[word] = *map_ptr;
     }
     return ESP_OK;

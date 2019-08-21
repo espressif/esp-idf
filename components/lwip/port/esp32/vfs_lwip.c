@@ -39,7 +39,7 @@ static void lwip_stop_socket_select_isr(void *sem, BaseType_t *woken)
     }
 }
 
-static void *lwip_get_socket_select_semaphore()
+static void *lwip_get_socket_select_semaphore(void)
 {
     /* Calling this from the same process as select() will ensure that the semaphore won't be allocated from
      * ISR (lwip_stop_socket_select_isr).
@@ -49,23 +49,23 @@ static void *lwip_get_socket_select_semaphore()
 
 static int lwip_fcntl_r_wrapper(int fd, int cmd, int arg)
 {
-    return lwip_fcntl_r(fd, cmd, arg);
+    return lwip_fcntl(fd, cmd, arg);
 }
 
 static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
 {
-    return lwip_ioctl_r(fd, cmd, va_arg(args, void *));
+    return lwip_ioctl(fd, cmd, va_arg(args, void *));
 }
 
-void esp_vfs_lwip_sockets_register()
+void esp_vfs_lwip_sockets_register(void)
 {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &lwip_write_r,
+        .write = &lwip_write,
         .open = NULL,
         .fstat = NULL,
-        .close = &lwip_close_r,
-        .read = &lwip_read_r,
+        .close = &lwip_close,
+        .read = &lwip_read,
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
         .socket_select = &lwip_select,

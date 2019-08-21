@@ -6,7 +6,9 @@ This directory contains a range of example ESP-IDF projects. These are intended 
 
 The examples are grouped into subdirectories by category. Each category directory contains one or more example projects:
 
-* `bluetooth` contains Bluetooth (BLE & BT Classic) examples.
+* `bluetooth/bluedroid` contains Classic BT, BLE and coex examples using default Bluedroid host stack.
+* `bluetooth/nimble` contains BLE examples using NimBLE host stack.
+* `bluetooth/esp_ble_mesh` contains ESP BLE Mesh examples.
 * `ethernet` contains Ethernet examples.
 * `get-started` contains some very simple examples with minimal functionality.
 * `mesh` contains Wi-Fi Mesh examples.
@@ -23,9 +25,9 @@ Building an example is the same as building any other project:
 
 * Follow the Getting Started instructions which include building the "Hello World" example.
 * Change into the directory of the new example you'd like to build.
-* `make menuconfig` to configure the example. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
-* `make` to build the example.
-* Follow the printed instructions to flash, or run `make flash`.
+* Run `idf.py menuconfig` to open the project configuration menu. Most examples have a project-specific "Example Configuration" section here (for example, to set the WiFi SSID & password to use).
+* `idf.py build` to build the example.
+* Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
 
 # Copying Examples
 

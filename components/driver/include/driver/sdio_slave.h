@@ -111,7 +111,7 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config);
 
 /** De-initialize the sdio slave driver to release the resources.
  */
-void sdio_slave_deinit();
+void sdio_slave_deinit(void);
 
 /** Start hardware for sending and receiving, as well as set the IOREADY1 to 1.
  *
@@ -122,19 +122,19 @@ void sdio_slave_deinit();
  *  - ESP_ERR_INVALID_STATE if already started.
  *  - ESP_OK otherwise.
  */
-esp_err_t sdio_slave_start();
+esp_err_t sdio_slave_start(void);
 
 /** Stop hardware from sending and receiving, also set IOREADY1 to 0.
  *
  * @note this will not clear the data already in the driver, and also not reset the PKT_LEN and TOKEN1 counting. Call ``sdio_slave_reset`` to do that.
  */
-void sdio_slave_stop();
+void sdio_slave_stop(void);
 
 /** Clear the data still in the driver, as well as reset the PKT_LEN and TOKEN1 counting.
  *
  * @return always return ESP_OK.
  */
-esp_err_t sdio_slave_reset();
+esp_err_t sdio_slave_reset(void);
 
 /*---------------------------------------------------------------------------
  *                  Receive
@@ -263,7 +263,7 @@ esp_err_t sdio_slave_write_reg(int pos, uint8_t reg);
  *
  * @return the interrupt mask.
  */
-sdio_slave_hostint_t sdio_slave_get_host_intena();
+sdio_slave_hostint_t sdio_slave_get_host_intena(void);
 
 /** Set the interrupt enable for host.
  *

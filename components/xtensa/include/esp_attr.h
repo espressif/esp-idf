@@ -34,6 +34,9 @@
 // Forces data to be placed to DMA-capable places
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
 
+// Forces a function to be inlined
+#define FORCE_INLINE_ATTR static inline __attribute__((always_inline))
+
 // Forces a string into DRAM instead of flash
 // Use as ets_printf(DRAM_STR("Hello world!\n"));
 #define DRAM_STR(str) (__extension__({static const DRAM_ATTR char __c[] = (str); (const char *)&__c;}))
@@ -45,7 +48,7 @@
 // Forces bss variable into external memory. "
 #define EXT_RAM_ATTR _SECTION_ATTR_IMPL(".ext_ram.bss", __COUNTER__)
 #else
-#define EXT_RAM_ATTR 
+#define EXT_RAM_ATTR
 #endif
 
 // Forces data into RTC slow memory. See "docs/deep-sleep-stub.rst"
@@ -72,6 +75,30 @@
 
 // Forces to not inline function
 #define NOINLINE_ATTR __attribute__((noinline))
+
+// This allows using enum as flags in C++
+// Format: FLAG_ATTR(flag_enum_t)
+#ifdef __cplusplus
+
+#define FLAG_ATTR_IMPL(TYPE, INT_TYPE) \
+constexpr TYPE operator~ (TYPE a) { return (TYPE)~(INT_TYPE)a; } \
+constexpr TYPE operator| (TYPE a, TYPE b) { return (TYPE)((INT_TYPE)a | (INT_TYPE)b); } \
+constexpr TYPE operator& (TYPE a, TYPE b) { return (TYPE)((INT_TYPE)a & (INT_TYPE)b); } \
+constexpr TYPE operator^ (TYPE a, TYPE b) { return (TYPE)((INT_TYPE)a ^ (INT_TYPE)b); } \
+constexpr TYPE operator>> (TYPE a, int b) { return (TYPE)((INT_TYPE)a >> b); } \
+constexpr TYPE operator<< (TYPE a, int b) { return (TYPE)((INT_TYPE)a << b); } \
+TYPE& operator|=(TYPE& a, TYPE b) { a = a | b; return a; } \
+TYPE& operator&=(TYPE& a, TYPE b) { a = a & b; return a; } \
+TYPE& operator^=(TYPE& a, TYPE b) { a = a ^ b; return a; } \
+TYPE& operator>>=(TYPE& a, int b) { a >>= b; return a; } \
+TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
+
+#define FLAG_ATTR_U32(TYPE) FLAG_ATTR_IMPL(TYPE, uint32_t)
+#define FLAG_ATTR FLAG_ATTR_U32
+
+#else
+#define FLAG_ATTR(TYPE)
+#endif
 
 // Implementation for a unique custom section
 //

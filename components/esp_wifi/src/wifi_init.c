@@ -18,6 +18,15 @@
 #include "esp_private/wifi.h"
 #include "esp_pm.h"
 #include "soc/rtc.h"
+#include "esp_wpa.h"
+
+#if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
+#error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
+#endif
+
+#if (CONFIG_ESP32_WIFI_RX_BA_WIN > (CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM << 1))
+#error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than double of the WIFI_STATIC_RX_BUFFER_NUM!"
+#endif
 
 ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 
@@ -32,7 +41,7 @@ wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
 
 static const char* TAG = "wifi_init";
 
-static void __attribute__((constructor)) s_set_default_wifi_log_level()
+static void __attribute__((constructor)) s_set_default_wifi_log_level(void)
 {
     /* WiFi libraries aren't compiled to know CONFIG_LOG_DEFAULT_LEVEL,
        so set it at runtime startup. Done here not in esp_wifi_init() to allow
@@ -42,7 +51,7 @@ static void __attribute__((constructor)) s_set_default_wifi_log_level()
     esp_log_level_set("mesh", CONFIG_LOG_DEFAULT_LEVEL);
 }
 
-static void esp_wifi_set_debug_log()
+static void esp_wifi_set_debug_log(void)
 {
     /* set WiFi log level and module */
 #if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
@@ -110,6 +119,17 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
 #endif
+
+        result = esp_supplicant_init();
+        if (result != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to init supplicant (0x%x)", result);
+            esp_err_t deinit_ret = esp_wifi_deinit();
+            if (deinit_ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to deinit Wi-Fi (0x%x)", deinit_ret);
+            }
+
+            return result;
+        } 
     }
 
     return result;

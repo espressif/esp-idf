@@ -221,7 +221,7 @@ static void del_cb(int index, void *ptr)
     *((uint32_t *)ptr) = (TLSP_DEL_BASE << index);   //Indicate deletion by setting task storage element to a unique value
 }
 
-static void task_cb()
+static void task_cb(void *arg)
 {
     int core = xPortGetCoreID();
     for(int i = 0; i < NO_OF_TLSP; i++){

@@ -372,7 +372,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
     mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, Rinv, num_words);
     DPORT_REG_WRITE(RSA_M_DASH_REG, Mprime);
 
-    DPORT_REG_WRITE(RSA_CONSTANT_TIME_DISABLE_REG, 1);
+    DPORT_REG_WRITE(RSA_CONSTANT_TIME_REG, 0);
     DPORT_REG_WRITE(RSA_SEARCH_OPEN_REG, 1);
     DPORT_REG_WRITE(RSA_SEARCH_POS_REG, (y_words * 32) - 1);
 

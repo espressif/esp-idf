@@ -22,21 +22,34 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/gpio_periph.h"
 #include "esp_log.h"
+#include "esp_ipc.h"
 
-static const char* GPIO_TAG = "gpio";
 #define GPIO_CHECK(a, str, ret_val) \
     if (!(a)) { \
         ESP_LOGE(GPIO_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
         return (ret_val); \
     }
+#define GPIO_ISR_CORE_ID_UNINIT    (3)
 
 typedef struct {
     gpio_isr_t fn;   /*!< isr function */
     void* args;      /*!< isr function args */
 } gpio_isr_func_t;
 
+// Used by the IPC call to register the interrupt service routine.
+typedef struct {
+    int source;               /*!< ISR source */
+    int intr_alloc_flags;     /*!< ISR alloc flag */
+    void (*fn)(void*);        /*!< ISR function */
+    void *arg;                /*!< ISR function args*/
+    void *handle;             /*!< ISR handle */
+    esp_err_t ret;
+} gpio_isr_alloc_t;
+
+static const char* GPIO_TAG = "gpio";
 static gpio_isr_func_t* gpio_isr_func = NULL;
 static gpio_isr_handle_t gpio_isr_handle;
+static uint32_t isr_core_id = GPIO_ISR_CORE_ID_UNINIT;
 static portMUX_TYPE gpio_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
@@ -118,7 +131,6 @@ static void gpio_intr_status_clr(gpio_num_t gpio_num)
 
 static esp_err_t gpio_intr_enable_on_core (gpio_num_t gpio_num, uint32_t core_id)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_intr_status_clr(gpio_num);
 #if CONFIG_IDF_TARGET_ESP32
     if (core_id == 0) {
@@ -136,7 +148,13 @@ static esp_err_t gpio_intr_enable_on_core (gpio_num_t gpio_num, uint32_t core_id
 
 esp_err_t gpio_intr_enable(gpio_num_t gpio_num)
 {
-    return gpio_intr_enable_on_core (gpio_num, xPortGetCoreID());
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&gpio_spinlock);
+    if(isr_core_id == GPIO_ISR_CORE_ID_UNINIT) {
+        isr_core_id = xPortGetCoreID();
+    }
+    portEXIT_CRITICAL(&gpio_spinlock);
+    return gpio_intr_enable_on_core (gpio_num, isr_core_id);
 }
 
 esp_err_t gpio_intr_disable(gpio_num_t gpio_num)
@@ -377,16 +395,25 @@ static void IRAM_ATTR gpio_intr_service(void* arg)
     if (gpio_isr_func == NULL) {
         return;
     }
-
     //read status to get interrupt status for GPIO0-31
-    const uint32_t gpio_intr_status = GPIO.status;
+    uint32_t gpio_intr_status;
+#ifdef CONFIG_IDF_TARGET_ESP32
+    gpio_intr_status = (isr_core_id == 0) ? GPIO.pcpu_int : GPIO.acpu_int;
+#else
+    gpio_intr_status = GPIO.pcpu_int;
+#endif
     if (gpio_intr_status) {
         gpio_isr_loop(gpio_intr_status, 0);
         GPIO.status_w1tc = gpio_intr_status;
     }
 
     //read status1 to get interrupt status for GPIO32-39
-    const uint32_t gpio_intr_status_h = GPIO.status1.intr_st;
+    uint32_t gpio_intr_status_h;
+#ifdef CONFIG_IDF_TARGET_ESP32
+    gpio_intr_status_h = (isr_core_id == 0) ? GPIO.pcpu_int1.intr : GPIO.acpu_int1.intr;
+#else
+    gpio_intr_status_h = GPIO.pcpu_int1.intr;
+#endif
     if (gpio_intr_status_h) {
         gpio_isr_loop(gpio_intr_status_h, 32);
         GPIO.status1_w1tc.intr_st = gpio_intr_status_h;
@@ -428,16 +455,16 @@ esp_err_t gpio_install_isr_service(int intr_alloc_flags)
     esp_err_t ret;
     portENTER_CRITICAL(&gpio_spinlock);
     gpio_isr_func = (gpio_isr_func_t*) calloc(GPIO_NUM_MAX, sizeof(gpio_isr_func_t));
+    portEXIT_CRITICAL(&gpio_spinlock);
     if (gpio_isr_func == NULL) {
         ret = ESP_ERR_NO_MEM;
     } else {
         ret = gpio_isr_register(gpio_intr_service, NULL, intr_alloc_flags, &gpio_isr_handle);
     }
-    portEXIT_CRITICAL(&gpio_spinlock);
     return ret;
 }
 
-void gpio_uninstall_isr_service()
+void gpio_uninstall_isr_service(void)
 {
     if (gpio_isr_func == NULL) {
         return;
@@ -446,14 +473,37 @@ void gpio_uninstall_isr_service()
     esp_intr_free(gpio_isr_handle);
     free(gpio_isr_func);
     gpio_isr_func = NULL;
+    isr_core_id = GPIO_ISR_CORE_ID_UNINIT;
     portEXIT_CRITICAL(&gpio_spinlock);
     return;
+}
+
+static void gpio_isr_register_on_core_static(void *param)
+{
+    gpio_isr_alloc_t *p = (gpio_isr_alloc_t *)param;
+    //We need to check the return value.
+    p->ret = esp_intr_alloc(p->source, p->intr_alloc_flags, p->fn, p->arg, p->handle);
 }
 
 esp_err_t gpio_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, gpio_isr_handle_t *handle)
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
-    return esp_intr_alloc(ETS_GPIO_INTR_SOURCE, intr_alloc_flags, fn, arg, handle);
+    gpio_isr_alloc_t p;
+    p.source = ETS_GPIO_INTR_SOURCE;
+    p.intr_alloc_flags = intr_alloc_flags;
+    p.fn = fn;
+    p.arg = arg;
+    p.handle = handle;
+    portENTER_CRITICAL(&gpio_spinlock);
+    if(isr_core_id == GPIO_ISR_CORE_ID_UNINIT) {
+        isr_core_id = xPortGetCoreID();
+    }
+    portEXIT_CRITICAL(&gpio_spinlock);
+    esp_err_t ret = esp_ipc_call_blocking(isr_core_id, gpio_isr_register_on_core_static, (void *)&p);
+    if(ret != ESP_OK || p.ret != ESP_OK) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    return ESP_OK;
 }
 
 esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)

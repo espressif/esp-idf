@@ -18,7 +18,6 @@
 #include "soc/cpu.h"
 #include "soc/soc_memory_layout.h"
 #include "sdkconfig.h"
-#include "esp_debug_helpers.h"
 
 #if !XCHAL_HAVE_WINDOWED
 #warning "gdbstub_xtensa: revisit the implementation for Call0 ABI"

@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config EXAMPLE_PEER_ADDR
+        string "Peer Address"
+        default "ADDR_ANY"
+        help
+            Enter the peer address in aa:bb:cc:dd:ee:ff form to connect to a specific peripheral
+
+endmenu

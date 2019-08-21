@@ -90,7 +90,7 @@ static struct syscall_stub_table s_stub_table = {
 #endif
 };
 
-void esp_setup_syscall_table()
+void esp_setup_syscall_table(void)
 {
     syscall_table_ptr_pro = &s_stub_table;
     syscall_table_ptr_app = &s_stub_table;

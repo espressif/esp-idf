@@ -23,6 +23,7 @@
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
 #include "bootloader_random.h"
+#include "soc/apb_ctrl_reg.h"
 
 const static char *TAG = "efuse";
 
@@ -31,8 +32,29 @@ const static char *TAG = "efuse";
 // Returns chip version from efuse
 uint8_t esp_efuse_get_chip_ver(void)
 {
-    uint8_t chip_ver;
-    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &chip_ver, 1);
+    uint8_t eco_bit0, eco_bit1, eco_bit2;
+    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &eco_bit0, 1);
+    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV2, &eco_bit1, 1);
+    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 80000000) >> 31;
+    uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
+    uint8_t chip_ver = 0;
+    switch (combine_value) {
+    case 0:
+        chip_ver = 0;
+        break;
+    case 1:
+        chip_ver = 1;
+        break;
+    case 3:
+        chip_ver = 2;
+        break;
+    case 7:
+        chip_ver = 3;
+        break;
+    default:
+        chip_ver = 0;
+        break;
+    }
     return chip_ver;
 }
 
@@ -111,7 +133,7 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     ESP_LOGV(TAG, "Writing random values to address 0x%08x", blk_wdata0_reg);
     for (int i = 0; i < 8; i++) {
         ESP_LOGV(TAG, "EFUSE_BLKx_WDATA%d_REG = 0x%08x", i, buf[i]);
-        REG_WRITE(blk_wdata0_reg + 4*i, buf[i]);
+        REG_WRITE(blk_wdata0_reg + 4 * i, buf[i]);
     }
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
@@ -130,7 +152,7 @@ void esp_efuse_init(uint32_t offset, uint32_t size)
     esp_efuse_flash_size = size;
 }
 
-static uint32_t emulate_secure_version_read()
+static uint32_t emulate_secure_version_read(void)
 {
     uint32_t secure_version;
     uint32_t offset = esp_efuse_flash_offset;
@@ -170,7 +192,7 @@ static void emulate_secure_version_write(uint32_t secure_version)
 #define EFUSE_BLK_RD_ANTI_ROLLBACK EFUSE_BLK3_RDATA4_REG
 #define EFUSE_BLK_WR_ANTI_ROLLBACK EFUSE_BLK3_WDATA4_REG
 
-uint32_t esp_efuse_read_secure_version()
+uint32_t esp_efuse_read_secure_version(void)
 {
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     uint32_t secure_version;
@@ -236,3 +258,4 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 #endif
     return ESP_OK;
 }
+

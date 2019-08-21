@@ -304,7 +304,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg);
  * @brief  De-initialize BT controller to free resource and delete task.
  *
  * This function should be called only once, after any other BT functions are called.
- * This function is not whole completed, esp_bt_controller_init cannot called after this function.
  * @return  ESP_OK - success, other - failed
  */
 esp_err_t esp_bt_controller_deinit(void);
@@ -417,6 +416,8 @@ esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode);
  *      esp_bt_controller_deinit();
  *      esp_bt_mem_release(ESP_BT_MODE_BTDM);
  *
+ * @note In case of NimBLE host, to release BSS and data memory to heap, the mode needs to be
+ * set to ESP_BT_MODE_BTDM as controller is dual mode.
  * @param mode : the mode whose memory is to be released
  * @return ESP_OK - success, other - failed
  */

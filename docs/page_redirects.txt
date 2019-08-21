@@ -1,0 +1,52 @@
+# Redirects from "old URL" "new URL"
+#
+# Space delimited
+#
+# New URL should be relative to document root, only)
+#
+# Empty lines and lines starting with # are ignored
+
+api-reference/ethernet/index              api-reference/network/index
+api-reference/ethernet/esp_eth            api-reference/network/esp_eth
+api-reference/mesh/index                  api-reference/network/index
+api-reference/mesh/esp_mesh               api-reference/network/esp_mesh
+api-reference/wifi/index                  api-reference/network/index
+api-reference/wifi/esp_now                api-reference/network/esp_now
+api-reference/wifi/esp_smartconfig        api-reference/network/esp_smartconfig
+api-reference/wifi/esp_wifi               api-reference/network/esp_wifi
+api-reference/system/tcpip_adapter        api-reference/network/tcpip_adapter
+get-started/idf-monitor                   api-guides/tools/idf-monitor
+get-started-cmake/idf-monitor             api-guides/tools/idf-monitor
+get-started/get-started-devkitc           hw-reference/get-started-devkitc
+get-started/get-started-devkitc-v2        hw-reference/get-started-devkitc-v2
+get-started/get-started-wrover-kit        hw-reference/get-started-wrover-kit
+get-started/get-started-wrover-kit-v2     hw-reference/get-started-wrover-kit-v2
+get-started/get-started-wrover-kit-v3     hw-reference/get-started-wrover-kit-v3
+get-started/get-started-pico-kit          hw-reference/get-started-pico-kit
+get-started/get-started-pico-kit-v3       hw-reference/get-started-pico-kit-v3
+
+# The preview 'get-started-cmake' guides are now 'get-started'
+get-started-cmake                              get-started
+get-started-cmake/add-idf_path-to-profile      get-started/add-idf_path-to-profile
+get-started-cmake/eclipse-setup                get-started/eclipse-setup
+get-started-cmake/establish-serial-connection  get-started/establish-serial-connection
+get-started-cmake/index                        get-started/index
+get-started-cmake/linux-setup                  get-started/linux-setup
+get-started-cmake/linux-setup-scratch          get-started/linux-setup-scratch
+get-started-cmake/macos-setup                  get-started/macos-setup
+get-started-cmake/macos-setup-scratch          get-started/macos-setup-scratch
+get-started-cmake/toolchain-setup-scratch      get-started/toolchain-setup-scratch
+get-started-cmake/windows-setup                get-started/windows-setup
+get-started-cmake/windows-setup-scratch        get-started/windows-setup-scratch
+get-started-cmake/get-started-devkitc          hw-reference/get-started-devkitc
+get-started-cmake/get-started-devkitc-v2       hw-reference/get-started-devkitc-v2
+get-started-cmake/get-started-wrover-kit       hw-reference/get-started-wrover-kit
+get-started-cmake/get-started-wrover-kit-v2    hw-reference/get-started-wrover-kit-v2
+get-started-cmake/get-started-wrover-kit-v3    hw-reference/get-started-wrover-kit-v3
+get-started-cmake/get-started-pico-kit         hw-reference/get-started-pico-kit
+get-started-cmake/get-started-pico-kit-v3      hw-reference/get-started-pico-kit-v3
+
+api-guide/build-system-cmake                   api-guide/build-system
+api-guide/ulp-cmake                            api-guide/ulp
+api-guide/unit-tests-cmake                     api-guide/unit-tests
+

@@ -58,7 +58,7 @@ xQueueHandle cap_queue;
 
 static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1};
 
-static void mcpwm_example_gpio_initialize()
+static void mcpwm_example_gpio_initialize(void)
 {
     printf("initializing mcpwm bldc control gpio...\n");
 #if MCPWM_GPIO_INIT
@@ -162,7 +162,7 @@ static void disp_captured_signal(void *arg)
 /**
  * @brief this is ISR handler function, here we check for interrupt that triggers rising edge on CAP0 signal and according take action
  */
-static void IRAM_ATTR isr_handler()
+static void IRAM_ATTR isr_handler(void *arg)
 {
     uint32_t mcpwm_intr_status;
     capture evt;
@@ -307,7 +307,7 @@ static void mcpwm_example_bldc_control(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Testing MCPWM BLDC Control...\n");
 #if CHANGE_DUTY_CONTINUOUSLY

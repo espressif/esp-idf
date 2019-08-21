@@ -20,7 +20,7 @@
 #include "tcpip_adapter.h"
 #include "lwip/sockets.h"
 
-const esp_partition_t *get_test_data_partition()
+const esp_partition_t *get_test_data_partition(void)
 {
     /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
     const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
@@ -29,7 +29,7 @@ const esp_partition_t *get_test_data_partition()
     return result;
 }
 
-void test_case_uses_tcpip()
+void test_case_uses_tcpip(void)
 {
     // Can be called more than once, does nothing on subsequent calls
     tcpip_adapter_init();

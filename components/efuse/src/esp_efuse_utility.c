@@ -15,6 +15,7 @@
 #include "esp_efuse_utility.h"
 
 #include "soc/efuse_periph.h"
+#include "esp32/clk.h"
 #include "esp_log.h"
 #include "assert.h"
 #include "sdkconfig.h"
@@ -34,7 +35,7 @@ static const char *TAG = "efuse";
 static uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
 
 /* Call the update function to seed virtual efuses during initialization */
-__attribute__((constructor)) void esp_efuse_utility_update_virt_blocks();
+__attribute__((constructor)) void esp_efuse_utility_update_virt_blocks(void);
 
 #endif
 
@@ -209,6 +210,25 @@ void esp_efuse_utility_burn_efuses(void)
         }
     }
 #else
+    // Update Efuse timing configuration
+    uint32_t apb_freq_mhz = esp_clk_apb_freq() / 1000000;
+    uint32_t clk_sel0, clk_sel1, dac_clk_div;
+    if (apb_freq_mhz <= 26) {
+        clk_sel0 = 250;
+        clk_sel1 = 255;
+        dac_clk_div = 52;
+    } else if (apb_freq_mhz <= 40) {
+        clk_sel0 = 160;
+        clk_sel1 = 255;
+        dac_clk_div = 80;
+    } else {
+        clk_sel0 = 80;
+        clk_sel1 = 128;
+        dac_clk_div = 100;
+    }
+    REG_SET_FIELD(EFUSE_DAC_CONF_REG, EFUSE_DAC_CLK_DIV, dac_clk_div);
+    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL0, clk_sel0);
+    REG_SET_FIELD(EFUSE_CLK_REG, EFUSE_CLK_SEL1, clk_sel1);
     // Permanently update values written to the efuse write registers
     REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_WRITE);
     REG_WRITE(EFUSE_CMD_REG,  EFUSE_CMD_PGM);
@@ -222,7 +242,7 @@ void esp_efuse_utility_burn_efuses(void)
 
 
 // Erase the virt_blocks array.
-void esp_efuse_utility_erase_virt_blocks()
+void esp_efuse_utility_erase_virt_blocks(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     memset(virt_blocks, 0, sizeof(virt_blocks));
@@ -230,7 +250,7 @@ void esp_efuse_utility_erase_virt_blocks()
 }
 
 // Fills the virt_blocks array by values from efuse_Rdata.
-void esp_efuse_utility_update_virt_blocks()
+void esp_efuse_utility_update_virt_blocks(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGI(TAG, "Loading virtual efuse blocks from real efuses");
@@ -247,7 +267,7 @@ void esp_efuse_utility_update_virt_blocks()
 }
 
 // Prints efuse values for all registers.
-void esp_efuse_utility_debug_dump_blocks()
+void esp_efuse_utility_debug_dump_blocks(void)
 {
     printf("EFUSE_BLKx:\n");
 #ifdef CONFIG_EFUSE_VIRTUAL
@@ -454,7 +474,7 @@ static void read_r_data(esp_efuse_block_t num_block, uint32_t* buf_r_data)
 
 // After esp_efuse_write.. functions EFUSE_BLKx_WDATAx_REG were filled is not coded values.
 // This function reads EFUSE_BLKx_WDATAx_REG registers, applies coding scheme and writes encoded values back to EFUSE_BLKx_WDATAx_REG.
-esp_err_t esp_efuse_utility_apply_new_coding_scheme()
+esp_err_t esp_efuse_utility_apply_new_coding_scheme(void)
 {
     uint8_t buf_w_data[COUNT_EFUSE_REG_PER_BLOCK * 4];
     uint8_t buf_r_data[COUNT_EFUSE_REG_PER_BLOCK * 4];

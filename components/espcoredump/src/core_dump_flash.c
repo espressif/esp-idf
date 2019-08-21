@@ -50,7 +50,7 @@ static inline core_dump_crc_t esp_core_dump_calc_flash_config_crc(void)
     return crc32_le(0, (uint8_t const *)&s_core_flash_config.partition, sizeof(s_core_flash_config.partition));
 }
 
-void esp_core_dump_flash_init() 
+void esp_core_dump_flash_init(void) 
 {
     const esp_partition_t *core_part;
 

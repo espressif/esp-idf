@@ -64,7 +64,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
    about interrupts, CPU coordination, flash mapping. However some of
    the functions in esp_spi_flash.c call it.
  */
-esp_rom_spiflash_result_t esp_rom_spiflash_unlock()
+esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void)
 {
     uint32_t status;
 
@@ -383,6 +383,7 @@ static void spi_cache_mode_switch(uint32_t  modebit)
             REG_SET_FIELD(SPI_USER2_REG(0), SPI_USR_COMMAND_VALUE, 0x6B);
             REG_SET_FIELD(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN, SPI0_R_FAST_DUMMY_CYCLELEN + g_rom_spiflash_dummy_len_plus[0]);
         } else if ((modebit & SPI_FREAD_DIO)) {
+            REG_SET_FIELD(SPI_USER1_REG(0), SPI_USR_ADDR_BITLEN, SPI0_R_DIO_ADDR_BITSLEN);
             REG_SET_FIELD(SPI_USER1_REG(0), SPI_USR_DUMMY_CYCLELEN, SPI0_R_DIO_DUMMY_CYCLELEN + g_rom_spiflash_dummy_len_plus[0]);
             REG_SET_FIELD(SPI_USER2_REG(0), SPI_USR_COMMAND_VALUE, 0xBB);
         } else if ((modebit & SPI_FREAD_DUAL)) {
@@ -443,7 +444,7 @@ static void spi_cache_mode_switch(uint32_t  modebit)
 #endif
 }
 
-esp_rom_spiflash_result_t esp_rom_spiflash_lock()
+esp_rom_spiflash_result_t esp_rom_spiflash_lock(void)
 {
     uint32_t status;
 
@@ -518,7 +519,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read
     return  ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
-esp_rom_spiflash_result_t esp_rom_spiflash_erase_chip()
+esp_rom_spiflash_result_t esp_rom_spiflash_erase_chip(void)
 {
     if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_enable_write(&g_rom_spiflash_chip)) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;

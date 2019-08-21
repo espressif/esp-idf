@@ -68,7 +68,7 @@ TEST_CASE("Can use access() for UART", "[vfs]")
 #endif
 }
 
-static inline void test_spi_flash_setup()
+static inline void test_spi_flash_setup(void)
 {
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,
@@ -78,7 +78,7 @@ static inline void test_spi_flash_setup()
     TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
 }
 
-static inline void test_spi_flash_teardown()
+static inline void test_spi_flash_teardown(void)
 {
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
 }

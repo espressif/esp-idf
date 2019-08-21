@@ -147,7 +147,7 @@ static void tp_example_read_task(void *pvParameter)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     if (que_touch == NULL) {
         que_touch = xQueueCreate(TOUCH_BUTTON_NUM, sizeof(touch_event_t));

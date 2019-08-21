@@ -121,7 +121,7 @@ static void vMBMasterPortSerialRxPoll(size_t xEventSize)
     }
 }
 
-BOOL xMBMasterPortSerialTxPoll()
+BOOL xMBMasterPortSerialTxPoll(void)
 {
     BOOL bStatus = FALSE;
     USHORT usCount = 0;
@@ -265,7 +265,7 @@ BOOL xMBMasterPortSerialInit( UCHAR ucPORT, ULONG ulBaudRate, UCHAR ucDataBits, 
     return TRUE;
 }
 
-void vMBMasterPortSerialClose()
+void vMBMasterPortSerialClose(void)
 {
     (void)vTaskDelete(xMbTaskHandle);
     ESP_ERROR_CHECK(uart_driver_delete(ucUartNumber));

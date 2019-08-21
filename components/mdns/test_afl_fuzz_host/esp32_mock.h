@@ -38,7 +38,7 @@ uint32_t xQueueReceive(QueueHandle_t xQueue, void *pvBuffer, TickType_t xTicksTo
 
 void GetLastItem(void *pvBuffer);
 
-void ForceTaskDelete();
+void ForceTaskDelete(void);
 
 esp_err_t esp_event_handler_register(const char * event_base, int32_t event_id, void* event_handler, void* event_handler_arg);
 

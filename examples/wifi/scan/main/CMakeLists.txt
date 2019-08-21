@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "scan.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "scan.c"
+                    INCLUDE_DIRS ".")

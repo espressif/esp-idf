@@ -36,7 +36,7 @@
  */
 #define XTAL_FREQ_EST_CYCLES            10
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate();
+static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
 
 static const char* TAG = "rtc_clk_init";
 
@@ -140,7 +140,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_slow_freq_set(cfg.slow_freq);
 }
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
+static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 {
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();

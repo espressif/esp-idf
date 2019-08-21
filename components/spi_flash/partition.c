@@ -19,11 +19,14 @@
 #include <sys/lock.h>
 #include "esp_flash_partitions.h"
 #include "esp_attr.h"
+#include "esp_flash.h"
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
 #include "bootloader_common.h"
+#include "bootloader_util.h"
+#include "esp_ota_ops.h"
 
 #define HASH_LEN 32 /* SHA-256 digest length */
 
@@ -34,8 +37,10 @@
 #include "sys/queue.h"
 
 
+
 typedef struct partition_list_item_ {
     esp_partition_t info;
+    bool user_registered;
     SLIST_ENTRY(partition_list_item_) next;
 } partition_list_item_t;
 
@@ -49,7 +54,7 @@ typedef struct esp_partition_iterator_opaque_ {
 
 
 static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
-static esp_err_t load_partitions();
+static esp_err_t load_partitions(void);
 
 
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list =
@@ -141,7 +146,7 @@ static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t typ
 
 // Create linked list of partition_list_item_t structures.
 // This function is called only once, with s_partition_list_lock taken.
-static esp_err_t load_partitions()
+static esp_err_t load_partitions(void)
 {
     const uint32_t* ptr;
     spi_flash_mmap_handle_t handle;
@@ -162,12 +167,18 @@ static esp_err_t load_partitions()
             break;
         }
         // allocate new linked list item and populate it with data from partition table
-        partition_list_item_t* item = (partition_list_item_t*) malloc(sizeof(partition_list_item_t));
+        partition_list_item_t* item = (partition_list_item_t*) calloc(sizeof(partition_list_item_t), 1);
+        if (item == NULL) {
+            err = ESP_ERR_NO_MEM;
+            break;
+        }
+        item->info.flash_chip = esp_flash_default_chip;
         item->info.address = it->pos.offset;
         item->info.size = it->pos.size;
         item->info.type = it->type;
         item->info.subtype = it->subtype;
         item->info.encrypted = it->flags & PART_FLAG_ENCRYPTED;
+        item->user_registered = false;
 
         if (!esp_flash_encryption_enabled()) {
             /* If flash encryption is not turned on, no partitions should be treated as encrypted */
@@ -192,7 +203,7 @@ static esp_err_t load_partitions()
         last = item;
     }
     spi_flash_munmap(handle);
-    return ESP_OK;
+    return err;
 }
 
 void esp_partition_iterator_release(esp_partition_iterator_t iterator)
@@ -207,6 +218,80 @@ const esp_partition_t* esp_partition_get(esp_partition_iterator_t iterator)
     return iterator->info;
 }
 
+esp_err_t esp_partition_register_external(esp_flash_t* flash_chip, size_t offset, size_t size,
+        const char* label, esp_partition_type_t type, esp_partition_subtype_t subtype,
+        const esp_partition_t** out_partition)
+{
+    if (out_partition != NULL) {
+        *out_partition = NULL;
+    }
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+
+    if (offset + size > flash_chip->size) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    partition_list_item_t* item = (partition_list_item_t*) calloc(sizeof(partition_list_item_t), 1);
+    if (item == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    item->info.flash_chip = flash_chip;
+    item->info.address = offset;
+    item->info.size = size;
+    item->info.type = type;
+    item->info.subtype = subtype;
+    item->info.encrypted = false;
+    item->user_registered = true;
+    strlcpy(item->info.label, label, sizeof(item->info.label));
+
+    _lock_acquire(&s_partition_list_lock);
+    partition_list_item_t *it, *last = NULL;
+    SLIST_FOREACH(it, &s_partition_list, next) {
+        /* Check if the new partition overlaps an existing one */
+        if (it->info.flash_chip == flash_chip &&
+                bootloader_util_regions_overlap(offset, offset + size,
+                                                it->info.address, it->info.address + it->info.size)) {
+            _lock_release(&s_partition_list_lock);
+            free(item);
+            return ESP_ERR_INVALID_ARG;
+        }
+        last = it;
+    }
+    if (last == NULL) {
+        SLIST_INSERT_HEAD(&s_partition_list, item, next);
+    } else {
+        SLIST_INSERT_AFTER(last, item, next);
+    }
+    _lock_release(&s_partition_list_lock);
+    if (out_partition != NULL) {
+        *out_partition = &item->info;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_partition_deregister_external(const esp_partition_t* partition)
+{
+    esp_err_t result = ESP_ERR_NOT_FOUND;
+    _lock_acquire(&s_partition_list_lock);
+    partition_list_item_t *it;
+    SLIST_FOREACH(it, &s_partition_list, next) {
+        if (&it->info == partition) {
+            if (!it->user_registered) {
+                result = ESP_ERR_INVALID_ARG;
+                break;
+            }
+            SLIST_REMOVE(&s_partition_list, it, partition_list_item_, next);
+            free(it);
+            result = ESP_OK;
+            break;
+        }
+    }
+    _lock_release(&s_partition_list_lock);
+    return result;
+}
+
 const esp_partition_t *esp_partition_verify(const esp_partition_t *partition)
 {
     assert(partition != NULL);
@@ -217,7 +302,8 @@ const esp_partition_t *esp_partition_verify(const esp_partition_t *partition)
     while (it != NULL) {
         const esp_partition_t *p = esp_partition_get(it);
         /* Can't memcmp() whole structure here as padding contents may be different */
-        if (p->address == partition->address
+        if (p->flash_chip == partition->flash_chip
+            && p->address == partition->address
             && partition->size == p->size
             && partition->encrypted == p->encrypted) {
             esp_partition_iterator_release(it);
@@ -241,9 +327,17 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
     }
 
     if (!partition->encrypted) {
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+        return esp_flash_read(partition->flash_chip, dst, partition->address + src_offset, size);
+#else
         return spi_flash_read(partition->address + src_offset, dst, size);
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     } else {
 #if CONFIG_SECURE_FLASH_ENC_ENABLED
+        if (partition->flash_chip != esp_flash_default_chip) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+
         /* Encrypted partitions need to be read via a cache mapping */
         const void *buf;
         spi_flash_mmap_handle_t handle;
@@ -275,9 +369,16 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
     }
     dst_offset = partition->address + dst_offset;
     if (!partition->encrypted) {
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+        return esp_flash_write(partition->flash_chip, src, dst_offset, size);
+#else
         return spi_flash_write(dst_offset, src, size);
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     } else {
 #if CONFIG_SECURE_FLASH_ENC_ENABLED
+        if (partition->flash_chip != esp_flash_default_chip) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
         return spi_flash_write_encrypted(dst_offset, src, size);
 #else
         return ESP_ERR_NOT_SUPPORTED;
@@ -286,23 +387,26 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
 }
 
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
-                                    size_t start_addr, size_t size)
+                                    size_t offset, size_t size)
 {
     assert(partition != NULL);
-    if (start_addr > partition->size) {
+    if (offset > partition->size) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (start_addr + size > partition->size) {
+    if (offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
     }
     if (size % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_SIZE;
     }
-    if (start_addr % SPI_FLASH_SEC_SIZE != 0) {
+    if (offset % SPI_FLASH_SEC_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    return spi_flash_erase_range(partition->address + start_addr, size);
-
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+    return esp_flash_erase_region(partition->flash_chip, partition->address + offset, size);
+#else
+    return spi_flash_erase_range(partition->address + offset, size);
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 }
 
 /*
@@ -313,7 +417,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
  * we can add esp_partition_mmapv which will accept an array of offsets and sizes, and return array of
  * mmaped pointers, and a single handle for all these regions.
  */
-esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, uint32_t size,
+esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, size_t size,
                              spi_flash_mmap_memory_t memory,
                              const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
@@ -323,6 +427,9 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, 
     }
     if (offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
+    }
+    if (partition->flash_chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
     size_t phys_addr = partition->address + offset;
     // offset within 64kB block
@@ -354,4 +461,20 @@ bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_
         }
     }
     return false;
+}
+
+bool esp_partition_main_flash_region_safe(size_t addr, size_t size)
+{
+    bool result = true;
+    if (addr <= ESP_PARTITION_TABLE_OFFSET + ESP_PARTITION_TABLE_MAX_LEN) {
+        return false;
+    }
+    const esp_partition_t *p = esp_ota_get_running_partition();
+    if (addr >= p->address && addr < p->address + p->size) {
+        return false;
+    }
+    if (addr < p->address && addr + size > p->address) {
+        return false;
+    }
+    return result;
 }

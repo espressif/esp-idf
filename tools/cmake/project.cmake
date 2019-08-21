@@ -244,12 +244,13 @@ macro(project project_name)
 
     __target_set_toolchain()
 
-    # Enable ccache if it's on the path
-    if(NOT CCACHE_DISABLE)
+    if(CCACHE_ENABLE)
         find_program(CCACHE_FOUND ccache)
         if(CCACHE_FOUND)
             message(STATUS "ccache will be used for faster builds")
             set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+        else()
+            message(WARNING "enabled ccache in build but ccache program not found")
         endif()
     endif()
 
@@ -264,6 +265,31 @@ macro(project project_name)
     function(project)
         set(project_ARGV ARGV)
         __project(${${project_ARGV}})
+
+        # Set the variables that project() normally sets, documented in the
+        # command's docs.
+        #
+        # https://cmake.org/cmake/help/v3.5/command/project.html
+        #
+        # There is some nuance when it comes to setting version variables in terms of whether
+        # CMP0048 is set to OLD or NEW. However, the proper behavior should have bee already handled by the original
+        # project call, and we're just echoing the values those variables were set to.
+        set(PROJECT_NAME "${PROJECT_NAME}" PARENT_SCOPE)
+        set(PROJECT_BINARY_DIR "${PROJECT_BINARY_DIR}" PARENT_SCOPE)
+        set(PROJECT_SOURCE_DIR "${PROJECT_SOURCE_DIR}" PARENT_SCOPE)
+        set(PROJECT_VERSION "${PROJECT_VERSION}" PARENT_SCOPE)
+        set(PROJECT_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}" PARENT_SCOPE)
+        set(PROJECT_VERSION_MINOR "${PROJECT_VERSION_MINOR}" PARENT_SCOPE)
+        set(PROJECT_VERSION_PATCH "${PROJECT_VERSION_PATCH}" PARENT_SCOPE)
+        set(PROJECT_VERSION_TWEAK "${PROJECT_VERSION_TWEAK}" PARENT_SCOPE)
+
+        set(${PROJECT_NAME}_BINARY_DIR "${${PROJECT_NAME}_BINARY_DIR}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_SOURCE_DIR "${${PROJECT_NAME}_SOURCE_DIR}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_VERSION_MAJOR "${${PROJECT_NAME}_VERSION_MAJOR}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}" PARENT_SCOPE)
+        set(${PROJECT_NAME}_VERSION_TWEAK "${${PROJECT_NAME}_VERSION_TWEAK}" PARENT_SCOPE)
     endfunction()
 
     # Prepare the following arguments for the idf_build_process() call using external
@@ -382,19 +408,26 @@ macro(project project_name)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
+    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
+    if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
+        list(APPEND idf_size "--json")
+    endif()
+
     # Add size targets, depend on map file, run idf_size.py
     add_custom_target(size
         DEPENDS ${project_elf}
-        COMMAND ${python} ${idf_path}/tools/idf_size.py ${mapfile}
+        COMMAND ${idf_size} ${mapfile}
         )
     add_custom_target(size-files
         DEPENDS ${project_elf}
-        COMMAND ${python} ${idf_path}/tools/idf_size.py --files ${mapfile}
+        COMMAND ${idf_size} --files ${mapfile}
         )
     add_custom_target(size-components
         DEPENDS ${project_elf}
-        COMMAND ${python} ${idf_path}/tools/idf_size.py --archives ${mapfile}
+        COMMAND ${idf_size} --archives ${mapfile}
         )
+
+    unset(idf_size)
 
     idf_build_executable(${project_elf})
 

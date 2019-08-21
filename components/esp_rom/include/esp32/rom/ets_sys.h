@@ -25,6 +25,10 @@
 #include "soc/soc.h"
 #endif
 
+#ifndef CONFIG_IDF_TARGET_ESP32
+#error "This header should only be included when building for ESP32"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

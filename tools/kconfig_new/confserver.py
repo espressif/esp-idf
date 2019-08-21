@@ -29,8 +29,16 @@ def main():
                         help='KConfig file with config item definitions',
                         required=True)
 
+    parser.add_argument('--sdkconfig-rename',
+                        help='File with deprecated Kconfig options',
+                        required=False)
+
     parser.add_argument('--env', action='append', default=[],
                         help='Environment to set when evaluating the config file', metavar='NAME=VAL')
+
+    parser.add_argument('--env-file', type=argparse.FileType('r'),
+                        help='Optional file to load environment variables from. Contents '
+                             'should be a JSON object where each key/value pair is a variable.')
 
     parser.add_argument('--version', help='Set protocol version to use on initial status',
                         type=int, default=MAX_PROTOCOL_VERSION)
@@ -54,18 +62,26 @@ def main():
     for name, value in args.env:
         os.environ[name] = value
 
-    run_server(args.kconfig, args.config)
+    if args.env_file is not None:
+        env = json.load(args.env_file)
+        os.environ.update(env)
+
+    run_server(args.kconfig, args.config, args.sdkconfig_rename)
 
 
-def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
+def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCOL_VERSION):
     config = kconfiglib.Kconfig(kconfig)
-    deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
-    with tempfile.NamedTemporaryFile(mode='w+b') as f_o:
+    sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
+    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
+    deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
+    f_o = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
+    try:
         with open(sdkconfig, mode='rb') as f_i:
             f_o.write(f_i.read())
-        f_o.flush()
-        f_o.seek(0)
+        f_o.close()  # need to close as DeprecatedOptions will reopen, and Windows only allows one open file
         deprecated_options.replace(sdkconfig_in=f_o.name, sdkconfig_out=sdkconfig)
+    finally:
+        os.unlink(f_o.name)
     config.load_config(sdkconfig)
 
     print("Server running, waiting for requests on stdin...", file=sys.stderr)
@@ -82,6 +98,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
         # V2 onwards: separate visibility from version
         json.dump({"version": default_version, "values": config_dict, "ranges": ranges_dict, "visible": visible_dict}, sys.stdout)
     print("\n")
+    sys.stdout.flush()
 
     while True:
         line = sys.stdin.readline()
@@ -93,6 +110,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             response = {"version": default_version, "error": ["JSON formatting error: %s" % e]}
             json.dump(response, sys.stdout)
             print("\n")
+            sys.stdout.flush()
             continue
         before = confgen.get_json_values(config)
         before_ranges = get_ranges(config)
@@ -142,6 +160,7 @@ def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
             response["error"] = error
         json.dump(response, sys.stdout)
         print("\n")
+        sys.stdout.flush()
 
 
 def handle_request(deprecated_options, config, req):

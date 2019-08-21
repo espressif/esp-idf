@@ -29,7 +29,7 @@ static void deep_sleep_task(void *arg)
     esp_deep_sleep_start();
 }
 
-static void do_deep_sleep_from_app_cpu()
+static void do_deep_sleep_from_app_cpu(void)
 {
     xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
 
@@ -204,20 +204,20 @@ TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][re
 }
 #endif
 
-static void do_deep_sleep()
+static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_sleep_reset_and_sleep()
+static void check_sleep_reset_and_sleep(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_sleep_reset()
+static void check_sleep_reset(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
 }
@@ -228,12 +228,12 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=
         check_sleep_reset_and_sleep,
         check_sleep_reset);
 
-static void do_abort()
+static void do_abort(void)
 {
     abort();
 }
 
-static void check_abort_reset_and_sleep()
+static void check_abort_reset_and_sleep(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
@@ -247,20 +247,20 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abo
 
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
 
-static RTC_IRAM_ATTR void wake_stub()
+static RTC_IRAM_ATTR void wake_stub(void)
 {
     esp_default_wake_deep_sleep();
     s_wake_stub_var = (uint32_t) &wake_stub;
 }
 
-static void prepare_wake_stub()
+static void prepare_wake_stub(void)
 {
     esp_set_deep_sleep_wake_stub(&wake_stub);
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_wake_stub()
+static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
@@ -336,7 +336,7 @@ static float get_time_ms(void)
     return fabs(dt);
 }
 
-static uint32_t get_cause()
+static uint32_t get_cause(void)
 {
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, \
                                             RTC_CNTL_WAKEUP_CAUSE);

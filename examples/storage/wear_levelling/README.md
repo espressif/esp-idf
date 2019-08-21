@@ -20,25 +20,15 @@ Wear levelling partition size is set in partitions_example.csv file. See [Partit
 
 This example does not require any special hardware, and can be run on any common development board.
 
-### Configure the project
-
-If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
-
-If using CMake based build system, no configuration is required.
-
 ### Build and flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
-```
-
-Or, for CMake based build system (replace PORT with serial port name):
-
-```
 idf.py -p PORT flash monitor
 ```
+
+(Replace PORT with serial port name.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -46,7 +36,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example output
 
-Here is an typical example console output. 
+Here is a typical example console output. 
 
 ```
 I (280) example: Mounting FAT filesystem
@@ -61,4 +51,4 @@ I (920) example: Unmounting FAT filesystem
 I (1000) example: Done
 ```
 
-To erase the contents of wear levelling partition, run `make erase_flash` command (or `idf.py erase_flash`, if using CMake build system). Then upload the example again as described above.
+To erase the contents of wear levelling partition, run `idf.py erase_flash` command. Then upload the example again as described above.

@@ -458,15 +458,23 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 #define SD_IO_CIS_SIZE          0x17000
 
 /* CIS tuple codes (based on PC Card 16) */
-#define SD_IO_CISTPL_NULL       0x00
-#define SD_IO_CISTPL_VERS_1     0x15
-#define SD_IO_CISTPL_MANFID     0x20
-#define SD_IO_CISTPL_FUNCID     0x21
-#define SD_IO_CISTPL_FUNCE      0x22
-#define SD_IO_CISTPL_END        0xff
+#define CISTPL_CODE_NULL            0x00
+#define CISTPL_CODE_DEVICE          0x01
+#define CISTPL_CODE_CHKSUM          0x10
+#define CISTPL_CODE_VERS1           0x15
+#define CISTPL_CODE_ALTSTR          0x16
+#define CISTPL_CODE_CONFIG          0x1A
+#define CISTPL_CODE_CFTABLE_ENTRY   0x1B
+#define CISTPL_CODE_MANFID          0x20
+#define CISTPL_CODE_FUNCID          0x21
+#define   TPLFID_FUNCTION_SDIO        0x0c
+#define CISTPL_CODE_FUNCE           0x22
+#define CISTPL_CODE_VENDER_BEGIN    0x80
+#define CISTPL_CODE_VENDER_END      0x8F
+#define CISTPL_CODE_SDIO_STD        0x91
+#define CISTPL_CODE_SDIO_EXT        0x92
+#define CISTPL_CODE_END             0xFF
 
-/* CISTPL_FUNCID codes */
-#define TPLFID_FUNCTION_SDIO        0x0c
 
 /* Timing */
 #define SDMMC_TIMING_LEGACY 0

@@ -19,7 +19,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "esp_err.h"
+#include "esp_flash.h"
 #include "esp_spi_flash.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,6 +100,7 @@ typedef struct esp_partition_iterator_opaque_* esp_partition_iterator_t;
  * However, this is the format used by this API.
  */
 typedef struct {
+    esp_flash_t* flash_chip;            /*!< SPI flash chip on which the partition resides */
     esp_partition_type_t type;          /*!< partition type (app/data) */
     esp_partition_subtype_t subtype;    /*!< partition subtype */
     uint32_t address;                   /*!< starting address of the partition in flash */
@@ -246,8 +249,8 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
  * @param partition Pointer to partition structure obtained using
  *                  esp_partition_find_first or esp_partition_get.
  *                  Must be non-NULL.
- * @param start_addr Address where erase operation should start. Must be aligned
- *                   to 4 kilobytes.
+ * @param offset Offset from the beginning of partition where erase operation
+ *               should start. Must be aligned to 4 kilobytes.
  * @param size Size of the range which should be erased, in bytes.
  *                   Must be divisible by 4 kilobytes.
  *
@@ -257,7 +260,7 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
  *         or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
-                                    uint32_t start_addr, uint32_t size);
+                                    size_t offset, size_t size);
 
 /**
  * @brief Configure MMU to map partition into data memory
@@ -284,7 +287,7 @@ esp_err_t esp_partition_erase_range(const esp_partition_t* partition,
  *
  * @return ESP_OK, if successful
  */
-esp_err_t esp_partition_mmap(const esp_partition_t* partition, uint32_t offset, uint32_t size,
+esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, size_t size,
                              spi_flash_mmap_memory_t memory,
                              const void** out_ptr, spi_flash_mmap_handle_t* out_handle);
 
@@ -319,6 +322,43 @@ esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sh
  *         - False: Otherwise
  */
 bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_partition_t *partition_2);
+
+/**
+ * @brief Register a partition on an external flash chip
+ *
+ * This API allows designating certain areas of external flash chips (identified by the esp_flash_t structure)
+ * as partitions. This allows using them with components which access SPI flash through the esp_partition API.
+ *
+ * @param flash_chip  Pointer to the structure identifying the flash chip
+ * @param offset  Address in bytes, where the partition starts
+ * @param size  Size of the partition in bytes
+ * @param label  Partition name
+ * @param type  One of the partition types (ESP_PARTITION_TYPE_*). Note that applications can not be booted from external flash
+ *              chips, so using ESP_PARTITION_TYPE_APP is not supported.
+ * @param subtype  One of the partition subtypes (ESP_PARTITION_SUBTYPE_*)
+ * @param[out] out_partition  Output, if non-NULL, receives the pointer to the resulting esp_partition_t structure
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if CONFIG_CONFIG_SPI_FLASH_USE_LEGACY_IMPL is enabled
+ *      - ESP_ERR_NO_MEM if memory allocation has failed
+ *      - ESP_ERR_INVALID_ARG if the new partition overlaps another partition on the same flash chip
+ *      - ESP_ERR_INVALID_SIZE if the partition doesn't fit into the flash chip size
+ */
+esp_err_t esp_partition_register_external(esp_flash_t* flash_chip, size_t offset, size_t size,
+                                     const char* label, esp_partition_type_t type, esp_partition_subtype_t subtype,
+                                     const esp_partition_t** out_partition);
+
+/**
+ * @brief Deregister the partition previously registered using esp_partition_register_external
+ * @param partition  pointer to the partition structure obtained from esp_partition_register_external,
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NOT_FOUND if the partition pointer is not found
+ *      - ESP_ERR_INVALID_ARG if the partition comes from the partition table
+ *      - ESP_ERR_INVALID_ARG if the partition was not registered using
+ *        esp_partition_register_external function.
+ */
+esp_err_t esp_partition_deregister_external(const esp_partition_t* partition);
 
 #ifdef __cplusplus
 }

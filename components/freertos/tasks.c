@@ -77,7 +77,6 @@ all the API functions to use the MPU wrappers.  That should only be done when
 task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 #include "esp_newlib.h"
-#include "esp_debug_helpers.h"
 
 /* FreeRTOS includes. */
 #include "FreeRTOS.h"
@@ -2117,7 +2116,7 @@ void vTaskEndScheduler( void )
 
 #if ( configUSE_NEWLIB_REENTRANT == 1 )
 //Return global reent struct if FreeRTOS isn't running,
-struct _reent* __getreent() {
+struct _reent* __getreent(void) {
 	//No lock needed because if this changes, we won't be running anymore.
 	TCB_t *currTask=xTaskGetCurrentTaskHandle();
 	if (currTask==NULL) {
@@ -2149,7 +2148,7 @@ void vTaskSuspendAll( void )
 
 #if ( portNUM_PROCESSORS > 1 )
 
-	static BaseType_t xHaveReadyTasks()
+	static BaseType_t xHaveReadyTasks( void )
 	{
 		for (int i = tskIDLE_PRIORITY + 1; i < configMAX_PRIORITIES; ++i)
 		{

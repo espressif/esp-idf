@@ -1,4 +1,4 @@
-register_config_only_component()
+idf_component_register()
 
 if(BOOTLOADER_BUILD)
     return()
@@ -40,19 +40,6 @@ add_custom_command(OUTPUT "${build_dir}/partition_table/${unsigned_partition_bin
     DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
     VERBATIM)
 
-# Add signing steps
-if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_target(gen_unsigned_partition_bin ALL DEPENDS
-                    "${build_dir}/partition_table/${unsigned_partition_bin}")
-
-    add_custom_command(OUTPUT "${build_dir}/partition_table/${final_partition_bin}"
-        COMMAND ${ESPSECUREPY} sign_data --keyfile "${secure_boot_signing_key}"
-        -o "${build_dir}/partition_table/${final_partition_bin}"
-        "${build_dir}/partition_table/${unsigned_partition_bin}"
-        DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
-        VERBATIM)
-endif()
-
 if(EXISTS ${partition_csv})
     add_custom_target(partition_table ALL DEPENDS "${build_dir}/partition_table/${final_partition_bin}")
 else()
@@ -64,28 +51,28 @@ else()
         "Either change partition table in menuconfig or create this input file.")
 endif()
 
-if(CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    add_custom_command(TARGET partition_table POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "Partition table built but not signed. Sign partition data before flashing:"
-        COMMAND ${CMAKE_COMMAND} -E echo
-            "\t${ESPSECUREPY} sign_data --keyfile KEYFILE ${CMAKE_CURRENT_BINARY_DIR}/${final_partition_bin}"
-        VERBATIM)
-endif()
+# Add signing steps
+if(CONFIG_SECURE_SIGNED_APPS)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        add_custom_target(gen_unsigned_partition_bin ALL DEPENDS
+                        "${build_dir}/partition_table/${unsigned_partition_bin}")
 
-# If anti-rollback option is set then factory partition should not be in Partition Table.
-# In this case, should be used the partition table with two ota app without the factory.
-partition_table_get_partition_info(factory_offset "--partition-type app --partition-subtype factory" "offset")
-if(CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK AND factory_offset)
-    fail_at_build_time(check_table_contents
-        "ERROR: Anti-rollback option is enabled. Partition table should consist of two ota app without factory partition.")
-add_dependencies(bootloader check_table_contents)
-add_dependencies(app check_table_contents)
+        add_custom_command(OUTPUT "${build_dir}/partition_table/${final_partition_bin}"
+            COMMAND ${ESPSECUREPY} sign_data --keyfile "${SECURE_BOOT_SIGNING_KEY}"
+            -o "${build_dir}/partition_table/${final_partition_bin}"
+            "${build_dir}/partition_table/${unsigned_partition_bin}"
+            DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
+            VERBATIM)
+    else()
+        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
+        add_custom_command(TARGET partition_table POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "Partition table built but not signed. Sign partition data before flashing:"
+            COMMAND ${CMAKE_COMMAND} -E echo 
+                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
+            VERBATIM)
+    endif()
 endif()
-
-add_dependencies(bootloader partition_table)
-add_dependencies(app partition_table)
 
 # Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build
 # the list of esptool write arguments for flashing
@@ -95,8 +82,3 @@ set_property(GLOBAL APPEND_STRING PROPERTY
 
 esptool_py_flash_project_args(partition_table ${PARTITION_TABLE_OFFSET}
                               ${build_dir}/partition_table/partition-table.bin FLASH_IN_PROJECT)
-
-partition_table_get_partition_info(app_partition_offset "--partition-boot-default" "offset")
-esptool_py_flash_project_args(app ${app_partition_offset} ${build_dir}/${PROJECT_BIN} FLASH_IN_PROJECT)
-
-

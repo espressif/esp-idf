@@ -52,7 +52,7 @@
 #endif
 
 #ifdef WITH_RTC
-static uint64_t get_rtc_time_us()
+static uint64_t get_rtc_time_us(void)
 {
     const uint64_t ticks = rtc_time_get();
     const uint32_t cal = esp_clk_slowclk_cal_get();
@@ -90,7 +90,7 @@ static uint64_t adjtime_start = 0;
 // is how many microseconds total to slew
 static int64_t adjtime_total_correction = 0;
 #define ADJTIME_CORRECTION_FACTOR 6
-static uint64_t get_time_since_boot();
+static uint64_t get_time_since_boot(void);
 #endif
 // Offset between FRC timer and the RTC.
 // Initialized after reset or light sleep.
@@ -111,7 +111,7 @@ static void set_boot_time(uint64_t time_us)
     _lock_release(&s_boot_time_lock);
 }
 
-static uint64_t get_boot_time()
+static uint64_t get_boot_time(void)
 {
     uint64_t result;
     _lock_acquire(&s_boot_time_lock);
@@ -125,7 +125,7 @@ static uint64_t get_boot_time()
 }
 
 // This function gradually changes boot_time to the correction value and immediately updates it.
-static uint64_t adjust_boot_time()
+static uint64_t adjust_boot_time(void)
 {
     uint64_t boot_time = get_boot_time();
     if ((boot_time == 0) || (get_time_since_boot() < adjtime_start)) {
@@ -244,12 +244,12 @@ void esp_clk_slowclk_cal_set(uint32_t new_cal)
     REG_WRITE(RTC_SLOW_CLK_CAL_REG, new_cal);
 }
 
-uint32_t esp_clk_slowclk_cal_get()
+uint32_t esp_clk_slowclk_cal_get(void)
 {
     return REG_READ(RTC_SLOW_CLK_CAL_REG);
 }
 
-void esp_set_time_from_rtc()
+void esp_set_time_from_rtc(void)
 {
 #if defined( WITH_FRC ) && defined( WITH_RTC )
     // initialize time from RTC clock
@@ -279,7 +279,7 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
 }
 
 #if defined( WITH_FRC ) || defined( WITH_RTC )
-static uint64_t get_time_since_boot()
+static uint64_t get_time_since_boot(void)
 {
     uint64_t microseconds = 0;
 #ifdef WITH_FRC
@@ -377,7 +377,7 @@ uint64_t system_get_rtc_time(void)
 #endif
 }
 
-void esp_sync_counters_rtc_and_frc()
+void esp_sync_counters_rtc_and_frc(void)
 {
 #if defined( WITH_FRC ) && defined( WITH_RTC )
     adjtime_corr_stop();
@@ -420,10 +420,10 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
         return -1;
     }
     struct timeval tv;
-    _gettimeofday_r(NULL, &tv, NULL);
     uint64_t monotonic_time_us = 0;
     switch (clock_id) {
         case CLOCK_REALTIME:
+            _gettimeofday_r(NULL, &tv, NULL);
             tp->tv_sec = tv.tv_sec;
             tp->tv_nsec = tv.tv_usec * 1000L;
             break;

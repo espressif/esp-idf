@@ -14,6 +14,7 @@
 
 #ifndef _DRIVER_TOUCH_PAD_H_
 #define _DRIVER_TOUCH_PAD_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -278,7 +279,7 @@ typedef intr_handle_t touch_isr_handle_t;
  *     - ESP_OK Success
  *     - ESP_ERR_NO_MEM Touch pad init error
  */
-esp_err_t touch_pad_init();
+esp_err_t touch_pad_init(void);
 
 /**
  * @brief Un-install touch pad driver.
@@ -287,7 +288,7 @@ esp_err_t touch_pad_init();
  *     - ESP_OK   Success
  *     - ESP_FAIL Touch pad driver not initialized
  */
-esp_err_t touch_pad_deinit();
+esp_err_t touch_pad_deinit(void);
 
 /**
  * @brief Deregister the handler previously registered using touch_pad_isr_handler_register
@@ -301,64 +302,20 @@ esp_err_t touch_pad_deinit();
 esp_err_t touch_pad_isr_deregister(void(*fn)(void *), void *arg);
 
 /**
- * @brief Set touch sensor reference voltage, if the voltage gap between high and low reference voltage get less,
- *        the charging and discharging time would be faster, accordingly, the counter value would be larger.
- *        In the case of detecting very slight change of capacitance, we can narrow down the gap so as to increase
- *        the sensitivity. On the other hand, narrow voltage gap would also introduce more noise, but we can use a
- *        software filter to pre-process the counter value.
- * @param refh the value of DREFH
- * @param refl the value of DREFL
- * @param atten the attenuation on DREFH
+ * @brief Get the touch pad which caused wakeup from sleep
+ * @param pad_num pointer to touch pad which caused wakeup
  * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if argument is wrong
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG parameter is NULL
  */
-esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, touch_volt_atten_t atten);
+esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num);
 
 /**
- * @brief Get touch sensor reference voltage,
- * @param refh pointer to accept DREFH value
- * @param refl pointer to accept DREFL value
- * @param atten pointer to accept the attenuation on DREFH
+ * @brief Get the touch sensor status, usually used in ISR to decide which pads are 'touched'.
  * @return
- *      - ESP_OK on success
+ *      - touch status
  */
-esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl, touch_volt_atten_t *atten);
-
-/**
- * @brief Set touch sensor charge/discharge speed for each pad.
- *        If the slope is 0, the counter would always be zero.
- *        If the slope is 1, the charging and discharging would be slow, accordingly, the counter value would be small.
- *        If the slope is set 7, which is the maximum value, the charging and discharging would be fast, accordingly, the
- *        counter value would be larger.
- * @param touch_num touch pad index
- * @param slope touch pad charge/discharge speed
- * @param opt the initial voltage
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if argument is wrong
- */
-esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope, touch_tie_opt_t opt);
-
-/**
- * @brief Get touch sensor charge/discharge speed for each pad
- * @param touch_num touch pad index
- * @param slope pointer to accept touch pad charge/discharge slope
- * @param opt pointer to accept the initial voltage
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if argument is wrong
- */
-esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope, touch_tie_opt_t *opt);
-
-/**
- * @brief Initialize touch pad GPIO
- * @param touch_num touch pad index
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if argument is wrong
- */
-esp_err_t touch_pad_io_init(touch_pad_t touch_num);
+uint32_t touch_pad_get_status(void);
 
 /**
  * @brief Set touch sensor FSM mode, the test action can be triggered by the timer,
@@ -377,30 +334,6 @@ esp_err_t touch_pad_set_fsm_mode(touch_fsm_mode_t mode);
  *      - ESP_OK on success
  */
 esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
-
-/**
- * @brief Trigger a touch sensor measurement, only support in SW mode of FSM
- * @return
- *      - ESP_OK on success
- */
-esp_err_t touch_pad_sw_start();
-
-/**
- * @brief Get the touch sensor status bit mask. usually used in ISR to decide which pads are 'touched'.
- *        If status bit is 1, this pad is be touched, else, this pad is released.
- * @return
- *      - touch status 
- */
-uint32_t touch_pad_get_status();
-
-/**
- * @brief Get the touch pad which caused wakeup from sleep
- * @param pad_num pointer to touch pad which caused wakeup
- * @return
- *      - ESP_OK Success
- *      - ESP_ERR_INVALID_ARG parameter is NULL
- */
-esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num);
 
 #if CONFIG_IDF_TARGET_ESP32
 
@@ -547,6 +480,73 @@ esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_cycle);
 esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_cycle);
 
 /**
+ * @brief Set touch sensor reference voltage, if the voltage gap between high and low reference voltage get less,
+ *        the charging and discharging time would be faster, accordingly, the counter value would be larger.
+ *        In the case of detecting very slight change of capacitance, we can narrow down the gap so as to increase
+ *        the sensitivity. On the other hand, narrow voltage gap would also introduce more noise, but we can use a
+ *        software filter to pre-process the counter value.
+ * @param refh the value of DREFH
+ * @param refl the value of DREFL
+ * @param atten the attenuation on DREFH
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if argument is wrong
+ */
+esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, touch_volt_atten_t atten);
+
+/**
+ * @brief Get touch sensor reference voltage,
+ * @param refh pointer to accept DREFH value
+ * @param refl pointer to accept DREFL value
+ * @param atten pointer to accept the attenuation on DREFH
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl, touch_volt_atten_t *atten);
+
+/**
+ * @brief Set touch sensor charge/discharge speed for each pad.
+ *        If the slope is 0, the counter would always be zero.
+ *        If the slope is 1, the charging and discharging would be slow, accordingly, the counter value would be small.
+ *        If the slope is set 7, which is the maximum value, the charging and discharging would be fast, accordingly, the
+ *        counter value would be larger.
+ * @param touch_num touch pad index
+ * @param slope touch pad charge/discharge speed
+ * @param opt the initial voltage
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if argument is wrong
+ */
+esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope, touch_tie_opt_t opt);
+
+/**
+ * @brief Get touch sensor charge/discharge speed for each pad
+ * @param touch_num touch pad index
+ * @param slope pointer to accept touch pad charge/discharge slope
+ * @param opt pointer to accept the initial voltage
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if argument is wrong
+ */
+esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope, touch_tie_opt_t *opt);
+
+/**
+ * @brief Initialize touch pad GPIO
+ * @param touch_num touch pad index
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if argument is wrong
+ */
+esp_err_t touch_pad_io_init(touch_pad_t touch_num);
+
+/**
+ * @brief Trigger a touch sensor measurement, only support in SW mode of FSM
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t touch_pad_sw_start(void);
+
+/**
  * @brief Set touch sensor interrupt threshold
  * @param touch_num touch pad index
  * @param threshold threshold of touchpad count, refer to touch_pad_set_trigger_mode to see how to set trigger mode.
@@ -648,21 +648,21 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_clear_status();
+esp_err_t touch_pad_clear_status(void);
 
 /**
  * @brief To enable touch pad interrupt
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_intr_enable();
+esp_err_t touch_pad_intr_enable(void);
 
 /**
  * @brief To disable touch pad interrupt
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_intr_disable();
+esp_err_t touch_pad_intr_disable(void);
 
 /**
  * @brief set touch pad filter calibration period, in ms.
@@ -712,7 +712,7 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms);
  *      - ESP_OK Success
  *      - ESP_ERR_INVALID_STATE driver state error
  */
-esp_err_t touch_pad_filter_stop();
+esp_err_t touch_pad_filter_stop(void);
 
 /**
  * @brief delete touch pad filter driver and release the memory
@@ -721,7 +721,7 @@ esp_err_t touch_pad_filter_stop();
  *      - ESP_OK Success
  *      - ESP_ERR_INVALID_STATE driver state error
  */
-esp_err_t touch_pad_filter_delete();
+esp_err_t touch_pad_filter_delete(void);
 
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 
@@ -732,14 +732,14 @@ esp_err_t touch_pad_filter_delete();
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_fsm_start();
+esp_err_t touch_pad_fsm_start(void);
 
 /**
  * @brief Stop touch sensor FSM.
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_fsm_stop();
+esp_err_t touch_pad_fsm_stop(void);
 
 /**
  * @brief Set touch sensor measurement and sleep time
@@ -859,7 +859,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_reset();
+esp_err_t touch_pad_reset(void);
 
 /**
  * @brief Check touch sensor measurement status.
@@ -878,7 +878,7 @@ bool touch_pad_meas_is_done(void);
  * @return
  *      - touch channel number
  */
-touch_pad_t touch_pad_get_scan_curr();
+touch_pad_t touch_pad_get_scan_curr(void);
 
 /**
  * @brief Get the touch sensor interrupt status mask. usually used in ISR to decide interrupt type.
@@ -886,7 +886,7 @@ touch_pad_t touch_pad_get_scan_curr();
  * @return
  *      - touch intrrupt bit 
  */
-uint32_t touch_pad_intr_status_get_mask();
+uint32_t touch_pad_intr_status_get_mask(void);
 
 /**
  * @brief Enable touch sensor interrupt.
@@ -984,7 +984,7 @@ esp_err_t touch_pad_filter_get_config(touch_filter_config_t *filter_info);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_filter_enable();
+esp_err_t touch_pad_filter_enable(void);
 
 /**
  * @brief diaable touch sensor filter and detection algorithm.
@@ -992,7 +992,7 @@ esp_err_t touch_pad_filter_enable();
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_filter_disable();
+esp_err_t touch_pad_filter_disable(void);
 
 /**
  * @brief set parameter of denoise pad (TOUCH_PAD_NUM0).
@@ -1025,14 +1025,14 @@ esp_err_t touch_pad_denoise_get_config(touch_pad_denoise_t *denoise);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_denoise_enable();
+esp_err_t touch_pad_denoise_enable(void);
 
 /**
  * @brief disable denoise function.
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_denoise_disable();
+esp_err_t touch_pad_denoise_disable(void);
 
 /**
  * @brief get denoise measure value (TOUCH_PAD_NUM0).
@@ -1073,7 +1073,7 @@ esp_err_t touch_pad_waterproof_get_config(touch_pad_waterproof_t *waterproof);
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_waterproof_enable();
+esp_err_t touch_pad_waterproof_enable(void);
 
 /**
  * @brief Enable parameter of waterproof function.
@@ -1085,7 +1085,7 @@ esp_err_t touch_pad_waterproof_enable();
  * @return
  *     - ESP_OK Success
  */
-esp_err_t touch_pad_waterproof_disable();
+esp_err_t touch_pad_waterproof_disable(void);
 
 /**
  * @brief Set parameter of proximity channel. Three proximity sensing channels can be set. 

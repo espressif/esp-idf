@@ -28,7 +28,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/lock.h>
-#include <byteswap.h>
 #include <assert.h>
 
 #include "esp32s2beta/sha.h"
@@ -82,7 +81,7 @@ static void memcpy_endianswap(void *to, const void *from, size_t num_bytes)
     const uint32_t *from_words = (const uint32_t *)from;
     assert(num_bytes % 4 == 0);
     for (int i = 0; i < num_bytes / 4; i++) {
-        to_words[i] = __bswap_32(from_words[i]);
+        to_words[i] = __builtin_bswap32(from_words[i]);
     }
     asm volatile ("memw");
 }

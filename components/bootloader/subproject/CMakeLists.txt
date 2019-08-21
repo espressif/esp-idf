@@ -19,7 +19,7 @@ set(COMPONENTS bootloader esptool_py partition_table soc bootloader_support log 
 set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
 set(common_req log esp_rom esp_common xtensa)
-if (CONFIG_LEGACY_INCLUDE_COMMON_HEADERS)
+if(LEGACY_INCLUDE_COMMON_HEADERS)
     list(APPEND common_req soc)
 endif()
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
@@ -28,8 +28,6 @@ project(bootloader)
 
 idf_build_set_property(COMPILE_DEFINITIONS "-DBOOTLOADER_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
-
-set(secure_boot_signing_key ${SECURE_BOOT_SIGNING_KEY})
 
 string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
 string(REPLACE ";" " " espefusepy "${ESPEFUSEPY}")
@@ -53,7 +51,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     add_custom_command(OUTPUT "${secure_bootloader_key}"
         COMMAND ${ESPSECUREPY} digest_private_key
             --keylen "${key_digest_len}"
-            --keyfile "${secure_boot_signing_key}"
+            --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             "${secure_bootloader_key}"
         VERBATIM)
 
@@ -67,7 +65,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
                 "\nTo generate one, you can use this command:"
                 "\n\t${espsecurepy} generate_flash_encryption_key ${secure_bootloader_key}"
                 "\nIf a signing key is present, then instead use:"
-                "\n\t${ESPSECUREPY} digest_private_key "
+                "\n\t${espsecurepy} digest_private_key "
                 "--keylen (192/256) --keyfile KEYFILE "
                 "${secure_bootloader_key}")
         endif()
@@ -78,14 +76,14 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
         COMMAND ${ESPSECUREPY} digest_secure_bootloader --keyfile "${secure_bootloader_key}"
             -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
-        DEPENDS gen_secure_bootloader_key "${CMAKE_BINARY_DIR}/bootloader.bin"
+        DEPENDS gen_secure_bootloader_key gen_project_binary
         VERBATIM)
 
     add_custom_target (gen_bootloader_digest_bin ALL DEPENDS "${bootloader_digest_bin}")
 endif()
 
 if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
-    add_custom_command(TARGET bootloader POST_BUILD
+    add_custom_command(TARGET bootloader.elf POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -97,9 +95,8 @@ if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
         COMMAND ${CMAKE_COMMAND} -E echo
             "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
         VERBATIM)
-
 elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
-    add_custom_command(TARGET bootloader POST_BUILD
+    add_custom_command(TARGET bootloader.elf POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo

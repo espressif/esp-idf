@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 // Register Ethernet functions
-void register_ethernet();
+void register_ethernet(void);
 
 #ifdef __cplusplus
 }

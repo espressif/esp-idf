@@ -5,21 +5,32 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Hardware crypto support Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-//#include "wpa/includes.h"
-
-//#include "wpa/common.h"
-#include "crypto/common.h"
-#include "crypto/crypto.h"
-#include "crypto/aes.h"
+#include "utils/common.h"
+#include "utils/includes.h"
+#include "crypto.h"
+#include "aes.h"
 #if defined(CONFIG_DES) || defined(CONFIG_DES3)
-#include "crypto/des_i.h"
+#include "des_i.h"
 #endif
-
-#ifdef MEMLEAK_DEBUG
-static const char mem_debug_file[] ICACHE_RODATA_ATTR = __FILE__;
-#endif
-
+#ifdef USE_MBEDTLS_CRYPTO
+#include "mbedtls/aes.h"
+#endif /* USE_MBEDTLS_CRYPTO */
 
 struct crypto_cipher {
 	enum crypto_cipher_alg alg;
@@ -31,8 +42,13 @@ struct crypto_cipher {
 		} rc4;
 		struct {
 			u8 cbc[32];
+#ifdef USE_MBEDTLS_CRYPTO
+			mbedtls_aes_context ctx_enc;
+			mbedtls_aes_context ctx_dec;
+#else /* USE_MBEDTLS_CRYPTO */
 			void *ctx_enc;
 			void *ctx_dec;
+#endif /* USE_MBEDTLS_CRYPTO */
 		} aes;
 #ifdef CONFIG_DES3
 		struct {
@@ -73,6 +89,12 @@ struct crypto_cipher *  crypto_cipher_init(enum crypto_cipher_alg alg,
 		os_memcpy(ctx->u.rc4.key, key, key_len);
 		break;
 	case CRYPTO_CIPHER_ALG_AES:
+#ifdef USE_MBEDTLS_CRYPTO
+		mbedtls_aes_init(&(ctx->u.aes.ctx_enc));
+		mbedtls_aes_setkey_enc(&(ctx->u.aes.ctx_enc), key, key_len * 8);
+		mbedtls_aes_init(&(ctx->u.aes.ctx_dec));
+		mbedtls_aes_setkey_dec(&(ctx->u.aes.ctx_dec), key, key_len * 8);
+#else /* USE_MBEDTLS_CRYPTO */
 		ctx->u.aes.ctx_enc = aes_encrypt_init(key, key_len);
 		if (ctx->u.aes.ctx_enc == NULL) {
 			os_free(ctx);
@@ -84,6 +106,7 @@ struct crypto_cipher *  crypto_cipher_init(enum crypto_cipher_alg alg,
 			os_free(ctx);
 			return NULL;
 		}
+#endif /* USE_MBEDTLS_CRYPTO */
 		os_memcpy(ctx->u.aes.cbc, iv, AES_BLOCK_SIZE);
 		break;
 #ifdef CONFIG_DES3
@@ -135,8 +158,14 @@ int  crypto_cipher_encrypt(struct crypto_cipher *ctx, const u8 *plain,
 		for (i = 0; i < blocks; i++) {
 			for (j = 0; j < AES_BLOCK_SIZE; j++)
 				ctx->u.aes.cbc[j] ^= plain[j];
+#ifdef USE_MBEDTLS_CRYPTO
+			if (mbedtls_internal_aes_encrypt(&(ctx->u.aes.ctx_enc),
+					ctx->u.aes.cbc, ctx->u.aes.cbc) != 0)
+				return -1;
+#else /* USE_MBEDTLS_CRYPTO */
 			aes_encrypt(ctx->u.aes.ctx_enc, ctx->u.aes.cbc,
 				    ctx->u.aes.cbc);
+#endif /* USE_MBEDTLS_CRYPTO */
 			os_memcpy(crypt, ctx->u.aes.cbc, AES_BLOCK_SIZE);
 			plain += AES_BLOCK_SIZE;
 			crypt += AES_BLOCK_SIZE;
@@ -202,7 +231,13 @@ int  crypto_cipher_decrypt(struct crypto_cipher *ctx, const u8 *crypt,
 		blocks = len / AES_BLOCK_SIZE;
 		for (i = 0; i < blocks; i++) {
 			os_memcpy(tmp, crypt, AES_BLOCK_SIZE);
+#ifdef USE_MBEDTLS_CRYPTO
+			if (mbedtls_internal_aes_decrypt(&(ctx->u.aes.ctx_dec),
+							 crypt, plain) != 0)
+				return -1;
+#else /* USE_MBEDTLS_CRYPTO */
 			aes_decrypt(ctx->u.aes.ctx_dec, crypt, plain);
+#endif /* USE_MBEDTLS_CRYPTO */
 			for (j = 0; j < AES_BLOCK_SIZE; j++)
 				plain[j] ^= ctx->u.aes.cbc[j];
 			os_memcpy(ctx->u.aes.cbc, tmp, AES_BLOCK_SIZE);
@@ -254,8 +289,13 @@ void  crypto_cipher_deinit(struct crypto_cipher *ctx)
 {
 	switch (ctx->alg) {
 	case CRYPTO_CIPHER_ALG_AES:
+#ifdef USE_MBEDTLS_CRYPTO
+		mbedtls_aes_free(&(ctx->u.aes.ctx_enc));
+		mbedtls_aes_free(&(ctx->u.aes.ctx_dec));
+#else /* USE_MBEDTLS_CRYPTO */
 		aes_encrypt_deinit(ctx->u.aes.ctx_enc);
 		aes_decrypt_deinit(ctx->u.aes.ctx_dec);
+#endif /* USE_MBEDTLS_CRYPTO */
 		break;
 #ifdef CONFIG_DES3
 	case CRYPTO_CIPHER_ALG_3DES:

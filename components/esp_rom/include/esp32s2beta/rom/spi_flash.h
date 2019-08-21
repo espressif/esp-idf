@@ -511,8 +511,8 @@ typedef esp_rom_spiflash_result_t SpiFlashOpResult;
 
 SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, const void* data, uint32_t len);
 SpiFlashOpResult SPI_Encrypt_Write_Dest(SpiEncryptDest dest, uint32_t flash_addr, const void* data, uint32_t len);
-void SPI_Write_Encrypt_Enable();
-void SPI_Write_Encrypt_Disable();
+void SPI_Write_Encrypt_Enable(void);
+void SPI_Write_Encrypt_Disable(void);
 
 /** @brief Wait until SPI flash write operation is complete
  *

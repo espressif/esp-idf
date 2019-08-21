@@ -30,6 +30,7 @@
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_wdt.h"
+#include "soc/soc_memory_layout.h"
 
 #include "esp_private/gdbstub.h"
 #include "esp_debug_helpers.h"
@@ -43,6 +44,8 @@
 #include "esp_private/system_internal.h"
 #include "sdkconfig.h"
 #include "esp_ota_ops.h"
+#include "driver/timer.h"
+#include "hal/timer_ll.h"
 #if CONFIG_SYSVIEW_ENABLE
 #include "SEGGER_RTT.h"
 #endif
@@ -138,7 +141,7 @@ esp_reset_reason_t __attribute__((weak)) esp_reset_reason_get_hint(void)
 
 static bool abort_called;
 
-static __attribute__((noreturn)) inline void invoke_abort()
+static __attribute__((noreturn)) inline void invoke_abort(void)
 {
     abort_called = true;
 #if CONFIG_ESP32_APPTRACE_ENABLE
@@ -157,7 +160,7 @@ static __attribute__((noreturn)) inline void invoke_abort()
     }
 }
 
-void abort()
+void abort(void)
 {
 #if !CONFIG_ESP32_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
@@ -188,12 +191,12 @@ static const char *edesc[] = {
 #define NUM_EDESCS (sizeof(edesc) / sizeof(char *))
 
 static void commonErrorHandler(XtExcFrame *frame);
-static inline void disableAllWdts();
+static inline void disableAllWdts(void);
 static void illegal_instruction_helper(XtExcFrame *frame);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
-static void haltOtherCore()
+static void haltOtherCore(void)
 {
     esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
 }
@@ -310,7 +313,7 @@ void panicHandler(XtExcFrame *frame)
         disableAllWdts();
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
             frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-            TIMERG1.int_clr_timers.wdt = 1;
+            timer_group_clr_intr_sta_in_isr(TIMER_GROUP_1, TIMER_INTR_WDT);
         }
 #if CONFIG_ESP32_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
@@ -398,39 +401,43 @@ static void illegal_instruction_helper(XtExcFrame *frame)
   all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
   one second.
 */
-static void reconfigureAllWdts()
+static void reconfigureAllWdts(void)
 {
-    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_feed = 1;
-    TIMERG0.wdt_config0.sys_reset_length = 7;           //3.2uS
-    TIMERG0.wdt_config0.cpu_reset_length = 7;           //3.2uS
-    TIMERG0.wdt_config0.stg0 = TIMG_WDT_STG_SEL_RESET_SYSTEM; //1st stage timeout: reset system
-    TIMERG0.wdt_config1.clk_prescale = 80 * 500;        //Prescaler: wdt counts in ticks of 0.5mS
-    TIMERG0.wdt_config2 = 2000;                         //1 second before reset
-    TIMERG0.wdt_config0.en = 1;
-    TIMERG0.wdt_wprotect = 0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_feed(&TIMERG0);
+    timer_ll_wdt_init(&TIMERG0);
+    timer_ll_wdt_set_tick(&TIMERG0, TG0_WDT_TICK_US); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
+    //1st stage timeout: reset system
+    timer_ll_wdt_set_timeout_behavior(&TIMERG0, 0, TIMER_WDT_RESET_SYSTEM);
+    //1 second before reset
+    timer_ll_wdt_set_timeout(&TIMERG0, 0, 1000*1000/TG0_WDT_TICK_US);
+    timer_ll_wdt_set_enable(&TIMERG0, true);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
     //Disable wdt 1
-    TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect = 0;
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 }
 
 /*
   This disables all the watchdogs for when we call the gdbstub.
 */
-static inline void disableAllWdts()
+static inline void disableAllWdts(void)
 {
-    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect = 0;
-    TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect = 0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_set_enable(&TIMERG0, false);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 }
 
-static void esp_panic_dig_reset() __attribute__((noreturn));
+#if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
+static void esp_panic_dig_reset(void) __attribute__((noreturn));
 
-static void esp_panic_dig_reset()
+static void esp_panic_dig_reset(void)
 {
     // make sure all the panic handler output is sent from UART FIFO
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
@@ -443,36 +450,40 @@ static void esp_panic_dig_reset()
         ;
     }
 }
+#endif
 
 static void putEntry(uint32_t pc, uint32_t sp)
 {
-    if (pc & 0x80000000) {
-        pc = (pc & 0x3fffffff) | 0x40000000;
-    }
     panicPutStr(" 0x");
     panicPutHex(pc);
     panicPutStr(":0x");
     panicPutHex(sp);
 }
 
-static void doBacktrace(XtExcFrame *frame)
+static void doBacktrace(XtExcFrame *exc_frame, int depth)
 {
-    uint32_t i = 0, pc = frame->pc, sp = frame->a1;
+    //Initialize stk_frame with first frame of stack
+    esp_backtrace_frame_t stk_frame = {.pc = exc_frame->pc, .sp = exc_frame->a1, .next_pc = exc_frame->a0};
     panicPutStr("\r\nBacktrace:");
-    /* Do not check sanity on first entry, PC could be smashed. */
-    putEntry(pc, sp);
-    pc = frame->a0;
-    while (i++ < 100) {
-        uint32_t psp = sp;
-        if (!esp_stack_ptr_is_sane(sp) || i++ > 100) {
-            break;
+    putEntry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+
+    //Check if first frame is valid
+    bool corrupted = (esp_stack_ptr_is_sane(stk_frame.sp) &&
+                      esp_ptr_executable((void*)esp_cpu_process_stack_pc(stk_frame.pc))) ?
+                      false : true;
+    uint32_t i = ((depth <= 0) ? INT32_MAX : depth) - 1;    //Account for stack frame that's already printed
+    while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
+        if (!esp_backtrace_get_next_frame(&stk_frame)) {    //Get next stack frame
+            corrupted = true;
         }
-        sp = *((uint32_t *) (sp - 0x10 + 4));
-        putEntry(pc - 3, sp); // stack frame addresses are return addresses, so subtract 3 to get the CALL address
-        pc = *((uint32_t *) (psp - 0x10));
-        if (pc < 0x40000000) {
-            break;
-        }
+        putEntry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
+    }
+
+    //Print backtrace termination marker
+    if (corrupted) {
+        panicPutStr(" |<-CORRUPTED");
+    } else if (stk_frame.next_pc != 0) {    //Backtrace continues
+        panicPutStr(" |<-CONTINUES");
     }
     panicPutStr("\r\n");
 }
@@ -549,7 +560,7 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
     panicPutStr("\r\n");
 
     /* With windowed ABI backtracing is easy, let's do it. */
-    doBacktrace(frame);
+    doBacktrace(frame, 100);
 
     panicPutStr("\r\n");
 }

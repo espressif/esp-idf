@@ -43,15 +43,24 @@ static void test_setup(size_t max_files)
 
     TEST_ASSERT(part->size == (fatfs_end - fatfs_start - 1));
 
-    esp_partition_erase_range(part, 0, part->size);
-    for (int i = 0; i < part->size; i+= SPI_FLASH_SEC_SIZE) {
-        ESP_ERROR_CHECK( esp_partition_write(part, i, fatfs_start + i, SPI_FLASH_SEC_SIZE) );
+    spi_flash_mmap_handle_t mmap_handle;
+    const void* mmap_ptr;
+    TEST_ESP_OK(esp_partition_mmap(part, 0, part->size, SPI_FLASH_MMAP_DATA, &mmap_ptr, &mmap_handle));
+    bool content_valid = memcmp(fatfs_start, mmap_ptr, part->size) == 0;
+    spi_flash_munmap(mmap_handle);
+
+    if (!content_valid) {
+        printf("Copying fatfs.img into test partition...\n");
+        esp_partition_erase_range(part, 0, part->size);
+        for (int i = 0; i < part->size; i+= SPI_FLASH_SEC_SIZE) {
+            ESP_ERROR_CHECK( esp_partition_write(part, i, fatfs_start + i, SPI_FLASH_SEC_SIZE) );
+        }
     }
 
     TEST_ESP_OK(esp_vfs_fat_rawflash_mount("/spiflash", "flash_test", &mount_config));
 }
 
-static void test_teardown()
+static void test_teardown(void)
 {
     TEST_ESP_OK(esp_vfs_fat_rawflash_unmount("/spiflash","flash_test"));
 }
@@ -319,12 +328,8 @@ TEST_CASE("(raw) multiple tasks can use same volume", "[fatfs]")
     test_teardown();
 }
 
-TEST_CASE("(raw) write/read speed test", "[fatfs][timeout=60]")
+TEST_CASE("(raw) read speed test", "[fatfs][timeout=60]")
 {
-    /* Erase partition before running the test to get consistent results */
-    const esp_partition_t* part = get_test_data_partition();
-    esp_partition_erase_range(part, 0, part->size);
-
     test_setup(5);
 
     const size_t buf_size = 16 * 1024;

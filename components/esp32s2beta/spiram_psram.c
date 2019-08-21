@@ -698,7 +698,7 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_SPICLK_U, FUNC_SPICLK_SPICLK);
 }
 
-psram_size_t psram_get_size()
+psram_size_t psram_get_size(void)
 {
     if (PSRAM_IS_32MBIT_VER0(s_psram_id)) {
         return PSRAM_SIZE_32MBITS;

@@ -1,5 +1,11 @@
 menu "LWIP"
 
+    config LWIP_LOCAL_HOSTNAME
+        string "Local netif hostname"
+        default 'espressif'
+        help
+            The name this device will report to other devices on the network
+
     config LWIP_L2_TO_L3_COPY
         bool "Enable copy between Layer2 and Layer3 packets"
         default n
@@ -26,6 +32,16 @@ menu "LWIP"
             10KB IRAM for these optimizations.
 
             If this feature is disabled, all lwip functions will be put into FLASH.
+
+    config LWIP_TIMERS_ONDEMAND
+        bool "Enable LWIP Timers on demand"
+        default y
+        help
+            If this feature is enabled, IGMP and MLD6 timers will be activated only
+            when joining groups or receiving QUERY packets.
+
+            This feature will reduce the power consumption for applications which do not
+            use IGMP and MLD6.
 
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
@@ -73,15 +89,6 @@ menu "LWIP"
         default n
         help
             Enabling this option allows checking for available data on a netconn.
-
-    config LWIP_DHCP_MAX_NTP_SERVERS
-        int "Maximum number of NTP servers"
-        default 1
-        range 1 16
-        help
-            Set maximum number of NTP servers used by LwIP SNTP module.
-            First argument of sntp_setserver/sntp_setservername functions
-            is limited to this value.
 
     config LWIP_IP_FRAG
         bool "Enable fragment outgoing IP packets"
@@ -561,5 +568,27 @@ menu "LWIP"
                 limit is determined by available heap memory at runtime.
 
     endmenu  # LWIP RAW API
+
+    menu "SNTP"
+
+        config LWIP_DHCP_MAX_NTP_SERVERS
+            int "Maximum number of NTP servers"
+            default 1
+            range 1 16
+            help
+                Set maximum number of NTP servers used by LwIP SNTP module.
+                First argument of sntp_setserver/sntp_setservername functions
+                is limited to this value.
+
+        config LWIP_SNTP_UPDATE_DELAY
+            int "Request interval to update time (ms)"
+            range 15000 4294967295
+            default 3600000
+            help
+                This option allows you to set the time update period via SNTP.
+                Default is 1 hour. Must not be below 15 seconds by specification.
+                (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
+
+    endmenu # SNTP
 
 endmenu

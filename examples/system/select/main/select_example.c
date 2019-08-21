@@ -27,13 +27,13 @@ static const char* TAG = "uart_select_example";
 static int uart_fd = -1;
 static int socket_fd = -1;
 
-static void socket_deinit()
+static void socket_deinit(void)
 {
     close(socket_fd);
     socket_fd = -1;
 }
 
-static void socket_init()
+static void socket_init(void)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,
@@ -81,7 +81,7 @@ static void socket_init()
     freeaddrinfo(res);
 }
 
-static void uart1_deinit()
+static void uart1_deinit(void)
 {
     close(uart_fd);
     uart_fd = -1;
@@ -89,7 +89,7 @@ static void uart1_deinit()
     UART1.conf0.loopback = 0;
 }
 
-static void uart1_init()
+static void uart1_init(void)
 {
     uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -128,7 +128,7 @@ static void uart1_write_task(void *param)
         }
     }
 
-    uart1_deinit(uart_fd);
+    uart1_deinit();
     vTaskDelete(NULL);
 }
 
@@ -198,7 +198,7 @@ static void select_task(void *param)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(uart1_write_task, "uart1_write_task", 4*1024, NULL, 5, NULL);
     xTaskCreate(socket_write_task, "socket_write_task", 4*1024, NULL, 5, NULL);

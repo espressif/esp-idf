@@ -12,11 +12,11 @@
  * See README and COPYING for more details.
  */
 
-#include "crypto/includes.h"
+#include "utils/includes.h"
 
-#include "crypto/common.h"
-#include "crypto/dh_groups.h"
-#include "crypto/dh_group5.h"
+#include "utils/common.h"
+#include "dh_groups.h"
+#include "dh_group5.h"
 
 
 void * 

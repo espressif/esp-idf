@@ -29,7 +29,7 @@
 #include "nvs_flash.h"
 
 
-/*set wps mode via "make menuconfig"*/
+/*set wps mode via project configuration */
 #if CONFIG_EXAMPLE_WPS_TYPE_PBC
 #define WPS_MODE WPS_TYPE_PBC
 #elif CONFIG_EXAMPLE_WPS_TYPE_PIN
@@ -115,7 +115,7 @@ static void start_wps(void)
     ESP_ERROR_CHECK(esp_wifi_wps_start(0));
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize NVS — it is used to store PHY calibration data */
     esp_err_t ret = nvs_flash_init();

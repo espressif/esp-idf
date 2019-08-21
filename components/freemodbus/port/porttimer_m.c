@@ -62,34 +62,16 @@ static USHORT usT35TimeOut50us;
 static const USHORT usTimerIndex = MB_TIMER_INDEX;      // Initialize Modbus Timer index used by stack,
 static const USHORT usTimerGroupIndex = MB_TIMER_GROUP; // Timer group index used by stack
 
-static timg_dev_t *MB_TG[2] = { &TIMERG0, &TIMERG1 };
-
 /* ----------------------- static functions ---------------------------------*/
 
 static void IRAM_ATTR vTimerGroupIsr(void *param)
 {
-    // Retrieve the interrupt status and the counter value
-    // from the timer that reported the interrupt
-#if CONFIG_IDF_TARGET_ESP32
-    uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st_timers.val;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-    uint32_t intr_status = MB_TG[usTimerGroupIndex]->int_st.val;
-#endif
-    if (intr_status & BIT(usTimerIndex)) {
-#if CONFIG_IDF_TARGET_ESP32
-        MB_TG[usTimerGroupIndex]->int_clr_timers.val |= BIT(usTimerIndex);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-        MB_TG[usTimerGroupIndex]->int_clr.val |= BIT(usTimerIndex);
-#endif
-#if CONFIG_IDF_TARGET_ESP32
-        MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].update = 1;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-        MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].update.update = 1;
-#endif
-        (void)pxMBMasterPortCBTimerExpired(); // Timer expired callback function
-        // Enable alarm
-        MB_TG[usTimerGroupIndex]->hw_timer[usTimerIndex].config.alarm_en = TIMER_ALARM_EN;
-    }
+    assert((int)param == usTimerIndex);
+    // Retrieve the the counter value from the timer that reported the interrupt
+    timer_group_intr_clr_in_isr(usTimerGroupIndex, usTimerIndex);
+    (void)pxMBMasterPortCBTimerExpired(); // Timer expired callback function
+    // Enable alarm
+    timer_group_enable_alarm_in_isr(usTimerGroupIndex, usTimerIndex);
 }
 
 /* ----------------------- Start implementation -----------------------------*/
@@ -128,7 +110,7 @@ BOOL xMBMasterPortTimersInit(USHORT usTimeOut50us)
                     (uint32_t)xErr);
     // Register ISR for timer
     xErr = timer_isr_register(usTimerGroupIndex, usTimerIndex,
-                                vTimerGroupIsr, NULL, ESP_INTR_FLAG_IRAM, NULL);
+                                vTimerGroupIsr, (void*)(uint32_t)usTimerIndex, ESP_INTR_FLAG_IRAM, NULL);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                     "timer set value failure, timer_isr_register() returned (0x%x).",
                     (uint32_t)xErr);
@@ -168,7 +150,7 @@ static BOOL xMBMasterPortTimersEnable(USHORT usTimerTics50us)
     return TRUE;
 }
 
-void vMBMasterPortTimersT35Enable()
+void vMBMasterPortTimersT35Enable(void)
 {
     USHORT usTimerTicks = usT35TimeOut50us;
 
@@ -178,7 +160,7 @@ void vMBMasterPortTimersT35Enable()
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersConvertDelayEnable()
+void vMBMasterPortTimersConvertDelayEnable(void)
 {
     // Covert time in milliseconds into ticks
     USHORT usTimerTicks = ((MB_MASTER_DELAY_MS_CONVERT * 1000) / MB_TICK_TIME_US);
@@ -189,7 +171,7 @@ void vMBMasterPortTimersConvertDelayEnable()
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersRespondTimeoutEnable()
+void vMBMasterPortTimersRespondTimeoutEnable(void)
 {
     USHORT usTimerTicks = (MB_MASTER_TIMEOUT_MS_RESPOND * 1000 / MB_TICK_TIME_US);
 
@@ -198,7 +180,7 @@ void vMBMasterPortTimersRespondTimeoutEnable()
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersDisable()
+void vMBMasterPortTimersDisable(void)
 {
     // Stop timer and then reload timer counter value
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
@@ -207,7 +189,7 @@ void vMBMasterPortTimersDisable()
     ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
 }
 
-void vMBMasterPortTimerClose()
+void vMBMasterPortTimerClose(void)
 {
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));

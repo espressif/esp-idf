@@ -11,7 +11,7 @@
 #define _OPENSSL_EXAMPLE_H_
 
 /* The examples use domain of "www.baidu.com" and port number of 433 that 
-   you can set via 'make menuconfig'.
+   you can set via the project configuration menu.
 
    If you'd rather not, just change the below entries to strings with
    the config you want - ie #define OPENSSL_EXAMPLE_TARGET_NAME "www.baidu.com"

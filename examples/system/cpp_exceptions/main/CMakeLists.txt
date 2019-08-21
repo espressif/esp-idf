@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "exception_example_main.cpp")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "exception_example_main.cpp"
+                    INCLUDE_DIRS ".")

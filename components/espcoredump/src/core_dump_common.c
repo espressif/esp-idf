@@ -153,7 +153,7 @@ inline void esp_core_dump_write(void *frame, core_dump_write_config_t *write_cfg
 
 #endif
 
-void esp_core_dump_init()
+void esp_core_dump_init(void)
 {
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
     esp_core_dump_flash_init();

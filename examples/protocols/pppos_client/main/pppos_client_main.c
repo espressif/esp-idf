@@ -179,7 +179,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     return ESP_OK;
 }
 
-void app_main()
+void app_main(void)
 {
     tcpip_adapter_init();
     event_group = xEventGroupCreate();

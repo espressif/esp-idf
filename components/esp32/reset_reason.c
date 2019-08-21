@@ -17,7 +17,7 @@
 #include "esp_private/system_internal.h"
 #include "soc/rtc_periph.h"
 
-static void esp_reset_reason_clear_hint();
+static void esp_reset_reason_clear_hint(void);
 
 static esp_reset_reason_t s_reset_reason;
 
@@ -119,7 +119,7 @@ esp_reset_reason_t IRAM_ATTR esp_reset_reason_get_hint(void)
     }
     return (esp_reset_reason_t) low;
 }
-static void esp_reset_reason_clear_hint()
+static void esp_reset_reason_clear_hint(void)
 {
     REG_WRITE(RTC_RESET_CAUSE_REG, 0);
 }

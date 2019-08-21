@@ -25,6 +25,7 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 
+
 /*
  * For SDIO master-slave board, we have 3 pins controlling power of 3 different
  * slaves individially. We only enable one at a time.
@@ -122,7 +123,7 @@ esp_err_t slave_reset(esp_slave_context_t *context)
 }
 
 #ifdef CONFIG_EXAMPLE_SDIO_OVER_SPI
-static void gpio_d2_set_high()
+static void gpio_d2_set_high(void)
 {
     gpio_config_t d2_config = {
         .pin_bit_mask = BIT(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
@@ -133,6 +134,36 @@ static void gpio_d2_set_high()
     gpio_set_level(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2, 1);
 }
 #endif
+
+static esp_err_t print_sdio_cis_information(sdmmc_card_t* card)
+{
+    const size_t cis_buffer_size = 256;
+    uint8_t cis_buffer[cis_buffer_size];
+    size_t cis_data_len = 1024; //specify maximum searching range to avoid infinite loop
+    esp_err_t ret = ESP_OK;
+
+    ret = sdmmc_io_get_cis_data(card, cis_buffer, cis_buffer_size, &cis_data_len);
+    if (ret == ESP_ERR_INVALID_SIZE) {
+        int temp_buf_size = cis_data_len;
+        uint8_t* temp_buf = malloc(temp_buf_size);
+        assert(temp_buf);
+
+        ESP_LOGW(TAG, "CIS data longer than expected, temporary buffer allocated.");
+        ret = sdmmc_io_get_cis_data(card, temp_buf, temp_buf_size, &cis_data_len);
+        ESP_ERROR_CHECK(ret);
+
+        sdmmc_io_print_cis_info(temp_buf, cis_data_len, NULL);
+
+        free(temp_buf);
+    } else if (ret == ESP_OK) {
+        sdmmc_io_print_cis_info(cis_buffer, cis_data_len, NULL);
+    } else {
+        //including ESP_ERR_NOT_FOUND
+        ESP_LOGE(TAG, "failed to get the entire CIS data.");
+        abort();
+    }
+    return ESP_OK;
+}
 
 //host use this to initialize the slave card as well as SDIO registers
 esp_err_t slave_init(esp_slave_context_t *context)
@@ -164,10 +195,10 @@ esp_err_t slave_init(esp_slave_context_t *context)
     */
     //slot_config.flags = SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
     err = sdmmc_host_init();
-    assert(err==ESP_OK);
+    ESP_ERROR_CHECK(err);
 
     err = sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config);
-    assert(err==ESP_OK);
+    ESP_ERROR_CHECK(err);
 #else   //over SPI
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
 
@@ -179,12 +210,12 @@ esp_err_t slave_init(esp_slave_context_t *context)
     slot_config.gpio_int = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D1;
 
     err = gpio_install_isr_service(0);
-    assert(err == ESP_OK);
+    ESP_ERROR_CHECK(err);
     err = sdspi_host_init();
-    assert(err==ESP_OK);
+    ESP_ERROR_CHECK(err);
 
     err = sdspi_host_init_slot(HSPI_HOST, &slot_config);
-    assert(err==ESP_OK);
+    ESP_ERROR_CHECK(err);
     ESP_LOGI(TAG, "Probe using SPI...\n");
 
     //we have to pull up all the slave pins even when the pin is not used
@@ -218,11 +249,15 @@ esp_err_t slave_init(esp_slave_context_t *context)
 
     *context = ESP_SLAVE_DEFAULT_CONTEXT(card);
     esp_err_t ret = esp_slave_init_io(context);
+    ESP_ERROR_CHECK(ret);
 
+    ret = print_sdio_cis_information(card);
+    ESP_ERROR_CHECK(ret);
     return ret;
 }
 
-void slave_power_on()
+
+void slave_power_on(void)
 {
 #ifdef SLAVE_PWR_GPIO
     int level_active;
@@ -375,7 +410,7 @@ void job_getint(esp_slave_context_t *context)
     slave_inform_job(context, JOB_SEND_INT);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_slave_context_t context;
     esp_err_t err;

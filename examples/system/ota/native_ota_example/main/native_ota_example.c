@@ -37,7 +37,7 @@ static void http_cleanup(esp_http_client_handle_t client)
     esp_http_client_cleanup(client);
 }
 
-static void __attribute__((noreturn)) task_fatal_error()
+static void __attribute__((noreturn)) task_fatal_error(void)
 {
     ESP_LOGE(TAG, "Exiting task due to fatal error...");
     (void)vTaskDelete(NULL);
@@ -182,6 +182,11 @@ static void ota_example_task(void *pvParameter)
         }
     }
     ESP_LOGI(TAG, "Total Write binary data length : %d", binary_file_length);
+    if (esp_http_client_is_complete_data_received(client) != true) {
+        ESP_LOGE(TAG, "Error in receiving complete file");
+        http_cleanup(client);
+        task_fatal_error();
+    }
 
     if (esp_ota_end(update_handle) != ESP_OK) {
         ESP_LOGE(TAG, "esp_ota_end failed!");
@@ -219,7 +224,7 @@ static bool diagnostic(void)
     return diagnostic_is_ok;
 }
 
-void app_main()
+void app_main(void)
 {
     uint8_t sha_256[HASH_LEN] = { 0 };
     esp_partition_t partition;

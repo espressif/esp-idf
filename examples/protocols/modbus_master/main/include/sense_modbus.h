@@ -47,7 +47,7 @@ typedef struct
     uint64_t            timestamp;          /*!< Time stamp of last access to parameter */
 } characteristic_descriptor_t;
 
-esp_err_t sense_modbus_init();
+esp_err_t sense_modbus_init(void);
 esp_err_t sense_modbus_get_characteristics(characteristic_descriptor_t** cid_table, uint16_t* table_size);
 esp_err_t sense_modbus_read_value(uint16_t cid, void* value);
 esp_err_t sense_modbus_send_value(uint16_t cid, void* value);

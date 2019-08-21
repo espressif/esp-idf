@@ -1,9 +1,6 @@
-set(COMPONENT_SRCS "main.cpp")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_EMBED_TXTFILES "sample.xml")
-
-register_component()
+idf_component_register(SRCS "main.cpp"
+                    INCLUDE_DIRS "."
+                    EMBED_TXTFILES "sample.xml")
 
 # Build static library, do not build test executables
 option(BUILD_SHARED_LIBS OFF)
@@ -23,4 +20,4 @@ endfunction()
 add_subdirectory(lib/tinyxml2)
 
 # Link tinyxml2 to main component
-target_link_libraries(${COMPONENT_LIB} tinyxml2)
+target_link_libraries(${COMPONENT_LIB} PUBLIC tinyxml2)

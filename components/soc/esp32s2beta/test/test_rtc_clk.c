@@ -97,7 +97,7 @@ TEST_CASE("Output 8M XTAL clock to GPIO25", "[rtc_clk][ignore]")
 
 static void test_clock_switching(void (*switch_func)(rtc_cpu_freq_t))
 {
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     const int test_duration_sec = 10;
     ref_clock_init();
@@ -137,7 +137,7 @@ TEST_CASE("Test fast switching between PLL and XTAL", "[rtc_clk]")
 #define COUNT_TEST      3
 #define TIMEOUT_TEST_MS (5 + CONFIG_ESP32_RTC_CLK_CAL_CYCLES / 16)
 
-void stop_rtc_external_quartz(){
+void stop_rtc_external_quartz(void){
     const uint8_t pin_32 = 32;
     const uint8_t pin_33 = 33;
     const uint8_t mask_32 = (1 << (pin_32 - 32));

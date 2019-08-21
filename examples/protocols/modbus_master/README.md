@@ -72,7 +72,7 @@ ESP32 WROVER KIT 1  |               |   RS-485 side |               |      Exter
 ### Configure the application
 Configure the UART pins used for modbus communication using command and table below.
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 ```
@@ -98,7 +98,7 @@ Other option is to have the modbus_slave example flashed into ESP32 WROVER KIT b
 ### Build and flash software of master device
 Build the project and flash it to the board, then run monitor tool to view serial output:
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

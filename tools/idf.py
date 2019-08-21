@@ -168,6 +168,30 @@ def detect_cmake_generator():
     )
 
 
+def _strip_quotes(value, regexp=re.compile(r"^\"(.*)\"$|^'(.*)'$|^(.*)$")):
+    """
+    Strip quotes like CMake does during parsing cache entries
+    """
+
+    return [x for x in regexp.match(value).groups() if x is not None][0].rstrip()
+
+
+def _new_cmakecache_entries(cache_path, new_cache_entries):
+    if not os.path.exists(cache_path):
+        return True
+
+    if new_cache_entries:
+        current_cache = parse_cmakecache(cache_path)
+
+        for entry in new_cache_entries:
+            key, value = entry.split("=", 1)
+            current_value = current_cache.get(key, None)
+            if current_value is None or _strip_quotes(value) != current_value:
+                return True
+
+    return False
+
+
 def _ensure_build_directory(args, always_run_cmake=False):
     """Check the build directory exists and that cmake has been run there.
 
@@ -195,7 +219,11 @@ def _ensure_build_directory(args, always_run_cmake=False):
     if not os.path.isdir(build_dir):
         os.makedirs(build_dir)
     cache_path = os.path.join(build_dir, "CMakeCache.txt")
-    if not os.path.exists(cache_path) or always_run_cmake:
+
+    args.define_cache_entry = list(args.define_cache_entry)
+    args.define_cache_entry.append("CCACHE_ENABLE=%d" % args.ccache)
+
+    if always_run_cmake or _new_cmakecache_entries(cache_path, args.define_cache_entry):
         if args.generator is None:
             args.generator = detect_cmake_generator()
         try:
@@ -208,8 +236,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
             ]
             if not args.no_warnings:
                 cmake_args += ["--warn-uninitialized"]
-            if args.no_ccache:
-                cmake_args += ["-DCCACHE_DISABLE=1"]
+
             if args.define_cache_entry:
                 cmake_args += ["-D" + d for d in args.define_cache_entry]
             cmake_args += [project_dir]
@@ -262,7 +289,7 @@ def parse_cmakecache(path):
         for line in f:
             # cmake cache lines look like: CMAKE_CXX_FLAGS_DEBUG:STRING=-g
             # groups are name, type, value
-            m = re.match(r"^([^#/:=]+):([^:=]+)=(.+)\n$", line)
+            m = re.match(r"^([^#/:=]+):([^:=]+)=(.*)\n$", line)
             if m:
                 result[m.group(1)] = m.group(3)
     return result
@@ -278,7 +305,7 @@ def build_target(target_name, ctx, args):
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
 
-    if not args.no_ccache:
+    if args.ccache:
         # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
         # (this means ccache hits can be shared between different projects. It may mean that some debug information
         # will point to files in another project, if these files are perfect duplicates of each other.)
@@ -320,6 +347,8 @@ def flash(action, ctx, args):
         "partition_table-flash": "flash_partition_table_args",
         "app-flash": "flash_app_args",
         "flash": "flash_project_args",
+        "encrypted-app-flash": "flash_encrypted_app_args",
+        "encrypted-flash": "flash_encrypted_project_args",
     }[
         action
     ]
@@ -334,7 +363,7 @@ def erase_flash(action, ctx, args):
     _run_tool("esptool.py", esptool_args, args.build_dir)
 
 
-def monitor(action, ctx, args):
+def monitor(action, ctx, args, print_filter):
     """
     Run idf_monitor.py to watch build output
     """
@@ -359,6 +388,9 @@ def monitor(action, ctx, args):
         monitor_args += ["-p", args.port]
     monitor_args += ["-b", project_desc["monitor_baud"]]
     monitor_args += ["--toolchain-prefix", project_desc["monitor_toolprefix"]]
+
+    if print_filter is not None:
+        monitor_args += ["--print_filter", print_filter]
     monitor_args += [elf_file]
 
     idf_py = [PYTHON] + get_commandline_options(ctx)  # commands to re-run idf.py
@@ -514,8 +546,11 @@ def init_cli():
             self.action_args = action_args
             self.aliases = aliases
 
-        def run(self, context, global_args):
-            self.callback(self.name, context, global_args, **self.action_args)
+        def run(self, context, global_args, action_args=None):
+            if action_args is None:
+                action_args = self.action_args
+
+            self.callback(self.name, context, global_args, **action_args)
 
     class Action(click.Command):
         def __init__(
@@ -569,6 +604,57 @@ def init_cli():
 
                 self.callback = wrapped_callback
 
+    class Argument(click.Argument):
+        """Positional argument"""
+
+        def __init__(self, **kwargs):
+            names = kwargs.pop("names")
+            super(Argument, self).__init__(names, **kwargs)
+
+    class Scope(object):
+        """
+            Scope for sub-command option.
+            possible values:
+            - default - only available on defined level (global/action)
+            - global - When defined for action, also available as global
+            - shared - Opposite to 'global': when defined in global scope, also available for all actions
+        """
+
+        SCOPES = ("default", "global", "shared")
+
+        def __init__(self, scope=None):
+            if scope is None:
+                self._scope = "default"
+            elif isinstance(scope, str) and scope in self.SCOPES:
+                self._scope = scope
+            elif isinstance(scope, Scope):
+                self._scope = str(scope)
+            else:
+                raise FatalError("Unknown scope for option: %s" % scope)
+
+        @property
+        def is_global(self):
+            return self._scope == "global"
+
+        @property
+        def is_shared(self):
+            return self._scope == "shared"
+
+        def __str__(self):
+            return self._scope
+
+    class Option(click.Option):
+        """Option that knows whether it should be global"""
+
+        def __init__(self, scope=None, **kwargs):
+            kwargs["param_decls"] = kwargs.pop("names")
+            super(Option, self).__init__(**kwargs)
+
+            self.scope = Scope(scope)
+
+            if self.scope.is_global:
+                self.help += " This option can be used at most once either globally, or for one subcommand."
+
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
 
@@ -587,20 +673,31 @@ def init_cli():
             if action_lists is None:
                 action_lists = []
 
+            shared_options = []
+
             for action_list in action_lists:
                 # Global options
                 for option_args in action_list.get("global_options", []):
-                    option_args["param_decls"] = option_args.pop("names")
-                    self.params.append(click.Option(**option_args))
+                    option = Option(**option_args)
+                    self.params.append(option)
 
+                    if option.scope.is_shared:
+                        shared_options.append(option)
+
+            for action_list in action_lists:
                 # Global options validators
                 self.global_action_callbacks.extend(
                     action_list.get("global_action_callbacks", [])
                 )
 
+            for action_list in action_lists:
                 # Actions
                 for name, action in action_list.get("actions", {}).items():
+                    arguments = action.pop("arguments", [])
                     options = action.pop("options", [])
+
+                    if arguments is None:
+                        arguments = []
 
                     if options is None:
                         options = []
@@ -609,9 +706,27 @@ def init_cli():
                     for alias in [name] + action.get("aliases", []):
                         self.commands_with_aliases[alias] = name
 
+                    for argument_args in arguments:
+                        self._actions[name].params.append(Argument(**argument_args))
+
+                    # Add all shared options
+                    for option in shared_options:
+                        self._actions[name].params.append(option)
+
                     for option_args in options:
-                        option_args["param_decls"] = option_args.pop("names")
-                        self._actions[name].params.append(click.Option(**option_args))
+                        option = Option(**option_args)
+
+                        if option.scope.is_shared:
+                            raise FatalError(
+                                '"%s" is defined for action "%s". '
+                                ' "shared" options can be declared only on global level' % (option.name, name)
+                            )
+
+                        # Promote options to global if see for the first time
+                        if option.scope.is_global and option.name not in [o.name for o in self.params]:
+                            self.params.append(option)
+
+                        self._actions[name].params.append(option)
 
         def list_commands(self, ctx):
             return sorted(self._actions)
@@ -692,10 +807,26 @@ def init_cli():
 
         def execute_tasks(self, tasks, **kwargs):
             ctx = click.get_current_context()
-
-            # Validate global arguments
             global_args = PropertyDict(ctx.params)
 
+            # Set propagated global options
+            for task in tasks:
+                for key in list(task.action_args):
+                    option = next((o for o in ctx.command.params if o.name == key), None)
+                    if option and (option.scope.is_global or option.scope.is_shared):
+                        local_value = task.action_args.pop(key)
+                        global_value = global_args[key]
+                        default = () if option.multiple else option.default
+
+                        if global_value != default and local_value != default and global_value != local_value:
+                            raise FatalError(
+                                'Option "%s" provided for "%s" is already defined to a different value. '
+                                "This option can appear at most once in the command line." % (key, task.name)
+                            )
+                        if local_value != default:
+                            global_args[key] = local_value
+
+            # Validate global arguments
             for action_callback in ctx.command.global_action_callbacks:
                 action_callback(ctx, global_args, tasks)
 
@@ -722,6 +853,13 @@ def init_cli():
                             % (task.name, dep)
                         )
                         dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
+
+                        # Remove global options from dependent tasks
+                        for key in list(dep_task.action_args):
+                            option = next((o for o in ctx.command.params if o.name == key), None)
+                            if option and (option.scope.is_global or option.scope.is_shared):
+                                dep_task.action_args.pop(key)
+
                         tasks.insert(0, dep_task)
                         ready_to_run = False
 
@@ -740,7 +878,7 @@ def init_cli():
                         )
                     else:
                         print("Executing action: %s" % name_with_aliases)
-                        task.run(ctx, global_args)
+                        task.run(ctx, global_args, task.action_args)
 
                     completed_tasks.add(task.name)
 
@@ -788,46 +926,50 @@ def init_cli():
         args.build_dir = _realpath(args.build_dir)
 
     # Possible keys for action dict are: global_options, actions and global_action_callbacks
+    global_options = [
+        {
+            "names": ["-D", "--define-cache-entry"],
+            "help": "Create a cmake cache entry.",
+            "scope": "global",
+            "multiple": True,
+        }
+    ]
+
     root_options = {
         "global_options": [
             {
                 "names": ["-C", "--project-dir"],
-                "help": "Project directory",
+                "help": "Project directory.",
                 "type": click.Path(),
                 "default": os.getcwd(),
             },
             {
                 "names": ["-B", "--build-dir"],
-                "help": "Build directory",
+                "help": "Build directory.",
                 "type": click.Path(),
                 "default": None,
             },
             {
                 "names": ["-n", "--no-warnings"],
-                "help": "Disable Cmake warnings",
+                "help": "Disable Cmake warnings.",
                 "is_flag": True,
                 "default": False,
             },
             {
                 "names": ["-v", "--verbose"],
-                "help": "Verbose build output",
+                "help": "Verbose build output.",
                 "is_flag": True,
                 "default": False,
             },
             {
-                "names": ["-D", "--define-cache-entry"],
-                "help": "Create a cmake cache entry",
-                "multiple": True,
-            },
-            {
-                "names": ["--no-ccache"],
-                "help": "Disable ccache. Otherwise, if ccache is available on the PATH then it will be used for faster builds.",
+                "names": ["--ccache/--no-ccache"],
+                "help": "Use ccache in build. Disabled by default.",
                 "is_flag": True,
                 "default": False,
             },
             {
                 "names": ["-G", "--generator"],
-                "help": "CMake generator",
+                "help": "CMake generator.",
                 "type": click.Choice(GENERATOR_CMDS.keys()),
             },
         ],
@@ -846,6 +988,7 @@ def init_cli():
                 + "2. Run CMake as necessary to configure the project and generate build files for the main build tool.\n\n"
                 + "3. Run the main build tool (Ninja or GNU Make). By default, the build tool is automatically detected "
                 + "but it can be explicitly set by passing the -G option to idf.py.\n\n",
+                "options": global_options,
                 "order_dependencies": [
                     "reconfigure",
                     "menuconfig",
@@ -856,59 +999,75 @@ def init_cli():
             "menuconfig": {
                 "callback": build_target,
                 "help": 'Run "menuconfig" project configuration tool.',
+                "options": global_options,
             },
             "confserver": {
                 "callback": build_target,
                 "help": "Run JSON configuration server.",
+                "options": global_options,
             },
             "size": {
                 "callback": build_target,
                 "help": "Print basic size information about the app.",
+                "options": global_options,
                 "dependencies": ["app"],
             },
             "size-components": {
                 "callback": build_target,
                 "help": "Print per-component size information.",
+                "options": global_options,
                 "dependencies": ["app"],
             },
             "size-files": {
                 "callback": build_target,
                 "help": "Print per-source-file size information.",
+                "options": global_options,
                 "dependencies": ["app"],
             },
-            "bootloader": {"callback": build_target, "help": "Build only bootloader."},
+            "bootloader": {
+                "callback": build_target,
+                "help": "Build only bootloader.",
+                "options": global_options,
+            },
             "app": {
                 "callback": build_target,
                 "help": "Build only the app.",
                 "order_dependencies": ["clean", "fullclean", "reconfigure"],
+                "options": global_options,
             },
             "efuse_common_table": {
                 "callback": build_target,
                 "help": "Genereate C-source for IDF's eFuse fields.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "efuse_custom_table": {
                 "callback": build_target,
                 "help": "Genereate C-source for user's eFuse fields.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "show_efuse_table": {
                 "callback": build_target,
-                "help": "Print eFuse table",
+                "help": "Print eFuse table.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "partition_table": {
                 "callback": build_target,
                 "help": "Build only partition table.",
                 "order_dependencies": ["reconfigure"],
+                "options": global_options,
             },
             "erase_otadata": {
                 "callback": build_target,
                 "help": "Erase otadata partition.",
+                "options": global_options,
             },
             "read_otadata": {
                 "callback": build_target,
                 "help": "Read otadata partition.",
+                "options": global_options,
             },
         }
     }
@@ -922,6 +1081,7 @@ def init_cli():
                 + "but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. "
                 + "For example, \"idf.py -DNAME='VALUE' reconfigure\" "
                 + 'can be used to set variable "NAME" in CMake cache to value "VALUE".',
+                "options": global_options,
                 "order_dependencies": ["menuconfig"],
             },
             "clean": {
@@ -942,35 +1102,56 @@ def init_cli():
         }
     }
 
+    baud_rate = {
+        "names": ["-b", "--baud"],
+        "help": "Baud rate.",
+        "scope": "global",
+        "envvar": "ESPBAUD",
+        "default": 460800,
+    }
+
+    port = {
+        "names": ["-p", "--port"],
+        "help": "Serial port.",
+        "scope": "global",
+        "envvar": "ESPPORT",
+        "default": None,
+    }
+
     serial_actions = {
-        "global_options": [
-            {
-                "names": ["-p", "--port"],
-                "help": "Serial port",
-                "envvar": "ESPPORT",
-                "default": None,
-            },
-            {
-                "names": ["-b", "--baud"],
-                "help": "Baud rate",
-                "envvar": "ESPBAUD",
-                "default": 460800,
-            },
-        ],
         "actions": {
             "flash": {
                 "callback": flash,
-                "help": "Flash the project",
+                "help": "Flash the project.",
+                "options": global_options + [baud_rate, port],
                 "dependencies": ["all"],
                 "order_dependencies": ["erase_flash"],
             },
             "erase_flash": {
                 "callback": erase_flash,
                 "help": "Erase entire flash chip.",
+                "options": [baud_rate, port],
             },
             "monitor": {
                 "callback": monitor,
                 "help": "Display serial output.",
+                "options": [
+                    port,
+                    {
+                        "names": ["--print-filter", "--print_filter"],
+                        "help": (
+                            "Filter monitor output.\n"
+                            "Restrictions on what to print can be specified as a series of <tag>:<log_level> items "
+                            "where <tag> is the tag string and <log_level> is a character from the set "
+                            "{N, E, W, I, D, V, *} referring to a level. "
+                            'For example, "tag1:W" matches and prints only the outputs written with '
+                            'ESP_LOGW("tag1", ...) or at lower verbosity level, i.e. ESP_LOGE("tag1", ...). '
+                            'Not specifying a <log_level> or using "*" defaults to Verbose level.\n'
+                            'Please see the IDF Monitor section of the ESP-IDF documentation '
+                            'for a more detailed description and further examples.'),
+                        "default": None,
+                    },
+                ],
                 "order_dependencies": [
                     "flash",
                     "partition_table-flash",
@@ -981,19 +1162,34 @@ def init_cli():
             "partition_table-flash": {
                 "callback": flash,
                 "help": "Flash partition table only.",
+                "options": [baud_rate, port],
                 "dependencies": ["partition_table"],
                 "order_dependencies": ["erase_flash"],
             },
             "bootloader-flash": {
                 "callback": flash,
                 "help": "Flash bootloader only.",
+                "options": [baud_rate, port],
                 "dependencies": ["bootloader"],
                 "order_dependencies": ["erase_flash"],
             },
             "app-flash": {
                 "callback": flash,
                 "help": "Flash the app only.",
+                "options": [baud_rate, port],
                 "dependencies": ["app"],
+                "order_dependencies": ["erase_flash"],
+            },
+            "encrypted-app-flash": {
+                "callback": flash,
+                "help": "Flash the encrypted app only.",
+                "dependencies": ["app"],
+                "order_dependencies": ["erase_flash"],
+            },
+            "encrypted-flash": {
+                "callback": flash,
+                "help": "Flash the encrypted project.",
+                "dependencies": ["all"],
                 "order_dependencies": ["erase_flash"],
             },
         },
@@ -1016,7 +1212,6 @@ def init_cli():
             )
 
     # Add actions extensions
-
     try:
         all_actions.append(action_extensions(base_actions, project_dir))
     except NameError:
@@ -1070,7 +1265,7 @@ def _find_usable_locale():
                 usable_locales.append(locale)
 
     if not usable_locales:
-        FatalError(
+        raise FatalError(
             "Support for Unicode filenames is required, but no suitable UTF-8 locale was found on your system."
             " Please refer to the manual for your operating system for details on locale reconfiguration."
         )
@@ -1087,7 +1282,7 @@ if __name__ == "__main__":
         WINPTY_VAR = "WINPTY"
         WINPTY_EXE = "winpty"
         if ("MSYSTEM" in os.environ) and (
-            not os.environ["_"].endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ
+            not os.environ.get("_", "").endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ
         ):
             os.environ[WINPTY_VAR] = "1"  # the value is of no interest to us
             # idf.py calls itself with "winpty" and WINPTY global variable set

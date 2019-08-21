@@ -46,13 +46,7 @@ class SDKConfig:
     # Operators supported by the expression evaluation
     OPERATOR = oneOf(["=", "!=", ">", "<", "<=", ">="])
 
-    def __init__(self, kconfig_file, sdkconfig_file, env=[]):
-        env = [(name, value) for (name,value) in (e.split("=",1) for e in env)]
-
-        for name, value in env:
-            value = " ".join(value.split())
-            os.environ[name] = value
-
+    def __init__(self, kconfig_file, sdkconfig_file):
         self.config = kconfiglib.Kconfig(kconfig_file)
         self.config.load_config(sdkconfig_file)
 

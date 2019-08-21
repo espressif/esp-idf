@@ -5,8 +5,8 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-#include "wpa/includes.h"
-#include "wpa/common.h"
+#include "utils/includes.h"
+#include "utils/common.h"
 
 #include "wps/wps_i.h"
 #include "wps/wps_dev_attr.h"
@@ -352,20 +352,12 @@ static int wps_process_dev_name(struct wps_device_data *dev, const u8 *str,
 static int wps_process_primary_dev_type(struct wps_device_data *dev,
 					const u8 *dev_type)
 {
-#if 0
-#ifndef CONFIG_NO_STDOUT_DEBUG
-	char devtype[WPS_DEV_TYPE_BUFSIZE];
-#endif /* CONFIG_NO_STDOUT_DEBUG */
-#endif
 	if (dev_type == NULL) {
 		wpa_printf(MSG_DEBUG,  "WPS: No Primary Device Type received");
 		return -1;
 	}
 
 	os_memcpy(dev->pri_dev_type, dev_type, WPS_DEV_TYPE_LEN);
-	//wpa_printf(MSG_DEBUG,  "WPS: Primary Device Type: %s",
-	//	   wps_dev_type_bin2str(dev->pri_dev_type, devtype,
-	//				sizeof(devtype)));
 
 	return 0;
 }

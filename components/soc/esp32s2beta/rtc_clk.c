@@ -176,7 +176,7 @@ void rtc_clk_32k_bootstrap(uint32_t cycle)
     CLEAR_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_RTC_EN);
 }
 
-bool rtc_clk_32k_enabled()
+bool rtc_clk_32k_enabled(void)
 {
     uint32_t xtal_conf = READ_PERI_REG(RTC_CNTL_EXT_XTL_CONF_REG);
     /* If xtal xpd is controlled by software */
@@ -211,12 +211,12 @@ void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
     }
 }
 
-bool rtc_clk_8m_enabled()
+bool rtc_clk_8m_enabled(void)
 {
     return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M) == 0;
 }
 
-bool rtc_clk_8md256_enabled()
+bool rtc_clk_8md256_enabled(void)
 {
     return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ENB_CK8M_DIV) == 0;
 }
@@ -278,12 +278,12 @@ void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)
     ets_delay_us(DELAY_SLOW_CLK_SWITCH);
 }
 
-rtc_slow_freq_t rtc_clk_slow_freq_get()
+rtc_slow_freq_t rtc_clk_slow_freq_get(void)
 {
     return REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL);
 }
 
-uint32_t rtc_clk_slow_freq_get_hz()
+uint32_t rtc_clk_slow_freq_get_hz(void)
 {
     switch(rtc_clk_slow_freq_get()) {
         case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_150K;
@@ -299,7 +299,7 @@ void rtc_clk_fast_freq_set(rtc_fast_freq_t fast_freq)
     ets_delay_us(DELAY_FAST_CLK_SWITCH);
 }
 
-rtc_fast_freq_t rtc_clk_fast_freq_get()
+rtc_fast_freq_t rtc_clk_fast_freq_get(void)
 {
     return REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_FAST_CLK_RTC_SEL);
 }
@@ -446,7 +446,7 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
 /**
  * Switch to XTAL frequency. Does not disable the PLL.
  */
-static void rtc_clk_cpu_freq_to_xtal()
+static void rtc_clk_cpu_freq_to_xtal(void)
 {
     rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
     ets_update_cpu_frequency(xtal_freq);
@@ -586,7 +586,7 @@ void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
     s_cur_freq = cpu_freq;
 }
 
-rtc_cpu_freq_t rtc_clk_cpu_freq_get()
+rtc_cpu_freq_t rtc_clk_cpu_freq_get(void)
 {
     uint32_t soc_clk_sel = REG_GET_FIELD(SYSCON_SYSCLK_CONF_REG, SYSCON_SOC_CLK_SEL);
     switch (soc_clk_sel) {
@@ -681,7 +681,7 @@ static uint32_t clk_val_to_reg_val(uint32_t val) {
     return (val & UINT16_MAX) | ((val & UINT16_MAX) << 16);
 }
 
-rtc_xtal_freq_t rtc_clk_xtal_freq_get()
+rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     /* We may have already written XTAL value into RTC_XTAL_FREQ_REG */
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
@@ -697,7 +697,7 @@ void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
     WRITE_PERI_REG(RTC_XTAL_FREQ_REG, clk_val_to_reg_val(xtal_freq));
 }
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
+static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 {
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();
@@ -738,7 +738,7 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq)
     WRITE_PERI_REG(RTC_APB_FREQ_REG, clk_val_to_reg_val(apb_freq >> 12));
 }
 
-uint32_t rtc_clk_apb_freq_get()
+uint32_t rtc_clk_apb_freq_get(void)
 {
     uint32_t freq_hz = reg_val_to_clk_val(READ_PERI_REG(RTC_APB_FREQ_REG)) << 12;
     // round to the nearest MHz
@@ -848,4 +848,4 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 /* Name used in libphy.a:phy_chip_v7.o
  * TODO: update the library to use rtc_clk_xtal_freq_get
  */
-rtc_xtal_freq_t rtc_get_xtal() __attribute__((alias("rtc_clk_xtal_freq_get")));
+rtc_xtal_freq_t rtc_get_xtal(void) __attribute__((alias("rtc_clk_xtal_freq_get")));

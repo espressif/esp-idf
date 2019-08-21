@@ -5,21 +5,18 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-#include "wpa/includes.h"
-#include "wpa/list.h"
-#include "wpa/common.h"
-#include "crypto/base64.h"
-//#include "utils/eloop.h"
-#include "wps/utils/uuid.h"
-#include "wpa/list.h"
+#include "utils/includes.h"
+#include "utils/list.h"
+#include "utils/common.h"
+#include "utils/base64.h"
+#include "utils/uuid.h"
+#include "utils/list.h"
 #include "crypto/crypto.h"
 #include "crypto/sha256.h"
 #include "crypto/random.h"
-#include "wpa/ieee802_11_defs.h"
+#include "common/ieee802_11_defs.h"
 #include "wps/wps_i.h"
 #include "wps/wps_dev_attr.h"
-//#include "wps/wps_upnp.h"
-//#include "wps/wps_upnp_i.h"
 
 #ifndef CONFIG_WPS_STRICT
 #define WPS_WORKAROUNDS
@@ -188,11 +185,7 @@ struct wps_registrar {
 
 
 static int wps_set_ie(struct wps_registrar *reg);
-//static void wps_registrar_pbc_timeout(void *eloop_ctx, void *timeout_ctx);
-//static void wps_registrar_set_selected_timeout(void *eloop_ctx,
-//					       void *timeout_ctx);
 static void wps_registrar_pbc_timeout(void *eloop_ctx);
-//static void wps_registrar_set_selected_timeout(void *eloop_ctx);
 
 #ifdef CONFIG_WPS_PIN
 
@@ -695,12 +688,6 @@ void wps_registrar_deinit(struct wps_registrar *reg)
 {
 	if (reg == NULL)
 		return;
-	//eloop_cancel_timeout(wps_registrar_pbc_timeout, reg, NULL);
-	//eloop_cancel_timeout(wps_registrar_set_selected_timeout, reg, NULL);
-
-	// TODO: snake to check, no sys_untimeout now, by wujg
-//	sys_untimeout(wps_registrar_pbc_timeout, reg);
-//	sys_untimeout(wps_registrar_set_selected_timeout, reg);
 
 #ifdef CONFIG_WPS_PIN
 	wps_free_pins(&reg->pins);
@@ -787,10 +774,6 @@ int wps_registrar_add_pin(struct wps_registrar *reg, const u8 *addr,
 		wps_registrar_add_authorized_mac(
 			reg, (u8 *) "\xff\xff\xff\xff\xff\xff");
 	wps_registrar_selected_registrar_changed(reg);
-	//eloop_cancel_timeout(wps_registrar_set_selected_timeout, reg, NULL);
-	//eloop_register_timeout(WPS_PBC_WALK_TIME, 0,
-			       //wps_registrar_set_selected_timeout,
-			       //reg, NULL);
 
 	return 0;
 }
@@ -975,7 +958,6 @@ static void wps_registrar_stop_pbc(struct wps_registrar *reg)
 }
 
 
-//static void ICACHE_FLASH_ATTR wps_registrar_pbc_timeout(void *eloop_ctx, void *timeout_ctx)
 static void wps_registrar_pbc_timeout(void *eloop_ctx)
 {
 	struct wps_registrar *reg = eloop_ctx;
@@ -1022,17 +1004,6 @@ int wps_registrar_button_pushed(struct wps_registrar *reg,
 					 (u8 *) "\xff\xff\xff\xff\xff\xff");
 	wps_registrar_selected_registrar_changed(reg);
 
-	//eloop_cancel_timeout(wps_registrar_set_selected_timeout, reg, NULL);
-	//eloop_cancel_timeout(wps_registrar_pbc_timeout, reg, NULL);
-
-	// TODO: snake to check, no sys_untimeout now, by wujg
-//	sys_untimeout(wps_registrar_set_selected_timeout, reg);
-//	sys_untimeout(wps_registrar_pbc_timeout, reg);
-
-	//eloop_register_timeout(WPS_PBC_WALK_TIME, 0, wps_registrar_pbc_timeout,
-	//		       reg, NULL);
-//	sys_timeout(WPS_PBC_WALK_TIME*1000, wps_registrar_pbc_timeout, reg);
-
 	return 0;
 }
 
@@ -1040,10 +1011,6 @@ int wps_registrar_button_pushed(struct wps_registrar *reg,
 static void wps_registrar_pbc_completed(struct wps_registrar *reg)
 {
 	wpa_printf(MSG_DEBUG,  "WPS: PBC completed - stopping PBC mode");
-
-	// TODO: snake to check, no sys_untimeout now, by wujg
-	//eloop_cancel_timeout(wps_registrar_pbc_timeout, reg, NULL);
-//	sys_untimeout(wps_registrar_pbc_timeout, reg);
 
 	wps_registrar_stop_pbc(reg);
 }
@@ -1053,7 +1020,6 @@ static void wps_registrar_pbc_completed(struct wps_registrar *reg)
 static void wps_registrar_pin_completed(struct wps_registrar *reg)
 {
 	wpa_printf(MSG_DEBUG,  "WPS: PIN completed using internal Registrar");
-	//eloop_cancel_timeout(wps_registrar_set_selected_timeout, reg, NULL);
 	reg->selected_registrar = 0;
 	wps_registrar_selected_registrar_changed(reg);
 }
@@ -1088,12 +1054,7 @@ int wps_registrar_wps_cancel(struct wps_registrar *reg)
 {
 	if (reg->pbc) {
 		wpa_printf(MSG_DEBUG,  "WPS: PBC is set - cancelling it");
-		//wps_registrar_pbc_timeout(reg, NULL);
-		//eloop_cancel_timeout(wps_registrar_pbc_timeout, reg, NULL);
 		wps_registrar_pbc_timeout(reg);
-
-		// TODO: snake to check, no sys_untimeout now, by wujg
-//		sys_untimeout(wps_registrar_pbc_timeout, reg);
 
 		return 1;
 	} else if (reg->selected_registrar) {
@@ -1466,12 +1427,7 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 	len[2] = wpabuf_len(wps->dh_pubkey_e);
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
-	if (wps_crypto_funcs.hmac_sha256_vector) {
-		wps_crypto_funcs.hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, (int *)len, hash);
-	} else {
-		wpa_printf(MSG_ERROR, "In function %s, fail to register hmac_sha256_vector function!\r\n", __FUNCTION__);
-		return -1;
-	}
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash1", hash, SHA256_MAC_LEN);
 
 	wpa_printf(MSG_DEBUG,  "WPS:  * R-Hash2");
@@ -1481,12 +1437,7 @@ static int wps_build_r_hash(struct wps_data *wps, struct wpabuf *msg)
 	/* R-Hash2 = HMAC_AuthKey(R-S2 || PSK2 || PK_E || PK_R) */
 	addr[0] = wps->snonce + WPS_SECRET_NONCE_LEN;
 	addr[1] = wps->psk2;
-	if (wps_crypto_funcs.hmac_sha256_vector) {
-		wps_crypto_funcs.hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, (int *)len, hash);
-	} else {
-		wpa_printf(MSG_ERROR, "In function %s, fail to register hmac_sha256_vector function!\r\n", __FUNCTION__);
-		return -1;
-	}
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	wpa_hexdump(MSG_DEBUG, "WPS: R-Hash2", hash, SHA256_MAC_LEN);
 
 	return 0;
@@ -1689,7 +1640,6 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		if (random_get_bytes(r, sizeof(r)) < 0)
 			return -1;
 		os_free(wps->new_psk);
-		//wps->new_psk = base64_encode(r, sizeof(r), &wps->new_psk_len);
 		if (wps->new_psk == NULL)
 			return -1;
 		wps->new_psk_len--; /* remove newline */
@@ -1703,7 +1653,6 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 	} else if (wps->use_psk_key && wps->wps->psk_set) {
 		char hex[65];
 		wpa_printf(MSG_DEBUG,  "WPS: Use PSK format for Network Key");
-		//wpa_snprintf_hex(hex, sizeof(hex), wps->wps->psk, 32);
 		os_memcpy(wps->cred.key, hex, 32 * 2);
 		wps->cred.key_len = 32 * 2;
 	} else if (wps->wps->network_key) {
@@ -1725,8 +1674,6 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		}
 		wpa_hexdump_key(MSG_DEBUG, "WPS: Generated per-device PSK",
 				wps->new_psk, wps->new_psk_len);
-		//wpa_snprintf_hex(hex, sizeof(hex), wps->new_psk,
-		//		 wps->new_psk_len);
 		os_memcpy(wps->cred.key, hex, wps->new_psk_len * 2);
 		wps->cred.key_len = wps->new_psk_len * 2;
 	}
@@ -2223,12 +2170,7 @@ static int wps_process_e_snonce1(struct wps_data *wps, const u8 *e_snonce1)
 	len[2] = wpabuf_len(wps->dh_pubkey_e);
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
-	if (wps_crypto_funcs.hmac_sha256_vector) {
-		wps_crypto_funcs.hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, (int *)len, hash);
-	} else {
-		wpa_printf(MSG_ERROR, "In function %s, fail to register hmac_sha256_vector function!\r\n", __FUNCTION__);
-		return -1;
-	}
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	if (os_memcmp(wps->peer_hash1, hash, WPS_HASH_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: E-Hash1 derived from E-S1 does "
 			   "not match with the pre-committed value");
@@ -2268,12 +2210,7 @@ static int wps_process_e_snonce2(struct wps_data *wps, const u8 *e_snonce2)
 	addr[3] = wpabuf_head(wps->dh_pubkey_r);
 	len[3] = wpabuf_len(wps->dh_pubkey_r);
 
-	if (wps_crypto_funcs.hmac_sha256_vector) {
-		wps_crypto_funcs.hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, (int *)len, hash);
-	} else {
-		wpa_printf(MSG_ERROR, "In function %s, fail to register hmac_sha256_vector function!\r\n", __FUNCTION__);
-		return -1;
-	}
+	hmac_sha256_vector(wps->authkey, WPS_AUTHKEY_LEN, 4, addr, len, hash);
 	if (os_memcmp(wps->peer_hash2, hash, WPS_HASH_LEN) != 0) {
 		wpa_printf(MSG_DEBUG,  "WPS: E-Hash2 derived from E-S2 does "
 			   "not match with the pre-committed value");
@@ -2610,12 +2547,7 @@ static enum wps_process_res wps_process_m1(struct wps_data *wps,
 			wps->nfc_pw_token = token;
 
 			addr[0] = attr->public_key;
-			if (wps_crypto_funcs.sha256_vector) {
-				wps_crypto_funcs.sha256_vector(1, addr, &attr->public_key_len, hash);
-			} else {
-				wpa_printf(MSG_ERROR, "In function %s, fail to register sha256_vector function!\r\n", __FUNCTION__);
-				return WPS_FAILURE;
-			}
+			sha256_vector(1, addr, &attr->public_key_len, hash);
 			if (os_memcmp(hash, wps->nfc_pw_token->pubkey_hash,
 				      WPS_OOB_PUBKEY_HASH_LEN) != 0) {
 				wpa_printf(MSG_ERROR,  "WPS: Public Key hash "
@@ -3161,8 +3093,6 @@ static enum wps_process_res wps_process_wsc_done(struct wps_data *wps,
 
 	wpa_printf(MSG_DEBUG,  "WPS: Received WSC_Done");
 
-	//if (wps->state != RECV_DONE &&
-	//    (!wps->wps->wps_upnp || !wps->ext_reg))
 	if (wps->state != RECV_DONE && (!wps->ext_reg)){
 		wpa_printf(MSG_DEBUG,  "WPS: Unexpected state (%d) for "
 			   "receiving WSC_Done", wps->state);
@@ -3352,21 +3282,6 @@ int wps_registrar_update_ie(struct wps_registrar *reg)
 	return wps_set_ie(reg);
 }
 
-
-//static void ICACHE_FLASH_ATTR wps_registrar_set_selected_timeout(void *eloop_ctx,
-//					       void *timeout_ctx)
-#if 0
-static void wps_registrar_set_selected_timeout(void *eloop_ctx)
-{
-	struct wps_registrar *reg = eloop_ctx;
-
-	wpa_printf(MSG_DEBUG,  "WPS: Selected Registrar timeout - "
-		   "unselect internal Registrar");
-	reg->selected_registrar = 0;
-	reg->pbc = 0;
-	wps_registrar_selected_registrar_changed(reg);
-}
-#endif
 
 #ifdef CONFIG_WPS_UPNP
 static void wps_registrar_sel_reg_add(struct wps_registrar *reg,
@@ -3582,12 +3497,6 @@ int wps_registrar_add_nfc_pw_token(struct wps_registrar *reg,
 	wps_registrar_add_authorized_mac(reg,
 					 (u8 *) "\xff\xff\xff\xff\xff\xff");
 	wps_registrar_selected_registrar_changed(reg);
-	#if 0
-	eloop_cancel_timeout(wps_registrar_set_selected_timeout, reg, NULL);
-	eloop_register_timeout(WPS_PBC_WALK_TIME, 0,
-			       wps_registrar_set_selected_timeout,
-			       reg, NULL);
-    #endif
 	return 0;
 }
 

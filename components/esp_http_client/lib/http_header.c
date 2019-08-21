@@ -37,7 +37,7 @@ typedef struct http_header_item {
 STAILQ_HEAD(http_header, http_header_item);
 
 
-http_header_handle_t http_header_init()
+http_header_handle_t http_header_init(void)
 {
     http_header_handle_t header = calloc(1, sizeof(struct http_header));
     HTTP_MEM_CHECK(TAG, header, return NULL);

@@ -39,14 +39,14 @@ void tempsensor_example(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(tempsensor_example, "temp", 2048, NULL, 5, NULL);
 }
 
 #elif CONFIG_IDF_TARGET_ESP32
 
-void app_main()
+void app_main(void)
 {
     printf("ESP32 don't support temperature sensor\n");
 }

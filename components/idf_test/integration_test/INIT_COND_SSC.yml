@@ -14,6 +14,13 @@
     - - SSC SSC1 op -W -a start
       - - R SSC1 C +MODE
 
+.dut_init_espnow: &dut_init_espnow
+  LIST_MERGE:
+  - - SSC SSC[1,2] espnow -D
+    - - 'R SSC[1,2] C +ESPNOW:'
+  - - SSC SSC[1,2] espnow -I
+    - - 'R SSC[1,2] C +ESPNOW:'
+
 initial condition:
 - tag: APM1
   <<: *SSC_INIT_COND
@@ -290,6 +297,61 @@ initial condition:
     - - R SSC1 C +MODE:OK
   - - SSC SSC1 op -W -a stop
     - - R SSC1 C +MODE:OK
+- tag: APM2_MDNS
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT set to SoftAP mode, PC Wi-Fi NIC connected with SoftAP, restart MDNS
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:2
+  - - SSC SSC1 ap -Q
+    - - R SSC1 RE "\+APCONFIG:%%s,%%s,7,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC1 ap -L
+    - - R SSC1 RE "\+LSTA:.+,%%s"%%(<pc_ip_wifi>)
+  - - SSC SSC1 dhcp -Q -o 2
+    - - R SSC1 C +DHCP:AP,STARTED
+  - - SSC SSC1 mac -Q -o 2
+    - - R SSC1 P <target_ap_mac>
+  - - SSC SSC1 mdns -T
+    - - R SSC1 C +MDNS:OK
+  - - SSC SSC1 mdns -I
+    - - R SSC1 C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC1 C +SAP:OK
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - - R PC_COM NC ERROR C +WIFICONN:OK
+  - - SSC SSC1 mdns -T
+    - - R SSC1 C +MDNS:OK
+  - - SSC SSC1 mdns -I
+    - - R SSC1 C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC1 C +SAP:OK
+  - - WIFI <pc_wifi_nic> CONN <target_ssid> <target_password> <pc_ip_wifi> <target_auth>
+      <target_encryption>
+    - - R PC_COM NC ERROR C +WIFICONN:OK
+  - - SSC SSC1 mdns -T
+    - - R SSC1 C +MDNS:OK
+  - - SSC SSC1 mdns -I
+    - - R SSC1 C +MDNS:OK
 - tag: BLE_CONN2
   <<: *SSC_INIT_COND
   initial condition detail: (SSC) enable BLE one 2 DUTs, GATT service 0xA000 started on DUT2, DUT1 connected with DUT2
@@ -316,21 +378,21 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - - R SSC2 C +GATTS:StartService,OK,A000
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - R SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
+    - - R SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -348,21 +410,21 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA0
+    - - R SSC2 C +GATTS:StartService,OK,A000
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - R SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
+    - - R SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -393,21 +455,21 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA2
-    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - R SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
+    - - R SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -425,21 +487,21 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
     - - R SSC2 C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA2
-    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - R SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
+    - - R SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -470,23 +532,21 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC[1-2] gatts -S -z load -p 0xA2
+    - - R SSC[1-2] C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-  - - SSC SSC[1-2] gatts -S -z load -p 0xA2
-    - - R SSC[1-2] C +GATTS:StartService,OK,A002
+    - - R SSC2 C +BLEADV
   - - SSC SSC[1-2] gattc -F -r <dut[2,1]_bt_mac>
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - R SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>
-    - - R SSC2 C +BLE:GattcOpen,OK
+    - - R SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-2] reboot
@@ -504,23 +564,21 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC[1-2] gatts -S -z load -p 0xA2
+    - - R SSC[1-2] C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-  - - SSC SSC[1-2] gatts -S -z load -p 0xA2
-    - - R SSC[1-2] C +GATTS:StartService,OK,A002
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC[1-2] gattc -F -r <dut[2,1]_bt_mac>
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - R SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
-  - - SSC SSC2 bleconn -C -p 0x10 -a <dut1_bt_mac>
-    - - R SSC2 C +BLE:GattcOpen,OK
+    - - R SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -549,21 +607,21 @@ initial condition:
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
+  - - SSC SSC[2-5] gatts -S -z load -p 0xA2
+    - - P SSC[2-5] C +GATTS:StartService,OK,A002
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[2-5] bleadv -D -z start
     - - P SSC[2-5] C +BLEADV:Start,OK
-  - - SSC SSC[2-5] gatts -S -z load -p 0xA2
-    - - P SSC[2-5] C +GATTS:StartService,OK,A002
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
-    - - R SSC1 RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
-      - P SSC{%d} C +BLE:GattsConnect
+    - - R SSC1 RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
+      - P SSC{%d} C +BLECONN:GapConnect,OK
   restore cmd set:
   - ''
   # do wifi disconnect, to prevent wifi reconnect cause bad BLE performance
@@ -583,21 +641,21 @@ initial condition:
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
+  - - SSC SSC[2-5] gatts -S -z load -p 0xA2
+    - - P SSC[2-5] C +GATTS:StartService,OK,A002
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[2-5] bleadv -D -z start
     - - P SSC[2-5] C +BLEADV:Start,OK
-  - - SSC SSC[2-5] gatts -S -z load -p 0xA2
-    - - P SSC[2-5] C +GATTS:StartService,OK,A002
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
-    - - R SSC1 RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
-      - P SSC{%d} C +BLE:GattsConnect
+    - - R SSC1 RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
+      - P SSC{%d} C +BLECONN:GapConnect,OK,
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -628,12 +686,12 @@ initial condition:
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
-  - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC1 gatts -S -z load -p 0xA2
     - - R SSC1 C +GATTS:StartService,OK,A002
+  - - SSC SSC[1-5] bleadv -D -z stop
+    - - R SSC[1-5] C +BLEADV:Stop
   - - LOOP 4 3 "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleadv -D -z start
@@ -641,8 +699,8 @@ initial condition:
   - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
     - - R SSC[2-5] C +GATTC:OK
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
-    - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
-      - P SSC1 C +BLE:GattsConnect
+    - - R SSC{%d} RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
+      - P SSC1 C +BLECONN:GapConnect,OK
   force restore cmd set:
   - ''
   - - SSC SSC[1-5] reboot
@@ -661,20 +719,22 @@ initial condition:
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC1 gatts -S -z load -p 0xA2
     - - R SSC1 C +GATTS:StartService,OK,A002
   - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
     - - R SSC[2-5] C +GATTC:OK
-  - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
+  - - LOOP 4 3 "[2,3,4,5]" "[2,3,4,5]"
     - ''
   - - SSC SSC1 bleadv -D -z start
     - - P SSC1 C +BLEADV:Start,OK
+  - - SSC SSC[2-5] gattc -F -r <dut1_bt_mac>
+    - - R SSC[2-5] C +GATTC:OK
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
-    - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
-      - P SSC1 C +BLE:GattsConnect
+    - - R SSC{%d} RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
+      - P SSC1 C +BLECONN:GapConnect,OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -706,7 +766,7 @@ initial condition:
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[1-3] gatts -S -z load -p 0xA2
@@ -716,15 +776,15 @@ initial condition:
   - - SSC SSC1 bleadv -D -z start
     - - P SSC1 C +BLEADV:Start,OK
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
-    - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
-      - P SSC1 C +BLE:GattsConnect
+    - - R SSC{%d} RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
+      - P SSC1 C +BLECONN:GapConnect,OK
   - - SSC SSC[2-3] bleadv -D -z start
     - - P SSC[2-3] C +BLEADV:Start,OK
   - - LOOP 2 1 "[2,3]" "[2,3]" "[2,3]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
-    - - R SSC1 RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
-      - P SSC{%d} C +BLE:GattsConnect
+    - - R SSC1 RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
+      - P SSC{%d} C +BLECONN:GapConnect,OK,
   force restore cmd set:
   - ''
   - - SSC SSC[1-5] reboot
@@ -743,7 +803,7 @@ initial condition:
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC[1-3] gatts -S -z load -p 0xA2
@@ -753,15 +813,15 @@ initial condition:
   - - SSC SSC1 bleadv -D -z start
     - - P SSC1 C +BLEADV:Start,OK
   - - SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>
-    - - R SSC{%d} RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
-      - P SSC1 C +BLE:GattsConnect
+    - - R SSC{%d} RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut1_bt_mac>)
+      - P SSC1 C +BLECONN:GapConnect,OK,
   - - SSC SSC[2-3] bleadv -D -z start
     - - P SSC[2-3] C +BLEADV:Start,OK
   - - LOOP 2 1 "[2,3]" "[2,3]" "[2,3]"
     - ''
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>
-    - - R SSC1 RE "\+BLE:GattcConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
-      - P SSC{%d} C +BLE:GattsConnect
+    - - R SSC1 RE "\+BLECONN:GapConnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)
+      - P SSC{%d} C +BLECONN:GapConnect,OK
   restore post cmd set:
   - ''
   - - SSC SSC1 ram
@@ -793,15 +853,15 @@ initial condition:
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC2 blesmp -S -z AuthReqMode -v 0x01
     - - P SSC2 C +BLESMP:OK
   - - SSC SSC2 blesmp -S -z IOCAP -v 0x03
@@ -809,11 +869,9 @@ initial condition:
   - - SSC SSC2 blesmp -S -z RspKey -v 0x03
     - - P SSC2 C +BLESMP:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - P SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
+    - - P SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   - - SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc
-    - - P SSC1 C +BLESMP:SecReq
-  - - SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>
     - - P SSC[1-2] C +BLESMP:AuthComplete,Success,0
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
@@ -835,15 +893,15 @@ initial condition:
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
+  - - SSC SSC2 gatts -S -z load -p 0xA2
+    - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-  - - SSC SSC2 gatts -S -z load -p 0xA0
-    - - R SSC2 C +GATTS:StartService,OK,A000
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC2 blesmp -S -z AuthReqMode -v 0x01
     - - P SSC2 C +BLESMP:OK
   - - SSC SSC2 blesmp -S -z IOCAP -v 0x03
@@ -851,11 +909,9 @@ initial condition:
   - - SSC SSC2 blesmp -S -z RspKey -v 0x03
     - - P SSC2 C +BLESMP:OK
   - - SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>
-    - - P SSC1 C +BLE:GattcConnect,OK
-      - P SSC2 C +BLE:GattsConnect
+    - - P SSC1 C +BLECONN:GapConnect,OK
+      - P SSC2 C +BLECONN:GapConnect,OK
   - - SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc
-    - - P SSC1 C +BLESMP:SecReq
-  - - SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>
     - - P SSC[1-2] C +BLESMP:AuthComplete,Success,0
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
     - - R SSC1 C +GATTC:OK
@@ -1017,17 +1073,16 @@ initial condition:
     - - 'R SSC[1-2] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
+  - - SSC SSC[1-2] bleadv -D -z stop
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC2 gatts -S -z load -p 0xA0
     - - R SSC2 C +GATTS:StartService,OK,A000
-  - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
-
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT3
@@ -1066,13 +1121,13 @@ initial condition:
   - - SSC SSC2 gatts -S -z load -p 0xA2
     - - R SSC2 C +GATTS:StartService,OK,A002
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
 - tag: BLE_INIT5
@@ -1111,10 +1166,10 @@ initial condition:
     - - 'R SSC[1-5] C +GATTS:'
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
-  - - "SSC SSC[2-5] gatts -S -z load -p 0xA0"
-    - ["P SSC[2-5] C +GATTS:StartService,OK,A000"]
+  - - "SSC SSC[2-5] gatts -S -z load -p 0xA2"
+    - ["P SSC[2-5] C +GATTS:StartService,OK,A002"]
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
@@ -1147,7 +1202,7 @@ initial condition:
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 gatts -S -z load -p 0xA2
@@ -1155,7 +1210,7 @@ initial condition:
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC[1-2] blesmp -L -c [1,0]
     - - R SSC[1-2] C +BLESMP:OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
@@ -1178,7 +1233,7 @@ initial condition:
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC2 gatts -S -z load -p 0xA2
@@ -1186,7 +1241,7 @@ initial condition:
   - - SSC SSC2 bleadv -L -c 0 -t 3
     - - R SSC2 C +BLEADV:SetAdv,OK
   - - SSC SSC2 bleadv -D -z start
-    - - R SSC2 C +BLEADV:OK
+    - - R SSC2 C +BLEADV:Start,OK
   - - SSC SSC[1-2] blesmp -L -c [1,0]
     - - R SSC[1-2] C +BLESMP:OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
@@ -1219,15 +1274,15 @@ initial condition:
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
-  - - SSC SSC[2-5] gatts -S -z load -p 0xA0
-    - - R SSC[2-5] C +GATTS:StartService,OK,A000
+  - - SSC SSC[2-5] gatts -S -z load -p 0xA2
+    - - R SSC[2-5] C +GATTS:StartService,OK,A002
   - - SSC SSC[2-5] bleadv -L -c 0 -t 3
     - - R SSC[2-5] C +BLEADV:SetAdv,OK
   - - SSC SSC[2-5] bleadv -D -z start
-    - - R SSC[2-5] C +BLEADV:OK
+    - - R SSC[2-5] C +BLEADV:Start,OK
   - - SSC SSC[1-5] blesmp -L -c [1,0]
     - - R SSC[1-5] C +BLESMP:OK
   - - SSC SSC1 gattc -F -r <dut2_bt_mac>
@@ -1247,15 +1302,15 @@ initial condition:
   - - SSC SSC[1-5] gattc -U -z all
     - - R SSC[1-5] C +GATTC:OK
   - - SSC SSC[1-5] bleadv -D -z stop
-    - - R SSC[1-5] C +BLEADV:OK
+    - - R SSC[1-5] C +BLEADV:Stop
   - - SSC SSC[1-5] ble -S -z public
     - - R SSC[1-5] C +BLE:OK
-  - - SSC SSC[2-5] gatts -S -z load -p 0xA0
-    - - R SSC[2-5] C +GATTS:StartService,OK,A000
+  - - SSC SSC[2-5] gatts -S -z load -p 0xA2
+    - - R SSC[2-5] C +GATTS:StartService,OK,A002
   - - SSC SSC[2-5] bleadv -L -c 0 -t 3
     - - R SSC[2-5] C +BLEADV:SetAdv,OK
   - - SSC SSC[2-5] bleadv -D -z start
-    - - R SSC[2-5] C +BLEADV:OK
+    - - R SSC[2-5] C +BLEADV:Start,OK
   - - SSC SSC1 blesmp -L -c 1
     - - R SSC1 C +BLESMP:OK
   - - SSC SSC[2-5] blesmp -L -c 0
@@ -1267,14 +1322,99 @@ initial condition:
     - - R SSC1 C +GATTC:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
-- tag: NOW1
+- tag: NOW_STAM1
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT in sta mode and espnow is de-initialized
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:1
+  - - SSC SSC1 sta -D
+    - - 'R SSC1 C +QAP:'
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC1 espnow -D
+    - - 'R SSC1 C +ESPNOW:'
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 sta -D
+    - - 'R SSC1 C +QAP:'
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 espnow -D
+    - - 'R SSC1 C +ESPNOW:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 sta -D
+    - - 'R SSC1 C +QAP:'
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 espnow -D
+    - - 'R SSC1 C +ESPNOW:'
+- tag: NOW_STAM2
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT in sta mode, join AP and espnow is de-initialized
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:1
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC1 espnow -D
+    - - 'R SSC1 C +ESPNOW:'
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 espnow -D
+    - - 'R SSC1 C +ESPNOW:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 espnow -D
+    - - 'R SSC1 C +ESPNOW:'
+- tag: NOW_APM1
   <<: *SSC_INIT_COND
   initial condition detail: (SSC) DUT1 in AP mode and espnow is de-initialized
   check cmd set:
   - ''
-  - *dut1_start_wifi
   - - SSC SSC1 op -Q
     - - R SSC1 C +CURMODE:2
+  - - SSC SSC1 ap -Q
+    - - R SSC1 RE "\+APCONFIG:%%s,%%s,8,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC1 dhcp -Q -o 2
+    - - R SSC1 C +DHCP:AP,STARTED
   - - SSC SSC1 mac -Q -o 2
     - - R SSC1 P <target_ap_mac>
   - - SSC SSC1 espnow -D
@@ -1283,79 +1423,284 @@ initial condition:
   - ''
   - - SSC SSC1 op -S -o 2
     - - R SSC1 C +MODE:OK
-  - - SSC SSC1 mac -S -m <target_ap_mac> -o 2
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
     - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC1 C +SAP:OK
   - - SSC SSC1 espnow -D
     - - 'R SSC1 C +ESPNOW:'
   force restore cmd set:
   - ''
-  - - SSC SSC[1-<dev_num>] reboot
-    - - R SSC[1-<dev_num>] C !!!ready!!!
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
   - - SSC SSC1 op -S -o 2
     - - R SSC1 C +MODE:OK
-  - - SSC SSC1 mac -S -m <target_ap_mac> -o 2
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
     - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC1 C +SAP:OK
   - - SSC SSC1 espnow -D
     - - 'R SSC1 C +ESPNOW:'
-  restore post cmd set:
-  - ''
-  - - SSC SSC1 ram
-    - - R SSC1 A <heap_size>:(\d+)
-- tag: NOW2
+- tag: NOW_T2_STAM1
   <<: *SSC_INIT_COND
-  initial condition detail: (SSC) multiple (<dev_num>) DUTs in AP mode, espnow is initialized
-    with self role slave
+  initial condition detail: (SSC) two DUTs in sta mode, set same channel and espnow is de-initialized
   check cmd set:
   - ''
-  - *dut1_start_wifi
-  - - SSC SSC[1-<dev_num>] op -Q
-    - - R SSC[1-<dev_num>] C +CURMODE:2
-  - - SSC SSC[1-<dev_num>] mac -Q -o 3
-    - - R SSC[1-<dev_num>] P <target[1-<dev_num>]_ap_mac> P <target[1-<dev_num>]_mac>
-  - - SSC SSC[1-<dev_num>] espnow -D
-    - - 'R SSC[1-<dev_num>] C +ESPNOW:'
-  - - SSC SSC[1-<dev_num>] espnow -I
-    - - R SSC[1-<dev_num>] C +ESPNOW:OK
-  - - SSC SSC[1-<dev_num>] espnow -R -t Set -r 2
-    - - R SSC[1-<dev_num>] C +ESPNOW:OK
+  - - SSC SSC[1,2] op -Q
+    - - R SSC[1,2] C +CURMODE:1
+  - - SSC SSC[1,2] sta -D
+    - - 'R SSC[1,2] C +QAP:'
+  - - SSC SSC[1,2] channel -G
+    - - R SSC[1,2] C +CHANNEL:5
+  - - SSC SSC[1,2] dhcp -Q -o 1
+    - - R SSC[1,2] C +DHCP:STA,STARTED
+  - - SSC SSC[1,2] mac -Q -o 1
+    - - R SSC[1,2] P <target[1,2]_mac>
+  - *dut_init_espnow
   restore cmd set:
   - ''
-  - - SSC SSC[1-<dev_num>] op -S -o 3
-    - - R SSC[1-<dev_num>] C +MODE:OK
-  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_ap_mac> -o 2
-    - - R SSC[1-<dev_num>] C +MAC:AP,OK
-  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_mac> -o 1
-    - - R SSC[1-<dev_num>] C +MAC:STA,OK
-  - - SSC SSC[1-<dev_num>] op -S -o 2
-    - - R SSC[1-<dev_num>] C +MODE:OK
-  - - SSC SSC[1-<dev_num>] espnow -D
-    - - 'R SSC[1-<dev_num>] C +ESPNOW:'
-  - - SSC SSC[1-<dev_num>] espnow -I
-    - - R SSC[1-<dev_num>] C +ESPNOW:OK
-  - - SSC SSC[1-<dev_num>] espnow -R -t Set -r 2
-    - - R SSC[1-<dev_num>] C +ESPNOW:OK
+  - - SSC SSC[1,2] op -S -o 1
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC[1,2] sta -D
+    - - 'R SSC[1,2] C +QAP:'
+  - - SSC SSC[1,2] channel -S -c 5
+    - - R SSC[1,2] C +CHANNEL:OK
+  - - SSC SSC[1,2] dhcp -S -o 1
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] mac -S -o 1 -m <target[1,2]_mac>
+    - - R SSC[1,2] C +MAC:STA,OK
+  - *dut_init_espnow
   force restore cmd set:
   - ''
-  - - SSC SSC[1-<dev_num>] reboot
-    - - R SSC[1-<dev_num>] C !!!ready!!!
-  - - SSC SSC[1-<dev_num>] op -S -o 3
-    - - R SSC[1-<dev_num>] C +MODE:OK
-  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_ap_mac> -o 2
-    - - R SSC[1-<dev_num>] C +MAC:AP,OK
-  - - SSC SSC[1-<dev_num>] mac -S -m <target[1-<dev_num>]_mac> -o 1
-    - - R SSC[1-<dev_num>] C +MAC:STA,OK
-  - - SSC SSC[1-<dev_num>] op -S -o 2
-    - - R SSC[1-<dev_num>] C +MODE:OK
-  - - SSC SSC[1-<dev_num>] espnow -D
-    - - 'R SSC[1-<dev_num>] C +ESPNOW:'
-  - - SSC SSC[1-<dev_num>] espnow -I
-    - - R SSC[1-<dev_num>] C +ESPNOW:OK
-  - - SSC SSC[1-<dev_num>] espnow -R -t Set -r 2
-    - - R SSC[1-<dev_num>] C +ESPNOW:OK
-  restore post cmd set:
+  - - SSC SSC[1,2] reboot
+    - - R SSC[1,2] C !!!ready!!!
+  - - SSC SSC[1,2] op -S -o 1
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC[1,2] sta -D
+    - - 'R SSC[1,2] C +QAP:'
+  - - SSC SSC[1,2] channel -S -c 5
+    - - R SSC[1,2] C +CHANNEL:OK
+  - - SSC SSC[1,2] dhcp -S -o 1
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] mac -S -o 1 -m <target[1,2]_mac>
+    - - R SSC[1,2] C +MAC:STA,OK
+  - *dut_init_espnow
+- tag: NOW_T2_STAM2
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) one DUT in sta mode, one DUT in softap mode, station joins softap and espnow is de-initialized
+  check cmd set:
   - ''
-  - - SSC SSC1 ram
-    - - R SSC1 A <heap_size>:(\d+)
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:1
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:2
+  - - SSC SSC2 ap -Q
+    - - R SSC2 RE "\+APCONFIG:%%s,%%s,8,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC2 dhcp -Q -o 2
+    - - R SSC2 C +DHCP:AP,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 2
+    - - R SSC2 P <target2_ap_mac>
+  - *dut_init_espnow
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 2
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC[1,2] dhcp -S -o [1,2]
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - *dut_init_espnow
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - - R SSC[1-2] C !!!ready!!!
+  - - SSC SSC[1-2] op -S -o [1,2]
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1,2] dhcp -S -o [1,2]
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - *dut_init_espnow
+- tag: NOW_T2_APM1
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) 2 DUTs in softap mode, set same channel and espnow is de-initialized
+  check cmd set:
+  - ''
+  - - SSC SSC[1,2] op -Q
+    - - R SSC[1,2] C +CURMODE:2
+  - - SSC SSC[1,2] ap -Q
+    - - R SSC[1,2] RE "\+APCONFIG:%%s,%%s,2,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC[1,2] dhcp -Q -o 2
+    - - R SSC[1,2] C +DHCP:AP,STARTED
+  - - SSC SSC[1,2] mac -Q -o 2
+    - - R SSC[1,2] P <target[1,2]_ap_mac>
+  - *dut_init_espnow
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2] op -S -o 2
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC[1,2] dhcp -S -o 2
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] mac -S -o 2 -m <target[1,2]_ap_mac>
+    - - R SSC[1,2] C +MAC:AP,OK
+  - - SSC SSC[1,2] ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 2
+    - - R SSC[1,2] C +SAP:OK
+  - *dut_init_espnow
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2] reboot
+    - - R SSC[1,2] C !!!ready!!!
+  - - SSC SSC[1,2] op -S -o 2
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC[1,2] dhcp -S -o 2
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] mac -S -o 2 -m <target[1,2]_ap_mac>
+    - - R SSC[1,2] C +MAC:AP,OK
+  - - SSC SSC[1,2] ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 2
+    - - R SSC[1,2] C +SAP:OK
+  - *dut_init_espnow
+- tag: NOW_T2_STAAP1
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) two DUTs in sta + ap mode, set same channel and espnow is de-initialized
+  check cmd set:
+  - ''
+  - - SSC SSC[1,2] op -Q
+    - - R SSC[1,2] C +CURMODE:3
+  - - SSC SSC[1,2] sta -D
+    - - 'R SSC[1,2] C +QAP:'
+  - - SSC SSC[1,2] ap -Q
+    - - R SSC[1,2] RE "\+APCONFIG:%%s,%%s,8,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC[1,2] dhcp -Q -o 1
+    - - R SSC[1,2] C +DHCP:STA,STARTED
+  - - SSC SSC[1,2] dhcp -Q -o 2
+    - - R SSC[1,2] C +DHCP:AP,STARTED
+  - - SSC SSC[1,2] mac -Q -o 1
+    - - R SSC[1,2] P <target[1,2]_mac>
+  - - SSC SSC[1,2] mac -Q -o 2
+    - - R SSC[1,2] P <target[1,2]_ap_mac>
+  - *dut_init_espnow
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2] op -S -o 3
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC[1,2] sta -D
+    - - 'R SSC[1,2] C +QAP:'
+  - - SSC SSC[1,2] dhcp -S -o 1
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] dhcp -S -o 2
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] mac -S -o 1 -m <target[1,2]_mac>
+    - - R SSC[1,2] C +MAC:STA,OK
+  - - SSC SSC[1,2] mac -S -o 2 -m <target[1,2]_ap_mac>
+    - - R SSC[1,2] C +MAC:AP,OK
+  - - SSC SSC[1,2] ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC[1,2] C +SAP:OK
+  - *dut_init_espnow
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2] reboot
+    - - R SSC[1,2] C !!!ready!!!
+  - - SSC SSC[1,2] op -S -o 3
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC[1,2] sta -D
+    - - 'R SSC[1,2] C +QAP:'
+  - - SSC SSC[1,2] dhcp -S -o 1
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] dhcp -S -o 2
+    - - R SSC[1,2] C +DHCP
+  - - SSC SSC[1,2] mac -S -o 1 -m <target[1,2]_mac>
+    - - R SSC[1,2] C +MAC:STA,OK
+  - - SSC SSC[1,2] mac -S -o 2 -m <target[1,2]_ap_mac>
+    - - R SSC[1,2] C +MAC:AP,OK
+  - - SSC SSC[1,2] ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC[1,2] C +SAP:OK
+  - *dut_init_espnow
+- tag: NOW_T2_STAAP2
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) one DUT in softap mode, one DUT in sta + softap mode, station join softap and espnow is de-initialized
+  check cmd set:
+  - ''
+  - - SSC SSC[1,2] op -Q
+    - - R SSC[1,2] C +CURMODE:3
+  - - SSC SSC2 ap -Q
+    - - R SSC2 RE "\+APCONFIG:%%s,%%s,8,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC2 dhcp -Q -o 2
+    - - R SSC2 C +DHCP:AP,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 2
+    - - R SSC2 P <target2_ap_mac>
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - *dut_init_espnow
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2] op -S -o 3
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC2 dhcp -S -o 2
+    - - R SSC2 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - *dut_init_espnow
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2] reboot
+    - - R SSC[1,2] C !!!ready!!!
+  - - SSC SSC[1,2] op -S -o 3
+    - - R SSC[1,2] C +MODE:OK
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC2 dhcp -S -o 2
+    - - R SSC2 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 8
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - *dut_init_espnow
 - tag: None
   <<: *SSC_INIT_COND
   initial condition detail: (SSC) do nothing
@@ -1630,6 +1975,53 @@ initial condition:
     - - R SSC1 C +MAC:STA,OK
   - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
     - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+- tag: STAM2_MDNS
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT set to STA mode, connected with AP, restart MDNS
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:1
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC1 mdns -T
+    - - R SSC1 C +MDNS:OK
+  - - SSC SSC1 mdns -I
+    - - R SSC1 C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 mdns -T
+    - - R SSC1 C +MDNS:OK
+  - - SSC SSC1 mdns -I
+    - - R SSC1 C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC1 op -S -o 1
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC1 dhcp -S -o 1
+    - - R SSC1 C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC1 sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC1 mdns -T
+    - - R SSC1 C +MDNS:OK
+  - - SSC SSC1 mdns -I
+    - - R SSC1 C +MDNS:OK
 - tag: STAO1
   <<: *SSC_INIT_COND
   initial condition detail: (SSC) DUT set to STA mode, disconnected from AP, enable DHCP client
@@ -1919,6 +2311,246 @@ initial condition:
     - - R SSC1 C +MAC:AP,OK
   - - SSC SSC2 mac -S -o 1 -m <target2_mac>
     - - R SSC2 C +MAC:STA,OK
+- tag: T2_3
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to STA+SoftAP mode, DUT2 set to STA+SoftAP mode
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:2
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:3
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - - SSC SSC2 soc -T
+    - - R SSC2 C +CLOSEALL
+  - - SSC SSC1 dhcp -Q -o 2
+    - - R SSC1 C +DHCP:AP,STARTED
+  - - SSC SSC2 dhcp -Q -o 1
+    - - R SSC2 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 2
+    - - R SSC1 P <target_ap_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  restore cmd set:
+  - ''
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 3
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - - SSC SSC2 soc -T
+    - - R SSC2 C +CLOSEALL
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC2 dhcp -S -o 1
+    - - R SSC2 C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC1 reboot
+    - - R SSC1 C !!!ready!!!
+  - - SSC SSC2 reboot
+    - - R SSC2 C !!!ready!!!
+  - - SSC SSC1 op -S -o 2
+    - - R SSC1 C +MODE:OK
+  - - SSC SSC2 op -S -o 3
+    - - R SSC2 C +MODE:OK
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - - SSC SSC2 soc -T
+    - - R SSC2 C +CLOSEALL
+  - - SSC SSC1 dhcp -S -o 2
+    - - R SSC1 C +DHCP
+  - - SSC SSC2 dhcp -S -o 1
+    - - R SSC2 C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+- tag: T2_MDNS
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) Both DUT set to STA mode, connected with AP, restart MDNS
+  check cmd set:
+  - ''
+  - - SSC SSC[1-2] op -Q
+    - - R SSC[1-2] C+CURMODE:1
+  - - SSC SSC[1-2] sta -Q
+    - - R SSC[1-2] RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC[1-2] dhcp -Q -o 1
+    - - R SSC[1-2] C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o [1,1]
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] dhcp -S -o 1
+    - - R SSC[1-2] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC[1-2] sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC[1-2] RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - - R SSC[1-2] C !!!ready!!!
+  - - SSC SSC[1-2] op -S -o 1
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] dhcp -S -o 1
+    - - R SSC[1-2] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC[1-2] sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC[1-2] RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+- tag: T2_MDNS_MODE1
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to STA mode, DUT2 set to SoftAP mode, DUT1 connected with DUT2, restart MDNS
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C+CURMODE:1
+  - - SSC SSC2 op -Q
+    - - R SSC2 C+CURMODE:2
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC2 ap -Q
+    - - R SSC2 RE "\+APCONFIG:%%s,%%s,7,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC2 dhcp -Q -o 2
+    - - R SSC2 C +DHCP:AP,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 2
+    - - R SSC2 P <target2_ap_mac>
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o [1,2]
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] dhcp -S -o [1,2]
+    - - R SSC[1-2] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - - R SSC[1-2] C !!!ready!!!
+  - - SSC SSC[1-2] op -S -o [1,2]
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] dhcp -S -o [1,2]
+    - - R SSC[1-2] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+- tag: T2_MDNS_MODE2
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to SoftAP mode, DUT2 set to STA mode, DUT1 connected with DUT2, restart MDNS
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C+CURMODE:2
+  - - SSC SSC2 op -Q
+    - - R SSC2 C+CURMODE:1
+  - - SSC SSC1 ap -Q
+    - - R SSC1 RE "\+APCONFIG:%%s,%%s,7,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC2 sta -Q
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 dhcp -Q -o 2
+    - - R SSC1 C +DHCP:AP,STARTED
+  - - SSC SSC2 dhcp -Q -o 1
+    - - R SSC2 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 2
+    - - R SSC1 P <target_ap_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-2] op -S -o [2,1]
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] dhcp -S -o [2,1]
+    - - R SSC[1-2] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-2] reboot
+    - - R SSC[1-2] C !!!ready!!!
+  - - SSC SSC[1-2] op -S -o [2,1]
+    - - R SSC[1-2] C +MODE:OK
+  - - SSC SSC[1-2] dhcp -S -o [2,1]
+    - - R SSC[1-2] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-2] mdns -T
+    - - R SSC[1-2] C +MDNS:OK
+  - - SSC SSC[1-2] mdns -I
+    - - R SSC[1-2] C +MDNS:OK
 - tag: T3_1
   <<: *SSC_INIT_COND
   initial condition detail: (SSC) DUT1 set to STA+SoftAP mode, DUT2 and DUT3 set to STA mode
@@ -1970,6 +2602,376 @@ initial condition:
     - - R SSC2 C +MAC:STA,OK
   - - SSC SSC3 mac -S -o 1 -m <target3_mac>
     - - R SSC3 C +MAC:STA,OK
+- tag: T3_2
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to SoftAP mode, DUT2 as STA mode
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:2
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:1
+  - - SSC SSC3 op -Q
+    - - R SSC3 C +CURMODE:2
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - - SSC SSC2 soc -T
+    - - ''
+  - - SSC SSC1 dhcp -Q -o 2
+    - - R SSC1 C +DHCP:AP,STARTED
+  - - SSC SSC2 dhcp -Q -o 1
+    - - R SSC2 C +DHCP:STA,STARTED
+  - - SSC SSC3 dhcp -Q -o 2
+    - - R SSC3 C +DHCP:AP,STARTED
+  - - SSC SSC1 mac -Q -o 2
+    - - R SSC1 P <target_ap_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC3 mac -Q -o 2
+    - - R SSC3 P <target3_ap_mac>
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o [2,1,2]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - - SSC SSC2 soc -T
+    - - ''
+  - - SSC SSC[1-3] dhcp -S -o [2,1,2]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 2 -m <target3_ap_mac>
+    - - R SSC3 C +MAC:AP,OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - - R SSC[1-3] C !!!ready!!!
+  - - SSC SSC[1-3] op -S -o [2,1,2]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC2 sta -D
+    - - 'R SSC2 C +QAP:'
+  - - SSC SSC2 soc -T
+    - - ''
+  - - SSC SSC[1-3] dhcp -S -o [2,1,2]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 2 -m <target3_ap_mac>
+    - - R SSC3 C +MAC:AP,OK
+- tag: T3_3
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 set to SoftAp mode, DUT2-3 set to STA mode
+  check cmd set:
+  - ''
+  - - SSC SSC[1,2,3] op -Q
+    - - R SSC[1,2,3] C +CURMODE:[2,1,1]
+  - - SSC SSC[2,3] sta -D
+    - - 'R SSC[2,3] C +QAP:'
+  restore cmd set:
+  - ''
+  - - SSC SSC[1,2,3] op -S -o [2,1,1]
+    - - R SSC[1,2,3] C +MODE:OK
+  - - SSC SSC[2,3] sta -D
+    - - 'R SSC[2,3] C +QAP:'
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1,2,3] reboot
+    - - R SSC[1,2,3] C !!!ready!!!
+  - - SSC SSC[1,2,3] op -S -o [2,1,1]
+    - - R SSC[1,2,3] C +MODE:OK
+  - - SSC SSC[2,3] sta -D
+    - - 'R SSC[2,3] C +QAP:'
+- tag: T3_MDNS
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) All 3 DUTs set to STA mode, connected with AP, restart MDNS
+  check cmd set:
+  - ''
+  - - SSC SSC[1-3] op -Q
+    - - R SSC[1-3] C +CURMODE:1
+  - - SSC SSC[1-3] sta -Q
+    - - R SSC[1-3] RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC[1-3] dhcp -Q -o 1
+    - - R SSC[1-3] C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC3 mac -Q -o 1
+    - - R SSC3 P <target3_mac>
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o 1
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o 1
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  - - SSC SSC[1-3] sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC[1-3] RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - - R SSC[1-3] C !!!ready!!!
+  - - SSC SSC[1-3] op -S -o 1
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o 1
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  - - SSC SSC[1-3] sta -C -s <ap_ssid> -p <ap_password>
+    - - R SSC[1-3] RE "\+JAP:CONNECTED,%%s"%%(<ap_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+- tag: T3_MDNS_MODE1
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 and DUT2 set to STA mode, DUT3 set to SoftAP mode, DUT1 and DUT2 connected with DUT3, restart MDNS on all DUTs
+  check cmd set:
+  - ''
+  - - SSC SSC[1-2] op -Q
+    - - R SSC[1-2] C +CURMODE:1
+  - - SSC SSC3 op -Q
+    - - R SSC3 C +CURMODE:2
+  - - SSC SSC[1-2] sta -Q
+    - - R SSC[1-2] RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC3 ap -Q
+    - - R SSC3 RE "\+APCONFIG:%%s,%%s,7,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC[1-2] dhcp -Q -o 1
+    - - R SSC[1-2] C +DHCP:STA,STARTED
+  - - SSC SSC3 dhcp -Q -o 2
+    - - R SSC3 C +DHCP:AP,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC3 mac -Q -o 2
+    - - R SSC3 P <target3_ap_mac>
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o [1,1,2]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o [1,1,2]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 2 -m <target3_ap_mac>
+    - - R SSC3 C +MAC:AP,OK
+  - - SSC SSC3 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC3 C +SAP:OK
+  - - SSC SSC[1-2] sta -C -s <target_ssid> -p <target_password>
+    - - R SSC[1-2] RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - - R SSC[1-3] C !!!ready!!!
+  - - SSC SSC[1-3] op -S -o [1,1,2]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o [1,1,2]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 2 -m <target3_ap_mac>
+    - - R SSC3 C +MAC:AP,OK
+  - - SSC SSC3 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC3 C +SAP:OK
+  - - SSC SSC[1-2] sta -C -s <target_ssid> -p <target_password>
+    - - R SSC[1-2] RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+- tag: T3_MDNS_MODE2
+  <<: *SSC_INIT_COND
+  initial condition detail: (SSC) DUT1 and DUT3 set to STA mode, DUT2 set to SoftAP mode, DUT1 and DUT3 connected with DUT2, restart MDNS on all DUTs
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:1
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:2
+  - - SSC SSC3 op -Q
+    - - R SSC3 C +CURMODE:1
+  - - SSC SSC1 sta -Q
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC2 ap -Q
+    - - R SSC2 RE "\+APCONFIG:%%s,%%s,7,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC3 sta -Q
+    - - R SSC3 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 dhcp -Q -o 1
+    - - R SSC1 C +DHCP:STA,STARTED
+  - - SSC SSC2 dhcp -Q -o 2
+    - - R SSC2 C +DHCP:AP,STARTED
+  - - SSC SSC3 dhcp -Q -o 1
+    - - R SSC3 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 1
+    - - R SSC1 P <target_mac>
+  - - SSC SSC2 mac -Q -o 2
+    - - R SSC2 P <target2_ap_mac>
+  - - SSC SSC3 mac -Q -o 1
+    - - R SSC3 P <target3_mac>
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o [1,2,1]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o [1,2,1]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC3 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - - R SSC[1-3] C !!!ready!!!
+  - - SSC SSC[1-3] op -S -o [1,2,1]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o [1,2,1]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 1 -m <target_mac>
+    - - R SSC1 C +MAC:STA,OK
+  - - SSC SSC2 mac -S -o 2 -m <target2_ap_mac>
+    - - R SSC2 C +MAC:AP,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  - - SSC SSC2 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC2 C +SAP:OK
+  - - SSC SSC1 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC1 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC3 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+- tag: T3_MDNS_MODE3
+  <<: *SSC_INIT_COND
+  initial condition detail: softap + sta + sta mode, sta join softap, DHCP on, mdns stop
+  check cmd set:
+  - ''
+  - - SSC SSC1 op -Q
+    - - R SSC1 C +CURMODE:2
+  - - SSC SSC2 op -Q
+    - - R SSC2 C +CURMODE:1
+  - - SSC SSC3 op -Q
+    - - R SSC3 C +CURMODE:1
+  - - SSC SSC1 ap -Q
+    - - R SSC1 RE "\+APCONFIG:%%s,%%s,7,\d+,\d+,4,"%%(<target_ssid>,<target_password>)
+  - - SSC SSC2 sta -Q
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC3 sta -Q
+    - - R SSC3 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC1 dhcp -Q -o 2
+    - - R SSC1 C +DHCP:AP,STARTED
+  - - SSC SSC2 dhcp -Q -o 1
+    - - R SSC2 C +DHCP:STA,STARTED
+  - - SSC SSC3 dhcp -Q -o 1
+    - - R SSC3 C +DHCP:STA,STARTED
+  - - SSC SSC1 mac -Q -o 2
+    - - R SSC1 P <target_ap_mac>
+  - - SSC SSC2 mac -Q -o 1
+    - - R SSC2 P <target2_mac>
+  - - SSC SSC3 mac -Q -o 1
+    - - R SSC3 P <target3_mac>
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  restore cmd set:
+  - ''
+  - - SSC SSC[1-3] op -S -o [2,1,1]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o [2,1,1]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC3 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
+  force restore cmd set:
+  - ''
+  - - SSC SSC[1-3] reboot
+    - - R SSC[1-3] C !!!ready!!!
+  - - SSC SSC[1-3] op -S -o [2,1,1]
+    - - R SSC[1-3] C +MODE:OK
+  - - SSC SSC[1-3] dhcp -S -o [2,1,1]
+    - - R SSC[1-3] C +DHCP
+  - - SSC SSC1 mac -S -o 2 -m <target_ap_mac>
+    - - R SSC1 C +MAC:AP,OK
+  - - SSC SSC2 mac -S -o 1 -m <target2_mac>
+    - - R SSC2 C +MAC:STA,OK
+  - - SSC SSC3 mac -S -o 1 -m <target3_mac>
+    - - R SSC3 C +MAC:STA,OK
+  - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t <target_auth_enum> -n 7
+    - - R SSC1 C +SAP:OK
+  - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC3 sta -C -s <target_ssid> -p <target_password>
+    - - R SSC3 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
+  - - SSC SSC[1-3] mdns -T
+    - - R SSC[1-3] C +MDNS:OK
+  - - SSC SSC[1-3] mdns -I
+    - - R SSC[1-3] C +MDNS:OK
 - tag: T3_PHY1
   <<: *SSC_INIT_COND
   initial condition detail: (SSC) DUT1-2 set to STA+SoftAP mode, DUT3 set to STA mode. All interface of DUT2-3 set to 11n ht40. Set DUT1-2 SoftAP config.
@@ -2131,54 +3133,8 @@ initial condition:
   - - SSC SSC[1-2] gattc -U -z all
     - - R SSC[1-2] C +GATTC:OK
   - - SSC SSC[1-2] bleadv -D -z stop
-    - - R SSC[1-2] C +BLEADV:OK
+    - - R SSC[1-2] C +BLEADV:Stop
   - - SSC SSC[1-2] ble -S -z public
     - - R SSC[1-2] C +BLE:OK
   - - SSC SSC1 ram
     - - R SSC1 A <heap_size>:(\d+)
-- tag: T3_2
-  <<: *SSC_INIT_COND
-  initial condition detail: (SSC) DUT set to STA+SoftAP mode, DUT2 set to SoftAP mode, DUT3 set to STA mode
-  check cmd set:
-  - ''
-  - - SSC SSC[1,2,3] op -Q
-    - - R SSC[1,2,3] C +CURMODE:[3,2,1]
-  - - SSC SSC3 sta -D
-    - - 'R SSC3 C +QAP:'
-  restore cmd set:
-  - ''
-  - - SSC SSC[1,2,3] op -S -o [3,2,1]
-    - - R SSC[1,2,3] C +MODE:OK
-  - - SSC SSC3 sta -D
-    - - 'R SSC3 C +QAP:'
-  force restore cmd set:
-  - ''
-  - - SSC SSC[1,2,3] reboot
-    - - R SSC[1,2,3] C !!!ready!!!
-  - - SSC SSC[1,2,3] op -S -o [3,2,1]
-    - - R SSC[1,2,3] C +MODE:OK
-  - - SSC SSC3 sta -D
-    - - 'R SSC3 C +QAP:'
-- tag: T3_3
-  <<: *SSC_INIT_COND
-  initial condition detail: (SSC) DUT1 set to SoftAp mode, DUT2-3 set to STA mode
-  check cmd set:
-  - ''
-  - - SSC SSC[1,2,3] op -Q
-    - - R SSC[1,2,3] C +CURMODE:[2,1,1]
-  - - SSC SSC[2,3] sta -D
-    - - 'R SSC[2,3] C +QAP:'
-  restore cmd set:
-  - ''
-  - - SSC SSC[1,2,3] op -S -o [2,1,1]
-    - - R SSC[1,2,3] C +MODE:OK
-  - - SSC SSC[2,3] sta -D
-    - - 'R SSC[2,3] C +QAP:'
-  force restore cmd set:
-  - ''
-  - - SSC SSC[1,2,3] reboot
-    - - R SSC[1,2,3] C !!!ready!!!
-  - - SSC SSC[1,2,3] op -S -o [2,1,1]
-    - - R SSC[1,2,3] C +MODE:OK
-  - - SSC SSC[2,3] sta -D
-    - - 'R SSC[2,3] C +QAP:'
