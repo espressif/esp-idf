@@ -49,7 +49,7 @@ typedef enum {
 }rmt_mem_owner_t;
 
 typedef enum {
-    RMT_BASECLK_REF = 0,   /*!< RMT source clock system reference tick, 1MHz by default (not supported in this version) */
+    RMT_BASECLK_REF = 0,   /*!< RMT source clock system reference tick, 1MHz by default */
     RMT_BASECLK_APB,       /*!< RMT source clock is APB CLK, 80Mhz by default */
     RMT_BASECLK_MAX,
 } rmt_source_clk_t;
@@ -119,6 +119,7 @@ typedef struct {
 typedef struct {
     rmt_mode_t rmt_mode;               /*!< RMT mode: transmitter or receiver */
     rmt_channel_t channel;             /*!< RMT channel */
+    rmt_source_clk_t clock;            /*!< RMT base clock */
     uint8_t clk_div;                   /*!< RMT channel counter divider */
     gpio_num_t gpio_num;               /*!< RMT GPIO number */
     uint8_t mem_block_num;             /*!< RMT memory block number */

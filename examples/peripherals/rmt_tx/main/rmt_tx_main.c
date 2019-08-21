@@ -91,6 +91,7 @@ static void rmt_tx_int(void)
     config.channel = RMT_TX_CHANNEL;
     config.gpio_num = RMT_TX_GPIO;
     config.mem_block_num = 1;
+    config.clock = RMT_BASECLK_APB;
     config.tx_config.loop_en = 0;
     // enable the carrier to be able to hear the Morse sound
     // if the RMT_TX_GPIO is connected to a speaker

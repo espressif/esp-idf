@@ -242,6 +242,7 @@ static void nec_tx_init(void)
     rmt_tx.gpio_num = RMT_TX_GPIO_NUM;
     rmt_tx.mem_block_num = 1;
     rmt_tx.clk_div = RMT_CLK_DIV;
+    rmt_tx.clock = RMT_BASECLK_APB;
     rmt_tx.tx_config.loop_en = false;
     rmt_tx.tx_config.carrier_duty_percent = 50;
     rmt_tx.tx_config.carrier_freq_hz = 38000;
@@ -262,6 +263,7 @@ static void nec_rx_init(void)
     rmt_config_t rmt_rx;
     rmt_rx.channel = RMT_RX_CHANNEL;
     rmt_rx.gpio_num = RMT_RX_GPIO_NUM;
+    rmt_rx.clock = RMT_BASECLK_APB;
     rmt_rx.clk_div = RMT_CLK_DIV;
     rmt_rx.mem_block_num = 1;
     rmt_rx.rmt_mode = RMT_MODE_RX;

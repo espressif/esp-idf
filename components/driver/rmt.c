@@ -413,6 +413,7 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
     uint8_t channel = rmt_param->channel;
     uint8_t gpio_num = rmt_param->gpio_num;
     uint8_t mem_cnt = rmt_param->mem_block_num;
+    uint8_t clock = rmt_param->clock;
     int clk_div = rmt_param->clk_div;
     uint32_t carrier_freq_hz = rmt_param->tx_config.carrier_freq_hz;
     bool carrier_en = rmt_param->tx_config.carrier_en;
@@ -446,9 +447,9 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
         /*Memory set block number*/
         RMT.conf_ch[channel].conf0.mem_size = mem_cnt;
         RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_TX;
-        /*We use APB clock in this version, which is 80Mhz, later we will release system reference clock*/
-        RMT.conf_ch[channel].conf1.ref_always_on = RMT_BASECLK_APB;
-        rmt_source_clk_hz = RMT_SOURCE_CLK(RMT_BASECLK_APB);
+        /*Select peripheral base clock */
+        RMT.conf_ch[channel].conf1.ref_always_on = clock;
+        rmt_source_clk_hz = RMT_SOURCE_CLK(clock);
         /*Set idle level */
         RMT.conf_ch[channel].conf1.idle_out_en = rmt_param->tx_config.idle_output_en;
         RMT.conf_ch[channel].conf1.idle_out_lv = idle_level;
@@ -479,8 +480,8 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
 
         portENTER_CRITICAL(&rmt_spinlock);
         /*clock init*/
-        RMT.conf_ch[channel].conf1.ref_always_on = RMT_BASECLK_APB;
-        uint32_t rmt_source_clk_hz = RMT_SOURCE_CLK(RMT_BASECLK_APB);
+        RMT.conf_ch[channel].conf1.ref_always_on = clock;
+        uint32_t rmt_source_clk_hz = RMT_SOURCE_CLK(clock);
         /*memory set block number and owner*/
         RMT.conf_ch[channel].conf0.mem_size = mem_cnt;
         RMT.conf_ch[channel].conf1.mem_owner = RMT_MEM_OWNER_RX;
