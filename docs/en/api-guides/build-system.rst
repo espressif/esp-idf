@@ -949,7 +949,7 @@ The call requires the target chip to be specified with *target* argument. Option
 
 - PROJECT_DIR - directory of the project; defaults to CMAKE_SOURCE_DIR
 - PROJECT_NAME - name of the project; defaults to CMAKE_PROJECT_NAME
-- PROJECT_VER - version/revision of the project; defaults to "0.0.0"
+- PROJECT_VER - version/revision of the project; defaults to "1"
 - SDKCONFIG - output path of generated sdkconfig file; defaults to PROJECT_DIR/sdkconfig or CMAKE_SOURCE_DIR/sdkconfig depending if PROJECT_DIR is set
 - SDKCONFIG_DEFAULTS - defaults file to use for the build; defaults to empty
 - BUILD_DIR - directory to place ESP-IDF build-related artifacts, such as generated binaries, text files, components; defaults to CMAKE_BINARY_DIR
