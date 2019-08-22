@@ -225,6 +225,9 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     client->lock = xSemaphoreCreateMutex();
     ESP_WS_CLIENT_MEM_CHECK(TAG, client->lock, goto _websocket_init_fail);
 
+    client->config = calloc(1, sizeof(websocket_config_storage_t));
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
+
     client->transport_list = esp_transport_list_init();
     ESP_WS_CLIENT_MEM_CHECK(TAG, client->transport_list, goto _websocket_init_fail);
 
@@ -260,13 +263,10 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     esp_transport_set_default_port(wss, WEBSOCKET_SSL_DEFAULT_PORT);
 
     esp_transport_list_add(client->transport_list, wss, "wss");
-    if (config->transport == WEBSOCKET_TRANSPORT_OVER_TCP) {
+    if (config->transport == WEBSOCKET_TRANSPORT_OVER_SSL) {
         asprintf(&client->config->scheme, "wss");
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
     }
-
-    client->config = calloc(1, sizeof(websocket_config_storage_t));
-    ESP_WS_CLIENT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
 
     if (config->uri) {
         if (esp_websocket_client_set_uri(client, config->uri) != ESP_OK) {
