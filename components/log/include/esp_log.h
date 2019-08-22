@@ -84,7 +84,11 @@ vprintf_like_t esp_log_set_vprintf(vprintf_like_t func);
  *
  * @return timestamp, in milliseconds
  */
+#if defined(CONFIG_LOG_SYSTEM_TIME) && !defined(BOOTLOADER_BUILD)
+char* esp_log_timestamp(void);
+#else
 uint32_t esp_log_timestamp(void);
+#endif
 
 /**
  * @brief Function which returns timestamp to be used in log output
@@ -241,7 +245,11 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #define LOG_RESET_COLOR
 #endif //CONFIG_LOG_COLORS
 
+#if defined(CONFIG_LOG_SYSTEM_TIME) && !defined(BOOTLOADER_BUILD)
+#define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%s) %s: " format LOG_RESET_COLOR "\n"
+#else
 #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%d) %s: " format LOG_RESET_COLOR "\n"
+#endif
 
 /** @endcond */
 

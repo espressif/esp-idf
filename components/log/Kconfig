@@ -44,5 +44,15 @@ menu "Log output"
 
             In order to view these, your terminal program must support ANSI color codes.
 
+    config LOG_SYSTEM_TIME
+        bool "Use system time in log output"
+        default "n"
+        help
+            Display the system time (HH:MM:SS.sss) in the log output rather than the 
+            RTOS time.
+
+            In order for this time to be correct, you must do an SNTP time sync,
+            otherwise this time will start from 0.
+
 
 endmenu

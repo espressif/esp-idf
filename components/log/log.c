@@ -53,6 +53,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "esp_log.h"
 
@@ -332,6 +334,27 @@ uint32_t ATTR esp_log_early_timestamp(void)
 
 #ifndef BOOTLOADER_BUILD
 
+#if CONFIG_LOG_SYSTEM_TIME
+char* IRAM_ATTR esp_log_timestamp(void)
+{
+    static char buffer[15] = {0};
+    struct tm timeinfo;
+    struct timespec tv;
+    time_t now;
+
+    time(&now);
+    localtime_r(&now, &timeinfo);
+    clock_gettime(CLOCK_REALTIME, &tv);
+    sprintf(buffer, 
+    		"%02d:%02d:%02d.%03ld", 
+            timeinfo.tm_hour, 
+            timeinfo.tm_min, 
+            timeinfo.tm_sec, 
+            tv.tv_nsec / 1000000);
+
+    return buffer;
+}
+#else
 uint32_t IRAM_ATTR esp_log_timestamp(void)
 {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
@@ -343,6 +366,7 @@ uint32_t IRAM_ATTR esp_log_timestamp(void)
     }
     return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
 }
+#endif //CONFIG_LOG_SYSTEM_TIME
 
 #else
 
