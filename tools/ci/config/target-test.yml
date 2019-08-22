@@ -419,41 +419,6 @@ UT_031:
     - 7.2.2
     - UT_T1_1
 
-UT_032:
-  extends: .unit_test_template
-  parallel: 3
-  tags:
-    - 7.2.2
-    - UT_T2_1
-
-UT_033:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - 7.2.2
-    - Example_SPI_Multi_device
-
-UT_034:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - 7.2.2
-    - UT_T1_RMT
-
-UT_035:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - 7.2.2
-    - UT_T2_I2C
-
-UT_036:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - 7.2.2
-    - UT_T2_RS485
-
 nvs_compatible_test:
   extends: .test_template
   artifacts:

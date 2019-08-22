@@ -110,7 +110,7 @@ TEST_CASE("wifi stop and deinit","[wifi]")
             .password = DEFAULT_PWD
         },
     };
-    
+
     //init nvs
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
     esp_err_t r = nvs_flash_init();
@@ -118,7 +118,7 @@ TEST_CASE("wifi stop and deinit","[wifi]")
         ESP_LOGI(TAG, EMPH_STR("no free pages or nvs version mismatch, erase.."));
         TEST_ESP_OK(nvs_flash_erase());
         r = nvs_flash_init();
-    } 
+    }
     TEST_ESP_OK(r);
     //init tcpip
     ESP_LOGI(TAG, EMPH_STR("tcpip_adapter_init"));
@@ -126,7 +126,7 @@ TEST_CASE("wifi stop and deinit","[wifi]")
     //init event loop
     ESP_LOGI(TAG, EMPH_STR("esp_event_loop_init"));
     TEST_ESP_OK(esp_event_loop_init(event_handler, NULL));
-    
+
     ESP_LOGI(TAG, "test wifi init & deinit...");
     test_wifi_init_deinit(&cfg, &wifi_config);
     ESP_LOGI(TAG, "wifi init & deinit seem to be OK.");
@@ -141,174 +141,3 @@ TEST_CASE("wifi stop and deinit","[wifi]")
 
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of tcpip_adapter and event_loop.");
 }
-
-static void start_wifi_as_softap(void)
-{
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    cfg.nvs_enable = false;
-
-    wifi_config_t w_config = {
-        .ap.ssid = DEFAULT_SSID,
-        .ap.password = DEFAULT_PWD,
-        .ap.ssid_len = 0,
-        .ap.channel = 1,
-        .ap.authmode = WIFI_AUTH_WPA2_PSK,
-        .ap.ssid_hidden = false,
-        .ap.max_connection = 4,
-        .ap.beacon_interval = 100,
-    };
-
-    TEST_ESP_OK(esp_event_loop_init(event_handler, NULL));
-
-    // can't deinit event loop, need to reset leak check
-    unity_reset_leak_checks();
-
-    if (wifi_events == NULL) {
-        wifi_events = xEventGroupCreate();
-    }
-
-    TEST_ESP_OK(esp_wifi_init(&cfg));
-    TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_AP));
-    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_AP, &w_config));
-    TEST_ESP_OK(esp_wifi_start());
-}
-
-static void start_wifi_as_sta(void)
-{
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    cfg.nvs_enable = false;
-
-    // do not auto connect
-    wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
-    TEST_ESP_OK(esp_event_loop_init(event_handler, NULL));
-
-    // can't deinit event loop, need to reset leak check
-    unity_reset_leak_checks();
-
-    if (wifi_events == NULL) {
-        wifi_events = xEventGroupCreate();
-    } else {
-        xEventGroupClearBits(wifi_events, 0x00ffffff);
-    }
-
-    TEST_ESP_OK(esp_wifi_init(&cfg));
-    TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
-    TEST_ESP_OK(esp_wifi_start());
-
-}
-
-static void stop_wifi(void)
-{
-    printf("stop wifi\n");
-    TEST_ESP_OK(esp_wifi_stop());
-    TEST_ESP_OK(esp_wifi_deinit());
-    if (wifi_events) {
-        vEventGroupDelete(wifi_events);
-        wifi_events = NULL;
-    }
-    vTaskDelay(1000/portTICK_PERIOD_MS);
-}
-
-static void receive_ds2ds_packet(void)
-{
-    test_case_uses_tcpip();
-    start_wifi_as_softap();
-    unity_wait_for_signal("sender ready");
-    unity_send_signal("receiver ready");
-
-    // wait for sender to send packets
-    vTaskDelay(1000/portTICK_PERIOD_MS);
-    stop_wifi();
-}
-
-static const char ds2ds_pdu[] = {
-    0x48, 0x03, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xE8, 0x65, 0xD4, 0xCB, 0x74, 0x19, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0x60, 0x94, 0xE8, 0x65, 0xD4, 0xCB, 0x74, 0x1C, 0x26, 0xB9,
-    0x0D, 0x02, 0x7D, 0x13, 0x00, 0x00, 0x01, 0xE8, 0x65, 0xD4, 0xCB, 0x74,
-    0x1C, 0x00, 0x00, 0x26, 0xB9, 0x00, 0x00, 0x00, 0x00
-};
-
-static void send_ds2ds_packet(void)
-{
-    test_case_uses_tcpip();
-    start_wifi_as_softap();
-    unity_send_signal("sender ready");
-    unity_wait_for_signal("receiver ready");
-
-    // send packet 20 times to make sure receiver will get this packet
-    for (uint16_t i = 0; i < 20; i++) {
-        esp_wifi_80211_tx(ESP_IF_WIFI_AP, ds2ds_pdu, sizeof(ds2ds_pdu), true);
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-    }
-    stop_wifi();
-}
-
-TEST_CASE_MULTIPLE_DEVICES("receive ds2ds packet without exception", "[wifi][test_env=UT_T2_1]", receive_ds2ds_packet, send_ds2ds_packet);
-
-static void wifi_connect_by_bssid(uint8_t *bssid)
-{
-    EventBits_t bits;
-
-    wifi_config_t w_config = {
-        .sta.ssid = DEFAULT_SSID,
-        .sta.password = DEFAULT_PWD,
-        .sta.bssid_set = true,
-    };
-
-    memcpy(w_config.sta.bssid, bssid, 6);
-
-    TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
-    TEST_ESP_OK(esp_wifi_connect());
-    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, 5000/portTICK_RATE_MS);
-    TEST_ASSERT(bits == GOT_IP_EVENT);
-}
-
-static void test_wifi_connection_sta(void)
-{
-    char mac_str[19];
-    uint8_t mac[6];
-    EventBits_t bits;
-
-    test_case_uses_tcpip();
-
-    start_wifi_as_sta();
-
-    unity_wait_for_signal_param("SoftAP mac", mac_str, 19);
-
-    TEST_ASSERT_TRUE(unity_util_convert_mac_from_string(mac_str, mac));
-
-    wifi_connect_by_bssid(mac);
-
-    unity_send_signal("STA connected");
-
-    bits = xEventGroupWaitBits(wifi_events, DISCONNECT_EVENT, 1, 0, 60000 / portTICK_RATE_MS);
-    // disconnect event not triggered
-    printf("wait finish\n");
-    TEST_ASSERT(bits == 0);
-
-    stop_wifi();
-}
-
-static void test_wifi_connection_softap(void)
-{
-    char mac_str[19] = {0};
-    uint8_t mac[6];
-
-    test_case_uses_tcpip();
-
-    start_wifi_as_softap();
-
-    TEST_ESP_OK(esp_wifi_get_mac(ESP_IF_WIFI_AP, mac));
-    sprintf(mac_str, MACSTR, MAC2STR(mac));
-
-    unity_send_signal_param("SoftAP mac", mac_str);
-
-    unity_wait_for_signal("STA connected");
-
-    vTaskDelay(60000 / portTICK_PERIOD_MS);
-
-    stop_wifi();
-}
-
-TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][test_env=UT_T2_1][timeout=90]", test_wifi_connection_sta, test_wifi_connection_softap);
