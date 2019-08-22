@@ -209,11 +209,14 @@ menu "ESP32S2-specific"
                 option to select 80MHz will only be visible if the flash SPI speed is also 80MHz.
                 (ESPTOOLPY_FLASHFREQ_80M is true)
 
-            config SPIRAM_SPEED_40M
-                bool "40MHz clock speed"
             config SPIRAM_SPEED_80M
-                depends on ESPTOOLPY_FLASHFREQ_80M
                 bool "80MHz clock speed"
+            config SPIRAM_SPEED_40M
+                bool "40Mhz clock speed"
+            config SPIRAM_SPEED_26M
+                bool "26Mhz clock speed"
+            config SPIRAM_SPEED_20M
+                bool "20Mhz clock speed"
         endchoice
 
         # insert non-chip-specific items here

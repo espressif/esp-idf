@@ -20,11 +20,10 @@
 #include "sdkconfig.h"
 
 typedef enum {
-    PSRAM_CACHE_F80M_S40M = 0,
-    PSRAM_CACHE_F80M_S80M,
-    PSRAM_CACHE_F40M_S40M,
-    PSRAM_CACHE_F26M_S26M,
-    PSRAM_CACHE_F20M_S20M,
+    PSRAM_CACHE_S80M = 1,
+    PSRAM_CACHE_S40M,
+    PSRAM_CACHE_S26M,
+    PSRAM_CACHE_S20M,
     PSRAM_CACHE_MAX,
 } psram_cache_mode_t;
 

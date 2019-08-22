@@ -320,10 +320,9 @@ static void psram_disable_qio_mode(psram_spi_num_t spi_num)
     ps_cmd.txDataBitLen = 8;
     if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
         switch (s_psram_mode) {
-            case PSRAM_CACHE_F80M_S80M:
+            case PSRAM_CACHE_S80M:
                 break;
-            case PSRAM_CACHE_F80M_S40M:
-            case PSRAM_CACHE_F40M_S40M:
+            case PSRAM_CACHE_S40M:
             default:
                 cmd_exit_qpi = PSRAM_EXIT_QMODE << 8;
                 ps_cmd.txDataBitLen = 16;
@@ -357,10 +356,9 @@ static void psram_read_id(uint32_t* dev_id)
     ps_cmd.cmdBitLen = 8;
     if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
         switch (s_psram_mode) {
-            case PSRAM_CACHE_F80M_S80M:
+            case PSRAM_CACHE_S80M:
                 break;
-            case PSRAM_CACHE_F80M_S40M:
-            case PSRAM_CACHE_F40M_S40M:
+            case PSRAM_CACHE_S40M:
             default:
                 ps_cmd.cmdBitLen = 2;   //this two bits is used to delay 2 clock cycle
                 ps_cmd.cmd = 0;
@@ -391,10 +389,9 @@ static esp_err_t IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spi_num)
     ps_cmd.cmdBitLen = 0;
     if (s_clk_mode == PSRAM_CLK_MODE_DCLK) {
         switch (s_psram_mode) {
-            case PSRAM_CACHE_F80M_S80M:
+            case PSRAM_CACHE_S80M:
                 break;
-            case PSRAM_CACHE_F80M_S40M:
-            case PSRAM_CACHE_F40M_S40M:
+            case PSRAM_CACHE_S40M:
             default:
                 ps_cmd.cmdBitLen = 2;
                 break;
@@ -519,13 +516,12 @@ static void psram_read_id(uint32_t* dev_id)
     uint32_t addr = 0;
     psram_cmd_t ps_cmd;
     switch (s_psram_mode) {
-        case PSRAM_CACHE_F80M_S80M:
+        case PSRAM_CACHE_S80M:
             dummy_bits = 0 + extra_dummy;
             break;
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        case PSRAM_CACHE_F26M_S26M:
-        case PSRAM_CACHE_F20M_S20M:
+        case PSRAM_CACHE_S40M:
+        case PSRAM_CACHE_S26M:
+        case PSRAM_CACHE_S20M:
         default:
             dummy_bits = 0 + extra_dummy;
             break;
@@ -588,7 +584,7 @@ void IRAM_ATTR psram_spi_init(psram_spi_num_t spi_num, psram_cache_mode_t mode)
     CLEAR_PERI_REG_MASK(SPI_MEM_SLAVE_REG(spi_num), SPI_MEM_SLAVE_MODE);
 #endif
     // Set SPI speed for non-80M mode. (80M mode uses APB clock directly.)
-    if (mode!=PSRAM_CACHE_F80M_S80M) {
+    if (mode!=PSRAM_CACHE_S80M) {
         k = 2;      //Main divider. Divide by 2 so we get 40MHz
          //clear bit 31, set SPI clock div
         CLEAR_PERI_REG_MASK(SPI_MEM_CLOCK_REG(spi_num), SPI_MEM_CLK_EQU_SYSCLK);
@@ -632,15 +628,17 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 #warning "psram_gpio_config: parts not implemented for esp32s2beta"
 
     switch (mode) {
-        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_S40M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
-            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-            SET_PERI_REG_BITS(SPI_MEM_USER1_REG(_SPI_CACHE_PORT), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
-            esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+                g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
+                g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
+                SET_PERI_REG_BITS(SPI_MEM_USER1_REG(_SPI_CACHE_PORT), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
+                esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
+                esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
+#endif
             break;
-        case PSRAM_CACHE_F80M_S80M:
+        case PSRAM_CACHE_S80M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_80M;
 #if 0
             g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
@@ -654,23 +652,8 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
 
 #endif
             break;
-        case PSRAM_CACHE_F40M_S40M:
-            extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-#if 0
-            g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-            g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-            SET_PERI_REG_BITS(SPI_MEM_USER1_REG(_SPI_CACHE_PORT), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_40M, SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
-
-            CLEAR_PERI_REG_MASK(PERIPHS_SPI_FLASH_CTRL, SPI_MEM_FREAD_QIO | SPI_MEM_FREAD_QUAD | SPI_MEM_FREAD_DIO | SPI_MEM_FREAD_DUAL | SPI_MEM_FASTRD_MODE);
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_CACHE_PORT);
-
-            CLEAR_PERI_REG_MASK(PERIPHS_SPI_FLASH_CTRL, SPI_MEM_FREAD_QIO | SPI_MEM_FREAD_QUAD | SPI_MEM_FREAD_DIO | SPI_MEM_FREAD_DUAL | SPI_MEM_FASTRD_MODE);
-            esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
-#endif
-
-            break;
-        case PSRAM_CACHE_F26M_S26M:
-        case PSRAM_CACHE_F20M_S20M:
+        case PSRAM_CACHE_S26M:
+        case PSRAM_CACHE_S20M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_20M;
 #if 0
             g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_20M;
@@ -726,11 +709,10 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
 
     switch (mode) {
-        case PSRAM_CACHE_F80M_S80M:
-        case PSRAM_CACHE_F80M_S40M:
-        case PSRAM_CACHE_F40M_S40M:
-        case PSRAM_CACHE_F26M_S26M:
-        case PSRAM_CACHE_F20M_S20M:
+        case PSRAM_CACHE_S80M:
+        case PSRAM_CACHE_S40M:
+        case PSRAM_CACHE_S26M:
+        case PSRAM_CACHE_S20M:
         default:
             psram_spi_init(PSRAM_SPI_1, mode);
             CLEAR_PERI_REG_MASK(SPI_MEM_USER_REG(PSRAM_SPI_1), SPI_MEM_CS_HOLD);
@@ -792,7 +774,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         REG_SET_FIELD(SPI_MEM_CTRL1_REG(1), SPI_MEM_CLK_MODE, 0);
     } else if (PSRAM_IS_32MBIT_VER0(s_psram_id)) {
         s_clk_mode = PSRAM_CLK_MODE_DCLK;
-        if (mode == PSRAM_CACHE_F80M_S80M) {
+        if (mode == PSRAM_CACHE_S80M) {
         }
     }
     psram_reset_mode(PSRAM_SPI_1);
@@ -829,19 +811,18 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
             SPI_MEM_SRAM_RDUMMY_CYCLELEN_S); //dummy, psram cache :  40m--+1dummy,80m--+2dummy
 
     switch (psram_cache_mode) {
-        case PSRAM_CACHE_F80M_S80M:
+        case PSRAM_CACHE_S80M:
             psram_clock_set(0, 1);
             break;
-        case PSRAM_CACHE_F80M_S40M:
+        case PSRAM_CACHE_S40M:
             psram_clock_set(0, 2);
             break;
-        case PSRAM_CACHE_F26M_S26M:
+        case PSRAM_CACHE_S26M:
             psram_clock_set(0, 3);
             break;
-        case PSRAM_CACHE_F20M_S20M:
+        case PSRAM_CACHE_S20M:
             psram_clock_set(0, 4);
             break;
-        case PSRAM_CACHE_F40M_S40M:
         default:
             psram_clock_set(0, 2);
             break;
@@ -853,12 +834,11 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
 
     //config sram cache r/w command
     switch (psram_cache_mode) {
-        case PSRAM_CACHE_F80M_S80M: //in this mode , no delay is needed
+        case PSRAM_CACHE_S80M: //in this mode , no delay is needed
             break;
-        case PSRAM_CACHE_F80M_S40M: //is sram is @40M, need 2 cycles of delay
-        case PSRAM_CACHE_F40M_S40M:
-        case PSRAM_CACHE_F26M_S26M:
-        case PSRAM_CACHE_F20M_S20M:
+        case PSRAM_CACHE_S40M: //is sram is @40M, need 2 cycles of delay
+        case PSRAM_CACHE_S26M:
+        case PSRAM_CACHE_S20M:
         default:
 #ifdef FAKE_QPI
             SET_PERI_REG_BITS(SPI_MEM_SRAM_DRD_CMD_REG(0), SPI_MEM_CACHE_SRAM_USR_RD_CMD_BITLEN_V, 15,
