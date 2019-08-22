@@ -49,14 +49,12 @@ we add more types of external RAM memory, this can be made into a more intellige
 
 static const char* TAG = "spiram";
 
-#if CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_40M
-#define PSRAM_SPEED PSRAM_CACHE_F40M_S40M
-#elif CONFIG_SPIRAM_SPEED_40M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define PSRAM_SPEED PSRAM_CACHE_F80M_S40M
-#elif CONFIG_SPIRAM_SPEED_80M && CONFIG_ESPTOOLPY_FLASHFREQ_80M
-#define PSRAM_SPEED PSRAM_CACHE_F80M_S80M
+#if CONFIG_SPIRAM_SPEED_40M
+#define PSRAM_SPEED PSRAM_CACHE_S40M
+#elif CONFIG_SPIRAM_SPEED_80M
+#define PSRAM_SPEED PSRAM_CACHE_S80M
 #else
-#define PSRAM_SPEED PSRAM_CACHE_F20M_S20M
+#define PSRAM_SPEED PSRAM_CACHE_S20M
 #endif
 
 
@@ -244,9 +242,8 @@ esp_err_t esp_spiram_init(void)
         return r;
     }
 
-    ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_F40M_S40M ? "flash 40m sram 40m" : \
-                                          PSRAM_SPEED == PSRAM_CACHE_F80M_S40M ? "flash 80m sram 40m" : \
-                                          PSRAM_SPEED == PSRAM_CACHE_F80M_S80M ? "flash 80m sram 80m" : "flash 20m sram 20m");
+    ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_S40M ? "sram 40m" : \
+                                          PSRAM_SPEED == PSRAM_CACHE_S80M ? "sram 80m" : "sram 20m");
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)": \
                                           (PSRAM_MODE==PSRAM_VADDR_MODE_LOWHIGH)?"low/high (2-core)": \
