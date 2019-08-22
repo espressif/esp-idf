@@ -173,7 +173,7 @@ function(__component_add component_dir prefix)
     # 'override' components added earlier.
     if(NOT component_target IN_LIST component_targets)
         if(NOT TARGET ${component_target})
-            add_custom_target(${component_target} EXCLUDE_FROM_ALL)
+            add_library(${component_target} STATIC IMPORTED)
         endif()
         idf_build_set_property(__COMPONENT_TARGETS ${component_target} APPEND)
     endif()
