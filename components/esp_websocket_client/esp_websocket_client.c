@@ -205,6 +205,18 @@ static esp_err_t esp_websocket_client_destroy_config(esp_websocket_client_handle
     return ESP_OK;
 }
 
+static void set_websocket_client_path(esp_websocket_client_handle_t client)
+{
+    esp_transport_handle_t trans = esp_transport_list_get_transport(client->transport_list, "ws");
+    if (trans) {
+        esp_transport_ws_set_path(trans, client->config->path);
+    }
+    trans = esp_transport_list_get_transport(client->transport_list, "wss");
+    if (trans) {
+        esp_transport_ws_set_path(trans, client->config->path);
+    }
+}
+
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config)
 {
     esp_websocket_client_handle_t client = calloc(1, sizeof(struct esp_websocket_client));
@@ -282,6 +294,10 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     if (client->config->scheme == NULL) {
         asprintf(&client->config->scheme, "ws");
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
+    }
+
+    if (client->config->path) {
+        set_websocket_client_path(client);
     }
 
     client->keepalive_tick_ms = _tick_get_ms();
@@ -366,15 +382,7 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
         free(client->config->path);
         asprintf(&client->config->path, "%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off);
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->path, return ESP_ERR_NO_MEM);
-
-        esp_transport_handle_t trans = esp_transport_list_get_transport(client->transport_list, "ws");
-        if (trans) {
-            esp_transport_ws_set_path(trans, client->config->path);
-        }
-        trans = esp_transport_list_get_transport(client->transport_list, "wss");
-        if (trans) {
-            esp_transport_ws_set_path(trans, client->config->path);
-        }
+        set_websocket_client_path(client);
     }
     if (puri.field_data[UF_PORT].off) {
         client->config->port = strtol((const char*)(uri + puri.field_data[UF_PORT].off), NULL, 10);
