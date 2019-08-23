@@ -103,12 +103,24 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
                          ws->path,
                          host, port,
                          client_key);
-    if (ws->sub_protocol) {
-        len += snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
-    }
-    len += snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "\r\n");
     if (len <= 0 || len >= DEFAULT_WS_BUFFER) {
         ESP_LOGE(TAG, "Error in request generation, %d", len);
+        return -1;
+    }
+    if (ws->sub_protocol) {
+        int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
+        len += r;
+        if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+            ESP_LOGE(TAG, "Error in request generation"
+                          "(snprintf of subprotocol returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
+            return -1;
+        }
+    }
+    int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "\r\n");
+    len += r;
+    if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+        ESP_LOGE(TAG, "Error in request generation"
+                       "(snprintf of header terminal returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
         return -1;
     }
     ESP_LOGD(TAG, "Write upgrate request\r\n%s", ws->buffer);
