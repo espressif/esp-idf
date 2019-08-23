@@ -335,26 +335,55 @@ uint32_t ATTR esp_log_early_timestamp(void)
 #ifndef BOOTLOADER_BUILD
 
 #if CONFIG_LOG_SYSTEM_TIME
+
 char* IRAM_ATTR esp_log_timestamp(void)
 {
     static char buffer[15] = {0};
-    struct tm timeinfo;
-    struct timespec tv;
-    time_t now;
 
-    time(&now);
-    localtime_r(&now, &timeinfo);
-    clock_gettime(CLOCK_REALTIME, &tv);
-    sprintf(buffer, 
-    		"%02d:%02d:%02d.%03ld", 
-            timeinfo.tm_hour, 
-            timeinfo.tm_min, 
-            timeinfo.tm_sec, 
-            tv.tv_nsec / 1000000);
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) 
+    {
+        uint32_t timestamp = esp_log_early_timestamp();
+        for (uint8_t i = 0; i < sizeof(buffer); i++)
+        {
+            if ((timestamp > 0) || (i == 0))
+            {
+                for (uint8_t j = sizeof(buffer); j > 0; j--)
+                {
+                    buffer[j] = buffer[j - 1];
+                }
+                buffer[0] = (char) (timestamp % 10) + '0';
+                timestamp /= 10;
+            }
+            else
+            {
+                buffer[i] = 0;
+                break;
+            }
+        }
+        return buffer;
+    }
+    else
+    {
+        struct tm timeinfo;
+        struct timespec tv;
+        time_t now;
 
-    return buffer;
+        time(&now);
+        localtime_r(&now, &timeinfo);
+        clock_gettime(CLOCK_REALTIME, &tv);
+        sprintf(buffer, 
+                "%02d:%02d:%02d.%03ld", 
+                timeinfo.tm_hour, 
+                timeinfo.tm_min, 
+                timeinfo.tm_sec, 
+                tv.tv_nsec / 1000000);
+
+        return buffer;
+    }
 }
+
 #else
+
 uint32_t IRAM_ATTR esp_log_timestamp(void)
 {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
@@ -366,6 +395,7 @@ uint32_t IRAM_ATTR esp_log_timestamp(void)
     }
     return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
 }
+
 #endif //CONFIG_LOG_SYSTEM_TIME
 
 #else
