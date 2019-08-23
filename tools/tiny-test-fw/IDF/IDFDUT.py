@@ -217,7 +217,7 @@ class IDFDUT(DUT.SerialDUT):
                 'no_stub': False,
                 'compress': True,
                 'verify': False,
-                'encrypt': False,
+                'encrypt': self.app.flash_settings.get("encrypt", False),
                 'erase_all': False,
             })
 
