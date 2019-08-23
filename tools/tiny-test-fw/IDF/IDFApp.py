@@ -135,6 +135,11 @@ class IDFApp(App.BaseApp):
                         # offs, filename
                         flash_files.append((args[idx], args[idx + 1]))
 
+        # The build metadata file does not currently have details, which files should be encrypted and which not.
+        # Assume that all files should be encrypted if flash encryption is enabled in development mode.
+        sdkconfig_dict = self.get_sdkconfig()
+        flash_settings["encrypt"] = "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT" in sdkconfig_dict
+
         # make file offsets into integers, make paths absolute
         flash_files = [(int(offs, 0), os.path.join(self.binary_path, path.strip())) for (offs, path) in flash_files]
 

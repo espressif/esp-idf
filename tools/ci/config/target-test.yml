@@ -196,6 +196,12 @@ example_test_007:
     - ESP32
     - Example_I2C_CCS811_SENSOR
 
+example_test_008:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_Flash_Encryption
+
 UT_001:
   extends: .unit_test_template
   parallel: 50
@@ -411,6 +417,12 @@ UT_030:
   tags:
     - ESP32_IDF
     - UT_T1_1
+
+UT_031:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_FlashEncryption
 
 nvs_compatible_test:
   extends: .test_template

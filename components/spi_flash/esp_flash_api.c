@@ -646,10 +646,4 @@ esp_err_t spi_flash_read(size_t src, void *dstv, size_t size)
     return spi_flash_translate_rc(err);
 }
 
-esp_err_t spi_flash_unlock(void)
-{
-    esp_err_t err = esp_flash_set_chip_write_protect(NULL, false);
-    return spi_flash_translate_rc(err);
-}
-
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL

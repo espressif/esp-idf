@@ -9,6 +9,8 @@
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
 
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+
 static void test_encrypted_write(size_t offset, const uint8_t *data, size_t length);
 static void verify_erased_flash(size_t offset, size_t length);
 
@@ -23,13 +25,9 @@ static void setup_tests(void)
     }
 }
 
-TEST_CASE("test 16 byte encrypted writes", "[spi_flash]")
+TEST_CASE("test 16 byte encrypted writes", "[flash_encryption][test_env=UT_T1_FlashEncryption]")
 {
     setup_tests();
-
-    if (!esp_flash_encryption_enabled()) {
-        TEST_IGNORE_MESSAGE("flash encryption disabled, skipping spi_flash_write_encrypted() tests");
-    }
 
     TEST_ASSERT_EQUAL_HEX(ESP_OK,
                       spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE));
@@ -101,3 +99,4 @@ static void verify_erased_flash(size_t offset, size_t length)
     }
 }
 
+#endif // CONFIG_SECURE_FLASH_ENC_ENABLED
