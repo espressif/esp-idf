@@ -198,7 +198,7 @@ static esp_rom_spiflash_result_t IRAM_ATTR spi_flash_unlock(void)
     }
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
-#endif
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 esp_err_t IRAM_ATTR spi_flash_erase_sector(size_t sec)
 {
@@ -419,7 +419,7 @@ out:
 
     return spi_flash_translate_rc(rc);
 }
-#endif
+#endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 esp_err_t IRAM_ATTR spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size)
 {

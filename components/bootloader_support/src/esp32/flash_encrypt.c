@@ -37,7 +37,7 @@ static const char *TAG = "flash_encrypt";
 
 /* Static functions for stages of flash encryption */
 static esp_err_t initialise_flash_encryption(void);
-static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_crypt_wr_dis);
+static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_crypt_wr_dis) __attribute__((unused));
 static esp_err_t encrypt_bootloader(void);
 static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partition_table, int *num_partitions);
 static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partition);
@@ -60,8 +60,14 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
         return ESP_OK;
     }
     else {
+#ifndef CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
         /* Flash is not encrypted, so encrypt it! */
         return encrypt_flash_contents(flash_crypt_cnt, flash_crypt_wr_dis);
+#else
+        ESP_LOGE(TAG, "flash encryption is not enabled, and SECURE_FLASH_REQUIRE_ALREADY_ENABLED "
+                      "is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+#endif // CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
     }
 }
 
