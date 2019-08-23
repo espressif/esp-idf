@@ -226,7 +226,8 @@ PREDEFINED             = \
     configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
     configUSE_APPLICATION_TASK_TAG=1 \
-    configTASKLIST_INCLUDE_COREID=1
+    configTASKLIST_INCLUDE_COREID=1 \
+    "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 
 ## Do not complain about not having dot
 ##
