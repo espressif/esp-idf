@@ -58,7 +58,7 @@ static struct eap_sm *gEapSm = NULL;
 static int eap_peer_sm_init(void);
 static void eap_peer_sm_deinit(void);
 
-static int wpa2_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
+static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
 static int wpa2_start_eapol_internal(void);
 int wpa2_post(uint32_t sig, uint32_t par);
 
@@ -216,7 +216,7 @@ void wpa2_task(void *pvParameters )
                 struct wpa2_rx_param *param = NULL;
 
                 while ((param = wpa2_rxq_dequeue()) != NULL){
-                    wpa2_sm_rx_eapol_internal(param->sa, param->buf, param->len, param->bssid);
+                    eap_sm_rx_eapol_internal(param->sa, param->buf, param->len, param->bssid);
                     os_free(param->buf);
                     os_free(param);
                 }
@@ -511,7 +511,7 @@ out:
     return ret;
 }
 
-static int wpa2_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
+static int eap_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
 {
     struct eap_sm *sm = gEapSm;
 
@@ -541,12 +541,35 @@ static int wpa2_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
     }
 #else
 
-    return wpa2_sm_rx_eapol_internal(src_addr, buf, len, bssid);
+    return eap_sm_rx_eapol_internal(src_addr, buf, len, bssid);
 #endif
 }
 
+static int wpa2_ent_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
+{
+    struct ieee802_1x_hdr *hdr;
+    int ret = ESP_OK;
 
-static int wpa2_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
+    hdr = (struct ieee802_1x_hdr *) buf;
+
+    switch (hdr->type) {
+	    case IEEE802_1X_TYPE_EAPOL_START:
+	    case IEEE802_1X_TYPE_EAP_PACKET:
+	    case IEEE802_1X_TYPE_EAPOL_LOGOFF:
+		    ret = eap_sm_rx_eapol(src_addr, buf, len, bssid);
+		    break;
+	    case IEEE802_1X_TYPE_EAPOL_KEY:
+		    ret = wpa_sm_rx_eapol(src_addr, buf, len);
+		    break;
+	    default:
+		wpa_printf(MSG_ERROR, "Unknown EAPOL packet type - %d\n", hdr->type);
+		    break;
+    }
+
+	return ret;
+}
+
+static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
 {
     struct eap_sm *sm = gEapSm;
     u32 plen, data_len;
@@ -614,6 +637,12 @@ static int wpa2_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bs
 #ifdef EAP_PEER_METHOD
     switch (ehdr->code) {
     case EAP_CODE_REQUEST:
+        /* Handle EAP-reauthentication case */
+        if (sm->finish_state == WPA2_ENT_EAP_STATE_SUCCESS) {
+                wpa_printf(MSG_INFO, ">>>>>wpa2 EAP Re-authentication in progress\n");
+		wpa2_set_eap_state(WPA2_ENT_EAP_STATE_IN_PROGRESS);
+	}
+
         req = wpabuf_alloc_copy((u8 *)ehdr, len - sizeof(*hdr));
         ret = eap_sm_process_request(sm, req);
         break;
@@ -628,6 +657,7 @@ static int wpa2_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bs
             wpa_printf(MSG_INFO, ">>>>>wpa2 FINISH\n");
             ret = WPA2_ENT_EAP_STATE_SUCCESS;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_SUCCESS);
+	    eap_deinit_prev_method(sm, "EAP Success");
         } else {
             wpa_printf(MSG_INFO, ">>>>>wpa2 FAILED, receive EAP_SUCCESS but pmk is empty, potential attack!\n");
             ret = WPA2_ENT_EAP_STATE_FAIL;
@@ -821,7 +851,7 @@ esp_err_t esp_wifi_sta_wpa2_ent_enable_fn(void *arg)
         return ESP_ERR_NO_MEM;
     }
 
-    wpa2_cb->wpa2_sm_rx_eapol = wpa2_sm_rx_eapol;
+    wpa2_cb->wpa2_sm_rx_eapol = wpa2_ent_rx_eapol;
     wpa2_cb->wpa2_start = wpa2_start_eapol;
     wpa2_cb->wpa2_init = eap_peer_sm_init;
     wpa2_cb->wpa2_deinit = eap_peer_sm_deinit;
