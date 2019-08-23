@@ -948,9 +948,9 @@ static void uart_rx_intr_handler_default(void *param)
                 //We have to read out all data in RX FIFO to clear the interrupt signal
                 for(buf_idx = 0; buf_idx < rx_fifo_len; buf_idx++) {
 #if CONFIG_IDF_TARGET_ESP32
-                    p_uart->rx_data_buf[buf_idx++] = uart_reg->fifo.rw_byte;
+                    p_uart->rx_data_buf[buf_idx] = uart_reg->fifo.rw_byte;
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-                    p_uart->rx_data_buf[buf_idx++] = READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
+                    p_uart->rx_data_buf[buf_idx] = READ_PERI_REG(UART_FIFO_AHB_REG(uart_num));
 #endif
                 }
                 uint8_t pat_chr = uart_reg->at_cmd_char.data;
