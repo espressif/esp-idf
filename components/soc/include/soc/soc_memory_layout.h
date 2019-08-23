@@ -163,9 +163,12 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
     intptr_t ip = (intptr_t) p;
     bool r;
     r = (ip >= SOC_BYTE_ACCESSIBLE_LOW && ip < SOC_BYTE_ACCESSIBLE_HIGH);
-#if CONFIG_SPIRAM && CONFIG_SPIRAM_SIZE
-    // ToDo: Use SOC_EXTRAM_DATA_HIGH if CONFIG_SPIRAM_SIZE is -1 (ie max possible SPIRAM size)
+#if CONFIG_SPIRAM
+#if CONFIG_SPIRAM_SIZE != -1 // Fixed size, can be more accurate
     r |= (ip >= SOC_EXTRAM_DATA_LOW && ip < (SOC_EXTRAM_DATA_LOW + CONFIG_SPIRAM_SIZE));
+#else
+    r |= (ip >= SOC_EXTRAM_DATA_LOW && ip < (SOC_EXTRAM_DATA_HIGH));
+#endif
 #endif
     return r;
 }
