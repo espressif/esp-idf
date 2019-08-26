@@ -222,6 +222,7 @@ esp_err_t sdmmc_host_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+    periph_module_reset(PERIPH_SDMMC_MODULE);
     periph_module_enable(PERIPH_SDMMC_MODULE);
 
     // Enable clock to peripheral. Use smallest divider first.
