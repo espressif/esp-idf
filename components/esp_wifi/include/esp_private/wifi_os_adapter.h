@@ -104,11 +104,7 @@ typedef struct {
     int32_t (* _get_time)(void *t);
     unsigned long (* _random)(void);
     void (* _log_write)(uint32_t level, const char* tag, const char* format, ...);
-#if defined(CONFIG_LOG_SYSTEM_TIME) && !defined(BOOTLOADER_BUILD)
-    char* (* _log_timestamp)(void);
-#else
     uint32_t (* _log_timestamp)(void);
-#endif
     void * (* _malloc_internal)(size_t size);
     void * (* _realloc_internal)(void *ptr, size_t size);
     void * (* _calloc_internal)(size_t n, size_t size);

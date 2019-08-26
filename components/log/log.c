@@ -334,9 +334,7 @@ uint32_t ATTR esp_log_early_timestamp(void)
 
 #ifndef BOOTLOADER_BUILD
 
-#if CONFIG_LOG_SYSTEM_TIME
-
-char* IRAM_ATTR esp_log_timestamp(void)
+char* IRAM_ATTR esp_log_system_timestamp(void)
 {
     static char buffer[15] = {0};
 
@@ -382,8 +380,6 @@ char* IRAM_ATTR esp_log_timestamp(void)
     }
 }
 
-#else
-
 uint32_t IRAM_ATTR esp_log_timestamp(void)
 {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
@@ -395,8 +391,6 @@ uint32_t IRAM_ATTR esp_log_timestamp(void)
     }
     return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
 }
-
-#endif //CONFIG_LOG_SYSTEM_TIME
 
 #else
 
