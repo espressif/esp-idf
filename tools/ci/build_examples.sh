@@ -62,7 +62,7 @@ SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
 
-if [ -z {CI_NODE_TOTAL} ]
+if [ -z "${CI_NODE_TOTAL:-}" ]
 then
     START_NUM=0
     END_NUM=999
