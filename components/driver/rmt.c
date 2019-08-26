@@ -424,6 +424,11 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
         RMT_CHECK((!carrier_en || carrier_freq_hz > 0), "RMT carrier frequency can't be zero", ESP_ERR_INVALID_ARG);
     }
 
+    static bool rmt_enable = false;
+    if (rmt_enable == false) {
+        periph_module_reset(PERIPH_RMT_MODULE);
+        rmt_enable = true;
+    }
     periph_module_enable(PERIPH_RMT_MODULE);
 
     RMT.conf_ch[channel].conf0.div_cnt = clk_div;
