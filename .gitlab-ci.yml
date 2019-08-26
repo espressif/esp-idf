@@ -766,7 +766,7 @@ assign_test:
     LOG_PATH: "$CI_PROJECT_DIR/$CI_COMMIT_SHA"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/$CI_JOB_NAME.yml"
+    CONFIG_FILE: "$CI_PROJECT_DIR/components/idf_test/integration_test/CIConfigs/${CI_JOB_NAME}_.yml"
   before_script: *add_gitlab_key_before
   script:
     # first test if config file exists, if not exist, exit 0
