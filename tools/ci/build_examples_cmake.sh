@@ -68,7 +68,7 @@ SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/main/" | sort )
 
-if [ -z {CI_NODE_TOTAL} ]
+if [ -z "${CI_NODE_TOTAL:-}" ]
 then
     START_NUM=0
     END_NUM=999
