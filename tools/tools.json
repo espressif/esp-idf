@@ -195,7 +195,6 @@
         {
           "install": "on_request",
           "platforms": [
-            "linux-armel",
             "linux-i686"
           ]
         }
@@ -211,6 +210,11 @@
             "sha256": "038affba6cb2874098f6b70e61ce139afdf056f926ea6aefcf4d90a6ccf05bc3",
             "size": 1675213,
             "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-linux64-0.10.0-esp32-20190708.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "f3f01d2b0ec440127b8951b82ee79dd04b9d2774bab4de741067c5f65cffaa7e",
+            "size": 1729130,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-armel-0.10.0-esp32-20190708.tar.gz"
           },
           "macos": {
             "sha256": "840c94ce6208c5b21d0ba6c3113a06405daf6b27085a287cfbb6c9d21e80bd70",
