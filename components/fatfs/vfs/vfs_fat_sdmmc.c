@@ -111,7 +111,8 @@ esp_err_t esp_vfs_fat_sdmmc_mount(const char* base_path,
     if (res != FR_OK) {
         err = ESP_FAIL;
         ESP_LOGW(TAG, "failed to mount card (%d)", res);
-        if (!(res == FR_NO_FILESYSTEM && mount_config->format_if_mount_failed)) {
+        if (!((res == FR_NO_FILESYSTEM || res == FR_INT_ERR)
+              && mount_config->format_if_mount_failed)) {
             goto fail;
         }
         ESP_LOGW(TAG, "partitioning card");
