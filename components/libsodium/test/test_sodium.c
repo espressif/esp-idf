@@ -39,7 +39,7 @@ TEST_CASE("box tests", "[libsodium]")
 
 extern int ed25519_convert_xmain(void);
 
-TEST_CASE("ed25519_convert tests", "[libsodium][timeout=60]")
+TEST_CASE_ESP32("ed25519_convert tests", "[libsodium][timeout=60]")
 {
     printf("Running ed25519_convert\n");
     TEST_ASSERT_EQUAL(0, ed25519_convert_xmain() );

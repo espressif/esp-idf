@@ -143,7 +143,7 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
     if (ret_error != mbedtls_mpi_exp_mod(&Z, &X, &Y, &M, NULL)) {
         fail = true;
     }
-    
+
     if (ret_error == MBEDTLS_OK) {
         mbedtls_mpi_write_string(&Z, 16, z_buf, sizeof(z_buf)-1, &z_buf_len);
         if (memcmp(z_str, z_buf, strlen(z_str)) != 0) {
@@ -165,7 +165,7 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
     return fail;
 }
 
-TEST_CASE("test MPI modexp", "[bignum]")
+TEST_CASE_ESP32("test MPI modexp", "[bignum]")
 {
     bool test_error = false;
     printf("Z = (X ^ Y) mod M \n");

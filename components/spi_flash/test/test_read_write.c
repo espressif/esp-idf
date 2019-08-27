@@ -167,7 +167,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
+TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST

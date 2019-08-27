@@ -414,7 +414,7 @@ UT_030:
 
 UT_031:
   extends: .unit_test_template
-  parallel: 34
+  parallel: 28
   tags:
     - 7.2.2
     - UT_T1_1
