@@ -423,7 +423,7 @@ void test_posix_timers_clock (void)
 #endif // defined( WITH_FRC ) || defined( WITH_RTC )
 }
 
-TEST_CASE("test posix_timers clock_... functions", "[newlib]")
+TEST_CASE_ESP32("test posix_timers clock_... functions", "[newlib]")
 {
     test_posix_timers_clock();
 }

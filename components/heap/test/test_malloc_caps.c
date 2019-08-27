@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-TEST_CASE("Capabilities allocator test", "[heap]")
+TEST_CASE_ESP32("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
     int x;

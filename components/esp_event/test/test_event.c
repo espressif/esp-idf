@@ -838,7 +838,7 @@ TEST_CASE("performance test - dedicated task", "[event]")
     performance_test(true);
 }
 
-TEST_CASE("performance test - no dedicated task", "[event]")
+TEST_CASE_ESP32("performance test - no dedicated task", "[event]")
 {
     performance_test(false);
 }

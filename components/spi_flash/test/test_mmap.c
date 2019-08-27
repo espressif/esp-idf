@@ -75,7 +75,7 @@ static void setup_mmap_tests(void)
     }
 }
 
-TEST_CASE("Can mmap into data address space", "[spi_flash]")
+TEST_CASE_ESP32("Can mmap into data address space", "[spi_flash]")
 {
     setup_mmap_tests();
 
@@ -135,7 +135,7 @@ TEST_CASE("Can mmap into data address space", "[spi_flash]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-TEST_CASE("Can mmap into instruction address space", "[mmap]")
+TEST_CASE_ESP32("Can mmap into instruction address space", "[mmap]")
 {
     setup_mmap_tests();
 
@@ -183,7 +183,7 @@ TEST_CASE("Can mmap into instruction address space", "[mmap]")
 
 }
 
-TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash]")
+TEST_CASE_ESP32("Can mmap unordered pages into contiguous memory", "[spi_flash]")
 {
     int nopages;
     int *pages;
@@ -324,7 +324,7 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash]")
+TEST_CASE_ESP32("phys2cache/cache2phys basic checks", "[spi_flash]")
 {
     uint8_t buf[64];
 
@@ -401,7 +401,7 @@ TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash]")
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
 }
 
-TEST_CASE("no stale data read post mmap and write partition", "[spi_flash]")
+TEST_CASE_ESP32("no stale data read post mmap and write partition", "[spi_flash]")
 {
     const char buf[] = "Test buffer data for partition";
     char read_data[sizeof(buf)];
