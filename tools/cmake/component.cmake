@@ -482,10 +482,6 @@ function(idf_component_register)
     # Set dependencies
     __component_set_all_dependencies()
 
-    # Add the component to built components
-    idf_build_set_property(__BUILD_COMPONENTS ${component_lib} APPEND)
-    idf_build_set_property(BUILD_COMPONENTS ${component_alias} APPEND)
-
     # Make the COMPONENT_LIB variable available in the component CMakeLists.txt
     set(COMPONENT_LIB ${component_lib} PARENT_SCOPE)
     # COMPONENT_TARGET is deprecated but is made available with same function
