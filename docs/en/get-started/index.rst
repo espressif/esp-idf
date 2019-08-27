@@ -1,4 +1,4 @@
-﻿***********
+***********
 Get Started
 ***********
 
@@ -62,7 +62,7 @@ If you have one of ESP32 development boards listed below, you can click on the l
     ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
     ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
     ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
-    
+
 
 .. _get-started-step-by-step:
 
@@ -175,6 +175,13 @@ If you want to install the tools without the help of ESP-IDF Tools Installer, op
     cd %userprofile%\esp\esp-idf
     install.bat
 
+or with Windows PowerShell
+
+.. code-block:: powershell
+
+    cd ~/esp/esp-idf
+    ./install.ps1
+
 Linux and macOS
 ~~~~~~~~~~~~~~~
 
@@ -188,7 +195,7 @@ Customizing the tools installation path
 
 The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux and macOS, ``%USERPROFILE%\.espressif`` on Windows. If you wish to install the tools into a different directory, set the environment variable ``IDF_TOOLS_PATH`` before running the installation scripts. Make sure that your user has sufficient permissions to read and write this path.
 
-If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the ``install.bat``/``install.sh`` and ``export.bat``/``export.sh`` scripts are executed.
+If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the Install script (``install.bat``, ``install.ps1`` or ``install.sh``) and an Export script (``export.bat``, ``export.ps1`` or ``export.sh``) are executed.
 
 .. _get-started-set-up-env:
 
@@ -207,6 +214,12 @@ Alternatively, if you want to use ESP-IDF in an existing Command Prompt window, 
 .. code-block:: batch
 
     %userprofile%\esp\esp-idf\export.bat
+
+or with Windows PowerShell
+
+.. code-block:: powershell
+
+    .$HOME/esp/esp-idf/export.ps1
 
 Linux and macOS
 ~~~~~~~~~~~~~~~
@@ -481,9 +494,9 @@ You should update ESP-IDF from time to time, as newer versions fix bugs and prov
 
 Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
 
-After updating ESP-IDF, execute ``install.sh`` (``install.bat`` on Windows) again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
+After updating ESP-IDF, execute the Install script again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
 
-Once the new tools are installed, update the environment using ``export.sh`` (``export.bat`` on Windows). See instructions at :ref:`get-started-set-up-env`.
+Once the new tools are installed, update the environment using the Export script. See instructions at :ref:`get-started-set-up-env`.
 
 Related Documents
 =================
