@@ -28,8 +28,8 @@ TEST_CASE_PATTERN = {
 class Parser(object):
     """ parse unit test cases from build files and create files for test bench """
 
-    TAG_PATTERN = re.compile("([^=]+)(=)?(.+)?")
-    DESCRIPTION_PATTERN = re.compile("\[([^]\[]+)\]")  # noqa: W605 - regular expression
+    TAG_PATTERN = re.compile(r"([^=]+)(=)?(.+)?")
+    DESCRIPTION_PATTERN = re.compile(r"\[([^]\[]+)\]")
     CONFIG_PATTERN = re.compile(r"{([^}]+)}")
     TEST_GROUPS_PATTERN = re.compile(r"TEST_GROUPS=(.*)$")
 
@@ -261,7 +261,12 @@ class Parser(object):
         dump parsed test cases to YAML file for test bench input
         :param test_cases: parsed test cases
         """
-        with open(os.path.join(self.idf_path, self.TEST_CASE_FILE), "w+") as f:
+        filename = os.path.join(self.idf_path, self.TEST_CASE_FILE)
+        try:
+            os.mkdir(os.path.dirname(filename))
+        except OSError:
+            pass
+        with open(os.path.join(filename), "w+") as f:
             yaml.dump({"test cases": test_cases}, f, allow_unicode=True, default_flow_style=False)
 
     def copy_module_def_file(self):
