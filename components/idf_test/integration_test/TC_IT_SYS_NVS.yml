@@ -26,7 +26,7 @@ test cases:
     4. check if SoftAP config is correct
   sub module: NVS
   summary: use old NVS data WIFI function test
-  test environment: SSC_T1_1
+  test environment: SSC_T1_5
   test point 1: compatiable test
   test point 2: test if latest SDK work with pervious version of NVS data
   version: v1 (2017-06-01)
