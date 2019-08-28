@@ -1181,6 +1181,18 @@ UT_029:
     - UT_T2_1
     - 8Mpsram
 
+UT_030:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
+UT_031:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 IT_001:
   <<: *test_template
   parallel: 3

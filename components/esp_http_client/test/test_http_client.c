@@ -24,7 +24,7 @@
 #define USERNAME  "user"
 #define PASSWORD  "challenge"
 
-TEST_CASE("most_common_use", "Test in common case: Only URL and hostname are specified.")
+TEST_CASE("Test in common case: Only URL and hostname are specified.", "[ESP HTTP CLIENT]")
 {
     esp_http_client_config_t config_incorrect = {0};
 
@@ -50,7 +50,7 @@ TEST_CASE("most_common_use", "Test in common case: Only URL and hostname are spe
     TEST_ASSERT(esp_http_client_cleanup(client) == ESP_OK);
 }
 
-TEST_CASE("get_username_password", "Get username and password after initialization.")
+TEST_CASE("Get username and password after initialization.", "[ESP HTTP CLIENT]")
 {
     esp_http_client_config_t config_with_auth = {
         .host = HOST,
@@ -79,7 +79,7 @@ TEST_CASE("get_username_password", "Get username and password after initializati
  * Test case to test that, the esp_http_client_set_url won't drop username and password
  * when pass a path "/abc" for url.
  **/
-TEST_CASE("username_not_lost", "Username is unmodified when we change to new path")
+TEST_CASE("Username is unmodified when we change to new path", "[ESP HTTP CLIENT]")
 {
     esp_http_client_config_t config_with_auth = {
         .host = HOST,
@@ -106,7 +106,7 @@ TEST_CASE("username_not_lost", "Username is unmodified when we change to new pat
  * Test case to test that, the esp_http_client_set_url will reset username and password
  * when passing a full URL with username & password missing.
  **/
-TEST_CASE("username_is_reset", "Username is reset if new absolute URL doesnot specify username.")
+TEST_CASE("Username is reset if new absolute URL doesnot specify username.", "[ESP HTTP CLIENT]")
 {
     esp_http_client_config_t config_with_auth = {
         .host = HOST,
