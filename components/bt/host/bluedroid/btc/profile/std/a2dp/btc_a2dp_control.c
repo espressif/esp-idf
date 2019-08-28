@@ -117,7 +117,7 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
     APPL_TRACE_DEBUG("BTC MEDIA (A2DP-DATA) EVENT %u", ctrl);
 
     if (btc_aa_ctrl_cb.a2dp_cmd_pending != ESP_A2D_MEDIA_CTRL_NONE) {
-        APPL_TRACE_DEBUG("un-acked a2dp cmd: %u", btc_aa_ctrl_cb.a2dp_cmd_pending);
+        APPL_TRACE_WARNING("un-acked a2dp cmd: %u", btc_aa_ctrl_cb.a2dp_cmd_pending);
         a2dp_cmd_acknowledge(ctrl, ESP_A2D_MEDIA_CTRL_ACK_BUSY);
         return;
     }
@@ -179,6 +179,11 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         /* local suspend */
         if (btc_av_stream_started_ready()) {
             btc_dispatch_sm_event(BTC_AV_SUSPEND_STREAM_REQ_EVT, NULL, 0);
+#if (BTC_AV_SINK_INCLUDED == TRUE)
+            if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
+                btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
+            }
+#endif
         } else {
             /* we are not in started state; just ack back ok. This can happen if we are
                remotely suspended; clear REMOTE SUSPEND Flag */
