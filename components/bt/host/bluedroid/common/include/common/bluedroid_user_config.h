@@ -33,6 +33,12 @@
 #else
 #define UC_A2DP_SOURCE_TASK_STACK_SIZE      2048
 #endif
+#ifdef CONFIG_BT_BTU_TASK_STACK_SIZE
+#define UC_BT_BTU_TASK_STACK_SIZE           CONFIG_BT_BTU_TASK_STACK_SIZE
+#else
+#define UC_BT_BTU_TASK_STACK_SIZE           4096
+#endif
+
 
 /**********************************************************
  * Profile reference

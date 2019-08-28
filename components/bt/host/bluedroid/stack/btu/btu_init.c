@@ -45,7 +45,7 @@
 #endif
 
 #define BTU_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
-#define BTU_TASK_STACK_SIZE             (4096 + BT_TASK_EXTRA_STACK_SIZE)
+#define BTU_TASK_STACK_SIZE             (BT_BTU_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)
 #define BTU_TASK_PRIO                   (BT_TASK_MAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "btuT"
 

@@ -45,6 +45,7 @@
 /* OS Configuration from User config (eg: sdkconfig) */
 #define A2DP_SINK_TASK_STACK_SIZE   UC_A2DP_SINK_TASK_STACK_SIZE
 #define A2DP_SOURCE_TASK_STACK_SIZE UC_A2DP_SOURCE_TASK_STACK_SIZE
+#define BT_BTU_TASK_STACK_SIZE      UC_BT_BTU_TASK_STACK_SIZE
 
 /******************************************************************************
 **
