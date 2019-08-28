@@ -41,6 +41,10 @@
 
 #include "stack/dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
+
+/* OS Configuration from User config (eg: sdkconfig) */
+#define BT_BTU_TASK_STACK_SIZE      UC_BT_BTU_TASK_STACK_SIZE
+
 /******************************************************************************
 **
 ** Classic BT features
