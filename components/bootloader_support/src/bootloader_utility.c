@@ -28,6 +28,7 @@
 #include "esp32/rom/uart.h"
 #include "esp32/rom/gpio.h"
 #include "esp32/rom/secure_boot.h"
+#include "esp32/rom/rtc.h"
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -416,7 +417,30 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
         update_anti_rollback(&bs->ota[index]);
 #endif
     }
+#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+    esp_partition_pos_t partition = index_to_partition(bs, index);
+    bootloader_common_update_rtc_retain_mem(&partition, true);
+#endif
 }
+
+#ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+void bootloader_utility_load_boot_image_from_deep_sleep(void)
+{
+    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+        esp_partition_pos_t* partition = bootloader_common_get_rtc_retain_mem_partition();
+        if (partition != NULL) {
+            esp_image_metadata_t image_data;
+            if (bootloader_load_image_no_verify(partition, &image_data) == ESP_OK) {
+                ESP_LOGI(TAG, "Fast booting app from partition at offset 0x%x", partition->offset);
+                bootloader_common_update_rtc_retain_mem(NULL, true);
+                load_image(&image_data);
+            }
+        }
+        ESP_LOGE(TAG, "Fast booting is not successful");
+        ESP_LOGI(TAG, "Try to load an app as usual with all validations");
+    }
+}
+#endif
 
 #define TRY_LOG_FORMAT "Trying partition index %d offs 0x%x size 0x%x"
 

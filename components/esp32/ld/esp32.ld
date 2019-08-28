@@ -21,6 +21,14 @@
 #define CONFIG_BT_RESERVE_DRAM 0
 #endif
 
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#else
+#define ESP_BOOTLOADER_RESERVE_RTC 0
+#endif
+
 #if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
 
 ASSERT((CONFIG_ESP32_FIXED_STATIC_RAM_SIZE <= 0x2c200),
@@ -74,7 +82,7 @@ MEMORY
   rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
 
   /* RTC fast memory (same block as above), viewed from data bus */
-  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000
+  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
 
   /* RTC slow memory (data accessible). Persists over deep sleep.
 
