@@ -511,7 +511,11 @@ static void emac_dm9051_task(void *arg)
                     buffer = (uint8_t *)heap_caps_malloc(ETH_MAX_PACKET_SIZE, MALLOC_CAP_DMA);
                     if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
                         /* pass the buffer to stack (e.g. TCP/IP layer) */
-                        emac->eth->stack_input(emac->eth, buffer, length);
+                        if (length) {
+                            emac->eth->stack_input(emac->eth, buffer, length);
+                        } else {
+                            free(buffer);
+                        }
                     } else {
                         free(buffer);
                     }
