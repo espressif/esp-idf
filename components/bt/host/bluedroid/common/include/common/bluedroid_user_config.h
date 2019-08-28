@@ -20,6 +20,16 @@
 #include "bt_user_config.h"
 
 /**********************************************************
+ * Thread/Task reference
+ **********************************************************/
+#ifdef CONFIG_BT_BTU_TASK_STACK_SIZE
+#define UC_BT_BTU_TASK_STACK_SIZE           CONFIG_BT_BTU_TASK_STACK_SIZE
+#else
+#define UC_BT_BTU_TASK_STACK_SIZE           4096
+#endif
+
+
+/**********************************************************
  * Profile reference
  **********************************************************/
 //Classic BT reference
