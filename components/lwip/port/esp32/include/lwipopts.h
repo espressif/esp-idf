@@ -556,6 +556,12 @@
  */
 #define SO_REUSE_RXTOALL                CONFIG_LWIP_SO_REUSE_RXTOALL
 
+/**
+ * LWIP_NETBUF_RECVINFO==1: Enable IP_PKTINFO option.
+ * This option is set via menuconfig.
+ */
+#define LWIP_NETBUF_RECVINFO            CONFIG_LWIP_NETBUF_RECVINFO
+
 /*
    ----------------------------------------
    ---------- Statistics options ----------
