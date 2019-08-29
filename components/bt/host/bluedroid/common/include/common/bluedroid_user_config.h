@@ -20,21 +20,6 @@
 #include "bt_user_config.h"
 
 /**********************************************************
- * Thread/Task reference
- **********************************************************/
-
-#ifdef CONFIG_A2DP_SINK_TASK_STACK_SIZE
-#define UC_A2DP_SINK_TASK_STACK_SIZE        CONFIG_A2DP_SINK_TASK_STACK_SIZE
-#else
-#define UC_A2DP_SINK_TASK_STACK_SIZE        2048
-#endif
-#ifdef CONFIG_A2DP_SOURCE_TASK_STACK_SIZE
-#define UC_A2DP_SOURCE_TASK_STACK_SIZE      CONFIG_A2DP_SOURCE_TASK_STACK_SIZE
-#else
-#define UC_A2DP_SOURCE_TASK_STACK_SIZE      2048
-#endif
-
-/**********************************************************
  * Profile reference
  **********************************************************/
 //Classic BT reference
