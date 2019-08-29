@@ -9,6 +9,7 @@ from shutil import copyfile
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -83,7 +84,7 @@ def lwip_test_suite(env, extra_data):
       3. Execute ttcn3 test suite
       4. Collect result from ttcn3
     """
-    dut1 = env.get_dut("net_suite", "examples/system/network_tests")
+    dut1 = env.get_dut("net_suite", "examples/system/network_tests", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "net_suite.bin")
     bin_size = os.path.getsize(binary_file)
