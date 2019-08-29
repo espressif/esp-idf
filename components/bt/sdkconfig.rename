@@ -42,8 +42,6 @@ CONFIG_BTU_TASK_STACK_SIZE                                  CONFIG_BT_BTU_TASK_S
 CONFIG_BLUEDROID_MEM_DEBUG                                  CONFIG_BT_BLUEDROID_MEM_DEBUG
 CONFIG_CLASSIC_BT_ENABLED                                   CONFIG_BT_CLASSIC_ENABLED
 CONFIG_A2DP_ENABLE                                          CONFIG_BT_A2DP_ENABLE
-CONFIG_A2DP_SINK_TASK_STACK_SIZE                            CONFIG_BT_A2DP_SINK_TASK_STACK_SIZE
-CONFIG_A2DP_SOURCE_TASK_STACK_SIZE                          CONFIG_BT_A2DP_SOURCE_TASK_STACK_SIZE
 CONFIG_HFP_ENABLE                                           CONFIG_BT_HFP_ENABLE
 CONFIG_HFP_ROLE                                             CONFIG_BT_HFP_ROLE
 CONFIG_HFP_CLIENT_ENABLE                                    CONFIG_BT_HFP_CLIENT_ENABLE
