@@ -27,6 +27,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: normal
 
   UNIT_TEST_BUILD_SYSTEM: cmake
+  EXAMPLE_TEST_BUILD_SYSTEM: cmake
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
