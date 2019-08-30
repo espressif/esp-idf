@@ -337,6 +337,7 @@ uint32_t ATTR esp_log_early_timestamp(void)
 char* IRAM_ATTR esp_log_system_timestamp(void)
 {
     static char buffer[15] = {0};
+    static _lock_t bufferLock = 0;
 
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) 
     {
@@ -366,15 +367,23 @@ char* IRAM_ATTR esp_log_system_timestamp(void)
         struct timespec tv;
         time_t now;
 
+        if (bufferLock == 0)
+        {
+            _lock_init(&bufferLock);
+        }
+
         time(&now);
         localtime_r(&now, &timeinfo);
         clock_gettime(CLOCK_REALTIME, &tv);
-        sprintf(buffer, 
-                "%02d:%02d:%02d.%03ld", 
-                timeinfo.tm_hour, 
-                timeinfo.tm_min, 
-                timeinfo.tm_sec, 
-                tv.tv_nsec / 1000000);
+
+        _lock_acquire(&bufferLock);
+        snprintf(buffer, sizeof(buffer),
+                 "%02d:%02d:%02d.%03ld", 
+                 timeinfo.tm_hour, 
+                 timeinfo.tm_min, 
+                 timeinfo.tm_sec, 
+                 tv.tv_nsec / 1000000);
+        _lock_release(&bufferLock);
 
         return buffer;
     }
