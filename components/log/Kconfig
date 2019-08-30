@@ -44,17 +44,30 @@ menu "Log output"
 
             In order to view these, your terminal program must support ANSI color codes.
 
-    config LOG_SYSTEM_TIME
-        bool "Use system time in log output"
-        default "n"
+    choice LOG_TIMESTAMP_SOURCE
+        prompt "Log Timestamps"
+        default LOG_TIMESTAMP_SOURCE_RTOS
         help
-            Display the system time (HH:MM:SS.sss) in the log output rather than the 
-            RTOS time. Currently this will not get used in logging from binary blobs
-			(i.e WiFi & Bluetooth libraries), these will still print the RTOS tick time.
+            Choose what sort of timestamp is displayed in the log output:
 
-            The system time is initialized to 0 on startup, this can be set to 
-            the correct time with an SNTP sync, or manually with standard 
-            POSIX time functions.
+            - Milliseconds since boot is calulated from the RTOS tick count multiplied
+              by the tick period. This time will reset after a software reboot.
+              e.g. (90000)
+            
+            - System time is taken from POSIX time functions which use the ESP32's
+              RTC and FRC1 timers to maintain an accurate time. The system time is 
+              initialized to 0 on startup, it can be set with an SNTP sync, or with 
+              POSIX time functions. This time will not reset after a software reboot.
+              e.g. (00:01:30.000)
 
+            - NOTE: Currently this will not get used in logging from binary blobs
+              (i.e WiFi & Bluetooth libraries), these will always print 
+              milliseconds since boot.
+
+        config LOG_TIMESTAMP_SOURCE_RTOS
+            bool "Milliseconds Since Boot"
+        config LOG_TIMESTAMP_SOURCE_SYSTEM
+            bool "System Time"
+    endchoice
 
 endmenu
