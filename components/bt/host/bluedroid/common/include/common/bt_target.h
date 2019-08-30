@@ -43,7 +43,7 @@
 
 
 /* OS Configuration from User config (eg: sdkconfig) */
-#define BT_BTU_TASK_STACK_SIZE      UC_BT_BTU_TASK_STACK_SIZE
+#define BT_BTU_TASK_STACK_SIZE      UC_BTU_TASK_STACK_SIZE
 
 /******************************************************************************
 **
