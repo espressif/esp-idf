@@ -15,7 +15,7 @@
 #include <esp_log.h>
 
 #include <esp_wifi.h>
-#include <tcpip_adapter.h>
+#include <esp_netif.h>
 
 #include <wifi_provisioning/wifi_config.h>
 
@@ -60,10 +60,9 @@ static esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data, wifi
         ESP_LOGI(TAG, "Connected state");
 
         /* IP Addr assigned to STA */
-        tcpip_adapter_ip_info_t ip_info;
-        tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
-        char *ip_addr = ip4addr_ntoa(&ip_info.ip);
-        strcpy(resp_data->conn_info.ip_addr, ip_addr);
+        esp_netif_ip_info_t ip_info;
+        esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &ip_info);
+        esp_ip4addr_ntoa(&ip_info.ip, resp_data->conn_info.ip_addr, sizeof(resp_data->conn_info.ip_addr));
 
         /* AP information to which STA is connected */
         wifi_ap_record_t ap_info;

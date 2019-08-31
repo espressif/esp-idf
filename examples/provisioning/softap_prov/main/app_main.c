@@ -99,7 +99,7 @@ static void start_softap_provisioning(void)
 void app_main(void)
 {
     /* Initialize networking stack */
-    tcpip_adapter_init();
+    esp_netif_init();
 
     /* Create default event loop needed by the
      * main app and the provisioning service */
@@ -108,7 +108,9 @@ void app_main(void)
     /* Initialize NVS needed by Wi-Fi */
     ESP_ERROR_CHECK(nvs_flash_init());
 
-    /* Initialize Wi-Fi with default config */
+    /* Initialize Wi-Fi including netif with default config */
+    esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_ap();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
