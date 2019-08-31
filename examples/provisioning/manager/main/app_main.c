@@ -107,7 +107,7 @@ void app_main(void)
     }
 
     /* Initialize TCP/IP */
-    tcpip_adapter_init();
+    esp_netif_init();
 
     /* Initialize the event loop */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -118,7 +118,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
-    /* Initialize Wi-Fi */
+    /* Initialize Wi-Fi including netif with default config */
+    esp_netif_create_default_wifi_sta();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
