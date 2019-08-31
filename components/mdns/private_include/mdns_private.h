@@ -214,10 +214,10 @@ typedef struct mdns_parsed_record_s {
 } mdns_parsed_record_t;
 
 typedef struct {
-    tcpip_adapter_if_t tcpip_if;
+    mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
     //struct udp_pcb *pcb;
-    ip_addr_t src;
+    esp_ip_addr_t src;
     uint16_t src_port;
     uint8_t multicast;
     uint8_t authoritative;
@@ -229,11 +229,11 @@ typedef struct {
 } mdns_parsed_packet_t;
 
 typedef struct {
-    tcpip_adapter_if_t tcpip_if;
+    mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
     struct pbuf *pb;
-    ip_addr_t src;
-    ip_addr_t dest;
+    esp_ip_addr_t src;
+    esp_ip_addr_t dest;
     uint16_t src_port;
     uint8_t multicast;
 } mdns_rx_packet_t;
@@ -283,9 +283,9 @@ typedef struct mdns_out_answer_s {
 typedef struct mdns_tx_packet_s {
     struct mdns_tx_packet_s * next;
     uint32_t send_at;
-    tcpip_adapter_if_t tcpip_if;
+    mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
-    ip_addr_t dst;
+    esp_ip_addr_t dst;
     uint16_t port;
     uint16_t flags;
     uint8_t distributed;
@@ -333,7 +333,7 @@ typedef struct mdns_search_once_s {
 typedef struct mdns_server_s {
     struct {
         mdns_pcb_t pcbs[MDNS_IP_PROTOCOL_MAX];
-    } interfaces[TCPIP_ADAPTER_IF_MAX];
+    } interfaces[MDNS_IF_MAX];
     const char * hostname;
     const char * instance;
     mdns_srv_item_t * services;
@@ -352,7 +352,7 @@ typedef struct {
         struct {
             esp_event_base_t event_base;
             int32_t event_id;
-            tcpip_adapter_if_t interface;
+            esp_netif_t* interface;
         } sys_event;
         struct {
             mdns_srv_item_t * service;
@@ -392,5 +392,17 @@ typedef struct {
         } rx_handle;
     } data;
 } mdns_action_t;
+
+/*
+ * @brief  Convert mnds if to esp-netif handle
+ *
+ * @param  tcpip_if     mdns supported interface as internal enum
+ *
+ * @return
+ *     - ptr to esp-netif on success
+ *     - NULL if no available netif for current interface index
+ */
+esp_netif_t *_mdns_get_esp_netif(mdns_if_t tcpip_if);
+
 
 #endif /* MDNS_PRIVATE_H_ */

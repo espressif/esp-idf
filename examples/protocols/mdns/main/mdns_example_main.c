@@ -9,18 +9,15 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h"
 #include "esp_system.h"
-#include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "protocol_examples_common.h"
 #include "mdns.h"
 #include "driver/gpio.h"
-#include <sys/socket.h>
-#include <netdb.h>
+#include "netdb.h"
 
 
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
@@ -88,7 +85,7 @@ static void mdns_print_results(mdns_result_t * results){
         }
         a = r->addr;
         while(a){
-            if(a->addr.type == IPADDR_TYPE_V6){
+            if(a->addr.type == ESP_IPADDR_TYPE_V6){
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
@@ -123,7 +120,7 @@ static void query_mdns_host(const char * host_name)
 {
     ESP_LOGI(TAG, "Query A: %s.local", host_name);
 
-    struct ip4_addr addr;
+    struct esp_ip4_addr addr;
     addr.addr = 0;
 
     esp_err_t err = mdns_query_a(host_name, 2000,  &addr);

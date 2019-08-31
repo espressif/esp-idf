@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#include <tcpip_adapter.h>
+#include <esp_netif.h>
 #include "esp_event.h"
 
 #define MDNS_TYPE_A                 0x0001
@@ -52,9 +52,16 @@ typedef struct {
  * @brief   mDNS query linked list IP item
  */
 typedef struct mdns_ip_addr_s {
-    ip_addr_t addr;                         /*!< IP address */
+    esp_ip_addr_t addr;                     /*!< IP address */
     struct mdns_ip_addr_s * next;           /*!< next IP, or NULL for the last IP in the list */
 } mdns_ip_addr_t;
+
+typedef enum mdns_if_internal {
+    MDNS_IF_STA = 0,
+    MDNS_IF_AP = 1,
+    MDNS_IF_ETH = 2,
+    MDNS_IF_MAX
+} mdns_if_t;
 
 /**
  * @brief   mDNS query result structure
@@ -62,7 +69,8 @@ typedef struct mdns_ip_addr_s {
 typedef struct mdns_result_s {
     struct mdns_result_s * next;            /*!< next result, or NULL for the last result in the list */
 
-    tcpip_adapter_if_t tcpip_if;            /*!< interface on which the result came (AP/STA/ETH) */
+    mdns_if_t tcpip_if;                     /*!< interface index */
+
     mdns_ip_protocol_t ip_protocol;         /*!< ip_protocol type of the interface (v4/v6) */
     // PTR
     char * instance_name;                   /*!< instance name */
@@ -329,7 +337,7 @@ esp_err_t mdns_query_txt(const char * instance_name, const char * service_type, 
  *     - ESP_ERR_NO_MEM         memory error
  *     - ESP_ERR_INVALID_ARG    parameter error
  */
-esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, ip4_addr_t * addr);
+esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t * addr);
 
 /**
  * @brief  Query mDNS for A record
@@ -344,7 +352,7 @@ esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, ip4_addr_t * ad
  *     - ESP_ERR_NO_MEM         memory error
  *     - ESP_ERR_INVALID_ARG    parameter error
  */
-esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, ip6_addr_t * addr);
+esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr_t * addr);
 
 /**
  * @brief   System event handler
