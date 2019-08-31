@@ -42,7 +42,7 @@ static void mdns_print_results(mdns_result_t * results)
         }
         a = r->addr;
         while (a) {
-            if (a->addr.type == IPADDR_TYPE_V6) {
+            if (a->addr.type == ESP_IPADDR_TYPE_V6) {
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
@@ -81,7 +81,7 @@ static int cmd_mdns_query_a(int argc, char** argv)
 
     printf("Query A: %s.local, Timeout: %d\n", hostname, timeout);
 
-    struct ip4_addr addr;
+    struct esp_ip4_addr addr;
     addr.addr = 0;
 
     esp_err_t err = mdns_query_a(hostname, timeout,  &addr);
@@ -138,7 +138,7 @@ static int cmd_mdns_query_aaaa(int argc, char** argv)
 
     printf("Query AAAA: %s.local, Timeout: %d\n", hostname, timeout);
 
-    struct ip6_addr addr;
+    struct esp_ip6_addr addr;
     memset(addr.addr, 0, 16);
 
     esp_err_t err = mdns_query_aaaa(hostname, timeout,  &addr);
