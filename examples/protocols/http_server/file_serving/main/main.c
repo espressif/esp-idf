@@ -15,7 +15,7 @@
 #include "esp_system.h"
 #include "esp_spiffs.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "protocol_examples_common.h"
 
 /* This example demonstrates how to create file server
@@ -67,7 +67,7 @@ esp_err_t start_file_server(const char *base_path);
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
