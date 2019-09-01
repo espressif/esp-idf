@@ -94,8 +94,10 @@ TEST_CASE("adc2 work with wifi","[adc]")
         r = nvs_flash_init();
     } 
     TEST_ESP_OK( r);
-    tcpip_adapter_init();
+    esp_netif_init();
     event_init();
+    esp_netif_create_default_wifi_sta();
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config = {
@@ -144,5 +146,5 @@ TEST_CASE("adc2 work with wifi","[adc]")
 
     printf("test passed...\n");
 
-    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of tcpip_adapter and event_loop.");
+    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }

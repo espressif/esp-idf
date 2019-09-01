@@ -144,8 +144,8 @@ TEST_CASE("wifi stop and deinit","[wifi]")
     }
     TEST_ESP_OK(r);
     //init tcpip
-    ESP_LOGI(TAG, EMPH_STR("tcpip_adapter_init"));
-    tcpip_adapter_init();
+    ESP_LOGI(TAG, EMPH_STR("esp_netif_init"));
+    esp_netif_init();
     //init event loop
 
     ESP_LOGI(TAG, EMPH_STR("event_init"));
@@ -163,7 +163,7 @@ TEST_CASE("wifi stop and deinit","[wifi]")
     nvs_flash_deinit();
     ESP_LOGI(TAG, "test passed...");
 
-    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of tcpip_adapter and event_loop.");
+    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
 
 static void start_wifi_as_softap(void)

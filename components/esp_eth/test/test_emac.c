@@ -62,7 +62,7 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
 {
     EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-    const tcpip_adapter_ip_info_t *ip_info = (tcpip_adapter_ip_info_t *)&event->ip_info;
+    const esp_netif_ip_info_t *ip_info = &event->ip_info;
 
     ESP_LOGI(TAG, "Ethernet Got IP Address");
     ESP_LOGI(TAG, "~~~~~~~~~~~");
@@ -309,9 +309,11 @@ TEST_CASE("dm9051 io test", "[ethernet][ignore]")
     };
     TEST_ESP_OK(spi_bus_add_device(HSPI_HOST, &devcfg, &spi_handle));
     gpio_install_isr_service(0);
-    tcpip_adapter_init();
+    esp_netif_init();
     TEST_ESP_OK(esp_event_loop_create_default());
-    TEST_ESP_OK(tcpip_adapter_set_default_eth_handlers());
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
+    esp_netif_t* eth_netif = esp_netif_new(&cfg);
+    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
@@ -322,6 +324,7 @@ TEST_CASE("dm9051 io test", "[ethernet][ignore]")
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle));
+    TEST_ESP_OK(esp_netif_attach(eth_netif, eth_handle));
     vTaskDelay(pdMS_TO_TICKS(portMAX_DELAY));
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     TEST_ESP_OK(phy->del(phy));
