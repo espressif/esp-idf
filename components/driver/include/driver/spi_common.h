@@ -45,7 +45,7 @@ extern "C"
  *  len Length of data to be sent, since the SPI peripheral sends from the MSB,
  *  this helps to shift the data to the MSB.
  */
-#define SPI_SWAP_DATA_TX(data, len) __builtin_bswap32((uint32_t)data<<(32-len))
+#define SPI_SWAP_DATA_TX(data, len) __builtin_bswap32((uint32_t)(data)<<(32-len))
 
 /**
  * Transform received data of length <= 32 bits to the format of an unsigned integer.
