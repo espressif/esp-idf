@@ -42,11 +42,11 @@ extern "C"
  *
  * Then points tx_buffer to ``&data``.
  *
- * @param data Data to be sent, can be uint8_t, uint16_t or uint32_t. @param
- *  len Length of data to be sent, since the SPI peripheral sends from the MSB,
- *  this helps to shift the data to the MSB.
+ * @param DATA Data to be sent, can be uint8_t, uint16_t or uint32_t.
+ * @param LEN Length of data to be sent, since the SPI peripheral sends from
+ *      the MSB, this helps to shift the data to the MSB.
  */
-#define SPI_SWAP_DATA_TX(data, len) __builtin_bswap32((uint32_t)data<<(32-len))
+#define SPI_SWAP_DATA_TX(DATA, LEN) __builtin_bswap32((uint32_t)(DATA)<<(32-(LEN)))
 
 /**
  * Transform received data of length <= 32 bits to the format of an unsigned integer.
@@ -55,11 +55,11 @@ extern "C"
  *
  *      uint16_t data = SPI_SWAP_DATA_RX(*(uint32_t*)t->rx_data, 15);
  *
- * @param data Data to be rearranged, can be uint8_t, uint16_t or uint32_t.
- * @param len Length of data received, since the SPI peripheral writes from
+ * @param DATA Data to be rearranged, can be uint8_t, uint16_t or uint32_t.
+ * @param LEN Length of data received, since the SPI peripheral writes from
  *      the MSB, this helps to shift the data to the LSB.
  */
-#define SPI_SWAP_DATA_RX(data, len) (__builtin_bswap32(data)>>(32-len))
+#define SPI_SWAP_DATA_RX(DATA, LEN) (__builtin_bswap32(DATA)>>(32-(LEN)))
 
 /**
  * @brief Enum with the three SPI peripherals that are software-accessible in it
