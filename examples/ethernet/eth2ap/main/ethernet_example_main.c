@@ -192,7 +192,6 @@ static void initialize_wifi(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(tcpip_adapter_clear_default_wifi_handlers());
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     wifi_config_t wifi_config = {
         .ap = {
