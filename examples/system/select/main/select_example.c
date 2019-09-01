@@ -18,7 +18,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "driver/uart.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 
@@ -43,7 +43,7 @@ static void socket_init(void)
     int err;
     struct sockaddr_in saddr = { 0 };
 
-    tcpip_adapter_init();
+    esp_netif_init();
 
     err = getaddrinfo("localhost", "80", &hints, &res);
 
