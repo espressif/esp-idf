@@ -36,6 +36,7 @@ static const char *MESH_TAG = "mesh_main";
 static const uint8_t MESH_ID[6] = { 0x77, 0x77, 0x77, 0x77, 0x77, 0x77};
 static mesh_addr_t mesh_parent_addr;
 static int mesh_layer = -1;
+static esp_netif_t *netif_sta = NULL;
 
 /*******************************************************
  *                Function Declarations
@@ -228,7 +229,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         if (esp_mesh_is_root()) {
-            tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+            esp_netif_dhcpc_start(netif_sta);
         }
     }
     break;
@@ -295,20 +296,49 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
     ESP_LOGI(MESH_TAG, "<IP_EVENT_STA_GOT_IP>IP:" IPSTR, IP2STR(&event->ip_info.ip));
 }
 
+/**
+ * @brief Creates mesh network interfaces based on default STA and AP,
+ * but without DHCP, this is to be enabled separately only on root node
+ */
+static esp_err_t create_wifi_netifs(void)
+{
+    esp_netif_inherent_config_t netif_cfg;
+    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_AP, sizeof(netif_cfg));
+    netif_cfg.flags &= ~ESP_NETIF_DHCPS;
+    esp_netif_config_t cfg_ap = {
+        .base = &netif_cfg,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP,
+        .driver = ESP_NETIF_DRIVER_DEFAULT_WIFI_AP,
+    };
+    esp_netif_t *netif_ap = esp_netif_new(&cfg_ap);
+    assert(netif_ap);
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers(netif_ap));
+
+
+    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_STA, sizeof(netif_cfg));
+    netif_cfg.flags &= ~ESP_NETIF_DHCPC;
+    esp_netif_config_t cfg_sta = {
+        .base = &netif_cfg,
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+        .driver = ESP_NETIF_DRIVER_DEFAULT_WIFI_STA,
+    };
+
+    netif_sta = esp_netif_new(&cfg_sta);
+    assert(netif_sta);
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers(netif_sta));
+    return ESP_OK;
+}
+
 void app_main(void)
 {
     ESP_ERROR_CHECK(mesh_light_init());
     ESP_ERROR_CHECK(nvs_flash_init());
     /*  tcpip initialization */
-    tcpip_adapter_init();
-    /* for mesh
-     * stop DHCP server on softAP interface by default
-     * stop DHCP client on station interface by default
-     * */
-    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
-    ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
+    esp_netif_init();
     /*  event initialization */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    /*  crete network interfaces for mesh */
+    ESP_ERROR_CHECK(create_wifi_netifs());
     /*  wifi initialization */
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&config));
