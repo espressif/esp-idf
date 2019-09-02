@@ -1195,15 +1195,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         transmit = bt_mesh_relay_retransmit_get();
     } else {
         transmit = bt_mesh_net_transmit_get();
-        if (rx->net_if == BLE_MESH_NET_IF_PROXY &&
-            transmit < BLE_MESH_TRANSMIT(5, 20)) {
-            /**
-             * Add this in case EspBleMesh APP just send a message once, and
-             * the Proxy Node will send this message using advertising bearer
-             * with duration not less than 180ms.
-             */
-            transmit = BLE_MESH_TRANSMIT(5, 20);
-        }
     }
 
     buf = bt_mesh_adv_create(BLE_MESH_ADV_DATA, transmit, K_NO_WAIT);
