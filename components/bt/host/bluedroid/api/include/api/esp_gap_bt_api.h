@@ -326,7 +326,7 @@ typedef void (* esp_bt_gap_cb_t)(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
  * @param[in]       cod: Class of Device
  * @return          major service bits
  */
-inline uint32_t esp_bt_gap_get_cod_srvc(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_srvc(uint32_t cod)
 {
     return (cod & ESP_BT_COD_SRVC_BIT_MASK) >> ESP_BT_COD_SRVC_BIT_OFFSET;
 }
@@ -336,7 +336,7 @@ inline uint32_t esp_bt_gap_get_cod_srvc(uint32_t cod)
  * @param[in]       cod: Class of Device
  * @return          major device bits
  */
-inline uint32_t esp_bt_gap_get_cod_major_dev(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_major_dev(uint32_t cod)
 {
     return (cod & ESP_BT_COD_MAJOR_DEV_BIT_MASK) >> ESP_BT_COD_MAJOR_DEV_BIT_OFFSET;
 }
@@ -346,7 +346,7 @@ inline uint32_t esp_bt_gap_get_cod_major_dev(uint32_t cod)
  * @param[in]       cod: Class of Device
  * @return          minor service bits
  */
-inline uint32_t esp_bt_gap_get_cod_minor_dev(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_minor_dev(uint32_t cod)
 {
     return (cod & ESP_BT_COD_MINOR_DEV_BIT_MASK) >> ESP_BT_COD_MINOR_DEV_BIT_OFFSET;
 }
@@ -356,7 +356,7 @@ inline uint32_t esp_bt_gap_get_cod_minor_dev(uint32_t cod)
  * @param[in]       cod: Class of Device
  * @return          format type
  */
-inline uint32_t esp_bt_gap_get_cod_format_type(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_format_type(uint32_t cod)
 {
     return (cod & ESP_BT_COD_FORMAT_TYPE_BIT_MASK);
 }
@@ -368,7 +368,7 @@ inline uint32_t esp_bt_gap_get_cod_format_type(uint32_t cod)
  *                  - true if cod is valid
  *                  - false otherise
  */
-inline bool esp_bt_gap_is_valid_cod(uint32_t cod)
+static inline bool esp_bt_gap_is_valid_cod(uint32_t cod)
 {
     if (esp_bt_gap_get_cod_format_type(cod) == ESP_BT_COD_FORMAT_TYPE_1 &&
             esp_bt_gap_get_cod_srvc(cod) != ESP_BT_COD_SRVC_NONE) {

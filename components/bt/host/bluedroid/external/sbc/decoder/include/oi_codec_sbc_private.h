@@ -143,11 +143,11 @@ OI_INT adjustToFitBitpool(const OI_UINT bitpool,
                           OI_UINT bitcount,
                           OI_UINT *excess);
 
-INLINE OI_INT allocAdjustedBits(OI_UINT8 *dest,
+OI_INT allocAdjustedBits(OI_UINT8 *dest,
                                 OI_INT bits,
                                 OI_INT excess);
 
-INLINE OI_INT allocExcessBits(OI_UINT8 *dest,
+OI_INT allocExcessBits(OI_UINT8 *dest,
                               OI_INT excess);
 
 PRIVATE OI_UINT32 internal_CalculateBitrate(OI_CODEC_SBC_FRAME_INFO *frame);
@@ -165,7 +165,7 @@ PRIVATE OI_STATUS internal_DecodeRaw(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                      OI_INT16 *pcmData,
                                      OI_UINT32 *pcmBytes);
 
-INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
+OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_UINT32 *decoderData,
                                        OI_UINT32 decoderDataBytes,
                                        OI_BYTE maxChannels,
@@ -173,7 +173,7 @@ INLINE OI_STATUS internal_DecoderReset(OI_CODEC_SBC_DECODER_CONTEXT *context,
                                        OI_BOOL enhanced,
                                        OI_BOOL msbc_enable);
 
-INLINE OI_UINT16 OI_SBC_CalculateFrameAndHeaderlen(OI_CODEC_SBC_FRAME_INFO *frame, OI_UINT *headerLen_);
+OI_UINT16 OI_SBC_CalculateFrameAndHeaderlen(OI_CODEC_SBC_FRAME_INFO *frame, OI_UINT *headerLen_);
 
 PRIVATE OI_UINT32 OI_SBC_MaxBitpool(OI_CODEC_SBC_FRAME_INFO *frame);
 
@@ -185,13 +185,13 @@ PRIVATE void shift_buffer(SBC_BUFFER_T *dest, SBC_BUFFER_T *src, OI_UINT wordCou
 PRIVATE void cosineModulateSynth4(SBC_BUFFER_T *RESTRICT out, OI_INT32 const *RESTRICT in);
 PRIVATE void SynthWindow40_int32_int32_symmetry_with_sum(OI_INT16 *pcm, SBC_BUFFER_T buffer[80], OI_UINT strideShift);
 
-INLINE void dct3_4(OI_INT32 *RESTRICT out, OI_INT32 const *RESTRICT in);
+void dct3_4(OI_INT32 *RESTRICT out, OI_INT32 const *RESTRICT in);
 PRIVATE void analyze4_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 40],
                                 OI_INT16 *pcm,
                                 OI_UINT strideShift,
                                 OI_INT32 subband[4]);
 
-INLINE void dct3_8(OI_INT32 *RESTRICT out, OI_INT32 const *RESTRICT in);
+void dct3_8(OI_INT32 *RESTRICT out, OI_INT32 const *RESTRICT in);
 
 PRIVATE void analyze8_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 80],
                                 OI_INT16 *pcm,
@@ -207,12 +207,12 @@ PRIVATE void analyze8_enhanced_generated(SBC_BUFFER_T analysisBuffer[RESTRICT 11
 
 /* Decoder functions */
 
-INLINE  void OI_SBC_ReadHeader(OI_CODEC_SBC_COMMON_CONTEXT *common, const OI_BYTE *data);
+void OI_SBC_ReadHeader(OI_CODEC_SBC_COMMON_CONTEXT *common, const OI_BYTE *data);
 PRIVATE void OI_SBC_ReadScalefactors(OI_CODEC_SBC_COMMON_CONTEXT *common, const OI_BYTE *b, OI_BITSTREAM *bs);
 PRIVATE void OI_SBC_ReadSamples(OI_CODEC_SBC_DECODER_CONTEXT *common, OI_BITSTREAM *ob);
 PRIVATE void OI_SBC_ReadSamplesJoint(OI_CODEC_SBC_DECODER_CONTEXT *common, OI_BITSTREAM *global_bs);
 PRIVATE void OI_SBC_SynthFrame(OI_CODEC_SBC_DECODER_CONTEXT *context, OI_INT16 *pcm, OI_UINT start_block, OI_UINT nrof_blocks);
-INLINE OI_INT32 OI_SBC_Dequant(OI_UINT32 raw, OI_UINT scale_factor, OI_UINT bits);
+OI_INT32 OI_SBC_Dequant(OI_UINT32 raw, OI_UINT scale_factor, OI_UINT bits);
 PRIVATE OI_BOOL OI_SBC_ExamineCommandPacket(OI_CODEC_SBC_DECODER_CONTEXT *context, const OI_BYTE *data, OI_UINT32 len);
 PRIVATE void OI_SBC_GenerateTestSignal(OI_INT16 pcmData[][2], OI_UINT32 sampleCount);
 
