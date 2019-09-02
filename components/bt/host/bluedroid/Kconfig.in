@@ -54,16 +54,6 @@ config BT_A2DP_ENABLE
     help
         Advanced Audio Distrubution Profile
 
-config BT_A2DP_SINK_TASK_STACK_SIZE
-    int "A2DP sink (audio stream decoding) task stack size"
-    depends on BT_A2DP_ENABLE
-    default 2048
-
-config BT_A2DP_SOURCE_TASK_STACK_SIZE
-    int "A2DP source (audio stream encoding) task stack size"
-    depends on BT_A2DP_ENABLE
-    default 2048
-
 config BT_SPP_ENABLED
     bool "SPP"
     depends on BT_CLASSIC_ENABLED

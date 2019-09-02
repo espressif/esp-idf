@@ -41,11 +41,6 @@
 
 #include "stack/dyn_mem.h"    /* defines static and/or dynamic memory for components */
 
-
-/* OS Configuration from User config (eg: sdkconfig) */
-#define A2DP_SINK_TASK_STACK_SIZE   UC_A2DP_SINK_TASK_STACK_SIZE
-#define A2DP_SOURCE_TASK_STACK_SIZE UC_A2DP_SOURCE_TASK_STACK_SIZE
-
 /******************************************************************************
 **
 ** Classic BT features
