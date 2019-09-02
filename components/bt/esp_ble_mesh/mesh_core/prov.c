@@ -48,6 +48,9 @@
 #define INPUT_OOB_NUMBER       0x02
 #define INPUT_OOB_STRING       0x03
 
+#define PUB_KEY_NO_OOB         0x00
+#define PUB_KEY_OOB            0x01
+
 #define PROV_ERR_NONE          0x00
 #define PROV_ERR_NVAL_PDU      0x01
 #define PROV_ERR_NVAL_FMT      0x02
@@ -772,8 +775,8 @@ static void prov_start(const u8_t *data)
         return;
     }
 
-    if (data[1] > 0x01) {
-        BT_ERR("%s, Invalid public key value: 0x%02x", __func__, data[1]);
+    if (data[1] != prov->oob_pub_key) {
+        BT_ERR("%s, Invalid public key type: 0x%02x", __func__, data[1]);
         prov_send_fail_msg(PROV_ERR_NVAL_FMT);
         return;
     }
