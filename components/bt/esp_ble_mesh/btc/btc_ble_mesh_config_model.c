@@ -126,6 +126,16 @@ static void btc_ble_mesh_config_client_copy_req_data(btc_msg_t *msg, void *p_des
         return;
     }
 
+    if (p_src_data->params) {
+        p_dest_data->params = osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        if (!p_dest_data->params) {
+            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            return;
+        }
+
+        memcpy(p_dest_data->params, p_src_data->params, sizeof(esp_ble_mesh_client_common_param_t));
+    }
+
     switch (msg->act) {
     case ESP_BLE_MESH_CFG_CLIENT_GET_STATE_EVT:
     case ESP_BLE_MESH_CFG_CLIENT_SET_STATE_EVT:
@@ -211,14 +221,6 @@ static void btc_ble_mesh_config_client_copy_req_data(btc_msg_t *msg, void *p_des
             }
         }
     case ESP_BLE_MESH_CFG_CLIENT_TIMEOUT_EVT:
-        if (p_src_data->params) {
-            p_dest_data->params = osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-            if (p_dest_data->params) {
-                memcpy(p_dest_data->params, p_src_data->params, sizeof(esp_ble_mesh_client_common_param_t));
-            } else {
-                LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
-            }
-        }
         break;
     default:
         break;
