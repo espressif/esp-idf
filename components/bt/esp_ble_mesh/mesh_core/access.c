@@ -611,8 +611,6 @@ bool bt_mesh_fixed_group_match(u16_t addr)
     }
 }
 
-u32_t mesh_opcode;
-
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models, *model;
@@ -631,8 +629,6 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     }
 
     BT_DBG("OpCode 0x%08x", opcode);
-
-    mesh_opcode = opcode;
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
