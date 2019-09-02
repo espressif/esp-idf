@@ -50,8 +50,8 @@
 #if __has_include("nvs.h")
 #include "nvs.h"
 #endif
-#if __has_include("tcpip_adapter.h")
-#include "tcpip_adapter.h"
+#if __has_include("esp_netif.h")
+#include "esp_netif.h"
 #endif
 #if __has_include("ulp_common.h")
 #include "ulp_common.h"

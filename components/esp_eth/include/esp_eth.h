@@ -103,15 +103,6 @@ typedef struct {
     }
 
 /**
-* @brief Default esp-netif driver related configuration
-*
-*/
-#define ESP_NETIF_DRIVER_DEFAULT_ETH      _g_eth_driver_ifconfig
-
-struct esp_netif_driver_ifconfig;
-extern const struct esp_netif_driver_ifconfig *_g_eth_driver_ifconfig;
-
-/**
 * @brief Install Ethernet driver
 *
 * @param[in]  config: configuration of the Ethernet driver

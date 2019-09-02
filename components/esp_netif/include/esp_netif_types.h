@@ -202,6 +202,7 @@ typedef struct esp_netif_driver_ifconfig esp_netif_driver_ifconfig_t;
  */
 typedef enum esp_netif_netstack_type {
     ESP_NETIF_NETWORK_STACK_IS_LWIP = 0,
+    ESP_NETIF_NETWORK_STACK_IS_LOOPBACK = 1,
     ESP_NETIF_NETWORK_STACK_MAX,
 } esp_netif_netstack_type_t;
 

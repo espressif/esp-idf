@@ -4,11 +4,14 @@
 
 TEST_CASE("esp_netif: init and destroy", "[esp_netif][leaks=0]")
 {
-    esp_netif_config_t cfg = {};
+    esp_netif_inherent_config_t base = {};
+    const esp_netif_netstack_base_config_t stack = { .type = ESP_NETIF_NETWORK_STACK_IS_LWIP };
+    esp_netif_config_t cfg = { .base = &base, .stack = (const esp_netif_netstack_config_t*)&stack };
     esp_netif_t *esp_netif = esp_netif_new(NULL);
 
-    TEST_ASSERT_EQUAL(ESP_ERR_ESP_NETIF_INVALID_PARAMS, esp_netif_configure(esp_netif, NULL));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_configure(esp_netif, &cfg));
+    TEST_ASSERT_EQUAL(NULL, esp_netif);
+    esp_netif = esp_netif_new(&cfg);
+    TEST_ASSERT_NOT_EQUAL(NULL, esp_netif);
 
     esp_netif_destroy(esp_netif);
 }
@@ -41,8 +44,8 @@ TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]"
 
     // create 10 wifi stations
     for (int i=0; i<nr_of_netifs; ++i) {
-        netifs[i] = esp_netif_new(NULL);
-        TEST_ASSERT_EQUAL(ESP_OK, esp_netif_configure(netifs[i] , &cfg));
+        netifs[i] = esp_netif_new(&cfg);
+        TEST_ASSERT_NOT_NULL(netifs[i]);
     }
 
     // there's no AP within created stations

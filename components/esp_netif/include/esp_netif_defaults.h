@@ -26,7 +26,7 @@
     {                                            \
         .base = ESP_NETIF_BASE_DEFAULT_ETH,      \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH, \
-        .driver = ESP_NETIF_DRIVER_DEFAULT_ETH,  \
+        .driver = NULL,  \
     }
 
 /**

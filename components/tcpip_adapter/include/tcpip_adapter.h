@@ -15,51 +15,10 @@
 #ifndef _TCPIP_ADAPTER_H_
 #define _TCPIP_ADAPTER_H_
 
+#warning "This header is deprecated, please use new network related API in esp_netif.h"
+
 #include "esp_netif.h"
-#include "lwip/ip_addr.h"
-#include "dhcpserver/dhcpserver.h"
-
-
-//
-// Define compatible types if tcpip_adapter interface used
-//
-#define TCPIP_ADAPTER_DHCP_STARTED ESP_NETIF_DHCP_STARTED
-#define TCPIP_ADAPTER_DHCP_STOPPED ESP_NETIF_DHCP_STOPPED
-#define TCPIP_ADAPTER_DHCP_INIT    ESP_NETIF_DHCP_INIT
-#define TCPIP_ADAPTER_OP_SET       ESP_NETIF_OP_SET
-#define TCPIP_ADAPTER_OP_GET       ESP_NETIF_OP_GET
-#define TCPIP_ADAPTER_DOMAIN_NAME_SERVER             ESP_NETIF_DOMAIN_NAME_SERVER
-#define TCPIP_ADAPTER_ROUTER_SOLICITATION_ADDRESS    ESP_NETIF_ROUTER_SOLICITATION_ADDRESS
-#define TCPIP_ADAPTER_REQUESTED_IP_ADDRESS           ESP_NETIF_REQUESTED_IP_ADDRESS
-#define TCPIP_ADAPTER_IP_ADDRESS_LEASE_TIME          ESP_NETIF_IP_ADDRESS_LEASE_TIME
-#define TCPIP_ADAPTER_IP_REQUEST_RETRY_TIME          ESP_NETIF_IP_REQUEST_RETRY_TIME
-
-typedef enum {
-    TCPIP_ADAPTER_IF_STA = 0,     /**< Wi-Fi STA (station) interface */
-    TCPIP_ADAPTER_IF_AP,          /**< Wi-Fi soft-AP interface */
-    TCPIP_ADAPTER_IF_ETH,         /**< Ethernet interface */
-    TCPIP_ADAPTER_IF_TEST,        /**< tcpip stack test interface */
-    TCPIP_ADAPTER_IF_MAX
-} tcpip_adapter_if_t;
-
-/** @brief legacy ip_info type
- */
-typedef struct {
-    ip4_addr_t ip;      /**< Interface IPV4 address */
-    ip4_addr_t netmask; /**< Interface IPV4 netmask */
-    ip4_addr_t gw;      /**< Interface IPV4 gateway address */
-} tcpip_adapter_ip_info_t;
-
-/** @brief legacy typedefs
- */
-typedef esp_netif_dhcp_status_t tcpip_adapter_dhcp_status_t;
-typedef dhcps_lease_t tcpip_adapter_dhcps_lease_t;
-typedef esp_netif_dhcp_option_mode_t tcpip_adapter_dhcp_option_mode_t;
-typedef esp_netif_dhcp_option_id_t tcpip_adapter_dhcp_option_id_t;
-typedef esp_netif_dns_type_t tcpip_adapter_dns_type_t;
-typedef esp_netif_dns_info_t tcpip_adapter_dns_info_t;
-typedef esp_netif_sta_list_t tcpip_adapter_sta_list_t;
-typedef esp_netif_sta_info_t tcpip_adapter_sta_info_t;
+#include "tcpip_adapter_types.h"
 
 /**
  * @brief tcpip adapter legacy init. It is used only to set the compatibility mode of esp-netif, which
@@ -147,18 +106,64 @@ esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb);
  */
 esp_err_t tcpip_adapter_clear_default_wifi_handlers(void);
 
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcps_stop
+*/
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcpc_stop
+*/
 esp_err_t tcpip_adapter_dhcpc_stop(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcps_start
+*/
 esp_err_t tcpip_adapter_dhcps_start(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcpc_start
+*/
 esp_err_t tcpip_adapter_dhcpc_start(tcpip_adapter_if_t tcpip_if);
 
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcps_get_status
+*/
 esp_err_t tcpip_adapter_dhcps_get_status(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dhcp_status_t *status);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcps_option
+*/
 esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcpc_option
+*/
 esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_set_ip_info
+*/
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_get_dns_info
+*/
 esp_err_t tcpip_adapter_get_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dns_type_t type, tcpip_adapter_dns_info_t *dns);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_set_dns_info
+*/
 esp_err_t tcpip_adapter_set_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_dns_type_t type, tcpip_adapter_dns_info_t *dns);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_get_netif_impl_index
+*/
 int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_get_sta_list
+*/
 esp_err_t tcpip_adapter_get_sta_list(const wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list);
 
 #endif //_TCPIP_ADAPTER_H_

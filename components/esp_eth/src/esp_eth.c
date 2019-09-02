@@ -35,15 +35,6 @@ static const char *TAG = "esp_eth";
 
 ESP_EVENT_DEFINE_BASE(ETH_EVENT);
 
-// Default driver interface config, at the init moment doesn't include driver handle, as it is created
-// in starup phase, netif is updated in event handler on eth_start event with valid ethernet driver handle
-static const esp_netif_driver_ifconfig_t _s_eth_driver_ifconfig = {
-        .handle =  NULL,
-        .transmit = esp_eth_transmit,
-};
-
-const esp_netif_driver_ifconfig_t *_g_eth_driver_ifconfig = &_s_eth_driver_ifconfig;
-
 /**
  * @brief The Ethernet driver mainly consists of PHY, MAC and
  * the mediator who will handle the request/response from/to MAC, PHY and Users.
@@ -171,17 +162,16 @@ static esp_err_t esp_eth_driver_start(esp_netif_t * esp_netif, void * args)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = args;
     eth_driver->base.netif = esp_netif;
-    // Update esp-netif with already created ethernet handle
+
+    // Set driver related config to esp-netif
 
     esp_netif_driver_ifconfig_t driver_ifconfig = {
             .handle =  eth_driver,
             .transmit = esp_eth_transmit,
+            .driver_free_rx_buffer = NULL
     };
-    esp_netif_config_t cfg =  {
-            .driver = &driver_ifconfig,
 
-    };
-    ESP_ERROR_CHECK(esp_netif_configure(esp_netif, &cfg));
+    ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));
     uint8_t eth_mac[6];
     esp_eth_ioctl(eth_driver, ETH_CMD_G_MAC_ADDR, eth_mac);
     ESP_LOGI(TAG, "%x %x %x %x %x %x", eth_mac[0], eth_mac[1], eth_mac[2], eth_mac[3], eth_mac[4], eth_mac[5]);

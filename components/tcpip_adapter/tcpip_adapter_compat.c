@@ -13,12 +13,14 @@
 // limitations under the License.
 
 #include "esp_netif.h"
-#include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
 #include "esp_private/wifi.h"
 #include "esp_log.h"
 #include "esp_netif_net_stack.h"
-#include "tcpip_adapter.h"
+
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
+
 #include "esp_eth.h"
+#include "tcpip_adapter_types.h"
 
 extern void _esp_wifi_set_default_ap_netif(esp_netif_t* esp_netif);
 extern void _esp_wifi_set_default_sta_netif(esp_netif_t* esp_netif);
@@ -129,21 +131,16 @@ esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb)
 
 esp_err_t tcpip_adapter_start_eth(void* eth_driver)
 {
-#if CONFIG_ESP_NETIF_USE_TCPIP_ADAPTER_COMPATIBLE_LAYER
     if (s_tcpip_adapter_compat) {
         esp_netif_t *esp_netif = netif_from_if(TCPIP_ADAPTER_IF_ETH);
         esp_netif_attach(esp_netif, eth_driver);
     }
     return ESP_OK;
-#else
-    ESP_LOGE(TAG, "%s: tcpip adapter compatibility layer is disabled", __func__);
-    return ESP_ERR_INVALID_STATE;
-#endif
 }
 
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
 {
-#if CONFIG_ESP_NETIF_USE_TCPIP_ADAPTER_COMPATIBLE_LAYER
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     if (s_tcpip_adapter_compat) {
         // create instances and register default handlers only on start event
         esp_err_t err = esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_START, wifi_create_and_start_sta, NULL);
@@ -265,10 +262,19 @@ esp_err_t tcpip_adapter_set_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_
 
 int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if)
 {
-    return esp_netif_get_netif_index(netif_from_if(tcpip_if));
+    return esp_netif_get_netif_impl_index(netif_from_if(tcpip_if));
 }
 
 esp_err_t tcpip_adapter_get_sta_list(const wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list)
 {
     return esp_netif_get_sta_list(wifi_sta_list, tcpip_sta_list);
 }
+
+#else
+
+esp_err_t tcpip_adapter_start_eth(void* eth_driver)
+{
+    return ESP_OK;
+}
+
+#endif

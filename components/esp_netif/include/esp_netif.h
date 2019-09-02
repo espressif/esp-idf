@@ -67,20 +67,18 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config);
 void esp_netif_destroy(esp_netif_t *esp_netif);
 
 /**
- * @brief   Configures the esp_netif object
- *
- * Note: if some of the configuration parameter is null, the corresponding config
- * option is skipped. This enables calling this function multiple times to configure
- * different parts related to for example network stack or io driver separately
+ * @brief   Configures driver related options of esp_netif object
  *
  * @param[inout]  pointer to the object to be configured
- * @param[in]     esp_netif_config pointer esp-netif configuration
+ * @param[in]     driver_config pointer esp-netif io driver related configuration
  * @return
- *         - ESP_OK
+ *         - ESP_OK on success
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS if invalid parameters provided
  *
  */
-esp_err_t esp_netif_configure(esp_netif_t *esp_netif,
-                              const esp_netif_config_t *esp_netif_config);
+esp_err_t esp_netif_set_driver_config(esp_netif_t *esp_netif,
+                              const esp_netif_driver_ifconfig_t *driver_config);
+
 
 esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle driver_handle);
 
@@ -629,13 +627,16 @@ size_t esp_netif_get_nr_of_ifs(void);
  */
 esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif_sta_list_t *tcpip_sta_list);
 
-int esp_netif_get_netif_index(esp_netif_t *esp_netif);
-
-#if CONFIG_ESP_NETIF_USE_TCPIP_ADAPTER_COMPATIBLE_LAYER
-//
-// 8) Compatibility layer
-//
-#include "tcpip_adapter.h"
-#endif
+/**
+ * @brief  Get net interface index from network stack implementation
+ *
+ * @note This index could be used in `setsockopt()` to bind socket with multicast interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return
+ *         implementation specific index of interface represented with supplied esp_netif
+ */
+int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
 
 #endif /*  _ESP_NETIF_H_ */

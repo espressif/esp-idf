@@ -62,8 +62,8 @@ Overall application interaction with communication media and network stack
 * setters, getters
 * network stack abstraction: enabling user interaction with TCP/IP stack
   - netif up/down
-  - dhcp server, client
-  - dns api
+  - DHCP server, client
+  - DNS API
 * driver conversion utilities
 
 ###  D) Network stack: no public interaction with user code (wrtt interfaces)
@@ -73,7 +73,7 @@ Overall application interaction with communication media and network stack
 
 * `........`     Initialization line from user code to esp-netif and comm driver
 
-* `--<--->--`    Data packets going from communication media to tcpip stack and back
+* `--<--->--`    Data packets going from communication media to TCP/IP stack and back
 
 * `********`     Events agregated in ESP-NETIP propagates to driver, user code and network stack
 
