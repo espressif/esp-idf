@@ -784,13 +784,15 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
         return err;
     }
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
         bt_mesh_proxy_relay(&buf->b, dst)) {
         send_cb_finalize(cb, cb_data);
-    } else {
-        bt_mesh_adv_send(buf, cb, cb_data);
+        return 0;
+    }
     }
 
+    bt_mesh_adv_send(buf, cb, cb_data);
     return 0;
 }
 
