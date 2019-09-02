@@ -547,25 +547,6 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     return err;
 }
 
-int bt_mesh_trans_resend(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
-                         const struct bt_mesh_send_cb *cb, void *cb_data)
-{
-    struct net_buf_simple_state state;
-    int err;
-
-    net_buf_simple_save(msg, &state);
-
-    if (tx->ctx->send_rel || msg->len > 15) {
-        err = send_seg(tx, msg, cb, cb_data);
-    } else {
-        err = send_unseg(tx, msg, cb, cb_data);
-    }
-
-    net_buf_simple_restore(msg, &state);
-
-    return err;
-}
-
 static void update_rpl(struct bt_mesh_rpl *rpl, struct bt_mesh_net_rx *rx)
 {
     rpl->src = rx->ctx.addr;
