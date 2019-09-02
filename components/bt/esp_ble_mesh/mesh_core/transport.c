@@ -32,7 +32,7 @@
 #include "transport.h"
 #include "mesh_common.h"
 #include "client_common.h"
-#include "provisioner_main.h"
+#include "cfg_srv.h"
 
 /* The transport layer needs at least three buffers for itself to avoid
  * deadlocks. Ensure that there are a sufficient number of advertising
@@ -1574,4 +1574,53 @@ void bt_mesh_rpl_clear(void)
 {
     BT_DBG("%s", __func__);
     (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+}
+
+void bt_mesh_heartbeat_send(void)
+{
+    struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
+    u16_t feat = 0U;
+    struct __packed {
+        u8_t  init_ttl;
+        u16_t feat;
+    } hb;
+    struct bt_mesh_msg_ctx ctx = {
+        .net_idx = cfg->hb_pub.net_idx,
+        .app_idx = BLE_MESH_KEY_UNUSED,
+        .addr = cfg->hb_pub.dst,
+        .send_ttl = cfg->hb_pub.ttl,
+    };
+    struct bt_mesh_net_tx tx = {
+        .sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
+        .ctx = &ctx,
+        .src = bt_mesh_model_elem(cfg->model)->addr,
+        .xmit = bt_mesh_net_transmit_get(),
+    };
+
+    hb.init_ttl = cfg->hb_pub.ttl;
+
+    if (bt_mesh_relay_get() == BLE_MESH_RELAY_ENABLED) {
+        feat |= BLE_MESH_FEAT_RELAY;
+    }
+
+    if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
+        feat |= BLE_MESH_FEAT_PROXY;
+    }
+
+    if (bt_mesh_friend_get() == BLE_MESH_FRIEND_ENABLED) {
+        feat |= BLE_MESH_FEAT_FRIEND;
+    }
+
+#if defined(CONFIG_BLE_MESH_LOW_POWER)
+    if (bt_mesh.lpn.state != BLE_MESH_LPN_DISABLED) {
+        feat |= BLE_MESH_FEAT_LOW_POWER;
+    }
+#endif
+
+    hb.feat = sys_cpu_to_be16(feat);
+
+    BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
+
+    bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
+                NULL, NULL, NULL);
 }
