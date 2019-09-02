@@ -241,7 +241,7 @@ menu "mbedTLS"
 
         config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
             bool "Enable ECDHE-PSK based ciphersuite modes"
-            depends on MBEDTLS_PSK_MODES
+            depends on MBEDTLS_PSK_MODES && MBEDTLS_ECDH_C
             default y
             help
                 Enable to support Elliptic-Curve-Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
