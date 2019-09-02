@@ -99,6 +99,18 @@ Advanced Commands
 
 The order of multiple ``idf.py`` commands on the same invocation is not important, they will automatically be executed in the correct order for everything to take effect (ie building before flashing, erasing before flashing, etc.).
 
+idf.py options
+^^^^^^^^^^^^^^
+
+To list all available options, run ``idf.py --help``.
+
+- ``-C <dir>`` allows overriding the project directory from the default current working directory.
+- ``-B <dir>`` allows overriding the build directory from the default ``build`` subdirectory of the project directory.
+- ``--ccache`` flag can be used to enable CCache_ when compiling source files, if the CCache_ tool is installed. This can dramatically reduce some build times.
+
+Note that some older versions of CCache may exhibit bugs on some platforms, so if files are not rebuilt as expected then try disabling ccache and build again. CCache can be enabled by default by setting the ``IDF_ENABLE_CCACHE`` environment variable to a non-zero value.
+- ``-v`` flag causes both ``idf.py`` and the build system to produce verbose build output. This can be useful for debugging build problems.
+
 Using CMake Directly
 --------------------
 
@@ -1474,3 +1486,4 @@ Flashing from make
 .. _quirc: https://github.com/dlbeer/quirc
 .. _pyenv: https://github.com/pyenv/pyenv#README
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/
+.. _CCache: https://ccache.dev/
