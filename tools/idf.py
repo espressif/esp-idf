@@ -310,15 +310,6 @@ def build_target(target_name, ctx, args):
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
 
-    if args.ccache:
-        # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
-        # (this means ccache hits can be shared between different projects. It may mean that some debug information
-        # will point to files in another project, if these files are perfect duplicates of each other.)
-        #
-        # It would be nicer to set these from cmake, but there's no cross-platform way to set build-time environment
-        # os.environ["CCACHE_BASEDIR"] = args.build_dir
-        # os.environ["CCACHE_NO_HASHDIR"] = "1"
-        pass
     if args.verbose:
         generator_cmd += [GENERATOR_VERBOSE[args.generator]]
 
