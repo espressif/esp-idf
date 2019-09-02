@@ -22,7 +22,7 @@
 #include "mesh_access.h"
 #include "mesh_kernel.h"
 
-#include "model_common.h"
+#include "client_common.h"
 
 /* Time scene client model common structure */
 typedef bt_mesh_client_common_t bt_mesh_time_scene_client_t;
