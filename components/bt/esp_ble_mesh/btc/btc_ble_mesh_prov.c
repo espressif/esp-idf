@@ -266,8 +266,6 @@ static void btc_ble_mesh_model_free_req_data(btc_msg_t *msg)
     }
 }
 
-extern u32_t mesh_opcode;
-
 static void btc_ble_mesh_server_model_op_cb(struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
         struct net_buf_simple *buf)
@@ -276,7 +274,7 @@ static void btc_ble_mesh_server_model_op_cb(struct bt_mesh_model *model,
     btc_msg_t msg = {0};
     bt_status_t ret;
 
-    mesh_param.model_operation.opcode = mesh_opcode;
+    mesh_param.model_operation.opcode = ctx->recv_op;
     mesh_param.model_operation.model = (esp_ble_mesh_model_t *)model;
     mesh_param.model_operation.ctx = (esp_ble_mesh_msg_ctx_t *)ctx;
     mesh_param.model_operation.length = buf->len;
@@ -320,14 +318,14 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, false);
     if (node == NULL) {
         msg.act = ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT;
-        mesh_param.client_recv_publish_msg.opcode = mesh_opcode;
+        mesh_param.client_recv_publish_msg.opcode = ctx->recv_op;
         mesh_param.client_recv_publish_msg.model = (esp_ble_mesh_model_t *)model;
         mesh_param.client_recv_publish_msg.ctx = (esp_ble_mesh_msg_ctx_t *)ctx;
         mesh_param.client_recv_publish_msg.length = buf->len;
         mesh_param.client_recv_publish_msg.msg = buf->data;
     } else {
         msg.act = ESP_BLE_MESH_MODEL_OPERATION_EVT;
-        mesh_param.model_operation.opcode = mesh_opcode;
+        mesh_param.model_operation.opcode = ctx->recv_op;
         mesh_param.model_operation.model = (esp_ble_mesh_model_t *)model;
         mesh_param.model_operation.ctx = (esp_ble_mesh_msg_ctx_t *)ctx;
         mesh_param.model_operation.length = buf->len;
