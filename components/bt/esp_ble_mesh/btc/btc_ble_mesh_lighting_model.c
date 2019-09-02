@@ -302,7 +302,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
-            return;
+            break;
         }
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
@@ -328,7 +328,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
-            return;
+            break;
         }
         common.opcode = params->opcode;
         common.model = (struct bt_mesh_model *)params->model;
