@@ -215,7 +215,7 @@ const OI_INT32 dec_window_4[21] = {
  * @return  A signed 32-bit value corresponding to the 32 most significant bits
  * of the 48-bit product of u and v.
  */
-INLINE OI_INT32 default_mul_16s_32s_hi(OI_INT16 u, OI_INT32 v)
+static INLINE OI_INT32 default_mul_16s_32s_hi(OI_INT16 u, OI_INT32 v)
 {
     OI_UINT16 v0;
     OI_INT16 v1;
