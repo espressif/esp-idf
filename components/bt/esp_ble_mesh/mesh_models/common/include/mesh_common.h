@@ -56,6 +56,6 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
  *
  * @return 0 - Node, 1 - Provisioner
  */
-u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send);
+u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
 
 #endif /* _MESH_COMMON_H_ */

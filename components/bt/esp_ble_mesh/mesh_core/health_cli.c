@@ -95,7 +95,7 @@ static void health_client_cancel(struct bt_mesh_model *model,
     /* If it is a publish message, sent to the user directly. */
     buf.data = (u8_t *)status;
     buf.len  = (u16_t)len;
-    node = bt_mesh_is_model_message_publish(model, ctx, &buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, &buf, true);
     if (!node) {
         BT_DBG("Unexpected health status message 0x%x", ctx->recv_op);
     } else {
@@ -169,7 +169,7 @@ static void health_current_status(struct bt_mesh_model *model,
            bt_hex(buf->data, buf->len));
 
     /* Health current status is a publish message, sent to the user directly. */
-    if (!(node = bt_mesh_is_model_message_publish(model, ctx, buf, true))) {
+    if (!(node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true))) {
         return;
     }
 
