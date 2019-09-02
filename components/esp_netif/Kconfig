@@ -15,20 +15,26 @@ menu "ESP NETIF Adapter"
 
     choice ESP_NETIF_USE_TCPIP_STACK_LIB
         prompt "TCP/IP Stack Library"
-        default TCPIP_LWIP
+        default ESP_NETIF_TCPIP_LWIP
         help
             Choose the TCP/IP Stack to work, for example, LwIP, uIP, etc.
-        config TCPIP_LWIP
+        config ESP_NETIF_TCPIP_LWIP
             bool "LwIP"
             help
                 lwIP is a small independent implementation of the TCP/IP protocol suite.
+
+        config ESP_NETIF_LOOPBACK
+            bool "Loopback"
+            help
+                Dummy implementation of esp-netif functionality which connects driver transmit
+                to receive function. This option is for testing purpose only
     endchoice
 
-    config ESP_NETIF_USE_TCPIP_ADAPTER_COMPATIBLE_LAYER
+    config ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
         bool "Enable backward compatible tcpip_adapter interface"
         default y
         help
             Backward compatible interface to tcpip_adapter is enabled by default to support
-            legacy tcpip stack initialisation code. Disable this option to use only esp-netif
+            legacy TCP/IP stack initialisation code. Disable this option to use only esp-netif
             interface.
 endmenu

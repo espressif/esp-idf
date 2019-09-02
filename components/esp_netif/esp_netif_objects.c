@@ -23,8 +23,6 @@
 
 static const char *TAG = "esp_netif_objects";
 
-//#define ESP_NETIF_TYPE_DEFINE(id) const esp_netif_type_t id = #id
-
 typedef struct slist_netifs_s slist_netifs_t;
 struct slist_netifs_s {
     esp_netif_t *netif;
@@ -36,10 +34,6 @@ SLIST_HEAD(slisthead, slist_netifs_s) s_head = { .slh_first = NULL, };
 static size_t s_esp_netif_counter = 0;
 
 ESP_EVENT_DEFINE_BASE(IP_EVENT);
-
-//ESP_NETIF_TYPE_DEFINE(ESP_NETIF_TYPE_STA);
-//ESP_NETIF_TYPE_DEFINE(ESP_NETIF_TYPE_AP);
-//ESP_NETIF_TYPE_DEFINE(ESP_NETIF_TYPE_ETH);
 
 
 //

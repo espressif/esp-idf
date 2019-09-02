@@ -110,7 +110,9 @@ esp_err_t esp_wifi_deinit(void)
         ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
     }
 
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     tcpip_adapter_clear_default_wifi_handlers();
+#endif
 
     return err;
 }
@@ -126,7 +128,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         }
     }
 #endif
-#if CONFIG_ESP_NETIF_USE_TCPIP_ADAPTER_COMPATIBLE_LAYER
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     esp_err_t err = tcpip_adapter_set_default_wifi_handlers();
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);

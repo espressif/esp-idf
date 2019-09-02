@@ -212,7 +212,7 @@ static int create_multicast_ipv6_socket(void)
 #endif // LISTEN_ALL_IF
 
     // search for netif index
-    netif_index = esp_netif_get_netif_index(EXAMPLE_INTERFACE);
+    netif_index = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
     if(netif_index < 0) {
         ESP_LOGE(V6TAG, "Failed to get netif index");
         goto err;

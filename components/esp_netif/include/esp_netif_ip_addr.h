@@ -24,6 +24,12 @@
                       (((x) & (uint32_t)0x00ff0000UL) >>  8) | \
                       (((x) & (uint32_t)0xff000000UL) >> 24))
 #endif
+
+#define esp_netif_ip4_makeu32(a,b,c,d) (((uint32_t)((a) & 0xff) << 24) | \
+                               ((uint32_t)((b) & 0xff) << 16) | \
+                               ((uint32_t)((c) & 0xff) << 8)  | \
+                                (uint32_t)((d) & 0xff))
+
 // Access address in 16-bit block
 #define ESP_IP6_ADDR_BLOCK1(ip6addr) ((uint16_t)((esp_netif_htonl((ip6addr)->addr[0]) >> 16) & 0xffff))
 #define ESP_IP6_ADDR_BLOCK2(ip6addr) ((uint16_t)((esp_netif_htonl((ip6addr)->addr[0])) & 0xffff))
@@ -62,6 +68,10 @@
     ESP_IP6_ADDR_BLOCK6(&(ipaddr)),     \
     ESP_IP6_ADDR_BLOCK7(&(ipaddr)),     \
     ESP_IP6_ADDR_BLOCK8(&(ipaddr))
+
+#define ESP_IPADDR_TYPE_V4                0U
+#define ESP_IPADDR_TYPE_V6                6U
+#define ESP_IPADDR_TYPE_ANY               46U
 
 
 struct esp_ip6_addr {

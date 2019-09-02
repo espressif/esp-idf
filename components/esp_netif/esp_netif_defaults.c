@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "esp_netif.h"
-#include "esp_event.h"
 #include "esp_wifi_default.h"
 #include "esp_eth.h"
 
@@ -44,8 +43,8 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config = {
 };
 
 static const esp_netif_ip_info_t soft_ap_ip = {
-        .ip = { .addr = IP4TOADDR( 192, 168, 8, 1) },
-        .gw = { .addr = IP4TOADDR( 192, 168, 8, 1) },
+        .ip = { .addr = IP4TOADDR( 192, 168, 4, 1) },
+        .gw = { .addr = IP4TOADDR( 192, 168, 4, 1) },
         .netmask = { .addr = IP4TOADDR( 255, 255, 255, 0) },
 
 };
