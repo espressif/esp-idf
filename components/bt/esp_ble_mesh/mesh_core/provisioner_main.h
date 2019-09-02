@@ -55,7 +55,7 @@ struct bt_mesh_subnet *provisioner_subnet_get(u16_t net_idx);
 
 bool provisioner_check_msg_dst_addr(u16_t dst_addr);
 
-const u8_t *provisioner_get_device_key(u16_t dst_addr);
+const u8_t *provisioner_dev_key_get(u16_t dst_addr);
 
 struct bt_mesh_app_key *provisioner_app_key_find(u16_t app_idx);
 
@@ -105,11 +105,11 @@ int bt_mesh_provisioner_print_local_element_info(void);
 
 /* The following APIs are for fast provisioning */
 
-const u8_t *get_fast_prov_device_key(u16_t dst_addr);
+const u8_t *fast_prov_dev_key_get(u16_t dst_addr);
 
-struct bt_mesh_subnet *get_fast_prov_subnet(u16_t net_idx);
+struct bt_mesh_subnet *fast_prov_subnet_get(u16_t net_idx);
 
-struct bt_mesh_app_key *get_fast_prov_app_key(u16_t net_idx, u16_t app_idx);
+struct bt_mesh_app_key *fast_prov_app_key_find(u16_t net_idx, u16_t app_idx);
 
 u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx);
 

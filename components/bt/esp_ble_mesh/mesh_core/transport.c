@@ -481,36 +481,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     }
 
     if (tx->ctx->app_idx == BLE_MESH_KEY_DEV) {
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-        if (role == NODE) {
-            if (!bt_mesh_is_provisioner_en()) {
-                key = bt_mesh.dev_key;
-            }
-        }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (role == PROVISIONER) {
-            if (bt_mesh_is_provisioner_en()) {
-                key = provisioner_get_device_key(tx->ctx->addr);
-            }
-        }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (role == NODE) {
-            key = bt_mesh.dev_key;
-        } else if (role == PROVISIONER) {
-            if (bt_mesh_is_provisioner_en()) {
-                key = provisioner_get_device_key(tx->ctx->addr);
-            }
-        } else if (role == FAST_PROV) {
-#if CONFIG_BLE_MESH_FAST_PROV
-            key = get_fast_prov_device_key(tx->ctx->addr);
-#endif
-        }
-#endif
-
+        key = bt_mesh_tx_devkey_get(role, tx->ctx->addr);
         if (!key) {
             BT_ERR("%s, Failed to get Device Key", __func__);
             return -EINVAL;
@@ -520,36 +491,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     } else {
         struct bt_mesh_app_key *app_key = NULL;
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-        if (role == NODE) {
-            if (!bt_mesh_is_provisioner_en()) {
-                app_key = bt_mesh_app_key_find(tx->ctx->app_idx);
-            }
-        }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (role == PROVISIONER) {
-            if (bt_mesh_is_provisioner_en()) {
-                app_key = provisioner_app_key_find(tx->ctx->app_idx);
-            }
-        }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (role == NODE) {
-            app_key = bt_mesh_app_key_find(tx->ctx->app_idx);
-        } else if (role == PROVISIONER) {
-            if (bt_mesh_is_provisioner_en()) {
-                app_key = provisioner_app_key_find(tx->ctx->app_idx);
-            }
-        } else if (role == FAST_PROV) {
-#if CONFIG_BLE_MESH_FAST_PROV
-            app_key = get_fast_prov_app_key(tx->ctx->net_idx, tx->ctx->app_idx);
-#endif
-        }
-#endif
-
+        app_key = bt_mesh_tx_appkey_get(role, tx->ctx->app_idx, tx->ctx->net_idx);
         if (!app_key) {
             BT_ERR("%s, Failed to get AppKey", __func__);
             return -EINVAL;
@@ -677,7 +619,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
                     u8_t aszmic, struct net_buf_simple *buf)
 {
     struct net_buf_simple *sdu = NULL;
-    u32_t array_size = 0;
+    size_t array_size = 0;
     u8_t *ad;
     u16_t i;
     int err;
@@ -715,48 +657,12 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
     }
 
     if (!AKF(&hdr)) {
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-        if (!bt_mesh_is_provisioner_en()) {
-            array_size = 1;
-        }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (bt_mesh_is_provisioner_en()) {
-            array_size = 1;
-        }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        array_size = 1;
-        if (bt_mesh_is_provisioner_en()) {
-            array_size += 1;
-        }
-#endif
+        array_size = bt_mesh_rx_devkey_size();
 
         for (i = 0; i < array_size; i++) {
             const u8_t *dev_key = NULL;
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-            if (!bt_mesh_is_provisioner_en()) {
-                dev_key = bt_mesh.dev_key;
-            }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-            if (bt_mesh_is_provisioner_en()) {
-                dev_key = provisioner_get_device_key(rx->ctx.addr);
-            }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-            if (i < 1) {
-                dev_key = bt_mesh.dev_key;
-            } else {
-                dev_key = provisioner_get_device_key(rx->ctx.addr);
-            }
-#endif
-
+            dev_key = bt_mesh_rx_devkey_get(i, rx->ctx.addr);
             if (!dev_key) {
                 BT_DBG("%s, NULL Device Key", __func__);
                 continue;
@@ -783,49 +689,13 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
         return -ENODEV;
     }
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-    if (!bt_mesh_is_provisioner_en()) {
-        array_size = ARRAY_SIZE(bt_mesh.app_keys);
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (bt_mesh_is_provisioner_en()) {
-        array_size = ARRAY_SIZE(bt_mesh.p_app_keys);
-    }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    array_size = ARRAY_SIZE(bt_mesh.app_keys);
-    if (bt_mesh_is_provisioner_en()) {
-        array_size += ARRAY_SIZE(bt_mesh.p_app_keys);
-    }
-#endif
+    array_size = bt_mesh_rx_appkey_size();
 
     for (i = 0; i < array_size; i++) {
-        struct bt_mesh_app_key  *key  = NULL;
         struct bt_mesh_app_keys *keys = NULL;
+        struct bt_mesh_app_key *key = NULL;
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-        if (!bt_mesh_is_provisioner_en()) {
-            key = &bt_mesh.app_keys[i];
-        }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (bt_mesh_is_provisioner_en()) {
-            key = bt_mesh.p_app_keys[i];
-        }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (i < ARRAY_SIZE(bt_mesh.app_keys)) {
-            key = &bt_mesh.app_keys[i];
-        } else {
-            key = bt_mesh.p_app_keys[i - ARRAY_SIZE(bt_mesh.app_keys)];
-        }
-#endif
-
+        key = bt_mesh_rx_appkey_get(i);
         if (!key) {
             BT_DBG("%s, NULL AppKey", __func__);
             continue;
