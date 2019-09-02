@@ -31,7 +31,7 @@
 #include "settings.h"
 #include "transport.h"
 #include "mesh_common.h"
-#include "model_common.h"
+#include "client_common.h"
 #include "provisioner_main.h"
 
 /* The transport layer needs at least three buffers for itself to avoid

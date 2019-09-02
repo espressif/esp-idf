@@ -13,7 +13,7 @@
 
 #include "mesh_access.h"
 #include "mesh_kernel.h"
-#include "model_common.h"
+#include "client_common.h"
 
 /**
  * @brief Bluetooth Mesh
