@@ -57,4 +57,22 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
 
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp);
 
+struct bt_mesh_subnet *bt_mesh_tx_netkey_get(u8_t role, u16_t net_idx);
+
+const u8_t *bt_mesh_tx_devkey_get(u8_t role, u16_t dst);
+
+struct bt_mesh_app_key *bt_mesh_tx_appkey_get(u8_t role, u16_t app_idx, u16_t net_idx);
+
+size_t bt_mesh_rx_netkey_size(void);
+
+struct bt_mesh_subnet *bt_mesh_rx_netkey_get(size_t index);
+
+size_t bt_mesh_rx_devkey_size(void);
+
+const u8_t *bt_mesh_rx_devkey_get(size_t index, u16_t src);
+
+size_t bt_mesh_rx_appkey_size(void);
+
+struct bt_mesh_app_key *bt_mesh_rx_appkey_get(size_t index);
+
 #endif /* _ACCESS_H_ */

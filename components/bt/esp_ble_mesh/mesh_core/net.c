@@ -1078,56 +1078,15 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
                                  struct net_buf_simple *buf)
 {
     struct bt_mesh_subnet *sub = NULL;
-    u32_t array_size = 0;
+    size_t array_size = 0;
     int i;
 
     BT_DBG("%s", __func__);
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-    if (!bt_mesh_is_provisioner_en()) {
-        array_size = ARRAY_SIZE(bt_mesh.sub);
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (bt_mesh_is_provisioner_en()) {
-        array_size = ARRAY_SIZE(bt_mesh.p_sub);
-    }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    array_size = ARRAY_SIZE(bt_mesh.sub);
-    if (bt_mesh_is_provisioner_en()) {
-        array_size += ARRAY_SIZE(bt_mesh.p_sub);
-    }
-#endif
-
-    if (!array_size) {
-        BT_ERR("%s, Unable to get subnet size", __func__);
-        return false;
-    }
+    array_size = bt_mesh_rx_netkey_size();
 
     for (i = 0; i < array_size; i++) {
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-        if (!bt_mesh_is_provisioner_en()) {
-            sub = &bt_mesh.sub[i];
-        }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (bt_mesh_is_provisioner_en()) {
-            sub = bt_mesh.p_sub[i];
-        }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (i < ARRAY_SIZE(bt_mesh.sub)) {
-            sub = &bt_mesh.sub[i];
-        } else {
-            sub = bt_mesh.p_sub[i - ARRAY_SIZE(bt_mesh.sub)];
-        }
-#endif
-
+        sub = bt_mesh_rx_netkey_get(i);
         if (!sub) {
             BT_DBG("%s, NULL subnet", __func__);
             continue;
@@ -1373,6 +1332,29 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
     return 0;
 }
 
+static bool ready_to_recv(void)
+{
+#if CONFIG_BLE_MESH_NODE
+    if (!bt_mesh_is_provisioner_en()) {
+        if (!bt_mesh_is_provisioned()) {
+            return false;
+        }
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (!bt_mesh_is_provisioner_en()) {
+        BT_WARN("%s, Provisioner is disabled", __func__);
+        return false;
+    }
+    if (!provisioner_get_prov_node_count()) {
+        return false;
+    }
+#endif
+
+    return true;
+}
+
 void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
                       enum bt_mesh_net_if net_if)
 {
@@ -1382,23 +1364,9 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 
     BT_DBG("rssi %d net_if %u", rssi, net_if);
 
-#if CONFIG_BLE_MESH_NODE
-    if (!bt_mesh_is_provisioner_en()) {
-        if (!bt_mesh_is_provisioned()) {
-            return;
-        }
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (!bt_mesh_is_provisioner_en()) {
-        BT_WARN("%s, Provisioner is disabled", __func__);
+    if (!ready_to_recv()) {
         return;
     }
-    if (!provisioner_get_prov_node_count()) {
-        return;
-    }
-#endif
 
     if (bt_mesh_net_decode(data, net_if, &rx, &buf)) {
         return;
