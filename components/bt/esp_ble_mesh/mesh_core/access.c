@@ -740,7 +740,7 @@ static int model_send(struct bt_mesh_model *model,
            tx->ctx->app_idx, tx->ctx->addr);
     BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
-    role = bt_mesh_get_model_role(model, tx->ctx->srv_send);
+    role = bt_mesh_get_device_role(model, tx->ctx->srv_send);
     if (role == ROLE_NVAL) {
         BT_ERR("%s, Failed to get model role", __func__);
         return -EINVAL;
@@ -819,7 +819,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
     struct bt_mesh_subnet *sub = NULL;
     u8_t role;
 
-    role = bt_mesh_get_model_role(model, ctx->srv_send);
+    role = bt_mesh_get_device_role(model, ctx->srv_send);
     if (role == ROLE_NVAL) {
         BT_ERR("%s, Failed to get model role", __func__);
         return -EINVAL;

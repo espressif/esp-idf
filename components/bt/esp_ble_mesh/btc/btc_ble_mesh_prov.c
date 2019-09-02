@@ -299,8 +299,8 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
         struct net_buf_simple *buf)
 {
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
-    bt_mesh_client_common_t *client_param = NULL;
-    bt_mesh_internal_data_t *data = NULL;
+    bt_mesh_client_user_data_t *client_param = NULL;
+    bt_mesh_client_internal_data_t *data = NULL;
     bt_mesh_client_node_t *node = NULL;
     btc_msg_t msg = {0};
     bt_status_t ret;
@@ -310,14 +310,14 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
         return;
     }
 
-    client_param = (bt_mesh_client_common_t *)model->user_data;
-    data = (bt_mesh_internal_data_t *)client_param->internal_data;
+    client_param = (bt_mesh_client_user_data_t *)model->user_data;
+    data = (bt_mesh_client_internal_data_t *)client_param->internal_data;
     if (!data) {
         LOG_ERROR("%s, Client internal_data is NULL", __func__);
         return;
     }
 
-    node = bt_mesh_is_model_message_publish(model, ctx, buf, false);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, false);
     if (node == NULL) {
         msg.act = ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT;
         mesh_param.client_recv_publish_msg.opcode = mesh_opcode;
@@ -594,8 +594,8 @@ static void btc_prov_register_complete_cb(int err_code)
 static void btc_client_model_timeout_cb(struct k_work *work)
 {
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
-    bt_mesh_client_common_t *client_param = NULL;
-    bt_mesh_internal_data_t *data = NULL;
+    bt_mesh_client_user_data_t *client_param = NULL;
+    bt_mesh_client_internal_data_t *data = NULL;
     bt_mesh_client_node_t *node = NULL;
     btc_msg_t msg = {0};
     bt_status_t ret;
@@ -606,8 +606,8 @@ static void btc_client_model_timeout_cb(struct k_work *work)
         return;
     }
 
-    client_param = (bt_mesh_client_common_t *)node->ctx.model->user_data;
-    data = (bt_mesh_internal_data_t *)client_param->internal_data;
+    client_param = (bt_mesh_client_user_data_t *)node->ctx.model->user_data;
+    data = (bt_mesh_client_internal_data_t *)client_param->internal_data;
     if (!data) {
         LOG_ERROR("%s, Client internal_data is NULL", __func__);
         return;
@@ -986,7 +986,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_ONOFF_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_onoff_cli_op);
-        bt_mesh_gen_onoff_cli_t *cli = (bt_mesh_gen_onoff_cli_t *)model->user_data;
+        bt_mesh_gen_onoff_client_t *cli = (bt_mesh_gen_onoff_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -994,7 +994,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_LEVEL_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_level_cli_op);
-        bt_mesh_gen_level_cli_t *cli = (bt_mesh_gen_level_cli_t *)model->user_data;
+        bt_mesh_gen_level_client_t *cli = (bt_mesh_gen_level_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1002,7 +1002,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_def_trans_time_cli_op);
-        bt_mesh_gen_def_trans_time_cli_t *cli = (bt_mesh_gen_def_trans_time_cli_t *)model->user_data;
+        bt_mesh_gen_def_trans_time_client_t *cli = (bt_mesh_gen_def_trans_time_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1010,7 +1010,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_power_onoff_cli_op);
-        bt_mesh_gen_power_onoff_cli_t *cli = (bt_mesh_gen_power_onoff_cli_t *)model->user_data;
+        bt_mesh_gen_power_onoff_client_t *cli = (bt_mesh_gen_power_onoff_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1018,7 +1018,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_power_level_cli_op);
-        bt_mesh_gen_power_level_cli_t *cli = (bt_mesh_gen_power_level_cli_t *)model->user_data;
+        bt_mesh_gen_power_level_client_t *cli = (bt_mesh_gen_power_level_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1026,7 +1026,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_BATTERY_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_battery_cli_op);
-        bt_mesh_gen_battery_cli_t *cli = (bt_mesh_gen_battery_cli_t *)model->user_data;
+        bt_mesh_gen_battery_client_t *cli = (bt_mesh_gen_battery_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1034,7 +1034,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_LOCATION_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_location_cli_op);
-        bt_mesh_gen_location_cli_t *cli = (bt_mesh_gen_location_cli_t *)model->user_data;
+        bt_mesh_gen_location_client_t *cli = (bt_mesh_gen_location_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1042,7 +1042,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_GEN_PROP_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)gen_property_cli_op);
-        bt_mesh_gen_property_cli_t *cli = (bt_mesh_gen_property_cli_t *)model->user_data;
+        bt_mesh_gen_property_client_t *cli = (bt_mesh_gen_property_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_generic_client_publish_callback;
         }
@@ -1050,7 +1050,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)light_lightness_cli_op);
-        bt_mesh_light_lightness_cli_t *cli = (bt_mesh_light_lightness_cli_t *)model->user_data;
+        bt_mesh_light_lightness_client_t *cli = (bt_mesh_light_lightness_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_light_client_publish_callback;
         }
@@ -1058,7 +1058,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_LIGHT_CTL_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)light_ctl_cli_op);
-        bt_mesh_light_ctl_cli_t *cli = (bt_mesh_light_ctl_cli_t *)model->user_data;
+        bt_mesh_light_ctl_client_t *cli = (bt_mesh_light_ctl_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_light_client_publish_callback;
         }
@@ -1066,7 +1066,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_LIGHT_HSL_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)light_hsl_cli_op);
-        bt_mesh_light_hsl_cli_t *cli = (bt_mesh_light_hsl_cli_t *)model->user_data;
+        bt_mesh_light_hsl_client_t *cli = (bt_mesh_light_hsl_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_light_client_publish_callback;
         }
@@ -1074,7 +1074,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_LIGHT_XYL_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)light_xyl_cli_op);
-        bt_mesh_light_xyl_cli_t *cli = (bt_mesh_light_xyl_cli_t *)model->user_data;
+        bt_mesh_light_xyl_client_t *cli = (bt_mesh_light_xyl_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_light_client_publish_callback;
         }
@@ -1082,7 +1082,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_LIGHT_LC_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)light_lc_cli_op);
-        bt_mesh_light_lc_cli_t *cli = (bt_mesh_light_lc_cli_t *)model->user_data;
+        bt_mesh_light_lc_client_t *cli = (bt_mesh_light_lc_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_light_client_publish_callback;
         }
@@ -1098,7 +1098,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_TIME_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)time_cli_op);
-        bt_mesh_time_scene_client_t *cli = (bt_mesh_time_scene_client_t *)model->user_data;
+        bt_mesh_time_client_t *cli = (bt_mesh_time_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_time_scene_client_publish_callback;
         }
@@ -1106,7 +1106,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_SCENE_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)scene_cli_op);
-        bt_mesh_time_scene_client_t *cli = (bt_mesh_time_scene_client_t *)model->user_data;
+        bt_mesh_scene_client_t *cli = (bt_mesh_scene_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_time_scene_client_publish_callback;
         }
@@ -1114,7 +1114,7 @@ static void btc_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_SCHEDULER_CLI: {
         model->op = ((esp_ble_mesh_model_op_t *)scheduler_cli_op);
-        bt_mesh_time_scene_client_t *cli = (bt_mesh_time_scene_client_t *)model->user_data;
+        bt_mesh_scheduler_client_t *cli = (bt_mesh_scheduler_client_t *)model->user_data;
         if (cli != NULL) {
             cli->publish_status = btc_mesh_time_scene_client_publish_callback;
         }
@@ -1429,7 +1429,7 @@ void btc_mesh_model_call_handler(btc_msg_t *msg)
             bt_mesh_role_param_t common = {0};
             common.model = (struct bt_mesh_model *)(arg->model_publish.model);
             common.role  = arg->model_publish.device_role;
-            if (bt_mesh_set_model_role(&common)) {
+            if (bt_mesh_set_client_model_role(&common)) {
                 LOG_ERROR("%s, Failed to set model role", __func__);
                 return;
             }
@@ -1467,7 +1467,7 @@ void btc_mesh_model_call_handler(btc_msg_t *msg)
         arg->model_send.ctx->srv_send = false;
         common.model = (struct bt_mesh_model *)(arg->model_send.model);
         common.role  = arg->model_send.device_role;
-        if (bt_mesh_set_model_role(&common)) {
+        if (bt_mesh_set_client_model_role(&common)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
             return;
         }

@@ -46,9 +46,9 @@ void bt_mesh_free_buf(struct net_buf_simple *buf)
     }
 }
 
-u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send)
+u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
 {
-    bt_mesh_client_common_t *client = NULL;
+    bt_mesh_client_user_data_t *client = NULL;
 
     if (srv_send) {
         BT_DBG("%s, Message is sent by a server model", __func__);
@@ -60,7 +60,7 @@ u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send)
         return ROLE_NVAL;
     }
 
-    client = (bt_mesh_client_common_t *)model->user_data;
+    client = (bt_mesh_client_user_data_t *)model->user_data;
 
     return client->msg_role;
 }
