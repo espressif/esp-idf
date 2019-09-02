@@ -688,7 +688,7 @@ static void clear_procedure_start(struct bt_mesh_friend *frnd)
 {
     BT_DBG("LPN 0x%04x (old) Friend 0x%04x", frnd->lpn, frnd->clear.frnd);
 
-    frnd->clear.start = k_uptime_get_32() + (2 * frnd->poll_to);
+    frnd->clear.start = k_uptime_get_32();
     frnd->clear.repeat_sec = 1U;
 
     send_friend_clear(frnd);
