@@ -3121,15 +3121,10 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
     net_buf_simple_add_u8(&msg, status);
     net_buf_simple_add_le16(&msg, cfg->hb_sub.src);
     net_buf_simple_add_le16(&msg, cfg->hb_sub.dst);
-    if (cfg->hb_sub.src == BLE_MESH_ADDR_UNASSIGNED ||
-            cfg->hb_sub.dst == BLE_MESH_ADDR_UNASSIGNED) {
-        memset(net_buf_simple_add(&msg, 4), 0, 4);
-    } else {
-        net_buf_simple_add_u8(&msg, hb_log(period));
-        net_buf_simple_add_u8(&msg, hb_log(cfg->hb_sub.count));
-        net_buf_simple_add_u8(&msg, cfg->hb_sub.min_hops);
-        net_buf_simple_add_u8(&msg, cfg->hb_sub.max_hops);
-    }
+    net_buf_simple_add_u8(&msg, hb_log(period));
+    net_buf_simple_add_u8(&msg, hb_log(cfg->hb_sub.count));
+    net_buf_simple_add_u8(&msg, cfg->hb_sub.min_hops);
+    net_buf_simple_add_u8(&msg, cfg->hb_sub.max_hops);
 
     if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
         BT_ERR("%s, Unable to send Config Heartbeat Subscription Status", __func__);
@@ -3188,9 +3183,13 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
          * trigger clearing of the values according to
          * MESH/NODE/CFG/HBS/BV-02-C.
          */
-        if (cfg->hb_sub.src != sub_src || cfg->hb_sub.dst != sub_dst) {
+        if (sub_src == BLE_MESH_ADDR_UNASSIGNED ||
+            sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
             cfg->hb_sub.src = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.dst = BLE_MESH_ADDR_UNASSIGNED;
+            cfg->hb_sub.min_hops = BLE_MESH_TTL_MAX;
+            cfg->hb_sub.max_hops = 0U;
+            cfg->hb_sub.count = 0U;
         }
 
         period_ms = 0;
