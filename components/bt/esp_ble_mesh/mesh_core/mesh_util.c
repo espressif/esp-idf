@@ -17,19 +17,11 @@
 const char *bt_hex(const void *buf, size_t len)
 {
     static const char hex[] = "0123456789abcdef";
-    static char hexbufs[4][129];
-    static u8_t curbuf;
+    static char str[129];
     const u8_t *b = buf;
-    unsigned int mask;
-    char *str;
     int i;
 
-    mask = bt_mesh_irq_lock();
-    str = hexbufs[curbuf++];
-    curbuf %= ARRAY_SIZE(hexbufs);
-    bt_mesh_irq_unlock(mask);
-
-    len = MIN(len, (sizeof(hexbufs[0]) - 1) / 2);
+    len = MIN(len, (sizeof(str) - 1) / 2);
 
     for (i = 0; i < len; i++) {
         str[i * 2]     = hex[b[i] >> 4];
