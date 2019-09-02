@@ -722,6 +722,16 @@ u32_t bt_mesh_next_seq(void)
         bt_mesh_store_seq();
     }
 
+    if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) &&
+        bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
+        bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY)) {
+#if CONFIG_BLE_MESH_NODE
+        bt_mesh_beacon_ivu_initiator(true);
+#endif
+        bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
+        bt_mesh_net_sec_update(NULL);
+    }
+
     return seq;
 }
 
@@ -778,15 +788,6 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
         net_buf_unref(buf);
     } else {
         bt_mesh_adv_send(buf, cb, cb_data);
-    }
-
-    if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) &&
-            bt_mesh.seq > IV_UPDATE_SEQ_LIMIT) {
-#if CONFIG_BLE_MESH_NODE
-        bt_mesh_beacon_ivu_initiator(true);
-#endif
-        bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
-        bt_mesh_net_sec_update(NULL);
     }
 
     return 0;
