@@ -32,21 +32,19 @@ Permission issues /dev/ttyUSB0
 
 With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
 
+ncurses 5 dependency
+--------------------
 
-Arch Linux Users
-----------------
+To run the precompiled gdb (xtensa-esp32-elf-gdb) in Linux requires ncurses 5, but some newer distributions only provide ncurses 6 by default.
 
-To run the precompiled gdb (xtensa-esp32-elf-gdb) in Arch Linux requires ncurses 5, but Arch uses ncurses 6.
+Consult your distribution's documentation to see if ncurses 5 libraries are available. Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
 
-Backwards compatibility libraries are available in AUR_ for native and lib32 configurations:
+For Arch Linux users, ncurses 5 libraries are available in AUR_ for native and lib32 configurations:
 
 - https://aur.archlinux.org/packages/ncurses5-compat-libs/
 - https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
 
 Before installing these packages you might need to add the author's public key to your keyring as described in the "Comments" section at the links above.
-
-Alternatively, use crosstool-NG to compile a gdb that links against ncurses 6.
-
 
 Next Steps
 ==========
