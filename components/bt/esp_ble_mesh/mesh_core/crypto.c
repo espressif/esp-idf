@@ -261,7 +261,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
             }
         }
 
-        for (i = 0; i < aad_len; i++, j++) {
+        for (; i < aad_len; i++, j++) {
             pmsg[i] = Xn[i] ^ aad[j];
         }
 
@@ -425,7 +425,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
             }
         }
 
-        for (i = 0; i < aad_len; i++, j++) {
+        for (; i < aad_len; i++, j++) {
             pmsg[i] = Xn[i] ^ aad[j];
         }
 
