@@ -1144,14 +1144,25 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 
 static struct bt_mesh_subnet *next_sub(void)
 {
+    struct bt_mesh_subnet *sub = NULL;
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub;
-
-        sub = &bt_mesh.sub[(i + next_idx) % ARRAY_SIZE(bt_mesh.sub)];
+    for (i = next_idx; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+        sub = &bt_mesh.sub[i];
         if (advertise_subnet(sub)) {
-            next_idx = (next_idx + 1) % ARRAY_SIZE(bt_mesh.sub);
+            next_idx = (i + 1) % ARRAY_SIZE(bt_mesh.sub);
+            return sub;
+        }
+    }
+
+    /**
+     * If among [next_idx, ARRAY_SIZE(bt_mesh.sub)], there is no subnet
+     * to advertise, then try to start advertising from Primary subnet.
+     */
+    for (i = 0; i < next_idx; i++) {
+        sub = &bt_mesh.sub[i];
+        if (advertise_subnet(sub)) {
+            next_idx = (i + 1) % ARRAY_SIZE(bt_mesh.sub);
             return sub;
         }
     }
