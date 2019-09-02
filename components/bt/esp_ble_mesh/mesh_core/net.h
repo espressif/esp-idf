@@ -209,7 +209,7 @@ enum {
     BLE_MESH_IVU_TEST,        /* IV Update test mode */
     BLE_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
 
-    /* pending storage actions */
+    /* pending storage actions, must reside within first 32 flags */
     BLE_MESH_RPL_PENDING,
     BLE_MESH_KEYS_PENDING,
     BLE_MESH_NET_PENDING,
