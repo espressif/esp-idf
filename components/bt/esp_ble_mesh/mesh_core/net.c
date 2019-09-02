@@ -135,7 +135,8 @@ static bool msg_cache_match(struct bt_mesh_net_rx *rx,
     }
 
     /* Add to the cache */
-    msg_cache[msg_cache_next++] = hash;
+    rx->msg_cache_idx = msg_cache_next++;
+    msg_cache[rx->msg_cache_idx] = hash;
     msg_cache_next %= ARRAY_SIZE(msg_cache);
 
     return false;
@@ -1380,7 +1381,19 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
                       bt_mesh_elem_find(rx.ctx.recv_dst));
 
-    bt_mesh_trans_recv(&buf, &rx);
+    /* The transport layer has indicated that it has rejected the message,
+    * but would like to see it again if it is received in the future.
+    * This can happen if a message is received when the device is in
+    * Low Power mode, but the message was not encrypted with the friend
+    * credentials. Remove it from the message cache so that we accept
+    * it again in the future.
+    */
+    if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
+        BT_WARN("Removing rejected message from Network Message Cache");
+        msg_cache[rx.msg_cache_idx] = 0ULL;
+        /* Rewind the next index now that we're not using this entry */
+        msg_cache_next = rx.msg_cache_idx;
+    }
 
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
