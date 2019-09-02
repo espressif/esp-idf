@@ -522,8 +522,8 @@ static void app_key_add(struct bt_mesh_model *model,
     }
 
 #if defined(CONFIG_BLE_MESH_FAST_PROV)
-    bt_mesh_callback_cfg_server_event_to_btc(0x0, model, ctx,
-            (u8_t *)&key_app_idx, sizeof(u16_t));
+    bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_RECV_MSG,
+        model, ctx, (u8_t *)&key_app_idx, sizeof(u16_t));
 #endif
 }
 

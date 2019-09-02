@@ -145,8 +145,8 @@ static void timeout_handler(struct k_work *work)
         return;
     }
 
-    bt_mesh_callback_generic_status_to_btc(node->opcode, 0x03, node->ctx.model,
-                                           &node->ctx, NULL, 0);
+    bt_mesh_generic_client_cb_evt_to_btc(node->opcode,
+        BTC_BLE_MESH_EVT_GENERIC_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
 
     bt_mesh_client_free_node(&internal->queue, node);
 
@@ -558,7 +558,7 @@ static void generic_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_GET:
         case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_GET:
         case BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET:
-            evt = 0x00;
+            evt = BTC_BLE_MESH_EVT_GENERIC_CLIENT_GET_STATE;
             break;
         case BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
         case BLE_MESH_MODEL_OP_GEN_LEVEL_SET:
@@ -574,13 +574,13 @@ static void generic_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET:
         case BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET:
         case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET:
-            evt = 0x01;
+            evt = BTC_BLE_MESH_EVT_GENERIC_CLIENT_SET_STATE;
             break;
         default:
             break;
         }
 
-        bt_mesh_callback_generic_status_to_btc(node->opcode, evt, model, ctx, val, len);
+        bt_mesh_generic_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
         // Don't forget to release the node at the end.
         bt_mesh_client_free_node(&internal->queue, node);
     }
@@ -781,8 +781,8 @@ static int gen_set_state(bt_mesh_client_common_param_t *common,
     case BLE_MESH_MODEL_OP_GEN_DELTA_SET_UNACK: {
         struct bt_mesh_gen_delta_set *set;
         set = (struct bt_mesh_gen_delta_set *)value;
-        net_buf_simple_add_le32(msg, set->level);
-        net_buf_simple_add_u8(msg,   set->tid);
+        net_buf_simple_add_le32(msg, set->delta_level);
+        net_buf_simple_add_u8(msg, set->tid);
         if (set->op_en) {
             net_buf_simple_add_u8(msg, set->trans_time);
             net_buf_simple_add_u8(msg, set->delay);

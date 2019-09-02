@@ -97,11 +97,11 @@ struct bt_mesh_gen_level_set {
 };
 
 struct bt_mesh_gen_delta_set {
-    bool  op_en;      /* Indicate whether optional parameters included */
-    s32_t level;      /* Delta change of Generic Level state           */
-    u8_t  tid;        /* Transaction Identifier                        */
-    u8_t  trans_time; /* Time to complete state transition (optional)  */
-    u8_t  delay;      /* Indicate message execution delay (C.1)        */
+    bool  op_en;        /* Indicate whether optional parameters included */
+    s32_t delta_level;  /* Delta change of Generic Level state           */
+    u8_t  tid;          /* Transaction Identifier                        */
+    u8_t  trans_time;   /* Time to complete state transition (optional)  */
+    u8_t  delay;        /* Indicate message execution delay (C.1)        */
 };
 
 struct bt_mesh_gen_move_set {
