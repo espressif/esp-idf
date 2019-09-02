@@ -220,7 +220,24 @@ static void publish_sent(int err, void *user_data)
     }
 }
 
+static void publish_start(u16_t duration, int err, void *user_data)
+{
+    struct bt_mesh_model *mod = user_data;
+    struct bt_mesh_model_pub *pub = mod->pub;
+
+    if (err) {
+        BT_ERR("Failed to publish: err %d", err);
+        return;
+    }
+
+    /* Initialize the timestamp for the beginning of a new period */
+    if (pub->count == BLE_MESH_PUB_TRANSMIT_COUNT(pub->retransmit)) {
+        pub->period_start = k_uptime_get_32();
+    }
+}
+
 static const struct bt_mesh_send_cb pub_sent_cb = {
+    .start = publish_start,
     .end = publish_sent,
 };
 
@@ -309,8 +326,6 @@ static void mod_publish(struct k_work *work)
     }
 
     __ASSERT_NO_MSG(pub->update != NULL);
-
-    pub->period_start = k_uptime_get_32();
 
     /* Callback the model publish update event to the application layer.
      * In the event, users can update the context of the publish message
@@ -856,7 +871,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     BT_DBG("%s", __func__);
 
-    if (!pub) {
+    if (!pub || !pub->msg) {
         BT_ERR("%s, Model has no publication support", __func__);
         return -ENOTSUP;
     }
