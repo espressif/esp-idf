@@ -391,8 +391,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
         net_buf_add_mem(seg, sdu->data, len);
         net_buf_simple_pull(sdu, len);
 
-        tx->seg[seg_o] = net_buf_ref(seg);
-
         if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
             enum bt_mesh_friend_pdu_type type;
@@ -411,10 +409,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
                  * out through the Friend Queue.
                  */
                 net_buf_unref(seg);
-                return 0;
+                continue;
             }
         }
         }
+
+        tx->seg[seg_o] = net_buf_ref(seg);
 
         BT_DBG("Sending %u/%u", seg_o, tx->seg_n);
 
@@ -425,6 +425,23 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
             BT_ERR("%s, Sending segment failed", __func__);
             seg_tx_reset(tx);
             return err;
+        }
+    }
+
+    /* This can happen if segments only went into the Friend Queue */
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && !tx->seg[0]) {
+        seg_tx_reset(tx);
+        /* If there was a callback notify sending immediately since
+         * there's no other way to track this (at least currently)
+         * with the Friend Queue.
+         */
+        if (cb) {
+            if (cb->start) {
+                cb->start(0, 0, cb_data);
+            }
+            if (cb->end) {
+                cb->end(0, cb_data);
+            }
         }
     }
 
