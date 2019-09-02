@@ -1614,6 +1614,11 @@ void bt_mesh_heartbeat_send(void)
         .xmit = bt_mesh_net_transmit_get(),
     };
 
+    /* Do nothing if heartbeat publication is not enabled */
+    if (cfg->hb_pub.dst == BLE_MESH_ADDR_UNASSIGNED) {
+        return;
+    }
+
     hb.init_ttl = cfg->hb_pub.ttl;
 
     if (bt_mesh_relay_get() == BLE_MESH_RELAY_ENABLED) {
