@@ -53,55 +53,6 @@ static struct label {
     u8_t  uuid[16];
 } labels[CONFIG_BLE_MESH_LABEL_COUNT];
 
-static void hb_send(struct bt_mesh_model *model)
-{
-    struct bt_mesh_cfg_srv *cfg = model->user_data;
-    u16_t feat = 0U;
-    struct __packed {
-        u8_t  init_ttl;
-        u16_t feat;
-    } hb;
-    struct bt_mesh_msg_ctx ctx = {
-        .net_idx = cfg->hb_pub.net_idx,
-        .app_idx = BLE_MESH_KEY_UNUSED,
-        .addr = cfg->hb_pub.dst,
-        .send_ttl = cfg->hb_pub.ttl,
-    };
-    struct bt_mesh_net_tx tx = {
-        .sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx),
-        .ctx = &ctx,
-        .src = bt_mesh_model_elem(model)->addr,
-        .xmit = bt_mesh_net_transmit_get(),
-    };
-
-    hb.init_ttl = cfg->hb_pub.ttl;
-
-    if (bt_mesh_relay_get() == BLE_MESH_RELAY_ENABLED) {
-        feat |= BLE_MESH_FEAT_RELAY;
-    }
-
-    if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
-        feat |= BLE_MESH_FEAT_PROXY;
-    }
-
-    if (bt_mesh_friend_get() == BLE_MESH_FRIEND_ENABLED) {
-        feat |= BLE_MESH_FEAT_FRIEND;
-    }
-
-#if defined(CONFIG_BLE_MESH_LOW_POWER)
-    if (bt_mesh.lpn.state != BLE_MESH_LPN_DISABLED) {
-        feat |= BLE_MESH_FEAT_LOW_POWER;
-    }
-#endif
-
-    hb.feat = sys_cpu_to_be16(feat);
-
-    BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
-
-    bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-                     NULL, NULL, NULL);
-}
-
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
                          bool primary)
 {
@@ -897,7 +848,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 
     sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
     if ((cfg->hb_pub.feat & BLE_MESH_FEAT_PROXY) && sub) {
-        hb_send(model);
+        bt_mesh_heartbeat_send();
     }
 
 send_status:
@@ -1015,7 +966,7 @@ static void relay_set(struct bt_mesh_model *model,
 
         sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
         if ((cfg->hb_pub.feat & BLE_MESH_FEAT_RELAY) && sub && change) {
-            hb_send(model);
+            bt_mesh_heartbeat_send();
         }
     } else {
         BT_WARN("Invalid Relay value 0x%02x", buf->data[0]);
@@ -2767,7 +2718,7 @@ static void friend_set(struct bt_mesh_model *model,
 
     sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
     if ((cfg->hb_pub.feat & BLE_MESH_FEAT_FRIEND) && sub) {
-        hb_send(model);
+        bt_mesh_heartbeat_send();
     }
 
 send_status:
@@ -3279,7 +3230,6 @@ static void hb_publish(struct k_work *work)
     struct bt_mesh_cfg_srv *cfg = CONTAINER_OF(work,
                                   struct bt_mesh_cfg_srv,
                                   hb_pub.timer.work);
-    struct bt_mesh_model *model = cfg->model;
     struct bt_mesh_subnet *sub;
     u16_t period_ms;
 
@@ -3302,7 +3252,7 @@ static void hb_publish(struct k_work *work)
         k_delayed_work_submit(&cfg->hb_pub.timer, period_ms);
     }
 
-    hb_send(model);
+    bt_mesh_heartbeat_send();
 
     if (cfg->hb_pub.count != 0xffff) {
         cfg->hb_pub.count--;
