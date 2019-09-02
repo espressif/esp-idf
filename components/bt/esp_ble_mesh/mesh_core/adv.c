@@ -189,6 +189,8 @@ static void adv_thread(void *p)
                     BT_ERR("%s, xQueueSendToFront failed", __func__);
                 }
             }
+        } else {
+            net_buf_unref(*buf);
         }
 
         /* Give other threads a chance to run */
