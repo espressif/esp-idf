@@ -47,7 +47,7 @@ function(__kconfig_init)
         externalproject_add(mconf-idf
             SOURCE_DIR ${src_path}
             CONFIGURE_COMMAND ""
-            BINARY_DIR "kconfig_bin"
+            BINARY_DIR "${CMAKE_BINARY_DIR}/kconfig_bin"
             BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
             COMMAND make -f ${src_path}/Makefile mconf-idf
             BUILD_BYPRODUCTS ${MCONF}

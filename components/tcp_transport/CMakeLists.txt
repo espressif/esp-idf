@@ -5,5 +5,5 @@ idf_component_register(SRCS "transport.c"
                             "transport_utils.c"
                             "transport_strcasestr.c"
                     INCLUDE_DIRS "include"
-                    PRIVATE_INCLUDE_DIRS "private_include"
+                    PRIV_INCLUDE_DIRS "private_include"
                     REQUIRES lwip esp-tls)
