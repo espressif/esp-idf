@@ -1454,7 +1454,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
             common.role  = arg->model_publish.device_role;
             if (bt_mesh_set_client_model_role(&common)) {
                 LOG_ERROR("%s, Failed to set model role", __func__);
-                return;
+                break;
             }
         }
         err = bt_mesh_model_publish((struct bt_mesh_model *)arg->model_publish.model);
@@ -1466,7 +1466,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 8);
         if (!buf) {
             LOG_ERROR("%s, Failed to allocate memory", __func__);
-            return;
+            break;
         }
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
         arg->model_send.ctx->srv_send = true;
@@ -1484,7 +1484,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 8);
         if (!buf) {
             LOG_ERROR("%s, Failed to allocate memory", __func__);
-            return;
+            break;
         }
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
         arg->model_send.ctx->srv_send = false;
@@ -1492,7 +1492,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         common.role  = arg->model_send.device_role;
         if (bt_mesh_set_client_model_role(&common)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
-            return;
+            break;
         }
         err = bt_mesh_client_send_msg((struct bt_mesh_model *)arg->model_send.model,
                                        arg->model_send.opcode,
