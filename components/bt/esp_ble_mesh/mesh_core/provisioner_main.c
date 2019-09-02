@@ -330,7 +330,7 @@ bool provisioner_check_msg_dst_addr(u16_t dst_addr)
     return false;
 }
 
-const u8_t *provisioner_get_device_key(u16_t dst_addr)
+const u8_t *provisioner_dev_key_get(u16_t dst_addr)
 {
     /* Device key is only used to encrypt configuration messages.
     *  Configuration model shall only be supported by the primary
@@ -1140,7 +1140,7 @@ int bt_mesh_provisioner_print_local_element_info(void)
 
 #if CONFIG_BLE_MESH_FAST_PROV
 
-const u8_t *get_fast_prov_device_key(u16_t addr)
+const u8_t *fast_prov_dev_key_get(u16_t addr)
 {
     struct bt_mesh_node_t *node = NULL;
 
@@ -1165,7 +1165,7 @@ const u8_t *get_fast_prov_device_key(u16_t addr)
     return NULL;
 }
 
-struct bt_mesh_subnet *get_fast_prov_subnet(u16_t net_idx)
+struct bt_mesh_subnet *fast_prov_subnet_get(u16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
@@ -1188,7 +1188,7 @@ struct bt_mesh_subnet *get_fast_prov_subnet(u16_t net_idx)
     return NULL;
 }
 
-struct bt_mesh_app_key *get_fast_prov_app_key(u16_t net_idx, u16_t app_idx)
+struct bt_mesh_app_key *fast_prov_app_key_find(u16_t net_idx, u16_t app_idx)
 {
     struct bt_mesh_app_key *key = NULL;
 
@@ -1216,7 +1216,7 @@ u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx)
     struct bt_mesh_subnet      *sub = NULL;
     struct bt_mesh_subnet_keys *key = NULL;
 
-    sub = get_fast_prov_subnet(net_idx);
+    sub = fast_prov_subnet_get(net_idx);
     if (sub) {
         key = BLE_MESH_KEY_REFRESH(sub->kr_flag) ? &sub->keys[1] : &sub->keys[0];
         return provisioner_set_fast_prov_net_idx(key->net, net_idx);
@@ -1253,7 +1253,7 @@ const u8_t *bt_mesh_get_fast_prov_net_key(u16_t net_idx)
 {
     struct bt_mesh_subnet *sub = NULL;
 
-    sub = get_fast_prov_subnet(net_idx);
+    sub = fast_prov_subnet_get(net_idx);
     if (!sub) {
         BT_ERR("%s, Failed to get subnet", __func__);
         return NULL;
@@ -1266,7 +1266,7 @@ const u8_t *bt_mesh_get_fast_prov_app_key(u16_t net_idx, u16_t app_idx)
 {
     struct bt_mesh_app_key *key = NULL;
 
-    key = get_fast_prov_app_key(net_idx, app_idx);
+    key = fast_prov_app_key_find(net_idx, app_idx);
     if (!key) {
         BT_ERR("%s, Failed to get AppKey", __func__);
         return NULL;
