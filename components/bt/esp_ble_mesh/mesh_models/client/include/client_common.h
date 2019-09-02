@@ -119,15 +119,5 @@ typedef struct bt_mesh_role_param {
  */
 int bt_mesh_set_model_role(bt_mesh_role_param_t *common);
 
-/**
- * @brief This function gets msg role for stack internal use.
- *
- * @param[in] model:    Pointer to the model structure
- * @param[in] srv_send: Indicate if the message is sent by a server model
- *
- * @return 0 - Node, 1 - Provisioner
- */
-u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send);
-
 #endif /* _MODEL_COMMON_H_ */
 

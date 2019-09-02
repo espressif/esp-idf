@@ -23,7 +23,7 @@
 #include "mesh_main.h"
 
 #include "mesh.h"
-#include "model_common.h"
+#include "client_common.h"
 
 bt_mesh_client_node_t *bt_mesh_is_model_message_publish(struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
@@ -316,21 +316,3 @@ int bt_mesh_set_model_role(bt_mesh_role_param_t *common)
     return 0;
 }
 
-u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send)
-{
-    bt_mesh_client_common_t *client = NULL;
-
-    if (srv_send) {
-        BT_DBG("%s, Message is sent by a server model", __func__);
-        return NODE;
-    }
-
-    if (!model || !model->user_data) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return ROLE_NVAL;
-    }
-
-    client = (bt_mesh_client_common_t *)model->user_data;
-
-    return client->msg_role;
-}

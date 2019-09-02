@@ -44,7 +44,7 @@
 #include "lighting_client.h"
 #include "sensor_client.h"
 #include "time_scene_client.h"
-#include "model_common.h"
+#include "client_common.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_config_model.h"

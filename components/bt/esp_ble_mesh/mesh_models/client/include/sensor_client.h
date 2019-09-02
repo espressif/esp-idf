@@ -22,7 +22,7 @@
 #include "mesh_access.h"
 #include "mesh_kernel.h"
 
-#include "model_common.h"
+#include "client_common.h"
 
 /* Sensor Client Model Context */
 extern const struct bt_mesh_model_op sensor_cli_op[];
