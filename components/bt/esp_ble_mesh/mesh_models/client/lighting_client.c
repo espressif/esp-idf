@@ -650,7 +650,7 @@ static void light_status(struct bt_mesh_model *model,
 
     buf->data = val;
     buf->len  = len;
-    node = bt_mesh_is_model_message_publish(model, ctx, buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
         BT_DBG("Unexpected light status message 0x%x", rsp);
     } else {
@@ -770,7 +770,7 @@ const struct bt_mesh_model_op light_lc_cli_op[] = {
     BLE_MESH_MODEL_OP_END,
 };
 
-static int light_get_state(struct bt_mesh_common_param *common, void *value)
+static int light_get_state(bt_mesh_client_common_param_t *common, void *value)
 {
     NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_LIGHT_GET_STATE_MSG_LEN);
     int err;
@@ -801,7 +801,7 @@ static int light_get_state(struct bt_mesh_common_param *common, void *value)
     return err;
 }
 
-static int light_set_state(struct bt_mesh_common_param *common,
+static int light_set_state(bt_mesh_client_common_param_t *common,
                            void *value, u16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
@@ -1042,7 +1042,7 @@ end:
     return err;
 }
 
-int bt_mesh_light_client_get_state(struct bt_mesh_common_param *common, void *get, void *status)
+int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status)
 {
     bt_mesh_light_client_t *client = NULL;
 
@@ -1095,7 +1095,7 @@ int bt_mesh_light_client_get_state(struct bt_mesh_common_param *common, void *ge
     return light_get_state(common, get);
 }
 
-int bt_mesh_light_client_set_state(struct bt_mesh_common_param *common, void *set, void *status)
+int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status)
 {
     bt_mesh_light_client_t *client = NULL;
     u16_t length   = 0;

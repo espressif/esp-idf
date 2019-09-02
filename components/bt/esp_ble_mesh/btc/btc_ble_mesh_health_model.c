@@ -489,7 +489,7 @@ void btc_mesh_health_client_call_handler(btc_msg_t *msg)
         health_client_cb.params = arg->health_client_get_state.params;
         role_param.model = (struct bt_mesh_model *)health_client_cb.params->model;
         role_param.role = health_client_cb.params->msg_role;
-        if (bt_mesh_set_model_role(&role_param)) {
+        if (bt_mesh_set_client_model_role(&role_param)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
             return;
         }
@@ -506,7 +506,7 @@ void btc_mesh_health_client_call_handler(btc_msg_t *msg)
         health_client_cb.params = arg->health_client_set_state.params;
         role_param.model = (struct bt_mesh_model *)health_client_cb.params->model;
         role_param.role = health_client_cb.params->msg_role;
-        if (bt_mesh_set_model_role(&role_param)) {
+        if (bt_mesh_set_client_model_role(&role_param)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
             return;
         }

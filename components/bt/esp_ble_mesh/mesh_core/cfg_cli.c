@@ -139,7 +139,7 @@ static void cfg_client_cancel(struct bt_mesh_model *model,
     /* If it is a publish message, sent to the user directly. */
     buf.data = (u8_t *)status;
     buf.len  = (u16_t)len;
-    node = bt_mesh_is_model_message_publish(model, ctx, &buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, &buf, true);
     if (!node) {
         BT_DBG("Unexpected config status message 0x%x", ctx->recv_op);
     } else {

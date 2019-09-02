@@ -534,7 +534,7 @@ void btc_mesh_sensor_client_call_handler(btc_msg_t *msg)
     esp_ble_mesh_sensor_client_cb_param_t sensor_client_cb = {0};
     esp_ble_mesh_client_common_param_t *params = NULL;
     btc_ble_mesh_sensor_client_args_t *arg = NULL;
-    struct bt_mesh_common_param common = {0};
+    bt_mesh_client_common_param_t common = {0};
     bt_mesh_role_param_t role_param = {0};
 
     if (!msg || !msg->arg) {
@@ -549,7 +549,7 @@ void btc_mesh_sensor_client_call_handler(btc_msg_t *msg)
         params = arg->sensor_client_get_state.params;
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
-        if (bt_mesh_set_model_role(&role_param)) {
+        if (bt_mesh_set_client_model_role(&role_param)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
             return;
         }
@@ -578,7 +578,7 @@ void btc_mesh_sensor_client_call_handler(btc_msg_t *msg)
         params = arg->sensor_client_set_state.params;
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
-        if (bt_mesh_set_model_role(&role_param)) {
+        if (bt_mesh_set_client_model_role(&role_param)) {
             LOG_ERROR("%s, Failed to set model role", __func__);
             return;
         }

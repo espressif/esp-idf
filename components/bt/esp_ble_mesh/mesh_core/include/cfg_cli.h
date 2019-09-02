@@ -23,8 +23,8 @@
  */
 
 /* Config client model common structure */
-typedef bt_mesh_client_common_t bt_mesh_config_client_t;
-typedef bt_mesh_internal_data_t config_internal_data_t;
+typedef bt_mesh_client_user_data_t      bt_mesh_config_client_t;
+typedef bt_mesh_client_internal_data_t  config_internal_data_t;
 
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
 
