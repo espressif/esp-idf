@@ -115,6 +115,12 @@ struct bt_mesh_friend {
 
     struct bt_mesh_friend_seg {
         sys_slist_t queue;
+
+        /* The target number of segments, i.e. not necessarily
+         * the current number of segments, in the queue. This is
+         * used for Friend Queue free space calculations.
+         */
+        u8_t        seg_count;
     } seg[FRIEND_SEG_RX];
 
     struct net_buf *last;
