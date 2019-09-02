@@ -937,6 +937,20 @@ static void send_pub_key(void)
     PROV_BUF(buf, 65);
     const u8_t *key;
 
+    /* Copy remote key in little-endian for bt_mesh_dh_key_gen().
+     * X and Y halves are swapped independently. Use response
+     * buffer as a temporary storage location. The validating of
+     * the remote public key is finished when it is received.
+     */
+    sys_memcpy_swap(buf.data, &link.conf_inputs[17], 32);
+    sys_memcpy_swap(&buf.data[32], &link.conf_inputs[49], 32);
+
+    if (bt_mesh_dh_key_gen(buf.data, prov_dh_key_cb, 0)) {
+        BT_ERR("%s, Unable to generate DHKey", __func__);
+        prov_send_fail_msg(PROV_ERR_UNEXP_ERR);
+        return;
+    }
+
     key = bt_mesh_pub_key_get();
     if (!key) {
         BT_ERR("%s, No public key available", __func__);
@@ -954,18 +968,8 @@ static void send_pub_key(void)
 
     memcpy(&link.conf_inputs[81], &buf.data[1], 64);
 
-    prov_send(&buf);
-
-    /* Copy remote key in little-endian for bt_mesh_dh_key_gen().
-     * X and Y halves are swapped independently.
-     */
-    net_buf_simple_reset(&buf);
-    sys_memcpy_swap(buf.data, &link.conf_inputs[17], 32);
-    sys_memcpy_swap(&buf.data[32], &link.conf_inputs[49], 32);
-
-    if (bt_mesh_dh_key_gen(buf.data, prov_dh_key_cb, 0)) {
-        BT_ERR("%s, Unable to generate DHKey", __func__);
-        prov_send_fail_msg(PROV_ERR_UNEXP_ERR);
+    if (prov_send(&buf)) {
+        BT_ERR("Failed to send Public Key");
         return;
     }
 
