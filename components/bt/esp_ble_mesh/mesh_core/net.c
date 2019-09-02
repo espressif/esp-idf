@@ -785,7 +785,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
         bt_mesh_proxy_relay(&buf->b, dst)) {
-        net_buf_unref(buf);
+        send_cb_finalize(cb, cb_data);
     } else {
         bt_mesh_adv_send(buf, cb, cb_data);
     }
@@ -901,15 +901,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
             /* Notify completion if this only went
              * through the Mesh Proxy.
              */
-            if (cb) {
-                if (cb->start) {
-                    cb->start(0, 0, cb_data);
-                }
-
-                if (cb->end) {
-                    cb->end(0, cb_data);
-                }
-            }
+            send_cb_finalize(cb, cb_data);
 
             err = 0;
             goto done;
