@@ -129,7 +129,7 @@ endfunction()
 #
 function(__build_init idf_path)
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to
-    add_custom_target(__idf_build_target)
+    add_library(__idf_build_target STATIC IMPORTED)
 
     set_default(python "python")
 
