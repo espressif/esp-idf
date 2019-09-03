@@ -1527,7 +1527,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
     if (link.rx.buf->len > link.rx.buf->size) {
         BT_ERR("%s, Too large provisioning PDU (%u bytes)",
                 __func__, link.rx.buf->len);
-        // prov_send_fail_msg(PROV_ERR_NVAL_FMT);
+        /* Zephyr uses prov_send_fail_msg() here */
         return;
     }
 

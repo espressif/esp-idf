@@ -418,27 +418,27 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
         net_buf_simple_pull(sdu, len);
 
         if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-            enum bt_mesh_friend_pdu_type type;
+            if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+                enum bt_mesh_friend_pdu_type type;
 
-            if (seg_o == tx->seg_n) {
-                type = BLE_MESH_FRIEND_PDU_COMPLETE;
-            } else {
-                type = BLE_MESH_FRIEND_PDU_PARTIAL;
-            }
+                if (seg_o == tx->seg_n) {
+                    type = BLE_MESH_FRIEND_PDU_COMPLETE;
+                } else {
+                    type = BLE_MESH_FRIEND_PDU_PARTIAL;
+                }
 
-            if (bt_mesh_friend_enqueue_tx(net_tx, type,
-                                          &tx->seq_auth,
-                                          tx->seg_n + 1,
-                                          &seg->b) &&
-                BLE_MESH_ADDR_IS_UNICAST(net_tx->ctx->addr)) {
-                /* PDUs for a specific Friend should only go
-                 * out through the Friend Queue.
-                 */
-                net_buf_unref(seg);
-                continue;
+                if (bt_mesh_friend_enqueue_tx(net_tx, type,
+                                            &tx->seq_auth,
+                                            tx->seg_n + 1,
+                                            &seg->b) &&
+                    BLE_MESH_ADDR_IS_UNICAST(net_tx->ctx->addr)) {
+                    /* PDUs for a specific Friend should only go
+                    * out through the Friend Queue.
+                    */
+                    net_buf_unref(seg);
+                    continue;
+                }
             }
-        }
         }
 
         tx->seg[seg_o] = net_buf_ref(seg);
@@ -1543,25 +1543,25 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
      *
      */
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
-            (bt_mesh_lpn_timer() ||
-             (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
-        bt_mesh_lpn_msg_received(rx);
-    }
+        if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+                (bt_mesh_lpn_timer() ||
+                (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
+            bt_mesh_lpn_msg_received(rx);
+        }
     }
 
     net_buf_simple_restore(buf, &state);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && rx->friend_match && !err) {
-        if (seq_auth == TRANS_SEQ_AUTH_NVAL) {
-            bt_mesh_friend_enqueue_rx(rx, pdu_type, NULL,
-                                      seg_count, buf);
-        } else {
-            bt_mesh_friend_enqueue_rx(rx, pdu_type, &seq_auth,
-                                      seg_count, buf);
+        if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && rx->friend_match && !err) {
+            if (seq_auth == TRANS_SEQ_AUTH_NVAL) {
+                bt_mesh_friend_enqueue_rx(rx, pdu_type, NULL,
+                                        seg_count, buf);
+            } else {
+                bt_mesh_friend_enqueue_rx(rx, pdu_type, &seq_auth,
+                                        seg_count, buf);
+            }
         }
-    }
     }
 
     return err;
