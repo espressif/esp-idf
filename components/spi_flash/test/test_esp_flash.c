@@ -6,7 +6,7 @@
 
 #include <unity.h>
 #include "esp_flash.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "esp_flash_spi_init.h"
 #include <esp_attr.h>
 #include "esp_log.h"
@@ -14,7 +14,6 @@
 #include <test_utils.h>
 
 #include "unity.h"
-#include "driver/spi_common.h"
 #include "driver/gpio.h"
 #include "soc/io_mux_reg.h"
 

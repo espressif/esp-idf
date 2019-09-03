@@ -1,7 +1,7 @@
 #include "esp_heap_caps.h"
 #include "unity.h"
 #include "esp_log.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "sdkconfig.h"
 
 static const char TAG[] = "test_psram";
