@@ -45,13 +45,31 @@ build_template_app:
     - export PATH="$IDF_PATH/tools:$PATH"
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    
+    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
+    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" >> sdkconfig
     - make defconfig
-    # Test debug build (default)
     - make all V=1
-    # Now test release build
     - make clean
-    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
+
+    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
+    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig
+    - make defconfig
     - make all V=1
+    - make clean
+    
+    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
+    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" >> sdkconfig
+    - make defconfig
+    - make all V=1
+    - make clean
+
+    # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
+    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" >> sdkconfig
+    - make defconfig
+    - make all V=1
+    - make clean
+
     # Check if there are any stray printf/ets_printf references in WiFi libs
     - pushd ../components/esp_wifi/lib_esp32
     - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
