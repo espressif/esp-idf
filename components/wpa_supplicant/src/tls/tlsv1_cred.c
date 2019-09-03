@@ -157,7 +157,7 @@ static int tlsv1_set_cert_chain(struct x509_certificate **chain,
 
 	if (cert) {
 		u8 *buf = NULL;
-		size_t len;
+		size_t len = 0;
 		int ret;
 
 		if (buf == NULL) {
@@ -328,7 +328,7 @@ int tlsv1_set_private_key(struct tlsv1_credentials *cred,
 
 	if (private_key) {
 		u8 *buf = NULL;
-		size_t len;
+		size_t len = 0;
 		int ret;
 
 		if (buf == NULL) {
@@ -484,7 +484,7 @@ int tlsv1_set_dhparams(struct tlsv1_credentials *cred, const char *dh_file,
 
 	if (dh_file) {
 		u8 *buf = NULL;
-		size_t len;
+		size_t len = 0;
 		int ret;
 
 		if (buf == NULL) {

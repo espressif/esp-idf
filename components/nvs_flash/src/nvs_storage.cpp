@@ -45,7 +45,7 @@ void Storage::populateBlobIndices(TBlobIndexList& blobIdxList)
         while (p.findItem(Page::NS_ANY, ItemType::BLOB_IDX, nullptr, itemIndex, item) == ESP_OK) {
             BlobIndexNode* entry = new BlobIndexNode;
 
-            item.getKey(entry->key, sizeof(entry->key) - 1);
+            item.getKey(entry->key, sizeof(entry->key));
             entry->nsIndex = item.nsIndex;
             entry->chunkStart = item.blobIndex.chunkStart;
             entry->chunkCount = item.blobIndex.chunkCount;
@@ -101,7 +101,7 @@ esp_err_t Storage::init(uint32_t baseSector, uint32_t sectorCount)
         Item item;
         while (p.findItem(Page::NS_INDEX, ItemType::U8, nullptr, itemIndex, item) == ESP_OK) {
             NamespaceEntry* entry = new NamespaceEntry;
-            item.getKey(entry->mName, sizeof(entry->mName) - 1);
+            item.getKey(entry->mName, sizeof(entry->mName));
             item.getValue(entry->mIndex);
             mNamespaces.push_back(entry);
             mNamespaceUsage.set(entry->mIndex, true);
@@ -182,7 +182,7 @@ esp_err_t Storage::writeMultiPageBlob(uint8_t nsIndex, const char* key, const vo
                 return err;
             } else if(getCurrentPage().getVarDataTailroom() == tailroom) {
                 /* We got the same page or we are not improving.*/
-                return ESP_ERR_NVS_NOT_ENOUGH_SPACE; 
+                return ESP_ERR_NVS_NOT_ENOUGH_SPACE;
             } else {
                 continue;
             }
@@ -308,9 +308,9 @@ esp_err_t Storage::writeItem(uint8_t nsIndex, ItemType datatype, const char* key
             if (err != ESP_OK) {
                 return err;
             }
-            
+
             findPage = nullptr;
-        } else { 
+        } else {
             /* Support for earlier versions where BLOBS were stored without index */
             err = findItem(nsIndex, datatype, key, findPage, item);
             if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
@@ -512,14 +512,14 @@ esp_err_t Storage::readItem(uint8_t nsIndex, ItemType datatype, const char* key,
         if (err != ESP_ERR_NVS_NOT_FOUND) {
             return err;
         } // else check if the blob is stored with earlier version format without index
-    } 
+    }
 
     auto err = findItem(nsIndex, datatype, key, findPage, item);
     if (err != ESP_OK) {
         return err;
     }
     return findPage->readItem(nsIndex, datatype, key, data, dataSize);
-    
+
 }
 
 esp_err_t Storage::eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffset chunkStart)
