@@ -29,8 +29,11 @@ if(NOT BOOTLOADER_BUILD)
 
         idf_build_get_property(idf_path IDF_PATH)
         idf_build_get_property(python PYTHON)
+
+        idf_component_get_property(partition_table_dir partition_table COMPONENT_DIR)
+
         add_custom_command(OUTPUT ${blank_otadata_file}
-            COMMAND ${python} ${idf_path}/components/partition_table/gen_empty_partition.py
+            COMMAND ${python} ${partition_table_dir}/gen_empty_partition.py
             ${otadata_size} ${blank_otadata_file})
 
         add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
