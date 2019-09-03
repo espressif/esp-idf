@@ -1656,21 +1656,23 @@ const u8_t *bt_mesh_pub_key_get(void)
     BT_OCTET32 private_key = {0};
     Point public_key = {0};
 
-#if 1
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_HAS_PUB_KEY)) {
         return bt_mesh_public_key;
     }
-#else
+
     /* BLE Mesh BQB test case MESH/NODE/PROV/UPD/BV-12-C requires
      * different public key for each provisioning procedure.
      * Note: if enabled, when Provisioner provision multiple devices
      * at the same time, this may cause invalid confirmation value.
+     *
+     * Use the following code for generating different private key
+     * for each provisioning procedure.
+     *
+     * if (bt_mesh_rand(bt_mesh_private_key, BT_OCTET32_LEN)) {
+     *    BT_ERR("%s, Unable to generate bt_mesh_private_key", __func__);
+     *    return NULL;
+     * }
      */
-    if (bt_mesh_rand(bt_mesh_private_key, BT_OCTET32_LEN)) {
-        BT_ERR("%s, Unable to generate bt_mesh_private_key", __func__);
-        return NULL;
-    }
-#endif
 
     memcpy(private_key, bt_mesh_private_key, BT_OCTET32_LEN);
     ECC_PointMult(&public_key, &(curve_p256.G), (DWORD *)private_key, KEY_LENGTH_DWORDS_P256);
