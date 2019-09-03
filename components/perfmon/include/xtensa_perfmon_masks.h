@@ -45,7 +45,7 @@ typedef struct xtensa_perfmon_masks {
 } xtensa_perfmon_masks_t;
 
 // Maximum amount of performance counter events
-#define MAX_PERFMON_EVENTS 118
+#define MAX_PERFMON_EVENTS 119
 
 /**
  * @brief Select value description table
