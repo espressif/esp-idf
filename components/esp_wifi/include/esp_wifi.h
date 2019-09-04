@@ -63,7 +63,6 @@
 #include "esp_wifi_types.h"
 #include "esp_event.h"
 #include "esp_private/esp_wifi_private.h"
-#include "esp_wifi_default.h"
 
 #ifdef __cplusplus
 extern "C" {

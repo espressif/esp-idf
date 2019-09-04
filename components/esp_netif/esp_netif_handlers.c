@@ -108,7 +108,7 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
 
 void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
-    ESP_LOGD(TAG, "esp_netif action connected with netif%p from event_id=%d", esp_netif, event_id);
+    ESP_LOGD(TAG, "esp_netif action disconnected with netif%p from event_id=%d", esp_netif, event_id);
     esp_netif_down(esp_netif);
 
 }

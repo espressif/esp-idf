@@ -47,7 +47,7 @@ static void ip_event_handler(void* arg, esp_event_base_t event_base, int32_t eve
         case IP_EVENT_STA_GOT_IP:
             event = (ip_event_got_ip_t*)event_data;
             ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n", ip4addr_ntoa(&event->ip_info.ip));
+            ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
             if (wifi_events) {
                 xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
             }
@@ -123,9 +123,9 @@ static void wifi_start_stop_task(void* arg)
 	    r = nvs_flash_init();
     }
     TEST_ESP_OK(r);
-    //init tcpip
-    ESP_LOGI(TAG, EMPH_STR("tcpip_adapter_init"));
-    tcpip_adapter_init();
+    //init tcpip stack
+    ESP_LOGI(TAG, EMPH_STR("esp_netif_init"));
+    esp_netif_init();
     //init event loop
     ESP_LOGI(TAG, EMPH_STR("event_init"));
     event_init();

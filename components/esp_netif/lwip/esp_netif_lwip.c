@@ -201,6 +201,12 @@ char * esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen)
     return ip4addr_ntoa_r((ip4_addr_t *)addr, buf, buflen);
 }
 
+uint32_t esp_ip4addr_aton(const char *addr)
+{
+    return ipaddr_addr(addr);
+}
+
+
 esp_netif_iodriver_handle esp_netif_get_io_driver(esp_netif_t *esp_netif)
 {
     return esp_netif->driver_handle;
@@ -380,13 +386,25 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     return esp_netif;
 }
 
+static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
+{
+    if (esp_netif->lwip_netif) {
+        if (netif_is_up(esp_netif->lwip_netif)) {
+            netif_set_down(esp_netif->lwip_netif);
+        }
+        netif_remove(esp_netif->lwip_netif);
+        free(esp_netif->lwip_netif);
+        esp_netif->lwip_netif = NULL;
+    }
+}
+
 void esp_netif_destroy(esp_netif_t *esp_netif)
 {
     if (esp_netif) {
         esp_netif_remove_from_list(esp_netif);
         free(esp_netif->ip_info);
         free(esp_netif->ip_info_old);
-        free(esp_netif->lwip_netif);
+        esp_netif_lwip_remove(esp_netif);
         free(esp_netif->if_key);
         free(esp_netif);
     }
@@ -536,7 +554,7 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
     }
 
     if (!netif_is_up(lwip_netif)) {
-        netif_remove(lwip_netif);
+        esp_netif_lwip_remove(esp_netif);
         return ESP_ERR_ESP_NETIF_IF_NOT_READY;
     }
 
@@ -556,7 +574,7 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
     }
 
     netif_set_down(lwip_netif);
-    netif_remove(lwip_netif);
+    esp_netif_lwip_remove(esp_netif);
     esp_netif_update_default_netif(esp_netif, ESP_NETIF_STOPPED);;
 
     return ESP_OK;
@@ -645,7 +663,19 @@ static void esp_netif_dhcpc_cb(struct netif *netif)
 
 static void esp_netif_ip_lost_timer(void *arg)
 {
-    esp_netif_t *esp_netif = (esp_netif_t*)arg;
+    esp_netif_t *esp_netif = NULL;
+    esp_netif_t *nif = esp_netif_next(NULL);
+    do {
+        if (nif && nif == arg) {
+            esp_netif = nif;
+            break;
+        }
+    } while (NULL != (nif = esp_netif_next(nif)));
+
+    if (esp_netif == NULL) {
+        ESP_LOGD(TAG, "%s esp_netif not found in the list", __func__);
+        return;
+    }
 
     ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
 

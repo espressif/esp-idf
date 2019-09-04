@@ -80,6 +80,9 @@ static esp_err_t event_init(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &ip_event_handler, NULL));
+    esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_ap();
+
     return ESP_OK;
 }
 

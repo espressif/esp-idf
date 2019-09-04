@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
+#include "esp_wifi_default.h"
 #if CONFIG_EXAMPLE_CONNECT_ETHERNET
 #include "esp_eth.h"
 #endif
@@ -136,7 +137,7 @@ static void start(void)
 
     assert(netif);
 
-    esp_wifi_set_default_wifi_sta_handlers(netif);
+    esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, netif);
 
     s_example_esp_netif = netif;
 
@@ -176,7 +177,7 @@ static void stop(void)
     }
     ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_wifi_deinit());
-
+    ESP_ERROR_CHECK(esp_wifi_clear_default_wifi_driver_and_handlers(s_example_esp_netif));
     esp_netif_destroy(s_example_esp_netif);
     s_example_esp_netif = NULL;
 }
