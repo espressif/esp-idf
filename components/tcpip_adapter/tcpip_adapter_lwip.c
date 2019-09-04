@@ -34,8 +34,8 @@
 #include "netif/wlanif.h"
 #ifdef _DECL_ethernet
 #include "netif/ethernetif.h"
-#include "netif/nettestif.h"
 #endif
+#include "netif/nettestif.h"
 
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"

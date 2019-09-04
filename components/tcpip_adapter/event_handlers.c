@@ -42,13 +42,13 @@ static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event
 static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 
+#ifdef _DECL_ethernet
 static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 
-#ifdef _DECL_ethernet
 static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     tcpip_adapter_ip_info_t eth_ip;

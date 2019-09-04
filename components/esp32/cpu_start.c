@@ -62,6 +62,7 @@
 #endif
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
+#include "esp_flash_encrypt.h"
 #ifdef _DECL_esp_event
 #include "esp_event.h"
 #endif

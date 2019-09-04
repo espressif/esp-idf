@@ -131,6 +131,9 @@ static __attribute__((unused)) bool is_safe_write_address(size_t addr, size_t si
         UNSAFE_WRITE_ADDRESS;
     }
     return true;
+#else
+    UNSAFE_WRITE_ADDRESS;
+#endif
 }
 
 
