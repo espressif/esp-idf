@@ -531,6 +531,15 @@ void esp_netif_set_ip4_addr(esp_ip4_addr_t *addr, uint8_t a, uint8_t b, uint8_t 
  */
 char * esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen);
 
+/**
+ * @brief Ascii internet address interpretation routine
+ * The value returned is in network order.
+ *
+ * @param addr IP address in ascii representation (e.g. "127.0.0.1")
+ * @return ip address in network order
+*/
+uint32_t esp_ip4addr_aton(const char *addr);
+
 //
 // 6) Driver conversion utilities to related keys, flags, implementation handle, list of netifs
 //

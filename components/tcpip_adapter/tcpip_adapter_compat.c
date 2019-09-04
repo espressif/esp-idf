@@ -21,6 +21,7 @@
 
 #include "esp_eth.h"
 #include "tcpip_adapter_types.h"
+#include "esp_wifi_default.h"
 
 extern void _esp_wifi_set_default_ap_netif(esp_netif_t* esp_netif);
 extern void _esp_wifi_set_default_sta_netif(esp_netif_t* esp_netif);
@@ -52,7 +53,7 @@ static void wifi_create_and_start_ap(void *esp_netif, esp_event_base_t base, int
         esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_AP();
         esp_netif_t *ap_netif = esp_netif_new(&cfg);
 
-        _esp_wifi_set_default_ap_netif(ap_netif);
+        esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_AP, ap_netif);
         s_esp_netifs[TCPIP_ADAPTER_IF_AP] = ap_netif;
     }
 }
@@ -63,7 +64,7 @@ static void wifi_create_and_start_sta(void *esp_netif, esp_event_base_t base, in
         esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
         esp_netif_t *sta_netif = esp_netif_new(&cfg);
 
-        _esp_wifi_set_default_sta_netif(sta_netif);
+        esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, sta_netif);
         s_esp_netifs[TCPIP_ADAPTER_IF_STA] = sta_netif;
     }
 }
@@ -102,6 +103,11 @@ static void tcpip_adapter_eth_start(void *esp_netif, esp_event_base_t base, int3
 {
     esp_eth_handle_t eth_handle = *(esp_eth_handle_t*)data;
     esp_netif_attach(esp_netif, eth_handle);
+}
+
+esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
+{
+    return esp_eth_clear_default_handlers(netif_from_if(TCPIP_ADAPTER_IF_ETH));
 }
 
 esp_err_t tcpip_adapter_set_default_eth_handlers(void)

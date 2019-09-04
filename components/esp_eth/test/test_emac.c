@@ -4,7 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "tcpip_adapter.h"
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_event.h"
@@ -14,6 +13,9 @@
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
 #include "ping/ping_sock.h"
+
+#define GOT_IP_BIT BIT(0)
+#define ETHERNET_GET_IP_TIMEOUT_MS (20000)
 
 static const char *TAG = "esp_eth_test";
 
@@ -63,7 +65,6 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
     EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
     ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
     const esp_netif_ip_info_t *ip_info = &event->ip_info;
-
     ESP_LOGI(TAG, "Ethernet Got IP Address");
     ESP_LOGI(TAG, "~~~~~~~~~~~");
     ESP_LOGI(TAG, "ETHIP:" IPSTR, IP2STR(&ip_info->ip));
@@ -148,6 +149,8 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     EventGroupHandle_t eth_event_group = xEventGroupCreate();
     TEST_ASSERT(eth_event_group != NULL);
     TEST_ESP_OK(esp_event_loop_create_default());
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
+    esp_netif_t* eth_netif = esp_netif_new(&cfg);
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
@@ -156,6 +159,7 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    TEST_ESP_OK(esp_netif_attach(eth_netif, eth_handle));
     /* wait for connection start */
     bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
@@ -173,6 +177,7 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
+    esp_netif_destroy(eth_netif);
 }
 
 TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
@@ -182,7 +187,10 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ASSERT(eth_event_group != NULL);
     test_case_uses_tcpip();
     TEST_ESP_OK(esp_event_loop_create_default());
-    TEST_ESP_OK(tcpip_adapter_set_default_eth_handlers());
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
+    esp_netif_t* eth_netif = esp_netif_new(&cfg);
+    TEST_ESP_OK(esp_eth_set_default_handlers(eth_netif));
+
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
@@ -192,6 +200,8 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    TEST_ESP_OK(esp_netif_attach(eth_netif, eth_handle));
+
     /* wait for IP lease */
     bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
@@ -205,9 +215,10 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
-    TEST_ESP_OK(tcpip_adapter_clear_default_eth_handlers());
+    TEST_ESP_OK(esp_eth_clear_default_handlers(eth_netif));
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
+    esp_netif_destroy(eth_netif);
 }
 
 TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")

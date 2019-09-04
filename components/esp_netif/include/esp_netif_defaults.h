@@ -36,7 +36,7 @@
 {                                                    \
         .base = ESP_NETIF_BASE_DEFAULT_WIFI_AP,      \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP, \
-        .driver = ESP_NETIF_DRIVER_DEFAULT_WIFI_AP,  \
+        .driver = NULL,  \
     }
 
 /**
@@ -46,7 +46,7 @@
     {                                                 \
         .base = ESP_NETIF_BASE_DEFAULT_WIFI_STA,      \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA, \
-        .driver = ESP_NETIF_DRIVER_DEFAULT_WIFI_STA,  \
+        .driver = NULL,  \
     }
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI STA

@@ -335,7 +335,7 @@ static int wifi_cmd_iperf(int argc, char **argv)
     if (iperf_args.ip->count == 0) {
         cfg.flag |= IPERF_FLAG_SERVER;
     } else {
-        cfg.dip = ipaddr_addr(iperf_args.ip->sval[0]);
+        cfg.dip = esp_ip4addr_aton(iperf_args.ip->sval[0]);
         cfg.flag |= IPERF_FLAG_CLIENT;
     }
 

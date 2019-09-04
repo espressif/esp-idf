@@ -22,33 +22,37 @@
 //  Also this module holds esp-netif handles for AP and STA
 //
 
+typedef struct wifi_netif_driver {
+    esp_netif_driver_base_t base;
+    wifi_interface_t wifi_if;
+}* wifi_netif_driver_t;
+
 static const char* TAG = "wifi_init_default";
 
-static esp_netif_t *sta_netif = NULL;
-static esp_netif_t *ap_netif = NULL;
-static bool wifi_default_handlers_set = false;
+#define MAX_WIFI_IFS (2)
 
+static esp_netif_t *s_wifi_netifs[MAX_WIFI_IFS] = { NULL };
+static bool wifi_default_handlers_set = false;
 
 static esp_err_t wifi_sta_receive(void *buffer, uint16_t len, void *eb)
 {
-    return esp_netif_receive(sta_netif, buffer, len, eb);
+    return esp_netif_receive(s_wifi_netifs[WIFI_IF_STA], buffer, len, eb);
 }
 
 static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
 {
-    return esp_netif_receive(ap_netif, buffer, len, eb);
+    return esp_netif_receive(s_wifi_netifs[WIFI_IF_AP], buffer, len, eb);
 }
-
 
 void wifi_free(void *h, void* buffer)
 {
     esp_wifi_internal_free_rx_buffer(buffer);
 }
 
-
 esp_err_t wifi_transmit(void *h, void *buffer, size_t len)
 {
-    return esp_wifi_internal_tx((wifi_interface_t)h, buffer, len);
+    wifi_netif_driver_t driver = h;
+    return esp_wifi_internal_tx(driver->wifi_if, buffer, len);
 }
 
 void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
@@ -58,7 +62,8 @@ void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *
     uint8_t mac[6];
     esp_err_t ret;
 
-    wifi_interface_t wifi_interface = (wifi_interface_t) esp_netif_get_io_driver(esp_netif);
+    wifi_netif_driver_t driver = esp_netif_get_io_driver(esp_netif);
+    wifi_interface_t wifi_interface = driver->wifi_if;
 
     if ((ret = esp_wifi_get_mac(wifi_interface, mac)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_get_mac failed with %d", ret);
@@ -81,21 +86,21 @@ void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *
 
 static void wifi_default_action_sta_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (sta_netif != NULL) {
-        wifi_start(sta_netif, base, event_id, data);
+    if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
+        wifi_start(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
 }
 
 static void wifi_default_action_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (sta_netif != NULL) {
-        esp_netif_action_stop(sta_netif, base, event_id, data);
+    if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
+        esp_netif_action_stop(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
 }
 
 static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (sta_netif != NULL) {
+    if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_err_t ret;
         // By default register wifi rxcb once the STA gets connected
         if ((ret = esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA,  wifi_sta_receive)) != ESP_OK) {
@@ -103,40 +108,40 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
             return;
         }
 
-        esp_netif_action_connected(sta_netif, base, event_id, data);
+        esp_netif_action_connected(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
 }
 
 static void wifi_default_action_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (sta_netif != NULL) {
-        esp_netif_action_disconnected(sta_netif, base, event_id, data);
+    if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
+        esp_netif_action_disconnected(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
 }
 
 static void wifi_default_action_ap_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (ap_netif != NULL) {
-        wifi_start(ap_netif, base, event_id, data);
+    if (s_wifi_netifs[WIFI_IF_AP] != NULL) {
+        wifi_start(s_wifi_netifs[WIFI_IF_AP], base, event_id, data);
     }
 }
 
 static void wifi_default_action_ap_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (ap_netif != NULL) {
-        esp_netif_action_stop(ap_netif, base, event_id, data);
+    if (s_wifi_netifs[WIFI_IF_AP] != NULL) {
+        esp_netif_action_stop(s_wifi_netifs[WIFI_IF_AP], base, event_id, data);
     }
 }
 
 static void wifi_default_action_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    if (sta_netif != NULL) {
+    if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         ESP_LOGD(TAG, "Got IP wifi default handler entered");
         int ret = esp_wifi_internal_set_sta_ip();
         if (ret != ESP_OK) {
             ESP_LOGI(TAG, "esp_wifi_internal_set_sta_ip failed with %d", ret);
         }
-        esp_netif_action_got_ip(sta_netif, base, event_id, data);
+        esp_netif_action_got_ip(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
 }
 
@@ -154,16 +159,40 @@ esp_err_t esp_wifi_clear_default_wifi_handlers(void)
     return ESP_OK;
 }
 
-void _esp_wifi_set_default_ap_netif(esp_netif_t* esp_netif)
+static esp_err_t wifi_driver_start(esp_netif_t * esp_netif, void * args)
 {
-    assert(esp_netif);
-    ap_netif = esp_netif;
+    wifi_netif_driver_t driver = args;
+    driver->base.netif = esp_netif;
+    esp_netif_driver_ifconfig_t driver_ifconfig = {
+            .handle =  driver,
+            .transmit = wifi_transmit,
+            .driver_free_rx_buffer = wifi_free
+    };
+
+    return esp_netif_set_driver_config(esp_netif, &driver_ifconfig);
 }
 
-void _esp_wifi_set_default_sta_netif(esp_netif_t* esp_netif)
+static esp_err_t disconnect_and_destroy(esp_netif_t* esp_netif)
 {
-    assert(esp_netif);
-    sta_netif = esp_netif;
+    wifi_netif_driver_t driver = esp_netif_get_io_driver(esp_netif);
+    driver->base.netif = NULL;
+    esp_netif_driver_ifconfig_t driver_ifconfig = { };
+    esp_err_t  ret = esp_netif_set_driver_config(esp_netif, &driver_ifconfig);
+    free(driver);
+    return ret;
+}
+
+static esp_err_t create_and_attach(wifi_interface_t wifi_if, esp_netif_t* esp_netif)
+{
+    wifi_netif_driver_t driver = calloc(1, sizeof(struct wifi_netif_driver));
+    if (driver == NULL) {
+        ESP_LOGE(TAG, "No memory to create a wifi driver");
+        return ESP_ERR_NO_MEM;
+    }
+    driver->wifi_if = wifi_if;
+    driver->base.post_attach = wifi_driver_start;
+    esp_netif_attach(esp_netif, driver);
+    return ESP_OK;
 }
 
 esp_err_t _esp_wifi_set_default_wifi_handlers(void)
@@ -219,26 +248,32 @@ fail:
     return err;
 }
 
-esp_err_t esp_wifi_set_default_wifi_sta_handlers(void *esp_netif)
+esp_err_t esp_wifi_set_default_wifi_driver_and_handlers(wifi_interface_t wifi_if, void *esp_netif)
 {
-    _esp_wifi_set_default_sta_netif(esp_netif);
+    assert(esp_netif);
+    assert(wifi_if < MAX_WIFI_IFS);
+    s_wifi_netifs[wifi_if] = esp_netif;
+    ESP_ERROR_CHECK(create_and_attach(wifi_if, esp_netif));
     return _esp_wifi_set_default_wifi_handlers();
 }
 
-esp_err_t esp_wifi_set_default_wifi_ap_handlers(void *esp_netif)
+esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif)
 {
-    _esp_wifi_set_default_ap_netif(esp_netif);
-    return _esp_wifi_set_default_wifi_handlers();
+    int i;
+    for (i = 0; i< MAX_WIFI_IFS; ++i) {
+        // clear internal static pointers to netifs
+        if (s_wifi_netifs[i] == esp_netif) {
+            s_wifi_netifs[i] = NULL;
+        }
+        // check if all netifs are cleared to delete default handlers
+        if (s_wifi_netifs[i] != NULL) {
+            break;
+        }
+    }
+
+    if (i == MAX_WIFI_IFS) { // if all wifi default netifs are null
+        ESP_LOGD(TAG, "Clearing wifi default handlers");
+        esp_wifi_clear_default_wifi_handlers();
+    }
+    return disconnect_and_destroy(esp_netif);
 }
-
-const esp_netif_driver_ifconfig_t _g_wifi_driver_sta_ifconfig = {
-        .handle =  (void*)WIFI_IF_STA,
-        .transmit = wifi_transmit,
-        .driver_free_rx_buffer = wifi_free,
-};
-
-const esp_netif_driver_ifconfig_t _g_wifi_driver_ap_ifconfig = {
-        .handle =  (void*)WIFI_IF_AP,
-        .transmit = wifi_transmit,
-        .driver_free_rx_buffer = wifi_free,
-};

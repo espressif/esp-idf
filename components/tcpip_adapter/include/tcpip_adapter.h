@@ -107,6 +107,12 @@ esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb);
 esp_err_t tcpip_adapter_clear_default_wifi_handlers(void);
 
 /**
+ * @brief Compatible version of former tcpip_adapter API to clear default ethernet handlers
+ * @return ESP_OK on success
+ */
+esp_err_t tcpip_adapter_clear_default_eth_handlers(void);
+
+/**
  * @brief Compatible version of former tcpip_adapter API of esp_netif_dhcps_stop
 */
 esp_err_t tcpip_adapter_dhcps_stop(tcpip_adapter_if_t tcpip_if);
