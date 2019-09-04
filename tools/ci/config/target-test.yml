@@ -457,6 +457,14 @@ UT_033:
     - UT_T2_Ethernet
     - psram
 
+UT_034:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - ESP32_IDF
+    - UT_T1_ESP_FLASH
+
+
 nvs_compatible_test:
   extends: .test_template
   artifacts:
