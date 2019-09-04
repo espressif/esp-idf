@@ -1,7 +1,0 @@
-language: python
-sudo: false
-python:
-  - "3.4"
-script:
-  - pip install flake8
-  - travis_wait 20 python -m flake8 --config=.flake8 .
