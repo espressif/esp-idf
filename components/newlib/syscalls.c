@@ -27,6 +27,7 @@ int _system_r(struct _reent *r, const char *str)
     return -1;
 }
 
+int _raise_r(struct _reent *r, int sig) __attribute__((weak));
 int _raise_r(struct _reent *r, int sig)
 {
     abort();
