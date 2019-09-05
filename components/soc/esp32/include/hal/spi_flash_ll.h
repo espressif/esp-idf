@@ -202,21 +202,6 @@ static inline bool spi_flash_ll_host_idle(const spi_dev_t *dev)
     return dev->ext2.st != 0;
 }
 
-/**
- * Set phases for user-defined transaction to read
- *
- * @param dev Beginning address of the peripheral registers.
- */
-static inline void spi_flash_ll_read_phase(spi_dev_t *dev)
-{
-    typeof (dev->user) user = {
-        .usr_command = 1,
-        .usr_mosi = 0,
-        .usr_miso = 1,
-        .usr_addr = 1,
-    };
-    dev->user = user;
-}
 /*------------------------------------------------------------------------------
  * Configs
  *----------------------------------------------------------------------------*/
@@ -239,7 +224,7 @@ static inline void spi_flash_ll_set_cs_pin(spi_dev_t *dev, int pin)
  * @param dev Beginning address of the peripheral registers.
  * @param read_mode I/O mode to use in the following transactions.
  */
-static inline void spi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_read_mode_t read_mode)
+static inline void spi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mode_t read_mode)
 {
     typeof (dev->ctrl) ctrl = dev->ctrl;
     ctrl.val &= ~(SPI_FREAD_QIO_M | SPI_FREAD_QUAD_M | SPI_FREAD_DIO_M | SPI_FREAD_DUAL_M);
