@@ -127,7 +127,7 @@ static void release_bus(int host_id)
     }
 }
 
-static void setup_new_chip(esp_flash_read_mode_t io_mode, esp_flash_speed_t speed)
+static void setup_new_chip(esp_flash_io_mode_t io_mode, esp_flash_speed_t speed)
 {
     //the bus should be initialized before the flash is attached to the bus
     setup_bus(TEST_HOST);

@@ -155,23 +155,38 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_driver_t *chip_drv, boo
 bool spi_flash_hal_host_idle(spi_flash_host_driver_t *driver);
 
 /**
- *  Configure the SPI host hardware registers for the specified read mode.
+ * @brief Configure the SPI host hardware registers for the specified io mode.
  *
  *  Note that calling this configures SPI host registers, so if running any
- *  other commands as part of set_read_mode() then these must be run before
+ *  other commands as part of set_io_mode() then these must be run before
  *  calling this function.
  *
+ *  The command value, address length and dummy cycles are configured according
+ *  to the format of read commands:
+ *
+ *  - command: 8 bits, value set.
+ *  - address: 24 bits
+ *  - dummy: cycles to compensate the input delay
+ *  - out & in data: 0 bits.
+ *
+ *  The following commands still need to:
+ *
+ *  - Read data: set address value and data (length and contents), no need
+ *    to touch command and dummy phases.
+ *  - Common read: set command value, address value (or length to 0 if not used)
+ *  - Common write: set command value, address value (or length to 0 if not
+ *    used), disable dummy phase, and set output data.
+ *
  * @param driver The driver context
- * @param read_mode The HW read mode to use
+ * @param io_mode The HW read mode to use
  * @param addr_bitlen Length of the address phase, in bits
  * @param dummy_cyclelen_base Base cycles of the dummy phase, some extra dummy cycles may be appended to compensate the timing.
- * @param read_command  Actual reading command to send to flash chip on the bus.
+ * @param command  Actual reading command to send to flash chip on the bus.
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_configure_host_read_mode(spi_flash_host_driver_t *driver, esp_flash_read_mode_t read_mode,
-        uint32_t addr_bitlen, uint32_t dummy_cyclelen_base,
-        uint32_t read_command);
+esp_err_t spi_flash_hal_configure_host_io_mode(spi_flash_host_driver_t *driver, uint32_t command, uint32_t addr_bitlen,
+                                               int dummy_cyclelen_base, esp_flash_io_mode_t io_mode);
 
 /**
  * Poll until the last operation is done.
