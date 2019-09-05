@@ -205,6 +205,14 @@ static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_cry
     uint32_t new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
     ESP_LOGD(TAG, "FLASH_CRYPT_CNT 0x%x -> 0x%x", flash_crypt_cnt, new_flash_crypt_cnt);
     REG_SET_FIELD(EFUSE_BLK0_WDATA0_REG, EFUSE_FLASH_CRYPT_CNT, new_flash_crypt_cnt);
+
+#ifdef CONFIG_FLASH_ENCRYPTION_DISABLE_PLAINTEXT
+    ESP_LOGI(TAG, "Write protecting FLASH_CRYPT_CNT efuse...");
+    REG_SET_BIT(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_FLASH_CRYPT_CNT);
+#else
+    ESP_LOGW(TAG, "Not disabling FLASH_CRYPT_CNT - plaintext flashing is still possible");
+#endif
+
     esp_efuse_burn_new_values();
 
     ESP_LOGI(TAG, "Flash encryption completed");
