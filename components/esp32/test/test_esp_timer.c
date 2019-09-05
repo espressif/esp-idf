@@ -649,3 +649,133 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
 
     ref_clock_deinit();
 }
+
+#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+
+#include "soc/dport_reg.h"
+#include "soc/frc_timer_reg.h"
+#include "esp_ipc.h"
+static bool task_stop;
+static bool time_jumped;
+
+static void task_check_time(void *p)
+{
+    int64_t  t1 = 0, t2 = 0;
+    while (task_stop == false) {
+
+        t1 = t2;
+        t2 = esp_timer_get_time();
+        if (t1 > t2) {
+            int64_t shift_us = t2 - t1;
+            time_jumped = true;
+            printf("System clock jumps back: %lli us\n", shift_us);
+        }
+
+        vTaskDelay(1);
+    }
+    vTaskDelete(NULL);
+}
+
+static void timer_callback(void* arg)
+{
+
+}
+
+static void dport_task(void *pvParameters)
+{
+    while (task_stop == false) {
+        DPORT_STALL_OTHER_CPU_START();
+        ets_delay_us(3);
+        DPORT_STALL_OTHER_CPU_END();
+    }
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("esp_timer_impl_set_alarm does not set an alarm below the current time", "[esp_timer][timeout=62]")
+{
+    const int max_timers = 2;
+    time_jumped = false;
+    task_stop   = false;
+
+    xTaskCreatePinnedToCore(task_check_time, "task_check_time", 4096, NULL, 5, NULL, 0);
+    // dport_task is used here to interrupt the esp_timer_impl_set_alarm function.
+    // To interrupt it we can use an interrupt with 4 or 5 levels which will run on CPU0.
+    // Instead, an interrupt we use the dport workaround which has 4 interrupt level for stall CPU0.
+    xTaskCreatePinnedToCore(dport_task, "dport_task", 4096, NULL, 5, NULL, 1);
+
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &timer_callback,
+    };
+
+    esp_timer_handle_t periodic_timer[max_timers];
+    printf("timers created\n");
+
+    esp_timer_create(&periodic_timer_args, &periodic_timer[0]);
+    esp_timer_start_periodic(periodic_timer[0], 9000);
+
+    esp_timer_create(&periodic_timer_args, &periodic_timer[1]);
+    esp_timer_start_periodic(periodic_timer[1], 9000);
+
+    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+    task_stop = true;
+
+    esp_timer_stop(periodic_timer[0]);
+    esp_timer_delete(periodic_timer[0]);
+    esp_timer_stop(periodic_timer[1]);
+    esp_timer_delete(periodic_timer[1]);
+    printf("timers deleted\n");
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    TEST_ASSERT(time_jumped == false);
+}
+
+
+static esp_timer_handle_t oneshot_timer;
+
+static void oneshot_timer_callback(void* arg)
+{
+    esp_timer_start_once(oneshot_timer, 5000);
+}
+
+static const esp_timer_create_args_t oneshot_timer_args = {
+    .callback = &oneshot_timer_callback,
+};
+
+TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the System time jumps back", "[esp_timer][timeout=62]")
+{
+    time_jumped = false;
+    task_stop   = false;
+
+    xTaskCreatePinnedToCore(task_check_time, "task_check_time", 4096, NULL, 5, NULL, 0);
+    // dport_task is used here to interrupt the esp_timer_impl_set_alarm function.
+    // To interrupt it we can use an interrupt with 4 or 5 levels which will run on CPU0.
+    // Instead, an interrupt we use the dport workaround which has 4 interrupt level for stall CPU0.
+    xTaskCreatePinnedToCore(dport_task, "dport_task", 4096, NULL, 5, NULL, 1);
+
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &timer_callback,
+    };
+
+    esp_timer_handle_t periodic_timer;
+
+    esp_timer_create(&periodic_timer_args, &periodic_timer);
+    esp_timer_start_periodic(periodic_timer, 5000);
+
+    esp_timer_create(&oneshot_timer_args, &oneshot_timer);
+    esp_timer_start_once(oneshot_timer, 9990);
+    printf("timers created\n");
+
+    vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
+    task_stop = true;
+
+    esp_timer_stop(oneshot_timer);
+    esp_timer_delete(oneshot_timer);
+    printf("timers deleted\n");
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    TEST_ASSERT(time_jumped == false);
+}
+
+#endif // !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
