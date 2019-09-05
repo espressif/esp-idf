@@ -887,6 +887,13 @@ UBaseType_t x;
 	}
 	#endif /* ( ( configCHECK_FOR_STACK_OVERFLOW > 1 ) || ( ( configUSE_TRACE_FACILITY == 1 ) || ( INCLUDE_uxTaskGetStackHighWaterMark == 1 ) ) ) */
 
+	#if( configUSE_TRACE_FACILITY == 1 )
+	{
+		/* Zero the uxTaskNumber TCB member to avoid random value from dynamically allocated TCBs */
+		pxNewTCB->uxTaskNumber = 0;
+	}
+	#endif  /* ( configUSE_TRACE_FACILITY == 1 ) */
+
 	/* Calculate the top of stack address.  This depends on whether the stack
 	grows from high memory to low (as per the 80x86) or vice versa.
 	portSTACK_GROWTH is used to make the result positive or negative as required
