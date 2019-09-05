@@ -35,12 +35,28 @@ esp_err_t spi_flash_chip_issi_probe(esp_flash_t *chip, uint32_t flash_id)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_chip_issi_set_read_mode(esp_flash_t *chip)
+esp_err_t spi_flash_chip_issi_set_io_mode(esp_flash_t *chip)
 {
     /* ISSI uses bit 6 of "basic" SR as Quad Enable */
     const uint8_t BIT_QE = 1 << 6;
-    return spi_flash_common_set_read_mode(chip, CMD_RDSR, CMD_WRSR, 8, BIT_QE);
+    return spi_flash_common_set_io_mode(chip,
+                                        spi_flash_common_write_status_8b_wrsr,
+                                        spi_flash_common_read_status_8b_rdsr,
+                                        BIT_QE);
 }
+
+esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode)
+{
+    /* ISSI uses bit 6 of "basic" SR as Quad Enable */
+    const uint8_t BIT_QE = 1 << 6;
+    uint32_t sr;
+    esp_err_t ret = spi_flash_common_read_status_8b_rdsr(chip, &sr);
+    if (ret == ESP_OK) {
+        *out_io_mode = ((sr & BIT_QE)? SPI_FLASH_QOUT: 0);
+    }
+    return ret;
+}
+
 
 static const char chip_name[] = "issi";
 
@@ -73,5 +89,6 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .write_encrypted = spi_flash_chip_generic_write_encrypted,
 
     .wait_idle = spi_flash_chip_generic_wait_idle,
-    .set_read_mode = spi_flash_chip_issi_set_read_mode,
+    .set_io_mode = spi_flash_chip_issi_set_io_mode,
+    .get_io_mode = spi_flash_chip_issi_get_io_mode,
 };

@@ -63,7 +63,7 @@ struct esp_flash_t {
     const esp_flash_os_functions_t *os_func;    ///< Pointer to os-specific hook structure. Call ``esp_flash_init_os_functions()`` to setup this field, after the host is properly initialized.
     void *os_func_data;                         ///< Pointer to argument for os-specific hooks. Left NULL and will be initialized with ``os_func``.
 
-    esp_flash_read_mode_t read_mode; ///< Configured SPI flash read mode. Set before ``esp_flash_init`` is called.
+    esp_flash_io_mode_t read_mode; ///< Configured SPI flash read mode. Set before ``esp_flash_init`` is called.
     uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation.
 };
 
@@ -285,6 +285,22 @@ esp_err_t esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *ou
 */
 extern esp_flash_t *esp_flash_default_chip;
 
+
+/*******************************************************************************
+ * Utility Functions
+ ******************************************************************************/
+
+/**
+ * @brief Returns true if chip is configured for Quad I/O or Quad Fast Read.
+ *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ *
+ * @return true if flash works in quad mode, otherwise false
+ */
+static inline bool esp_flash_is_quad_mode(const esp_flash_t *chip)
+{
+    return (chip->read_mode == SPI_FLASH_QIO) || (chip->read_mode == SPI_FLASH_QOUT);
+}
 
 #ifdef __cplusplus
 }

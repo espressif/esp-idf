@@ -52,28 +52,37 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *driver)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_hal_configure_host_read_mode(spi_flash_host_driver_t *driver, esp_flash_read_mode_t read_mode,
-        uint32_t addr_bitlen, uint32_t dummy_cyclelen_base,
-        uint32_t read_command)
+esp_err_t spi_flash_hal_configure_host_io_mode(
+    spi_flash_host_driver_t *host,
+    uint32_t command,
+    uint32_t addr_bitlen,
+    int dummy_cyclelen_base,
+    esp_flash_io_mode_t io_mode)
 {
     // Add dummy cycles to compensate for latency of GPIO matrix and external delay, if necessary...
     int dummy_cyclelen = dummy_cyclelen_base + ((spi_flash_memspi_data_t *)driver->driver_data)->extra_dummy;
 
     spi_dev_t *dev = get_spi_dev(driver);
+    spi_flash_ll_set_command8(dev, command);
     spi_flash_ll_set_addr_bitlen(dev, addr_bitlen);
-    spi_flash_ll_set_command8(dev, read_command);
-    spi_flash_ll_read_phase(dev);
     spi_flash_ll_set_dummy(dev, dummy_cyclelen);
-    spi_flash_ll_set_read_mode(dev, read_mode);
+    //disable all data phases, enable them later if needed
+    spi_flash_ll_set_miso_bitlen(dev, 0);
+    spi_flash_ll_set_mosi_bitlen(dev, 0);
+    spi_flash_ll_set_read_mode(dev, io_mode);
     return ESP_OK;
 }
 
 esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *chip_drv, spi_flash_trans_t *trans)
 {
-    chip_drv->configure_host_read_mode(chip_drv, SPI_FLASH_FASTRD, 0, 0, 0);
+    host->configure_host_io_mode(host, trans->command, 0, 0, SPI_FLASH_FASTRD);
+
     spi_dev_t *dev = get_spi_dev(chip_drv);
-    spi_flash_ll_set_command8(dev, trans->command);
-    spi_flash_ll_set_addr_bitlen(dev, 0);
+    //disable dummy if no input phase
+    if (trans->miso_len == 0) {
+        spi_flash_ll_set_dummy(dev, 0);
+    }
+
     spi_flash_ll_set_miso_bitlen(dev, trans->miso_len);
     spi_flash_ll_set_mosi_bitlen(dev, trans->mosi_len);
 
@@ -122,7 +131,7 @@ void spi_flash_hal_program_page(spi_flash_host_driver_t *chip_drv, const void *b
 esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *chip_drv, void *buffer, uint32_t address, uint32_t read_len)
 {
     spi_dev_t *dev = get_spi_dev(chip_drv);
-    //the command is already set by ``spi_flash_hal_configure_host_read_mode`` before.
+    //the command is already set by ``spi_flash_hal_configure_host_io_mode`` before.
     spi_flash_ll_set_address(dev, address << 8);
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
     spi_flash_ll_user_start(dev);
