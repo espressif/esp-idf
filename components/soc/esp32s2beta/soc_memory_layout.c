@@ -122,7 +122,7 @@ extern int _data_start_xtos;
    These are removed from the soc_memory_regions array when heaps are created.
  */
 //ROM data region
-SOC_RESERVE_MEMORY_REGION(0x3fff8000, (intptr_t)&_data_start_xtos, rom_data_region);
+SOC_RESERVE_MEMORY_REGION(0x3fffc000, (intptr_t)&_data_start_xtos, rom_data_region);
 
 // TODO: soc_memory_layout: handle trace memory regions - IDF-750
 
