@@ -114,7 +114,7 @@ menu "Ethernet"
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
-            range 3 20
+            range 3 30
             default 10
             help
                 Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
@@ -122,7 +122,7 @@ menu "Ethernet"
 
         config ETH_DMA_TX_BUFFER_NUM
             int "Amount of Ethernet DMA Tx buffers"
-            range 3 20
+            range 3 30
             default 10
             help
                 Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
