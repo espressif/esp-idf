@@ -1,4 +1,7 @@
 [mapping:esp_gdbstub]
 archive: libesp_gdbstub.a
-entries:
-    * (noflash)
+entries: 
+   if ESP32_PANIC_HANDLER_IRAM = y:
+        * (noflash_text)
+   else:
+        * (default)

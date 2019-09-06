@@ -776,6 +776,20 @@ menu "ESP32-specific"
             To prevent interrupting DPORT workarounds,
             need to disable interrupt with a maximum used level in the system.
 
+    config ESP32_PANIC_HANDLER_IRAM
+        bool "Place panic handler code in IRAM"
+        default n
+        help
+            If this option is disabled (default), the panic handler code is placed in flash not IRAM.
+            This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will
+            automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
+            risk, if the flash cache status is also corrupted during the crash.
+
+            If this option is enabled, the panic handler code is placed in IRAM. This allows the panic
+            handler to run without needing to re-enable cache first. This may be necessary to debug some
+            complex issues with crashes while flash cache is disabled (for example, when writing to
+            SPI flash.)
+
 endmenu  # ESP32-Specific
 
 menu "Power Management"

@@ -296,6 +296,13 @@ const void *spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memor
 bool spi_flash_cache_enabled(void);
 
 /**
+ * @brief Re-enable cache for the core defined as cpuid parameter.
+ *
+ * @param cpuid the core number to enable instruction cache for
+ */
+void spi_flash_enable_cache(uint32_t cpuid);
+
+/**
  * @brief SPI flash critical section enter function.
  *
  */

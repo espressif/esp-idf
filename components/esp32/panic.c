@@ -608,6 +608,14 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     reconfigureAllWdts();
 #endif
 
+#if !CONFIG_ESP32_PANIC_HANDLER_IRAM
+    // Re-enable CPU cache for current CPU if it was disabled
+    if (!spi_flash_cache_enabled()) {
+        spi_flash_enable_cache(core_id);
+        panicPutStr("Re-enable cpu cache.\r\n");
+    }
+#endif
+
 #if CONFIG_ESP32_PANIC_GDBSTUB
     disableAllWdts();
     rtc_wdt_disable();

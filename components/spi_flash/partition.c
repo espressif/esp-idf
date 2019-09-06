@@ -172,7 +172,9 @@ static esp_err_t load_partitions(void)
             err = ESP_ERR_NO_MEM;
             break;
         }
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
         item->info.flash_chip = esp_flash_default_chip;
+#endif
         item->info.address = it->pos.offset;
         item->info.size = it->pos.size;
         item->info.type = it->type;
@@ -334,10 +336,11 @@ esp_err_t esp_partition_read(const esp_partition_t* partition,
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     } else {
 #if CONFIG_SECURE_FLASH_ENC_ENABLED
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
         if (partition->flash_chip != esp_flash_default_chip) {
             return ESP_ERR_NOT_SUPPORTED;
         }
-
+#endif
         /* Encrypted partitions need to be read via a cache mapping */
         const void *buf;
         spi_flash_mmap_handle_t handle;
@@ -376,9 +379,11 @@ esp_err_t esp_partition_write(const esp_partition_t* partition,
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     } else {
 #if CONFIG_SECURE_FLASH_ENC_ENABLED
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
         if (partition->flash_chip != esp_flash_default_chip) {
             return ESP_ERR_NOT_SUPPORTED;
         }
+#endif
         return spi_flash_write_encrypted(dst_offset, src, size);
 #else
         return ESP_ERR_NOT_SUPPORTED;
@@ -428,9 +433,11 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, si
     if (offset + size > partition->size) {
         return ESP_ERR_INVALID_SIZE;
     }
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     if (partition->flash_chip != esp_flash_default_chip) {
         return ESP_ERR_NOT_SUPPORTED;
     }
+#endif
     size_t phys_addr = partition->address + offset;
     // offset within 64kB block
     size_t region_offset = phys_addr & 0xffff;
