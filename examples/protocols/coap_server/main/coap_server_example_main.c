@@ -252,12 +252,20 @@ static void coap_example_server(void *p)
         }
 #if defined(CONFIG_COAP_MBEDTLS_PSK) || defined(CONFIG_COAP_MBEDTLS_PKI)
         if (coap_dtls_is_supported()) {
+#ifndef CONFIG_MBEDTLS_TLS_SERVER
+            /* This is not critical as unencrypted support is still available */
+            ESP_LOGI(TAG, "MbedTLS (D)TLS Server Mode not configured");
+#else /* CONFIG_MBEDTLS_TLS_SERVER */
             serv_addr.addr.sin.sin_port = htons(COAPS_DEFAULT_PORT);
             ep = coap_new_endpoint(ctx, &serv_addr, COAP_PROTO_DTLS);
             if (!ep) {
                 ESP_LOGE(TAG, "dtls: coap_new_endpoint() failed");
                 goto clean_up;
             }
+#endif /* CONFIG_MBEDTLS_TLS_SERVER */
+        } else {
+            /* This is not critical as unencrypted support is still available */
+            ESP_LOGI(TAG, "MbedTLS (D)TLS Server Mode not configured");
         }
 #endif /* CONFIG_COAP_MBEDTLS_PSK CONFIG_COAP_MBEDTLS_PKI */
         resource = coap_resource_init(coap_make_str_const("Espressif"), 0);

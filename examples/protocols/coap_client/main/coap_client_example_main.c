@@ -219,9 +219,12 @@ static void coap_example_client(void *p)
             break;
         }
 
-        if ((uri.scheme == COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) ||
-                (uri.scheme == COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported())) {
-            ESP_LOGE(TAG, "CoAP server uri scheme is not supported");
+        if (uri.scheme == COAP_URI_SCHEME_COAPS && !coap_dtls_is_supported()) {
+            ESP_LOGE(TAG, "MbedTLS (D)TLS Client Mode not configured");
+            break;
+        }
+        if (uri.scheme == COAP_URI_SCHEME_COAPS_TCP && !coap_tls_is_supported()) {
+            ESP_LOGE(TAG, "CoAP server uri coaps+tcp:// scheme is not supported");
             break;
         }
 
@@ -308,6 +311,10 @@ static void coap_example_client(void *p)
          * but the code is left in for completeness.
          */
         if (uri.scheme == COAP_URI_SCHEME_COAPS || uri.scheme == COAP_URI_SCHEME_COAPS_TCP) {
+#ifndef CONFIG_MBEDTLS_TLS_CLIENT
+            ESP_LOGE(TAG, "MbedTLS (D)TLS Client Mode not configured");
+            goto clean_up;
+#endif /* CONFIG_MBEDTLS_TLS_CLIENT */
 #ifdef CONFIG_COAP_MBEDTLS_PSK
             session = coap_new_client_session_psk(ctx, NULL, &dst_addr,
                                                   uri.scheme == COAP_URI_SCHEME_COAPS ? COAP_PROTO_DTLS : COAP_PROTO_TLS,
