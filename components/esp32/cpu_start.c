@@ -404,9 +404,11 @@ void start_cpu0_default(void)
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
 
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     esp_flash_app_init();
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
+#endif
 
     uint8_t revision = esp_efuse_get_chip_ver();
     ESP_LOGI(TAG, "Chip Revision: %d", revision);

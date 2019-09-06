@@ -94,7 +94,9 @@ bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_
         ESP_COREDUMP_LOG_PROCESS("Stack len = %lu (%x %x)", len,
                 task_snaphort->stack_start, task_snaphort->stack_end);
         // Take stack padding into account
-        *length = (len + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+        if (length) {
+            *length = (len + sizeof(uint32_t) - 1) & ~(sizeof(uint32_t) - 1);
+        }
         task_is_valid = true;
     }
     return task_is_valid;
