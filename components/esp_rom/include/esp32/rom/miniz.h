@@ -522,7 +522,10 @@ mz_bool mz_zip_add_mem_to_archive_file_in_place(const char *pZip_filename, const
 
 // Reads a single file from an archive into a heap block.
 // Returns NULL on failure.
-void *mz_zip_extract_archive_file_to_heap(const char *pZip_filename, const char *pArchive_name, size_t *pSize, mz_uint zip_flags);
+//
+// Note: Due to MINIZ_NO_MALLOC, this function will not work.
+//
+void *mz_zip_extract_archive_file_to_heap(const char *pZip_filename, const char *pArchive_name, size_t *pSize, mz_uint zip_flags)  __attribute__((warning("miniz is compiled without malloc so this function does not work")));
 
 #endif // #ifndef MINIZ_NO_ARCHIVE_WRITING_APIS
 
@@ -551,7 +554,10 @@ enum
 //  Function returns a pointer to the decompressed data, or NULL on failure.
 //  *pOut_len will be set to the decompressed data's size, which could be larger than src_buf_len on uncompressible data.
 //  The caller must call mz_free() on the returned block when it's no longer needed.
-void *tinfl_decompress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
+//
+// Note: Due to MINIZ_NO_MALLOC, this function will not work.
+//
+void *tinfl_decompress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags) __attribute__((warning("miniz is compiled without malloc so this function does not work")));
 
 // tinfl_decompress_mem_to_mem() decompresses a block in memory to another block in memory.
 // Returns TINFL_DECOMPRESS_MEM_TO_MEM_FAILED on failure, or the number of bytes written on success.
@@ -559,9 +565,12 @@ void *tinfl_decompress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, siz
 size_t tinfl_decompress_mem_to_mem(void *pOut_buf, size_t out_buf_len, const void *pSrc_buf, size_t src_buf_len, int flags);
 
 // tinfl_decompress_mem_to_callback() decompresses a block in memory to an internal 32KB buffer, and a user provided callback function will be called to flush the buffer.
-// Returns 1 on success or 0 on failure.
+//
+// Note: Due to MINIZ_NO_MALLOC, this function will not work.
+//
+// Returns 1 on success or 0 or -1 on failure.
 typedef int (*tinfl_put_buf_func_ptr)(const void* pBuf, int len, void *pUser);
-int tinfl_decompress_mem_to_callback(const void *pIn_buf, size_t *pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
+int tinfl_decompress_mem_to_callback(const void *pIn_buf, size_t *pIn_buf_size, tinfl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags) __attribute__((warning("miniz is compiled without malloc so this function does not work")));;
 
 struct tinfl_decompressor_tag; typedef struct tinfl_decompressor_tag tinfl_decompressor;
 
@@ -663,7 +672,10 @@ enum
 //  Function returns a pointer to the compressed data, or NULL on failure.
 //  *pOut_len will be set to the compressed data's size, which could be larger than src_buf_len on uncompressible data.
 //  The caller must free() the returned block when it's no longer needed.
-void *tdefl_compress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags);
+//
+// Note: Due to MINIZ_NO_MALLOC, this function will not work.
+//
+void *tdefl_compress_mem_to_heap(const void *pSrc_buf, size_t src_buf_len, size_t *pOut_len, int flags)  __attribute__((warning("miniz is compiled without malloc so this function does not work")));;
 
 // tdefl_compress_mem_to_mem() compresses a block in memory to another block in memory.
 // Returns 0 on failure.
@@ -686,7 +698,10 @@ void *tdefl_write_image_to_png_file_in_memory(const void *pImage, int w, int h, 
 typedef mz_bool (*tdefl_put_buf_func_ptr)(const void* pBuf, int len, void *pUser);
 
 // tdefl_compress_mem_to_output() compresses a block to an output stream. The above helpers use this function internally.
-mz_bool tdefl_compress_mem_to_output(const void *pBuf, size_t buf_len, tdefl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags);
+//
+// Note: Due to MINIZ_NO_MALLOC, this function will not work.
+//
+mz_bool tdefl_compress_mem_to_output(const void *pBuf, size_t buf_len, tdefl_put_buf_func_ptr pPut_buf_func, void *pPut_buf_user, int flags)  __attribute__((warning("miniz is compiled without malloc so this function does not work")));;
 
 enum { TDEFL_MAX_HUFF_TABLES = 3, TDEFL_MAX_HUFF_SYMBOLS_0 = 288, TDEFL_MAX_HUFF_SYMBOLS_1 = 32, TDEFL_MAX_HUFF_SYMBOLS_2 = 19, TDEFL_LZ_DICT_SIZE = 32768, TDEFL_LZ_DICT_SIZE_MASK = TDEFL_LZ_DICT_SIZE - 1, TDEFL_MIN_MATCH_LEN = 3, TDEFL_MAX_MATCH_LEN = 258 };
 
