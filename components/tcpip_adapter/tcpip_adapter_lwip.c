@@ -35,7 +35,9 @@
 #ifdef _DECL_ethernet
 #include "netif/ethernetif.h"
 #endif
+#if CONFIG_NETIF_USE_TEST_IF
 #include "netif/nettestif.h"
+#endif
 
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -173,8 +175,10 @@ static esp_err_t tcpip_adapter_update_default_netif(void)
 #endif
     } else if (esp_netif[TCPIP_ADAPTER_IF_AP] != NULL && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_AP])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_AP]);
+#if CONFIG_NETIF_USE_TEST_IF
     } else if(esp_netif[TCPIP_ADAPTER_IF_TEST] != NULL && netif_is_up(esp_netif[TCPIP_ADAPTER_IF_TEST])) {
         netif_set_default(esp_netif[TCPIP_ADAPTER_IF_TEST]);
+#endif
     }
 
     return ESP_OK;
@@ -229,8 +233,10 @@ static esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, 
 
             dhcps_status = TCPIP_ADAPTER_DHCP_STARTED;
         }
+#if CONFIG_NETIF_USE_TEST_IF
     } else if (tcpip_if == TCPIP_ADAPTER_IF_TEST) {
         netif_set_up(esp_netif[tcpip_if]);
+#endif
     }
 
     tcpip_adapter_update_default_netif();
@@ -252,12 +258,13 @@ esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info
     return tcpip_adapter_start(TCPIP_ADAPTER_IF_STA, mac, ip_info, NULL);
 }
 
+#if CONFIG_NETIF_USE_TEST_IF
 esp_err_t tcpip_adapter_test_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
 {
     esp_netif_init_fn[TCPIP_ADAPTER_IF_TEST] = nettestif_init;
     return tcpip_adapter_start(TCPIP_ADAPTER_IF_TEST, mac, ip_info, NULL);
 }
-
+#endif
 
 esp_err_t tcpip_adapter_ap_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
 {

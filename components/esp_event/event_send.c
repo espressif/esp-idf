@@ -103,8 +103,10 @@ static system_event_id_t esp_event_legacy_ip_event_id(int32_t event_id)
     case IP_EVENT_GOT_IP6:
         return SYSTEM_EVENT_GOT_IP6;
 
+#ifdef _DECL_ethernet
     case IP_EVENT_ETH_GOT_IP:
         return SYSTEM_EVENT_ETH_GOT_IP;
+#endif
 
     default:
         ESP_LOGE(TAG, "invalid ip event id %d", event_id);

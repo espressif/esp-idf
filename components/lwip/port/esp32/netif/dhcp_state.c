@@ -33,7 +33,9 @@ static const char *interface_key[] =
 #ifdef _DECL_ethernet
     "IF_ETH",
 #endif
+#if CONFIG_NETIF_USE_TEST_IF
     "IF_TEST",
+#endif
 };
 
 _Static_assert(sizeof(interface_key) / sizeof(char*) == TCPIP_ADAPTER_IF_MAX,

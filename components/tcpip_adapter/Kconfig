@@ -24,4 +24,10 @@ menu "TCP/IP Adapter"
                 lwIP is a small independent implementation of the TCP/IP protocol suite.
     endchoice
 
+    config NETIF_USE_TEST_IF
+        bool "Enable TCP adapter for Lwip Test interface"
+        default y
+        help
+            If this is set, the test interface will be implemented. This is not required usually.
+
 endmenu

@@ -22,9 +22,13 @@
 extern "C" {
 #endif
 
+#if CONFIG_NETIF_USE_TEST_IF
+
 err_t nettestif_init(struct netif *netif);
 
 void nettestif_input(void *buffer, u16_t len);
+
+#endif
 
 #ifdef __cplusplus
 }

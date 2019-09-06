@@ -15,6 +15,7 @@
 
 #include "tcpip_adapter.h"
 
+#if CONFIG_NETIF_USE_TEST_IF
 static struct netif *g_last_netif = NULL;
 
 
@@ -103,3 +104,5 @@ void nettestif_input(void *buffer, u16_t len)
   }
 
 }
+
+#endif

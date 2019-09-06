@@ -98,7 +98,9 @@ typedef enum {
 #ifdef _DECL_ethernet
     TCPIP_ADAPTER_IF_ETH,         /**< Ethernet interface */
 #endif
+#if CONFIG_NETIF_USE_TEST_IF
     TCPIP_ADAPTER_IF_TEST,        /**< tcpip stack test interface */
+#endif
     TCPIP_ADAPTER_IF_MAX
 } tcpip_adapter_if_t;
 
@@ -152,7 +154,9 @@ typedef enum {
     IP_EVENT_STA_LOST_IP,              /*!< ESP32 station lost IP and the IP is reset to 0 */
     IP_EVENT_AP_STAIPASSIGNED,         /*!< ESP32 soft-AP assign an IP to a connected station */
     IP_EVENT_GOT_IP6,                  /*!< ESP32 station or ap or ethernet interface v6IP addr is preferred */
+#ifdef _DECL_ethernet
     IP_EVENT_ETH_GOT_IP,               /*!< ESP32 ethernet got IP from connected AP */
+#endif
 } ip_event_t;
 
 /** @brief IP event base declaration */
@@ -700,6 +704,7 @@ esp_err_t tcpip_adapter_get_netif(tcpip_adapter_if_t tcpip_if, void ** netif);
  */
 bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
 
+#if CONFIG_NETIF_USE_TEST_IF
 /**
  * @brief  Cause the TCP/IP stack to start the test interface with specified MAC and IP.
  * Test interface is used to exercise network stack with injected packets from SW.
@@ -713,7 +718,9 @@ bool tcpip_adapter_is_netif_up(tcpip_adapter_if_t tcpip_if);
  *         - ESP_ERR_NO_MEM
  */
 esp_err_t tcpip_adapter_test_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+#endif
 
+#ifdef _DECL_ethernet
 /**
  * @brief  Install default event handlers for Ethernet interface
  * @return
@@ -729,6 +736,7 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void);
  *      - one of the errors from esp_event on failure
  */
 esp_err_t tcpip_adapter_clear_default_eth_handlers(void);
+#endif
 
 /**
  * @brief  Install default event handlers for Wi-Fi interfaces (station and AP)
