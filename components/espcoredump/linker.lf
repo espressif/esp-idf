@@ -1,7 +1,10 @@
 [mapping:espcoredump]
 archive: libespcoredump.a
 entries: 
-    core_dump_uart (noflash_text)
-    core_dump_flash (noflash_text)
-    core_dump_common (noflash_text)
-    core_dump_port (noflash_text)
+    if ESP32_PANIC_HANDLER_IRAM = y:
+        core_dump_uart (noflash_text)
+        core_dump_flash (noflash_text)
+        core_dump_common (noflash_text)
+        core_dump_port (noflash_text)
+    else:
+        * (default)
