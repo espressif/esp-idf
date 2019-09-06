@@ -135,7 +135,7 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
             .data = data,
             .api_fn = fn
     };
-    if (g_lwip_task == xTaskGetCurrentTaskHandle()) {
+    if (g_lwip_task != xTaskGetCurrentTaskHandle()) {
         ESP_LOGD(TAG, "check: remote, if=%p fn=%p\n", netif, fn);
         sys_arch_sem_wait(&api_lock_sem, 0);
         tcpip_send_msg_wait_sem((tcpip_callback_fn)esp_netif_api_cb, &msg, &api_sync_sem);
@@ -144,6 +144,28 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
     }
     ESP_LOGD(TAG, "check: local, if=%p fn=%p\n", netif, fn);
     return fn(&msg);
+}
+
+/**
+ * @brief Check if supplied esp_netif handle is active, i.e. available within registered interfaces
+ * as it might have already been destroyed. Returns the supplied handle if active, nullptr otherwise
+ *
+ * @param esp_netif handle to check if available in the list of registered interfaces
+ * @return esp_netif handle if available, or NULL if it wasn't found
+ */
+static esp_netif_t* esp_netif_is_active(esp_netif_t *arg)
+{
+    esp_netif_t *esp_netif = NULL;
+    // looking for the netif in the list of registered interfaces
+    //  as it might have already been destroyed
+    esp_netif_t *nif = esp_netif_next(NULL);
+    do {
+        if (nif && nif == arg) {
+            esp_netif = nif;
+            break;
+        }
+    } while (NULL != (nif = esp_netif_next(nif)));
+    return esp_netif;
 }
 
 /**
@@ -157,6 +179,9 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
 static void esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_action_t action) {
     switch (action) {
         case ESP_NETIF_STARTED:
+        {
+            // check if previously default interface hasn't been destroyed in the meantime
+            s_last_default_esp_netif = esp_netif_is_active(s_last_default_esp_netif);
             if (s_last_default_esp_netif && esp_netif_is_netif_up(s_last_default_esp_netif)
                 && (s_last_default_esp_netif->route_prio > esp_netif->route_prio)) {
                 netif_set_default(s_last_default_esp_netif->lwip_netif);
@@ -164,7 +189,9 @@ static void esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_act
                 s_last_default_esp_netif = esp_netif;
                 netif_set_default(s_last_default_esp_netif->lwip_netif);
             }
-            break;
+        }
+        break;
+
         default:
         case ESP_NETIF_STOPPED:
         {
@@ -186,7 +213,8 @@ static void esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_act
             if (s_last_default_esp_netif && esp_netif_is_netif_up(s_last_default_esp_netif)) {
                 netif_set_default(s_last_default_esp_netif->lwip_netif);
             }
-        } break;
+        }
+        break;
     }
 }
 
@@ -393,9 +421,24 @@ static void esp_netif_lwip_remove(esp_netif_t *esp_netif)
             netif_set_down(esp_netif->lwip_netif);
         }
         netif_remove(esp_netif->lwip_netif);
-        free(esp_netif->lwip_netif);
-        esp_netif->lwip_netif = NULL;
     }
+}
+
+static esp_err_t esp_netif_lwip_add(esp_netif_t *esp_netif)
+{
+    if (esp_netif->lwip_netif == NULL) {
+        esp_netif->lwip_netif = calloc(1, sizeof(struct netif));
+        if (esp_netif->lwip_netif == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+    }
+    if (NULL == netif_add(esp_netif->lwip_netif, (struct ip4_addr*)&esp_netif->ip_info->ip,
+                         (struct ip4_addr*)&esp_netif->ip_info->netmask, (struct ip4_addr*)&esp_netif->ip_info->gw,
+                         esp_netif, esp_netif->lwip_init_fn, tcpip_input)) {
+        esp_netif_lwip_remove(esp_netif);
+        return ESP_ERR_ESP_NETIF_IF_NOT_READY;
+    }
+    return ESP_OK;
 }
 
 void esp_netif_destroy(esp_netif_t *esp_netif)
@@ -404,8 +447,14 @@ void esp_netif_destroy(esp_netif_t *esp_netif)
         esp_netif_remove_from_list(esp_netif);
         free(esp_netif->ip_info);
         free(esp_netif->ip_info_old);
-        esp_netif_lwip_remove(esp_netif);
         free(esp_netif->if_key);
+        esp_netif_lwip_remove(esp_netif);
+        free(esp_netif->lwip_netif);
+        free(esp_netif->hostname);
+        if (s_last_default_esp_netif == esp_netif) {
+            // clear last default netif if it happens to be this just destroyed interface
+            s_last_default_esp_netif = NULL;
+        }
         free(esp_netif);
     }
 }
@@ -440,8 +489,8 @@ esp_err_t esp_netif_set_driver_config(esp_netif_t *esp_netif,
 static esp_err_t esp_netif_reset_ip_info(esp_netif_t *esp_netif)
 {
     ip4_addr_set_zero(&(esp_netif->ip_info->ip));
-    ip4_addr_set_zero(&esp_netif->ip_info->gw);
-    ip4_addr_set_zero(&esp_netif->ip_info->netmask);
+    ip4_addr_set_zero(&(esp_netif->ip_info->gw));
+    ip4_addr_set_zero(&(esp_netif->ip_info->netmask));
     return ESP_OK;
 }
 
@@ -480,13 +529,12 @@ static esp_err_t esp_netif_config_sanity_check(const esp_netif_t * esp_netif)
     if (esp_netif->driver_transmit == NULL ||
         esp_netif->driver_handle == NULL ||
         esp_netif->lwip_input_fn == NULL ||
-        esp_netif->lwip_init_fn == NULL ||
-        esp_netif->lwip_netif == NULL) {
+        esp_netif->lwip_init_fn == NULL) {
         ESP_LOGE(TAG,  "Cannot start esp_netif: Missing mandatory configuration:\n"
                        "esp_netif->driver_transmit: %p, esp_netif->driver_handle:%p, "
-                       "esp_netif->lwip_input_fn: %p, esp_netif->lwip_init_fn:%p, esp_netif->lwip_netif: %p",
+                       "esp_netif->lwip_input_fn: %p, esp_netif->lwip_init_fn:%p",
                        esp_netif->driver_transmit,  esp_netif->driver_handle,
-                       esp_netif->lwip_input_fn,  esp_netif->lwip_init_fn, esp_netif->lwip_netif);
+                       esp_netif->lwip_input_fn,  esp_netif->lwip_init_fn);
 
          return ESP_ERR_INVALID_STATE;
     }
@@ -501,7 +549,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
 
     ESP_ERROR_CHECK(esp_netif_config_sanity_check(esp_netif));
 
-    netif_add(esp_netif->lwip_netif, (struct ip4_addr*)&esp_netif->ip_info->ip, (struct ip4_addr*)&esp_netif->ip_info->netmask, (struct ip4_addr*)&esp_netif->ip_info->gw, esp_netif, esp_netif->lwip_init_fn, tcpip_input);
+    ESP_ERROR_CHECK(esp_netif_lwip_add(esp_netif));
 
     if (esp_netif->flags&ESP_NETIF_FLAG_GARP) {
 #if ESP_GRATUITOUS_ARP
@@ -663,17 +711,10 @@ static void esp_netif_dhcpc_cb(struct netif *netif)
 
 static void esp_netif_ip_lost_timer(void *arg)
 {
-    esp_netif_t *esp_netif = NULL;
-    esp_netif_t *nif = esp_netif_next(NULL);
-    do {
-        if (nif && nif == arg) {
-            esp_netif = nif;
-            break;
-        }
-    } while (NULL != (nif = esp_netif_next(nif)));
+    esp_netif_t *esp_netif = esp_netif_is_active(arg);
 
     if (esp_netif == NULL) {
-        ESP_LOGD(TAG, "%s esp_netif not found in the list", __func__);
+        ESP_LOGD(TAG, "%s esp_netif=%p not active any more", __func__, arg);
         return;
     }
 
@@ -691,7 +732,7 @@ static void esp_netif_ip_lost_timer(void *arg)
         int ret;
 
         ESP_LOGD(TAG, "if%p ip lost tmr: raise ip lost event", esp_netif);
-        memset(&esp_netif->ip_info_old, 0, sizeof(esp_netif_ip_info_t));
+        memset(esp_netif->ip_info_old, 0, sizeof(esp_netif_ip_info_t));
         if (esp_netif->lost_ip_event) {
             ret = esp_event_send_internal(IP_EVENT, esp_netif->lost_ip_event,
                                           &evt, sizeof(evt), 0);
@@ -707,7 +748,7 @@ static void esp_netif_ip_lost_timer(void *arg)
 
 static esp_err_t esp_netif_start_ip_lost_timer(esp_netif_t *esp_netif)
 {
-    esp_netif_ip_info_t *ip_info_old = (esp_netif_ip_info_t *)&esp_netif->ip_info;
+    esp_netif_ip_info_t *ip_info_old = esp_netif->ip_info;
     struct netif *netif = esp_netif->lwip_netif;
 
     ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
@@ -956,7 +997,7 @@ esp_err_t esp_netif_get_hostname(esp_netif_t *esp_netif, const char **hostname)
 #endif
 }
 
-esp_err_t esp_netif_up_api(esp_netif_api_msg_t *msg)
+static esp_err_t esp_netif_up_api(esp_netif_api_msg_t *msg)
 {
     esp_netif_t *esp_netif = msg->esp_netif;
 
@@ -1017,7 +1058,7 @@ bool esp_netif_is_netif_up(esp_netif_t *esp_netif)
 {
     ESP_LOGV(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
-    if (esp_netif != NULL && netif_is_up(esp_netif->lwip_netif)) {
+    if (esp_netif != NULL && esp_netif->lwip_netif != NULL && netif_is_up(esp_netif->lwip_netif)) {
         return true;
     } else {
         return false;
@@ -1123,13 +1164,12 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
                 ip_event_t evt_id = esp_netif->get_ip_event;
                 ip_event_got_ip_t evt = { .esp_netif = esp_netif, .if_index = -1, .ip_changed = false};
                 int ret;
-
-                if (memcmp(ip_info, &esp_netif->ip_info_old, sizeof(esp_netif_ip_info_t))) {
+                if (memcmp(ip_info, esp_netif->ip_info_old, sizeof(esp_netif_ip_info_t))) {
                     evt.ip_changed = true;
                 }
 
                 memcpy(&evt.ip_info, ip_info, sizeof(esp_netif_ip_info_t));
-                memcpy(&esp_netif->ip_info_old, ip_info, sizeof(esp_netif_ip_info_t));
+                memcpy(esp_netif->ip_info_old, ip_info, sizeof(esp_netif_ip_info_t));
                 ret = esp_event_send_internal(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
                 if (ESP_OK != ret) {
                     ESP_LOGE(TAG, "set ip info: failed to post got ip event (%x)", ret);
