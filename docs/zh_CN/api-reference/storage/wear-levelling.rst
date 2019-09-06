@@ -1,4 +1,4 @@
-.. include:: ../../../../components/wear_levelling/README.rst
+.. include:: ../../../../components/wear_levelling/README_CN.rst
 
 另请参阅
 -----------
@@ -31,3 +31,4 @@
 -----------------------
 
 .. include:: /_build/inc/wear_levelling.inc
+
