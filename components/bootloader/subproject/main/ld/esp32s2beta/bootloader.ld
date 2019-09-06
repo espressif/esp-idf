@@ -13,10 +13,9 @@ MEMORY
 {
   /* I/O */
   dport0_seg (RW) :                 org = 0x3FF00000, len = 0x10
-  /* IRAM POOL1, used for APP CPU cache. Bootloader runs from here during the final stage of loading the app because APP CPU is still held in reset, the main app enables APP CPU cache */
-  iram_loader_seg (RWX) :           org = 0x40022000, len = 0x2000  /* 8KB, APP CPU cache */
-  iram_seg (RWX) :                  org = 0x40024000, len = 0x4000  /* 16KB, IRAM */
-  /* 16k at the end of DRAM, after ROM bootloader stack */
+  iram_loader_seg (RWX) :           org = 0x40062000, len = 0x2000  /* 8KB, IRAM */
+  iram_seg (RWX) :                  org = 0x40064000, len = 0x4000  /* 16KB, IRAM */
+  /* 16k at the end of DRAM, before ROM data & stack */
   dram_seg (RW) :                   org = 0x3FFF8000, len = 0x4000
 }
 
