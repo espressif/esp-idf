@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
 if(NOT "${target}" STREQUAL "esp32s2beta")
     return()
 endif()

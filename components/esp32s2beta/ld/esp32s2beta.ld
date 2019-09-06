@@ -1,4 +1,4 @@
-/* ESP32 Linker Script Memory Layout
+/* ESP32S2Beta Linker Script Memory Layout
 
    This file describes the memory layout (memory blocks) as virtual
    memory addresses.
@@ -16,10 +16,33 @@
 */
 #include "sdkconfig.h"
 
-/* If BT is not built at all */
-#ifndef CONFIG_BT_RESERVE_DRAM
-#define CONFIG_BT_RESERVE_DRAM 0
+
+#ifdef CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
+#define CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE 0x2000
+#else
+#define CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE 0x4000
 #endif
+
+#ifdef CONFIG_ESP32S2_DATA_CACHE_0KB
+#define CONFIG_ESP32S2_DATA_CACHE_SIZE 0
+#elif defined CONFIG_ESP32S2_DATA_CACHE_8KB
+#define CONFIG_ESP32S2_DATA_CACHE_SIZE 0x2000
+#else
+#define CONFIG_ESP32S2_DATA_CACHE_SIZE 0x4000
+#endif
+
+#define RAM_IRAM_START    0x40020000
+#define RAM_DRAM_START    0x3FFB0000
+#define DATA_RAM_END      0x3FFF2000  /* start address of bootloader */
+
+#define IRAM_ORG    (RAM_IRAM_START + CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE \
+                                    + CONFIG_ESP32S2_DATA_CACHE_SIZE)
+#define IRAM_SIZE   0x18000
+
+#define DRAM_ORG    (RAM_DRAM_START + CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE \
+                                    + CONFIG_ESP32S2_DATA_CACHE_SIZE \
+                                    + IRAM_SIZE)
+#define DRAM_SIZE   DATA_RAM_END - DRAM_ORG
 
 MEMORY
 {
@@ -27,8 +50,8 @@ MEMORY
   of the various regions. The 'data access port' dram/drom regions map to the same iram/irom regions but
   are connected to the data port of the CPU and eg allow bytewise access. */
 
-  /* IRAM for PRO cpu. Not sure if happy with this, this is MMU area... */
-  iram0_0_seg (RX) :                 org = 0x40028000, len = 0x18000
+  /* IRAM for CPU.*/
+  iram0_0_seg (RX) :                 org = IRAM_ORG, len = IRAM_SIZE
 
   /* Even though the segment name is iram, it is actually mapped to flash
   */
@@ -41,17 +64,12 @@ MEMORY
   */
 
 
-  /* Shared data RAM, excluding memory reserved for ROM bss/data/stack.
+  /* Shared data RAM, excluding memory reserved for bootloader and ROM bss/data/stack.
 
      Enabling Bluetooth & Trace Memory features in menuconfig will decrease
      the amount of RAM available.
-
-     Note: Length of this section *should* be 0x50000, and this extra DRAM is available
-     in heap at runtime. However due to static ROM memory usage at this 176KB mark, the
-     additional static memory temporarily cannot be used.
   */
-  dram0_0_seg (RW) :                 org = 0x3FFD0000 + CONFIG_BT_RESERVE_DRAM,
-                                     len = 0x28000 - CONFIG_BT_RESERVE_DRAM
+  dram0_0_seg (RW) :                 org = DRAM_ORG, len = DRAM_SIZE
 
   /* Flash mapped constant data */
   drom0_0_seg (R) :                  org = 0x3F000018, len = 0x3f0000-0x18
