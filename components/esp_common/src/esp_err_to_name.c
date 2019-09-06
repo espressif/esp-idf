@@ -23,6 +23,9 @@
 #if __has_include("esp_mesh.h")
 #include "esp_mesh.h"
 #endif
+#if __has_include("esp_netif_types.h")
+#include "esp_netif_types.h"
+#endif
 #if __has_include("esp_now.h")
 #include "esp_now.h"
 #endif
@@ -49,9 +52,6 @@
 #endif
 #if __has_include("nvs.h")
 #include "nvs.h"
-#endif
-#if __has_include("esp_netif.h")
-#include "esp_netif.h"
 #endif
 #if __has_include("ulp_common.h")
 #include "ulp_common.h"
@@ -454,30 +454,33 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MESH_VOTING
     ERR_TBL_IT(ESP_ERR_MESH_VOTING),                            /* 16406 0x4016 */
 #   endif
-    // components/tcpip_adapter/include/tcpip_adapter.h
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_BASE
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_BASE),                     /* 20480 0x5000 */
+    // components/esp_netif/include/esp_netif_types.h
+#   ifdef      ESP_ERR_ESP_NETIF_BASE
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_BASE),                         /* 20480 0x5000 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS),           /* 20481 0x5001 */
+#   ifdef      ESP_ERR_ESP_NETIF_INVALID_PARAMS
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_INVALID_PARAMS),               /* 20481 0x5001 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_IF_NOT_READY),             /* 20482 0x5002 */
+#   ifdef      ESP_ERR_ESP_NETIF_IF_NOT_READY
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_IF_NOT_READY),                 /* 20482 0x5002 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCPC_START_FAILED),       /* 20483 0x5003 */
+#   ifdef      ESP_ERR_ESP_NETIF_DHCPC_START_FAILED
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DHCPC_START_FAILED),           /* 20483 0x5003 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STARTED),     /* 20484 0x5004 */
+#   ifdef      ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED),         /* 20484 0x5004 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_ALREADY_STOPPED),     /* 20485 0x5005 */
+#   ifdef      ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED),         /* 20485 0x5005 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_NO_MEM
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_NO_MEM),                   /* 20486 0x5006 */
+#   ifdef      ESP_ERR_ESP_NETIF_NO_MEM
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_NO_MEM),                       /* 20486 0x5006 */
 #   endif
-#   ifdef      ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED
-    ERR_TBL_IT(ESP_ERR_TCPIP_ADAPTER_DHCP_NOT_STOPPED),         /* 20487 0x5007 */
+#   ifdef      ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED),             /* 20487 0x5007 */
+#   endif
+#   ifdef      ESP_ERR_ESP_NETIF_DRIVER_ATACH_FAILED
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DRIVER_ATACH_FAILED),          /* 20488 0x5008 */
 #   endif
     // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_FLASH_BASE

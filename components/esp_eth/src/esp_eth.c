@@ -159,12 +159,12 @@ static void eth_check_link_timer_cb(TimerHandle_t xTimer)
 
 static esp_err_t esp_eth_driver_start(esp_netif_t * esp_netif, void * args)
 {
+    uint8_t eth_mac[6];
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = args;
     eth_driver->base.netif = esp_netif;
 
     // Set driver related config to esp-netif
-
     esp_netif_driver_ifconfig_t driver_ifconfig = {
             .handle =  eth_driver,
             .transmit = esp_eth_transmit,
@@ -172,7 +172,6 @@ static esp_err_t esp_eth_driver_start(esp_netif_t * esp_netif, void * args)
     };
 
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));
-    uint8_t eth_mac[6];
     esp_eth_ioctl(eth_driver, ETH_CMD_G_MAC_ADDR, eth_mac);
     ESP_LOGI(TAG, "%x %x %x %x %x %x", eth_mac[0], eth_mac[1], eth_mac[2], eth_mac[3], eth_mac[4], eth_mac[5]);
 
