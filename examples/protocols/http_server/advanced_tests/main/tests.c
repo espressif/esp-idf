@@ -27,6 +27,96 @@ static esp_err_t hello_get_handler(httpd_req_t *req)
 #undef STR
 }
 
+/* This handler is intended to check what happens in case of empty values of headers. 
+ * Here `Header2` is an empty header and `Header1` and `Header3` will have `Value1` 
+ * and `Value3` in them. */
+static esp_err_t test_header_get_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
+    int buf_len;
+    char *buf;
+
+    buf_len = httpd_req_get_hdr_value_len(req, "Header1");
+    if (buf_len > 0) {
+        buf = malloc(++buf_len);
+        if (!buf) {
+            ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+            return ESP_ERR_NO_MEM;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "Header1", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Header1 content: %s", buf);
+            if (strcmp("Value1", buf) != 0) {
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Wrong value of Header1 received");
+                free(buf);
+                return ESP_ERR_INVALID_ARG;
+            } else {
+                ESP_LOGI(TAG, "Expected value and received value matched for Header1");
+            }
+        } else {
+            ESP_LOGE(TAG, "Error in getting value of Header1");
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Error in getting value of Header1");
+            free(buf);
+            return ESP_FAIL;
+        }
+        free(buf);
+    } else {
+        ESP_LOGE(TAG, "Header1 not found");
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header1 not found");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    buf_len = httpd_req_get_hdr_value_len(req, "Header3");
+    if (buf_len > 0) {
+        buf = malloc(++buf_len);
+        if (!buf) {
+            ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+            return ESP_ERR_NO_MEM;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "Header3", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Header3 content: %s", buf);
+            if (strcmp("Value3", buf) != 0) {
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Wrong value of Header3 received");
+                free(buf);
+                return ESP_ERR_INVALID_ARG;
+            } else {
+                ESP_LOGI(TAG, "Expected value and received value matched for Header3");
+            }
+        } else {
+            ESP_LOGE(TAG, "Error in getting value of Header3");
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Error in getting value of Header3");
+            free(buf);
+            return ESP_FAIL;
+        }
+        free(buf);
+    } else {
+        ESP_LOGE(TAG, "Header3 not found");
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header3 not found");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    buf_len = httpd_req_get_hdr_value_len(req, "Header2");
+    buf = malloc(++buf_len);
+    if (!buf) {
+        ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+        return ESP_ERR_NO_MEM;
+    }
+    if (httpd_req_get_hdr_value_str(req, "Header2", buf, buf_len) == ESP_OK) {
+        ESP_LOGI(TAG, "Header2 content: %s", buf);
+        httpd_resp_send(req, buf, strlen(buf));
+    } else {
+        ESP_LOGE(TAG, "Header2 not found");
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header2 not found");
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
 static esp_err_t hello_type_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
@@ -217,6 +307,11 @@ static const httpd_uri_t basic_handlers[] = {
       .handler  = hello_type_get_handler,
       .user_ctx = NULL,
     },
+    { .uri      = "/test_header",
+      .method   = HTTP_GET,
+      .handler  = test_header_get_handler,
+      .user_ctx = NULL,
+    },
     { .uri      = "/hello",
       .method   = HTTP_GET,
       .handler  = hello_get_handler,
@@ -275,6 +370,8 @@ static httpd_handle_t test_httpd_start()
     pre_start_mem = esp_get_free_heap_size();
     httpd_handle_t hd;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    /* Modify this setting to match the number of test URI handlers */
+    config.max_uri_handlers  = 9;
     config.server_port = 1234;
 
     /* This check should be a part of http_server */

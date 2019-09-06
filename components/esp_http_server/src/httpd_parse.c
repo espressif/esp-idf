@@ -267,6 +267,23 @@ static esp_err_t cb_header_value(http_parser *parser, const char *at, size_t len
         parser_data->last.at     = at;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_VALUE;
+
+        if (length == 0) {
+            /* As per behavior of http_parser, when length > 0,
+             * `at` points to the start of CRLF. But, in the
+             * case when header value is empty (zero length),
+             * then `at` points to the position right after
+             * the CRLF. Since for our purpose we need `last.at`
+             * to point to exactly where the CRLF starts, it
+             * needs to be adjusted by the right offset */
+            char *at_adj = (char *)parser_data->last.at;
+            /* Find the end of header field string */
+            while (*(--at_adj) != ':');
+            /* Now skip leading spaces' */
+            while (*(++at_adj) == ' ');
+            /* Now we are at the right position */
+            parser_data->last.at = at_adj;
+        }
     } else if (parser_data->status != PARSING_HDR_VALUE) {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
         parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
