@@ -1,12 +1,28 @@
 menu "ESP-TLS"
+    choice ESP_TLS_LIBRARY_CHOOSE
+        prompt "Choose SSL/TLS library for ESP-TLS (See help for more Info)"
+        default ESP_TLS_USING_MBEDTLS
+        help
+            The ESP-TLS APIs support multiple backend TLS libraries. Currently mbedTLS and WolfSSL are
+            supported. Different TLS libraries may support different features and have different resource
+            usage. Consult the ESP-TLS documentation in ESP-IDF Programming guide for more details.
+        config ESP_TLS_USING_MBEDTLS
+            bool "mbedTLS"
+        config ESP_TLS_USING_WOLFSSL
+            depends on TLS_STACK_WOLFSSL
+            bool "wolfSSL (License info in wolfSSL directory README)"
+    endchoice
 
     config ESP_TLS_SERVER
         bool "Enable ESP-TLS Server"
+        depends on ESP_TLS_USING_MBEDTLS
+        default n
         help
-            Enable support for creating server side SSL/TLS session
+            Enable support for creating server side SSL/TLS session, uses the mbedtls crypto library
 
     config ESP_TLS_PSK_VERIFICATION
         bool "Enable PSK verification"
+        depends on ESP_TLS_USING_MBEDTLS
         select MBEDTLS_PSK_MODES
         select MBEDTLS_KEY_EXCHANGE_PSK
         select MBEDTLS_KEY_EXCHANGE_DHE_PSK
@@ -14,7 +30,22 @@ menu "ESP-TLS"
         select MBEDTLS_KEY_EXCHANGE_RSA_PSK
         default n
         help
-            Enable support for pre shared key ciphers
+            Enable support for pre shared key ciphers, uses the mbedtls crypto library
+
+    config ESP_WOLFSSL_SMALL_CERT_VERIFY
+        bool "Enable SMALL_CERT_VERIFY"
+        depends on ESP_TLS_USING_WOLFSSL
+        default y
+        help
+            Enables server verification with Intermediate CA cert, does not authenticate full chain
+            of trust upto the root CA cert (After Enabling this option client only needs to have Intermediate
+            CA certificate of the server to authenticate server, root CA cert is not necessary).
+
+    config ESP_DEBUG_WOLFSSL
+        bool "Enable debug logs for wolfSSL"
+        depends on ESP_TLS_USING_WOLFSSL
+        default n
+        help
+            Enable detailed debug prints for wolfSSL SSL library.
 
 endmenu
-
