@@ -623,6 +623,17 @@ extern int PORT_Test (UINT16 handle, UINT8 *p_data, UINT16 len);
 *******************************************************************************/
 extern void RFCOMM_Init (void);
 
+/*******************************************************************************
+**
+** Function         RFCOMM_Deinit
+**
+** Description      This function is called to deinitialize the control block
+**                  for this layer.
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void RFCOMM_Deinit(void);
 
 /*******************************************************************************
 **
