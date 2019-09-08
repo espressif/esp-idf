@@ -350,7 +350,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
     /* Before loading segment, check it doesn't clobber bootloader RAM. */
     if (do_load) {
         const intptr_t load_end = load_addr + data_len;
-        if (load_end <= (intptr_t) SOC_DIRAM_DRAM_HIGH) {
+        if (load_end < (intptr_t) SOC_DRAM_HIGH) {
             /* Writing to DRAM */
             intptr_t sp = (intptr_t)get_sp();
             if (load_end > sp - STACK_LOAD_HEADROOM) {
