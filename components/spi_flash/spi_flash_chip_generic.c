@@ -82,7 +82,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
 {
     esp_err_t err;
 
-    err = chip->chip_drv->set_write_protect(chip, false);
+    err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
         err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
     }
@@ -102,7 +102,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip)
 
 esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_address)
 {
-    esp_err_t err = chip->chip_drv->set_write_protect(chip, false);
+    esp_err_t err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
         err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
     }
@@ -122,7 +122,7 @@ esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_
 
 esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_address)
 {
-    esp_err_t err = chip->chip_drv->set_write_protect(chip, false);
+    esp_err_t err = chip->chip_drv->set_chip_write_protect(chip, false);
     if (err == ESP_OK) {
         err = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
     }
@@ -185,7 +185,7 @@ esp_err_t spi_flash_chip_generic_write(esp_flash_t *chip, const void *buffer, ui
             page_len = page_size - (address % page_size);
         }
 
-        err = chip->chip_drv->set_write_protect(chip, false);
+        err = chip->chip_drv->set_chip_write_protect(chip, false);
 
         if (err == ESP_OK) {
             err = chip->chip_drv->program_page(chip, buffer, address, page_len);
@@ -205,7 +205,7 @@ esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *
     return ESP_ERR_FLASH_UNSUPPORTED_HOST; // TODO
 }
 
-esp_err_t spi_flash_chip_generic_write_enable(esp_flash_t *chip, bool write_protect)
+esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write_protect)
 {
     esp_err_t err = ESP_OK;
 
@@ -215,17 +215,26 @@ esp_err_t spi_flash_chip_generic_write_enable(esp_flash_t *chip, bool write_prot
         chip->host->set_write_protect(chip->host, write_protect);
     }
 
+    bool wp_read;
+    err = chip->chip_drv->get_chip_write_protect(chip, &wp_read);
+    if (err == ESP_OK && wp_read != write_protect) {
+        // WREN flag has not been set!
+        err = ESP_ERR_NOT_FOUND;
+    }
+    return err;
+}
+
+esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_write_protect)
+{
+    esp_err_t err = ESP_OK;
     uint8_t status;
+    assert(out_write_protect!=NULL);
     err = chip->host->read_status(chip->host, &status);
     if (err != ESP_OK) {
         return err;
     }
 
-    if ((status & SR_WREN) == 0) {
-        // WREN flag has not been set!
-        err = ESP_ERR_NOT_FOUND;
-    }
-
+    *out_write_protect = ((status & SR_WREN) == 0);
     return err;
 }
 
@@ -329,7 +338,7 @@ esp_err_t spi_flash_common_set_read_mode(esp_flash_t *chip, uint8_t qe_rdsr_comm
         ESP_EARLY_LOGV(TAG, "set_read_mode: status before 0x%x", sr);
         if ((sr & qe_sr_bit) == 0) {
             //some chips needs the write protect to be disabled before writing to Status Register
-            chip->chip_drv->set_write_protect(chip, false);
+            chip->chip_drv->set_chip_write_protect(chip, false);
 
             sr |= qe_sr_bit;
             spi_flash_trans_t t = {
@@ -354,7 +363,7 @@ esp_err_t spi_flash_common_set_read_mode(esp_flash_t *chip, uint8_t qe_rdsr_comm
                 return ESP_ERR_FLASH_NO_RESPONSE;
             }
 
-            chip->chip_drv->set_write_protect(chip, true);
+            chip->chip_drv->set_chip_write_protect(chip, true);
         }
     }
     return ESP_OK;
@@ -383,8 +392,8 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .block_erase_size = 64 * 1024,
 
     // TODO: figure out if generic chip-wide protection bits exist across some manufacturers
-    .get_chip_write_protect = NULL,
-    .set_chip_write_protect = NULL,
+    .get_chip_write_protect = spi_flash_chip_generic_get_write_protect,
+    .set_chip_write_protect = spi_flash_chip_generic_set_write_protect,
 
     // Chip write protection regions do not appear to be standardised
     // at all, this is implemented in chip-specific drivers only.
@@ -399,7 +408,6 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .page_size = 256,
     .write_encrypted = spi_flash_chip_generic_write_encrypted,
 
-    .set_write_protect = spi_flash_chip_generic_write_enable,
     .wait_idle = spi_flash_chip_generic_wait_idle,
     .set_read_mode = spi_flash_chip_generic_set_read_mode,
 };

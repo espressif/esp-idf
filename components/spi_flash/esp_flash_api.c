@@ -265,23 +265,13 @@ esp_err_t IRAM_ATTR esp_flash_erase_chip(esp_flash_t *chip)
 {
     VERIFY_OP(erase_chip);
     CHECK_WRITE_ADDRESS(chip, 0, chip->size);
-    bool write_protect = false;
 
     esp_err_t err = spiflash_start(chip);
     if (err != ESP_OK) {
         return err;
     }
 
-    err  = esp_flash_get_chip_write_protect(chip, &write_protect);
-
-    if (err == ESP_OK && write_protect) {
-        err = ESP_ERR_FLASH_PROTECTED;
-    }
-
-    if (err == ESP_OK) {
-        err = chip->chip_drv->erase_chip(chip);
-    }
-
+    err = chip->chip_drv->erase_chip(chip);
     return spiflash_end(chip, err);
 }
 
@@ -292,7 +282,6 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     CHECK_WRITE_ADDRESS(chip, start, len);
     uint32_t block_erase_size = chip->chip_drv->erase_block == NULL ? 0 : chip->chip_drv->block_erase_size;
     uint32_t sector_size = chip->chip_drv->sector_size;
-    bool write_protect = false;
 
     if (sector_size == 0 || (block_erase_size % sector_size) != 0) {
         return ESP_ERR_FLASH_NOT_INITIALISED;
@@ -310,16 +299,9 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
         return err;
     }
 
-    // Check for write protection on whole chip
-    if (chip->chip_drv->get_chip_write_protect != NULL) {
-        err = chip->chip_drv->get_chip_write_protect(chip, &write_protect);
-        if (err == ESP_OK && write_protect) {
-            err = ESP_ERR_FLASH_PROTECTED;
-        }
-    }
-
     // Check for write protected regions overlapping the erase region
-    if (err == ESP_OK && chip->chip_drv->get_protected_regions != NULL && chip->chip_drv->num_protectable_regions > 0) {
+    if (chip->chip_drv->get_protected_regions != NULL &&
+        chip->chip_drv->num_protectable_regions > 0) {
         uint64_t protected = 0;
         err = chip->chip_drv->get_protected_regions(chip, &protected);
         if (err == ESP_OK && protected != 0) {
@@ -360,10 +342,10 @@ esp_err_t IRAM_ATTR esp_flash_erase_region(esp_flash_t *chip, uint32_t start, ui
     return err;
 }
 
-esp_err_t IRAM_ATTR esp_flash_get_chip_write_protect(esp_flash_t *chip, bool *write_protected)
+esp_err_t IRAM_ATTR esp_flash_get_chip_write_protect(esp_flash_t *chip, bool *out_write_protected)
 {
     VERIFY_OP(get_chip_write_protect);
-    if (write_protected == NULL) {
+    if (out_write_protected == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -372,7 +354,7 @@ esp_err_t IRAM_ATTR esp_flash_get_chip_write_protect(esp_flash_t *chip, bool *wr
         return err;
     }
 
-    err = chip->chip_drv->get_chip_write_protect(chip, write_protected);
+    err = chip->chip_drv->get_chip_write_protect(chip, out_write_protected);
 
     return spiflash_end(chip, err);
 }

@@ -88,14 +88,15 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *driver);
 esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *driver, spi_flash_trans_t *trans);
 
 /**
- * Erase whole flash chip.
+ * Erase whole flash chip by using the erase chip (C7h) command.
  *
  * @param driver The driver context.
  */
 void spi_flash_hal_erase_chip(spi_flash_host_driver_t *driver);
 
 /**
- * Erase a specific sector by its start address.
+ * Erase a specific sector by its start address through the sector erase (20h)
+ * command.
  *
  * @param driver The driver context.
  * @param start_address Start address of the sector to erase.
@@ -103,7 +104,8 @@ void spi_flash_hal_erase_chip(spi_flash_host_driver_t *driver);
 void spi_flash_hal_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_address);
 
 /**
- * Erase a specific block by its start address.
+ * Erase a specific 64KB block by its start address through the 64KB block
+ * erase (D8h) command.
  *
  * @param driver The driver context.
  * @param start_address Start address of the block to erase.
@@ -111,7 +113,7 @@ void spi_flash_hal_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_
 void spi_flash_hal_erase_block(spi_flash_host_driver_t *driver, uint32_t start_address);
 
 /**
- * Program a page of the flash.
+ * Program a page of the flash using the page program (02h) command.
  *
  * @param driver The driver context.
  * @param address Address of the page to program
@@ -121,7 +123,8 @@ void spi_flash_hal_erase_block(spi_flash_host_driver_t *driver, uint32_t start_a
 void spi_flash_hal_program_page(spi_flash_host_driver_t *driver, const void *buffer, uint32_t address, uint32_t length);
 
 /**
- * Read from the flash. The read command should be set by ``spi_flash_hal_configure_host_read_mode`` before.
+ * Read from the flash. Call ``spi_flash_hal_configure_host_read_mode`` to
+ * configure the read command before calling this function.
  *
  * @param driver The driver context.
  * @param buffer Buffer to store the read data
@@ -133,7 +136,7 @@ void spi_flash_hal_program_page(spi_flash_host_driver_t *driver, const void *buf
 esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *driver, void *buffer, uint32_t address, uint32_t read_len);
 
 /**
- * Enable or disable the write protection of the flash chip.
+ * @brief Send the write enable (06h) or write disable (04h) command to the flash chip.
  *
  * @param driver The driver context.
  * @param wp true to enable the write protection, otherwise false.
