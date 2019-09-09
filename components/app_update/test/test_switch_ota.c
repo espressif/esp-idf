@@ -444,7 +444,7 @@ static void test_flow4(void)
 // 2 Stage: run factory -> check it -> copy factory to OTA0          -> reboot  --//--
 // 3 Stage: run OTA0    -> check it -> set_pin_factory_reset         -> reboot  --//--
 // 4 Stage: run factory -> check it -> erase OTA_DATA for next tests -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0, sets pin_factory_reset, factory", "[app_update][timeout=90][ignore][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow4, test_flow4, test_flow4);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_APP_TEST
@@ -487,7 +487,7 @@ static void test_flow5(void)
 // 2 Stage: run factory    -> check it -> copy factory to Test and set pin_test_app -> reboot  --//--
 // 3 Stage: run test       -> check it -> reset pin_test_app                        -> reboot  --//--
 // 4 Stage: run factory    -> check it -> erase OTA_DATA for next tests             -> PASS
-TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
+TEST_CASE_MULTIPLE_STAGES("Switching between factory, test, factory", "[app_update][timeout=90][ignore][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow5, test_flow5, test_flow5);
 #endif
 
 static const esp_partition_t* app_update(void)
