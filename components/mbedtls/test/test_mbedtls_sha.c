@@ -15,7 +15,7 @@
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
 
-TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA self-tests", "[mbedtls]")
 {
     start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
@@ -121,7 +121,7 @@ static void tskRunSHA256Test(void *pvParameters)
 
 #define SHA_TASK_STACK_SIZE (10*1024)
 
-TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA multithreading", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(4, 0);
     xTaskCreate(tskRunSHA1Test, "SHA1Task1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
@@ -164,7 +164,7 @@ void tskRunSHASelftests(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA self-tests multithreaded", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(2, 0);
     xTaskCreate(tskRunSHASelftests, "SHASelftests1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
@@ -180,7 +180,7 @@ TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
     vSemaphoreDelete(done_sem);
 }
 
-TEST_CASE("mbedtls SHA512 clone", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA512 clone", "[mbedtls]")
 {
     mbedtls_sha512_context ctx;
     mbedtls_sha512_context clone;
@@ -205,7 +205,7 @@ TEST_CASE("mbedtls SHA512 clone", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_thousand_bs, sha512, 64, "SHA512 cloned calculation");
 }
 
-TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA384 clone", "[mbedtls]")
 {
     mbedtls_sha512_context ctx;
     mbedtls_sha512_context clone;
@@ -231,7 +231,7 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
 }
 
 
-TEST_CASE("mbedtls SHA256 clone", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA256 clone", "[mbedtls]")
 {
     mbedtls_sha256_context ctx;
     mbedtls_sha256_context clone;
@@ -276,7 +276,7 @@ static void tskFinaliseSha(void *v_param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("mbedtls SHA session passed between tasks" , "[mbedtls]")
+TEST_CASE_ESP32("mbedtls SHA session passed between tasks" , "[mbedtls]")
 {
     finalise_sha_param_t param = { 0 };
 

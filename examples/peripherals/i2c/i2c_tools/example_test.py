@@ -6,6 +6,7 @@ EXPECT_TIMEOUT = 20
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     test_fw_path = os.getenv("TEST_FW_PATH")
     if test_fw_path and test_fw_path not in sys.path:
@@ -16,7 +17,7 @@ except ImportError:
 @IDF.idf_example_test(env_tag='Example_I2C_CCS811_SENSOR')
 def test_i2ctools_example(env, extra_data):
     # Get device under test, flash and start example. "i2ctool" must be defined in EnvConfig
-    dut = env.get_dut('i2ctools', 'examples/peripherals/i2c/i2c_tools')
+    dut = env.get_dut('i2ctools', 'examples/peripherals/i2c/i2c_tools', dut_class=ESP32DUT)
     dut.start_app()
     dut.expect("esp32>", timeout=EXPECT_TIMEOUT)
     # Get i2c address

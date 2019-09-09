@@ -4,8 +4,11 @@
 
 #include <esp_types.h>
 #include <stdio.h>
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

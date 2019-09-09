@@ -29,7 +29,7 @@
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
 #include "ff.h"
-#include "test_fatfs_common.h"
+#include "../test_fatfs_common.h"
 
 
 static void test_setup(void)

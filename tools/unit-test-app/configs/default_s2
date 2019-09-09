@@ -1,0 +1,2 @@
+TEST_COMPONENTS=freertos esp32s2beta driver heap pthread soc spi_flash vfs
+CONFIG_IDF_TARGET="esp32s2beta"

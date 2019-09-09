@@ -22,7 +22,7 @@ TEST_CASE("realloc shrink buffer in place", "[heap]")
 
 #endif
 
-TEST_CASE("realloc move data to a new heap type", "[heap]")
+TEST_CASE_ESP32("realloc move data to a new heap type", "[heap]")
 {
     const char *test = "I am some test content to put in the heap";
     char buf[64];

@@ -15,7 +15,7 @@ all:
 # Each file in configs/ directory defines a configuration. The format is the
 # same as sdkconfig file. Configuration is applied on top of sdkconfig.defaults
 # file from the project directory
-CONFIG_NAMES := $(notdir $(wildcard configs/*))
+CONFIG_NAMES := $(shell ${IDF_PATH}/tools/unit-test-app/tools/get_available_configs.sh esp32)
 
 # Per-config targets
 CONFIG_BUILD_TARGETS := $(addprefix ut-build-,$(CONFIG_NAMES))

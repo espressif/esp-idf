@@ -6,6 +6,7 @@ import time
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     test_fw_path = os.getenv('TEST_FW_PATH')
     if test_fw_path and test_fw_path not in sys.path:
@@ -21,7 +22,7 @@ WAKEUP_INTERVAL_MS = 2000
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_examples_system_light_sleep(env, extra_data):
-    dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep')
+    dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep', dut_class=ESP32DUT)
     dut.start_app()
 
     # Ensure DTR and RTS are de-asserted for proper control of GPIO0

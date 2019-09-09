@@ -99,10 +99,10 @@ class Env(object):
                 except ValueError:
                     dut_config = dict()
                 dut_config.update(dut_init_args)
-                dut = self.default_dut_cls(dut_name, port,
-                                           os.path.join(self.log_path, dut_name + ".log"),
-                                           app_inst,
-                                           **dut_config)
+                dut = dut_class(dut_name, port,
+                                os.path.join(self.log_path, dut_name + ".log"),
+                                app_inst,
+                                **dut_config)
                 self.allocated_duts[dut_name] = {"port": port, "dut": dut}
             else:
                 raise ValueError("Failed to get DUT")

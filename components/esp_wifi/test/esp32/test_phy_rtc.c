@@ -11,18 +11,23 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include "soc/soc_caps.h"
 
 
 //Function just extern, need not test
+#ifdef SOC_BT_SUPPORTED
 extern void bt_bb_init_cmplx(void);
+#endif
 extern void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void);
 extern void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void);
 
 //Functions in librtc.a called by WIFI or Blutooth directly in ISR
+#ifdef SOC_BT_SUPPORTED
 extern void bt_bb_init_cmplx_reg(void);
+extern void bt_track_pll_cap(void);
+#endif
 extern void force_wifi_mode(int);
 extern void unforce_wifi_mode(void);
-extern void bt_track_pll_cap(void);
 
 static const char* TAG = "test_phy_rtc";
 
@@ -39,7 +44,9 @@ static void test_phy_rtc_init(void)
     }
     TEST_ESP_OK(ret);
 
+#ifdef SOC_BT_SUPPORTED
     esp_phy_load_cal_and_init(PHY_BT_MODULE);
+#endif
     esp_phy_load_cal_and_init(PHY_WIFI_MODULE);
 
     //must run here, not blocking in above code
@@ -50,11 +57,6 @@ static void test_phy_rtc_init(void)
 static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
 {
     test_phy_rtc_init();
-
-    ESP_LOGI(TAG, "Test bt_bb_init_cmplx_reg()...");
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    bt_bb_init_cmplx_reg();
-    spi_flash_enable_interrupts_caches_and_other_cpu();
 
     for (int i = 0; i < 2; i++) {
         ESP_LOGI(TAG, "Test force_wifi_mode(%d)...", i);
@@ -68,10 +70,17 @@ static IRAM_ATTR void test_phy_rtc_cache_task(void *arg)
         spi_flash_enable_interrupts_caches_and_other_cpu();
     }
 
+#ifdef SOC_BT_SUPPORTED
+    ESP_LOGI(TAG, "Test bt_bb_init_cmplx_reg()...");
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    bt_bb_init_cmplx_reg();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
     ESP_LOGI(TAG, "Test bt_track_pll_cap()...");
     spi_flash_disable_interrupts_caches_and_other_cpu();
     bt_track_pll_cap();
     spi_flash_enable_interrupts_caches_and_other_cpu();
+#endif
 
     TEST_ASSERT( xSemaphoreGive(semphr_done) );
 

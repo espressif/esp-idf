@@ -5,7 +5,6 @@
 #include <esp_types.h>
 #include <stdio.h>
 #include "string.h"
-#include "esp32/rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -34,7 +33,7 @@ TEST_CASE("Verify bootloader image in flash", "[bootloader_support]")
     TEST_ASSERT_EQUAL(data.image_len, bootloader_length);
 }
 
-TEST_CASE("Verify unit test app image", "[bootloader_support]")
+TEST_CASE_ESP32("Verify unit test app image", "[bootloader_support]")
 {
     esp_image_metadata_t data = { 0 };
     const esp_partition_t *running = esp_ota_get_running_partition();

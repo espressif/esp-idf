@@ -41,5 +41,7 @@ foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
 endforeach()
 
+set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
+
 # Link mbedtls libraries to component library
 target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})

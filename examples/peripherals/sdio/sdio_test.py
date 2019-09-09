@@ -27,6 +27,7 @@ except ImportError:
     import TinyFW
 
 import IDF
+from IDF.IDFDUT import ESP32DUT
 
 
 @IDF.idf_example_test(env_tag="Example_SDIO", ignore=True)
@@ -49,8 +50,8 @@ def test_example_sdio_communication(env, extra_data):
     or use sdio test board, which has two wrover modules connect to a same FT3232
     Assume that first dut is host and second is slave
     """
-    dut1 = env.get_dut("sdio_host", "examples/peripherals/sdio/host")
-    dut2 = env.get_dut("sdio_slave", "examples/peripherals/sdio/slave")
+    dut1 = env.get_dut("sdio_host", "examples/peripherals/sdio/host", dut_class=ESP32DUT)
+    dut2 = env.get_dut("sdio_slave", "examples/peripherals/sdio/slave", dut_class=ESP32DUT)
     dut1.start_app()
     # wait until the master is ready to setup the slave
     dut1.expect("host ready, start initializing slave...")

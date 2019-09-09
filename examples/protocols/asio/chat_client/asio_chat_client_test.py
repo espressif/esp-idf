@@ -7,6 +7,7 @@ import time
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -69,7 +70,7 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
     global g_client_response
     global g_msg_to_client
     test_msg = "ABC"
-    dut1 = env.get_dut("chat_client", "examples/protocols/asio/chat_client")
+    dut1 = env.get_dut("chat_client", "examples/protocols/asio/chat_client", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "asio_chat_client.bin")
     bin_size = os.path.getsize(binary_file)

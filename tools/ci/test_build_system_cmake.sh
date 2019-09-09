@@ -306,6 +306,15 @@ function run_tests()
     grep "CONFIG_IDF_TARGET=\"${fake_target}\"" sdkconfig || failure "Project not configured correctly using idf.py reconfigure -D"
     grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py reconfigure -D"
 
+    # TODO Change the real target to other value than esp32 when we have
+    real_target=esp32
+    print_status "Can set target using idf.py set-target"
+    clean_build_dir
+    rm sdkconfig
+    idf.py set-target esp32 || failure "Failed to set target via idf.py set-target"
+    grep "CONFIG_IDF_TARGET=\"${real_target}\"" sdkconfig || failure "Project not configured correctly using idf.py set-target"
+    grep "IDF_TARGET:STRING=${real_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py set-target"
+
     # Clean up modifications for the fake target
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf components
