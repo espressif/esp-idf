@@ -25,7 +25,6 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/rtc.h"
-#include "esp32/rom/ets_sys.h"
 
 #define GPIO_PWMA_OUT  4
 #define GPIO_PWMB_OUT  13

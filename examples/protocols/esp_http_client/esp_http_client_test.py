@@ -4,6 +4,7 @@ import sys
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -23,7 +24,7 @@ def test_examples_protocol_esp_http_client(env, extra_data):
       1. join AP
       2. Send HTTP request to httpbin.org
     """
-    dut1 = env.get_dut("esp_http_client", "examples/protocols/esp_http_client")
+    dut1 = env.get_dut("esp_http_client", "examples/protocols/esp_http_client", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "esp-http-client-example.bin")
     bin_size = os.path.getsize(binary_file)

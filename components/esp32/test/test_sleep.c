@@ -18,6 +18,7 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 
+
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 
@@ -330,7 +331,7 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][igno
 static float get_time_ms(void)
 {
     gettimeofday(&tv_stop, NULL);
-    
+
     float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
                 (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     return fabs(dt);
@@ -343,20 +344,20 @@ static uint32_t get_cause(void)
     return wakeup_cause;
 }
 
-// This test case verifies deactivation of trigger for wake up sources 
+// This test case verifies deactivation of trigger for wake up sources
 TEST_CASE("disable source trigger behavior", "[deepsleep]")
 {
     float dt = 0;
 
     printf("Setup timer and ext0 to wake up immediately from GPIO_13 \n");
-    
+
     // Setup ext0 configuration to wake up almost immediately
     // The wakeup time is proportional to input capacitance * pullup resistance
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
-            
+
     // Setup timer to wakeup with timeout
      esp_sleep_enable_timer_wakeup(2000000);
 
@@ -367,22 +368,22 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     dt = get_time_ms();
     printf("Ext0 sleep time = %d \n", (int) dt);
 
-    // Check wakeup from Ext0 using time measurement because wakeup cause is 
+    // Check wakeup from Ext0 using time measurement because wakeup cause is
     // not available in light sleep mode
     TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
-    
+
     TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
-    
+
     // Disable Ext0 source. Timer source should be triggered
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
     printf("Disable ext0 trigger and leave timer active.\n");
-            
+
     gettimeofday(&tv_start, NULL);
     esp_light_sleep_start();
 
     dt = get_time_ms();
     printf("Timer sleep time = %d \n", (int) dt);
-    
+
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 
     // Additionally check wakeup cause
@@ -407,8 +408,8 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
 
     TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
     TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
-    
-    // Check error message when source is already disabled 
+
+    // Check error message when source is already disabled
     esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
     TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
 }
@@ -429,7 +430,7 @@ static void trigger_deepsleep(void)
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);
     esp_sleep_enable_timer_wakeup(1000);
-    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc() 
+    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
 }

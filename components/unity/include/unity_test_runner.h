@@ -130,6 +130,8 @@ void unity_testcase_register(test_desc_t* desc);
         unity_testcase_register( & UNITY_TEST_UID(test_desc_) ); \
     }
 
+
+
 /*
  * First argument is a free-form description,
  * second argument is (by convention) a list of identifiers, each one in square brackets.
@@ -172,3 +174,14 @@ void unity_run_all_tests(void);
 
 void unity_run_menu(void);
 
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#define TEST_CASE_ESP32(...) TEST_CASE(__VA_ARGS__)
+#define TEST_CASE_MULTIPLE_STAGES_ESP32(...) TEST_CASE_MULTIPLE_STAGES(__VA_ARGS__)
+#define TEST_CASE_MULTIPLE_DEVICES_ESP32(...) TEST_CASE_MULTIPLE_DEVICES(__VA_ARGS__)
+#else
+#define TEST_CASE_ESP32(...) __attribute__((unused)) static void UNITY_TEST_UID(test_func_) (void)
+#define TEST_CASE_MULTIPLE_STAGES_ESP32(_, __, ...) __attribute__((unused)) static test_func UNITY_TEST_UID(test_functions)[] = {__VA_ARGS__};
+#define TEST_CASE_MULTIPLE_DEVICES_ESP32(_, __, ...) __attribute__((unused)) static test_func UNITY_TEST_UID(test_functions)[] = {__VA_ARGS__};
+
+#endif

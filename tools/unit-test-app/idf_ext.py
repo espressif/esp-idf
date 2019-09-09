@@ -66,12 +66,19 @@ def action_extensions(base_actions, project_path=os.getcwd()):
             config_path = os.path.join(project_path, "configs", config_name)
             config = parse_config(config_path)
 
+            target = config.get("CONFIG_IDF_TARGET", "esp32").strip("'").strip('"')
+
+            print("Reconfigure: config %s, target %s" % (config_name, target))
+
+            # Clean up and set idf-target
+            base_actions["actions"]["set-target"]["callback"]("set-target", ctx, args, target)
+
             new_cache_values["EXCLUDE_COMPONENTS"] = config.get("EXCLUDE_COMPONENTS", "''")
             new_cache_values["TEST_EXCLUDE_COMPONENTS"] = config.get("TEST_EXCLUDE_COMPONENTS", "''")
             new_cache_values["TEST_COMPONENTS"] = config.get("TEST_COMPONENTS", "''")
             new_cache_values["TESTS_ALL"] = int(new_cache_values["TEST_COMPONENTS"] == "''")
-
-            with tempfile.NamedTemporaryFile() as sdkconfig_temp:
+            # When delete=True, the file is invisible to kconfiglib on Windows
+            with tempfile.NamedTemporaryFile(delete=False) as sdkconfig_temp:
                 # Use values from the combined defaults and the values from
                 # config folder to build config
                 sdkconfig_default = os.path.join(project_path, "sdkconfig.defaults")
@@ -89,8 +96,8 @@ def action_extensions(base_actions, project_path=os.getcwd()):
 
                 args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in new_cache_values.items()])
 
-                reconfigure = base_actions["actions"]["reconfigure"]["callback"]
-                reconfigure(None, ctx, args)
+                base_actions["actions"]["fullclean"]["callback"]("fullclean", ctx, args)
+                base_actions["actions"]["reconfigure"]["callback"](None, ctx, args)
 
     # This target builds the configuration. It does not currently track dependencies,
     # but is good enough for CI builds if used together with clean-all-configs.

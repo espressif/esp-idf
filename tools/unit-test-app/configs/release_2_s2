@@ -1,0 +1,4 @@
+TEST_EXCLUDE_COMPONENTS=libsodium bt app_update freertos esp32s2beta driver heap pthread soc spi_flash vfs
+CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE=y
+CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT=y
+CONFIG_IDF_TARGET="esp32s2beta"

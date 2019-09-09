@@ -17,7 +17,6 @@
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_types.h"
-#include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "ff.h"
 #include "wear_levelling.h"

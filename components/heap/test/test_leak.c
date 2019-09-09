@@ -57,4 +57,4 @@ static void test_fn3(void)
     check_calloc(7000);
 }
 
-TEST_CASE_MULTIPLE_STAGES("Check for leaks in MULTIPLE_STAGES mode (manual reset)", "[heap][leaks][reset=SW_CPU_RESET, SW_CPU_RESET]", test_fn2, test_fn2, test_fn3);
+TEST_CASE_MULTIPLE_STAGES_ESP32("Check for leaks in MULTIPLE_STAGES mode (manual reset)", "[heap][leaks][reset=SW_CPU_RESET, SW_CPU_RESET]", test_fn2, test_fn2, test_fn3);

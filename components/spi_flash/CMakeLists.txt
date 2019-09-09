@@ -4,7 +4,7 @@ if(BOOTLOADER_BUILD)
     # but on other platforms no source files are needed for bootloader
     set(srcs)
 else()
-    set(srcs 
+    set(srcs
         "cache_utils.c"
         "flash_mmap.c"
         "flash_ops.c"
@@ -27,7 +27,7 @@ else()
     set(priv_requires bootloader_support app_update soc)
 endif()
 
-if(CONFIG_IDF_TARGET_ESP32)
+if(IDF_TARGET STREQUAL "esp32")
     list(APPEND srcs "spi_flash_rom_patch.c")
 endif()
 
