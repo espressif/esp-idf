@@ -14,7 +14,7 @@ else()
         "partition.c"
         "spi_flash_rom_patch.c"
     )
-    # New implementation
+    # New implementation after IDF v4.0
     list(APPEND cache_srcs
         "esp_flash_api.c"
         "esp_flash_spi_init.c"
@@ -25,6 +25,7 @@ else()
         "spi_flash_chip_drivers.c"
         "spi_flash_chip_generic.c"
         "spi_flash_chip_issi.c"
+        "spi_flash_chip_gd.c"
         "memspi_host_driver.c"
     )
     list(APPEND srcs ${cache_srcs})
