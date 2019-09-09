@@ -24,22 +24,7 @@ extern "C" {
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "soc/adc_periph.h"
-
-typedef enum {
-    ADC_ATTEN_DB_0   = 0,  /*!<The input voltage of ADC will be reduced to about 1/1 */
-    ADC_ATTEN_DB_2_5 = 1,  /*!<The input voltage of ADC will be reduced to about 1/1.34 */
-    ADC_ATTEN_DB_6   = 2,  /*!<The input voltage of ADC will be reduced to about 1/2 */
-    ADC_ATTEN_DB_11  = 3,  /*!<The input voltage of ADC will be reduced to about 1/3.6*/
-    ADC_ATTEN_MAX,
-} adc_atten_t;
-
-typedef enum {
-    ADC_WIDTH_BIT_9  = 0, /*!< ADC capture width is  9 bits*/
-    ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10 bits*/
-    ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11 bits*/
-    ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12 bits*/
-    ADC_WIDTH_MAX,
-} adc_bits_width_t;
+#include "hal/adc_types.h"
 
 //this definitions are only for being back-compatible
 #define ADC_ATTEN_0db   ADC_ATTEN_DB_0
@@ -52,6 +37,7 @@ typedef enum {
 #define ADC_WIDTH_11Bit ADC_WIDTH_BIT_11
 #define ADC_WIDTH_12Bit ADC_WIDTH_BIT_12
 
+/**** `adc1_channel_t` will be deprecated functions, combine into `adc_channel_t` ********/
 typedef enum {
     ADC1_CHANNEL_0 = 0, /*!< ADC1 channel 0 is GPIO36 (ESP32), GPIO1 (ESP32-S2) */
     ADC1_CHANNEL_1,     /*!< ADC1 channel 1 is GPIO37 (ESP32), GPIO2 (ESP32-S2) */
@@ -70,6 +56,7 @@ typedef enum {
 #endif
 } adc1_channel_t;
 
+/**** `adc2_channel_t` will be deprecated functions, combine into `adc_channel_t` ********/
 typedef enum {
     ADC2_CHANNEL_0 = 0, /*!< ADC2 channel 0 is GPIO4  (ESP32), GPIO11 (ESP32-S2) */
     ADC2_CHANNEL_1,     /*!< ADC2 channel 1 is GPIO0  (ESP32), GPIO12 (ESP32-S2) */
@@ -85,20 +72,6 @@ typedef enum {
 } adc2_channel_t;
 
 typedef enum {
-    ADC_CHANNEL_0 = 0, /*!< ADC channel */
-    ADC_CHANNEL_1,     /*!< ADC channel */
-    ADC_CHANNEL_2,     /*!< ADC channel */
-    ADC_CHANNEL_3,     /*!< ADC channel */
-    ADC_CHANNEL_4,     /*!< ADC channel */
-    ADC_CHANNEL_5,     /*!< ADC channel */
-    ADC_CHANNEL_6,     /*!< ADC channel */
-    ADC_CHANNEL_7,     /*!< ADC channel */
-    ADC_CHANNEL_8,     /*!< ADC channel */
-    ADC_CHANNEL_9,     /*!< ADC channel */
-    ADC_CHANNEL_MAX,
-} adc_channel_t;
-
-typedef enum {
     ADC_UNIT_1 = 1,          /*!< SAR ADC 1*/
     ADC_UNIT_2 = 2,          /*!< SAR ADC 2, not supported yet*/
     ADC_UNIT_BOTH = 3,       /*!< SAR ADC 1 and 2, not supported yet */
@@ -112,22 +85,16 @@ typedef enum {
     ADC_ENCODE_MAX,
 } adc_i2s_encode_t;
 
-typedef enum {
-    ADC_I2S_DATA_SRC_IO_SIG = 0, /*!< I2S data from GPIO matrix signal  */
-    ADC_I2S_DATA_SRC_ADC = 1,    /*!< I2S data from ADC */
-    ADC_I2S_DATA_SRC_MAX,
-} adc_i2s_source_t;
-
 /**
  * @brief Get the GPIO number of a specific ADC1 channel.
- * 
+ *
  * @param channel Channel to get the GPIO number
- * 
+ *
  * @param gpio_num output buffer to hold the GPIO number
- * 
- * @return 
+ *
+ * @return
  *   - ESP_OK if success
- *   - ESP_ERR_INVALID_ARG if channel not valid 
+ *   - ESP_ERR_INVALID_ARG if channel not valid
  */
 esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num);
 
@@ -309,14 +276,14 @@ int hall_sensor_read(void);
 
 /**
  * @brief Get the GPIO number of a specific ADC2 channel.
- * 
+ *
  * @param channel Channel to get the GPIO number
- * 
+ *
  * @param gpio_num output buffer to hold the GPIO number
- * 
- * @return 
+ *
+ * @return
  *   - ESP_OK if success
- *   - ESP_ERR_INVALID_ARG if channel not valid 
+ *   - ESP_ERR_INVALID_ARG if channel not valid
  */
 esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num);
 
@@ -337,8 +304,8 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num);
  * - 6 dB attenuation (ADC_ATTEN_6db) gives full-scale voltage 2.2 V
  * - 11 dB attenuation (ADC_ATTEN_11db) gives full-scale voltage 3.9 V (see note below)
  *
- * @note The full-scale voltage is the voltage corresponding to a maximum reading 
- * (depending on ADC2 configured bit width, this value is: 4095 for 12-bits, 2047 
+ * @note The full-scale voltage is the voltage corresponding to a maximum reading
+ * (depending on ADC2 configured bit width, this value is: 4095 for 12-bits, 2047
  * for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
  *
  * @note At 11 dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
@@ -365,16 +332,16 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten);
  * function will always fail with ``ESP_ERR_TIMEOUT``.
  *
  * @param  channel ADC2 channel to read
- * 
+ *
  * @param width_bit Bit capture width for ADC2
- * 
+ *
  * @param raw_out the variable to hold the output data.
  *
  * @return
  *     - ESP_OK if success
  *     - ESP_ERR_TIMEOUT the WIFI is started, using the ADC2
  */
-esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* raw_out);
+esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out);
 
 /**
  *  @brief Output ADC2 reference voltage to GPIO 25 or 26 or 27

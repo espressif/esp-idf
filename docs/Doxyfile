@@ -113,6 +113,7 @@ INPUT = \
     ../../components/soc/include/hal/ledc_types.h \
     ../../components/soc/include/hal/i2c_types.h \
     ../../components/soc/include/hal/dac_types.h \
+    ../../components/soc/include/hal/adc_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
     ../../components/soc/esp32/include/soc/touch_channel.h \
