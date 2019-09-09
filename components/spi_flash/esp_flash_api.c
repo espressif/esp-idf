@@ -62,6 +62,7 @@ static const char io_mode_str[][IO_STR_LEN] = {
 
 _Static_assert(sizeof(io_mode_str)/IO_STR_LEN == SPI_FLASH_READ_MODE_MAX, "the io_mode_str should be consistent with the esp_flash_io_mode_t defined in spi_flash_ll.h");
 
+esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
 
 /* Static function to notify OS of a new SPI flash operation.
 
@@ -114,6 +115,18 @@ esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
         ((memspi_host_data_t*)chip->host->driver_data)->spi == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    //read chip id
+    uint32_t flash_id;
+    int retries = 10;
+    do {
+        err = esp_flash_read_chip_id(chip, &flash_id);
+    } while (err == ESP_ERR_FLASH_NOT_INITIALISED && retries-- > 0);
+
+    if (err != ESP_OK) {
+        return err;
+    }
+    chip->chip_id = flash_id;
 
     if (!esp_flash_chip_driver_initialized(chip)) {
         // Detect chip_drv
@@ -175,15 +188,7 @@ esp_err_t IRAM_ATTR esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id
 static esp_err_t IRAM_ATTR detect_spi_flash_chip(esp_flash_t *chip)
 {
     esp_err_t err;
-    uint32_t flash_id;
-    int retries = 10;
-    do {
-        err = esp_flash_read_chip_id(chip, &flash_id);
-    } while (err == ESP_ERR_FLASH_NOT_INITIALISED && retries-- > 0);
-
-    if (err != ESP_OK) {
-        return err;
-    }
+    uint32_t flash_id = chip->chip_id;
 
     // Detect the chip and set the chip_drv structure for it
     const spi_flash_chip_t **drivers = esp_flash_registered_chips;
