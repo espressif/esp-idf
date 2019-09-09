@@ -60,12 +60,8 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
 
 esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size)
 {
-    uint32_t id = 0;
+    uint32_t id = chip->chip_id;
     *size = 0;
-    esp_err_t err = chip->host->read_id(chip->host, &id);
-    if (err != ESP_OK) {
-        return err;
-    }
 
     /* Can't detect size unless the high byte of the product ID matches the same convention, which is usually 0x40 or
      * 0xC0 or similar. */

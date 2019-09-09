@@ -65,6 +65,7 @@ struct esp_flash_t {
 
     esp_flash_io_mode_t read_mode; ///< Configured SPI flash read mode. Set before ``esp_flash_init`` is called.
     uint32_t size;                   ///< Size of SPI flash in bytes. If 0, size will be detected during initialisation.
+    uint32_t chip_id;               ///< Detected chip id.
 };
 
 
