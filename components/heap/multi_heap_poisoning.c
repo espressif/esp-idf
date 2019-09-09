@@ -110,7 +110,7 @@ static poison_head_t *verify_allocated_region(void *data, bool print_errors)
     }
     if (canary != TAIL_CANARY_PATTERN) {
         if (print_errors) {
-            printf("CORRUPT HEAP: Bad tail at %p. Expected 0x%08x got 0x%08x\n", &tail->tail_canary,
+            MULTI_HEAP_STDERR_PRINTF("CORRUPT HEAP: Bad tail at %p. Expected 0x%08x got 0x%08x\n", &tail->tail_canary,
                    TAIL_CANARY_PATTERN, canary);
         }
         return NULL;
