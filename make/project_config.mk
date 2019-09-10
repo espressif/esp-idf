@@ -4,12 +4,17 @@
 COMPONENT_KCONFIGS := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig))
 COMPONENT_KCONFIGS_PROJBUILD := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/Kconfig.projbuild))
 COMPONENT_SDKCONFIG_RENAMES := $(foreach component,$(COMPONENT_PATHS),$(wildcard $(component)/sdkconfig.rename))
+COMPONENT_KCONFIGS_SOURCE_FILE:=$(BUILD_DIR_BASE)/kconfigs.in
+COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE:=$(BUILD_DIR_BASE)/kconfigs_projbuild.in
+
 
 ifeq ($(OS),Windows_NT)
 # kconfiglib requires Windows-style paths for kconfig files
 COMPONENT_KCONFIGS := $(shell cygpath -m $(COMPONENT_KCONFIGS))
 COMPONENT_KCONFIGS_PROJBUILD := $(shell cygpath -m $(COMPONENT_KCONFIGS_PROJBUILD))
 COMPONENT_SDKCONFIG_RENAMES := $(shell cygpath -m $(COMPONENT_SDKCONFIG_RENAMES))
+COMPONENT_KCONFIGS_SOURCE_FILE := $(shell cygpath -m $(COMPONENT_KCONFIGS_SOURCE_FILE))
+COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE := $(shell cygpath -m $(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE))
 endif
 
 #For doing make menuconfig etc
@@ -30,8 +35,13 @@ $(KCONFIG_TOOL_DIR)/mconf-idf: $(KCONFIG_TOOL_DIR)/conf-idf
 
 # reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
 $(KCONFIG_TOOL_DIR)/mconf-idf $(KCONFIG_TOOL_DIR)/conf-idf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c)
+ifeq ($(OS),Windows_NT)
+	# mconf-idf is used only in MSYS
 	MAKEFLAGS="" CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
+else
+	@echo "mconf-idf is not required on this platform"
+endif
 
 ifeq ("$(wildcard $(SDKCONFIG))","")
 # if no configuration file is present we need a rule for it
@@ -44,6 +54,11 @@ else
 # otherwise, just run defconfig
 $(SDKCONFIG): defconfig
 endif
+endif
+
+ifeq ("$(PYTHON)","")
+# fallback value when menuconfig is called without a build directory and sdkconfig file
+PYTHON=python
 endif
 
 ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
@@ -65,6 +80,8 @@ define RunConfGen
 		--sdkconfig-rename $(SDKCONFIG_RENAME) \
 		--env "COMPONENT_KCONFIGS=$(strip $(COMPONENT_KCONFIGS))" \
 		--env "COMPONENT_KCONFIGS_PROJBUILD=$(strip $(COMPONENT_KCONFIGS_PROJBUILD))" \
+		--env "COMPONENT_KCONFIGS_SOURCE_FILE=$(COMPONENT_KCONFIGS_SOURCE_FILE)" \
+		--env "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=$(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE)" \
 		--env "COMPONENT_SDKCONFIG_RENAMES=$(strip $(COMPONENT_SDKCONFIG_RENAMES))" \
 		--env "IDF_CMAKE=n" \
 		$(DEFAULTS_ARG) \
@@ -73,17 +90,21 @@ define RunConfGen
 		--output header $(BUILD_DIR_BASE)/include/sdkconfig.h
 endef
 
-# macro for the commands to run kconfig tools conf-idf or mconf-idf.
-# $1 is the name (& args) of the conf tool to run
-# Note: Currently only mconf-idf is used for compatibility with the CMake build system. The header file used is also
-# the same.
-define RunConf
+ifeq ($(OS),Windows_NT)
+MENUCONFIG_CMD := $(KCONFIG_TOOL_DIR)/mconf-idf
+else
+MENUCONFIG_CMD := MENUCONFIG_STYLE=aquatic $(PYTHON) $(IDF_PATH)/tools/kconfig_new/menuconfig.py
+endif
+
+# macro for running menuconfig
+define RunMenuConf
 	mkdir -p $(BUILD_DIR_BASE)/include/config
 	cd $(BUILD_DIR_BASE); KCONFIG_AUTOHEADER=$(abspath $(BUILD_DIR_BASE)/include/sdkconfig.h) \
-	COMPONENT_KCONFIGS="$(COMPONENT_KCONFIGS)" KCONFIG_CONFIG=$(SDKCONFIG) \
-	COMPONENT_KCONFIGS_PROJBUILD="$(COMPONENT_KCONFIGS_PROJBUILD)" \
+	KCONFIG_CONFIG=$(SDKCONFIG) \
+	COMPONENT_KCONFIGS_SOURCE_FILE="$(COMPONENT_KCONFIGS_SOURCE_FILE)" \
+	COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE="$(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE)" \
 	IDF_CMAKE=n \
-	$(KCONFIG_TOOL_DIR)/$1 $(IDF_PATH)/Kconfig
+	$(MENUCONFIG_CMD) $(IDF_PATH)/Kconfig
 endef
 
 ifndef MAKE_RESTARTS
@@ -108,9 +129,9 @@ ifdef BATCH_BUILD
 	@exit 1
 else
 	$(call RunConfGen)
-	# RunConfGen before mconf-idf ensures that deprecated options won't be ignored (they've got renamed)
-	$(call RunConf,mconf-idf)
-	# RunConfGen after mconf-idf ensures that deprecated options are appended to $(SDKCONFIG) for backward compatibility
+	# RunConfGen before menuconfig ensures that deprecated options won't be ignored (they've got renamed)
+	$(call RunMenuConf)
+	# RunConfGen after menuconfig ensures that deprecated options are appended to $(SDKCONFIG) for backward compatibility
 	$(call RunConfGen)
 endif
 
@@ -136,4 +157,5 @@ endif
 config-clean:
 	$(summary) RM CONFIG
 	MAKEFLAGS="" $(MAKE) -C $(KCONFIG_TOOL_DIR) clean
-	rm -rf $(BUILD_DIR_BASE)/include/config $(BUILD_DIR_BASE)/include/sdkconfig.h
+	rm -rf $(BUILD_DIR_BASE)/include/config $(BUILD_DIR_BASE)/include/sdkconfig.h \
+		$(COMPONENT_KCONFIGS_SOURCE_FILE) $(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE)
