@@ -31,6 +31,12 @@
 #define PDU_TYPE(data)     (data[0] & BIT_MASK(6))
 #define PDU_SAR(data)      (data[0] >> 6)
 
+/* Mesh Profile 1.0 Section 6.6:
+ * "The timeout for the SAR transfer is 20 seconds. When the timeout
+ *  expires, the Proxy Server shall disconnect."
+ */
+#define PROXY_SAR_TIMEOUT  K_SECONDS(20)
+
 #define SAR_COMPLETE       0x00
 #define SAR_FIRST          0x01
 #define SAR_CONT           0x02
@@ -71,13 +77,6 @@ static u16_t prov_ccc_val;
 static bool prov_fast_adv;
 #endif
 
-enum {
-    SAR_TIMER_START,    /* Timer for SAR transfer has been started */
-    NUM_FLAGS,
-};
-
-#define PROXY_SAR_TRANS_TIMEOUT  K_SECONDS(20)
-
 static struct bt_mesh_proxy_client {
     struct bt_mesh_conn *conn;
     u16_t filter[CONFIG_BLE_MESH_PROXY_FILTER_SIZE];
@@ -91,10 +90,8 @@ static struct bt_mesh_proxy_client {
 #if defined(CONFIG_BLE_MESH_GATT_PROXY)
     struct k_work send_beacons;
 #endif
+    struct k_delayed_work    sar_timer;
     struct net_buf_simple    buf;
-    /* Proxy Server: 20s timeout for each segmented proxy pdu */
-    BLE_MESH_ATOMIC_DEFINE(flags, NUM_FLAGS);
-    struct k_delayed_work sar_timer;
 } clients[BLE_MESH_MAX_CONN] = {
     [0 ... (BLE_MESH_MAX_CONN - 1)] = {
 #if defined(CONFIG_BLE_MESH_GATT_PROXY)
@@ -143,6 +140,22 @@ static struct bt_mesh_proxy_client *find_client(struct bt_mesh_conn *conn)
     }
 
     return NULL;
+}
+
+static void proxy_sar_timeout(struct k_work *work)
+{
+    struct bt_mesh_proxy_client *client = NULL;
+
+    BT_WARN("Proxy SAR timeout");
+
+    client = CONTAINER_OF(work, struct bt_mesh_proxy_client, sar_timer.work);
+    if (!client || !client->conn) {
+        BT_ERR("%s, Invalid proxy client parameter", __func__);
+        return;
+    }
+
+    net_buf_simple_reset(&client->buf);
+    bt_mesh_gatts_disconnect(client->conn, 0x13);
 }
 
 #if defined(CONFIG_BLE_MESH_GATT_PROXY)
@@ -500,10 +513,7 @@ static ssize_t proxy_recv(struct bt_mesh_conn *conn,
             return -EINVAL;
         }
 
-        if (!bt_mesh_atomic_test_and_set_bit(client->flags, SAR_TIMER_START)) {
-            k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TRANS_TIMEOUT);
-        }
-
+        k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TIMEOUT);
         client->msg_type = PDU_TYPE(data);
         net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
         break;
@@ -519,6 +529,7 @@ static ssize_t proxy_recv(struct bt_mesh_conn *conn,
             return -EINVAL;
         }
 
+        k_delayed_work_submit(&client->sar_timer, PROXY_SAR_TIMEOUT);
         net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
         break;
 
@@ -533,10 +544,7 @@ static ssize_t proxy_recv(struct bt_mesh_conn *conn,
             return -EINVAL;
         }
 
-        if (bt_mesh_atomic_test_and_clear_bit(client->flags, SAR_TIMER_START)) {
-            k_delayed_work_cancel(&client->sar_timer);
-        }
-
+        k_delayed_work_cancel(&client->sar_timer);
         net_buf_simple_add_mem(&client->buf, data + 1, len - 1);
         proxy_complete_pdu(client);
         break;
@@ -599,10 +607,7 @@ static void proxy_disconnected(struct bt_mesh_conn *conn, u8_t reason)
                 bt_mesh_pb_gatt_close(conn);
             }
 
-            if (bt_mesh_atomic_test_and_clear_bit(client->flags, SAR_TIMER_START)) {
-                k_delayed_work_cancel(&client->sar_timer);
-            }
-
+            k_delayed_work_cancel(&client->sar_timer);
             bt_mesh_conn_unref(client->conn);
             client->conn = NULL;
             break;
@@ -1144,14 +1149,25 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 
 static struct bt_mesh_subnet *next_sub(void)
 {
+    struct bt_mesh_subnet *sub = NULL;
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub;
-
-        sub = &bt_mesh.sub[(i + next_idx) % ARRAY_SIZE(bt_mesh.sub)];
+    for (i = next_idx; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+        sub = &bt_mesh.sub[i];
         if (advertise_subnet(sub)) {
-            next_idx = (next_idx + 1) % ARRAY_SIZE(bt_mesh.sub);
+            next_idx = (i + 1) % ARRAY_SIZE(bt_mesh.sub);
+            return sub;
+        }
+    }
+
+    /**
+     * If among [next_idx, ARRAY_SIZE(bt_mesh.sub)], there is no subnet
+     * to advertise, then try to start advertising from Primary subnet.
+     */
+    for (i = 0; i < next_idx; i++) {
+        sub = &bt_mesh.sub[i];
+        if (advertise_subnet(sub)) {
+            next_idx = (i + 1) % ARRAY_SIZE(bt_mesh.sub);
             return sub;
         }
     }
@@ -1350,23 +1366,6 @@ static struct bt_mesh_conn_cb conn_callbacks = {
     .disconnected = proxy_disconnected,
 };
 
-static void proxy_recv_timeout(struct k_work *work)
-{
-    struct bt_mesh_proxy_client *client = NULL;
-
-    BT_DBG("%s", __func__);
-
-    client = CONTAINER_OF(work, struct bt_mesh_proxy_client, sar_timer.work);
-    if (!client || !client->conn) {
-        BT_ERR("%s, Invalid proxy client parameter", __func__);
-        return;
-    }
-
-    bt_mesh_atomic_clear_bit(client->flags, SAR_TIMER_START);
-    net_buf_simple_reset(&client->buf);
-    bt_mesh_gatts_disconnect(client->conn, 0x13);
-}
-
 int bt_mesh_proxy_init(void)
 {
     int i;
@@ -1377,7 +1376,8 @@ int bt_mesh_proxy_init(void)
 
         client->buf.size = CLIENT_BUF_SIZE;
         client->buf.__buf = client_buf_data + (i * CLIENT_BUF_SIZE);
-        k_delayed_work_init(&client->sar_timer, proxy_recv_timeout);
+
+        k_delayed_work_init(&client->sar_timer, proxy_sar_timeout);
     }
 
     bt_mesh_gatts_conn_cb_register(&conn_callbacks);

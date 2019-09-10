@@ -145,8 +145,8 @@ static void timeout_handler(struct k_work *work)
         return;
     }
 
-    bt_mesh_callback_generic_status_to_btc(node->opcode, 0x03, node->ctx.model,
-                                           &node->ctx, NULL, 0);
+    bt_mesh_generic_client_cb_evt_to_btc(node->opcode,
+        BTC_BLE_MESH_EVT_GENERIC_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
 
     bt_mesh_client_free_node(&internal->queue, node);
 
@@ -535,7 +535,7 @@ static void generic_status(struct bt_mesh_model *model,
 
     buf->data = val;
     buf->len  = len;
-    node = bt_mesh_is_model_message_publish(model, ctx, buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
         BT_DBG("Unexpected generic status message 0x%x", rsp);
     } else {
@@ -558,7 +558,7 @@ static void generic_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_GET:
         case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_GET:
         case BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET:
-            evt = 0x00;
+            evt = BTC_BLE_MESH_EVT_GENERIC_CLIENT_GET_STATE;
             break;
         case BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
         case BLE_MESH_MODEL_OP_GEN_LEVEL_SET:
@@ -574,13 +574,13 @@ static void generic_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET:
         case BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET:
         case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET:
-            evt = 0x01;
+            evt = BTC_BLE_MESH_EVT_GENERIC_CLIENT_SET_STATE;
             break;
         default:
             break;
         }
 
-        bt_mesh_callback_generic_status_to_btc(node->opcode, evt, model, ctx, val, len);
+        bt_mesh_generic_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
         // Don't forget to release the node at the end.
         bt_mesh_client_free_node(&internal->queue, node);
     }
@@ -687,7 +687,7 @@ const struct bt_mesh_model_op gen_property_cli_op[] = {
     BLE_MESH_MODEL_OP_END,
 };
 
-static int gen_get_state(struct bt_mesh_common_param *common, void *value)
+static int gen_get_state(bt_mesh_client_common_param_t *common, void *value)
 {
     NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_GEN_GET_STATE_MSG_LEN);
     int err;
@@ -736,7 +736,7 @@ static int gen_get_state(struct bt_mesh_common_param *common, void *value)
     return err;
 }
 
-static int gen_set_state(struct bt_mesh_common_param *common,
+static int gen_set_state(bt_mesh_client_common_param_t *common,
                          void *value, u16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
@@ -781,8 +781,8 @@ static int gen_set_state(struct bt_mesh_common_param *common,
     case BLE_MESH_MODEL_OP_GEN_DELTA_SET_UNACK: {
         struct bt_mesh_gen_delta_set *set;
         set = (struct bt_mesh_gen_delta_set *)value;
-        net_buf_simple_add_le32(msg, set->level);
-        net_buf_simple_add_u8(msg,   set->tid);
+        net_buf_simple_add_le32(msg, set->delta_level);
+        net_buf_simple_add_u8(msg, set->tid);
         if (set->op_en) {
             net_buf_simple_add_u8(msg, set->trans_time);
             net_buf_simple_add_u8(msg, set->delay);
@@ -918,7 +918,7 @@ end:
     return err;
 }
 
-int bt_mesh_generic_client_get_state(struct bt_mesh_common_param *common, void *get, void *status)
+int bt_mesh_generic_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status)
 {
     bt_mesh_generic_client_t *client = NULL;
 
@@ -981,7 +981,7 @@ int bt_mesh_generic_client_get_state(struct bt_mesh_common_param *common, void *
     return gen_get_state(common, get);
 }
 
-int bt_mesh_generic_client_set_state(struct bt_mesh_common_param *common, void *set, void *status)
+int bt_mesh_generic_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status)
 {
     bt_mesh_generic_client_t *client = NULL;
     u16_t length   = 0;

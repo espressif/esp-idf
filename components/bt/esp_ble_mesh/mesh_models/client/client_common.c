@@ -23,15 +23,15 @@
 #include "mesh_main.h"
 
 #include "mesh.h"
-#include "model_common.h"
+#include "client_common.h"
 
-bt_mesh_client_node_t *bt_mesh_is_model_message_publish(struct bt_mesh_model *model,
+bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
+        struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
-        struct net_buf_simple *buf,
-        bool need_pub)
+        struct net_buf_simple *buf, bool need_pub)
 {
-    bt_mesh_internal_data_t *data = NULL;
-    bt_mesh_client_common_t *cli = NULL;
+    bt_mesh_client_internal_data_t *data = NULL;
+    bt_mesh_client_user_data_t *cli = NULL;
     bt_mesh_client_node_t *node = NULL;
     u32_t rsp;
 
@@ -40,7 +40,7 @@ bt_mesh_client_node_t *bt_mesh_is_model_message_publish(struct bt_mesh_model *mo
         return NULL;
     }
 
-    cli = (bt_mesh_client_common_t *)model->user_data;
+    cli = (bt_mesh_client_user_data_t *)model->user_data;
     if (!cli) {
         BT_ERR("%s, Clinet user_data is NULL", __func__);
         return NULL;
@@ -65,7 +65,7 @@ bt_mesh_client_node_t *bt_mesh_is_model_message_publish(struct bt_mesh_model *mo
      *  message, then the message is from another element and
      *  push it to application layer.
      */
-    data = (bt_mesh_internal_data_t *)cli->internal_data;
+    data = (bt_mesh_client_internal_data_t *)cli->internal_data;
     if (!data) {
         BT_ERR("%s, Client internal_data is NULL", __func__);
         return NULL;
@@ -172,8 +172,8 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
                             const struct bt_mesh_send_cb *cb,
                             void *cb_data)
 {
-    bt_mesh_internal_data_t *internal = NULL;
-    bt_mesh_client_common_t *cli = NULL;
+    bt_mesh_client_internal_data_t *internal = NULL;
+    bt_mesh_client_user_data_t *cli = NULL;
     bt_mesh_client_node_t *node = NULL;
     int err;
 
@@ -182,9 +182,9 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    cli = (bt_mesh_client_common_t *)model->user_data;
+    cli = (bt_mesh_client_user_data_t *)model->user_data;
     __ASSERT(cli, "Invalid client value when sent client msg.");
-    internal = (bt_mesh_internal_data_t *)cli->internal_data;
+    internal = (bt_mesh_client_internal_data_t *)cli->internal_data;
     __ASSERT(internal, "Invalid internal value when sent client msg.");
 
     if (!need_ack) {
@@ -224,8 +224,8 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
 
 int bt_mesh_client_init(struct bt_mesh_model *model)
 {
-    bt_mesh_internal_data_t *data = NULL;
-    bt_mesh_client_common_t *cli = NULL;
+    bt_mesh_client_internal_data_t *data = NULL;
+    bt_mesh_client_user_data_t *cli = NULL;
 
     if (!model) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -244,7 +244,7 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
     }
 
     /* TODO: call osi_free() when deinit function is invoked */
-    data = osi_calloc(sizeof(bt_mesh_internal_data_t));
+    data = osi_calloc(sizeof(bt_mesh_client_internal_data_t));
     if (!data) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -275,16 +275,16 @@ int bt_mesh_client_free_node(sys_slist_t *queue, bt_mesh_client_node_t *node)
     return 0;
 }
 
-int bt_mesh_set_model_role(bt_mesh_role_param_t *common)
+int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common)
 {
-    bt_mesh_client_common_t *client = NULL;
+    bt_mesh_client_user_data_t *client = NULL;
 
     if (!common || !common->model || !common->model->user_data) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
-    client = (bt_mesh_client_common_t *)common->model->user_data;
+    client = (bt_mesh_client_user_data_t *)common->model->user_data;
 
     switch (common->role) {
 #if CONFIG_BLE_MESH_NODE
@@ -314,23 +314,4 @@ int bt_mesh_set_model_role(bt_mesh_role_param_t *common)
     }
 
     return 0;
-}
-
-u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send)
-{
-    bt_mesh_client_common_t *client = NULL;
-
-    if (srv_send) {
-        BT_DBG("%s, Message is sent by a server model", __func__);
-        return NODE;
-    }
-
-    if (!model || !model->user_data) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return ROLE_NVAL;
-    }
-
-    client = (bt_mesh_client_common_t *)model->user_data;
-
-    return client->msg_role;
 }

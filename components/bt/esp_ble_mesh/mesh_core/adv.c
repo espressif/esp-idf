@@ -7,6 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+#include <errno.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/task.h"
@@ -186,6 +189,8 @@ static void adv_thread(void *p)
                     BT_ERR("%s, xQueueSendToFront failed", __func__);
                 }
             }
+        } else {
+            net_buf_unref(*buf);
         }
 
         /* Give other threads a chance to run */
@@ -387,6 +392,8 @@ void bt_mesh_adv_init(void)
 
 int bt_mesh_scan_enable(void)
 {
+    int err;
+
     struct bt_mesh_scan_param scan_param = {
         .type       = BLE_MESH_SCAN_PASSIVE,
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
@@ -400,12 +407,26 @@ int bt_mesh_scan_enable(void)
 
     BT_DBG("%s", __func__);
 
-    return bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+    err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+    if (err && err != -EALREADY) {
+        BT_ERR("starting scan failed (err %d)", err);
+        return err;
+    }
+
+    return 0;
 }
 
 int bt_mesh_scan_disable(void)
 {
+    int err;
+
     BT_DBG("%s", __func__);
 
-    return bt_le_scan_stop();
+    err = bt_le_scan_stop();
+    if (err && err != -EALREADY) {
+        BT_ERR("stopping scan failed (err %d)", err);
+        return err;
+    }
+
+    return 0;
 }

@@ -1653,25 +1653,29 @@ void bt_mesh_set_private_key(const u8_t pri_key[32])
 
 const u8_t *bt_mesh_pub_key_get(void)
 {
-    Point public_key;
-    BT_OCTET32 pri_key;
-#if 1
+    BT_OCTET32 private_key = {0};
+    Point public_key = {0};
+
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_HAS_PUB_KEY)) {
         return bt_mesh_public_key;
     }
-#else
+
     /* BLE Mesh BQB test case MESH/NODE/PROV/UPD/BV-12-C requires
      * different public key for each provisioning procedure.
      * Note: if enabled, when Provisioner provision multiple devices
      * at the same time, this may cause invalid confirmation value.
+     *
+     * Use the following code for generating different private key
+     * for each provisioning procedure.
+     *
+     * if (bt_mesh_rand(bt_mesh_private_key, BT_OCTET32_LEN)) {
+     *    BT_ERR("%s, Unable to generate bt_mesh_private_key", __func__);
+     *    return NULL;
+     * }
      */
-    if (bt_mesh_rand(bt_mesh_private_key, 32)) {
-        BT_ERR("%s, Unable to generate bt_mesh_private_key", __func__);
-        return NULL;
-    }
-#endif
-    mem_rcopy(pri_key, bt_mesh_private_key, 32);
-    ECC_PointMult(&public_key, &(curve_p256.G), (DWORD *)pri_key, KEY_LENGTH_DWORDS_P256);
+
+    memcpy(private_key, bt_mesh_private_key, BT_OCTET32_LEN);
+    ECC_PointMult(&public_key, &(curve_p256.G), (DWORD *)private_key, KEY_LENGTH_DWORDS_P256);
 
     memcpy(bt_mesh_public_key, public_key.x, BT_OCTET32_LEN);
     memcpy(bt_mesh_public_key + BT_OCTET32_LEN, public_key.y, BT_OCTET32_LEN);
@@ -1697,29 +1701,26 @@ bool bt_mesh_check_public_key(const u8_t key[64])
 
 int bt_mesh_dh_key_gen(const u8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const u8_t idx)
 {
-    BT_OCTET32 private_key;
-    Point peer_publ_key;
-    Point new_publ_key;
-    BT_OCTET32 dhkey;
+    BT_OCTET32 private_key = {0};
+    Point peer_pub_key = {0};
+    Point new_pub_key = {0};
 
     BT_DBG("private key = %s", bt_hex(bt_mesh_private_key, BT_OCTET32_LEN));
 
-    mem_rcopy(private_key, bt_mesh_private_key, BT_OCTET32_LEN);
-    memcpy(peer_publ_key.x, remote_pk, BT_OCTET32_LEN);
-    memcpy(peer_publ_key.y, &remote_pk[BT_OCTET32_LEN], BT_OCTET32_LEN);
+    memcpy(private_key, bt_mesh_private_key, BT_OCTET32_LEN);
+    memcpy(peer_pub_key.x, remote_pk, BT_OCTET32_LEN);
+    memcpy(peer_pub_key.y, &remote_pk[BT_OCTET32_LEN], BT_OCTET32_LEN);
 
-    BT_DBG("remote public key x = %s", bt_hex(peer_publ_key.x, BT_OCTET32_LEN));
-    BT_DBG("remote public key y = %s", bt_hex(peer_publ_key.y, BT_OCTET32_LEN));
+    BT_DBG("remote public key x = %s", bt_hex(peer_pub_key.x, BT_OCTET32_LEN));
+    BT_DBG("remote public key y = %s", bt_hex(peer_pub_key.y, BT_OCTET32_LEN));
 
-    ECC_PointMult(&new_publ_key, &peer_publ_key, (DWORD *) private_key, KEY_LENGTH_DWORDS_P256);
+    ECC_PointMult(&new_pub_key, &peer_pub_key, (DWORD *)private_key, KEY_LENGTH_DWORDS_P256);
 
-    memcpy(dhkey, new_publ_key.x, BT_OCTET32_LEN);
-
-    BT_DBG("new public key x = %s", bt_hex(new_publ_key.x, 32));
-    BT_DBG("new public key y = %s", bt_hex(new_publ_key.y, 32));
+    BT_DBG("new public key x = %s", bt_hex(new_pub_key.x, 32));
+    BT_DBG("new public key y = %s", bt_hex(new_pub_key.y, 32));
 
     if (cb != NULL) {
-        cb((const u8_t *)dhkey, idx);
+        cb((const u8_t *)new_pub_key.x, idx);
     }
 
     return 0;

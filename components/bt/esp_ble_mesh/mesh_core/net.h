@@ -115,6 +115,12 @@ struct bt_mesh_friend {
 
     struct bt_mesh_friend_seg {
         sys_slist_t queue;
+
+        /* The target number of segments, i.e. not necessarily
+         * the current number of segments, in the queue. This is
+         * used for Friend Queue free space calculations.
+         */
+        u8_t        seg_count;
     } seg[FRIEND_SEG_RX];
 
     struct net_buf *last;
@@ -209,7 +215,7 @@ enum {
     BLE_MESH_IVU_TEST,        /* IV Update test mode */
     BLE_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
 
-    /* pending storage actions */
+    /* pending storage actions, must reside within first 32 flags */
     BLE_MESH_RPL_PENDING,
     BLE_MESH_KEYS_PENDING,
     BLE_MESH_NET_PENDING,
@@ -289,6 +295,7 @@ struct bt_mesh_net_rx {
            net_if: 2,      /* Network interface */
            local_match: 1, /* Matched a local element */
            friend_match: 1; /* Matched an LPN we're friends for */
+    u16_t  msg_cache_idx;  /* Index of entry in message cache */
     s8_t   rssi;
 };
 
@@ -384,5 +391,21 @@ struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, u16_t addr,
                                        u16_t lpn_counter, u16_t frnd_counter);
 void friend_cred_clear(struct friend_cred *cred);
 int friend_cred_del(u16_t net_idx, u16_t addr);
+
+static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
+                    void *cb_data)
+{
+    if (!cb) {
+        return;
+    }
+
+    if (cb->start) {
+        cb->start(0, 0, cb_data);
+    }
+
+    if (cb->end) {
+        cb->end(0, cb_data);
+    }
+}
 
 #endif /* _NET_H_ */

@@ -15,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "client_common.h"
 #include "mesh_common.h"
 
 struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
@@ -43,4 +44,23 @@ void bt_mesh_free_buf(struct net_buf_simple *buf)
     if (buf) {
         osi_free(buf);
     }
+}
+
+u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
+{
+    bt_mesh_client_user_data_t *client = NULL;
+
+    if (srv_send) {
+        BT_DBG("%s, Message is sent by a server model", __func__);
+        return NODE;
+    }
+
+    if (!model || !model->user_data) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return ROLE_NVAL;
+    }
+
+    client = (bt_mesh_client_user_data_t *)model->user_data;
+
+    return client->msg_role;
 }

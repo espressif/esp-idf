@@ -19,7 +19,6 @@
 #ifndef _ESP_BLE_MESH_SENSOR_MODEL_API_H_
 #define _ESP_BLE_MESH_SENSOR_MODEL_API_H_
 
-#include "sensor_client.h"
 #include "esp_ble_mesh_defs.h"
 
 /** @def    ESP_BLE_MESH_MODEL_SENSOR_CLI
@@ -45,60 +44,60 @@
 /** Parameters of Sensor Descriptor Get */
 typedef struct {
     bool  op_en;        /*!< Indicate if optional parameters are included */
-    u16_t property_id;  /*!< Property ID of a sensor (optional) */
+    uint16_t property_id;  /*!< Property ID of a sensor (optional) */
 } esp_ble_mesh_sensor_descriptor_get_t;
 
 /** Parameter of Sensor Cadence Get */
 typedef struct {
-    u16_t property_id;  /*!< Property ID of a sensor */
+    uint16_t property_id;  /*!< Property ID of a sensor */
 } esp_ble_mesh_sensor_cadence_get_t;
 
 /** Parameters of Sensor Cadence Set */
 typedef struct {
-    u16_t property_id;                                  /*!< Property ID for the sensor */
-    u8_t  fast_cadence_period_divisor : 7,              /*!< Divisor for the publish period */
-          status_trigger_type : 1;                      /*!< The unit and format of the Status Trigger Delta fields */
+    uint16_t property_id;                               /*!< Property ID for the sensor */
+    uint8_t  fast_cadence_period_divisor : 7,           /*!< Divisor for the publish period */
+             status_trigger_type : 1;                   /*!< The unit and format of the Status Trigger Delta fields */
     struct net_buf_simple *status_trigger_delta_down;   /*!< Delta down value that triggers a status message */
     struct net_buf_simple *status_trigger_delta_up;     /*!< Delta up value that triggers a status message */
-    u8_t  status_min_interval;                          /*!< Minimum interval between two consecutive Status messages */
+    uint8_t  status_min_interval;                       /*!< Minimum interval between two consecutive Status messages */
     struct net_buf_simple *fast_cadence_low;            /*!< Low value for the fast cadence range */
     struct net_buf_simple *fast_cadence_high;           /*!< Fast value for the fast cadence range */
 } esp_ble_mesh_sensor_cadence_set_t;
 
 /** Parameter of Sensor Settings Get */
 typedef struct {
-    u16_t sensor_property_id;   /*!< Property ID of a sensor */
+    uint16_t sensor_property_id;   /*!< Property ID of a sensor */
 } esp_ble_mesh_sensor_settings_get_t;
 
 /** Parameters of Sensor Setting Get */
 typedef struct {
-    u16_t sensor_property_id;           /*!< Property ID of a sensor */
-    u16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */
+    uint16_t sensor_property_id;           /*!< Property ID of a sensor */
+    uint16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */
 } esp_ble_mesh_sensor_setting_get_t;
 
 /** Parameters of Sensor Setting Set */
 typedef struct {
-    u16_t sensor_property_id;           /*!< Property ID identifying a sensor */
-    u16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */
+    uint16_t sensor_property_id;           /*!< Property ID identifying a sensor */
+    uint16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */
     struct net_buf_simple *sensor_setting_raw;  /*!< Raw value for the setting */
 } esp_ble_mesh_sensor_setting_set_t;
 
 /** Parameters of Sensor Get */
 typedef struct {
-    bool  op_en;        /*!< Indicate if optional parameters are included  */
-    u16_t property_id;  /*!< Property ID for the sensor (optional) */
+    bool     op_en;        /*!< Indicate if optional parameters are included  */
+    uint16_t property_id;  /*!< Property ID for the sensor (optional) */
 } esp_ble_mesh_sensor_get_t;
 
 /** Parameters of Sensor Column Get */
 typedef struct {
-    u16_t property_id;  /*!< Property identifying a sensor */
+    uint16_t property_id;  /*!< Property identifying a sensor */
     struct net_buf_simple *raw_value_x; /*!< Raw value identifying a column */
 } esp_ble_mesh_sensor_column_get_t;
 
 /** Parameters of Sensor Series Get */
 typedef struct {
-    bool  op_en;        /*!< Indicate if optional parameters are included */
-    u16_t property_id;  /*!< Property identifying a sensor */
+    bool     op_en;        /*!< Indicate if optional parameters are included */
+    uint16_t property_id;  /*!< Property identifying a sensor */
     struct net_buf_simple *raw_value_x1;    /*!< Raw value identifying a starting column (optional) */
     struct net_buf_simple *raw_value_x2;    /*!< Raw value identifying an ending column (C.1) */
 } esp_ble_mesh_sensor_series_get_t;
@@ -135,22 +134,22 @@ typedef struct {
 
 /** Parameters of Sensor Cadence Status */
 typedef struct {
-    u16_t property_id;  /*!< Property for the sensor */
+    uint16_t property_id;  /*!< Property for the sensor */
     struct net_buf_simple *sensor_cadence_value;    /*!< Value of sensor cadence state */
 } esp_ble_mesh_sensor_cadence_status_cb_t;
 
 /** Parameters of Sensor Settings Status */
 typedef struct {
-    u16_t sensor_property_id;   /*!< Property ID identifying a sensor */
+    uint16_t sensor_property_id;   /*!< Property ID identifying a sensor */
     struct net_buf_simple *sensor_setting_property_ids; /*!< A sequence of N sensor setting property IDs (optional) */
 } esp_ble_mesh_sensor_settings_status_cb_t;
 
 /** Parameters of Sensor Setting Status */
 typedef struct  {
-    bool  op_en;                        /*!< Indicate id optional parameters are included */
-    u16_t sensor_property_id;           /*!< Property ID identifying a sensor */
-    u16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */
-    u8_t  sensor_setting_access;        /*!< Read/Write access rights for the setting (optional) */
+    bool     op_en;                        /*!< Indicate id optional parameters are included */
+    uint16_t sensor_property_id;           /*!< Property ID identifying a sensor */
+    uint16_t sensor_setting_property_id;   /*!< Setting ID identifying a setting within a sensor */
+    uint8_t  sensor_setting_access;        /*!< Read/Write access rights for the setting (optional) */
     struct net_buf_simple *sensor_setting_raw;  /*!< Raw value for the setting */
 } esp_ble_mesh_sensor_setting_status_cb_t;
 
@@ -161,13 +160,13 @@ typedef struct {
 
 /** Parameters of Sensor Column Status */
 typedef struct {
-    u16_t property_id;  /*!< Property identifying a sensor and the Y axis  */
+    uint16_t property_id;  /*!< Property identifying a sensor and the Y axis  */
     struct net_buf_simple *sensor_column_value; /*!< Left values of sensor column status */
 } esp_ble_mesh_sensor_column_status_cb_t;
 
 /** Parameters of Sensor Series Status */
 typedef struct {
-    u16_t property_id;  /*!< Property identifying a sensor and the Y axis  */
+    uint16_t property_id;  /*!< Property identifying a sensor and the Y axis  */
     struct net_buf_simple *sensor_series_value; /*!< Left values of sensor series status */
 } esp_ble_mesh_sensor_series_status_cb_t;
 

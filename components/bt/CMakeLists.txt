@@ -297,7 +297,8 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/include"
                     "esp_ble_mesh/mesh_core/settings"
                     "esp_ble_mesh/btc/include"
-                    "esp_ble_mesh/mesh_models/include"
+                    "esp_ble_mesh/mesh_models/common/include"
+                    "esp_ble_mesh/mesh_models/client/include"
                     "esp_ble_mesh/api/core/include"
                     "esp_ble_mesh/api/models/include"
                     "esp_ble_mesh/api")
@@ -350,12 +351,12 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/settings.c"
                     "esp_ble_mesh/mesh_core/test.c"
                     "esp_ble_mesh/mesh_core/transport.c"
-                    "esp_ble_mesh/mesh_models/generic_client.c"
-                    "esp_ble_mesh/mesh_models/lighting_client.c"
-                    "esp_ble_mesh/mesh_models/mesh_common.c"
-                    "esp_ble_mesh/mesh_models/model_common.c"
-                    "esp_ble_mesh/mesh_models/sensor_client.c"
-                    "esp_ble_mesh/mesh_models/time_scene_client.c")
+                    "esp_ble_mesh/mesh_models/common/mesh_common.c"
+                    "esp_ble_mesh/mesh_models/client/client_common.c"
+                    "esp_ble_mesh/mesh_models/client/generic_client.c"
+                    "esp_ble_mesh/mesh_models/client/lighting_client.c"
+                    "esp_ble_mesh/mesh_models/client/sensor_client.c"
+                    "esp_ble_mesh/mesh_models/client/time_scene_client.c")
     endif()
 
     if(CONFIG_BT_NIMBLE_ENABLED)
