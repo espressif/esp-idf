@@ -177,9 +177,10 @@ linkcheck: | check_python_packages
 	      "or in $(BUILDDIR)/linkcheck/output.txt."
 
 gh-linkcheck: | check_python_packages
-	@echo "Checking for hardcoded GitHub links"
+	@echo "Checking for hardcoded GitHub links"  # note: exception for links to support policy doc as we *want* this to be a link to master's policy
 	@if (find ../ -name '*.rst' | xargs grep \
-		'https://github.com/espressif/esp-idf/tree\|https://github.com/espressif/esp-idf/blob\|https://github.com/espressif/esp-idf/raw'\
+		'https://github.com/espressif/esp-idf/tree\|https://github.com/espressif/esp-idf/blob\|https://github.com/espressif/esp-idf/raw' \
+		| grep -v 'SUPPORT_POLICY\.md' \
 		); \
 	then \
 		echo "WARNINIG: Some .rst files contain hardcoded Github links."; \
