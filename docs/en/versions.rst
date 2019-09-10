@@ -31,12 +31,13 @@ Which Version Should I Start With?
 
 - For production purposes, use the `current stable version`_. Stable versions have been manually tested, and are updated with "bugfix releases" which fix bugs without changing other functionality (see `Versioning Scheme`_ for more details).
 
+  In order to maximize the time between updates to new ESP-IDF versions, use the latest stable Long Term Support release version. This version can be found on the `Releases page`_.
+
 - For prototyping, experimentation or for developing new ESP-IDF features, use the `latest version (master branch in Git) <https://docs.espressif.com/projects/esp-idf/en/latest/>`_. The latest version in the master branch has all the latest features and has passed automated testing, but has not been completely manually tested ("bleeding edge").
 
 - If a required feature is not yet available in a stable release, but you do not want to use the master branch, it is possible to check out a pre-release version or a release branch. It is recommended to start from a stable version and then follow the instructions for :ref:`updating-pre-release` or :ref:`updating-release-branch`.
 
 See :ref:`updating` if you already have a local copy of ESP-IDF and wish to update it.
-
 
 Versioning Scheme
 -----------------
@@ -55,6 +56,22 @@ ESP-IDF uses `Semantic Versioning <http://semver.org/>`_. This means that:
 
   If updating to a new bugfix release (for example, from ``v3.0`` to ``v3.0.1``), you do not need to change any code in your project, and you only need to re-test the functionality directly related to bugs listed in the release notes on the `Releases page`_.
 
+Support Periods
+---------------
+
+Each ESP-IDF major and minor release version has an associated support period. After this period, the release is End of Life and no longer supported. Some releases are designated Long Term Support, which means the support period is longer than for other releases.
+
+The `ESP-IDF Support Period Policy`_ explains this in detail, and describes how the support periods for each release are determined.
+
+Each release on the `Releases page`_ includes information about the support period for that particular release.
+
+As a general guideline:
+
+- Using Long Term Support releases will maximize the amount of time between required ESP-IDF major or minor upgrades.
+- Using standard stable releases will require more frequent upgrades to new ESP-IDF versions. However, this means that new features and major improvements will be available more frequently.
+
+It is also possible to upgrade from a Long Term Support release to a standard release, and vice versa.
+
 
 Checking the Current Version
 ----------------------------
@@ -65,6 +82,8 @@ The local ESP-IDF version can be checked by using git::
   git describe --tags --dirty
 
 The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (the version information is not always updated in code, it only changes if that particular source file is recompiled).
+
+If writing code that needs to support multiple ESP-IDF versions, the version can be checked at compile time using :ref:`compile-time macros<idf-version-h>`.
 
 Examples of ESP-IDF versions:
 
@@ -191,3 +210,4 @@ Each time you ``git pull`` this branch, ESP-IDF will be updated with fixes for t
 .. _`list of branches`: https://github.com/espressif/esp-idf/branches
 .. _`list of tags`: https://github.com/espressif/esp-idf/tags
 .. _`current stable version`: https://docs.espressif.com/projects/esp-idf/en/stable/
+.. _`ESP-IDF Support Period Policy`:  https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md
