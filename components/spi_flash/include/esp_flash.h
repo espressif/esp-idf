@@ -282,33 +282,6 @@ esp_err_t esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *ou
 */
 extern esp_flash_t *esp_flash_default_chip;
 
-/** @brief Initialise the default SPI flash chip
- *
- * Called by OS startup code. You do not need to call this in your own applications.
- */
-esp_err_t esp_flash_init_default_chip(void);
-
-/**
- *  Enable OS-level SPI flash protections in IDF
- *
- *  Called by OS startup code. You do not need to call this in your own applications.
- *
- * @return ESP_OK if success, otherwise failed. See return value of ``esp_flash_init_os_functions``.
- */
-esp_err_t esp_flash_app_init(void);
-
-/**
- *  Enable OS-level SPI flash for a specific chip.
- *
- * @param chip The chip to init os functions.
- * @param host_id Which SPI host to use, 1 for SPI1, 2 for SPI2 (HSPI), 3 for SPI3 (VSPI)
- *
- * @return
- *      - ESP_OK if success
- *      - ESP_ERR_INVALID_ARG if host_id is invalid
- */
-esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id);
-
 
 #ifdef __cplusplus
 }
