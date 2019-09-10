@@ -95,7 +95,7 @@ class SourceChecker(BaseChecker):
                                  line.replace('source', 'source '))
             path = m.group(2)
             filename = os.path.basename(path)
-            if path in ['$COMPONENT_KCONFIGS_PROJBUILD', '$COMPONENT_KCONFIGS']:
+            if path in ['$COMPONENT_KCONFIGS_SOURCE_FILE', '$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE']:
                 pass
             elif not filename.startswith('Kconfig.'):
                 raise InputError(self.path_in_idf, line_number, "only filenames starting with Kconfig.* can be sourced",
