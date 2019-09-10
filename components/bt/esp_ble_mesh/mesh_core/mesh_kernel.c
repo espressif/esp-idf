@@ -189,17 +189,5 @@ s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
         return 0;
     }
 
-    if (!alarm->deadline_us) {
-        return 0;
-    }
-
-    s32_t remain_time = 0;
-    int64_t now = esp_timer_get_time();
-    if ((alarm->deadline_us - now) < 0x1FFFFFFFFFF) {
-        remain_time = (alarm->deadline_us - now) / 1000;
-    } else {
-        return 0;
-    }
-
-    return remain_time;
+    return osi_alarm_get_remaining_ms(alarm);
 }
