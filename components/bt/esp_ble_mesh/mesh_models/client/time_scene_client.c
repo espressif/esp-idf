@@ -99,8 +99,8 @@ static void timeout_handler(struct k_work *work)
         return;
     }
 
-    bt_mesh_callback_time_scene_status_to_btc(node->opcode, 0x03, node->ctx.model,
-            &node->ctx, NULL, 0);
+    bt_mesh_time_scene_client_cb_evt_to_btc(node->opcode,
+        BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
 
     bt_mesh_client_free_node(&internal->queue, node);
 
@@ -299,7 +299,7 @@ static void time_scene_status(struct bt_mesh_model *model,
 
     buf->data = val;
     buf->len = len;
-    node = bt_mesh_is_model_message_publish(model, ctx, buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
         BT_DBG("Unexpected time scene status message 0x%x", rsp);
     } else {
@@ -312,7 +312,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_SCENE_REGISTER_GET:
         case BLE_MESH_MODEL_OP_SCHEDULER_GET:
         case BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET:
-            evt = 0x00;
+            evt = BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_GET_STATE;
             break;
         case BLE_MESH_MODEL_OP_TIME_SET:
         case BLE_MESH_MODEL_OP_TIME_ZONE_SET:
@@ -322,13 +322,13 @@ static void time_scene_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_SCENE_RECALL:
         case BLE_MESH_MODEL_OP_SCENE_DELETE:
         case BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET:
-            evt = 0x01;
+            evt = BTC_BLE_MESH_EVT_TIME_SCENE_CLIENT_SET_STATE;
             break;
         default:
             break;
         }
 
-        bt_mesh_callback_time_scene_status_to_btc(node->opcode, evt, model, ctx, val, len);
+        bt_mesh_time_scene_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
         // Don't forget to release the node at the end.
         bt_mesh_client_free_node(&internal->queue, node);
     }
@@ -369,7 +369,7 @@ const struct bt_mesh_model_op scheduler_cli_op[] = {
     BLE_MESH_MODEL_OP_END,
 };
 
-static int time_scene_get_state(struct bt_mesh_common_param *common, void *value)
+static int time_scene_get_state(bt_mesh_client_common_param_t *common, void *value)
 {
     NET_BUF_SIMPLE_DEFINE(msg, BLE_MESH_SCENE_GET_STATE_MSG_LEN);
     int err;
@@ -400,7 +400,7 @@ static int time_scene_get_state(struct bt_mesh_common_param *common, void *value
     return err;
 }
 
-static int time_scene_set_state(struct bt_mesh_common_param *common,
+static int time_scene_set_state(bt_mesh_client_common_param_t *common,
                                 void *value, u16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
@@ -497,7 +497,7 @@ end:
     return err;
 }
 
-int bt_mesh_time_scene_client_get_state(struct bt_mesh_common_param *common, void *get, void *status)
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status)
 {
     bt_mesh_time_scene_client_t *client = NULL;
 
@@ -535,7 +535,7 @@ int bt_mesh_time_scene_client_get_state(struct bt_mesh_common_param *common, voi
     return time_scene_get_state(common, get);
 }
 
-int bt_mesh_time_scene_client_set_state(struct bt_mesh_common_param *common, void *set, void *status)
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status)
 {
     bt_mesh_time_scene_client_t *client = NULL;
     u16_t length = 0;

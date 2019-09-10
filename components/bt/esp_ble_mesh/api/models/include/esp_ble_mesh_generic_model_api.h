@@ -19,7 +19,6 @@
 #ifndef _ESP_BLE_MESH_GENERIC_MODEL_API_H_
 #define _ESP_BLE_MESH_GENERIC_MODEL_API_H_
 
-#include "generic_client.h"
 #include "esp_ble_mesh_defs.h"
 
 /** @def    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI

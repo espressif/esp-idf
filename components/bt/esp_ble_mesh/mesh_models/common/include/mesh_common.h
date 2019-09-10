@@ -24,6 +24,7 @@
 #include "mesh_types.h"
 #include "mesh_buf.h"
 #include "mesh_trace.h"
+#include "mesh_access.h"
 
 /**
  * @brief This function allocates memory to store outgoing message.
@@ -42,5 +43,19 @@ struct net_buf_simple *bt_mesh_alloc_buf(u16_t size);
  * @return none
  */
 void bt_mesh_free_buf(struct net_buf_simple *buf);
+
+/**
+ * @brief This function gets device role for stack internal use.
+ * 
+ * @Note  Currently Provisioner only support client models, Node supports
+ *        client models and server models. Hence if srv_send is set to be
+ *        TRUE, then role NODE will be returned.
+ *
+ * @param[in] model:    Pointer to the model structure
+ * @param[in] srv_send: Indicate if the message is sent by a server model
+ *
+ * @return 0 - Node, 1 - Provisioner
+ */
+u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
 
 #endif /* _MESH_COMMON_H_ */

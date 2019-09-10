@@ -23,7 +23,11 @@
 extern "C" {
 #endif
 
-#define SETTINGS_ITEM_SIZE  sizeof(u16_t)
+#define SETTINGS_ITEM_SIZE              sizeof(u16_t)
+
+#define BLE_MESH_GET_ELEM_IDX(x)        ((u8_t)((x) >> 8))
+#define BLE_MESH_GET_MODEL_IDX(x)       ((u8_t)(x))
+#define BLE_MESH_GET_MODEL_KEY(a, b)    ((u16_t)(((u16_t)((a) << 8)) | b))
 
 void bt_mesh_settings_foreach(void);
 

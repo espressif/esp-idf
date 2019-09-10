@@ -17,17 +17,23 @@
 
 #include "mesh_access.h"
 
-/** Mesh Client Model Context */
+/** Client model opcode pair table */
 typedef struct {
-    u32_t cli_op;              /* The client opcode */
-    u32_t status_op;           /* The server status opcode corresponding to the client opcode */
+    u32_t cli_op;       /* Client message opcode */
+    u32_t status_op;    /* Corresponding status message opcode */
 } bt_mesh_client_op_pair_t;
 
-/** Mesh Client Model Context */
+/** Client model user data context */
 typedef struct {
+    /** Pointer to the client model */
     struct bt_mesh_model *model;
-    int op_pair_size; /* the size of op_pair */
+
+    /** Size of the opcode pair table */
+    int op_pair_size;
+
+    /** Pointer to the opcode pair table */
     const bt_mesh_client_op_pair_t *op_pair;
+
     /**
      * @brief This function is a callback function used to push the received unsolicited
      *        messages to the application layer.
@@ -40,26 +46,42 @@ typedef struct {
      * @return None
      */
     void (*publish_status)(u32_t opcode, struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
-    void *internal_data; /* Pointer of the structure of internal data */
-    u8_t msg_role; /* device role of the tx message */
-} bt_mesh_client_common_t;
 
+    /** Pointer to the internal data of client model */
+    void *internal_data;
+
+    /** Role of the device to which the client model belongs */
+    u8_t msg_role;
+} bt_mesh_client_user_data_t;
+
+/** Client model internal data context */
 typedef struct  {
     sys_slist_t queue;
-} bt_mesh_internal_data_t;
+} bt_mesh_client_internal_data_t;
 
+/** Client model sending message related context */
 typedef struct {
     sys_snode_t client_node;
-    struct bt_mesh_msg_ctx ctx;
-    u32_t opcode;     /* Indicate the opcode of the message sending */
-    u32_t op_pending; /* Indicate the status message waiting for    */
-    struct k_delayed_work timer; /* Message send Timer. Only for stack-internal use. */
+    struct bt_mesh_msg_ctx ctx;     /* Message context */
+    u32_t opcode;                   /* Message opcode */
+    u32_t op_pending;               /* Expected status message opcode */
+    struct k_delayed_work timer;    /* Time used to get response. Only for internal use. */
 } bt_mesh_client_node_t;
+
+/** Client model sending message parameters */
+typedef struct {
+    u32_t opcode;                       /* Message opcode */
+    struct bt_mesh_model *model;        /* Pointer to the client model */
+    struct bt_mesh_msg_ctx ctx;         /* Message context */
+    s32_t msg_timeout;                  /* Time to get corresponding response */
+    const struct bt_mesh_send_cb *cb;   /* User defined callback function */
+    void *cb_data;                      /* User defined callback value */
+} bt_mesh_client_common_param_t;
 
 int bt_mesh_client_init(struct bt_mesh_model *model);
 
 /**
- * @brief Check the msg is a publish msg or not
+ * @brief Check if the msg received by client model is a publish msg or not
  *
  * @param model     Mesh (client) Model that the message belongs to.
  * @param ctx       Message context, includes keys, TTL, etc.
@@ -67,10 +89,10 @@ int bt_mesh_client_init(struct bt_mesh_model *model);
  * @param need_pub  Indicate if the msg sent to app layer as a publish msg
  * @return 0 on success, or (negative) error code on failure.
  */
-bt_mesh_client_node_t *bt_mesh_is_model_message_publish(struct bt_mesh_model *model,
+bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
+        struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
-        struct net_buf_simple *buf,
-        bool need_pub);
+        struct net_buf_simple *buf, bool need_pub);
 
 bool bt_mesh_client_find_opcode_in_list(sys_slist_t *list, u32_t opcode);
 
@@ -94,18 +116,9 @@ enum {
     FAST_PROV,
 };
 
-#define ROLE_NVAL 0xFF
+#define ROLE_NVAL   0xFF
 
-struct bt_mesh_common_param {
-    u32_t opcode;                     /* Message opcode           */
-    struct bt_mesh_model *model;      /* Pointer to cli structure */
-    struct bt_mesh_msg_ctx ctx;       /* Message context */
-    s32_t msg_timeout;                /* Time to get response messages */
-    const struct bt_mesh_send_cb *cb; /* User defined callback function       */
-    void *cb_data;                    /* Data as parameter of the cb function */
-};
-
-typedef struct bt_mesh_role_param {
+typedef struct {
     struct bt_mesh_model *model;    /* The client model structure */
     u8_t  role;                     /* Role of the device - Node/Provisioner */
 } bt_mesh_role_param_t;
@@ -113,21 +126,11 @@ typedef struct bt_mesh_role_param {
 /**
  * @brief This function copies node_index for stack internal use.
  *
- * @param[in] common: Pointer to the struct bt_mesh_role_param structure
+ * @param[in] common: Pointer to the bt_mesh_role_param_t structure
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_set_model_role(bt_mesh_role_param_t *common);
-
-/**
- * @brief This function gets msg role for stack internal use.
- *
- * @param[in] model:    Pointer to the model structure
- * @param[in] srv_send: Indicate if the message is sent by a server model
- *
- * @return 0 - Node, 1 - Provisioner
- */
-u8_t bt_mesh_get_model_role(struct bt_mesh_model *model, bool srv_send);
+int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common);
 
 #endif /* _MODEL_COMMON_H_ */
 

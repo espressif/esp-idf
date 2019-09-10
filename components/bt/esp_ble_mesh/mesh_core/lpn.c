@@ -26,6 +26,7 @@
 #include "beacon.h"
 #include "foundation.h"
 #include "lpn.h"
+#include "cfg_srv.h"
 
 #ifdef CONFIG_BLE_MESH_LOW_POWER
 
@@ -201,6 +202,7 @@ static int send_friend_clear(void)
 
 static void clear_friendship(bool force, bool disable)
 {
+    struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
     BT_DBG("force %u disable %u", force, disable);
@@ -247,6 +249,10 @@ static void clear_friendship(bool force, bool disable)
      * modified meanwhile.
      */
     lpn->groups_changed = 1U;
+
+    if (cfg->hb_pub.feat & BLE_MESH_FEAT_LOW_POWER) {
+        bt_mesh_heartbeat_send();
+    }
 
     if (disable) {
         lpn_set_state(BLE_MESH_LPN_DISABLED);
@@ -764,6 +770,7 @@ static void lpn_timeout(struct k_work *work)
         }
         lpn->counter++;
         lpn_set_state(BLE_MESH_LPN_ENABLED);
+        lpn->sent_req = 0U;
         k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
         break;
     case BLE_MESH_LPN_OFFER_RECV:
@@ -951,6 +958,8 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
     }
 
     if (!lpn->established) {
+        struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
+
         /* This is normally checked on the transport layer, however
          * in this state we're also still accepting master
          * credentials so we need to ensure the right ones (Friend
@@ -964,6 +973,10 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
         lpn->established = 1U;
 
         BT_INFO("Friendship established with 0x%04x", lpn->frnd);
+
+        if (cfg->hb_pub.feat & BLE_MESH_FEAT_LOW_POWER) {
+            bt_mesh_heartbeat_send();
+        }
 
         if (lpn_cb) {
             lpn_cb(lpn->frnd, true);

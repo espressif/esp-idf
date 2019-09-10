@@ -22,11 +22,11 @@
 #include "mesh_access.h"
 #include "mesh_kernel.h"
 
-#include "model_common.h"
+#include "client_common.h"
 
 /* Generic client model common structure */
-typedef bt_mesh_client_common_t bt_mesh_generic_client_t;
-typedef bt_mesh_internal_data_t generic_internal_data_t;
+typedef bt_mesh_client_user_data_t      bt_mesh_generic_client_t;
+typedef bt_mesh_client_internal_data_t  generic_internal_data_t;
 
 /* Generic OnOff Client Model Context */
 extern const struct bt_mesh_model_op gen_onoff_cli_op[];
@@ -45,7 +45,7 @@ extern const struct bt_mesh_model_op gen_onoff_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_ONOFF_CLI,     \
                     gen_onoff_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_onoff_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_onoff_client_t;
 
 struct bt_mesh_gen_onoff_status {
     bool op_en;         /* Indicate whether optional parameters included  */
@@ -79,7 +79,7 @@ extern const struct bt_mesh_model_op gen_level_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_LEVEL_CLI,     \
                     gen_level_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_level_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_level_client_t;
 
 struct bt_mesh_gen_level_status {
     bool  op_en;         /* Indicate whether optional parameters included      */
@@ -97,11 +97,11 @@ struct bt_mesh_gen_level_set {
 };
 
 struct bt_mesh_gen_delta_set {
-    bool  op_en;      /* Indicate whether optional parameters included */
-    s32_t level;      /* Delta change of Generic Level state           */
-    u8_t  tid;        /* Transaction Identifier                        */
-    u8_t  trans_time; /* Time to complete state transition (optional)  */
-    u8_t  delay;      /* Indicate message execution delay (C.1)        */
+    bool  op_en;        /* Indicate whether optional parameters included */
+    s32_t delta_level;  /* Delta change of Generic Level state           */
+    u8_t  tid;          /* Transaction Identifier                        */
+    u8_t  trans_time;   /* Time to complete state transition (optional)  */
+    u8_t  delay;        /* Indicate message execution delay (C.1)        */
 };
 
 struct bt_mesh_gen_move_set {
@@ -130,7 +130,7 @@ extern const struct bt_mesh_model_op gen_def_trans_time_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI,    \
                     gen_def_trans_time_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_def_trans_time_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_def_trans_time_client_t;
 
 struct bt_mesh_gen_def_trans_time_set {
     u8_t trans_time;  /* The value of the Generic Default Transition Time state */
@@ -157,7 +157,7 @@ extern const struct bt_mesh_model_op gen_power_onoff_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI,   \
                     gen_power_onoff_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_power_onoff_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_power_onoff_client_t;
 
 struct bt_mesh_gen_onpowerup_set {
     u8_t onpowerup;  /* The value of the Generic OnPowerUp state */
@@ -184,7 +184,7 @@ extern const struct bt_mesh_model_op gen_power_level_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI,   \
                     gen_power_level_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_power_level_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_power_level_client_t;
 
 struct bt_mesh_gen_power_level_status {
     bool  op_en;         /* Indicate whether optional parameters included         */
@@ -241,7 +241,7 @@ extern const struct bt_mesh_model_op gen_battery_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_BATTERY_CLI,   \
                     gen_battery_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_battery_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_battery_client_t;
 
 struct bt_mesh_gen_battery_status {
     u32_t battery_level     : 8;  /* Value of Generic Battery Level state             */
@@ -267,7 +267,7 @@ extern const struct bt_mesh_model_op gen_location_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_LOCATION_CLI,  \
                     gen_location_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_location_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_location_client_t;
 
 struct bt_mesh_gen_loc_global_status {
     s32_t global_latitude;  /* Global Coordinates (Latitude)  */
@@ -314,7 +314,7 @@ extern const struct bt_mesh_model_op gen_property_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_GEN_PROP_CLI,      \
                     gen_property_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_gen_property_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_gen_property_client_t;
 
 struct bt_mesh_gen_user_properties_status {
     struct net_buf_simple *user_property_ids; /* Buffer contains a sequence of N User Property IDs */
@@ -475,7 +475,7 @@ int bt_mesh_gen_property_cli_init(struct bt_mesh_model *model, bool primary);
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_generic_client_get_state(struct bt_mesh_common_param *common, void *get, void *status);
+int bt_mesh_generic_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
 
 /**
  * @brief This function is called to set generic states.
@@ -486,6 +486,6 @@ int bt_mesh_generic_client_get_state(struct bt_mesh_common_param *common, void *
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_generic_client_set_state(struct bt_mesh_common_param *common, void *set, void *status);
+int bt_mesh_generic_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
 
 #endif /* _GENERIC_CLIENT_H_ */
