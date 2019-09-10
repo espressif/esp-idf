@@ -22,11 +22,11 @@
 #include "mesh_access.h"
 #include "mesh_kernel.h"
 
-#include "model_common.h"
+#include "client_common.h"
 
 /* Light client model common structure */
-typedef bt_mesh_client_common_t bt_mesh_light_client_t;
-typedef bt_mesh_internal_data_t light_internal_data_t;
+typedef bt_mesh_client_user_data_t      bt_mesh_light_client_t;
+typedef bt_mesh_client_internal_data_t  light_internal_data_t;
 
 /* Light Lightness Client Model Context */
 extern const struct bt_mesh_model_op light_lightness_cli_op[];
@@ -45,7 +45,7 @@ extern const struct bt_mesh_model_op light_lightness_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI,   \
                     light_lightness_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_light_lightness_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_light_lightness_client_t;
 
 struct bt_mesh_light_lightness_status {
     bool  op_en;             /* Indicate whether optional parameters included           */
@@ -117,7 +117,7 @@ extern const struct bt_mesh_model_op light_ctl_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_CTL_CLI,     \
                     light_ctl_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_light_ctl_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_light_ctl_client_t;
 
 struct bt_mesh_light_ctl_status {
     bool  op_en;                   /* Indicate whether optional parameters included        */
@@ -196,7 +196,7 @@ extern const struct bt_mesh_model_op light_hsl_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_HSL_CLI,     \
                     light_hsl_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_light_hsl_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_light_hsl_client_t;
 
 struct bt_mesh_light_hsl_status {
     bool  op_en;          /* Indicate whether optional parameters included */
@@ -298,7 +298,7 @@ extern const struct bt_mesh_model_op light_xyl_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_XYL_CLI,     \
                     light_xyl_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_light_xyl_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_light_xyl_client_t;
 
 struct bt_mesh_light_xyl_status {
     bool  op_en;         /* Indicate whether optional parameters included      */
@@ -370,7 +370,7 @@ extern const struct bt_mesh_model_op light_lc_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_LIGHT_LC_CLI,      \
                     light_lc_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_light_lc_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_light_lc_client_t;
 
 struct bt_mesh_light_lc_mode_status {
     u8_t mode; /* The present value of the Light LC Mode state */
@@ -476,7 +476,7 @@ int bt_mesh_light_lc_cli_init(struct bt_mesh_model *model, bool primary);
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_light_client_get_state(struct bt_mesh_common_param *common, void *get, void *status);
+int bt_mesh_light_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
 
 /**
  * @brief This function is called to set light states.
@@ -487,6 +487,6 @@ int bt_mesh_light_client_get_state(struct bt_mesh_common_param *common, void *ge
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_light_client_set_state(struct bt_mesh_common_param *common, void *set, void *status);
+int bt_mesh_light_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
 
 #endif /* _LIGHTING_CLIENT_H_ */

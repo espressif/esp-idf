@@ -22,7 +22,7 @@
 #include "mesh_access.h"
 #include "mesh_kernel.h"
 
-#include "model_common.h"
+#include "client_common.h"
 
 /* Sensor Client Model Context */
 extern const struct bt_mesh_model_op sensor_cli_op[];
@@ -41,8 +41,8 @@ extern const struct bt_mesh_model_op sensor_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_SENSOR_CLI,    \
                     sensor_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_sensor_client_t;
-typedef bt_mesh_internal_data_t sensor_internal_data_t;
+typedef bt_mesh_client_user_data_t      bt_mesh_sensor_client_t;
+typedef bt_mesh_client_internal_data_t  sensor_internal_data_t;
 
 struct bt_mesh_sensor_descriptor_status {
     struct net_buf_simple *descriptor; /* Sequence of 8-octet sensor descriptors (optional) */
@@ -151,7 +151,7 @@ int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary);
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_sensor_client_get_state(struct bt_mesh_common_param *common, void *get, void *status);
+int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
 
 /**
  * @brief This function is called to set sensor states.
@@ -162,6 +162,6 @@ int bt_mesh_sensor_client_get_state(struct bt_mesh_common_param *common, void *g
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_sensor_client_set_state(struct bt_mesh_common_param *common, void *set, void *status);
+int bt_mesh_sensor_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
 
 #endif /* _SENSOR_CLIENT_H_ */

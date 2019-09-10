@@ -114,16 +114,16 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 #if CONFIG_BLE_MESH
-    [BTC_PID_PROV]            = {btc_mesh_prov_call_handler, btc_mesh_prov_cb_handler},
-    [BTC_PID_MODEL]           = {btc_mesh_model_call_handler, btc_mesh_model_cb_handler},
-    [BTC_PID_HEALTH_CLIENT]   = {btc_mesh_health_client_call_handler, btc_mesh_health_client_cb_handler},
-    [BTC_PID_HEALTH_SERVER]   = {btc_mesh_health_server_call_handler, btc_mesh_health_server_cb_handler},
-    [BTC_PID_CFG_CLIENT]      = {btc_mesh_cfg_client_call_handler, btc_mesh_cfg_client_cb_handler},
-    [BTC_PID_CFG_SERVER]      = {NULL , btc_mesh_cfg_server_cb_handler},
-    [BTC_PID_GENERIC_CLIENT]  = {btc_mesh_generic_client_call_handler, btc_mesh_generic_client_cb_handler},
-    [BTC_PID_LIGHT_CLIENT]    = {btc_mesh_light_client_call_handler, btc_mesh_light_client_cb_handler},
-    [BTC_PID_SENSOR_CLIENT]   = {btc_mesh_sensor_client_call_handler, btc_mesh_sensor_client_cb_handler},
-    [BTC_PID_TIME_SCENE_CLIENT] = {btc_mesh_time_scene_client_call_handler, btc_mesh_time_scene_client_cb_handler},
+    [BTC_PID_PROV]              = {btc_ble_mesh_prov_call_handler,              btc_ble_mesh_prov_cb_handler             },
+    [BTC_PID_MODEL]             = {btc_ble_mesh_model_call_handler,             btc_ble_mesh_model_cb_handler            },
+    [BTC_PID_HEALTH_CLIENT]     = {btc_ble_mesh_health_client_call_handler,     btc_ble_mesh_health_client_cb_handler    },
+    [BTC_PID_HEALTH_SERVER]     = {btc_ble_mesh_health_server_call_handler,     btc_ble_mesh_health_server_cb_handler    },
+    [BTC_PID_CONFIG_CLIENT]     = {btc_ble_mesh_config_client_call_handler,     btc_ble_mesh_config_client_cb_handler    },
+    [BTC_PID_CONFIG_SERVER]     = {NULL,                                        btc_ble_mesh_config_server_cb_handler    },
+    [BTC_PID_GENERIC_CLIENT]    = {btc_ble_mesh_generic_client_call_handler,    btc_ble_mesh_generic_client_cb_handler   },
+    [BTC_PID_LIGHTING_CLIENT]   = {btc_ble_mesh_lighting_client_call_handler,   btc_ble_mesh_lighting_client_cb_handler  },
+    [BTC_PID_SENSOR_CLIENT]     = {btc_ble_mesh_sensor_client_call_handler,     btc_ble_mesh_sensor_client_cb_handler    },
+    [BTC_PID_TIME_SCENE_CLIENT] = {btc_ble_mesh_time_scene_client_call_handler, btc_ble_mesh_time_scene_client_cb_handler},
 #endif /* #if CONFIG_BLE_MESH */
 };
 

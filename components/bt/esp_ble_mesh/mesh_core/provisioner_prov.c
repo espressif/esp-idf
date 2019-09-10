@@ -575,16 +575,6 @@ static int provisioner_check_unprov_dev_info(const u8_t uuid[16])
         return -EALREADY;
     }
 
-    /* Check if this device is currently being provisioned.
-     * According to Zephyr's device code, if we connect with
-     * one device and start to provision it, we may still can
-     * receive the connectable prov adv pkt from this device.
-     * Here we check both PB-GATT and PB-ADV link status.
-     */
-    if (is_unprov_dev_being_provision(uuid)) {
-        return -EALREADY;
-    }
-
     /* Check if the device has already been provisioned */
     for (i = 0U; i < ARRAY_SIZE(prov_nodes); i++) {
         if (prov_nodes[i].provisioned) {
@@ -1757,7 +1747,7 @@ static int prov_auth(const u8_t idx, u8_t method, u8_t action, u8_t size)
 
             bt_mesh_rand(str, size);
             /* Normalize to '0' .. '9' & 'A' .. 'Z' */
-            for (j = 0; j < size; j++) {
+            for (j = 0U; j < size; j++) {
                 str[j] %= 36;
                 if (str[j] < 10) {
                     str[j] += '0';
@@ -1768,7 +1758,7 @@ static int prov_auth(const u8_t idx, u8_t method, u8_t action, u8_t size)
             str[size] = '\0';
 
             memcpy(link[idx].auth, str, size);
-            memset(link[idx].auth + size, 0, sizeof(link[idx].auth) - size);
+            memset(link[idx].auth + size, 0, PROV_AUTH_VAL_SIZE - size);
 
             return prov->prov_output_num(AUTH_METHOD_INPUT, input, str, size, idx);
         } else {
@@ -1892,8 +1882,7 @@ int bt_mesh_prov_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_fl
     return 0;
 }
 
-#if 0
-int bt_mesh_prov_set_oob_output_data(const u8_t idx, u8_t *num, u8_t size, bool num_flag)
+int bt_mesh_prov_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag)
 {
     /** This function should be called in the prov_output_num
      *  callback, after the data has been output by provisioner.
@@ -1923,7 +1912,6 @@ int bt_mesh_prov_set_oob_output_data(const u8_t idx, u8_t *num, u8_t size, bool 
 
     return 0;
 }
-#endif
 
 int bt_mesh_prov_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32])
 {

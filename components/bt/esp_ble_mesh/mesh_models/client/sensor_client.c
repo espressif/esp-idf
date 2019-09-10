@@ -83,8 +83,8 @@ static void timeout_handler(struct k_work *work)
         return;
     }
 
-    bt_mesh_callback_sensor_status_to_btc(node->opcode, 0x03, node->ctx.model,
-                                          &node->ctx, NULL, 0);
+    bt_mesh_sensor_client_cb_evt_to_btc(node->opcode,
+        BTC_BLE_MESH_EVT_SENSOR_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
 
     bt_mesh_client_free_node(&internal->queue, node);
 
@@ -262,7 +262,7 @@ static void sensor_status(struct bt_mesh_model *model,
 
     buf->data = val;
     buf->len  = len;
-    node = bt_mesh_is_model_message_publish(model, ctx, buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
         BT_DBG("Unexpected sensor status message 0x%x", rsp);
     } else {
@@ -274,17 +274,17 @@ static void sensor_status(struct bt_mesh_model *model,
         case BLE_MESH_MODEL_OP_SENSOR_GET:
         case BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET:
         case BLE_MESH_MODEL_OP_SENSOR_SERIES_GET:
-            evt = 0x00;
+            evt = BTC_BLE_MESH_EVT_SENSOR_CLIENT_GET_STATE;
             break;
         case BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET:
         case BLE_MESH_MODEL_OP_SENSOR_SETTING_SET:
-            evt = 0x01;
+            evt = BTC_BLE_MESH_EVT_SENSOR_CLIENT_SET_STATE;
             break;
         default:
             break;
         }
 
-        bt_mesh_callback_sensor_status_to_btc(node->opcode, evt, model, ctx, val, len);
+        bt_mesh_sensor_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
         // Don't forget to release the node at the end.
         bt_mesh_client_free_node(&internal->queue, node);
     }
@@ -352,7 +352,7 @@ const struct bt_mesh_model_op sensor_cli_op[] = {
     BLE_MESH_MODEL_OP_END,
 };
 
-static int sensor_act_state(struct bt_mesh_common_param *common,
+static int sensor_act_state(bt_mesh_client_common_param_t *common,
                             void *value, u16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
@@ -460,7 +460,7 @@ end:
     return err;
 }
 
-int bt_mesh_sensor_client_get_state(struct bt_mesh_common_param *common, void *get, void *status)
+int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status)
 {
     bt_mesh_sensor_client_t *client = NULL;
     u16_t length = 0;
@@ -525,7 +525,7 @@ int bt_mesh_sensor_client_get_state(struct bt_mesh_common_param *common, void *g
     return sensor_act_state(common, get, length, true);
 }
 
-int bt_mesh_sensor_client_set_state(struct bt_mesh_common_param *common, void *set, void *status)
+int bt_mesh_sensor_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status)
 {
     bt_mesh_sensor_client_t *client = NULL;
     u16_t length = 0;

@@ -22,11 +22,11 @@
 #include "mesh_access.h"
 #include "mesh_kernel.h"
 
-#include "model_common.h"
+#include "client_common.h"
 
 /* Time scene client model common structure */
-typedef bt_mesh_client_common_t bt_mesh_time_scene_client_t;
-typedef bt_mesh_internal_data_t time_scene_internal_data_t;
+typedef bt_mesh_client_user_data_t      bt_mesh_time_scene_client_t;
+typedef bt_mesh_client_internal_data_t  time_scene_internal_data_t;
 
 /* Time Client Model Context */
 extern const struct bt_mesh_model_op time_cli_op[];
@@ -45,7 +45,7 @@ extern const struct bt_mesh_model_op time_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_TIME_CLI,      \
                     time_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_time_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_time_client_t;
 
 struct bt_mesh_time_status {
     u8_t  tai_seconds[5];     /* The current TAI time in seconds */
@@ -115,7 +115,7 @@ extern const struct bt_mesh_model_op scene_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_SCENE_CLI,     \
                     scene_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_scene_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_scene_client_t;
 
 struct bt_mesh_scene_status {
     bool  op_en;         /* Indicate whether optional parameters included */
@@ -164,7 +164,7 @@ extern const struct bt_mesh_model_op scheduler_cli_op[];
         BLE_MESH_MODEL(BLE_MESH_MODEL_ID_SCHEDULER_CLI,     \
                     scheduler_cli_op, cli_pub, cli_data)
 
-typedef bt_mesh_client_common_t bt_mesh_scheduler_cli_t;
+typedef bt_mesh_client_user_data_t  bt_mesh_scheduler_client_t;
 
 struct bt_mesh_scheduler_status {
     u16_t schedules; /* Bit field indicating defined Actions in the Schedule Register */
@@ -241,7 +241,7 @@ int bt_mesh_scheduler_cli_init(struct bt_mesh_model *model, bool primary);
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_get_state(struct bt_mesh_common_param *common, void *get, void *status);
+int bt_mesh_time_scene_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status);
 
 /**
  * @brief This function is called to set scene states.
@@ -252,6 +252,6 @@ int bt_mesh_time_scene_client_get_state(struct bt_mesh_common_param *common, voi
  *
  * @return Zero-success, other-fail
  */
-int bt_mesh_time_scene_client_set_state(struct bt_mesh_common_param *common, void *set, void *status);
+int bt_mesh_time_scene_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status);
 
 #endif /* _TIME_SCENE_CLIENT_H_ */
