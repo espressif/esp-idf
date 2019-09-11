@@ -17,6 +17,8 @@
 #include "esp_core_dump_priv.h"
 #include "esp_flash_internal.h"
 
+#include "sdkconfig.h"
+
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
@@ -83,7 +85,11 @@ static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint
     assert((off + data_len + (data_size % sizeof(uint32_t) ? sizeof(uint32_t) : 0)) <=
         s_core_flash_config.partition.start + s_core_flash_config.partition.size);
 
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     err = spi_flash_write(off, data, data_len);
+#else
+    err = esp_flash_write(esp_flash_default_chip, data, off, data_len);
+#endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write data to flash (%d)!", err);
         return 0;
@@ -96,7 +102,11 @@ static uint32_t esp_core_dump_write_flash_padded(size_t off, uint8_t *data, uint
         for (k = 0; k < len; k++) {
             rom_data.data8[k] = *(data + data_len + k);
         }
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
         err = spi_flash_write(off + data_len, &rom_data, sizeof(uint32_t));
+#else
+        err = esp_flash_write(esp_flash_default_chip, &rom_data, off + data_len, sizeof(uint32_t));
+#endif
         if (err != ESP_OK) {
             ESP_COREDUMP_LOGE("Failed to finish write data to flash (%d)!", err);
             return 0;
@@ -128,7 +138,11 @@ static esp_err_t esp_core_dump_flash_write_prepare(void *priv, uint32_t *data_le
         sec_num++;
     }
     assert(sec_num * SPI_FLASH_SEC_SIZE <= s_core_flash_config.partition.size);
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     err = spi_flash_erase_range(s_core_flash_config.partition.start + 0, sec_num * SPI_FLASH_SEC_SIZE);
+#else
+    err = esp_flash_erase_region(esp_flash_default_chip, s_core_flash_config.partition.start + 0, sec_num * SPI_FLASH_SEC_SIZE);
+#endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to erase flash (%d)!", err);
         return err;
@@ -142,7 +156,11 @@ static esp_err_t esp_core_dump_flash_write_word(core_dump_write_flash_data_t *wr
     uint32_t  data32 = word;
 
     assert(wr_data->off + sizeof(uint32_t) <= s_core_flash_config.partition.size);
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     err = spi_flash_write(s_core_flash_config.partition.start + wr_data->off, &data32, sizeof(uint32_t));
+#else
+    err = esp_flash_write(esp_flash_default_chip, &data32, s_core_flash_config.partition.start + wr_data->off, sizeof(uint32_t));
+#endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to write to flash (%d)!", err);
         return err;
@@ -167,7 +185,11 @@ static esp_err_t esp_core_dump_flash_write_end(void *priv)
         uint32_t   data32[4];
     } rom_data;
 
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     esp_err_t err = spi_flash_read(s_core_flash_config.partition.start + 0, &rom_data, sizeof(rom_data));
+#else
+    esp_err_t err = esp_flash_read(esp_flash_default_chip, &rom_data, s_core_flash_config.partition.start + 0, sizeof(rom_data));
+#endif
     if (err != ESP_OK) {
         ESP_COREDUMP_LOGE("Failed to read flash (%d)!", err);
         return err;
