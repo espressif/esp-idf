@@ -154,7 +154,13 @@ extensions = ['breathe',
               'sphinxcontrib.rackdiag',
               'sphinxcontrib.packetdiag',
               'html_redirects',
+              'sphinx.ext.todo',
               ]
+
+# sphinx.ext.todo extension parameters
+# If the below parameter is True, the extension
+# produces output, else it produces nothing.
+todo_include_todos = False
 
 # Enabling this fixes cropping of blockdiag edge labels
 seqdiag_antialias = True
