@@ -129,7 +129,7 @@ static void https_get_task(void *pvParameters)
             ESP_LOGD(TAG, "%d bytes read", len);
             /* Print response directly to stdout as it is read */
             for(int i = 0; i < len; i++) {
-                putchar(buf[i]);
+                printf("%c", buf[i]);
             }
         } while(1);
 
