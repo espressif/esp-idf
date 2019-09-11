@@ -15,6 +15,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "soc/soc_memory_layout.h"
+#include "sdkconfig.h"
 
 static const char *TAG = "memory_layout";
 
@@ -69,8 +70,19 @@ static void s_prepare_reserved_regions(soc_reserved_region_t *reserved, size_t c
     /* Add the EXTRA_RESERVED_REGIONS at the beginning */
     reserved[0].start = (intptr_t)&_data_start; /* DRAM used by data+bss */
     reserved[0].end = (intptr_t)&_static_data_end;
+#if CONFIG_IDF_TARGET_ESP32
+    //ESP32 has a IRAM-only region 0x4008_0000 - 0x4009_FFFF, protect the used part
     reserved[1].start = (intptr_t)&_iram_start; /* IRAM used by code */
     reserved[1].end = (intptr_t)&_iram_end;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //ESP32S2 has a big D/IRAM region, the part used by code is reserved
+    //The address of the D/I bus are in the same order, directly shift IRAM address to get reserved DRAM address
+    const uint32_t i_d_offset = SOC_IRAM_LOW - SOC_DRAM_LOW;
+    reserved[1].start = (intptr_t)&_iram_start - i_d_offset; /* IRAM used by code */
+    reserved[1].end = (intptr_t)&_iram_end - i_d_offset;
+#else
+#   error chip not implemented!
+#endif
 
     /* Sort by starting address */
     qsort(reserved, count, sizeof(soc_reserved_region_t), s_compare_reserved_regions);
@@ -127,14 +139,13 @@ size_t soc_get_available_memory_regions(soc_memory_region_t *regions)
         bool move_to_next = true;
 
         for (size_t i = 0; i < num_reserved; i++) {
-            if (reserved[i].start >= SOC_DRAM_HIGH && in_end < SOC_DRAM_HIGH && in.iram_address != 0) {
-                reserved[i].start = reserved[i].start - (in.iram_address - in.start);
-                reserved[i].end = reserved[i].end - (in.iram_address - in.start);
-            }
-
-            if (reserved[i].end <= in_start || reserved[i].start >= in_end) {
-                /* reserved region ends before 'in' starts or reserved region starts after 'in' ends */
+            if (reserved[i].end <= in_start) {
+                /* reserved region ends before 'in' starts */
                 continue;
+            }
+            else if (reserved[i].start >= in_end) {
+                /* reserved region starts after 'in' ends */
+                break;
             }
             else if (reserved[i].start <= in_start &&
                      reserved[i].end >= in_end) { /* reserved covers all of 'in' */

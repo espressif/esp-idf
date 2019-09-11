@@ -44,9 +44,9 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     // Type 1: DRAM used for startup stacks
     { "DRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_DMA|MALLOC_CAP_32BIT, 0 }, false, true},
     //Type 2: DRAM which has an alias on the I-port
-    //(This DRAM is also the region used by ROM during startup)
-    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, true},
+    { "D/IRAM", { 0, MALLOC_CAP_DMA|MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL|MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT|MALLOC_CAP_EXEC }, true, false},
     //Type 3: IRAM
+    //In ESP32S2beta, All IRAM region are available by D-port (D/IRAM).
     { "IRAM", { MALLOC_CAP_EXEC|MALLOC_CAP_32BIT|MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
     //Type 4: SPI SRAM data
     //TODO, in fact, part of them support EDMA, to be supported.
@@ -75,41 +75,41 @@ const soc_memory_region_t soc_memory_regions[] = {
 #endif
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
-    { 0x3FFB2000, 0x2000, 0, 0x40022000}, //Block 1, can be use as I/D cache memory
-    { 0x3FFB4000, 0x2000, 0, 0x40024000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB2000, 0x2000, 2, 0x40022000}, //Block 1, can be use as I/D cache memory
+    { 0x3FFB4000, 0x2000, 2, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
 #elif CONFIG_ESP32S2_DATA_CACHE_8KB
-    { 0x3FFB4000, 0x2000, 0, 0x40024000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB4000, 0x2000, 2, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
 #else
-    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
 #endif
 #else
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
-    { 0x3FFB4000, 0x2000, 0, 0x40024000}, //Block 2, can be use as D cache memory
-    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB4000, 0x2000, 2, 0x40024000}, //Block 2, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
 #elif CONFIG_ESP32S2_DATA_CACHE_8KB
-    { 0x3FFB6000, 0x2000, 0, 0x40026000}, //Block 3, can be use as D cache memory
+    { 0x3FFB6000, 0x2000, 2, 0x40026000}, //Block 3, can be use as D cache memory
 #endif
 #endif
-    { 0x3FFB8000, 0x4000, 0, 0x40028000}, //Block 4,  can be remapped to ROM, can be used as trace memory
-    { 0x3FFBC000, 0x4000, 0, 0x4002C000}, //Block 5,  can be remapped to ROM, can be used as trace memory
-    { 0x3FFC0000, 0x4000, 0, 0x40030000}, //Block 6,  can be used as trace memory
-    { 0x3FFC4000, 0x4000, 0, 0x40034000}, //Block 7,  can be used as trace memory
-    { 0x3FFC8000, 0x4000, 0, 0x40038000}, //Block 8,  can be used as trace memory
-    { 0x3FFCC000, 0x4000, 0, 0x4003C000}, //Block 9,  can be used as trace memory
+    { 0x3FFB8000, 0x4000, 2, 0x40028000}, //Block 4,  can be remapped to ROM, can be used as trace memory
+    { 0x3FFBC000, 0x4000, 2, 0x4002C000}, //Block 5,  can be remapped to ROM, can be used as trace memory
+    { 0x3FFC0000, 0x4000, 2, 0x40030000}, //Block 6,  can be used as trace memory
+    { 0x3FFC4000, 0x4000, 2, 0x40034000}, //Block 7,  can be used as trace memory
+    { 0x3FFC8000, 0x4000, 2, 0x40038000}, //Block 8,  can be used as trace memory
+    { 0x3FFCC000, 0x4000, 2, 0x4003C000}, //Block 9,  can be used as trace memory
 
-    { 0x3FFD0000, 0x4000, 0, 0x40040000}, //Block 10,  can be used as trace memory
-    { 0x3FFD4000, 0x4000, 0, 0x40044000}, //Block 11,  can be used as trace memory
-    { 0x3FFD8000, 0x4000, 0, 0x40048000}, //Block 12,  can be used as trace memory
-    { 0x3FFDC000, 0x4000, 0, 0x4004C000}, //Block 13,  can be used as trace memory
-    { 0x3FFE0000, 0x4000, 0, 0x40050000}, //Block 14,  can be used as trace memory
-    { 0x3FFE4000, 0x4000, 0, 0x40054000}, //Block 15,  can be used as trace memory
-    { 0x3FFE8000, 0x4000, 0, 0x40058000}, //Block 16,  can be used as trace memory
-    { 0x3FFEC000, 0x4000, 0, 0x4005C000}, //Block 17,  can be used as trace memory
-    { 0x3FFF0000, 0x4000, 0, 0x40060000}, //Block 18,  can be used for MAC dump, can be used as trace memory
-    { 0x3FFF4000, 0x4000, 0, 0x40064000}, //Block 19,  can be used for MAC dump, can be used as trace memory
-    { 0x3FFF8000, 0x4000, 0, 0x40068000}, //Block 20,  can be used for MAC dump, can be used as trace memory
+    { 0x3FFD0000, 0x4000, 2, 0x40040000}, //Block 10,  can be used as trace memory
+    { 0x3FFD4000, 0x4000, 2, 0x40044000}, //Block 11,  can be used as trace memory
+    { 0x3FFD8000, 0x4000, 2, 0x40048000}, //Block 12,  can be used as trace memory
+    { 0x3FFDC000, 0x4000, 2, 0x4004C000}, //Block 13,  can be used as trace memory
+    { 0x3FFE0000, 0x4000, 2, 0x40050000}, //Block 14,  can be used as trace memory
+    { 0x3FFE4000, 0x4000, 2, 0x40054000}, //Block 15,  can be used as trace memory
+    { 0x3FFE8000, 0x4000, 2, 0x40058000}, //Block 16,  can be used as trace memory
+    { 0x3FFEC000, 0x4000, 2, 0x4005C000}, //Block 17,  can be used as trace memory
+    { 0x3FFF0000, 0x4000, 2, 0x40060000}, //Block 18,  can be used for MAC dump, can be used as trace memory
+    { 0x3FFF4000, 0x4000, 2, 0x40064000}, //Block 19,  can be used for MAC dump, can be used as trace memory
+    { 0x3FFF8000, 0x4000, 2, 0x40068000}, //Block 20,  can be used for MAC dump, can be used as trace memory
     { 0x3FFFC000, 0x4000, 1, 0x4006C000}, //Block 21,  can be used for MAC dump, can be used as trace memory, used for startup stack
 };
 
