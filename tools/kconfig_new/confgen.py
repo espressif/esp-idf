@@ -29,8 +29,12 @@ import tempfile
 import json
 
 import gen_kconfig_doc
-import kconfiglib
 import pprint
+try:
+    from . import kconfiglib
+except Exception:
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+    import kconfiglib
 
 __version__ = "0.1"
 
