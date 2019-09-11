@@ -35,7 +35,6 @@
         .configure_host_read_mode = spi_flash_hal_configure_host_read_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
-        .region_protected = memspi_region_protected, \
 }
 
 /// configuration for the memspi host
@@ -100,14 +99,3 @@ esp_err_t memspi_host_read_status_hs(spi_flash_host_driver_t *driver, uint8_t *o
  * @return always ESP_OK.
  */
 esp_err_t memspi_host_flush_cache(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
-
-/**
- * Check if the given region is protected.
- *
- * @param driver The driver context.
- * @param addr Start address of the region.
- * @param size Size of the region to check.
- *
- * @return true if protected, otherwise false.
- */
-bool memspi_region_protected(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);

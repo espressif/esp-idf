@@ -15,6 +15,7 @@
 #include "esp32/rom/crc.h"
 #include "esp_partition.h"
 #include "esp_core_dump_priv.h"
+#include "esp_flash_internal.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";
 
@@ -50,7 +51,7 @@ static inline core_dump_crc_t esp_core_dump_calc_flash_config_crc(void)
     return crc32_le(0, (uint8_t const *)&s_core_flash_config.partition, sizeof(s_core_flash_config.partition));
 }
 
-void esp_core_dump_flash_init(void) 
+void esp_core_dump_flash_init(void)
 {
     const esp_partition_t *core_part;
 
@@ -214,10 +215,9 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
         return;
     }
 
-#if CONFIG_SPI_FLASH_USE_LEGACY_IMPL
     // init non-OS flash access critical section
     spi_flash_guard_set(&g_flash_guard_no_os_ops);
-#endif
+    esp_flash_app_disable_protect(true);
 
     memset(&wr_cfg, 0, sizeof(wr_cfg));
     wr_cfg.prepare = esp_core_dump_flash_write_prepare;

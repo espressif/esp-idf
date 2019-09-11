@@ -22,6 +22,7 @@
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
 #include "driver/spi_common.h"
+#include "esp_flash_internal.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 
@@ -207,7 +208,7 @@ esp_err_t esp_flash_init_default_chip(void)
 
 esp_err_t esp_flash_app_init(void)
 {
-    return esp_flash_init_os_functions(&default_chip, 0);
+    return esp_flash_app_init_os_functions(&default_chip);
 }
 
 #endif

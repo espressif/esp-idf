@@ -22,6 +22,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp_heap_caps.h"
+#include "esp_flash_internal.h"
 
 static const char TAG[] = "spi_flash";
 
@@ -42,7 +43,7 @@ static const char TAG[] = "spi_flash";
 #define CHECK_WRITE_ADDRESS(CHIP, ADDR, SIZE)
 #else /* FAILS or ABORTS */
 #define CHECK_WRITE_ADDRESS(CHIP, ADDR, SIZE) do {                            \
-        if (CHIP && CHIP->host->region_protected && CHIP->host->region_protected(CHIP->host, ADDR, SIZE)) {                       \
+        if (CHIP && CHIP->os_func->region_protected && CHIP->os_func->region_protected(CHIP->os_func_data, ADDR, SIZE)) {                       \
             UNSAFE_WRITE_ADDRESS;                                 \
         }                                                               \
     } while(0)
@@ -615,6 +616,17 @@ esp_err_t IRAM_ATTR esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address
     }
     return spi_flash_read_encrypted(address, out_buffer, length);
 }
+
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+esp_err_t esp_flash_app_disable_protect(bool disable)
+{
+    if (disable) {
+        return esp_flash_app_disable_os_functions(esp_flash_default_chip);
+    } else {
+        return esp_flash_app_init_os_functions(esp_flash_default_chip);
+    }
+}
+#endif
 
 /*------------------------------------------------------------------------------
     Adapter layer to original api before IDF v4.0
