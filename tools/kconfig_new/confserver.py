@@ -6,11 +6,16 @@
 from __future__ import print_function
 import argparse
 import json
-import kconfiglib
 import os
 import sys
 import confgen
 from confgen import FatalError, __version__
+
+try:
+    from . import kconfiglib
+except Exception:
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+    import kconfiglib
 
 def main():
     parser = argparse.ArgumentParser(description='confserver.py v%s - Config Generation Tool' % __version__, prog=os.path.basename(sys.argv[0]))
