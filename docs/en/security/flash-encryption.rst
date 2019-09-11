@@ -3,7 +3,9 @@ Flash Encryption
 
 Flash Encryption is a feature for encrypting the contents of the ESP32's attached SPI flash. When flash encryption is enabled, physical readout of the SPI flash is not sufficient to recover most flash contents.
 
-Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However we recommend using both features together for a secure environment.
+Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However, **for a secure environment both should be used simultaneously**. In absence of secure boot, additional configuration needs to be performed to ensure effectiveness of flash encryption. See :ref:`flash-encryption-without-secure-boot` for more details.
+
+When using any non-default configuration in production, additional steps may also be needed to ensure effectiveness of flash encryption. See :ref:`securing-flash-encryption` for more details.
 
 **IMPORTANT: Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.**
 
@@ -35,6 +37,23 @@ Background
 - Although software running on the chip can transparently decrypt flash contents, by default it is made impossible for the UART bootloader to decrypt (or encrypt) data when flash encryption is enabled.
 
 - If flash encryption may be enabled, the programmer must take certain precautions when writing code that :ref:`uses encrypted flash <using-encrypted-flash>`.
+
+.. _storing-encrypted-data:
+
+Storing Encrypted Data
+----------------------
+
+Aside from encrypting the firmware binary, the app may need to store some sensitive data in an encrypted form. For example, in a filesystem or NVS data partition.
+
+The recommended way to do this is to use :ref:`nvs_encryption` .
+
+Alternatively, it is possible to use the :doc:`Wear Levelling feature </api-reference/storage/wear-levelling>` with an encrypted partition, if the "encrypted" flag is set on the partition. This allows, for example, a FATFS partition to be stored encrypted in flash.
+
+The following are **not suitable** and will store data where an attacker with physical access can read it out:
+
+- Custom efuse fields (these can be write protected against modification but not read protected if the app needs to read them)
+- SPIFFS (SPIFFS is optimized for the read and write behavior of NOR flash, so it's not possible to encrypt this filesystem)
+
 
 .. _flash-encryption-initialisation:
 
@@ -166,15 +185,7 @@ Serial Re-Flashing Procedure
 
 - Reset the device and it will re-encrypt plaintext partitions, then burn the :ref:`FLASH_CRYPT_CNT` again to re-enable encryption.
 
-
-Disabling Serial Updates
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-To prevent further plaintext updates via serial, use espefuse.py to write protect the :ref:`FLASH_CRYPT_CNT` after flash encryption has been enabled (ie after first boot is complete)::
-
-    espefuse.py --port PORT write_protect_efuse FLASH_CRYPT_CNT
-
-This prevents any further modifications to disable or re-enable flash encryption.
+To prevent any further serial updates, see :ref:`securing-flash-encryption`.
 
 .. _pregenerated-flash-encryption-key:
 
@@ -262,7 +273,7 @@ Limitations of Flash Encryption
 
 Flash Encryption prevents plaintext readout of the encrypted flash, to protect firmware against unauthorised readout and modification. It is important to understand the limitations of the flash encryption system:
 
-- Flash encryption is only as strong as the key. For this reason, we recommend keys are generated on the device during first boot (default behaviour). If generating keys off-device (see :ref:`pregenerated-flash-encryption-key`), ensure proper procedure is followed.
+- Flash encryption is only as strong as the key. For this reason, we recommend keys are generated on the device during first boot (default behavior). If generating keys off-device (see :ref:`pregenerated-flash-encryption-key`), ensure proper procedure is followed.
 
 - Not all data is stored encrypted. If storing data on flash, check if the method you are using (library, API, etc.) supports flash encryption.
 
@@ -271,6 +282,26 @@ Flash Encryption prevents plaintext readout of the encrypted flash, to protect f
 - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain identical content. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient).
 
 - Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from runningon the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot>`.
+
+.. _flash-encryption-without-secure-boot:
+.. _securing-flash-encryption:
+
+Securing Flash Encryption
+-------------------------
+
+In a production setting it's important to ensure that flash encryption cannot be temporarily disabled.
+
+This is because if the :doc:`secure-boot` feature is not enabled, or if Secure Boot is somehow bypassed by an attacker, then unauthorised code can be written to flash in plaintext. This code can then re-enable encryption and access encrypted data, making flash encryption ineffective.
+
+This problem must be avoided by write-protecting :ref:`FLASH_CRYPT_CNT` and thereby keeping flash encryption permanently enabled.
+
+The simplest way to do this is to enable the configuration option :envvar:`CONFIG_FLASH_ENCRYPTION_DISABLE_PLAINTEXT` (enabled by default if Secure Boot is enabled). This option causes :ref:`FLASH_CRYPT_CNT` to be write protected during initial app startup, or during first boot when the bootloader enables flash encryption. This includes if an app with this option is OTA updated.
+
+Alternatively, :ref:`FLASH_CRYPT_CNT` can be write-protected using the serial bootloader::
+
+  espefuse.py --port PORT write_protect_efuse FLASH_CRYPT_CNT
+
+A third option with more flexibility: the app can call :func:`esp_flash_write_protect_crypt_cnt` at a convenient time during its startup or provisioning process, or set the ``FLASH_ENCRYPTION_DISABLE_PLAINTEXT`` config option for this to happen automatically.
 
 .. _flash-encryption-advanced-features:
 
