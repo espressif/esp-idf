@@ -190,6 +190,96 @@ static void setFirstBreakpoint(uint32_t pc)
         ::"r"(pc):"a3", "a4");
 }
 
+static inline void printCacheError(void)
+{
+    uint32_t vaddr = 0, size = 0;
+    uint32_t status[2];
+    status[0] = REG_READ(DPORT_CACHE_DBG_STATUS0_REG);
+    status[1] = REG_READ(DPORT_CACHE_DBG_STATUS1_REG);
+    for (int i = 0; i < 32; i++) {
+        switch (status[0] & BIT(i))
+        {
+        case DPORT_IC_SYNC_SIZE_FAULT_ST:
+            vaddr = REG_READ(DPORT_PRO_ICACHE_MEM_SYNC0_REG);
+            size = REG_READ(DPORT_PRO_ICACHE_MEM_SYNC1_REG);
+            panicPutStr("Icache sync parameter configuration error, the error address and size is 0x");
+            panicPutHex(vaddr);
+            panicPutStr("(0x");
+            panicPutHex(size);
+            panicPutStr(")\r\n");
+            break;
+        case DPORT_IC_PRELOAD_SIZE_FAULT_ST:
+            vaddr = REG_READ(DPORT_PRO_ICACHE_PRELOAD_ADDR_REG);
+            size = REG_READ(DPORT_PRO_ICACHE_PRELOAD_SIZE_REG);
+            panicPutStr("Icache preload parameter configuration error, the error address and size is 0x");
+            panicPutHex(vaddr);
+            panicPutStr("(0x");
+            panicPutHex(size);
+            panicPutStr(")\r\n");
+            break;
+        case DPORT_ICACHE_REJECT_ST:
+            vaddr = REG_READ(DPORT_PRO_ICACHE_REJECT_VADDR_REG);
+            panicPutStr("Icache reject error occurred while accessing the address 0x");
+            panicPutHex(vaddr);
+
+            if (REG_READ(DPORT_PRO_CACHE_MMU_ERROR_CONTENT_REG) & DPORT_MMU_INVALID) {
+                panicPutStr(" (invalid mmu entry)");
+            }
+            panicPutStr("\r\n");
+            break;
+        default:
+            break;
+        }
+        switch (status[1] & BIT(i))
+        {
+        case DPORT_DC_SYNC_SIZE_FAULT_ST:
+            vaddr = REG_READ(DPORT_PRO_DCACHE_MEM_SYNC0_REG);
+            size = REG_READ(DPORT_PRO_DCACHE_MEM_SYNC1_REG);
+            panicPutStr("Dcache sync parameter configuration error, the error address and size is 0x");
+            panicPutHex(vaddr);
+            panicPutStr("(0x");
+            panicPutHex(size);
+            panicPutStr(")\r\n");
+            break;
+        case DPORT_DC_PRELOAD_SIZE_FAULT_ST:
+            vaddr = REG_READ(DPORT_PRO_DCACHE_PRELOAD_ADDR_REG);
+            size = REG_READ(DPORT_PRO_DCACHE_PRELOAD_SIZE_REG);
+            panicPutStr("Dcache preload parameter configuration error, the error address and size is 0x");
+            panicPutHex(vaddr);
+            panicPutStr("(0x");
+            panicPutHex(size);
+            panicPutStr(")\r\n");
+            break;
+        case DPORT_DCACHE_WRITE_FLASH_ST:
+            panicPutStr("Write back error occurred while dcache tries to write back to flash\r\n");
+            break;
+        case DPORT_DCACHE_REJECT_ST:
+            vaddr = REG_READ(DPORT_PRO_DCACHE_REJECT_VADDR_REG);
+            panicPutStr("Dcache reject error occurred while accessing the address 0x");
+            panicPutHex(vaddr);
+
+            if (REG_READ(DPORT_PRO_CACHE_MMU_ERROR_CONTENT_REG) & DPORT_MMU_INVALID) {
+                panicPutStr(" (invalid mmu entry)");
+            }
+            panicPutStr("\r\n");
+            break;
+        case DPORT_MMU_ENTRY_FAULT_ST:
+            vaddr = REG_READ(DPORT_PRO_CACHE_MMU_ERROR_VADDR_REG);
+            panicPutStr("MMU entry fault error occurred while accessing the address 0x");
+            panicPutHex(vaddr);
+
+            if (REG_READ(DPORT_PRO_CACHE_MMU_ERROR_CONTENT_REG) & DPORT_MMU_INVALID) {
+                panicPutStr(" (invalid mmu entry)");
+            }
+            panicPutStr("\r\n");
+            break;
+        default:
+            break;
+        }
+    }
+    panicPutStr("\r\n");
+}
+
 //When interrupt watchdog happen in one core, both cores will be interrupted.
 //The core which doesn't trigger the interrupt watchdog will save the frame and return.
 //The core which triggers the interrupt watchdog will use the saved frame, and dump frames for both cores.
@@ -209,7 +299,7 @@ void panicHandler(XtExcFrame *frame)
         "Coprocessor exception",
         "Interrupt wdt timeout on CPU0",
         "Interrupt wdt timeout on CPU1",
-        "Cache disabled but cached memory region accessed",
+        "Cache exception",
     };
     const char *reason = reasons[0];
     //The panic reason is stored in the EXCCAUSE register.
@@ -242,7 +332,6 @@ void panicHandler(XtExcFrame *frame)
     panicPutStr(" panic'ed (");
     panicPutStr(reason);
     panicPutStr(")\r\n");
-#ifdef PANIC_COMPLETE_IN_ESP32C
     if (frame->exccause == PANIC_RSN_DEBUGEXCEPTION) {
         int debugRsn;
         asm("rsr.debugcause %0":"=r"(debugRsn));
@@ -280,6 +369,9 @@ void panicHandler(XtExcFrame *frame)
             panicPutStr("DebugIntr ");
         }
         panicPutStr("\r\n");
+    } else if (frame->exccause == PANIC_RSN_CACHEERR) {
+        panicPutStr("                                         ^~~~~~~~~~~~~~~\r\n");
+        printCacheError();
     }
 
     if (esp_cpu_in_ocd_debug_mode()) {
@@ -299,7 +391,6 @@ void panicHandler(XtExcFrame *frame)
         setFirstBreakpoint(frame->pc);
         return;
     }
-#endif
     commonErrorHandler(frame);
 }
 
@@ -405,6 +496,8 @@ void esp_panic_wdt_stop(void)
     WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
 }
 
+#if CONFIG_ESP32S2_PANIC_PRINT_REBOOT || CONFIG_ESP32S2_PANIC_SILENT_REBOOT
+
 static void esp_panic_dig_reset(void) __attribute__((noreturn));
 
 static void esp_panic_dig_reset(void)
@@ -420,6 +513,8 @@ static void esp_panic_dig_reset(void)
         ;
     }
 }
+
+#endif
 
 static void putEntry(uint32_t pc, uint32_t sp)
 {
