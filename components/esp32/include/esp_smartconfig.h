@@ -42,7 +42,7 @@ typedef enum {
   *
   * @param  status  Status of SmartConfig:
   *    - SC_STATUS_GETTING_SSID_PSWD : pdata is a pointer of smartconfig_type_t, means config type.
-  *    - SC_STATUS_LINK : pdata is a pointer of struct station_config.
+  *    - SC_STATUS_LINK : pdata is a pointer to wifi_config_t.
   *    - SC_STATUS_LINK_OVER : pdata is a pointer of phone's IP address(4 bytes) if pdata unequal NULL.
   *    - otherwise : parameter void *pdata is NULL.
   * @param  pdata  According to the different status have different values.

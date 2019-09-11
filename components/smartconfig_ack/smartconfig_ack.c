@@ -46,7 +46,8 @@ static void sc_ack_send_task(void *pvParameters)
 {
     sc_ack_t *ack = (sc_ack_t *)pvParameters;
     tcpip_adapter_ip_info_t local_ip;
-    uint8_t *remote_ip = ack->ctx.ip;
+    uint8_t remote_ip[4];
+    memcpy(remote_ip, ack->ctx.ip, sizeof(remote_ip));
     int remote_port = (ack->type == SC_ACK_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_SERVER_PORT : SC_ACK_AIRKISS_SERVER_PORT;
     struct sockaddr_in server_addr;
     socklen_t sin_size = sizeof(server_addr);
@@ -60,7 +61,7 @@ static void sc_ack_send_task(void *pvParameters)
 
     bzero(&server_addr, sizeof(struct sockaddr_in));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr((const char*)remote_ip);
+    memcpy(&server_addr.sin_addr.s_addr, remote_ip, sizeof(remote_ip));
     server_addr.sin_port = htons(remote_port);
 
     esp_wifi_get_mac(WIFI_IF_STA, ack->ctx.mac);
