@@ -45,6 +45,9 @@ typedef struct {
     /** Called after completing any flash operation. */
     esp_err_t (*end)(void *arg);
 
+    /** Called before any erase/write operations to check whether the region is limited by the OS */
+    esp_err_t (*region_protected)(void* arg, size_t start_addr, size_t size);
+
     /** Delay for at least 'ms' milliseconds. Called in between 'start' and 'end'. */
     esp_err_t (*delay_ms)(void *arg, unsigned ms);
 } esp_flash_os_functions_t;

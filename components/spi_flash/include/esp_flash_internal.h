@@ -51,6 +51,19 @@ esp_err_t esp_flash_app_init(void);
 #endif
 
 /**
+ *  Disable OS-level SPI flash protections in IDF
+ *
+ *  Called by the IDF internal code (e.g. coredump). You do not need to call this in your own applications.
+ *
+ * @return always ESP_OK.
+ */
+#ifdef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+#define esp_flash_app_disable_protect(...) ({ESP_OK;})
+#else
+esp_err_t esp_flash_app_disable_protect(bool disable);
+#endif
+
+/**
  *  Initialize OS-level functions for a specific chip.
  *
  * @param chip The chip to init os functions.
@@ -61,6 +74,25 @@ esp_err_t esp_flash_app_init(void);
  *      - ESP_ERR_INVALID_ARG if host_id is invalid
  */
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id);
+
+/**
+ *  Initialize OS-level functions for the main flash chip.
+ *
+ * @param chip The chip to init os functions. Only pointer to the default chip is supported now.
+ *
+ * @return always ESP_OK
+ */
+esp_err_t esp_flash_app_init_os_functions(esp_flash_t* chip);
+
+/**
+ *  Disable OS-level functions for the main flash chip during special phases (e.g. coredump)
+ *
+ * @param chip The chip to init os functions. Only "esp_flash_default_chip" is supported now.
+ *
+ * @return always ESP_OK
+ */
+esp_err_t esp_flash_app_disable_os_functions(esp_flash_t* chip);
+
 
 
 #ifdef __cplusplus
