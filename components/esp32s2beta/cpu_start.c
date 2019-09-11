@@ -315,7 +315,7 @@ void start_cpu0_default(void)
     //Initialize the interrupt watch dog for CPU0.
     //esp_int_wdt_cpu_init();
 #endif
-    //esp_cache_err_int_init();
+    esp_cache_err_int_init();
     esp_crosscore_int_init();
     spi_flash_init();
     /* init default OS-aware flash access critical section */
