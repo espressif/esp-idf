@@ -88,6 +88,14 @@ choice BT_HFP_AUDIO_DATA_PATH
         bool "HCI"
 endchoice
 
+config BT_HFP_WBS_ENABLE
+    bool "Wide Band Speech"
+    depends on BT_HFP_AUDIO_DATA_PATH_HCI
+    default y
+    help
+        This enables Wide Band Speech. Should disable it when SCO data path is PCM.
+        Otherwise there will be no data transmited via GPIOs.
+
 config BT_SSP_ENABLED
     bool "Secure Simple Pairing"
     depends on BT_CLASSIC_ENABLED
