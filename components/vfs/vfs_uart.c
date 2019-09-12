@@ -474,16 +474,16 @@ static esp_err_t uart_end_select(void *end_select_args)
 {
     uart_select_args_t *args = end_select_args;
 
-    if (args) {
-        free(args);
-    }
-
     portENTER_CRITICAL(uart_get_selectlock());
     esp_err_t ret = unregister_select(args);
     for (int i = 0; i < UART_NUM; ++i) {
         uart_set_select_notif_callback(i, NULL);
     }
     portEXIT_CRITICAL(uart_get_selectlock());
+
+    if (args) {
+        free(args);
+    }
 
     return ret;
 }
