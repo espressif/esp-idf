@@ -591,7 +591,7 @@
 
 /* Includes WBS if TRUE */
 #ifndef BTM_WBS_INCLUDED
-#define BTM_WBS_INCLUDED            FALSE       /* TRUE includes WBS code */
+#define BTM_WBS_INCLUDED                UC_BT_HFP_WBS_ENABLE    /* TRUE includes WBS code */
 #endif
 
 /*  This is used to work around a controller bug that doesn't like Disconnect
