@@ -19,6 +19,10 @@
 // Network stack API: This ESP-NETIF API are supposed to be called only from internals of TCP/IP stack
 //
 
+/** @addtogroup ESP_NETIF_CONVERT
+ * @{
+ */
+
 /**
  * @brief Returns esp-netif handle
  *
@@ -28,7 +32,6 @@
  */
 esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev);
 
-
 /**
  * @brief Returns network stack specific implementation handle
  *
@@ -37,5 +40,40 @@ esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev);
  * @return    handle to related network stack netif handle
  */
 void* esp_netif_get_netif_impl(esp_netif_t *esp_netif);
+
+/**
+ * @}
+ */
+
+/** @addtogroup ESP_NETIF_DATA_IO_API
+ * @{
+ */
+
+/**
+  * @brief  Outputs packets from the TCP/IP stack to the media to be transmitted
+  *
+  * This function gets called from network stack to output packets to IO driver.
+  *
+  * @param[in]  esp_netif Handle to esp-netif instance
+  * @param[in]  data Data to be tranmitted
+  * @param[in]  len Length of the data frame
+  */
+esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len);
+
+/**
+  * @brief  Free the rx buffer allocated by the media driver
+  *
+  * This function gets called from network stack when the rx buffer to be freed in IO driver context,
+  * i.e. to deallocate a buffer owned by io driver (when data packets were passed to higher levels
+  * to avoid copying)
+  *
+  * @param[in]  esp_netif Handle to esp-netif instance
+  * @param[in]  void* buffer: rx buffer pointer
+  */
+void esp_netif_free_rx_buffer(void *esp_netif, void* buffer);
+
+/**
+ * @}
+ */
 
 #endif //_ESP_NETIF_NET_STACK_H_

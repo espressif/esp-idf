@@ -122,7 +122,7 @@ The ESP32 Wi-Fi programming model is depicted as follows:
 
 The Wi-Fi driver can be considered a black box that knows nothing about high-layer code, such as the TCP/IP stack, application task, event task, etc. The application task (code) generally calls :doc:`Wi-Fi driver APIs <../api-reference/network/esp_wifi>` to initialize Wi-Fi and handles Wi-Fi events when necessary. Wi-Fi driver receives API calls, handles them, and post events to the application.
 
-Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`tcpip_adapter component <../api-reference/network/tcpip_adapter>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, tcpip_adapter will automatically start the DHCP client.
+Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`esp_netif component <../api-reference/network/esp_netif>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, esp_netif will automatically start the DHCP client (by default).
 
 ESP32 Wi-Fi Event Description
 ------------------------------------
@@ -300,15 +300,17 @@ Below is a "big scenario" which describes some small scenarios in Station mode:
 
 1. Wi-Fi/LwIP Init Phase
 ++++++++++++++++++++++++++++++
- - s1.1: The main task calls tcpip_adapter_init() to create an LwIP core task and initialize LwIP-related work.
+ - s1.1: The main task calls esp_netif_init() to create an LwIP core task and initialize LwIP-related work.
 
  - s1.2: The main task calls esp_event_loop_init() to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task. 
 
- - s1.3: The main task calls esp_wifi_init() to create the Wi-Fi driver task and initialize the Wi-Fi driver.
+ - s1.3: The main task calls esp_netif_create_default_wifi_ap() or esp_netif_create_default_wifi_sta() to create default network interface instance binding station or AP with TCP/IP stack.
 
- - s1.4: The main task calls OS API to create the application task.
+ - s1.4: The main task calls esp_wifi_init() to create the Wi-Fi driver task and initialize the Wi-Fi driver.
 
-Step 1.1~1.4 is a recommended sequence that initializes a Wi-Fi-/LwIP-based application. However, it is **NOT** a must-follow sequence, which means that you can create the application task in step 1.1 and put all other initializations in the application task. Moreover, you may not want to create the application task in the initialization phase if the application task depends on the sockets. Rather, you can defer the task creation until the IP is obtained.
+ - s1.5: The main task calls OS API to create the application task.
+
+Step 1.1~1.5 is a recommended sequence that initializes a Wi-Fi-/LwIP-based application. However, it is **NOT** a must-follow sequence, which means that you can create the application task in step 1.1 and put all other initializations in the application task. Moreover, you may not want to create the application task in the initialization phase if the application task depends on the sockets. Rather, you can defer the task creation until the IP is obtained.
 
 2. Wi-Fi Configuration Phase
 +++++++++++++++++++++++++++++++

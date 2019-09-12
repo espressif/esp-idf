@@ -479,8 +479,8 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED
     ERR_TBL_IT(ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED),             /* 20487 0x5007 */
 #   endif
-#   ifdef      ESP_ERR_ESP_NETIF_DRIVER_ATACH_FAILED
-    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DRIVER_ATACH_FAILED),          /* 20488 0x5008 */
+#   ifdef      ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED
+    ERR_TBL_IT(ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED),         /* 20488 0x5008 */
 #   endif
     // components/esp_common/include/esp_err.h
 #   ifdef      ESP_ERR_FLASH_BASE
