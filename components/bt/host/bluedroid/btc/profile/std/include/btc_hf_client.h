@@ -57,6 +57,7 @@ typedef enum {
     BTC_HF_CLIENT_SEND_DTMF_EVT,
     BTC_HF_CLIENT_REQUEST_LAST_VOICE_TAG_NUMBER_EVT,
     BTC_HF_CLIENT_REGISTER_DATA_CALLBACK_EVT,
+    BTC_HF_CLIENT_SEND_NREC_EVT,
 } btc_hf_client_act_t;
 
 /* btc_hf_client_args_t */
