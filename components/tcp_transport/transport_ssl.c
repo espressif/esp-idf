@@ -78,30 +78,55 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
         ssl->tls = NULL;
         return -1;
     }
+
     return 0;
 }
 
 static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    int ret = -1;
     fd_set readset;
+    fd_set errset;
     FD_ZERO(&readset);
+    FD_ZERO(&errset);
     FD_SET(ssl->tls->sockfd, &readset);
+    FD_SET(ssl->tls->sockfd, &errset);
     struct timeval timeout;
     esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
 
-    return select(ssl->tls->sockfd + 1, &readset, NULL, NULL, &timeout);
+    ret = select(ssl->tls->sockfd + 1, &readset, NULL, &errset, &timeout);
+    if (ret > 0 && FD_ISSET(ssl->tls->sockfd, &errset)) {
+        int sock_errno = 0;
+        uint32_t optlen = sizeof(sock_errno);
+        getsockopt(ssl->tls->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+        ESP_LOGE(TAG, "ssl_poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->tls->sockfd);
+        ret = -1;
+    }
+    return ret;
 }
 
 static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    int ret = -1;
     fd_set writeset;
+    fd_set errset;
     FD_ZERO(&writeset);
+    FD_ZERO(&errset);
     FD_SET(ssl->tls->sockfd, &writeset);
+    FD_SET(ssl->tls->sockfd, &errset);
     struct timeval timeout;
     esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    return select(ssl->tls->sockfd + 1, NULL, &writeset, NULL, &timeout);
+    ret = select(ssl->tls->sockfd + 1, NULL, &writeset, &errset, &timeout);
+    if (ret > 0 && FD_ISSET(ssl->tls->sockfd, &errset)) {
+        int sock_errno = 0;
+        uint32_t optlen = sizeof(sock_errno);
+        getsockopt(ssl->tls->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+        ESP_LOGE(TAG, "ssl_poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->tls->sockfd);
+        ret = -1;
+    }
+    return ret;
 }
 
 static int ssl_write(esp_transport_handle_t t, const char *buffer, int len, int timeout_ms)
