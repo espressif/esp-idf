@@ -133,6 +133,8 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
         failed = True
     if not client.get_false_uri(got_ip, got_port):
         failed = True
+    if not client.get_test_headers(got_ip, got_port):
+        failed = True
 
     Utility.console_log("Error code tests...")
     if not client.code_500_server_error_test(got_ip, got_port):
