@@ -17,6 +17,7 @@
 
 #include "lwip/ip_addr.h"
 #include "dhcpserver/dhcpserver.h"
+#include "esp_netif_sta_list.h"
 //
 // Define compatible types if tcpip_adapter interface used
 //

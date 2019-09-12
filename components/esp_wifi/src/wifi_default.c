@@ -277,3 +277,21 @@ esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif)
     }
     return disconnect_and_destroy(esp_netif);
 }
+
+esp_netif_t* esp_netif_create_default_wifi_ap(void)
+{
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_AP();
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    assert(netif);
+    esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_AP, netif);
+    return netif;
+}
+
+esp_netif_t* esp_netif_create_default_wifi_sta(void)
+{
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    assert(netif);
+    esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, netif);
+    return netif;
+}
