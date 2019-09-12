@@ -670,7 +670,7 @@ esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif);
  * 
  * @return Textual description of related interface
  */
-char *esp_netif_get_ifkey(esp_netif_t *esp_netif);
+const char *esp_netif_get_ifkey(esp_netif_t *esp_netif);
 
 /**
  * @brief Returns configured interface type for this esp-netif instance
@@ -721,22 +721,8 @@ esp_netif_t* esp_netif_next(esp_netif_t* esp_netif);
  */
 size_t esp_netif_get_nr_of_ifs(void);
 
-//
-// 8) MISC: List of STAs
-//
-
 /**
- * @brief  Get IP information for stations connected to the Wi-Fi AP interface
- *
- * @param[in]   wifi_sta_list Wi-Fi station info list, returned from esp_wifi_ap_get_sta_list()
- * @param[out]  tcpip_sta_list IP layer station info list, corresponding to MAC addresses provided in wifi_sta_list
- *
- * @return
- *         - ESP_OK
- *         - ESP_ERR_ESP_NETIF_NO_MEM
- *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+ * @}
  */
-esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif_sta_list_t *tcpip_sta_list);
-
 
 #endif /*  _ESP_NETIF_H_ */

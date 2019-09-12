@@ -65,30 +65,3 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = {
         .if_type = ESP_NETIF_TYPE_ETH,
         .route_prio = 50
 };
-
-esp_netif_t* esp_netif_create_default_wifi_ap(void)
-{
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_AP();
-    esp_netif_t *netif = esp_netif_new(&cfg);
-    assert(netif);
-    esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_AP, netif);
-    return netif;
-}
-
-esp_netif_t* esp_netif_create_default_wifi_sta(void)
-{
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
-    esp_netif_t *netif = esp_netif_new(&cfg);
-    assert(netif);
-    esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, netif);
-    return netif;
-}
-
-esp_netif_t* esp_netif_create_default_eth(void * eth_driver)
-{
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
-    esp_netif_t* eth_netif = esp_netif_new(&cfg);
-    assert(eth_netif);
-    ESP_ERROR_CHECK(esp_netif_attach(eth_netif, eth_driver));
-    return eth_netif;
-}

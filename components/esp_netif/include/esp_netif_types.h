@@ -120,16 +120,7 @@ typedef struct {
 } ip_event_ap_staipassigned_t;
 
 
-typedef struct {
-    uint8_t mac[6]; /**< Station MAC address */
-    esp_ip4_addr_t ip;  /**< Station assigned IP address */
-} esp_netif_sta_info_t;
 
-
-typedef struct {
-    esp_netif_sta_info_t sta[ESP_WIFI_MAX_CONN_NUM]; /**< Connected stations */
-    int num; /**< Number of connected stations */
-} esp_netif_sta_list_t;
 
 typedef enum esp_netif_flags {
     ESP_NETIF_DHCPC       = 1 << 0,

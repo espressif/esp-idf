@@ -85,30 +85,4 @@ extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
 
-//
-// API for creating default interfaces
-//
-
-/**
- * @brief Creates default WIFI AP. In case of any init error this API aborts.
- *
- * @return pointer to esp-netif instance
- */
-esp_netif_t* esp_netif_create_default_wifi_ap(void);
-
-/**
- * @brief Creates default WIFI STA. In case of any init error this API aborts.
- *
- * @return pointer to esp-netif instance
- */
-esp_netif_t* esp_netif_create_default_wifi_sta(void);
-
-/**
- * @brief Creates default ethernet interface. In case of any init error this API aborts.
- *
- * @return pointer to esp-netif instance
- */
-esp_netif_t* esp_netif_create_default_eth(void * eth_driver);
-
-
 #endif //_ESP_NETIF_DEFAULTS_H

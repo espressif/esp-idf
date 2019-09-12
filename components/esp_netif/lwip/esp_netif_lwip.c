@@ -1275,25 +1275,6 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
     return esp_netif_lwip_ipc_call(esp_netif_get_dns_info_api, esp_netif, (void *)&dns_param);
 }
 
-esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif_sta_list_t *netif_sta_list)
-{
-    ESP_LOGD(TAG, "%s entered", __func__);
-
-    if ((wifi_sta_list == NULL) || (netif_sta_list == NULL)) {
-        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-    }
-
-    memset(netif_sta_list, 0, sizeof(esp_netif_sta_list_t));
-    netif_sta_list->num = wifi_sta_list->num;
-    for (int i = 0; i < wifi_sta_list->num; i++) {
-        memcpy(netif_sta_list->sta[i].mac, wifi_sta_list->sta[i].mac, 6);
-        dhcp_search_ip_on_mac(netif_sta_list->sta[i].mac, (ip4_addr_t*)&netif_sta_list->sta[i].ip);
-    }
-
-    return ESP_OK;
-}
-
-
 static void esp_netif_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
 {
     ESP_LOGD(TAG, "%s lwip-netif:%p", __func__, p_netif);
@@ -1362,7 +1343,7 @@ esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
     return esp_netif->flags;
 }
 
-char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
+const char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
 {
     return esp_netif->if_key;
 }

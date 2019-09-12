@@ -47,5 +47,18 @@ esp_err_t esp_wifi_set_default_wifi_ap_handlers(void *esp_netif);
  */
 esp_err_t esp_wifi_clear_default_wifi_driver_and_handlers(void *esp_netif);
 
+/**
+ * @brief Creates default WIFI AP. In case of any init error this API aborts.
+ *
+ * @return pointer to esp-netif instance
+ */
+esp_netif_t* esp_netif_create_default_wifi_ap(void);
+
+/**
+ * @brief Creates default WIFI STA. In case of any init error this API aborts.
+ *
+ * @return pointer to esp-netif instance
+ */
+esp_netif_t* esp_netif_create_default_wifi_sta(void);
 
 #endif //_ESP_WIFI_DEFAULT_H
