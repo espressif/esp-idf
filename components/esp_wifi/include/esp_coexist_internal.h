@@ -80,6 +80,12 @@ esp_err_t coex_preference_set(coex_prefer_t prefer);
 uint32_t coex_status_get(void);
 
 /**
+ * @brief Set software coexist condition.
+ * @return : software coexist condition
+ */
+void coex_condition_set(uint32_t type, bool dissatisfy);
+
+/**
  * @brief WiFi requests coexistence.
  *
  *  @param event : WiFi event
