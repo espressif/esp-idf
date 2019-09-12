@@ -16,7 +16,7 @@ Adapted APIs
 
 Some common lwIP "app" APIs are supported indirectly by ESP-IDF:
 
-- DHCP Server & Client are supported indirectly via the :doc:`/api-reference/network/tcpip_adapter` functionality
+- DHCP Server & Client are supported indirectly via the :doc:`/api-reference/network/esp_netif` functionality
 - Simple Network Time Protocol (SNTP) is supported via the :component_file:`lwip/include/apps/esp_sntp.h` functions (see also :example:`protocols/sntp`)
 - ICMP Ping is supported using a variation on the lwIP ping API. See :doc:`/api-reference/protocols/icmp_echo`.
 - NetBIOS lookup is available using the standard lwIP API. :example:`protocols/http_server/restful_server` has an option to demonstrate using NetBIOS to look up a host on the LAN.

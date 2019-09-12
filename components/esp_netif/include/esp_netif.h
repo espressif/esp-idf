@@ -22,9 +22,15 @@
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
 
-//
-// 1) Initialization API:
-//
+/**
+ * @defgroup ESP_NETIF_INIT_API ESP-NETIF Initialization API
+ * @brief Initialization and deinitialization of underlying TCP/IP stack and esp-netif instances
+ *
+ */
+
+/** @addtogroup ESP_NETIF_INIT_API
+ * @{
+ */
 
 /**
  * @brief  Initialize the underlying TCP/IP stack
@@ -62,14 +68,14 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config);
 /**
  * @brief   Destroys the esp_netif object
  *
- * @param[in]  pointer to the object to be deleted
+ * @param[in]  esp_netif pointer to the object to be deleted
  */
 void esp_netif_destroy(esp_netif_t *esp_netif);
 
 /**
  * @brief   Configures driver related options of esp_netif object
  *
- * @param[inout]  pointer to the object to be configured
+ * @param[inout]  esp_netif pointer to the object to be configured
  * @param[in]     driver_config pointer esp-netif io driver related configuration
  * @return
  *         - ESP_OK on success
@@ -79,51 +85,52 @@ void esp_netif_destroy(esp_netif_t *esp_netif);
 esp_err_t esp_netif_set_driver_config(esp_netif_t *esp_netif,
                               const esp_netif_driver_ifconfig_t *driver_config);
 
-
+/**
+ * @brief   Attaches esp_netif instance to the io driver handle
+ *
+ * Calling this function enables connecting specific esp_netif object
+ * with already initialized io driver to update esp_netif object with driver
+ * specific configuration (i.e. calls post_attach callback, which typically
+ * sets io driver callbacks to esp_netif instance and starts the driver)
+ *
+ * @param[inout]  esp_netif pointer to esp_netif object to be attached
+ * @param[in]  driver_handle pointer to the driver handle
+ * @return
+ *         - ESP_OK on success
+ *         - ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED if driver's pot_attach callback failed
+ */
 esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle driver_handle);
 
-//
-// 2) Input - Output APIs
-//
+/**
+ * @}
+ */
 
 /**
-  * @brief  Outputs packets from the TCP/IP stack to the media to be transmitted
-  *
-  * This function gets called from network stack to output packets to IO driver.
-  *
-  * @note This function is installed automatically for default interfaces.
-  * Custom interface may need to install if the rx buffer passed as pointer and the IO driver has to
-  * deallocate the data in driver context
-  *
-  * @param[in]  esp_netif Handle to esp-netif instance
-  * @param[in]  void* buffer: rx buffer pointer
-  */
-esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len);
+ * @defgroup ESP_NETIF_DATA_IO_API ESP-NETIF Input Output API
+ * @brief Input and Output functions to pass data packets from communication media (IO driver)
+ * to TCP/IP stack.
+ *
+ * These functions are usually not directly called from user code, but installed, or registered
+ * as callbacks in either IO driver on one hand or TCP/IP stack on the other. More specifically
+ * esp_netif_receive is typically called from io driver on reception callback to input the packets
+ * to TCP/IP stack. Similarly esp_netif_transmit is called from the TCP/IP stack whenever
+ * a packet ought to output to the communication media.
+ *
+ * @note These IO functions are registerd (installed) automatically for default interfaces
+ * (interfaces with the keys such as WIFI_STA_DEF, WIFI_AP_DEF, ETH_DEF). Custom interface
+ * has to register these IO functions when creating interface using @ref esp_netif_new
+ *
+ */
 
-/**
-  * @brief  Free the rx buffer allocated by the media driver
-  *
-  * This function gets called from network stack when the rx buffer to be freed in media driver context.
-  *
-  * @note This function is installed automatically for default interfaces.
-  * Custom interface may need to install if the rx buffer passed as pointer and the IO driver has to
-  * deallocate the data in driver context
-  *
-  * @param[in]  esp_netif Handle to esp-netif instance
-  * @param[in]  void* buffer: rx buffer pointer
-  */
-void esp_netif_free_rx_buffer(void *esp_netif, void* buffer);
+/** @addtogroup ESP_NETIF_DATA_IO_API
+ * @{
+ */
 
 /**
  * @brief  Passes the raw packets from communication media to the appropriate TCP/IP stack
  *
  * This function is called from the configured (peripheral) driver layer.
  * The data are then forwarded as frames to the TCP/IP stack.
- *
- * @note Installation happens automatically for default interfaces; custom IO drivers must install
- * this function so that it is called on a reception of incoming packet
- *
- * @note Application code does not usually need to call this function directly.
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in]  buffer Received data
@@ -135,10 +142,20 @@ void esp_netif_free_rx_buffer(void *esp_netif, void* buffer);
  */
 esp_err_t esp_netif_receive(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb);
 
-//
-// 3) ESP-NETIF lifecycle
-//
+/**
+ * @}
+ */
 
+/**
+ * @defgroup ESP_NETIF_LIFECYCLE ESP-NETIF Lifecycle control
+ * @brief These APIS define basic building blocks to control network interface lifecycle, i.e.
+ * start, stop, set_up or set_down. These functions can be directly used as event handlers
+ * registered to follow the events from communication media.
+ */
+
+/** @addtogroup ESP_NETIF_LIFECYCLE
+ * @{
+ */
 
 /**
  * @brief Default building block for network interface action upon IO driver start event
@@ -202,9 +219,28 @@ void esp_netif_action_disconnected(void *esp_netif, esp_event_base_t base, int32
  */
 void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
 
-//
-/// 4) Configuration (getter - setters)
-//
+/**
+ * @}
+ */
+
+/**
+ * @defgroup ESP_NETIF_GET_SET ESP-NETIF Runtime configuration
+ * @brief Getters and setters for various TCP/IP related parameters
+ */
+
+/** @addtogroup ESP_NETIF_GET_SET
+ * @{
+ */
+
+/**
+ * @brief Set the mac address for the interface instance
+
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  mac Desired mac address for the related network interface
+ * @return     ESP_OK
+ */
+esp_err_t esp_netif_set_mac(esp_netif_t *esp_netif, uint8_t mac[]);
+
 /**
  * @brief  Set the hostname of an interface
  *
@@ -317,14 +353,31 @@ esp_err_t esp_netif_set_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_
  */
 esp_err_t esp_netif_set_old_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_t *ip_info);
 
+/**
+ * @brief  Get net interface index from network stack implementation
+ *
+ * @note This index could be used in `setsockopt()` to bind socket with multicast interface
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return
+ *         implementation specific index of interface represented with supplied esp_netif
+ */
+int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
 
-//
-// 5) Network stack related API
-//
+/**
+ * @}
+ */
 
-//
-// DHCP
-//
+/**
+ * @defgroup ESP_NETIF_NET_DHCP ESP-NETIF DHCP Settings
+ * @brief Network stack related interface to DHCP client and server
+ */
+
+/** @addtogroup ESP_NETIF_NET_DHCP
+ * @{
+ */
+
 /**
  * @brief  Set or Get DHCP server option
  *
@@ -342,6 +395,21 @@ esp_err_t esp_netif_set_old_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_i
  */
 esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
 
+/**
+ * @brief  Set or Get DHCP client option
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in] opt_op ESP_NETIF_OP_SET to set an option, ESP_NETIF_OP_GET to get an option.
+ * @param[in] opt_id Option index to get or set, must be one of the supported enum values.
+ * @param[inout] opt_val Pointer to the option parameter.
+ * @param[in] opt_len Length of the option parameter.
+ *
+ * @return
+ *         - ESP_OK
+ *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
+ *         - ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED
+ *         - ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED
+ */
 esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
 
 /**
@@ -421,9 +489,19 @@ esp_err_t esp_netif_dhcps_start(esp_netif_t *esp_netif);
  */
 esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
 
-//
-// DNS:
-//
+/**
+ * @}
+ */
+
+/**
+ * @defgroup ESP_NETIF_NET_DNS ESP-NETIF DNS Settings
+ * @brief Network stack related interface to NDS
+ */
+
+/** @addtogroup ESP_NETIF_NET_DNS
+ * @{
+ */
+
 /**
  * @brief  Set DNS Server information
  *
@@ -467,14 +545,19 @@ esp_err_t esp_netif_set_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
  *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS invalid params
  */
 esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t type, esp_netif_dns_info_t *dns);
-/**
- * @brief Set the mac address for the interface instance
 
- * @param[in]  esp_netif Handle to esp-netif instance
- * @param[in]  mac Desired mac address for the related network interface
- * @return     ESP_OK
+/**
+ * @}
  */
-esp_err_t esp_netif_set_mac(esp_netif_t *esp_netif, uint8_t mac[]);
+
+/**
+ * @defgroup ESP_NETIF_NET_IP ESP-NETIF IP address related interface
+ * @brief Network stack related interface to IP
+ */
+
+/** @addtogroup ESP_NETIF_NET_IP
+ * @{
+ */
 
 /**
  * @brief  Create interface link-local IPv6 address
@@ -540,9 +623,18 @@ char * esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen);
 */
 uint32_t esp_ip4addr_aton(const char *addr);
 
-//
-// 6) Driver conversion utilities to related keys, flags, implementation handle, list of netifs
-//
+/**
+ * @}
+ */
+
+/**
+ * @defgroup ESP_NETIF_CONVERT ESP-NETIF Conversion utilities
+ * @brief  ESP-NETIF conversion utilities to related keys, flags, implementation handle
+ */
+
+/** @addtogroup ESP_NETIF_CONVERT
+ * @{
+ */
 
 /**
  * @brief Gets media driver handle for this esp-netif instance
@@ -600,9 +692,19 @@ esp_netif_type_t esp_netif_get_type(esp_netif_t *esp_netif);
  */
 uint32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type);
 
-//
-// 7) esp_netif list API
-//
+/**
+ * @}
+ */
+
+/**
+ * @defgroup ESP_NETIF_LIST ESP-NETIF List of interfaces
+ * @brief  APIs to enumerate all registered interfaces
+ */
+
+/** @addtogroup ESP_NETIF_LIST
+ * @{
+ */
+
 /**
  * @brief Iterates over list of interfaces. Returns first netif if NULL given as parameter
  *
@@ -610,7 +712,7 @@ uint32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_
  *
  * @return First netif from the list if supplied parameter is NULL, next one otherwise
  */
-esp_netif_t* esp_netif_next(esp_netif_t* netif);
+esp_netif_t* esp_netif_next(esp_netif_t* esp_netif);
 
 /**
  * @brief Returns number of registered esp_netif objects
@@ -636,16 +738,5 @@ size_t esp_netif_get_nr_of_ifs(void);
  */
 esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif_sta_list_t *tcpip_sta_list);
 
-/**
- * @brief  Get net interface index from network stack implementation
- *
- * @note This index could be used in `setsockopt()` to bind socket with multicast interface
- *
- * @param[in]  esp_netif Handle to esp-netif instance
- *
- * @return
- *         implementation specific index of interface represented with supplied esp_netif
- */
-int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
 
 #endif /*  _ESP_NETIF_H_ */

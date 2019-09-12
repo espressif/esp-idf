@@ -468,7 +468,7 @@ esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle dri
         esp_err_t ret = base_driver->post_attach(esp_netif, driver_handle);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Post-attach callback of driver(%p) failed with %d", driver_handle, ret);
-            return ESP_ERR_ESP_NETIF_DRIVER_ATACH_FAILED;
+            return ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED;
         }
     }
     return ESP_OK;

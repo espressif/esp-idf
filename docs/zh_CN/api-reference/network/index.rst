@@ -36,7 +36,7 @@ IP 网络层协议
 .. toctree::
    :maxdepth: 1
 
-   TCP/IP Adapter <tcpip_adapter.rst>
+   ESP-NETIF <esp_netif.rst>
 
 TCP/IP 套接字 API 的示例代码存放在 ESP-IDF 示例项目的 :example:`protocols/sockets` 目录下。
 
