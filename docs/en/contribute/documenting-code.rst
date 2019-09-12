@@ -241,7 +241,7 @@ By default, the directives ``.. todo::`` and ``.. todolist::`` are ignored by do
 
 Before pushing your changes to origin, please set the value of ``todo_include_todos`` back to ``False``.
 
-For more details about the extension, see `its website <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_.
+For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documenation.
 
 
 Put it all together
