@@ -58,3 +58,12 @@ void bootloader_clock_configure()
     }
 #endif
 }
+
+#ifdef BOOTLOADER_BUILD
+
+int esp_clk_apb_freq(void)
+{
+    return rtc_clk_apb_freq_get();
+}
+
+#endif // BOOTLOADER_BUILD
