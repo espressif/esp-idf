@@ -19,7 +19,6 @@
 
 // LWIP netif specific network stack configuration
 struct esp_netif_netstack_config {
-    esp_netif_netstack_base_config_t base;
     err_t (*init_fn)(struct netif*);
     void (*input_fn)(struct netif *netif, void *buffer, size_t len, void *eb);
 };

@@ -120,10 +120,6 @@ low_level_output(struct netif *netif, struct pbuf *p)
   if (esp_netif == NULL) {
     return ERR_IF;
   }
-  esp_netif_type_t type = esp_netif_get_type(esp_netif);
-  if (type != ESP_NETIF_TYPE_STA && type != ESP_NETIF_TYPE_AP) {
-    return ERR_IF;
-  }
 
   struct pbuf *q = p;
   err_t ret;

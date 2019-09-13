@@ -22,6 +22,16 @@
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
 
+//
+// Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
+//  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
+//
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
+#define _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
+#include "tcpip_adapter.h"
+#undef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
+#endif // CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
+
 /**
  * @defgroup ESP_NETIF_INIT_API ESP-NETIF Initialization API
  * @brief Initialization and deinitialization of underlying TCP/IP stack and esp-netif instances
@@ -679,7 +689,7 @@ const char *esp_netif_get_ifkey(esp_netif_t *esp_netif);
  *
  * @return Enumerated type of this interface, such as station, AP, ethernet
  */
-esp_netif_type_t esp_netif_get_type(esp_netif_t *esp_netif);
+const char *esp_netif_get_desc(esp_netif_t *esp_netif);
 
 /**
  * @brief Returns configured event for this esp-netif instance and supplied event type

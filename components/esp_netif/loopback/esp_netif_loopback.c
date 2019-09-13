@@ -56,7 +56,7 @@ struct esp_netif_obj {
     esp_netif_flags_t flags;
     char * hostname;
     char * if_key;
-    esp_netif_type_t if_type;
+    char * if_desc;
     int route_prio;
 };
 
@@ -135,18 +135,14 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
     if (cfg->base->if_key) {
         esp_netif->if_key = strdup(cfg->base->if_key);
     }
-    if (cfg->base->if_type) {
-        esp_netif->if_type = cfg->base->if_type;
+    if (cfg->base->if_desc) {
+        esp_netif->if_desc = strdup(cfg->base->if_desc);
     }
     if (cfg->base->route_prio) {
         esp_netif->route_prio = cfg->base->route_prio;
     }
 
-    // Install network stack functions -- connects netif and L3 stack
-    if (cfg->stack->base.type != ESP_NETIF_NETWORK_STACK_IS_LOOPBACK) {
-        ESP_LOGE(TAG, "Failed to configure uknown network stack %d", cfg->stack->base.type);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
+    // Network stack is bypassed in loopback interface
 
     // Install IO functions only if provided -- connects driver and netif
     // this configuration could be updated after esp_netif_new(), typically in post_attach callback
@@ -215,6 +211,7 @@ void esp_netif_destroy(esp_netif_t *esp_netif)
         free(esp_netif->ip_info);
         free(esp_netif->ip_info_old);
         free(esp_netif->if_key);
+        free(esp_netif->if_desc);
         free(esp_netif);
     }
 }
@@ -228,7 +225,7 @@ esp_err_t esp_netif_attach(esp_netif_t *esp_netif, esp_netif_iodriver_handle dri
         esp_err_t ret = base_driver->post_attach(esp_netif, driver_handle);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Post-attach callback of driver(%p) failed with %d", driver_handle, ret);
-            return ESP_ERR_ESP_NETIF_DRIVER_ATACH_FAILED;
+            return ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED;
         }
     }
     return ESP_OK;
@@ -420,14 +417,14 @@ esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
     return esp_netif->flags;
 }
 
-char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
+const char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
 {
     return esp_netif->if_key;
 }
 
-esp_netif_type_t esp_netif_get_type(esp_netif_t *esp_netif)
+const char *esp_netif_get_desc(esp_netif_t *esp_netif)
 {
-    return esp_netif->if_type;
+    return esp_netif->if_desc;
 }
 
 esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)

@@ -93,7 +93,7 @@ struct esp_netif_obj {
     esp_netif_flags_t flags;
     char * hostname;
     char * if_key;
-    esp_netif_type_t if_type;
+    char * if_desc;
     int route_prio;
 };
 
@@ -322,8 +322,8 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
     if (cfg->base->if_key) {
         esp_netif->if_key = strdup(cfg->base->if_key);
     }
-    if (cfg->base->if_type) {
-        esp_netif->if_type = cfg->base->if_type;
+    if (cfg->base->if_desc) {
+        esp_netif->if_desc = strdup(cfg->base->if_desc);
     }
     if (cfg->base->route_prio) {
         esp_netif->route_prio = cfg->base->route_prio;
@@ -331,10 +331,6 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
 
     // Install network stack functions -- connects netif and L3 stack
     const esp_netif_netstack_config_t *esp_netif_stack_config = cfg->stack;
-    if (cfg->stack->base.type != ESP_NETIF_NETWORK_STACK_IS_LWIP) {
-        ESP_LOGE(TAG, "Failed to configure uknown network stack %d", cfg->stack->base.type);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
     if (esp_netif_stack_config->init_fn) {
         esp_netif->lwip_init_fn = esp_netif_stack_config->init_fn;
     }
@@ -448,6 +444,7 @@ void esp_netif_destroy(esp_netif_t *esp_netif)
         free(esp_netif->ip_info);
         free(esp_netif->ip_info_old);
         free(esp_netif->if_key);
+        free(esp_netif->if_desc);
         esp_netif_lwip_remove(esp_netif);
         free(esp_netif->lwip_netif);
         free(esp_netif->hostname);
@@ -1348,9 +1345,9 @@ const char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
     return esp_netif->if_key;
 }
 
-esp_netif_type_t esp_netif_get_type(esp_netif_t *esp_netif)
+const char *esp_netif_get_desc(esp_netif_t *esp_netif)
 {
-    return esp_netif->if_type;
+    return esp_netif->if_desc;
 }
 
 esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
