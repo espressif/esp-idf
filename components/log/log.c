@@ -339,30 +339,22 @@ char* IRAM_ATTR esp_log_system_timestamp(void)
     static char buffer[15] = {0};
     static _lock_t bufferLock = 0;
 
-    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) 
-    {
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         uint32_t timestamp = esp_log_early_timestamp();
-        for (uint8_t i = 0; i < sizeof(buffer); i++)
-        {
-            if ((timestamp > 0) || (i == 0))
-            {
-                for (uint8_t j = sizeof(buffer); j > 0; j--)
-                {
+        for (uint8_t i = 0; i < sizeof(buffer); i++) {
+            if ((timestamp > 0) || (i == 0)) {
+                for (uint8_t j = sizeof(buffer); j > 0; j--) {
                     buffer[j] = buffer[j - 1];
                 }
                 buffer[0] = (char) (timestamp % 10) + '0';
                 timestamp /= 10;
-            }
-            else
-            {
+            } else {
                 buffer[i] = 0;
                 break;
             }
         }
         return buffer;
-    }
-    else
-    {
+    } else {
         struct tm timeinfo;
         struct timespec tv;
         time_t now;
