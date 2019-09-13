@@ -250,13 +250,11 @@ build_docs:
     - cd en
     - make gh-linkcheck
     - make html
-    # TODO: revert it before release esp32s2
-    # - ../check_doc_warnings.sh
+    - ../check_doc_warnings.sh
     - cd ../zh_CN
     - make gh-linkcheck
     - make html
-    # TODO: revert it before release esp32s2
-    #- ../check_doc_warnings.sh
+    - ../check_doc_warnings.sh
 
 verify_cmake_style:
   extends: .check_job_template
