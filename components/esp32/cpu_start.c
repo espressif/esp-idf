@@ -372,14 +372,14 @@ void start_cpu0_default(void)
 #endif
     esp_timer_init();
     esp_set_time_from_rtc();
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
     err = esp_apptrace_init();
     assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
 #endif
 #if CONFIG_SYSVIEW_ENABLE
     SEGGER_SYSVIEW_Conf();
 #endif
-#if CONFIG_ESP32_DEBUG_STUBS_ENABLE
+#if CONFIG_ESP_DEBUG_STUBS_ENABLE
     esp_dbg_stubs_init();
 #endif
     err = esp_pthread_init();
@@ -474,7 +474,7 @@ void start_cpu1_default(void)
 #if CONFIG_ESP32_TRAX_TWOBANKS
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
     esp_err_t err = esp_apptrace_init();
     assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
 #endif

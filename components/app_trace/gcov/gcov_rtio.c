@@ -23,7 +23,7 @@
 #include "esp_private/dbg_stubs.h"
 #include "hal/timer_ll.h"
 
-#if CONFIG_ESP32_GCOV_ENABLE
+#if CONFIG_APPTRACE_GCOV_ENABLE
 
 #define ESP_GCOV_DOWN_BUF_SIZE  4200
 

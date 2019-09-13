@@ -76,11 +76,11 @@
 //    It can happen that system panic occurs when there are very small amount of data which are not exposed to host yet (e.g. crash just after the
 //    TRAX block switch). In this case the previous 16KB of collected data will be dropped and host will see the latest, but very small piece of trace.
 //    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option
-//    CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
+//    CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH
 //    which controls the threshold for flushing data in case of panic.
 //  - Streaming mode. Tracing module enters this mode when host connects to target and sets respective bits in control registers (per core).
 //    In this mode before switching the block tracing module waits for the host to read all the data from the previously exposed block.
-//    On panic tracing module also waits (timeout is configured via menuconfig via CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO) for the host to read all data.
+//    On panic tracing module also waits (timeout is configured via menuconfig via CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO) for the host to read all data.
 
 // 4. Communication Protocol
 // =========================
@@ -114,7 +114,7 @@
 // has not completed reading of the previous one yet. So in this case time critical tracing calls (which can not be delayed for too long time due to
 // the lack of free memory in TRAX block) can be dropped. To avoid such scenarios tracing module implements data buffering. Buffered data will be sent
 // to the host later when TRAX block switch occurs. The maximum size of the buffered data is controlled by menuconfig option
-// CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX.
+// CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX.
 
 // 4.4 Target Connection/Disconnection
 // -----------------------------------
@@ -167,7 +167,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_app_trace.h"
 
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
 #define ESP_APPTRACE_MAX_VPRINTF_ARGS           256
 #define ESP_APPTRACE_HOST_BUF_SIZE              256
 
@@ -309,17 +309,17 @@ typedef struct {
 typedef struct {
     volatile esp_apptrace_trax_state_t  state;                                  // state
     esp_apptrace_mem_block_t            blocks[ESP_APPTRACE_TRAX_BLOCKS_NUM];   // memory blocks
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
     // ring buffer control struct for pending user blocks
     esp_apptrace_rb_t                   rb_pend;
     // storage for pending user blocks
-    uint8_t                             pending_data[CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX + 1];
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+    uint8_t                             pending_data[CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX + 1];
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
     // ring buffer control struct for pending user data chunks sizes,
     // every chunk contains whole number of user blocks and fit into TRAX memory block
     esp_apptrace_rb_t                   rb_pend_chunk_sz;
     // storage for above ring buffer data
-    uint16_t                            pending_chunk_sz[CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX/ESP_APPTRACE_TRAX_BLOCK_SIZE + 2];
+    uint16_t                            pending_chunk_sz[CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX/ESP_APPTRACE_TRAX_BLOCK_SIZE + 2];
     // current (accumulated) pending user data chunk size
     uint16_t                            cur_pending_chunk_sz;
 #endif
@@ -397,7 +397,7 @@ static inline void esp_apptrace_log_unlock(void)
 
 static inline esp_err_t esp_apptrace_lock_initialize(esp_apptrace_lock_t *lock)
 {
-#if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
+#if CONFIG_APPTRACE_LOCK_ENABLE
     esp_apptrace_lock_init(lock);
 #endif
     return ESP_OK;
@@ -410,7 +410,7 @@ static inline esp_err_t esp_apptrace_lock_cleanup(void)
 
 esp_err_t esp_apptrace_lock(esp_apptrace_tmo_t *tmo)
 {
-#if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
+#if CONFIG_APPTRACE_LOCK_ENABLE
     esp_err_t ret = esp_apptrace_lock_take(&s_trace_buf.lock, tmo);
     if (ret != ESP_OK) {
         return ESP_FAIL;
@@ -422,13 +422,13 @@ esp_err_t esp_apptrace_lock(esp_apptrace_tmo_t *tmo)
 esp_err_t esp_apptrace_unlock(void)
 {
     esp_err_t ret = ESP_OK;
-#if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
+#if CONFIG_APPTRACE_LOCK_ENABLE
     ret = esp_apptrace_lock_give(&s_trace_buf.lock);
 #endif
     return ret;
 }
 
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
 
 static inline void esp_apptrace_trax_select_memory_block(int block_num)
 {
@@ -453,7 +453,7 @@ static void esp_apptrace_trax_init(void)
     ESP_APPTRACE_LOGI("Initialized TRAX on CPU%d", xPortGetCoreID());
 }
 
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
 // keep the size of buffered data for copying to TRAX mem block.
 // Only whole user blocks should be copied from buffer to TRAX block upon the switch
 static void esp_apptrace_trax_pend_chunk_sz_update(uint16_t size)
@@ -544,9 +544,9 @@ static esp_err_t esp_apptrace_trax_block_switch(void)
         }
         hdr->block_sz = 0;
     }
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
     // copy pending data to TRAX block if any
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
     uint16_t max_chunk_sz = esp_apptrace_trax_pend_chunk_sz_get();
 #else
     uint16_t max_chunk_sz = s_trace_buf.trax.blocks[new_block_num].sz;
@@ -554,7 +554,7 @@ static esp_err_t esp_apptrace_trax_block_switch(void)
     while (s_trace_buf.trax.state.markers[new_block_num] < max_chunk_sz) {
         uint32_t read_sz = esp_apptrace_rb_read_size_get(&s_trace_buf.trax.rb_pend);
         if (read_sz == 0) {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
             /* theres is a bug: esp_apptrace_trax_pend_chunk_sz_get returned wrong value,
                it must be greater or equal to one returned by esp_apptrace_rb_read_size_get */
             ESP_APPTRACE_LOGE("No pended bytes, must be > 0 and <= %d!", max_chunk_sz);
@@ -697,7 +697,7 @@ static inline uint8_t *esp_apptrace_trax_wait4buf(uint16_t size, esp_apptrace_tm
         return NULL;
     }
     // check if we still have pending data
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
     if (esp_apptrace_rb_read_size_get(&s_trace_buf.trax.rb_pend) > 0) {
         // if after TRAX block switch still have pending data (not all pending data have been pumped to TRAX block)
         // alloc new pending buffer
@@ -711,7 +711,7 @@ static inline uint8_t *esp_apptrace_trax_wait4buf(uint16_t size, esp_apptrace_tm
     {
         // update block pointers
         if (ESP_APPTRACE_TRAX_INBLOCK_MARKER() + size > ESP_APPTRACE_TRAX_INBLOCK_GET()->sz) {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
             *pended = 1;
             ptr = esp_apptrace_rb_produce(&s_trace_buf.trax.rb_pend, size);
             if (ptr == NULL) {
@@ -741,7 +741,7 @@ static uint8_t *esp_apptrace_trax_get_buffer(uint32_t size, esp_apptrace_tmo_t *
         return NULL;
     }
     // check for data in the pending buffer
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
     if (esp_apptrace_rb_read_size_get(&s_trace_buf.trax.rb_pend) > 0) {
         // if we have buffered data try to switch TRAX block
         esp_apptrace_trax_block_switch();
@@ -756,7 +756,7 @@ static uint8_t *esp_apptrace_trax_get_buffer(uint32_t size, esp_apptrace_tmo_t *
             buf_ptr = esp_apptrace_trax_wait4buf(ESP_APPTRACE_USR_BLOCK_RAW_SZ(size), tmo, &pended_buf);
             if (buf_ptr) {
                 if (pended_buf) {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
                     esp_apptrace_trax_pend_chunk_sz_update(ESP_APPTRACE_USR_BLOCK_RAW_SZ(size));
 #endif
                 } else {
@@ -766,18 +766,18 @@ static uint8_t *esp_apptrace_trax_get_buffer(uint32_t size, esp_apptrace_tmo_t *
                 }
             }
         } else {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
             esp_apptrace_trax_pend_chunk_sz_update(ESP_APPTRACE_USR_BLOCK_RAW_SZ(size));
 #endif
         }
     } else
 #endif
     if (ESP_APPTRACE_TRAX_INBLOCK_MARKER() + ESP_APPTRACE_USR_BLOCK_RAW_SZ(size) > ESP_APPTRACE_TRAX_INBLOCK_GET()->sz) {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
         ESP_APPTRACE_LOGD("TRAX full. Get %d bytes from PEND buffer", size);
         buf_ptr = esp_apptrace_rb_produce(&s_trace_buf.trax.rb_pend, ESP_APPTRACE_USR_BLOCK_RAW_SZ(size));
         if (buf_ptr) {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
             esp_apptrace_trax_pend_chunk_sz_update(ESP_APPTRACE_USR_BLOCK_RAW_SZ(size));
 #endif
         }
@@ -788,7 +788,7 @@ static uint8_t *esp_apptrace_trax_get_buffer(uint32_t size, esp_apptrace_tmo_t *
             buf_ptr = esp_apptrace_trax_wait4buf(ESP_APPTRACE_USR_BLOCK_RAW_SZ(size), tmo, &pended_buf);
             if (buf_ptr) {
                 if (pended_buf) {
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
                     esp_apptrace_trax_pend_chunk_sz_update(ESP_APPTRACE_USR_BLOCK_RAW_SZ(size));
 #endif
                 } else {
@@ -880,10 +880,10 @@ static esp_err_t esp_apptrace_trax_dest_init(void)
         s_trace_buf.trax.state.markers[i] = 0;
     }
     s_trace_buf.trax.state.in_block = ESP_APPTRACE_TRAX_INBLOCK_START;
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > 0
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > 0
     esp_apptrace_rb_init(&s_trace_buf.trax.rb_pend, s_trace_buf.trax.pending_data,
                         sizeof(s_trace_buf.trax.pending_data));
-#if CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
+#if CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX > ESP_APPTRACE_TRAX_BLOCK_SIZE
     s_trace_buf.trax.cur_pending_chunk_sz = 0;
     esp_apptrace_rb_init(&s_trace_buf.trax.rb_pend_chunk_sz, (uint8_t *)s_trace_buf.trax.pending_chunk_sz,
                         sizeof(s_trace_buf.trax.pending_chunk_sz));
@@ -915,7 +915,7 @@ esp_err_t esp_apptrace_init(void)
             ESP_APPTRACE_LOGE("Failed to init log lock (%d)!", res);
             return res;
         }
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         res = esp_apptrace_trax_dest_init();
         if (res != ESP_OK) {
             ESP_APPTRACE_LOGE("Failed to init TRAX dest data (%d)!", res);
@@ -925,7 +925,7 @@ esp_err_t esp_apptrace_init(void)
 #endif
     }
 
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
     // init TRAX on this CPU
     esp_apptrace_trax_init();
 #endif
@@ -947,7 +947,7 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -984,7 +984,7 @@ uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, 
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1008,7 +1008,7 @@ esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, u
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1033,7 +1033,7 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1069,7 +1069,7 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1133,7 +1133,7 @@ uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1157,7 +1157,7 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1181,7 +1181,7 @@ esp_err_t esp_apptrace_flush_nolock(esp_apptrace_dest_t dest, uint32_t min_sz, u
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1225,7 +1225,7 @@ bool esp_apptrace_host_is_connected(esp_apptrace_dest_t dest)
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1243,7 +1243,7 @@ esp_err_t esp_apptrace_status_reg_set(esp_apptrace_dest_t dest, uint32_t val)
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");
@@ -1261,7 +1261,7 @@ esp_err_t esp_apptrace_status_reg_get(esp_apptrace_dest_t dest, uint32_t *val)
     esp_apptrace_hw_t *hw = NULL;
 
     if (dest == ESP_APPTRACE_DEST_TRAX) {
-#if CONFIG_ESP32_APPTRACE_DEST_TRAX
+#if CONFIG_APPTRACE_DEST_TRAX
         hw = ESP_APPTRACE_HW(ESP_APPTRACE_HW_TRAX);
 #else
         ESP_APPTRACE_LOGE("Application tracing via TRAX is disabled in menuconfig!");

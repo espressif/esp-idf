@@ -9,7 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
-#if CONFIG_ESP32_APPTRACE_ENABLE == 1
+#if CONFIG_APPTRACE_ENABLE == 1
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 
