@@ -2,26 +2,47 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.google.protobuf'
 
 android {
-    compileSdkVersion 27
+
+    compileSdkVersion 28
+
     defaultConfig {
-        applicationId "com.espressif.provision"
         minSdkVersion 21
-        targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion 28
+        versionCode 5
+        versionName "1.2"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
+    flavorDimensions "transport", "security"
+
+    productFlavors {
+
+        wifi {
+            dimension "transport"
+            applicationId "com.espressif.provsoftap"
+        }
+        ble {
+            dimension "transport"
+            applicationId "com.espressif.provble"
+        }
+        sec0 {
+            dimension "security"
+        }
+        sec1 {
+            dimension "security"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            debuggable false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             resValue "string", "proof_of_possesion", "abcd1234"
             resValue "string", "wifi_base_url", "192.168.4.1:80"
             resValue "string", "wifi_network_name_prefix", "PROV_"
-            resValue "string", "ble_service_uuid", "0000ffff-0000-1000-8000-00805f9b34fb"
-            resValue "string", "ble_session_uuid", "0000ff51-0000-1000-8000-00805f9b34fb"
-            resValue "string", "ble_config_uuid", "0000ff52-0000-1000-8000-00805f9b34fb"
             resValue "string", "ble_device_name_prefix", "PROV_"
+            buildConfigField "boolean", "IS_ALLOWED_FILTERING_BY_PREFIX", "true"
         }
 
         debug {
@@ -29,29 +50,8 @@ android {
             resValue "string", "proof_of_possesion", "abcd1234"
             resValue "string", "wifi_base_url", "192.168.4.1:80"
             resValue "string", "wifi_network_name_prefix", "PROV_"
-            resValue "string", "ble_service_uuid", "0000ffff-0000-1000-8000-00805f9b34fb"
-            resValue "string", "ble_session_uuid", "0000ff51-0000-1000-8000-00805f9b34fb"
-            resValue "string", "ble_config_uuid", "0000ff52-0000-1000-8000-00805f9b34fb"
             resValue "string", "ble_device_name_prefix", "PROV_"
-        }
-    }
-
-    flavorDimensions "transport", "security"
-    productFlavors {
-        wifi {
-            dimension "transport"
-        }
-
-        ble {
-            dimension "transport"
-        }
-
-        sec0 {
-            dimension "security"
-        }
-
-        sec1 {
-            dimension "security"
+            buildConfigField "boolean", "IS_ALLOWED_FILTERING_BY_PREFIX", "true"
         }
     }
 }
@@ -79,12 +79,12 @@ protobuf {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.1'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.1.0'
-    implementation 'com.android.support:design:27.1.1'
+    implementation 'com.android.support:design:28.0.0'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.google.protobuf:protobuf-lite:3.0.1'
-    compile 'com.google.crypto.tink:tink-android:1.1.0'
+    implementation 'com.google.crypto.tink:tink-android:1.1.0'
 }

@@ -1,45 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.espressif.ui.ProvisionActivity"
+    tools:context="com.espressif.ui.activities.ProvisionActivity"
     tools:showIn="@layout/activity_provision">
 
     <TextView
         android:id="@+id/setup_instructions_view"
         android:layout_width="wrap_content"
-        android:layout_height="106dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_gravity="center"
-        android:layout_marginBottom="32dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginBottom="25dp"
         android:paddingLeft="16dp"
         android:paddingRight="16dp"
         android:text="@string/setup_instructions"
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@id/ssid_input_layout"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        android:textSize="18sp" />
+
+    <TextView
+        android:id="@+id/ssid_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/setup_instructions_view"
+        android:layout_marginBottom="30dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:text="Your SSID"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textSize="18sp" />
 
     <android.support.design.widget.TextInputLayout
         android:id="@+id/ssid_input_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        app:layout_constraintBottom_toTopOf="@id/password_input_layout"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
+        android:layout_below="@id/ssid_text"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="30dp">
 
         <EditText
             android:id="@+id/ssid_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/ssid_hint_text"
-            android:inputType="textCapWords" />
+            android:inputType="text" />
 
     </android.support.design.widget.TextInputLayout>
 
@@ -47,11 +59,11 @@
         android:id="@+id/password_input_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        app:passwordToggleEnabled="true"
-        app:layout_constraintBottom_toTopOf="@id/provision_button_layout"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
+        android:layout_below="@id/ssid_input_layout"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="30dp"
+        app:passwordToggleEnabled="true">
 
         <EditText
             android:id="@+id/password_input"
@@ -65,23 +77,24 @@
     <RelativeLayout
         android:id="@+id/provision_button_layout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
+        android:layout_height="match_parent"
+        android:layout_below="@id/password_input_layout"
+        android:layout_marginTop="25dp"
+        android:layout_marginBottom="30dp">
 
         <Button
-            android:id="@+id/provision_button"
+            android:id="@+id/btn_provision"
             style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:layout_marginEnd="16dp"
-            android:layout_marginStart="16dp"
-            android:background="@color/colorPrimary"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:background="@drawable/bg_btn"
             android:enabled="false"
-            android:text="@string/provision"/>
+            android:text="@string/provision"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF" />
 
         <ProgressBar
             android:id="@+id/progress_indicator"
@@ -89,7 +102,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
     </RelativeLayout>
-</android.support.constraint.ConstraintLayout>
+
+</RelativeLayout>

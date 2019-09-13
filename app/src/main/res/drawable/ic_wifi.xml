@@ -1,0 +1,14 @@
+<level-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/ic_wifi_1"
+        android:maxLevel="0" />
+    <item
+        android:drawable="@drawable/ic_wifi_2"
+        android:maxLevel="1" />
+    <item
+        android:drawable="@drawable/ic_wifi_3"
+        android:maxLevel="2" />
+    <item
+        android:drawable="@drawable/ic_wifi_full"
+        android:maxLevel="3" />
+</level-list>

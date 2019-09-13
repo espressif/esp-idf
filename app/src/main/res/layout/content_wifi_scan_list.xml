@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="com.espressif.ui.activities.WiFiScanActivity">
+
+    <TextView
+        android:id="@+id/wifi_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:text="@string/setup_instructions"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textSize="18sp" />
+
+    <RelativeLayout
+        android:id="@+id/network_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/wifi_message"
+        android:layout_margin="25dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/networks"
+            android:textSize="20sp" />
+
+        <ImageView
+            android:id="@+id/btn_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/ic_refresh"
+            android:visibility="gone" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/wifi_list_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/network_layout">
+
+        <ListView
+            android:id="@+id/wifi_ap_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="15dp"
+            android:layout_marginBottom="15dp" />
+
+        <ProgressBar
+            android:id="@+id/wifi_progress_indicator"
+            style="@android:style/Widget.DeviceDefault.Light.ProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="visible" />
+
+    </RelativeLayout>
+
+</RelativeLayout>

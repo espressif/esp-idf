@@ -5,13 +5,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.espressif.ui.ProvisionSuccessActivity"
+    tools:context="com.espressif.ui.activities.ProvisionSuccessActivity"
     tools:showIn="@layout/activity_provision_success">
 
     <TextView
         android:id="@+id/success_textview"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
         android:layout_marginBottom="32dp"
         android:text="@string/success_text"
         android:textAlignment="center"
@@ -26,11 +28,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:layout_marginBottom="32dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginStart="16dp"
+        android:layout_margin="30dp"
         android:background="@color/colorPrimary"
         android:text="@string/done"
+        android:textAllCaps="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

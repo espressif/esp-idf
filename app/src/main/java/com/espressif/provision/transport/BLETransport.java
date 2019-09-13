@@ -13,35 +13,26 @@
 // limitations under the License.
 package com.espressif.provision.transport;
 
-import android.Manifest;
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Handler;
-import android.os.ParcelUuid;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import android.os.Build;
 import android.util.Log;
 
-import com.espressif.provision.Provision;
+import com.espressif.AppConstants;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,359 +40,414 @@ import java.util.concurrent.Semaphore;
 
 /**
  * Bluetooth implementation of the Transport protocol.
- *
  */
 public class BLETransport implements Transport {
-    public static final String SERVICE_UUID_KEY = "serviceUUID";
-    public static final String SESSION_UUID_KEY = "sessionUUID";
-    public static final String CONFIG_UUID_KEY = "configUUID";
-    public static final String DEVICE_NAME_PREFIX_KEY = "deviceNamePrefix";
+
     private static final String TAG = "Espressif::" + BLETransport.class.getSimpleName();
-    private final UUID sessionCharacteristicUuid;
+
     private Activity context;
-    private UUID serviceUuid;
-    private String deviceNamePrefix;
-    private BluetoothAdapter bleAdapter;
-    private ArrayList<BluetoothDevice> bluetoothDevices;
-    private long scanTimeoutInMillis;
     private BluetoothDevice currentDevice;
     private BluetoothGatt bluetoothGatt;
     private BluetoothGattService service;
-    private BluetoothGattCharacteristic sessionCharacteristic;
-    private HashMap<String, String> configUUIDMap;
     private BLETransportListener transportListener;
     private ResponseListener currentResponseListener;
     private Semaphore transportToken;
     private ExecutorService dispatcherThreadPool;
+    private HashMap<String, String> uuidMap = new HashMap<>();
+    private ArrayList<String> charUuidList = new ArrayList<>();
 
-    /***
+    private String serviceUuid;
+    private boolean isReadingDescriptors = false;
+    public ArrayList<String> deviceCapabilities = new ArrayList<>();
+
+    /**
      * Create BLETransport implementation
+     *
      * @param context
-     * @param serviceUuid string representation of the BLE Service UUID
-     * @param sessionUuid string representation of the BLE Session characteristic UUID
-     * @param configUuidMap map of config paths and string representations of the BLE characteristic UUID
-     * @param deviceNamePrefix device name prefix
-     * @param scanTimeoutInMillis timeout in milliseconds for which BLE scan should happen
+     * @param transportListener listener implementation which will receive resulting events
      */
-    public BLETransport(Activity context,
-                        UUID serviceUuid,
-                        UUID sessionUuid,
-                        HashMap<String, String> configUuidMap,
-                        String deviceNamePrefix,
-                        long scanTimeoutInMillis) {
+    public BLETransport(Activity context, BLETransportListener transportListener) {
         this.context = context;
-        this.serviceUuid = serviceUuid;
-        this.sessionCharacteristicUuid = sessionUuid;
-        this.configUUIDMap = configUuidMap;
-        this.deviceNamePrefix = deviceNamePrefix;
+        this.transportListener = transportListener;
         this.transportToken = new Semaphore(1);
         this.dispatcherThreadPool = Executors.newSingleThreadExecutor();
-        this.bluetoothDevices = new ArrayList<>();
-        this.scanTimeoutInMillis = scanTimeoutInMillis;
     }
 
-    /***
+    /**
      * BLE implementation of Transport protocol
-     * @param data data to be sent
+     *
+     * @param data     data to be sent
      * @param listener listener implementation which receives events when response is received.
      */
     @Override
     public void sendSessionData(byte[] data, ResponseListener listener) {
-        if(sessionCharacteristic != null) {
-            try {
-                this.transportToken.acquire();
-                sessionCharacteristic.setValue(data);
-                bluetoothGatt.writeCharacteristic(sessionCharacteristic);
-                currentResponseListener = listener;
-            } catch (Exception e) {
-                e.printStackTrace();
-                listener.onFailure(e);
-                this.transportToken.release();
+
+        if (uuidMap.containsKey(AppConstants.HANDLER_PROV_SESSION)) {
+
+            BluetoothGattCharacteristic sessionCharacteristic = service.getCharacteristic(UUID.fromString(uuidMap.get(AppConstants.HANDLER_PROV_SESSION)));
+
+            if (sessionCharacteristic == null) {
+                sessionCharacteristic = service.getCharacteristic(UUID.fromString("0000ff51-0000-1000-8000-00805f9b34fb"));
+            }
+
+            if (sessionCharacteristic != null) {
+                try {
+                    this.transportToken.acquire();
+                    sessionCharacteristic.setValue(data);
+                    bluetoothGatt.writeCharacteristic(sessionCharacteristic);
+                    currentResponseListener = listener;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onFailure(e);
+                    this.transportToken.release();
+                }
+            } else {
+                Log.e(TAG, "Session Characteristic is not available.");
             }
         }
     }
 
-    /***
+    /**
      * BLE implementation of Transport protocol
-     * @param path path of the config endpoint.
-     * @param data config data to be sent
+     *
+     * @param path     path of the config endpoint.
+     * @param data     config data to be sent
      * @param listener listener implementation which receives events when response is received.
      */
     @Override
     public void sendConfigData(String path, byte[] data, ResponseListener listener) {
-        try {
-            this.transportToken.acquire();
-            BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(configUUIDMap.get(path)));
-            if (characteristic != null) {
-                characteristic.setValue(data);
-                bluetoothGatt.writeCharacteristic(characteristic);
-                currentResponseListener = listener;
-            } else {
-                this.transportToken.release();
+
+        if (uuidMap.containsKey(path)) {
+
+            BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(uuidMap.get(path)));
+
+            if (characteristic == null) {
+                characteristic = service.getCharacteristic(UUID.fromString("0000ff52-0000-1000-8000-00805f9b34fb"));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            listener.onFailure(e);
-            this.transportToken.release();
+
+            if (characteristic != null) {
+                try {
+                    this.transportToken.acquire();
+                    characteristic.setValue(data);
+                    bluetoothGatt.writeCharacteristic(characteristic);
+                    currentResponseListener = listener;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    listener.onFailure(e);
+                    this.transportToken.release();
+                }
+            } else {
+                Log.e(TAG, "Characteristic is not available for given path.");
+            }
         }
     }
 
-    /***
-     * Scan for BLE bluetoothDevices
-     * @param transportListener listener implementation which will receive resulting events
+    /**
+     * Connect to a BLE peripheral device.
+     *
+     * @param bluetoothDevice    The peripheral device
+     * @param primaryServiceUuid Primary Service UUID
      */
-    public void scan(BLETransportListener transportListener) {
-        this.transportListener = transportListener;
-        this.scanForPeripherals();
+    public void connect(BluetoothDevice bluetoothDevice, UUID primaryServiceUuid) {
+        this.currentDevice = bluetoothDevice;
+        this.serviceUuid = primaryServiceUuid.toString();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            bluetoothGatt = this.currentDevice.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
+        } else {
+            bluetoothGatt = this.currentDevice.connectGatt(context, false, gattCallback);
+        }
     }
 
-    /***
-     * Connect to a BLE peripheral device.
-     * @param bluetoothDevice The peripheral device
+    /**
+     * Disconnect from the current connected peripheral
      */
-    public void connect(BluetoothDevice bluetoothDevice) {
-        this.currentDevice = bluetoothDevice;
-        this.currentDevice.connectGatt(context, false, new BluetoothGattCallback() {
-            @Override
-            public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-                super.onConnectionStateChange(gatt, status, newState);
-                if (status == BluetoothGatt.GATT_FAILURE) {
-                    if(transportListener != null) {
-                        transportListener.onFailure(new Exception("GATT failure in connection"));
-                    }
-                    return;
-                } else if (status != BluetoothGatt.GATT_SUCCESS) {
-                    return;
+    public void disconnect() {
+        if (this.bluetoothGatt != null) {
+            this.bluetoothGatt.disconnect();
+            bluetoothGatt = null;
+        }
+    }
+
+    private BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+
+        @Override
+        public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+
+            super.onConnectionStateChange(gatt, status, newState);
+            Log.d(TAG, "onConnectionStateChange, New state : " + newState + ", Status : " + status);
+
+            if (status == BluetoothGatt.GATT_FAILURE) {
+                if (transportListener != null) {
+                    transportListener.onFailure(new Exception("GATT failure in connection"));
                 }
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    gatt.discoverServices();
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    if(transportListener != null) {
-                        transportListener.onPeripheralDisconnected(new Exception("Bluetooth device disconnected"));
-                    }
+                return;
+            } else if (status != BluetoothGatt.GATT_SUCCESS) {
+                return;
+            }
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                Log.e(TAG, "Connected to GATT server.");
+                gatt.discoverServices();
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                Log.e(TAG, "Disconnected from GATT server.");
+                if (transportListener != null) {
+                    transportListener.onPeripheralDisconnected(new Exception("Bluetooth device disconnected"));
                 }
             }
+        }
 
-            @Override
-            public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-                super.onServicesDiscovered(gatt, status);
-                if (status != BluetoothGatt.GATT_SUCCESS) {
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
+            super.onServicesDiscovered(gatt, status);
+
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "Status not success");
+                return;
+            }
+
+            service = gatt.getService(UUID.fromString(serviceUuid));
+
+            if (service == null) {
+                Log.e(TAG, "Service not found!");
+                return;
+            }
+
+            for (BluetoothGattCharacteristic characteristic : service.getCharacteristics()) {
+
+                if (characteristic == null) {
+                    Log.e(TAG, "Tx characteristic not found!");
                     return;
                 }
-                service = gatt.getService(serviceUuid);
-                bluetoothGatt = gatt;
-                bluetoothGatt.requestMtu(400);
 
-                for (BluetoothGattCharacteristic characteristic:service.getCharacteristics()) {
-                    characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+                String uuid = characteristic.getUuid().toString();
+                Log.d(TAG, "Characteristic UUID : " + uuid);
+                charUuidList.add(uuid);
+
+                characteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
+            }
+
+            readNextDescriptor();
+        }
+
+        @Override
+        public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "Read Descriptor : " + bluetoothGatt.readDescriptor(descriptor));
+            } else {
+                Log.e(TAG, "Fail to read descriptor");
+            }
+        }
+
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+
+            Log.d(TAG, "DescriptorRead, : Status " + status + " Data : " + new String(descriptor.getValue(), StandardCharsets.UTF_8));
+
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.e(TAG, "Failed to read descriptor");
+                return;
+            }
+
+            byte[] data = descriptor.getValue();
+
+            String value = new String(data, StandardCharsets.UTF_8);
+            uuidMap.put(value, descriptor.getCharacteristic().getUuid().toString());
+            Log.d(TAG, "Value : " + value + " for UUID : " + descriptor.getCharacteristic().getUuid().toString());
+
+            if (isReadingDescriptors) {
+
+                readNextDescriptor();
+
+            } else {
+
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(uuidMap.get(AppConstants.HANDLER_PROTO_VER)));
+
+                if (characteristic != null) {
+                    // Write anything. It doesn't matter. We need to read characteristic and for that we need to write something.
+                    characteristic.setValue("ESP");
+                    bluetoothGatt.writeCharacteristic(characteristic);
+                }
+            }
+        }
+
+        @Override
+        public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+            super.onMtuChanged(gatt, mtu, status);
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "Supported MTU = " + mtu);
+            }
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+            Log.d(TAG, "onCharacteristicChanged");
+            super.onCharacteristicChanged(gatt, characteristic);
+        }
+
+        @Override
+        public void onCharacteristicRead(BluetoothGatt gatt,
+                                         final BluetoothGattCharacteristic characteristic,
+                                         int status) {
+
+            Log.d(TAG, "onCharacteristicRead, status " + status + " UUID : " + characteristic.getUuid().toString());
+            super.onCharacteristicRead(gatt, characteristic, status);
+
+            if (uuidMap.get((AppConstants.HANDLER_PROTO_VER)).equals(characteristic.getUuid().toString())) {
+
+                String data = new String(characteristic.getValue(), StandardCharsets.UTF_8);
+                Log.d(TAG, "Value : " + data);
+
+                try {
+                    JSONObject jsonObject = new JSONObject(data);
+                    JSONObject provInfo = jsonObject.getJSONObject("prov");
+
+                    String versionInfo = provInfo.getString("ver");
+                    Log.d(TAG, "Device Version : " + versionInfo);
+
+                    JSONArray capabilities = provInfo.getJSONArray("cap");
+
+                    for (int i = 0; i < capabilities.length(); i++) {
+                        String cap = capabilities.getString(i);
+                        deviceCapabilities.add(cap);
+                    }
+                    Log.d(TAG, "Capabilities : " + deviceCapabilities);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.d(TAG, "Capabilities JSON not available.");
                 }
 
-                sessionCharacteristic = service.getCharacteristic(sessionCharacteristicUuid);
-                if(transportListener != null) {
-                    if(sessionCharacteristic != null) {
+                if (transportListener != null) {
+
+                    if (uuidMap.containsKey(AppConstants.HANDLER_PROV_SESSION)) {
+                        // This is where provisionSession will get called.
+                        Log.d(TAG, "Session characteristic not NULL " + currentDevice.getAddress());
                         transportListener.onPeripheralConfigured(currentDevice);
                     } else {
+                        Log.d(TAG, "Session characteristic is NULL");
                         transportListener.onPeripheralNotConfigured(currentDevice);
                     }
                 }
             }
 
-            @Override
-            public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-                super.onMtuChanged(gatt, mtu, status);
+            if (currentResponseListener != null) {
+
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d(TAG, "Supported MTU = " + mtu);
+                    /*
+                     * Need to dispatch this on another thread since the caller
+                     * might decide to enqueue another send operation on success
+                     * of the first.
+                     */
+                    final ResponseListener responseListener = currentResponseListener;
+                    dispatcherThreadPool.submit(new Runnable() {
+                        @Override
+                        public void run() {
+                            byte[] charValue = characteristic.getValue();
+                            responseListener.onSuccess(charValue);
+                        }
+                    });
+                    currentResponseListener = null;
+                } else {
+
+                    currentResponseListener.onFailure(new Exception("Read from BLE failed"));
                 }
             }
+            transportToken.release();
+        }
 
-            @Override
-            public void onCharacteristicRead(BluetoothGatt gatt,
-                                             final BluetoothGattCharacteristic characteristic,
-                                             int status) {
-                super.onCharacteristicRead(gatt, characteristic, status);
-                if(currentResponseListener != null) {
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
-                        /**
-                         * Need to dispatch this on another thread since the caller
-                         * might decide to enqueue another send operation on success
-                         * of the first.
-                         */
-                        final ResponseListener responseListener = currentResponseListener;
-                        dispatcherThreadPool.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                byte[] charValue = characteristic.getValue();
-                                responseListener.onSuccess(charValue);
-                            }
-                        });
-                        currentResponseListener = null;
-                    } else {
-                        currentResponseListener.onFailure(new Exception("Read from BLE failed"));
-                    }
+        @Override
+        public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+
+            Log.d(TAG, "onCharacteristicWrite, status : " + status);
+            Log.d(TAG, "UUID : " + characteristic.getUuid().toString());
+//            super.onCharacteristicWrite(gatt, characteristic, status);
+
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                bluetoothGatt.readCharacteristic(characteristic);
+            } else {
+                if (currentResponseListener != null) {
+                    currentResponseListener.onFailure(new Exception("Write to BLE failed"));
                 }
                 transportToken.release();
             }
-
-            @Override
-            public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-                super.onCharacteristicWrite(gatt, characteristic, status);
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    bluetoothGatt.readCharacteristic(characteristic);
-                } else {
-                    if(currentResponseListener != null) {
-                        currentResponseListener.onFailure(new Exception("Write to BLE failed"));
-                    }
-                    transportToken.release();
-                }
-            }
-        });
-    }
-
-    /***
-     * Disconnect from the current connected peripheral
-     */
-    public void disconnect() {
-        if(this.bluetoothGatt != null) {
-            this.bluetoothGatt.disconnect();
         }
-    }
+    };
 
-    private void scanForPeripherals () {
-        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
-        bleAdapter = bluetoothManager.getAdapter();
-        bluetoothDevices.clear();
-        if(!this.hasPermissions()) {
-            if(transportListener != null) {
-                transportListener.onFailure(new Exception("Not enough permissions to connect over BLE"));
+    private void readNextDescriptor() {
+
+        boolean found = false;
+
+        for (int i = 0; i < charUuidList.size(); i++) {
+
+            String uuid = charUuidList.get(i);
+
+            if (!uuidMap.containsValue(uuid)) {
+
+                // Read descriptor
+                BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(uuid));
+                if (characteristic == null) {
+                    Log.e(TAG, "Tx characteristic not found!");
+                    return;
+                }
+
+                for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
+
+                    Log.d(TAG, "Descriptor : " + descriptor.getUuid().toString());
+                    Log.d(TAG, "Des read : " + bluetoothGatt.readDescriptor(descriptor));
+                }
+                found = true;
+                break;
             }
+        }
+
+        if (found) {
+            isReadingDescriptors = true;
         } else {
-            final BluetoothLeScanner scanner = bleAdapter.getBluetoothLeScanner();
-            List<ScanFilter> filters = new ArrayList<>();
-            ScanFilter scanFilter = new ScanFilter.Builder()
-                    .setServiceUuid(new ParcelUuid(this.serviceUuid))
-                    .build();
-            filters.add(scanFilter);
-            ScanSettings settings = new ScanSettings.Builder()
-                    .setScanMode(ScanSettings.SCAN_MODE_LOW_POWER)
-                    .build();
 
-            final ScanCallback scanCallback = new ScanCallback() {
-                @Override
-                public void onScanResult(int callbackType, ScanResult result) {
-                    boolean deviceExists = false;
-                    Log.d(TAG, "Got scan result");
+            isReadingDescriptors = false;
 
-                    for(BluetoothDevice device:bluetoothDevices) {
-                        if(device.equals(result.getDevice())) {
-                            deviceExists = true;
-                            break;
-                        }
-                    }
+            BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(uuidMap.get(AppConstants.HANDLER_PROTO_VER)));
 
-                    if (!deviceExists) {
-                        String deviceName = result.getDevice().getName();
-                        if(deviceName != null && deviceName.startsWith(deviceNamePrefix)) {
-                            bluetoothDevices.add(result.getDevice());
-                        }
-                    }
-                }
-
-                @Override
-                public void onBatchScanResults(List<ScanResult> results) {
-                    super.onBatchScanResults(results);
-                }
-
-                @Override
-                public void onScanFailed(int errorCode) {
-                    super.onScanFailed(errorCode);
-                    if(transportListener != null) {
-                        transportListener.onFailure(new Exception("BLE connect failed with error code : " + errorCode));
-                    }
-                }
-            };
-            scanner.startScan(filters, settings, scanCallback);
-            Handler someHandler = new Handler();
-            someHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (bluetoothDevices.size() == 0 && transportListener != null) {
-                        transportListener.onPeripheralsNotFound();
-                    } else if (transportListener != null) {
-                        transportListener.onPeripheralsFound(bluetoothDevices);
-                    }
-                    scanner.stopScan(scanCallback);
-                    bluetoothDevices.clear();
-                }
-            }, this.scanTimeoutInMillis);
+            if (characteristic != null) {
+                characteristic.setValue("ESP");
+                bluetoothGatt.writeCharacteristic(characteristic);
+            }
         }
     }
 
-    private boolean hasPermissions() {
-        if (bleAdapter == null || !bleAdapter.isEnabled()) {
-            requestBluetoothEnable();
-            return false;
-        } else if (!hasLocationPermissions()) {
-            requestLocationPermission();
-            return false;
-        }
-        return true;
-    }
-
-    private void requestBluetoothEnable() {
-        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        context.startActivityForResult(enableBtIntent, Provision.REQUEST_ENABLE_BLE_CODE);
-    }
-
-    private boolean hasLocationPermissions() {
-        return ContextCompat.checkSelfPermission(context,
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void requestLocationPermission() {
-        ActivityCompat.requestPermissions(context,
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 102);
-    }
-
-    /***
+    /**
      * Listener which will receive events relating to BLE device scanning
      */
     public interface BLETransportListener {
-        /***
-         * Peripheral bluetoothDevices found with matching Service UUID
-         * Callers should call the BLETransport.connect method with
-         * one of the peripherals found here
-         * @param devices
-         */
-        void onPeripheralsFound(ArrayList<BluetoothDevice> devices);
 
-        /***
-         * No peripherals found with matching Service UUID
-         */
-        void onPeripheralsNotFound();
-
-        /***
+        /**
          * Peripheral device configured.
          * This tells the caller that the connected BLE device is now configured
          * and can be provisioned
+         *
          * @param device
          */
         void onPeripheralConfigured(BluetoothDevice device);
 
-        /***
+        /**
          * Peripheral device could not be configured.
          * This tells the called that the connected device cannot be configured for provisioning
+         *
          * @param device
          */
         void onPeripheralNotConfigured(BluetoothDevice device);
 
-        /***
+        /**
          * Peripheral device disconnected
+         *
          * @param e
          */
         void onPeripheralDisconnected(Exception e);
 
-        /***
+        /**
          * Failed to scan for BLE bluetoothDevices
+         *
          * @param e
          */
         void onFailure(Exception e);

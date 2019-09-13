@@ -21,8 +21,8 @@ import com.espressif.provision.security.Security;
 import com.espressif.provision.session.Session;
 import com.espressif.provision.transport.ResponseListener;
 import com.espressif.provision.transport.Transport;
-import com.espressif.ui.BLEProvisionLanding;
-import com.espressif.ui.ProvisionLanding;
+import com.espressif.ui.activities.BLEProvisionLanding;
+import com.espressif.ui.activities.ProvisionLanding;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -40,9 +40,8 @@ import static java.lang.Thread.sleep;
  * the device with Wifi credentials.
  */
 public class Provision {
-    public static final int REQUEST_PROVISIONING_CODE = 101;
+    public static final int REQUEST_PROVISIONING_CODE = 103;
     public static final int REQUEST_PERMISSIONS_CODE = 102;
-    public static final int REQUEST_ENABLE_BLE_CODE = 103;
     public static final String CONFIG_TRANSPORT_KEY = "transport";
     public static final String CONFIG_SECURITY_KEY = "security";
     public static final String CONFIG_TRANSPORT_WIFI = "wifi";
@@ -53,6 +52,7 @@ public class Provision {
     public static final String CONFIG_SECURITY_SECURITY0 = "security0";
     public static final String CONFIG_WIFI_AP_KEY = "wifiAPPrefix";
     public static final String PROVISIONING_CONFIG_PATH = "prov-config";
+    public static final String PROVISIONING_WIFI_SSID = "SSID";
     private static final String TAG = "Espressif::" + Provision.class.getSimpleName();
     public ProvisioningListener provisioningListener;
     private Security security;
@@ -63,6 +63,7 @@ public class Provision {
      * Initialize Provision class with a Session object.
      * Session object should already have been
      * successfully initialized by calling Session.init.
+     *
      * @param session
      */
     public Provision(Session session) {
@@ -76,22 +77,23 @@ public class Provision {
      * This UI will take the user through the following flow
      * 1. Connect to the device via Wifi (AP) or Bluetooth (BLE)
      * 2. Provide Network information like SSID and Passphrase
+     *
      * @param activity parent activity which is typically part of the App
-     * @param config Config dictionary.
-     *               Currently supported configurations are
-     *                HashMap<String, String> config = new HashMap<>();
-     *                config.put(Provision.CONFIG_TRANSPORT_KEY, transportVersion);
-     *                config.put(Provision.CONFIG_SECURITY_KEY, securityVersion);
-     *                config.put(Provision.CONFIG_PROOF_OF_POSSESSION_KEY, POP);
-     *                config.put(Provision.CONFIG_BASE_URL_KEY, BASE_URL);
-     *                config.put(Provision.CONFIG_WIFI_AP_KEY, NETWORK_NAME_PREFIX);
-     *                config.put(BLETransport.SERVICE_UUID_KEY, SERVICE_UUID);
-     *                config.put(BLETransport.SESSION_UUID_KEY, SESSION_UUID);
-     *                config.put(BLETransport.CONFIG_UUID_KEY, CONFIG_UUID);
-     *                config.put(BLETransport.DEVICE_NAME_PREFIX_KEY, DEVICE_NAME_PREFIX);
+     * @param config   Config dictionary.
+     *                 Currently supported configurations are
+     *                 HashMap<String, String> config = new HashMap<>();
+     *                 config.put(Provision.CONFIG_TRANSPORT_KEY, transportVersion);
+     *                 config.put(Provision.CONFIG_SECURITY_KEY, securityVersion);
+     *                 config.put(Provision.CONFIG_PROOF_OF_POSSESSION_KEY, POP);
+     *                 config.put(Provision.CONFIG_BASE_URL_KEY, BASE_URL);
+     *                 config.put(Provision.CONFIG_WIFI_AP_KEY, NETWORK_NAME_PREFIX);
+     *                 config.put(BLETransport.SERVICE_UUID_KEY, SERVICE_UUID);
+     *                 config.put(BLETransport.SESSION_UUID_KEY, SESSION_UUID);
+     *                 config.put(BLETransport.CONFIG_UUID_KEY, CONFIG_UUID);
+     *                 config.put(BLETransport.DEVICE_NAME_PREFIX_KEY, DEVICE_NAME_PREFIX);
      */
-    public static void showProvisioningUI (Activity activity,
-                                           HashMap<String, String> config) {
+    public static void showProvisioningUI(Activity activity,
+                                          HashMap<String, String> config) {
         final String transportVersion = config.get(Provision.CONFIG_TRANSPORT_KEY);
         Class landingActivity = ProvisionLanding.class;
         if (transportVersion.equals(Provision.CONFIG_TRANSPORT_BLE)) {
@@ -111,14 +113,15 @@ public class Provision {
     /**
      * Send Configuration information relating to the Home
      * Wifi network which the device should use for Internet access
-     * @param ssid ssid of the home network
-     * @param passphrase passphrase
+     *
+     * @param ssid           ssid of the home network
+     * @param passphrase     passphrase
      * @param actionListener listener to be called when config data is sent
      */
     public void configureWifi(final String ssid,
                               final String passphrase,
                               final ProvisionActionListener actionListener) {
-        if(session.isEstablished()) {
+        if (session.isEstablished()) {
             byte[] message = createSetWifiConfigRequest(ssid, passphrase);
             transport.sendConfigData(PROVISIONING_CONFIG_PATH, message, new ResponseListener() {
                 @Override
@@ -127,17 +130,17 @@ public class Provision {
                     if (status != Constants.Status.Success && provisioningListener != null) {
                         provisioningListener.OnProvisioningFailed(new RuntimeException("Could not sent wifi credentials to device"));
                     }
-                    if(actionListener != null) {
+                    if (actionListener != null) {
                         actionListener.onComplete(status, null);
                     }
                 }
 
                 @Override
                 public void onFailure(Exception e) {
-                    if(provisioningListener != null) {
+                    if (provisioningListener != null) {
                         provisioningListener.OnProvisioningFailed(e);
                     }
-                    if(actionListener != null) {
+                    if (actionListener != null) {
                         actionListener.onComplete(Constants.Status.InternalError, e);
                     }
                 }
@@ -150,10 +153,11 @@ public class Provision {
      * A typical flow will be
      * Initialize session -> Set config (1 or more times) -> Apply config
      * This API call will also start a poll for getting Wifi connection status from the device
+     *
      * @param actionListener listener to be called when apply config message is sent
      */
     public void applyConfigurations(final ProvisionActionListener actionListener) {
-        if(session.isEstablished()) {
+        if (session.isEstablished()) {
             byte[] message = createApplyConfigRequest();
             transport.sendConfigData(PROVISIONING_CONFIG_PATH, message, new ResponseListener() {
                 @Override
@@ -180,7 +184,7 @@ public class Provision {
                             provisioningListener.OnApplyConfigurationsFailed();
                         }
                     }
-                    if(actionListener != null) {
+                    if (actionListener != null) {
                         actionListener.onComplete(status, null);
                     }
                 }
@@ -190,7 +194,7 @@ public class Provision {
                     if (provisioningListener != null) {
                         provisioningListener.OnApplyConfigurationsFailed();
                     }
-                    if(actionListener != null) {
+                    if (actionListener != null) {
                         actionListener.onComplete(Constants.Status.InternalError, e);
                     }
                 }
@@ -248,8 +252,8 @@ public class Provision {
         WifiConstants.WifiStationState wifiStationState = WifiConstants.WifiStationState.Disconnected;
         WifiConstants.WifiConnectFailedReason failedReason = WifiConstants.WifiConnectFailedReason.UNRECOGNIZED;
 
-        if(responseData == null) {
-            return new Object[] { wifiStationState, failedReason };
+        if (responseData == null) {
+            return new Object[]{wifiStationState, failedReason};
         }
 
         byte[] decryptedData = this.security.decrypt(responseData);
@@ -260,7 +264,7 @@ public class Provision {
         } catch (InvalidProtocolBufferException e) {
             e.printStackTrace();
         }
-        return new Object[] {wifiStationState, failedReason};
+        return new Object[]{wifiStationState, failedReason};
     }
 
     private void pollForWifiConnectionStatus(final WifiStateListener wifiStateListener) {
