@@ -367,11 +367,6 @@ char* IRAM_ATTR esp_log_system_timestamp(void)
         struct timespec tv;
         time_t now;
 
-        if (bufferLock == 0)
-        {
-            _lock_init(&bufferLock);
-        }
-
         time(&now);
         localtime_r(&now, &timeinfo);
         clock_gettime(CLOCK_REALTIME, &tv);
