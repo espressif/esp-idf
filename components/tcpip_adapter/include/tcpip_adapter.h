@@ -11,20 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
+#warning "This header is deprecated, please use new network related API in esp_netif.h"
+#include "esp_netif.h"
+#endif
 
 #ifndef _TCPIP_ADAPTER_H_
 #define _TCPIP_ADAPTER_H_
 
-#warning "This header is deprecated, please use new network related API in esp_netif.h"
-
 #include "esp_netif.h"
+
 #include "tcpip_adapter_types.h"
 
 /**
  * @brief tcpip adapter legacy init. It is used only to set the compatibility mode of esp-netif, which
  * will enable backward compatibility of esp-netif.
  */
-void tcpip_adapter_init(void);
+void tcpip_adapter_init(void)  __attribute__ ((deprecated));
 
 /**
  * @brief Compatiblity mode: convert the esp-netif handle to tcpip_adapter legacy interface enum

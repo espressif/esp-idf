@@ -26,7 +26,6 @@ static struct netif *g_last_netif = NULL;
 
 // LWIP netif specific defines
 struct esp_netif_netstack_config {
-    esp_netif_netstack_base_config_t base;
     err_t (*init_fn)(struct netif*);
     void (*input_fn)(struct netif *netif, void *buffer, size_t len, void *eb);
 };
@@ -35,8 +34,7 @@ err_t testnetif_init(struct netif *netif);
 
 void testnetif_input(struct netif *netif, void *buffer, size_t len, void *eb);
 
-const struct esp_netif_netstack_config _g_test_netif_stack_config = { { ESP_NETIF_NETWORK_STACK_IS_LWIP }, testnetif_init, testnetif_input};
-
+const struct esp_netif_netstack_config _g_test_netif_stack_config = { testnetif_init, testnetif_input};
 
 err_t testnetif_output(struct netif *netif, struct pbuf *p)
 {

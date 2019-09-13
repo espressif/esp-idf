@@ -130,15 +130,6 @@ typedef enum esp_netif_flags {
     ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4
 } esp_netif_flags_t;
 
-typedef enum esp_netif_type {
-    ESP_NETIF_TYPE_UNKNOWN,
-    ESP_NETIF_TYPE_STA,
-    ESP_NETIF_TYPE_AP,
-    ESP_NETIF_TYPE_ETH,
-    ESP_NETIF_TYPE_OTHER,
-    ESP_NETIF_TYPE_MAX
-} esp_netif_type_t;
-
 typedef enum esp_netif_ip_event_type {
     ESP_NETIF_IP_EVENT_GOT_IP = 1,
     ESP_NETIF_IP_EVENT_LOST_IP = 2,
@@ -158,8 +149,8 @@ typedef struct esp_netif_inherent_config {
     esp_netif_ip_info_t* ip_info;    /*!< initial ip address for this interface */
     uint32_t get_ip_event;           /*!< event id to be raised when interface gets an IP */
     uint32_t lost_ip_event;          /*!< event id to be raised when interface losts its IP */
-    esp_netif_type_t if_type;        /*!< enum type of the interface */
     const char * if_key;             /*!< string identifier of the interface */
+    const char * if_desc;            /*!< textual description of the interface */
     int route_prio;                  /*!< numeric priority of this interface to become a default
                                           routing if (if other netifs are up) */
 } esp_netif_inherent_config_t;
@@ -191,15 +182,6 @@ typedef struct esp_netif_driver_ifconfig esp_netif_driver_ifconfig_t;
 /**
  * @brief  Specific L3 network stack configuration
  */
-typedef enum esp_netif_netstack_type {
-    ESP_NETIF_NETWORK_STACK_IS_LWIP = 0,
-    ESP_NETIF_NETWORK_STACK_IS_LOOPBACK = 1,
-    ESP_NETIF_NETWORK_STACK_MAX,
-} esp_netif_netstack_type_t;
-
-typedef struct esp_netif_netstack_base_config {
-    esp_netif_netstack_type_t type;
-} esp_netif_netstack_base_config_t;
 
 typedef struct esp_netif_netstack_config esp_netif_netstack_config_t;
 

@@ -28,30 +28,6 @@
 
 static const char *TAG = "esp_netif_handlers";
 
-#define _STR(x) #x
-
-/**
- * @brief This function converts interface type to string, which
- * helps with backward compatibility of test infrastructure
- * to check for standard message that specific interface (sta, ap, eth)
- * obtained IP address
- */
-static const char* get_netif_type(esp_netif_t* netif) {
-    const char* s_esp_netif_type_desc[] = {
-            _STR(ESP_NETIF_TYPE_UNKNOWN),
-            "sta",
-            "ap",
-            "eth",
-            _STR(ESP_NETIF_TYPE_OTHER)
-    };
-    size_t type_nr = esp_netif_get_type(netif);
-    if (type_nr > sizeof(s_esp_netif_type_desc)/sizeof(s_esp_netif_type_desc[0])) {
-        type_nr = 0;
-    }
-    return s_esp_netif_type_desc[type_nr];
-}
-
-
 void esp_netif_action_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
     ESP_LOGD(TAG, "esp_netif action has started with netif%p from event_id=%d", esp_netif, event_id);
@@ -117,7 +93,7 @@ void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t eve
 {
     ESP_LOGD(TAG, "esp_netif action got_ip with netif%p from event_id=%d", esp_netif, event_id);
     const ip_event_got_ip_t *event = (const ip_event_got_ip_t *) data;
-    ESP_LOGI(TAG, "%s ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR, get_netif_type(esp_netif),
+    ESP_LOGI(TAG, "%s ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR, esp_netif_get_desc(esp_netif),
              IP2STR(&event->ip_info.ip),
              IP2STR(&event->ip_info.netmask),
              IP2STR(&event->ip_info.gw));

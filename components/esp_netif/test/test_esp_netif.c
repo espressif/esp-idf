@@ -4,9 +4,7 @@
 
 TEST_CASE("esp_netif: init and destroy", "[esp_netif][leaks=0]")
 {
-    esp_netif_inherent_config_t base = {};
-    const esp_netif_netstack_base_config_t stack = { .type = ESP_NETIF_NETWORK_STACK_IS_LWIP };
-    esp_netif_config_t cfg = { .base = &base, .stack = (const esp_netif_netstack_config_t*)&stack };
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
     esp_netif_t *esp_netif = esp_netif_new(NULL);
 
     TEST_ASSERT_EQUAL(NULL, esp_netif);

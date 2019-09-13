@@ -24,17 +24,14 @@
 //
 
 static const struct esp_netif_netstack_config s_eth_netif_config = {
-        .base = { .type = ESP_NETIF_NETWORK_STACK_IS_LWIP },
         .init_fn = ethernetif_init,
         .input_fn = ethernetif_input
 };
 static const struct esp_netif_netstack_config s_wifi_netif_config_ap = {
-        .base = { .type = ESP_NETIF_NETWORK_STACK_IS_LWIP },
         .init_fn = wlanif_init_ap,
         .input_fn = wlanif_input
 };
 static const struct esp_netif_netstack_config s_wifi_netif_config_sta = {
-        .base = { .type = ESP_NETIF_NETWORK_STACK_IS_LWIP },
         .init_fn = wlanif_init_sta,
         .input_fn = wlanif_input
 };

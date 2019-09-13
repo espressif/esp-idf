@@ -38,7 +38,7 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config = {
         .lost_ip_event = IP_EVENT_STA_LOST_IP,
         .get_ip_event = IP_EVENT_STA_GOT_IP,
         .if_key = "WIFI_STA_DEF",
-        .if_type = ESP_NETIF_TYPE_STA,
+        .if_desc = "sta",
         .route_prio = 100
 };
 
@@ -53,7 +53,7 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = {
         .flags = ESP_NETIF_DHCPS | ESP_NETIF_FLAG_AUTOUP,
         .ip_info = (esp_netif_ip_info_t*)&soft_ap_ip,
         .if_key = "WIFI_AP_DEF",
-        .if_type = ESP_NETIF_TYPE_AP,
+        .if_desc = "ap",
         .route_prio = 10
 };
 
@@ -62,6 +62,6 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = {
         .lost_ip_event = 0,
         .flags = ESP_NETIF_DHCPC | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
         .if_key = "ETH_DEF",
-        .if_type = ESP_NETIF_TYPE_ETH,
+        .if_desc = "eth",
         .route_prio = 50
 };
