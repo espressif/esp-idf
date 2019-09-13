@@ -71,7 +71,8 @@
 #include "esp_flash_encrypt.h"
 #include "pm_impl.h"
 #include "trax.h"
-#include "bootloader_common.h"
+#include "esp_ota_ops.h"
+#include "bootloader_flash_config.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -162,8 +163,6 @@ void IRAM_ATTR call_start_cpu0()
         abort();
 #endif
     }
-# else  // If psram is uninitialized, we need to improve the flash cs timing.
-    bootloader_common_set_flash_cs_timing();
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
@@ -387,6 +386,20 @@ void start_cpu0_default(void)
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
     esp_core_dump_init();
+#endif
+
+    bootloader_flash_update_id();
+#if !CONFIG_SPIRAM_BOOT_INIT
+    // Read the application binary image header. This will also decrypt the header if the image is encrypted.
+    esp_image_header_t fhdr = {0};
+    // This assumes that DROM is the first segment in the application binary, i.e. that we can read
+    // the binary header through cache by accessing SOC_DROM_LOW address.
+    memcpy(&fhdr, (void*) SOC_DROM_LOW, sizeof(fhdr));
+    // If psram is uninitialized, we need to improve some flash configuration.
+    bootloader_flash_clock_config(&fhdr);
+    bootloader_flash_gpio_config(&fhdr);
+    bootloader_flash_dummy_config(&fhdr);
+    bootloader_flash_cs_timing_config();
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
