@@ -21,7 +21,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import kconfiglib
+import sys
+
+try:
+    from . import kconfiglib
+except Exception:
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+    import kconfiglib
 
 # Indentation to be used in the generated file
 INDENT = '    '
