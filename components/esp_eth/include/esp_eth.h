@@ -117,6 +117,21 @@ typedef struct {
 esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_t *out_hdl);
 
 /**
+* @brief Start ethernet driver **ONLY** in standalone mode, i.e. without TCP/IP stack
+*
+* Note that ethernet driver is typically started as soon as it is attached to esp-netif.
+* This API should only be called if ethernet is used separately without esp-netif, for example
+* when esp_eth_config_t.stack_input is not NULL.
+*
+* @param[in] eth_handle handle of Ethernet driver
+*
+* @return
+*       - ESP_OK: starts ethernet driver
+*       - ESP_ERR_INVALID_STATE: if event loop hasn't been initialized
+*/
+esp_err_t esp_eth_driver_start(esp_eth_handle_t eth_handle);
+
+/**
 * @brief Uninstall Ethernet driver
 *
 * @param[in] hdl: handle of Ethernet driver
