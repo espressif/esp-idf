@@ -7,11 +7,16 @@ from __future__ import print_function
 import argparse
 import confgen
 import json
-import kconfiglib
 import os
 import sys
 import tempfile
 from confgen import FatalError, __version__
+
+try:
+    from . import kconfiglib
+except Exception:
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+    import kconfiglib
 
 # Min/Max supported protocol versions
 MIN_PROTOCOL_VERSION = 1

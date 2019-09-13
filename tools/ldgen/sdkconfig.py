@@ -19,11 +19,11 @@ from pyparsing import Word, alphanums, printables, Combine, Literal, hexnums, qu
 
 import sys
 try:
-    import kconfiglib
-except ImportError:
+    from . import kconfiglib
+except Exception:
     parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     kconfig_new_dir = os.path.abspath(parent_dir_name + "/kconfig_new")
-    sys.path.append(kconfig_new_dir)
+    sys.path.insert(0, kconfig_new_dir)
     import kconfiglib
 
 
