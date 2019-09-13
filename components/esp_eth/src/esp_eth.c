@@ -151,16 +151,9 @@ static void eth_check_link_timer_cb(TimerHandle_t xTimer)
     phy->get_link(phy);
 }
 
-////////////////////////////////User face APIs////////////////////////////////////////////////
-// User has to pass the handle of Ethernet driver to each API.
-// Different Ethernet driver instance is identified with a unique handle.
-// It's helpful for us to support multiple Ethernet port on ESP32.
-//////////////////////////////////////////////////////////////////////////////////////////////
-
-static esp_err_t esp_eth_driver_start(esp_netif_t * esp_netif, void * args)
+static esp_err_t esp_eth_post_attach_driver_start(esp_netif_t * esp_netif, void * args)
 {
     uint8_t eth_mac[6];
-    esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = args;
     eth_driver->base.netif = esp_netif;
 
@@ -177,6 +170,18 @@ static esp_err_t esp_eth_driver_start(esp_netif_t * esp_netif, void * args)
 
     esp_netif_set_mac(esp_netif, eth_mac);
     ESP_LOGI(TAG, "ETH netif started");
+    return esp_eth_driver_start(eth_driver);
+}
+
+////////////////////////////////User face APIs////////////////////////////////////////////////
+// User has to pass the handle of Ethernet driver to each API.
+// Different Ethernet driver instance is identified with a unique handle.
+// It's helpful for us to support multiple Ethernet port on ESP32.
+//////////////////////////////////////////////////////////////////////////////////////////////
+esp_err_t esp_eth_driver_start(esp_eth_handle_t eth_handle)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = eth_handle;
 
     ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
               "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
@@ -216,7 +221,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
                                    eth_driver, eth_check_link_timer_cb);
     ETH_CHECK(eth_driver->check_link_timer, "create eth_link_timer failed", err_create_timer, ESP_FAIL);
     ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS, "start eth_link_timer failed", err_start_timer, ESP_FAIL);
-    eth_driver->base.post_attach = esp_eth_driver_start;
+    eth_driver->base.post_attach = esp_eth_post_attach_driver_start;
     *out_hdl = (esp_eth_handle_t)eth_driver;
     tcpip_adapter_start_eth(eth_driver);
     return ESP_OK;

@@ -185,6 +185,7 @@ static void initialize_ethernet(void)
     config.stack_input = pkt_eth2wifi;
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
     esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
+    esp_eth_driver_start(s_eth_handle);
 }
 
 static void initialize_wifi(void)
