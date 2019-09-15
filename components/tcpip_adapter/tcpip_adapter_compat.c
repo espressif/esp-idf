@@ -26,8 +26,7 @@
 extern void _esp_wifi_set_default_ap_netif(esp_netif_t* esp_netif);
 extern void _esp_wifi_set_default_sta_netif(esp_netif_t* esp_netif);
 extern esp_err_t _esp_wifi_set_default_wifi_handlers(void);
-extern esp_err_t esp_eth_set_default_handlers(void *esp_netif);
-extern esp_err_t esp_wifi_clear_default_wifi_handlers(void);
+extern esp_err_t _esp_wifi_clear_default_wifi_handlers(void);
 
 //
 // Purpose of this module is to provide backward compatible version of esp-netif
@@ -45,15 +44,14 @@ static const char* s_netif_keyif[TCPIP_ADAPTER_IF_MAX] = {
 
 static bool s_tcpip_adapter_compat = false;
 
-void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
-
 static void wifi_create_and_start_ap(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
     if (s_esp_netifs[TCPIP_ADAPTER_IF_AP] == NULL) {
         esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_AP();
         esp_netif_t *ap_netif = esp_netif_new(&cfg);
 
-        esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_AP, ap_netif);
+        esp_netif_attach_wifi_ap(ap_netif);
+        esp_wifi_set_default_wifi_sta_handlers();
         s_esp_netifs[TCPIP_ADAPTER_IF_AP] = ap_netif;
     }
 }
@@ -64,7 +62,8 @@ static void wifi_create_and_start_sta(void *esp_netif, esp_event_base_t base, in
         esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
         esp_netif_t *sta_netif = esp_netif_new(&cfg);
 
-        esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, sta_netif);
+        esp_netif_attach_wifi_station(sta_netif);
+        esp_wifi_set_default_wifi_sta_handlers();
         s_esp_netifs[TCPIP_ADAPTER_IF_STA] = sta_netif;
     }
 }
@@ -168,7 +167,7 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers(void)
 
 esp_err_t tcpip_adapter_clear_default_wifi_handlers(void)
 {
-    return esp_wifi_clear_default_wifi_handlers();
+    return _esp_wifi_clear_default_wifi_handlers();
 }
 
 tcpip_adapter_if_t tcpip_adapter_if_from_esp_netif(esp_netif_t *esp_netif)
