@@ -16,6 +16,7 @@ idf_component_register(SRCS "src/coexist.c"
                             "src/smartconfig_ack.c"
                             "src/wifi_init.c"
                             "src/wifi_default.c"
+                            "src/wifi_netif.c"
                     INCLUDE_DIRS "include" "${idf_target}/include"
                     PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif
                     LDFRAGMENTS "${ldfragments}")

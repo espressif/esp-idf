@@ -137,7 +137,8 @@ static void start(void)
 
     assert(netif);
 
-    esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, netif);
+    esp_netif_attach_wifi_station(netif);
+    esp_wifi_set_default_wifi_sta_handlers();
 
     s_example_esp_netif = netif;
 

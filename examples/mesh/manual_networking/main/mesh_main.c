@@ -8,7 +8,6 @@
 */
 #include <string.h>
 #include "esp_wifi.h"
-#include "esp_wifi_default.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -312,8 +311,8 @@ static esp_err_t create_wifi_netifs(void)
     };
     esp_netif_t *netif_ap = esp_netif_new(&cfg_ap);
     assert(netif_ap);
-    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_AP, netif_ap));
-
+    ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
 
     memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_STA, sizeof(netif_cfg));
     netif_cfg.flags &= ~ESP_NETIF_DHCPC;
@@ -324,7 +323,8 @@ static esp_err_t create_wifi_netifs(void)
 
     netif_sta = esp_netif_new(&cfg_sta);
     assert(netif_sta);
-    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_driver_and_handlers(ESP_IF_WIFI_STA, netif_sta));
+    ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif_sta));
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
     return ESP_OK;
 }
 

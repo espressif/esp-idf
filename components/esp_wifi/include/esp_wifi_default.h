@@ -16,26 +16,42 @@
 #define _ESP_WIFI_DEFAULT_H
 
 /**
- * @brief Sets default wifi event handlers for STA interface
+ * @brief Attaches wifi station interface to supplied netif
  *
- * @param esp_netif instance of corresponding if object
+ * @param esp_netif instance to attach the wifi station to
  *
  * @return
- *  - ESP_OK on success, error returned from esp_event_handler_register if failed
+ *  - ESP_OK on success
+ *  - ESP_FAIL if attach failed
  */
-esp_err_t esp_wifi_set_default_wifi_sta_handlers(void *esp_netif);
+esp_err_t esp_netif_attach_wifi_station(esp_netif_t *esp_netif);
+
+/**
+ * @brief Attaches wifi soft AP interface to supplied netif
+ *
+ * @param esp_netif instance to attach the wifi AP to
+ *
+ * @return
+ *  - ESP_OK on success
+ *  - ESP_FAIL if attach failed
+ */
+esp_err_t esp_netif_attach_wifi_ap(esp_netif_t *esp_netif);
 
 /**
  * @brief Sets default wifi event handlers for STA interface
  *
- * @param esp_netif instance of corresponding if object
+ * @return
+ *  - ESP_OK on success, error returned from esp_event_handler_register if failed
+ */
+esp_err_t esp_wifi_set_default_wifi_sta_handlers(void);
+
+/**
+ * @brief Sets default wifi event handlers for STA interface
  *
  * @return
  *  - ESP_OK on success, error returned from esp_event_handler_register if failed
  */
-esp_err_t esp_wifi_set_default_wifi_driver_and_handlers(wifi_interface_t wifi_if, void *esp_netif);
-
-esp_err_t esp_wifi_set_default_wifi_ap_handlers(void *esp_netif);
+esp_err_t esp_wifi_set_default_wifi_ap_handlers(void);
 
 /**
  * @brief Clears default wifi event handlers for supplied network interface
