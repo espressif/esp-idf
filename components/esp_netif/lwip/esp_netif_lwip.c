@@ -358,19 +358,27 @@ static esp_err_t esp_netif_init_configuration(esp_netif_t *esp_netif, const esp_
 esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
 {
     // mandatory configuration must be provided when creating esp_netif object
-    if (esp_netif_config == NULL) {
+    if (esp_netif_config == NULL ||
+        esp_netif_config->base->if_key == NULL ||
+        NULL != esp_netif_get_handle_from_ifkey(esp_netif_config->base->if_key)) {
+        ESP_LOGE(TAG, "%s: Failed to configure netif with config=%p (config or if_key is NULL or duplicate key)",
+        __func__,  esp_netif_config);
         return NULL;
     }
 
     // Create parent esp-netif object
     esp_netif_t *esp_netif = calloc(1, sizeof(struct esp_netif_obj));
     if (!esp_netif) {
+        ESP_LOGE(TAG, "Failed to allocate %d bytes (fee heap size %d)", sizeof(struct esp_netif_obj),
+                 esp_get_free_heap_size());
         return NULL;
     }
 
     // Create ip info
     esp_netif_ip_info_t *ip_info = calloc(1, sizeof(esp_netif_ip_info_t));
     if (!ip_info) {
+        ESP_LOGE(TAG, "Failed to allocate %d bytes (fee heap size %d)", sizeof(esp_netif_ip_info_t),
+                 esp_get_free_heap_size());
         free(esp_netif);
         return NULL;
     }
@@ -379,6 +387,8 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     // creating another ip info (to store old ip)
     ip_info = calloc(1, sizeof(esp_netif_ip_info_t));
     if (!ip_info) {
+        ESP_LOGE(TAG, "Failed to allocate %d bytes (fee heap size %d)", sizeof(esp_netif_ip_info_t),
+                 esp_get_free_heap_size());
         free(esp_netif->ip_info);
         free(esp_netif);
         return NULL;
@@ -388,6 +398,8 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     // Create underlying lwip netif
     struct netif * lwip_netif = calloc(1, sizeof(struct netif));
     if (!lwip_netif) {
+        ESP_LOGE(TAG, "Failed to allocate %d bytes (fee heap size %d)", sizeof(struct netif),
+                 esp_get_free_heap_size());
         free(esp_netif->ip_info_old);
         free(esp_netif->ip_info);
         free(esp_netif);
