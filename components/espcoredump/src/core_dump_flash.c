@@ -200,8 +200,8 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_
 
 void esp_core_dump_to_flash(XtExcFrame *frame)
 {
-    core_dump_write_config_t wr_cfg;
-    core_dump_write_flash_data_t wr_data;
+    static core_dump_write_config_t wr_cfg;
+    static core_dump_write_flash_data_t wr_data;
 
     core_dump_crc_t crc = esp_core_dump_calc_flash_config_crc();
     if (s_core_flash_config.partition_config_crc != crc) {
@@ -214,8 +214,10 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
         return;
     }
 
-    /* init non-OS flash access critical section */
+#if CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+    // init non-OS flash access critical section
     spi_flash_guard_set(&g_flash_guard_no_os_ops);
+#endif
 
     memset(&wr_cfg, 0, sizeof(wr_cfg));
     wr_cfg.prepare = esp_core_dump_flash_write_prepare;

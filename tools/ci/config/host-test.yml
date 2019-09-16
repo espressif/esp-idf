@@ -205,9 +205,9 @@ test_esp_err_to_name_on_host:
   script:
     - cd ${IDF_PATH}/tools/
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./gen_esp_err_to_name.py
-    - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
-    - git diff --exit-code -- ../components/esp32/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
 
 test_esp_efuse_table_on_host:
   extends: .host_test_template
@@ -221,7 +221,7 @@ test_esp_efuse_table_on_host:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
     - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
-    - git diff --exit-code -- ../components/esp32/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
     - cd ${IDF_PATH}/components/efuse/test_efuse_host
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
 

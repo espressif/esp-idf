@@ -129,7 +129,7 @@ endfunction()
 #
 function(__build_init idf_path)
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to
-    add_custom_target(__idf_build_target)
+    add_library(__idf_build_target STATIC IMPORTED)
 
     set_default(python "python")
 
@@ -295,7 +295,7 @@ endmacro()
 #
 macro(__build_set_default var default)
     set(_var __${var})
-    if(${_var})
+    if(NOT "${_var}" STREQUAL "")
         idf_build_set_property(${var} "${${_var}}")
     else()
         idf_build_set_property(${var} "${default}")
@@ -330,7 +330,7 @@ endfunction()
 # @param[in, optional] PROJECT_DIR (single value) directory of the main project the buildsystem
 #                      is processed for; defaults to CMAKE_SOURCE_DIR
 # @param[in, optional] PROJECT_VER (single value) version string of the main project; defaults
-#                      to 0.0.0
+#                      to 1
 # @param[in, optional] PROJECT_NAME (single value) main project name, defaults to CMAKE_PROJECT_NAME
 # @param[in, optional] SDKCONFIG (single value) sdkconfig output path, defaults to PROJECT_DIR/sdkconfig
 #                       if PROJECT_DIR is set and CMAKE_SOURCE_DIR/sdkconfig if not
@@ -366,7 +366,7 @@ macro(idf_build_process target)
 
     __build_set_default(PROJECT_DIR ${CMAKE_SOURCE_DIR})
     __build_set_default(PROJECT_NAME ${CMAKE_PROJECT_NAME})
-    __build_set_default(PROJECT_VER "0.0.0")
+    __build_set_default(PROJECT_VER 1)
     __build_set_default(BUILD_DIR ${CMAKE_BINARY_DIR})
 
     idf_build_get_property(project_dir PROJECT_DIR)

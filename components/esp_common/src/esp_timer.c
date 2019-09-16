@@ -104,7 +104,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (args->callback == NULL) {
+    if (args == NULL || args->callback == NULL || out_handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_timer_handle_t result = (esp_timer_handle_t) calloc(1, sizeof(*result));
@@ -123,6 +123,9 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
 
 esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!is_initialized() || timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -136,6 +139,9 @@ esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t time
 
 esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!is_initialized() || timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -150,6 +156,9 @@ esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t 
 
 esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!is_initialized() || !timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }

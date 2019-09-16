@@ -432,6 +432,22 @@ esp_err_t esp_hf_client_request_last_voice_tag_number(void)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_hf_client_send_nrec(void)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_HF_CLIENT;
+    msg.act = BTC_HF_CLIENT_SEND_NREC_EVT;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, NULL, 0, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 esp_err_t esp_hf_client_register_data_callback(esp_hf_client_incoming_data_cb_t recv,
                                                esp_hf_client_outgoing_data_cb_t send)
 {

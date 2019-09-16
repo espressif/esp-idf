@@ -11,7 +11,7 @@ JTAG 调试
 :ref:`jtag-debugging-selecting-jtag-adapter`
     介绍有关 JTAG 硬件适配器的选择及参照标准。
 :ref:`jtag-debugging-setup-openocd`
-    介绍如何在 :doc:`Windows <setup-openocd-windows>`，:doc:`Linux <setup-openocd-linux>` 和 :doc:`MacOS <setup-openocd-macos>` 操作系统上安装预编译好的 OpenOCD 软件包。
+    介绍如何安装官方预编译好的 OpenOCD 软件包并验证是否安装成功。
 :ref:`jtag-debugging-configuring-esp32-target`
     介绍如何设置 OpenOCD 软件并安装 JTAG 硬件适配器，这两者共同组成最终的调试目标。
 :ref:`jtag-debugging-launching-debugger`
@@ -81,44 +81,28 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 安装 OpenOCD
 ------------
 
-本节会介绍 OpenOCD 软件包的安装，如果你想从源码构建 OpenOCD，请参阅 :ref:`jtag-debugging-building-openocd`。默认所有 OpenOCD 相关的文件都会被存放到 ``~/esp/openocd-esp32`` 目录下，你也可以选择任何其它的目录，但相应地，你也需要调整本文档示例中使用的相对路径。
+.. highlight:: bash
 
-.. toctree::
-    :hidden:
+如果你已经按照 :doc:`快速入门 <../../get-started/index>` 一文中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 OpenOCD 已经被默认安装到了你的开发系统中。在 :ref:`设置开发环境 <get-started-set-up-env>` 结束后，你应该能够在终端中运行如下 OpenOCD 命令::
 
-    Windows <setup-openocd-windows>
-    Linux <setup-openocd-linux> 
-    MacOS <setup-openocd-macos> 
+    openocd --version
 
-从下面选择你使用的操作系统，并按照提示进一步设置 OpenOCD。
+.. highlight:: none
 
-+-------------------+-------------------+-------------------+
-| |windows-logo|    | |linux-logo|      | |macos-logo|      |
-+-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
-+-------------------+-------------------+-------------------+
+终端会输出以下信息（实际版本号可能会比这里列出的更新）::
 
-.. |windows-logo| image:: ../../../_static/windows-logo.png
-    :target: ../jtag-debugging/setup-openocd-windows.html
+    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
+    Licensed under GNU GPL v2
+    For bug reports, read
+        http://openocd.org/doc/doxygen/bugs.html
 
-.. |linux-logo| image:: ../../../_static/linux-logo.png
-    :target: ../jtag-debugging/setup-openocd-linux.html
+你还可以检查 ``OPENOCD_SCRIPTS`` 环境变量的值来确认 OpenOCD 配置文件的路径，Linux 和 macOS 用户可以在终端输入 ``echo $OPENOCD_SCRIPTS``，Windows 用户需要输入 ``echo %OPENOCD_SCRIPTS%``。如果终端打印了有效的路径，则表明 OpenOCD 已经被正确安装。
 
-.. |macos-logo| image:: ../../../_static/macos-logo.png
-    :target: ../jtag-debugging/setup-openocd-macos.html
-
-.. _Windows: setup-openocd-windows.html
-.. _Linux: setup-openocd-linux.html
-.. _Mac OS: setup-openocd-macos.html
-
-安装完成后，请熟悉一下 ``openocd-esp32`` 安装路径下的两个关键目录：
-
--  ``bin`` 目录下包含了 OpenOCD 的可执行文件
--  ``share\openocd\scripts`` 目录下包含了一些配置文件，它们会作为命令行参数与 OpenOCD 一同被调用
+如果上述步骤没有成功执行，请返回快速入门手册，参考其中 :ref:`设置安装工具 <get-started-set-up-tools>` 章节的说明。
 
 .. note::
 
-    上面的目录名称和结构特定于 OpenOCD 的二进制发行版，它们会被用在本指南中的 OpenOCD 示例中。从源码构建得到的 OpenOCD 存放的目录可能会不一样，所以调用 OpenOCD 的方式也会略有不同。更多详细信息请参阅 :ref:`jtag-debugging-building-openocd`。
+    另外，我们还可以从源代码编译 OpenOCD 工具，相关详细信息请参阅 :ref:`jtag-debugging-building-openocd` 章节。
 
 
 .. _jtag-debugging-configuring-esp32-target:
@@ -154,23 +138,20 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 .. highlight:: bash
 
-打开终端，进入安装目录并启动 OpenOCD::
+打开终端，按照快速入门中的指南 :ref:`设置好开发环境 <get-started-set-up-env>` ，然后运行如下命令，启动 OpenOCD（该命令在 Windows，Linux，和 macOS 中通用）::
 
-    cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
 
 .. note::
 
-    如上所示，``-f`` 后面的文件是特定于板载 :ref:`ESP-WROOM-32 <esp-modules-and-boards-esp32-wroom-32>` 模组的 ESP-WROVER-KIT 开发板的。您可能需要根据具体使用的硬件而提供不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
-
-.. include:: ./windows-openocd-note.rst
+    上述命令中 ``-f`` 选项后跟的配置文件专用于板载 :ref:`ESP-WROOM-32 <esp-modules-and-boards-esp32-wroom-32>` 模组的 ESP-WROVER-KIT 开发板。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
 
 .. highlight:: none
 
-现在应该可以看到类似下面的输出（此日志来自 ESP-WROVER-KIT）::
+现在应该可以看到如下输入（此日志来自 ESP-WROVER-KIT）::
 
-    user-name@computer-name:~/esp/openocd-esp32$ bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f  board/esp-wroom-32.cfg
-    Open On-Chip Debugger 0.10.0-dev-ged7b1a9 (2017-07-10-07:16)
+    user-name@computer-name:~/esp/esp-idf$ openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
             http://openocd.org/doc/doxygen/bugs.html
@@ -198,10 +179,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 除此以外，还支持使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下::
 
-    cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32  filename.bin 0x10000 verify exit"
-
-.. include:: ./windows-openocd-note.rst
+    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
 
 其中 OpenOCD 的烧写命令 ``program_esp32`` 具有以下格式：
 
@@ -265,13 +243,28 @@ ESP32 的工具链中带有 GNU 调试器（简称 GDB） ``xtensa-esp32-elf-gdb
     Linux <building-openocd-linux>
     MacOS <building-openocd-macos>
 
-.. note::
 
-    本文档演示所使用的 OpenOCD 是 :ref:`jtag-debugging-setup-openocd` 章节中介绍的预编译好的二进制发行版，如果要使用本地从源代码构建得到的 OpenOCD 程序，需要将相应可执行文件的路径修改为 ``src/openocd``，并将配置文件的路径修改为 ``-s tcl``。
+本文档演示所使用的 OpenOCD 是 :ref:`jtag-debugging-setup-openocd` 章节中介绍的预编译好的二进制发行版。
 
-    具体使用示例如下::
+.. highlight:: bash
 
-        src/openocd -s tcl -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+如果要使用本地从源代码编译的 OpenOCD 程序，需要将相应可执行文件的路径修改为 ``src/openocd``，并设置 ``OPENOCD_SCRIPTS`` 环境变量，这样 OpenOCD 才能找到配置文件。Linux 和 macOS 用户可以执行::
+
+    cd ~/esp/openocd-esp32
+    export OPENOCD_SCRIPTS=$PWD/tcl
+
+Windows 用户可以执行::
+
+    cd %USERPROFILE%\esp\openocd-esp32
+    set "OPENOCD_SCRIPTS=%CD%\tcl"
+
+运行本地编译的 OpenOCD 的示例如下（Linux 和 macOS 用户）::
+
+    src/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+
+Windows 用户::
+
+    src\openocd -f interface\ftdi\esp32_devkitj_v1.cfg -f board\esp-wroom-32.cfg
 
 
 .. _jtag-debugging-tips-and-quirks:

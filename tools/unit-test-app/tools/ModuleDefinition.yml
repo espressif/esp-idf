@@ -78,6 +78,11 @@ spi_flash_write:
     module abbr: DRV
     sub module: SPI
     sub module abbr: SPI
+flash_encryption:
+    module: Driver
+    module abbr: DRV
+    sub module: SPI
+    sub module abbr: SPI
 esp32:
     module: System
     module abbr: SYS

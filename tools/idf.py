@@ -36,6 +36,7 @@ import re
 import shutil
 import subprocess
 import sys
+import platform
 
 
 class FatalError(RuntimeError):
@@ -64,6 +65,9 @@ if "MSYSTEM" in os.environ:  # MSYS
 elif os.name == "nt":  # other Windows
     MAKE_CMD = "mingw32-make"
     MAKE_GENERATOR = "MinGW Makefiles"
+elif platform.system() == "FreeBSD":
+    MAKE_CMD = "gmake"
+    MAKE_GENERATOR = "Unix Makefiles"
 else:
     MAKE_CMD = "make"
     MAKE_GENERATOR = "Unix Makefiles"
@@ -306,15 +310,6 @@ def build_target(target_name, ctx, args):
     _ensure_build_directory(args)
     generator_cmd = GENERATOR_CMDS[args.generator]
 
-    if args.ccache:
-        # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
-        # (this means ccache hits can be shared between different projects. It may mean that some debug information
-        # will point to files in another project, if these files are perfect duplicates of each other.)
-        #
-        # It would be nicer to set these from cmake, but there's no cross-platform way to set build-time environment
-        # os.environ["CCACHE_BASEDIR"] = args.build_dir
-        # os.environ["CCACHE_NO_HASHDIR"] = "1"
-        pass
     if args.verbose:
         generator_cmd += [GENERATOR_VERBOSE[args.generator]]
 
@@ -538,14 +533,65 @@ def get_default_serial_port():
 
 
 class PropertyDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(PropertyDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
+        else:
+            raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
 
 
 def init_cli():
     # Click is imported here to run it after check_environment()
     import click
+
+    class DeprecationMessage(object):
+        """Construct deprecation notice for help messages"""
+
+        def __init__(self, deprecated=False):
+            self.deprecated = deprecated
+            self.since = None
+            self.removed = None
+            self.custom_message = ""
+
+            if isinstance(deprecated, dict):
+                self.custom_message = deprecated.get("message", "")
+                self.since = deprecated.get("since", None)
+                self.removed = deprecated.get("removed", None)
+            elif isinstance(deprecated, str):
+                self.custom_message = deprecated
+
+        def full_message(self, type="Option"):
+            return "%s is deprecated %sand will be removed in%s.%s" % (
+                type,
+                "since %s " % self.since if self.since else "",
+                " %s" % self.removed if self.removed else " future versions",
+                " %s" % self.custom_message if self.custom_message else ""
+            )
+
+        def help(self, text, type="Option", separator=" "):
+            text = text or ""
+            return self.full_message(type) + separator + text if self.deprecated else text
+
+        def short_help(self, text):
+            text = text or ""
+            return ("Deprecated! " + text) if self.deprecated else text
+
+    def print_deprecation_warning(ctx):
+        """Prints deprectation warnings for arguments in given context"""
+        for option in ctx.command.params:
+            default = () if option.multiple else option.default
+            if isinstance(option, Option) and option.deprecated and ctx.params[option.name] != default:
+                print("Warning: %s" % DeprecationMessage(option.deprecated).
+                      full_message('Option "%s"' % option.name))
 
     class Task(object):
         def __init__(
@@ -569,6 +615,7 @@ def init_cli():
             self,
             name=None,
             aliases=None,
+            deprecated=False,
             dependencies=None,
             order_dependencies=None,
             **kwargs
@@ -576,6 +623,7 @@ def init_cli():
             super(Action, self).__init__(name, **kwargs)
 
             self.name = self.name or self.callback.__name__
+            self.deprecated = deprecated
 
             if aliases is None:
                 aliases = []
@@ -593,6 +641,11 @@ def init_cli():
 
             # Show first line of help if short help is missing
             self.short_help = self.short_help or self.help.split("\n")[0]
+
+            if deprecated:
+                deprecation = DeprecationMessage(deprecated)
+                self.short_help = deprecation.short_help(self.short_help)
+                self.help = deprecation.help(self.help, type="Command", separator="\n")
 
             # Add aliases to help string
             if aliases:
@@ -616,8 +669,21 @@ def init_cli():
 
                 self.callback = wrapped_callback
 
+        def invoke(self, ctx):
+            if self.deprecated:
+                print("Warning: %s" % DeprecationMessage(self.deprecated).full_message('Command "%s"' % self.name))
+                self.deprecated = False  # disable Click's built-in deprecation handling
+
+            # Print warnings for options
+            print_deprecation_warning(ctx)
+            return super(Action, self).invoke(ctx)
+
     class Argument(click.Argument):
-        """Positional argument"""
+        """
+        Positional argument
+
+        names - alias of 'param_decls'
+        """
 
         def __init__(self, **kwargs):
             names = kwargs.pop("names")
@@ -658,11 +724,27 @@ def init_cli():
     class Option(click.Option):
         """Option that knows whether it should be global"""
 
-        def __init__(self, scope=None, **kwargs):
+        def __init__(self, scope=None, deprecated=False, **kwargs):
+            """
+            Keyword arguments additional to Click's Option class:
+
+            names - alias of 'param_decls'
+            deprecated - marks option as deprecated. May be boolean, string (with custom deprecation message)
+            or dict with optional keys:
+                since: version of deprecation
+                removed: version when option will be removed
+                custom_message:  Additional text to deprecation warning
+            """
+
             kwargs["param_decls"] = kwargs.pop("names")
             super(Option, self).__init__(**kwargs)
 
+            self.deprecated = deprecated
             self.scope = Scope(scope)
+
+            if deprecated:
+                deprecation = DeprecationMessage(deprecated)
+                self.help = deprecation.help(self.help)
 
             if self.scope.is_global:
                 self.help += " This option can be used at most once either globally, or for one subcommand."
@@ -825,6 +907,7 @@ def init_cli():
             for task in tasks:
                 for key in list(task.action_args):
                     option = next((o for o in ctx.command.params if o.name == key), None)
+
                     if option and (option.scope.is_global or option.scope.is_shared):
                         local_value = task.action_args.pop(key)
                         global_value = global_args[key]
@@ -837,6 +920,9 @@ def init_cli():
                             )
                         if local_value != default:
                             global_args[key] = local_value
+
+            # Show warnings about global arguments
+            print_deprecation_warning(ctx)
 
             # Validate global arguments
             for action_callback in ctx.command.global_action_callbacks:
@@ -984,9 +1070,9 @@ def init_cli():
             },
             {
                 "names": ["--ccache/--no-ccache"],
-                "help": "Use ccache in build. Disabled by default.",
+                "help": "Use ccache in build. Disabled by default, unless IDF_CCACHE_ENABLE environment variable is set to a non-zero value.",
                 "is_flag": True,
-                "default": False,
+                "default": os.getenv("IDF_CCACHE_ENABLE") not in [None, "", "0"],
             },
             {
                 "names": ["-G", "--generator"],

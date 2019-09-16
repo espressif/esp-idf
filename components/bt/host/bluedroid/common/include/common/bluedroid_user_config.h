@@ -22,17 +22,12 @@
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
+#ifdef CONFIG_BTU_TASK_STACK_SIZE
+#define UC_BTU_TASK_STACK_SIZE              CONFIG_BTU_TASK_STACK_SIZE
+#else
+#define UC_BTU_TASK_STACK_SIZE              4096
+#endif
 
-#ifdef CONFIG_A2DP_SINK_TASK_STACK_SIZE
-#define UC_A2DP_SINK_TASK_STACK_SIZE        CONFIG_A2DP_SINK_TASK_STACK_SIZE
-#else
-#define UC_A2DP_SINK_TASK_STACK_SIZE        2048
-#endif
-#ifdef CONFIG_A2DP_SOURCE_TASK_STACK_SIZE
-#define UC_A2DP_SOURCE_TASK_STACK_SIZE      CONFIG_A2DP_SOURCE_TASK_STACK_SIZE
-#else
-#define UC_A2DP_SOURCE_TASK_STACK_SIZE      2048
-#endif
 
 /**********************************************************
  * Profile reference
@@ -176,6 +171,12 @@
 #define UC_BT_HFP_AUDIO_DATA_PATH_HCI           FALSE
 #endif
 
+//Wide Band Speech
+#ifdef CONFIG_BT_HFP_WBS_ENABLE
+#define UC_BT_HFP_WBS_ENABLE                    CONFIG_BT_HFP_WBS_ENABLE
+#else
+#define UC_BT_HFP_WBS_ENABLE                    FALSE
+#endif
 
 /**********************************************************
  * Memory reference

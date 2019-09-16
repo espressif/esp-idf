@@ -173,7 +173,7 @@ function(__component_add component_dir prefix)
     # 'override' components added earlier.
     if(NOT component_target IN_LIST component_targets)
         if(NOT TARGET ${component_target})
-            add_custom_target(${component_target} EXCLUDE_FROM_ALL)
+            add_library(${component_target} STATIC IMPORTED)
         endif()
         idf_build_set_property(__COMPONENT_TARGETS ${component_target} APPEND)
     endif()
@@ -213,6 +213,7 @@ function(__component_get_requirements)
     __component_write_properties(${component_properties_file})
 
     execute_process(COMMAND "${CMAKE_COMMAND}"
+        -D "ESP_PLATFORM=1"
         -D "BUILD_PROPERTIES_FILE=${build_properties_file}"
         -D "COMPONENT_PROPERTIES_FILE=${component_properties_file}"
         -D "COMPONENT_REQUIRES_FILE=${component_requires_file}"
@@ -271,7 +272,7 @@ macro(__component_add_sources sources)
         if(__EXCLUDE_SRCS)
             foreach(src ${__EXCLUDE_SRCS})
                 get_filename_component(src "${src}" ABSOLUTE)
-                list(REMOVE_ITEM source "${src}")
+                list(REMOVE_ITEM sources "${src}")
             endforeach()
         endif()
     endif()

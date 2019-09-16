@@ -96,12 +96,13 @@ endif()
 idf_build_get_property(idf_path IDF_PATH)
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(sdkconfig SDKCONFIG)
+idf_build_get_property(python PYTHON)
 
 externalproject_add(bootloader
     SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
     BINARY_DIR "${BOOTLOADER_BUILD_DIR}"
     CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
-                -DPYTHON_DEPS_CHECKED=1
+                -DPYTHON_DEPS_CHECKED=1 -DPYTHON=${python}
                 -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
                 ${sign_key_arg} ${ver_key_arg}
                 # LEGACY_INCLUDE_COMMON_HEADERS has to be passed in via cache variable since

@@ -354,7 +354,7 @@ esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, ip6_addr_t *
  * @param  ctx          The system event context
  * @param  event        The system event
  */
-esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event);
+esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event) __attribute__((deprecated));
 
 #ifdef __cplusplus
 }

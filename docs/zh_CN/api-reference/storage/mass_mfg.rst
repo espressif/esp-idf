@@ -1,1 +1,1 @@
-.. include:: /../../tools/mass_mfg/docs/README.rst
+.. include:: /../../tools/mass_mfg/docs/README_CN.rst

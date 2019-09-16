@@ -1,6 +1,8 @@
 FAT Filesystem Support
 ======================
 
+:link_to_translation:`zh_CN:[中文]`
+
 ESP-IDF uses the `FatFs <http://elm-chan.org/fsw/ff/00index_e.html>`_ library to work with FAT filesystems. FatFs resides in the ``fatfs`` component. Although the library can be used directly, many of its features can be accessed via VFS, using the C standard library and POSIX API functions.
 
 Additionally, FatFs has been modified to support the runtime pluggable disk I/O layer. This allows mapping of FatFs drives to physical disks at runtime.

@@ -40,6 +40,7 @@ SECTIONS
      *(.iram1 .iram1.*) /* catch stray IRAM_ATTR */
     *liblog.a:(.literal .text .literal.* .text.*)
     *libgcc.a:(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_clock.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_common.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_flash.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_random.*(.literal .text .literal.* .text.*)
@@ -53,6 +54,7 @@ SECTIONS
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
     *libsoc.a:rtc_wdt.*(.literal .text .literal.* .text.*)
+    *libsoc.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)

@@ -135,7 +135,8 @@ static bool msg_cache_match(struct bt_mesh_net_rx *rx,
     }
 
     /* Add to the cache */
-    msg_cache[msg_cache_next++] = hash;
+    rx->msg_cache_idx = msg_cache_next++;
+    msg_cache[rx->msg_cache_idx] = hash;
     msg_cache_next %= ARRAY_SIZE(msg_cache);
 
     return false;
@@ -722,6 +723,16 @@ u32_t bt_mesh_next_seq(void)
         bt_mesh_store_seq();
     }
 
+    if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) &&
+        bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
+        bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY)) {
+#if CONFIG_BLE_MESH_NODE
+        bt_mesh_beacon_ivu_initiator(true);
+#endif
+        bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
+        bt_mesh_net_sec_update(NULL);
+    }
+
     return seq;
 }
 
@@ -731,6 +742,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 {
     const u8_t *enc, *priv;
     u32_t seq;
+    u16_t dst;
     int err;
 
     BT_DBG("net_idx 0x%04x new_key %u len %u", sub->net_idx, new_key,
@@ -757,6 +769,9 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
     buf->data[3] = seq >> 8;
     buf->data[4] = seq;
 
+    /* Get destination, in case it's a proxy client */
+    dst = DST(buf->data);
+
     err = bt_mesh_net_encrypt(enc, &buf->b, BLE_MESH_NET_IVI_TX, false);
     if (err) {
         BT_ERR("%s, Encrypt failed (err %d)", __func__, err);
@@ -769,17 +784,15 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
         return err;
     }
 
-    bt_mesh_adv_send(buf, cb, cb_data);
-
-    if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) &&
-            bt_mesh.seq > IV_UPDATE_SEQ_LIMIT) {
-#if CONFIG_BLE_MESH_NODE
-        bt_mesh_beacon_ivu_initiator(true);
-#endif
-        bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
-        bt_mesh_net_sec_update(NULL);
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+            bt_mesh_proxy_relay(&buf->b, dst)) {
+            send_cb_finalize(cb, cb_data);
+            return 0;
+        }
     }
 
+    bt_mesh_adv_send(buf, cb, cb_data);
     return 0;
 }
 
@@ -891,15 +904,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
             /* Notify completion if this only went
              * through the Mesh Proxy.
              */
-            if (cb) {
-                if (cb->start) {
-                    cb->start(0, 0, cb_data);
-                }
-
-                if (cb->end) {
-                    cb->end(0, cb_data);
-                }
-            }
+            send_cb_finalize(cb, cb_data);
 
             err = 0;
             goto done;
@@ -1078,56 +1083,15 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
                                  struct net_buf_simple *buf)
 {
     struct bt_mesh_subnet *sub = NULL;
-    u32_t array_size = 0;
+    size_t array_size = 0;
     int i;
 
     BT_DBG("%s", __func__);
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-    if (!bt_mesh_is_provisioner_en()) {
-        array_size = ARRAY_SIZE(bt_mesh.sub);
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (bt_mesh_is_provisioner_en()) {
-        array_size = ARRAY_SIZE(bt_mesh.p_sub);
-    }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    array_size = ARRAY_SIZE(bt_mesh.sub);
-    if (bt_mesh_is_provisioner_en()) {
-        array_size += ARRAY_SIZE(bt_mesh.p_sub);
-    }
-#endif
-
-    if (!array_size) {
-        BT_ERR("%s, Unable to get subnet size", __func__);
-        return false;
-    }
+    array_size = bt_mesh_rx_netkey_size();
 
     for (i = 0; i < array_size; i++) {
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-        if (!bt_mesh_is_provisioner_en()) {
-            sub = &bt_mesh.sub[i];
-        }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (bt_mesh_is_provisioner_en()) {
-            sub = bt_mesh.p_sub[i];
-        }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-        if (i < ARRAY_SIZE(bt_mesh.sub)) {
-            sub = &bt_mesh.sub[i];
-        } else {
-            sub = bt_mesh.p_sub[i - ARRAY_SIZE(bt_mesh.sub)];
-        }
-#endif
-
+        sub = bt_mesh_rx_netkey_get(i);
         if (!sub) {
             BT_DBG("%s, NULL subnet", __func__);
             continue;
@@ -1236,15 +1200,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         transmit = bt_mesh_relay_retransmit_get();
     } else {
         transmit = bt_mesh_net_transmit_get();
-        if (rx->net_if == BLE_MESH_NET_IF_PROXY &&
-            transmit < BLE_MESH_TRANSMIT(5, 20)) {
-            /**
-             * Add this in case EspBleMesh APP just send a message once, and
-             * the Proxy Node will send this message using advertising bearer
-             * with duration not less than 180ms.
-             */
-            transmit = BLE_MESH_TRANSMIT(5, 20);
-        }
     }
 
     buf = bt_mesh_adv_create(BLE_MESH_ADV_DATA, transmit, K_NO_WAIT);
@@ -1373,6 +1328,29 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
     return 0;
 }
 
+static bool ready_to_recv(void)
+{
+#if CONFIG_BLE_MESH_NODE
+    if (!bt_mesh_is_provisioner_en()) {
+        if (!bt_mesh_is_provisioned()) {
+            return false;
+        }
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (!bt_mesh_is_provisioner_en()) {
+        BT_WARN("%s, Provisioner is disabled", __func__);
+        return false;
+    }
+    if (!provisioner_get_prov_node_count()) {
+        return false;
+    }
+#endif
+
+    return true;
+}
+
 void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
                       enum bt_mesh_net_if net_if)
 {
@@ -1382,23 +1360,9 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 
     BT_DBG("rssi %d net_if %u", rssi, net_if);
 
-#if CONFIG_BLE_MESH_NODE
-    if (!bt_mesh_is_provisioner_en()) {
-        if (!bt_mesh_is_provisioned()) {
-            return;
-        }
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (!bt_mesh_is_provisioner_en()) {
-        BT_WARN("%s, Provisioner is disabled", __func__);
+    if (!ready_to_recv()) {
         return;
     }
-    if (!provisioner_get_prov_node_count()) {
-        return;
-    }
-#endif
 
     if (bt_mesh_net_decode(data, net_if, &rx, &buf)) {
         return;
@@ -1419,7 +1383,19 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
                       bt_mesh_elem_find(rx.ctx.recv_dst));
 
-    bt_mesh_trans_recv(&buf, &rx);
+    /* The transport layer has indicated that it has rejected the message,
+    * but would like to see it again if it is received in the future.
+    * This can happen if a message is received when the device is in
+    * Low Power mode, but the message was not encrypted with the friend
+    * credentials. Remove it from the message cache so that we accept
+    * it again in the future.
+    */
+    if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
+        BT_WARN("Removing rejected message from Network Message Cache");
+        msg_cache[rx.msg_cache_idx] = 0ULL;
+        /* Rewind the next index now that we're not using this entry */
+        msg_cache_next = rx.msg_cache_idx;
+    }
 
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.

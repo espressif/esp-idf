@@ -108,8 +108,8 @@ static void timeout_handler(struct k_work *work)
         return;
     }
 
-    bt_mesh_callback_config_status_to_btc(node->opcode, 0x03, node->ctx.model,
-                                          &node->ctx, NULL, 0);
+    bt_mesh_config_client_cb_evt_to_btc(node->opcode,
+        BTC_BLE_MESH_EVT_CONFIG_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
 
     bt_mesh_client_free_node(&internal->queue, node);
 
@@ -139,7 +139,7 @@ static void cfg_client_cancel(struct bt_mesh_model *model,
     /* If it is a publish message, sent to the user directly. */
     buf.data = (u8_t *)status;
     buf.len  = (u16_t)len;
-    node = bt_mesh_is_model_message_publish(model, ctx, &buf, true);
+    node = bt_mesh_is_client_recv_publish_msg(model, ctx, &buf, true);
     if (!node) {
         BT_DBG("Unexpected config status message 0x%x", ctx->recv_op);
     } else {
@@ -163,7 +163,7 @@ static void cfg_client_cancel(struct bt_mesh_model *model,
         case OP_HEARTBEAT_SUB_GET:
         case OP_LPN_TIMEOUT_GET:
         case OP_NET_TRANSMIT_GET:
-            evt_type = 0x00;
+            evt_type = BTC_BLE_MESH_EVT_CONFIG_CLIENT_GET_STATE;
             break;
         case OP_BEACON_SET:
         case OP_DEFAULT_TTL_SET:
@@ -193,14 +193,14 @@ static void cfg_client_cancel(struct bt_mesh_model *model,
         case OP_HEARTBEAT_PUB_SET:
         case OP_HEARTBEAT_SUB_SET:
         case OP_NET_TRANSMIT_SET:
-            evt_type = 0x01;
+            evt_type = BTC_BLE_MESH_EVT_CONFIG_CLIENT_SET_STATE;
             break;
         default:
             break;
         }
 
-        bt_mesh_callback_config_status_to_btc(node->opcode, evt_type, model,
-                                              ctx, (const u8_t *)status, len);
+        bt_mesh_config_client_cb_evt_to_btc(
+            node->opcode, evt_type, model, ctx, (const u8_t *)status, len);
         // Don't forget to release the node at the end.
         bt_mesh_client_free_node(&data->queue, node);
     }

@@ -9,6 +9,7 @@ ifeq ($(OS),Windows_NT)
 # kconfiglib requires Windows-style paths for kconfig files
 COMPONENT_KCONFIGS := $(shell cygpath -w $(COMPONENT_KCONFIGS))
 COMPONENT_KCONFIGS_PROJBUILD := $(shell cygpath -w $(COMPONENT_KCONFIGS_PROJBUILD))
+COMPONENT_SDKCONFIG_RENAMES := $(shell cygpath -w $(COMPONENT_SDKCONFIG_RENAMES))
 endif
 
 #For doing make menuconfig etc
