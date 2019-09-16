@@ -18,6 +18,7 @@
 #include "esp_log.h"
 #include "rom/gpio.h"
 #include "rom/spi_flash.h"
+#include "rom/rtc.h"
 #include "bootloader_config.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
@@ -74,7 +75,8 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     int boot_index = bootloader_utility_get_selected_boot_partition(bs);
     if (boot_index == INVALID_INDEX) {
         return boot_index; // Unrecoverable failure (not due to corrupt ota data or bad partition contents)
-    } else {
+    }
+    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
         // Factory firmware.
 #ifdef CONFIG_BOOTLOADER_FACTORY_RESET
         if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
