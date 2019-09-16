@@ -696,7 +696,6 @@ esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num);
  * @param arg user-supplied argument passed to the handler function.
  * @param intr_alloc_flags flags used to allocate the interrupt. One or multiple (ORred)
  *        ESP_INTR_FLAG_* values. see esp_intr_alloc.h for more info.
- * @param arg parameter for handler function
  * @param handle pointer to return handle. If non-NULL, a handle for the interrupt will
  *        be returned here.
  *
