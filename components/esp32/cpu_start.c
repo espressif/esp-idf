@@ -400,15 +400,6 @@ void start_cpu0_default(void)
     esp_err_t flash_ret = esp_flash_init_default_chip();
     assert(flash_ret == ESP_OK);
 
-    uint8_t revision = esp_efuse_get_chip_ver();
-    ESP_LOGI(TAG, "Chip Revision: %d", revision);
-    if (revision > CONFIG_ESP32_REV_MIN) {
-        ESP_LOGW(TAG, "Chip revision is higher than the one configured in menuconfig. Suggest to upgrade it.");
-    } else if(revision != CONFIG_ESP32_REV_MIN) {
-        ESP_LOGE(TAG, "ESP-IDF can't support this chip revision. Modify minimum supported revision in menuconfig");
-        abort();
-    }
-
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO

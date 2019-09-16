@@ -15,6 +15,7 @@
 #pragma once
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
+#include "esp_app_format.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,7 +130,7 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 
 /**
  * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
- * 
+ *
  * Returns a description for the requested app partition.
  * @param[in] partition      App partition description.
  * @param[out] app_desc      Structure of info about app.
@@ -140,6 +141,16 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
  *  - ESP_FAIL:              mapping is fail.
  */
 esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
+
+/**
+ * @brief Check if the image (bootloader and application) has valid chip ID and revision
+ *
+ * @param img_hdr: image header
+ * @return
+ *      - ESP_OK: image and chip are matched well
+ *      - ESP_FAIL: image doesn't match to the chip
+ */
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr);
 
 /**
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
