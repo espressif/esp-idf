@@ -505,17 +505,21 @@ static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
 
 struct bt_mesh_elem *bt_mesh_elem_find(u16_t addr)
 {
-    int i;
+    u16_t index;
 
-    for (i = 0; i < dev_comp->elem_count; i++) {
-        struct bt_mesh_elem *elem = &dev_comp->elem[i];
+    if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
+        index = (addr - dev_comp->elem[0].addr);
+        if (index < dev_comp->elem_count) {
+            return &dev_comp->elem[index];
+        } else {
+            return NULL;
+        }
+    }
 
-        if (BLE_MESH_ADDR_IS_GROUP(addr) ||
-                BLE_MESH_ADDR_IS_VIRTUAL(addr)) {
-            if (bt_mesh_elem_find_group(elem, addr)) {
-                return elem;
-            }
-        } else if (elem->addr == addr) {
+    for (index = 0; index < dev_comp->elem_count; index++) {
+        struct bt_mesh_elem *elem = &dev_comp->elem[index];
+
+        if (bt_mesh_elem_find_group(elem, addr)) {
             return elem;
         }
     }
