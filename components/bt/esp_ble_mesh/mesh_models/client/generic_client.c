@@ -17,6 +17,7 @@
 #include <stdbool.h>
 
 #include "osi/allocator.h"
+#include "osi/mutex.h"
 #include "sdkconfig.h"
 
 #include "mesh_types.h"
@@ -119,6 +120,28 @@ static const bt_mesh_client_op_pair_t gen_op_pair[] = {
     { BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET, BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_STATUS },
 };
 
+static osi_mutex_t generic_client_mutex;
+
+static void bt_mesh_generic_client_mutex_new(void)
+{
+    static bool init;
+
+    if (!init) {
+        osi_mutex_new(&generic_client_mutex);
+        init = true;
+    }
+}
+
+static void bt_mesh_generic_client_lock(void)
+{
+    osi_mutex_lock(&generic_client_mutex, OSI_MUTEX_MAX_TIMEOUT);
+}
+
+static void bt_mesh_generic_client_unlock(void)
+{
+    osi_mutex_unlock(&generic_client_mutex);
+}
+
 static void timeout_handler(struct k_work *work)
 {
     generic_internal_data_t *internal = NULL;
@@ -145,10 +168,16 @@ static void timeout_handler(struct k_work *work)
         return;
     }
 
-    bt_mesh_generic_client_cb_evt_to_btc(node->opcode,
-        BTC_BLE_MESH_EVT_GENERIC_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
+    bt_mesh_generic_client_lock();
 
-    bt_mesh_client_free_node(&internal->queue, node);
+    if (!k_delayed_work_free(&node->timer)) {
+        bt_mesh_generic_client_cb_evt_to_btc(node->opcode,
+            BTC_BLE_MESH_EVT_GENERIC_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
+        // Don't forget to release the node at the end.
+        bt_mesh_client_free_node(&internal->queue, node);
+    }
+
+    bt_mesh_generic_client_unlock();
 
     return;
 }
@@ -535,6 +564,9 @@ static void generic_status(struct bt_mesh_model *model,
 
     buf->data = val;
     buf->len  = len;
+
+    bt_mesh_generic_client_lock();
+
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
         BT_DBG("Unexpected generic status message 0x%x", rsp);
@@ -580,10 +612,14 @@ static void generic_status(struct bt_mesh_model *model,
             break;
         }
 
-        bt_mesh_generic_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
-        // Don't forget to release the node at the end.
-        bt_mesh_client_free_node(&internal->queue, node);
+        if (!k_delayed_work_free(&node->timer)) {
+            bt_mesh_generic_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
+            // Don't forget to release the node at the end.
+            bt_mesh_client_free_node(&internal->queue, node);
+        }
     }
+
+    bt_mesh_generic_client_unlock();
 
     switch (rsp) {
     case BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS: {
@@ -1180,6 +1216,8 @@ static int generic_client_init(struct bt_mesh_model *model, bool primary)
     client->op_pair_size = ARRAY_SIZE(gen_op_pair);
     client->op_pair = gen_op_pair;
     client->internal_data = internal;
+
+    bt_mesh_generic_client_mutex_new();
 
     return 0;
 }
