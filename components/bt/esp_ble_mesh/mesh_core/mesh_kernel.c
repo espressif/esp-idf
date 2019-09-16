@@ -38,14 +38,6 @@ typedef struct alarm_t {
     int64_t deadline_us;
 } osi_alarm_t;
 
-static void bt_mesh_alarm_cb(void *data)
-{
-    assert(data != NULL);
-    struct k_delayed_work *work = (struct k_delayed_work *)data;
-    work->work.handler(&work->work);
-    return;
-}
-
 unsigned int bt_mesh_irq_lock(void)
 {
 #if defined(CONFIG_BLE_MESH_IRQ_LOCK) && CONFIG_BLE_MESH_IRQ_LOCK
@@ -111,7 +103,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 
     osi_mutex_lock(&bm_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
     if (!hash_map_has_key(bm_alarm_hash_map, (void *)work)) {
-        alarm = osi_alarm_new("bt_mesh", bt_mesh_alarm_cb, (void *)work, 0);
+        alarm = osi_alarm_new("bt_mesh", (osi_alarm_callback_t)handler, (void *)work, 0);
         if (alarm == NULL) {
             BT_ERR("%s, Unable to create alarm", __func__);
             return;
