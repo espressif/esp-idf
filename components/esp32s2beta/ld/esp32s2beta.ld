@@ -55,12 +55,14 @@ MEMORY
 
   /* Even though the segment name is iram, it is actually mapped to flash
   */
-  iram0_2_seg (RX) :                 org = 0x40080018, len = 0xb80000-0x18
+  iram0_2_seg (RX) :                 org = 0x40080020, len = 0xb80000-0x20
 
   /*
-    (0x18 offset above is a convenience for the app binary image generation. Flash cache has 64KB pages. The .bin file
-    which is flashed to the chip has a 0x18 byte file header. Setting this offset makes it simple to meet the flash
-    cache MMU's constraint that (paddr % 64KB == vaddr % 64KB).)
+    (0x20 offset above is a convenience for the app binary image generation.
+    Flash cache has 64KB pages. The .bin file which is flashed to the chip
+    has a 0x18 byte file header, and each segment has a 0x08 byte segment
+    header. Setting this offset makes it simple to meet the flash cache MMU's
+    constraint that (paddr % 64KB == vaddr % 64KB).)
   */
 
 
@@ -72,9 +74,9 @@ MEMORY
   dram0_0_seg (RW) :                 org = DRAM_ORG, len = DRAM_SIZE
 
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x3F000018, len = 0x3f0000-0x18
+  drom0_0_seg (R) :                  org = 0x3F000020, len = 0x3f0000-0x20
 
-  /* (See iram0_2_seg for meaning of 0x18 offset in the above.) */
+  /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
