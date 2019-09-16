@@ -890,7 +890,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
 #endif
     periph_module_enable(i2s_periph_signal[i2s_num].module);
-    
+
     if(i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
         //in ADC built-in mode, we need to call i2s_set_adc_mode to
         //initialize the specific ADC channel.

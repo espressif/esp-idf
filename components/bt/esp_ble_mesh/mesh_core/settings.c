@@ -59,10 +59,6 @@
 
 #if CONFIG_BLE_MESH_SETTINGS
 
-#define GET_ELEMENT_IDX(x)      ((u8_t)((x) >> 8))
-#define GET_MODEL_IDX(x)        ((u8_t)(x))
-#define GET_MODEL_KEY(a, b)     ((u16_t)(((u16_t)((a) << 8)) | b))
-
 /* Tracking of what storage changes are pending for App and Net Keys. We
  * track this in a separate array here instead of within the respective
  * bt_mesh_app_key and bt_mesh_subnet structs themselves, since once a key
@@ -653,8 +649,8 @@ static int model_set(bool vnd, const char *name)
 
     for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t model_key = net_buf_simple_pull_le16(buf);
-        elem_idx = GET_ELEMENT_IDX(model_key);
-        model_idx = GET_MODEL_IDX(model_key);
+        elem_idx = BLE_MESH_GET_ELEM_IDX(model_key);
+        model_idx = BLE_MESH_GET_MODEL_IDX(model_key);
 
         model = bt_mesh_model_get(vnd, elem_idx, model_idx);
         if (!model) {
@@ -837,22 +833,38 @@ int settings_core_commit(void)
     return 0;
 }
 
+/* Pending flags that use K_NO_WAIT as the storage timeout */
+#define NO_WAIT_PENDING_BITS (BIT(BLE_MESH_NET_PENDING) |       \
+                              BIT(BLE_MESH_IV_PENDING) |        \
+                              BIT(BLE_MESH_SEQ_PENDING))
+
+/* Pending flags that use CONFIG_BLE_MESH_STORE_TIMEOUT */
+#define GENERIC_PENDING_BITS (BIT(BLE_MESH_KEYS_PENDING) |      \
+                              BIT(BLE_MESH_HB_PUB_PENDING) |    \
+                              BIT(BLE_MESH_CFG_PENDING) |       \
+                              BIT(BLE_MESH_MOD_PENDING))
+
 static void schedule_store(int flag)
 {
-    s32_t timeout;
+    s32_t timeout, remaining;
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, flag);
 
-    if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_NET_PENDING) ||
-            bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IV_PENDING) ||
-            bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_SEQ_PENDING)) {
+    if (bt_mesh_atomic_get(bt_mesh.flags) & NO_WAIT_PENDING_BITS) {
         timeout = K_NO_WAIT;
     } else if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_RPL_PENDING) &&
-               (CONFIG_BLE_MESH_RPL_STORE_TIMEOUT < 
-                CONFIG_BLE_MESH_STORE_TIMEOUT)) {
+               (!(bt_mesh_atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
+                (CONFIG_BLE_MESH_RPL_STORE_TIMEOUT <
+                 CONFIG_BLE_MESH_STORE_TIMEOUT))) {
         timeout = K_SECONDS(CONFIG_BLE_MESH_RPL_STORE_TIMEOUT);
     } else {
         timeout = K_SECONDS(CONFIG_BLE_MESH_STORE_TIMEOUT);
+    }
+
+    remaining = k_delayed_work_remaining_get(&pending_store);
+    if (remaining && remaining < timeout) {
+        BT_DBG("Not rescheduling due to existing earlier deadline");
+        return;
     }
 
     BT_DBG("Waiting %d seconds", timeout / MSEC_PER_SEC);
@@ -1196,7 +1208,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
     u16_t model_key;
     int err;
 
-    model_key = GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
 
     sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
 
@@ -1226,7 +1238,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
     u16_t model_key;
     int err;
 
-    model_key = GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
 
     sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
 
@@ -1270,7 +1282,7 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
     pub.period_div = model->pub->period_div;
     pub.cred = model->pub->cred;
 
-    model_key = GET_MODEL_KEY(model->elem_idx, model->model_idx);
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
 
     sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
 

@@ -90,6 +90,13 @@ menu "LWIP"
         help
             Enabling this option allows checking for available data on a netconn.
 
+    config LWIP_NETBUF_RECVINFO
+        bool "Enable IP_PKTINFO option"
+        default n
+        help
+            Enabling this option allows checking for the destination address
+            of a received IPv4 Packet.
+
     config LWIP_IP_FRAG
         bool "Enable fragment outgoing IP packets"
         default n

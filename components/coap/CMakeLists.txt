@@ -19,6 +19,7 @@ set(srcs
     "libcoap/src/subscribe.c"
     "libcoap/src/uri.c"
     "libcoap/src/coap_io.c"
+    "port/coap_notls.c"
     "port/coap_mbedtls.c")
 
 idf_component_register(SRCS "${srcs}"

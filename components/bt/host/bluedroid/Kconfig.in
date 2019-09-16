@@ -54,16 +54,6 @@ config BT_A2DP_ENABLE
     help
         Advanced Audio Distrubution Profile
 
-config BT_A2DP_SINK_TASK_STACK_SIZE
-    int "A2DP sink (audio stream decoding) task stack size"
-    depends on BT_A2DP_ENABLE
-    default 2048
-
-config BT_A2DP_SOURCE_TASK_STACK_SIZE
-    int "A2DP source (audio stream encoding) task stack size"
-    depends on BT_A2DP_ENABLE
-    default 2048
-
 config BT_SPP_ENABLED
     bool "SPP"
     depends on BT_CLASSIC_ENABLED
@@ -97,6 +87,14 @@ choice BT_HFP_AUDIO_DATA_PATH
     config BT_HFP_AUDIO_DATA_PATH_HCI
         bool "HCI"
 endchoice
+
+config BT_HFP_WBS_ENABLE
+    bool "Wide Band Speech"
+    depends on BT_HFP_AUDIO_DATA_PATH_HCI
+    default y
+    help
+        This enables Wide Band Speech. Should disable it when SCO data path is PCM.
+        Otherwise there will be no data transmited via GPIOs.
 
 config BT_SSP_ENABLED
     bool "Secure Simple Pairing"

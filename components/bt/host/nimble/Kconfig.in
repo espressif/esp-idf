@@ -1,7 +1,7 @@
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
-    range 1 10
+    range 1 9
     default 1
     depends on BT_NIMBLE_ENABLED
     help
@@ -23,7 +23,7 @@ config BT_NIMBLE_MAX_CCCDS
 
 config BT_NIMBLE_L2CAP_COC_MAX_NUM
     int "Maximum number of connection oriented channels"
-    range 0 10
+    range 0 9
     depends on BT_NIMBLE_ENABLED
     default 0
     help
@@ -49,6 +49,13 @@ config BT_NIMBLE_PINNED_TO_CORE
     default 0 if BT_NIMBLE_PINNED_TO_CORE_0
     default 1 if BT_NIMBLE_PINNED_TO_CORE_1
     default 0
+
+config BT_NIMBLE_TASK_STACK_SIZE
+    int "NimBLE Host task stack size"
+    depends on BT_NIMBLE_ENABLED
+    default 4096
+    help
+        This configures stack size of NimBLE host task
 
 config BT_NIMBLE_ROLE_CENTRAL
     bool "Enable BLE Central role"

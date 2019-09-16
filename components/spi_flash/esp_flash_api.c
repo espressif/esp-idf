@@ -569,27 +569,26 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     return err;
 }
 
+//currently the legacy implementation is used, from flash_ops.c
+esp_err_t spi_flash_write_encrypted(size_t dest_addr, const void *src, size_t size);
+
 esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length)
 {
-    VERIFY_OP(write_encrypted);
-    if (((memspi_host_data_t*)chip->host->driver_data)->spi != 0) {
-        // Encrypted operations have to use SPI0
-        return ESP_ERR_FLASH_UNSUPPORTED_HOST;
+    /*
+     * Since currently this feature is supported only by the hardware, there
+     * is no way to support non-standard chips. We use the legacy
+     * implementation and skip the chip and driver layers.
+     */
+    if (chip == NULL) {
+        chip = esp_flash_default_chip;
+    } else if (chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
     }
     if (buffer == NULL || address > chip->size || address+length > chip->size) {
         return ESP_ERR_INVALID_ARG;
     }
-
-    esp_err_t err = spiflash_start(chip);
-    if (err != ESP_OK) {
-        return err;
-    }
-
-    err = chip->chip_drv->write_encrypted(chip, buffer, address, length);
-
-    return spiflash_end(chip, err);
+    return spi_flash_write_encrypted(address, buffer, length);
 }
-
 
 inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,uint32_t b_start, uint32_t b_len)
 {
@@ -598,6 +597,23 @@ inline static IRAM_ATTR bool regions_overlap(uint32_t a_start, uint32_t a_len,ui
     return (a_end > b_start && b_end > a_start);
 }
 
+//currently the legacy implementation is used, from flash_ops.c
+esp_err_t spi_flash_read_encrypted(size_t src, void *dstv, size_t size);
+
+esp_err_t IRAM_ATTR esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *out_buffer, uint32_t length)
+{
+    /*
+     * Since currently this feature is supported only by the hardware, there
+     * is no way to support non-standard chips. We use the legacy
+     * implementation and skip the chip and driver layers.
+     */
+    if (chip == NULL) {
+        chip = esp_flash_default_chip;
+    } else if (chip != esp_flash_default_chip) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    return spi_flash_read_encrypted(address, out_buffer, length);
+}
 
 /*------------------------------------------------------------------------------
     Adapter layer to original api before IDF v4.0
@@ -643,12 +659,6 @@ esp_err_t spi_flash_write(size_t dst, const void *srcv, size_t size)
 esp_err_t spi_flash_read(size_t src, void *dstv, size_t size)
 {
     esp_err_t err = esp_flash_read(NULL, dstv, src, size);
-    return spi_flash_translate_rc(err);
-}
-
-esp_err_t spi_flash_unlock(void)
-{
-    esp_err_t err = esp_flash_set_chip_write_protect(NULL, false);
     return spi_flash_translate_rc(err);
 }
 

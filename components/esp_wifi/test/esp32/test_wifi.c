@@ -5,7 +5,7 @@
 #include "esp_system.h"
 #include "unity.h"
 #include "esp_system.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
 #include "esp_log.h"
@@ -28,25 +28,18 @@ static uint32_t wifi_event_handler_flag;
 
 static EventGroupHandle_t wifi_events;
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void wifi_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
 {
-    printf("ev_handle_called.\n");
-    switch(event->event_id) {
-        case SYSTEM_EVENT_STA_START:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+    printf("wifi ev_handle_called.\n");
+    switch(event_id) {
+        case WIFI_EVENT_STA_START:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_START");
     //do not actually connect in test case
             //;
             break;
-        case SYSTEM_EVENT_STA_GOT_IP:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n",
-            ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-            if (wifi_events) {
-                xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
-            }
-            break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
+        case WIFI_EVENT_STA_DISCONNECTED:
+            ESP_LOGI(TAG, "WIFI_EVENT_STA_DISCONNECTED");
             if (! (EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT & wifi_event_handler_flag) ) {
                 TEST_ESP_OK(esp_wifi_connect());
             }
@@ -57,9 +50,122 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         default:
             break;
     }
+    return;
+}
+
+
+static void ip_event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data)
+{
+    ip_event_got_ip_t *event;
+
+    printf("ip ev_handle_called.\n");
+    switch(event_id) {
+        case IP_EVENT_STA_GOT_IP:
+            event = (ip_event_got_ip_t*)event_data;
+            ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
+            ESP_LOGI(TAG, "got ip:%s\n",
+            ip4addr_ntoa(&event->ip_info.ip));
+            if (wifi_events) {
+                xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
+            }
+            break;
+        default:
+            break;
+    }
+    return;
+}
+
+static esp_err_t event_init(void)
+{
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &ip_event_handler, NULL));
     return ESP_OK;
 }
 
+#define EMPH_STR(s) "****** "s" ******"
+
+static void test_wifi_init_deinit(wifi_init_config_t *cfg, wifi_config_t* wifi_config)
+{
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_deinit());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_get_mode"));
+    wifi_mode_t mode_get;
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_get_mode(&mode_get));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
+    TEST_ESP_OK(esp_wifi_init(cfg));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
+    TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_config"));
+    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit..."));
+    TEST_ESP_OK(esp_wifi_deinit());
+}
+
+static void test_wifi_start_stop(wifi_init_config_t *cfg, wifi_config_t* wifi_config)
+{
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop"));
+    TEST_ESP_ERR(ESP_ERR_WIFI_NOT_INIT, esp_wifi_stop());
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_init"));
+    TEST_ESP_OK(esp_wifi_init(cfg));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_mode"));
+    TEST_ESP_OK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_set_config"));
+    TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
+    //now start wifi
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_start..."));
+    TEST_ESP_OK(esp_wifi_start());
+    //wifi stop
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_stop..."));
+    TEST_ESP_OK( esp_wifi_stop() );
+    ESP_LOGI(TAG, EMPH_STR("esp_wifi_deinit..."));
+    TEST_ESP_OK(esp_wifi_deinit());
+}
+
+TEST_CASE("wifi stop and deinit","[wifi]")
+{
+    test_case_uses_tcpip();
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = DEFAULT_SSID,
+            .password = DEFAULT_PWD
+        },
+    };
+
+    //init nvs
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_init"));
+    esp_err_t r = nvs_flash_init();
+    if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGI(TAG, EMPH_STR("no free pages or nvs version mismatch, erase.."));
+        TEST_ESP_OK(nvs_flash_erase());
+        r = nvs_flash_init();
+    }
+    TEST_ESP_OK(r);
+    //init tcpip
+    ESP_LOGI(TAG, EMPH_STR("tcpip_adapter_init"));
+    tcpip_adapter_init();
+    //init event loop
+
+    ESP_LOGI(TAG, EMPH_STR("event_init"));
+    event_init();
+
+    ESP_LOGI(TAG, "test wifi init & deinit...");
+    test_wifi_init_deinit(&cfg, &wifi_config);
+    ESP_LOGI(TAG, "wifi init & deinit seem to be OK.");
+
+    ESP_LOGI(TAG, "test wifi start & stop...");
+    test_wifi_start_stop(&cfg, &wifi_config);
+    ESP_LOGI(TAG, "wifi start & stop seem to be OK.");
+
+    ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
+    nvs_flash_deinit();
+    ESP_LOGI(TAG, "test passed...");
+
+    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of tcpip_adapter and event_loop.");
+}
 
 static void start_wifi_as_softap(void)
 {
@@ -77,7 +183,7 @@ static void start_wifi_as_softap(void)
         .ap.beacon_interval = 100,
     };
 
-    TEST_ESP_OK(esp_event_loop_init(event_handler, NULL));
+    event_init();
 
     // can't deinit event loop, need to reset leak check
     unity_reset_leak_checks();
@@ -99,7 +205,7 @@ static void start_wifi_as_sta(void)
 
     // do not auto connect
     wifi_event_handler_flag |= EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT;
-    TEST_ESP_OK(esp_event_loop_init(event_handler, NULL));
+    event_init();
 
     // can't deinit event loop, need to reset leak check
     unity_reset_leak_checks();

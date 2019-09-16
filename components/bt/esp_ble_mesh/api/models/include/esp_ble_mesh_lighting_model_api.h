@@ -19,7 +19,6 @@
 #ifndef _ESP_BLE_MESH_LIGHTING_MODEL_API_H_
 #define _ESP_BLE_MESH_LIGHTING_MODEL_API_H_
 
-#include "lighting_client.h"
 #include "esp_ble_mesh_defs.h"
 
 /** @def    ESP_BLE_MESH_MODEL_LIGHT_LIGHTNESS_CLI
@@ -108,164 +107,164 @@
 
 /** Parameters of Light Lightness Set */
 typedef struct {
-    bool  op_en;        /*!< Indicate if optional parameters are included */
-    u16_t lightness;    /*!< Target value of light lightness actual state */
-    u8_t  tid;          /*!< Transaction ID */
-    u8_t  trans_time;   /*!< Time to complete state transition (optional) */
-    u8_t  delay;        /*!< Indicate message execution delay (C.1) */
+    bool     op_en;        /*!< Indicate if optional parameters are included */
+    uint16_t lightness;    /*!< Target value of light lightness actual state */
+    uint8_t  tid;          /*!< Transaction ID */
+    uint8_t  trans_time;   /*!< Time to complete state transition (optional) */
+    uint8_t  delay;        /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_lightness_set_t;
 
 /** Parameters of Light Lightness Linear Set */
 typedef struct {
-    bool  op_en;        /*!< Indicate if optional parameters are included */
-    u16_t lightness;    /*!< Target value of light lightness linear state */
-    u8_t  tid;          /*!< Transaction ID */
-    u8_t  trans_time;   /*!< Time to complete state transition (optional) */
-    u8_t  delay;        /*!< Indicate message execution delay (C.1) */
+    bool     op_en;        /*!< Indicate if optional parameters are included */
+    uint16_t lightness;    /*!< Target value of light lightness linear state */
+    uint8_t  tid;          /*!< Transaction ID */
+    uint8_t  trans_time;   /*!< Time to complete state transition (optional) */
+    uint8_t  delay;        /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_lightness_linear_set_t;
 
 /** Parameter of Light Lightness Default Set */
 typedef struct {
-    u16_t lightness;    /*!< The value of the Light Lightness Default state */
+    uint16_t lightness;    /*!< The value of the Light Lightness Default state */
 } esp_ble_mesh_light_lightness_default_set_t;
 
 /** Parameters of Light Lightness Range Set */
 typedef struct {
-    u16_t range_min;    /*!< Value of range min field of light lightness range state */
-    u16_t range_max;    /*!< Value of range max field of light lightness range state */
+    uint16_t range_min;    /*!< Value of range min field of light lightness range state */
+    uint16_t range_max;    /*!< Value of range max field of light lightness range state */
 } esp_ble_mesh_light_lightness_range_set_t;
 
 /** Parameters of Light CTL Set */
 typedef struct {
-    bool  op_en;            /*!< Indicate if optional parameters are included */
-    u16_t ctl_lightness;    /*!< Target value of light ctl lightness state */
-    u16_t ctl_temperatrue;  /*!< Target value of light ctl temperature state */
-    s16_t ctl_delta_uv;     /*!< Target value of light ctl delta UV state */
-    u8_t  tid;              /*!< Transaction ID */
-    u8_t  trans_time;       /*!< Time to complete state transition (optional) */
-    u8_t  delay;            /*!< Indicate message execution delay (C.1) */
+    bool     op_en;            /*!< Indicate if optional parameters are included */
+    uint16_t ctl_lightness;    /*!< Target value of light ctl lightness state */
+    uint16_t ctl_temperatrue;  /*!< Target value of light ctl temperature state */
+    int16_t  ctl_delta_uv;     /*!< Target value of light ctl delta UV state */
+    uint8_t  tid;              /*!< Transaction ID */
+    uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
+    uint8_t  delay;            /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_ctl_set_t;
 
 /** Parameters of Light CTL Temperature Set */
 typedef struct {
-    bool  op_en;            /*!< Indicate if optional parameters are included */
-    u16_t ctl_temperatrue;  /*!< Target value of light ctl temperature state */
-    s16_t ctl_delta_uv;     /*!< Target value of light ctl delta UV state */
-    u8_t  tid;              /*!< Transaction ID */
-    u8_t  trans_time;       /*!< Time to complete state transition (optional) */
-    u8_t  delay;            /*!< Indicate message execution delay (C.1) */
+    bool     op_en;            /*!< Indicate if optional parameters are included */
+    uint16_t ctl_temperatrue;  /*!< Target value of light ctl temperature state */
+    int16_t  ctl_delta_uv;     /*!< Target value of light ctl delta UV state */
+    uint8_t  tid;              /*!< Transaction ID */
+    uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
+    uint8_t  delay;            /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_ctl_temperature_set_t;
 
 /** Parameters of Light CTL Temperature Range Set */
 typedef struct {
-    u16_t range_min;        /*!< Value of temperature range min field of light ctl temperature range state */
-    u16_t range_max;        /*!< Value of temperature range max field of light ctl temperature range state */
+    uint16_t range_min;        /*!< Value of temperature range min field of light ctl temperature range state */
+    uint16_t range_max;        /*!< Value of temperature range max field of light ctl temperature range state */
 } esp_ble_mesh_light_ctl_temperature_range_set_t;
 
 /** Parameters of Light CTL Default Set */
 typedef struct {
-    u16_t lightness;        /*!< Value of light lightness default state */
-    u16_t temperature;      /*!< Value of light temperature default state */
-    s16_t delta_uv;         /*!< Value of light delta UV default state */
+    uint16_t lightness;        /*!< Value of light lightness default state */
+    uint16_t temperature;      /*!< Value of light temperature default state */
+    int16_t  delta_uv;         /*!< Value of light delta UV default state */
 } esp_ble_mesh_light_ctl_default_set_t;
 
 /** Parameters of Light HSL Set */
 typedef struct {
-    bool  op_en;            /*!< Indicate if optional parameters are included */
-    u16_t hsl_lightness;    /*!< Target value of light hsl lightness state */
-    u16_t hsl_hue;          /*!< Target value of light hsl hue state */
-    u16_t hsl_saturation;   /*!< Target value of light hsl saturation state */
-    u8_t  tid;              /*!< Transaction ID */
-    u8_t  trans_time;       /*!< Time to complete state transition (optional) */
-    u8_t  delay;            /*!< Indicate message execution delay (C.1) */
+    bool     op_en;            /*!< Indicate if optional parameters are included */
+    uint16_t hsl_lightness;    /*!< Target value of light hsl lightness state */
+    uint16_t hsl_hue;          /*!< Target value of light hsl hue state */
+    uint16_t hsl_saturation;   /*!< Target value of light hsl saturation state */
+    uint8_t  tid;              /*!< Transaction ID */
+    uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
+    uint8_t  delay;            /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_hsl_set_t;
 
 /** Parameters of Light HSL Hue Set */
 typedef struct {
-    bool  op_en;            /*!< Indicate if optional parameters are included */
-    u16_t hue;              /*!< Target value of light hsl hue state */
-    u8_t  tid;              /*!< Transaction ID */
-    u8_t  trans_time;       /*!< Time to complete state transition (optional) */
-    u8_t  delay;            /*!< Indicate message execution delay (C.1) */
+    bool     op_en;            /*!< Indicate if optional parameters are included */
+    uint16_t hue;              /*!< Target value of light hsl hue state */
+    uint8_t  tid;              /*!< Transaction ID */
+    uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
+    uint8_t  delay;            /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_hsl_hue_set_t;
 
 /** Parameters of Light HSL Saturation Set */
 typedef struct {
-    bool  op_en;            /*!< Indicate if optional parameters are included */
-    u16_t saturation;       /*!< Target value of light hsl hue state */
-    u8_t  tid;              /*!< Transaction ID */
-    u8_t  trans_time;       /*!< Time to complete state transition (optional) */
-    u8_t  delay;            /*!< Indicate message execution delay (C.1) */
+    bool     op_en;            /*!< Indicate if optional parameters are included */
+    uint16_t saturation;       /*!< Target value of light hsl hue state */
+    uint8_t  tid;              /*!< Transaction ID */
+    uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
+    uint8_t  delay;            /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_hsl_saturation_set_t;
 
 /** Parameters of Light HSL Default Set */
 typedef struct {
-    u16_t lightness;        /*!< Value of light lightness default state */
-    u16_t hue;              /*!< Value of light hue default state */
-    u16_t saturation;       /*!< Value of light saturation default state */
+    uint16_t lightness;        /*!< Value of light lightness default state */
+    uint16_t hue;              /*!< Value of light hue default state */
+    uint16_t saturation;       /*!< Value of light saturation default state */
 } esp_ble_mesh_light_hsl_default_set_t;
 
 /** Parameters of Light HSL Range Set */
 typedef struct {
-    u16_t hue_range_min;        /*!< Value of hue range min field of light hsl hue range state */
-    u16_t hue_range_max;        /*!< Value of hue range max field of light hsl hue range state */
-    u16_t saturation_range_min; /*!< Value of saturation range min field of light hsl saturation range state */
-    u16_t saturation_range_max; /*!< Value of saturation range max field of light hsl saturation range state */
+    uint16_t hue_range_min;        /*!< Value of hue range min field of light hsl hue range state */
+    uint16_t hue_range_max;        /*!< Value of hue range max field of light hsl hue range state */
+    uint16_t saturation_range_min; /*!< Value of saturation range min field of light hsl saturation range state */
+    uint16_t saturation_range_max; /*!< Value of saturation range max field of light hsl saturation range state */
 } esp_ble_mesh_light_hsl_range_set_t;
 
 /** Parameters of Light xyL Set */
 typedef struct {
-    bool  op_en;            /*!< Indicate whether optional parameters included */
-    u16_t xyl_lightness;    /*!< The target value of the Light xyL Lightness state */
-    u16_t xyl_x;            /*!< The target value of the Light xyL x state */
-    u16_t xyl_y;            /*!< The target value of the Light xyL y state */
-    u8_t  tid;              /*!< Transaction Identifier */
-    u8_t  trans_time;       /*!< Time to complete state transition (optional) */
-    u8_t  delay;            /*!< Indicate message execution delay (C.1) */
+    bool     op_en;            /*!< Indicate whether optional parameters included */
+    uint16_t xyl_lightness;    /*!< The target value of the Light xyL Lightness state */
+    uint16_t xyl_x;            /*!< The target value of the Light xyL x state */
+    uint16_t xyl_y;            /*!< The target value of the Light xyL y state */
+    uint8_t  tid;              /*!< Transaction Identifier */
+    uint8_t  trans_time;       /*!< Time to complete state transition (optional) */
+    uint8_t  delay;            /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_xyl_set_t;
 
 /** Parameters of Light xyL Default Set */
 typedef struct {
-    u16_t lightness;        /*!< The value of the Light Lightness Default state */
-    u16_t xyl_x;            /*!< The value of the Light xyL x Default state */
-    u16_t xyl_y;            /*!< The value of the Light xyL y Default state */
+    uint16_t lightness;        /*!< The value of the Light Lightness Default state */
+    uint16_t xyl_x;            /*!< The value of the Light xyL x Default state */
+    uint16_t xyl_y;            /*!< The value of the Light xyL y Default state */
 } esp_ble_mesh_light_xyl_default_set_t;
 
 /** Parameters of Light xyL Range Set */
 typedef struct {
-    u16_t xyl_x_range_min;  /*!< The value of the xyL x Range Min field of the Light xyL x Range state */
-    u16_t xyl_x_range_max;  /*!< The value of the xyL x Range Max field of the Light xyL x Range state */
-    u16_t xyl_y_range_min;  /*!< The value of the xyL y Range Min field of the Light xyL y Range state */
-    u16_t xyl_y_range_max;  /*!< The value of the xyL y Range Max field of the Light xyL y Range state */
+    uint16_t xyl_x_range_min;  /*!< The value of the xyL x Range Min field of the Light xyL x Range state */
+    uint16_t xyl_x_range_max;  /*!< The value of the xyL x Range Max field of the Light xyL x Range state */
+    uint16_t xyl_y_range_min;  /*!< The value of the xyL y Range Min field of the Light xyL y Range state */
+    uint16_t xyl_y_range_max;  /*!< The value of the xyL y Range Max field of the Light xyL y Range state */
 } esp_ble_mesh_light_xyl_range_set_t;
 
 /** Parameter of Light LC Mode Set */
 typedef struct {
-    u8_t mode;              /*!< The target value of the Light LC Mode state */
+    uint8_t mode;              /*!< The target value of the Light LC Mode state */
 } esp_ble_mesh_light_lc_mode_set_t;
 
 /** Parameter of Light LC OM Set */
 typedef struct {
-    u8_t mode;              /*!< The target value of the Light LC Occupancy Mode state */
+    uint8_t mode;              /*!< The target value of the Light LC Occupancy Mode state */
 } esp_ble_mesh_light_lc_om_set_t;
 
 /** Parameters of Light LC Light OnOff Set */
 typedef struct {
-    bool op_en;             /*!< Indicate whether optional parameters included */
-    u8_t light_onoff;       /*!< The target value of the Light LC Light OnOff state */
-    u8_t tid;               /*!< Transaction Identifier */
-    u8_t trans_time;        /*!< Time to complete state transition (optional) */
-    u8_t delay;             /*!< Indicate message execution delay (C.1) */
+    bool    op_en;             /*!< Indicate whether optional parameters included */
+    uint8_t light_onoff;       /*!< The target value of the Light LC Light OnOff state */
+    uint8_t tid;               /*!< Transaction Identifier */
+    uint8_t trans_time;        /*!< Time to complete state transition (optional) */
+    uint8_t delay;             /*!< Indicate message execution delay (C.1) */
 } esp_ble_mesh_light_lc_light_onoff_set_t;
 
 /** Parameter of Light LC Property Get */
 typedef struct {
-    u16_t property_id;      /*!< Property ID identifying a Light LC Property */
+    uint16_t property_id;      /*!< Property ID identifying a Light LC Property */
 } esp_ble_mesh_light_lc_property_get_t;
 
 /** Parameters of Light LC Property Set */
 typedef struct {
-    u16_t property_id;      /*!< Property ID identifying a Light LC Property */
+    uint16_t property_id;      /*!< Property ID identifying a Light LC Property */
     struct net_buf_simple *property_value;  /*!< Raw value for the Light LC Property */
 } esp_ble_mesh_light_lc_property_set_t;
 
@@ -308,176 +307,176 @@ typedef union {
 
 /** Parameters of Light Lightness Status */
 typedef struct {
-    bool  op_en;                /*!< Indicate if optional parameters are included */
-    u16_t present_lightness;    /*!< Current value of light lightness actual state */
-    u16_t target_lightness;     /*!< Target value of light lightness actual state (optional) */
-    u8_t  remain_time;          /*!< Time to complete state transition (C.1) */
+    bool     op_en;                /*!< Indicate if optional parameters are included */
+    uint16_t present_lightness;    /*!< Current value of light lightness actual state */
+    uint16_t target_lightness;     /*!< Target value of light lightness actual state (optional) */
+    uint8_t  remain_time;          /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_lightness_status_cb_t;
 
 /** Parameters of Light Lightness Linear Status */
 typedef struct {
-    bool  op_en;                /*!< Indicate if optional parameters are included */
-    u16_t present_lightness;    /*!< Current value of light lightness linear state */
-    u16_t target_lightness;     /*!< Target value of light lightness linear state (optional) */
-    u8_t  remain_time;          /*!< Time to complete state transition (C.1) */
+    bool     op_en;                /*!< Indicate if optional parameters are included */
+    uint16_t present_lightness;    /*!< Current value of light lightness linear state */
+    uint16_t target_lightness;     /*!< Target value of light lightness linear state (optional) */
+    uint8_t  remain_time;          /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_lightness_linear_status_cb_t;
 
 /** Parameter of Light Lightness Last Status */
 typedef struct {
-    u16_t lightness;            /*!< The value of the Light Lightness Last state */
+    uint16_t lightness;            /*!< The value of the Light Lightness Last state */
 } esp_ble_mesh_light_lightness_last_status_cb_t;
 
 /** Parameter of Light Lightness Default Status */
 typedef struct {
-    u16_t lightness;            /*!< The value of the Light Lightness default State */
+    uint16_t lightness;            /*!< The value of the Light Lightness default State */
 } esp_ble_mesh_light_lightness_default_status_cb_t;
 
 /** Parameters of Light Lightness Range Status */
 typedef struct {
-    u8_t  status_code;          /*!< Status Code for the request message */
-    u16_t range_min;            /*!< Value of range min field of light lightness range state */
-    u16_t range_max;            /*!< Value of range max field of light lightness range state */
+    uint8_t  status_code;          /*!< Status Code for the request message */
+    uint16_t range_min;            /*!< Value of range min field of light lightness range state */
+    uint16_t range_max;            /*!< Value of range max field of light lightness range state */
 } esp_ble_mesh_light_lightness_range_status_cb_t;
 
 /** Parameters of Light CTL Status */
 typedef struct {
-    bool  op_en;                    /*!< Indicate if optional parameters are included */
-    u16_t present_ctl_lightness;    /*!< Current value of light ctl lightness state */
-    u16_t present_ctl_temperature;  /*!< Current value of light ctl temperature state */
-    u16_t target_ctl_lightness;     /*!< Target value of light ctl lightness state (optional) */
-    u16_t target_ctl_temperature;   /*!< Target value of light ctl temperature state (C.1) */
-    u8_t  remain_time;              /*!< Time to complete state transition (C.1) */
+    bool     op_en;                    /*!< Indicate if optional parameters are included */
+    uint16_t present_ctl_lightness;    /*!< Current value of light ctl lightness state */
+    uint16_t present_ctl_temperature;  /*!< Current value of light ctl temperature state */
+    uint16_t target_ctl_lightness;     /*!< Target value of light ctl lightness state (optional) */
+    uint16_t target_ctl_temperature;   /*!< Target value of light ctl temperature state (C.1) */
+    uint8_t  remain_time;              /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_ctl_status_cb_t;
 
 /** Parameters of Light CTL Temperature Status */
 typedef struct {
-    bool  op_en;                    /*!< Indicate if optional parameters are included */
-    u16_t present_ctl_temperature;  /*!< Current value of light ctl temperature state */
-    u16_t present_ctl_delta_uv;     /*!< Current value of light ctl delta UV state */
-    u16_t target_ctl_temperature;   /*!< Target value of light ctl temperature state (optional) */
-    u16_t target_ctl_delta_uv;      /*!< Target value of light ctl delta UV state (C.1) */
-    u8_t  remain_time;              /*!< Time to complete state transition (C.1) */
+    bool     op_en;                    /*!< Indicate if optional parameters are included */
+    uint16_t present_ctl_temperature;  /*!< Current value of light ctl temperature state */
+    uint16_t present_ctl_delta_uv;     /*!< Current value of light ctl delta UV state */
+    uint16_t target_ctl_temperature;   /*!< Target value of light ctl temperature state (optional) */
+    uint16_t target_ctl_delta_uv;      /*!< Target value of light ctl delta UV state (C.1) */
+    uint8_t  remain_time;              /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_ctl_temperature_status_cb_t;
 
 /** Parameters of Light CTL Temperature Range Status */
 typedef struct {
-    u8_t  status_code;      /*!< Status code for the request message */
-    u16_t range_min;        /*!< Value of temperature range min field of light ctl temperature range state */
-    u16_t range_max;        /*!< Value of temperature range max field of light ctl temperature range state */
+    uint8_t  status_code;      /*!< Status code for the request message */
+    uint16_t range_min;        /*!< Value of temperature range min field of light ctl temperature range state */
+    uint16_t range_max;        /*!< Value of temperature range max field of light ctl temperature range state */
 } esp_ble_mesh_light_ctl_temperature_range_status_cb_t;
 
 /** Parameters of Light CTL Default Status */
 typedef struct {
-    u16_t lightness;        /*!< Value of light lightness default state */
-    u16_t temperature;      /*!< Value of light temperature default state */
-    s16_t delta_uv;         /*!< Value of light delta UV default state */
+    uint16_t lightness;        /*!< Value of light lightness default state */
+    uint16_t temperature;      /*!< Value of light temperature default state */
+    int16_t  delta_uv;         /*!< Value of light delta UV default state */
 } esp_ble_mesh_light_ctl_default_status_cb_t;
 
 /** Parameters of Light HSL Status */
 typedef struct {
-    bool  op_en;            /*!< Indicate if optional parameters are included */
-    u16_t hsl_lightness;    /*!< Current value of light hsl lightness state */
-    u16_t hsl_hue;          /*!< Current value of light hsl hue state */
-    u16_t hsl_saturation;   /*!< Current value of light hsl saturation state */
-    u8_t  remain_time;      /*!< Time to complete state transition (optional) */
+    bool     op_en;            /*!< Indicate if optional parameters are included */
+    uint16_t hsl_lightness;    /*!< Current value of light hsl lightness state */
+    uint16_t hsl_hue;          /*!< Current value of light hsl hue state */
+    uint16_t hsl_saturation;   /*!< Current value of light hsl saturation state */
+    uint8_t  remain_time;      /*!< Time to complete state transition (optional) */
 } esp_ble_mesh_light_hsl_status_cb_t;
 
 /** Parameters of Light HSL Target Status */
 typedef struct {
     bool  op_en;                    /*!< Indicate if optional parameters are included */
-    u16_t hsl_lightness_target;     /*!< Target value of light hsl lightness state */
-    u16_t hsl_hue_target;           /*!< Target value of light hsl hue state */
-    u16_t hsl_saturation_target;    /*!< Target value of light hsl saturation state */
-    u8_t  remain_time;              /*!< Time to complete state transition (optional) */
+    uint16_t hsl_lightness_target;     /*!< Target value of light hsl lightness state */
+    uint16_t hsl_hue_target;           /*!< Target value of light hsl hue state */
+    uint16_t hsl_saturation_target;    /*!< Target value of light hsl saturation state */
+    uint8_t  remain_time;              /*!< Time to complete state transition (optional) */
 } esp_ble_mesh_light_hsl_target_status_cb_t;
 
 /** Parameters of Light HSL Hue Status */
 typedef struct {
-    bool  op_en;        /*!< Indicate if optional parameters are included */
-    u16_t present_hue;  /*!< Current value of light hsl hue state */
-    u16_t target_hue;   /*!< Target value of light hsl hue state (optional) */
-    u8_t  remain_time;  /*!< Time to complete state transition (C.1) */
+    bool     op_en;        /*!< Indicate if optional parameters are included */
+    uint16_t present_hue;  /*!< Current value of light hsl hue state */
+    uint16_t target_hue;   /*!< Target value of light hsl hue state (optional) */
+    uint8_t  remain_time;  /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_hsl_hue_status_cb_t;
 
 /** Parameters of Light HSL Saturation Status */
 typedef struct {
-    bool  op_en;                /*!< Indicate if optional parameters are included */
-    u16_t present_saturation;   /*!< Current value of light hsl saturation state */
-    u16_t target_saturation;    /*!< Target value of light hsl saturation state (optional) */
-    u8_t  remain_time;          /*!< Time to complete state transition (C.1) */
+    bool     op_en;                /*!< Indicate if optional parameters are included */
+    uint16_t present_saturation;   /*!< Current value of light hsl saturation state */
+    uint16_t target_saturation;    /*!< Target value of light hsl saturation state (optional) */
+    uint8_t  remain_time;          /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_hsl_saturation_status_cb_t;
 
 /** Parameters of Light HSL Default Status */
 typedef struct {
-    u16_t lightness;    /*!< Value of light lightness default state */
-    u16_t hue;          /*!< Value of light hue default state */
-    u16_t saturation;   /*!< Value of light saturation default state */
+    uint16_t lightness;    /*!< Value of light lightness default state */
+    uint16_t hue;          /*!< Value of light hue default state */
+    uint16_t saturation;   /*!< Value of light saturation default state */
 } esp_ble_mesh_light_hsl_default_status_cb_t;
 
 /** Parameters of Light HSL Range Status */
 typedef struct {
-    u8_t  status_code;          /*!< Status code for the request message */
-    u16_t hue_range_min;        /*!< Value of hue range min field of light hsl hue range state */
-    u16_t hue_range_max;        /*!< Value of hue range max field of light hsl hue range state */
-    u16_t saturation_range_min; /*!< Value of saturation range min field of light hsl saturation range state */
-    u16_t saturation_range_max; /*!< Value of saturation range max field of light hsl saturation range state */
+    uint8_t  status_code;          /*!< Status code for the request message */
+    uint16_t hue_range_min;        /*!< Value of hue range min field of light hsl hue range state */
+    uint16_t hue_range_max;        /*!< Value of hue range max field of light hsl hue range state */
+    uint16_t saturation_range_min; /*!< Value of saturation range min field of light hsl saturation range state */
+    uint16_t saturation_range_max; /*!< Value of saturation range max field of light hsl saturation range state */
 } esp_ble_mesh_light_hsl_range_status_cb_t;
 
 /** Parameters of Light xyL Status */
 typedef struct {
-    bool  op_en;                /*!< Indicate whether optional parameters included */
-    u16_t xyl_lightness;        /*!< The present value of the Light xyL Lightness state */
-    u16_t xyl_x;                /*!< The present value of the Light xyL x state */
-    u16_t xyl_y;                /*!< The present value of the Light xyL y state */
-    u8_t  remain_time;          /*!< Time to complete state transition (optional) */
+    bool     op_en;                /*!< Indicate whether optional parameters included */
+    uint16_t xyl_lightness;        /*!< The present value of the Light xyL Lightness state */
+    uint16_t xyl_x;                /*!< The present value of the Light xyL x state */
+    uint16_t xyl_y;                /*!< The present value of the Light xyL y state */
+    uint8_t  remain_time;          /*!< Time to complete state transition (optional) */
 } esp_ble_mesh_light_xyl_status_cb_t;
 
 /** Parameters of Light xyL Target Status */
 typedef struct {
-    bool  op_en;                /*!< Indicate whether optional parameters included */
-    u16_t target_xyl_lightness; /*!< The target value of the Light xyL Lightness state */
-    u16_t target_xyl_x;         /*!< The target value of the Light xyL x state */
-    u16_t target_xyl_y;         /*!< The target value of the Light xyL y state */
-    u8_t  remain_time;          /*!< Time to complete state transition (optional) */
+    bool     op_en;                /*!< Indicate whether optional parameters included */
+    uint16_t target_xyl_lightness; /*!< The target value of the Light xyL Lightness state */
+    uint16_t target_xyl_x;         /*!< The target value of the Light xyL x state */
+    uint16_t target_xyl_y;         /*!< The target value of the Light xyL y state */
+    uint8_t  remain_time;          /*!< Time to complete state transition (optional) */
 } esp_ble_mesh_light_xyl_target_status_cb_t;
 
 /** Parameters of Light xyL Default Status */
 typedef struct {
-    u16_t lightness;        /*!< The value of the Light Lightness Default state */
-    u16_t xyl_x;            /*!< The value of the Light xyL x Default state */
-    u16_t xyl_y;            /*!< The value of the Light xyL y Default state */
+    uint16_t lightness;        /*!< The value of the Light Lightness Default state */
+    uint16_t xyl_x;            /*!< The value of the Light xyL x Default state */
+    uint16_t xyl_y;            /*!< The value of the Light xyL y Default state */
 } esp_ble_mesh_light_xyl_default_status_cb_t;
 
 /** Parameters of Light xyL Range Status */
 typedef struct {
-    u8_t  status_code;      /*!< Status Code for the requesting message */
-    u16_t xyl_x_range_min;  /*!< The value of the xyL x Range Min field of the Light xyL x Range state */
-    u16_t xyl_x_range_max;  /*!< The value of the xyL x Range Max field of the Light xyL x Range state */
-    u16_t xyl_y_range_min;  /*!< The value of the xyL y Range Min field of the Light xyL y Range state */
-    u16_t xyl_y_range_max;  /*!< The value of the xyL y Range Max field of the Light xyL y Range state */
+    uint8_t  status_code;      /*!< Status Code for the requesting message */
+    uint16_t xyl_x_range_min;  /*!< The value of the xyL x Range Min field of the Light xyL x Range state */
+    uint16_t xyl_x_range_max;  /*!< The value of the xyL x Range Max field of the Light xyL x Range state */
+    uint16_t xyl_y_range_min;  /*!< The value of the xyL y Range Min field of the Light xyL y Range state */
+    uint16_t xyl_y_range_max;  /*!< The value of the xyL y Range Max field of the Light xyL y Range state */
 } esp_ble_mesh_light_xyl_range_status_cb_t;
 
 /** Parameter of Light LC Mode Status */
 typedef struct {
-    u8_t mode;              /*!< The present value of the Light LC Mode state */
+    uint8_t mode;              /*!< The present value of the Light LC Mode state */
 } esp_ble_mesh_light_lc_mode_status_cb_t;
 
 /** Parameter of Light LC OM Status */
 typedef struct {
-    u8_t mode;              /*!< The present value of the Light LC Occupancy Mode state */
+    uint8_t mode;              /*!< The present value of the Light LC Occupancy Mode state */
 } esp_ble_mesh_light_lc_om_status_cb_t;
 
 /** Parameters of Light LC Light OnOff Status */
 typedef struct {
-    bool op_en;                 /*!< Indicate whether optional parameters included */
-    u8_t present_light_onoff;   /*!< The present value of the Light LC Light OnOff state */
-    u8_t target_light_onoff;    /*!< The target value of the Light LC Light OnOff state (Optional) */
-    u8_t remain_time;           /*!< Time to complete state transition (C.1) */
+    bool    op_en;                 /*!< Indicate whether optional parameters included */
+    uint8_t present_light_onoff;   /*!< The present value of the Light LC Light OnOff state */
+    uint8_t target_light_onoff;    /*!< The target value of the Light LC Light OnOff state (Optional) */
+    uint8_t remain_time;           /*!< Time to complete state transition (C.1) */
 } esp_ble_mesh_light_lc_light_onoff_status_cb_t;
 
 /** Parameters of Light LC Property Status */
 typedef struct {
-    u16_t property_id;      /*!< Property ID identifying a Light LC Property */
+    uint16_t property_id;      /*!< Property ID identifying a Light LC Property */
     struct net_buf_simple *property_value;  /*!< Raw value for the Light LC Property */
 } esp_ble_mesh_light_lc_property_status_cb_t;
 
@@ -571,7 +570,7 @@ esp_err_t esp_ble_mesh_light_client_get_state(esp_ble_mesh_client_common_param_t
  *              please refer to esp_ble_mesh_light_message_opcode_t in esp_ble_mesh_defs.h
  *
  * @param[in]   params:    Pointer to BLE Mesh common client parameters.
- * @param[in]   set_state: Pointer of generic set message value.
+ * @param[in]   set_state: Pointer of light set message value.
  *                         Shall not be set to NULL.
  *
  * @return      ESP_OK on success or error code otherwise.

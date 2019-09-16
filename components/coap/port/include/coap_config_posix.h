@@ -29,13 +29,27 @@
 #define HAVE_TIME_H
 #define HAVE_NETDB_H
 #define HAVE_NETINET_IN_H
+#define HAVE_STRUCT_CMSGHDR
 
-#define IPV6_PKTINFO IPV6_V6ONLY
+#define ipi_spec_dst ipi_addr
+struct in6_pktinfo {
+  struct in6_addr ipi6_addr;        /* src/dst IPv6 address */
+  unsigned int ipi6_ifindex;        /* send/recv interface index */
+};
+#define IN6_IS_ADDR_V4MAPPED(a) \
+        ((((__const uint32_t *) (a))[0] == 0)                                 \
+         && (((__const uint32_t *) (a))[1] == 0)                              \
+         && (((__const uint32_t *) (a))[2] == htonl (0xffff)))
+
+/* As not defined, just need to define is as something innocuous */
+#define IPV6_PKTINFO IPV6_CHECKSUM
 
 #define PACKAGE_NAME "libcoap-posix"
 #define PACKAGE_VERSION "?"
 
+#ifdef CONFIG_MBEDTLS_TLS_ENABLED
 #define HAVE_MBEDTLS
+#endif /* CONFIG_MBEDTLS_TLS_ENABLED */
 #define COAP_CONSTRAINED_STACK 1
 #define ESPIDF_VERSION
 

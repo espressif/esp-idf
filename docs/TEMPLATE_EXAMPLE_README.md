@@ -57,3 +57,7 @@ _For examples where ESP32 is connected  with some other hardware, include a tabl
 ## Troubleshooting
 
 _If there are any likely problems or errors which many users might encounter, mention them here. Remove this section for very simple examples where nothing is likely to go wrong._
+
+## Example Breakdown
+
+_If the example source code is lengthy, complex, or cannot be easily understood, use this section to break down and explain the source code. This can be done by breaking down the execution path step by step, or explaining what each major function/task/source file does. Add sub titles if necessary. Remove this section for very simple examples where the source code is self explanatory._

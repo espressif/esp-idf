@@ -3,6 +3,8 @@ if(NOT "${target}" STREQUAL "esp32")
     return()
 endif()
 
+idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
+
 if(BOOTLOADER_BUILD)
     # For bootloader, all we need from esp32 is headers
     idf_component_register(INCLUDE_DIRS include)

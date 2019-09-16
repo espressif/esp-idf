@@ -145,7 +145,7 @@ build_example () {
         cat ${BUILDLOG}
     popd
 
-    grep -i "error\|warning" "${BUILDLOG}" 2>&1 | grep -v "error.c.obj" >> "${LOG_SUSPECTED}" || :
+    grep -i "error\|warning" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
 }
 
 EXAMPLE_NUM=0
@@ -175,6 +175,7 @@ echo -e "\nFound issues:"
 # 'Compiler and toochain versions is not supported' from crosstool_version_check.cmake
 IGNORE_WARNS="\
 library/error\.o\
+\|.*error.*\.c\.obj\
 \|\ -Werror\
 \|error\.d\
 \|reassigning to symbol\

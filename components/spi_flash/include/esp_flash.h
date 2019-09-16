@@ -247,17 +247,34 @@ esp_err_t esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t addres
 
 /** @brief Encrypted and write data to the SPI flash chip using on-chip hardware flash encryption
  *
- * @param chip Pointer to identify flash chip. Must have been successfully initialised via esp_flash_init()
+ * @param chip Pointer to identify flash chip. Must be NULL (the main flash chip). For other chips, encrypted write is not supported.
  * @param address Address on flash to write to. 16 byte aligned. Must be previously erased (SPI NOR flash can only write bits 1->0).
  * @param buffer Pointer to a buffer with the data to write.
  * @param length Length (in bytes) of data to write. 16 byte aligned.
  *
  * @note Both address & length must be 16 byte aligned, as this is the encryption block size
  *
- * @return ESP_OK on success, or a flash error code if operation failed.
+ * @return
+ *  - ESP_OK: on success
+ *  - ESP_ERR_NOT_SUPPORTED: encrypted write not supported for this chip.
+ *  - ESP_ERR_INVALID_ARG: Either the address, buffer or length is invalid.
+ *  - or other flash error code from spi_flash_write_encrypted().
  */
 esp_err_t esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const void *buffer, uint32_t length);
 
+/** @brief Read and decrypt data from the SPI flash chip using on-chip hardware flash encryption
+ *
+ * @param chip Pointer to identify flash chip. Must be NULL (the main flash chip). For other chips, encrypted read is not supported.
+ * @param address Address on flash to read from.
+ * @param out_buffer Pointer to a buffer for the data to read to.
+ * @param length Length (in bytes) of data to read.
+ *
+ * @return
+ *  - ESP_OK: on success
+ *  - ESP_ERR_NOT_SUPPORTED: encrypted read not supported for this chip.
+ *  - or other flash error code from spi_flash_read_encrypted().
+ */
+esp_err_t esp_flash_read_encrypted(esp_flash_t *chip, uint32_t address, void *out_buffer, uint32_t length);
 
 /** @brief Pointer to the "default" SPI flash chip, ie the main chip attached to the MCU.
 

@@ -439,11 +439,11 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
 
     print_status "Check ccache is used to build"
     touch ccache && chmod +x ccache  # make sure that ccache is present for this test
-    (export PATH=$PWD:$PATH && idf.py --ccache reconfigure | grep "ccache will be used for faster builds") || failure "ccache should be used when --cache is specified"
+    (export PATH=$PWD:$PATH && idf.py --ccache reconfigure | grep "ccache will be used") || failure "ccache should be used when --cache is specified"
     idf.py fullclean
-    (export PATH=$PWD:$PATH && idf.py reconfigure| grep -c "ccache will be used for faster builds" | grep -wq 0) \
+    (export PATH=$PWD:$PATH && idf.py reconfigure| grep -c "ccache will be used" | grep -wq 0) \
         || failure "ccache should not be used even when present if --ccache is not specified"
-    (export PATH=$PWD:$PATH && idf.py --no-ccache reconfigure| grep -c "ccache will be used for faster builds" | grep -wq 0) \
+    (export PATH=$PWD:$PATH && idf.py --no-ccache reconfigure| grep -c "ccache will be used" | grep -wq 0) \
         || failure "--no-ccache causes no issue for backward compatibility"
     rm -f ccache
 
@@ -527,6 +527,18 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     rm -rf CMakeLists.txt
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
+    
+    print_status "Print all required argument deprecation warnings"
+    idf.py -C${IDF_PATH}/tools/test_idf_py --test-0=a --test-1=b --test-2=c --test-3=d test-0 --test-sub-0=sa --test-sub-1=sb ta test-1 > out.txt
+    ! grep -e '"test-0" is deprecated' -e '"test_0" is deprecated' out.txt || failure "Deprecation warnings are displayed for non-deprecated option/command"       
+    grep -e 'Warning: Option "test_sub_1" is deprecated and will be removed in future versions.' \
+        -e 'Warning: Command "test-1" is deprecated and will be removed in future versions. Please use alternative command.' \
+        -e 'Warning: Option "test_1" is deprecated and will be removed in future versions.' \
+        -e 'Warning: Option "test_2" is deprecated and will be removed in future versions. Please update your parameters.' \
+        -e 'Warning: Option "test_3" is deprecated and will be removed in future versions.' \
+        out.txt \
+        || failure "Deprecation warnings are not displayed"
+    rm out.txt
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

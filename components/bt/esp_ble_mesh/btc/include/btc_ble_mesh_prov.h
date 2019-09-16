@@ -61,7 +61,7 @@ typedef enum {
 typedef enum {
     BTC_BLE_MESH_ACT_MODEL_PUBLISH,
     BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
-    BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND
+    BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
 } btc_ble_mesh_model_act_t;
 
 typedef union {
@@ -176,11 +176,9 @@ typedef union {
     } model_send;
 } btc_ble_mesh_model_args_t;
 
-void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg);
-
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
-int btc_ble_mesh_client_init(esp_ble_mesh_model_t *model);
+int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
 
 int32_t btc_ble_mesh_model_pub_period_get(esp_ble_mesh_model_t *mod);
 
@@ -200,11 +198,10 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem,
 
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
 
-void btc_mesh_model_call_handler(btc_msg_t *msg);
-void btc_mesh_model_cb_handler(btc_msg_t *msg);
+void btc_ble_mesh_model_call_handler(btc_msg_t *msg);
+void btc_ble_mesh_model_cb_handler(btc_msg_t *msg);
 
-void btc_mesh_prov_call_handler(btc_msg_t *msg);
-
-void btc_mesh_prov_cb_handler(btc_msg_t *msg);
+void btc_ble_mesh_prov_call_handler(btc_msg_t *msg);
+void btc_ble_mesh_prov_cb_handler(btc_msg_t *msg);
 
 #endif /* _BTC_BLE_MESH_PROV_H_ */

@@ -37,13 +37,14 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"
-#include "esp_ipc.h"
 #include "driver/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "esp32/clk.h"
 #include "esp_coexist_internal.h"
-
+#if !CONFIG_FREERTOS_UNICORE
+#include "esp_ipc.h"
+#endif
 
 #if CONFIG_BT_ENABLED
 
@@ -755,12 +756,15 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 {
     esp_err_t err = ESP_OK;
 
+#if CONFIG_FREERTOS_UNICORE
+    cause_sw_intr((void *)intr_no);
+#else /* CONFIG_FREERTOS_UNICORE */
     if (xPortGetCoreID() == core_id) {
         cause_sw_intr((void *)intr_no);
     } else {
         err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
     }
-
+#endif /* !CONFIG_FREERTOS_UNICORE */
     return err;
 }
 

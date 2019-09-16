@@ -77,6 +77,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     esp_transport_utils_ms_to_timeval(timeout_ms, &tv);
 
     setsockopt(tcp->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(tcp->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
 
     ESP_LOGD(TAG, "[sock=%d],connecting to server IP:%s,Port:%d...",
              tcp->sock, ipaddr_ntoa((const ip_addr_t*)&remote_ip.sin_addr.s_addr), port);
@@ -115,23 +116,47 @@ static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout
 static int tcp_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
+    int ret = -1;
     fd_set readset;
+    fd_set errset;
     FD_ZERO(&readset);
+    FD_ZERO(&errset);
     FD_SET(tcp->sock, &readset);
+    FD_SET(tcp->sock, &errset);
     struct timeval timeout;
     esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    return select(tcp->sock + 1, &readset, NULL, NULL, &timeout);
+    ret = select(tcp->sock + 1, &readset, NULL, &errset, &timeout);
+    if (ret > 0 && FD_ISSET(tcp->sock, &errset)) {
+        int sock_errno = 0;
+        uint32_t optlen = sizeof(sock_errno);
+        getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+        ESP_LOGE(TAG, "tcp_poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), tcp->sock);
+        ret = -1;
+    }
+    return ret;
 }
 
 static int tcp_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
+    int ret = -1;
     fd_set writeset;
+    fd_set errset;
     FD_ZERO(&writeset);
+    FD_ZERO(&errset);
     FD_SET(tcp->sock, &writeset);
+    FD_SET(tcp->sock, &errset);
     struct timeval timeout;
     esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    return select(tcp->sock + 1, NULL, &writeset, NULL, &timeout);
+    ret = select(tcp->sock + 1, NULL, &writeset, &errset, &timeout);
+    if (ret > 0 && FD_ISSET(tcp->sock, &errset)) {
+        int sock_errno = 0;
+        uint32_t optlen = sizeof(sock_errno);
+        getsockopt(tcp->sock, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+        ESP_LOGE(TAG, "tcp_poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), tcp->sock);
+        ret = -1;
+    }
+    return ret;
 }
 
 static int tcp_close(esp_transport_handle_t t)

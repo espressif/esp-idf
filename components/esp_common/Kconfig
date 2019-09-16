@@ -198,4 +198,19 @@ menu "Common ESP-related"
             If this option is enabled, the Task Wtachdog Timer will wach the CPU1
             Idle Task.
 
+    config ESP_PANIC_HANDLER_IRAM
+        bool "Place panic handler code in IRAM"
+        default n
+        depends on IDF_TARGET_ESP32  # pending ESP32-S2 Beta support
+        help
+            If this option is disabled (default), the panic handler code is placed in flash not IRAM.
+            This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will
+            automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
+            risk, if the flash cache status is also corrupted during the crash.
+
+            If this option is enabled, the panic handler code is placed in IRAM. This allows the panic
+            handler to run without needing to re-enable cache first. This may be necessary to debug some
+            complex issues with crashes while flash cache is disabled (for example, when writing to
+            SPI flash.)
+
 endmenu # Common ESP-related
