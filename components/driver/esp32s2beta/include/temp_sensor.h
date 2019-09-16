@@ -31,6 +31,9 @@ typedef enum {
     TSENS_DAC_DEFAULT = TSENS_DAC_L2,
 } temp_sensor_dac_offset_t;
 
+/**
+ * @brief Configuration for temperature sensor reading
+ */
 typedef struct {
     temp_sensor_dac_offset_t dac_offset;    /*!< The temperature measurement range is configured with a built-in temperature offset DAC. */
     uint8_t clk_div;                        /*!< Default: 6 */
