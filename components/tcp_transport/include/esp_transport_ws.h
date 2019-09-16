@@ -13,6 +13,13 @@
 extern "C" {
 #endif
 
+typedef enum ws_transport_opcodes {
+    WS_TRANSPORT_OPCODES_TEXT =  0x01,
+    WS_TRANSPORT_OPCODES_BINARY = 0x02,
+    WS_TRANSPORT_OPCODES_CLOSE = 0x08,
+    WS_TRANSPORT_OPCODES_PING = 0x09,
+    WS_TRANSPORT_OPCODES_PONG = 0x0a,
+} ws_transport_opcodes_t;
 
 /**
  * @brief      Create web socket transport
@@ -42,6 +49,37 @@ void esp_transport_ws_set_path(esp_transport_handle_t t, const char *path);
  *      - One of the error codes
  */
 esp_err_t esp_transport_ws_set_subprotocol(esp_transport_handle_t t, const char *sub_protocol);
+
+/**
+ * @brief               Sends websocket raw message with custom opcode and payload
+ *
+ * Note that generic esp_transport_write for ws handle sends
+ * binary massages by default if size is > 0 and
+ * ping message if message size is set to 0.
+ * This API is provided to support explicit messages with arbitrary opcode,
+ * should it be PING, PONG or TEXT message with arbitrary data.
+ *
+ * @param[in]  t           Websocket transport handle
+ * @param[in]  opcode      ws operation code
+ * @param[in]  buffer      The buffer
+ * @param[in]  len         The length
+ * @param[in]  timeout_ms  The timeout milliseconds
+ *
+ * @return
+ *  - Number of bytes was written
+ *  - (-1) if there are any errors, should check errno
+ */
+int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms);
+
+/**
+ * @brief               Returns websocket op-code for last received data
+ *
+ * @param t             websocket transport handle
+ *
+ * @return
+ *      - Received op-code as enum
+ */
+ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t);
 
 
 #ifdef __cplusplus
