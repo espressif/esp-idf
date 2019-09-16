@@ -49,3 +49,4 @@ add_definitions(-DWIFI_ESP_WIFI_MD5=\"${WIFI_ESP_WIFI_MD5}\")
 add_custom_target(esp32_test_logo DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h")
 
 add_dependencies(${COMPONENT_NAME} esp32_test_logo)
+
