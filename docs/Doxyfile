@@ -217,6 +217,7 @@ INPUT = \
     ##
     ## NOTE: for line below header_file.inc is not used
     ../../components/ulp/include/esp32/ulp.h \
+    ../../components/ulp/include/ulp_common.h \
     ##
     ## Application Level Tracing - API Reference
     ##
