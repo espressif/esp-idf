@@ -34,6 +34,11 @@ This will prevent test cases from getting configs from other env when there're c
 
 import yaml
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
 
 class Config(object):
     """ Test Env Config """
@@ -52,7 +57,7 @@ class Config(object):
         """
         try:
             with open(config_file) as f:
-                configs = yaml.load(f)[env_name]
+                configs = yaml.load(f, Loader=Loader)[env_name]
         except (OSError, TypeError, IOError):
             configs = dict()
         return configs

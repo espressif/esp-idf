@@ -8,6 +8,11 @@ import subprocess
 from copy import deepcopy
 import CreateSectionTable
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
 TEST_CASE_PATTERN = {
     "initial condition": "UTINIT1",
     "SDK": "ESP32_IDF",
@@ -50,9 +55,10 @@ class Parser(object):
         self.unit_jobs = {}
         self.file_name_cache = {}
         self.idf_path = idf_path
-        self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"))
-        self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"))
-        self.config_dependencies = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), "r"))
+        self.tag_def = yaml.load(open(os.path.join(idf_path, self.TAG_DEF_FILE), "r"), Loader=Loader)
+        self.module_map = yaml.load(open(os.path.join(idf_path, self.MODULE_DEF_FILE), "r"), Loader=Loader)
+        self.config_dependencies = yaml.load(open(os.path.join(idf_path, self.CONFIG_DEPENDENCY_FILE), "r"),
+                                             Loader=Loader)
         # used to check if duplicated test case names
         self.test_case_names = set()
         self.parsing_errors = []
