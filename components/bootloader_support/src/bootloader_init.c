@@ -41,6 +41,7 @@
 #include "soc/spi_periph.h"
 
 #include "sdkconfig.h"
+#include "esp_efuse.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
@@ -128,6 +129,14 @@ static esp_err_t bootloader_main(void)
         ESP_LOGE(TAG, "failed to load bootloader header!");
         return ESP_FAIL;
     }
+
+    /* Check chip ID and minimum chip revision that supported by this image */
+    uint8_t revision = esp_efuse_get_chip_ver();
+    ESP_LOGI(TAG, "Chip Revision: %d", revision);
+    if (bootloader_common_check_chip_validity(&fhdr) != ESP_OK) {
+        return ESP_FAIL;
+    }
+
     bootloader_init_flash_configure(&fhdr);
 #if (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ == 240)
     //Check if ESP32 is rated for a CPU frequency of 160MHz only
