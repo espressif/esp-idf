@@ -122,7 +122,7 @@ int esp_wolfssl_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
         return 1;
     } else {
         int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
-        if (err != WOLFSSL_ERROR_WANT_READ && err != WOLFSSL_ERROR_WANT_WRITE) {
+        if (err != ESP_TLS_ERR_SSL_WANT_READ && err != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_LOGE(TAG, "wolfSSL_connect returned -0x%x", -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
 
@@ -149,7 +149,7 @@ ssize_t esp_wolfssl_read(esp_tls_t *tls, char *data, size_t datalen)
             return 0;
         }
 
-        if (ret != WOLFSSL_ERROR_WANT_READ && ret != WOLFSSL_ERROR_WANT_WRITE) {
+        if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
             ESP_LOGE(TAG, "read error :%d:", ret);
         }
@@ -162,7 +162,7 @@ ssize_t esp_wolfssl_write(esp_tls_t *tls, const char *data, size_t datalen)
     ssize_t ret = wolfSSL_write( (WOLFSSL *)tls->priv_ssl, (unsigned char *) data, datalen);
     if (ret < 0) {
         ret = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
-        if (ret != WOLFSSL_ERROR_WANT_READ  && ret != WOLFSSL_ERROR_WANT_WRITE) {
+        if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
             ESP_LOGE(TAG, "write error :%d:", ret);
         }
