@@ -1246,6 +1246,8 @@ typedef enum {
     ESP_BLE_MESH_LPN_POLL_COMP_EVT,                             /*!< Low Power Node send Friend Poll completion event */
     ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT,                  /*!< Low Power Node establishes friendship event */
     ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT,                  /*!< Low Power Node terminates friendship event */
+    ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT,               /*!< Friend Node establishes friendship event */
+    ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT,               /*!< Friend Node terminates friendship event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
 
@@ -1536,7 +1538,7 @@ typedef union {
         uint8_t  hops;                          /*!< Heartbeat hops (InitTTL - RxTTL + 1) */
         uint16_t feature;                       /*!< Bit field of currently active features of the node */
     } heartbeat_msg_recv;                       /*!< Event parameter of ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT */
-    /*
+    /**
      * @brief ESP_BLE_MESH_LPN_ENABLE_COMP_EVT
      */
     struct ble_mesh_lpn_enable_comp_param {
@@ -1566,6 +1568,26 @@ typedef union {
     struct ble_mesh_lpn_friendship_terminate_param {
         uint16_t friend_addr;                   /*!< Friend Node unicast address */
     } lpn_friendship_terminate;                 /*!< Event parameter of ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT */
+    /**
+     * @brief ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT
+     */
+    struct ble_mesh_friend_friendship_establish_param {
+        uint16_t lpn_addr;                      /*!< Low Power Node unciast address */
+    } frnd_friendship_establish;                /*!< Event parameter of ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT */
+    /**
+     * @brief ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT
+     */
+    struct ble_mesh_friend_friendship_terminate_param {
+        uint16_t lpn_addr;                      /*!< Low Power Node unicast address */
+        /** This enum value is the reason of friendship termination on the friend node side */
+        enum {
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_ESTABLISH_FAIL,  /*!< Friend Offer has been sent, but Friend Offer is not received within 1 second, friendship fails to be established */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_POLL_TIMEOUT,    /*!< Friendship is established, PollTimeout timer expires and no Friend Poll/Sub Add/Sub Remove is received */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_RECV_FRND_REQ,   /*!< Receive Friend Request from existing Low Power Node */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_RECV_FRND_CLEAR, /*!< Receive Friend Clear from other friend node */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_DISABLE,         /*!< Friend feature disabled or corresponding NetKey is deleted */
+        } reason;                               /*!< Friendship terminated reason */
+    } frnd_friendship_terminate;                /*!< Event parameter of ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT */
 } esp_ble_mesh_prov_cb_param_t;
 
 /**

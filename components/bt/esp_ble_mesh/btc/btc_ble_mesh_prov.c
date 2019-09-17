@@ -599,6 +599,43 @@ static void btc_ble_mesh_lpn_cb(u16_t friend_addr, bool established)
 }
 #endif /* CONFIG_BLE_MESH_LOW_POWER */
 
+#if CONFIG_BLE_MESH_FRIEND
+void btc_ble_mesh_friend_cb(bool establish, u16_t lpn_addr, u8_t reason)
+{
+    esp_ble_mesh_prov_cb_param_t mesh_param = {0};
+    btc_msg_t msg = {0};
+    bt_status_t ret;
+    u8_t act;
+
+    LOG_DEBUG("%s", __func__);
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(lpn_addr)) {
+        LOG_ERROR("%s, Not a unicast address", __func__);
+        return;
+    }
+
+    if (establish) { 
+        mesh_param.frnd_friendship_establish.lpn_addr = lpn_addr;
+        act = ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT;
+    } else {
+        mesh_param.frnd_friendship_terminate.lpn_addr = lpn_addr;
+        mesh_param.frnd_friendship_terminate.reason = reason;
+        act = ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT;
+    }
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_PROV;
+    msg.act = act;
+
+    ret = btc_transfer_context(&msg, &mesh_param,
+                               sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed", __func__);
+    }
+    return;
+}
+#endif /* CONFIG_BLE_MESH_FRIEND */
+
 #endif /* CONFIG_BLE_MESH_NODE */
 
 static void btc_ble_mesh_prov_register_complete_cb(int err_code)
@@ -1259,6 +1296,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
 #if CONFIG_BLE_MESH_LOW_POWER
         bt_mesh_lpn_set_cb(btc_ble_mesh_lpn_cb);
 #endif /* CONFIG_BLE_MESH_LOW_POWER */
+#if CONFIG_BLE_MESH_FRIEND
+        bt_mesh_friend_set_cb(btc_ble_mesh_friend_cb);
+#endif /* CONFIG_BLE_MESH_FRIEND */
 #endif /* CONFIG_BLE_MESH_NODE */
 #if CONFIG_BLE_MESH_PROVISIONER
         arg->mesh_init.prov->provisioner_prov_read_oob_pub_key = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_prov_read_oob_pub_key_cb;

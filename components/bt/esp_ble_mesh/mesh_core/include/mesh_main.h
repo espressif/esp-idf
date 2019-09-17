@@ -581,6 +581,15 @@ int bt_mesh_lpn_poll(void);
  */
 void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
 
+/** @brief Register a callback for Friendship changes of friend node.
+ *
+ *  Registers a callback that will be called whenever Friendship gets
+ *  established or is terminated.
+ *
+ *  @param cb Function to call when the Friendship status of friend node changes.
+ */
+void bt_mesh_friend_set_cb(void (*cb)(bool establish, u16_t lpn_addr, u8_t reason));
+
 /**
  * @}
  */
