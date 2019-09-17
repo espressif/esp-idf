@@ -68,7 +68,7 @@ typedef enum {
 typedef union {
     struct ble_mesh_health_server_fault_update_args {
         esp_ble_mesh_elem_t *element;
-    } fault_update;
+    } health_fault_update;
 } btc_ble_mesh_health_server_args_t;
 
 void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg);
@@ -76,5 +76,13 @@ void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg);
 void btc_ble_mesh_health_server_cb_handler(btc_msg_t *msg);
 
 void btc_ble_mesh_health_server_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+void btc_ble_mesh_health_server_fault_clear(struct bt_mesh_model *model, u16_t company_id);
+
+void btc_ble_mesh_health_server_fault_test(struct bt_mesh_model *model, u8_t test_id, u16_t company_id);
+
+void btc_ble_mesh_health_server_attention_on(struct bt_mesh_model *model, u8_t time);
+
+void btc_ble_mesh_health_server_attention_off(struct bt_mesh_model *model);
 
 #endif /* _BTC_BLE_MESH_HEALTH_MODEL_H_ */
