@@ -567,6 +567,38 @@ static void btc_ble_mesh_reset_cb(void)
     }
     return;
 }
+
+#if CONFIG_BLE_MESH_LOW_POWER
+static void btc_ble_mesh_lpn_cb(u16_t friend_addr, bool established)
+{
+    esp_ble_mesh_prov_cb_param_t mesh_param = {0};
+    btc_msg_t msg = {0};
+    bt_status_t ret;
+    u8_t act;
+
+    LOG_DEBUG("%s", __func__);
+
+    if (established) { 
+        mesh_param.lpn_friendship_establish.friend_addr = friend_addr;
+        act = ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT;
+    } else {
+        mesh_param.lpn_friendship_terminate.friend_addr = friend_addr;
+        act = ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT;
+    }
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_PROV;
+    msg.act = act;
+
+    ret = btc_transfer_context(&msg, &mesh_param,
+                               sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed", __func__);
+    }
+    return;
+}
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+
 #endif /* CONFIG_BLE_MESH_NODE */
 
 static void btc_ble_mesh_prov_register_complete_cb(int err_code)
@@ -1224,6 +1256,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         arg->mesh_init.prov->link_close_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_link_close_cb;
         arg->mesh_init.prov->complete_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_complete_cb;
         arg->mesh_init.prov->reset_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_reset_cb;
+#if CONFIG_BLE_MESH_LOW_POWER
+        bt_mesh_lpn_set_cb(btc_ble_mesh_lpn_cb);
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
 #endif /* CONFIG_BLE_MESH_NODE */
 #if CONFIG_BLE_MESH_PROVISIONER
         arg->mesh_init.prov->provisioner_prov_read_oob_pub_key = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_prov_read_oob_pub_key_cb;
@@ -1440,6 +1475,20 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             bt_mesh_set_fast_prov_action(arg->set_fast_prov_action.action);
         break;
 #endif /* CONFIG_BLE_MESH_FAST_PROV */
+#if CONFIG_BLE_MESH_LOW_POWER
+    case BTC_BLE_MESH_ACT_LPN_ENABLE:
+        act = ESP_BLE_MESH_LPN_ENABLE_COMP_EVT;
+        param.lpn_enable_comp.err_code = bt_mesh_lpn_set(true, false);
+        break;
+    case BTC_BLE_MESH_ACT_LPN_DISABLE:
+        act = ESP_BLE_MESH_LPN_DISABLE_COMP_EVT;
+        param.lpn_disable_comp.err_code = bt_mesh_lpn_set(false, arg->lpn_disable.force);
+        break;
+    case BTC_BLE_MESH_ACT_LPN_POLL:
+        act = ESP_BLE_MESH_LPN_POLL_COMP_EVT;
+        param.lpn_poll_comp.err_code = bt_mesh_lpn_poll();
+        break;
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
     default:
         LOG_WARN("%s, Invalid msg->act %d", __func__, msg->act);
         return;
