@@ -31,6 +31,7 @@
 #include "mesh_proxy.h"
 #include "cfg_cli.h"
 #include "health_cli.h"
+#include "cfg_srv.h"
 #include "health_srv.h"
 
 #include "mesh.h"
@@ -865,6 +866,29 @@ static void btc_ble_mesh_provisioner_prov_complete_cb(
 }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
+static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
+{
+    esp_ble_mesh_prov_cb_param_t mesh_param = {0};
+    btc_msg_t msg = {0};
+    bt_status_t ret;
+
+    LOG_DEBUG("%s", __func__);
+
+    mesh_param.heartbeat_msg_recv.hops = hops;
+    mesh_param.heartbeat_msg_recv.feature = feature;
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_PROV;
+    msg.act = ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT;
+    ret = btc_transfer_context(&msg, &mesh_param,
+                               sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed", __func__);
+    }
+    return;
+}
+
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
 {
     __ASSERT(model && model->op, "%s, Invalid parameter", __func__);
@@ -964,6 +988,10 @@ static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
     switch (model->model_id) {
     case BLE_MESH_MODEL_ID_CFG_SRV: {
         model->op = (esp_ble_mesh_model_op_t *)bt_mesh_cfg_srv_op;
+        struct bt_mesh_cfg_srv *srv = (struct bt_mesh_cfg_srv *)model->user_data;
+        if (srv) {
+            srv->hb_sub.func = btc_ble_mesh_heartbeat_msg_recv_cb;
+        }
         break;
     }
     case BLE_MESH_MODEL_ID_CFG_CLI: {

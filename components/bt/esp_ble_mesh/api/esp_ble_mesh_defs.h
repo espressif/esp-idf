@@ -1240,6 +1240,7 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT,        /*!< Provisioner add local network key completion event */
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
+    ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
 
@@ -1523,6 +1524,13 @@ typedef union {
     struct ble_mesh_set_fast_prov_action_comp_param {
         uint8_t status_action;                  /*!< Indicate the result of setting action of fast provisioning */
     } set_fast_prov_action_comp;                /*!< Event parameter of ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT
+     */
+    struct ble_mesh_heartbeat_msg_recv_param {
+        uint8_t  hops;                          /*!< Heartbeat hops (InitTTL - RxTTL + 1) */
+        uint16_t feature;                       /*!< Bit field of currently active features of the node */
+    } heartbeat_msg_recv;                       /*!< Event parameter of ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT */
 } esp_ble_mesh_prov_cb_param_t;
 
 /**
