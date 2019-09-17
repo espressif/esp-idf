@@ -89,6 +89,10 @@ struct bt_mesh_net bt_mesh = {
 static u32_t dup_cache[4];
 static int   dup_cache_next;
 
+#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+#define BLE_MESH_MAX_STORED_RELAY_COUNT  (CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT / 2)
+#endif
+
 static bool check_dup(struct net_buf_simple *data)
 {
     const u8_t *tail = net_buf_simple_tail(data);
@@ -1202,7 +1206,25 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
         transmit = bt_mesh_net_transmit_get();
     }
 
+    /**
+     * When the node tries to relay a Segment ACK message, in this case
+     * the corresponding segment packets (if exist) can be removed from
+     * the relay queue.
+     */
+
+#if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
     buf = bt_mesh_adv_create(BLE_MESH_ADV_DATA, transmit, K_NO_WAIT);
+#else
+    /**
+     * Check if the number of relay packets in queue is too large, if so
+     * use minimum relay retransmit value for later relay packets.
+     */
+    if (bt_mesh_get_stored_relay_count() >= BLE_MESH_MAX_STORED_RELAY_COUNT) {
+        transmit = BLE_MESH_TRANSMIT(0, 20);
+    }
+    buf = bt_mesh_relay_adv_create(BLE_MESH_ADV_DATA, transmit, K_NO_WAIT);
+#endif
+
     if (!buf) {
         BT_ERR("%s, Out of relay buffers", __func__);
         return;
@@ -1256,7 +1278,11 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     }
 
     if (relay_to_adv(rx->net_if)) {
+#if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
         bt_mesh_adv_send(buf, NULL, NULL);
+#else
+        bt_mesh_relay_adv_send(buf, NULL, NULL, rx->ctx.addr, rx->ctx.recv_dst);
+#endif
     }
 
 done:
