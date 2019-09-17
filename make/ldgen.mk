@@ -8,7 +8,7 @@ LDGEN_FRAGMENT_FILES = $(COMPONENT_LDFRAGMENTS)
 ifeq ($(OS),Windows_NT)
 define ldgen_process_template
 $(BUILD_DIR_BASE)/ldgen.section_infos: $(LDGEN_SECTIONS_INFO_FILES) $(IDF_PATH)/make/ldgen.mk
-	printf "$(foreach info,$(LDGEN_SECTIONS_INFO_FILES),$(subst \,/,$(shell cygpath -w $(info)))\n)" > $(BUILD_DIR_BASE)/ldgen.section_infos
+	printf "$(foreach info,$(LDGEN_SECTIONS_INFO_FILES),$(subst \,/,$(shell cygpath -m $(info)))\n)" > $(BUILD_DIR_BASE)/ldgen.section_infos
 
 $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen.section_infos
 	@echo 'Generating $(notdir $(2))'
@@ -19,8 +19,8 @@ $(2): $(1) $(LDGEN_FRAGMENT_FILES) $(SDKCONFIG) $(BUILD_DIR_BASE)/ldgen.section_
 		--output        $(2) \
 		--sections      $(BUILD_DIR_BASE)/ldgen.section_infos \
 		--kconfig       $(IDF_PATH)/Kconfig \
-		--env           "COMPONENT_KCONFIGS=$(foreach k, $(COMPONENT_KCONFIGS), $(shell cygpath -w $(k)))" \
-		--env           "COMPONENT_KCONFIGS_PROJBUILD=$(foreach k, $(COMPONENT_KCONFIGS_PROJBUILD), $(shell cygpath -w $(k)))" \
+		--env           "COMPONENT_KCONFIGS=$(foreach k, $(COMPONENT_KCONFIGS), $(shell cygpath -m $(k)))" \
+		--env           "COMPONENT_KCONFIGS_PROJBUILD=$(foreach k, $(COMPONENT_KCONFIGS_PROJBUILD), $(shell cygpath -m $(k)))" \
 		--env           "IDF_CMAKE=n"
 endef
 else # Windows_NT
