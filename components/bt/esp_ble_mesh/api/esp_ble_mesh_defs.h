@@ -1241,6 +1241,11 @@ typedef enum {
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
     ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
+    ESP_BLE_MESH_LPN_ENABLE_COMP_EVT,                           /*!< Enable Low Power Node completion event */
+    ESP_BLE_MESH_LPN_DISABLE_COMP_EVT,                          /*!< Disable Low Power Node completion event */
+    ESP_BLE_MESH_LPN_POLL_COMP_EVT,                             /*!< Low Power Node send Friend Poll completion event */
+    ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT,                  /*!< Low Power Node establishes friendship event */
+    ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT,                  /*!< Low Power Node terminates friendship event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
 
@@ -1531,6 +1536,36 @@ typedef union {
         uint8_t  hops;                          /*!< Heartbeat hops (InitTTL - RxTTL + 1) */
         uint16_t feature;                       /*!< Bit field of currently active features of the node */
     } heartbeat_msg_recv;                       /*!< Event parameter of ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT */
+    /*
+     * @brief ESP_BLE_MESH_LPN_ENABLE_COMP_EVT
+     */
+    struct ble_mesh_lpn_enable_comp_param {
+        int err_code;                           /*!< Indicate the result of enabling LPN functionality */
+    } lpn_enable_comp;                          /*!< Event parameter of ESP_BLE_MESH_LPN_ENABLE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_DISABLE_COMP_EVT
+     */
+    struct ble_mesh_lpn_disable_comp_param {
+        int err_code;                           /*!< Indicate the result of disabling LPN functionality */
+    } lpn_disable_comp;                         /*!< Event parameter of ESP_BLE_MESH_LPN_DISABLE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_POLL_COMP_EVT
+     */
+    struct ble_mesh_lpn_poll_comp_param {
+        int err_code;                           /*!< Indicate the result of sending Friend Poll */
+    } lpn_poll_comp;                            /*!< Event parameter of ESP_BLE_MESH_LPN_POLL_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT
+     */
+    struct ble_mesh_lpn_friendship_establish_param {
+        uint16_t friend_addr;                   /*!< Friend Node unicast address */
+    } lpn_friendship_establish;                 /*!< Event parameter of ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT
+     */
+    struct ble_mesh_lpn_friendship_terminate_param {
+        uint16_t friend_addr;                   /*!< Friend Node unicast address */
+    } lpn_friendship_terminate;                 /*!< Event parameter of ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT */
 } esp_ble_mesh_prov_cb_param_t;
 
 /**
