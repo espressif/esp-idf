@@ -220,6 +220,24 @@ function(__build_expand_requirements component_target)
     idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
     if(NOT component_target IN_LIST build_component_targets)
         idf_build_set_property(__BUILD_COMPONENT_TARGETS ${component_target} APPEND)
+
+        __component_get_property(component_lib ${component_target} COMPONENT_LIB)
+        idf_build_set_property(__BUILD_COMPONENTS ${component_lib} APPEND)
+
+        idf_build_get_property(prefix __PREFIX)
+        __component_get_property(component_prefix ${component_target} __PREFIX)
+
+        __component_get_property(component_alias ${component_target} COMPONENT_ALIAS)
+
+        idf_build_set_property(BUILD_COMPONENT_ALIASES ${component_alias} APPEND)
+
+        # Only put in the prefix in the name if it is not the default one
+        if(component_prefix STREQUAL prefix)
+            __component_get_property(component_name ${component_target} COMPONENT_NAME)
+            idf_build_set_property(BUILD_COMPONENTS ${component_name} APPEND)
+        else()
+            idf_build_set_property(BUILD_COMPONENTS ${component_alias} APPEND)
+        endif()
     endif()
 endfunction()
 

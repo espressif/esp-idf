@@ -353,13 +353,16 @@ macro(project project_name)
     # so that it treats components equally.
     #
     # This behavior should only be when user did not set REQUIRES/PRIV_REQUIRES manually.
-    idf_build_get_property(build_components BUILD_COMPONENTS)
+    idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
     if(idf::main IN_LIST build_components)
         __component_get_target(main_target idf::main)
         __component_get_property(reqs ${main_target} REQUIRES)
         __component_get_property(priv_reqs ${main_target} PRIV_REQUIRES)
         idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
         if(reqs STREQUAL common_reqs AND NOT priv_reqs) #if user has not set any requirements
+            if(test_components)
+                list(REMOVE_ITEM build_components ${test_components})
+            endif()
             list(REMOVE_ITEM build_components idf::main)
             __component_get_property(lib ${main_target} COMPONENT_LIB)
             set_property(TARGET ${lib} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${build_components}")
@@ -392,7 +395,7 @@ macro(project project_name)
         target_link_libraries(${project_elf} "-Wl,--no-whole-archive")
     endif()
 
-    idf_build_get_property(build_components BUILD_COMPONENTS)
+    idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
     if(test_components)
         list(REMOVE_ITEM build_components ${test_components})
     endif()

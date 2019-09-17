@@ -56,13 +56,8 @@ function(__component_get_target var name_or_alias)
         foreach(component_target ${component_targets})
             __component_get_property(_component_name ${component_target} COMPONENT_NAME)
             if(name_or_alias STREQUAL _component_name)
-                # There should only be one component of the same name
-                if(NOT target)
-                    set(target ${component_target})
-                else()
-                    message(FATAL_ERROR "Multiple components with name '${name_or_alias}' found.")
-                    return()
-                endif()
+                set(target ${component_target})
+                break()
             endif()
         endforeach()
         set(${var} ${target} PARENT_SCOPE)
@@ -191,6 +186,7 @@ function(__component_add component_dir prefix)
     __component_set_property(${component_target} COMPONENT_NAME ${component_name})
     __component_set_property(${component_target} COMPONENT_DIR ${component_dir})
     __component_set_property(${component_target} COMPONENT_ALIAS ${component_alias})
+
     __component_set_property(${component_target} __PREFIX ${prefix})
 
     # Set Kconfig related properties on the component
@@ -481,10 +477,6 @@ function(idf_component_register)
 
     # Set dependencies
     __component_set_all_dependencies()
-
-    # Add the component to built components
-    idf_build_set_property(__BUILD_COMPONENTS ${component_lib} APPEND)
-    idf_build_set_property(BUILD_COMPONENTS ${component_alias} APPEND)
 
     # Make the COMPONENT_LIB variable available in the component CMakeLists.txt
     set(COMPONENT_LIB ${component_lib} PARENT_SCOPE)
