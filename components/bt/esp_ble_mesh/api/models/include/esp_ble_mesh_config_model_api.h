@@ -79,8 +79,8 @@ typedef struct esp_ble_mesh_cfg_srv {
         uint8_t  min_hops;              /*!< Minimum hops when receiving Heartbeat messages */
         uint8_t  max_hops;              /*!< Maximum hops when receiving Heartbeat messages */
 
-        /** Optional subscription tracking function */
-        void (*func)(uint8_t hops, uint16_t feature);
+        /** Optional heartbeat subscription tracking function */
+        esp_ble_mesh_cb_t heartbeat_recv_cb;
     } heartbeat_sub;
 } esp_ble_mesh_cfg_srv_t;
 
