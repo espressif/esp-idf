@@ -187,6 +187,14 @@ test_idf_size:
     - cd ${IDF_PATH}/tools/test_idf_size
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
 
+test_idf_py:
+  extends: .host_test_template
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_py.py
+
 test_idf_tools:
   extends: .host_test_template
   script:

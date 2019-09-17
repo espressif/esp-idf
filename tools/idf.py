@@ -32,11 +32,12 @@ import locale
 import multiprocessing
 import os
 import os.path
+import platform
 import re
 import shutil
 import subprocess
 import sys
-import platform
+from collections import Counter, OrderedDict
 
 
 class FatalError(RuntimeError):
@@ -422,6 +423,7 @@ def set_target(action, ctx, args, idf_target):
     if os.path.exists(sdkconfig_path):
         os.rename(sdkconfig_path, sdkconfig_old)
     print("Set Target to: %s, new sdkconfig created. Existing sdkconfig renamed to sdkconfig.old." % idf_target)
+    _ensure_build_directory(args, True)
 
 
 def reconfigure(action, ctx, args):
@@ -798,7 +800,7 @@ def init_cli(verbose_output=None):
     class Option(click.Option):
         """Option that knows whether it should be global"""
 
-        def __init__(self, scope=None, deprecated=False, **kwargs):
+        def __init__(self, scope=None, deprecated=False, hidden=False, **kwargs):
             """
             Keyword arguments additional to Click's Option class:
 
@@ -815,6 +817,7 @@ def init_cli(verbose_output=None):
 
             self.deprecated = deprecated
             self.scope = Scope(scope)
+            self.hidden = hidden
 
             if deprecated:
                 deprecation = DeprecationMessage(deprecated)
@@ -822,6 +825,13 @@ def init_cli(verbose_output=None):
 
             if self.scope.is_global:
                 self.help += " This option can be used at most once either globally, or for one subcommand."
+
+        def get_help_record(self, ctx):
+            # Backport "hidden" parameter to click 5.0
+            if self.hidden:
+                return
+
+            return super(Option, self).get_help_record(ctx)
 
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
@@ -980,9 +990,18 @@ def init_cli(verbose_output=None):
 
         def execute_tasks(self, tasks, **kwargs):
             ctx = click.get_current_context()
-            global_args = PropertyDict(ctx.params)
+            global_args = PropertyDict(kwargs)
 
-            # Set propagated global options
+            # Show warning if some tasks are present several times in the list
+            dupplicated_tasks = sorted([item for item, count in Counter(task.name for task in tasks).items() if count > 1])
+            if dupplicated_tasks:
+                dupes = ", ".join('"%s"' % t for t in dupplicated_tasks)
+                print("WARNING: Command%s found in the list of commands more than once. "
+                      % ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes)
+                      + "Only first occurence will be executed.")
+
+            # Set propagated global options.
+            # These options may be set on one subcommand, but available in the list of global arguments
             for task in tasks:
                 for key in list(task.action_args):
                     option = next((o for o in ctx.command.params if o.name == key), None)
@@ -1003,72 +1022,78 @@ def init_cli(verbose_output=None):
             # Show warnings about global arguments
             print_deprecation_warning(ctx)
 
-            # Validate global arguments
+            # Make sure that define_cache_entry is mutable list and can be modified in callbacks
+            global_args.define_cache_entry = list(global_args.define_cache_entry)
+
+            # Execute all global action callback - first from idf.py itself, then from extensions
             for action_callback in ctx.command.global_action_callbacks:
                 action_callback(ctx, global_args, tasks)
 
+            # Always show help when command is not provided
             if not tasks:
                 print(ctx.get_help())
                 ctx.exit()
 
-            # Make sure that define_cache_entry is list
-            global_args.define_cache_entry = list(global_args.define_cache_entry)
-
-            # Go through the task and create depended but missing tasks
-            all_tasks = [t.name for t in tasks]
-            tasks, tasks_to_handle = [], tasks
-            while tasks_to_handle:
-                task = tasks_to_handle.pop()
-                tasks.append(task)
-                for dep in task.dependencies:
-                    if dep not in all_tasks:
-                        print(
-                            'Adding %s\'s dependency "%s" to list of actions'
-                            % (task.name, dep)
-                        )
-                        dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
-
-                        # Remove global options from dependent tasks
-                        for key in list(dep_task.action_args):
-                            option = next((o for o in ctx.command.params if o.name == key), None)
-                            if option and (option.scope.is_global or option.scope.is_shared):
-                                dep_task.action_args.pop(key)
-
-                        tasks_to_handle.append(dep_task)
-                        all_tasks.append(dep_task.name)
-
-            # very simple dependency management
-            completed_tasks = set()
+            # Build full list of tasks to and deal with dependencies and order dependencies
+            tasks_to_run = OrderedDict()
             while tasks:
                 task = tasks[0]
                 tasks_dict = dict([(t.name, t) for t in tasks])
 
-                name_with_aliases = task.name
-                if task.aliases:
-                    name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
+                dependecies_processed = True
 
-                ready_to_run = True
+                # If task have some dependecies they have to be executed before the task.
+                for dep in task.dependencies:
+                    if dep not in tasks_to_run.keys():
+                        # If dependent task is in the list of unprocessed tasks move to the front of the list
+                        if dep in tasks_dict.keys():
+                            dep_task = tasks.pop(tasks.index(tasks_dict[dep]))
+                        # Otherwise invoke it with default set of options
+                        # and put to the front of the list of unprocessed tasks
+                        else:
+                            print(
+                                'Adding "%s"\'s dependency "%s" to list of commands with default set of options.'
+                                % (task.name, dep)
+                            )
+                            dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
 
+                            # Remove options with global scope from invoke tasks because they are alread in global_args
+                            for key in list(dep_task.action_args):
+                                option = next((o for o in ctx.command.params if o.name == key), None)
+                                if option and (option.scope.is_global or option.scope.is_shared):
+                                    dep_task.action_args.pop(key)
+
+                        tasks.insert(0, dep_task)
+                        dependecies_processed = False
+
+                # Order only dependencies are moved to the front of the queue if they present in command list
                 for dep in task.order_dependencies:
-                    if dep in tasks_dict.keys() and dep not in completed_tasks:
+                    if dep in tasks_dict.keys() and dep not in tasks_to_run.keys():
                         tasks.insert(0, tasks.pop(tasks.index(tasks_dict[dep])))
-                        ready_to_run = False
+                        dependecies_processed = False
 
-                if ready_to_run:
+                if dependecies_processed:
+                    # Remove task from list of unprocessed tasks
                     tasks.pop(0)
 
-                    if task.name in completed_tasks:
-                        print(
-                            "Skipping action that is already done: %s"
-                            % name_with_aliases
-                        )
-                    else:
-                        print("Executing action: %s" % name_with_aliases)
-                        task.run(ctx, global_args, task.action_args)
+                    # And add to the queue
+                    if task.name not in tasks_to_run.keys():
+                        tasks_to_run.update([(task.name, task)])
 
-                    completed_tasks.add(task.name)
+            # Run all tasks in the queue
+            # when global_args.no_run is true idf.py works in idle mode and skips actual task execution
+            if not global_args.no_run:
+                for task in tasks_to_run.values():
+                    name_with_aliases = task.name
+                    if task.aliases:
+                        name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
 
-            self._print_closing_message(global_args, completed_tasks)
+                    print("Executing action: %s" % name_with_aliases)
+                    task.run(ctx, global_args, task.action_args)
+
+                self._print_closing_message(global_args, tasks_to_run.keys())
+
+            return tasks_to_run
 
         @staticmethod
         def merge_action_lists(*action_lists):
@@ -1165,6 +1190,13 @@ def init_cli(verbose_output=None):
                 "names": ["-G", "--generator"],
                 "help": "CMake generator.",
                 "type": click.Choice(GENERATOR_CMDS.keys()),
+            },
+            {
+                "names": ["--no-run"],
+                "help": "Only process arguments, but don't execute actions.",
+                "is_flag": True,
+                "hidden": True,
+                "default": False
             },
         ],
         "global_action_callbacks": [validate_root_options],
@@ -1276,7 +1308,7 @@ def init_cli(verbose_output=None):
                 + "For example, \"idf.py -DNAME='VALUE' reconfigure\" "
                 + 'can be used to set variable "NAME" in CMake cache to value "VALUE".',
                 "options": global_options,
-                "order_dependencies": ["menuconfig", "set-target", "fullclean"],
+                "order_dependencies": ["menuconfig", "fullclean"],
             },
             "set-target": {
                 "callback": set_target,
@@ -1291,7 +1323,7 @@ def init_cli(verbose_output=None):
                     "nargs": 1,
                     "type": click.Choice(SUPPORTED_TARGETS),
                 }],
-                "dependencies": ["fullclean", "reconfigure"],
+                "dependencies": ["fullclean"],
             },
             "clean": {
                 "callback": clean,
