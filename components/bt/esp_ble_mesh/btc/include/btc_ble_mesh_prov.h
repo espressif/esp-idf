@@ -55,6 +55,9 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
+    BTC_BLE_MESH_ACT_LPN_ENABLE,
+    BTC_BLE_MESH_ACT_LPN_DISABLE,
+    BTC_BLE_MESH_ACT_LPN_POLL,
 } btc_ble_mesh_prov_act_t;
 
 typedef enum {
@@ -156,6 +159,15 @@ typedef union {
     struct ble_mesh_set_fast_prov_action_args {
         uint8_t action;
     } set_fast_prov_action;
+    struct ble_mesh_lpn_enable_args {
+        /* RFU */
+    } lpn_enable;
+    struct ble_mesh_lpn_disable_args {
+        bool force;
+    } lpn_disable;
+    struct ble_mesh_lpn_poll_args {
+        /* RFU */
+    } lpn_poll;
 } btc_ble_mesh_prov_args_t;
 
 typedef union {

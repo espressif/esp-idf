@@ -555,10 +555,13 @@ bool bt_mesh_iv_update(void);
  *  from a battery power source.
  *
  *  @param enable  true to enable LPN functionality, false to disable it.
+ *  @param force   when disable LPN functionality, use this flag to indicate
+ *                 whether directly clear corresponding information or sending
+ *                 friend clear to disable it.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_lpn_set(bool enable);
+int bt_mesh_lpn_set(bool enable, bool force);
 
 /** @brief Send out a Friend Poll message.
  *
