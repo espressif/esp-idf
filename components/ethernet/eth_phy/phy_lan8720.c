@@ -128,11 +128,11 @@ void phy_lan8720_dump_registers()
     ESP_LOGD(TAG, "ANAR   0x%04x", esp_eth_smi_read(0x4));
     ESP_LOGD(TAG, "ANLPAR 0x%04x", esp_eth_smi_read(0x5));
     ESP_LOGD(TAG, "ANER   0x%04x", esp_eth_smi_read(0x6));
-    ESP_LOGD(TAG, "MCSR   0x%04x", esp_eth_smi_read(0x17));
-    ESP_LOGD(TAG, "SM     0x%04x", esp_eth_smi_read(0x18));
-    ESP_LOGD(TAG, "SECR   0x%04x", esp_eth_smi_read(0x26));
-    ESP_LOGD(TAG, "CSIR   0x%04x", esp_eth_smi_read(0x27));
-    ESP_LOGD(TAG, "ISR    0x%04x", esp_eth_smi_read(0x29));
-    ESP_LOGD(TAG, "IMR    0x%04x", esp_eth_smi_read(0x30));
-    ESP_LOGD(TAG, "PSCSR  0x%04x", esp_eth_smi_read(0x31));
+    ESP_LOGD(TAG, "MCSR   0x%04x", esp_eth_smi_read(0x11));
+    ESP_LOGD(TAG, "SM     0x%04x", esp_eth_smi_read(0x12));
+    ESP_LOGD(TAG, "SECR   0x%04x", esp_eth_smi_read(0x1A));
+    ESP_LOGD(TAG, "CSIR   0x%04x", esp_eth_smi_read(0x1B));
+    ESP_LOGD(TAG, "ISR    0x%04x", esp_eth_smi_read(0x1D));
+    ESP_LOGD(TAG, "IMR    0x%04x", esp_eth_smi_read(0x1E));
+    ESP_LOGD(TAG, "PSCSR  0x%04x", esp_eth_smi_read(0x1F));
 }

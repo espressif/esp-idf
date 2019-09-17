@@ -825,9 +825,9 @@ static void emac_start(void *param)
     emac_mac_init();
 
     /* check if enable promiscuous mode */
-    if(emac_config.promiscuous_enable){
+    if (emac_config.promiscuous_enable) {
         emac_enable_promiscuous();
-    }else{
+    } else {
         emac_disable_promiscuous();
     }
 
@@ -1116,12 +1116,15 @@ esp_err_t esp_eth_init_internal(eth_config_t *config)
 
     if (emac_config.clock_mode != ETH_CLOCK_GPIO0_IN) {
 #if CONFIG_SPIRAM_SUPPORT
-        if (esp_spiram_is_initialized()) {
-            ESP_LOGE(TAG, "GPIO16 and GPIO17 has been occupied by PSRAM, Only ETH_CLOCK_GPIO_IN is supported!");
-            ret = ESP_FAIL;
-            goto _verify_err;
-        } else {
-            ESP_LOGW(TAG, "GPIO16/17 is used for clock of EMAC, Please Make Sure you're not using PSRAM.");
+        // make sure Ethernet won't have conflict with PSRAM
+        if (emac_config.clock_mode >= ETH_CLOCK_GPIO16_OUT) {
+            if (esp_spiram_is_initialized()) {
+                ESP_LOGE(TAG, "GPIO16 and GPIO17 are occupied by PSRAM, please switch to ETH_CLOCK_GPIO_IN or ETH_CLOCK_GPIO_OUT mode");
+                ret = ESP_FAIL;
+                goto _verify_err;
+            } else {
+                ESP_LOGW(TAG, "Using GPIO16/17 to output Ethernet RMII clock, make sure you don't have PSRAM on board");
+            }
         }
 #endif
         // 50 MHz = 40MHz * (6 + 4) / (2 * (2 + 2) = 400MHz / 8
