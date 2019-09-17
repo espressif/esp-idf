@@ -2,7 +2,7 @@ menu "Example Configuration"
 
     choice PHY_MODEL
         prompt "Ethernet PHY Device"
-        default PHY_TLK110
+        default PHY_IP101
         help
             Select the PHY driver to use for the example.
         config PHY_IP101
@@ -24,7 +24,7 @@ menu "Example Configuration"
 
     config PHY_ADDRESS
         int "Ethernet PHY Address"
-        default 31
+        default 1
         range 0 31
         help
             PHY Address of your PHY device. It dependens on your schematic design.
@@ -39,9 +39,15 @@ menu "Example Configuration"
             help
                 Input of 50MHz RMII clock on GPIO0.
         config PHY_CLOCK_GPIO0_OUT
-            bool "GPIO0 Output"
+            bool "GPIO0 Output(READ HELP)"
             help
-                Output the internal 50MHz RMII clock on GPIO0.
+                GPIO0 can be set to output a pre-divided PLL clock (test only!).
+                Enabling this option will configure GPIO0 to output a 50MHz clock.
+                In fact this clock doesn't have directly relationship with EMAC peripheral.
+                Sometimes this clock won't work well with your PHY chip. You might need to
+                add some extra devices after GPIO0 (e.g. inverter).
+                Note that outputting RMII clock on GPIO0 is an experimental practice.
+                If you want the Ethernet to work with WiFi, don't select GPIO0 output mode for stability.
         config PHY_CLOCK_GPIO16_OUT
             bool "GPIO16 Output"
             help
@@ -61,7 +67,7 @@ menu "Example Configuration"
 
     config PHY_USE_POWER_PIN
         bool "Use PHY Power (enable / disable) pin"
-        default n
+        default y
         help
             Use a GPIO "power pin" to power the PHY on/off during operation.
             When using GPIO0 to input RMII clock, the reset process will be interfered by this clock.
@@ -70,7 +76,7 @@ menu "Example Configuration"
     if PHY_USE_POWER_PIN
         config PHY_POWER_PIN
             int "PHY Power GPIO"
-            default 17
+            default 5
             range 0 33
             depends on PHY_USE_POWER_PIN
             help
