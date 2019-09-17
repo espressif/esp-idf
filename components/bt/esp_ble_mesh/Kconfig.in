@@ -422,6 +422,28 @@ if BLE_MESH
             be enabled or disabled by proper configuration messages. Disabling this
             option will let a node not support the Relay feature.
 
+    if BLE_MESH_RELAY
+
+        config BLE_MESH_RELAY_ADV_BUF
+            bool "Use separate advertising buffers for relay packets"
+            default n
+            help
+                When selected, self-send packets will be put in a high-priority
+                queue and relay packets will be put in a low-priority queue.
+
+        if BLE_MESH_RELAY_ADV_BUF
+
+            config BLE_MESH_RELAY_ADV_BUF_COUNT
+                int "Number of advertising buffers for relay packets"
+                default 60
+                range 6 256
+                help
+                    Number of advertising buffers for relay packets available.
+
+        endif # BLE_MESH_RELAY_ADV_BUF
+
+    endif # BLE_MESH_RELAY
+
     config BLE_MESH_LOW_POWER
         bool "Support for Low Power features"
         help
