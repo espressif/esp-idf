@@ -31,6 +31,7 @@
 #include "mesh_proxy.h"
 #include "cfg_cli.h"
 #include "health_cli.h"
+#include "health_srv.h"
 
 #include "mesh.h"
 #include "access.h"
@@ -975,6 +976,13 @@ static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
     }
     case BLE_MESH_MODEL_ID_HEALTH_SRV: {
         model->op = (esp_ble_mesh_model_op_t *)bt_mesh_health_srv_op;
+        struct bt_mesh_health_srv *srv = (struct bt_mesh_health_srv *)model->user_data;
+        if (srv) {
+            srv->cb.fault_clear = btc_ble_mesh_health_server_fault_clear;
+            srv->cb.fault_test = btc_ble_mesh_health_server_fault_test;
+            srv->cb.attn_on = btc_ble_mesh_health_server_attention_on;
+            srv->cb.attn_off = btc_ble_mesh_health_server_attention_off;
+        }
         break;
     }
     case BLE_MESH_MODEL_ID_HEALTH_CLI: {
