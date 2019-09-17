@@ -578,6 +578,7 @@ if BLE_MESH
 
     config BLE_MESH_FRIEND
         bool "Support for acting as a Friend Node"
+        select BLE_MESH_NODE
         help
             Enable this option to be able to act as a Friend Node.
 
