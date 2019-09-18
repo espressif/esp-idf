@@ -102,6 +102,7 @@ bool list_insert_after(list_t *list, list_node_t *prev_node, void *data) {
     assert(data != NULL);
     list_node_t *node = (list_node_t *)osi_calloc(sizeof(list_node_t));
     if (!node) {
+        OSI_TRACE_ERROR("%s osi_calloc failed.\n", __FUNCTION__ );
         return false;
     }
     node->next = prev_node->next;
@@ -120,6 +121,7 @@ bool list_prepend(list_t *list, void *data)
     assert(data != NULL);
     list_node_t *node = (list_node_t *)osi_calloc(sizeof(list_node_t));
     if (!node) {
+        OSI_TRACE_ERROR("%s osi_calloc failed.\n", __FUNCTION__ );
         return false;
     }
     node->next = list->head;
@@ -138,6 +140,7 @@ bool list_append(list_t *list, void *data)
     assert(data != NULL);
     list_node_t *node = (list_node_t *)osi_calloc(sizeof(list_node_t));
     if (!node) {
+        OSI_TRACE_ERROR("%s osi_calloc failed.\n", __FUNCTION__ );
         return false;
     }
     node->next = NULL;
