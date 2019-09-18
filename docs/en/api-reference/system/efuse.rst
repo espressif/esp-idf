@@ -146,6 +146,10 @@ Also, 3/4 coding scheme imposes restrictions on writing bits belonging to one co
 
 It turns out that only one field can be written into one coding unit. Repeated rewriting in one coding unit is prohibited. But if the record was made in advance or through a :cpp:func:`esp_efuse_write_block` function, then reading the fields belonging to one coding unit is possible.
 
+In case ``3/4`` coding scheme, the writing process is divided into the coding units and we can not use the usual mode of writing some fields. We can prepare all the data for writing and burn it in one time. You can also use this mode for ``None`` coding scheme but it is not necessary. It is important for ``3/4`` coding scheme.
+To write some fields in one time need to use ``the batch writing mode``. Firstly set this mode through :cpp:func:`esp_efuse_batch_write_begin` function then write some fields as usual use the ``esp_efuse_write_...`` functions. At the end to burn they, need to call the :cpp:func:`esp_efuse_batch_write_commit` function. It burns prepared data to the efuse blocks and disable the ``batch recording mode``.
+``The batch writing mode`` blocks ``esp_efuse_read_...`` operations.
+
 After changing the coding scheme, run ``efuse_common_table`` and ``efuse_custom_table`` commands to check the tables of the new coding scheme.
 
 eFuse API
@@ -163,6 +167,9 @@ Access to the fields is via a pointer to the description structure. API function
 * :cpp:func:`esp_efuse_get_coding_scheme` - returns eFuse coding scheme for blocks.
 * :cpp:func:`esp_efuse_read_block` - reads key to eFuse block starting at the offset and the required size.
 * :cpp:func:`esp_efuse_write_block` - writes key to eFuse block starting at the offset and the required size.
+* :cpp:func:`esp_efuse_batch_write_begin` - set the batch mode of writing fields.
+* :cpp:func:`esp_efuse_batch_write_commit` - writes all prepared data for batch writing mode and reset the batch writing mode.
+* :cpp:func:`esp_efuse_batch_write_cancel` - reset the batch writing mode and prepared data.
 
 For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_chip_ver`, :cpp:func:`esp_efuse_get_pkg_ver`.
 

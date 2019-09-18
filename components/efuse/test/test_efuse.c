@@ -12,6 +12,10 @@
 #include "esp_efuse_test_table.h"
 #include "esp32/rom/efuse.h"
 #include "bootloader_random.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "test_utils.h"
 #include "sdkconfig.h"
 
 static const char* TAG = "efuse_test";
@@ -607,5 +611,83 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
         printf("Test skipped. It is not applicable, the device has no written bits.");
     }
 }
+
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static const int delay_ms = 2000;
+static xSemaphoreHandle sema;
+
+static void task1(void* arg)
+{
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    ESP_LOGI(TAG, "Start work in batch mode");
+    xSemaphoreGive(sema);
+    vTaskDelay((delay_ms + 100) / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "Finish work in batch mode");
+    TEST_ESP_OK(esp_efuse_batch_write_cancel());
+
+    vTaskDelete(NULL);
+}
+
+static void task2(void* arg)
+{
+    xSemaphoreTake(sema, portMAX_DELAY);
+    uint8_t mac[6];
+    int64_t t1 = esp_timer_get_time();
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
+    int64_t t2 = esp_timer_get_time();
+    int diff_ms = (t2 - t1) / 1000;
+    TEST_ASSERT_GREATER_THAN(delay_ms, diff_ms);
+    ESP_LOGI(TAG, "read MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    xSemaphoreGive(sema);
+
+    vTaskDelete(NULL);
+}
+
+static void task3(void* arg)
+{
+    xSemaphoreTake(sema, portMAX_DELAY);
+    size_t test3_len_6 = 2;
+    int64_t t1 = esp_timer_get_time();
+    TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
+    TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST3_LEN_6, &test3_len_6));
+    int64_t t2 = esp_timer_get_time();
+    ESP_LOGI(TAG, "write&read test3_len_6: %d", test3_len_6);
+    int diff_ms = (t2 - t1) / 1000;
+    TEST_ASSERT_GREATER_THAN(delay_ms, diff_ms);
+    TEST_ASSERT_EQUAL_INT(2, test3_len_6);
+    xSemaphoreGive(sema);
+
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Batch mode is thread-safe", "[efuse]")
+{
+    // Batch mode blocks work with efuse on other tasks.
+    esp_efuse_utility_update_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+    sema = xSemaphoreCreateBinary();
+
+    printf("\n");
+    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task2, "task2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    xSemaphoreTake(sema, portMAX_DELAY);
+
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+
+    printf("\n");
+    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task3, "task3", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    xSemaphoreTake(sema, portMAX_DELAY);
+
+    printf("\n");
+    vSemaphoreDelete(sema);
+    esp_efuse_utility_reset();
+    esp_efuse_utility_erase_virt_blocks();
+}
+#endif // #ifndef CONFIG_FREERTOS_UNICORE
 
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL
