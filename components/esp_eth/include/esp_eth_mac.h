@@ -247,11 +247,6 @@ typedef struct {
     uint32_t sw_reset_timeout_ms; /*!< Software reset timeout value (Unit: ms) */
     uint32_t rx_task_stack_size;  /*!< Stack size of the receive task */
     uint32_t rx_task_prio;        /*!< Priority of the receive task */
-    uint32_t queue_len;           /*!< Length of the transaction queue */
-#if CONFIG_ETH_USE_SPI_ETHERNET
-    spi_device_handle_t spi_hdl;  /*!< Handle of spi device */
-#endif
-
 } eth_mac_config_t;
 
 /**
@@ -263,7 +258,6 @@ typedef struct {
         .sw_reset_timeout_ms = 100, \
         .rx_task_stack_size = 4096, \
         .rx_task_prio = 15,         \
-        .queue_len = 100,           \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
@@ -281,15 +275,33 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
 
 #if CONFIG_ETH_SPI_ETHERNET_DM9051
 /**
+ * @brief DM9051 specific configuration
+ *
+ */
+typedef struct {
+    spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
+} eth_dm9051_config_t;
+
+/**
+ * @brief Default DM9051 specific configuration
+ *
+ */
+#define ETH_DM9051_DEFAULT_CONFIG(spi_device) \
+    {                                         \
+        .spi_hdl = spi_device,                \
+    }
+
+/**
 * @brief Create DM9051 Ethernet MAC instance
 *
-* @param config: Ethernet MAC configuration
+* @param dm9051_config: DM9051 specific configuration
+* @param mac_config: Ethernet MAC configuration
 *
 * @return
 *      - instance: create MAC instance successfully
 *      - NULL: create MAC instance failed because some error occurred
 */
-esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_mac_config_t *config);
+esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
 #endif
 #ifdef __cplusplus
 }
