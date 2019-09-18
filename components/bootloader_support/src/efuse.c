@@ -15,6 +15,7 @@
 #include "esp_log.h"
 #include <string.h>
 #include "bootloader_random.h"
+#include "soc/apb_ctrl_reg.h"
 
 #define EFUSE_CONF_WRITE 0x5A5A /* efuse_pgm_op_ena, force no rd/wr disable */
 #define EFUSE_CONF_READ 0x5AA5 /* efuse_read_op_ena, release force */
@@ -111,4 +112,33 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     }
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
+}
+
+// Returns chip version from efuse
+uint8_t esp_efuse_get_chip_ver(void)
+{
+    uint8_t eco_bit0, eco_bit1, eco_bit2;
+    eco_bit0 = (REG_READ(EFUSE_BLK0_RDATA3_REG) & 0xF000) >> 15;
+    eco_bit1 = (REG_READ(EFUSE_BLK0_RDATA5_REG) & 0x100000) >> 20;
+    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 0x80000000) >> 31;
+    uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
+    uint8_t chip_ver = 0;
+    switch (combine_value) {
+    case 0:
+        chip_ver = 0;
+        break;
+    case 1:
+        chip_ver = 1;
+        break;
+    case 3:
+        chip_ver = 2;
+        break;
+    case 7:
+        chip_ver = 3;
+        break;
+    default:
+        chip_ver = 0;
+        break;
+    }
+    return chip_ver;
 }

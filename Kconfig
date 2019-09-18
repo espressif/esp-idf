@@ -8,6 +8,10 @@ config IDF_CMAKE
     bool
     option env="IDF_CMAKE"
 
+config IDF_FIRMWARE_CHIP_ID
+    hex
+    default 0x0000
+
 menu "SDK tool configuration"
 config TOOLPREFIX
     string "Compiler toolchain path/prefix"
@@ -132,17 +136,17 @@ choice STACK_CHECK_MODE
 
         - In NORMAL mode (GCC flag: -fstack-protector) only functions that call alloca,
           and functions with buffers larger than 8 bytes are protected.
-        
+
         - STRONG mode (GCC flag: -fstack-protector-strong) is like NORMAL, but includes
           additional functions to be protected -- those that have local array definitions,
           or have references to local frame addresses.
-        
+
         - In OVERALL mode (GCC flag: -fstack-protector-all) all functions are protected.
 
         Modes have the following impact on code performance and coverage:
 
         - performance: NORMAL > STRONG > OVERALL
-        
+
         - coverage: NORMAL < STRONG < OVERALL
 
 
