@@ -282,7 +282,24 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
         payload_len = len;
     }
 
+    // Handle control frames
+    if (opcode == WS_OPCODE_PING) {
+        // Reply with PONG frame
+        ESP_LOGD(TAG, "Write PONG message");
+        if (_ws_write(t, WS_OPCODE_PONG | WS_FIN, 0, NULL, 0, timeout_ms) < 0) {
+            ESP_LOGE(TAG, "Error when writing PONG message");
+        }
+    } else if (opcode == WS_OPCODE_PONG) {
+        ESP_LOGD(TAG, "Received PONG message");
+        // TODO: No existing way to pass pong data to upper layer transport
+    }
+    
     // Then receive and process payload
+    // TODO: Currently it handle data from any frame including ping/pong the same way
+    if (payload_len == 0) {
+        // Ping-pong control frames are usually 0 in length, reading 0 length in lower layer transport results in error
+        return 0; 
+    }
     if ((rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
