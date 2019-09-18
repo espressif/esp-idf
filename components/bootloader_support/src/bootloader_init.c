@@ -17,6 +17,7 @@
 #include <sys/param.h>
 
 #include "esp_attr.h"
+#include "esp_efuse.h"
 #include "esp_log.h"
 
 #include "rom/cache.h"
@@ -124,6 +125,12 @@ static esp_err_t bootloader_main()
     esp_image_header_t fhdr;
     if (bootloader_flash_read(ESP_BOOTLOADER_OFFSET, &fhdr, sizeof(esp_image_header_t), true) != ESP_OK) {
         ESP_LOGE(TAG, "failed to load bootloader header!");
+        return ESP_FAIL;
+    }
+    /* Check chip ID and minimum chip revision that supported by this image */
+    uint8_t revision = esp_efuse_get_chip_ver();
+    ESP_LOGI(TAG, "Chip Revision: %d", revision);
+    if (bootloader_common_check_chip_validity(&fhdr) != ESP_OK) {
         return ESP_FAIL;
     }
     bootloader_init_flash_configure(&fhdr);
