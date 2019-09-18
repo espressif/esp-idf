@@ -16,6 +16,7 @@
 #include <errno.h>
 
 #include "osi/allocator.h"
+#include "osi/mutex.h"
 
 #include "mesh_access.h"
 #include "mesh_buf.h"
@@ -222,6 +223,28 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     return err;
 }
 
+static osi_mutex_t client_model_mutex;
+
+static void bt_mesh_client_model_mutex_new(void)
+{
+    static bool init;
+
+    if (!init) {
+        osi_mutex_new(&client_model_mutex);
+        init = true;
+    }
+}
+
+void bt_mesh_client_model_lock(void)
+{
+    osi_mutex_lock(&client_model_mutex, OSI_MUTEX_MAX_TIMEOUT);
+}
+
+void bt_mesh_client_model_unlock(void)
+{
+    osi_mutex_unlock(&client_model_mutex);
+}
+
 int bt_mesh_client_init(struct bt_mesh_model *model)
 {
     bt_mesh_client_internal_data_t *data = NULL;
@@ -256,17 +279,18 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
     cli->model = model;
     cli->internal_data = data;
 
+    bt_mesh_client_model_mutex_new();
+
     return 0;
 }
 
 int bt_mesh_client_free_node(sys_slist_t *queue, bt_mesh_client_node_t *node)
 {
     if (!queue || !node) {
+        BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
-    // Free the node timer
-    k_delayed_work_free(&node->timer);
     // Release the client node from the queue
     sys_slist_find_and_remove(queue, &node->client_node);
     // Free the node
