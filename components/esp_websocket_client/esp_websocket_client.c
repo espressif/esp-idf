@@ -460,7 +460,7 @@ static void esp_websocket_client_task(void *pv)
                     esp_transport_write(client->transport, NULL, 0, client->config->network_timeout_ms);
                 }
                 if (read_select == 0) {
-                    ESP_LOGD(TAG, "Timeout...");
+                    ESP_LOGD(TAG, "Keep waiting for new message...");
                     continue;
                 }
                 client->ping_tick_ms = _tick_get_ms();
