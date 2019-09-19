@@ -181,17 +181,13 @@ typedef enum {
 typedef struct {
     int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
     wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
-}wifi_fast_scan_threshold_t;
-
-typedef wifi_fast_scan_threshold_t wifi_scan_threshold_t;    /**< wifi_fast_scan_threshold_t only used in fast scan mode once, now it enabled in all channel scan, the wifi_fast_scan_threshold_t will be remove in version 4.0 */
+}wifi_scan_threshold_t;
 
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
     WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
-
-#define WIFI_PS_MODEM WIFI_PS_MIN_MODEM /**< @deprecated Use WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM instead */
 
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2

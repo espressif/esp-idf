@@ -464,7 +464,6 @@ test cases:
   SDK: |-
     8266_NonOS
     8266_RTOS
-    ESP32_IDF
   Test App: SSC
   allow fail: ''
   auto test: 'Yes'
@@ -1066,35 +1065,6 @@ test cases:
   sub module: WIFI Connect
   summary: sta connect after WiFi stop
   test environment: SSC_T1_4
-  test point 1: basic function
-  test point 2: use WiFi API after WiFi stop
-  version: v1 (2016-12-31)
-- CI ready: 'Yes'
-  ID: WIFI_CONN_1202
-  SDK: ESP32_IDF
-  Test App: SSC
-  allow fail: ''
-  auto test: 'Yes'
-  category: Function
-  cmd set:
-  - ''
-  - - SSC SSC1 sta -R -a 1
-    - - R SSC1 C +AUTORECONN:OK
-  - - SSC SSC1 sta -Q
-    - - R SSC1 C +JAP:DISCONNECTED
-  execution time: 0
-  expected result: |
-    1. OK
-    2. DISCONNECTED
-  initial condition: WIFISTO
-  level: Integration
-  module: WIFI MAC
-  steps: |
-    1. sta reconnect start
-    2. query sta state
-  sub module: WIFI Connect
-  summary: sta reconnect start and connect fail after WiFi stop
-  test environment: SSC_T1_5
   test point 1: basic function
   test point 2: use WiFi API after WiFi stop
   version: v1 (2016-12-31)

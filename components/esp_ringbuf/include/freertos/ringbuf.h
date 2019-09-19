@@ -514,10 +514,6 @@ void vRingbufferGetInfo(RingbufHandle_t xRingbuffer,
  */
 void xRingbufferPrintInfo(RingbufHandle_t xRingbuffer);
 
-/* ------------------------------- Deprecated ------------------------------- */
-
-typedef RingbufferType_t ringbuf_type_t __attribute__((deprecated));
-
 #ifdef __cplusplus
 }
 #endif
