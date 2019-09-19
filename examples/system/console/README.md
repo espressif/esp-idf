@@ -100,6 +100,30 @@ Type 'help' to get the list of commands.
 Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
 [esp32]> 
+ping  <IP address>
+Send an ICMP message to an IPv4/IPv6 address
+<IPv4/IPv6>  Target IP Address
+-c, --count=<n>  Number of messages
+-t, --timeout=<t>  Connection timeout, ms
+-d, --delay=<t>  Delay between messges, ms
+-s, --size=<n>  Packet data size, bytes
+--tos=<n>  Type of service
+
+esp32>
+esp32> ping 192.168.1.1
+PING 192.168.1.1 (192.168.1.1) 32(60) bytes of data.
+60 bytes from 192.168.1.1: icmp_seq=1 time=13 ms
+60 bytes from 192.168.1.1: icmp_seq=2 time=11 ms
+60 bytes from 192.168.1.1: icmp_seq=3 time=7 ms
+60 bytes from 192.168.1.1: icmp_seq=4 time=13 ms
+60 bytes from 192.168.1.1: icmp_seq=5 time=25 ms
+
+--- 192.168.1.1 ping statistics ---
+5 packets transmitted, 5 received, 0% packet loss, time 69ms
+rtt min/avg/max = 7/13.80/25 ms
+esp32>
+
+
 
 ```
 

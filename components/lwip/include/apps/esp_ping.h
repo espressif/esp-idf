@@ -42,6 +42,7 @@ typedef struct _ping_found {
     uint32_t total_time;
     uint32_t min_time;
     uint32_t max_time;
+    uint32_t ping_seqno;
     int8_t  ping_err;
 } esp_ping_found;
 
@@ -102,7 +103,7 @@ esp_err_t esp_ping_get_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
  *      - ESP_OK
  *      - ESP_ERR_PING_INVALID_PARAMS
  */
-esp_err_t esp_ping_result(uint8_t res_val, uint16_t res_len, uint32_t res_time);
+esp_err_t esp_ping_result(uint8_t res_val, uint16_t res_len, uint32_t res_time, uint32_t seqno);
 
 #ifdef __cplusplus
 }

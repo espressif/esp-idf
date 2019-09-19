@@ -130,6 +130,7 @@ void app_main(void)
     register_system();
     register_wifi();
     register_nvs();
+    register_ping();
 
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.

@@ -128,7 +128,7 @@ esp_err_t esp_ping_get_target(ping_target_id_t opt_id, void *opt_val, uint32_t o
     return ret;
 }
 
-esp_err_t esp_ping_result(uint8_t res_val, uint16_t ping_len, uint32_t ping_time)
+esp_err_t esp_ping_result(uint8_t res_val, uint16_t ping_len, uint32_t ping_time, uint32_t seqno)
 {
     esp_err_t ret = ESP_OK;
 
@@ -154,6 +154,7 @@ esp_err_t esp_ping_result(uint8_t res_val, uint16_t ping_len, uint32_t ping_time
 
             ping_option_info->ping_res.total_time += ping_time;
             ping_option_info->ping_res.recv_count ++;
+            ping_option_info->ping_res.ping_seqno = seqno;
         }
     }
 
