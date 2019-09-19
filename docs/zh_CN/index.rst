@@ -42,6 +42,7 @@ ESP-IDF 编程指南
    快速入门 <get-started/index>
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
+   ESP32-S2 预览 <esp32s2beta>
    API 指南 <api-guides/index>
    Libraries and Frameworks <libraries-and-frameworks/index>
    贡献代码 <contribute/index>
