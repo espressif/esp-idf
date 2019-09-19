@@ -34,7 +34,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/periph_defs.h"
-
+#include "soc/rtc_wdt.h"
 #include "driver/rtc_io.h"
 
 #include "freertos/FreeRTOS.h"
@@ -311,9 +311,9 @@ void start_cpu0_default(void)
 
     do_global_ctors();
 #if CONFIG_ESP_INT_WDT
-    //esp_int_wdt_init();
-    //Initialize the interrupt watch dog for CPU0.
-    //esp_int_wdt_cpu_init();
+    esp_int_wdt_init();
+    //Initialize the interrupt watch dog
+    esp_int_wdt_cpu_init();
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();
@@ -368,31 +368,28 @@ static void do_global_ctors(void)
 
 static void main_task(void* args)
 {
-    // Now that the application is about to start, disable boot watchdogs
-    REG_CLR_BIT(TIMG_WDTCONFIG0_REG(0), TIMG_WDT_FLASHBOOT_MOD_EN_S);
-    REG_CLR_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
-
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
 
     //Initialize task wdt if configured to do so
 #ifdef CONFIG_ESP_TASK_WDT_PANIC
-    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true))
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
 #elif CONFIG_ESP_TASK_WDT
-    //ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false))
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
 #endif
 
     //Add IDLE 0 to task wdt
-// TODO: cpu_start.c: re-enable task WDT - IDF-753
-#if 0
 #ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
     if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0))
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
     }
 #endif
-#endif
 
+    // Now that the application is about to start, disable boot watchdog
+#ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+    rtc_wdt_disable();
+#endif
     app_main();
     vTaskDelete(NULL);
 }
