@@ -32,6 +32,10 @@ typedef struct {
     char *path;
     char *buffer;
     char *sub_protocol;
+
+    unsigned int prev_remaining_payload_len;
+    char prev_mask;
+
     esp_transport_handle_t parent;
 } transport_ws_t;
 
@@ -233,7 +237,7 @@ static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeou
 static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
-    int payload_len;
+    unsigned int payload_len;
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
     char *data_ptr = ws_header, opcode, mask, *mask_key = NULL;
     int rlen;
@@ -242,77 +246,89 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
         return poll_read;
     }
 
-    // Receive and process header first (based on header size)
-    int header = 2;
-    if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data");
-        return rlen;
-    }
-    opcode = (*data_ptr & 0x0F);
-    data_ptr ++;
-    mask = ((*data_ptr >> 7) & 0x01);
-    payload_len = (*data_ptr & 0x7F);
-    data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", opcode, mask, payload_len);
-    if (payload_len == 126) {
-        // headerLen += 2;
+    if (ws->prev_remaining_payload_len <= 0) {
+        // Receive and process header first (based on header size)
+        int header = 2;
         if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
             ESP_LOGE(TAG, "Error read data");
             return rlen;
         }
-        payload_len = data_ptr[0] << 8 | data_ptr[1];
-    } else if (payload_len == 127) {
-        // headerLen += 8;
-        header = 8;
-        if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read data");
-            return rlen;
-        }
+        opcode = (*data_ptr & 0x0F);
+        data_ptr++;
+        mask = ((*data_ptr >> 7) & 0x01);
+        payload_len = (*data_ptr & 0x7F);
+        data_ptr++;
+        ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", opcode, mask, payload_len);
+        if (payload_len == 126) {
+            // headerLen += 2;
+            if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+                ESP_LOGE(TAG, "Error read data");
+                return rlen;
+            }
+            payload_len = data_ptr[0] << 8 | data_ptr[1];
+        } else if (payload_len == 127) {
+            // headerLen += 8;
+            header = 8;
+            if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
+                ESP_LOGE(TAG, "Error read data");
+                return rlen;
+            }
 
-        if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0) {
-            // really too big!
-            payload_len = 0xFFFFFFFF;
-        } else {
-            payload_len = data_ptr[4] << 24 | data_ptr[5] << 16 | data_ptr[6] << 8 | data_ptr[7];
+            if (data_ptr[0] != 0 || data_ptr[1] != 0 || data_ptr[2] != 0 || data_ptr[3] != 0) {
+                // really too big!
+                payload_len = 0xFFFFFFFF;
+                ESP_LOGE(TAG, "Over sized websocket frame received");
+            } else {
+                payload_len = data_ptr[4] << 24 | data_ptr[5] << 16 | data_ptr[6] << 8 | data_ptr[7];
+            }
         }
+        ws->prev_remaining_payload_len = payload_len;
+
+        // Handle control frames
+        if (opcode == WS_OPCODE_PING) {
+            // Reply with PONG frame
+            ESP_LOGD(TAG, "Write PONG message");
+            if (_ws_write(t, WS_OPCODE_PONG | WS_FIN, 0, NULL, 0, timeout_ms) < 0) {
+                ESP_LOGE(TAG, "Error when writing PONG message");
+            }
+        } else if (opcode == WS_OPCODE_PONG) {
+            ESP_LOGD(TAG, "Received PONG message");
+            // TODO: No existing way to pass pong data to upper layer transport
+        }
+    } else {
+        // Keep reading previous frame
+        payload_len = ws->prev_remaining_payload_len;
+        mask = ws->prev_mask;
     }
 
     if (payload_len > len) {
         ESP_LOGD(TAG, "Actual data to receive (%d) are longer than ws buffer (%d)", payload_len, len);
+        ws->prev_mask = mask;
         payload_len = len;
-    }
-
-    // Handle control frames
-    if (opcode == WS_OPCODE_PING) {
-        // Reply with PONG frame
-        ESP_LOGD(TAG, "Write PONG message");
-        if (_ws_write(t, WS_OPCODE_PONG | WS_FIN, 0, NULL, 0, timeout_ms) < 0) {
-            ESP_LOGE(TAG, "Error when writing PONG message");
-        }
-    } else if (opcode == WS_OPCODE_PONG) {
-        ESP_LOGD(TAG, "Received PONG message");
-        // TODO: No existing way to pass pong data to upper layer transport
     }
     
     // Then receive and process payload
-    // TODO: Currently it handle data from any frame including ping/pong the same way
     if (payload_len == 0) {
-        // Ping-pong control frames are usually 0 in length, reading 0 length in lower layer transport results in error
-        return 0; 
+        // Ping-pong control frames are usually 0 in length, reading 0 length in parent transport results in error
+        return 0;
     }
     if ((rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
 
+    // Calculate remaining size
+    assert(ws->prev_remaining_payload_len >= rlen);
+    ws->prev_remaining_payload_len -= rlen;
+
     if (mask) {
         mask_key = buffer;
         data_ptr = buffer + 4;
-        for (int i = 0; i < payload_len; i++) {
+        for (int i = 0; i < rlen; i++) {
             buffer[i] = (data_ptr[i] ^ mask_key[i % 4]);
         }
     }
-    return payload_len;
+    return rlen;
 }
 
 static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
@@ -354,6 +370,7 @@ esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handl
     esp_transport_handle_t t = esp_transport_init();
     transport_ws_t *ws = calloc(1, sizeof(transport_ws_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, ws, return NULL);
+    ws->prev_remaining_payload_len = 0;
     ws->parent = parent_handle;
 
     ws->path = strdup("/");
