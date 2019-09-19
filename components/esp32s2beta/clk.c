@@ -28,7 +28,8 @@
 #include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_wdt.h"
+#include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
@@ -63,10 +64,30 @@ void esp_clk_init(void)
 
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 
+#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+    // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
+    // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
+    // Therefore, for the time of frequency change, set a new lower timeout value (1.6 sec).
+    // This prevents excessive delay before resetting in case the supply voltage is drawdown.
+    // (If frequency is changed from 150kHz to 32kHz then WDT timeout will increased to 1.6sec * 150/32 = 7.5 sec).
+    rtc_wdt_protect_off();
+    rtc_wdt_feed();
+    rtc_wdt_set_time(RTC_WDT_STAGE0, 1600);
+    rtc_wdt_protect_on();
+#endif
+
 #ifdef CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
     select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
+#endif
+
+#ifdef CONFIG_BOOTLOADER_WDT_ENABLE
+    // After changing a frequency WDT timeout needs to be set for new frequency.
+    rtc_wdt_protect_off();
+    rtc_wdt_feed();
+    rtc_wdt_set_time(RTC_WDT_STAGE0, CONFIG_BOOTLOADER_WDT_TIME_MS);
+    rtc_wdt_protect_on();
 #endif
 
     uint32_t freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
