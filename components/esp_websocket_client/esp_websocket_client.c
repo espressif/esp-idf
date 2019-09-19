@@ -171,6 +171,15 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
         free(cfg->path);
         cfg->path = strdup(config->path);
         ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->path, return ESP_ERR_NO_MEM);
+
+        esp_transport_handle_t trans = esp_transport_list_get_transport(client->transport_list, "ws");
+        if (trans) {
+            esp_transport_ws_set_path(trans, cfg->path);
+        }
+        trans = esp_transport_list_get_transport(client->transport_list, "wss");
+        if (trans) {
+            esp_transport_ws_set_path(trans, cfg->path);
+        }
     }
 
     cfg->network_timeout_ms = WEBSOCKET_NETWORK_TIMEOUT_MS;
