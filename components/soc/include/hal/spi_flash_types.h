@@ -142,11 +142,6 @@ struct spi_flash_host_driver_t {
      * modified, the cache needs to be flushed. Left NULL if not supported.
      */
     esp_err_t (*flush_cache)(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
-    /**
-     * Check if the given region is protected (e.g. is the bootloader). Left
-     * NULL if current host doesn't need protection.
-     */
-    bool (*region_protected)(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
 };
 
 #ifdef __cplusplus

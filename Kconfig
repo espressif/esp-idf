@@ -40,6 +40,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "n"
         select FREERTOS_UNICORE
 
+    config IDF_FIRMWARE_CHIP_ID
+        hex
+        default 0x0000 if IDF_TARGET_ESP32
+        # note: S2 beta uses Chip ID 0 still, S2 will use 0x0002
+        default 0x0000 if IDF_TARGET_ESP32S2BETA
+        default 0xFFFF
+
     menu "SDK tool configuration"
         config SDK_TOOLPREFIX
             string "Compiler toolchain path/prefix"
@@ -81,24 +88,35 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         choice COMPILER_OPTIMIZATION
             prompt "Optimization Level"
-            default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+            default COMPILER_OPTIMIZATION_DEFAULT
             help
                 This option sets compiler optimization level (gcc -O argument).
 
-                - for "Release" setting, -Os flag is added to CFLAGS.
-                - for "Debug" setting, -Og flag is added to CFLAGS.
+                - The "Default" setting will add the -0g flag to CFLAGS.
+                - The "Size" setting will add the -0s flag to CFLAGS.
+                - The "Performance" setting will add the -O2 flag to CFLAGS.
+                - The "None" setting will add the -O0 flag to CFLAGS.
 
-                "Release" with -Os produces smaller & faster compiled code but it
-                may be harder to correlated code addresses to source files when debugging.
+                The "Size" setting cause the compiled code to be smaller and faster, but
+                may lead to difficulties of correlating code addresses to source file
+                lines when debugging.
 
-                To add custom optimization settings, set CFLAGS and/or CPPFLAGS
-                in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
-                custom optimization levels may be unsupported.
+                The "Performance" setting causes the compiled code to be larger and faster,
+                but will be easier to correlated code addresses to source file lines.
 
-            config COMPILER_OPTIMIZATION_LEVEL_DEBUG
+                "None" with -O0 produces compiled code without optimization.
+
+                Note that custom optimization levels may be unsupported.
+
+            config COMPILER_OPTIMIZATION_DEFAULT
                 bool "Debug (-Og)"
-            config COMPILER_OPTIMIZATION_LEVEL_RELEASE
-                bool "Release (-Os)"
+            config COMPILER_OPTIMIZATION_SIZE
+                bool "Optimize for size (-Os)"
+            config COMPILER_OPTIMIZATION_PERF
+                bool "Optimize for performance (-O2)"
+            config COMPILER_OPTIMIZATION_NONE
+                bool "Debug without optimization (-O0)"
+
         endchoice
 
         choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL

@@ -35,6 +35,7 @@
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
 #include "sys/param.h"
+#include "esp_efuse.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
 
@@ -278,6 +279,25 @@ void bootloader_common_vddsdio_configure(void)
 #endif // CONFIG_BOOTLOADER_VDDSDIO_BOOST
 }
 
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr)
+{
+    esp_err_t err = ESP_OK;
+    esp_chip_id_t chip_id = CONFIG_IDF_FIRMWARE_CHIP_ID;
+    if (chip_id != img_hdr->chip_id) {
+        ESP_LOGE(TAG, "image has invalid chip ID, expected at least %d, found %d", chip_id, img_hdr->chip_id);
+        err = ESP_FAIL;
+    }
+    uint8_t revision = esp_efuse_get_chip_ver();
+    if (revision < img_hdr->min_chip_rev) {
+        ESP_LOGE(TAG, "image has invalid chip revision, expected at least %d, found %d", revision, img_hdr->min_chip_rev);
+        err = ESP_FAIL;
+    } else if (revision != img_hdr->min_chip_rev) {
+        ESP_LOGI(TAG, "This chip is revision %d but project was configured for minimum revision %d. "\
+                 "Suggest setting project minimum revision to %d if safe to do so.",
+                 revision, img_hdr->min_chip_rev, revision);
+    }
+    return err;
+}
 
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
 

@@ -14,6 +14,19 @@
 #pragma once
 
 /**
+ * @brief ESP chip ID
+ *
+ */
+typedef enum {
+    ESP_CHIP_ID_ESP32 = 0x0000,  /*!< chip ID: ESP32 */
+    ESP_CHIP_ID_INVALID = 0xFFFF /*!< Invalid chip ID (we defined it to make sure the esp_chip_id_t is 2 bytes size) */
+} __attribute__((packed)) esp_chip_id_t;
+
+/** @cond */
+_Static_assert(sizeof(esp_chip_id_t) == 2, "esp_chip_id_t should be 16 bit");
+/** @endcond */
+
+/**
  * @brief SPI flash mode, used in esp_image_header_t
  */
 typedef enum {
@@ -63,7 +76,9 @@ typedef struct {
                                 * the IDF bootloader uses software to configure the WP
                                 * pin and sets this field to 0xEE=disabled) */
     uint8_t spi_pin_drv[3];     /*!< Drive settings for the SPI flash pins (read by ROM bootloader) */
-    uint8_t reserved[11];       /*!< Reserved bytes in ESP32 additional header space, currently unused */
+    esp_chip_id_t chip_id;      /*!< Chip identification number */
+    uint8_t min_chip_rev;       /*!< Minimum chip revision supported by image */
+    uint8_t reserved[8];       /*!< Reserved bytes in additional header space, currently unused */
     uint8_t hash_appended;      /*!< If 1, a SHA256 digest "simple hash" (of the entire image) is appended after the checksum.
                                  * Included in image length. This digest
                                  * is separate to secure boot and only used for detecting corruption.

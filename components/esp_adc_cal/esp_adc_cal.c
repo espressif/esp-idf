@@ -390,23 +390,3 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
     *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
     return ESP_OK;
 }
-
-/* ------------------------ Deprecated API --------------------------------- */
-void esp_adc_cal_get_characteristics(uint32_t vref,
-                                     adc_atten_t atten,
-                                     adc_bits_width_t bit_width,
-                                     esp_adc_cal_characteristics_t *chars)
-{
-    assert(chars != NULL);
-    esp_adc_cal_characterize(ADC_UNIT_1, atten, bit_width, vref, chars);
-}
-
-uint32_t adc1_to_voltage(adc1_channel_t channel, const esp_adc_cal_characteristics_t *chars)
-{
-    assert(chars != NULL);
-    uint32_t voltage = 0;
-    esp_adc_cal_get_voltage((adc_channel_t)channel, chars, &voltage);
-    return voltage;
-}
-
-
