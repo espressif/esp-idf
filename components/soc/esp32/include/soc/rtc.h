@@ -305,7 +305,7 @@ void rtc_clk_fast_freq_set(rtc_fast_freq_t fast_freq);
 rtc_fast_freq_t rtc_clk_fast_freq_get();
 
 /**
-/**
+ *
  * @brief Get CPU frequency config corresponding to a rtc_cpu_freq_t value
  * @param cpu_freq CPU frequency enumeration value
  * @param[out] out_config  Output, CPU frequency configuration structure
