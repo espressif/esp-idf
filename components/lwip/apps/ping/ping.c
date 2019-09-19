@@ -208,7 +208,7 @@ ping_recv(int s)
         if ((iecho->id == PING_ID) && (iecho->seqno == htons(ping_seq_num))) {
           /* do some ping result processing */
 #ifdef ESP_PING
-          esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), len, PING_TIME_DIFF_MS(now, ping_time));
+          esp_ping_result((ICMPH_TYPE(iecho) == ICMP_ER), len, PING_TIME_DIFF_MS(now, ping_time), ntohs(iecho->seqno));
 #else
           PING_RESULT((ICMPH_TYPE(iecho) == ICMP_ER));
 #endif
@@ -228,7 +228,7 @@ ping_recv(int s)
 
   /* do some ping result processing */
 #ifdef ESP_PING
-  esp_ping_result(0, len, PING_TIME_DIFF_MS(now, ping_time));
+  esp_ping_result(0, len, PING_TIME_DIFF_MS(now, ping_time),0);
 #else
   PING_RESULT(0);
 #endif
@@ -317,7 +317,7 @@ _exit:
   close(s);
 
 _exit_new_socket_failed:
-  esp_ping_result(PING_RES_FINISH, 0, 0);
+  esp_ping_result(PING_RES_FINISH, 0, 0, 0);
   SYS_ARCH_PROTECT(lev);
   if (ping_init_flag) { /* Ping closed by this thread */
     LWIP_DEBUGF( PING_DEBUG, ("ping: closed by self "));

@@ -12,11 +12,10 @@
 extern "C" {
 #endif
 
-#include "cmd_system.h"
-#include "cmd_wifi.h"
-#include "cmd_ping.h"
-#include "cmd_nvs.h"
+// Register Ping functions
+void register_ping(void);
 
 #ifdef __cplusplus
 }
 #endif
+

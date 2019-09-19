@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+extern volatile bool is_connected;
 // Register WiFi functions
 void register_wifi(void);
 
