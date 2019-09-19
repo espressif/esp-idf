@@ -559,7 +559,7 @@ static int wpa2_ent_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
 		    ret = eap_sm_rx_eapol(src_addr, buf, len, bssid);
 		    break;
 	    case IEEE802_1X_TYPE_EAPOL_KEY:
-		    ret = wpa_sm_rx_eapol(src_addr, buf, len);
+            ret = wpa_sm_rx_eapol(src_addr, buf, len);
 		    break;
 	    default:
 		wpa_printf(MSG_ERROR, "Unknown EAPOL packet type - %d\n", hdr->type);
@@ -695,6 +695,18 @@ static int wpa2_start_eapol_internal(void)
 
     if (!sm) {
         return ESP_FAIL;
+    }
+    if (wpa_sta_is_cur_pmksa_set()) {
+        if (0) {
+            wpa_printf(MSG_DEBUG,
+                    "RSN: Timeout on waiting for the AP to initiate 4-way handshake \
+                    for PMKSA caching or EAP authentication \
+                    - try to force it to start EAP authentication");
+        } else {
+            wpa_printf(MSG_DEBUG,
+                    "RSN: PMKSA caching - do not send EAPOL-Start");
+            return -1;
+        }
     }
 
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
