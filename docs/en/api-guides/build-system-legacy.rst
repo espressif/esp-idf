@@ -360,7 +360,7 @@ Advanced Make Targets
 ---------------------
 
 - ``make app``, ``make bootloader``, ``make partition table`` can be used to build only the app, bootloader, or partition table from the project as applicable.
-- ``make erase_flash`` and ``make erase_ota`` will use esptool.py to erase the entire flash chip and the OTA selection setting from the flash chip, respectively.
+- ``make erase_flash`` and ``make erase_otadata`` will use esptool.py to erase the entire flash chip and the OTA selection setting from the flash chip, respectively.
 - ``make size`` prints some size information about the app. ``make size-components`` and ``make size-files`` are similar targets which print more detailed per-component or per-source-file information, respectively.
 
 

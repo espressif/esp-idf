@@ -127,24 +127,6 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
  */
 esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel, const esp_adc_cal_characteristics_t *chars, uint32_t *voltage);
 
-/* -------------------------- Deprecated API ------------------------------- */
-
-/** @cond */    //Doxygen command to hide deprecated function from API Reference
-/**
- * @deprecated  ADC1 characterization function. Deprecated in order to accommodate
- *              ADC2 and eFuse functionality. Use esp_adc_cal_characterize() instead
- */
-void esp_adc_cal_get_characteristics(uint32_t vref, adc_atten_t atten, adc_bits_width_t bit_width, esp_adc_cal_characteristics_t *chars) __attribute__((deprecated));
-
-/*
- * @deprecated  This function reads ADC1 and returns the corrected voltage. This
- *              has been deprecated in order to accommodate ADC2 support. Use the
- *              new function esp_adc_cal_get_voltage() instead.
- */
-uint32_t adc1_to_voltage(adc1_channel_t channel, const esp_adc_cal_characteristics_t *chars) __attribute__((deprecated));
-
-/** @endcond */
-
 #ifdef __cplusplus
 }
 #endif
