@@ -105,7 +105,7 @@ typedef struct {
 } wifi_wpa_ie_t;
 
 struct wpa_funcs {
-    void (*wpa_sta_init)(void);
+    bool (*wpa_sta_init)(void);
     bool (*wpa_sta_deinit)(void);
     void (*wpa_sta_connect)(uint8_t *bssid);
     int (*wpa_sta_rx_eapol)(u8 *src_addr, u8 *buf, u32 len);

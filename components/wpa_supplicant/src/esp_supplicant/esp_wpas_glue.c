@@ -18,6 +18,7 @@
 #include "utils/common.h"
 #include "common/eapol_common.h"
 #include "rsn_supp/wpa.h"
+#include "rsn_supp/pmksa_cache.h"
 
 u8   *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
                          const void *data, u16 data_len,
@@ -65,6 +66,7 @@ void  wpa_sm_deauthenticate(struct wpa_sm *sm, u8 reason_code)
 
     /*only need send deauth frame when associated*/
     if (WPA_SM_STATE(sm) >= WPA_ASSOCIATED) {
+        pmksa_cache_clear_current(sm);
         sm->wpa_deauthenticate(reason_code);
     }
 }

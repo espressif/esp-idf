@@ -58,7 +58,7 @@ static struct eap_sm *gEapSm = NULL;
 static int eap_peer_sm_init(void);
 static void eap_peer_sm_deinit(void);
 
-static int wpa2_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
+static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid);
 static int wpa2_start_eapol_internal(void);
 int wpa2_post(uint32_t sig, uint32_t par);
 
@@ -216,7 +216,7 @@ void wpa2_task(void *pvParameters )
                 struct wpa2_rx_param *param = NULL;
 
                 while ((param = wpa2_rxq_dequeue()) != NULL){
-                    wpa2_sm_rx_eapol_internal(param->sa, param->buf, param->len, param->bssid);
+                    eap_sm_rx_eapol_internal(param->sa, param->buf, param->len, param->bssid);
                     os_free(param->buf);
                     os_free(param);
                 }
@@ -541,12 +541,11 @@ static int wpa2_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
     }
 #else
 
-    return wpa2_sm_rx_eapol_internal(src_addr, buf, len, bssid);
+    return eap_sm_rx_eapol_internal(src_addr, buf, len, bssid);
 #endif
 }
 
-
-static int wpa2_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
+static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bssid)
 {
     struct eap_sm *sm = gEapSm;
     u32 plen, data_len;
@@ -665,6 +664,18 @@ static int wpa2_start_eapol_internal(void)
 
     if (!sm) {
         return ESP_FAIL;
+    }
+    if (wpa_sta_is_cur_pmksa_set()) {
+        if (0) {
+            wpa_printf(MSG_DEBUG,
+                    "RSN: Timeout on waiting for the AP to initiate 4-way handshake \
+                    for PMKSA caching or EAP authentication \
+                    - try to force it to start EAP authentication");
+        } else {
+            wpa_printf(MSG_DEBUG,
+                    "RSN: PMKSA caching - do not send EAPOL-Start");
+            return -1;
+        }
     }
 
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
