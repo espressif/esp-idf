@@ -13,8 +13,8 @@ MEMORY
 {
   /* I/O */
   dport0_seg (RW) :                 org = 0x3FF00000, len = 0x10
-  iram_loader_seg (RWX) :           org = 0x40062000, len = 0x2000  /* 8KB, IRAM */
-  iram_seg (RWX) :                  org = 0x40064000, len = 0x4000  /* 16KB, IRAM */
+  iram_loader_seg (RWX) :           org = 0x40062000, len = 0x4000  /* 16KB, IRAM */
+  iram_seg (RWX) :                  org = 0x40066000, len = 0x4000  /* 16KB, IRAM */
   /* 16k at the end of DRAM, before ROM data & stack */
   dram_seg (RW) :                   org = 0x3FFF8000, len = 0x4000
 }
