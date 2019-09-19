@@ -232,7 +232,7 @@ union ulp_insn {
         uint32_t unused : 8;        /*!< Unused */
         uint32_t low : 5;           /*!< Low bit */
         uint32_t high : 5;          /*!< High bit */
-        uint32_t opcode : 4;        /*!< Opcode (OPCODE_WR_REG) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_RD_REG) */
     } rd_reg;                       /*!< Format of RD_REG instruction */
 
     struct {
