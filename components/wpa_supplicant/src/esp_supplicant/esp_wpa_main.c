@@ -106,18 +106,21 @@ void  wpa_neg_complete(void)
     esp_wifi_auth_done_internal();
 }
 
-void  wpa_attach(void)
+bool  wpa_attach(void)
 {
+    bool ret = true; 
 #ifndef IOT_SIP_MODE
-    wpa_register(NULL, wpa_sendto_wrapper,
+    ret = wpa_sm_init(NULL, wpa_sendto_wrapper,
                  wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
 #else
     u8 *payload = (u8 *)os_malloc(WPA_TX_MSG_BUFF_MAXLEN);
-    wpa_register(payload, wpa_sendto_wrapper,
+    ret = wpa_sm_init(payload, wpa_sendto_wrapper,
                  wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
 #endif
-
-    esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID);
+    if(ret) {   
+        ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
+    }
+    return ret;
 }
 
 uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
@@ -148,6 +151,7 @@ bool  wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 
 bool  wpa_deattach(void)
 {
+    wpa_sm_deinit();
     return true;
 }
 
@@ -224,7 +228,7 @@ int esp_supplicant_init(void)
 
     wpa_cb->wpa_config_parse_string  = wpa_config_parse_string;
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
-    wpa_cb->wpa_config_bss = wpa_config_bss;
+    wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
