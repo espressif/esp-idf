@@ -1130,7 +1130,8 @@ For example, to get the Python interpreter used for the build:
   message(STATUS "The Python intepreter is: ${python}")
 
   - BUILD_DIR - build directory; set from ``idf_build_process`` BUILD_DIR argument
-  - BUILD_COMPONENTS - list of components (more specifically, component aliases) included in the build; set by ``idf_build_process``
+  - BUILD_COMPONENTS - list of components included in the build; set by ``idf_build_process``
+  - BUILD_COMPONENT_ALIASES - list of library alias of components included in the build; set by ``idf_build_process``
   - C_COMPILE_OPTIONS - compile options applied to all components' C source files
   - COMPILE_OPTIONS - compile options applied to all components' source files, regardless of it being C or C++
   - COMPILE_DEFINITIONS - compile definitions applied to all component source files

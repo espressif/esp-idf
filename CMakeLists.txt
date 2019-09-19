@@ -9,11 +9,16 @@ unset(compile_definitions)
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
 
-if(CONFIG_COMPILER_OPTIMIZATION_LEVEL_RELEASE)
+if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
     list(APPEND compile_options "-Os")
     list(APPEND compile_options "-freorder-blocks")
-else()
+elseif(CONFIG_COMPILER_OPTIMIZATION_DEFAULT)
     list(APPEND compile_options "-Og")
+elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
+    list(APPEND compile_options "-O0")
+elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
+    list(APPEND compile_options "-O2")
+
 endif()
 
 if(CONFIG_COMPILER_CXX_EXCEPTIONS)

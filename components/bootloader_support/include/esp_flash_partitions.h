@@ -98,12 +98,6 @@ typedef struct {
 esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions);
 
 
-/* This function is included for compatibility with the ESP-IDF v3.x API */
-inline static __attribute__((deprecated)) esp_err_t esp_partition_table_basic_verify(const esp_partition_info_t *partition_table, bool log_errors, int *num_partitions)
-{
-    return esp_partition_table_verify(partition_table, log_errors, num_partitions);
-}
-
 /**
  * Check whether the region on the main flash is safe to write.
  *

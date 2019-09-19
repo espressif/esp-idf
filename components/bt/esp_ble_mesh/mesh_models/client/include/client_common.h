@@ -78,6 +78,10 @@ typedef struct {
     void *cb_data;                      /* User defined callback value */
 } bt_mesh_client_common_param_t;
 
+void bt_mesh_client_model_lock(void);
+
+void bt_mesh_client_model_unlock(void);
+
 int bt_mesh_client_init(struct bt_mesh_model *model);
 
 /**

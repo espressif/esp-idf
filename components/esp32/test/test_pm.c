@@ -15,6 +15,8 @@
 #include "esp32/ulp.h"
 #include "soc/rtc_periph.h"
 
+#define MHZ     1000000
+
 TEST_CASE("Can dump power management lock stats", "[pm]")
 {
     esp_pm_dump_locks(stdout);
@@ -31,15 +33,15 @@ static void switch_freq(int mhz)
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
     printf("Waiting for frequency to be set to %d MHz...\n", mhz);
-    while (esp_clk_cpu_freq() / 1000000 != mhz) {
+    while (esp_clk_cpu_freq() / MHZ != mhz) {
         vTaskDelay(pdMS_TO_TICKS(200));
-        printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / 1000000);
+        printf("Frequency is %d MHz\n", esp_clk_cpu_freq() / MHZ);
     }
 }
 
 TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 {
-    int orig_freq_mhz = esp_clk_cpu_freq() / 1000000;
+    int orig_freq_mhz = esp_clk_cpu_freq() / MHZ;
     switch_freq(240);
     switch_freq(40);
     switch_freq(160);
@@ -60,9 +62,12 @@ TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 
 static void light_sleep_enable(void)
 {
+    int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
+    int xtal_freq = (int) rtc_clk_xtal_freq_get();
+
     const esp_pm_config_esp32_t pm_config = {
-        .max_cpu_freq = rtc_clk_cpu_freq_get(),
-        .min_cpu_freq = RTC_CPU_FREQ_XTAL,
+        .max_freq_mhz = cur_freq_mhz,
+        .min_freq_mhz = xtal_freq,
         .light_sleep_enable = true
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
@@ -70,9 +75,11 @@ static void light_sleep_enable(void)
 
 static void light_sleep_disable(void)
 {
+    int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
+
     const esp_pm_config_esp32_t pm_config = {
-        .max_cpu_freq = rtc_clk_cpu_freq_get(),
-        .min_cpu_freq = rtc_clk_cpu_freq_get(),
+        .max_freq_mhz = cur_freq_mhz,
+        .min_freq_mhz = cur_freq_mhz,
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
 }

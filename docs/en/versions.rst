@@ -59,10 +59,9 @@ ESP-IDF uses `Semantic Versioning <http://semver.org/>`_. This means that:
 Checking the Current Version
 ----------------------------
 
-The local ESP-IDF version can be checked by using git::
+The local ESP-IDF version can be checked by using idf.py::
 
-  cd $IDF_PATH
-  git describe --tags --dirty
+  idf.py --version
 
 The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (the version information is not always updated in code, it only changes if that particular source file is recompiled).
 

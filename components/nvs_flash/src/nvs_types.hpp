@@ -21,7 +21,9 @@
 #include <algorithm>
 #include "nvs.h"
 #include "compressed_enum_table.hpp"
+#include "string.h"
 
+using namespace std;
 
 namespace nvs
 {
@@ -125,7 +127,8 @@ public:
 
     void getKey(char* dst, size_t dstSize)
     {
-        strncpy(dst, key, (dstSize<MAX_KEY_LENGTH)?dstSize:MAX_KEY_LENGTH);
+        strncpy(dst, key, min(dstSize, sizeof(key)));
+        dst[dstSize-1] = 0;
     }
 
     template<typename T>
@@ -137,7 +140,5 @@ public:
 };
 
 } // namespace nvs
-
-
 
 #endif /* nvs_types_h */

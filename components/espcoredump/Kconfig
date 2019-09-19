@@ -13,7 +13,6 @@ menu "Core dump"
         config ESP32_ENABLE_COREDUMP_TO_FLASH
             bool "Flash"
             select ESP32_ENABLE_COREDUMP
-            select SPI_FLASH_USE_LEGACY_IMPL
         config ESP32_ENABLE_COREDUMP_TO_UART
             bool "UART"
             select ESP32_ENABLE_COREDUMP
