@@ -1,6 +1,8 @@
 Non-volatile storage library
 ============================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Introduction
 ------------
 
@@ -144,7 +146,7 @@ Entry and entry state bitmap
 Each entry can be in one of the following three states represented with two bits in the entry state bitmap. The final four bits in the bitmap (256 - 2 * 126) are not used.
 
 Empty (2'b11)
-    Nothing is written into the specific entry yet. It is in an uninitialized state (all bytes are ``0xff``). 
+    Nothing is written into the specific entry yet. It is in an uninitialized state (all bytes are ``0xff``).
 
 Written (2'b10)
     A key-value pair (or part of key-value pair which spans multiple entries) has been written into the entry.
@@ -169,12 +171,12 @@ For values of primitive types (currently integers from 1 to 8 bytes long), entry
                                              Primitive  +--------------------------------+
                                             +-------->  |     Data (8)                   |
                                             | Types     +--------------------------------+
-                       +-> Fixed length --                                                
+                       +-> Fixed length --
                        |                    |           +---------+--------------+---------------+-------+
                        |                    +-------->  | Size(4) | ChunkCount(1)| ChunkStart(1) | Rsv(2)|
         Data format ---+                    Blob Index  +---------+--------------+---------------+-------+
                        |
-                       |                             +----------+---------+-----------+ 
+                       |                             +----------+---------+-----------+
                        +->   Variable length   -->   | Size (2) | Rsv (2) | CRC32 (4) |
                             (Strings, Blob Data)     +----------+---------+-----------+
 
@@ -200,21 +202,21 @@ Key
     Zero-terminated ASCII string containing a key name. Maximum string length is 15 bytes, excluding a zero terminator.
 
 Data
-    For integer types, this field contains the value itself. If the value itself is shorter than 8 bytes, it is padded to the right, with unused bytes filled with ``0xff``. 
+    For integer types, this field contains the value itself. If the value itself is shorter than 8 bytes, it is padded to the right, with unused bytes filled with ``0xff``.
 
     For "blob index" entry, these 8 bytes hold the following information about data-chunks:
 
     - Size
         (Only for blob index.) Size, in bytes, of complete blob data.
 
-    - ChunkCount 
-        (Only for blob index.) Total number of blob-data chunks into which the blob was divided during storage. 
-     
-    - ChunkStart 
-        (Only for blob index.) ChunkIndex of the first blob-data chunk of this blob. Subsequent chunks have chunkIndex incrementally allocated (step of 1). 
+    - ChunkCount
+        (Only for blob index.) Total number of blob-data chunks into which the blob was divided during storage.
+
+    - ChunkStart
+        (Only for blob index.) ChunkIndex of the first blob-data chunk of this blob. Subsequent chunks have chunkIndex incrementally allocated (step of 1).
 
     For string and blob data chunks, these 8 bytes hold additional data about the value, which are described below:
-  
+
     - Size
         (Only for strings and blobs.) Size, in bytes, of actual data. For strings, this includes zero terminators.
 
@@ -227,7 +229,7 @@ Variable length values (strings and blobs) are written into subsequent entries, 
 Namespaces
 ^^^^^^^^^^
 
-As mentioned above, each key-value pair belongs to one of the namespaces. Namespace identifiers (strings) are stored as keys of key-value pairs in namespace with index 0. Values corresponding to these keys are indexes of these namespaces. 
+As mentioned above, each key-value pair belongs to one of the namespaces. Namespace identifiers (strings) are stored as keys of key-value pairs in namespace with index 0. Values corresponding to these keys are indexes of these namespaces.
 
 ::
 
@@ -261,7 +263,7 @@ Data stored in NVS partitions can be encrypted using AES-XTS in the manner simil
 NVS key partition
 ^^^^^^^^^^^^^^^^^
 
-An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted`. Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. The size of the partition should be 4096 bytes (minimum partition size). The structure of this partition is depicted below. 
+An application requiring NVS encryption support needs to be compiled with a key-partition of the type `data` and subtype `key`. This partition should be marked as `encrypted`. Refer to :doc:`Partition Tables <../../api-guides/partition-tables>` for more details. The size of the partition should be 4096 bytes (minimum partition size). The structure of this partition is depicted below.
 
 ::
 
