@@ -14,6 +14,7 @@
 
 #pragma once
 #include "esp_flash_data_types.h"
+#include "esp_image_format.h"
 
 /// Type of hold a GPIO in low state
 typedef enum {
@@ -91,6 +92,17 @@ bool bootloader_common_label_search(const char *list, char *label);
  *          - ESP_FAIL: An allocation error occurred.
  */
 esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
+
+/**
+ * @brief Check if the image (bootloader and application) has valid chip ID and revision
+ *
+ * @param img_hdr: image header
+ * @return
+ *      - ESP_OK: image and chip are matched well
+ *      - ESP_FAIL: image doesn't match to the chip
+ */
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr);
+
 
 /**
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.

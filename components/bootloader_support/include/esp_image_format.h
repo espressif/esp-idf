@@ -55,6 +55,19 @@ typedef enum {
 
 #define ESP_IMAGE_HEADER_MAGIC 0xE9
 
+/**
+ * @brief ESP chip ID
+ *
+ */
+typedef enum {
+    ESP_CHIP_ID_ESP32 = 0x0000,  /*!< chip ID: ESP32 */
+    ESP_CHIP_ID_INVALID = 0xFFFF /*!< Invalid chip ID (we defined it to make sure the esp_chip_id_t is 2 bytes size) */
+} __attribute__((packed)) esp_chip_id_t;
+
+/** @cond */
+_Static_assert(sizeof(esp_chip_id_t) == 2, "esp_chip_id_t should be 16 bit");
+
+
 /* Main header of binary image */
 typedef struct {
     uint8_t magic;
@@ -71,8 +84,12 @@ typedef struct {
     uint8_t wp_pin;
     /* Drive settings for the SPI flash pins (read by ROM bootloader) */
     uint8_t spi_pin_drv[3];
-    /* Reserved bytes in ESP32 additional header space, currently unused */
-    uint8_t reserved[11];
+    /*!< Chip identification number */
+    esp_chip_id_t chip_id;
+    /*!< Minimum chip revision supported by image */
+    uint8_t min_chip_rev;
+    /*!< Reserved bytes in additional header space, currently unused */
+    uint8_t reserved[8];
     /* If 1, a SHA256 digest "simple hash" (of the entire image) is appended after the checksum. Included in image length. This digest
      * is separate to secure boot and only used for detecting corruption. For secure boot signed images, the signature
      * is appended after this (and the simple hash is included in the signed data). */
