@@ -1,6 +1,8 @@
 SPI Flash API
 =============
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 The spi_flash component contains API functions related to reading, writing,
