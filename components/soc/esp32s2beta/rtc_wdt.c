@@ -14,6 +14,7 @@
 
 #include "soc/rtc_wdt.h"
 #include "soc/rtc.h"
+#include "soc/efuse_periph.h"
 
 
 bool rtc_wdt_get_protect_status(void)
@@ -94,6 +95,9 @@ esp_err_t rtc_wdt_set_time(rtc_wdt_stage_t stage, unsigned int timeout_ms)
         return ESP_ERR_INVALID_ARG;
     }
     uint32_t timeout = (uint32_t) ((uint64_t) rtc_clk_slow_freq_get_hz() * timeout_ms / 1000);
+    if (stage == RTC_WDT_STAGE0) {
+        timeout = timeout >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
+    }
     WRITE_PERI_REG(get_addr_reg(stage), timeout);
     return ESP_OK;
 }
