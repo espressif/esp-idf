@@ -237,7 +237,7 @@ esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
  */
 typedef enum {
     CHIP_ESP32  = 1, //!< ESP32
-    CHIP_ESP32S2BETA = 2, //!< ESP32S2BETA
+    CHIP_ESP32S2BETA = 2, //!< ESP32-S2 Beta
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */
