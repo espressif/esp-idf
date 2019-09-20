@@ -371,6 +371,19 @@ function run_tests()
     rm sdkconfig;
     rm sdkconfig.defaults;
 
+    print_status "can build with ethernet component disabled"
+    idf.py clean > /dev/null;
+    idf.py fullclean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "CONFIG_ETH_USE_SPI_ETHERNET=" >> sdkconfig.defaults;
+    echo "CONFIG_ETH_USE_ESP32_EMAC=" >> sdkconfig.defaults;
+    idf.py reconfigure > /dev/null;
+    idf.py build || failure "Failed to build with ethernet component disabled"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+    rm sdkconfig;
+    rm sdkconfig.defaults;
+
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -rf build
@@ -517,10 +530,10 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     rm -rf CMakeLists.txt
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
-    
+
     print_status "Print all required argument deprecation warnings"
     idf.py -C${IDF_PATH}/tools/test_idf_py --test-0=a --test-1=b --test-2=c --test-3=d test-0 --test-sub-0=sa --test-sub-1=sb ta test-1 > out.txt
-    ! grep -e '"test-0" is deprecated' -e '"test_0" is deprecated' out.txt || failure "Deprecation warnings are displayed for non-deprecated option/command"       
+    ! grep -e '"test-0" is deprecated' -e '"test_0" is deprecated' out.txt || failure "Deprecation warnings are displayed for non-deprecated option/command"
     grep -e 'Warning: Option "test_sub_1" is deprecated and will be removed in future versions.' \
         -e 'Warning: Command "test-1" is deprecated and will be removed in future versions. Please use alternative command.' \
         -e 'Warning: Option "test_1" is deprecated and will be removed in future versions.' \

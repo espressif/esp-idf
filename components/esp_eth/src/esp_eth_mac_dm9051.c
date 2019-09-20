@@ -815,16 +815,16 @@ static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
-esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_mac_config_t *config)
+esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config)
 {
     esp_eth_mac_t *ret = NULL;
-    MAC_CHECK(config, "can't set mac config to null", err, NULL);
-    MAC_CHECK(config->spi_hdl, "can't set spi handle to null", err, NULL);
+    MAC_CHECK(dm9051_config, "can't set dm9051 specific config to null", err, NULL);
+    MAC_CHECK(mac_config, "can't set mac config to null", err, NULL);
     emac_dm9051_t *emac = calloc(1, sizeof(emac_dm9051_t));
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
     /* bind methods and attributes */
-    emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
-    emac->spi_hdl = config->spi_hdl;
+    emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
+    emac->spi_hdl = dm9051_config->spi_hdl;
     emac->parent.set_mediator = emac_dm9051_set_mediator;
     emac->parent.init = emac_dm9051_init;
     emac->parent.deinit = emac_dm9051_deinit;
@@ -843,8 +843,8 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_mac_config_t *config)
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err_lock, NULL);
     /* create dm9051 task */
-    BaseType_t xReturned = xTaskCreate(emac_dm9051_task, "dm9051_tsk", config->rx_task_stack_size, emac,
-                                       config->rx_task_prio, &emac->rx_task_hdl);
+    BaseType_t xReturned = xTaskCreate(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
+                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
     MAC_CHECK(xReturned == pdPASS, "create dm9051 task failed", err_tsk, NULL);
     return &(emac->parent);
 err_tsk:
