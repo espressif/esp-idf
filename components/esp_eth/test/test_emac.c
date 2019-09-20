@@ -119,8 +119,8 @@ TEST_CASE("dm9051 io test", "[ethernet][ignore]")
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.spi_hdl = spi_handle;
-    esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&mac_config);
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
+    esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
