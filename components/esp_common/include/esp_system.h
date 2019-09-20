@@ -58,22 +58,6 @@ typedef enum {
     ESP_RST_SDIO,       //!< Reset over SDIO
 } esp_reset_reason_t;
 
-/** @cond */
-/**
-  * @attention  Applications don't need to call this function anymore. It does nothing and will
-  *             be removed in future version.
-  */
-void system_init(void) __attribute__ ((deprecated));
-
-/**
-  * @brief  Reset to default settings.
-  *
-  * Function has been deprecated, please use esp_wifi_restore instead.
-  * This name will be removed in a future release.
-  */
-void system_restore(void) __attribute__ ((deprecated));
-/** @endcond */
-
 /**
  * Shutdown handler type
  */
@@ -113,31 +97,11 @@ esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handle);
   */
 void esp_restart(void) __attribute__ ((noreturn));
 
-/** @cond */
-/**
-  * @brief  Restart system.
-  *
-  * Function has been renamed to esp_restart.
-  * This name will be removed in a future release.
-  */
-void system_restart(void) __attribute__ ((deprecated, noreturn));
-/** @endcond */
-
 /**
  * @brief  Get reason of last reset
  * @return See description of esp_reset_reason_t for explanation of each value.
  */
 esp_reset_reason_t esp_reset_reason(void);
-
-/** @cond */
-/**
-  * @brief  Get system time, unit: microsecond.
-  *
-  * This function is deprecated. Use 'gettimeofday' function for 64-bit precision.
-  * This definition will be removed in a future release.
-  */
-uint32_t system_get_time(void)  __attribute__ ((deprecated));
-/** @endcond */
 
 /**
   * @brief  Get the size of available heap.
@@ -148,18 +112,6 @@ uint32_t system_get_time(void)  __attribute__ ((deprecated));
   * @return Available heap size, in bytes.
   */
 uint32_t esp_get_free_heap_size(void);
-
-/** @cond */
-/**
-  * @brief  Get the size of available heap.
-  *
-  * Function has been renamed to esp_get_free_heap_size.
-  * This name will be removed in a future release.
-  *
-  * @return Available heap size, in bytes.
-  */
-uint32_t system_get_free_heap_size(void)  __attribute__ ((deprecated));
-/** @endcond */
 
 /**
   * @brief Get the minimum heap that has ever been available
@@ -246,31 +198,6 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac);
   */
 esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
 
-/** @cond */
-/**
-  * @brief  Read hardware MAC address from efuse.
-  *
-  * Function has been renamed to esp_efuse_mac_get_default.
-  * This name will be removed in a future release.
-  *
-  * @param  mac  hardware MAC address, length: 6 bytes.
-  *
-  * @return ESP_OK on success
-  */
-esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__ ((deprecated));
-
-/**
-  * @brief  Read hardware MAC address.
-  *
-  * Function has been renamed to esp_efuse_mac_get_default.
-  * This name will be removed in a future release.
-  *
-  * @param  mac  hardware MAC address, length: 6 bytes.
-  * @return ESP_OK on success
-  */
-esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__ ((deprecated));
-/** @endcond */
-
 /**
   * @brief  Read base MAC address and set MAC address of the interface.
   *
@@ -300,17 +227,6 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
   * @return ESP_OK on success
   */
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac);
-
-/** @cond */
-/**
- * Get SDK version
- *
- * This function is deprecated and will be removed in a future release.
- *
- * @return constant string "master"
- */
-const char* system_get_sdk_version(void)  __attribute__ ((deprecated));
-/** @endcond */
 
 /**
  * @brief Chip models

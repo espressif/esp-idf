@@ -212,20 +212,6 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten);
  */
 int adc1_get_raw(adc1_channel_t channel);
 
-/** @cond */    //Doxygen command to hide deprecated function from API Reference
-/*
- * @note When the power switch of SARADC1, SARADC2, HALL sensor and AMP sensor is turned on,
- *       the input of GPIO36 and GPIO39 will be pulled down for about 80ns.
- *       When enabling power for any of these peripherals, ignore input from GPIO36 and GPIO39.
- *       Please refer to section 3.11 of 'ECO_and_Workarounds_for_Bugs_in_ESP32' for the description of this issue.
- *       
- * @deprecated This function returns an ADC1 reading but is deprecated due to
- * a misleading name and has been changed to directly call the new function.
- * Use the new function adc1_get_raw() instead
- */
-int adc1_get_voltage(adc1_channel_t channel) __attribute__((deprecated));
-/** @endcond */
-
 /**
  * @brief Enable ADC power
  */

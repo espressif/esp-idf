@@ -1180,18 +1180,6 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
-int i2s_write_bytes(i2s_port_t i2s_num, const void *src, size_t size, TickType_t ticks_to_wait)
-{
-    size_t bytes_written = 0;
-    int res = 0;
-    res = i2s_write(i2s_num, src, size, &bytes_written, ticks_to_wait);
-    if (res != ESP_OK) {
-        return ESP_FAIL;
-    } else {
-        return bytes_written;
-    }
-}
-
 esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *bytes_written, TickType_t ticks_to_wait)
 {
     char *data_ptr, *src_byte;
@@ -1317,18 +1305,6 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
     return ESP_OK;
 }
 
-int i2s_read_bytes(i2s_port_t i2s_num, void *dest, size_t size, TickType_t ticks_to_wait)
-{
-    size_t bytes_read = 0;
-    int res = 0;
-    res = i2s_read(i2s_num, dest, size, &bytes_read, ticks_to_wait);
-    if (res != ESP_OK) {
-        return ESP_FAIL;
-    } else {
-        return bytes_read;
-    }
-}
-
 esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
 {
     char *data_ptr, *dest_byte;
@@ -1366,30 +1342,4 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
 #endif
     xSemaphoreGive(p_i2s_obj[i2s_num]->rx->mux);
     return ESP_OK;
-}
-
-int i2s_push_sample(i2s_port_t i2s_num, const void *sample, TickType_t ticks_to_wait)
-{
-    size_t bytes_push = 0;
-    int res = 0;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
-    res = i2s_write(i2s_num, sample, p_i2s_obj[i2s_num]->bytes_per_sample, &bytes_push, ticks_to_wait);
-    if (res != ESP_OK) {
-        return ESP_FAIL;
-    } else {
-        return bytes_push;
-    }
-}
-
-int i2s_pop_sample(i2s_port_t i2s_num, void *sample, TickType_t ticks_to_wait)
-{
-    size_t bytes_pop = 0;
-    int res = 0;
-    I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_FAIL);
-    res = i2s_read(i2s_num, sample, p_i2s_obj[i2s_num]->bytes_per_sample, &bytes_pop, ticks_to_wait);
-    if (res != ESP_OK) {
-        return ESP_FAIL;
-    } else {
-        return bytes_pop;
-    }
 }

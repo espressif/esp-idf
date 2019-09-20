@@ -46,10 +46,6 @@ static uint8_t base_mac_addr[6] = { 0 };
 #define SHUTDOWN_HANDLERS_NO 2
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
-void system_init()
-{
-}
-
 esp_err_t esp_base_mac_addr_set(uint8_t *mac)
 {
     if (mac == NULL) {
@@ -120,9 +116,6 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
     }
     return ESP_OK;
 }
-
-esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
-esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
@@ -342,8 +335,6 @@ void IRAM_ATTR esp_restart_noos()
     }
 }
 
-void system_restart(void) __attribute__((alias("esp_restart")));
-
 uint32_t esp_get_free_heap_size( void )
 {
     return heap_caps_get_free_size( MALLOC_CAP_DEFAULT );
@@ -352,13 +343,6 @@ uint32_t esp_get_free_heap_size( void )
 uint32_t esp_get_minimum_free_heap_size( void )
 {
     return heap_caps_get_minimum_free_size( MALLOC_CAP_DEFAULT );
-}
-
-uint32_t system_get_free_heap_size(void) __attribute__((alias("esp_get_free_heap_size")));
-
-const char* system_get_sdk_version(void)
-{
-    return "master";
 }
 
 const char* esp_get_idf_version(void)

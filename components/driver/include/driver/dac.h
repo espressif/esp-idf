@@ -42,25 +42,6 @@ typedef enum {
  */
 esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num);
 
-/** @cond */
-/**
-  * @brief  Set DAC output voltage.
-  *
-  * @note Function has been deprecated, please use dac_output_voltage instead.
-  *       This name will be removed in a future release.
-  *       The difference is that before calling dac_output_voltage, we need to initialize the dac pad by dac_output_enable
-  *
-  *
-  * @param channel DAC channel
-  * @param dac_value DAC output value
-  *
-  * @return
-  *     - ESP_OK success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
-esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value) __attribute__ ((deprecated));
-/** @endcond */
-
 /**
  * @brief Set DAC output voltage.
  *

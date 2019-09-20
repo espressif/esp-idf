@@ -39,7 +39,7 @@ esp_err_t mesh_light_init(void)
     s_light_inited = true;
 
     ledc_timer_config_t ledc_timer = {
-        .bit_num = LEDC_TIMER_13_BIT,
+        .duty_resolution = LEDC_TIMER_13_BIT,
         .freq_hz = 5000,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
         .timer_num = LEDC_TIMER_0,

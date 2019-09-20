@@ -205,19 +205,6 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
     return ESP_OK;
 }
 
-esp_err_t esp_vfs_fat_unregister()
-{
-    if (s_fat_ctx == NULL) {
-        return ESP_ERR_INVALID_STATE;
-    }
-    esp_err_t err = esp_vfs_fat_unregister_path(s_fat_ctx->base_path);
-    if (err != ESP_OK) {
-        return err;
-    }
-    s_fat_ctx = NULL;
-    return ESP_OK;
-}
-
 static int get_next_fd(vfs_fat_ctx_t* fat_ctx)
 {
     for (size_t i = 0; i < fat_ctx->max_files; ++i) {

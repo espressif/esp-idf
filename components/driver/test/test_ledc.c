@@ -83,7 +83,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     };
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,
-        .bit_num = timer_bit,
+        .duty_resolution = timer_bit,
         .timer_num = timer,
         .freq_hz = 5000,
         .clk_cfg = LEDC_AUTO_CLK,
@@ -124,7 +124,7 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
     };
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,
-        .bit_num = timer_bit,
+        .duty_resolution = timer_bit,
         .timer_num = timer,
         .freq_hz = 5000,
         .clk_cfg = LEDC_AUTO_CLK,
@@ -228,7 +228,7 @@ TEST_CASE("LEDC normal channel and timer config", "[ledc][test_env=UT_T1_LEDC]")
 
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .bit_num = LEDC_TIMER_13_BIT,
+        .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
         .clk_cfg = LEDC_AUTO_CLK,
@@ -298,7 +298,7 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
 
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .bit_num = 13,
+        .duty_resolution = 13,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
         .clk_cfg = LEDC_AUTO_CLK,
