@@ -14,6 +14,7 @@
 
 #pragma once
 #include "esp_flash_data_types.h"
+#include "esp_image_format.h"
 
 /// Type of hold a GPIO in low state
 typedef enum {
@@ -68,3 +69,13 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
  * @return    Returns true if the list contains the label, false otherwise.
  */
 bool bootloader_common_label_search(const char *list, char *label);
+
+/**
+ * @brief Check if the image (bootloader and application) has valid chip ID and revision
+ *
+ * @param img_hdr: image header
+ * @return
+ *      - ESP_OK: image and chip are matched well
+ *      - ESP_FAIL: image doesn't match to the chip
+ */
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr);

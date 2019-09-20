@@ -91,6 +91,13 @@ esp_err_t esp_efuse_apply_34_encoding(const uint8_t *in_bytes, uint32_t *out_wor
  */
 void esp_efuse_write_random_key(uint32_t blk_wdata0_reg);
 
+/**
+ * @brief   Returns chip version from efuse
+ *
+ * @return chip version
+ */
+uint8_t esp_efuse_get_chip_ver(void);
+
 #ifdef __cplusplus
 }
 #endif

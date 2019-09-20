@@ -38,9 +38,9 @@
 #include "esp_log.h"
 
 
-#define OTA_MAX(a,b) ((a) >= (b) ? (a) : (b)) 
-#define OTA_MIN(a,b) ((a) <= (b) ? (a) : (b)) 
-#define SUB_TYPE_ID(i) (i & 0x0F) 
+#define OTA_MAX(a,b) ((a) >= (b) ? (a) : (b))
+#define OTA_MIN(a,b) ((a) <= (b) ? (a) : (b))
+#define SUB_TYPE_ID(i) (i & 0x0F)
 
 typedef struct ota_ops_entry_ {
     uint32_t handle;
@@ -146,7 +146,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
             // must erase the partition before writing to it
             assert(it->erased_size > 0 && "must erase the partition before writing to it");
             if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0 && data_bytes[0] != ESP_IMAGE_HEADER_MAGIC) {
-                ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x", data_bytes[0]);
+                ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x)", data_bytes[0]);
                 return ESP_ERR_OTA_VALIDATE_FAILED;
             }
 
@@ -302,10 +302,10 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
         //named data in first sector as s_ota_select[0], second sector data as s_ota_select[1]
         //e.g.
         //if s_ota_select[0].ota_seq == s_ota_select[1].ota_seq == 0xFFFFFFFF,means ota info partition is in init status
-        //so it will boot factory application(if there is),if there's no factory application,it will boot ota[0] application 
+        //so it will boot factory application(if there is),if there's no factory application,it will boot ota[0] application
         //if s_ota_select[0].ota_seq != 0 and s_ota_select[1].ota_seq != 0,it will choose a max seq ,and get value of max_seq%max_ota_app_number
         //and boot a subtype (mask 0x0F) value is (max_seq - 1)%max_ota_app_number,so if want switch to run ota[x],can use next formulas.
-        //for example, if s_ota_select[0].ota_seq = 4, s_ota_select[1].ota_seq = 5, and there are 8 ota application, 
+        //for example, if s_ota_select[0].ota_seq = 4, s_ota_select[1].ota_seq = 5, and there are 8 ota application,
         //current running is (5-1)%8 = 4,running ota[4],so if we want to switch to run ota[7],
         //we should add s_ota_select[0].ota_seq (is 4) to 4 ,(8-1)%8=7,then it will boot ota[7]
         //if      A=(B - C)%D
