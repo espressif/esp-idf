@@ -4,7 +4,6 @@ import os
 import os.path
 import re
 import shutil
-import tempfile
 
 
 def action_extensions(base_actions, project_path=os.getcwd()):
@@ -71,33 +70,30 @@ def action_extensions(base_actions, project_path=os.getcwd()):
             print("Reconfigure: config %s, target %s" % (config_name, target))
 
             # Clean up and set idf-target
+            base_actions["actions"]["fullclean"]["callback"]("fullclean", ctx, args)
             base_actions["actions"]["set-target"]["callback"]("set-target", ctx, args, target)
 
             new_cache_values["EXCLUDE_COMPONENTS"] = config.get("EXCLUDE_COMPONENTS", "''")
             new_cache_values["TEST_EXCLUDE_COMPONENTS"] = config.get("TEST_EXCLUDE_COMPONENTS", "''")
             new_cache_values["TEST_COMPONENTS"] = config.get("TEST_COMPONENTS", "''")
             new_cache_values["TESTS_ALL"] = int(new_cache_values["TEST_COMPONENTS"] == "''")
-            # When delete=True, the file is invisible to kconfiglib on Windows
-            with tempfile.NamedTemporaryFile(delete=False) as sdkconfig_temp:
-                # Use values from the combined defaults and the values from
-                # config folder to build config
+
+            # write a new sdkconfig file from the combined defaults and the config
+            # value folder
+            with open(os.path.join(project_path, "sdkconfig"), "w") as sdkconfig:
                 sdkconfig_default = os.path.join(project_path, "sdkconfig.defaults")
 
                 with open(sdkconfig_default, "rb") as sdkconfig_default_file:
-                    sdkconfig_temp.write(sdkconfig_default_file.read())
+                    sdkconfig.write(sdkconfig_default_file.read())
 
                 sdkconfig_config = os.path.join(project_path, "configs", config_name)
                 with open(sdkconfig_config, "rb") as sdkconfig_config_file:
-                    sdkconfig_temp.write(b"\n")
-                    sdkconfig_temp.write(sdkconfig_config_file.read())
+                    sdkconfig.write(b"\n")
+                    sdkconfig.write(sdkconfig_config_file.read())
 
-                sdkconfig_temp.flush()
-                new_cache_values["SDKCONFIG_DEFAULTS"] = sdkconfig_temp.name
+            args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in new_cache_values.items()])
 
-                args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in new_cache_values.items()])
-
-                base_actions["actions"]["fullclean"]["callback"]("fullclean", ctx, args)
-                base_actions["actions"]["reconfigure"]["callback"](None, ctx, args)
+            base_actions["actions"]["reconfigure"]["callback"](None, ctx, args)
 
     # This target builds the configuration. It does not currently track dependencies,
     # but is good enough for CI builds if used together with clean-all-configs.
