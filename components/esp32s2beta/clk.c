@@ -66,10 +66,10 @@ void esp_clk_init(void)
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
-    // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
+    // If the frequency changes from 90kHz to 32kHz, then the timeout set for the WDT will increase 2.8 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (1.6 sec).
     // This prevents excessive delay before resetting in case the supply voltage is drawdown.
-    // (If frequency is changed from 150kHz to 32kHz then WDT timeout will increased to 1.6sec * 150/32 = 7.5 sec).
+    // (If frequency is changed from 90kHz to 32kHz then WDT timeout will increased to 1.6sec * 90/32 = 4.5 sec).
     rtc_wdt_protect_off();
     rtc_wdt_feed();
     rtc_wdt_set_time(RTC_WDT_STAGE0, 1600);
