@@ -489,7 +489,7 @@ def main():
                         default=True)
 
     parser.add_argument("--follow-symlinks",
-                        help="For creating partition image, symbolic links are also taken into account. Specify if CONFIG_SPIFFS_FOLLOW_SYMLINKS.",
+                        help="Take into account symbolic links during partition image creation.",
                         action="store_true",
                         default=False)
 

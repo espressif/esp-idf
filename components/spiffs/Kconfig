@@ -77,11 +77,11 @@ menu "SPIFFS Configuration"
             SPIFFS_PAGE_SIZE - 64.
 
     config SPIFFS_FOLLOW_SYMLINKS
-        bool "Enable Symbolic-Links for image creating"
+        bool "Enable symbolic links for image creation"
         default "n"
         help
             If this option is enabled, symbolic links are taken into account
-            during partition image creating.
+            during partition image creation.
 
     config SPIFFS_USE_MAGIC
         bool "Enable SPIFFS Filesystem Magic"
