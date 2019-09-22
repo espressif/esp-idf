@@ -301,7 +301,7 @@ def parse_cmakecache(path):
     CMakeCache entries also each have a "type", but this is currently ignored.
     """
     result = {}
-    with open(path) as f:
+    with open(path, encoding="utf8") as f:
         for line in f:
             # cmake cache lines look like: CMAKE_CXX_FLAGS_DEBUG:STRING=-g
             # groups are name, type, value
