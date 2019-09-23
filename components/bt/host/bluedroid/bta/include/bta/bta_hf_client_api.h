@@ -115,15 +115,16 @@ typedef UINT8 tBTA_HF_CLIENT_EVT;
 
 typedef UINT8 tBTA_HF_CLIENT_STATUS;
 
-/* indicator type */
-#define BTA_HF_CLIENT_IND_BATTCH    0  /* Battery charge indicator */
-#define BTA_HF_CLIENT_IND_SIGNAL    1  /* Signal Strength indicator */
-#define BTA_HF_CLIENT_IND_SERVICE   2  /* Service availability indicator */
-#define BTA_HF_CLIENT_IND_CALL      3  /* Standard call status indicator*/
-#define BTA_HF_CLIENT_IND_ROAM      4  /* Roaming status indicator */
-#define BTA_HF_CLIENT_IND_CALLSETUP 5  /* Call setup status indicator */
-#define BTA_HF_CLIENT_IND_CALLHELD  6  /* Call hold status indicator */
-
+/* indicator constants HFP 1.1 and later */
+#define BTA_HF_CLIENT_IND_CALL             0   /* position of call indicator */
+#define BTA_HF_CLIENT_IND_CALLSETUP        1   /* position of callsetup indicator */
+#define BTA_HF_CLIENT_IND_SERVICE          2   /* position of service indicator */
+/* indicator constants HFP 1.5 and later */
+#define BTA_HF_CLIENT_IND_SIGNAL           3   /* position of signal strength indicator */
+#define BTA_HF_CLIENT_IND_ROAM             4   /* position of roaming indicator */
+#define BTA_HF_CLIENT_IND_BATTCH           5   /* position of battery charge indicator */
+#define BTA_HF_CLIENT_IND_CALLHELD         6   /* position of callheld indicator */
+#define BTA_HF_CLIENT_IND_BEARER           7   /* position of bearer indicator */
 typedef UINT8 tBTA_HF_CLIENT_IND_TYPE;
 
 /* AT commands */
