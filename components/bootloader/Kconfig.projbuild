@@ -388,7 +388,7 @@ menu "Security features"
     config SECURE_BOOT_SIGNING_KEY
         string "Secure boot private signing key"
         depends on SECURE_BOOT_BUILD_SIGNED_BINARIES
-        default secure_boot_signing_key.pem
+        default "secure_boot_signing_key.pem"
         help
             Path to the key file used to sign app images.
 
@@ -404,7 +404,7 @@ menu "Security features"
     config SECURE_BOOT_VERIFICATION_KEY
         string "Secure boot public signature verification key"
         depends on SECURE_SIGNED_APPS && !SECURE_BOOT_BUILD_SIGNED_BINARIES
-        default signature_verification_key.bin
+        default "signature_verification_key.bin"
         help
             Path to a public key file used to verify signed images. This key is compiled into the bootloader and/or
             app, to verify app images.
@@ -418,7 +418,7 @@ menu "Security features"
     choice SECURE_BOOTLOADER_KEY_ENCODING
         bool "Hardware Key Encoding"
         depends on SECURE_BOOTLOADER_REFLASHABLE
-        default SECURE_BOOTLOADER_NO_ENCODING
+        default SECURE_BOOTLOADER_KEY_ENCODING_256BIT
         help
 
             In reflashable secure bootloader mode, a hardware key is derived from the signing key (with SHA-256) and

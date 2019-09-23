@@ -19,7 +19,7 @@ menu "FreeRTOS"
 
     choice FREERTOS_CORETIMER
         prompt "Xtensa timer to use as the FreeRTOS tick source"
-        default CONFIG_FREERTOS_CORETIMER_0
+        default FREERTOS_CORETIMER_0
         help
             FreeRTOS needs a timer with an associated interrupt to use as
             the main tick source to increase counters, run timers and do
