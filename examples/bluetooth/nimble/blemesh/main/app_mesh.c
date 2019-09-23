@@ -32,7 +32,7 @@
 #include "mesh/mesh.h"
 
 static const char *tag = "NimBLE_MESH";
-void ble_store_ram_init(void);
+void ble_store_config_init(void);
 
 #define BT_DBG_ENABLED (MYNEWT_VAL(BLE_MESH_DEBUG))
 
@@ -418,6 +418,7 @@ void blemesh_host_task(void *param)
 
     health_pub_init();
     nimble_port_run();
+    nimble_port_freertos_deinit();
 }
 
 void app_main()
@@ -438,7 +439,7 @@ void app_main()
 
     bt_mesh_register_gatt();
     /* XXX Need to have template for store */
-    ble_store_ram_init();
+    ble_store_config_init();
 
     nimble_port_freertos_init(blemesh_host_task);
 }

@@ -64,6 +64,8 @@ def test_example_app_ble_central(env, extra_data):
     adv_type = 'peripheral'
     adv_uuid = '1811'
 
+    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
+    subprocess.check_output(['hciconfig','hci0','reset'])
     # Acquire DUT
     dut = env.get_dut("blecent", "examples/bluetooth/nimble/blecent")
 
@@ -75,8 +77,8 @@ def test_example_app_ble_central(env, extra_data):
     # Upload binary and start testing
     Utility.console_log("Starting blecent example test app")
     dut.start_app()
+    dut.reset()
 
-    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
     device_addr = ':'.join(re.findall('..', '%012x' % uuid.getnode()))
 
     # Get BLE client module
