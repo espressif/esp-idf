@@ -377,8 +377,12 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/store/ram/include
                     host/nimble/nimble/nimble/host/store/config/include
                     host/nimble/nimble/porting/npl/freertos/include
-                    host/nimble/nimble/ext/tinycrypt/include
                     host/nimble/esp-hci/include)
+
+    if(NOT CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS)
+
+        list(APPEND include_dirs
+                    host/nimble/nimble/ext/tinycrypt/include)
 
         list(APPEND srcs "host/nimble/nimble/ext/tinycrypt/src/utils.c"
                     "host/nimble/nimble/ext/tinycrypt/src/sha256.c"
@@ -394,8 +398,10 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/ext/tinycrypt/src/hmac_prng.c"
                     "host/nimble/nimble/ext/tinycrypt/src/ecc_platform_specific.c"
                     "host/nimble/nimble/ext/tinycrypt/src/hmac.c"
-                    "host/nimble/nimble/ext/tinycrypt/src/cbc_mode.c"
-                    "host/nimble/nimble/nimble/host/util/src/addr.c"
+                    "host/nimble/nimble/ext/tinycrypt/src/cbc_mode.c")
+    endif()
+
+        list(APPEND srcs "host/nimble/nimble/nimble/host/util/src/addr.c"
                     "host/nimble/nimble/nimble/host/services/gatt/src/ble_svc_gatt.c"
                     "host/nimble/nimble/nimble/host/services/tps/src/ble_svc_tps.c"
                     "host/nimble/nimble/nimble/host/services/ias/src/ble_svc_ias.c"
