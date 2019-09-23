@@ -13,14 +13,14 @@
 // limitations under the License.
 
 #include "utils/common.h"
-#include "crypto/aes_wrap.h"
-#include "crypto/sha256.h"
-#include "crypto/crypto.h"
-#include "crypto/md5.h"
-#include "crypto/sha1.h"
-#include "crypto/aes.h"
-#include "crypto/dh_group5.h"
-#include "esp_wifi_crypto_types.h"
+#include "aes_wrap.h"
+#include "sha256.h"
+#include "crypto.h"
+#include "md5.h"
+#include "sha1.h"
+#include "aes.h"
+#include "esp_wpa.h"
+
 /* 
  * This structure is used to set the cyrpto callback function for station to connect when in security mode.
  * These functions either call MbedTLS API's if USE_MBEDTLS_CRYPTO flag is set through Kconfig, or native

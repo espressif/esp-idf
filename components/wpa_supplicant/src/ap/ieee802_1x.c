@@ -10,7 +10,6 @@
 
 #include "utils/common.h"
 #include "crypto/crypto.h"
-#include "crypto/random.h"
 #include "common/ieee802_11_defs.h"
 #include "hostapd.h"
 #include "ap/sta_info.h"

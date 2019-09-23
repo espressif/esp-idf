@@ -25,8 +25,8 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/aes.h"
-#include "crypto/aes_wrap.h"
+#include "aes.h"
+#include "aes_wrap.h"
 #ifdef USE_MBEDTLS_CRYPTO
 #include "mbedtls/aes.h"
 #endif /* USE_MBEDTLS_CRYPTO */

@@ -15,9 +15,9 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/crypto.h"
-#include "crypto/random.h"
-#include "crypto/dh_groups.h"
+#include "crypto.h"
+#include "random.h"
+#include "dh_groups.h"
 #include "utils/wpabuf.h"
 #include "utils/wpa_debug.h"
 #include "esp_wifi_crypto_types.h"

@@ -29,7 +29,6 @@
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
-#include "crypto/wepkey.h"
 
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"

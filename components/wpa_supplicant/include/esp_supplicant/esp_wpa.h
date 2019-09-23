@@ -40,7 +40,10 @@ extern "C" {
 /** @addtogroup WPA_APIs
   * @{
   */
-
+/* Crypto callback functions */
+const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+/* Mesh crypto callback functions */
+const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs;
 
 /**
   * @brief     Supplicant initialization

@@ -7,7 +7,7 @@
  */
 
 #include "utils/common.h"
-#include "crypto/crypto.h"
+#include "crypto.h"
 
 #include "utils/includes.h"
 #include "utils/common.h"

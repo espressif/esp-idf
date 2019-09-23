@@ -33,8 +33,8 @@
 #ifdef USE_MBEDTLS_CRYPTO
 #include "mbedtls/sha256.h"
 #else /* USE_MBEDTLS_CRYPTO */
-#include "crypto/sha256.h"
-#include "crypto/crypto.h"
+#include "sha256.h"
+#include "crypto.h"
 #endif /* USE_MBEDTLS_CRYPTO */
 
 #ifdef USE_MBEDTLS_CRYPTO

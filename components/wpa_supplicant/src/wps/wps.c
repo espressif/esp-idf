@@ -14,8 +14,6 @@
 #include "utils/wpa_debug.h"
 #include "common/ieee802_11_defs.h"
 
-#include "crypto/dh_group5.h"
-
 #include "wps/wps_i.h"
 #include "wps/wps_dev_attr.h"
 
