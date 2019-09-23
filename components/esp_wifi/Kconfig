@@ -1,5 +1,5 @@
 
-menu Wi-Fi
+menu "Wi-Fi"
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
@@ -240,7 +240,7 @@ menu Wi-Fi
     choice ESP32_WIFI_DEBUG_LOG_LEVEL
         depends on ESP32_WIFI_DEBUG_LOG_ENABLE
         prompt "WiFi debug log level"
-        default ESP32_WIFI_LOG_DEBUG
+        default ESP32_WIFI_DEBUG_LOG_DEBUG
         help
             The WiFi log is divided into the following levels: ERROR,WARNING,INFO,DEBUG,VERBOSE.
             The ERROR,WARNING,INFO levels are enabled by default, and the DEBUG,VERBOSE levels can be enabled here.
@@ -318,7 +318,7 @@ menu Wi-Fi
 
 endmenu  # Wi-Fi
 
-menu PHY
+menu "PHY"
 
     config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
         bool "Store phy calibration data in NVS"

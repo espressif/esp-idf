@@ -9,7 +9,7 @@ menu "eFuse Bit Manager"
     config EFUSE_CUSTOM_TABLE_FILENAME
         string "Custom eFuse CSV file"
         depends on EFUSE_CUSTOM_TABLE
-        default main/esp_efuse_custom_table.csv
+        default "main/esp_efuse_custom_table.csv"
         help
             Name of the custom eFuse CSV filename. This path is evaluated
             relative to the project root directory.
