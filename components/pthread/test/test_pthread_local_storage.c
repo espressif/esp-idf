@@ -3,6 +3,7 @@
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "test_utils.h"
 
 TEST_CASE("pthread local storage basics", "[pthread]")
 {

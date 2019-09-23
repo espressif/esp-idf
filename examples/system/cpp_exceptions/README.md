@@ -4,25 +4,33 @@
 
 This example demonstrates usage of C++ exceptions in ESP-IDF.
 
-By default, C++ exceptions support is disabled in ESP-IDF. It can be enabled using `CONFIG_CXX_EXCEPTIONS` configuration option.
+By default, C++ exceptions support is disabled in ESP-IDF. It can be enabled using `CONFIG_COMPILER_CXX_EXCEPTIONS` configuration option.
 
-In this example, `sdkconfig.defaults` file sets `CONFIG_CXX_EXCEPTIONS` option. This enables both compile time support (`-fexceptions` compiler flag) and run-time support for C++ exception handling.
+In this example, the `sdkconfig.defaults` file sets the `CONFIG_COMPILER_CXX_EXCEPTIONS` option. This enables both compile time support (`-fexceptions` compiler flag) and run-time support for C++ exception handling.
 
-Example source code declares a class which can throw exception from the constructor, depending on the argument. It illustrates that exceptions can be thrown and caught using standard C++ facilities.
+The example source code declares a class which can throw exception from the constructor if the argument provided is equal to `0`. This is used to demonstrate that exceptions can be thrown and caught using standard C++ facilities.
+
+**Note: Due to the use of the C++ exceptions, this example is written in C++ instead of C.**
 
 ## How to use example
 
+### Hardware Required
+
+This example should be able to run on any commonly available ESP32 development board.
+
 ### Configure the project
 
-Run `make menuconfig` and set serial port under Serial Flasher Options.
+```
+idf.py menuconfig
+```
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+```
+idf.py -p PORT flash monitor
+```
 
-```
-make -j4 flash monitor
-```
+(Replace PORT with the name of the serial port.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

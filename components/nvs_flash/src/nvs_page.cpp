@@ -13,12 +13,14 @@
 // limitations under the License.
 #include "nvs_page.hpp"
 #if defined(ESP_PLATFORM)
-#include <rom/crc.h>
+#include <esp32/rom/crc.h>
 #else
 #include "crc.h"
 #endif
 #include <cstdio>
 #include <cstring>
+
+#include "nvs_ops.hpp"
 
 namespace nvs
 {
@@ -46,19 +48,22 @@ esp_err_t Page::load(uint32_t sectorNumber)
         mState = header.mState;
         // check if the whole page is really empty
         // reading the whole page takes ~40 times less than erasing it
-        uint32_t line[8];
-        for (uint32_t i = 0; i < SPI_FLASH_SEC_SIZE; i += sizeof(line)) {
-            rc = spi_flash_read(mBaseAddress + i, line, sizeof(line));
+        const int BLOCK_SIZE = 128;
+        uint32_t* block = new uint32_t[BLOCK_SIZE];
+        for (uint32_t i = 0; i < SPI_FLASH_SEC_SIZE; i += 4 * BLOCK_SIZE) {
+            rc = spi_flash_read(mBaseAddress + i, block, 4 * BLOCK_SIZE);
             if (rc != ESP_OK) {
                 mState = PageState::INVALID;
+                delete[] block;
                 return rc;
             }
-            if (std::any_of(line, line + 4, [](uint32_t val) -> bool { return val != 0xffffffff; })) {
+            if (std::any_of(block, block + BLOCK_SIZE, [](uint32_t val) -> bool { return val != 0xffffffff; })) {
                 // page isn't as empty after all, mark it as corrupted
                 mState = PageState::CORRUPT;
                 break;
             }
         }
+        delete[] block;
     } else if (header.mCrc32 != header.calculateCrc32()) {
         header.mState = PageState::CORRUPT;
     } else {
@@ -91,13 +96,16 @@ esp_err_t Page::load(uint32_t sectorNumber)
 
 esp_err_t Page::writeEntry(const Item& item)
 {
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
-    if (rc != ESP_OK) {
+    esp_err_t err;
+
+    err = nvs_flash_write(getEntryAddress(mNextFreeEntry), &item, sizeof(item));
+
+    if (err != ESP_OK) {
         mState = PageState::INVALID;
-        return rc;
+        return err;
     }
 
-    auto err = alterEntryState(mNextFreeEntry, EntryState::WRITTEN);
+    err = alterEntryState(mNextFreeEntry, EntryState::WRITTEN);
     if (err != ESP_OK) {
         return err;
     }
@@ -137,7 +145,9 @@ esp_err_t Page::writeEntryData(const uint8_t* data, size_t size)
         memcpy((void*)buf, data, size);
     }
 #endif //ESP_PLATFORM
-    auto rc = spi_flash_write(getEntryAddress(mNextFreeEntry), buf, size);
+
+    auto rc = nvs_flash_write(getEntryAddress(mNextFreeEntry), buf, size);
+
 #ifdef ESP_PLATFORM
     if (buf != data) {
         free((void*)buf);
@@ -235,7 +245,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
 
         size_t tail = dataSize - left;
         if (tail > 0) {
-            std::fill_n(item.rawData, ENTRY_SIZE / 4, 0xffffffff);
+            std::fill_n(item.rawData, ENTRY_SIZE, 0xff);
             memcpy(item.rawData, static_cast<const uint8_t*>(data) + left, tail);
             err = writeEntry(item);
             if (err != ESP_OK) {
@@ -295,6 +305,58 @@ esp_err_t Page::readItem(uint8_t nsIndex, ItemType datatype, const char* key, vo
         }
         return ESP_ERR_NVS_NOT_FOUND;
     }
+    return ESP_OK;
+}
+
+esp_err_t Page::cmpItem(uint8_t nsIndex, ItemType datatype, const char* key, const void* data, size_t dataSize, uint8_t chunkIdx, VerOffset chunkStart)
+{
+    size_t index = 0;
+    Item item;
+
+    if (mState == PageState::INVALID) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+
+    esp_err_t rc = findItem(nsIndex, datatype, key, index, item, chunkIdx, chunkStart);
+    if (rc != ESP_OK) {
+        return rc;
+    }
+
+    if (!isVariableLengthType(datatype)) {
+        if (dataSize != getAlignmentForType(datatype)) {
+            return ESP_ERR_NVS_TYPE_MISMATCH;
+        }
+
+        if (memcmp(data, item.data, dataSize)) {
+            return ESP_ERR_NVS_CONTENT_DIFFERS;
+        }
+        return ESP_OK;
+    }
+
+    if (dataSize < static_cast<size_t>(item.varLength.dataSize)) {
+        return ESP_ERR_NVS_INVALID_LENGTH;
+    }
+
+    const uint8_t* dst = reinterpret_cast<const uint8_t*>(data);
+    size_t left = item.varLength.dataSize;
+    for (size_t i = index + 1; i < index + item.span; ++i) {
+        Item ditem;
+        rc = readEntry(i, ditem);
+        if (rc != ESP_OK) {
+            return rc;
+        }
+        size_t willCopy = ENTRY_SIZE;
+        willCopy = (left < willCopy)?left:willCopy;
+        if (memcmp(dst, ditem.rawData, willCopy)) {
+            return ESP_ERR_NVS_CONTENT_DIFFERS;
+        }
+        left -= willCopy;
+        dst += willCopy;
+    }
+    if (Item::calculateCrc32(reinterpret_cast<const uint8_t*>(data), item.varLength.dataSize) != item.varLength.dataCrc32) {
+        return ESP_ERR_NVS_NOT_FOUND;
+    }
+
     return ESP_OK;
 }
 
@@ -707,7 +769,7 @@ esp_err_t Page::alterPageState(PageState state)
 
 esp_err_t Page::readEntry(size_t index, Item& dst) const
 {
-    auto rc = spi_flash_read(getEntryAddress(index), &dst, sizeof(dst));
+    auto rc = nvs_flash_read(getEntryAddress(index), &dst, sizeof(dst));
     if (rc != ESP_OK) {
         return rc;
     }

@@ -16,8 +16,9 @@
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_RTT.h"
 #include "SEGGER_SYSVIEW.h"
+#include "SEGGER_SYSVIEW_Conf.h"
 
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_app_trace.h"
 
 #include "esp_log.h"
@@ -27,8 +28,12 @@ const static char *TAG = "segger_rtt";
 
 // size of down channel data buf
 #define SYSVIEW_DOWN_BUF_SIZE   32
-#define SEGGER_HOST_WAIT_TMO    500 //us
 #define SEGGER_STOP_WAIT_TMO    1000000 //us
+#if CONFIG_SYSVIEW_BUF_WAIT_TMO == -1
+#define SEGGER_HOST_WAIT_TMO    ESP_APPTRACE_TMO_INFINITE
+#else
+#define SEGGER_HOST_WAIT_TMO    CONFIG_SYSVIEW_BUF_WAIT_TMO
+#endif
 
 static uint8_t s_events_buf[SYSVIEW_EVENTS_BUF_SZ];
 static uint16_t s_events_buf_filled;
@@ -57,9 +62,12 @@ static uint8_t s_down_buf[SYSVIEW_DOWN_BUF_SIZE];
 */
 void SEGGER_RTT_ESP32_FlushNoLock(unsigned long min_sz, unsigned long tmo)
 {
-    esp_err_t res = esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, s_events_buf, s_events_buf_filled, tmo);
-    if (res != ESP_OK) {
-      ESP_LOGE(TAG, "Failed to flush buffered events (%d)!\n", res);
+    esp_err_t res;
+    if (s_events_buf_filled > 0) {
+      res = esp_apptrace_write(ESP_APPTRACE_DEST_TRAX, s_events_buf, s_events_buf_filled, tmo);
+      if (res != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to flush buffered events (%d)!\n", res);
+      }
     }
     // flush even if we failed to write buffered events, because no new events will be sent after STOP
     res = esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, min_sz, tmo);
@@ -67,6 +75,27 @@ void SEGGER_RTT_ESP32_FlushNoLock(unsigned long min_sz, unsigned long tmo)
       ESP_LOGE(TAG, "Failed to flush apptrace data (%d)!\n", res);
     }
     s_events_buf_filled = 0;
+}
+
+/*********************************************************************
+*
+*       SEGGER_RTT_ESP32_Flush()
+*
+*  Function description
+*    Flushes buffered events.
+*
+*  Parameters
+*    min_sz  Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
+*    tmo     Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinetly.
+*
+*  Return value
+*    None.
+*/
+void SEGGER_RTT_ESP32_Flush(unsigned long min_sz, unsigned long tmo)
+{
+    SEGGER_SYSVIEW_LOCK();
+    SEGGER_RTT_ESP32_FlushNoLock(min_sz, tmo);
+    SEGGER_SYSVIEW_UNLOCK();
 }
 
 /*********************************************************************

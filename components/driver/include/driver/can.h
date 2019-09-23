@@ -19,8 +19,9 @@
 extern "C" {
 #endif
 
+#include "freertos/FreeRTOS.h"
 #include "esp_types.h"
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "gpio.h"
 
@@ -105,7 +106,7 @@ extern "C" {
 #define CAN_EXTD_ID_MASK                0x1FFFFFFF  /**< Bit mask for 29 bit Extended Frame Format ID */
 #define CAN_STD_ID_MASK                 0x7FF       /**< Bit mask for 11 bit Standard Frame Format ID */
 #define CAN_MAX_DATA_LEN                8           /**< Maximum number of data bytes in a CAN2.0B frame */
-#define CAN_IO_UNUSED                   (-1)        /**< Marks GPIO as unused in CAN configuration */
+#define CAN_IO_UNUSED                   ((gpio_num_t) -1)   /**< Marks GPIO as unused in CAN configuration */
 /** @endcond */
 
 /* ----------------------- Enum and Struct Definitions ---------------------- */
@@ -237,7 +238,7 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
  *      - ESP_OK: Successfully uninstalled CAN driver
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped/bus-off state, or is not installed
  */
-esp_err_t can_driver_uninstall();
+esp_err_t can_driver_uninstall(void);
 
 /**
  * @brief   Start the CAN driver
@@ -252,7 +253,7 @@ esp_err_t can_driver_uninstall();
  *      - ESP_OK: CAN driver is now running
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped state, or is not installed
  */
-esp_err_t can_start();
+esp_err_t can_start(void);
 
 /**
  * @brief   Stop the CAN driver
@@ -271,7 +272,7 @@ esp_err_t can_start();
  *      - ESP_OK: CAN driver is now Stopped
  *      - ESP_ERR_INVALID_STATE: Driver is not in running state, or is not installed
  */
-esp_err_t can_stop();
+esp_err_t can_stop(void);
 
 /**
  * @brief   Transmit a CAN message
@@ -378,7 +379,7 @@ esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_aler
  *      - ESP_OK: Bus recovery started
  *      - ESP_ERR_INVALID_STATE: CAN driver is not in the bus-off state, or is not installed
  */
-esp_err_t can_initiate_recovery();
+esp_err_t can_initiate_recovery(void);
 
 /**
  * @brief   Get current status information of the CAN driver
@@ -391,6 +392,34 @@ esp_err_t can_initiate_recovery();
  *      - ESP_ERR_INVALID_STATE: CAN driver is not installed
  */
 esp_err_t can_get_status_info(can_status_info_t *status_info);
+
+/**
+ * @brief   Clear the transmit queue
+ *
+ * This function will clear the transmit queue of all messages.
+ *
+ * @note    The transmit queue is automatically cleared when can_stop() or
+ *          can_initiate_recovery() is called.
+ *
+ * @return
+ *      - ESP_OK: Transmit queue cleared
+ *      - ESP_ERR_INVALID_STATE: CAN driver is not installed or TX queue is disabled
+ */
+esp_err_t can_clear_transmit_queue(void);
+
+/**
+ * @brief   Clear the receive queue
+ *
+ * This function will clear the receive queue of all messages.
+ *
+ * @note    The receive queue is automatically cleared when can_start() is
+ *          called.
+ *
+ * @return
+ *      - ESP_OK: Transmit queue cleared
+ *      - ESP_ERR_INVALID_STATE: CAN driver is not installed
+ */
+esp_err_t can_clear_receive_queue(void);
 
 #ifdef __cplusplus
 }

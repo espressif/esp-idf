@@ -53,6 +53,7 @@ Related Documents
 
     style-guide
     documenting-code
+    add-ons-reference
     creating-examples
     ../api-reference/template
     contributor-agreement

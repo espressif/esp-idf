@@ -1,0 +1,17 @@
+# Override some defaults so BT stack is enabled
+# in this example
+
+#
+# BT config
+#
+CONFIG_BT_ENABLED=y
+CONFIG_BTDM_CTRL_MODE_BLE_ONLY=y
+CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=
+CONFIG_BTDM_CTRL_MODE_BTDM=
+
+#
+# ESP32-specific config
+#
+CONFIG_ESP32_ENABLE_STACK_BT=y
+# CONFIG_ESP32_ENABLE_STACK_NONE is not set
+CONFIG_MEMMAP_BT=y

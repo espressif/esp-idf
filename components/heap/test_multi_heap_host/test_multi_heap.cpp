@@ -453,3 +453,44 @@ TEST_CASE("corrupt heap block", "[multi_heap]")
     memset(a, 0xEE, 64);
     REQUIRE( !multi_heap_check(heap, true) );
 }
+
+TEST_CASE("unaligned heaps", "[multi_heap]")
+{
+    const size_t CHUNK_LEN = 256;
+    const size_t CANARY_LEN = 16;
+    const uint8_t CANARY_BYTE = 0x3E;
+    uint8_t heap_chunk[CHUNK_LEN + CANARY_LEN * 2];
+
+    /* Put some canary bytes before and after the bytes we intend to use for
+       the heap, make sure they aren't ever overwritten */
+    memset(heap_chunk, CANARY_BYTE, CANARY_LEN);
+    memset(heap_chunk + CANARY_LEN + CHUNK_LEN, CANARY_BYTE, CANARY_LEN);
+
+    for (int i = 0; i < 8; i++) {
+        printf("Testing with offset %d\n", i);
+        multi_heap_handle_t heap = multi_heap_register(heap_chunk + CANARY_LEN + i, CHUNK_LEN - i);
+        multi_heap_info_t info;
+
+        REQUIRE( multi_heap_check(heap, true) );
+
+        multi_heap_get_info(heap, &info);
+
+        REQUIRE( info.total_free_bytes > CHUNK_LEN - 64 - i );
+        REQUIRE( info.largest_free_block > CHUNK_LEN - 64 - i );
+
+        void *a = multi_heap_malloc(heap, info.largest_free_block);
+        REQUIRE( a != NULL );
+        memset(a, 0xAA, info.largest_free_block);
+
+        REQUIRE( multi_heap_check(heap, true) );
+
+        multi_heap_free(heap, a);
+
+        REQUIRE( multi_heap_check(heap, true) );
+
+        for (unsigned j = 0; j < CANARY_LEN; j++) { // check canaries
+            REQUIRE( heap_chunk[j] == CANARY_BYTE );
+            REQUIRE( heap_chunk[CHUNK_LEN + CANARY_LEN + j] == CANARY_BYTE );
+        }
+    }
+}

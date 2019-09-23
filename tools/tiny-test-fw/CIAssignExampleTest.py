@@ -22,11 +22,15 @@ import sys
 import re
 import argparse
 
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path:
-    sys.path.insert(0, test_fw_path)
+try:
+    from Utility.CIAssignTest import AssignTest
+except ImportError:
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path:
+        sys.path.insert(0, test_fw_path)
+    from Utility.CIAssignTest import AssignTest
 
-from Utility.CIAssignTest import AssignTest, Group
+from Utility.CIAssignTest import Group
 
 
 class ExampleGroup(Group):

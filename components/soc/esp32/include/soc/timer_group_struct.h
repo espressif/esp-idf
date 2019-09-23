@@ -14,11 +14,13 @@
 #ifndef _SOC_TIMG_STRUCT_H_
 #define _SOC_TIMG_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct timg_dev_s {
     struct{
         union {
             struct {

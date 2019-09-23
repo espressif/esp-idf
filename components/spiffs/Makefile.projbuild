@@ -1,0 +1,46 @@
+SPIFFSGEN_PY:=$(COMPONENT_PATH)/spiffsgen.py
+SPIFFSGEN_FLASH_IN_PROJECT=
+
+ifdef CONFIG_SPIFFS_USE_MAGIC
+USE_MAGIC = "--use-magic"
+else
+USE_MAGIC = ""
+endif
+
+ifdef CONFIG_SPIFFS_USE_MAGIC_LENGTH
+USE_MAGIC_LEN = "--use-magic-len" 
+else
+USE_MAGIC_LEN = ""
+endif
+
+# spiffs_create_partition_image
+#
+# Create a spiffs image of the specified directory on the host during build and optionally
+# have the created image flashed using `make flash`
+define spiffs_create_partition_image
+
+$(1)_bin: $(PARTITION_TABLE_BIN) $(SPIFFS_IMAGE_DEPENDS) | check_python_dependencies
+	partition_size=`$(GET_PART_INFO) \
+	--partition-table-file $(PARTITION_TABLE_BIN) \
+	get_partition_info --partition-name $(1) --info size`; \
+	$(PYTHON) $(SPIFFSGEN_PY) $$$$partition_size $(2) $(BUILD_DIR_BASE)/$(1).bin \
+	--page-size=$(CONFIG_SPIFFS_PAGE_SIZE) \
+	--obj-name-len=$(CONFIG_SPIFFS_OBJ_NAME_LEN) \
+	--meta-len=$(CONFIG_SPIFFS_META_LENGTH) \
+	$(USE_MAGIC) \
+	$(USE_MAGIC_LEN) 
+
+all_binaries: $(1)_bin
+print_flash_cmd: $(1)_bin
+
+# Append the created binary to esptool_py args if FLASH_IN_PROJECT is set
+ifdef SPIFFS_IMAGE_FLASH_IN_PROJECT
+ifeq ($(SPIFFS_IMAGE_FLASH_IN_PROJECT),1)
+SPIFFSGEN_FLASH_IN_PROJECT += $(1)
+endif
+endif
+endef
+
+ESPTOOL_ALL_FLASH_ARGS += $(foreach partition,$(SPIFFSGEN_FLASH_IN_PROJECT), \
+$(shell $(GET_PART_INFO) --partition-table-file $(PARTITION_TABLE_BIN) \
+get_partition_info --partition-name $(partition) --info offset) $(BUILD_DIR_BASE)/$(partition).bin)

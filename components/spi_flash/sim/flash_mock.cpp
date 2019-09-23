@@ -7,7 +7,7 @@
 #include "esp_partition.h"
 
 #include "esp_err.h"
-#include "rom/spi_flash.h"
+#include "esp32/rom/spi_flash.h"
 
 SpiFlash spiflash = SpiFlash();
 
@@ -65,7 +65,7 @@ extern "C" void spi_flash_munmap(spi_flash_mmap_handle_t handle)
     return;
 }
 
-extern "C" int spi_flash_get_total_erase_cycles()
+extern "C" int spi_flash_get_total_erase_cycles(void)
 {
     return spiflash.get_total_erase_cycles();
 }
@@ -109,3 +109,5 @@ void *heap_caps_malloc( size_t size, uint32_t caps )
 {
     return NULL;
 }
+
+esp_flash_t* esp_flash_default_chip = NULL;

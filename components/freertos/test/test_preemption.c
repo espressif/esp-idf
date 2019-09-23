@@ -4,7 +4,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -13,6 +13,7 @@
 #include "freertos/xtensa_api.h"
 #include "unity.h"
 #include "soc/cpu.h"
+#include "test_utils.h"
 
 static volatile bool trigger;
 static volatile bool flag;

@@ -42,7 +42,8 @@ esp_err_t mesh_light_init(void)
         .bit_num = LEDC_TIMER_13_BIT,
         .freq_hz = 5000,
         .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .timer_num = LEDC_TIMER_0
+        .timer_num = LEDC_TIMER_0,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     ledc_timer_config(&ledc_timer);
 

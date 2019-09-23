@@ -1,7 +1,7 @@
 
 
 #include <stdio.h>
-#include "rom/tjpgd.h"
+#include "esp32/rom/tjpgd.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

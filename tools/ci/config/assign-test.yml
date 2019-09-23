@@ -1,0 +1,74 @@
+
+assign_test:
+  tags:
+    - assign_test
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  stage: assign_test
+  # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
+  # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
+  dependencies:
+    - build_ssc
+    - build_esp_idf_tests_make
+    - build_esp_idf_tests_cmake
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
+  artifacts:
+    paths:
+      - components/idf_test/*/CIConfigs
+      - components/idf_test/*/TC.sqlite
+      - $EXAMPLE_CONFIG_OUTPUT_PATH
+    expire_in: 1 week
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_EXAMPLE_TEST
+  script:
+    # assign example tests
+    - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $CI_TARGET_TEST_CONFIG_FILE $EXAMPLE_CONFIG_OUTPUT_PATH
+    # assign unit test cases
+    - python $TEST_FW_PATH/CIAssignUnitTest.py $IDF_PATH/components/idf_test/unit_test/TestCaseAll.yml $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
+    # clone test script to assign tests
+    - git clone $TEST_SCRIPT_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
+    - cd auto_test_script
+    # assgin integration test cases
+    - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin
+
+update_test_cases:
+  stage: assign_test
+  image: $CI_DOCKER_REGISTRY/ubuntu-test-env
+  tags:
+    - deploy_test
+  only:
+    refs:
+      - master
+      - schedules
+  dependencies:
+    - build_esp_idf_tests_make
+    - build_esp_idf_tests_cmake
+  artifacts:
+    when: always
+    paths:
+      - ${CI_PROJECT_DIR}/test-management/*.log
+    expire_in: 1 week
+  variables:
+    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
+    BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
+    PYTHON_VER: 3
+  script:
+    - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
+    - git clone $TEST_MANAGEMENT_REPO
+    - python $CHECKOUT_REF_SCRIPT test-management test-management
+    - cd test-management
+    - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
+    # update unit test cases
+    - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT unity -d $UNIT_TEST_CASE_FILE -r $GIT_SHA
+    # update example test cases
+    - python ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT tiny_test_fw -d ${CI_PROJECT_DIR}/examples -r $GIT_SHA
+    # organize test cases
+    - python OrganizeTestCases.py $JIRA_TEST_MANAGEMENT_PROJECT

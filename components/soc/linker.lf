@@ -1,0 +1,23 @@
+[mapping:soc]
+archive: libsoc.a
+entries:
+    cpu_util (noflash_text)
+    rtc_clk (noflash)
+    rtc_clk_init (noflash_text)
+    rtc_init (noflash_text)
+    rtc_periph (noflash_text)
+    rtc_pm (noflash_text)
+    rtc_sleep (noflash_text)
+    rtc_time (noflash_text)
+    rtc_wdt (noflash_text)
+    spi_hal_iram (noflash_text)
+    spi_slave_hal_iram (noflash_text)
+    spi_flash_hal_iram (noflash)
+    lldesc (noflash_text)
+    if ETH_USE_ESP32_EMAC = y:
+        emac_hal:emac_hal_isr (noflash_text)
+        emac_hal:emac_hal_tx_complete_cb (noflash_text)
+        emac_hal:emac_hal_tx_unavail_cb (noflash_text)
+        emac_hal:emac_hal_rx_complete_cb (noflash_text)
+        emac_hal:emac_hal_rx_early_cb (noflash_text)
+        emac_hal:emac_hal_rx_unavail_cb (noflash_text)

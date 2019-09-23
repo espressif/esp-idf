@@ -277,15 +277,17 @@ This galvanic isolated circuit does not require RTS pin control by software appl
 Application Examples
 --------------------
 
-Configure UART settings and install UART driver to read/write using UART1 interface: :example:`peripherals/uart_echo`.
+Configure UART settings and install UART driver to read/write using UART1 interface: :example:`peripherals/uart/uart_echo`.
 
-Demonstration of how to report various communication events and how to use patern detection interrupts: :example:`peripherals/uart_events`.
+Demonstration of how to report various communication events and how to use patern detection interrupts: :example:`peripherals/uart/uart_events`.
 
-Transmitting and receiveing with the same UART in two separate FreeRTOS tasks: :example:`peripherals/uart_async_rxtxtasks`.
+Transmitting and receiveing with the same UART in two separate FreeRTOS tasks: :example:`peripherals/uart/uart_async_rxtxtasks`.
 
-Using synchronous I/O multiplexing for UART file descriptors: :example:`peripherals/uart_select`.
+Using synchronous I/O multiplexing for UART file descriptors: :example:`peripherals/uart/uart_select`.
 
-Setup of UART driver to communicate over RS485 interface in half-duplex mode: :example:`peripherals/uart_echo_rs485`. This example is similar to uart_echo but provide communication through RS485 interface chip connected to ESP32 pins.
+Setup of UART driver to communicate over RS485 interface in half-duplex mode: :example:`peripherals/uart/uart_echo_rs485`. This example is similar to uart_echo but provide communication through RS485 interface chip connected to ESP32 pins.
+
+Demonstration of how to get GPS information by parsing NMEA0183 statements received from GPS via UART peripheral: :example:`peripherals/uart/nmea0183_parser`.
 
 API Reference
 -------------

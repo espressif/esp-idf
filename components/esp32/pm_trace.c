@@ -13,9 +13,8 @@
 // limitations under the License.
 
 
-#include "pm_trace.h"
+#include "esp_private/pm_trace.h"
 #include "driver/gpio.h"
-#include "soc/gpio_reg.h"
 
 /* GPIOs to use for tracing of esp_pm events.
  * Two entries in the array for each type, one for each CPU.
@@ -30,7 +29,7 @@ static const int DRAM_ATTR s_trace_io[] = {
         BIT(27), BIT(27), // ESP_PM_TRACE_SLEEP
 };
 
-void esp_pm_trace_init()
+void esp_pm_trace_init(void)
 {
     for (size_t i = 0; i < sizeof(s_trace_io)/sizeof(s_trace_io[0]); ++i) {
         int io = __builtin_ffs(s_trace_io[i]);

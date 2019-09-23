@@ -20,7 +20,6 @@
 #include "driver/pcnt.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "soc/gpio_sig_map.h"
 
 /**
  * TEST CODE BRIEF
@@ -101,6 +100,7 @@ static void ledc_init(void)
     ledc_timer.timer_num        = LEDC_TIMER_1;
     ledc_timer.duty_resolution  = LEDC_TIMER_10_BIT;
     ledc_timer.freq_hz          = 1;  // set output frequency at 1 Hz
+    ledc_timer.clk_cfg = LEDC_AUTO_CLK;
     ledc_timer_config(&ledc_timer);
 
     // Prepare and then apply the LEDC PWM channel configuration
@@ -111,6 +111,7 @@ static void ledc_init(void)
     ledc_channel.intr_type  = LEDC_INTR_DISABLE;
     ledc_channel.gpio_num   = LEDC_OUTPUT_IO;
     ledc_channel.duty       = 100; // set duty at about 10%
+    ledc_channel.hpoint     = 0;
     ledc_channel_config(&ledc_channel);
 }
 
@@ -167,7 +168,7 @@ static void pcnt_example_init(void)
     pcnt_counter_resume(PCNT_TEST_UNIT);
 }
 
-void app_main()
+void app_main(void)
 {
     /* Initialize LEDC to generate sample pulse signal */
     ledc_init();

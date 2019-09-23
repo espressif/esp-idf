@@ -18,7 +18,7 @@ static mdns_search_once_t * _mdns_search_init(const char * name, const char * se
 static esp_err_t _mdns_send_search_action(mdns_action_type_t type, mdns_search_once_t * search);
 static void _mdns_search_free(mdns_search_once_t * search);
 
-void mdns_test_init_di()
+void mdns_test_init_di(void)
 {
     mdns_test_static_execute_action = _mdns_execute_action;
     mdns_test_static_mdns_get_service_item = _mdns_get_service_item;

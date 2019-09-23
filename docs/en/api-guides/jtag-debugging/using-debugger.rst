@@ -1,5 +1,6 @@
 Using Debugger
 --------------
+:link_to_translation:`zh_CN:[中文]`
 
 This section covers configuration and running debugger either from :ref:`jtag-debugging-using-debugger-eclipse`
 or :ref:`jtag-debugging-using-debugger-command-line`. It is recommended to first check if debugger works from :ref:`jtag-debugging-using-debugger-command-line` and then move to using Eclipse.
@@ -48,14 +49,19 @@ Once installation is complete, configure debugging session following steps below
 
         Configuration of GDB Hardware Debugging - Debugger tab
 
-8.  The last tab to that requires changing of default configuration is "Startup". Under "Initialization Commands" uncheck "Reset and Delay (seconds)" and "Halt"". Then, in entry field below, type ``mon reset halt`` and ``flushregs`` (in two separate lines).
+8.  The last tab to that requires changing of default configuration is "Startup". Under "Initialization Commands" uncheck "Reset and Delay (seconds)" and "Halt"". Then, in entry field below, enter the following lines:
+
+    ::
+
+        mon reset halt
+        flushregs
+        set remote hardware-watchpoint-limit 2
 
     .. note::
         If you want to update image in the flash automatically before starting new debug session add the following lines of commands at the beginning of "Initialization Commands" textbox::
 
             mon reset halt
             mon program_esp32 ${workspace_loc:blink/build/blink.bin} 0x10000 verify
-
 
     For description of ``program_esp32`` command see :ref:`jtag-upload-app-debug`.
 
@@ -95,7 +101,7 @@ If you are not quite sure how to use GDB, check :ref:`jtag-debugging-examples-ec
 Command Line
 ^^^^^^^^^^^^
 
-1.  To be able start debugging session, the target should be up and running. If not done already, complete steps described under :ref:`jtag-debugging-configuring-esp32-target`.
+1.  Begin with completing steps described under :ref:`jtag-debugging-configuring-esp32-target`. This is prerequisite to start a debugging session.
 
 .. highlight:: bash
 
@@ -112,6 +118,7 @@ Command Line
     ::
 
         target remote :3333
+        set remote hardware-watchpoint-limit 2
         mon reset halt
         flushregs
         thb app_main
@@ -173,7 +180,7 @@ Command Line
         [New Thread 1073432196]
         [New Thread 1073411552]
         [Switching to Thread 1073411996]
-
+        
         Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
         43      xTaskCreate(&blink_task, "blink_task", 512, NULL, 5, NULL);
         (gdb) 

@@ -3,7 +3,7 @@
    This file describes the memory layout (memory blocks) as virtual
    memory addresses.
 
-   esp32.common.ld contains output sections to link compiler output
+   esp32.project.ld contains output sections to link compiler output
    into these memory blocks.
 
    ***
@@ -19,6 +19,25 @@
 /* If BT is not built at all */
 #ifndef CONFIG_BT_RESERVE_DRAM
 #define CONFIG_BT_RESERVE_DRAM 0
+#endif
+
+#ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
+#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#else
+#define ESP_BOOTLOADER_RESERVE_RTC 0
+#endif
+
+#if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
+
+ASSERT((CONFIG_ESP32_FIXED_STATIC_RAM_SIZE <= 0x2c200),
+          "Fixed static ram data does not fit.")
+
+#define DRAM0_0_SEG_LEN CONFIG_ESP32_FIXED_STATIC_RAM_SIZE
+
+#else
+#define DRAM0_0_SEG_LEN 0x2c200
 #endif
 
 MEMORY
@@ -51,7 +70,7 @@ MEMORY
      additional static memory temporarily cannot be used.
   */
   dram0_0_seg (RW) :                 org = 0x3FFB0000 + CONFIG_BT_RESERVE_DRAM,
-                                     len = 0x2c200 - CONFIG_BT_RESERVE_DRAM
+                                     len = DRAM0_0_SEG_LEN - CONFIG_BT_RESERVE_DRAM
 
   /* Flash mapped constant data */
   drom0_0_seg (R) :                  org = 0x3F400018, len = 0x400000-0x18
@@ -62,13 +81,38 @@ MEMORY
    */
   rtc_iram_seg(RWX) :                org = 0x400C0000, len = 0x2000
 
+  /* RTC fast memory (same block as above), viewed from data bus */
+  rtc_data_seg(RW) :                 org = 0x3ff80000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+
   /* RTC slow memory (data accessible). Persists over deep sleep.
 
      Start of RTC slow memory is reserved for ULP co-processor code + data, if enabled.
   */
-  rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                     len = 0x1000 - CONFIG_ULP_COPROC_RESERVE_MEM
+  rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ESP32_ULP_COPROC_RESERVE_MEM,
+                                     len = 0x1000 - CONFIG_ESP32_ULP_COPROC_RESERVE_MEM
+
+  /* external memory ,including data and text */
+  extern_ram_seg(RWX)  :             org = 0x3F800000,
+                                     len = 0x400000
 }
 
+#if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
+/* static data ends at defined address */
+_static_data_end = 0x3FFB0000 + DRAM0_0_SEG_LEN;
+#else
+_static_data_end = _bss_end;
+#endif
+
 /* Heap ends at top of dram0_0_seg */
-_heap_end = 0x40000000 - CONFIG_TRACEMEM_RESERVE_DRAM;
+_heap_end = 0x40000000 - CONFIG_ESP32_TRACEMEM_RESERVE_DRAM;
+
+_data_seg_org = ORIGIN(rtc_data_seg);
+
+/* The lines below define location alias for .rtc.data section based on Kconfig option.
+   When the option is not defined then use slow memory segment
+   else the data will be placed in fast memory segment */
+#ifndef CONFIG_ESP32_RTCDATA_IN_FAST_MEM
+REGION_ALIAS("rtc_data_location", rtc_slow_seg );
+#else
+REGION_ALIAS("rtc_data_location", rtc_data_seg );
+#endif

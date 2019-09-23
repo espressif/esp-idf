@@ -7,20 +7,18 @@
  */
 #include <string.h>
 
-#include "wpa/includes.h"
-#include "wpa/wpa.h"
-#include "wpa/common.h"
-#include "wpa/eapol_common.h"
-#include "wpa/wpa_debug.h"
-#include "wpa/ieee802_11_defs.h"
-
-#include "crypto/dh_group5.h"
+#include "utils/includes.h"
+#include "rsn_supp/wpa.h"
+#include "utils/common.h"
+#include "common/eapol_common.h"
+#include "utils/wpa_debug.h"
+#include "common/ieee802_11_defs.h"
 
 #include "wps/wps_i.h"
 #include "wps/wps_dev_attr.h"
 
-#include "wpa2/eap_peer/eap_defs.h"
-#include "wpa2/eap_peer/eap_common.h"
+#include "eap_peer/eap_defs.h"
+#include "eap_peer/eap_common.h"
 
 
 /**
@@ -109,16 +107,7 @@ int wps_is_selected_pbc_registrar(const struct wpabuf *msg, u8 *bssid)
         os_free(attr);
         return 0;
     }
-#if 0
-#ifdef CONFIG_WPS_STRICT
-    if (!attr->sel_reg_config_methods ||
-        !(WPA_GET_BE16(attr->sel_reg_config_methods) &
-          WPS_CONFIG_PUSHBUTTON)) {
-        os_free(attr);
-        return 0;
-        }
-#endif /* CONFIG_WPS_STRICT */
-#endif
+
     os_free(attr);
     return 1;
 }
@@ -160,9 +149,7 @@ static int is_selected_pin_registrar(struct wps_parse_attr *attr, u8 *bssid)
         return 0;
     }
 #ifdef CONFIG_WPS_STRICT
-    if (!attr->sel_reg_config_methods)// ||
-        //!(WPA_GET_BE16(attr->sel_reg_config_methods) &
-          //(WPS_CONFIG_LABEL | WPS_CONFIG_DISPLAY | WPS_CONFIG_KEYPAD)))
+    if (!attr->sel_reg_config_methods)
         return 0;
 #endif /* CONFIG_WPS_STRICT */
     return 1;

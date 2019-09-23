@@ -27,7 +27,7 @@
 #include "freertos/semphr.h"
 #include "freertos/list.h"
 
-#include <rom/queue.h>
+#include <sys/queue.h>
 #include <sys/time.h>
 
 #define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -197,4 +197,9 @@ int pthread_cond_destroy(pthread_cond_t *cv)
     }
 
     return ret;
+}
+
+/* Hook function to force linking this file */
+void pthread_include_pthread_cond_var_impl(void)
+{
 }

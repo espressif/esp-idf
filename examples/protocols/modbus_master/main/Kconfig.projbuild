@@ -1,0 +1,27 @@
+menu "Modbus Example Configuration"
+
+    config MB_UART_RXD
+        int "UART RXD pin number"
+        range 0 34
+        default 22
+        help
+            GPIO number for UART RX pin. See UART documentation for more information
+            about available pin numbers for UART.
+
+    config MB_UART_TXD
+        int "UART TXD pin number"
+        range 0 34
+        default 23
+        help
+            GPIO number for UART TX pin. See UART documentation for more information
+            about available pin numbers for UART.
+
+    config MB_UART_RTS
+        int "UART RTS pin number"
+        range 0 34
+        default 18
+        help
+            GPIO number for UART RTS pin. This pin is connected to
+            ~RE/DE pin of RS485 transceiver to switch direction.
+
+endmenu

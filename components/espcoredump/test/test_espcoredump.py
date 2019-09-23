@@ -18,10 +18,14 @@ import sys
 import os
 import unittest
 
-idf_path = os.getenv('IDF_PATH')
-if idf_path:
-    sys.path.insert(0, os.path.join(idf_path, 'components', 'espcoredump'))
-import espcoredump
+try:
+    import espcoredump
+except ImportError:
+    idf_path = os.getenv('IDF_PATH')
+    if idf_path:
+        sys.path.insert(0, os.path.join(idf_path, 'components', 'espcoredump'))
+    import espcoredump
+
 
 class TestESPCoreDumpFileLoader(unittest.TestCase):
     def setUp(self):
@@ -34,14 +38,15 @@ class TestESPCoreDumpFileLoader(unittest.TestCase):
 
     def testESPCoreDumpFileLoaderWithoutB64(self):
         t = espcoredump.ESPCoreDumpFileLoader(path='coredump.b64', b64=False)
-        self.assertIsInstance(t, espcoredump.ESPCoreDumpFileLoader) # invoke for coverage of open()
+        self.assertIsInstance(t, espcoredump.ESPCoreDumpFileLoader)  # invoke for coverage of open()
         t.cleanup()
 
     def test_cannot_remove_dir(self):
-        self.dloader.remove_tmp_file(fname='.') # silent failure (but covers exception inside)
+        self.dloader.remove_tmp_file(fname='.')  # silent failure (but covers exception inside)
 
     def test_create_corefile(self):
         self.assertEqual(self.dloader.create_corefile(core_fname=self.tmp_file, off=0, rom_elf=None), self.tmp_file)
+
 
 if __name__ == '__main__':
     # The purpose of these tests is to increase the code coverage at places which are sensitive to issues related to

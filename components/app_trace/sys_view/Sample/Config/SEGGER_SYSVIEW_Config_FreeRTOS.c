@@ -63,11 +63,11 @@ Revision: $Rev: 3734 $
 */
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -244,7 +244,7 @@ static void _cbSendSystemDesc(void) {
 *
 **********************************************************************
 */
-static void SEGGER_SYSVIEW_TS_Init()
+static void SEGGER_SYSVIEW_TS_Init(void)
 {
     /* We only need to initialize something if we use Timer Group.
      * esp_timer and ccount can be used as is.
@@ -316,7 +316,7 @@ void SEGGER_SYSVIEW_Conf(void) {
   SEGGER_SYSVIEW_DisableEvents(disable_evts);
 }
 
-U32 SEGGER_SYSVIEW_X_GetTimestamp()
+U32 SEGGER_SYSVIEW_X_GetTimestamp(void)
 {
 #if TS_USE_TIMERGROUP
     uint64_t ts = 0;
@@ -329,23 +329,26 @@ U32 SEGGER_SYSVIEW_X_GetTimestamp()
 #endif
 }
 
-void SEGGER_SYSVIEW_X_RTT_Lock()
+void SEGGER_SYSVIEW_X_RTT_Lock(void)
 {
 }
 
-void SEGGER_SYSVIEW_X_RTT_Unlock()
+void SEGGER_SYSVIEW_X_RTT_Unlock(void)
 {
 }
 
-void SEGGER_SYSVIEW_X_SysView_Lock()
+unsigned SEGGER_SYSVIEW_X_SysView_Lock(void)
 {
     esp_apptrace_tmo_t tmo;
     esp_apptrace_tmo_init(&tmo, SEGGER_LOCK_WAIT_TMO);
     esp_apptrace_lock_take(&s_sys_view_lock, &tmo);
+    // to be recursive save IRQ status on the stack of the caller to keep it from overwriting
+    return s_sys_view_lock.int_state;
 }
 
-void SEGGER_SYSVIEW_X_SysView_Unlock()
+void SEGGER_SYSVIEW_X_SysView_Unlock(unsigned int_state)
 {
+    s_sys_view_lock.int_state = int_state;
     esp_apptrace_lock_give(&s_sys_view_lock);
 }
 

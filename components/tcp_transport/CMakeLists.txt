@@ -1,6 +1,8 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-
-set(COMPONENT_REQUIRES lwip esp-tls)
-
-register_component()
+idf_component_register(SRCS "transport.c"
+                            "transport_ssl.c"
+                            "transport_tcp.c"
+                            "transport_ws.c"
+                            "transport_utils.c"
+                    INCLUDE_DIRS "include"
+                    PRIV_INCLUDE_DIRS "private_include"
+                    REQUIRES lwip esp-tls)

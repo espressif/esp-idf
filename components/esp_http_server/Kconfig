@@ -1,0 +1,42 @@
+menu "HTTP Server"
+
+    config HTTPD_MAX_REQ_HDR_LEN
+        int "Max HTTP Request Header Length"
+        default 512
+        help
+            This sets the maximum supported size of headers section in HTTP request packet to be processed by the
+            server
+
+    config HTTPD_MAX_URI_LEN
+        int "Max HTTP URI Length"
+        default 512
+        help
+            This sets the maximum supported size of HTTP request URI to be processed by the server
+
+    config HTTPD_ERR_RESP_NO_DELAY
+        bool "Use TCP_NODELAY socket option when sending HTTP error responses"
+        default y
+        help
+            Using TCP_NODEALY socket option ensures that HTTP error response reaches the client before the
+            underlying socket is closed. Please note that turning this off may cause multiple test failures
+
+    config HTTPD_PURGE_BUF_LEN
+        int "Length of temporary buffer for purging data"
+        default 32
+        help
+            This sets the size of the temporary buffer used to receive and discard any remaining data that is
+            received from the HTTP client in the request, but not processed as part of the server HTTP request
+            handler.
+
+            If the remaining data is larger than the available buffer size, the buffer will be filled in multiple
+            iterations. The buffer should be small enough to fit on the stack, but large enough to avoid excessive
+            iterations.
+
+    config HTTPD_LOG_PURGE_DATA
+        bool "Log purged content data at Debug level"
+        default n
+        help
+            Enabling this will log discarded binary HTTP request data at Debug level.
+            For large content data this may not be desirable as it will clutter the log.
+
+endmenu

@@ -1,95 +1,41 @@
-set(COMPONENT_ADD_INCLUDEDIRS port/include mbedtls/include)
-set(COMPONENT_SRCS "mbedtls/library/aes.c"
-                   "mbedtls/library/aesni.c"
-                   "mbedtls/library/arc4.c"
-                   "mbedtls/library/aria.c"
-                   "mbedtls/library/asn1parse.c"
-                   "mbedtls/library/asn1write.c"
-                   "mbedtls/library/base64.c"
-                   "mbedtls/library/bignum.c"
-                   "mbedtls/library/blowfish.c"
-                   "mbedtls/library/camellia.c"
-                   "mbedtls/library/ccm.c"
-                   "mbedtls/library/certs.c"
-                   "mbedtls/library/chacha20.c"
-                   "mbedtls/library/chachapoly.c"
-                   "mbedtls/library/cipher.c"
-                   "mbedtls/library/cipher_wrap.c"
-                   "mbedtls/library/cmac.c"
-                   "mbedtls/library/ctr_drbg.c"
-                   "mbedtls/library/debug.c"
-                   "mbedtls/library/des.c"
-                   "mbedtls/library/dhm.c"
-                   "mbedtls/library/ecdh.c"
-                   "mbedtls/library/ecdsa.c"
-                   "mbedtls/library/ecjpake.c"
-                   "mbedtls/library/ecp.c"
-                   "mbedtls/library/ecp_curves.c"
-                   "mbedtls/library/entropy.c"
-                   "mbedtls/library/entropy_poll.c"
-                   "mbedtls/library/error.c"
-                   "mbedtls/library/gcm.c"
-                   "mbedtls/library/havege.c"
-                   "mbedtls/library/hkdf.c"
-                   "mbedtls/library/hmac_drbg.c"
-                   "mbedtls/library/md.c"
-                   "mbedtls/library/md2.c"
-                   "mbedtls/library/md4.c"
-                   "mbedtls/library/md5.c"
-                   "mbedtls/library/md_wrap.c"
-                   "mbedtls/library/memory_buffer_alloc.c"
-                   "mbedtls/library/net_sockets.c"
-                   "mbedtls/library/nist_kw.c"
-                   "mbedtls/library/oid.c"
-                   "mbedtls/library/padlock.c"
-                   "mbedtls/library/pem.c"
-                   "mbedtls/library/pk.c"
-                   "mbedtls/library/pk_wrap.c"
-                   "mbedtls/library/pkcs11.c"
-                   "mbedtls/library/pkcs12.c"
-                   "mbedtls/library/pkcs5.c"
-                   "mbedtls/library/pkparse.c"
-                   "mbedtls/library/pkwrite.c"
-                   "mbedtls/library/platform.c"
-                   "mbedtls/library/platform_util.c"
-                   "mbedtls/library/poly1305.c"
-                   "mbedtls/library/ripemd160.c"
-                   "mbedtls/library/rsa.c"
-                   "mbedtls/library/rsa_internal.c"
-                   "mbedtls/library/sha1.c"
-                   "mbedtls/library/sha256.c"
-                   "mbedtls/library/sha512.c"
-                   "mbedtls/library/ssl_cache.c"
-                   "mbedtls/library/ssl_ciphersuites.c"
-                   "mbedtls/library/ssl_cli.c"
-                   "mbedtls/library/ssl_cookie.c"
-                   "mbedtls/library/ssl_srv.c"
-                   "mbedtls/library/ssl_ticket.c"
-                   "mbedtls/library/ssl_tls.c"
-                   "mbedtls/library/threading.c"
-                   "mbedtls/library/timing.c"
-                   "mbedtls/library/version.c"
-                   "mbedtls/library/version_features.c"
-                   "mbedtls/library/x509.c"
-                   "mbedtls/library/x509_create.c"
-                   "mbedtls/library/x509_crl.c"
-                   "mbedtls/library/x509_crt.c"
-                   "mbedtls/library/x509_csr.c"
-                   "mbedtls/library/x509write_crt.c"
-                   "mbedtls/library/x509write_csr.c"
-                   "mbedtls/library/xtea.c"
-                   "port/esp_bignum.c"
-                   "port/esp_hardware.c"
-                   "port/esp_sha1.c"
-                   "port/esp_sha256.c"
-                   "port/esp_sha512.c"
-                   "port/mbedtls_debug.c"
-                   "port/net_sockets.c")
+idf_component_register(INCLUDE_DIRS "port/include" "mbedtls/include"
+                    REQUIRES lwip)
 
-set(COMPONENT_REQUIRES lwip)
+# Only build mbedtls libraries
+set(ENABLE_TESTING CACHE BOOL OFF)
+set(ENABLE_PROGRAMS CACHE BOOL OFF)
 
-register_component()
+# Needed to for include_next includes to work from within mbedtls
+include_directories("${COMPONENT_DIR}/port/include")
 
-target_compile_definitions(mbedtls PUBLIC
-    -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h"
-)
+# Import mbedtls library targets
+add_subdirectory(mbedtls)
+
+# Use port specific implementation of net_socket.c instead of one from mbedtls
+get_target_property(src_tls mbedtls SOURCES)
+list(REMOVE_ITEM src_tls net_sockets.c)
+set_property(TARGET mbedtls PROPERTY SOURCES ${src_tls})
+
+set(mbedtls_targets mbedtls mbedcrypto mbedx509)
+
+# Add port files to mbedtls targets
+target_sources(mbedtls PRIVATE  "${COMPONENT_DIR}/port/mbedtls_debug.c"
+                                "${COMPONENT_DIR}/port/net_sockets.c")
+
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_bignum.c"
+                                "${COMPONENT_DIR}/port/esp_hardware.c"
+                                "${COMPONENT_DIR}/port/esp_mem.c"
+                                "${COMPONENT_DIR}/port/esp_sha.c"
+                                "${COMPONENT_DIR}/port/esp_sha1.c"
+                                "${COMPONENT_DIR}/port/esp_sha256.c"
+                                "${COMPONENT_DIR}/port/esp_sha512.c"
+                                "${COMPONENT_DIR}/port/esp_timing.c"
+                                "${COMPONENT_DIR}/port/esp32/aes.c"
+                                "${COMPONENT_DIR}/port/esp32/sha.c")
+
+foreach(target ${mbedtls_targets})
+    target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
+endforeach()
+
+# Link mbedtls libraries to component library
+target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})

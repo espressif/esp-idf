@@ -106,6 +106,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdio_ext.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -204,7 +205,7 @@ void linenoiseSetDumbMode(int set) {
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
-static int getCursorPosition() {
+static int getCursorPosition(void) {
     char buf[32];
     int cols, rows;
     unsigned int i = 0;
@@ -227,7 +228,7 @@ static int getCursorPosition() {
 
 /* Try to get the number of columns in the current terminal, or assume 80
  * if it fails. */
-static int getColumns() {
+static int getColumns(void) {
     int start, cols;
 
     /* Get the initial position so we can restore it later. */
@@ -879,11 +880,14 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
             linenoiseEditDeletePrevWord(&l);
             break;
         }
+        if (__fbufsize(stdout) > 0) {
+            fflush(stdout);
+        }
     }
     return l.len;
 }
 
-int linenoiseProbe() {
+int linenoiseProbe(void) {
     /* Switch to non-blocking mode */
     int flags = fcntl(STDIN_FILENO, F_GETFL);
     flags |= O_NONBLOCK;
@@ -996,7 +1000,7 @@ void linenoiseFree(void *ptr) {
 
 /* ================================ History ================================= */
 
-void linenoiseHistoryFree() {
+void linenoiseHistoryFree(void) {
     if (history) {
         for (int j = 0; j < history_len; j++) {
             free(history[j]);

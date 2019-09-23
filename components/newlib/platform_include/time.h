@@ -25,9 +25,9 @@ extern "C" {
 #define CLOCK_MONOTONIC (clockid_t)4
 #define CLOCK_BOOTTIME (clockid_t)4
 
-int _EXFUN(clock_settime, (clockid_t clock_id, const struct timespec *tp));
-int _EXFUN(clock_gettime, (clockid_t clock_id, struct timespec *tp));
-int _EXFUN(clock_getres,  (clockid_t clock_id, struct timespec *res));
+int clock_settime(clockid_t clock_id, const struct timespec *tp);
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
+int clock_getres(clockid_t clock_id, struct timespec *res);
 
 #ifdef __cplusplus
 }

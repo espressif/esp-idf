@@ -1,18 +1,20 @@
 Storage API
 ***********
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. toctree::
-   :maxdepth: 1
+    :maxdepth: 1
 
-   SPI Flash and Partition APIs <spi_flash>
-   SD/SDIO/MMC Driver <sdmmc>
-   Non-Volatile Storage <nvs_flash>
-   NVS Partition Generation Utility <nvs_partition_gen.rst>
-   Virtual Filesystem <vfs>
-   FAT Filesystem <fatfs>
-   Wear Levelling <wear-levelling>
-   SPIFFS Filesystem <spiffs>
-   Mass Manufacturing Utility <mass_mfg.rst>
+    FAT Filesystem <fatfs>
+    Mass Manufacturing Utility <mass_mfg.rst>
+    Non-Volatile Storage <nvs_flash>
+    NVS Partition Generation Utility <nvs_partition_gen.rst>
+    SD/SDIO/MMC Driver <sdmmc>
+    SPI Flash and Partition APIs <spi_flash>
+    SPIFFS Filesystem <spiffs>
+    Virtual Filesystem <vfs>
+    Wear Levelling <wear-levelling>
 
 
-Example code for this API section is provided in :example:`storage` directory of ESP-IDF examples.
+Code examples for this API section are provided in the :example:`storage` directory of ESP-IDF examples.

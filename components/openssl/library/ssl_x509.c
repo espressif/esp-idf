@@ -409,7 +409,7 @@ failed:
 /**
  * @brief get the memory BIO method function
  */
-void *BIO_s_mem() {
+void *BIO_s_mem(void) {
     return NULL;
 }
 

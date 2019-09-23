@@ -15,18 +15,15 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
-#include <assert.h>
 #include <stdlib.h>
-#include "rom/ets_sys.h"
-#include "rom/rtc.h"
-#include "rom/uart.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/uart.h"
+#include "esp32/rom/gpio.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/sens_reg.h"
-#include "soc/dport_reg.h"
-#include "soc/efuse_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
+#include "soc/efuse_periph.h"
 #include "soc/apb_ctrl_reg.h"
 #include "i2c_rtc_clk.h"
 #include "soc_log.h"
@@ -39,7 +36,7 @@
  */
 #define XTAL_FREQ_EST_CYCLES            10
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate();
+static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void);
 
 static const char* TAG = "rtc_clk_init";
 
@@ -118,7 +115,10 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     uint32_t freq_before = old_config.freq_mhz;
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
-    assert(res && "invalid CPU frequency value");
+    if (!res) {
+        SOC_LOGE(TAG, "invalid CPU frequency value");
+        abort();
+    }
     rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Configure REF_TICK */
@@ -126,7 +126,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     REG_WRITE(APB_CTRL_PLL_TICK_CONF_REG, APB_CLK_FREQ / MHZ - 1); /* Under PLL, APB frequency is always 80MHz */
 
     /* Re-calculate the ccount to make time calculation correct. */
-    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * cfg.cpu_freq_mhz / freq_before );
+    XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * cfg.cpu_freq_mhz / freq_before );
 
     /* Slow & fast clocks setup */
     if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
@@ -140,7 +140,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_slow_freq_set(cfg.slow_freq);
 }
 
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate()
+static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 {
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();

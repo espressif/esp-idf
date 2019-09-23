@@ -1,0 +1,27 @@
+menu "IDF unit test"
+
+    config UNITY_FREERTOS_PRIORITY
+        int "Priority of Unity test task"
+        default 5
+
+    config UNITY_FREERTOS_CPU
+        int "CPU to run Unity test task on"
+        default 0
+
+    config UNITY_FREERTOS_STACK_SIZE
+        int "Stack size of Unity test task, in bytes"
+        default 8192
+
+    config UNITY_WARN_LEAK_LEVEL_GENERAL
+        int "Leak warning level"
+        default 255
+
+    config UNITY_CRITICAL_LEAK_LEVEL_GENERAL
+        int "Critical leak"
+        default 1024
+
+    config UNITY_CRITICAL_LEAK_LEVEL_LWIP
+        int "Critical leak for UT which use LWIP component"
+        default 4095
+
+endmenu

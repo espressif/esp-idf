@@ -17,6 +17,6 @@
 /**
  * @brief  Register MDNS functions with the console component
  */
-void mdns_console_register();
+void mdns_console_register(void);
 
 #endif /* _MDNS_CONSOLE_H_ */

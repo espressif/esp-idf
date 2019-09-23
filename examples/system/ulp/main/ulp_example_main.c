@@ -22,10 +22,10 @@
 extern const uint8_t ulp_main_bin_start[] asm("_binary_ulp_main_bin_start");
 extern const uint8_t ulp_main_bin_end[]   asm("_binary_ulp_main_bin_end");
 
-static void init_ulp_program();
-static void update_pulse_count();
+static void init_ulp_program(void);
+static void update_pulse_count(void);
 
-void app_main()
+void app_main(void)
 {
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     if (cause != ESP_SLEEP_WAKEUP_ULP) {
@@ -41,7 +41,7 @@ void app_main()
     esp_deep_sleep_start();
 }
 
-static void init_ulp_program()
+static void init_ulp_program(void)
 {
     esp_err_t err = ulp_load_binary(0, ulp_main_bin_start,
             (ulp_main_bin_end - ulp_main_bin_start) / sizeof(uint32_t));
@@ -91,13 +91,13 @@ static void init_ulp_program()
     ESP_ERROR_CHECK(err);
 }
 
-static void update_pulse_count()
+static void update_pulse_count(void)
 {
     const char* namespace = "plusecnt";
     const char* count_key = "count";
 
     ESP_ERROR_CHECK( nvs_flash_init() );
-    nvs_handle handle;
+    nvs_handle_t handle;
     ESP_ERROR_CHECK( nvs_open(namespace, NVS_READWRITE, &handle));
     uint32_t pulse_count = 0;
     esp_err_t err = nvs_get_u32(handle, count_key, &pulse_count);

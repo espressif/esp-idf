@@ -15,7 +15,7 @@
 import matplotlib
 # fix can't draw figure with docker
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402 - matplotlib.use('Agg') need to be before this
 
 
 # candidate colors

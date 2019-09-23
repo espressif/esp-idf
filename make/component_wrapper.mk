@@ -46,6 +46,10 @@ COMPONENT_EMBED_TXTFILES ?=
 COMPONENT_ADD_INCLUDEDIRS = include
 COMPONENT_ADD_LDFLAGS = -l$(COMPONENT_NAME)
 
+# Name of the linker fragment files this component presents to the Linker
+# script generator
+COMPONENT_ADD_LDFRAGMENTS ?=
+
 # Define optional compiling macros
 define compile_exclude
 COMPONENT_OBJEXCLUDE += $(1)
@@ -87,7 +91,9 @@ COMPONENT_SUBMODULES ?=
 COMPILING_COMPONENT_PATH := $(COMPONENT_PATH)
 
 define includeCompBuildMakefile
-$(if $(V),$(info including $(1)/Makefile.componentbuild...))
+ifeq ("$(V)","1")
+$$(info including $(1)/Makefile.componentbuild...)
+endif
 COMPONENT_PATH := $(1)
 include $(1)/Makefile.componentbuild
 endef
@@ -193,8 +199,8 @@ component_project_vars.mk::
 	@echo 'COMPONENT_LINKER_DEPS += $(call MakeVariablePath,$(call resolvepath,$(COMPONENT_ADD_LINKER_DEPS),$(COMPONENT_PATH)))' >> $@
 	@echo 'COMPONENT_SUBMODULES += $(call MakeVariablePath,$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_SUBMODULES))))' >> $@
 	@echo 'COMPONENT_LIBRARIES += $(COMPONENT_NAME)' >> $@
+	@echo 'COMPONENT_LDFRAGMENTS += $(call MakeVariablePath,$(abspath $(addprefix $(COMPONENT_PATH)/,$(COMPONENT_ADD_LDFRAGMENTS))))' >> $@
 	@echo 'component-$(COMPONENT_NAME)-build: $(addprefix component-,$(addsuffix -build,$(COMPONENT_DEPENDS)))' >> $@
-
 ################################################################################
 # 5) Where COMPONENT_OWNBUILDTARGET / COMPONENT_OWNCLEANTARGET
 # is not set by component.mk, define default build, clean, etc. targets
@@ -212,7 +218,7 @@ build: $(COMPONENT_LIBRARY)
 $(COMPONENT_LIBRARY): $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
 	$(summary) AR $(patsubst $(PWD)/%,%,$(CURDIR))/$@
 	rm -f $@
-	$(AR) $(ARFLAGS) $@ $^
+	$(AR) $(ARFLAGS) $@ $(COMPONENT_OBJS) $(COMPONENT_EMBED_OBJS)
 endif
 
 # If COMPONENT_OWNCLEANTARGET is not set, define a phony clean target
@@ -332,7 +338,7 @@ clean:
 	$(summary) RM component_project_vars.mk
 	rm -f component_project_vars.mk
 
-component_project_vars.mk::  # no need to add variables via component.mk
+component_project_vars.mk:: # no need to add variables via component.mk
 	@echo '# COMPONENT_CONFIG_ONLY target sets no variables here' > $@
 
 endif  # COMPONENT_CONFIG_ONLY

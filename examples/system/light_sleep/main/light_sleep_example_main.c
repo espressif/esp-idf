@@ -16,7 +16,7 @@
 #include "freertos/task.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
-#include "rom/uart.h"
+#include "driver/uart.h"
 #include "driver/rtc_io.h"
 
 /* Most development boards have "boot" button attached to GPIO0.
@@ -27,7 +27,7 @@
 /* "Boot" button on GPIO0 is active low */
 #define BUTTON_WAKEUP_LEVEL_DEFAULT     0
 
-void app_main()
+void app_main(void)
 {
     /* Configure the button GPIO as input, enable wakeup */
     const int button_gpio_num = BUTTON_GPIO_NUM_DEFAULT;
@@ -57,7 +57,7 @@ void app_main()
         /* To make sure the complete line is printed before entering sleep mode,
          * need to wait until UART TX FIFO is empty:
          */
-        uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+        uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
 
         /* Get timestamp before entering sleep */
         int64_t t_before_us = esp_timer_get_time();

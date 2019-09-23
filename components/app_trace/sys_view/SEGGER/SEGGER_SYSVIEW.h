@@ -230,6 +230,8 @@ void SEGGER_SYSVIEW_GetSysDesc                    (void);
 void SEGGER_SYSVIEW_SendTaskList                  (void);
 void SEGGER_SYSVIEW_SendTaskInfo                  (const SEGGER_SYSVIEW_TASKINFO* pInfo);
 void SEGGER_SYSVIEW_SendSysDesc                   (const char* sSysDesc);
+// Checks whether tracing has been started
+U8 SEGGER_SYSVIEW_Started(void);
 
 /*********************************************************************
 *

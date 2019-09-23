@@ -43,23 +43,30 @@ Template Config File::
       - name: xxx
 """
 
-# TODO: add a function to use suitable import lib for python2 and python3
-import imp
-
 import yaml
 
 import TestCase
 
+from Utility import load_source
 
-def _convert_to_lower_case(item):
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
+
+def _convert_to_lower_case_bytes(item):
     """
     bot filter is always lower case string.
     this function will convert to all string to lower case.
+    Note: Unicode strings are converted to bytes.
     """
     if isinstance(item, (tuple, list)):
-        output = [_convert_to_lower_case(v) for v in item]
-    elif isinstance(item, str):
+        output = [_convert_to_lower_case_bytes(v) for v in item]
+    elif isinstance(item, type(b'')):
         output = item.lower()
+    elif isinstance(item, type(u'')):
+        output = item.encode().lower()
     else:
         output = item
     return output
@@ -76,8 +83,8 @@ def _filter_one_case(test_method, case_filter):
         if key in test_method.case_info:
             # the filter key is both in case and filter
             # we need to check if they match
-            filter_item = _convert_to_lower_case(case_filter[orig_key])
-            accepted_item = _convert_to_lower_case(test_method.case_info[key])
+            filter_item = _convert_to_lower_case_bytes(case_filter[orig_key])
+            accepted_item = _convert_to_lower_case_bytes(test_method.case_info[key])
 
             if isinstance(filter_item, (tuple, list)) \
                     and isinstance(accepted_item, (tuple, list)):
@@ -90,6 +97,9 @@ def _filter_one_case(test_method, case_filter):
                 # accepted item list/tuple, check if case filter value is in accept item list/tuple
                 filter_result = True if filter_item in accepted_item else False
             else:
+                if type(filter_item) != type(accepted_item):
+                    # This will catch silent ignores of test cases when Unicode and bytes are compared
+                    raise AssertionError(filter_item, '!=', accepted_item)
                 # both string/int, just do string compare
                 filter_result = (filter_item == accepted_item)
         else:
@@ -149,7 +159,7 @@ class Parser(object):
         configs = cls.DEFAULT_CONFIG.copy()
         if config_file:
             with open(config_file, "r") as f:
-                configs.update(yaml.load(f))
+                configs.update(yaml.load(f), Loader=Loader)
         return configs
 
     @classmethod
@@ -163,8 +173,7 @@ class Parser(object):
         output = dict()
         for key in overwrite:
             _path = overwrite[key]["path"]
-            # TODO: add a function to use suitable import lib for python2 and python3
-            _module = imp.load_source(str(hash(_path)), overwrite[key]["path"])
+            _module = load_source(str(hash(_path)), overwrite[key]["path"])
             output[key] = _module.__getattribute__(overwrite[key]["class"])
         return output
 

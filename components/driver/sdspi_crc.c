@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
-#include "rom/crc.h"
+#include "esp32/rom/crc.h"
 #include "sdspi_crc.h"
 
 static const uint8_t crc7_table[256] =

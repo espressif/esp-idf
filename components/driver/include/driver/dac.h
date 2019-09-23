@@ -21,7 +21,7 @@ extern "C" {
 
 #include <stdint.h>
 #include "esp_err.h"
-#include "soc/dac_channel.h"
+#include "soc/dac_periph.h"
 
 typedef enum {
     DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 */
@@ -99,12 +99,12 @@ esp_err_t dac_output_disable(dac_channel_t channel);
 /**
  * @brief Enable DAC output data from I2S
  */
-esp_err_t dac_i2s_enable();
+esp_err_t dac_i2s_enable(void);
 
 /**
  * @brief Disable DAC output data from I2S
  */
-esp_err_t dac_i2s_disable();
+esp_err_t dac_i2s_disable(void);
 #ifdef __cplusplus
 }
 #endif

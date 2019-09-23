@@ -44,8 +44,26 @@ typedef struct {
     uint32_t flags;                 ///< Bitwise OR of SPI_SLAVE_* flags
     int queue_size;                 ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_slave_queue_trans but not yet finished using spi_slave_get_trans_result) at the same time
     uint8_t mode;                   ///< SPI mode (0-3)
-    slave_transaction_cb_t post_setup_cb; ///< Callback called after the SPI registers are loaded with new data
-    slave_transaction_cb_t post_trans_cb; ///< Callback called after a transaction is done
+    slave_transaction_cb_t post_setup_cb;  /**< Callback called after the SPI registers are loaded with new data.
+                                             *
+                                             *  This callback is called within interrupt
+                                             *  context should be in IRAM for best
+                                             *  performance, see "Transferring Speed"
+                                             *  section in the SPI Master documentation for
+                                             *  full details. If not, the callback may crash
+                                             *  during flash operation when the driver is
+                                             *  initialized with ESP_INTR_FLAG_IRAM.
+                                             */
+    slave_transaction_cb_t post_trans_cb;  /**< Callback called after a transaction is done.
+                                             *
+                                             *  This callback is called within interrupt
+                                             *  context should be in IRAM for best
+                                             *  performance, see "Transferring Speed"
+                                             *  section in the SPI Master documentation for
+                                             *  full details. If not, the callback may crash
+                                             *  during flash operation when the driver is
+                                             *  initialized with ESP_INTR_FLAG_IRAM.
+                                             */
 } spi_slave_interface_config_t;
 
 /**
@@ -55,7 +73,10 @@ struct spi_slave_transaction_t {
     size_t length;                  ///< Total data length, in bits
     size_t trans_len;               ///< Transaction data length, in bits
     const void *tx_buffer;          ///< Pointer to transmit buffer, or NULL for no MOSI phase
-    void *rx_buffer;                ///< Pointer to receive buffer, or NULL for no MISO phase
+    void *rx_buffer;                /**< Pointer to receive buffer, or NULL for no MISO phase.
+                                     * When the DMA is anabled, must start at WORD boundary (``rx_buffer%4==0``),
+                                     * and has length of a multiple of 4 bytes.
+                                     */
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
 };
 
@@ -71,10 +92,14 @@ struct spi_slave_transaction_t {
  *                 it. The SPI hardware has two DMA channels to share. This parameter indicates which
  *                 one to use.
  *
- * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in 
+ * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
  *          DMA-capable memory.
  *
- * @return 
+ * @warning The ISR of SPI is always executed on the core which calls this
+ *          function. Never starve the ISR on this core or the SPI transactions will not
+ *          be handled.
+ *
+ * @return
  *         - ESP_ERR_INVALID_ARG   if configuration is invalid
  *         - ESP_ERR_INVALID_STATE if host already is in use
  *         - ESP_ERR_NO_MEM        if out of memory
@@ -86,7 +111,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
  * @brief Free a SPI bus claimed as a SPI slave interface
  *
  * @param host SPI peripheral to free
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_INVALID_STATE if not all devices on the bus are freed
  *         - ESP_OK                on success
@@ -110,7 +135,7 @@ esp_err_t spi_slave_free(spi_host_device_t host);
  *                   into the transaction description.
  * @param ticks_to_wait Ticks to wait until there's room in the queue; use portMAX_DELAY to
  *                      never time out.
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
@@ -120,19 +145,19 @@ esp_err_t spi_slave_queue_trans(spi_host_device_t host, const spi_slave_transact
 /**
  * @brief Get the result of a SPI transaction queued earlier
  *
- * This routine will wait until a transaction to the given device (queued earlier with 
+ * This routine will wait until a transaction to the given device (queued earlier with
  * spi_slave_queue_trans) has succesfully completed. It will then return the description of the
- * completed transaction so software can inspect the result and e.g. free the memory or 
+ * completed transaction so software can inspect the result and e.g. free the memory or
  * re-use the buffers.
  *
  * It is mandatory to eventually use this function for any transaction queued by ``spi_slave_queue_trans``.
  *
  * @param host SPI peripheral to that is acting as a slave
- * @param[out] trans_desc Pointer to variable able to contain a pointer to the description of the 
+ * @param[out] trans_desc Pointer to variable able to contain a pointer to the description of the
  *                   transaction that is executed
  * @param ticks_to_wait Ticks to wait until there's a returned item; use portMAX_DELAY to never time
  *                      out.
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
@@ -143,16 +168,16 @@ esp_err_t spi_slave_get_trans_result(spi_host_device_t host, spi_slave_transacti
  * @brief Do a SPI transaction
  *
  * Essentially does the same as spi_slave_queue_trans followed by spi_slave_get_trans_result. Do
- * not use this when there is still a transaction queued that hasn't been finalized 
+ * not use this when there is still a transaction queued that hasn't been finalized
  * using spi_slave_get_trans_result.
  *
  * @param host SPI peripheral to that is acting as a slave
- * @param trans_desc Pointer to variable able to contain a pointer to the description of the 
+ * @param trans_desc Pointer to variable able to contain a pointer to the description of the
  *                   transaction that is executed. Not const because we may want to write status back
  *                   into the transaction description.
  * @param ticks_to_wait Ticks to wait until there's a returned item; use portMAX_DELAY to never time
  *                      out.
- * @return 
+ * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */

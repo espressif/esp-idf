@@ -22,7 +22,7 @@
 #include <sys/signal.h>
 #include <sys/unistd.h>
 #include <sys/reent.h>
-#include "rom/libc_stubs.h"
+#include "esp32/rom/libc_stubs.h"
 #include "esp_vfs.h"
 #include "esp_newlib.h"
 #include "sdkconfig.h"
@@ -32,7 +32,7 @@ static struct _reent s_reent;
 extern int _printf_float(struct _reent *rptr,
                void *pdata,
                FILE * fp,
-               int (*pfunc) (struct _reent *, FILE *, _CONST char *, size_t len),
+               int (*pfunc) (struct _reent *, FILE *, const char *, size_t len),
                va_list * ap);
 
 
@@ -74,7 +74,7 @@ static struct syscall_stub_table s_stub_table = {
     ._lock_init = &_lock_init,
     ._lock_init_recursive = &_lock_init_recursive,
     ._lock_close = &_lock_close,
-    ._lock_close_recursive = &_lock_close,
+    ._lock_close_recursive = &_lock_close_recursive,
     ._lock_acquire = &_lock_acquire,
     ._lock_acquire_recursive = &_lock_acquire_recursive,
     ._lock_try_acquire = &_lock_try_acquire,
@@ -90,7 +90,7 @@ static struct syscall_stub_table s_stub_table = {
 #endif
 };
 
-void esp_setup_syscall_table()
+void esp_setup_syscall_table(void)
 {
     syscall_table_ptr_pro = &s_stub_table;
     syscall_table_ptr_app = &s_stub_table;

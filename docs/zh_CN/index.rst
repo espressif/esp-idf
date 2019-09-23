@@ -15,22 +15,24 @@ ESP-IDF 编程指南
 ==================  ==================  ==================
 
 
-.. |快速入门| image:: ../_static/get-started.gif
+.. |快速入门| image:: ../_static/get-started.png
 .. _快速入门: get-started/index.html
 
-.. |API 参考| image:: ../_static/api-reference.gif
+.. |API 参考| image:: ../_static/api-reference.png
 .. _API 参考: api-reference/index.html
 
-.. |H/W 参考| image:: ../_static/hw-reference.gif
+.. |H/W 参考| image:: ../_static/hw-reference.png
 .. _H/W 参考: hw-reference/index.html
 
-.. |API 指南| image:: ../_static/api-guides.gif
+.. |API 指南| image:: ../_static/api-guides.png
 .. _API 指南: api-guides/index.html
 
-.. |贡献代码| image:: ../_static/contribute.gif
+.. _Libraries and Frameworks: libraries-and-frameworks/index.html
+
+.. |贡献代码| image:: ../_static/contribute.png
 .. _贡献代码: contribute/index.html
 
-.. |相关资源| image:: ../_static/resources.gif
+.. |相关资源| image:: ../_static/resources.png
 .. _相关资源: resources.html
 
 
@@ -38,17 +40,17 @@ ESP-IDF 编程指南
    :hidden:
 
    快速入门 <get-started/index>
-   快速入门 (CMake 预览版本) <get-started-cmake/index>
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
    API 指南 <api-guides/index>
+   Libraries and Frameworks <libraries-and-frameworks/index>
    贡献代码 <contribute/index>
    版本 <versions>
    相关资源 <resources>
    版权 <COPYRIGHT>
    关于 <about>
    Languages/语言 <languages>
-   下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
+   指南下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>
 
 
 * :ref:`genindex`

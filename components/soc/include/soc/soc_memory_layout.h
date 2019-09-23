@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #pragma once
 #include <stdlib.h>
 #include <stdint.h>
@@ -48,7 +49,7 @@
 
 #define SOC_MEM_BT_EM_PER_SYNC_SIZE         0x870
 
-#define SOC_MEM_BT_EM_BREDR_REAL_END        (SOC_MEM_BT_EM_BREDR_NO_SYNC_END + CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_EFF * SOC_MEM_BT_EM_PER_SYNC_SIZE)
+#define SOC_MEM_BT_EM_BREDR_REAL_END        (SOC_MEM_BT_EM_BREDR_NO_SYNC_END + CONFIG_BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF * SOC_MEM_BT_EM_PER_SYNC_SIZE)
 
 #endif //CONFIG_BT_ENABLED
 
@@ -137,11 +138,16 @@ size_t soc_get_available_memory_regions(soc_memory_region_t *regions);
  * returned by soc_get_available_memory_regions(). Used to size the
  * array passed to that function.
  */
-size_t soc_get_available_memory_region_max_count();
+size_t soc_get_available_memory_region_max_count(void);
 
 inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
 {
     return (intptr_t)p >= SOC_DMA_LOW && (intptr_t)p < SOC_DMA_HIGH;
+}
+
+inline static bool IRAM_ATTR esp_ptr_word_aligned(const void *p)
+{
+    return ((intptr_t)p) % 4 == 0;
 }
 
 inline static bool IRAM_ATTR esp_ptr_executable(const void *p)
@@ -156,7 +162,7 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
 {
     bool r;
     r = ((intptr_t)p >= SOC_BYTE_ACCESSIBLE_LOW && (intptr_t)p < SOC_BYTE_ACCESSIBLE_HIGH);
-#if CONFIG_SPIRAM_SUPPORT
+#if CONFIG_ESP32_SPIRAM_SUPPORT
     r |= ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
 #endif
     return r;
@@ -172,4 +178,35 @@ inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
 
 inline static bool IRAM_ATTR esp_ptr_external_ram(const void *p) {
     return ((intptr_t)p >= SOC_EXTRAM_DATA_LOW && (intptr_t)p < SOC_EXTRAM_DATA_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_iram(const void *p) {
+#ifndef CONFIG_FREERTOS_UNICORE
+    return ((intptr_t)p >= SOC_IRAM_LOW && (intptr_t)p < SOC_IRAM_HIGH);
+#else
+    return ((intptr_t)p >= SOC_CACHE_APP_LOW && (intptr_t)p < SOC_IRAM_HIGH);
+#endif
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_drom(const void *p) {
+    return ((intptr_t)p >= SOC_DROM_LOW && (intptr_t)p < SOC_DROM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_dram(const void *p) {
+    return ((intptr_t)p >= SOC_DRAM_LOW && (intptr_t)p < SOC_DRAM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_diram_dram(const void *p) {
+    return ((intptr_t)p >= SOC_DIRAM_DRAM_LOW && (intptr_t)p < SOC_DIRAM_DRAM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_diram_iram(const void *p) {
+    return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
+}
+
+
+inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
+{
+    //Check if stack ptr is in between SOC_DRAM_LOW and SOC_DRAM_HIGH, and 16 byte aligned.
+    return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }

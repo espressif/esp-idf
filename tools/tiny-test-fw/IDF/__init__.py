@@ -20,6 +20,10 @@ from IDF.IDFApp import IDFApp, Example, UT
 from IDF.IDFDUT import IDFDUT
 
 
+def format_case_id(chip, case_name):
+    return "{}.{}".format(chip, case_name)
+
+
 def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", execution_time=1,
                      level="example", erase_nvs=True, **kwargs):
     """
@@ -41,8 +45,15 @@ def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", e
     except AttributeError:
         pass
 
-    return TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                              execution_time=execution_time, level=level, **kwargs)
+    original_method = TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
+                                         execution_time=execution_time, level=level, **kwargs)
+
+    def test(func):
+        test_func = original_method(func)
+        test_func.case_info["ID"] = format_case_id(chip, test_func.case_info["name"])
+        return test_func
+
+    return test
 
 
 def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", execution_time=1,
@@ -66,8 +77,15 @@ def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", executio
     except AttributeError:
         pass
 
-    return TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
-                              execution_time=execution_time, level=level, **kwargs)
+    original_method = TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
+                                         execution_time=execution_time, level=level, **kwargs)
+
+    def test(func):
+        test_func = original_method(func)
+        test_func.case_info["ID"] = format_case_id(chip, test_func.case_info["name"])
+        return test_func
+
+    return test
 
 
 def log_performance(item, value):
@@ -77,7 +95,11 @@ def log_performance(item, value):
     :param item: performance item name
     :param value: performance value
     """
-    Utility.console_log("[Performance][{}]: {}".format(item, value), "orange")
+    performance_msg = "[Performance][{}]: {}".format(item, value)
+    Utility.console_log(performance_msg, "orange")
+    # update to junit test report
+    current_junit_case = TinyFW.JunitReport.get_current_test_case()
+    current_junit_case.stdout += performance_msg + "\r\n"
 
 
 def check_performance(item, value):

@@ -1,0 +1,86 @@
+# field_name,       |    efuse_block, | bit_start, | bit_count, |comment #
+#                   |    (EFUSE_BLK0  | (0..255)   | (1..-)     |        #
+#                   |     EFUSE_BLK1  |            |MAX_BLK_LEN*|        #
+#                   |     EFUSE_BLK2  |            |            |        #
+#                   |     EFUSE_BLK3) |            |            |        #
+##########################################################################
+# *) The value MAX_BLK_LEN depends on CONFIG_EFUSE_MAX_BLK_LEN, will be replaced with "None" - 256. "3/4" - 192. "REPEAT" - 128.
+# !!!!!!!!!!! #
+# After editing this file, run the command manually "make efuse_common_table" or "idf.py efuse_common_table"
+# this will generate new source files, next rebuild all the sources.
+# !!!!!!!!!!! #
+
+# Factory MAC address #
+#######################
+MAC_FACTORY,            EFUSE_BLK0,    72,    8,    Factory MAC addr [0]
+,                       EFUSE_BLK0,    64,    8,    Factory MAC addr [1]
+,                       EFUSE_BLK0,    56,    8,    Factory MAC addr [2]
+,                       EFUSE_BLK0,    48,    8,    Factory MAC addr [3]
+,                       EFUSE_BLK0,    40,    8,    Factory MAC addr [4]
+,                       EFUSE_BLK0,    32,    8,    Factory MAC addr [5]
+MAC_FACTORY_CRC,        EFUSE_BLK0,    80,    8,    CRC8 for factory MAC address
+
+# Custom MAC address #
+######################
+MAC_CUSTOM_CRC,         EFUSE_BLK3,    0,     8,    CRC8 for custom MAC address.
+MAC_CUSTOM,             EFUSE_BLK3,    8,     48,   Custom MAC
+MAC_CUSTOM_VER,         EFUSE_BLK3,    184,   8,    Custom MAC version
+
+# Security boot #
+#################
+SECURE_BOOT_KEY,        EFUSE_BLK2,    0,     MAX_BLK_LEN,   Security boot. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
+ABS_DONE_0,             EFUSE_BLK0,    196,   1,     Secure boot is enabled for bootloader image. EFUSE_RD_ABS_DONE_0
+
+# Flash encrypt #
+#################
+ENCRYPT_FLASH_KEY,      EFUSE_BLK1,    0,     MAX_BLK_LEN,  Flash encrypt. Key. (length = "None" - 256. "3/4" - 192. "REPEAT" - 128)
+ENCRYPT_CONFIG,         EFUSE_BLK0,    188,   4,    Flash encrypt. EFUSE_FLASH_CRYPT_CONFIG_M
+
+DISABLE_DL_ENCRYPT,     EFUSE_BLK0,    199,   1,    Flash encrypt. Disable UART bootloader encryption. EFUSE_DISABLE_DL_ENCRYPT.
+DISABLE_DL_DECRYPT,     EFUSE_BLK0,    200,   1,    Flash encrypt. Disable UART bootloader decryption. EFUSE_DISABLE_DL_DECRYPT.
+DISABLE_DL_CACHE,       EFUSE_BLK0,    201,   1,    Flash encrypt. Disable UART bootloader MMU cache. EFUSE_DISABLE_DL_CACHE.
+DISABLE_JTAG,           EFUSE_BLK0,    198,   1,    Flash encrypt. Disable JTAG. EFUSE_RD_DISABLE_JTAG.
+CONSOLE_DEBUG_DISABLE,  EFUSE_BLK0,    194,   1,    Flash encrypt. Disable ROM BASIC interpreter fallback. EFUSE_RD_CONSOLE_DEBUG_DISABLE.
+FLASH_CRYPT_CNT,        EFUSE_BLK0,    20,    7,    Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.
+
+# Write protection #
+####################
+WR_DIS_FLASH_CRYPT_CNT, EFUSE_BLK0,    2,     1,    Flash encrypt. Write protection FLASH_CRYPT_CNT. EFUSE_WR_DIS_FLASH_CRYPT_CNT
+WR_DIS_BLK1,            EFUSE_BLK0,    7,     1,    Flash encrypt. Write protection encryption key. EFUSE_WR_DIS_BLK1
+WR_DIS_BLK2,            EFUSE_BLK0,    8,     1,    Security boot. Write protection security key. EFUSE_WR_DIS_BLK2
+WR_DIS_BLK3,            EFUSE_BLK0,    9,     1,    Write protection for EFUSE_BLK3. EFUSE_WR_DIS_BLK3
+
+# Read protection #
+###################
+RD_DIS_BLK1,            EFUSE_BLK0,    16,    1,    Flash encrypt. efuse_key_read_protected. EFUSE_RD_DIS_BLK1
+RD_DIS_BLK2,            EFUSE_BLK0,    17,    1,    Security boot. efuse_key_read_protected. EFUSE_RD_DIS_BLK2
+RD_DIS_BLK3,            EFUSE_BLK0,    18,    1,    Read protection for EFUSE_BLK3. EFUSE_RD_DIS_BLK3
+
+# Chip info #
+#############
+CHIP_VER_DIS_APP_CPU,   EFUSE_BLK0,    96,    1,    EFUSE_RD_CHIP_VER_DIS_APP_CPU
+CHIP_VER_DIS_BT,        EFUSE_BLK0,    97,    1,    EFUSE_RD_CHIP_VER_DIS_BT
+CHIP_VER_PKG,           EFUSE_BLK0,    105,   3,    EFUSE_RD_CHIP_VER_PKG
+CHIP_CPU_FREQ_LOW,      EFUSE_BLK0,    108,   1,    EFUSE_RD_CHIP_CPU_FREQ_LOW
+CHIP_CPU_FREQ_RATED,    EFUSE_BLK0,    109,   1,    EFUSE_RD_CHIP_CPU_FREQ_RATED
+CHIP_VER_REV1,          EFUSE_BLK0,    111,   1,    EFUSE_RD_CHIP_VER_REV1
+CHIP_VER_REV2,          EFUSE_BLK0,    180,   1,    EFUSE_RD_CHIP_VER_REV2
+XPD_SDIO_REG,           EFUSE_BLK0,    142,   1,    EFUSE_RD_XPD_SDIO_REG
+SDIO_TIEH,              EFUSE_BLK0,    143,   1,    EFUSE_RD_SDIO_TIEH
+SDIO_FORCE,             EFUSE_BLK0,    144,   1,    EFUSE_RD_SDIO_FORCE
+
+#SDIO_DREFH,            EFUSE_BLK0,    136,   2,    EFUSE_RD_SDIO_DREFH
+#SDIO_DREFM,            EFUSE_BLK0,    138,   2,    EFUSE_RD_SDIO_DREFM
+#SDIO_DREFL,            EFUSE_BLK0,    140,   2,    EFUSE_RD_SDIO_DREFL
+
+# esp_adc_cal #
+###############
+ADC_VREF_AND_SDIO_DREF, EFUSE_BLK0,    136,   6,    EFUSE_RD_ADC_VREF[0..4] or ( SDIO_DREFH[0 1], SDIO_DREFM[2 3], SDIO_DREFL[4 5] )
+ADC1_TP_LOW,            EFUSE_BLK3,    96,    7,    TP_REG EFUSE_RD_ADC1_TP_LOW
+ADC2_TP_LOW,            EFUSE_BLK3,    112,   7,    TP_REG EFUSE_RD_ADC2_TP_LOW
+ADC1_TP_HIGH,           EFUSE_BLK3,    103,   9,    TP_REG EFUSE_RD_ADC1_TP_HIGH
+ADC2_TP_HIGH,           EFUSE_BLK3,    119,   9,    TP_REG EFUSE_RD_ADC2_TP_HIGH
+
+# anti-rollback #
+#################
+SECURE_VERSION,         EFUSE_BLK3,    128,  32,    Secure version for anti-rollback

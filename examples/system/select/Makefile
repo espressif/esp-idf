@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := select-example
+PROJECT_NAME := select
 
 include $(IDF_PATH)/make/project.mk
 

@@ -15,16 +15,11 @@
 #include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_log.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_io_struct.h"
-#include "soc/sens_reg.h"
-#include "soc/sens_struct.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_cntl_struct.h"
-#include "soc/syscon_reg.h"
-#include "soc/syscon_struct.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
+#include "soc/syscon_periph.h"
 #include "soc/rtc.h"
 #include "rtc_io.h"
 #include "touch_pad.h"
@@ -44,7 +39,7 @@
 // Enable built-in checks in queue.h in debug builds
 #define INVARIANTS
 #endif
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 
 #define ADC_FSM_RSTB_WAIT_DEFAULT     (8)
@@ -373,7 +368,7 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-void rtc_gpio_force_hold_dis_all()
+void rtc_gpio_force_hold_dis_all(void)
 {
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
         const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio];
@@ -662,7 +657,7 @@ esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_sw_start()
+esp_err_t touch_pad_sw_start(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_touch_ctrl2.touch_start_en = 0;
@@ -777,13 +772,13 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
     return ESP_OK;
 }
 
-uint32_t IRAM_ATTR touch_pad_get_status()
+uint32_t IRAM_ATTR touch_pad_get_status(void)
 {
     uint32_t status = SENS.sar_touch_ctrl2.touch_meas_en;
     return TOUCH_BITS_SWAP(status);
 }
 
-esp_err_t IRAM_ATTR touch_pad_clear_status()
+esp_err_t IRAM_ATTR touch_pad_clear_status(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_touch_ctrl2.touch_meas_en_clr = 1;
@@ -791,7 +786,7 @@ esp_err_t IRAM_ATTR touch_pad_clear_status()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_intr_enable()
+esp_err_t touch_pad_intr_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     RTCCNTL.int_ena.rtc_touch = 1;
@@ -799,7 +794,7 @@ esp_err_t touch_pad_intr_enable()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_intr_disable()
+esp_err_t touch_pad_intr_disable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     RTCCNTL.int_ena.rtc_touch = 0;
@@ -839,7 +834,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_init()
+esp_err_t touch_pad_init(void)
 {
     if (rtc_touch_mux == NULL) {
         rtc_touch_mux = xSemaphoreCreateMutex();
@@ -857,7 +852,7 @@ esp_err_t touch_pad_init()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_deinit()
+esp_err_t touch_pad_deinit(void)
 {
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
     if (s_touch_pad_filter != NULL) {
@@ -985,28 +980,33 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
     RTC_MODULE_CHECK(filter_period_ms >= portTICK_PERIOD_MS, "Touch pad filter period error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
 
-    esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter == NULL) {
         s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
         if (s_touch_pad_filter == NULL) {
-            ret = ESP_ERR_NO_MEM;
+            goto err_no_mem;
         }
     }
     if (s_touch_pad_filter->timer == NULL) {
         s_touch_pad_filter->timer = xTimerCreate("filter_tmr", filter_period_ms / portTICK_PERIOD_MS, pdFALSE,
         NULL, touch_pad_filter_cb);
         if (s_touch_pad_filter->timer == NULL) {
-            ret = ESP_ERR_NO_MEM;
+            free(s_touch_pad_filter);
+            s_touch_pad_filter = NULL;
+            goto err_no_mem;
         }
         s_touch_pad_filter->period = filter_period_ms;
     }
     xSemaphoreGive(rtc_touch_mux);
     touch_pad_filter_cb(NULL);
-    return ret;
+    return ESP_OK;
+
+err_no_mem:
+    xSemaphoreGive(rtc_touch_mux);
+    return ESP_ERR_NO_MEM;
 }
 
-esp_err_t touch_pad_filter_stop()
+esp_err_t touch_pad_filter_stop(void)
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
@@ -1022,7 +1022,7 @@ esp_err_t touch_pad_filter_stop()
     return ret;
 }
 
-esp_err_t touch_pad_filter_delete()
+esp_err_t touch_pad_filter_delete(void)
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
@@ -1143,14 +1143,14 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
     return ESP_OK;
 }
 
-void adc_power_always_on()
+void adc_power_always_on(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
-void adc_power_on()
+void adc_power_on(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     //The power FSM controlled mode saves more power, while the ADC noise may get increased.
@@ -1168,7 +1168,7 @@ void adc_power_on()
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
-void adc_power_off()
+void adc_power_off(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     //Bit1  0:Fsm  1: SW mode
@@ -1474,7 +1474,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
     return ESP_OK;
 }
 
-static inline void adc1_fsm_disable()
+static inline void adc1_fsm_disable(void)
 {
     //channel is set in the  convert function
     SENS.sar_meas_wait2.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
@@ -1487,7 +1487,7 @@ static inline void adc1_fsm_disable()
     SENS.sar_meas_wait2.sar_amp_wait3 = 1;    
 }
 
-esp_err_t adc1_i2s_mode_acquire()
+esp_err_t adc1_i2s_mode_acquire(void)
 {
     //lazy initialization
     //for i2s, block until acquire the lock
@@ -1501,12 +1501,11 @@ esp_err_t adc1_i2s_mode_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc1_adc_mode_acquire()
+esp_err_t adc1_adc_mode_acquire(void)
 {
     //lazy initialization
     //for adc1, block until acquire the lock
     _lock_acquire( &adc1_i2s_lock );
-    ESP_LOGD( RTC_MODULE_TAG, "adc mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
     // for now the WiFi would use ADC2 and set xpd_sar force on.
     // so we can not reset xpd_sar to fsm mode directly.
@@ -1518,7 +1517,7 @@ esp_err_t adc1_adc_mode_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc1_lock_release()
+esp_err_t adc1_lock_release(void)
 {
     RTC_MODULE_CHECK((uint32_t*)adc1_i2s_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
     // for now the WiFi would use ADC2 and set xpd_sar force on.
@@ -1526,7 +1525,6 @@ esp_err_t adc1_lock_release()
     // We should handle this after the synchronization mechanism is established.
 
     _lock_release( &adc1_i2s_lock );
-    ESP_LOGD( RTC_MODULE_TAG, "returns adc1 lock." );
     return ESP_OK;
 }
 
@@ -1550,7 +1548,7 @@ int adc1_get_raw(adc1_channel_t channel)
     return adc_value;
 }
 
-int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw() instead
+int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw(void) instead
 {
     return adc1_get_raw(channel);
 }
@@ -1613,7 +1611,7 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
     return ESP_OK;
 }
 
-esp_err_t adc2_wifi_acquire()
+esp_err_t adc2_wifi_acquire(void)
 {
     //lazy initialization
     //for wifi, block until acquire the lock
@@ -1622,7 +1620,7 @@ esp_err_t adc2_wifi_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc2_wifi_release()
+esp_err_t adc2_wifi_release(void)
 {
     RTC_MODULE_CHECK((uint32_t*)adc2_wifi_lock != NULL, "wifi release called before acquire", ESP_ERR_INVALID_STATE );
 
@@ -1708,7 +1706,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     }
 
     //disable other peripherals
-#ifdef CONFIG_ADC2_DISABLE_DAC
+#ifdef CONFIG_ADC_DISABLE_DAC
     adc2_dac_disable( channel );
 #endif
     // set controller
@@ -1880,7 +1878,7 @@ esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
     return ESP_OK;
 }
 
-esp_err_t dac_i2s_enable()
+esp_err_t dac_i2s_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
@@ -1888,7 +1886,7 @@ esp_err_t dac_i2s_enable()
     return ESP_OK;
 }
 
-esp_err_t dac_i2s_disable()
+esp_err_t dac_i2s_disable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
@@ -1905,7 +1903,7 @@ static inline void adc1_hall_enable(bool enable)
     RTCIO.hall_sens.xpd_hall = enable;        
 }
 
-static int hall_sensor_get_value()    //hall sensor without LNA
+static int hall_sensor_get_value(void)    //hall sensor without LNA
 {
     int Sens_Vp0;
     int Sens_Vn0;
@@ -1934,7 +1932,7 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     return hall_value;
 }
 
-int hall_sensor_read()
+int hall_sensor_read(void)
 {
     adc_gpio_init(ADC_UNIT_1, ADC1_CHANNEL_0);
     adc_gpio_init(ADC_UNIT_1, ADC1_CHANNEL_3);
@@ -1964,19 +1962,19 @@ static void rtc_isr(void* arg)
 {
     uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
     rtc_isr_handler_t* it;
-    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    portENTER_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
     SLIST_FOREACH(it, &s_rtc_isr_handler_list, next) {
         if (it->mask & status) {
-            portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+            portEXIT_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
             (*it->handler)(it->handler_arg);
-            portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+            portENTER_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
         }
     }
-    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    portEXIT_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
 }
 
-static esp_err_t rtc_isr_ensure_installed()
+static esp_err_t rtc_isr_ensure_installed(void)
 {
     esp_err_t err = ESP_OK;
     portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);

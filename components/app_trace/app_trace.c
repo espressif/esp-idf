@@ -38,7 +38,7 @@
 //                                 |<------------------------------------------->|TRAX_CTRL_REGS|<---->|
 //                                                                               ----------------
 
-// In general tracing goes in the following way. User aplication requests tracing module to send some data by calling esp_apptrace_buffer_get(),
+// In general tracing goes in the following way. User application requests tracing module to send some data by calling esp_apptrace_buffer_get(),
 // module allocates necessary buffer in current input trace block. Then user fills received buffer with data and calls esp_apptrace_buffer_put().
 // When current input trace block is filled with app data it is exposed to host and the second block becomes input one and buffer filling restarts.
 // While target application fills one TRAX block host reads another one via JTAG.
@@ -62,7 +62,7 @@
 //    21..15 bits - trace memory block transfer ID. Block counter. It can overflow. Updated by target, host should not modify it. Actually can be 2 bits;
 //    22     bit  - 'host data present' flag. If set to one there is data from host, otherwise - no host data;
 //    23     bit  - 'host connected' flag. If zero then host is not connected and tracing module works in post-mortem mode, otherwise in streaming mode;
-// - Status register uses TRAX_TRIGGERPC as storage. If this register is not zero then currentlly CPU is changing TRAX registers and
+// - Status register uses TRAX_TRIGGERPC as storage. If this register is not zero then current CPU is changing TRAX registers and
 //   this register holds address of the instruction which application will execute when it finishes with those registers modifications.
 //   See 'Targets Connection' setion for details.
 
@@ -75,7 +75,8 @@
 //    trace data are necessary, e.g. for analyzing crashes. On panic the latest data from current input block are exposed to host and host can read them.
 //    It can happen that system panic occurs when there are very small amount of data which are not exposed to host yet (e.g. crash just after the
 //    TRAX block switch). In this case the previous 16KB of collected data will be dropped and host will see the latest, but very small piece of trace.
-//    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH
+//    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option
+//    CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
 //    which controls the threshold for flushing data in case of panic.
 //  - Streaming mode. Tracing module enters this mode when host connects to target and sets respective bits in control registers (per core).
 //    In this mode before switching the block tracing module waits for the host to read all the data from the previously exposed block.
@@ -87,7 +88,7 @@
 // 4.1 Trace Memory Blocks
 // -----------------------
 
-// Communication is controlled via special register. Host periodically polls control register on each core to find out if there are any data avalable.
+// Communication is controlled via special register. Host periodically polls control register on each core to find out if there are any data available.
 // When current input memory block is filled it is exposed to host and 'block_len' and 'block_id' fields are updated in the control register.
 // Host reads new register value and according to it's value starts reading data from exposed block. Meanwhile target starts filling another trace block.
 // When host finishes reading the block it clears 'block_len' field in control register indicating to the target that it is ready to accept the next one.
@@ -102,9 +103,9 @@
 // multithreading environment it can happen that task/ISR which copies data is preempted by another high prio task/ISR. So it is possible situation
 // that task/ISR will fail to complete filling its data chunk before the whole trace block is exposed to the host. To handle such conditions tracing
 // module prepends all user data chunks with header which contains allocated buffer size and actual data length within it. OpenOCD command
-// which reads application traces reports error when it reads incompleted user data block.
-// Data which are transfered from host to target are also prepended with a header. Down channel data header is simple and consists of one two bytes field
-// containing length of host data following the heder.
+// which reads application traces reports error when it reads incomplete user data block.
+// Data which are transffered from host to target are also prepended with a header. Down channel data header is simple and consists of one two bytes field
+// containing length of host data following the header.
 
 // 4.3 Data Buffering
 // ------------------
@@ -141,19 +142,17 @@
 //   So no local task switch occurs when mutex is locked. But this does not apply to tasks on another CPU.
 //   WARNING: Priority inversion can happen when low prio task works on one CPU and medium and high prio tasks work on another.
 // WARNING: Care must be taken when selecting timeout values for trace calls from ISRs. Tracing module does not care about watchdogs when waiting
-// on internal locks and for host to complete previous block reading, so if timeout value exceedes watchdog's one it can lead to the system reboot.
+// on internal locks and for host to complete previous block reading, so if timeout value exceeds watchdog's one it can lead to the system reboot.
 
 // 6. Timeouts
 // ===========
 
-// Timeout mechanism is based on xthal_get_ccount() routine and supports timeout values in micorseconds.
+// Timeout mechanism is based on xthal_get_ccount() routine and supports timeout values in microseconds.
 // There are two situations when task/ISR can be delayed by tracing API call. Timeout mechanism takes into account both conditions:
 // - Trace data are locked by another task/ISR. When wating on trace data lock.
 // - Current TRAX memory input block is full when working in streaming mode (host is connected). When waiting for host to complete previous block reading.
 // When wating for any of above conditions xthal_get_ccount() is called periodically to calculate time elapsed from trace API routine entry. When elapsed
 // time exceeds specified timeout value operation is canceled and ESP_ERR_TIMEOUT code is returned.
-
-// ALSO SEE example usage of application tracing module in 'components/app_trace/README.rst'
 
 #include <string.h>
 #include <sys/param.h>
@@ -161,8 +160,7 @@
 #include "soc/dport_reg.h"
 #include "eri.h"
 #include "trax.h"
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
+#include "soc/timer_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_app_trace.h"
 
@@ -172,7 +170,6 @@
 
 #define ESP_APPTRACE_PRINT_LOCK                 0
 
-#define LOG_LOCAL_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include "esp_log.h"
 const static char *TAG = "esp_apptrace";
 
@@ -363,7 +360,7 @@ static esp_apptrace_hw_t s_trace_hw[ESP_APPTRACE_HW_MAX] = {
     }
 };
 
-static inline int esp_apptrace_log_lock()
+static inline int esp_apptrace_log_lock(void)
 {
 #if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_tmo_t tmo;
@@ -375,22 +372,22 @@ static inline int esp_apptrace_log_lock()
 #endif
 }
 
-static inline void esp_apptrace_log_unlock()
+static inline void esp_apptrace_log_unlock(void)
 {
  #if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_lock_give(&s_log_lock);
 #endif
 }
 
-static inline esp_err_t esp_apptrace_lock_initialize()
+static inline esp_err_t esp_apptrace_lock_initialize(esp_apptrace_lock_t *lock)
 {
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
-    esp_apptrace_lock_init(&s_trace_buf.lock);
+    esp_apptrace_lock_init(lock);
 #endif
     return ESP_OK;
 }
 
-static inline esp_err_t esp_apptrace_lock_cleanup()
+static inline esp_err_t esp_apptrace_lock_cleanup(void)
 {
     return ESP_OK;
 }
@@ -406,7 +403,7 @@ esp_err_t esp_apptrace_lock(esp_apptrace_tmo_t *tmo)
     return ESP_OK;
 }
 
-esp_err_t esp_apptrace_unlock()
+esp_err_t esp_apptrace_unlock(void)
 {
     esp_err_t ret = ESP_OK;
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
@@ -416,7 +413,7 @@ esp_err_t esp_apptrace_unlock()
 }
 
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-static void esp_apptrace_trax_init()
+static void esp_apptrace_trax_init(void)
 {
     // Stop trace, if any (on the current CPU)
     eri_write(ERI_TRAX_TRAXCTRL, TRAXCTRL_TRSTP);
@@ -452,7 +449,7 @@ static void esp_apptrace_trax_pend_chunk_sz_update(uint16_t size)
     }
 }
 
-static uint16_t esp_apptrace_trax_pend_chunk_sz_get()
+static uint16_t esp_apptrace_trax_pend_chunk_sz_get(void)
 {
     uint16_t ch_sz;
     ESP_APPTRACE_LOGD("Get chunk enter %d w-r-s %d-%d-%d", s_trace_buf.trax.cur_pending_chunk_sz,
@@ -470,7 +467,7 @@ static uint16_t esp_apptrace_trax_pend_chunk_sz_get()
 #endif
 
 // assumed to be protected by caller from multi-core/thread access
-static esp_err_t esp_apptrace_trax_block_switch()
+static esp_err_t esp_apptrace_trax_block_switch(void)
 {
     int prev_block_num = s_trace_buf.trax.state.in_block % 2;
     int new_block_num = prev_block_num ? (0) : (1);
@@ -848,7 +845,7 @@ static esp_err_t esp_apptrace_trax_status_reg_get(uint32_t *val)
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_trax_dest_init()
+static esp_err_t esp_apptrace_trax_dest_init(void)
 {
     for (int i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
         s_trace_buf.trax.blocks[i].start = (uint8_t *)s_trax_blocks[i];
@@ -877,7 +874,7 @@ static esp_err_t esp_apptrace_trax_dest_init()
 }
 #endif
 
-esp_err_t esp_apptrace_init()
+esp_err_t esp_apptrace_init(void)
 {
     int res;
 
@@ -932,6 +929,9 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
     }
+    if (buf == NULL || size == NULL || *size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     //TODO: callback system
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -966,8 +966,10 @@ uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, 
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return NULL;
     }
+    if (size == NULL || *size == 0) {
+        return NULL;
+    }
 
-    // ESP_APPTRACE_LOGE("esp_apptrace_down_buffer_get %d", *size);
     esp_apptrace_tmo_init(&tmo, user_tmo);
     return hw->get_down_buffer(size, &tmo);
 }
@@ -987,6 +989,9 @@ esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, u
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ptr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1009,6 +1014,9 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (data == NULL || size == 0) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1042,6 +1050,9 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (fmt == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1104,6 +1115,9 @@ uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return NULL;
     }
+    if (size == 0) {
+        return NULL;
+    }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
     return hw->get_up_buffer(size, &tmo);
@@ -1124,6 +1138,9 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ptr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);

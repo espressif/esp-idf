@@ -1,71 +1,85 @@
-# Example: Application Level Tracing - Logging to Host (app_trace_to_host)
+# Application Level Tracing Example (Logging to Host)
 
-This test code shows how to perform high speed logging by redirecting the log messages to a host instead of UART.
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-For description of [logging to a host](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#logging-to-host) please refer to **ESP32 Programming Guide**, section **Application Level Tracing library**. The following example provides practical implementation of this functionality.
+This example demonstrates how to use the [Application Level Tracing Library](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#) (henceforth referred to as **App Trace**) to log messages to a host via JTAG instead of the normal method of logging via UART.
 
+UART logs are time consuming and can significantly slow down the function that calls it. Therefore, it is generally a bad idea to use UART logs in time-critical functions. Logging to host via JTAG is significantly faster and can be used in time-critical functions. For more details regarding logging to host via JTAG, refer to the [Logging to Host Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#app-trace-logging-to-host).
 
-## Use Case
+This example demonstrates JTAG logging to host in the context of polling for a [zero crossing](https://en.wikipedia.org/wiki/Zero_crossing). The ESP32 will continuously sample a 50 to 60 Hz sinusoidal signal (using the ADC) and log the sampled values (via JTAG). Due to the higher speed of JTAG logging, the polling rate of the ADC should be high enough to detect a zero crossing.
 
-Debugging of time critical functions may not work as desired if log messages are sent though the UART port. Printing out the logs may considerably slow down tested function to the point where it will not operate as expected.
+This example utilizes the following ESP-IDF features:
+* [DAC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/dac.html) to generate the 50 Hz sinusoidal signal.
+* [ADC driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/adc.html) to sample the sinusoidal signal.
+* [Application Level Tracing Library](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#) to log ADC samples to host.
+* [OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#setup-of-openocd) to interface with the ESP32 and receive the log output over JTAG.
 
-Let's consider a case we are testing implementation of [zero level crossing](https://en.wikipedia.org/wiki/Zero_crossing) detection for a 50 Hz signal with ESP32's ADC. 
+## How to use example
 
-We will start by checking if we can read ADC, what is the signal level and how many samples can be collected over 20 ms period by using a code snippet below:
+### Hardware Required
 
-```
-int sampling_period = 20;
-int i = 0;
-uint32_t sampling_start =  esp_log_timestamp();  //this clock counts miliseconds
-do {
-    ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
-} while (esp_log_timestamp() - sampling_start < sampling_period);
-```
+To run this example, you need an ESP32 dev board connected to a JTAG adapter, which can come in the following forms:
 
-Above code is sampling ADC in a loop continuously for 20 ms of time to collect one full period of 50 Hz signal (use 17 ms for 60 Hz signal), and printing out results. If you run this code, result will be likely as below:
+* [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v4-1) which integrates an on-board JTAG adapter. Ensure that the [required jumpers to enable JTAG are connected](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/get-started-wrover-kit.html#setup-options) on the WROVER-KIT.
+* ESP32 core board (e.g. ESP32-DevKitC) can also work as long as you connect it to an external JTAG adapter (e.g. FT2232H, J-LINK).
 
-```
-I (4309) example: Sample:1, Value:2224
-I (4309) example: Sample:2, Value:840
-I (4309) example: Sample:3, Value:3503
-I (4319) example: Sample:4, Value:27
-I (4319) example: Sample:5, Value:4095
-```
+This example will assume that that an ESP-WROVER-KIT is used.
 
-As you see we were able to collect only five samples. This seems rather not adequate for zero crossing detection. 
+#### Pin Assignment:
 
-We can remove `ESP_LOGI()` line and sample much faster, but then will not be able to see the values. To see the values we would need to save them in the memory and print out later.
+The sinusoidal signal of 50 to 60 Hz ranging from 0 V ~ 3.1 V should be input into `GPIO34` (`ADC1_CHANNEL_6`). Users may provide this signal themselves, our use the DAC generated signal by bridging GPIO34 with `GPIO25` (`DAC_CHANNEL_1`).
 
-Instead of saving samples to memory, a simple and compelling solution to this issue is sending logs to a host over a JTAG interface. This works much faster than with the UART. To do so, we need to redirect log messages to JTAG by calling the following function before `ESP_LOGx` line:
+| DAC Output         | ADC Input          |
+| ------------------ | ------------------ |
+| Channel 1 (GPIO25) | Channel 6 (GPIO34) |
 
-```
-esp_log_set_vprintf(esp_apptrace_vprintf);
-```
+#### Extra Connections:
 
-Once time critical messages are sent out, we can redirect `ESP_LOGx` back back to the UART by adding extra two lines of code. 
+1. Connect the JTAG interface to ESP32 board, and power up both the JTAG and ESP32. For details about how to set up JTAG interface, please see [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html).
 
-```
-esp_log_set_vprintf(vprintf);
-esp_apptrace_flush(ESP_APPTRACE_DEST_TRAX, 100000);
-```
+2. After connecting JTAG interface, you need to [Run OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#run-openocd).
 
-Note command `esp_apptrace_flush()` used to empty buffer with pending messages to the host.
+3. Open a separate terminal window and run telnet by entering the command below. The telnet terminal window is used to feed commands to OpenOCD:
 
-If checking the log received by the host, we will see over 400 samples collected!
+    ```bash
+    telnet localhost 4444
+    ```
+
+### Configure the project
 
 ```
-...
-I (59379) example: Sample:424, Value:298
-I (59379) example: Sample:425, Value:345
-I (59379) example: Sample:426, Value:386
-I (59379) example: Sample:427, Value:432
-I (61409) example: Sample:1, Value:2653
+idf.py menuconfig
 ```
 
+* By default, the DAC will generate 130 Hz signal ranging from 0 V ~ 3.1 V. To generate a 50 Hz signal, the RTC 8 MHz clock will need to use a non-standard divider. This is achieved by enabling the `Example Configuration > Set custom RTC 8 MHz clock divider to lower CW frequency` configuration option.
 
-## Example in Action
+* To enable application tracing, select the `(X) Trace memory` option under `Component config > Application Level Tracing`. This option should have been selected by default.
 
-Check the full example code [app_trace_to_host](main/app_trace_to_host_test.c) that combines both tests above and runs them in a loop showing instantly the number of samples collected:
+### Build, Flash, and Run
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+idf.py -p PORT flash monitor
+```
+
+(Replace PORT with the name of the serial port to use.)
+
+**Start App Trace:** In the telnet session window, trigger OpenOCD to start App Trace on the ESP32 by entering the command below. This command will collect 9000 bytes of JTAG log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
+
+```bash
+esp32 apptrace start file://adc.log 0 9000 5 0 0
+```
+
+**Note:** For more details on OpenOCD commands regarding App Trace, refer to the [OpenOCD Application Level Tracing Commands](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#openocd-application-level-tracing-commands)
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+## Example Output
+
+The example will continuously sample the ADC for 20ms per iteration, and will alternate between JTAG and UART logging per iteration. However, the JTAG logs should be captured by OpenOCD, thus will not appear in the monitor's output. Therefore, the monitor should only display the iterations where UART logging was used (i.e. every alternate iteration) such as the following:
 
 ```
 I (4289) example: Sampling ADC and sending data to the host...
@@ -80,98 +94,120 @@ I (4319) example: Sample:5, Value:4095
 I (4329) example: Collected 5 samples in 20 ms.
 ```
 
+**Note:** The UART log above was produced with the CPU running at 240 MHz.
 
-## Do it Yourself
+To access the JTAG logs, the `adc.log` file should be decoded. This can be done by using the `logtrace_proc.py` script  as such:
 
-To run the example and retrieve the log from the host, do the following:
+```bash
+$IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
+```
 
-1.  Connect JTAG interface to ESP32 board, power up both JTAG and ESP32. For details how to setup JTAG interface see [JTAG Debugging](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html).
+The `logtrace_proc.py` script should produce the following output when decoding:
 
-2.  [Run OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#run-openocd). If you are using the [binary distribution of OpenOCD](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/index.html#jtag-debugging-setup-openocd) and one of versions of [ESP-WROVER-KIT](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html#esp-wrover-kit-v3), respective command line will look as follows:
+```
+Parse trace file '/user-home/esp/openocd-esp32/adc.log'...
+Unprocessed 7 bytes of log record args!
+Parsing completed.
+====================================================================
+I (59369) example: Sample:1, Value:3717
+I (59369) example: Sample:2, Value:3647
+I (59369) example: Sample:3, Value:3575
+I (59369) example: Sample:4, Value:3491
+...
 
-    ```
-    cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
-    ```
+I (59379) example: Sample:398, Value:78
+I (59379) example: Sample:399, Value:58
+I (59379) example: Sample:400, Value:22
+I (59379) example: Sample:401, Value:14
+I (59379) example: Sample:402, Value:0
+I (59379) example: Sample:403, Value:0
+I (59379) example: Sample:404, Value:0
+I (59379) example: Sample:405, Value:0
+I (59379) example: Sample:406, Value:0
+I (59379) example: Sample:407, Value:0
+I (59379) example: Sample:408, Value:0
+I (59379) example: Sample:409, Value:0
+I (59379) example: Sample:410, Value:0
+I (59379) example: Sample:411, Value:0
+I (59379) example: Sample:412, Value:0
+I (59379) example: Sample:413, Value:0
+I (59379) example: Sample:414, Value:16
+I (59379) example: Sample:415, Value:32
+I (59379) example: Sample:416, Value:40
+I (59379) example: Sample:417, Value:74
+I (59379) example: Sample:418, Value:89
+I (59379) example: Sample:419, Value:113
+I (59379) example: Sample:420, Value:160
+I (59379) example: Sample:421, Value:192
+I (59379) example: Sample:422, Value:221
+I (59379) example: Sample:423, Value:256
+I (59379) example: Sample:424, Value:298
+I (59379) example: Sample:425, Value:345
+I (59379) example: Sample:426, Value:386
+I (59379) example: Sample:427, Value:432
+I (61409) example: Sample:1, Value:2653
 
-3.  Compile and load the example. Note to enable application tracing in menuconfig by going to `Component config > Application Level Tracing` and selecting `(X) Trace memory` 
+====================================================================
 
-4.  Connect 50 Hz sinusoidal signal to ADC1_CHANNEL_6 / GPIO34. The signal range should be from 0V to max 3.1V. Optionally bridge GPIO34 with DAC_CHANNEL_1 / GPIO25, that generates 130 Hz signal within 0V..3.1V. To get 50 Hz, you need to set non standard divider of RTC 8 MHz clock to lower the minimum CW (Cosine Waveform) generator's frequency. You can do it in menuconfig by going to `Component config > Example configuration > Set custom RTC 8 MHz clock divider to lower CW frequency`.
+Log records count: 428
+```
 
-5.  Open a separate terminal window and run telnet by entering:
+## Troubleshooting
 
-    ```
-    telnet localhost 4444
-    ``` 
+### Unable to flash when OpenOCD is connected to ESP32
 
-6.  In telnet execute the following command:
+One likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose an ESP32 board/module with a 3.3 V powered SPI flash is being used, but the `board/esp32-wrover.cfg` configuration file is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the ESP32 as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash ESP32 when OpenOCD is connected. 
 
-    ```
-    esp32 apptrace start file://adc.log 0 9000 5 0 0
-    ```
+To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Modules and Boards](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
 
-    This command should collect 9000 bytes of log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
+(For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you as soon as possible.)
 
-7.  Decode and print out retrieved log file by executing:
+The log should be identical to those printed via UART (complete with timestamps), but almost two orders of magnitude faster.
 
-    ```
-    $IDF_PATH/tools/esp_app_trace/logtrace_proc.py ~/esp/openocd-esp32/adc.log ~/esp/app_trace_to_host/build/app_trace_to_host_test.elf
-    ```
+## Example Breakdown
 
-    This should provide a similar output:
+The following code snippet demonstrates a loop of the sampling and logging the ADC over a 20 ms period in order to capture one full period of a 50 Hz signal.
 
-    ```
-    Parse trace file '/user-home/esp/openocd-esp32/adc.log'...
-    Unprocessed 7 bytes of log record args!
-    Parsing completed.
-    ====================================================================
-    I (59369) example: Sample:1, Value:3717
-    I (59369) example: Sample:2, Value:3647
-    I (59369) example: Sample:3, Value:3575
-    I (59369) example: Sample:4, Value:3491
-    ...
+```c
+int sampling_period = 20;
+int i = 0;
+uint32_t sampling_start =  esp_log_timestamp();  //this clock counts milliseconds
+do {
+    ESP_LOGI(TAG, "Sample:%d, Value:%d", ++i, adc1_get_raw(ADC1_TEST_CHANNEL));
+} while (esp_log_timestamp() - sampling_start < sampling_period);
+```
 
-    I (59379) example: Sample:398, Value:78
-    I (59379) example: Sample:399, Value:58
-    I (59379) example: Sample:400, Value:22
-    I (59379) example: Sample:401, Value:14
-    I (59379) example: Sample:402, Value:0
-    I (59379) example: Sample:403, Value:0
-    I (59379) example: Sample:404, Value:0
-    I (59379) example: Sample:405, Value:0
-    I (59379) example: Sample:406, Value:0
-    I (59379) example: Sample:407, Value:0
-    I (59379) example: Sample:408, Value:0
-    I (59379) example: Sample:409, Value:0
-    I (59379) example: Sample:410, Value:0
-    I (59379) example: Sample:411, Value:0
-    I (59379) example: Sample:412, Value:0
-    I (59379) example: Sample:413, Value:0
-    I (59379) example: Sample:414, Value:16
-    I (59379) example: Sample:415, Value:32
-    I (59379) example: Sample:416, Value:40
-    I (59379) example: Sample:417, Value:74
-    I (59379) example: Sample:418, Value:89
-    I (59379) example: Sample:419, Value:113
-    I (59379) example: Sample:420, Value:160
-    I (59379) example: Sample:421, Value:192
-    I (59379) example: Sample:422, Value:221
-    I (59379) example: Sample:423, Value:256
-    I (59379) example: Sample:424, Value:298
-    I (59379) example: Sample:425, Value:345
-    I (59379) example: Sample:426, Value:386
-    I (59379) example: Sample:427, Value:432
-    I (61409) example: Sample:1, Value:2653
+If `ESP_LOGI()` is routed via UART (occurs by default), the log output produced will likely resemble the output shown below. Notice that due to UART logging is time consuming, thus the ADC is only sampled five times, which is too infrequent to consistently detect a zero crossing (where the zero crossing is `4096/2 = 2048` i.e., the mid point of the 12-bit ADC).
 
-    ====================================================================
+```bash
+I (4309) example: Sample:1, Value:2224
+I (4309) example: Sample:2, Value:840
+I (4309) example: Sample:3, Value:3503
+I (4319) example: Sample:4, Value:27
+I (4319) example: Sample:5, Value:4095
+I (4329) example: Collected 5 samples in 20 ms.
+```
 
-    Log records count: 428
-    ```
+However, by logging via JTAG, the logging is much quicker hence allows a much higher sampling frequency (over 400 times) as shown the the log output below thus would be able to detect a zero crossing more consistently.
 
-This is the log we have been looking for, complete with timestamps as if printed to UART, but almost two orders of magnitude faster.
+```c
+esp_log_set_vprintf(esp_apptrace_vprintf);
+```
 
+```bash
+...
 
-## Conclusion
+I (59379) example: Sample:423, Value:256
+I (59379) example: Sample:424, Value:298
+I (59379) example: Sample:425, Value:345
+I (59379) example: Sample:426, Value:386
+I (59379) example: Sample:427, Value:432
+I (61409) example: Sample:1, Value:2653
 
-With this example code we have demonstrated powerful functionality of logging to host with JTAG interface. With standard UART communication speed setting of 115200 BPS, printing out a single line of a log message takes about 4 ms. This is also the maximum period we can sequentially execute other tasks in between. By providing the same logging over JTAG, we were able improve performance of this process over 80 times.
+====================================================================
 
+Log records count: 428
+
+```
+
+This example has demonstrated powerful functionality of logging to host via JTAG interface. With standard UART communication at a baud rate of 115200, printing out a single line log message takes approximately 4 ms. This also means that logged tasks cannot run more frequently than every 4 ms. By providing the same logging over JTAG, logging performance is improved 80 fold.

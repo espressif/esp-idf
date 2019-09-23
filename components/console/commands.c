@@ -20,7 +20,7 @@
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
-#include "rom/queue.h"
+#include "sys/queue.h"
 
 #define ANSI_COLOR_DEFAULT      39      /** Default foreground color */
 
@@ -70,7 +70,7 @@ esp_err_t esp_console_init(const esp_console_config_t *config)
     return ESP_OK;
 }
 
-esp_err_t esp_console_deinit()
+esp_err_t esp_console_deinit(void)
 {
     if (!s_tmp_line_buf) {
         return ESP_ERR_INVALID_STATE;
@@ -232,7 +232,7 @@ static int help_command(int argc, char **argv)
 }
 
 
-esp_err_t esp_console_register_help_command()
+esp_err_t esp_console_register_help_command(void)
 {
     esp_console_cmd_t command = {
         .command = "help",

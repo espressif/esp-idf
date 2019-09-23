@@ -14,11 +14,13 @@
 #ifndef _SOC_GPIO_SD_STRUCT_H_
 #define _SOC_GPIO_SD_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct gpio_sd_dev_s {
     union {
         struct {
             uint32_t duty:        8;

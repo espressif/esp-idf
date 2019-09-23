@@ -1,1 +1,0 @@
-.. include:: ../../../en/api-guides/jtag-debugging/setup-openocd-macos.rst

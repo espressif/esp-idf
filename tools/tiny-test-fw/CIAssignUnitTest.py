@@ -9,11 +9,18 @@ import argparse
 
 import yaml
 
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path:
-    sys.path.insert(0, test_fw_path)
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
 
-from Utility import CIAssignTest
+try:
+    from Utility import CIAssignTest
+except ImportError:
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path:
+        sys.path.insert(0, test_fw_path)
+    from Utility import CIAssignTest
 
 
 class Group(CIAssignTest.Group):
@@ -106,9 +113,13 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
         The unit test cases is stored in a yaml file which is created in job build-idf-test.
         """
 
-        with open(test_case_path, "r") as f:
-            raw_data = yaml.load(f)
-        test_cases = raw_data["test cases"]
+        try:
+            with open(test_case_path, "r") as f:
+                raw_data = yaml.load(f, Loader=Loader)
+            test_cases = raw_data["test cases"]
+        except IOError:
+            print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
+            test_cases = []
         # filter keys are lower case. Do map lower case keys with original keys.
         try:
             key_mapping = {x.lower(): x for x in test_cases[0].keys()}

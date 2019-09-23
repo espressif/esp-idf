@@ -27,7 +27,7 @@
  */
 esp_err_t save_restart_counter(void)
 {
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     esp_err_t err;
 
     // Open
@@ -64,7 +64,7 @@ esp_err_t save_restart_counter(void)
  */
 esp_err_t save_run_time(void)
 {
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     esp_err_t err;
 
     // Open
@@ -80,7 +80,10 @@ esp_err_t save_run_time(void)
     uint32_t* run_time = malloc(required_size + sizeof(uint32_t));
     if (required_size > 0) {
         err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
-        if (err != ESP_OK) return err;
+        if (err != ESP_OK) {
+            free(run_time);
+            return err;
+        }
     }
 
     // Write value including previously saved blob if available
@@ -107,7 +110,7 @@ esp_err_t save_run_time(void)
  */
 esp_err_t print_what_saved(void)
 {
-    nvs_handle my_handle;
+    nvs_handle_t my_handle;
     esp_err_t err;
 
     // Open
@@ -131,7 +134,10 @@ esp_err_t print_what_saved(void)
     } else {
         uint32_t* run_time = malloc(required_size);
         err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
-        if (err != ESP_OK) return err;
+        if (err != ESP_OK) {
+            free(run_time);
+            return err;
+        }
         for (int i = 0; i < required_size / sizeof(uint32_t); i++) {
             printf("%d: %d\n", i + 1, run_time[i]);
         }
@@ -144,7 +150,7 @@ esp_err_t print_what_saved(void)
 }
 
 
-void app_main()
+void app_main(void)
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {

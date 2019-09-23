@@ -35,7 +35,9 @@ typedef struct esp_http_client_event *esp_http_client_event_handle_t;
 typedef enum {
     HTTP_EVENT_ERROR = 0,       /*!< This event occurs when there are any errors during execution */
     HTTP_EVENT_ON_CONNECTED,    /*!< Once the HTTP has been connected to the server, no data exchange has been performed */
-    HTTP_EVENT_HEADER_SENT,     /*!< After sending all the headers to the server */
+    HTTP_EVENT_HEADERS_SENT,     /*!< After sending all the headers to the server */
+    HTTP_EVENT_HEADER_SENT = HTTP_EVENT_HEADERS_SENT, /*!< This header has been kept for backward compatability
+                                                           and will be deprecated in future versions esp-idf */
     HTTP_EVENT_ON_HEADER,       /*!< Occurs when receiving each header sent from the server */
     HTTP_EVENT_ON_DATA,         /*!< Occurs when receiving data from the server, possibly multiple portions of the packet */
     HTTP_EVENT_ON_FINISH,       /*!< Occurs when finish a HTTP session */
@@ -105,17 +107,34 @@ typedef struct {
     esp_http_client_auth_type_t auth_type;           /*!< Http authentication type, see `esp_http_client_auth_type_t` */
     const char                  *path;               /*!< HTTP Path, if not set, default is `/` */
     const char                  *query;              /*!< HTTP query */
-    const char                  *cert_pem;           /*!< SSL Certification, PEM format as string, if the client requires to verify server */
+    const char                  *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
+    const char                  *client_cert_pem;    /*!< SSL client certification, PEM format as string, if the server requires to verify client */
+    const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
     esp_http_client_method_t    method;                   /*!< HTTP Method */
     int                         timeout_ms;               /*!< Network timeout in milliseconds */
     bool                        disable_auto_redirect;    /*!< Disable HTTP automatic redirects */
     int                         max_redirection_count;    /*!< Max redirection number, using default value if zero*/
     http_event_handle_cb        event_handler;             /*!< HTTP Event Handle */
     esp_http_client_transport_t transport_type;           /*!< HTTP transport type, see `esp_http_client_transport_t` */
-    int                         buffer_size;              /*!< HTTP buffer size (both send and receive) */
+    int                         buffer_size;              /*!< HTTP receive buffer size */
+    int                         buffer_size_tx;           /*!< HTTP transmit buffer size */
     void                        *user_data;               /*!< HTTP user_data context */
+    bool                        is_async;                 /*!< Set asynchronous mode, only supported with HTTPS for now */
+    bool                        use_global_ca_store;      /*!< Use a global ca_store for all the connections in which this bool is set. */
+    bool                        skip_cert_common_name_check;    /*!< Skip any validation of server certificate CN field */
 } esp_http_client_config_t;
 
+/**
+ * Enum for the HTTP status codes.
+ */
+typedef enum {
+    /* 3xx - Redirection */
+    HttpStatus_MovedPermanently  = 301,
+    HttpStatus_Found             = 302,
+
+    /* 4xx - Client Error */
+    HttpStatus_Unauthorized      = 401
+} HttpStatus_Code;
 
 #define ESP_ERR_HTTP_BASE               (0x7000)                    /*!< Starting number of HTTP error codes */
 #define ESP_ERR_HTTP_MAX_REDIRECT       (ESP_ERR_HTTP_BASE + 1)     /*!< The error exceeds the number of HTTP redirects */
@@ -123,6 +142,8 @@ typedef struct {
 #define ESP_ERR_HTTP_WRITE_DATA         (ESP_ERR_HTTP_BASE + 3)     /*!< Error write HTTP data */
 #define ESP_ERR_HTTP_FETCH_HEADER       (ESP_ERR_HTTP_BASE + 4)     /*!< Error read HTTP header from server */
 #define ESP_ERR_HTTP_INVALID_TRANSPORT  (ESP_ERR_HTTP_BASE + 5)     /*!< There are no transport support for the input scheme */
+#define ESP_ERR_HTTP_CONNECTING         (ESP_ERR_HTTP_BASE + 6)     /*!< HTTP connection hasn't been established yet */
+#define ESP_ERR_HTTP_EAGAIN             (ESP_ERR_HTTP_BASE + 7)     /*!< Mapping of errno EAGAIN to esp_err_t */
 
 /**
  * @brief      Start a HTTP session
@@ -141,7 +162,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 /**
  * @brief      Invoke this function after `esp_http_client_init` and all the options calls are made, and will perform the
  *             transfer as described in the options. It must be called with the same esp_http_client_handle_t as input as the esp_http_client_init call returned.
- *             esp_http_client_perform performs the entire request in a blocking manner and returns when done, or if it failed.
+ *             esp_http_client_perform performs the entire request in either blocking or non-blocking manner. By default, the API performs request in a blocking manner and returns when done,
+ *             or if it failed, and in non-blocking manner, it returns if EAGAIN/EWOULDBLOCK or EINPROGRESS is encountered, or if it failed. And in case of non-blocking request,
+ *             the user may call this API multiple times unless request & response is complete or there is a failure. To enable non-blocking esp_http_client_perform(), `is_async` member of esp_http_client_config_t
+ *             must be set while making a call to esp_http_client_init() API.
  *             You can do any amount of calls to esp_http_client_perform while using the same esp_http_client_handle_t. The underlying connection may be kept open if the server allows it.
  *             If you intend to transfer more than one file, you are even encouraged to do so.
  *             esp_http_client will then attempt to re-use the same connection for the following transfers, thus making the operations faster, less CPU intense and using less network resources.
@@ -227,12 +251,42 @@ esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char
 esp_err_t esp_http_client_get_header(esp_http_client_handle_t client, const char *key, char **value);
 
 /**
+ * @brief      Get http request username.
+ *             The address of username buffer will be assigned to value parameter.
+ *             This function must be called after `esp_http_client_init`.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[out] value   The username value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_get_username(esp_http_client_handle_t client, char **value);
+
+/**
+ * @brief      Get http request password.
+ *             The address of password buffer will be assigned to value parameter.
+ *             This function must be called after `esp_http_client_init`.
+ *
+ * @param[in]  client  The esp_http_client handle
+ * @param[out] value   The password value
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **value);
+
+/**
  * @brief      Set http request method
  *
  * @param[in]  client  The esp_http_client handle
  * @param[in]  method  The method
  *
- * @return     ESP_OK
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
  */
 esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_client_method_t method);
 
@@ -367,6 +421,40 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client);
  */
 esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client);
 
+/**
+ * @brief      Set redirection URL.
+ *             When received the 30x code from the server, the client stores the redirect URL provided by the server.
+ *             This function will set the current URL to redirect to enable client to execute the redirection request.
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_FAIL
+ */
+esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client);
+
+/**
+ * @brief      On receiving HTTP Status code 401, this API can be invoked to add authorization
+ *             information.
+ *
+ * @note       There is a possibility of receiving body message with redirection status codes, thus make sure
+ *             to flush off body data after calling this API.
+ *
+ * @param[in]  client   The esp_http_client handle
+ */
+void esp_http_client_add_auth(esp_http_client_handle_t client);
+
+/**
+ * @brief      Checks if entire data in the response has been read without any error.
+ *
+ * @param[in]  client   The esp_http_client handle
+ * 
+ * @return
+ *     - true
+ *     - false
+ */
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client);
 
 #ifdef __cplusplus
 }

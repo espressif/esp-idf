@@ -14,30 +14,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import imp
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from builtins import str
+from builtins import range
 import re
 import os
 import sys
-import string
 import random
-import socket
 
-# This environment variable is expected on the host machine
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    # This environment variable is expected on the host machine
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import IDF
+
+import Utility
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
 # > make print_flash_cmd | tail -n 1 > build/download.config
 # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
-import TinyFW
-import IDF
-
 # Import client module
 expath = os.path.dirname(os.path.realpath(__file__))
-client = imp.load_source("client", expath + "/scripts/adder.py")
+client = Utility.load_source("client", expath + "/scripts/adder.py")
+
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_http_server_persistence(env, extra_data):
@@ -47,20 +53,20 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "persistent_sockets.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("http_server_bin_size", "{}KB".format(bin_size/1024))
-    IDF.check_performance("http_server_bin_size", bin_size/1024)
+    IDF.log_performance("http_server_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("http_server_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
-    print "Starting http_server persistance test app"
+    Utility.console_log("Starting http_server persistance test app")
     dut1.start_app()
 
     # Parse IP address of STA
-    print "Waiting to connect with AP"
-    got_ip   = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: '(\d+.\d+.\d+.\d+)'"), timeout=120)[0]
+    Utility.console_log("Waiting to connect with AP")
+    got_ip = dut1.expect(re.compile(r"(?:[\s\S]*)IPv4 address: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
     got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Starting server on port: '(\d+)'"), timeout=30)[0]
 
-    print "Got IP   : " + got_ip
-    print "Got Port : " + got_port
+    Utility.console_log("Got IP   : " + got_ip)
+    Utility.console_log("Got Port : " + got_port)
 
     # Expected Logs
     dut1.expect("Registering URI handlers", timeout=30)
@@ -80,7 +86,7 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
 
     # Retest PUT request and change session context value
     num = random.randint(0,100)
-    print "Adding :", num
+    Utility.console_log("Adding: " + str(num))
     client.putreq(conn, "/adder", str(num))
     visitor += 1
     adder += num
@@ -91,14 +97,14 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
         dut1.expect("PUT allocating new session", timeout=30)
         # Not expected
         raise RuntimeError
-    except:
+    except Exception:
         # As expected
         pass
 
     # Test POST request and session persistence
     random_nums = [random.randint(0,100) for _ in range(100)]
     for num in random_nums:
-        print "Adding :", num
+        Utility.console_log("Adding: " + str(num))
         client.postreq(conn, "/adder", str(num))
         visitor += 1
         adder += num
@@ -106,21 +112,21 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
         dut1.expect("/adder handler read " + str(num), timeout=30)
 
     # Test GET request and session persistence
-    print "Matching final sum :", adder
-    if client.getreq(conn, "/adder") != str(adder):
+    Utility.console_log("Matching final sum: " + str(adder))
+    if client.getreq(conn, "/adder").decode() != str(adder):
         raise RuntimeError
     visitor += 1
     dut1.expect("/adder visitor count = " + str(visitor), timeout=30)
     dut1.expect("/adder GET handler send " + str(adder), timeout=30)
 
-    print "Ending session"
+    Utility.console_log("Ending session")
     # Close connection and check for invocation of context "Free" function
     client.end_session(conn)
     dut1.expect("/adder Free Context function called", timeout=30)
 
-    print "Validating user context data"
+    Utility.console_log("Validating user context data")
     # Start another session to check user context data
-    conn2 = client.start_session(got_ip, got_port)
+    client.start_session(got_ip, got_port)
     num = random.randint(0,100)
     client.putreq(conn, "/adder", str(num))
     visitor += 1
@@ -129,6 +135,7 @@ def test_examples_protocol_http_server_persistence(env, extra_data):
     dut1.expect("PUT allocating new session", timeout=30)
     client.end_session(conn)
     dut1.expect("/adder Free Context function called", timeout=30)
+
 
 if __name__ == '__main__':
     test_examples_protocol_http_server_persistence()

@@ -1,4 +1,4 @@
-// Copyright 2010-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,55 +20,26 @@
 #include "esp_assert.h"
 #endif
 
-//Register Bits{{
-#define BIT31   0x80000000
-#define BIT30   0x40000000
-#define BIT29   0x20000000
-#define BIT28   0x10000000
-#define BIT27   0x08000000
-#define BIT26   0x04000000
-#define BIT25   0x02000000
-#define BIT24   0x01000000
-#define BIT23   0x00800000
-#define BIT22   0x00400000
-#define BIT21   0x00200000
-#define BIT20   0x00100000
-#define BIT19   0x00080000
-#define BIT18   0x00040000
-#define BIT17   0x00020000
-#define BIT16   0x00010000
-#define BIT15   0x00008000
-#define BIT14   0x00004000
-#define BIT13   0x00002000
-#define BIT12   0x00001000
-#define BIT11   0x00000800
-#define BIT10   0x00000400
-#define BIT9     0x00000200
-#define BIT8     0x00000100
-#define BIT7     0x00000080
-#define BIT6     0x00000040
-#define BIT5     0x00000020
-#define BIT4     0x00000010
-#define BIT3     0x00000008
-#define BIT2     0x00000004
-#define BIT1     0x00000002
-#define BIT0     0x00000001
-//}}
+#include <esp_bit_defs.h>
 
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
 
 /* Overall memory map */
-#define SOC_IROM_LOW    0x400D0000
-#define SOC_IROM_HIGH   0x40400000
-#define SOC_DROM_LOW    0x3F400000
-#define SOC_DROM_HIGH   0x3F800000
-#define SOC_RTC_IRAM_LOW  0x400C0000
-#define SOC_RTC_IRAM_HIGH 0x400C2000
-#define SOC_RTC_DATA_LOW  0x50000000
-#define SOC_RTC_DATA_HIGH 0x50002000
-#define SOC_EXTRAM_DATA_LOW 0x3F800000
-#define SOC_EXTRAM_DATA_HIGH 0x3FC00000
+#define SOC_IROM_LOW            0x400D0000
+#define SOC_IROM_HIGH           0x40400000
+#define SOC_DROM_LOW            0x3F400000
+#define SOC_DROM_HIGH           0x3F800000
+#define SOC_DRAM_LOW            0x3FFAE000
+#define SOC_DRAM_HIGH           0x40000000
+#define SOC_RTC_IRAM_LOW        0x400C0000
+#define SOC_RTC_IRAM_HIGH       0x400C2000
+#define SOC_RTC_DATA_LOW        0x50000000
+#define SOC_RTC_DATA_HIGH       0x50002000
+#define SOC_EXTRAM_DATA_LOW     0x3F800000
+#define SOC_EXTRAM_DATA_HIGH    0x3FC00000
+
+#define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
 
 #define DR_REG_DPORT_BASE                       0x3ff00000
@@ -130,20 +101,14 @@
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
-#define ETS_CACHED_ADDR(addr) (addr) 
+#define ETS_CACHED_ADDR(addr) (addr)
 
-#ifndef __ASSEMBLER__
-#define BIT(nr)                 (1UL << (nr))
-#define BIT64(nr)               (1ULL << (nr))
-#else
-#define BIT(nr)                 (1 << (nr))
-#endif
 
 #ifndef __ASSEMBLER__
 
 #define IS_DPORT_REG(_r) (((_r) >= DR_REG_DPORT_BASE) && (_r) <= DR_REG_DPORT_END)
 
-#if !defined( BOOTLOADER_BUILD ) && !defined( CONFIG_FREERTOS_UNICORE ) && defined( ESP_PLATFORM )
+#if !defined( BOOTLOADER_BUILD ) && defined( CONFIG_ESP32_DPORT_WORKAROUND ) && defined( ESP_PLATFORM )
 #define ASSERT_IF_DPORT_REG(_r, OP)  TRY_STATIC_ASSERT(!IS_DPORT_REG(_r), (Cannot use OP for DPORT registers use DPORT_##OP));
 #else
 #define ASSERT_IF_DPORT_REG(_r, OP)
@@ -277,6 +242,7 @@
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
 #define  TICKS_PER_US_ROM                            26              // CPU is 80MHz
+#define  GPIO_MATRIX_DELAY_NS                        25
 //}}
 
 /* Overall memory map */
@@ -284,10 +250,18 @@
 #define SOC_DROM_HIGH   0x3F800000
 #define SOC_IROM_LOW    0x400D0000
 #define SOC_IROM_HIGH   0x40400000
+#define SOC_IROM_MASK_LOW   0x40000000
+#define SOC_IROM_MASK_HIGH  0x40070000
+#define SOC_CACHE_PRO_LOW   0x40070000
+#define SOC_CACHE_PRO_HIGH  0x40078000
+#define SOC_CACHE_APP_LOW   0x40078000
+#define SOC_CACHE_APP_HIGH  0x40080000
 #define SOC_IRAM_LOW    0x40080000
 #define SOC_IRAM_HIGH   0x400A0000
 #define SOC_RTC_IRAM_LOW  0x400C0000
 #define SOC_RTC_IRAM_HIGH 0x400C2000
+#define SOC_RTC_DRAM_LOW  0x3FF80000
+#define SOC_RTC_DRAM_HIGH 0x3FF82000
 #define SOC_RTC_DATA_LOW  0x50000000
 #define SOC_RTC_DATA_HIGH 0x50002000
 

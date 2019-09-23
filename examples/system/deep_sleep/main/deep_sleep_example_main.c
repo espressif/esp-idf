@@ -20,8 +20,7 @@
 #include "driver/touch_pad.h"
 #include "driver/adc.h"
 #include "driver/rtc_io.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/sens_periph.h"
 #include "soc/rtc.h"
 
 static RTC_DATA_ATTR struct timeval sleep_enter_time;
@@ -31,13 +30,13 @@ static RTC_DATA_ATTR struct timeval sleep_enter_time;
 /*
  * Offset (in 32-bit words) in RTC Slow memory where the data is placed
  * by the ULP coprocessor. It can be chosen to be any value greater or equal
- * to ULP program size, and less than the CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
+ * to ULP program size, and less than the CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
  * where 6 is the number of words used by the ULP coprocessor.
  */
 #define ULP_DATA_OFFSET     36
 
-_Static_assert(ULP_DATA_OFFSET < CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
-        "ULP_DATA_OFFSET is set too high, or CONFIG_ULP_COPROC_RESERVE_MEM is not sufficient");
+_Static_assert(ULP_DATA_OFFSET < CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
+        "ULP_DATA_OFFSET is set too high, or CONFIG_ESP32_ULP_COPROC_RESERVE_MEM is not sufficient");
 
 /**
  * @brief Start ULP temperature monitoring program
@@ -46,7 +45,7 @@ _Static_assert(ULP_DATA_OFFSET < CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
  * The program monitors on-chip temperature sensor and wakes up the SoC when
  * the temperature goes lower or higher than certain thresholds.
  */
-static void start_ulp_temperature_monitoring();
+static void start_ulp_temperature_monitoring(void);
 
 /**
  * @brief Utility function which reads data written by ULP program
@@ -77,7 +76,7 @@ static inline void ulp_data_write(size_t offset, uint16_t value)
 static void calibrate_touch_pad(touch_pad_t pad);
 #endif
 
-void app_main()
+void app_main(void)
 {
     struct timeval now;
     gettimeofday(&now, NULL);
@@ -211,7 +210,7 @@ static void calibrate_touch_pad(touch_pad_t pad)
 #endif // CONFIG_ENABLE_TOUCH_WAKEUP
 
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
-static void start_ulp_temperature_monitoring()
+static void start_ulp_temperature_monitoring(void)
 {
     /*
      * This ULP program monitors the on-chip temperature sensor and wakes the chip up when
@@ -242,7 +241,7 @@ static void start_ulp_temperature_monitoring()
     CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP_FORCE);
 
     // Clear the part of RTC_SLOW_MEM reserved for the ULP. Makes debugging easier.
-    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
 
     // The first word of memory (at data offset) is used to store the initial temperature (T0)
     // Zero it out here, then ULP will update it on the first run.

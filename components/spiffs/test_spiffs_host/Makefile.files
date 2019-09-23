@@ -6,7 +6,7 @@ SOURCE_FILES := \
 	spiffs_gc.c \
 	spiffs_hydrogen.c \
 	spiffs_nucleus.c \
-	) 
+	)
 
 INCLUDE_DIRS := \
 	. \
@@ -24,7 +24,12 @@ INCLUDE_DIRS := \
 	vfs/include \
 	) \
 	$(addprefix ../../../components/, \
+	esp_rom/include \
+	esp_common/include \
+	xtensa/include \
+	xtensa/esp32/include \
 	soc/esp32/include \
+	soc/include \
 	esp32/include \
 	bootloader_support/include \
 	app_update/include \

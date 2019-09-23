@@ -1,55 +1,49 @@
-Wear Levelling APIs
-===================
+Wear Levelling API
+==================
+
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
-Most of the flash devices and specially SPI flash devices that are used in ESP32
-have sector based organization and have limited amount of erase/modification cycles
-per memory sector. To avoid situation when one sector reach the limit of erases when
-other sectors was used not often, we have made a component that avoid this situation.
-The wear levelling component share the amount of erases between all sectors in the
-memory without user interaction.
-The wear_levelling component contains APIs related to reading, writing, erasing,
-memory mapping data in the external SPI flash through the partition component. It
-also has higher-level APIs which work with FAT filesystem defined in
-the :doc:`FAT filesystem </api-reference/storage/fatfs>`.
+Most of flash memory and especially SPI flash that is used in ESP32 has a sector-based organization and also has a limited number of erase/modification cycles per memory sector. The wear levelling component helps to distribute wear and tear among sectors more evenly without requiring any attention from the user.
 
-The wear levelling component, together with FAT FS component, works with FAT FS sector size 4096
-bytes which is standard size of the flash devices. In this mode the component has best performance,
-but needs additional memoty in the RAM. To save internal memory the component has two additional modes
-to work with sector size 512 bytes: Performance and Safety modes. In Performance mode by erase sector
-operation data will be stored to the RAM, sector will be erased and then data will be stored
-back to the flash. If by this operation power off situation will occur, the complete 4096 bytes
-will be lost. To prevent this the Safety mode was implemented. In safety mode the data will be first
-stored to the flash and after sector will be erased, will be stored back. If power off situation will
-occur, after power on, the data will be recovered.
-By default defined the sector size 512 bytes and Performance mode. To change these values please use
-the configuration menu.
+The wear levelling component provides API functions related to reading, writing, erasing, and memory mapping of data in external SPI flash through the partition component. The component also has higher-level API functions which work with the FAT filesystem defined in :doc:`FAT filesystem </api-reference/storage/fatfs>`.
+
+The wear levelling component, together with the FAT FS component, uses FAT FS sectors of 4096 bytes, which is a standard size for flash memory. With this size, the component shows the best performance but needs additional memory in RAM.
+
+To save internal memory, the component has two additional modes which both use sectors of 512 bytes:
+
+- **Performance mode.** Erase sector operation data is stored in RAM, the sector is erased, and then data is copied back to flash memory. However, if a device is powered off for any reason, all 4096 bytes of data is lost.
+- **Safety mode.** The data is first saved to flash memory, and after the sector is erased, the data is saved back. If a device is powered off, the data can be recovered as soon as the device boots up.
+
+The default settings are as follows:
+- Sector size is 512 bytes
+- Performance mode
+
+You can change the settings through the configuration menu.
 
 
-The wear levelling component does not cache data in RAM. Write and erase functions
-modify flash directly, and flash contents is consistent when the function returns.
+The wear levelling component does not cache data in RAM. The write and erase functions modify flash directly, and flash contents are consistent when the function returns.
 
 
-Wear Levelling access APIs
---------------------------
+Wear Levelling access API functions
+-----------------------------------
 
-This is the set of APIs for working with data in flash:
+This is the set of API functions for working with data in flash:
 
-- ``wl_mount`` mount wear levelling module for defined partition
-- ``wl_unmount`` used to unmount levelling module
-- ``wl_erase_range`` used to erase range of addresses in flash
-- ``wl_write`` used to write data to the partition
-- ``wl_read`` used to read data from the partition
-- ``wl_size`` return size of avalible memory in bytes
-- ``wl_sector_size`` returns size of one sector
+- ``wl_mount`` - initializes the wear levelling module and mounts the specified partition
+- ``wl_unmount`` - unmounts the partition and deinitializes the wear levelling module
+- ``wl_erase_range`` - erases a range of addresses in flash
+- ``wl_write`` - writes data to a partition
+- ``wl_read`` - reads data from a partition
+- ``wl_size`` - returns the size of available memory in bytes
+- ``wl_sector_size`` - returns the size of one sector
 
-Generally, try to avoid using the raw wear levelling functions in favor of
-filesystem-specific functions.
+As a rule, try to avoid using raw wear levelling functions and use filesystem-specific functions instead.
+
 
 Memory Size
 -----------
 
-The memory size calculated in the wear Levelling module based on parameters of
-partition. The module use few sectors of flash for internal data.
+The memory size is calculated in the wear levelling module based on partition parameters. The module uses some sectors of flash for internal data.
 

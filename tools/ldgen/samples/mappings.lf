@@ -1,0 +1,62 @@
+
+[mapping:heap]
+archive: libheap.a
+entries:
+    multi_heap (noflash)
+    multi_heap_poisoning (noflash)
+
+[mapping:soc]
+archive: libsoc.a
+entries: 
+    * (noflash)
+
+[mapping:freertos]
+archive: libfreertos.a
+entries:
+    * (noflash)
+
+[mapping:esp32]
+archive: libesp32.a
+entries: 
+    core_dump (noflash)
+    panic (noflash)
+
+[mapping:app_trace]
+archive: libapp_trace.a
+entries: 
+    * (noflash)
+
+[mapping:xtensa_debug_module]
+archive: libxtensa-debug-module.a
+entries: 
+    eri (noflash)
+
+[mapping:phy]
+archive: libphy.a
+entries: 
+    * (noflash_data)
+
+[mapping:rtc]
+archive: librtc.a
+entries: 
+    * (noflash)
+
+[mapping:hal]
+archive: libhal.a
+entries: 
+    * (noflash)
+
+[mapping:gcc]
+archive: libgcc.a
+entries: 
+    lib2funcs (noflash)
+
+[mapping:spi_flash]
+archive: libspi_flash.a
+entries: 
+    spi_flash_rom_patch (noflash)
+
+[mapping:gcov]
+archive: libgcov.a
+entries: 
+    * (noflash)

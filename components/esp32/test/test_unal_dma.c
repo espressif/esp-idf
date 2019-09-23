@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "rom/ets_sys.h"
-#include "rom/lldesc.h"
-#include "rom/gpio.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/lldesc.h"
+#include "esp32/rom/gpio.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -14,12 +14,9 @@
 #include "freertos/xtensa_api.h"
 #include "unity.h"
 
-#include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/gpio_reg.h"
-#include "soc/i2s_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2s_periph.h"
 
 
 #define DPORT_I2S0_CLK_EN   (BIT(4))

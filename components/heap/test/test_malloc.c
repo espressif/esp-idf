@@ -4,7 +4,7 @@
 
 #include <esp_types.h>
 #include <stdio.h>
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -12,12 +12,8 @@
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 #include "unity.h"
-#include "soc/uart_reg.h"
-#include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
 #include "esp_heap_caps.h"
 
-#include "esp_panic.h"
 #include "sdkconfig.h"
 
 
@@ -25,7 +21,7 @@ static int **allocatedMem;
 static int noAllocated;
 
 
-static int tryAllocMem() {
+static int tryAllocMem(void) {
     int i, j;
     const int allocateMaxK=1024*5; //try to allocate a max of 5MiB
 
@@ -42,7 +38,7 @@ static int tryAllocMem() {
 }
 
 
-static void tryAllocMemFree() {
+static void tryAllocMemFree(void) {
     int i, j;
     for (i=0; i<noAllocated; i++) {
         for (j=0; j<1024/4; j++) {
@@ -109,13 +105,18 @@ void* test_calloc_wrapper(size_t count, size_t size)
 
 TEST_CASE("alloc overflows should all fail", "[heap]")
 {
-    /* allocates 8 bytes */
+    /* allocates 8 bytes if size_t overflows */
     TEST_ASSERT_NULL(test_calloc_wrapper(SIZE_MAX / 2 + 4, 2));
 
     /* will overflow if any poisoning is enabled
        (should fail for sensible OOM reasons, otherwise) */
     TEST_ASSERT_NULL(test_malloc_wrapper(SIZE_MAX - 1));
     TEST_ASSERT_NULL(test_calloc_wrapper(SIZE_MAX - 1, 1));
+
+    /* will overflow when the size is rounded up to word align it */
+    TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_32BIT));
+
+    TEST_ASSERT_NULL(heap_caps_malloc(SIZE_MAX-1, MALLOC_CAP_EXEC));
 }
 
 TEST_CASE("unreasonable allocs should all fail", "[heap]")

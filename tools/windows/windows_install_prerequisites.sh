@@ -33,19 +33,20 @@ set -e
 
 pacman --noconfirm -Syu # This step may require the terminal to be closed and restarted
 
-pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim mingw-w64-i686-python2-pip unzip winpty
+pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim \
+       mingw-w64-i686-python2-pip mingw-w64-i686-python2-cryptography unzip winpty
 
-# Workaround for errors when running "git submodule" commands
-# See https://github.com/Alexpux/MSYS2-packages/issues/735
-rm -f /mingw32/bin/envsubst.exe
-
-python -m pip install --upgrade pip
+# if IDF_PATH is set, install requirements now as well
+if [ -n "$IDF_PATH" ]; then
+	python -m pip install -r "$IDF_PATH/requirements.txt"
+fi
 
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
-TOOLCHAIN_ZIP=xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip
+TOOLCHAIN_ZIP=xtensa-esp32-elf-gcc8_2_0-esp32-2019r1-win32.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
 curl -LO --retry 10 http://dl.espressif.com/dl/${TOOLCHAIN_ZIP}
+mkdir -p /opt
 cd /opt
 rm -rf /opt/xtensa-esp32-elf  # for upgrades
 unzip ~/${TOOLCHAIN_ZIP}
@@ -54,7 +55,7 @@ rm ~/${TOOLCHAIN_ZIP}
 cat > /etc/profile.d/esp32_toolchain.sh << EOF
 # This file was created by ESP-IDF windows_install_prerequisites.sh
 # and will be overwritten if that script is run again.
-export PATH="\$PATH:/opt/xtensa-esp32-elf/bin"
+export PATH="/opt/xtensa-esp32-elf/bin:\$PATH"
 EOF
 
 # clean up pacman package cache to save some disk space

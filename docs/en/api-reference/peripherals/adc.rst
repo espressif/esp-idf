@@ -113,11 +113,46 @@ Calibration Values
 
 Calibration values are used to generate characteristic curves that account for the unique ADC reference voltage of a particular ESP32. There are currently three sources of calibration values. The availability of these calibration values will depend on the type and production date of the ESP32 chip/module.
 
-**Two Point** values represent each of the ADCs’ readings at 150mV and 850mV. To obtain more accurate calibration results these values should be measured by user and burned into eFuse ``BLOCK3``.
+* **Two Point** values represent each of the ADCs’ readings at 150mV and 850mV. To obtain more accurate calibration results these values should be measured by user and burned into eFuse ``BLOCK3``.
 
-**eFuse Vref** represents the true ADC reference voltage. This value is measured and burned into eFuse ``BLOCK0`` during factory calibration. 
+* **eFuse Vref** represents the true ADC reference voltage. This value is measured and burned into eFuse ``BLOCK0`` during factory calibration. 
 
-**Default Vref** is an estimate of the ADC reference voltage provided by the user as a parameter during characterization. If Two Point or eFuse Vref values are unavailable, **Default Vref** will be used.
+* **Default Vref** is an estimate of the ADC reference voltage provided by the user as a parameter during characterization. If Two Point or eFuse Vref values are unavailable, **Default Vref** will be used.
+
+Individual measurement and burning of the **eFuse Vref** has been applied to ESP32-D0WD and ESP32-D0WDQ6 chips produced on/after the 1st week of 2018. Such chips may be recognized by date codes on/later than 012018 (see Line 4 on figure below).
+
+.. figure:: ../../../_static/chip_surface_marking.png
+    :align: center
+    :alt: ESP32 Chip Surface Marking
+    
+    ESP32 Chip Surface Marking
+
+If you would like to purchase chips or modules with calibration, double check with distributor or Espressif directly.
+
+.. highlight:: none
+
+If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
+
+    $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
+
+Replace ``/dev/ttyUSB0`` with ESP32 board's port name. 
+
+A chip that has specific **eFuse Vref** value programmed (in this case 1093mV) will be reported as follows::
+
+    ADC VRef calibration: 1093mV
+
+In another example below the **eFuse Vref** is not programmed::
+
+    ADC VRef calibration: None (1100mV nominal)
+
+For a chip with two point calibration the message will look similar to::
+
+    ADC VRef calibration: 1149mV
+    ADC readings stored in efuse BLK3:
+        ADC1 Low reading  (150mV): 306
+        ADC1 High reading (850mV): 3153
+        ADC2 Low reading  (150mV): 389
+        ADC2 High reading (850mV): 3206
 
 Application Example
 ^^^^^^^^^^^^^^^^^^^

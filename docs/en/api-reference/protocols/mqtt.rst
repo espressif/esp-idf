@@ -18,10 +18,10 @@ Features
 Application Example
 -------------------
 
-    * :example:`protocols/mqtt/tcp`: MQTT over tcp, defalut port 1883
-    * :example:`protocols/mqtt/ssl`:  MQTT over tcp, defalut port 8883
-    * :example:`protocols/mqtt/ws`: MQTT over Websocket, defalut port 80
-    * :example:`protocols/mqtt/wss`: MQTT over Websocket Secure, defalut port 443
+    * :example:`protocols/mqtt/tcp`: MQTT over tcp, default port 1883
+    * :example:`protocols/mqtt/ssl`:  MQTT over tcp, default port 8883
+    * :example:`protocols/mqtt/ws`: MQTT over Websocket, default port 80
+    * :example:`protocols/mqtt/wss`: MQTT over Websocket Secure, default port 443
 
 
 Configuration
@@ -56,9 +56,13 @@ URI
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = "mqtt://iot.eclipse.org",
-        .event_handle = mqtt_event_handler,
         // .user_context = (void *)your_context
     };
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
+    esp_mqtt_client_start(client);
+
+-  Note: By default mqtt client uses event loop library to post related mqtt events (connected, subsribed, published, etc.)
 
 -  If there are any options related to the URI in
    ``esp_mqtt_client_config_t``, the option defined by the URI will be
@@ -68,7 +72,6 @@ URI
 
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = "mqtt://iot.eclipse.org:1234",
-        .event_handle = mqtt_event_handler,
         .port = 4567,
     };
     //MQTT client will connect to iot.eclipse.org using port 4567
@@ -91,19 +94,19 @@ SSL
 
 For more options on ``esp_mqtt_client_config_t``, please refer to API reference below
 
-Change settings in ``menuconfig``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Change settings in Project Configuration Menu
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ::
-    make menuconfig 
-    -> Component config -> ESP-MQTT Configuration 
+    idf.py menuconfig
+    -> Component config -> ESP-MQTT Configuration
 
 
-- :envvar:`CONFIG_MQTT_PROTOCOL_311`: Enables 3.1.1 version of MQTT protocol
+- :ref:`CONFIG_MQTT_PROTOCOL_311`: Enables 3.1.1 version of MQTT protocol
 
-- :envvar:`MQTT_TRANSPORT_%TRANSPORT%`: Enables specific MQTT transport layer, such as SSL, WEBSOCKET, WEBSOCKET_SECURE
+- :ref:`CONFIG_MQTT_TRANSPORT_SSL`, :ref:`CONFIG_MQTT_TRANSPORT_WEBSOCKET`: Enables specific MQTT transport layer, such as SSL, WEBSOCKET, WEBSOCKET_SECURE
 
-- :envvar:`MQTT_CUSTOM_OUTBOX`: Disables default implementation of mqtt_outbox, so a specific implementaion can be supplied
+- :ref:`CONFIG_MQTT_CUSTOM_OUTBOX`: Disables default implementation of mqtt_outbox, so a specific implementaion can be supplied
 
 
 API Reference

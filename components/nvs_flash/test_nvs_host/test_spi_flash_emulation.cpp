@@ -11,9 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <functional>
 #include "catch.hpp"
 #include "esp_spi_flash.h"
 #include "spi_flash_emulation.h"
+#include <functional>
 
 using namespace std;
 

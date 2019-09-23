@@ -4,6 +4,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
+#include "test_utils.h"
 
 #define TSK_PRIORITY    (UNITY_FREERTOS_PRIORITY + 1)
 

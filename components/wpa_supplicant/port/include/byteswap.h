@@ -5,7 +5,10 @@
 #ifndef BYTESWAP_H
 #define BYTESWAP_H
 
+#include <machine/endian.h>
+
 /* Swap bytes in 16 bit value.  */
+#ifndef __bswap_16
 #ifdef __GNUC__
 # define __bswap_16(x) \
     (__extension__							      \
@@ -18,8 +21,10 @@ __bswap_16 (unsigned short int __bsx)
   return ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8));
 }
 #endif
+#endif // __bswap_16
 
 /* Swap bytes in 32 bit value.  */
+#ifndef __bswap_32
 #ifdef __GNUC__
 # define __bswap_32(x) \
     (__extension__							      \
@@ -34,7 +39,9 @@ __bswap_32 (unsigned int __bsx)
 	  (((__bsx) & 0x0000ff00) <<  8) | (((__bsx) & 0x000000ff) << 24));
 }
 #endif
+#endif // __bswap_32
 
+#ifndef __bswap_64
 #if defined __GNUC__ && __GNUC__ >= 2
 /* Swap bytes in 64 bit value.  */
 # define __bswap_constant_64(x) \
@@ -61,5 +68,6 @@ __bswap_32 (unsigned int __bsx)
 	   }								      \
 	 __r.__ll; }))
 #endif
+#endif // __bswap_64
 
 #endif /* BYTESWAP_H */

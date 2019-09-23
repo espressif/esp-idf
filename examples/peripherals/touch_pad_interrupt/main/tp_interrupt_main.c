@@ -12,8 +12,8 @@
 #include "esp_log.h"
 
 #include "driver/touch_pad.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
 
 static const char* TAG = "Touch pad";
 #define TOUCH_THRESH_NO_USE   (0)
@@ -137,7 +137,7 @@ static void tp_example_rtc_intr(void * arg)
 /*
  * Before reading touch pad, we need to initialize the RTC IO.
  */
-static void tp_example_touch_pad_init()
+static void tp_example_touch_pad_init(void)
 {
     for (int i = 0;i< TOUCH_PAD_MAX;i++) {
         //init RTC IO and mode for touch pad.
@@ -145,7 +145,7 @@ static void tp_example_touch_pad_init()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize touch pad peripheral, it will start a timer to run a filter
     ESP_LOGI(TAG, "Initializing touch pad");

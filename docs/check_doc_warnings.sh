@@ -18,8 +18,7 @@ fi
 # the Sphinx warning log
 # (escape char removal from https://www.commandlinefu.com/commands/view/6141/remove-color-codes-special-characters-with-sed
 sed -r 's:\x1B\[[0-9;]*[mK]::g' sphinx-warning-log.txt | \
-    sed -E "s~${IDF_PATH}~\${IDF_PATH}~" | \
-    sed -E "s/:[0-9]+:/:line:/" > sphinx-warning-log-sanitized.txt
+    sed -E "s/.*\/(.*):[0-9]+:/\1:line:/" > sphinx-warning-log-sanitized.txt
 
 # diff sanitized warnings, ignoring lines which only appear in ../sphinx-known-warnings.txt
 

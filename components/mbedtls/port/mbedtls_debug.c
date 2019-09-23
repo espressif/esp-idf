@@ -20,6 +20,7 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/esp_debug.h"
 
+#ifdef CONFIG_MBEDTLS_DEBUG
 static const char *TAG = "mbedtls";
 
 static void mbedtls_esp_debug(void *ctx, int level,
@@ -28,9 +29,9 @@ static void mbedtls_esp_debug(void *ctx, int level,
 
 void mbedtls_esp_enable_debug_log(mbedtls_ssl_config *conf, int threshold)
 {
+    esp_log_level_t level = ESP_LOG_NONE;
     mbedtls_debug_set_threshold(threshold);
     mbedtls_ssl_conf_dbg(conf, mbedtls_esp_debug, NULL);
-    esp_log_level_t level = ESP_LOG_NONE;
     switch(threshold) {
     case 1:
         level = ESP_LOG_WARN;
@@ -52,6 +53,7 @@ void mbedtls_esp_disable_debug_log(mbedtls_ssl_config *conf)
 {
     mbedtls_ssl_conf_dbg(conf, NULL, NULL);
 }
+
 
 /* Default mbedtls debug function that translates mbedTLS debug output
    to ESP_LOGx debug output.
@@ -89,3 +91,4 @@ static void mbedtls_esp_debug(void *ctx, int level,
         break;
     }
 }
+#endif

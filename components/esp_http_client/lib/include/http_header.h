@@ -15,7 +15,7 @@
 #ifndef _HTTP_HEADER_H_
 #define _HTTP_HEADER_H_
 
-#include "rom/queue.h"
+#include "sys/queue.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -32,7 +32,7 @@ typedef struct http_header_item *http_header_item_handle_t;
  *     - http_header_handle_t
  *     - NULL if any errors
  */
-http_header_handle_t http_header_init();
+http_header_handle_t http_header_init(void);
 
 /**
  * @brief      Cleanup and free all http header pairs

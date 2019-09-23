@@ -20,8 +20,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include <rom/spi_flash.h>
-#include <rom/cache.h>
+#include <esp32/rom/spi_flash.h>
+#include <esp32/rom/cache.h>
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
 #include "sdkconfig.h"
@@ -31,6 +31,18 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 
+#define DPORT_CACHE_BIT(cpuid, regid) DPORT_ ## cpuid ## regid
+
+#define DPORT_CACHE_MASK(cpuid) (DPORT_CACHE_BIT(cpuid, _CACHE_MASK_OPSDRAM) | DPORT_CACHE_BIT(cpuid, _CACHE_MASK_DROM0) | \
+                                DPORT_CACHE_BIT(cpuid, _CACHE_MASK_DRAM1) | DPORT_CACHE_BIT(cpuid, _CACHE_MASK_IROM0) | \
+                                DPORT_CACHE_BIT(cpuid, _CACHE_MASK_IRAM1) | DPORT_CACHE_BIT(cpuid, _CACHE_MASK_IRAM0) )
+
+#define DPORT_CACHE_VAL(cpuid) (~(DPORT_CACHE_BIT(cpuid, _CACHE_MASK_DROM0) | \
+                                        DPORT_CACHE_BIT(cpuid, _CACHE_MASK_DRAM1) | \
+                                        DPORT_CACHE_BIT(cpuid, _CACHE_MASK_IRAM0)))
+
+#define DPORT_CACHE_GET_VAL(cpuid) (cpuid == 0) ? DPORT_CACHE_VAL(PRO) : DPORT_CACHE_VAL(APP)
+#define DPORT_CACHE_GET_MASK(cpuid) (cpuid == 0) ? DPORT_CACHE_MASK(PRO) : DPORT_CACHE_MASK(APP)
 
 static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state);
 static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
@@ -45,18 +57,18 @@ static volatile bool s_flash_op_complete = false;
 static volatile int s_flash_op_cpu = -1;
 #endif
 
-void spi_flash_init_lock()
+void spi_flash_init_lock(void)
 {
     s_flash_op_mutex = xSemaphoreCreateRecursiveMutex();
     assert(s_flash_op_mutex != NULL);
 }
 
-void spi_flash_op_lock()
+void spi_flash_op_lock(void)
 {
     xSemaphoreTakeRecursive(s_flash_op_mutex, portMAX_DELAY);
 }
 
-void spi_flash_op_unlock()
+void spi_flash_op_unlock(void)
 {
     xSemaphoreGiveRecursive(s_flash_op_mutex);
 }
@@ -90,7 +102,7 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
     xTaskResumeAll();
 }
 
-void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
     spi_flash_op_lock();
 
@@ -141,7 +153,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
     spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
 }
 
-void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 {
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
@@ -178,7 +190,7 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
     spi_flash_op_unlock();
 }
 
-void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os(void)
 {
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
@@ -191,7 +203,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
 }
 
-void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
 {
     const uint32_t cpuid = xPortGetCoreID();
 
@@ -203,36 +215,36 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
 
 #else // CONFIG_FREERTOS_UNICORE
 
-void spi_flash_init_lock()
+void spi_flash_init_lock(void)
 {
 }
 
-void spi_flash_op_lock()
+void spi_flash_op_lock(void)
 {
     vTaskSuspendAll();
 }
 
-void spi_flash_op_unlock()
+void spi_flash_op_unlock(void)
 {
     xTaskResumeAll();
 }
 
 
-void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
     spi_flash_op_lock();
     esp_intr_noniram_disable();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
-void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_and_other_cpu(void)
 {
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
     esp_intr_noniram_enable();
     spi_flash_op_unlock();
 }
 
-void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
+void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os(void)
 {
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
@@ -240,7 +252,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
 }
 
-void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
+void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os(void)
 {
     // Re-enable cache on this CPU
     spi_flash_restore_cache(0, s_flash_op_cache_state[0]);
@@ -256,13 +268,10 @@ void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
  * Cache_Flush before Cache_Read_Enable, even if cached data was not modified.
  */
 
-static const uint32_t cache_mask  = DPORT_APP_CACHE_MASK_OPSDRAM | DPORT_APP_CACHE_MASK_DROM0 |
-        DPORT_APP_CACHE_MASK_DRAM1 | DPORT_APP_CACHE_MASK_IROM0 |
-        DPORT_APP_CACHE_MASK_IRAM1 | DPORT_APP_CACHE_MASK_IRAM0;
-
 static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_state)
 {
     uint32_t ret = 0;
+    const uint32_t cache_mask = DPORT_CACHE_GET_MASK(cpuid);
     if (cpuid == 0) {
         ret |= DPORT_GET_PERI_REG_BITS2(DPORT_PRO_CACHE_CTRL1_REG, cache_mask, 0);
         while (DPORT_GET_PERI_REG_BITS2(DPORT_PRO_DCACHE_DBUG0_REG, DPORT_PRO_CACHE_STATE, DPORT_PRO_CACHE_STATE_S) != 1) {
@@ -281,6 +290,7 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t* saved_st
 
 static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
+    const uint32_t cache_mask = DPORT_CACHE_GET_MASK(cpuid);
     if (cpuid == 0) {
         DPORT_SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL_REG, 1, 1, DPORT_PRO_CACHE_ENABLE_S);
         DPORT_SET_PERI_REG_BITS(DPORT_PRO_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
@@ -290,12 +300,20 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
     }
 }
 
-
-IRAM_ATTR bool spi_flash_cache_enabled()
+IRAM_ATTR bool spi_flash_cache_enabled(void)
 {
     bool result = (DPORT_REG_GET_BIT(DPORT_PRO_CACHE_CTRL_REG, DPORT_PRO_CACHE_ENABLE) != 0);
 #if portNUM_PROCESSORS == 2
     result = result && (DPORT_REG_GET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE) != 0);
 #endif
     return result;
+}
+
+void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
+{
+    uint32_t cache_value = DPORT_CACHE_GET_VAL(cpuid);
+    cache_value &= DPORT_CACHE_GET_MASK(cpuid);
+
+    // Re-enable cache on this CPU
+    spi_flash_restore_cache(cpuid, cache_value);
 }

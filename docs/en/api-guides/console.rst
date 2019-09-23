@@ -1,5 +1,6 @@
 Console
 =======
+:link_to_translation:`zh_CN:[中文]`
 
 ESP-IDF provides ``console`` component, which includes building blocks needed to develop an interactive console over serial port. This component includes following facilities:
 
@@ -15,7 +16,7 @@ Line editing
 
 Line editing feature lets users compose commands by typing them, erasing symbols using 'backspace' key, navigating within the command using left/right keys, navigating to previously typed commands using up/down keys, and performing autocompletion using 'tab' key. 
 
-.. note:: This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running get_started/console example instead of a command prompt (``[esp32]>``), it means that the serial monitor does not support escape sequences. Programs which are known to work are  GNU screen, minicom, and idf_monitor.py (which can be invoked using ``make monitor`` from project directory).
+.. note:: This feature relies on ANSI escape sequence support in the terminal application. As such, serial monitors which display raw UART data can not be used together with the line editing library. If you see ``[6n`` or similar escape sequence when running get_started/console example instead of a command prompt (``[esp32]>``), it means that the serial monitor does not support escape sequences. Programs which are known to work are  GNU screen, minicom, and idf_monitor.py (which can be invoked using ``idf.py monitor`` from project directory).
 
 Here is an overview of functions provided by `linenoise`_ library.
 
@@ -125,7 +126,7 @@ A few other functions are provided by the command registration module:
 ``esp_console_run``
   This function takes the command line string, splits it into argc/argv argument list using ``esp_console_split_argv``, looks up the command in the list of registered components, and if it is found, executes its handler.
 
-``esp_console_split_argv``
+``esp_console_register_help_command``
   Adds ``help`` command to the list of registered commands. This command prints the list of all the registered commands, along with their arguments and help texts.
 
 ``esp_console_get_completion``

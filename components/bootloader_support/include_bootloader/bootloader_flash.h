@@ -31,6 +31,13 @@
 */
 
 /**
+ * @brief Get number of free pages
+ *
+ * @return Number of free pages
+ */
+uint32_t bootloader_mmap_get_free_pages(void);
+
+/**
  * @brief Map a region of flash to data memory
  *
  * @important In bootloader code, only one region can be bootloader_mmaped at once. The previous region must be bootloader_munmapped before another region is mapped.
@@ -110,5 +117,22 @@ esp_err_t bootloader_flash_erase_sector(size_t sector);
  * @return esp_err_t
  */
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size);
+
+/* Cache MMU block size */
+#define MMU_BLOCK_SIZE    0x00010000
+
+/* Cache MMU address mask (MMU tables ignore bits which are zero) */
+#define MMU_FLASH_MASK    (~(MMU_BLOCK_SIZE - 1))
+
+/**
+ * @brief Calculate the number of cache pages to map
+ * @param size  size of data to map
+ * @param vaddr  virtual address where data will be mapped
+ * @return number of cache MMU pages required to do the mapping
+ */
+static inline uint32_t bootloader_cache_pages_to_map(uint32_t size, uint32_t vaddr)
+{
+    return (size + (vaddr - (vaddr & MMU_FLASH_MASK)) + MMU_BLOCK_SIZE - 1) / MMU_BLOCK_SIZE;
+}
 
 #endif

@@ -15,7 +15,7 @@
 
 #ifndef _PSRAM_H
 #define _PSRAM_H
-#include "soc/spi_reg.h"
+#include "soc/spi_periph.h"
 #include "esp_err.h"
 #include "sdkconfig.h"
 
@@ -27,14 +27,9 @@ typedef enum {
 } psram_cache_mode_t;
 
 typedef enum {
-    PSRAM_VOLT_3V3 = 0,
-    PSRAM_VOLT_1V8 = 1,
-    PSRAM_VOLT_MAX,
-} psram_volt_t;
-
-typedef enum {
-    PSRAM_SIZE_32MBITS = 0,
-    PSRAM_SIZE_64MBITS = 1,
+    PSRAM_SIZE_16MBITS = 0,
+    PSRAM_SIZE_32MBITS = 1,
+    PSRAM_SIZE_64MBITS = 2,
     PSRAM_SIZE_MAX,
 } psram_size_t;
 
@@ -53,20 +48,12 @@ typedef enum {
 } psram_vaddr_mode_t;
 
 /**
- * @brief get psram voltage
- * @return
- *     - PSRAM_VOLT_MAX if psram not enabled or not valid.
- *     - PSRAM voltage
- */
-psram_volt_t psram_get_volt();
-
-/**
  * @brief get psram size
  * @return
  *     - PSRAM_SIZE_MAX if psram not enabled or not valid
  *     - PSRAM size
  */
-psram_size_t psram_get_size();
+psram_size_t psram_get_size(void);
 
 /**
  * @brief psram cache enable function

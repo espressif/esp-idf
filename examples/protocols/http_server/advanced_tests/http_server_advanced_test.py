@@ -14,30 +14,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import imp
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 import re
 import os
 import sys
-import string
-import random
-import socket
 
-# This environment variable is expected on the host machine
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import IDF
+except ImportError:
+    # This environment variable is expected on the host machine
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+
+    import IDF
+
+import Utility
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
 # > make print_flash_cmd | tail -n 1 > build/download.config
 # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
-import TinyFW
-import IDF
-
 # Import client module
 expath = os.path.dirname(os.path.realpath(__file__))
-client = imp.load_source("client", expath + "/scripts/test.py")
+client = Utility.load_source("client", expath + "/scripts/test.py")
+
 
 # Due to connectivity issues (between runner host and DUT) in the runner environment,
 # some of the `advanced_tests` are ignored. These tests are intended for verifying
@@ -53,60 +57,64 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "tests.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("http_server_bin_size", "{}KB".format(bin_size/1024))
-    IDF.check_performance("http_server_bin_size", bin_size/1024)
+    IDF.log_performance("http_server_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("http_server_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
-    print "Starting http_server advanced test app"
+    Utility.console_log("Starting http_server advanced test app")
     dut1.start_app()
 
     # Parse IP address of STA
-    print "Waiting to connect with AP"
-    got_ip = dut1.expect(re.compile(r"(?:[\s\S]*)Got IP: '(\d+.\d+.\d+.\d+)'"), timeout=30)[0]
+    Utility.console_log("Waiting to connect with AP")
+    got_ip = dut1.expect(re.compile(r"(?:[\s\S]*)IPv4 address: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
 
     got_port = dut1.expect(re.compile(r"(?:[\s\S]*)Started HTTP server on port: '(\d+)'"), timeout=15)[0]
-    result = dut1.expect(re.compile(r"(?:[\s\S]*)Max URI handlers: '(\d+)'(?:[\s\S]*)Max Open Sessions: '(\d+)'(?:[\s\S]*)Max Header Length: '(\d+)'(?:[\s\S]*)Max URI Length: '(\d+)'(?:[\s\S]*)Max Stack Size: '(\d+)'"), timeout=15)
-    max_uri_handlers = int(result[0])
+    result = dut1.expect(re.compile(r"(?:[\s\S]*)Max URI handlers: '(\d+)'(?:[\s\S]*)Max Open Sessions: "  # noqa: W605
+                                    r"'(\d+)'(?:[\s\S]*)Max Header Length: '(\d+)'(?:[\s\S]*)Max URI Length: "
+                                    r"'(\d+)'(?:[\s\S]*)Max Stack Size: '(\d+)'"), timeout=15)
+    # max_uri_handlers = int(result[0])
     max_sessions = int(result[1])
     max_hdr_len = int(result[2])
     max_uri_len = int(result[3])
     max_stack_size = int(result[4])
 
-    print "Got IP   : " + got_ip
-    print "Got Port : " + got_port
+    Utility.console_log("Got IP   : " + got_ip)
+    Utility.console_log("Got Port : " + got_port)
 
     # Run test script
     # If failed raise appropriate exception
     failed = False
 
-    print "Sessions and Context Tests..."
+    Utility.console_log("Sessions and Context Tests...")
     if not client.spillover_session(got_ip, got_port, max_sessions):
-        print "Ignoring failure"
+        Utility.console_log("Ignoring failure")
     if not client.parallel_sessions_adder(got_ip, got_port, max_sessions):
-        print "Ignoring failure"
+        Utility.console_log("Ignoring failure")
     if not client.leftover_data_test(got_ip, got_port):
         failed = True
     if not client.async_response_test(got_ip, got_port):
         failed = True
     if not client.recv_timeout_test(got_ip, got_port):
         failed = True
+    if not client.arbitrary_termination_test(got_ip, got_port):
+        failed = True
 
-    ## This test fails a lot! Enable when connection is stable
-    #test_size = 50*1024 # 50KB
-    #if not client.packet_size_limit_test(got_ip, got_port, test_size):
-    #    print "Ignoring failure"
+    # This test fails a lot! Enable when connection is stable
+    # test_size = 50*1024 # 50KB
+    # if not client.packet_size_limit_test(got_ip, got_port, test_size):
+    #    Utility.console_log("Ignoring failure")
 
-    print "Getting initial stack usage..."
+    Utility.console_log("Getting initial stack usage...")
     if not client.get_hello(got_ip, got_port):
         failed = True
 
     inital_stack = int(dut1.expect(re.compile(r"(?:[\s\S]*)Free Stack for server task: '(\d+)'"), timeout=15)[0])
 
-    if inital_stack < 0.1*max_stack_size:
-        print "More than 90% of stack being used on server start"
+    if inital_stack < 0.1 * max_stack_size:
+        Utility.console_log("More than 90% of stack being used on server start")
         failed = True
 
-    print "Basic HTTP Client Tests..."
+    Utility.console_log("Basic HTTP Client Tests...")
     if not client.get_hello(got_ip, got_port):
         failed = True
     if not client.post_hello(got_ip, got_port):
@@ -125,8 +133,10 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
         failed = True
     if not client.get_false_uri(got_ip, got_port):
         failed = True
+    if not client.get_test_headers(got_ip, got_port):
+        failed = True
 
-    print "Error code tests..."
+    Utility.console_log("Error code tests...")
     if not client.code_500_server_error_test(got_ip, got_port):
         failed = True
     if not client.code_501_method_not_impl(got_ip, got_port):
@@ -142,24 +152,25 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
     if not client.code_408_req_timeout(got_ip, got_port):
         failed = True
     if not client.code_414_uri_too_long(got_ip, got_port, max_uri_len):
-        print "Ignoring failure"
+        Utility.console_log("Ignoring failure")
     if not client.code_431_hdr_too_long(got_ip, got_port, max_hdr_len):
-        print "Ignoring failure"
+        Utility.console_log("Ignoring failure")
     if not client.test_upgrade_not_supported(got_ip, got_port):
         failed = True
 
-    print "Getting final stack usage..."
+    Utility.console_log("Getting final stack usage...")
     if not client.get_hello(got_ip, got_port):
         failed = True
 
     final_stack = int(dut1.expect(re.compile(r"(?:[\s\S]*)Free Stack for server task: '(\d+)'"), timeout=15)[0])
 
-    if final_stack < 0.05*max_stack_size:
-        print "More than 95% of stack got used during tests"
+    if final_stack < 0.05 * max_stack_size:
+        Utility.console_log("More than 95% of stack got used during tests")
         failed = True
 
     if failed:
         raise RuntimeError
+
 
 if __name__ == '__main__':
     test_examples_protocol_http_server_advanced()

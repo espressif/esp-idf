@@ -16,17 +16,17 @@ ESP-IDF provides special script `espcoredump.py` to help users to retrieve and a
 Configuration
 -------------
 
-There are a number of core dump related configuration options which user can choose in configuration menu of the application (`make menuconfig`).
+There are a number of core dump related configuration options which user can choose in project configuration menu (`idf.py menuconfig`).
 
-1. Core dump data destination (`Components -> ESP32-specific config -> Core dump destination`):
+1. Core dump data destination (`Components -> ESP32-specific config -> Core dump -> Data destination`):
 
 * Disable core dump generation
 * Save core dump to flash
 * Print core dump to UART
 
-2. Logging level of core dump module (`Components -> ESP32-specific config -> Core dump module logging level`). Value is a number from 0 (no output) to 5 (most verbose).
+2. Maximum number of tasks snapshots in core dump (`Components -> ESP32-specific config -> Core dump -> Maximum number of tasks`).
 
-3. Delay before core dump will be printed to UART (`Components -> ESP32-specific config -> Core dump print to UART delay`). Value is in ms.
+3. Delay before core dump is printed to UART (`Components -> ESP32-specific config -> Core dump -> Delay before print to UART`). Value is in ms.
 
 
 Save core dump to flash
@@ -37,7 +37,7 @@ allocates necessary space on flash, But if user wants to use its own layout file
 as it is shown below::
 
   # Name,   Type, SubType, Offset,  Size
-  # Note: if you change the phy_init or app partition offset, make sure to change the offset in Kconfig.projbuild
+  # Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
   nvs,      data, nvs,     0x9000,  0x6000
   phy_init, data, phy,     0xf000,  0x1000
   factory,  app,  factory, 0x10000, 1M
@@ -89,10 +89,11 @@ Generic command syntax:
     * info_corefile. Retrieve core dump and print useful info.
     * dbg_corefile. Retrieve core dump and start GDB session with it.
 :Command Arguments:
+    * --debug,-d DEBUG.             Log level (0..3).
     * --gdb,-g GDB.                 Path to gdb to use for data retrieval.
     * --core,-c CORE.               Path to core dump file to use (if skipped core dump will be read from flash).
     * --core-format,-t CORE_FORMAT. Specifies that file passed with "-c" is an ELF ("elf"), dumped raw binary ("raw") or base64-encoded ("b64") format.
-    * --off,-o OFF.                 Offset of coredump partition in flash (type `make partition_table` to see it).
+    * --off,-o OFF.                 Offset of coredump partition in flash (type `idf.py partition_table` to see it).
     * --save-core,-s SAVE_CORE.     Save core to file. Othwerwise temporary core file will be deleted. Ignored with "-c".
     * --rom-elf,-r ROM_ELF.         Path to ROM ELF file to use (if skipped "esp32_rom.elf" is used).
     * --print-mem,-m                Print memory dump. Used only with "info_corefile".

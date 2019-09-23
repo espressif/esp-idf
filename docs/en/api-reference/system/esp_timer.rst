@@ -17,6 +17,12 @@ Timer callbacks are dispatched from a high-priority ``esp_timer`` task. Because 
 
 .. note: Provisions are made to dispatch some simple callbacks directly from the interrupt handler, if needed. However this option is not implemented at the moment.
 
+If other tasks with priority higher than ``esp_timer`` are running, callback dispatching will be delayed until ``esp_timer`` task has a chance to run. For example, this will happen if a SPI Flash operation is in progress.
+
+Creating and starting a timer, and dispatching the callback takes some time. Therefore there is a lower limit to the timeout value of one-shot ``esp_timer``. If :cpp:func:`esp_timer_start_once` is called with a timeout value less than 20us, the callback will be dispatched only after approximately 20us.
+
+Periodic ``esp_timer`` also imposes a 50us restriction on the minimal timer period. Periodic software timers with period of less than 50us are not practical since they would consume most of the CPU time. Consider using dedicated hardware peripherals or DMA features if you find that a timer with small period is required.
+
 Using ``esp_timer`` APIs
 ------------------------
 

@@ -1,0 +1,32 @@
+ifdef CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
+
+PHY_INIT_DATA_OBJ = $(BUILD_DIR_BASE)/phy_init_data.o
+PHY_INIT_DATA_BIN = $(BUILD_DIR_BASE)/phy_init_data.bin
+
+# Command to flash PHY init data partition
+PHY_INIT_DATA_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
+ESPTOOL_ALL_FLASH_ARGS += $(PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
+
+ESP_WIFI_COMPONENT_PATH := $(COMPONENT_PATH)
+
+$(PHY_INIT_DATA_OBJ): $(ESP_WIFI_COMPONENT_PATH)/$(IDF_TARGET)/include/phy_init_data.h $(BUILD_DIR_BASE)/include/sdkconfig.h
+	$(summary) CC $(notdir $@)
+	printf "#include \"phy_init_data.h\"\n" | $(CC) -I $(BUILD_DIR_BASE)/include -I $(ESP_WIFI_COMPONENT_PATH)/../esp_common/include -I $(ESP_WIFI_COMPONENT_PATH)/include -I $(ESP_WIFI_COMPONENT_PATH)/$(IDF_TARGET)/include -c -o $@ -xc -
+
+$(PHY_INIT_DATA_BIN): $(PHY_INIT_DATA_OBJ)
+	$(summary) BIN $(notdir $@)
+	$(OBJCOPY) -O binary $< $@
+
+phy_init_data: $(PHY_INIT_DATA_BIN)
+
+phy_init_data-flash: $(BUILD_DIR_BASE)/phy_init_data.bin
+	@echo "Flashing PHY init data..."
+	$(PHY_INIT_DATA_FLASH_CMD)
+
+phy_init_data-clean:
+	rm -f $(PHY_INIT_DATA_BIN) $(PHY_INIT_DATA_OBJ)
+
+all: phy_init_data
+flash: phy_init_data
+
+endif # CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION

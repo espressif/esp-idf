@@ -1,0 +1,9 @@
+[mapping:vfs]
+archive: libvfs.a
+entries:
+    vfs:esp_vfs_open (noflash)
+    vfs:esp_vfs_write (noflash)
+    vfs:esp_vfs_close (noflash)
+    vfs:get_vfs_for_fd (noflash)
+    vfs:get_vfs_for_path (noflash)
+    vfs:translate_path (noflash)

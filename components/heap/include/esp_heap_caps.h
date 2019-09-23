@@ -308,7 +308,7 @@ void heap_caps_dump(uint32_t caps);
  * Output is the same as for heap_caps_dump.
  *
  */
-void heap_caps_dump_all();
+void heap_caps_dump_all(void);
 
 #ifdef __cplusplus
 }

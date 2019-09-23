@@ -47,7 +47,6 @@ typedef struct {
 
 /**
  * @brief Initialise heap tracing in standalone mode.
- * @note Standalone mode is the only mode currently supported.
  *
  * This function must be called before any other heap tracing functions.
  *
@@ -62,6 +61,17 @@ typedef struct {
  *  - ESP_OK Heap tracing initialised successfully.
  */
 esp_err_t heap_trace_init_standalone(heap_trace_record_t *record_buffer, size_t num_records);
+
+/**
+ * @brief Initialise heap tracing in host-based mode.
+ *
+ * This function must be called before any other heap tracing functions.
+ *
+ * @return
+ *  - ESP_ERR_INVALID_STATE Heap tracing is currently in progress.
+ *  - ESP_OK Heap tracing initialised successfully.
+ */
+esp_err_t heap_trace_init_tohost(void);
 
 /**
  * @brief Start heap tracing. All heap allocations & frees will be traced, until heap_trace_stop() is called.

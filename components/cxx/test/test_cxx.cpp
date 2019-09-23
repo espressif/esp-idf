@@ -1,10 +1,13 @@
 #include <vector>
-#include <algorithm>
+#include <numeric>
+#include <stdexcept>
+#include <string>
 #include "unity.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "soc/soc.h"
 
 static const char* TAG = "cxx";
 
@@ -193,7 +196,7 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
-#ifdef CONFIG_CXX_EXCEPTIONS
+#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
 TEST_CASE("c++ exceptions work", "[cxx]")
 {
@@ -256,7 +259,7 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
         thrown_value = e;
         printf("Got exception %d\n", thrown_value);
     }
-#if CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0
+#if CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE > 0
     // free all memory
     while (pprev) {
         p = (void **)(*pprev);
@@ -269,6 +272,22 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
     // expect abort() due to lack of memory for new exception
     TEST_ASSERT_TRUE(0 == 1);
 #endif
+}
+
+#else // !CONFIG_COMPILER_CXX_EXCEPTIONS
+
+TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+{
+    std::vector<int> v(10);
+    v.at(20) = 42;
+    TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
+}
+
+TEST_CASE("std::bad_alloc exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+{
+    std::string s = std::string(2000000000, 'a');
+    (void)s;
+    TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
 }
 
 #endif
@@ -299,4 +318,32 @@ TEST_CASE("can call std::function and bind", "[cxx]")
 }
 
 #endif
+
+/* Tests below are done in the compile time, don't actually get run. */
+/* Check whether a enumerator flag can be used in C++ */
+
+
+template<typename T> __attribute__((unused)) static void test_binary_operators()
+{
+    T flag1 = (T)0;
+    T flag2 = (T)0;
+    flag1 = ~flag1;
+    flag1 = flag1 | flag2;
+    flag1 = flag1 & flag2;
+    flag1 = flag1 ^ flag2;
+    flag1 = flag1 >> 2;
+    flag1 = flag1 << 2;
+    flag1 |= flag2;
+    flag1 &= flag2;
+    flag1 ^= flag2;
+    flag1 >>= 2;
+    flag1 <<= 2;
+}
+
+//Add more types here. If any flags cannot pass the build, use FLAG_ATTR in esp_attr.h
+#include "hal/timer_types.h"
+template void test_binary_operators<timer_intr_t>();
+
+
+
 

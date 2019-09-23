@@ -14,11 +14,13 @@
 #ifndef _SOC_PCNT_STRUCT_H_
 #define _SOC_PCNT_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct pcnt_dev_s {
     struct{
         union {
             struct {

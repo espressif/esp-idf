@@ -1,0 +1,12 @@
+[mapping:esp_eth]
+archive: libesp_eth.a
+entries:
+  if ETH_USE_ESP32_EMAC = y:
+    esp_eth_mac_esp32:emac_hal_tx_complete_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_tx_unavail_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_rx_complete_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_rx_early_cb (noflash_text)
+    esp_eth_mac_esp32:emac_hal_rx_unavail_cb (noflash_text)
+    esp_eth_mac_esp32:emac_esp32_isr_handler (noflash_text)
+  if ETH_SPI_ETHERNET_DM9051 = y:
+    esp_eth_mac_dm9051:dm9051_isr_handler (noflash_text)

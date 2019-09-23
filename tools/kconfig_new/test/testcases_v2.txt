@@ -1,0 +1,47 @@
+* Set TEST_BOOL, showing child items
+> { "TEST_BOOL" : true }
+< { "values" : { "TEST_BOOL" : true, "TEST_CHILD_STR" : "OHAI!", "TEST_CHILD_BOOL" : true }, "ranges": {"TEST_CONDITIONAL_RANGES": [0, 100], "TEST_CONDITIONAL_HEX_RANGES": [0, 175]}, "visible": {"TEST_CHILD_BOOL" : true, "TEST_CHILD_STR" : true} }
+
+* Set TEST_CHILD_STR
+> { "TEST_CHILD_STR" : "Other value" }
+< { "values" : { "TEST_CHILD_STR" : "Other value" } }
+
+* Clear TEST_BOOL, hiding child items
+> { "TEST_BOOL" : false }
+< { "values" : { "TEST_BOOL" : false },  "ranges": {"TEST_CONDITIONAL_RANGES": [0, 10], "TEST_CONDITIONAL_HEX_RANGES": [16, 175]}, "visible": { "TEST_CHILD_BOOL" : false, "TEST_CHILD_STR" : false } }
+
+* Set TEST_CHILD_BOOL, invalid as parent is disabled
+> { "TEST_CHILD_BOOL" : false }
+< { "values" : { } }
+
+* Set TEST_BOOL & TEST_CHILD_STR together
+> { "TEST_BOOL" : true, "TEST_CHILD_STR" : "New value" }
+< { "values" : { "TEST_BOOL" : true, "TEST_CHILD_STR" : "New value", "TEST_CHILD_BOOL" : true } }
+
+* Set choice
+> { "CHOICE_B" : true }
+< { "values" : { "CHOICE_B" : true, "CHOICE_A" : false, "DEPENDS_ON_CHOICE" : "Depends on B" } }
+
+* Set string which depends on choice B
+> { "DEPENDS_ON_CHOICE" : "oh, really?" }
+< { "values" : { "DEPENDS_ON_CHOICE" : "oh, really?" } }
+
+* Try setting boolean values to invalid types
+> { "CHOICE_A" : 11, "TEST_BOOL" : "false" }
+< { "values" : { } }
+
+* Disabling all items in a submenu causes all sub-items to have visible:False
+> { "SUBMENU_TRIGGER": false }
+< { "values" : { "SUBMENU_TRIGGER": false}, "visible": { "test-config-submenu" : false, "SUBMENU_ITEM_A": false, "SUBMENU_ITEM_B": false} }
+
+* Re-enabling submenu causes that menu to be visible again, and refreshes sub-items
+> { "SUBMENU_TRIGGER": true }
+< { "values" : { "SUBMENU_TRIGGER": true}, "visible": {"test-config-submenu": true, "SUBMENU_ITEM_A": true, "SUBMENU_ITEM_B": true}, "values": {"SUBMENU_TRIGGER": true, "SUBMENU_ITEM_A": 77, "SUBMENU_ITEM_B": false } }
+
+* Disabling submenuconfig item hides its children
+> { "SUBMENU_CONFIG": false }
+< { "values" : { "SUBMENU_CONFIG": false }, "visible": { "SUBMENU_CONFIG_ITEM": false } }
+
+* Enabling submenuconfig item re-shows its children
+> { "SUBMENU_CONFIG": true }
+< { "values" : { "SUBMENU_CONFIG_ITEM": true, "SUBMENU_CONFIG" : true }, "visible": { "SUBMENU_CONFIG_ITEM": true } }

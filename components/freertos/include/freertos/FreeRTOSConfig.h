@@ -117,7 +117,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 /* configASSERT behaviour */
 #ifndef __ASSEMBLER__
 #include <stdlib.h> /* for abort() */
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #if defined(CONFIG_FREERTOS_ASSERT_DISABLE)
 #define configASSERT(a) /* assertions disabled */
@@ -272,10 +272,10 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configUSE_NEWLIB_REENTRANT		1
 
 #define configSUPPORT_DYNAMIC_ALLOCATION    1
-#define configSUPPORT_STATIC_ALLOCATION CONFIG_SUPPORT_STATIC_ALLOCATION
+#define configSUPPORT_STATIC_ALLOCATION CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
 
 #ifndef __ASSEMBLER__
-#if CONFIG_ENABLE_STATIC_TASK_CLEAN_UP_HOOK
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
 extern void vPortCleanUpTCB ( void *pxTCB );
 #define portCLEAN_UP_TCB( pxTCB )           vPortCleanUpTCB( pxTCB )
 #endif
@@ -284,9 +284,9 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 /* Test FreeRTOS timers (with timer task) and more. */
 /* Some files don't compile if this flag is disabled */
 #define configUSE_TIMERS                    1
-#define configTIMER_TASK_PRIORITY           CONFIG_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH            CONFIG_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH        CONFIG_TIMER_TASK_STACK_DEPTH
+#define configTIMER_TASK_PRIORITY           CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+#define configTIMER_QUEUE_LENGTH            CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+#define configTIMER_TASK_STACK_DEPTH        CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
 
 #define INCLUDE_xTimerPendFunctionCall      1
 #define INCLUDE_eTaskGetState               1
@@ -300,13 +300,24 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 #define configXT_BOARD                      1   /* Board mode */
 #define configXT_SIMULATOR					0
 
-#define configENABLE_TASK_SNAPSHOT			1
+#if CONFIG_ESP32_ENABLE_COREDUMP
+#define configENABLE_TASK_SNAPSHOT          1
+#endif
+#ifndef configENABLE_TASK_SNAPSHOT
+#define configENABLE_TASK_SNAPSHOT          1
+#endif
 
 #if CONFIG_SYSVIEW_ENABLE
 #ifndef __ASSEMBLER__
 #include "SEGGER_SYSVIEW_FreeRTOS.h"
 #undef INLINE // to avoid redefinition
 #endif /* def __ASSEMBLER__ */
+#endif
+
+#if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
+#define configCHECK_MUTEX_GIVEN_BY_OWNER    1
+#else
+#define configCHECK_MUTEX_GIVEN_BY_OWNER    0
 #endif
 
 #endif /* FREERTOS_CONFIG_H */

@@ -1,18 +1,34 @@
 menu "Virtual file system"
 
-config SUPPRESS_SELECT_DEBUG_OUTPUT
-    bool "Suppress select() related debug outputs"
-    default y
-    help
-        Select() related functions might produce an unconveniently lot of
-        debug outputs when one sets the default log level to DEBUG or higher.
-        It is possible to suppress these debug outputs by enabling this
-        option.
+    config VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
+        bool "Suppress select() related debug outputs"
+        default y
+        help
+            Select() related functions might produce an unconveniently lot of
+            debug outputs when one sets the default log level to DEBUG or higher.
+            It is possible to suppress these debug outputs by enabling this
+            option.
 
-config SUPPORT_TERMIOS
-    bool "Add support for termios.h"
-    default y
-    help
-        Disabling this option can save memory when the support for termios.h is not required.
+    config VFS_SUPPORT_TERMIOS
+        bool "Add support for termios.h"
+        default y
+        help
+            Disabling this option can save memory when the support for termios.h is not required.
+
+    menu "Host File System I/O (Semihosting)"
+        config SEMIHOSTFS_MAX_MOUNT_POINTS
+            int "Maximum number of the host filesystem mount points"
+            default 1
+            help
+                Define maximum number of host filesystem mount points.
+
+        config SEMIHOSTFS_HOST_PATH_MAX_LEN
+            int "Maximum path length for the host base directory"
+            default 128
+            help
+                Define maximum path length for the host base directory which is to be mounted.
+                If host path passed to esp_vfs_semihost_register() is longer than this value
+                it will be truncated.
+    endmenu
 
 endmenu

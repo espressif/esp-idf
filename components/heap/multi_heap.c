@@ -326,18 +326,21 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
     return block_data_size(pb);
 }
 
-multi_heap_handle_t multi_heap_register_impl(void *start, size_t size)
+multi_heap_handle_t multi_heap_register_impl(void *start_ptr, size_t size)
 {
-    heap_t *heap = (heap_t *)ALIGN_UP((intptr_t)start);
-    uintptr_t end = ALIGN((uintptr_t)start + size);
-    if (end - (uintptr_t)start < sizeof(heap_t) + 2*sizeof(heap_block_t)) {
+    uintptr_t start = ALIGN_UP((uintptr_t)start_ptr);
+    uintptr_t end = ALIGN((uintptr_t)start_ptr + size);
+    heap_t *heap = (heap_t *)start;
+    size = end - start;
+
+    if (end < start || size < sizeof(heap_t) + 2*sizeof(heap_block_t)) {
         return NULL; /* 'size' is too small to fit a heap here */
     }
     heap->lock = NULL;
     heap->last_block = (heap_block_t *)(end - sizeof(heap_block_t));
 
     /* first 'real' (allocatable) free block goes after the heap structure */
-    heap_block_t *first_free_block = (heap_block_t *)((intptr_t)start + sizeof(heap_t));
+    heap_block_t *first_free_block = (heap_block_t *)(start + sizeof(heap_t));
     first_free_block->header = (intptr_t)heap->last_block | BLOCK_FREE_FLAG;
     first_free_block->next_free = heap->last_block;
 
@@ -356,7 +359,7 @@ multi_heap_handle_t multi_heap_register_impl(void *start, size_t size)
        - minus header of first_free_block
        - minus whole block at heap->last_block
     */
-    heap->free_bytes = ALIGN(size) - sizeof(heap_t) - sizeof(first_free_block->header) - sizeof(heap_block_t);
+    heap->free_bytes = size - sizeof(heap_t) - sizeof(first_free_block->header) - sizeof(heap_block_t);
     heap->minimum_free_bytes = heap->free_bytes;
 
     return heap;

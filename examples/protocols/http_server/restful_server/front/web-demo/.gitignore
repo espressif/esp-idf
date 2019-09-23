@@ -1,0 +1,26 @@
+.DS_Store
+node_modules
+/dist
+
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# APIs used in this example is simple and stable enough.
+# There shouldn't be risk of compatibility unless the major version of some library changed.
+# To compress the package size, just exclude the package-lock.json file.
+package-lock.json

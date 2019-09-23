@@ -14,6 +14,8 @@
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
+#include "esp_event_base.h"
+
 //#define MDNS_ENABLE_DEBUG
 
 #ifdef MDNS_ENABLE_DEBUG
@@ -115,9 +117,9 @@
 #define PCB_STATE_IS_ANNOUNCING(s) (s->state > PCB_PROBE_3 && s->state < PCB_RUNNING)
 #define PCB_STATE_IS_RUNNING(s) (s->state == PCB_RUNNING)
 
-#define MDNS_SEARCH_LOCK()      xSemaphoreTake(_mdns_server->search.lock, portMAX_DELAY)
-#define MDNS_SEARCH_UNLOCK()    xSemaphoreGive(_mdns_server->search.lock)
-
+#ifndef HOOK_MALLOC_FAILED
+#define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %d bytes)", __LINE__, esp_get_free_heap_size());
+#endif
 
 typedef enum {
     PCB_OFF, PCB_DUP, PCB_INIT,
@@ -182,6 +184,7 @@ typedef struct {
     char domain[MDNS_NAME_BUF_LEN];
     uint8_t parts;
     uint8_t sub;
+    bool    invalid;
 } mdns_name_t;
 
 typedef struct mdns_parsed_question_s {
@@ -258,7 +261,7 @@ typedef struct mdns_srv_item_s {
 typedef struct mdns_out_question_s {
     struct mdns_out_question_s * next;
     uint16_t type;
-    uint8_t unicast;
+    bool unicast;
     const char * host;
     const char * service;
     const char * proto;
@@ -289,6 +292,7 @@ typedef struct mdns_tx_packet_s {
     mdns_out_answer_t * answers;
     mdns_out_answer_t * servers;
     mdns_out_answer_t * additional;
+    bool queued;
 } mdns_tx_packet_t;
 
 typedef struct {
@@ -315,7 +319,7 @@ typedef struct mdns_search_once_s {
     uint32_t started_at;
     uint32_t sent_at;
     uint32_t timeout;
-    SemaphoreHandle_t lock;
+    SemaphoreHandle_t done_semaphore;
     uint16_t type;
     uint8_t max_results;
     uint8_t num_results;
@@ -345,7 +349,8 @@ typedef struct {
         char * hostname;
         char * instance;
         struct {
-            system_event_id_t event_id;
+            esp_event_base_t event_base;
+            int32_t event_id;
             tcpip_adapter_if_t interface;
         } sys_event;
         struct {

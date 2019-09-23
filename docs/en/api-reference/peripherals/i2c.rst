@@ -31,7 +31,7 @@ Configure Driver
 
 The first step to establishing I2C communication is to configure the driver. This is done by setting several parameters contained in :cpp:type:`i2c_config_t` structure:
 
-* I2C **operation mode** - select either slave or master from :cpp:type:`i2c_opmode_t`
+* I2C **mode** - select either slave or master from :cpp:type:`i2c_mode_t`
 * Settings of the **communication pins**:
 
     * GPIO pin numbers assigned to the SDA and SCL signals 
@@ -56,7 +56,7 @@ Install Driver
 Having the configuration initialized, the next step is to install the I2C driver by calling :cpp:func:`i2c_driver_install`. This function call requires the following parameters:
 
 * The port number, one of the two ports available, selected from :cpp:type:`i2c_port_t`
-* The operation mode, slave or master selected from :cpp:type:`i2c_opmode_t`
+* The I2C mode, slave or master, selected from :cpp:type:`i2c_mode_t`
 * Sizes of buffers that will be allocated for sending and receiving data **in the slave mode**
 * Flags used to allocate the interrupt
 

@@ -14,11 +14,13 @@
 #ifndef _SOC_UHCI_STRUCT_H_
 #define _SOC_UHCI_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct uhci_dev_s {
     union {
         struct {
             uint32_t in_rst:             1;                /*Set this bit to reset in link operations.*/

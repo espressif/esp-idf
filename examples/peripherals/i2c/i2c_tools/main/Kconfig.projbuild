@@ -1,0 +1,25 @@
+menu "Example Configuration"
+
+    config EXAMPLE_STORE_HISTORY
+        bool "Store command history in flash"
+        default y
+        help
+            Linenoise line editing library provides functions to save and load
+            command history. If this option is enabled, initalizes a FAT filesystem
+            and uses it to store command history.
+
+    config EXAMPLE_MAX_CMD_ARGUMENTS
+        int "Maximum number of command line arguments"
+        default 16
+        range 8 256
+        help
+            maximum number of command line arguments to parse
+
+    config EXAMPLE_MAX_CMD_LENGTH
+        int "Command line buffer length"
+        default 256
+        range 256 512
+        help
+            length of command line buffer, in bytes
+
+endmenu

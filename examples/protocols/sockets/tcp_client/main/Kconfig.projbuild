@@ -1,0 +1,37 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_IP_MODE
+        prompt "IP Version"
+        help
+            Example can use either IPV4 or IPV6.
+
+        config EXAMPLE_IPV4
+            bool "IPV4"
+
+        config EXAMPLE_IPV6
+            bool "IPV6"
+
+    endchoice
+
+    config EXAMPLE_IPV4_ADDR
+        string "IPV4 Address"
+        default "192.168.0.165"
+        depends on EXAMPLE_IPV4
+        help
+            The example will connect to this IPV4 address.
+
+    config EXAMPLE_IPV6_ADDR
+        string "IPV6 Address"
+        default "FE80::30AD:E57B:C212:68AD"
+        depends on EXAMPLE_IPV6
+        help
+            The example will connect to this IPV6 address.
+
+    config EXAMPLE_PORT
+        int "Port"
+        range 0 65535
+        default 3333
+        help
+            The remote port to which the client example will connect to.
+
+endmenu

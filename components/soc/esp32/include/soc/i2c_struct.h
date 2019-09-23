@@ -14,11 +14,13 @@
 #ifndef _SOC_I2C_STRUCT_H_
 #define _SOC_I2C_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct i2c_dev_s {
     union {
         struct {
             uint32_t period:14;             /*This register is used to configure the  low level width of SCL clock.*/

@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp_err.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 typedef long os_time_t;
 
@@ -270,7 +270,7 @@ char * ets_strdup(const char *s);
 #ifdef _MSC_VER
 #define os_snprintf _snprintf
 #else
-#define os_snprintf vsnprintf
+#define os_snprintf snprintf
 #endif
 #endif
 

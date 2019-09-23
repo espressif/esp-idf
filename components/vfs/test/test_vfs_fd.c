@@ -23,6 +23,7 @@
 #include "esp_vfs.h"
 #include "unity.h"
 #include "esp_log.h"
+#include "test_utils.h"
 
 #define VFS_PREF1       "/vfs1"
 #define VFS_PREF2       "/vfs2"
@@ -226,7 +227,7 @@ static int time_test_vfs_close(int fd)
     return 1;
 }
 
-int time_test_vfs_write(int fd, const void *data, size_t size)
+static int time_test_vfs_write(int fd, const void *data, size_t size)
 {
     return size;
 }
@@ -254,10 +255,12 @@ TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
         TEST_ASSERT_NOT_EQUAL(close(fd), -1);
     }
 
+    // esp_vfs_open, esp_vfs_write and esp_vfs_close need to be in IRAM for performance test to pass
+
     const int64_t time_diff_us = esp_timer_get_time() - begin;
     const int ns_per_iter = (int) (time_diff_us * 1000 / iter_count);
     TEST_ESP_OK( esp_vfs_unregister(VFS_PREF1) );
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
     TEST_PERFORMANCE_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME_PSRAM, "%dns", ns_per_iter);
 #else
     TEST_PERFORMANCE_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME, "%dns", ns_per_iter);

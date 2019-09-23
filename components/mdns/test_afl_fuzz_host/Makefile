@@ -1,7 +1,9 @@
 TEST_NAME=test
 FUZZ=afl-fuzz
 COMPONENTS_DIR=../..
-CFLAGS=-g -DMDNS_TEST_MODE -I. -I.. -I../include -I../private_include -I$(COMPONENTS_DIR)/tcpip_adapter/include -I$(COMPONENTS_DIR)/esp32/include -include esp32_compat.h
+CFLAGS=-g -DHOOK_MALLOC_FAILED -DESP_EVENT_H_ -D__ESP_LOG_H__ -DMDNS_TEST_MODE \
+				-I. -I.. -I../include -I../private_include -include esp32_compat.h \
+				-I$(COMPONENTS_DIR)/tcpip_adapter/include -I$(COMPONENTS_DIR)/esp_event/include -I$(COMPONENTS_DIR)/log/include
 MDNS_C_DEPENDENCY_INJECTION=-include mdns_di.h
 ifeq ($(INSTR),off)
     CC=gcc

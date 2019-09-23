@@ -8,29 +8,26 @@
 */
 
 #include <esp_wifi.h>
-#include <esp_event_loop.h>
+#include <esp_event.h>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
 #include <sys/param.h>
+#include "nvs_flash.h"
+#include "tcpip_adapter.h"
+#include "esp_eth.h"
+#include "protocol_examples_common.h"
 
-#include <http_server.h>
+#include <esp_http_server.h>
 
 /* A simple example that demonstrates how to create GET and POST
  * handlers for the web server.
- * The examples use simple WiFi configuration that you can set via
- * 'make menuconfig'.
- * If you'd rather not, just change the below entries to strings
- * with the config you want -
- * ie. #define EXAMPLE_WIFI_SSID "mywifissid"
-*/
-#define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
-#define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
+ */
 
-static const char *TAG="APP";
+static const char *TAG = "example";
 
 /* An HTTP GET handler */
-esp_err_t hello_get_handler(httpd_req_t *req)
+static esp_err_t hello_get_handler(httpd_req_t *req)
 {
     char*  buf;
     size_t buf_len;
@@ -104,7 +101,7 @@ esp_err_t hello_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-httpd_uri_t hello = {
+static const httpd_uri_t hello = {
     .uri       = "/hello",
     .method    = HTTP_GET,
     .handler   = hello_get_handler,
@@ -114,7 +111,7 @@ httpd_uri_t hello = {
 };
 
 /* An HTTP POST handler */
-esp_err_t echo_post_handler(httpd_req_t *req)
+static esp_err_t echo_post_handler(httpd_req_t *req)
 {
     char buf[100];
     int ret, remaining = req->content_len;
@@ -122,7 +119,11 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     while (remaining > 0) {
         /* Read the data for the request */
         if ((ret = httpd_req_recv(req, buf,
-                        MIN(remaining, sizeof(buf)))) < 0) {
+                        MIN(remaining, sizeof(buf)))) <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                /* Retry receiving if timeout occurred */
+                continue;
+            }
             return ESP_FAIL;
         }
 
@@ -141,35 +142,69 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-httpd_uri_t echo = {
+static const httpd_uri_t echo = {
     .uri       = "/echo",
     .method    = HTTP_POST,
     .handler   = echo_post_handler,
     .user_ctx  = NULL
 };
 
+/* This handler allows the custom error handling functionality to be
+ * tested from client side. For that, when a PUT request 0 is sent to
+ * URI /ctrl, the /hello and /echo URIs are unregistered and following
+ * custom error handler http_404_error_handler() is registered.
+ * Afterwards, when /hello or /echo is requested, this custom error
+ * handler is invoked which, after sending an error message to client,
+ * either closes the underlying socket (when requested URI is /echo)
+ * or keeps it open (when requested URI is /hello). This allows the
+ * client to infer if the custom error handler is functioning as expected
+ * by observing the socket state.
+ */
+esp_err_t http_404_error_handler(httpd_req_t *req, httpd_err_code_t err)
+{
+    if (strcmp("/hello", req->uri) == 0) {
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "/hello URI is not available");
+        /* Return ESP_OK to keep underlying socket open */
+        return ESP_OK;
+    } else if (strcmp("/echo", req->uri) == 0) {
+        httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "/echo URI is not available");
+        /* Return ESP_FAIL to close underlying socket */
+        return ESP_FAIL;
+    }
+    /* For any other URI send 404 and close socket */
+    httpd_resp_send_err(req, HTTPD_404_NOT_FOUND, "Some 404 error message");
+    return ESP_FAIL;
+}
+
 /* An HTTP PUT handler. This demonstrates realtime
  * registration and deregistration of URI handlers
  */
-esp_err_t ctrl_put_handler(httpd_req_t *req)
+static esp_err_t ctrl_put_handler(httpd_req_t *req)
 {
     char buf;
     int ret;
 
-    if ((ret = httpd_req_recv(req, &buf, 1)) < 0) {
+    if ((ret = httpd_req_recv(req, &buf, 1)) <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+            httpd_resp_send_408(req);
+        }
         return ESP_FAIL;
     }
 
     if (buf == '0') {
-        /* Handler can be unregistered using the uri string */
+        /* URI handlers can be unregistered using the uri string */
         ESP_LOGI(TAG, "Unregistering /hello and /echo URIs");
         httpd_unregister_uri(req->handle, "/hello");
         httpd_unregister_uri(req->handle, "/echo");
+        /* Register the custom error handler */
+        httpd_register_err_handler(req->handle, HTTPD_404_NOT_FOUND, http_404_error_handler);
     }
     else {
         ESP_LOGI(TAG, "Registering /hello and /echo URIs");
         httpd_register_uri_handler(req->handle, &hello);
         httpd_register_uri_handler(req->handle, &echo);
+        /* Unregister custom error handler */
+        httpd_register_err_handler(req->handle, HTTPD_404_NOT_FOUND, NULL);
     }
 
     /* Respond with empty body */
@@ -177,14 +212,14 @@ esp_err_t ctrl_put_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-httpd_uri_t ctrl = {
+static const httpd_uri_t ctrl = {
     .uri       = "/ctrl",
     .method    = HTTP_PUT,
     .handler   = ctrl_put_handler,
     .user_ctx  = NULL
 };
 
-httpd_handle_t start_webserver(void)
+static httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
@@ -204,69 +239,60 @@ httpd_handle_t start_webserver(void)
     return NULL;
 }
 
-void stop_webserver(httpd_handle_t server)
+static void stop_webserver(httpd_handle_t server)
 {
     // Stop the httpd server
     httpd_stop(server);
 }
 
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+static void disconnect_handler(void* arg, esp_event_base_t event_base, 
+                               int32_t event_id, void* event_data)
 {
-    httpd_handle_t *server = (httpd_handle_t *) ctx;
-
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
-        ESP_ERROR_CHECK(esp_wifi_connect());
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
-        ESP_LOGI(TAG, "Got IP: '%s'",
-                ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
-
-        /* Start the web server */
-        if (*server == NULL) {
-            *server = start_webserver();
-        }
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
-        ESP_ERROR_CHECK(esp_wifi_connect());
-
-        /* Stop the web server */
-        if (*server) {
-            stop_webserver(*server);
-            *server = NULL;
-        }
-        break;
-    default:
-        break;
+    httpd_handle_t* server = (httpd_handle_t*) arg;
+    if (*server) {
+        ESP_LOGI(TAG, "Stopping webserver");
+        stop_webserver(*server);
+        *server = NULL;
     }
-    return ESP_OK;
 }
 
-static void initialise_wifi(void *arg)
+static void connect_handler(void* arg, esp_event_base_t event_base, 
+                            int32_t event_id, void* event_data)
 {
-    tcpip_adapter_init();
-    ESP_ERROR_CHECK(esp_event_loop_init(event_handler, arg));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = EXAMPLE_WIFI_SSID,
-            .password = EXAMPLE_WIFI_PASS,
-        },
-    };
-    ESP_LOGI(TAG, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    httpd_handle_t* server = (httpd_handle_t*) arg;
+    if (*server == NULL) {
+        ESP_LOGI(TAG, "Starting webserver");
+        *server = start_webserver();
+    }
 }
 
-void app_main()
+
+void app_main(void)
 {
     static httpd_handle_t server = NULL;
+
     ESP_ERROR_CHECK(nvs_flash_init());
-    initialise_wifi(&server);
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
+
+    /* Register event handlers to stop the server when Wi-Fi or Ethernet is disconnected,
+     * and re-start it upon connection.
+     */
+#ifdef CONFIG_EXAMPLE_CONNECT_WIFI
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, &server));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, &server));
+#endif // CONFIG_EXAMPLE_CONNECT_WIFI
+#ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &connect_handler, &server));
+    ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_DISCONNECTED, &disconnect_handler, &server));
+#endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+
+    /* Start the server for the first time */
+    server = start_webserver();
 }

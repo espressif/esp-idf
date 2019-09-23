@@ -24,42 +24,62 @@ INPUT = \
     ##
     ## Wi-Fi - API Reference
     ##
-    ../../components/esp32/include/esp_wifi.h \
-    ../../components/esp32/include/esp_wifi_types.h \
-    ../../components/esp32/include/esp_smartconfig.h \
-    ../../components/esp32/include/esp_now.h \
+    ../../components/esp_wifi/include/esp_wifi.h \
+    ../../components/esp_wifi/include/esp_wifi_types.h \
+    ../../components/esp_wifi/include/esp_smartconfig.h \
+    ../../components/esp_wifi/include/esp_now.h \
     ## Mesh - API Reference
-    ../../components/esp32/include/esp_mesh.h \
+    ../../components/esp_wifi/include/esp_mesh.h \
+    ## Event loop - API Reference
+    ../../components/esp_event/include/esp_event.h \
+    ../../components/esp_event/include/esp_event_base.h \
+    ../../components/esp_event/include/esp_event_legacy.h \
     ## Bluetooth - API Reference
     ## Controller && VHCI
     ../../components/bt/include/esp_bt.h \
     ## Bluetooth COMMON
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_bt_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_bt_main.h \
-    ../../components/bt/bluedroid/api/include/api/esp_bt_device.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
     ## Bluetooth LE
-    ../../components/bt/bluedroid/api/include/api/esp_gap_ble_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_gatt_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_gatts_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_gattc_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_blufi_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_blufi_api.h \
     ## Bluetooth Classic
-    ../../components/bt/bluedroid/api/include/api/esp_gap_bt_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_a2dp_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_avrc_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_hf_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
+    ## NimBLE related Bluetooth APIs
+    ../../components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
+    ## ESP BLE Mesh APIs
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_networking_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_provisioning_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_proxy_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_config_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_generic_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_health_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_lighting_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
     ##
     ## Ethernet - API Reference
     ##
-    ../../components/ethernet/include/esp_eth.h \
-    ../../components/ethernet/include/eth_phy/phy.h \
-    ../../components/ethernet/include/eth_phy/phy_tlk110.h \
-    ../../components/ethernet/include/eth_phy/phy_lan8720.h \
+    ../../components/esp_eth/include/esp_eth.h \
+    ../../components/esp_eth/include/esp_eth_com.h \
+    ../../components/esp_eth/include/esp_eth_mac.h \
+    ../../components/esp_eth/include/esp_eth_phy.h \
     ##
     ## Peripherals - API Reference
     ##
@@ -82,11 +102,14 @@ INPUT = \
     ../../components/driver/include/driver/touch_pad.h \
     ../../components/driver/include/driver/uart.h \
     ../../components/esp_adc_cal/include/esp_adc_cal.h \
+    ../../components/soc/include/hal/spi_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
     ../../components/soc/esp32/include/soc/touch_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
     ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
+    ## tcpip_adapter - API Reference
+    ../../components/tcpip_adapter/include/tcpip_adapter.h \
     ##
     ## Protocols - API Reference
     ##
@@ -97,14 +120,39 @@ INPUT = \
     ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
-    ../../components/http_server/include/http_server.h \
+    ../../components/esp_websocket_client/include/esp_websocket_client.h \
+    ## HTTP / HTTPS Server
+    ../../components/esp_http_server/include/esp_http_server.h \
+    ../../components/esp_https_server/include/esp_https_server.h \
+    ## ESP Local Ctrl
+    ../../components/esp_local_ctrl/include/esp_local_ctrl.h \
+    ##
+    ## Provisioning - API Reference
+    ##
+    ## Protocol Communication
+    ../../components/protocomm/include/common/protocomm.h \
+    ../../components/protocomm/include/security/protocomm_security.h \
+    ../../components/protocomm/include/security/protocomm_security0.h \
+    ../../components/protocomm/include/security/protocomm_security1.h \
+    ../../components/protocomm/include/transports/protocomm_ble.h \
+    ../../components/protocomm/include/transports/protocomm_console.h \
+    ../../components/protocomm/include/transports/protocomm_httpd.h \
+    ## WiFi Provisioning
+    ../../components/wifi_provisioning/include/wifi_provisioning/manager.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     ##
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
-    ../../components/spi_flash/include/esp_spi_flash.h \
+    ../../components/spi_flash/include/esp_flash_spi_init.h \
+    ../../components/spi_flash/include/esp_flash.h \
     ../../components/spi_flash/include/esp_partition.h \
     ../../components/bootloader_support/include/esp_flash_encrypt.h \
+    ../../components/soc/include/hal/spi_flash_types.h \
     ## SPIFFS
     ../../components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
@@ -120,10 +168,14 @@ INPUT = \
     ## Virtual Filesystem
     ../../components/vfs/include/esp_vfs.h \
     ../../components/vfs/include/esp_vfs_dev.h \
+    ../../components/vfs/include/esp_vfs_semihost.h \
     ## FAT Filesystem
     ## NOTE: for two lines below header_file.inc is not used
-    ../../components/fatfs/src/esp_vfs_fat.h \
-    ../../components/fatfs/src/diskio.h \
+    ../../components/fatfs/vfs/esp_vfs_fat.h \
+    ../../components/fatfs/diskio/diskio_impl.h \
+    ../../components/fatfs/diskio/diskio_sdmmc.h \
+    ../../components/fatfs/diskio/diskio_wl.h \
+    ../../components/fatfs/diskio/diskio_rawflash.h \
     ## Wear Levelling
     ../../components/wear_levelling/include/wear_levelling.h \
     ##
@@ -134,16 +186,18 @@ INPUT = \
     ../../components/heap/include/esp_heap_trace.h \
     ../../components/heap/include/esp_heap_caps_init.h \
     ../../components/heap/include/multi_heap.h \
+    ## Himem
+    ../../components/esp32/include/esp32/himem.h \
     ## Interrupt Allocation
     ../../components/esp32/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
-    ../../components/esp32/include/esp_int_wdt.h \
-    ../../components/esp32/include/esp_task_wdt.h \
+    ../../components/esp_common/include/esp_int_wdt.h \
+    ../../components/esp_common/include/esp_task_wdt.h \
     ## Hooks
-    ../../components/esp32/include/esp_freertos_hooks.h \
+    ../../components/esp_common/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
-    ../../components/esp32/include/esp_ipc.h \
+    ../../components/esp_common/include/esp_ipc.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
     ## ESP HTTPS OTA
@@ -154,7 +208,9 @@ INPUT = \
     ../../components/log/include/esp_log.h \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
-    ../../components/esp32/include/esp_system.h \
+    ../../components/esp_common/include/esp_system.h \
+    ## IDF version
+    ../../components/esp_common/include/esp_idf_version.h \
     ##
     ## ULP Coprocessor - API Guides
     ##
@@ -164,11 +220,19 @@ INPUT = \
     ## Application Level Tracing - API Reference
     ##
     ../../components/app_trace/include/esp_app_trace.h \
+    ../../components/app_trace/include/esp_sysview_trace.h \
     ### Power management
-    ../../components/esp32/include/esp_pm.h \
+    ../../components/esp_common/include/esp_pm.h \
     ../../components/esp32/include/esp32/pm.h \
     ### esp_timer, High Resolution Timer
-    ../../components/esp32/include/esp_timer.h \
+    ../../components/esp_common/include/esp_timer.h \
+    ### esp_event, Event Loop Library
+    ../../components/esp_event/include/esp_event.h \
+    ../../components/esp_event/include/esp_event_base.h \
+    ### eFuse Manager
+    ../../components/efuse/include/esp_efuse.h \
+    ### App Image Format
+    ../../components/bootloader_support/include/esp_app_format.h \
     ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
     ###
@@ -182,10 +246,13 @@ INPUT = \
     ### Ringbuffer
     ../../components/esp_ringbuf/include/freertos/ringbuf.h \
     ### Helper functions for error codes
-    ../../components/esp32/include/esp_err.h \
+    ../../components/esp_common/include/esp_err.h \
     ### System APIs
-    ../../components/esp32/include/esp_system.h
-
+    ../../components/esp_common/include/esp_system.h \
+    ### Modbus controller component header file
+    ../../components/freemodbus/common/include/esp_modbus_common.h \
+    ../../components/freemodbus/common/include/esp_modbus_slave.h \
+    ../../components/freemodbus/common/include/esp_modbus_master.h
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value
@@ -199,6 +266,7 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
     __attribute__(x)= \
+    IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \
     configSUPPORT_STATIC_ALLOCATION=1 \
@@ -207,7 +275,8 @@ PREDEFINED             = \
     configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS=1 \
     configNUM_THREAD_LOCAL_STORAGE_POINTERS=1 \
     configUSE_APPLICATION_TASK_TAG=1 \
-    configTASKLIST_INCLUDE_COREID=1
+    configTASKLIST_INCLUDE_COREID=1 \
+    "ESP_EVENT_DECLARE_BASE(x)=extern esp_event_base_t x"
 
 ## Do not complain about not having dot
 ##

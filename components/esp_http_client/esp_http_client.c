@@ -19,16 +19,16 @@
 #include "esp_log.h"
 
 #include "http_header.h"
-#include "transport.h"
-#include "transport_tcp.h"
+#include "esp_transport.h"
+#include "esp_transport_tcp.h"
 #include "http_utils.h"
 #include "http_auth.h"
 #include "sdkconfig.h"
-#include "transport.h"
 #include "esp_http_client.h"
+#include "errno.h"
 
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
-#include "transport_ssl.h"
+#include "esp_transport_ssl.h"
 #endif
 
 static const char *TAG = "HTTP_CLIENT";
@@ -93,8 +93,8 @@ struct esp_http_client {
     int                         process_again;
     struct http_parser          *parser;
     struct http_parser_settings *parser_settings;
-    transport_list_handle_t     transport_list;
-    transport_handle_t          transport;
+    esp_transport_list_handle_t     transport_list;
+    esp_transport_handle_t          transport;
     esp_http_data_t                 *request;
     esp_http_data_t                 *response;
     void                        *user_data;
@@ -110,9 +110,15 @@ struct esp_http_client {
     esp_http_state_t            state;
     http_event_handle_cb        event_handler;
     int                         timeout_ms;
-    int                         buffer_size;
+    int                         buffer_size_rx;
+    int                         buffer_size_tx;
     bool                        disable_auto_redirect;
     esp_http_client_event_t     event;
+    int                         data_written_index;
+    int                         data_write_left;
+    bool                        first_line_prepared;
+    int                         header_index;
+    bool                        is_async;
 };
 
 typedef struct esp_http_client esp_http_client_t;
@@ -123,6 +129,10 @@ static esp_err_t _clear_connection_info(esp_http_client_handle_t client);
  */
 #define DEFAULT_HTTP_PORT (80)
 #define DEFAULT_HTTPS_PORT (443)
+
+#define ASYNC_TRANS_CONNECT_FAIL -1
+#define ASYNC_TRANS_CONNECTING 0
+#define ASYNC_TRANS_CONNECT_PASS 1
 
 static const char *DEFAULT_HTTP_USER_AGENT = "ESP32 HTTP Client/1.0";
 static const char *DEFAULT_HTTP_PROTOCOL = "HTTP/1.1";
@@ -143,18 +153,9 @@ static const char *HTTP_METHOD_MAPPING[] = {
     "OPTIONS"
 };
 
-/**
- * Enum for the HTTP status codes.
- */
-enum HttpStatus_Code
-{
-    /* 3xx - Redirection */
-    HttpStatus_MovedPermanently  = 301,
-    HttpStatus_Found             = 302,
-
-    /* 4xx - Client Error */
-    HttpStatus_Unauthorized      = 401
-};
+static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len);
+static esp_err_t esp_http_client_connect(esp_http_client_handle_t client);
+static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client);
 
 static esp_err_t http_dispatch_event(esp_http_client_t *client, esp_http_client_event_id_t event_id, void *data, int len)
 {
@@ -283,6 +284,26 @@ esp_err_t esp_http_client_delete_header(esp_http_client_handle_t client, const c
     return http_header_delete(client->request->headers, key);
 }
 
+esp_err_t esp_http_client_get_username(esp_http_client_handle_t client, char **value)
+{
+    if (client == NULL || value == NULL) {
+        ESP_LOGE(TAG, "client or value must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    *value = client->connection_info.username;
+    return ESP_OK;
+}
+
+esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **value)
+{
+    if (client == NULL || value == NULL) {
+        ESP_LOGE(TAG, "client or value must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    *value = client->connection_info.password;
+    return ESP_OK;
+}
+
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     client->connection_info.method = config->method;
@@ -292,11 +313,16 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     client->timeout_ms = config->timeout_ms;
     client->max_redirection_count = config->max_redirection_count;
     client->user_data = config->user_data;
-    client->buffer_size = config->buffer_size;
+    client->buffer_size_rx = config->buffer_size;
+    client->buffer_size_tx = config->buffer_size_tx;
     client->disable_auto_redirect = config->disable_auto_redirect;
 
     if (config->buffer_size == 0) {
-        client->buffer_size = DEFAULT_HTTP_BUF_SIZE;
+        client->buffer_size_rx = DEFAULT_HTTP_BUF_SIZE;
+    }
+
+    if (config->buffer_size_tx == 0) {
+        client->buffer_size_tx = DEFAULT_HTTP_BUF_SIZE;
     }
 
     if (client->max_redirection_count == 0) {
@@ -359,6 +385,9 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     if (client->timeout_ms == 0) {
         client->timeout_ms = DEFAULT_TIMEOUT_MS;
     }
+    if (config->is_async) {
+        client->is_async = true;
+    }
 
     return ESP_OK;
 }
@@ -399,6 +428,7 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
 {
     client->process_again = 0;
     client->response->data_process = 0;
+    client->first_line_prepared = false;
     http_parser_init(client->parser, HTTP_RESPONSE);
     if (client->connection_info.username) {
         char *auth_response = NULL;
@@ -425,7 +455,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 {
 
     esp_http_client_handle_t client;
-    transport_handle_t tcp;
+    esp_transport_handle_t tcp;
     bool _success;
 
     _success = (
@@ -443,66 +473,89 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (!_success) {
         ESP_LOGE(TAG, "Error allocate memory");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
     _success = (
-                   (client->transport_list = transport_list_init()) &&
-                   (tcp = transport_tcp_init()) &&
-                   (transport_set_default_port(tcp, DEFAULT_HTTP_PORT) == ESP_OK) &&
-                   (transport_list_add(client->transport_list, tcp, "http") == ESP_OK)
+                   (client->transport_list = esp_transport_list_init()) &&
+                   (tcp = esp_transport_tcp_init()) &&
+                   (esp_transport_set_default_port(tcp, DEFAULT_HTTP_PORT) == ESP_OK) &&
+                   (esp_transport_list_add(client->transport_list, tcp, "http") == ESP_OK)
                );
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize transport");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
-    transport_handle_t ssl;
+    esp_transport_handle_t ssl;
     _success = (
-                   (ssl = transport_ssl_init()) &&
-                   (transport_set_default_port(ssl, DEFAULT_HTTPS_PORT) == ESP_OK) &&
-                   (transport_list_add(client->transport_list, ssl, "https") == ESP_OK)
+                   (ssl = esp_transport_ssl_init()) &&
+                   (esp_transport_set_default_port(ssl, DEFAULT_HTTPS_PORT) == ESP_OK) &&
+                   (esp_transport_list_add(client->transport_list, ssl, "https") == ESP_OK)
                );
 
     if (!_success) {
         ESP_LOGE(TAG, "Error initialize SSL Transport");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
-    if (config->cert_pem) {
-        transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+    if (config->use_global_ca_store == true) {
+        esp_transport_ssl_enable_global_ca_store(ssl);
+    } else if (config->cert_pem) {
+        esp_transport_ssl_set_cert_data(ssl, config->cert_pem, strlen(config->cert_pem));
+    }
+
+    if (config->client_cert_pem) {
+        esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+    }
+
+    if (config->client_key_pem) {
+        esp_transport_ssl_set_client_key_data(ssl, config->client_key_pem, strlen(config->client_key_pem));
+    }
+
+    if (config->skip_cert_common_name_check) {
+        esp_transport_ssl_skip_common_name_check(ssl);
     }
 #endif
 
     if (_set_config(client, config) != ESP_OK) {
         ESP_LOGE(TAG, "Error set configurations");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
     _success = (
-                   (client->request->buffer->data  = malloc(client->buffer_size))  &&
-                   (client->response->buffer->data = malloc(client->buffer_size))
+                   (client->request->buffer->data  = malloc(client->buffer_size_tx))  &&
+                   (client->response->buffer->data = malloc(client->buffer_size_rx))
                );
 
     if (!_success) {
         ESP_LOGE(TAG, "Allocation failed");
-        esp_http_client_cleanup(client);
-        return NULL;
+        goto error;
     }
 
-    _success = (
-                   (esp_http_client_set_url(client, config->url) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
-                   (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
-               );
+    if (config->host != NULL && config->path != NULL) {
+        _success = (
+            (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+            (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+        );
 
-    if (!_success) {
-        ESP_LOGE(TAG, "Error set default configurations");
-        esp_http_client_cleanup(client);
-        return NULL;
+        if (!_success) {
+            ESP_LOGE(TAG, "Error while setting default configurations");
+            goto error;
+        }
+    } else if (config->url != NULL) {
+        _success = (
+                    (esp_http_client_set_url(client, config->url) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "User-Agent", DEFAULT_HTTP_USER_AGENT) == ESP_OK) &&
+                    (esp_http_client_set_header(client, "Host", client->connection_info.host) == ESP_OK)
+                );
+
+        if (!_success) {
+            ESP_LOGE(TAG, "Error while setting default configurations");
+            goto error;
+        }
+    } else {
+        ESP_LOGE(TAG, "config should have either URL or host & path");
+        goto error;
     }
 
     client->parser_settings->on_message_begin = http_on_message_begin;
@@ -519,6 +572,9 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     client->state = HTTP_STATE_INIT;
     return client;
+error:
+    esp_http_client_cleanup(client);
+    return NULL;
 }
 
 esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
@@ -527,7 +583,7 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
         return ESP_FAIL;
     }
     esp_http_client_close(client);
-    transport_list_destroy(client->transport_list);
+    esp_transport_list_destroy(client->transport_list);
     http_header_destroy(client->request->headers);
     free(client->request->buffer->data);
     free(client->request->buffer);
@@ -549,10 +605,20 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (client->location == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGD(TAG, "Redirect to %s", client->location);
+    return esp_http_client_set_url(client, client->location);
+}
+
 static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 {
-    char *auth_header = NULL;
-
     if (client->redirect_counter >= client->max_redirection_count || client->disable_auto_redirect) {
         ESP_LOGE(TAG, "Error, reach max_redirection_count count=%d", client->redirect_counter);
         return ESP_ERR_HTTP_MAX_REDIRECT;
@@ -560,44 +626,12 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     switch (client->response->status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
-            ESP_LOGI(TAG, "Redirect to %s", client->location);
-            esp_http_client_set_url(client, client->location);
+            esp_http_client_set_redirection(client);
             client->redirect_counter ++;
             client->process_again = 1;
             break;
         case HttpStatus_Unauthorized:
-            auth_header = client->auth_header;
-            if (auth_header) {
-                http_utils_trim_whitespace(&auth_header);
-                ESP_LOGD(TAG, "UNAUTHORIZED: %s", auth_header);
-                client->redirect_counter ++;
-                if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
-                    ESP_LOGD(TAG, "type = Digest");
-                    client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
-                } else if (http_utils_str_starts_with(auth_header, "Basic") == 0) {
-                    ESP_LOGD(TAG, "type = Basic");
-                    client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
-                } else {
-                    client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
-                    ESP_LOGE(TAG, "This authentication method is not supported: %s", auth_header);
-                    break;
-                }
-
-                _clear_auth_data(client);
-
-                client->auth_data->method = strdup(HTTP_METHOD_MAPPING[client->connection_info.method]);
-
-                client->auth_data->nc = 1;
-                client->auth_data->realm = http_utils_get_string_between(auth_header, "realm=\"", "\"");
-                client->auth_data->algorithm = http_utils_get_string_between(auth_header, "algorithm=", ",");
-                client->auth_data->qop = http_utils_get_string_between(auth_header, "qop=\"", "\"");
-                client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
-                client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
-                client->process_again = 1;
-            } else {
-                client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
-                ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
-            }
+            esp_http_client_add_auth(client);
     }
     return ESP_OK;
 }
@@ -621,10 +655,15 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         ESP_LOGE(TAG, "Error parse url %s", url);
         return ESP_ERR_INVALID_ARG;
     }
-    old_host = client->connection_info.host;
+    if (client->connection_info.host) {
+        old_host = strdup(client->connection_info.host);
+    }
     old_port = client->connection_info.port;
 
-    if (purl.field_data[UF_HOST].len) {
+    // Whether the passed url is absolute or is just a path
+    bool is_absolute_url = (bool) purl.field_data[UF_HOST].len;
+
+    if (is_absolute_url) {
         http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
         HTTP_MEM_CHECK(TAG, client->connection_info.host, return ESP_ERR_NO_MEM);
     }
@@ -633,9 +672,15 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
             && strcasecmp(old_host, (const void *)client->connection_info.host) != 0) {
         ESP_LOGD(TAG, "New host assign = %s", client->connection_info.host);
         if (esp_http_client_set_header(client, "Host", client->connection_info.host) != ESP_OK) {
+            free(old_host);
             return ESP_ERR_NO_MEM;
         }
         esp_http_client_close(client);
+    }
+
+    if (old_host) {
+        free(old_host);
+        old_host = NULL;
     }
 
     if (purl.field_data[UF_SCHEMA].len) {
@@ -675,7 +720,8 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         } else {
             return ESP_ERR_NO_MEM;
         }
-    } else {
+    } else if (is_absolute_url) {
+        // Only reset authentication info if the passed URL is full
         free(client->connection_info.username);
         free(client->connection_info.password);
         client->connection_info.username = NULL;
@@ -722,11 +768,27 @@ static int esp_http_client_get_data(esp_http_client_handle_t client)
 
     ESP_LOGD(TAG, "data_process=%d, content_length=%d", client->response->data_process, client->response->content_length);
 
-    int rlen = transport_read(client->transport, res_buffer->data, client->buffer_size, client->timeout_ms);
+    int rlen = esp_transport_read(client->transport, res_buffer->data, client->buffer_size_rx, client->timeout_ms);
     if (rlen >= 0) {
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
     }
     return rlen;
+}
+
+bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
+{
+    if (client->response->is_chunked) {
+        if (!client->is_chunk_complete) {
+            ESP_LOGI(TAG, "Chunks were not completely read");
+            return false;
+        }
+    } else {
+        if (client->response->data_process != client->response->content_length) {
+            ESP_LOGI(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
+            return false;
+        }
+    }
+    return true;
 }
 
 int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
@@ -752,18 +814,22 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         } else {
             is_data_remain = client->response->data_process < client->response->content_length;
         }
-        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d", is_data_remain, client->response->is_chunked);
+        ESP_LOGD(TAG, "is_data_remain=%d, is_chunked=%d, content_length=%d", is_data_remain, client->response->is_chunked, client->response->content_length);
         if (!is_data_remain) {
             break;
         }
         int byte_to_read = need_read;
-        if (byte_to_read > client->buffer_size) {
-            byte_to_read = client->buffer_size;
+        if (byte_to_read > client->buffer_size_rx) {
+            byte_to_read = client->buffer_size_rx;
         }
-        rlen = transport_read(client->transport, res_buffer->data, byte_to_read, client->timeout_ms);
+        errno = 0;
+        rlen = esp_transport_read(client->transport, res_buffer->data, byte_to_read, client->timeout_ms);
         ESP_LOGD(TAG, "need_read=%d, byte_to_read=%d, rlen=%d, ridx=%d", need_read, byte_to_read, rlen, ridx);
 
         if (rlen <= 0) {
+            if (errno != 0) {
+                ESP_LOGW(TAG, "esp_transport_read returned : %d and errno : %d ", rlen, errno);
+            }
             return ridx;
         }
         res_buffer->output_ptr = buffer + ridx;
@@ -781,54 +847,88 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
 {
     esp_err_t err;
-    if (client == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
     do {
-        if ((err = esp_http_client_open(client, client->post_len)) != ESP_OK) {
-            return err;
+        if (client->process_again) {
+            esp_http_client_prepare(client);
         }
-        if (client->post_data && client->post_len) {
-            if (esp_http_client_write(client, client->post_data, client->post_len) <= 0) {
-                ESP_LOGE(TAG, "Error upload data");
-                return ESP_ERR_HTTP_WRITE_DATA;
-            }
-        }
-        if (esp_http_client_fetch_headers(client) < 0) {
-            return ESP_ERR_HTTP_FETCH_HEADER;
-        }
+        switch (client->state) {
+        /* In case of blocking esp_http_client_perform(), the following states will fall through one after the after;
+           in case of non-blocking esp_http_client_perform(), if there is an error condition, like EINPROGRESS or EAGAIN,
+           then the esp_http_client_perform() API will return ESP_ERR_HTTP_EAGAIN error. The user may call
+           esp_http_client_perform API again, and for this reason, we maintain the states */
+            case HTTP_STATE_INIT:
+                if ((err = esp_http_client_connect(client)) != ESP_OK) {
+                    if (client->is_async && err == ESP_ERR_HTTP_CONNECTING) {
+                        return ESP_ERR_HTTP_EAGAIN;
+                    }
+                    return err;
+                }
+                /* falls through */
+            case HTTP_STATE_CONNECTED:
+                if ((err = esp_http_client_request_send(client, client->post_len)) != ESP_OK) {
+                    if (client->is_async && errno == EAGAIN) {
+                        return ESP_ERR_HTTP_EAGAIN;
+                    }
+                    return err;
+                }
+                /* falls through */
+            case HTTP_STATE_REQ_COMPLETE_HEADER:
+                if ((err = esp_http_client_send_post_data(client)) != ESP_OK) {
+                    if (client->is_async && errno == EAGAIN) {
+                        return ESP_ERR_HTTP_EAGAIN;
+                    }
+                    return err;
+                }
+                /* falls through */
+            case HTTP_STATE_REQ_COMPLETE_DATA:
+                if (esp_http_client_fetch_headers(client) < 0) {
+                    if (client->is_async && errno == EAGAIN) {
+                        return ESP_ERR_HTTP_EAGAIN;
+                    }
+                    return ESP_ERR_HTTP_FETCH_HEADER;
+                }
+                /* falls through */
+            case HTTP_STATE_RES_COMPLETE_HEADER:
+                if ((err = esp_http_check_response(client)) != ESP_OK) {
+                    ESP_LOGE(TAG, "Error response");
+                    return err;
+                }
+                while (client->response->is_chunked && !client->is_chunk_complete) {
+                    if (esp_http_client_get_data(client) <= 0) {
+                        if (client->is_async && errno == EAGAIN) {
+                            return ESP_ERR_HTTP_EAGAIN;
+                        }
+                        ESP_LOGD(TAG, "Read finish or server requests close");
+                        break;
+                    }
+                }
+                while (client->response->data_process < client->response->content_length) {
+                    if (esp_http_client_get_data(client) <= 0) {
+                        if (client->is_async && errno == EAGAIN) {
+                            return ESP_ERR_HTTP_EAGAIN;
+                        }
+                        ESP_LOGD(TAG, "Read finish or server requests close");
+                        break;
+                    }
+                }
+                http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
 
-        if ((err = esp_http_check_response(client)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error response");
-            return err;
-        }
-        while (client->response->is_chunked && !client->is_chunk_complete) {
-            if (esp_http_client_get_data(client) <= 0) {
-                ESP_LOGD(TAG, "Read finish or server requests close");
+                if (!http_should_keep_alive(client->parser)) {
+                    ESP_LOGD(TAG, "Close connection");
+                    esp_http_client_close(client);
+                } else {
+                    if (client->state > HTTP_STATE_CONNECTED) {
+                        client->state = HTTP_STATE_CONNECTED;
+                        client->first_line_prepared = false;
+                    }
+                }
                 break;
-            }
-        }
-        while (client->response->data_process < client->response->content_length) {
-            if (esp_http_client_get_data(client) <= 0) {
-                ESP_LOGD(TAG, "Read finish or server requests close");
+                default:
                 break;
-            }
-        }
-
-        http_dispatch_event(client, HTTP_EVENT_ON_FINISH, NULL, 0);
-
-        if (!http_should_keep_alive(client->parser)) {
-            ESP_LOGD(TAG, "Close connection");
-            esp_http_client_close(client);
-        } else {
-            if (client->state > HTTP_STATE_CONNECTED) {
-                client->state = HTTP_STATE_CONNECTED;
-            }
         }
     } while (client->process_again);
     return ESP_OK;
 }
-
 
 int esp_http_client_fetch_headers(esp_http_client_handle_t client)
 {
@@ -841,7 +941,7 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
     client->response->status_code = -1;
 
     while (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
-        buffer->len = transport_read(client->transport, buffer->data, client->buffer_size, client->timeout_ms);
+        buffer->len = esp_transport_read(client->transport, buffer->data, client->buffer_size_rx, client->timeout_ms);
         if (buffer->len <= 0) {
             return ESP_FAIL;
         }
@@ -855,9 +955,10 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
     return client->response->content_length;
 }
 
-esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
+static esp_err_t esp_http_client_connect(esp_http_client_handle_t client)
 {
     esp_err_t err;
+
     if (client->state == HTTP_STATE_UNINIT) {
         ESP_LOGE(TAG, "Client has not been initialized");
         return ESP_ERR_INVALID_STATE;
@@ -871,7 +972,7 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
 
     if (client->state < HTTP_STATE_CONNECTED) {
         ESP_LOGD(TAG, "Begin connect to: %s://%s:%d", client->connection_info.scheme, client->connection_info.host, client->connection_info.port);
-        client->transport = transport_list_get_transport(client->transport_list, client->connection_info.scheme);
+        client->transport = esp_transport_list_get_transport(client->transport_list, client->connection_info.scheme);
         if (client->transport == NULL) {
             ESP_LOGE(TAG, "No transport found");
 #ifndef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
@@ -881,79 +982,171 @@ esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
 #endif
             return ESP_ERR_HTTP_INVALID_TRANSPORT;
         }
-        if (transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
-            ESP_LOGE(TAG, "Connection failed");
-            return ESP_ERR_HTTP_CONNECT;
+        if (!client->is_async) {
+            if (esp_transport_connect(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms) < 0) {
+                ESP_LOGE(TAG, "Connection failed, sock < 0");
+                return ESP_ERR_HTTP_CONNECT;
+            }
+        } else {
+            int ret = esp_transport_connect_async(client->transport, client->connection_info.host, client->connection_info.port, client->timeout_ms);
+            if (ret == ASYNC_TRANS_CONNECT_FAIL) {
+                ESP_LOGE(TAG, "Connection failed");
+                if (strcasecmp(client->connection_info.scheme, "http") == 0) {
+                    ESP_LOGE(TAG, "Asynchronous mode doesn't work for HTTP based connection");
+                    return ESP_ERR_INVALID_ARG;
+                }
+                return ESP_ERR_HTTP_CONNECT;
+            } else if (ret == ASYNC_TRANS_CONNECTING) {
+                ESP_LOGD(TAG, "Connection not yet established");
+                return ESP_ERR_HTTP_CONNECTING;
+            }
         }
-        http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
         client->state = HTTP_STATE_CONNECTED;
+        http_dispatch_event(client, HTTP_EVENT_ON_CONNECTED, NULL, 0);
     }
+    return ESP_OK;
+}
 
+static int http_client_prepare_first_line(esp_http_client_handle_t client, int write_len)
+{
     if (write_len >= 0) {
         http_header_set_format(client->request->headers, "Content-Length", "%d", write_len);
-    } else if (write_len < 0) {
+    } else {
         esp_http_client_set_header(client, "Transfer-Encoding", "chunked");
         esp_http_client_set_method(client, HTTP_METHOD_POST);
     }
 
-    int header_index = 0;
-    int wlen = client->buffer_size;
-
     const char *method = HTTP_METHOD_MAPPING[client->connection_info.method];
 
-    int first_line = snprintf(client->request->buffer->data,
-                              client->buffer_size, "%s %s",
-                              method,
-                              client->connection_info.path);
-    if (first_line > client->buffer_size) {
+    int first_line_len = snprintf(client->request->buffer->data,
+                                  client->buffer_size_tx, "%s %s",
+                                  method,
+                                  client->connection_info.path);
+    if (first_line_len >= client->buffer_size_tx) {
         ESP_LOGE(TAG, "Out of buffer");
-        return ESP_ERR_HTTP_CONNECT;
+        return -1;
     }
 
     if (client->connection_info.query) {
-        first_line += snprintf(client->request->buffer->data + first_line,
-                               client->buffer_size - first_line, "?%s", client->connection_info.query);
-        if (first_line > client->buffer_size) {
+        first_line_len += snprintf(client->request->buffer->data + first_line_len,
+                                   client->buffer_size_tx - first_line_len, "?%s", client->connection_info.query);
+        if (first_line_len >= client->buffer_size_tx) {
             ESP_LOGE(TAG, "Out of buffer");
-            return ESP_ERR_HTTP_CONNECT;
+            return -1;
+
         }
     }
-    first_line += snprintf(client->request->buffer->data + first_line,
-                           client->buffer_size - first_line, " %s\r\n", DEFAULT_HTTP_PROTOCOL);
-    if (first_line > client->buffer_size) {
+    first_line_len += snprintf(client->request->buffer->data + first_line_len,
+                               client->buffer_size_tx - first_line_len, " %s\r\n", DEFAULT_HTTP_PROTOCOL);
+    if (first_line_len >= client->buffer_size_tx) {
         ESP_LOGE(TAG, "Out of buffer");
-        return ESP_ERR_HTTP_CONNECT;
+        return -1;
     }
-    wlen -= first_line;
+    return first_line_len;
+}
 
-    while ((header_index = http_header_generate_string(client->request->headers, header_index, client->request->buffer->data + first_line, &wlen))) {
+static esp_err_t esp_http_client_request_send(esp_http_client_handle_t client, int write_len)
+{
+    int first_line_len = 0;
+    if (!client->first_line_prepared) {
+        if ((first_line_len = http_client_prepare_first_line(client, write_len)) < 0) {
+            return first_line_len;
+        }
+        client->first_line_prepared = true;
+        client->header_index = 0;
+        client->data_written_index = 0;
+        client->data_write_left = 0;
+    }
+
+    if (client->data_write_left > 0) {
+        /* sending leftover data from previous call to esp_http_client_request_send() API */
+        int wret = 0;
+        if (((wret = esp_http_client_write(client, client->request->buffer->data + client->data_written_index, client->data_write_left)) < 0)) {
+            ESP_LOGE(TAG, "Error write request");
+            return ESP_ERR_HTTP_WRITE_DATA;
+        }
+        client->data_write_left -= wret;
+        client->data_written_index += wret;
+        if (client->is_async && client->data_write_left > 0) {
+            return ESP_ERR_HTTP_WRITE_DATA;      /* In case of EAGAIN error, we return ESP_ERR_HTTP_WRITE_DATA,
+                                                 and the handling of EAGAIN should be done in the higher level APIs. */
+        }
+    }
+
+    int wlen = client->buffer_size_tx - first_line_len;
+    while ((client->header_index = http_header_generate_string(client->request->headers, client->header_index, client->request->buffer->data + first_line_len, &wlen))) {
         if (wlen <= 0) {
             break;
         }
-        if (first_line) {
-            wlen += first_line;
-            first_line = 0;
+        if (first_line_len) {
+            wlen += first_line_len;
+            first_line_len = 0;
         }
         client->request->buffer->data[wlen] = 0;
-        ESP_LOGD(TAG, "Write header[%d]: %s", header_index, client->request->buffer->data);
+        ESP_LOGD(TAG, "Write header[%d]: %s", client->header_index, client->request->buffer->data);
 
-        int widx = 0, wret = 0;
-        while (wlen > 0) {
-            wret = transport_write(client->transport, client->request->buffer->data + widx, wlen, client->timeout_ms);
+        client->data_write_left = wlen;
+        client->data_written_index = 0;
+        while (client->data_write_left > 0) {
+            int wret = esp_transport_write(client->transport, client->request->buffer->data + client->data_written_index, client->data_write_left, client->timeout_ms);
             if (wret <= 0) {
                 ESP_LOGE(TAG, "Error write request");
                 esp_http_client_close(client);
                 return ESP_ERR_HTTP_WRITE_DATA;
             }
-            widx += wret;
-            wlen -= wret;
+            client->data_write_left -= wret;
+            client->data_written_index += wret;
         }
-        wlen = client->buffer_size;
+        wlen = client->buffer_size_tx;
     }
+
+    client->data_written_index = 0;
+    client->data_write_left = client->post_len;
+    http_dispatch_event(client, HTTP_EVENT_HEADERS_SENT, NULL, 0);
     client->state = HTTP_STATE_REQ_COMPLETE_HEADER;
     return ESP_OK;
 }
 
+static esp_err_t esp_http_client_send_post_data(esp_http_client_handle_t client)
+{
+    if (client->state != HTTP_STATE_REQ_COMPLETE_HEADER) {
+        ESP_LOGE(TAG, "Invalid state");
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (!(client->post_data && client->post_len)) {
+        goto success;
+    }
+
+    int wret = esp_http_client_write(client, client->post_data + client->data_written_index, client->data_write_left);
+    if (wret < 0) {
+        return wret;
+    }
+    client->data_write_left -= wret;
+    client->data_written_index += wret;
+
+    if (client->data_write_left <= 0) {
+        goto success;
+    } else {
+        return ESP_ERR_HTTP_WRITE_DATA;
+    }
+
+success:
+    client->state = HTTP_STATE_REQ_COMPLETE_DATA;
+    return ESP_OK;
+}
+
+esp_err_t esp_http_client_open(esp_http_client_handle_t client, int write_len)
+{
+    client->post_len = write_len;
+    esp_err_t err;
+    if ((err = esp_http_client_connect(client)) != ESP_OK) {
+        return err;
+    }
+    if ((err = esp_http_client_request_send(client, write_len)) != ESP_OK) {
+        return err;
+    }
+    return ESP_OK;
+}
 
 int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, int len)
 {
@@ -963,8 +1156,10 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
 
     int wlen = 0, widx = 0;
     while (len > 0) {
-        wlen = transport_write(client->transport, buffer + widx, len, client->timeout_ms);
-        if (wlen <= 0) {
+        wlen = esp_transport_write(client->transport, buffer + widx, len, client->timeout_ms);
+        /* client->async_block is initialised in case of non-blocking IO, and in this case we return how
+           much ever data was written by the esp_transport_write() API. */
+        if (client->is_async || wlen <= 0) {
             return wlen;
         }
         widx += wlen;
@@ -976,9 +1171,9 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
 esp_err_t esp_http_client_close(esp_http_client_handle_t client)
 {
     if (client->state >= HTTP_STATE_INIT) {
-        http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, NULL, 0);
+        http_dispatch_event(client, HTTP_EVENT_DISCONNECTED, esp_transport_get_error_handle(client->transport), 0);
         client->state = HTTP_STATE_INIT;
-        return transport_close(client->transport);
+        return esp_transport_close(client->transport);
     }
     return ESP_OK;
 }
@@ -1030,11 +1225,56 @@ bool esp_http_client_is_chunked_response(esp_http_client_handle_t client)
 
 esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_handle_t client)
 {
-    if (!strcmp(client->connection_info.scheme, "https") ) {
+    if (!strcasecmp(client->connection_info.scheme, "https") ) {
         return HTTP_TRANSPORT_OVER_SSL;
-    } else if (!strcmp(client->connection_info.scheme, "http")) {
+    } else if (!strcasecmp(client->connection_info.scheme, "http")) {
         return HTTP_TRANSPORT_OVER_TCP;
     } else {
         return HTTP_TRANSPORT_UNKNOWN;
+    }
+}
+
+void esp_http_client_add_auth(esp_http_client_handle_t client)
+{
+    if (client == NULL) {
+        return;
+    }
+    if (client->state != HTTP_STATE_RES_COMPLETE_HEADER) {
+        return;
+    }
+
+    char *auth_header = client->auth_header;
+    if (auth_header) {
+        http_utils_trim_whitespace(&auth_header);
+        ESP_LOGD(TAG, "UNAUTHORIZED: %s", auth_header);
+        client->redirect_counter++;
+        if (http_utils_str_starts_with(auth_header, "Digest") == 0) {
+            ESP_LOGD(TAG, "type = Digest");
+            client->connection_info.auth_type = HTTP_AUTH_TYPE_DIGEST;
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
+        } else if (http_utils_str_starts_with(auth_header, "Basic") == 0) {
+            ESP_LOGD(TAG, "type = Basic");
+            client->connection_info.auth_type = HTTP_AUTH_TYPE_BASIC;
+#endif
+        } else {
+            client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
+            ESP_LOGE(TAG, "This authentication method is not supported: %s", auth_header);
+            return;
+        }
+
+        _clear_auth_data(client);
+
+        client->auth_data->method = strdup(HTTP_METHOD_MAPPING[client->connection_info.method]);
+
+        client->auth_data->nc = 1;
+        client->auth_data->realm = http_utils_get_string_between(auth_header, "realm=\"", "\"");
+        client->auth_data->algorithm = http_utils_get_string_between(auth_header, "algorithm=", ",");
+        client->auth_data->qop = http_utils_get_string_between(auth_header, "qop=\"", "\"");
+        client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
+        client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
+        client->process_again = 1;
+    } else {
+        client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
+        ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
     }
 }

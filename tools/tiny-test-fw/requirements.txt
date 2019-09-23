@@ -1,5 +1,5 @@
 pyserial
 pyyaml
-xunitgen
+junit_xml
 netifaces
 matplotlib

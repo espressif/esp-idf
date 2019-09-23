@@ -31,7 +31,7 @@ to make ESPNOW data more safe and more reliable.
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set serial port under Serial Flasher Options.
@@ -44,13 +44,16 @@ make menuconfig
   The sending device and the recving device must be on the same channel.
 * Set Send count and Send delay under Example Configuration Options.
 * Set Send len under Example Configuration Options.
+* Set Enable Long Range Options.
+  When this parameter is enabled, the ESP32 device will send data at the PHY rate of 512Kbps or 256Kbps
+  then the data can be transmitted over long range between two ESP32 devices. 
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

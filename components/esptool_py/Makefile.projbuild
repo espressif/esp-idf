@@ -8,7 +8,7 @@ ESPFLASHSIZE ?= $(CONFIG_ESPTOOLPY_FLASHSIZE)
 
 CONFIG_ESPTOOLPY_COMPRESSED ?=
 
-PYTHON ?= $(call dequote,$(CONFIG_PYTHON))
+PYTHON ?= $(call dequote,$(CONFIG_SDK_PYTHON))
 
 # two commands that can be used from other components
 # to invoke esptool.py (with or without serial port args)
@@ -39,7 +39,15 @@ endif
 endif
 endif
 
+ifndef IS_BOOTLOADER_BUILD
+ESPTOOL_ELF2IMAGE_OPTIONS += --elf-sha256-offset 0xb0
+endif
+
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
+
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+ESPTOOLPY_WRITE_FLASH_ENCRYPT=$(ESPTOOLPY_SERIAL) write_flash --encrypt $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
+endif
 
 ESPTOOL_ALL_FLASH_ARGS += $(APP_OFFSET) $(APP_BIN)
 
@@ -58,6 +66,19 @@ APP_BIN_UNSIGNED ?= $(APP_BIN)
 $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC) | check_python_dependencies
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
 
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+encrypted-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
+	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
+ifdef CONFIG_SECURE_BOOT_ENABLED
+	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
+endif
+	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(ESPTOOL_ALL_FLASH_ARGS)
+else
+encrypted-flash:
+	@echo "The command is supported only in FLASH ENCRYPTION DEVELOPMENT MODE"
+	@exit 1
+endif
+
 flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT_ENABLED
@@ -69,6 +90,16 @@ app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) pa
 	@echo "Flashing app to serial port $(ESPPORT), offset $(APP_OFFSET)..."
 	$(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
 
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+encrypted-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
+	@echo "Flashing encrypted app binary to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
+	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(APP_OFFSET) $(APP_BIN)
+else
+encrypted-app-flash:
+	@echo "The command is supported only in FLASH ENCRYPTION DEVELOPMENT MODE"
+	@exit 1
+endif
+
 # Submodules normally added in component.mk, but can be added
 # at the project level as long as qualified path
 COMPONENT_SUBMODULES += $(COMPONENT_PATH)/esptool
@@ -77,7 +108,7 @@ erase_flash: | check_python_dependencies
 	@echo "Erasing entire flash..."
 	$(ESPTOOLPY_SERIAL) erase_flash
 
-MONITORBAUD ?= $(CONFIG_MONITOR_BAUD)
+MONITORBAUD ?= $(CONFIG_ESPTOOLPY_MONITOR_BAUD)
 
 MONITOR_PYTHON := $(PYTHON)
 
@@ -95,7 +126,7 @@ simple_monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 
 PRINT_FILTER ?=
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_SDK_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
 
 monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	$(summary) MONITOR

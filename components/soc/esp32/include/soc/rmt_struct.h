@@ -14,11 +14,13 @@
 #ifndef _SOC_RMT_STRUCT_H_
 #define _SOC_RMT_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct rmt_dev_s {
     uint32_t data_ch[8];                                /*The R/W ram address for channel0-7 by apb fifo access.
                                                         Note that in some circumstances, data read from the FIFO may get lost. As RMT memory area accesses using the RMTMEM method do not have this issue
                                                         and provide all the functionality that the FIFO register has, it is encouraged to use that instead.*/
@@ -233,7 +235,7 @@ typedef volatile struct {
 } rmt_dev_t;
 extern rmt_dev_t RMT;
 
-typedef struct {
+typedef struct rmt_item32_s {
     union {
         struct {
             uint32_t duration0 :15;
@@ -246,7 +248,7 @@ typedef struct {
 } rmt_item32_t;
 
 //Allow access to RMT memory using RMTMEM.chan[0].data32[8]
-typedef volatile struct {
+typedef volatile struct rmt_mem_s {
     struct {
         union {
             rmt_item32_t data32[64];

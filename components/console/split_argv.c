@@ -31,6 +31,13 @@ typedef enum {
     SS_QUOTED_ARG_ESCAPED = SS_QUOTED_ARG | SS_FLAG_ESCAPE,
 } split_state_t;
 
+/* helper macro, called when done with an argument */
+#define END_ARG() do { \
+    char_out = 0; \
+    argv[argc++] = next_arg_start; \
+    state = SS_SPACE; \
+} while(0)
+
 size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
 {
     const int QUOTE = '"';
@@ -46,13 +53,6 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
             break;
         }
         int char_out = -1;
-
-        /* helper function, called when done with an argument */
-        void end_arg() {
-            char_out = 0;
-            argv[argc++] = next_arg_start;
-            state = SS_SPACE;
-        }
 
         switch (state) {
         case SS_SPACE:
@@ -73,7 +73,7 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
 
         case SS_QUOTED_ARG:
             if (char_in == QUOTE) {
-                end_arg();
+                END_ARG();
             } else if (char_in == ESCAPE) {
                 state = SS_QUOTED_ARG_ESCAPED;
             } else {
@@ -93,7 +93,7 @@ size_t esp_console_split_argv(char *line, char **argv, size_t argv_size)
 
         case SS_ARG:
             if (char_in == SPACE) {
-                end_arg();
+                END_ARG();
             } else if (char_in == ESCAPE) {
                 state = SS_ARG_ESCAPED;
             } else {

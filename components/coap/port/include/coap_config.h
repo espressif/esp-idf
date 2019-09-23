@@ -18,9 +18,12 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#ifdef WITH_POSIX
-#include "coap_config_posix.h"
+/* Always enabled in ESP-IDF */
+#ifndef WITH_POSIX
+#define WITH_POSIX
 #endif
+
+#include "coap_config_posix.h"
 
 #define HAVE_STDIO_H
 #define HAVE_ASSERT_H

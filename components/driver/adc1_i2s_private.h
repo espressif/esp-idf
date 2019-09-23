@@ -29,7 +29,7 @@ extern "C" {
  * This is an internal API for I2S module to call to enable I2S-ADC function.
  * Note that adc_power_off() can still power down ADC.
  */
-void adc_power_always_on();
+void adc_power_always_on(void);
 
 /**
  * @brief For I2S dma to claim the usage of ADC1.
@@ -41,7 +41,7 @@ void adc_power_always_on();
  *      - ESP_OK success
  *      - ESP_ERR_TIMEOUT reserved for future use. Currently the function will wait until success.
  */
-esp_err_t adc1_i2s_mode_acquire();
+esp_err_t adc1_i2s_mode_acquire(void);
 
 /**
  * @brief For ADC1 to claim the usage of ADC1.
@@ -53,7 +53,7 @@ esp_err_t adc1_i2s_mode_acquire();
  *      - ESP_OK success
  *      - ESP_ERR_TIMEOUT reserved for future use. Currently the function will wait until success.
  */
-esp_err_t adc1_adc_mode_acquire();
+esp_err_t adc1_adc_mode_acquire(void);
 
 /**
  * @brief to let other tasks use the ADC1 when I2S is not work.
@@ -63,7 +63,7 @@ esp_err_t adc1_adc_mode_acquire();
  *
  * @return always return ESP_OK.
  */
-esp_err_t adc1_lock_release();
+esp_err_t adc1_lock_release(void);
 
 #ifdef __cplusplus
 }

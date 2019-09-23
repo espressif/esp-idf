@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "sdkconfig.h"
-#include <rom/ets_sys.h>
+#include <esp32/rom/ets_sys.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,7 +114,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #ifndef BOOTLOADER_BUILD
 #define LOG_LOCAL_LEVEL  CONFIG_LOG_DEFAULT_LEVEL
 #else
-#define LOG_LOCAL_LEVEL  CONFIG_LOG_BOOTLOADER_LEVEL
+#define LOG_LOCAL_LEVEL  CONFIG_BOOTLOADER_LOG_LEVEL
 #endif
 #endif
 

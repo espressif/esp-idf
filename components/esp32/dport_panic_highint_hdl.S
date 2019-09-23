@@ -17,7 +17,7 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include "freertos/xtensa_context.h"
-#include "esp_panic.h"
+#include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
@@ -31,9 +31,10 @@ Interrupt , a high-priority interrupt, is used for several things:
 
 */
 
-#define L4_INTR_STACK_SIZE  8
+#define L4_INTR_STACK_SIZE  12
 #define L4_INTR_A2_OFFSET   0
 #define L4_INTR_A3_OFFSET   4
+#define L4_INTR_A4_OFFSET   8
     .data
 _l4_intr_stack:
     .space      L4_INTR_STACK_SIZE
@@ -86,7 +87,7 @@ xt_highint4:
     movi    a0, PANIC_RSN_CACHEERR
     j 9f
 1:
-#if CONFIG_INT_WDT_CHECK_CPU1
+#if CONFIG_ESP_INT_WDT_CHECK_CPU1
     /* Check if the cause is the app cpu failing to tick.*/
     movi    a0, int_wdt_app_cpu_ticked
     l32i    a0, a0, 0
@@ -137,18 +138,19 @@ xt_highint4:
     /* This section is for dport access register protection */
     /* Allocate exception frame and save minimal context. */
     /* Because the interrupt cause code has protection that only
-       allows one cpu to enter in the dport section of the L4 
-       interrupt at one time, there's no need to have two 
+       allows one cpu to enter in the dport section of the L4
+       interrupt at one time, there's no need to have two
        _l4_intr_stack for each cpu */
 
     /* This int is edge-triggered and needs clearing. */
     movi    a0, (1<<ETS_DPORT_INUM)
     wsr     a0, INTCLEAR
 
-    /* Save A2, A3 so we can use those registers */
+    /* Save A2, A3, A4 so we can use those registers */
     movi    a0, _l4_intr_stack
     s32i    a2, a0, L4_INTR_A2_OFFSET
     s32i    a3, a0, L4_INTR_A3_OFFSET
+    s32i    a4, a0, L4_INTR_A4_OFFSET
 
     /* handle dport interrupt */
     /* get CORE_ID */
@@ -168,6 +170,7 @@ xt_highint4:
     s32i    a2, a0, 0   /* clear intr */
     movi    a0, 1       /* other cpu id */
 3:
+    rsil    a4, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested iterrupt */
     /* set and wait flag */
     movi    a2, dport_access_start
     addx4   a2, a0, a2
@@ -180,10 +183,12 @@ xt_highint4:
     l32i    a3, a2, 0
     beqz    a3, .check_dport_access_end
 
+    wsr     a4, PS                                   /* restore iterrupt level */
     /* Done. Restore registers and return. */
     movi    a0, _l4_intr_stack
     l32i    a2, a0, L4_INTR_A2_OFFSET
     l32i    a3, a0, L4_INTR_A3_OFFSET
+    l32i    a4, a0, L4_INTR_A4_OFFSET
     rsync                                   /* ensure register restored */
 
     rsr     a0, EXCSAVE_4                   /* restore a0 */
@@ -192,7 +197,7 @@ xt_highint4:
 #endif // CONFIG_FREERTOS_UNICORE
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined
-   (weakly!) in the default int handler. Define a symbol here so we can use it to have the 
+   (weakly!) in the default int handler. Define a symbol here so we can use it to have the
    linker inspect this anyway. */
 
     .global ld_include_panic_highint_hdl

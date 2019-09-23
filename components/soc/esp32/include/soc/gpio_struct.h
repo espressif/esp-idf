@@ -14,11 +14,13 @@
 #ifndef _SOC_GPIO_STRUCT_H_
 #define _SOC_GPIO_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct gpio_dev_s {
     uint32_t bt_select;                             /*NA*/
     uint32_t out;                                   /*GPIO0~31 output value*/
     uint32_t out_w1ts;                              /*GPIO0~31 output value write 1 to set*/

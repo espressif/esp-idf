@@ -1,4 +1,0 @@
---flash_mode ${ESPFLASHMODE}
---flash_size ${ESPFLASHSIZE}
---flash_freq ${ESPFLASHFREQ}
-0x1000 bootloader/bootloader.bin

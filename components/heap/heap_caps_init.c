@@ -31,13 +31,15 @@ struct registered_heap_ll registered_heaps;
 
 static void register_heap(heap_t *region)
 {
-    region->heap = multi_heap_register((void *)region->start, region->end - region->start);
+    size_t heap_size = region->end - region->start;
+    assert(heap_size <= HEAP_SIZE_MAX);
+    region->heap = multi_heap_register((void *)region->start, heap_size);
     if (region->heap != NULL) {
         ESP_EARLY_LOGD(TAG, "New heap initialised at %p", region->heap);
     }
 }
 
-void heap_caps_enable_nonos_stack_heaps()
+void heap_caps_enable_nonos_stack_heaps(void)
 {
     heap_t *heap;
     SLIST_FOREACH(heap, &registered_heaps, next) {
@@ -55,7 +57,7 @@ void heap_caps_enable_nonos_stack_heaps()
 /* Initialize the heap allocator to use all of the memory not
    used by static data or reserved for other purposes
  */
-void heap_caps_init()
+void heap_caps_init(void)
 {
     /* Get the array of regions that we can use for heaps
        (with reserved memory removed already.)

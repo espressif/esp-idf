@@ -1,6 +1,8 @@
-register_config_only_component()
+idf_component_register()
 
-if(NOT BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD)
+    return()
+endif()
 
 set(partition_csv "${PARTITION_CSV_PATH}")
 
@@ -22,49 +24,61 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE)
     set(flashsize_opt --flash-size ${CONFIG_ESPTOOLPY_FLASHSIZE})
 endif()
 
-add_custom_command(OUTPUT "${unsigned_partition_bin}"
-    COMMAND "${PYTHON}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py" -q --offset ${PARTITION_TABLE_OFFSET} ${md5_opt} ${flashsize_opt}
-    ${partition_csv} ${unsigned_partition_bin}
+if(CONFIG_SECURE_BOOT_ENABLED AND NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION)
+    set(partition_secure_opt --secure)
+else()
+    set(partition_secure_opt "")
+endif()
+
+idf_build_get_property(build_dir BUILD_DIR)
+idf_build_get_property(python PYTHON)
+
+add_custom_command(OUTPUT "${build_dir}/partition_table/${unsigned_partition_bin}"
+    COMMAND "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
+    -q --offset ${PARTITION_TABLE_OFFSET} ${md5_opt} ${flashsize_opt}
+    ${partition_secure_opt} ${partition_csv} ${build_dir}/partition_table/${unsigned_partition_bin}
     DEPENDS ${partition_csv} "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.py"
     VERBATIM)
 
-# Add signing steps
-if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
-    get_filename_component(secure_boot_signing_key
-        "${CONFIG_SECURE_BOOT_SIGNING_KEY}"
-        ABSOLUTE BASE_DIR "${PROJECT_PATH}")
-
-    add_custom_command(OUTPUT "${final_partition_bin}"
-        COMMAND "${PYTHON}" "${ESPSECUREPY}" sign_data --keyfile "${secure_boot_signing_key}"
-        -o "${final_partition_bin}" "${unsigned_partition_bin}"
-        DEPENDS "${unsigned_partition_bin}"
-        VERBATIM)
-
-endif()
-
 if(EXISTS ${partition_csv})
-    add_custom_target(partition_table ALL DEPENDS "${final_partition_bin}")
+    add_custom_target(partition_table ALL DEPENDS "${build_dir}/partition_table/${final_partition_bin}")
 else()
-    # This is a bit of a hack: If the partition input CSV is not found, create a phony partition_table target that
-    # fails the build. Have it also touch CMakeCache.txt to cause a cmake run next time
+    # If the partition input CSV is not found, create a phony partition_table target that
+    # fails the build. fail_at_build_time also touches CMakeCache.txt to cause a cmake run next time
     # (to pick up a new CSV if one exists, etc.)
-    #
-    # This is because partition CSV is required at CMake runtime (to generate metadata files with flashing data, etc) but we can't
-    # fail the build if it is not found, because the "menuconfig" target may be required to fix the problem. CMAKE_CONFIGURE_DEPENDS
-    # only works for files which exist at CMake runtime.
-    add_custom_target(partition_table ALL
-        COMMAND ${CMAKE_COMMAND} -E echo "Partition table CSV ${partition_csv} does not exist. Either change partition table in menuconfig or create this input file."
-        COMMAND ${CMAKE_COMMAND} -E touch "${CMAKE_BINARY_DIR}/CMakeCache.txt"
-        COMMAND ${CMAKE_COMMAND} -P ${IDF_PATH}/tools/cmake/scripts/fail.cmake)
+    fail_at_build_time(partition_table
+        "Partition table CSV ${partition_csv} does not exist."
+        "Either change partition table in menuconfig or create this input file.")
 endif()
 
-add_dependencies(bootloader partition_table)
-add_dependencies(app partition_table)
+# Add signing steps
+if(CONFIG_SECURE_SIGNED_APPS)
+    if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+        add_custom_target(gen_unsigned_partition_bin ALL DEPENDS
+                        "${build_dir}/partition_table/${unsigned_partition_bin}")
+
+        add_custom_command(OUTPUT "${build_dir}/partition_table/${final_partition_bin}"
+            COMMAND ${ESPSECUREPY} sign_data --keyfile "${SECURE_BOOT_SIGNING_KEY}"
+            -o "${build_dir}/partition_table/${final_partition_bin}"
+            "${build_dir}/partition_table/${unsigned_partition_bin}"
+            DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
+            VERBATIM)
+    else()
+        string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
+        add_custom_command(TARGET partition_table POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo
+                "Partition table built but not signed. Sign partition data before flashing:"
+            COMMAND ${CMAKE_COMMAND} -E echo 
+                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
+            VERBATIM)
+    endif()
+endif()
 
 # Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build
 # the list of esptool write arguments for flashing
 set_property(GLOBAL APPEND_STRING PROPERTY
     ESPTOOL_WRITE_FLASH_ARGS
-    "${PARTITION_TABLE_OFFSET} ${final_partition_bin} ")
+    "${PARTITION_TABLE_OFFSET}  ${build_dir}/partition_table/${final_partition_bin} ")
 
-endif()
+esptool_py_flash_project_args(partition_table ${PARTITION_TABLE_OFFSET}
+                              ${build_dir}/partition_table/partition-table.bin FLASH_IN_PROJECT)

@@ -19,7 +19,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "esp32/ulp.h"
 
 #include "soc/soc.h"
@@ -70,10 +70,10 @@ esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, siz
     if (program_size_bytes < sizeof(ulp_binary_header_t)) {
         return ESP_ERR_INVALID_SIZE;
     }
-    if (load_addr_bytes > CONFIG_ULP_COPROC_RESERVE_MEM) {
+    if (load_addr_bytes > CONFIG_ESP32_ULP_COPROC_RESERVE_MEM) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (load_addr_bytes + program_size_bytes > CONFIG_ULP_COPROC_RESERVE_MEM) {
+    if (load_addr_bytes + program_size_bytes > CONFIG_ESP32_ULP_COPROC_RESERVE_MEM) {
         return ESP_ERR_INVALID_SIZE;
     }
 

@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/system/himem.rst

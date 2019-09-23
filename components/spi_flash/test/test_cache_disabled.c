@@ -30,7 +30,7 @@ static IRAM_ATTR void cache_test_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash]")
+TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash]")
 {
     result_queue = xQueueCreate(1, sizeof(bool));
 

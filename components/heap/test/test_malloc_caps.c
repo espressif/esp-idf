@@ -114,7 +114,7 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
-static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test()
+static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 {
     spi_flash_guard_get()->start(); // Disables flash cache
 

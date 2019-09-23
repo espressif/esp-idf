@@ -60,7 +60,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "PID5DRAM", { MALLOC_CAP_PID5|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
     { "PID6DRAM", { MALLOC_CAP_PID6|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
     { "PID7DRAM", { MALLOC_CAP_PID7|MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT, MALLOC_CAP_32BIT|MALLOC_CAP_DEFAULT }, false, false},
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
     //Type 15: SPI SRAM data
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
 #endif
@@ -75,7 +75,7 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
     { 0x3F800000, 0x400000, 15, 0}, //SPI SRAM, if available
 #endif
     { 0x3FFAE000, 0x2000, 0, 0}, //pool 16 <- used for rom code
@@ -130,8 +130,10 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
 
    These are removed from the soc_memory_regions array when heaps are created.
  */
-SOC_RESERVE_MEMORY_REGION(0x40070000, 0x40078000, cpu0_cache);
-SOC_RESERVE_MEMORY_REGION(0x40078000, 0x40080000, cpu1_cache);
+SOC_RESERVE_MEMORY_REGION(SOC_CACHE_PRO_LOW, SOC_CACHE_PRO_HIGH, cpu0_cache);
+#ifndef CONFIG_FREERTOS_UNICORE
+SOC_RESERVE_MEMORY_REGION(SOC_CACHE_APP_LOW, SOC_CACHE_APP_HIGH, cpu1_cache);
+#endif
 
     /* Warning: The ROM stack is located in the 0x3ffe0000 area. We do not specifically disable that area here because
        after the scheduler has started, the ROM stack is not used anymore by anything. We handle it instead by not allowing
@@ -150,19 +152,21 @@ SOC_RESERVE_MEMORY_REGION(0x40078000, 0x40080000, cpu1_cache);
     */
 
 SOC_RESERVE_MEMORY_REGION(0x3ffe0000, 0x3ffe0440, rom_pro_data); //Reserve ROM PRO data region
-SOC_RESERVE_MEMORY_REGION(0x3ffe4000, 0x3ffe4350, rom_app_data); //Reserve ROM APP data region
+#ifndef CONFIG_FREERTOS_UNICORE
+SOC_RESERVE_MEMORY_REGION(0x3ffe3f20, 0x3ffe4350, rom_app_data); //Reserve ROM APP data region
+#endif
 
 SOC_RESERVE_MEMORY_REGION(0x3ffae000, 0x3ffae6e0, rom_data);
 
-#if CONFIG_MEMMAP_TRACEMEM
-#if CONFIG_MEMMAP_TRACEMEM_TWOBANKS
+#if CONFIG_ESP32_MEMMAP_TRACEMEM
+#if CONFIG_ESP32_MEMMAP_TRACEMEM_TWOBANKS
 SOC_RESERVE_MEMORY_REGION(0x3fff8000, 0x40000000, trace_mem); //Reserve trace mem region, 32K for both cpu
 #else
 SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace mem region, 16K (upper-half) for pro cpu
 #endif
 #endif
 
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
 SOC_RESERVE_MEMORY_REGION(0x3f800000, 0x3fC00000, spi_ram); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #endif
 

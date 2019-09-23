@@ -16,12 +16,21 @@
 
 from __future__ import unicode_literals
 from io import open
-import re
 import os
 import shutil
 
+try:
+    import urllib.request
+    _urlretrieve = urllib.request.urlretrieve
+except ImportError:
+    # Python 2 fallback
+    import urllib
+    _urlretrieve = urllib.urlretrieve
+
+
 def run_cmd_get_output(cmd):
     return os.popen(cmd).read().strip()
+
 
 def files_equal(path_1, path_2):
     if not os.path.exists(path_1) or not os.path.exists(path_2):
@@ -34,12 +43,14 @@ def files_equal(path_1, path_2):
         file_2_contents = f_2.read()
     return file_1_contents == file_2_contents
 
+
 def copy_file_if_modified(src_file_path, dst_file_path):
     if not files_equal(src_file_path, dst_file_path):
         dst_dir_name = os.path.dirname(dst_file_path)
         if not os.path.isdir(dst_dir_name):
             os.makedirs(dst_dir_name)
         shutil.copy(src_file_path, dst_file_path)
+
 
 def copy_if_modified(src_path, dst_path):
     if os.path.isfile(src_path):
@@ -53,3 +64,14 @@ def copy_if_modified(src_path, dst_path):
             dst_file_path = os.path.join(dst_path + root[src_path_len:], src_file_name)
             copy_file_if_modified(src_file_path, dst_file_path)
 
+
+def download_file_if_missing(from_url, to_path):
+    filename_with_path = to_path + "/" + os.path.basename(from_url)
+    exists = os.path.isfile(filename_with_path)
+    if exists:
+        print("The file '%s' already exists" % (filename_with_path))
+    else:
+        tmp_file, header = _urlretrieve(from_url)
+        with open(filename_with_path, 'wb') as fobj:
+            with open(tmp_file, 'rb') as tmp:
+                fobj.write(tmp.read())

@@ -1,60 +1,57 @@
 # Generate partition binary
 #
-.PHONY: dump_otadata erase_ota blank_ota_data
+.PHONY: blank_ota_data erase_otadata read_otadata
 
-GEN_EMPTY_PART := $(PYTHON) $(COMPONENT_PATH)/gen_empty_partition.py
+OTATOOL_PY := $(PYTHON) $(COMPONENT_PATH)/otatool.py
+PARTTOOL_PY := $(PYTHON) $(IDF_PATH)/components/partition_table/parttool.py
+
+# Generate blank partition file
 BLANK_OTA_DATA_FILE = $(BUILD_DIR_BASE)/ota_data_initial.bin
 
-PARTITION_TABLE_LEN := 0xC00
-OTADATA_LEN := 0x2000
+# Copy PARTITION_TABLE_CSV_PATH definition here from $IDF_PATH/components/partition_table/Makefile.projbuild
+# to avoid undefined variables warning for PARTITION_TABLE_CSV_PATH
+ifndef PARTITION_TABLE_CSV_PATH
+PARTITION_TABLE_ROOT := $(call dequote,$(if $(CONFIG_PARTITION_TABLE_CUSTOM),$(PROJECT_PATH),$(IDF_PATH)/components/partition_table))
+PARTITION_TABLE_CSV_PATH := $(call dequote,$(abspath $(PARTITION_TABLE_ROOT)/$(call dequote,$(CONFIG_PARTITION_TABLE_FILENAME))))
+endif
 
-PARTITION_TABLE_ONCHIP_BIN_PATH := $(call dequote,$(abspath $(BUILD_DIR_BASE)))
-PARTITION_TABLE_ONCHIP_BIN_NAME := "onchip_partition.bin"
-OTADATA_ONCHIP_BIN_NAME := "onchip_otadata.bin"
+$(BLANK_OTA_DATA_FILE): partition_table_get_info $(PARTITION_TABLE_CSV_PATH) | check_python_dependencies
+	$(shell if [ "$(OTA_DATA_OFFSET)" != "" ] && [ "$(OTA_DATA_SIZE)" != "" ]; then \
+				$(PYTHON) $(IDF_PATH)/components/partition_table/gen_empty_partition.py $(OTA_DATA_SIZE) $(BLANK_OTA_DATA_FILE); \
+			fi; )
+	$(eval BLANK_OTA_DATA_FILE = $(shell if [ "$(OTA_DATA_OFFSET)" != "" ] && [ "$(OTA_DATA_SIZE)" != "" ]; then \
+			echo $(BLANK_OTA_DATA_FILE); else echo " "; fi) )
 
-PARTITION_TABLE_ONCHIP_BIN := $(PARTITION_TABLE_ONCHIP_BIN_PATH)/$(call dequote,$(PARTITION_TABLE_ONCHIP_BIN_NAME)) 
-OTADATA_ONCHIP_BIN := $(PARTITION_TABLE_ONCHIP_BIN_PATH)/$(call dequote,$(OTADATA_ONCHIP_BIN_NAME))
-
-PARTITION_TABLE_GET_BIN_CMD = $(ESPTOOLPY_SERIAL) read_flash $(PARTITION_TABLE_OFFSET) $(PARTITION_TABLE_LEN) $(PARTITION_TABLE_ONCHIP_BIN)
-OTADATA_GET_BIN_CMD = $(ESPTOOLPY_SERIAL) read_flash $(OTADATA_OFFSET) $(OTADATA_LEN) $(OTADATA_ONCHIP_BIN)
-
-GEN_OTADATA = $(IDF_PATH)/components/app_update/dump_otadata.py
-ERASE_OTADATA_CMD = $(ESPTOOLPY_SERIAL) erase_region $(OTADATA_OFFSET) $(OTADATA_LEN)
+blank_ota_data: $(BLANK_OTA_DATA_FILE)
 
 # If there is no otadata partition, both OTA_DATA_OFFSET and BLANK_OTA_DATA_FILE 
 # expand to empty values.
 ESPTOOL_ALL_FLASH_ARGS += $(OTA_DATA_OFFSET) $(BLANK_OTA_DATA_FILE)
 
-$(PARTITION_TABLE_ONCHIP_BIN):
-	$(PARTITION_TABLE_GET_BIN_CMD)
+ESPTOOL_ARGS := --esptool-args port=$(CONFIG_ESPTOOLPY_PORT) baud=$(CONFIG_ESPTOOLPY_BAUD) before=$(CONFIG_ESPTOOLPY_BEFORE) after=$(CONFIG_ESPTOOLPY_AFTER)
 
-onchip_otadata_get_info: $(PARTITION_TABLE_ONCHIP_BIN) 
-	$(eval OTADATA_OFFSET:=$(shell $(GET_PART_INFO) --type data --subtype ota --offset $(PARTITION_TABLE_ONCHIP_BIN)))
-	@echo $(if $(OTADATA_OFFSET), $(shell export OTADATA_OFFSET), $(shell rm -f $(PARTITION_TABLE_ONCHIP_BIN));$(error "ERROR: ESP32 does not have otadata partition."))
+erase_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
+	$(OTATOOL_PY) $(ESPTOOL_ARGS) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \
+	--partition-table-offset $(PARTITION_TABLE_OFFSET) \
+	erase_otadata
 
-$(OTADATA_ONCHIP_BIN):
-	$(OTADATA_GET_BIN_CMD)
+read_otadata: $(PARTITION_TABLE_CSV_PATH) partition_table_get_info | check_python_dependencies
+	$(OTATOOL_PY) $(ESPTOOL_ARGS) --partition-table-file $(PARTITION_TABLE_CSV_PATH) \ 
+	--partition-table-offset $(partition_table_offset) \ 
+	read_otadata
 
-dump_otadata: onchip_otadata_get_info $(OTADATA_ONCHIP_BIN) $(PARTITION_TABLE_ONCHIP_BIN) 
-	@echo "otadata retrieved. Contents:"
-	@echo $(SEPARATOR)
-	$(GEN_OTADATA) $(OTADATA_ONCHIP_BIN)
-	@echo $(SEPARATOR)
-	rm -f $(PARTITION_TABLE_ONCHIP_BIN)
-	rm -f $(OTADATA_ONCHIP_BIN)
-
-$(BLANK_OTA_DATA_FILE): partition_table_get_info
-	$(GEN_EMPTY_PART) --size $(OTA_DATA_SIZE) $(BLANK_OTA_DATA_FILE)
-	$(eval BLANK_OTA_DATA_FILE = $(shell if [ $(OTA_DATA_SIZE) != 0 ]; then echo $(BLANK_OTA_DATA_FILE); else echo " "; fi) )
-
-blank_ota_data: $(BLANK_OTA_DATA_FILE)
-
-erase_ota: partition_table_get_info | check_python_dependencies
-	@echo $(if $(OTA_DATA_OFFSET), "Erase ota_data [addr=$(OTA_DATA_OFFSET) size=$(OTA_DATA_SIZE)] ...", $(error "ERROR: Partition table does not have ota_data partition."))
-	$(ESPTOOLPY_SERIAL) erase_region $(OTA_DATA_OFFSET) $(OTA_DATA_SIZE)
+erase_ota: erase_otadata
+	@echo "WARNING: erase_ota is deprecated. Use erase_otadata instead."
 
 all: blank_ota_data
 flash: blank_ota_data
+ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+encrypted-flash: blank_ota_data
+endif
+
+TMP_DEFINES := $(BUILD_DIR_BASE)/app_update/tmp_cppflags.txt
+export TMP_DEFINES
 
 clean:
 	rm -f $(BLANK_OTA_DATA_FILE)
+	rm -f $(TMP_DEFINES)

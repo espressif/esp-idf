@@ -103,6 +103,8 @@
 #define SD_SPI_R1_PARAM_ERR             (1<<6)
 #define SD_SPI_R1_NO_RESPONSE           (1<<7)
 
+#define SDIO_R1_FUNC_NUM_ERR            (1<<4)
+
 /* 48-bit response decoding (32 bits w/o CRC) */
 #define MMC_R1(resp)                    ((resp)[0])
 #define MMC_R3(resp)                    ((resp)[0])
@@ -116,6 +118,13 @@
 #define SD_SPI_R2(resp)                 ((resp)[0] & 0xffff)
 #define SD_SPI_R3(resp)                 ((resp)[0])
 #define SD_SPI_R7(resp)                 ((resp)[0])
+
+/* SPI mode data response decoding */
+#define SD_SPI_DATA_RSP_VALID(resp_byte)        (((resp_byte)&0x11)==0x1)
+#define SD_SPI_DATA_RSP(resp_byte)              (((resp_byte)>>1)&0x7)
+#define  SD_SPI_DATA_ACCEPTED                   0x2
+#define  SD_SPI_DATA_CRC_ERROR                  0x5
+#define  SD_SPI_DATA_WR_ERROR                   0x6
 
 /* RCA argument and response */
 #define MMC_ARG_RCA(rca)                ((rca) << 16)
@@ -258,7 +267,7 @@
 #define SD_CSD_CAPACITY(resp)           ((SD_CSD_C_SIZE((resp))+1) << \
                                          (SD_CSD_C_SIZE_MULT((resp))+2))
 #define SD_CSD_V2_C_SIZE(resp)          MMC_RSP_BITS((resp), 48, 22)
-#define SD_CSD_V2_CAPACITY(resp)        ((SD_CSD_V2_C_SIZE((resp))+1) << 10) 
+#define SD_CSD_V2_CAPACITY(resp)        ((SD_CSD_V2_C_SIZE((resp))+1) << 10)
 #define SD_CSD_V2_BL_LEN                0x9     /* 512 */
 #define SD_CSD_VDD_R_CURR_MIN(resp)     MMC_RSP_BITS((resp), 59, 3)
 #define SD_CSD_VDD_R_CURR_MAX(resp)     MMC_RSP_BITS((resp), 56, 3)
@@ -429,6 +438,7 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 #define  CCCR_BUS_WIDTH_1           (0<<0)
 #define  CCCR_BUS_WIDTH_4           (2<<0)
 #define  CCCR_BUS_WIDTH_8           (3<<0)
+#define  CCCR_BUS_WIDTH_ECSI        (1<<5)
 #define SD_IO_CCCR_CARD_CAP         0x08
 #define  CCCR_CARD_CAP_LSC          BIT(6)
 #define  CCCR_CARD_CAP_4BLS         BIT(7)
@@ -448,15 +458,23 @@ static inline uint32_t MMC_RSP_BITS(uint32_t *src, int start, int len)
 #define SD_IO_CIS_SIZE          0x17000
 
 /* CIS tuple codes (based on PC Card 16) */
-#define SD_IO_CISTPL_NULL       0x00
-#define SD_IO_CISTPL_VERS_1     0x15
-#define SD_IO_CISTPL_MANFID     0x20
-#define SD_IO_CISTPL_FUNCID     0x21
-#define SD_IO_CISTPL_FUNCE      0x22
-#define SD_IO_CISTPL_END        0xff
+#define CISTPL_CODE_NULL            0x00
+#define CISTPL_CODE_DEVICE          0x01
+#define CISTPL_CODE_CHKSUM          0x10
+#define CISTPL_CODE_VERS1           0x15
+#define CISTPL_CODE_ALTSTR          0x16
+#define CISTPL_CODE_CONFIG          0x1A
+#define CISTPL_CODE_CFTABLE_ENTRY   0x1B
+#define CISTPL_CODE_MANFID          0x20
+#define CISTPL_CODE_FUNCID          0x21
+#define   TPLFID_FUNCTION_SDIO        0x0c
+#define CISTPL_CODE_FUNCE           0x22
+#define CISTPL_CODE_VENDER_BEGIN    0x80
+#define CISTPL_CODE_VENDER_END      0x8F
+#define CISTPL_CODE_SDIO_STD        0x91
+#define CISTPL_CODE_SDIO_EXT        0x92
+#define CISTPL_CODE_END             0xFF
 
-/* CISTPL_FUNCID codes */
-#define TPLFID_FUNCTION_SDIO        0x0c
 
 /* Timing */
 #define SDMMC_TIMING_LEGACY 0

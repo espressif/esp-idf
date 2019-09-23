@@ -41,7 +41,9 @@
 
 #include "arch/sys_arch.h"
 
+#ifndef BYTE_ORDER
 #define BYTE_ORDER LITTLE_ENDIAN
+#endif // BYTE_ORDER
 
 typedef uint8_t  u8_t;
 typedef int8_t   s8_t;
@@ -50,7 +52,7 @@ typedef int16_t  s16_t;
 typedef uint32_t u32_t;
 typedef int32_t  s32_t;
 
-typedef unsigned long   mem_ptr_t;
+
 typedef int sys_prot_t;
 
 #define S16_F "d"

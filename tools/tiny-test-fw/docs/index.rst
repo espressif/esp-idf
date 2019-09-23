@@ -122,7 +122,8 @@ Class Diagram
    {method} expect_all
    {method} read
    {method} write
-   {method} open
+   {method} start_receive
+   {method} stop_receive
    {method} close
    }
    class SerialDUT {
@@ -137,12 +138,12 @@ Class Diagram
    }
    class BaseApp {
    {method} get_sdk_path
-   {method} get_tools
-   {method} process_app_info
    {method} get_log_folder
    }
    class IDFApp {
-   {method} process_app_info
+   {field} flash_files
+   {field} flash_settings
+   {field} partition_table
    }
    class Example {
    {method} get_binary_path
@@ -186,7 +187,7 @@ The following 3rd party lib is required:
 
     * pyserial
     * pyyaml
-    * xunitgen
+    * junit_xml
     * netifaces
     * matplotlib (if use Utility.LineChart)
 

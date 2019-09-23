@@ -1,0 +1,31 @@
+* Set TEST_BOOL, showing child items
+> { "TEST_BOOL" : true }
+< { "values" : { "TEST_BOOL" : true, "TEST_CHILD_STR" : "OHAI!", "TEST_CHILD_BOOL" : true }, "ranges": {"TEST_CONDITIONAL_RANGES": [0, 100], "TEST_CONDITIONAL_HEX_RANGES": [0, 175]} }
+
+* Set TEST_CHILD_STR
+> { "TEST_CHILD_STR" : "Other value" }
+< { "values" : { "TEST_CHILD_STR" : "Other value" } }
+
+* Clear TEST_BOOL, hiding child items
+> { "TEST_BOOL" : false }
+< { "values" : { "TEST_BOOL" : false, "TEST_CHILD_STR" : null, "TEST_CHILD_BOOL" : null },  "ranges": {"TEST_CONDITIONAL_RANGES": [0, 10], "TEST_CONDITIONAL_HEX_RANGES": [16, 175]} }
+
+* Set TEST_CHILD_BOOL, invalid as parent is disabled
+> { "TEST_CHILD_BOOL" : false }
+< { "values" : { } }
+
+* Set TEST_BOOL & TEST_CHILD_STR together
+> { "TEST_BOOL" : true, "TEST_CHILD_STR" : "New value" }
+< { "values" : { "TEST_BOOL" : true, "TEST_CHILD_STR" : "New value", "TEST_CHILD_BOOL" : true } }
+
+* Set choice
+> { "CHOICE_B" : true }
+< { "values" : { "CHOICE_B" : true, "CHOICE_A" : false, "DEPENDS_ON_CHOICE" : "Depends on B" } }
+
+* Set string which depends on choice B
+> { "DEPENDS_ON_CHOICE" : "oh, really?" }
+< { "values" : { "DEPENDS_ON_CHOICE" : "oh, really?" } }
+
+* Try setting boolean values to invalid types
+> { "CHOICE_A" : 11, "TEST_BOOL" : "false" }
+< { "values" : { } }

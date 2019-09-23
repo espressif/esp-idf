@@ -23,20 +23,20 @@ _If any other items (server, BLE device, app, second chip, whatever) are needed,
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
-* _If there is any menuconfig configuration that the user user must set for this example, mention this here._
+* _If there is any project configuration that the user must set for this example, mention this here._
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
+
+(Replace PORT with the name of the serial port to use.)
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -57,3 +57,7 @@ _For examples where ESP32 is connected  with some other hardware, include a tabl
 ## Troubleshooting
 
 _If there are any likely problems or errors which many users might encounter, mention them here. Remove this section for very simple examples where nothing is likely to go wrong._
+
+## Example Breakdown
+
+_If the example source code is lengthy, complex, or cannot be easily understood, use this section to break down and explain the source code. This can be done by breaking down the execution path step by step, or explaining what each major function/task/source file does. Add sub titles if necessary. Remove this section for very simple examples where the source code is self explanatory._

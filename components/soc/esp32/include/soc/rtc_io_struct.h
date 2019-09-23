@@ -14,11 +14,13 @@
 #ifndef _SOC_RTC_IO_STRUCT_H_
 #define _SOC_RTC_IO_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct rtc_io_dev_s {
     union {
         struct {
             uint32_t reserved0:        14;

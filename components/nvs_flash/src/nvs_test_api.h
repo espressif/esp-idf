@@ -33,6 +33,22 @@ extern "C" {
  */
 esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount);
 
+#ifdef CONFIG_NVS_ENCRYPTION
+/**
+ * @brief Initialize NVS flash storage with custom flash sector layout
+ *
+ * @note  This API is intended to be used in unit tests.
+ * 
+ * @param partName Partition name of the NVS partition as per partition table
+ * @param baseSector Flash sector (units of 4096 bytes) offset to start NVS
+ * @param sectorCount Length (in flash sectors) of NVS region. 
+ 					  NVS partition must be at least 3 sectors long.
+ * @param[in]  cfg    Security configuration (keys) to be used for NVS encryption/decryption. 
+ *                    If cfg is null, no encryption/decryption is used. 
+ * @return ESP_OK if flash was successfully initialized
+ */
+esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t baseSector, uint32_t sectorCount, nvs_sec_cfg_t* cfg);
+#endif
 
 /**
  * @brief Dump contents of NVS storage to stdout

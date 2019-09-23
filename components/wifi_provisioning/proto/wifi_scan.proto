@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+import "constants.proto";
+import "wifi_constants.proto";
+
+message CmdScanStart {
+    bool blocking = 1;
+    bool passive = 2;
+    uint32 group_channels = 3;
+    uint32 period_ms = 4;
+}
+
+message RespScanStart {
+
+}
+
+message CmdScanStatus {
+
+}
+
+message RespScanStatus {
+    bool scan_finished = 1;
+    uint32 result_count = 2;
+}
+
+message CmdScanResult {
+    uint32 start_index = 1;
+    uint32 count = 2;
+}
+
+message WiFiScanResult {
+    bytes ssid = 1;
+    uint32 channel = 2;
+    int32 rssi = 3;
+    bytes bssid = 4;
+    WifiAuthMode auth = 5;
+}
+
+message RespScanResult {
+    repeated WiFiScanResult entries = 1;
+}
+
+enum WiFiScanMsgType {
+    TypeCmdScanStart = 0;
+    TypeRespScanStart = 1;
+    TypeCmdScanStatus = 2;
+    TypeRespScanStatus = 3;
+    TypeCmdScanResult = 4;
+    TypeRespScanResult = 5;
+}
+
+message WiFiScanPayload {
+    WiFiScanMsgType msg = 1;
+    Status status = 2;
+    oneof payload {
+        CmdScanStart cmd_scan_start = 10;
+        RespScanStart resp_scan_start = 11;
+        CmdScanStatus cmd_scan_status = 12;
+        RespScanStatus resp_scan_status = 13;
+        CmdScanResult cmd_scan_result = 14;
+        RespScanResult resp_scan_result = 15;
+    }
+}

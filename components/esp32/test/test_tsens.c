@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "unity.h"
-#include "rom/ets_sys.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
+#include "esp32/rom/ets_sys.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
 
 TEST_CASE("can control TSENS using registers", "[rtc][ignore]")
 {

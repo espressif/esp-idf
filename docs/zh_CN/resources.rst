@@ -1,6 +1,7 @@
 ****
 资源
 ****
+:link_to_translation:`en:[English]`
 
 * 您可以在 `ESP32 论坛 <https://esp32.com/>`_ 中提出您的问题，访问社区资源。
 
@@ -16,4 +17,4 @@
 
 * 关于 ESP32 的其它信息，请查看官网 `文档 <https://espressif.com/zh-hans/support/download/documents>`_ 版块。
 
-* 本文档的镜像网址为：https://esp-idf.readthedocs.io/zh_CN/latest/ 或 https://docs.espressif.com/projects/esp-idf/zh_CN/latest/。
+* 关于本文档的 PDF 和 HTML 格式下载（最新版本和早期版本），请点击 `下载 <https://readthedocs.com/projects/espressif-esp-idf/downloads/>`_。

@@ -15,16 +15,15 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
-#include "soc/i2s_reg.h"
-#include "soc/timer_group_reg.h"
+#include "soc/i2s_periph.h"
+#include "soc/timer_periph.h"
 #include "soc/bb_reg.h"
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #define MHZ (1000000)
 

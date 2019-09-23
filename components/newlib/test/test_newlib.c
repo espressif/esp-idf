@@ -65,6 +65,7 @@ TEST_CASE("test time functions", "[newlib]")
 {
     time_t now = 1464248488;
     setenv("TZ", "UTC-8", 1);
+    tzset();
     struct tm *tm_utc = gmtime(&now);
     TEST_ASSERT_EQUAL( 28, tm_utc->tm_sec);
     TEST_ASSERT_EQUAL( 41, tm_utc->tm_min);
@@ -124,14 +125,14 @@ static bool fn_in_rom(void *fn, const char *name)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-#if defined(CONFIG_NEWLIB_NANO_FORMAT) && !defined(CONFIG_SPIRAM_SUPPORT)
+#if defined(CONFIG_NEWLIB_NANO_FORMAT) && !defined(CONFIG_ESP32_SPIRAM_SUPPORT)
     TEST_ASSERT(fn_in_rom(printf, "printf"));
     TEST_ASSERT(fn_in_rom(sscanf, "sscanf"));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(printf, "printf"));
     TEST_ASSERT_FALSE(fn_in_rom(sscanf, "sscanf"));
 #endif
-#if !defined(CONFIG_SPIRAM_SUPPORT)
+#if !defined(CONFIG_ESP32_SPIRAM_SUPPORT)
     TEST_ASSERT(fn_in_rom(atoi,   "atoi"));
     TEST_ASSERT(fn_in_rom(strtol, "strtol"));
 #else

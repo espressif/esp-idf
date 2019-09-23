@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "mdns_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "mdns_example_main.c"
+                    INCLUDE_DIRS ".")

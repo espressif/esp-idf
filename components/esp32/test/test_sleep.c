@@ -2,33 +2,34 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "esp_sleep.h"
-#include "esp_clk.h"
+#include "esp32/clk.h"
 #include "driver/rtc_io.h"
-#include "soc/gpio_reg.h"
-#include "soc/rtc.h"
-#include "soc/uart_reg.h"
-#include "rom/uart.h"
+#include "esp32/rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "soc/gpio_periph.h"
+#include "soc/uart_periph.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
-#include "soc/rtc_cntl_reg.h"   // for read rtc registers directly (cause)
+#include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
-#include "rom/rtc.h"
+#include "esp32/rom/rtc.h"
 #include "esp_newlib.h"
+#include "test_utils.h"
+#include "sdkconfig.h"
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
 
 static struct timeval tv_start, tv_stop;
 
-
+#ifndef CONFIG_FREERTOS_UNICORE
 static void deep_sleep_task(void *arg)
 {
     esp_deep_sleep_start();
 }
 
-static void do_deep_sleep_from_app_cpu()
+static void do_deep_sleep_from_app_cpu(void)
 {
     xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
 
@@ -39,6 +40,7 @@ static void do_deep_sleep_from_app_cpu()
         ;
     }
 }
+#endif
 
 TEST_CASE("wake up from deep sleep using timer", "[deepsleep][reset=DEEPSLEEP_RESET]")
 {
@@ -122,7 +124,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 }
 
 
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
 #define MAX_SLEEP_TIME_ERROR_US 200
 #else
 #define MAX_SLEEP_TIME_ERROR_US 100
@@ -173,8 +175,8 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 {
 #ifndef CONFIG_PM_ENABLE
     const int uart_clk_freq = REF_CLK_FREQ;
-    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
     rtc_cpu_freq_config_t config_xtal, config_default;
@@ -202,20 +204,20 @@ TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][re
 }
 #endif
 
-static void do_deep_sleep()
+static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_sleep_reset_and_sleep()
+static void check_sleep_reset_and_sleep(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_sleep_reset()
+static void check_sleep_reset(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
 }
@@ -226,12 +228,12 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=
         check_sleep_reset_and_sleep,
         check_sleep_reset);
 
-static void do_abort()
+static void do_abort(void)
 {
     abort();
 }
 
-static void check_abort_reset_and_sleep()
+static void check_abort_reset_and_sleep(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
@@ -245,20 +247,20 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abo
 
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
 
-static RTC_IRAM_ATTR void wake_stub()
+static RTC_IRAM_ATTR void wake_stub(void)
 {
     esp_default_wake_deep_sleep();
     s_wake_stub_var = (uint32_t) &wake_stub;
 }
 
-static void prepare_wake_stub()
+static void prepare_wake_stub(void)
 {
     esp_set_deep_sleep_wake_stub(&wake_stub);
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_wake_stub()
+static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
@@ -334,7 +336,7 @@ static float get_time_ms(void)
     return fabs(dt);
 }
 
-static uint32_t get_cause()
+static uint32_t get_cause(void)
 {
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, \
                                             RTC_CNTL_WAKEUP_CAUSE);

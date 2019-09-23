@@ -12,6 +12,7 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
+#include "test_utils.h"
 
 #if (CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE > 0)
 #define NO_OF_QUEUES_PER_CORE  ((int)((CONFIG_FREERTOS_QUEUE_REGISTRY_SIZE - 3)/portNUM_PROCESSORS))     //Save space for some preallocated tasks

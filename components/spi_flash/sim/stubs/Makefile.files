@@ -4,7 +4,7 @@ SOURCE_FILES := \
 	newlib/lock.c \
 	esp32/crc.cpp \
 	esp32/esp_random.c \
-	bootloader_support/src/bootloader_common.c 
+	bootloader_support/src/bootloader_common.c
 
 INCLUDE_DIRS := \
 	../include \
@@ -18,7 +18,11 @@ INCLUDE_DIRS := \
 	sdmmc/include \
 	vfs/include \
 	$(addprefix ../../../../components/, \
+	esp_common/include \
 	soc/esp32/include \
+	soc/include \
+	xtensa/include \
+	xtensa/esp32/include \
 	esp32/include \
 	bootloader_support/include \
 	app_update/include \

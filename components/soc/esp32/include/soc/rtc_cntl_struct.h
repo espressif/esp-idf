@@ -14,11 +14,13 @@
 #ifndef _SOC_RTC_CNTL_STRUCT_H_
 #define _SOC_RTC_CNTL_STRUCT_H_
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct rtc_cntl_dev_s {
     union {
         struct {
             uint32_t sw_stall_appcpu_c0:  2;             /*{reg_sw_stall_appcpu_c1[5:0]   reg_sw_stall_appcpu_c0[1:0]}  == 0x86 will stall APP CPU*/

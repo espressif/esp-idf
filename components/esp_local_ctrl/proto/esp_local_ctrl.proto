@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+import "constants.proto";
+
+message CmdGetPropertyCount {
+}
+
+message RespGetPropertyCount {
+    Status status = 1;
+    uint32 count = 2;
+}
+
+message PropertyInfo {
+    Status status = 1;
+    string name = 2;
+    uint32 type = 3;
+    uint32 flags = 4;
+    bytes  value = 5;
+}
+
+message CmdGetPropertyValues {
+    repeated uint32 indices = 1;
+}
+
+message RespGetPropertyValues {
+    Status status = 1;
+    repeated PropertyInfo props = 2;
+}
+
+message PropertyValue {
+    uint32 index = 1;
+    bytes value = 2;
+}
+
+message CmdSetPropertyValues {
+    repeated PropertyValue props = 1;
+}
+
+message RespSetPropertyValues {
+    Status status = 1;
+}
+
+enum LocalCtrlMsgType {
+    TypeCmdGetPropertyCount = 0;
+    TypeRespGetPropertyCount = 1;
+    TypeCmdGetPropertyValues = 4;
+    TypeRespGetPropertyValues = 5;
+    TypeCmdSetPropertyValues = 6;
+    TypeRespSetPropertyValues = 7;
+}
+
+message LocalCtrlMessage {
+    LocalCtrlMsgType msg = 1;
+    oneof payload {
+        CmdGetPropertyCount cmd_get_prop_count = 10;
+        RespGetPropertyCount resp_get_prop_count = 11;
+        CmdGetPropertyValues cmd_get_prop_vals = 12;
+        RespGetPropertyValues resp_get_prop_vals = 13;
+        CmdSetPropertyValues cmd_set_prop_vals = 14;
+        RespSetPropertyValues resp_set_prop_vals = 15;
+    }
+}

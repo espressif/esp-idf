@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 #
 
+from __future__ import print_function
 import argparse
 import struct
 import sys
-import pylibelf as elf
-import pylibelf.util as elfutil
-import pylibelf.iterators as elfiter
-import pylibelf.constants as elfconst
-from ctypes import *
+import elftools.elf.elffile as elffile
+import espytrace.apptrace as apptrace
+
 
 class ESPLogTraceParserError(RuntimeError):
     def __init__(self, message):
@@ -44,7 +43,7 @@ def logtrace_parse(fname):
         if len(trc_buf) < ESP32_LOGTRACE_HDR_SZ:
             # print "EOF"
             if len(trc_buf) > 0:
-                print "Unprocessed %d bytes of log record header!" % len(trc_buf)
+                print("Unprocessed %d bytes of log record header!" % len(trc_buf))
                 # data_ok = False
             break
         try:
@@ -58,76 +57,57 @@ def logtrace_parse(fname):
         except IOError as e:
             raise ESPLogTraceParserError("Failed to read log record args (%s)!" % e)
         if len(trc_buf) < args_sz:
-            # print "EOF"
+            # print("EOF")
             if len(trc_buf) > 0:
-                print "Unprocessed %d bytes of log record args!" % len(trc_buf)
+                print("Unprocessed %d bytes of log record args!" % len(trc_buf))
                 # data_ok = False
             break
         try:
             log_args = struct.unpack('<%sL' % nargs, trc_buf)
         except struct.error as e:
             raise ESPLogTraceParserError("Failed to unpack log record args (%s)!" % e)
-        # print log_args
-        recs.append(ESPLogTraceRecord(fmt_addr, list(log_args)))    
+        # print(log_args)
+        recs.append(ESPLogTraceRecord(fmt_addr, list(log_args)))
 
     ftrc.close()
     # sorted(recs, key=lambda rec: rec.fmt_addr)
     return recs
 
 
-def logtrace_get_str_from_elf(felf, str_addr):
-    tgt_str = ""
-    for sect in elfiter.sections(felf):
-        hdr = elfutil.section_hdr(felf, sect)
-        if hdr.sh_addr == 0 or hdr.sh_type != elfconst.SHT_PROGBITS:
-            continue
-        if str_addr < hdr.sh_addr or str_addr >= hdr.sh_addr + hdr.sh_size:
-            continue
-        # print "Found SECT: %x..%x @ %x" % (hdr.sh_addr, hdr.sh_addr + hdr.sh_size, str_addr - hdr.sh_addr)
-        sec_data = elfiter.getOnlyData(sect).contents
-        buf = cast(sec_data.d_buf, POINTER(c_char))
-        for i in range(str_addr - hdr.sh_addr, hdr.sh_size):
-            if buf[i] == "\0":
-                break
-            tgt_str += buf[i]
-        if len(tgt_str) > 0:
-            return tgt_str
-    return None
-
 def logtrace_formated_print(recs, elfname, no_err):
     try:
-        felf = elfutil.open_elf(elfname)
+        felf = elffile.ELFFile(open(elfname, 'rb'))
     except OSError as e:
         raise ESPLogTraceParserError("Failed to open ELF file (%s)!" % e)
 
     for lrec in recs:
-        fmt_str = logtrace_get_str_from_elf(felf, lrec.fmt_addr)
+        fmt_str = apptrace.get_str_from_elf(felf, lrec.fmt_addr)
         i = 0
         prcnt_idx = 0
         while i < len(lrec.args):
-            prcnt_idx = fmt_str.find('%', prcnt_idx, -2) # TODO: check str ending with %
+            prcnt_idx = fmt_str.find('%', prcnt_idx, -2)  # TODO: check str ending with %
             if prcnt_idx == -1:
                 break
-            prcnt_idx += 1 #  goto next char
+            prcnt_idx += 1  # goto next char
             if fmt_str[prcnt_idx] == 's':
                 # find string
-                arg_str = logtrace_get_str_from_elf(felf, lrec.args[i])
+                arg_str = apptrace.get_str_from_elf(felf, lrec.args[i])
                 if arg_str:
                     lrec.args[i] = arg_str
             i += 1
-        # print "\nFmt = {%s}, args = %d/%s" % lrec
+        # print("\nFmt = {%s}, args = %d/%s" % lrec)
         fmt_str = fmt_str.replace('%p', '%x')
-        # print "=====> " + fmt_str % lrec.args
+        # print("=====> " + fmt_str % lrec.args)
         try:
-            print fmt_str % tuple(lrec.args),
-            # print ".",
+            print(fmt_str % tuple(lrec.args), end='')
+            # print(".", end='')
             pass
         except Exception as e:
             if not no_err:
-                print "Print error (%s)" % e
-                print "\nFmt = {%s}, args = %d/%s" % (fmt_str, len(lrec.args), lrec.args)
+                print("Print error (%s)" % e)
+                print("\nFmt = {%s}, args = %d/%s" % (fmt_str, len(lrec.args), lrec.args))
+    felf.stream.close()
 
-    elf.elf_end(felf)
 
 def main():
 
@@ -141,23 +121,24 @@ def main():
 
     # parse trace file
     try:
-        print "Parse trace file '%s'..." % args.trace_file
-        lrecs = logtrace_parse(args.trace_file);
-        print "Parsing completed."
+        print("Parse trace file '%s'..." % args.trace_file)
+        lrecs = logtrace_parse(args.trace_file)
+        print("Parsing completed.")
     except ESPLogTraceParserError as e:
-        print "Failed to parse log trace (%s)!" % e
+        print("Failed to parse log trace (%s)!" % e)
         sys.exit(2)
     # print recs
     # get format strings and print info
-    print "===================================================================="
+    print("====================================================================")
     try:
-        logtrace_formated_print(lrecs, args.elf_file, args.no_errors);
+        logtrace_formated_print(lrecs, args.elf_file, args.no_errors)
     except ESPLogTraceParserError as e:
-        print "Failed to print log trace (%s)!" % e
+        print("Failed to print log trace (%s)!" % e)
         sys.exit(2)
-    print "\n====================================================================\n"
+    print("\n====================================================================\n")
 
-    print "Log records count: %d" % len(lrecs)
+    print("Log records count: %d" % len(lrecs))
+
 
 if __name__ == '__main__':
     main()

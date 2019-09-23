@@ -118,6 +118,8 @@ void IRAM_ATTR _lock_close(_lock_t *lock) {
     portEXIT_CRITICAL(&lock_init_spinlock);
 }
 
+void _lock_close_recursive(_lock_t *lock) __attribute__((alias("_lock_close")));
+
 /* Acquire the mutex semaphore for lock. wait up to delay ticks.
    mutex_type is queueQUEUE_TYPE_RECURSIVE_MUTEX or queueQUEUE_TYPE_MUTEX
 */
@@ -213,4 +215,11 @@ void IRAM_ATTR _lock_release(_lock_t *lock) {
 
 void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
     lock_release_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
+}
+
+/* No-op function, used to force linking this file,
+   instead of the dummy locks implementation from newlib.
+ */
+void newlib_include_locks_impl(void)
+{
 }

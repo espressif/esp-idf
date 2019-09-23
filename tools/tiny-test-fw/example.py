@@ -17,13 +17,16 @@ import re
 import os
 import sys
 
-# if we want to run test case outside `tiny-test-fw` folder,
-# we need to insert tiny-test-fw path into sys path
-test_fw_path = os.getenv("TEST_FW_PATH")
-if test_fw_path and test_fw_path not in sys.path:
-    sys.path.insert(0, test_fw_path)
+try:
+    import TinyFW
+except ImportError:
+    # if we want to run test case outside `tiny-test-fw` folder,
+    # we need to insert tiny-test-fw path into sys path
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+    import TinyFW
 
-import TinyFW
 import IDF
 
 

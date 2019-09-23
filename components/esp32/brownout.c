@@ -19,19 +19,19 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/cpu.h"
-#include "soc/rtc_cntl_reg.h"
-#include "rom/ets_sys.h"
-#include "esp_system_internal.h"
+#include "soc/rtc_periph.h"
+#include "esp32/rom/ets_sys.h"
+#include "esp_private/system_internal.h"
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
 
-#ifdef CONFIG_BROWNOUT_DET_LVL
-#define BROWNOUT_DET_LVL CONFIG_BROWNOUT_DET_LVL
+#ifdef CONFIG_ESP32_BROWNOUT_DET_LVL
+#define BROWNOUT_DET_LVL CONFIG_ESP32_BROWNOUT_DET_LVL
 #else
 #define BROWNOUT_DET_LVL 0
-#endif //CONFIG_BROWNOUT_DET_LVL
+#endif //CONFIG_ESP32_BROWNOUT_DET_LVL
 
-static void rtc_brownout_isr_handler()
+static void rtc_brownout_isr_handler(void *arg)
 {
     /* Normally RTC ISR clears the interrupt flag after the application-supplied
      * handler returns. Since restart is called here, the flag needs to be
@@ -47,7 +47,7 @@ static void rtc_brownout_isr_handler()
     esp_restart_noos();
 }
 
-void esp_brownout_init()
+void esp_brownout_init(void)
 {
     REG_WRITE(RTC_CNTL_BROWN_OUT_REG,
             RTC_CNTL_BROWN_OUT_ENA /* Enable BOD */

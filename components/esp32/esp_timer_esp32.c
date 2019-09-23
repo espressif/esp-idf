@@ -19,8 +19,8 @@
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
-#include "esp_clk.h"
-#include "esp_timer_impl.h"
+#include "esp32/clk.h"
+#include "esp_private/esp_timer_impl.h"
 #include "soc/frc_timer_reg.h"
 #include "soc/rtc.h"
 #include "freertos/FreeRTOS.h"
@@ -78,7 +78,7 @@
 /* ALARM_OVERFLOW_VAL is used as timer alarm value when there are not timers
  * enabled which need to fire within the next timer overflow period. This alarm
  * is used to perform timekeeping (i.e. to track timer overflows).
- * Due to the 0xffffffff cannot recognize the real overflow or the scenario that 
+ * Due to the 0xffffffff cannot recognize the real overflow or the scenario that
  * ISR happens follow set_alarm, so change the ALARM_OVERFLOW_VAL to resolve this problem.
  * Set it to 0xefffffffUL. The remain 0x10000000UL(about 3 second) is enough to handle ISR.
  */
@@ -97,7 +97,7 @@ static uint32_t s_alarm_overflow_val = DEFAULT_ALARM_OVERFLOW_VAL;
 
 static const char* TAG = "esp_timer_impl";
 
-// Interrupt handle retuned by the interrupt allocator
+// Interrupt handle returned by the interrupt allocator
 static intr_handle_t s_timer_interrupt_handle;
 
 // Function from the upper layer to be called when the interrupt happens.
@@ -123,15 +123,15 @@ static uint32_t s_timer_us_per_overflow;
 // value than the one which caused an interrupt. This can cause interrupt handler
 // to consider that the interrupt has happened due to timer overflow, incrementing
 // s_time_base_us. To avoid this, frequency switch hook sets this flag if
-// it needs to set timer alarm value to ALARM_OVERFLOW_VAL. Interrupt hanler
+// it needs to set timer alarm value to ALARM_OVERFLOW_VAL. Interrupt handler
 // will not increment s_time_base_us if this flag is set.
 static bool s_mask_overflow;
 
 //The timer_overflow_happened read alarm register to tell if overflow happened.
 //However, there is a monent that overflow happens, and before ISR function called
-//alarm register is set to another value, then you call timer_overflow_happened, 
+//alarm register is set to another value, then you call timer_overflow_happened,
 //it will return false.
-//So we store the overflow value when new alarm is to be set. 
+//So we store the overflow value when new alarm is to be set.
 static bool s_overflow_happened;
 
 #ifdef CONFIG_PM_DFS_USE_RTC_TIMER_REF
@@ -150,14 +150,14 @@ portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
 #define TIMER_IS_AFTER_OVERFLOW(a) (ALARM_OVERFLOW_VAL < (a) && (a) <= FRC_TIMER_LOAD_VALUE(1))
 
 // Check if timer overflow has happened (but was not handled by ISR yet)
-static inline bool IRAM_ATTR timer_overflow_happened()
+static inline bool IRAM_ATTR timer_overflow_happened(void)
 {
     if (s_overflow_happened) {
         return true;
     }
 
     return ((REG_READ(FRC_TIMER_CTRL_REG(1)) & FRC_TIMER_INT_STATUS) != 0 &&
-              ((REG_READ(FRC_TIMER_ALARM_REG(1)) == ALARM_OVERFLOW_VAL && TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))) && !s_mask_overflow) || 
+              ((REG_READ(FRC_TIMER_ALARM_REG(1)) == ALARM_OVERFLOW_VAL && TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))) && !s_mask_overflow) ||
                (!TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_ALARM_REG(1))) && TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))))));
 }
 
@@ -176,17 +176,17 @@ static inline void IRAM_ATTR timer_count_reload(void)
     REG_WRITE(FRC_TIMER_LOAD_REG(1), REG_READ(FRC_TIMER_COUNT_REG(1)) - ALARM_OVERFLOW_VAL);
 }
 
-void esp_timer_impl_lock()
+void esp_timer_impl_lock(void)
 {
     portENTER_CRITICAL(&s_time_update_lock);
 }
 
-void esp_timer_impl_unlock()
+void esp_timer_impl_unlock(void)
 {
     portEXIT_CRITICAL(&s_time_update_lock);
 }
 
-uint64_t IRAM_ATTR esp_timer_impl_get_time()
+uint64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
     uint32_t timer_val;
     uint64_t time_base;
@@ -371,7 +371,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     return ESP_OK;
 }
 
-void esp_timer_impl_deinit()
+void esp_timer_impl_deinit(void)
 {
     esp_intr_disable(s_timer_interrupt_handle);
 
@@ -386,13 +386,13 @@ void esp_timer_impl_deinit()
 // FIXME: This value is safe for 80MHz APB frequency.
 // Should be modified to depend on clock frequency.
 
-uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us()
+uint64_t IRAM_ATTR esp_timer_impl_get_min_period_us(void)
 {
     return 50;
 }
 
 #ifdef ESP_TIMER_DYNAMIC_OVERFLOW_VAL
-uint32_t esp_timer_impl_get_overflow_val()
+uint32_t esp_timer_impl_get_overflow_val(void)
 {
     return s_alarm_overflow_val;
 }

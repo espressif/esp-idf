@@ -25,17 +25,15 @@ is okay in 1-bit mode to leave DAT3 of host disconnected.
 Please run wires between the slave and master to make the example function
 (pins are the same for the host and the slave):
 
-======== =========
- Signal   GPIO NUM
-======== =========
- CLK      GPIO14  
- CMD      GPIO15  
- DAT0     GPIO2   
- DAT1     GPIO4   
- DAT2     GPIO12
- DAT3     GPIO13
- Ground   GND     
-======== =========
+| Signal | GPIO NUM |
+|--------|----------|
+| CLK    | GPIO-14  |
+| CMD    | GPIO-15  |
+| DAT0   | GPIO-2   |
+| DAT1   | GPIO-4   |
+| DAT2   | GPIO-12  |
+| DAT3   | GPIO-13  |
+| Ground | GND      |
 
 CMD and DAT0-3 lines require to be pulled up by 50KOhm resistors even in
 1-bit mode. See *Board Compability* below for details. In 1-bit mode, the

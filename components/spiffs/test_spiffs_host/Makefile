@@ -68,7 +68,7 @@ $(BUILD_DIR)/$(COMPONENT_LIB): $(OBJ_FILES) $(SDKCONFIG)
 clean:
 	$(MAKE) -C $(STUBS_LIB_DIR) clean
 	$(MAKE) -C $(SPI_FLASH_SIM_DIR) clean
-	rm -f $(OBJ_FILES) $(TEST_OBJ_FILES) $(TEST_PROGRAM) $(COMPONENT_LIB) partition_table.bin
+	rm -f $(OBJ_FILES) $(TEST_OBJ_FILES) $(TEST_PROGRAM) $(COMPONENT_LIB) partition_table.bin image.bin
 
 lib: $(BUILD_DIR)/$(COMPONENT_LIB)
 
@@ -79,14 +79,17 @@ $(foreach cxxfile, $(CPPFILES), $(eval $(call COMPILE_CPP, $(cxxfile))))
 TEST_SOURCE_FILES = \
 	test_spiffs.cpp \
 	main.cpp \
-	test_utils.c
 
 TEST_OBJ_FILES = $(filter %.o, $(TEST_SOURCE_FILES:.cpp=.o) $(TEST_SOURCE_FILES:.c=.o))
 
 $(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_BUILD_DIR)/$(SPI_FLASH_SIM_LIB) $(STUBS_LIB_BUILD_DIR)/$(STUBS_LIB) partition_table.bin $(SDKCONFIG)
 	g++ $(LDFLAGS) $(CXXFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(BUILD_DIR) -l:$(COMPONENT_LIB) -L$(SPI_FLASH_SIM_BUILD_DIR) -l:$(SPI_FLASH_SIM_LIB) -L$(STUBS_LIB_BUILD_DIR) -l:$(STUBS_LIB)
 
-test: $(TEST_PROGRAM)
+# Use spiffs source directory as the test image
+spiffs_image: ../spiffs $(shell find ../spiffs -type d) $(shell find ../spiffs -type -f -name '*')
+	../spiffsgen.py 2097152 ../spiffs image.bin 
+
+test: $(TEST_PROGRAM) spiffs_image 
 	./$(TEST_PROGRAM)
 
 # Create other necessary targets
