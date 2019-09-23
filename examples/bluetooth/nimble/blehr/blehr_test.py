@@ -129,7 +129,7 @@ def test_example_app_ble_hr(env, extra_data):
     subprocess.check_output(['hciconfig','hci0','reset'])
 
     # Acquire DUT
-    dut = env.get_dut("blehr", "examples/bluetooth/nimble/blehr")
+    dut = env.get_dut("blehr", "examples/bluetooth/nimble/blehr", dut_class=ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, "blehr.bin")
