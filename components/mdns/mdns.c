@@ -22,6 +22,10 @@
 void mdns_debug_packet(const uint8_t * data, size_t len);
 #endif
 
+// Internal size of IPv6 address is defined here as size of AAAA record in mdns packet
+// since the ip6_addr_t is defined in lwip and depends on using IPv6 zones
+#define _MDNS_SIZEOF_IP6_ADDR (MDNS_ANSWER_AAAA_SIZE)
+
 static const char * MDNS_DEFAULT_DOMAIN = "local";
 static const char * MDNS_SUB_STR = "_sub";
 
@@ -734,11 +738,11 @@ static uint16_t _mdns_append_aaaa_record(uint8_t * packet, uint16_t * index, uin
 
     uint16_t data_len_location = *index - 2;
 
-    if ((*index + 15) >= MDNS_MAX_PACKET_SIZE) {
+    if ((*index + MDNS_ANSWER_AAAA_SIZE) > MDNS_MAX_PACKET_SIZE) {
         return 0;
     }
 
-    part_length = sizeof(ip6_addr_t);
+    part_length = MDNS_ANSWER_AAAA_SIZE;
     memcpy(packet + *index, ipv6, part_length);
     *index += part_length;
     _mdns_set_u16(packet, data_len_location, part_length);
@@ -817,7 +821,7 @@ static bool _ipv6_address_is_zero(ip6_addr_t ip6)
 {
     uint8_t i;
     uint8_t * data = (uint8_t *)ip6.addr;
-    for (i=0; i<16; i++) {
+    for (i=0; i<_MDNS_SIZEOF_IP6_ADDR; i++) {
         if (data[i]) {
             return false;
         }
@@ -2185,7 +2189,7 @@ static int _mdns_check_aaaa_collision(ip6_addr_t * ip, tcpip_adapter_if_t tcpip_
     if (tcpip_adapter_get_ip6_linklocal(tcpip_if, &if_ip6)) {
         return 1;//they win
     }
-    int ret = memcmp((uint8_t*)&if_ip6.addr, (uint8_t*)ip->addr, sizeof(ip6_addr_t));
+    int ret = memcmp((uint8_t*)&if_ip6.addr, (uint8_t*)ip->addr, _MDNS_SIZEOF_IP6_ADDR);
     if (ret > 0) {
         return -1;//we win
     } else if (ret < 0) {
@@ -2197,7 +2201,7 @@ static int _mdns_check_aaaa_collision(ip6_addr_t * ip, tcpip_adapter_if_t tcpip_
         if (tcpip_adapter_get_ip6_linklocal(other_if, &other_ip6)) {
             return 1;//IPv6 not active! They win
         }
-        if (memcmp((uint8_t*)&other_ip6.addr, (uint8_t*)ip->addr, sizeof(ip6_addr_t))) {
+        if (memcmp((uint8_t*)&other_ip6.addr, (uint8_t*)ip->addr, _MDNS_SIZEOF_IP6_ADDR)) {
             return 1;//IPv6 not ours! They win
         }
         _mdns_dup_interface(tcpip_if);
@@ -2898,7 +2902,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
             } else if (type == MDNS_TYPE_AAAA) {//ipv6
                 ip_addr_t ip6;
                 ip6.type = IPADDR_TYPE_V6;
-                memcpy(ip6.u_addr.ip6.addr, data_ptr, 16);
+                memcpy(ip6.u_addr.ip6.addr, data_ptr, MDNS_ANSWER_AAAA_SIZE);
                 if (search_result) {
                     //check for more applicable searches (PTR & A/AAAA at the same time)
                     while (search_result) {
@@ -4934,7 +4938,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
                 _mdns_dbg_printf("\n");
             } else if (type == MDNS_TYPE_AAAA) {
                 ip6_addr_t ip6;
-                memcpy(&ip6, data_ptr, sizeof(ip6_addr_t));
+                memcpy(&ip6, data_ptr, MDNS_ANSWER_AAAA_SIZE);
                 _mdns_dbg_printf(IPV6STR "\n", IPV62STR(ip6));
             } else if (type == MDNS_TYPE_A) {
                 ip4_addr_t ip;
