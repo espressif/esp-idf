@@ -255,3 +255,15 @@ begin
     RaiseException('Failed to create the shortcut');
   end;
 end;
+
+
+{ ------------------------------ WD exclusion registration ------------------------------ }
+
+procedure RegisterIDFToolsExecutablesInWD();
+var
+  CmdLine: String;
+begin
+  CmdLine := ExpandConstant('powershell -ExecutionPolicy ByPass -File "{app}\dist\tools_WD_excl.ps1" -AddExclPath "{app}\*.exe"');
+  Log('Registering IDF Tools executables in Windows Defender: ' + CmdLine);
+  DoCmdlineInstall('Finishing ESP-IDF installation', 'Registering IDF Tools executables in Windows Defender', CmdLine);
+end;
