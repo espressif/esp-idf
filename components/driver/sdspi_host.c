@@ -287,20 +287,24 @@ esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
         return ESP_ERR_INVALID_ARG;
     }
 
-    spi_bus_config_t buscfg = {
-        .miso_io_num = slot_config->gpio_miso,
-        .mosi_io_num = slot_config->gpio_mosi,
-        .sclk_io_num = slot_config->gpio_sck,
-        .quadwp_io_num = GPIO_NUM_NC,
-        .quadhd_io_num = GPIO_NUM_NC
-    };
+    esp_err_t ret;
 
-    // Initialize SPI bus
-    esp_err_t ret = spi_bus_initialize((spi_host_device_t)slot, &buscfg,
-            slot_config->dma_channel);
-    if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "spi_bus_initialize failed with rc=0x%x", ret);
-        return ret;
+    if (!slot_config->skip_bus_init) {
+        spi_bus_config_t buscfg = {
+            .miso_io_num = slot_config->gpio_miso,
+            .mosi_io_num = slot_config->gpio_mosi,
+            .sclk_io_num = slot_config->gpio_sck,
+            .quadwp_io_num = GPIO_NUM_NC,
+            .quadhd_io_num = GPIO_NUM_NC
+        };
+
+        // Initialize SPI bus
+        ret = spi_bus_initialize((spi_host_device_t)slot, &buscfg,
+                slot_config->dma_channel);
+        if (ret != ESP_OK) {
+            ESP_LOGD(TAG, "spi_bus_initialize failed with rc=0x%x", ret);
+            return ret;
+        }
     }
 
     // Attach the SD card to the SPI bus

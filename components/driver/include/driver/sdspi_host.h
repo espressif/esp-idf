@@ -62,6 +62,7 @@ typedef struct {
     gpio_num_t gpio_wp;     ///< GPIO number of write protect signal
     gpio_num_t gpio_int;    ///< GPIO number of interrupt line (input) for SDIO card.
     int dma_channel;        ///< DMA channel to be used by SPI driver (1 or 2)
+    bool skip_bus_init;     ///< skip spi bus initialization
 } sdspi_slot_config_t;
 
 #define SDSPI_SLOT_NO_CD    GPIO_NUM_NC ///< indicates that card detect line is not used
@@ -79,7 +80,8 @@ typedef struct {
     .gpio_cd   = SDSPI_SLOT_NO_CD, \
     .gpio_wp   = SDSPI_SLOT_NO_WP, \
     .gpio_int  = GPIO_NUM_NC, \
-    .dma_channel = 1 \
+    .dma_channel = 1, \
+    .skip_bus_init = false \
 }
 
 /**
