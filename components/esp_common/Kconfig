@@ -53,6 +53,15 @@ menu "Common ESP-related"
             It can be shrunk if you are sure that you do not use any custom
             IPC functionality.
 
+    config ESP_IPC_USES_CALLERS_PRIORITY
+        bool "IPC runs at caller's priority"
+        default y
+        depends on !FREERTOS_UNICORE
+        help
+            If this option is not enabled then the IPC task will keep behavior
+            same as prior to that of ESP-IDF v4.0, and hence IPC task will run
+            at (configMAX_PRIORITIES - 1) priority.
+
     config ESP_TIMER_TASK_STACK_SIZE
         int "High-resolution timer task stack size"
         default 3584
