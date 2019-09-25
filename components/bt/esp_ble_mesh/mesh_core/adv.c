@@ -386,8 +386,10 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 void bt_mesh_adv_init(void)
 {
     xBleMeshQueue = xQueueCreate(150, sizeof(bt_mesh_msg_t));
-    xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", 3072, NULL,
+    configASSERT(xBleMeshQueue);
+    int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", 3072, NULL,
                             configMAX_PRIORITIES - 7, NULL, TASK_PINNED_TO_CORE);
+    configASSERT(ret == pdTRUE);
 }
 
 int bt_mesh_scan_enable(void)
