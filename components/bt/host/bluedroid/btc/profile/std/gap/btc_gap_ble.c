@@ -1196,6 +1196,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 bta_dm_co_ble_set_max_key_size(key_size);
                 break;
             }
+            case ESP_BLE_SM_MIN_KEY_SIZE: {
+                uint8_t key_size = 0;
+                STREAM_TO_UINT8(key_size, value);
+                bta_dm_co_ble_set_min_key_size(key_size);
+                break;
+            }
             case ESP_BLE_SM_SET_STATIC_PASSKEY: {
                 uint32_t passkey = 0;
                 for(uint8_t i = 0; i < arg->set_security_param.len; i++)
