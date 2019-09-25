@@ -33,7 +33,7 @@ menu "OpenSSL"
 
     choice OPENSSL_ASSERT
         prompt "Select OpenSSL assert function"
-        default CONFIG_OPENSSL_ASSERT_EXIT
+        default OPENSSL_ASSERT_EXIT
         help
             OpenSSL function needs "assert" function to check if input parameters are valid.
 

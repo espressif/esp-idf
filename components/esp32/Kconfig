@@ -117,7 +117,7 @@ menu "ESP32-specific"
 
         choice SPIRAM_SPEED
             prompt "Set RAM clock speed"
-            default SPIRAM_CACHE_SPEED_40M
+            default SPIRAM_SPEED_40M
             help
                 Select the speed for the SPI RAM chip.
                 If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
@@ -487,7 +487,7 @@ menu "ESP32-specific"
     choice ESP32_BROWNOUT_DET_LVL_SEL
         prompt "Brownout voltage level"
         depends on ESP32_BROWNOUT_DET
-        default BROWNOUT_DET_LVL_SEL_25
+        default ESP32_BROWNOUT_DET_LVL_SEL_0
         help
             The brownout detector will reset the chip when the supply voltage is approximately
             below this level. Note that there may be some variation of brownout voltage level
