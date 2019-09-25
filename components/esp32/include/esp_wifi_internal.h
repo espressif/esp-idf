@@ -204,15 +204,26 @@ esp_err_t esp_wifi_internal_osi_funcs_md5_check(const char *md5);
 esp_err_t esp_wifi_internal_crypto_funcs_md5_check(const char *md5);
 
 /**
-  * @brief     Check the git commit id of WiFi library
+  * @brief     Check the MD5 values of the esp_wifi_types.h in IDF and WiFi library
   *
-  * @attention 1. It is used for internal CI WiFi library check
+  * @attention 1. It is used for internal CI version check
   *
   * @return
   *     - ESP_OK : succeed
-  *     - ESP_FAIL : fail
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
   */
-esp_err_t esp_wifi_internal_git_commit_id_check(void);
+esp_err_t esp_wifi_internal_wifi_type_md5_check(const char *md5);
+
+/**
+  * @brief     Check the MD5 values of the esp_wifi.h in IDF and WiFi library
+  *
+  * @attention 1. It is used for internal CI version check
+  *
+  * @return
+  *     - ESP_OK : succeed
+  *     - ESP_WIFI_INVALID_ARG : MD5 check fail
+  */
+esp_err_t esp_wifi_internal_esp_wifi_md5_check(const char *md5);
 
 /**
   * @brief     Allocate a chunk of memory for WiFi driver
