@@ -30,8 +30,28 @@ function(__kconfig_init)
                     "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf-idf. "
                     "Consult the setup docs for ESP-IDF on Windows.")
             endif()
-        elseif(WINPTY)
-            set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
+        else()
+            execute_process(COMMAND "${MCONF}" -v
+                RESULT_VARIABLE mconf_res
+                OUTPUT_VARIABLE mconf_out
+                ERROR_VARIABLE mconf_err)
+            if(${mconf_res})
+                message(WARNING "Failed to detect version of mconf-idf. Return code was ${mconf_res}.")
+            else()
+                string(STRIP "${mconf_out}" mconf_out)
+                set(mconf_expected_ver "mconf-v4.6.0.0-idf-20190628-win32")
+                if(NOT ${mconf_out} STREQUAL "mconf-idf version ${mconf_expected_ver}")
+                    message(WARNING "Unexpected ${mconf_out}. Expected ${mconf_expected_ver}. "
+                                    "Please check the ESP-IDF Getting Started guide for version "
+                                    "${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH} "
+                                    "to correct this issue")
+                else()
+                    message(STATUS "${mconf_out}")   # prints: mconf-idf version ....
+                endif()
+            endif()
+            if(WINPTY)
+                set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
+            endif()
         endif()
     endif()
 
