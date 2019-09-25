@@ -22,8 +22,8 @@
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
-#ifdef CONFIG_BTU_TASK_STACK_SIZE
-#define UC_BTU_TASK_STACK_SIZE              CONFIG_BTU_TASK_STACK_SIZE
+#ifdef CONFIG_BT_BTU_TASK_STACK_SIZE
+#define UC_BTU_TASK_STACK_SIZE              CONFIG_BT_BTU_TASK_STACK_SIZE
 #else
 #define UC_BTU_TASK_STACK_SIZE              4096
 #endif
