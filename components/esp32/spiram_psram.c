@@ -671,7 +671,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
         // If flash mode is set to QIO or QOUT, the WP pin is equal the value configured in bootloader.
         // If flash mode is set to DIO or DOUT, the WP pin should config it via menuconfig.
-        #if CONFIG_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
+        #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
         psram_io.psram_spiwp_sd3_io = CONFIG_BOOTLOADER_SPI_WP_PIN;
         #else
         psram_io.psram_spiwp_sd3_io = CONFIG_SPIRAM_SPIWP_SD3_PIN;

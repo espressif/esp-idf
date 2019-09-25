@@ -69,6 +69,11 @@ check_kconfigs:
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/test_check_kconfigs.py
     - ${IDF_PATH}/tools/check_kconfigs.py
 
+check_deprecated_kconfig_options:
+  extends: .check_job_template_with_filter
+  script:
+    - ${IDF_PATH}/tools/ci/check_deprecated_kconfigs.py
+
 check_ut_cmake_make:
   extends: .check_job_template_with_filter
   stage: check

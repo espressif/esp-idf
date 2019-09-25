@@ -227,6 +227,10 @@ def main():
     config.disable_redun_warnings()
     config.disable_override_warnings()
 
+    sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
+    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
+    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
+
     if len(args.defaults) > 0:
         # always load defaults first, so any items which are not defined in that config
         # will have the default defined in the defaults file
@@ -234,11 +238,16 @@ def main():
             print("Loading defaults file %s..." % name)
             if not os.path.exists(name):
                 raise RuntimeError("Defaults file not found: %s" % name)
-            config.load_config(name, replace=False)
-
-    sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
-    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
+            try:
+                with tempfile.NamedTemporaryFile(prefix="confgen_tmp", delete=False) as f:
+                    temp_file = f.name
+                deprecated_options.replace(sdkconfig_in=name, sdkconfig_out=temp_file)
+                config.load_config(temp_file, replace=False)
+            finally:
+                try:
+                    os.remove(temp_file)
+                except OSError:
+                    pass
 
     # If config file previously exists, load it
     if args.config and os.path.exists(args.config):
