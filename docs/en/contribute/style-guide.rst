@@ -2,7 +2,7 @@ Espressif IoT Development Framework Style Guide
 ===============================================
 
 
-About this guide
+About This Guide
 ----------------
 
 Purpose of this style guide is to encourage use of common coding practices within the ESP-IDF. 
@@ -13,7 +13,7 @@ We try to keep rules simple enough, which means that they can not cover all pote
 
 When doing modifications to third-party code used in ESP-IDF, follow the way that particular project is written. That will help propose useful changes for merging into upstream project. 
 
-C code formatting
+C Code Formatting
 -----------------
 
 Indentation
@@ -21,7 +21,7 @@ Indentation
 
 Use 4 spaces for each indentation level. Don't use tabs for indentation. Configure the editor to emit 4 spaces each time you press tab key.
 
-Vertical space
+Vertical Space
 ^^^^^^^^^^^^^^
 
 Place one empty line between functions. Don't begin or end a function with an empty line.
@@ -43,7 +43,9 @@ Place one empty line between functions. Don't begin or end a function with an em
         }
     }
 
-Horizontal space
+The maximum line length is 120 characters as long as it doesn't seriously affect the readability.
+
+Horizontal Space
 ^^^^^^^^^^^^^^^^
 
 Always add single space after conditional and loop keywords::
@@ -173,7 +175,7 @@ If you accidentally have some commits in your branch that add LF endings, you ca
 
 For updating a single commit, it's possible to run ``dos2unix FILENAME`` and then run ``git commit --amend``
 
-Formatting your code
+Formatting Your Code
 ^^^^^^^^^^^^^^^^^^^^
 
 You can use ``astyle`` program to format your code according to the above recommendations.
@@ -183,6 +185,106 @@ If you are writing a file from scratch, or doing a complete rewrite, feel free t
 To re-format a file, run::
 
     tools/format.sh components/my_component/file.c
+
+
+C++ Code Formatting
+-------------------
+
+The same rules as for C apply. Where they are not enough, apply the following rules.
+
+File Naming
+^^^^^^^^^^^^
+C++ Header files have the extension ``.h``. C++ source files have the extension ``.cpp``, which is important for the compiler to distiguish them from normal C source files.
+
+Naming
+^^^^^^
+
+* **Class and struct** names shall be written in ``CamelCase`` with a capital letter as beginning. Member variables and methods shall be in ``snake_case``.
+* **Namespaces** shall be in lower ``snake_case``.
+* **Templates** are specified in the line above the function declaration.
+
+Member Order in Classes
+^^^^^^^^^^^^^^^^^^^^^^^
+
+First put the public members, then the protected, then private ones. Omit public, protected or private sections without any members.
+
+Spacing
+^^^^^^^
+
+* Don't indent inside namespaces.
+* Put ``public``, ``protected`` and ``private`` labels at the same indentation level as the corresponding ``class`` label.
+
+Simple Example
+^^^^^^^^^^^^^^^
+::
+
+    // file spaceship.h
+    #ifndef SPACESHIP_H_
+    #define SPACESHIP_H_
+    #include <cstdlib>
+
+    namespace spaceships {
+
+    class SpaceShip {
+    public:
+        SpaceShip(size_t crew);
+        size_t get_crew_size() const;
+
+    private:
+        const size_t crew;
+    };
+
+    class SpaceShuttle : public SpaceShip {
+    public:
+        SpaceShuttle();
+    };
+
+    class Sojuz : public SpaceShip {
+    public:
+        Sojuz();
+    };
+
+    template <typename T>
+    class CargoShip {
+    public:
+        CargoShip(const T &cargo);
+
+    private:
+        T cargo;
+    };
+
+    } // namespace spaceships
+
+    #endif // SPACESHIP_H_
+
+    // file spaceship.cpp
+    #include "spaceship.h"
+
+    namespace spaceships {
+
+    // Putting the curly braces in the same line for constructors is OK if it only initializes
+    // values in the initializer list
+    SpaceShip::SpaceShip(size_t crew) : crew(crew) { }
+
+    size_t SpaceShip::get_crew_size() const
+    {
+        return crew;
+    }
+
+    SpaceShuttle::SpaceShuttle() : SpaceShip(7)
+    {
+        // doing further initialization
+    }
+
+    Sojuz::Sojuz() : SpaceShip(3)
+    {
+        // doing further initialization
+    }
+
+    template <typename T>
+    CargoShip<T>::CargoShip(const T &cargo) : cargo(cargo) { }
+
+    } // namespace spaceships
 
 
 CMake Code Style
@@ -198,7 +300,7 @@ CMake Code Style
 - For globally scoped variables, use uppercase (``WITH_UNDERSCORES``).
 - Otherwise follow the defaults of the cmake-lint_ project.
 
-Configuring the code style for a project using EditorConfig
+Configuring the Code Style for a Project Using EditorConfig
 -----------------------------------------------------------
 
 EditorConfig helps developers define and maintain consistent coding styles between different editors and IDEs. The EditorConfig project consists of a file format for defining coding styles and a collection of text editor plugins that enable editors to read the file format and adhere to defined styles. EditorConfig files are easily readable and they work nicely with version control systems.
@@ -206,7 +308,7 @@ EditorConfig helps developers define and maintain consistent coding styles betwe
 For more information, see `EditorConfig <http://editorconfig.org>`_ Website.
 
 
-Documenting code
+Documenting Code
 ----------------
 
 Please see the guide here: :doc:`documenting-code`.
@@ -230,7 +332,7 @@ Structure
 To be written.
 
 
-Language features
+Language Features
 -----------------
 
 To be written.
