@@ -1,4 +1,4 @@
-menu Bluetooth
+menu "Bluetooth"
 
     config BT_ENABLED
         bool "Bluetooth"
