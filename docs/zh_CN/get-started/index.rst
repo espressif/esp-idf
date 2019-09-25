@@ -133,6 +133,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 
 .. _get-started-get-esp-idf:
+.. _get-started-set-up-tools:
 
 第二步：获取 ESP-IDF
 ===========================
@@ -181,6 +182,7 @@ ESP-IDF 将下载至 ``%userprofile%\esp\esp-idf``。
         git submodule update --init
 
 .. _get-started-setup-path:
+.. _get-started-set-up-env:
 
 第三步：设置环境变量
 ===========================
