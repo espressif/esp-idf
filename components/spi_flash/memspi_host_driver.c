@@ -34,7 +34,6 @@ esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_d
     //some functions are not required if not SPI1
     if (data->spi != &SPI1) {
         host->flush_cache = NULL;
-        host->region_protected = NULL;
     }
     return ESP_OK;
 }
@@ -87,15 +86,4 @@ esp_err_t memspi_host_flush_cache(spi_flash_host_driver_t* driver, uint32_t addr
         spi_flash_check_and_flush_cache(addr, size);
     }
     return ESP_OK;
-}
-
-bool memspi_region_protected(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size)
-{
-    if (((memspi_host_data_t*)(driver->driver_data))->spi != &SPI1) {
-        return false;
-    }
-    if (!esp_partition_main_flash_region_safe(addr, size)) {
-        return true;
-    }
-    return false;
 }

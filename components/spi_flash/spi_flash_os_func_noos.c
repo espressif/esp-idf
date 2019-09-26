@@ -20,13 +20,15 @@
 #include "esp_attr.h"
 
 
-static esp_err_t start(void *arg)
+
+static IRAM_ATTR esp_err_t start(void *arg)
 {
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);
     return ESP_OK;
 }
-static esp_err_t end(void *arg)
+
+static IRAM_ATTR esp_err_t end(void *arg)
 {
     Cache_Flush(0);
     Cache_Flush(1);
@@ -35,14 +37,21 @@ static esp_err_t end(void *arg)
     return ESP_OK;
 }
 
-static esp_err_t delay_ms(void *arg, unsigned ms)
+static IRAM_ATTR esp_err_t delay_ms(void *arg, unsigned ms)
 {
     ets_delay_us(1000 * ms);
     return ESP_OK;
 }
 
-const esp_flash_os_functions_t esp_flash_noos_functions = {
+const DRAM_ATTR esp_flash_os_functions_t esp_flash_noos_functions = {
     .start = start,
     .end = end,
     .delay_ms = delay_ms,
+    .region_protected = NULL,
 };
+
+esp_err_t IRAM_ATTR esp_flash_app_disable_os_functions(esp_flash_t* chip)
+{
+    chip->os_func = &esp_flash_noos_functions;
+    return ESP_OK;
+}

@@ -22,8 +22,9 @@
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
 #include "driver/spi_common.h"
+#include "esp_flash_internal.h"
 
-static const char TAG[] = "spi_flash";
+__attribute__((unused)) static const char TAG[] = "spi_flash";
 
 #ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
 #define DEFAULT_FLASH_SPEED ESP_FLASH_80MHZ
@@ -48,6 +49,18 @@ static const char TAG[] = "spi_flash";
 #else
 #define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
 #endif
+
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = false, \
+    .input_delay_ns = 0,\
+}
+
+
+esp_flash_t *esp_flash_default_chip = NULL;
+
 
 static IRAM_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux)
 {
@@ -151,28 +164,21 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
     return ESP_OK;
 }
 
-#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
-    .host_id = SPI_HOST,\
-    .speed = DEFAULT_FLASH_SPEED, \
-    .cs_num = 0, \
-    .iomux = false, \
-    .input_delay_ns = 0,\
-}
-
-static DRAM_ATTR spi_flash_host_driver_t esp_flash_default_host_drv = ESP_FLASH_DEFAULT_HOST_DRIVER();
-
-static DRAM_ATTR memspi_host_data_t default_driver_data;
 
 /* The default (ie initial boot) no-OS ROM esp_flash_os_functions_t */
 extern const esp_flash_os_functions_t esp_flash_noos_functions;
+
+#ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+
+static DRAM_ATTR memspi_host_data_t default_driver_data;
+static DRAM_ATTR spi_flash_host_driver_t esp_flash_default_host_drv = ESP_FLASH_DEFAULT_HOST_DRIVER();
+
 
 static DRAM_ATTR esp_flash_t default_chip = {
     .read_mode = DEFAULT_FLASH_MODE,
     .host = &esp_flash_default_host_drv,
     .os_func = &esp_flash_noos_functions,
 };
-
-esp_flash_t *esp_flash_default_chip = NULL;
 
 esp_err_t esp_flash_init_default_chip()
 {
@@ -202,5 +208,7 @@ esp_err_t esp_flash_init_default_chip()
 
 esp_err_t esp_flash_app_init()
 {
-    return esp_flash_init_os_functions(&default_chip, 0);
+    return esp_flash_app_init_os_functions(&default_chip);
 }
+
+#endif
