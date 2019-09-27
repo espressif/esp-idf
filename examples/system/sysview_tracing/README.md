@@ -94,7 +94,7 @@ To run the example and find out the reason of the problem:
 
     ```
     cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    bin/openocd -s share/openocd/scripts -f board/esp32-wrover-kit-3.3v.cfg
     ```
 NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181105` or later.
 

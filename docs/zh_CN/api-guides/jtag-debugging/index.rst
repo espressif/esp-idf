@@ -140,7 +140,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 打开终端，按照快速入门中的指南 :ref:`设置好开发环境 <get-started-set-up-env>` ，然后运行如下命令，启动 OpenOCD（该命令在 Windows，Linux，和 macOS 中通用）::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 .. note::
 
@@ -150,7 +150,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 现在应该可以看到如下输入（此日志来自 ESP-WROVER-KIT）::
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32-wrover-kit-3.3v.cfg
     Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
@@ -179,11 +179,11 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 除此以外，还支持使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp filename.bin 0x10000 verify exit"
 
-其中 OpenOCD 的烧写命令 ``program_esp32`` 具有以下格式：
+其中 OpenOCD 的烧写命令 ``program_esp`` 具有以下格式：
 
-``program_esp32 <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit]``
 
     -  ``image_file`` - 程序镜像文件存放的路径
     -  ``offset`` - 镜像烧写到闪存中的偏移地址
@@ -260,11 +260,11 @@ Windows 用户可以执行::
 
 运行本地编译的 OpenOCD 的示例如下（Linux 和 macOS 用户）::
 
-    src/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    src/openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 Windows 用户::
 
-    src\openocd -f interface\ftdi\esp32_devkitj_v1.cfg -f board\esp-wroom-32.cfg
+    src\openocd -f board\esp32-wrover-kit-3.3v.cfg
 
 
 .. _jtag-debugging-tips-and-quirks:
