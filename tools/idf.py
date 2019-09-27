@@ -448,10 +448,11 @@ def init_cli(verbose_output=None):
                     for o, f in flash_items:
                         cmd += o + " " + flasher_path(f) + " "
 
-                print("%s -p %s -b %s --after %s write_flash %s" % (
+                print("%s -p %s -b %s --before %s --after %s write_flash %s" % (
                     _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
                     args.port or "(PORT)",
                     args.baud,
+                    flasher_args["extra_esptool_args"]["before"],
                     flasher_args["extra_esptool_args"]["after"],
                     cmd.strip(),
                 ))
