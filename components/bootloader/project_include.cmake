@@ -1,7 +1,7 @@
 set(BOOTLOADER_OFFSET 0x1000)
 
 # Do not generate flash file when building bootloader
-if(BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 
