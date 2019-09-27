@@ -28,11 +28,11 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "settings.h"
 #include "mesh.h"
 #include "provisioner_prov.h"
-#include "provisioner_proxy.h"
+#include "proxy_client.h"
 #include "provisioner_main.h"
 
 static volatile bool provisioner_en = false;
@@ -127,7 +127,7 @@ void bt_mesh_reset(void)
         bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         bt_mesh_proxy_gatt_disable();
     }
 
@@ -296,7 +296,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
 #if CONFIG_BLE_MESH_NODE
     extern struct bt_mesh_gatt_service proxy_svc;
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         bt_mesh_gatts_service_register(&proxy_svc);
     }
 
@@ -340,8 +340,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 #if CONFIG_BLE_MESH_NODE
         bt_mesh_proxy_init();
 #endif
-#if CONFIG_BLE_MESH_PROVISIONER
-        provisioner_proxy_init();
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+        bt_mesh_proxy_prov_client_init();
 #endif
     }
 
@@ -397,11 +398,6 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
             (bearers & BLE_MESH_PROV_GATT)) {
         bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
             BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
-    }
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-            BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV, NULL);
     }
 #endif
 
@@ -469,7 +465,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
          * here. The node needs to send some status messages to the phone
          * while it is connected.
          */
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
             bt_mesh_proxy_gatt_disable();
         }
 #endif
@@ -490,7 +486,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
         }
 #if 0
         /* Mesh Proxy GATT will be re-enabled on application layer */
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
                 bt_mesh_gatt_proxy_get() != BLE_MESH_GATT_PROXY_NOT_SUPPORTED) {
             bt_mesh_proxy_gatt_enable();
             bt_mesh_adv_update();

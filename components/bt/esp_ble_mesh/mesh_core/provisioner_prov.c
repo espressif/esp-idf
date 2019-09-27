@@ -27,15 +27,13 @@
 #include "adv.h"
 #include "mesh.h"
 #include "provisioner_prov.h"
-#include "provisioner_proxy.h"
+#include "proxy_client.h"
 #include "provisioner_main.h"
 
 #if CONFIG_BLE_MESH_PROVISIONER
 
-/* Service data length has minus 1 type length & 2 uuid length*/
-#define BLE_MESH_PROV_SRV_DATA_LEN       0x12
-#define BLE_MESH_PROXY_SRV_DATA_LEN1     0x09
-#define BLE_MESH_PROXY_SRV_DATA_LEN2     0x11
+_Static_assert(BLE_MESH_MAX_CONN >= CONFIG_BLE_MESH_PBG_SAME_TIME,
+    "Too large BLE Mesh PB-GATT count");
 
 /* 3 transmissions, 20ms interval */
 #define PROV_XMIT              BLE_MESH_TRANSMIT(2, 20)
@@ -378,14 +376,14 @@ void provisioner_pbg_count_dec(void)
     }
 }
 
-void provisioner_pbg_count_inc(void)
+static inline void provisioner_pbg_count_inc(void)
 {
     prov_ctx.pbg_count++;
 }
 
+#if defined(CONFIG_BLE_MESH_PB_GATT)
 void provisioner_clear_link_conn_info(const u8_t addr[6])
 {
-#if defined(CONFIG_BLE_MESH_PB_GATT)
     u8_t i;
 
     if (!addr) {
@@ -411,9 +409,9 @@ void provisioner_clear_link_conn_info(const u8_t addr[6])
     }
 
     BT_WARN("%s, Address %s is not found", __func__, bt_hex(addr, BLE_MESH_ADDR_LEN));
-#endif
     return;
 }
+#endif
 
 const struct bt_mesh_prov *provisioner_get_prov_info(void)
 {
@@ -671,7 +669,7 @@ static int provisioner_start_prov_pb_gatt(const u8_t uuid[16],
                 link[i].addr.type = addr->type;
                 memcpy(link[i].addr.val, addr->val, BLE_MESH_ADDR_LEN);
             }
-            if (bt_mesh_gattc_conn_create(&link[i].addr, BLE_MESH_UUID_MESH_PROV_VAL)) {
+            if (bt_mesh_gattc_conn_create(&link[i].addr, BLE_MESH_UUID_MESH_PROV_VAL) < 0) {
                 memset(link[i].uuid, 0, 16);
                 link[i].oob_info = 0x0;
                 memset(&link[i].addr, 0, sizeof(bt_mesh_addr_t));
@@ -680,6 +678,7 @@ static int provisioner_start_prov_pb_gatt(const u8_t uuid[16],
             }
             /* If creating connection successfully, set connecting flag to 1 */
             link[i].connecting = true;
+            provisioner_pbg_count_inc();
             osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
             return 0;
         }
@@ -1424,7 +1423,7 @@ static int prov_send_gatt(const u8_t idx, struct net_buf_simple *msg)
         return -ENOTCONN;
     }
 
-    err = provisioner_proxy_send(link[idx].conn, BLE_MESH_PROXY_PROV, msg);
+    err = bt_mesh_proxy_prov_client_send(link[idx].conn, BLE_MESH_PROXY_PROV, msg);
     if (err) {
         BT_ERR("%s, Failed to send PB-GATT pdu", __func__);
         return err;
@@ -3153,85 +3152,7 @@ void provisioner_unprov_beacon_recv(struct net_buf_simple *buf)
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 }
 
-bool provisioner_flags_match(struct net_buf_simple *buf)
-{
-    u8_t flags;
-
-    if (buf->len != 1) {
-        BT_DBG("%s, Unexpected flags length", __func__);
-        return false;
-    }
-
-    flags = net_buf_simple_pull_u8(buf);
-
-    BT_DBG("Received adv pkt with flags: 0x%02x", flags);
-
-    /* Flags context will not be checked curently */
-
-    return true;
-}
-
-u16_t provisioner_srv_uuid_recv(struct net_buf_simple *buf)
-{
-    u16_t uuid;
-
-    if (buf->len != 2) {
-        BT_DBG("Length not match mesh service uuid");
-        return false;
-    }
-
-    uuid = net_buf_simple_pull_le16(buf);
-
-    BT_DBG("Received adv pkt with service UUID: %d", uuid);
-
-    if ((uuid != BLE_MESH_UUID_MESH_PROV_VAL) && (uuid != BLE_MESH_UUID_MESH_PROXY_VAL)) {
-        return false;
-    }
-
-    return uuid;
-}
-
-static void provisioner_prov_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
-
-void provisioner_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid)
-{
-    u16_t uuid_type;
-
-    if (!buf || !addr) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return;
-    }
-
-    uuid_type = net_buf_simple_pull_le16(buf);
-    if (uuid_type != uuid) {
-        BT_DBG("%s, Invalid Mesh Service Data UUID 0x%04x", __func__, uuid_type);
-        return;
-    }
-
-    switch (uuid) {
-    case BLE_MESH_UUID_MESH_PROV_VAL:
-        if (buf->len != BLE_MESH_PROV_SRV_DATA_LEN) {
-            BT_WARN("%s, Invalid Mesh Prov Service Data length %d", __func__, buf->len);
-            return;
-        }
-        BT_DBG("Start to deal with Mesh Prov Service Data");
-        provisioner_prov_srv_data_recv(buf, addr);
-        break;
-    case BLE_MESH_UUID_MESH_PROXY_VAL:
-        if (buf->len != BLE_MESH_PROXY_SRV_DATA_LEN1 &&
-                buf->len != BLE_MESH_PROXY_SRV_DATA_LEN2) {
-            BT_ERR("%s, Invalid Mesh Proxy Service Data length %d", __func__, buf->len);
-            return;
-        }
-        BT_DBG("Start to deal with Mesh Proxy Service Data");
-        provisioner_proxy_srv_data_recv(buf);
-        break;
-    default:
-        break;
-    }
-}
-
-static void provisioner_prov_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
+void provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
 {
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     const u8_t *uuid = NULL;
@@ -3239,6 +3160,11 @@ static void provisioner_prov_srv_data_recv(struct net_buf_simple *buf, const bt_
 
     if (prov_ctx.pbg_count == CONFIG_BLE_MESH_PBG_SAME_TIME) {
         BT_DBG("Current PB-GATT devices reach max limit");
+        return;
+    }
+
+    if (bt_mesh_gattc_get_free_conn_count() == 0) {
+        BT_WARN("%s, max connections", __func__);
         return;
     }
 

@@ -26,7 +26,7 @@
 #include "net.h"
 #include "lpn.h"
 #include "friend.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
@@ -34,6 +34,7 @@
 #include "settings.h"
 #include "prov.h"
 #include "provisioner_main.h"
+#include "proxy_client.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte
@@ -191,7 +192,7 @@ int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 
     BT_DBG("NetID %s", bt_hex(keys->net_id, 8));
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     err = bt_mesh_identity_key(key, keys->identity);
     if (err) {
         BT_ERR("%s, Unable to generate IdentityKey", __func__);
@@ -473,7 +474,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
     sub->net_idx = idx;
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
     } else {
         sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
@@ -613,7 +614,7 @@ void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub)
         bt_mesh_friend_sec_update(sub ? sub->net_idx : BLE_MESH_KEY_ANY);
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
 #if CONFIG_BLE_MESH_NODE
         bt_mesh_proxy_beacon_send(sub);
@@ -789,7 +790,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             bt_mesh_proxy_relay(&buf->b, dst)) {
             send_cb_finalize(cb, cb_data);
             return 0;
@@ -901,19 +902,35 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
      */
 #if CONFIG_BLE_MESH_NODE
     if (bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
-            tx->ctx->send_ttl != 1U) {
-        if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
-                BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-            /* Notify completion if this only went
-             * through the Mesh Proxy.
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
+                tx->ctx->send_ttl != 1U) {
+            if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
+                    BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+                /* Notify completion if this only went
+                * through the Mesh Proxy.
+                */
+                send_cb_finalize(cb, cb_data);
+
+                err = 0;
+                goto done;
+            }
+        }
+    }
+#endif
+
+#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    if (tx->ctx->send_ttl != 1U) {
+        if (bt_mesh_proxy_client_send(&buf->b, tx->ctx->addr)) {
+            /* If Proxy Client succeeds to send messages with GATT bearer,
+             * we can directly finish here. And if not, which means no
+             * connection has been created with Proxy Client, here we will
+             * use advertising bearer for the messages.
              */
             send_cb_finalize(cb, cb_data);
 
             err = 0;
             goto done;
         }
-    }
     }
 #endif
 
@@ -1268,7 +1285,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     /* Sending to the GATT bearer should only happen if GATT Proxy
      * is enabled or the message originates from the local node.
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED ||
              rx->net_if == BLE_MESH_NET_IF_LOCAL)) {
         if (bt_mesh_proxy_relay(&buf->b, rx->ctx.recv_dst) &&
@@ -1399,7 +1416,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 
 #if CONFIG_BLE_MESH_NODE
     if (bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
                 net_if == BLE_MESH_NET_IF_PROXY) {
             bt_mesh_proxy_addr_add(data, rx.ctx.addr);
         }
@@ -1474,7 +1491,7 @@ void bt_mesh_net_start(void)
         bt_mesh_beacon_disable();
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             bt_mesh_gatt_proxy_get() != BLE_MESH_GATT_PROXY_NOT_SUPPORTED) {
         bt_mesh_proxy_gatt_enable();
         bt_mesh_adv_update();

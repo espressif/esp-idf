@@ -30,10 +30,10 @@
 #include "foundation.h"
 #include "beacon.h"
 #include "prov.h"
-#include "proxy.h"
+#include "proxy_server.h"
 
 #include "provisioner_prov.h"
-#include "provisioner_proxy.h"
+#include "proxy_client.h"
 #include "provisioner_beacon.h"
 
 /* Convert from ms to 0.625ms units */
@@ -472,11 +472,112 @@ const bt_mesh_addr_t *bt_mesh_pba_get_addr(void)
     return dev_addr;
 }
 
+#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
+{
+    u8_t flags;
+
+    if (buf->len != 1U) {
+        BT_DBG("%s, Unexpected flags length", __func__);
+        return false;
+    }
+
+    flags = net_buf_simple_pull_u8(buf);
+
+    BT_DBG("Received adv pkt with flags: 0x%02x", flags);
+
+    /* Flags context will not be checked curently */
+
+    return true;
+}
+
+static bool bt_mesh_is_adv_srv_uuid_valid(struct net_buf_simple *buf, u16_t *uuid)
+{
+    if (buf->len != 2U) {
+        BT_DBG("Length not match mesh service uuid");
+        return false;
+    }
+
+    *uuid = net_buf_simple_pull_le16(buf);
+
+    BT_DBG("Received adv pkt with service UUID: %d", *uuid);
+
+    if (*uuid != BLE_MESH_UUID_MESH_PROV_VAL &&
+        *uuid != BLE_MESH_UUID_MESH_PROXY_VAL) {
+        return false;
+    }
+
+    if (*uuid == BLE_MESH_UUID_MESH_PROV_VAL &&
+        bt_mesh_is_provisioner_en() == false) {
+        return false;
+    }
+
+    if (*uuid == BLE_MESH_UUID_MESH_PROXY_VAL &&
+        !IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+        return false;
+    }
+
+    return true;
+}
+
+#define BLE_MESH_PROV_SRV_DATA_LEN      0x12
+#define BLE_MESH_PROXY_SRV_DATA_LEN1    0x09
+#define BLE_MESH_PROXY_SRV_DATA_LEN2    0x11
+
+static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid)
+{
+    u16_t type;
+
+    if (!buf || !addr) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    type = net_buf_simple_pull_le16(buf);
+    if (type != uuid) {
+        BT_DBG("%s, Invalid Mesh Service Data UUID 0x%04x", __func__, type);
+        return;
+    }
+
+    switch (type) {
+#if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
+    case BLE_MESH_UUID_MESH_PROV_VAL:
+        if (bt_mesh_is_provisioner_en()) {
+            if (buf->len != BLE_MESH_PROV_SRV_DATA_LEN) {
+                BT_WARN("%s, Invalid Mesh Prov Service Data length %d", __func__, buf->len);
+                return;
+            }
+
+            BT_DBG("Start to handle Mesh Prov Service Data");
+            provisioner_prov_adv_ind_recv(buf, addr);
+        }
+        break;
+#endif
+#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    case BLE_MESH_UUID_MESH_PROXY_VAL:
+        if (buf->len != BLE_MESH_PROXY_SRV_DATA_LEN1 &&
+            buf->len != BLE_MESH_PROXY_SRV_DATA_LEN2) {
+            BT_WARN("%s, Invalid Mesh Proxy Service Data length %d", __func__, buf->len);
+            return;
+        }
+
+        BT_DBG("Start to handle Mesh Proxy Service Data");
+        proxy_client_adv_ind_recv(buf, addr);
+        break;
+#endif
+    default:
+        break;
+    }
+}
+#endif
+
 static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
                             u8_t adv_type, struct net_buf_simple *buf)
 {
-#if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
-    u16_t uuid = 0;
+#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    u16_t uuid;
 #endif
 
     if (adv_type != BLE_MESH_ADV_NONCONN_IND && adv_type != BLE_MESH_ADV_IND) {
@@ -548,30 +649,24 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
             }
 #endif
             break;
-#if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
+#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
         case BLE_MESH_DATA_FLAGS:
-            if (bt_mesh_is_provisioner_en()) {
-                if (!provisioner_flags_match(buf)) {
-                    BT_DBG("Flags mismatch, ignore this adv pkt");
-                    return;
-                }
+            if (!bt_mesh_is_adv_flags_valid(buf)) {
+                BT_DBG("Adv Flags mismatch, ignore this adv pkt");
+                return;
             }
             break;
         case BLE_MESH_DATA_UUID16_ALL:
-            if (bt_mesh_is_provisioner_en()) {
-                uuid = provisioner_srv_uuid_recv(buf);
-                if (!uuid) {
-                    BT_DBG("Service UUID mismatch, ignore this adv pkt");
-                    return;
-                }
+            if (!bt_mesh_is_adv_srv_uuid_valid(buf, &uuid)) {
+                BT_DBG("Adv Service UUID mismatch, ignore this adv pkt");
+                return;
             }
             break;
         case BLE_MESH_DATA_SVC_DATA16:
-            if (bt_mesh_is_provisioner_en()) {
-                provisioner_srv_data_recv(buf, addr, uuid);
-            }
+            bt_mesh_adv_srv_data_recv(buf, addr, uuid);
             break;
-#endif /* CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT */
+#endif
         default:
             break;
         }

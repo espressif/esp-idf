@@ -29,7 +29,7 @@
 #include "crypto.h"
 #include "access.h"
 #include "beacon.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "foundation.h"
 #include "friend.h"
 #include "settings.h"
@@ -96,7 +96,7 @@ static int comp_get_page_0(struct net_buf_simple *buf)
         feat |= BLE_MESH_FEAT_RELAY;
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         feat |= BLE_MESH_FEAT_PROXY;
     }
 
@@ -797,7 +797,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
         return;
     }
 
-    if (!IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) ||
+    if (!IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) ||
             bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_NOT_SUPPORTED) {
         goto send_status;
     }
@@ -2166,7 +2166,7 @@ static void net_key_add(struct bt_mesh_model *model,
     /* Make sure we have valid beacon data to be sent */
     bt_mesh_net_beacon_update(sub);
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
 #if CONFIG_BLE_MESH_NODE
         bt_mesh_proxy_beacon_send(sub);
@@ -2416,7 +2416,7 @@ static void node_identity_set(struct bt_mesh_model *model,
          * 0x00, the Node Identity state for all subnets shall be set
          * to 0x00 and shall not be changed."
          */
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) &&
+        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
                 bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
             if (node_id) {
                 bt_mesh_proxy_identity_start(sub);
@@ -3295,7 +3295,7 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
         cfg->frnd = BLE_MESH_FRIEND_NOT_SUPPORTED;
     }
 
-    if (!IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (!IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         cfg->gatt_proxy = BLE_MESH_GATT_PROXY_NOT_SUPPORTED;
     }
 
