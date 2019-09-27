@@ -10,4 +10,4 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 project(mqtt_publish)
 
-target_add_binary_data(mqtt_publish.elf "main/iot_eclipse_org.pem" TEXT)
+target_add_binary_data(mqtt_publish.elf "main/mqtt_eclipse_org.pem" TEXT)

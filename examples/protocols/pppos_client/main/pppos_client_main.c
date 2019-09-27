@@ -16,7 +16,7 @@
 #include "sim800.h"
 #include "bg96.h"
 
-#define BROKER_URL "mqtt://iot.eclipse.org"
+#define BROKER_URL "mqtt://mqtt.eclipse.org"
 
 static const char *TAG = "pppos_example";
 static EventGroupHandle_t event_group = NULL;
