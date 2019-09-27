@@ -28,8 +28,9 @@
 #include "bootloader_common.h"
 #include "soc/gpio_periph.h"
 #include "soc/spi_reg.h"
+#include "soc/efuse_reg.h"
+#include "soc/apb_ctrl_reg.h"
 #include "esp_image_format.h"
-#include "esp_efuse.h"
 
 static const char* TAG = "boot_comm";
 
@@ -149,22 +150,49 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
     return ret;
 }
 
+
+uint8_t bootloader_common_get_chip_revision(void)
+{
+    uint8_t eco_bit0, eco_bit1, eco_bit2;
+    eco_bit0 = (REG_READ(EFUSE_BLK0_RDATA3_REG) & 0xF000) >> 15;
+    eco_bit1 = (REG_READ(EFUSE_BLK0_RDATA5_REG) & 0x100000) >> 20;
+    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 0x80000000) >> 31;
+    uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
+    uint8_t chip_ver = 0;
+    switch (combine_value) {
+    case 0:
+        chip_ver = 0;
+        break;
+    case 1:
+        chip_ver = 1;
+        break;
+    case 3:
+        chip_ver = 2;
+        break;
+    case 7:
+        chip_ver = 3;
+        break;
+    default:
+        chip_ver = 0;
+        break;
+    }
+    return chip_ver;
+}
+
 esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr)
 {
     esp_err_t err = ESP_OK;
     esp_chip_id_t chip_id = CONFIG_IDF_FIRMWARE_CHIP_ID;
     if (chip_id != img_hdr->chip_id) {
-        ESP_LOGE(TAG, "image has invalid chip ID, expected at least %d, found %d", chip_id, img_hdr->chip_id);
+        ESP_LOGE(TAG, "mismatch chip ID, expect %d, found %d", chip_id, img_hdr->chip_id);
         err = ESP_FAIL;
     }
-    uint8_t revision = esp_efuse_get_chip_ver();
+    uint8_t revision = bootloader_common_get_chip_revision();
     if (revision < img_hdr->min_chip_rev) {
-        ESP_LOGE(TAG, "image has invalid chip revision, expected at least %d, found %d", revision, img_hdr->min_chip_rev);
+        ESP_LOGE(TAG, "can't run on lower chip revision, expect %d, found %d", revision, img_hdr->min_chip_rev);
         err = ESP_FAIL;
     } else if (revision != img_hdr->min_chip_rev) {
-        ESP_LOGI(TAG, "This chip is revision %d but project was configured for minimum revision %d. "\
-                 "Suggest setting project minimum revision to %d if safe to do so.",
-                 revision, img_hdr->min_chip_rev, revision);
+        ESP_LOGI(TAG, "mismatch chip revision, expect %d, found %d", revision, img_hdr->min_chip_rev);
     }
     return err;
 }
