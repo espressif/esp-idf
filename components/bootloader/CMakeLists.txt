@@ -1,7 +1,7 @@
 idf_component_register(PRIV_REQUIRES partition_table)
 
 # Do not generate flash file when building bootloader or is in early expansion of the build
-if(BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 

@@ -161,11 +161,7 @@ SECTIONS
     mapping[iram0_text]
 
     _iram_text_end = ABSOLUTE(.);
-    _iram_end = ABSOLUTE(.);
   } > iram0_0_seg
-
-  ASSERT(((_iram_text_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
-          "IRAM0 segment data does not fit.")
 
   .dram0.data :
   {
@@ -312,7 +308,7 @@ SECTIONS
     *(.tbss.*)
     _thread_local_end = ABSOLUTE(.);
     . = ALIGN(4);
-  } >drom0_0_seg
+  } >default_rodata_seg
 
   .flash.text :
   {
@@ -334,5 +330,25 @@ SECTIONS
        the flash.text segment.
     */
     _flash_cache_start = ABSOLUTE(0);
-  } >iram0_2_seg
+  } >default_code_seg
+
+  /* Marks the end of IRAM code segment */
+  .iram0.text_end (NOLOAD) :
+  {
+    . = ALIGN (4);
+    _iram_end = ABSOLUTE(.);
+  } > iram0_0_seg
+
+  /* Marks the end of data, bss and possibly rodata  */
+  .dram0.heap_start (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _heap_start = ABSOLUTE(.);
+  } > dram0_0_seg
 }
+
+ASSERT(((_iram_text_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
+          "IRAM0 segment data does not fit.")
+
+ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
+          "DRAM segment data does not fit.")
