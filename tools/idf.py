@@ -341,6 +341,9 @@ def _get_esptool_args(args):
         flasher_args = json.load(f)
 
     extra_esptool_args = flasher_args["extra_esptool_args"]
+    result += ["--before", extra_esptool_args["before"]]
+
+    extra_esptool_args = flasher_args["extra_esptool_args"]
     result += ["--after", extra_esptool_args["after"]]
     return result
 
@@ -948,7 +951,7 @@ def init_cli(verbose_output=None):
                         cmd += o + " " + flasher_path(f) + " "
 
                 print(
-                    "%s -p %s -b %s --after %s write_flash %s"
+                    "%s -p %s -b %s --before %s --after %s write_flash %s"
                     % (
                         _safe_relpath(
                             "%s/components/esptool_py/esptool/esptool.py"
@@ -956,6 +959,7 @@ def init_cli(verbose_output=None):
                         ),
                         args.port or "(PORT)",
                         args.baud,
+                        flasher_args["extra_esptool_args"]["before"],
                         flasher_args["extra_esptool_args"]["after"],
                         cmd.strip(),
                     )
