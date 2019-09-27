@@ -35,7 +35,7 @@ uint8_t esp_efuse_get_chip_ver(void)
     uint8_t eco_bit0, eco_bit1, eco_bit2;
     esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &eco_bit0, 1);
     esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV2, &eco_bit1, 1);
-    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 80000000) >> 31;
+    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 0x80000000) >> 31;
     uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
     uint8_t chip_ver = 0;
     switch (combine_value) {
