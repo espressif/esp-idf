@@ -24,9 +24,13 @@
 #include "beacon.h"
 #include "foundation.h"
 #include "access.h"
-#include "proxy.h"
+#include "proxy_server.h"
 
 #if CONFIG_BLE_MESH_NODE
+
+/* Not support enabling Proxy Client and Proxy Server simultaneously */
+_Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) && IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)),
+    "Not support Proxy Server and Proxy Client simultaneously");
 
 #define PDU_TYPE(data)     (data[0] & BIT_MASK(6))
 #define PDU_SAR(data)      (data[0] >> 6)
@@ -67,7 +71,7 @@ static const struct bt_mesh_adv_param fast_adv_param = {
 
 static bool proxy_adv_enabled;
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
 static void proxy_send_beacons(struct k_work *work);
 static u16_t proxy_ccc_val;
 #endif
@@ -87,14 +91,14 @@ static struct bt_mesh_proxy_client {
         PROV,
     } filter_type;
     u8_t msg_type;
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     struct k_work send_beacons;
 #endif
     struct k_delayed_work    sar_timer;
     struct net_buf_simple    buf;
 } clients[BLE_MESH_MAX_CONN] = {
     [0 ... (BLE_MESH_MAX_CONN - 1)] = {
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
         .send_beacons = _K_WORK_INITIALIZER(proxy_send_beacons),
 #endif
     },
@@ -158,7 +162,7 @@ static void proxy_sar_timeout(struct k_work *work)
     bt_mesh_gatts_disconnect(client->conn, 0x13);
 }
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
 /* Next subnet in queue to be advertised */
 static int next_idx;
 
@@ -439,7 +443,7 @@ int bt_mesh_proxy_identity_enable(void)
 static void proxy_complete_pdu(struct bt_mesh_proxy_client *client)
 {
     switch (client->msg_type) {
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     case BLE_MESH_PROXY_NET_PDU:
         BT_DBG("Mesh Network PDU");
         bt_mesh_net_recv(&client->buf, 0, BLE_MESH_NET_IF_PROXY);
@@ -761,7 +765,7 @@ int bt_mesh_proxy_prov_disable(bool disconnect)
 
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
 static ssize_t proxy_ccc_write(struct bt_mesh_conn *conn,
                                const struct bt_mesh_gatt_attr *attr,
                                const void *buf, u16_t len,
@@ -968,13 +972,13 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, u16_t dst)
     return relayed;
 }
 
-#endif /* CONFIG_BLE_MESH_GATT_PROXY */
+#endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 
 static int proxy_send(struct bt_mesh_conn *conn, const void *data, u16_t len)
 {
     BT_DBG("%u bytes: %s", len, bt_hex(data, len));
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     if (gatt_svc == MESH_GATT_PROXY) {
         return bt_mesh_gatts_notify(conn, &proxy_attrs[4], data, len);
     }
@@ -1051,7 +1055,7 @@ static const struct bt_mesh_adv_data prov_ad[] = {
 };
 #endif /* PB_GATT */
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
 
 #define ID_TYPE_NET  0x00
 #define ID_TYPE_NODE 0x01
@@ -1360,7 +1364,7 @@ s32_t bt_mesh_proxy_adv_start(void)
     }
 #endif /* PB_GATT */
 
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     if (bt_mesh_is_provisioned()) {
         return gatt_proxy_advertise(next_sub());
     }

@@ -280,7 +280,6 @@ struct bt_mesh_prov {
      *
      *  @param bearer Provisioning bearer.
      *  @param reason Provisioning link close reason(disconnect reason)
-     *                0xFF: disconnect due to provisioner_pb_gatt_disable()
      */
     void (*prov_link_close)(bt_mesh_prov_bearer_t bearer, u8_t reason);
 

@@ -158,17 +158,28 @@ if BLE_MESH
             Enable this option to support BLE Mesh Proxy protocol used by PB-GATT
             and other proxy pdu transmission.
 
-    config BLE_MESH_GATT_PROXY
-        bool "BLE Mesh GATT Proxy Service"
+    config BLE_MESH_GATT_PROXY_SERVER
+        bool "BLE Mesh GATT Proxy Server"
         select BLE_MESH_PROXY
+        default y if BLE_MESH_NODE
+        default n if BLE_MESH_PROVISIONER
         help
             This option enables support for Mesh GATT Proxy Service, i.e. the
             ability to act as a proxy between a Mesh GATT Client and a Mesh network.
             This option should be enabled if a node is going to be a Proxy Server.
 
+    config BLE_MESH_GATT_PROXY_CLIENT
+        bool "BLE Mesh GATT Proxy Client"
+        select BLE_MESH_PROXY
+        default n
+        help
+            This option enables support for Mesh GATT Proxy Client. The Proxy Client
+            can use the GATT bearer to send mesh messages to a node that supports the
+            advertising bearer.
+
     config BLE_MESH_NODE_ID_TIMEOUT
         int "Node Identity advertising timeout"
-        depends on BLE_MESH_GATT_PROXY
+        depends on BLE_MESH_GATT_PROXY_SERVER
         range 1 60
         default 60
         help
@@ -185,7 +196,7 @@ if BLE_MESH
         config BLE_MESH_PROXY_FILTER_SIZE
             int "Maximum number of filter entries per Proxy Client"
             default 1
-            default 3 if BLE_MESH_GATT_PROXY
+            default 3 if BLE_MESH_GATT_PROXY_SERVER
             range 1 32767
             help
                 This option specifies how many Proxy Filter entries the local node supports.

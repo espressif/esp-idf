@@ -58,6 +58,11 @@ typedef enum {
     BTC_BLE_MESH_ACT_LPN_ENABLE,
     BTC_BLE_MESH_ACT_LPN_DISABLE,
     BTC_BLE_MESH_ACT_LPN_POLL,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_CONNECT,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_DISCONNECT,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_SET_FILTER_TYPE,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR,
 } btc_ble_mesh_prov_act_t;
 
 typedef enum {
@@ -168,6 +173,31 @@ typedef union {
     struct ble_mesh_lpn_poll_args {
         /* RFU */
     } lpn_poll;
+    struct ble_mesh_proxy_client_connect_args {
+        uint8_t  addr[6];
+        uint8_t  addr_type;
+        uint16_t net_idx;
+    } proxy_client_connect;
+    struct ble_mesh_proxy_client_disconnect_args {
+        uint8_t conn_handle;
+    } proxy_client_disconnect;
+    struct ble_mesh_proxy_client_set_filter_type_args {
+        uint8_t  conn_handle;
+        uint16_t net_idx;
+        uint8_t  filter_type;
+    } proxy_client_set_filter_type;
+    struct ble_mesh_proxy_client_add_filter_addr_args {
+        uint8_t   conn_handle;
+        uint16_t  net_idx;
+        uint16_t  addr_num;
+        uint16_t *addr;
+    } proxy_client_add_filter_addr;
+    struct ble_mesh_proxy_client_remove_filter_addr_args {
+        uint8_t   conn_handle;
+        uint16_t  net_idx;
+        uint16_t  addr_num;
+        uint16_t *addr;
+    } proxy_client_remove_filter_addr;
 } btc_ble_mesh_prov_args_t;
 
 typedef union {
@@ -188,6 +218,8 @@ typedef union {
 } btc_ble_mesh_model_args_t;
 
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
 

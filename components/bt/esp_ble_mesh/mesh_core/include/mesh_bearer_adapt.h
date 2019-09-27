@@ -17,7 +17,8 @@
 
 /* BLE Mesh Max Connection Count */
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
-#define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
+#define BLE_MESH_MAX_CONN   \
+    MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BTDM_CONTROLLER_BLE_MAX_CONN)
 
 #define ADV_TASK_CORE TASK_PINNED_TO_CORE
 #endif
@@ -481,15 +482,15 @@ struct bt_mesh_conn_cb {
 };
 
 struct bt_mesh_prov_conn_cb {
-    void (*connected)(const u8_t addr[6], struct bt_mesh_conn *conn, int id);
+    void (*connected)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, int id);
 
-    void (*disconnected)(struct bt_mesh_conn *conn, u8_t reason);
+    void (*disconnected)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, u8_t reason);
 
-    ssize_t (*prov_write_descr)(struct bt_mesh_conn *conn, u8_t *addr);
+    ssize_t (*prov_write_descr)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn);
 
     ssize_t (*prov_notify)(struct bt_mesh_conn *conn, u8_t *data, u16_t len);
 
-    ssize_t (*proxy_write_descr)(struct bt_mesh_conn *conn);
+    ssize_t (*proxy_write_descr)(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn);
 
     ssize_t (*proxy_notify)(struct bt_mesh_conn *conn, u8_t *data, u16_t len);
 };
@@ -681,6 +682,8 @@ int bt_mesh_gatts_service_stop(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc);
 
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb);
+
+u8_t bt_mesh_gattc_get_free_conn_count(void);
 
 u16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn);
 

@@ -24,7 +24,7 @@
 #include "net.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "prov.h"
 
 #if CONFIG_BLE_MESH_NODE
@@ -1203,7 +1203,7 @@ static void prov_data(const u8_t *data)
     link.expect = 0U;
 
     /* Store info, since bt_mesh_provision() will end up clearing it */
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         identity_enable = is_pb_gatt();
     } else {
         identity_enable = false;
@@ -1218,7 +1218,7 @@ static void prov_data(const u8_t *data)
     /* After PB-GATT provisioning we should start advertising
      * using Node Identity.
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) && identity_enable) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) && identity_enable) {
         bt_mesh_proxy_identity_enable();
     }
 }

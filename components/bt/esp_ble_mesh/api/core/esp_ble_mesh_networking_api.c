@@ -106,7 +106,7 @@ static esp_err_t ble_mesh_send_msg(esp_ble_mesh_model_t *model,
         arg.model_send.msg_timeout = msg_timeout;
     }
 
-    status = (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_prov_arg_deep_copy)
+    status = (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_model_arg_deep_copy)
               == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
     osi_free(msg_data);
