@@ -32,30 +32,30 @@ URI
 -  Curently support ``mqtt``, ``mqtts``, ``ws``, ``wss`` schemes
 -  MQTT over TCP samples:
 
-   -  ``mqtt://iot.eclipse.org``: MQTT over TCP, default port 1883:
-   -  ``mqtt://iot.eclipse.org:1884`` MQTT over TCP, port 1884:
-   -  ``mqtt://username:password@iot.eclipse.org:1884`` MQTT over TCP,
+   -  ``mqtt://mqtt.eclipse.org``: MQTT over TCP, default port 1883:
+   -  ``mqtt://mqtt.eclipse.org:1884`` MQTT over TCP, port 1884:
+   -  ``mqtt://username:password@mqtt.eclipse.org:1884`` MQTT over TCP,
       port 1884, with username and password
 
 -  MQTT over SSL samples:
 
-   -  ``mqtts://iot.eclipse.org``: MQTT over SSL, port 8883
-   -  ``mqtts://iot.eclipse.org:8884``: MQTT over SSL, port 8884
+   -  ``mqtts://mqtt.eclipse.org``: MQTT over SSL, port 8883
+   -  ``mqtts://mqtt.eclipse.org:8884``: MQTT over SSL, port 8884
 
 -  MQTT over Websocket samples:
 
-   -  ``ws://iot.eclipse.org:80/ws``
+   -  ``ws://mqtt.eclipse.org:80/mqtt``
 
 -  MQTT over Websocket Secure samples:
 
-   -  ``wss://iot.eclipse.org:443/ws``
+   -  ``wss://mqtt.eclipse.org:443/mqtt``
 
 -  Minimal configurations:
 
 .. code:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtt://iot.eclipse.org",
+        .uri = "mqtt://mqtt.eclipse.org",
         // .user_context = (void *)your_context
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
@@ -71,25 +71,25 @@ URI
 .. code:: c
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtt://iot.eclipse.org:1234",
+        .uri = "mqtt://mqtt.eclipse.org:1234",
         .port = 4567,
     };
-    //MQTT client will connect to iot.eclipse.org using port 4567
+    //MQTT client will connect to mqtt.eclipse.org using port 4567
 
 SSL
 ^^^
 
--  Get certificate from server, example: ``iot.eclipse.org``
-   ``openssl s_client -showcerts -connect iot.eclipse.org:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >iot_eclipse_org.pem``
+-  Get certificate from server, example: ``mqtt.eclipse.org``
+   ``openssl s_client -showcerts -connect mqtt.eclipse.org:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >mqtt_eclipse_org.pem``
 -  Check the sample application: ``examples/mqtt_ssl``
 -  Configuration:
 
 .. code:: cpp
 
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtts://iot.eclipse.org:8883",
+        .uri = "mqtts://mqtt.eclipse.org:8883",
         .event_handle = mqtt_event_handler,
-        .cert_pem = (const char *)iot_eclipse_org_pem_start,
+        .cert_pem = (const char *)mqtt_eclipse_org_pem_start,
     };
 
 For more options on ``esp_mqtt_client_config_t``, please refer to API reference below

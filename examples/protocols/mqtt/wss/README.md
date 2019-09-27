@@ -1,7 +1,7 @@
 # ESP-MQTT MQTT over WSS Sample application
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example connects to the broker iot.eclipse.org over secure websockets and as a demonstration subscribes/unsubscribes and send a message on certain topic.
+This example connects to the broker mqtt.eclipse.org over secure websockets and as a demonstration subscribes/unsubscribes and send a message on certain topic.
 (Please note that the public broker is maintained by the community so may not be always available, for details please see this [disclaimer](https://iot.eclipse.org/getting-started/#sandboxes))
 
 It uses ESP-MQTT library which implements mqtt client to connect to mqtt broker.
@@ -18,15 +18,15 @@ This example can be executed on any ESP32 board, the only required interface is 
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 * When using Make build system, set `Default serial port` under `Serial flasher config`.
 
-Note how to create a PEM certificate for iot.eclipse.org:
+Note how to create a PEM certificate for mqtt.eclipse.org:
 
-PEM certificate for this example could be extracted from an openssl `s_client` command connecting to iot.eclipse.org.
+PEM certificate for this example could be extracted from an openssl `s_client` command connecting to mqtt.eclipse.org.
 In case a host operating system has `openssl` and `sed` packages installed, one could execute the following command to download and save the root certificate to a file (Note for Windows users: Both Linux like environment or Windows native packages may be used).
 ```
-echo "" | openssl s_client -showcerts -connect iot.eclipse.org:443 | sed -n "1,/Root/d; /BEGIN/,/END/p" | openssl x509 -outform PEM >iot_eclipse_org.pem
+echo "" | openssl s_client -showcerts -connect mqtt.eclipse.org:443 | sed -n "1,/Root/d; /BEGIN/,/END/p" | openssl x509 -outform PEM >mqtt_eclipse_org.pem
 ```
 Please note that this is not a general command for downloading a root certificate for an arbitrary host;
-this command works with iot.eclipse.org as the site provides root certificate in the chain, which then could be extracted
+this command works with mqtt.eclipse.org as the site provides root certificate in the chain, which then could be extracted
 with text operation.
 
 ### Build and Flash

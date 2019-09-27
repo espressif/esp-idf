@@ -80,13 +80,12 @@ def test_single_config(dut, transport, qos, repeat, published):
     try:
         if transport in ["ws", "wss"]:
             client = mqtt.Client(transport="websockets")
-            client.ws_set_options(path="/ws", headers=None)
         else:
             client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message
         if transport in ["ssl", "wss"]:
-            client.tls_set(None, None, None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
+            client.tls_set(None, None, None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
             client.tls_insecure_set(True)
         print("Connecting...")
         client.connect(broker_host[transport], broker_port[transport], 60)
