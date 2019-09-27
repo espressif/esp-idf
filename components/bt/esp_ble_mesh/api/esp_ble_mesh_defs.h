@@ -22,7 +22,7 @@
 #include "mesh_main.h"
 
 #include "mesh.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "foundation.h"
 #include "provisioner_main.h"
 
@@ -1248,6 +1248,15 @@ typedef enum {
     ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT,                  /*!< Low Power Node terminates friendship event */
     ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT,               /*!< Friend Node establishes friendship event */
     ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT,               /*!< Friend Node terminates friendship event */
+    ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT,                 /*!< Proxy Client receives Network ID advertising packet event */
+    ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT,                    /*!< Proxy Client establishes connection successfully event */
+    ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT,                 /*!< Proxy Client terminates connection successfully event */
+    ESP_BLE_MESH_PROXY_CLIENT_RECV_FILTER_STATUS_EVT,           /*!< Proxy Client receives Proxy Filter Status event */
+    ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT,                 /*!< Proxy Client connect completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_DISCONNECT_COMP_EVT,              /*!< Proxy Client disconnect completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
 
@@ -1379,8 +1388,8 @@ typedef union {
      */
     struct ble_mesh_provisioner_recv_unprov_adv_pkt_param {
         uint8_t  dev_uuid[16];                  /*!< Device UUID of the unprovisoned device */
-        uint8_t  addr[6];                       /*!< Device address of the unprovisoned device */
-        esp_ble_mesh_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the unprovisoned device */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint16_t oob_info;                      /*!< OOB Info of the unprovisoned device */
         uint8_t  adv_type;                      /*!< Avertising type of the unprovisoned device */
         esp_ble_mesh_prov_bearer_t bearer;      /*!< Bearer of the unprovisoned device */
@@ -1588,6 +1597,84 @@ typedef union {
             ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_DISABLE,         /*!< Friend feature disabled or corresponding NetKey is deleted */
         } reason;                               /*!< Friendship terminated reason */
     } frnd_friendship_terminate;                /*!< Event parameter of ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT
+     */
+    struct ble_mesh_proxy_client_recv_adv_pkt_param {
+        esp_bd_addr_t addr;                     /*!< Device address */
+        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        uint16_t net_idx;                       /*!< Network ID related NetKey Index */
+        uint8_t  net_id[8];                     /*!< Network ID contained in the advertising packet */
+    } proxy_client_recv_adv_pkt;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT
+     */
+    struct ble_mesh_proxy_client_connected_param {
+        esp_bd_addr_t addr;                     /*!< Device address of the Proxy Server */
+        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_connected;                   /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT
+     */
+    struct ble_mesh_proxy_client_disconnected_param {
+        esp_bd_addr_t addr;                     /*!< Device address of the Proxy Server */
+        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+        uint8_t reason;                         /*!< Proxy disconnect reason */
+    } proxy_client_disconnected;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_RECV_FILTER_STATUS_EVT
+     */
+    struct ble_mesh_proxy_client_recv_filter_status_param {
+        uint8_t  conn_handle;                   /*!< Proxy connection handle */
+        uint16_t server_addr;                   /*!< Proxy Server primary element address */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+        uint8_t  filter_type;                   /*!< Proxy Server filter type(whitelist or blacklist) */
+        uint16_t list_size;                     /*!< Number of addresses in the Proxy Server filter list */
+    } proxy_client_recv_filter_status;          /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_RECV_FILTER_STATUS_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_connect_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client connect */
+        esp_bd_addr_t addr;                     /*!< Device address of the Proxy Server */
+        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_connect_comp;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_DISCONNECT_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_disconnect_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client disconnect */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+    } proxy_client_disconnect_comp;             /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_DISCONNECT_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_set_filter_type_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client set filter type */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_set_filter_type_comp;        /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_add_filter_addr_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client add filter address */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_add_filter_addr_comp;        /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_remove_filter_addr_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client remove filter address */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
 } esp_ble_mesh_prov_cb_param_t;
 
 /**

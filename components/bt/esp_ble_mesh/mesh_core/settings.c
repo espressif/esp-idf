@@ -27,7 +27,7 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "cfg_srv.h"
 
 #include "settings_nvs.h"
@@ -743,7 +743,7 @@ static int subnet_init(struct bt_mesh_subnet *sub)
         }
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
     } else {
         sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;

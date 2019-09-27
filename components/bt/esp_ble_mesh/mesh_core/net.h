@@ -67,7 +67,7 @@ struct bt_mesh_subnet {
         u8_t nid;           /* NID */
         u8_t enc[16];       /* EncKey */
         u8_t net_id[8];     /* Network ID */
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
         u8_t identity[16];  /* IdentityKey */
 #endif
         u8_t privacy[16];   /* PrivacyKey */
