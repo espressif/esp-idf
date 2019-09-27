@@ -85,7 +85,7 @@ def test_examples_protocol_mqtt_wss(env, extra_data):
         client.on_message = on_message
         client.tls_set(None,
                        None,
-                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
+                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
         print("Connecting...")
         client.connect(broker_url, broker_port, 60)
     except Exception:
