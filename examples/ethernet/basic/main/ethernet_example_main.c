@@ -104,9 +104,9 @@ void app_main()
         .queue_size = 20
     };
     ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
-    /* dm9051 ethernet driver is based on spi driver, so need to specify the spi handle */
-    mac_config.spi_hdl = spi_handle;
-    esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&mac_config);
+    /* dm9051 ethernet driver is based on spi driver */
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
+    esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
 #endif
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);

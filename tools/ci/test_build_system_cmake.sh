@@ -362,6 +362,19 @@ function run_tests()
     rm sdkconfig;
     rm sdkconfig.defaults;
 
+    print_status "can build with ethernet component disabled"
+    idf.py clean > /dev/null;
+    idf.py fullclean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "CONFIG_ETH_USE_SPI_ETHERNET=" >> sdkconfig.defaults;
+    echo "CONFIG_ETH_USE_ESP32_EMAC=" >> sdkconfig.defaults;
+    idf.py reconfigure > /dev/null;
+    idf.py build || failure "Failed to build with ethernet component disabled"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+    rm sdkconfig;
+    rm sdkconfig.defaults;
+
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -rf build
