@@ -1,7 +1,7 @@
 # ESP-MQTT MQTT over WSS Sample application
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example connects to the broker iot.eclipse.org over secure websockets and as a demonstration subscribes/unsubscribes and send a message on certain topic.
+This example connects to the broker mqtt.eclipse.org over secure websockets and as a demonstration subscribes/unsubscribes and send a message on certain topic.
 
 It uses ESP-MQTT library which implements mqtt client to connect to mqtt broker.
 
@@ -21,10 +21,10 @@ make menuconfig
 
 * Set ssid and password for the board to connect to AP.
 
-Note how to create a PEM certificate for iot.eclipse.org:
+Note how to create a PEM certificate for mqtt.eclipse.org:
 
 ```
-openssl s_client -showcerts -connect iot.eclipse.org:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >iot_eclipse_org.pem
+openssl s_client -showcerts -connect mqtt.eclipse.org:8883 </dev/null 2>/dev/null|openssl x509 -outform PEM >iot_eclipse_org.pem
 ```
 
 ### Build and Flash
