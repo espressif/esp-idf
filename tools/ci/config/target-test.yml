@@ -127,7 +127,7 @@ test_weekend_mqtt:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
-    CONFIG_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/config.yml"
+    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
 
 test_weekend_network:
   extends: .example_test_template
@@ -143,7 +143,7 @@ test_weekend_network:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
-    CONFIG_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/config.yml"
+    CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
 
 example_test_001:
   extends: .example_test_template
