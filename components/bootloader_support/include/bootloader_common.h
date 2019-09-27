@@ -94,6 +94,13 @@ bool bootloader_common_label_search(const char *list, char *label);
 esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256);
 
 /**
+ * @brief Get chip revision
+ *
+ * @return Chip revision number
+ */
+uint8_t bootloader_common_get_chip_revision(void);
+
+/**
  * @brief Check if the image (bootloader and application) has valid chip ID and revision
  *
  * @param img_hdr: image header
