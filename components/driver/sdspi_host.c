@@ -241,6 +241,23 @@ esp_err_t sdspi_host_deinit(void)
             s_slots[i].transactions = NULL;
             spi_bus_free((spi_host_device_t) i);
             s_slots[i].handle = NULL;
+
+            uint64_t pin_bit_mask = BIT64(s_slots[i].gpio_cs);
+            if (s_slots[i].gpio_cd != GPIO_UNUSED) {
+                pin_bit_mask |= BIT64(s_slots[i].gpio_cd);
+            }
+            if (s_slots[i].gpio_wp != GPIO_UNUSED) {
+                pin_bit_mask |= BIT64(s_slots[i].gpio_wp);
+            }
+            if (s_slots[i].gpio_int != GPIO_UNUSED) {
+                pin_bit_mask |= BIT64(s_slots[i].gpio_int);
+            }
+
+            gpio_config_t config = {
+                .pin_bit_mask = pin_bit_mask,
+                .mode = GPIO_MODE_INPUT,
+            };
+            gpio_config(&config);
         }
         if (s_slots[i].semphr_int) {
             vSemaphoreDelete(s_slots[i].semphr_int);
