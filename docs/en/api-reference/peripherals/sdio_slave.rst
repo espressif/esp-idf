@@ -127,9 +127,11 @@ SDIO initialization process (Sector 3.1.2 of `SDIO Simplified
 Specification <https://www.sdcard.org/downloads/pls/>`_), which is described
 briefly in :ref:`esp_slave_init`.
 
-Furthermore, there's an ESP32-specific upper-level communication protocol upon
-the CMD52/CMD53 to Func 1. Please refer to :ref:`esp_slave_protocol_layer`,
-or example :example:`peripherals/sdio` when programming your host.
+Furthermore, there's an ESP32-specific upper-level communication protocol upon the CMD52/CMD53 to
+Func 1. Please refer to :ref:`esp_slave_protocol_layer`. There is also a component
+:doc:`ESP Serial Slave Link </api-reference/protocols/esp_serial_slave_link>`
+for ESP32 master to communicate with ESP32 SDIO slave, see example :example:`peripherals/sdio`
+when programming your host.
 
 .. toctree::
     :hidden:
