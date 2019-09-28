@@ -492,6 +492,21 @@ UT_043:
     - UT_T1_32kXTAL
     - psram
 
+UT_044:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - ESP32_IDF
+    - UT_SDIO
+
+UT_045:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_SDIO
+    - psram
+
+
 nvs_compatible_test:
   extends: .test_template
   artifacts:
