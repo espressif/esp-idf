@@ -326,13 +326,14 @@ menu "LWIP"
                 IPv4 TCP_MSS Range: 576 <= TCP_MSS <= 1460
                 IPv6 TCP_MSS Range: 1220<= TCP_mSS <= 1440
 
-        config TCP_TMR_INTERVAL
-            int "TCP timer interval"
+        config LWIP_TCP_TMR_INTERVAL
+            int "TCP timer interval(ms)"
             default 250
             help
                 Set TCP timer interval in milliseconds.
 
-                Can be used to speed connections on bad networks. A lower value will redeliver unacked packets faster.
+                Can be used to speed connections on bad networks.
+                A lower value will redeliver unacked packets faster.
 
         config LWIP_TCP_MSL
             int "Maximum segment lifetime (MSL)"
