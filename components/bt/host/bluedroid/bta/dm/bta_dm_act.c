@@ -663,6 +663,23 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
 #endif /// CLASSIC_BT_INCLUDED
 }
 
+/*******************************************************************************
+**
+** Function         bta_dm_set_afh_channels
+**
+** Description      Sets AFH channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data)
+{
+#if CLASSIC_BT_INCLUDED
+    BTM_SetAfhChannels (p_data->set_afh_channels.channels, p_data->set_afh_channels.set_afh_cb);
+#endif /// CLASSIC_BT_INCLUDED
+}
+
 void bta_dm_config_eir (tBTA_DM_MSG *p_data)
 {
     tBTA_DM_API_CONFIG_EIR *config_eir = &p_data->config_eir;
