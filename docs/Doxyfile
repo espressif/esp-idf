@@ -154,6 +154,8 @@ INPUT = \
     ## ESP Serial Slave Link
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
+    ## ESP Certificate Bundle
+    $(IDF_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     ##
     ## Provisioning - API Reference
     ##

@@ -1,0 +1,39 @@
+Owner,Common Name or Certificate Name
+Amazon Trust Services,Amazon Root CA 1
+Amazon Trust Services,Amazon Root CA 2
+Amazon Trust Services,Amazon Root CA 3
+Amazon Trust Services,Amazon Root CA 4
+Amazon Trust Services,Starfield Services Root Certificate Authority - G2
+DigiCert,Baltimore CyberTrust Root
+DigiCert,Cybertrust Global Root
+DigiCert,DigiCert Assured ID Root CA
+DigiCert,DigiCert Assured ID Root G2
+DigiCert,DigiCert Assured ID Root G3
+DigiCert,DigiCert Global Root CA
+DigiCert,DigiCert Global Root G2
+DigiCert,DigiCert Global Root G3
+DigiCert,DigiCert High Assurance EV Root CA
+DigiCert,DigiCert Trusted Root G4
+GlobalSign,GlobalSign ECC Root CA - R5
+GlobalSign,GlobalSign Root CA - R3
+GlobalSign,GlobalSign Root CA - R6
+GlobalSign,GlobalSign Root CA
+GoDaddy,Go Daddy Class 2 CA
+GoDaddy,Go Daddy Root Certificate Authority - G2
+GoDaddy,Starfield Class 2 CA
+GoDaddy,Starfield Root Certificate Authority - G2
+Google Trust Services LLC (GTS),GlobalSign ECC Root CA - R4
+Google Trust Services LLC (GTS),GlobalSign Root CA - R2
+Google Trust Services LLC (GTS),GTS Root R1
+Google Trust Services LLC (GTS),GTS Root R2
+Google Trust Services LLC (GTS),GTS Root R3
+Google Trust Services LLC (GTS),GTS Root R4
+"IdenTrust Services, LLC",DST Root CA X3
+"IdenTrust Services, LLC",IdenTrust Commercial Root CA 1
+"IdenTrust Services, LLC",IdenTrust Public Sector Root CA 1
+Sectigo,Comodo AAA Services root
+Sectigo,COMODO Certification Authority
+Sectigo,COMODO ECC Certification Authority
+Sectigo,COMODO RSA Certification Authority
+Sectigo,USERTrust ECC Certification Authority
+Sectigo,USERTrust RSA Certification Authority

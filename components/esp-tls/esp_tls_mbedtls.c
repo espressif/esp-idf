@@ -26,6 +26,11 @@
 #include <errno.h>
 #include "esp_log.h"
 
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
+
+
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
@@ -402,7 +407,17 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         return ESP_ERR_INVALID_STATE;
 #endif
     }
-    if (cfg->use_global_ca_store == true) {
+
+    if (cfg->crt_bundle_attach != NULL) {
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        ESP_LOGD(TAG, "Use certificate bundle");
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+        cfg->crt_bundle_attach(&tls->conf);
+#else //CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+        ESP_LOGE(TAG, "use_crt_bundle configured but not enabled in menuconfig: Please enable MBEDTLS_CERTIFICATE_BUNDLE option");
+        return ESP_ERR_INVALID_STATE;
+#endif
+    } else if (cfg->use_global_ca_store == true) {
         esp_err_t esp_ret = set_global_ca_store(tls);
         if (esp_ret != ESP_OK) {
             return esp_ret;

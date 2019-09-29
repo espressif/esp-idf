@@ -110,8 +110,8 @@ typedef struct psk_key_hint {
 } psk_hint_key_t;
 
 /**
- * @brief      ESP-TLS configuration parameters 
- * 
+ * @brief      ESP-TLS configuration parameters
+ *
  * @note       Note about format of certificates:
  *             - This structure includes certificates of a Certificate Authority, of client or server as well
  *             as private keys, which may be of PEM or DER format. In case of PEM format, the buffer must be
@@ -121,17 +121,17 @@ typedef struct psk_key_hint {
  *             - Variables names of certificates and private key buffers and sizes are defined as unions providing
  *             backward compatibility for legacy *_pem_buf and *_pem_bytes names which suggested only PEM format
  *             was supported. It is encouraged to use generic names such as cacert_buf and cacert_bytes.
- */ 
+ */
 typedef struct esp_tls_cfg {
     const char **alpn_protos;               /*!< Application protocols required for HTTP2.
                                                  If HTTP2/ALPN support is required, a list
-                                                 of protocols that should be negotiated. 
+                                                 of protocols that should be negotiated.
                                                  The format is length followed by protocol
-                                                 name. 
+                                                 name.
                                                  For the most common cases the following is ok:
                                                  const char **alpn_protos = { "h2", NULL };
                                                  - where 'h2' is the protocol name */
- 
+
     union {
     const unsigned char *cacert_buf;        /*!< Certificate Authority's certificate in a buffer.
                                                  Format may be PEM or DER, depending on mbedtls-support
@@ -179,8 +179,8 @@ typedef struct esp_tls_cfg {
     unsigned int clientkey_password_len;    /*!< String length of the password pointed to by
                                                  clientkey_password */
 
-    bool non_block;                         /*!< Configure non-blocking mode. If set to true the 
-                                                 underneath socket will be configured in non 
+    bool non_block;                         /*!< Configure non-blocking mode. If set to true the
+                                                 underneath socket will be configured in non
                                                  blocking mode after tls session is established */
 
     int timeout_ms;                         /*!< Network timeout in milliseconds */
@@ -196,6 +196,10 @@ typedef struct esp_tls_cfg {
     const psk_hint_key_t* psk_hint_key;     /*!< Pointer to PSK hint and key. if not NULL (and certificates are NULL)
                                                  then PSK authentication is enabled with configured setup.
                                                  Important note: the pointer must be valid for connection */
+
+    esp_err_t (*crt_bundle_attach)(mbedtls_ssl_config *conf);
+                                            /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification
+                                                 bundle for server verification, must be enabled in menuconfig */
 
 } esp_tls_cfg_t;
 
@@ -255,24 +259,24 @@ typedef struct esp_tls_cfg_server {
 #endif /* ! CONFIG_ESP_TLS_SERVER */
 
 /**
- * @brief      ESP-TLS Connection Handle 
+ * @brief      ESP-TLS Connection Handle
  */
 typedef struct esp_tls {
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
     mbedtls_ssl_context ssl;                                                    /*!< TLS/SSL context */
- 
+
     mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
- 
+
     mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
-                                                                                     CTR_DRBG is deterministic random 
+                                                                                     CTR_DRBG is deterministic random
                                                                                      bit generation based on AES-256 */
- 
-    mbedtls_ssl_config conf;                                                    /*!< TLS/SSL configuration to be shared 
-                                                                                     between mbedtls_ssl_context 
+
+    mbedtls_ssl_config conf;                                                    /*!< TLS/SSL configuration to be shared
+                                                                                     between mbedtls_ssl_context
                                                                                      structures */
- 
+
     mbedtls_net_context server_fd;                                              /*!< mbedTLS wrapper type for sockets */
- 
+
     mbedtls_x509_crt cacert;                                                    /*!< Container for the X.509 CA certificate */
 
     mbedtls_x509_crt *cacert_ptr;                                               /*!< Pointer to the cacert being used. */
@@ -292,10 +296,10 @@ typedef struct esp_tls {
     void *priv_ssl;
 #endif
     int sockfd;                                                                 /*!< Underlying socket file descriptor. */
- 
+
     ssize_t (*read)(struct esp_tls  *tls, char *data, size_t datalen);          /*!< Callback function for reading data from TLS/SSL
                                                                                      connection. */
- 
+
     ssize_t (*write)(struct esp_tls *tls, const char *data, size_t datalen);    /*!< Callback function for writing data to TLS/SSL
                                                                                      connection. */
 
@@ -375,7 +379,7 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
  * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
  *
  * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
- * 
+ *
  * @param[in]  url  url of host.
  * @param[in]  cfg  TLS configuration as esp_tls_cfg_t. If you wish to open
  *                  non-TLS connection, keep this NULL. For TLS connection,
@@ -384,7 +388,7 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
  * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
  */
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
-   
+
 /**
  * @brief      Create a new non-blocking TLS/SSL connection
  *
@@ -423,18 +427,18 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
 
 /**
  * @brief      Write from buffer 'data' into specified tls connection.
- * 
+ *
  * @param[in]  tls      pointer to esp-tls as esp-tls handle.
  * @param[in]  data     Buffer from which data will be written.
  * @param[in]  datalen  Length of data buffer.
- * 
- * @return 
- *             - >0  if write operation was successful, the return value is the number 
- *                   of bytes actually written to the TLS/SSL connection.  
+ *
+ * @return
+ *             - >0  if write operation was successful, the return value is the number
+ *                   of bytes actually written to the TLS/SSL connection.
  *             -  0  if write operation was not successful. The underlying
  *                   connection was closed.
- *             - <0  if write operation was not successful, because either an 
- *                   error occured or an action must be taken by the calling process.   
+ *             - <0  if write operation was not successful, because either an
+ *                   error occured or an action must be taken by the calling process.
  */
 static inline ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_t datalen)
 {
@@ -443,10 +447,10 @@ static inline ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_
 
 /**
  * @brief      Read from specified tls connection into the buffer 'data'.
- * 
+ *
  * @param[in]  tls      pointer to esp-tls as esp-tls handle.
  * @param[in]  data     Buffer to hold read data.
- * @param[in]  datalen  Length of data buffer. 
+ * @param[in]  datalen  Length of data buffer.
  *
  * @return
  *             - >0  if read operation was successful, the return value is the number
@@ -463,11 +467,11 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
 
 /**
  * @brief      Close the TLS/SSL connection and free any allocated resources.
- * 
- * This function should be called to close each tls connection opened with esp_tls_conn_new() or
- * esp_tls_conn_http_new() APIs. 
  *
- * @param[in]  tls  pointer to esp-tls as esp-tls handle.    
+ * This function should be called to close each tls connection opened with esp_tls_conn_new() or
+ * esp_tls_conn_http_new() APIs.
+ *
+ * @param[in]  tls  pointer to esp-tls as esp-tls handle.
  */
 void esp_tls_conn_delete(esp_tls_t *tls);
 

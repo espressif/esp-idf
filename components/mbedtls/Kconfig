@@ -127,6 +127,52 @@ menu "mbedTLS"
         default 3 if MBEDTLS_DEBUG_LEVEL_DEBUG
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
+
+    menu "Certificate Bundle"
+
+        config MBEDTLS_CERTIFICATE_BUNDLE
+            bool "Enable trusted root certificate bundle"
+            default y
+            help
+                Enable support for large number of default root certificates
+
+                When enabled this option allows user to store default as well
+                as customer specific root certificates in compressed format rather
+                than storing full certificate. For the root certificates the public key and the subject name
+                will be stored.
+
+        choice MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE
+            bool "Default certificate bundle options"
+            depends on MBEDTLS_CERTIFICATE_BUNDLE
+            default MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL
+
+            config MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL
+                bool "Use the full default certificate bundle"
+            config MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_CMN
+                bool "Use only the most common certificates from the default bundles"
+                help
+                    Use only the most common certificates from the default bundles, reducing the size with 50%,
+                    while still having around 99% coverage.
+            config MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_NONE
+                bool "Do not use the default certificate bundle"
+        endchoice
+
+        config MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE
+            depends on MBEDTLS_CERTIFICATE_BUNDLE
+            default n
+            bool "Add custom certificates to the default bundle"
+        config MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE_PATH
+            depends on MBEDTLS_CUSTOM_CERTIFICATE_BUNDLE
+            string "Custom certificate bundle path"
+            help
+                Name of the custom certificate directory or file. This path is evaluated
+                relative to the project root directory.
+    endmenu
+
+
+
+
+
     config MBEDTLS_ECP_RESTARTABLE
         bool "Enable mbedTLS ecp restartable"
         default n
