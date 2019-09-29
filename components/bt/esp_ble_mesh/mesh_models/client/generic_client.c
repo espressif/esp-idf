@@ -144,37 +144,23 @@ static void bt_mesh_generic_client_unlock(void)
 
 static void timeout_handler(struct k_work *work)
 {
-    generic_internal_data_t *internal = NULL;
-    bt_mesh_generic_client_t *client = NULL;
+    struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
 
     BT_WARN("Receive generic status message timeout");
 
-    node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
-    if (!node || !node->ctx.model) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return;
-    }
-
-    client = (bt_mesh_generic_client_t *)node->ctx.model->user_data;
-    if (!client) {
-        BT_ERR("%s, Generic Client user_data is NULL", __func__);
-        return;
-    }
-
-    internal = (generic_internal_data_t *)client->internal_data;
-    if (!internal) {
-        BT_ERR("%s, Generic Client internal_data is NULL", __func__);
-        return;
-    }
-
     bt_mesh_generic_client_lock();
 
-    if (!k_delayed_work_free(&node->timer)) {
-        bt_mesh_generic_client_cb_evt_to_btc(node->opcode,
-            BTC_BLE_MESH_EVT_GENERIC_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
-        // Don't forget to release the node at the end.
-        bt_mesh_client_free_node(&internal->queue, node);
+    timer = CONTAINER_OF(work, struct k_delayed_work, work);
+
+    if (timer && !k_delayed_work_free(timer)) {
+        node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
+        if (node) {
+            bt_mesh_generic_client_cb_evt_to_btc(node->opcode,
+                BTC_BLE_MESH_EVT_GENERIC_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
+            // Don't forget to release the node at the end.
+            bt_mesh_client_free_node(node);
+        }
     }
 
     bt_mesh_generic_client_unlock();
@@ -186,31 +172,14 @@ static void generic_status(struct bt_mesh_model *model,
                            struct bt_mesh_msg_ctx *ctx,
                            struct net_buf_simple *buf)
 {
-    generic_internal_data_t *internal = NULL;
-    bt_mesh_generic_client_t *client = NULL;
     bt_mesh_client_node_t *node = NULL;
-    u8_t  *val = NULL;
-    u8_t   evt = 0xFF;
-    u32_t  rsp = 0;
+    u8_t *val = NULL;
+    u8_t evt = 0xFF;
     size_t len = 0;
 
     BT_DBG("%s, len %d, bytes %s", __func__, buf->len, bt_hex(buf->data, buf->len));
 
-    client = (bt_mesh_generic_client_t *)model->user_data;
-    if (!client) {
-        BT_ERR("%s, Generic Client user_data is NULL", __func__);
-        return;
-    }
-
-    internal = (generic_internal_data_t *)client->internal_data;
-    if (!internal) {
-        BT_ERR("%s, Generic Client internal_data is NULL", __func__);
-        return;
-    }
-
-    rsp = ctx->recv_op;
-
-    switch (rsp) {
+    switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS: {
         struct bt_mesh_gen_onoff_status *status = NULL;
         if (buf->len != 1 && buf->len != 3) {
@@ -569,7 +538,7 @@ static void generic_status(struct bt_mesh_model *model,
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, true);
     if (!node) {
-        BT_DBG("Unexpected generic status message 0x%x", rsp);
+        BT_DBG("Unexpected generic status message 0x%x", ctx->recv_op);
     } else {
         switch (node->opcode) {
         case BLE_MESH_MODEL_OP_GEN_ONOFF_GET:
@@ -615,13 +584,13 @@ static void generic_status(struct bt_mesh_model *model,
         if (!k_delayed_work_free(&node->timer)) {
             bt_mesh_generic_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
             // Don't forget to release the node at the end.
-            bt_mesh_client_free_node(&internal->queue, node);
+            bt_mesh_client_free_node(node);
         }
     }
 
     bt_mesh_generic_client_unlock();
 
-    switch (rsp) {
+    switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS: {
         struct bt_mesh_gen_user_properties_status *status;
         status = (struct bt_mesh_gen_user_properties_status *)val;
