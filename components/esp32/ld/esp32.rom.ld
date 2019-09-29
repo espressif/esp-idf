@@ -197,6 +197,7 @@ PROVIDE ( ld_acl_br_sizes = 0x3ff98a2a );
 PROVIDE ( ld_acl_br_types = 0x3ff98a36 );
 PROVIDE ( ld_acl_edr_sizes = 0x3ff98a14 );
 PROVIDE ( ld_acl_edr_types = 0x3ff98a22 );
+PROVIDE ( ld_acl_sniff_frm_cbk = 0x4003482c );
 PROVIDE ( ld_env = 0x3ffb9510 );
 PROVIDE ( ld_pcm_settings_dft = 0x3ff98a0c );
 PROVIDE ( ld_sched_params = 0x3ffb96c0 );
