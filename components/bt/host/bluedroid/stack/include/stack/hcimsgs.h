@@ -520,6 +520,8 @@ BOOLEAN btsnd_hcic_change_name(BD_NAME name);
 
 #define HCIC_WRITE_PARAM3_PARAM_OFF      0
 
+/* set AFH channels */
+BOOLEAN btsnd_hcic_set_afh_channels (AFH_CHANNELS channels);
 #define HCIC_PARAM_SIZE_SET_AFH_CHANNELS    10
 
 BOOLEAN btsnd_hcic_write_pin_type(UINT8 type);                   /* Write PIN Type */

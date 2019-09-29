@@ -433,6 +433,8 @@ typedef tBTM_TX_POWER_RESULTS tBTA_TX_POWER_RESULTS;
 
 typedef tBTM_RSSI_RESULTS tBTA_RSSI_RESULTS;
 
+typedef tBTM_SET_AFH_CHANNELS_RESULTS tBTA_SET_AFH_CHANNELS_RESULTS;
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -1472,6 +1474,18 @@ extern void BTA_DmSetDeviceName(const char *p_name);
 **
 *******************************************************************************/
 extern void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config);
+
+/*******************************************************************************
+**
+** Function         BTA_DmSetAfhChannels
+**
+** Description      This function sets the AFH channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb);
 
 #if (BLE_INCLUDED == TRUE)
 extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
