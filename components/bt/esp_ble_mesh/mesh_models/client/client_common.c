@@ -284,15 +284,30 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
     return 0;
 }
 
-int bt_mesh_client_free_node(sys_slist_t *queue, bt_mesh_client_node_t *node)
+int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
 {
-    if (!queue || !node) {
-        BT_ERR("%s, Invalid parameter", __func__);
+    bt_mesh_client_internal_data_t *internal = NULL;
+    bt_mesh_client_user_data_t *client = NULL;
+
+    if (!node || !node->ctx.model) {
+        BT_ERR("%s, Client model list item is NULL", __func__);
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_client_user_data_t *)node->ctx.model->user_data;
+    if (!client) {
+        BT_ERR("%s, Client model user data is NULL", __func__);
+        return -EINVAL;
+    }
+
+    internal = (bt_mesh_client_internal_data_t *)client->internal_data;
+    if (!internal) {
+        BT_ERR("%s, Client model internal data is NULL", __func__);
         return -EINVAL;
     }
 
     // Release the client node from the queue
-    sys_slist_find_and_remove(queue, &node->client_node);
+    sys_slist_find_and_remove(&internal->queue, &node->client_node);
     // Free the node
     osi_free(node);
 

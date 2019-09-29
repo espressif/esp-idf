@@ -63,37 +63,23 @@ static void bt_mesh_health_client_unlock(void)
 
 static void timeout_handler(struct k_work *work)
 {
-    health_internal_data_t *internal = NULL;
-    bt_mesh_health_client_t *client = NULL;
+    struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
 
     BT_WARN("Receive health status message timeout");
 
-    node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
-    if (!node || !node->ctx.model) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return;
-    }
-
-    client = (bt_mesh_health_client_t *)node->ctx.model->user_data;
-    if (!client) {
-        BT_ERR("%s, Health Client user_data is NULL", __func__);
-        return;
-    }
-
-    internal = (health_internal_data_t *)client->internal_data;
-    if (!internal) {
-        BT_ERR("%s, Health Client internal_data is NULL", __func__);
-        return;
-    }
-
     bt_mesh_health_client_lock();
 
-    if (!k_delayed_work_free(&node->timer)) {
-        bt_mesh_health_client_cb_evt_to_btc(node->opcode,
-            BTC_BLE_MESH_EVT_HEALTH_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
-        // Don't forget to release the node at the end.
-        bt_mesh_client_free_node(&internal->queue, node);
+    timer = CONTAINER_OF(work, struct k_delayed_work, work);
+
+    if (timer && !k_delayed_work_free(timer)) {
+        node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
+        if (node) {
+            bt_mesh_health_client_cb_evt_to_btc(node->opcode,
+                BTC_BLE_MESH_EVT_HEALTH_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
+            // Don't forget to release the node at the end.
+            bt_mesh_client_free_node(node);
+        }
     }
 
     bt_mesh_health_client_unlock();
@@ -105,19 +91,12 @@ static void health_client_cancel(struct bt_mesh_model *model,
                                  struct bt_mesh_msg_ctx *ctx,
                                  void *status, size_t len)
 {
-    health_internal_data_t *data = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct net_buf_simple buf = {0};
     u8_t evt_type = 0xFF;
 
     if (!model || !ctx || !status || !len) {
         BT_ERR("%s, Invalid parameter", __func__);
-        return;
-    }
-
-    data = (health_internal_data_t *)health_cli->internal_data;
-    if (!data) {
-        BT_ERR("%s, Health Client internal_data is NULL", __func__);
         return;
     }
 
@@ -151,7 +130,7 @@ static void health_client_cancel(struct bt_mesh_model *model,
             bt_mesh_health_client_cb_evt_to_btc(
                 node->opcode, evt_type, model, ctx, (const u8_t *)status, len);
             // Don't forget to release the node at the end.
-            bt_mesh_client_free_node(&data->queue, node);
+            bt_mesh_client_free_node(node);
         }
     }
 
