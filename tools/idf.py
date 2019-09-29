@@ -342,8 +342,6 @@ def _get_esptool_args(args):
 
     extra_esptool_args = flasher_args["extra_esptool_args"]
     result += ["--before", extra_esptool_args["before"]]
-
-    extra_esptool_args = flasher_args["extra_esptool_args"]
     result += ["--after", extra_esptool_args["after"]]
     return result
 
