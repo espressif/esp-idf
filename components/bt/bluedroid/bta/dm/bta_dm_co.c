@@ -48,6 +48,7 @@ tBTE_APPL_CFG bte_appl_cfg = {
     BTM_BLE_INITIATOR_KEY_SIZE,
     BTM_BLE_RESPONDER_KEY_SIZE,
     BTM_BLE_MAX_KEY_SIZE,
+    BTM_BLE_MIN_KEY_SIZE,
     BTM_BLE_ONLY_ACCEPT_SPECIFIED_SEC_AUTH_DISABLE,
     BTM_BLE_OOB_DISABLE,
 };
@@ -407,8 +408,19 @@ void bta_dm_co_ble_set_rsp_key_req(UINT8 rsp_key)
 void bta_dm_co_ble_set_max_key_size(UINT8 ble_key_size)
 {
 #if (SMP_INCLUDED == TRUE)
-    if(ble_key_size >= BTM_BLE_MIN_KEY_SIZE && ble_key_size <= BTM_BLE_MAX_KEY_SIZE) {
+    if(ble_key_size >= bte_appl_cfg.ble_min_key_size && ble_key_size <= BTM_BLE_MAX_KEY_SIZE) {
         bte_appl_cfg.ble_max_key_size = ble_key_size;
+    } else {
+        APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
+    }
+#endif  ///SMP_INCLUDED == TRUE
+}
+
+void bta_dm_co_ble_set_min_key_size(UINT8 ble_key_size)
+{
+#if (SMP_INCLUDED == TRUE)
+    if(ble_key_size >= BTM_BLE_MIN_KEY_SIZE && ble_key_size <= bte_appl_cfg.ble_max_key_size) {
+        bte_appl_cfg.ble_min_key_size = ble_key_size;
     } else {
         APPL_TRACE_ERROR("%s error:Invalid key size value, key_size =%d",__func__, ble_key_size);
     }
