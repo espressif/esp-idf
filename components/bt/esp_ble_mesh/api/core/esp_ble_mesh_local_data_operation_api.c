@@ -19,8 +19,6 @@
 #include "btc/btc_manage.h"
 
 #include "esp_err.h"
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "esp_ble_mesh_defs.h"

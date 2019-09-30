@@ -19,10 +19,9 @@
 
 #include "btc/btc_task.h"
 #include "btc/btc_manage.h"
+#include "osi/alarm.h"
 
 #include "esp_err.h"
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "esp_ble_mesh_defs.h"
@@ -32,12 +31,18 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     btc_ble_mesh_prov_args_t arg = {0};
     SemaphoreHandle_t semaphore = NULL;
     btc_msg_t msg = {0};
+    esp_err_t ret;
 
     if (prov == NULL || comp == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    ret = bt_mesh_host_init();
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     // Create a semaphore
     if ((semaphore = xSemaphoreCreateCounting(1, 0)) == NULL) {
