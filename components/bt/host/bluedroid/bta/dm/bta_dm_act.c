@@ -722,6 +722,23 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
     bta_dm_set_eir(NULL);
 }
 
+/*******************************************************************************
+**
+** Function         bta_dm_set_afh_channels
+**
+** Description      Sets AFH channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_ble_set_channels (tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED == TRUE)
+    BTM_BleSetChannels (p_data->ble_set_channels.channels, p_data->ble_set_channels.set_channels_cb);
+#endif /// BLE_INCLUDED == TRUE
+}
+
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)

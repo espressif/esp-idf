@@ -155,6 +155,7 @@ enum {
     BTA_DM_API_EXECUTE_CBACK_EVT,
     BTA_DM_API_REMOVE_ALL_ACL_EVT,
     BTA_DM_API_REMOVE_DEVICE_EVT,
+    BTA_DM_API_BLE_SET_CHANNELS_EVT,
     BTA_DM_API_UPDATE_WHITE_LIST_EVT,
     BTA_DM_API_BLE_READ_ADV_TX_POWER_EVT,
     BTA_DM_API_BLE_READ_RSSI_EVT,
@@ -214,6 +215,13 @@ typedef struct {
 }tBTA_DM_API_SET_AFH_CHANNELS;
 
 #if (BLE_INCLUDED == TRUE)
+/* data type for BTA_DM_API_BLE_SET_CHANNELS_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    AFH_CHANNELS        channels;
+    tBTA_CMPL_CB        *set_channels_cb;
+}tBTA_DM_API_BLE_SET_CHANNELS;
+
 typedef struct {
     BT_HDR    hdr;
     BOOLEAN   add_remove;
@@ -816,6 +824,7 @@ typedef union {
     tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
 
 #if (BLE_INCLUDED == TRUE)
+    tBTA_DM_API_BLE_SET_CHANNELS  ble_set_channels;
     tBTA_DM_API_UPDATE_WHITE_LIST white_list;
     tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
     tBTA_DM_API_READ_RSSI rssi;
@@ -1273,6 +1282,7 @@ extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
 extern void bta_dm_config_eir (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_set_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data);
