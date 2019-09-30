@@ -99,11 +99,11 @@ config BT_NIMBLE_SM_SC
         Enable security manager secure connections
 
 config BT_NIMBLE_DEBUG
-    bool "Enable host debugging"
+    bool "Enable extra runtime asserts and host debugging"
     default n
     depends on BT_NIMBLE_ENABLED
     help
-        This enables extra runtime assertions
+        This enables extra runtime asserts and host debugging
 
 config BT_NIMBLE_SVC_GAP_DEVICE_NAME
     string "BLE GAP default device name"
@@ -257,3 +257,12 @@ config BT_NIMBLE_MESH_DEVICE_NAME
     help
         This value defines Bluetooth Mesh device/node name
 
+config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+    bool "Override TinyCrypt with mbedTLS for crypto computations"
+    default y
+    depends on BT_NIMBLE_ENABLED
+    select MBEDTLS_ECP_RESTARTABLE
+    select MBEDTLS_CMAC_C
+    help
+        Enable this option to choose mbedTLS instead of TinyCrypt for crypto
+        computations.
