@@ -323,7 +323,7 @@ typedef union {
      */
     struct set_afh_channels_param {
         esp_bt_status_t stat;                  /*!< set AFH channel status */
-    } set_afh_channels;
+    } set_afh_channels;                        /*!< set AFH channel parameter struct */
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -652,18 +652,18 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
 /**
 * @brief            Set the AFH channels
 *
-* @param[in]        channles :  The n th such field (in the range 0 to 78) contains the value for channel n :
-*                               Channel n is bad = 0
-*                               Channel n is unknown = 1
-*                               The most significant bit is reserved and shall be set to 0
-*                               At least 20 channels shall be marked as unknown
+* @param[in]        channels :  The n th such field (in the range 0 to 78) contains the value for channel n :
+*                               0 means channel n is bad.
+*                               1 means channel n is unknown.
+*                               The most significant bit is reserved and shall be set to 0.
+*                               At least 20 channels shall be marked as unknown.
 *
 * @return           - ESP_OK : success
 *                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
 *                   - other  : failed
 *
 */
-esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channles);
+esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels);
 
 #ifdef __cplusplus
 }

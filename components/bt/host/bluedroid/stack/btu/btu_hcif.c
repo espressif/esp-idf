@@ -918,7 +918,10 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #endif
 
 #if (BLE_INCLUDED == TRUE)
-    /* BLE Commands sComplete*/
+    /* BLE Commands Complete*/
+    case HCI_BLE_SET_HOST_CHNL_CLASS:
+        btm_ble_set_channels_complete(p);
+        break;
     case HCI_BLE_ADD_WHITE_LIST:
         btm_ble_add_2_white_list_complete(*p);
         break;
