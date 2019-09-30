@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000003
+#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000004
 #define ESP_WIFI_OS_ADAPTER_MAGIC    0xDEADBEAF
 
 #define OSI_FUNCS_TIME_BLOCKING      0xffffffff
@@ -120,6 +120,7 @@ typedef struct {
     int32_t (* _modem_sleep_register)(uint32_t module);
     int32_t (* _modem_sleep_deregister)(uint32_t module);
     uint32_t (* _coex_status_get)(void);
+    void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
     int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
     int32_t (* _coex_wifi_release)(uint32_t event);
     int32_t _magic;
