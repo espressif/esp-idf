@@ -343,7 +343,7 @@ char* IRAM_ATTR esp_log_system_timestamp(void)
         uint32_t timestamp = esp_log_early_timestamp();
         for (uint8_t i = 0; i < sizeof(buffer); i++) {
             if ((timestamp > 0) || (i == 0)) {
-                for (uint8_t j = sizeof(buffer); j > 0; j--) {
+                for (uint8_t j = sizeof(buffer) - 1; j > 0; j--) {
                     buffer[j] = buffer[j - 1];
                 }
                 buffer[0] = (char) (timestamp % 10) + '0';
