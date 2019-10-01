@@ -232,7 +232,12 @@ static void start(void)
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
     s_mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     s_phy = esp_eth_phy_new_dm9051(&phy_config);
+#elif CONFIG_EXAMPLE_USE_OPENETH
+    phy_config.autonego_timeout_ms = 100;
+    s_mac = esp_eth_mac_new_openeth(&mac_config);
+    s_phy = esp_eth_phy_new_dp83848(&phy_config);
 #endif
+
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
     s_connection_name = "Ethernet";
