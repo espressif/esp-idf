@@ -5,7 +5,7 @@
 The following example demonstrates how to compile an ESP-IDF project to generate code coverage data, and how generate a code coverage report using Gcov or Lcov. Refer to the [Gcov Guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#gcov-source-code-coverage) for more details on the code coverage features supported in ESP-IDF.
 
 This example implements a simple blink application but with code coverage enabled. The example will demonstrate the following features:
-* How to compile a project with the `--coverage` flag
+* How to compile a project with coverage info enabled.
 * Various methods of dumping code coverage data (e.g. Instant Run-Time Dump and Hard-coded Dump).
 * How to generate a code coverage report.
 
