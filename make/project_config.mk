@@ -46,6 +46,16 @@ $(SDKCONFIG): defconfig
 endif
 endif
 
+ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
+ifeq ($(OS),Windows_NT)
+DEFAULTS_ARG:=--defaults $(shell cygpath -m $(SDKCONFIG_DEFAULTS))
+else
+DEFAULTS_ARG:=--defaults $(SDKCONFIG_DEFAULTS)
+endif
+else
+DEFAULTS_ARG:=
+endif
+
 # macro for running confgen.py
 define RunConfGen
 	mkdir -p $(BUILD_DIR_BASE)/include/config
@@ -57,6 +67,7 @@ define RunConfGen
 		--env "COMPONENT_KCONFIGS_PROJBUILD=$(strip $(COMPONENT_KCONFIGS_PROJBUILD))" \
 		--env "COMPONENT_SDKCONFIG_RENAMES=$(strip $(COMPONENT_SDKCONFIG_RENAMES))" \
 		--env "IDF_CMAKE=n" \
+		$(DEFAULTS_ARG) \
 		--output config ${SDKCONFIG} \
 		--output makefile $(SDKCONFIG_MAKEFILE) \
 		--output header $(BUILD_DIR_BASE)/include/sdkconfig.h
@@ -106,9 +117,6 @@ endif
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
 defconfig: | check_python_dependencies
 	$(summary) DEFCONFIG
-ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
-	cat $(SDKCONFIG_DEFAULTS) >> $(SDKCONFIG)  # append defaults to sdkconfig, will override existing values
-endif
 	$(call RunConfGen)
 
 # if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
