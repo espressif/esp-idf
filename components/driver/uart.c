@@ -28,6 +28,13 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_UART_ISR_IN_IRAM
+#define UART_ISR_ATTR IRAM_ATTR
+#else
+#define UART_ISR_ATTR
+#endif
 
 #define UART_NUM SOC_UART_NUM
 
@@ -305,7 +312,7 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
     return ESP_OK;
 }
 
-static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
+static esp_err_t UART_ISR_ATTR uart_reset_rx_fifo(uart_port_t uart_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     //Due to hardware issue, we can not use fifo_rst to reset uart fifo.
@@ -318,7 +325,7 @@ static esp_err_t uart_reset_rx_fifo(uart_port_t uart_num)
     return ESP_OK;
 }
 
-esp_err_t uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask)
+esp_err_t UART_ISR_ATTR uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     //intr_clr register is write-only
@@ -345,14 +352,14 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask)
     return ESP_OK;
 }
 
-static void uart_disable_intr_mask_from_isr(uart_port_t uart_num, uint32_t disable_mask)
+static void UART_ISR_ATTR uart_disable_intr_mask_from_isr(uart_port_t uart_num, uint32_t disable_mask)
 {
     UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
     CLEAR_PERI_REG_MASK(UART_INT_ENA_REG(uart_num), disable_mask);
     UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
 }
 
-static void uart_enable_intr_mask_from_isr(uart_port_t uart_num, uint32_t enable_mask)
+static void UART_ISR_ATTR uart_enable_intr_mask_from_isr(uart_port_t uart_num, uint32_t enable_mask)
 {
     UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
     SET_PERI_REG_MASK(UART_INT_CLR_REG(uart_num), enable_mask);
@@ -375,7 +382,7 @@ static esp_err_t uart_pattern_link_free(uart_port_t uart_num)
     return ESP_OK;
 }
 
-static esp_err_t uart_pattern_enqueue(uart_port_t uart_num, int pos)
+static esp_err_t UART_ISR_ATTR uart_pattern_enqueue(uart_port_t uart_num, int pos)
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
     esp_err_t ret = ESP_OK;
@@ -743,7 +750,7 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
     return ESP_OK;
 }
 
-static int uart_find_pattern_from_last(uint8_t* buf, int length, uint8_t pat_chr, int pat_num)
+static int UART_ISR_ATTR uart_find_pattern_from_last(uint8_t* buf, int length, uint8_t pat_chr, int pat_num)
 {
     int cnt = 0;
     int len = length;
@@ -762,7 +769,7 @@ static int uart_find_pattern_from_last(uint8_t* buf, int length, uint8_t pat_chr
 }
 
 //internal isr handler for default driver code.
-static void uart_rx_intr_handler_default(void *param)
+static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
 {
     uart_obj_t *p_uart = (uart_obj_t*) param;
     uint8_t uart_num = p_uart->uart_num;
@@ -1354,7 +1361,13 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((rx_buffer_size > UART_FIFO_LEN), "uart rx buffer length error(>128)", ESP_FAIL);
     UART_CHECK((tx_buffer_size > UART_FIFO_LEN) || (tx_buffer_size == 0), "uart tx buffer length error(>128 or 0)", ESP_FAIL);
-    UART_CHECK((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM set in intr_alloc_flags", ESP_FAIL); /* uart_rx_intr_handler_default is not in IRAM */
+#if CONFIG_UART_ISR_IN_IRAM
+    UART_CHECK((intr_alloc_flags & ESP_INTR_FLAG_IRAM) != 0,
+                "should set ESP_INTR_FLAG_IRAM flag when CONFIG_UART_ISR_IN_IRAM is enabled", ESP_FAIL);
+#else
+    UART_CHECK((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0,
+                "should not set ESP_INTR_FLAG_IRAM when CONFIG_UART_ISR_IN_IRAM is not enabled", ESP_FAIL);
+#endif
 
     if(p_uart_obj[uart_num] == NULL) {
         p_uart_obj[uart_num] = (uart_obj_t*) calloc(1, sizeof(uart_obj_t));
