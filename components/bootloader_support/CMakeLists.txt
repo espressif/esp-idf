@@ -8,6 +8,7 @@ set(srcs
     "src/flash_partitions.c"
     "src/flash_qio_mode.c"
     "src/bootloader_flash_config_${IDF_TARGET}.c"
+    "src/bootloader_efuse_${IDF_TARGET}.c"
     )
 
 if(IDF_TARGET STREQUAL "esp32")
@@ -26,7 +27,6 @@ if(BOOTLOADER_BUILD)
         "src/${IDF_TARGET}/secure_boot_signatures.c"
         "src/${IDF_TARGET}/secure_boot.c"
         "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
-        "src/${IDF_TARGET}/bootloader_clock_${IDF_TARGET}.c"
         )
 else()
     list(APPEND srcs

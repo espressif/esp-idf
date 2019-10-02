@@ -19,7 +19,8 @@ ifndef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE := src/bootloader_init.o
 endif
 
-COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2beta.o
+COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2beta.o \
+			src/bootloader_efuse_esp32s2beta.o
 
 #
 # Secure boot signing key support
