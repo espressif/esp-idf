@@ -320,9 +320,15 @@ ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 endif
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
+ifdef CONFIG_APP_BUILD_GENERATE_BINARIES
 	@echo "To flash all build output, run 'make flash' or:"
 endif
+endif
+ifdef CONFIG_APP_BUILD_GENERATE_BINARIES
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
+else
+	@echo "Binary is not available for flashing"
+endif
 
 
 # If we have `version.txt` then prefer that for extracting IDF version
@@ -533,6 +539,7 @@ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 app: $(APP_BIN) partition_table_get_info
+ifeq ("$(CONFIG_APP_BUILD_GENERATE_BINARIES)","y")
 ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
 	@echo "App built but not signed. Signing step via espsecure.py:"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
@@ -541,6 +548,9 @@ ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)"
 else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
+endif
+else
+	@echo "Application in not built and cannot be flashed."
 endif
 
 all_binaries: $(APP_BIN)

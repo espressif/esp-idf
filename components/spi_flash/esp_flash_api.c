@@ -634,7 +634,7 @@ esp_err_t esp_flash_app_disable_protect(bool disable)
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
-static esp_err_t spi_flash_translate_rc(esp_err_t err)
+static IRAM_ATTR esp_err_t spi_flash_translate_rc(esp_err_t err)
 {
     switch (err) {
         case ESP_OK:
@@ -657,19 +657,19 @@ static esp_err_t spi_flash_translate_rc(esp_err_t err)
     return ESP_OK;
 }
 
-esp_err_t spi_flash_erase_range(uint32_t start_addr, uint32_t size)
+esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
     esp_err_t err = esp_flash_erase_region(NULL, start_addr, size);
     return spi_flash_translate_rc(err);
 }
 
-esp_err_t spi_flash_write(size_t dst, const void *srcv, size_t size)
+esp_err_t IRAM_ATTR spi_flash_write(size_t dst, const void *srcv, size_t size)
 {
     esp_err_t err = esp_flash_write(NULL, srcv, dst, size);
     return spi_flash_translate_rc(err);
 }
 
-esp_err_t spi_flash_read(size_t src, void *dstv, size_t size)
+esp_err_t IRAM_ATTR spi_flash_read(size_t src, void *dstv, size_t size)
 {
     esp_err_t err = esp_flash_read(NULL, dstv, src, size);
     return spi_flash_translate_rc(err);

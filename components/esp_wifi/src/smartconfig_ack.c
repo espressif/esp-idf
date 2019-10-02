@@ -85,7 +85,7 @@ static void sc_ack_send_task(void *pvParameters)
 
     bzero(&server_addr, sizeof(struct sockaddr_in));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr((const char*)remote_ip);
+    memcpy(&server_addr.sin_addr.s_addr, remote_ip, sizeof(remote_ip));
     server_addr.sin_port = htons(remote_port);
 
     esp_wifi_get_mac(WIFI_IF_STA, ack->ctx.mac);

@@ -78,24 +78,28 @@ set(PROJECT_BIN "${elf_name}.bin")
 #
 # Add 'app.bin' target - generates with elf2image
 #
-add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
-        -o "${build_dir}/${unsigned_project_binary}" "${elf}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
-    COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
-    DEPENDS ${elf}
-    VERBATIM
-    WORKING_DIRECTORY ${build_dir}
-    COMMENT "Generating binary image from built executable"
-    )
-add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
+if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
+        COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
+            -o "${build_dir}/${unsigned_project_binary}" "${elf}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
+        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
+        DEPENDS ${elf}
+        VERBATIM
+        WORKING_DIRECTORY ${build_dir}
+        COMMENT "Generating binary image from built executable"
+        )
+    add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
+endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     "${build_dir}/${unsigned_project_binary}"
     )
 
-add_custom_target(app ALL DEPENDS gen_project_binary)
+if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    add_custom_target(app ALL DEPENDS gen_project_binary)
+endif()
 
 if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)

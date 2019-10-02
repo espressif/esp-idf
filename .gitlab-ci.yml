@@ -67,7 +67,7 @@ variables:
   rm -rf "$CUSTOM_TOOLCHAIN_PATH"
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
-  if [ "$CI_JOB_STAGE" != "target_test" ]; then
+  if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 

@@ -30,6 +30,7 @@ const char *base_path = "/extflash";
 
 static esp_flash_t* example_init_ext_flash(void);
 static const esp_partition_t* example_add_partition(esp_flash_t* ext_flash, const char* partition_label);
+static void example_list_data_partitions(void);
 static bool example_mount_fatfs(const char* partition_label);
 static void example_get_fatfs_usage(size_t* out_total_bytes, size_t* out_free_bytes);
 
@@ -44,6 +45,9 @@ void app_main(void)
     // Add the entire external flash chip as a partition
     const char *partition_label = "storage";
     example_add_partition(flash, partition_label);
+
+    // List the available partitions
+    example_list_data_partitions();
 
     // Initialize FAT FS in the partition
     if (!example_mount_fatfs(partition_label)) {
@@ -137,6 +141,20 @@ static const esp_partition_t* example_add_partition(esp_flash_t* ext_flash, cons
     const esp_partition_t* fat_partition;
     ESP_ERROR_CHECK(esp_partition_register_external(ext_flash, 0, ext_flash->size, partition_label, ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_FAT, &fat_partition));
     return fat_partition;
+}
+
+static void example_list_data_partitions(void)
+{
+    ESP_LOGI(TAG, "Listing data partitions:");
+    esp_partition_iterator_t it = esp_partition_find(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, NULL);
+
+    for (; it != NULL; it = esp_partition_next(it)) {
+        const esp_partition_t *part = esp_partition_get(it);
+        ESP_LOGI(TAG, "- partition '%s', subtype %d, offset 0x%x, size %d kB",
+        part->label, part->subtype, part->address, part->size / 1024);
+    }
+
+    esp_partition_iterator_release(it);
 }
 
 static bool example_mount_fatfs(const char* partition_label)

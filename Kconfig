@@ -82,6 +82,83 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     endmenu  # SDK tool configuration
 
+    menu "Build type"
+
+        choice APP_BUILD_TYPE
+            prompt "Application build type"
+            default APP_BUILD_TYPE_APP_2NDBOOT
+            help
+                Select the way the application is built.
+
+                By default, the application is built as a binary file in a format compatible with
+                the ESP32 bootloader. In addition to this application, 2nd stage bootloader is
+                also built. Application and bootloader binaries can be written into flash and
+                loaded/executed from there.
+
+                Another option, useful for only very small and limited applications, is to only link
+                the .elf file of the application, such that it can be loaded directly into RAM over
+                JTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to
+                build any complex application this way. However for kinds of testing and debugging,
+                this option may provide faster iterations, since the application does not need to be
+                written into flash.
+                Note that at the moment, ESP-IDF does not contain all the startup code required to
+                initialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute
+                a bit of ROM code prior to executing the application. A gdbinit file may look as follows:
+
+                    # Connect to a running instance of OpenOCD
+                    target remote :3333
+                    # Reset and halt the target
+                    mon reset halt
+                    # Run to a specific point in ROM code,
+                    #  where most of initialization is complete.
+                    thb *0x40007901
+                    c
+                    # Load the application into RAM
+                    load
+                    # Run till app_main
+                    tb app_main
+                    c
+
+                Execute this gdbinit file as follows:
+
+                    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit
+
+                Recommended sdkconfig.defaults for building loadable ELF files is as follows.
+                CONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application
+                memory footprint.
+
+                    CONFIG_APP_BUILD_TYPE_ELF_RAM=y
+                    CONFIG_VFS_SUPPORT_TERMIOS=
+                    CONFIG_NEWLIB_NANO_FORMAT=y
+                    CONFIG_ESP32_PANIC_PRINT_HALT=y
+                    CONFIG_ESP32_DEBUG_STUBS_ENABLE=
+                    CONFIG_ESP_ERR_TO_NAME_LOOKUP=
+
+
+            config APP_BUILD_TYPE_APP_2NDBOOT
+                bool
+                prompt "Default (binary application + 2nd stage bootloader)"
+                select APP_BUILD_GENERATE_BINARIES
+                select APP_BUILD_BOOTLOADER
+                select APP_BUILD_USE_FLASH_SECTIONS
+
+            config APP_BUILD_TYPE_ELF_RAM
+                bool
+                prompt "ELF file, loadable into RAM (EXPERIMENTAL))"
+        endchoice # APP_BUILD_TYPE
+
+        # Hidden options, set according to the choice above
+        config APP_BUILD_GENERATE_BINARIES
+            bool # Whether to generate .bin files or not
+
+        config APP_BUILD_BOOTLOADER
+            bool # Whether to build the bootloader
+
+        config APP_BUILD_USE_FLASH_SECTIONS
+            bool # Whether to place code/data into memory-mapped flash sections
+
+    endmenu # Build type
+
     source "$COMPONENT_KCONFIGS_PROJBUILD"
 
     menu "Compiler options"

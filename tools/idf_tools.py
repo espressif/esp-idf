@@ -61,6 +61,12 @@ try:
 except ImportError:
     from urllib import urlretrieve
 
+try:
+    from exceptions import WindowsError
+except ImportError:
+    class WindowsError(OSError):
+        pass
+
 
 TOOLS_FILE = 'tools/tools.json'
 TOOLS_SCHEMA_FILE = 'tools/tools_schema.json'
@@ -254,13 +260,34 @@ def unpack(filename, destination):
     archive_obj.extractall(destination)
 
 
+# Sometimes renaming a directory on Windows (randomly?) causes a PermissionError.
+# This is confirmed to be a workaround:
+# https://github.com/espressif/esp-idf/issues/3819#issuecomment-515167118
+# https://github.com/espressif/esp-idf/issues/4063#issuecomment-531490140
+# https://stackoverflow.com/a/43046729
+def rename_with_retry(path_from, path_to):
+    if sys.platform.startswith('win'):
+        retry_count = 100
+    else:
+        retry_count = 1
+
+    for retry in range(retry_count):
+        try:
+            os.rename(path_from, path_to)
+            return
+        except (OSError, WindowsError):       # WindowsError until Python 3.3, then OSError
+            if retry == retry_count - 1:
+                raise
+            warn('Rename {} to {} failed, retrying...'.format(path_from, path_to))
+
+
 def strip_container_dirs(path, levels):
     assert levels > 0
     # move the original directory out of the way (add a .tmp suffix)
     tmp_path = path + '.tmp'
     if os.path.exists(tmp_path):
         shutil.rmtree(tmp_path)
-    os.rename(path, tmp_path)
+    rename_with_retry(path, tmp_path)
     os.mkdir(path)
     base_path = tmp_path
     # walk given number of levels down
@@ -276,7 +303,7 @@ def strip_container_dirs(path, levels):
     for name in contents:
         move_from = os.path.join(base_path, name)
         move_to = os.path.join(path, name)
-        os.rename(move_from, move_to)
+        rename_with_retry(move_from, move_to)
     shutil.rmtree(tmp_path)
 
 
@@ -544,7 +571,7 @@ class IDFTool(object):
             if not self.check_download_file(download_obj, local_temp_path):
                 warn('Failed to download file {}'.format(local_temp_path))
                 continue
-            os.rename(local_temp_path, local_path)
+            rename_with_retry(local_temp_path, local_path)
             downloaded = True
             break
         if not downloaded:
@@ -810,7 +837,7 @@ def get_python_env_path():
         with open(version_file_path, "r") as version_file:
             idf_version_str = version_file.read()
     else:
-        idf_version_str = subprocess.check_output(['git', '-C', global_idf_path, 'describe', '--tags'], cwd=global_idf_path, env=os.environ).decode()
+        idf_version_str = subprocess.check_output(['git', '--work-tree=' + global_idf_path, 'describe', '--tags'], cwd=global_idf_path, env=os.environ).decode()
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
     idf_version = match.group(1)
 
