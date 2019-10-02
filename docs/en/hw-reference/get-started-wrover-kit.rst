@@ -184,7 +184,7 @@ JTAG, MicroSD          IO15   5V
 Legend:
 
 * NC/XTAL - :ref:`32.768 kHz Oscillator <get-started-esp-wrover-kit-v4.1-xtal>`
-* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v4.1-jtag-header>`
+* JTAG - :ref:`JTAG / JP2 <get-started-esp-wrover-kit-v4.1-jtag-header>`
 * Boot - Boot button / SW2
 * Camera - :ref:`Camera / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
