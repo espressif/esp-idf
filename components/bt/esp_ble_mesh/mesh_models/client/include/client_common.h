@@ -112,7 +112,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
                             s32_t timeout, bool need_ack,
                             const struct bt_mesh_send_cb *cb, void *cb_data);
 
-int bt_mesh_client_free_node(sys_slist_t *queue, bt_mesh_client_node_t *node);
+int bt_mesh_client_free_node(bt_mesh_client_node_t *node);
 
 enum {
     NODE = 0,

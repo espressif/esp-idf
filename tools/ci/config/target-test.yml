@@ -203,6 +203,25 @@ example_test_008:
     - ESP32
     - Example_Flash_Encryption
 
+example_test_009:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - test_jtag_arm
+  artifacts:
+      when: always
+      paths:
+        - $CI_PROJECT_DIR/examples/get-started/hello_world/*.log
+      expire_in: 1 week
+  variables:
+    SETUP_TOOLS: "1"
+
+example_test_010:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_ExtFlash
+
 UT_001:
   extends: .unit_test_template
   parallel: 50
@@ -431,6 +450,20 @@ UT_032:
   tags:
     - ESP32_IDF
     - UT_T1_FlashEncryption
+
+UT_032:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - ESP32_IDF
+    - UT_T2_Ethernet
+
+UT_033:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T2_Ethernet
+    - psram
 
 nvs_compatible_test:
   extends: .test_template

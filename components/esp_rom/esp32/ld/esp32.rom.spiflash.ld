@@ -8,6 +8,7 @@ PROVIDE ( esp_rom_spiflash_erase_area = 0x400631ac );
 PROVIDE ( esp_rom_spiflash_erase_block = 0x40062c4c );
 PROVIDE ( esp_rom_spiflash_erase_chip = 0x40062c14 );
 PROVIDE ( esp_rom_spiflash_erase_sector = 0x40062ccc );
+PROVIDE ( esp_rom_spiflash_attach = 0x40062a6c );
 PROVIDE ( esp_rom_spiflash_lock = 0x400628f0 );
 PROVIDE ( esp_rom_spiflash_read = 0x40062ed8 );
 PROVIDE ( esp_rom_spiflash_config_readmode = 0x40062b64 ); /* SPIMasterReadModeCnfig */

@@ -1,0 +1,32 @@
+name: Python CI
+
+# This workflow will be triggered when a PR modifies some python relevant files
+on:
+  pull_request:
+    paths:
+      - "*.py"
+      - "requirements.txt"
+
+jobs:
+  python_lint:
+    name: python lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [2.7, 3.5, 3.6, 3.7]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Set up Python environment
+        uses: actions/setup-python@master
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 . --config=.flake8

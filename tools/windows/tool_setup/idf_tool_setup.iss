@@ -5,7 +5,7 @@
 #include <idp.iss>
 
 #define MyAppName "ESP-IDF Tools"
-#define MyAppVersion "2.0"
+#define MyAppVersion "2.1"
 #define MyAppPublisher "Espressif Systems (Shanghai) Co. Ltd."
 #define MyAppURL "https://github.com/espressif/esp-idf"
 
@@ -65,6 +65,8 @@ Source: "..\..\idf_tools.py"; DestDir: "{app}"; DestName: "idf_tools_fallback.py
 Source: "tools_fallback.json"; DestDir: "{app}"; DestName: "tools_fallback.json"
 Source: "idf_cmd_init.bat"; DestDir: "{app}"
 Source: "dist\*"; DestDir: "{app}\dist"
+Source: "tools_WD_excl.ps1"; DestDir: "{app}\dist"
+Source: "tools_WD_clean.ps1"; DestDir: "{app}\dist"
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\dist"
@@ -72,18 +74,26 @@ Type: filesandordirs; Name: "{app}\releases"
 Type: filesandordirs; Name: "{app}\tools"
 Type: filesandordirs; Name: "{app}\python_env"
 
+[Tasks]
+Name: createlnk; Description: "Create Desktop shortcut for ESP-IDF Tools Command Line";
+Name: wdexcl; Description: "Register ESP-IDF Tools executables as Windows Defender exclusions (improves compilation speed, requires elevation)";
+
 [Run]
 Filename: "{app}\dist\{#PythonInstallerName}"; Parameters: "/passive PrependPath=1 InstallLauncherAllUsers=0 Include_dev=0 Include_tcltk=0 Include_launcher=0 Include_test=0 Include_doc=0"; Description: "Installing Python"; Check: PythonInstallRequired
 Filename: "{app}\dist\{#GitInstallerName}"; Parameters: "/silent /tasks="""" /norestart"; Description: "Installing Git"; Check: GitInstallRequired
 Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Description: "Run ESP-IDF Command Prompt (cmd.exe)"; Check: InstallationSuccessful
 
-[Registry]
+
+[UninstallRun]
+Filename: "powershell.exe"; \
+  Parameters: "-ExecutionPolicy Bypass -File ""{app}\dist\tools_WD_clean.ps1"" -RmExclPath ""{app}"""; \
+  WorkingDir: {app}; Flags: runhidden
+
+[Registry]                                                                                                        
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "IDF_TOOLS_PATH"; \
     ValueData: "{app}"; Flags: preservestringtype createvalueifdoesntexist uninsdeletevalue deletevalue;
 
 [Code]
-
-
 #include "utils.iss.inc"
 #include "choice_page.iss.inc"
 #include "cmdline_page.iss.inc"

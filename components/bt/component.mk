@@ -148,11 +148,12 @@ ifdef CONFIG_BLE_MESH
                             esp_ble_mesh/mesh_models/common      \
                             esp_ble_mesh/mesh_models/client      \
                             esp_ble_mesh/api/core                \
-                            esp_ble_mesh/api/models 
+                            esp_ble_mesh/api/models
 endif
 
 
 ifdef CONFIG_BT_NIMBLE_ENABLED
+
 COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/nimble/include                     \
                              host/nimble/nimble/nimble/host/include                \
                              host/nimble/nimble/porting/nimble/include             \
@@ -167,14 +168,16 @@ COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/nimble/include                  
                              host/nimble/nimble/nimble/host/util/include           \
                              host/nimble/nimble/nimble/host/store/ram/include      \
                              host/nimble/nimble/nimble/host/store/config/include   \
-                             host/nimble/nimble/ext/tinycrypt/include              \
                              host/nimble/esp-hci/include                           \
                              host/nimble/port/include
+
+ifndef CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/ext/tinycrypt/include
+endif
 
 COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/src                            \
                      host/nimble/nimble/porting/nimble/src                         \
                      host/nimble/nimble/porting/npl/freertos/src                   \
-                     host/nimble/nimble/ext/tinycrypt/src                          \
                      host/nimble/nimble/nimble/host/services/ans/src               \
                      host/nimble/nimble/nimble/host/services/bas/src               \
                      host/nimble/nimble/nimble/host/services/gap/src               \
@@ -186,6 +189,10 @@ COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/src                         
                      host/nimble/nimble/nimble/host/store/ram/src                  \
                      host/nimble/nimble/nimble/host/store/config/src               \
                      host/nimble/esp-hci/src
+
+ifndef CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+COMPONENT_SRCDIRS += host/nimble/nimble/ext/tinycrypt/src
+endif
 
 COMPONENT_OBJEXCLUDE += host/nimble/nimble/nimble/host/store/config/src/ble_store_config_conf.o
 
