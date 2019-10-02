@@ -24,6 +24,7 @@ set(srcs
     "port/http_parser.c")
 
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS port/include nghttp2/lib/includes)
+                    INCLUDE_DIRS port/include nghttp2/lib/includes
+                    PRIV_INCLUDE_DIRS private_include)
 
 target_compile_definitions(${COMPONENT_LIB} PUBLIC "-DHAVE_CONFIG_H")
