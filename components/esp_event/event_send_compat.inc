@@ -17,7 +17,7 @@
 #include "esp_event_legacy.h"
 #include "esp_wifi_types.h"
 #include "tcpip_adapter.h"
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
 #endif
 
@@ -38,8 +38,7 @@
  * default_event_loop.c is linked, this file is #include-ed into default_event_loop.c.
  */
 
-//#if LOG_LOCAL_LEVEL >= 4 /* ESP_LOG_DEBUG */
-#if 1
+#if LOG_LOCAL_LEVEL >= 4 /* ESP_LOG_DEBUG */
 #define WITH_EVENT_DEBUG
 #endif
 
@@ -90,7 +89,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT_ARG(WIFI, AP_STACONNECTED, sta_connected);
         HANDLE_SYS_EVENT_ARG(WIFI, AP_STADISCONNECTED, sta_disconnected);
         HANDLE_SYS_EVENT_ARG(WIFI, AP_PROBEREQRECVED, ap_probereqrecved);
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ETH_ENABLED
         /* Ethernet events */
         /* Some extra defines to fit the old naming scheme... */
 #define ETH_EVENT_ETH_START ETHERNET_EVENT_START
