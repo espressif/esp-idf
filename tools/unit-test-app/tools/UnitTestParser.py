@@ -103,7 +103,7 @@ class Parser(object):
                 file_name = table.get_string("any", file_name_addr)
 
                 # Search in tags to set the target
-                target_tag_dict = {"ESP32_IDF": "esp32", "7.2.2": "esp32s2beta"}
+                target_tag_dict = {"ESP32_IDF": "esp32", "ESP32S2BETA_IDF": "esp32s2beta"}
                 for tag in target_tag_dict:
                     if tag in tags:
                         target = target_tag_dict[tag]
