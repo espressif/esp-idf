@@ -442,11 +442,12 @@ UT_031:
   extends: .unit_test_template
   parallel: 28
   tags:
-    - 7.2.2
+    - ESP32S2BETA_IDF
     - UT_T1_1
 
 UT_032:
   extends: .unit_test_template
+  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_FlashEncryption
