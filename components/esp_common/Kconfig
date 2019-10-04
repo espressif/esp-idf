@@ -40,9 +40,10 @@ menu "Common ESP-related"
 
     config ESP_IPC_TASK_STACK_SIZE
         int "Inter-Processor Call (IPC) task stack size"
-        default 1024
         range 512 65536 if !ESP32_APPTRACE_ENABLE
         range 2048 65536 if ESP32_APPTRACE_ENABLE
+        default 2048 if ESP32_APPTRACE_ENABLE
+        default 1024
         help
             Configure the IPC tasks stack size. One IPC task runs on each core
             (in dual core mode), and allows for cross-core function calls.
