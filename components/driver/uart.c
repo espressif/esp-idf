@@ -166,6 +166,7 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
     UART_CHECK((stop_bit < UART_STOP_BITS_MAX), "stop bit error", ESP_FAIL);
 
     UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+#if CONFIG_IDF_TARGET_ESP32
     //workaround for hardware bug, when uart stop bit set as 2-bit mode.
     if (stop_bit == UART_STOP_BITS_2) {
         stop_bit = UART_STOP_BITS_1;
@@ -173,6 +174,7 @@ esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bit)
     } else {
         UART[uart_num]->rs485_conf.dl1_en = 0;
     }
+#endif
     UART[uart_num]->conf0.stop_bit_num = stop_bit;
     UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
     return ESP_OK;
