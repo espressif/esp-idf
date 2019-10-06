@@ -65,6 +65,7 @@ CTRL_R = '\x12'
 CTRL_T = '\x14'
 CTRL_Y = '\x19'
 CTRL_P = '\x10'
+CTRL_X = '\x18'
 CTRL_L = '\x0c'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
@@ -272,6 +273,8 @@ class ConsoleParser(object):
             yellow_print("Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart")
             # to fast trigger pause without press menu key
             ret = (TAG_CMD, CMD_ENTER_BOOT)
+        elif c in [CTRL_X, 'x', 'X']:  # Exiting from within the menu
+            ret = (TAG_CMD, CMD_STOP)
         else:
             red_print('--- unknown menu character {} --'.format(key_description(c)))
 
@@ -294,6 +297,7 @@ class ConsoleParser(object):
             ---    {output:14} Toggle output display
             ---    {log:14} Toggle saving output into file
             ---    {pause:14} Reset target into bootloader to pause app via RTS line
+            ---    {menuexit:14} Exit program
         """.format(version=__version__,
                    exit=key_description(self.exit_key),
                    menu=key_description(self.menu_key),
@@ -302,7 +306,8 @@ class ConsoleParser(object):
                    appmake=key_description(CTRL_A) + ' (or A)',
                    output=key_description(CTRL_Y),
                    log=key_description(CTRL_L),
-                   pause=key_description(CTRL_P))
+                   pause=key_description(CTRL_P),
+                   menuexit=key_description(CTRL_X) + ' (or X)')
         return textwrap.dedent(text)
 
     def get_next_action_text(self):
