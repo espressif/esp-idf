@@ -64,6 +64,7 @@ CTRL_R = '\x12'
 CTRL_T = '\x14'
 CTRL_Y = '\x19'
 CTRL_P = '\x10'
+CTRL_X = '\x18'
 CTRL_L = '\x0c'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
@@ -495,6 +496,9 @@ class Monitor(object):
             self.serial.setRTS(False)  # EN=HIGH, chip out of reset
             time.sleep(0.45)  # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.05
             self.serial.setDTR(False)  # IO0=HIGH, done
+        elif c in [CTRL_X, 'x', 'X']:  # Exiting from within the menu
+            self.console_reader.stop()
+            self.serial_reader.stop()
         else:
             red_print('--- unknown menu character {} --'.format(key_description(c)))
 
@@ -514,6 +518,7 @@ class Monitor(object):
 ---    {output:14} Toggle output display
 ---    {log:14} Toggle saving output into file
 ---    {pause:14} Reset target into bootloader to pause app via RTS line
+---    {menuexit:14} Exit program
 """.format(version=__version__,
            exit=key_description(self.exit_key),
            menu=key_description(self.menu_key),
@@ -522,7 +527,8 @@ class Monitor(object):
            appmake=key_description(CTRL_A) + ' (or A)',
            output=key_description(CTRL_Y),
            log=key_description(CTRL_L),
-           pause=key_description(CTRL_P))
+           pause=key_description(CTRL_P),
+           menuexit=key_description(CTRL_X) + ' (or X)')
 
     def __enter__(self):
         """ Use 'with self' to temporarily disable monitoring behaviour """
