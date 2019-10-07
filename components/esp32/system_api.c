@@ -230,12 +230,11 @@ void esp_restart_noos(void) __attribute__ ((noreturn));
 
 void IRAM_ATTR esp_restart(void)
 {
-     int i;
-     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
-	  if (shutdown_handlers[i]) {
-	       shutdown_handlers[i]();
-	  }
-     }
+    for (int i = SHUTDOWN_HANDLERS_NO - 1; i >= 0; i--) {
+        if (shutdown_handlers[i]) {
+            shutdown_handlers[i]();
+        }
+    }
 
     // Disable scheduler on this core.
     vTaskSuspendAll();
