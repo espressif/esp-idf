@@ -129,10 +129,17 @@ STRUCT_FIELD (long, 4, XT_STK_LEND,   lend)
 STRUCT_FIELD (long, 4, XT_STK_LCOUNT, lcount)
 #endif
 #ifndef __XTENSA_CALL0_ABI__
+#ifdef  CONFIG_FREERTOS_PORT_OPTIMIZE_INTERRUPT_HANDLING
+/* Todo prepare the stack frame to receive all windows regisster */
+STRUCT_FIELD (long, 4, XT_STK_TMP0,   tmp0)
+STRUCT_FIELD (long, 4, XT_STK_TMP1,   tmp1)
+STRUCT_FIELD (long, 4, XT_STK_TMP2,   tmp2)
+#else
 /* Temporary space for saving stuff during window spill */
 STRUCT_FIELD (long, 4, XT_STK_TMP0,   tmp0)
 STRUCT_FIELD (long, 4, XT_STK_TMP1,   tmp1)
 STRUCT_FIELD (long, 4, XT_STK_TMP2,   tmp2)
+#endif
 #endif
 #ifdef XT_USE_SWPRI
 /* Storage for virtual priority mask */

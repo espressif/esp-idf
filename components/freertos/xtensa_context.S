@@ -51,6 +51,7 @@ NOERROR: .error "C preprocessor needed for this file: make sure its filename\
 
 #include "xtensa_rtos.h"
 #include "xtensa_context.h"
+#include "xt_asm_utils.h"
 
 #ifdef XT_USE_OVLY
 #include <xtensa/overlay_os_asm.h>
@@ -143,6 +144,9 @@ _xt_context_save:
     mov     a9,  a0                     /* preserve ret addr */
     #endif
 
+    #ifdef CONFIG_FREERTOS_PORT_OPTIMIZE_INTERRUPT_HANDLING
+    SPILL_ALL_WINDOWS /* add the optimized spill reg */   
+    #else
     #ifndef __XTENSA_CALL0_ABI__
     /*
     To spill the reg windows, temp. need pre-interrupt stack ptr and a4-15.
@@ -174,6 +178,7 @@ _xt_context_save:
     l32i    a12, sp, XT_STK_TMP0        /* recover stuff from stack frame */
     l32i    a13, sp, XT_STK_TMP1    
     l32i    a9,  sp, XT_STK_TMP2    
+    #endif
     #endif
 
     #if XCHAL_EXTRA_SA_SIZE > 0
