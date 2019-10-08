@@ -119,7 +119,7 @@ We have two bits to control the interrupt:
 */
 
 #include <string.h>
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "driver/spi_master.h"
 #include "soc/spi_periph.h"
 #include "esp32/rom/ets_sys.h"
