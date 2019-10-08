@@ -218,6 +218,97 @@
 #define SOC_MEM_INTERNAL_LOW        0x3FF9E000
 #define SOC_MEM_INTERNAL_HIGH       0x40072000
 
+//Interrupt hardware source table
+//This table is decided by hardware, don't touch this.
+#define ETS_WIFI_MAC_INTR_SOURCE                    0/**< interrupt of WiFi MAC, level*/
+#define ETS_WIFI_MAC_NMI_SOURCE                     1/**< interrupt of WiFi MAC, NMI, use if MAC have bug to fix in NMI*/
+#define ETS_WIFI_PWR_INTR_SOURCE                    2/**< */
+#define ETS_WIFI_BB_INTR_SOURCE                     3/**< interrupt of WiFi BB, level, we can do some calibartion*/
+#define ETS_BT_MAC_INTR_SOURCE                      4/**< will be cancelled*/
+#define ETS_BT_BB_INTR_SOURCE                       5/**< interrupt of BT BB, level*/
+#define ETS_BT_BB_NMI_SOURCE                        6/**< interrupt of BT BB, NMI, use if BB have bug to fix in NMI*/
+#define ETS_RWBT_INTR_SOURCE                        7/**< interrupt of RWBT, level*/
+#define ETS_RWBLE_INTR_SOURCE                       8/**< interrupt of RWBLE, level*/
+#define ETS_RWBT_NMI_SOURCE                         9/**< interrupt of RWBT, NMI, use if RWBT have bug to fix in NMI*/
+#define ETS_RWBLE_NMI_SOURCE                        10/**< interrupt of RWBLE, NMI, use if RWBT have bug to fix in NMI*/
+#define ETS_SLC0_INTR_SOURCE                        11/**< interrupt of SLC0, level*/
+#define ETS_SLC1_INTR_SOURCE                        12/**< interrupt of SLC1, level*/
+#define ETS_UHCI0_INTR_SOURCE                       13/**< interrupt of UHCI0, level*/
+#define ETS_UHCI1_INTR_SOURCE                       14/**< interrupt of UHCI1, level*/
+#define ETS_TG0_T0_LEVEL_INTR_SOURCE                15/**< interrupt of TIMER_GROUP0, TIMER0, level, we would like use EDGE for timer if permission*/
+#define ETS_TG0_T1_LEVEL_INTR_SOURCE                16/**< interrupt of TIMER_GROUP0, TIMER1, level, we would like use EDGE for timer if permission*/
+#define ETS_TG0_WDT_LEVEL_INTR_SOURCE               17/**< interrupt of TIMER_GROUP0, WATCHDOG, level*/
+#define ETS_TG0_LACT_LEVEL_INTR_SOURCE              18/**< interrupt of TIMER_GROUP0, LACT, level*/
+#define ETS_TG1_T0_LEVEL_INTR_SOURCE                19/**< interrupt of TIMER_GROUP1, TIMER0, level, we would like use EDGE for timer if permission*/
+#define ETS_TG1_T1_LEVEL_INTR_SOURCE                20/**< interrupt of TIMER_GROUP1, TIMER1, level, we would like use EDGE for timer if permission*/
+#define ETS_TG1_WDT_LEVEL_INTR_SOURCE               21/**< interrupt of TIMER_GROUP1, WATCHDOG, level*/
+#define ETS_TG1_LACT_LEVEL_INTR_SOURCE              22/**< interrupt of TIMER_GROUP1, LACT, level*/
+#define ETS_GPIO_INTR_SOURCE                        23/**< interrupt of GPIO, level*/
+#define ETS_GPIO_NMI_SOURCE                         24/**< interrupt of GPIO, NMI*/
+#define ETS_GPIO_INTR_SOURCE2                       25/**< interrupt of GPIO, level*/
+#define ETS_GPIO_NMI_SOURCE2                        26/**< interrupt of GPIO, NMI*/
+#define ETS_DEDICATED_GPIO_INTR_SOURCE              27/**< interrupt of dedicated GPIO, level*/
+#define ETS_FROM_CPU_INTR0_SOURCE                   28/**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
+#define ETS_FROM_CPU_INTR1_SOURCE                   29/**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
+#define ETS_FROM_CPU_INTR2_SOURCE                   30/**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
+#define ETS_FROM_CPU_INTR3_SOURCE                   31/**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+#define ETS_SPI1_INTR_SOURCE                        32/**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
+#define ETS_SPI2_INTR_SOURCE                        33/**< interrupt of SPI2, level*/
+#define ETS_SPI3_INTR_SOURCE                        34/**< interrupt of SPI3, level*/
+#define ETS_I2S0_INTR_SOURCE                        35/**< interrupt of I2S0, level*/
+#define ETS_I2S1_INTR_SOURCE                        36/**< interrupt of I2S1, level*/
+#define ETS_UART0_INTR_SOURCE                       37/**< interrupt of UART0, level*/
+#define ETS_UART1_INTR_SOURCE                       38/**< interrupt of UART1, level*/
+#define ETS_UART2_INTR_SOURCE                       39/**< interrupt of UART2, level*/
+#define ETS_SDIO_HOST_INTR_SOURCE                   40/**< interrupt of SD/SDIO/MMC HOST, level*/
+#define ETS_PWM0_INTR_SOURCE                        41/**< interrupt of PWM0, level, Reserved*/
+#define ETS_PWM1_INTR_SOURCE                        42/**< interrupt of PWM1, level, Reserved*/
+#define ETS_PWM2_INTR_SOURCE                        43/**< interrupt of PWM2, level*/
+#define ETS_PWM3_INTR_SOURCE                        44/**< interruot of PWM3, level*/
+#define ETS_LEDC_INTR_SOURCE                        45/**< interrupt of LED PWM, level*/
+#define ETS_EFUSE_INTR_SOURCE                       46/**< interrupt of efuse, level, not likely to use*/
+#define ETS_CAN_INTR_SOURCE                         47/**< interrupt of can, level*/
+#define ETS_USB_INTR_SOURCE                         48/**< interrupt of USB, level*/
+#define ETS_RTC_CORE_INTR_SOURCE                    49/**< interrupt of rtc core, level, include rtc watchdog*/
+#define ETS_RMT_INTR_SOURCE                         50/**< interrupt of remote controller, level*/
+#define ETS_PCNT_INTR_SOURCE                        51/**< interrupt of pluse count, level*/
+#define ETS_I2C_EXT0_INTR_SOURCE                    52/**< interrupt of I2C controller1, level*/
+#define ETS_I2C_EXT1_INTR_SOURCE                    53/**< interrupt of I2C controller0, level*/
+#define ETS_RSA_INTR_SOURCE                         54/**< interrupt of RSA accelerator, level*/
+#define ETS_SPI1_DMA_INTR_SOURCE                    55/**< interrupt of SPI1 DMA, SPI1 is for flash read/write, do not use this*/
+#define ETS_SPI2_DMA_INTR_SOURCE                    56/**< interrupt of SPI2 DMA, level*/
+#define ETS_SPI3_DMA_INTR_SOURCE                    57/**< interrupt of SPI3 DMA, level*/
+#define ETS_WDT_INTR_SOURCE                         58/**< will be cancelled*/
+#define ETS_TIMER1_INTR_SOURCE                      59/**< will be cancelled*/
+#define ETS_TIMER2_INTR_SOURCE                      60/**< will be cancelled*/
+#define ETS_TG0_T0_EDGE_INTR_SOURCE                 61/**< interrupt of TIMER_GROUP0, TIMER0, EDGE*/
+#define ETS_TG0_T1_EDGE_INTR_SOURCE                 62/**< interrupt of TIMER_GROUP0, TIMER1, EDGE*/
+#define ETS_TG0_WDT_EDGE_INTR_SOURCE                63/**< interrupt of TIMER_GROUP0, WATCH DOG, EDGE*/
+#define ETS_TG0_LACT_EDGE_INTR_SOURCE               64/**< interrupt of TIMER_GROUP0, LACT, EDGE*/
+#define ETS_TG1_T0_EDGE_INTR_SOURCE                 65/**< interrupt of TIMER_GROUP1, TIMER0, EDGE*/
+#define ETS_TG1_T1_EDGE_INTR_SOURCE                 66/**< interrupt of TIMER_GROUP1, TIMER1, EDGE*/
+#define ETS_TG1_WDT_EDGE_INTR_SOURCE                67/**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
+#define ETS_TG1_LACT_EDGE_INTR_SOURCE               68/**< interrupt of TIMER_GROUP0, LACT, EDGE*/
+#define ETS_CACHE_IA_INTR_SOURCE                    69/**< interrupt of Cache Invalied Access, LEVEL*/
+#define ETS_SYSTIMER_TARGET0_EDGE_INTR_SOURCE       70/**< interrupt of system timer 0, EDGE*/
+#define ETS_SYSTIMER_TARGET1_EDGE_INTR_SOURCE       71/**< interrupt of system timer 1, EDGE*/
+#define ETS_SYSTIMER_TARGET2_EDGE_INTR_SOURCE       72/**< interrupt of system timer 2, EDGE*/
+#define ETS_ASSIST_DEBUG_INTR_SOURCE                73/**< interrupt of Assist debug module, LEVEL*/
+#define ETS_PMS_PRO_IRAM0_ILG_INTR_SOURCE           74/**< interrupt of illegal IRAM1 access, LEVEL*/
+#define ETS_PMS_PRO_DRAM0_ILG_INTR_SOURCE           75/**< interrupt of illegal DRAM0 access, LEVEL*/
+#define ETS_PMS_PRO_DPORT_ILG_INTR_SOURCE           76/**< interrupt of illegal DPORT access, LEVEL*/
+#define ETS_PMS_PRO_AHB_ILG_INTR_SOURCE             77/**< interrupt of illegal AHB access, LEVEL*/
+#define ETS_PMS_PRO_CACHE_ILG_INTR_SOURCE           78/**< interrupt of illegal CACHE access, LEVEL*/
+#define ETS_PMS_DMA_APB_I_ILG_INTR_SOURCE           79/**< interrupt of illegal APB access, LEVEL*/
+#define ETS_PMS_DMA_RX_I_ILG_INTR_SOURCE            80/**< interrupt of illegal DMA RX access, LEVEL*/
+#define ETS_PMS_DMA_TX_I_ILG_INTR_SOURCE            81/**< interrupt of illegal DMA TX access, LEVEL*/
+#define ETS_SPI0_REJECT_CACHE_INTR_SOURCE           82/**< interrupt of SPI0 Cache access rejected, LEVEL*/
+#define ETS_SPI1_REJECT_CPU_INTR_SOURCE             83/**< interrupt of SPI1 access rejected, LEVEL*/
+#define ETS_DMA_COPY_INTR_SOURCE                    84/**< interrupt of DMA copy, LEVEL*/
+#define ETS_SPI4_DMA_INTR_SOURCE                    85/**< interrupt of SPI4 DMA, LEVEL*/
+#define ETS_SPI4_INTR_SOURCE                        86/**< interrupt of SPI4, LEVEL*/
+#define ETS_MAX_INTR_SOURCE                         87/**< number of interrupt sources */
+
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
