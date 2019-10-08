@@ -37,7 +37,7 @@
 
 /* Frequency of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting */
 #define RTC_FAST_CLK_FREQ_8M        8500000
-#define RTC_SLOW_CLK_FREQ_150K      150000
+#define RTC_SLOW_CLK_FREQ_90K       90000
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_8M / 256)
 #define RTC_SLOW_CLK_FREQ_32K       32768
 
@@ -314,7 +314,7 @@ rtc_slow_freq_t rtc_clk_slow_freq_get(void)
 uint32_t rtc_clk_slow_freq_get_hz(void)
 {
     switch(rtc_clk_slow_freq_get()) {
-        case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_150K;
+        case RTC_SLOW_FREQ_RTC: return RTC_SLOW_CLK_FREQ_90K;
         case RTC_SLOW_FREQ_32K_XTAL: return RTC_SLOW_CLK_FREQ_32K;
         case RTC_SLOW_FREQ_8MD256: return RTC_SLOW_CLK_FREQ_8MD256;
     }
