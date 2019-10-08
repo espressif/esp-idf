@@ -136,6 +136,7 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     test_case_uses_tcpip();
     TEST_ESP_OK(esp_event_loop_create_default());
     TEST_ESP_OK(tcpip_adapter_set_default_eth_handlers());
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
@@ -148,9 +149,15 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    /* wait for connection stop */
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    // "check link timer callback" might owned the reference of phy object, make sure it has release it
+    vTaskDelay(pdMS_TO_TICKS(2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
+    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
     TEST_ESP_OK(tcpip_adapter_clear_default_eth_handlers());
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
