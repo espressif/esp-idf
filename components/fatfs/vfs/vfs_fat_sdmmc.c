@@ -159,6 +159,8 @@ fail:
     ff_diskio_unregister(pdrv);
     free(s_card);
     s_card = NULL;
+    free(s_base_path);
+    s_base_path = NULL;
     return err;
 }
 
