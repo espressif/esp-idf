@@ -21,7 +21,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "esp_flash_internal.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
