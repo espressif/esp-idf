@@ -538,6 +538,7 @@ static int cfg_set(const char *name)
         return 0;
     }
 
+    memcpy(&stored_cfg.cfg, &val, sizeof(val));
     stored_cfg.valid = true;
     BT_DBG("Restore configuration state");
     return 0;
