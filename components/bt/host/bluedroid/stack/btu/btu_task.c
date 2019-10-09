@@ -152,6 +152,7 @@ static void btu_hci_msg_process(void *param)
     case BT_EVT_TO_BTU_HCI_SCO:
 #if BTM_SCO_INCLUDED == TRUE
         btm_route_sco_data (p_msg);
+        osi_free(p_msg);
         break;
 #endif
 

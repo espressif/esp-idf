@@ -33,6 +33,7 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/bta/av/include
             host/bluedroid/bta/dm/include
             host/bluedroid/bta/gatt/include
+            host/bluedroid/bta/hf_ag/include
             host/bluedroid/bta/hf_client/include
             host/bluedroid/bta/hh/include
             host/bluedroid/bta/jv/include
@@ -74,6 +75,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/api/esp_gatt_common_api.c"
                    "host/bluedroid/api/esp_gattc_api.c"
                    "host/bluedroid/api/esp_gatts_api.c"
+                   "host/bluedroid/api/esp_hf_ag_api.c"
                    "host/bluedroid/api/esp_hf_client_api.c"
                    "host/bluedroid/api/esp_spp_api.c"
                    "host/bluedroid/bta/ar/bta_ar.c"
@@ -116,6 +118,15 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/bta/jv/bta_jv_api.c"
                    "host/bluedroid/bta/jv/bta_jv_cfg.c"
                    "host/bluedroid/bta/jv/bta_jv_main.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_act.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_api.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_at.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_cfg.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_cmd.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_main.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_rfc.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_sco.c"
+                   "host/bluedroid/bta/hf_ag/bta_ag_sdp.c"
                    "host/bluedroid/bta/hf_client/bta_hf_client_act.c"
                    "host/bluedroid/bta/hf_client/bta_hf_client_api.c"
                    "host/bluedroid/bta/hf_client/bta_hf_client_at.c"
@@ -151,6 +162,8 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/btc/profile/std/a2dp/btc_av.c"
                    "host/bluedroid/btc/profile/std/avrc/btc_avrc.c"
                    "host/bluedroid/btc/profile/std/avrc/bta_avrc_co.c"
+                   "host/bluedroid/btc/profile/std/hf_ag/bta_ag_co.c"
+                   "host/bluedroid/btc/profile/std/hf_ag/btc_hf_ag.c"
                    "host/bluedroid/btc/profile/std/hf_client/btc_hf_client.c"
                    "host/bluedroid/btc/profile/std/hf_client/bta_hf_client_co.c"
                    "host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"

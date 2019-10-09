@@ -27,6 +27,7 @@ ifdef CONFIG_BT_BLUEDROID_ENABLED
 COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/bta/ar/include                \
                                 host/bluedroid/bta/av/include                \
+                                host/bluedroid/bta/hf_ag/include             \
                                 host/bluedroid/bta/hf_client/include         \
                                 host/bluedroid/bta/dm/include                \
                                 host/bluedroid/bta/gatt/include              \
@@ -77,6 +78,7 @@ COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/bta/ar                      \
                         host/bluedroid/bta/sys                     \
                         host/bluedroid/bta/jv                      \
+                        host/bluedroid/bta/hf_ag                   \
                         host/bluedroid/bta/hf_client               \
                         host/bluedroid/bta                         \
                         host/bluedroid/btif                        \
@@ -94,6 +96,7 @@ COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/btc/profile/std/a2dp        \
                         host/bluedroid/btc/profile/std/avrc        \
                         host/bluedroid/btc/profile/std/spp         \
+                        host/bluedroid/btc/profile/std/hf_ag       \
                         host/bluedroid/btc/profile/std/hf_client   \
                         host/bluedroid/btc/profile                 \
                         host/bluedroid/stack/btm                   \
