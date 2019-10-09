@@ -263,13 +263,23 @@ typedef enum {
 
 typedef enum {
     ESP_BLE_SM_PASSKEY = 0,
+    /* Authentication requirements of local device */
     ESP_BLE_SM_AUTHEN_REQ_MODE,
+    /* The IO capability of local device */
     ESP_BLE_SM_IOCAP_MODE,
+    /* Initiator Key Distribution/Generation */
     ESP_BLE_SM_SET_INIT_KEY,
+    /* Responder Key Distribution/Generation */
     ESP_BLE_SM_SET_RSP_KEY,
+    /* Maximum Encryption key size to support */
     ESP_BLE_SM_MAX_KEY_SIZE,
+    /* Minimum Encryption key size requirement from Peer */
+    ESP_BLE_SM_MIN_KEY_SIZE,
+    /* Set static Passkey */
     ESP_BLE_SM_SET_STATIC_PASSKEY,
+    /* Reset static Passkey */
     ESP_BLE_SM_CLEAR_STATIC_PASSKEY,
+    /* Accept only specified SMP Authentication requirement */
     ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
     ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
