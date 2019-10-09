@@ -1048,7 +1048,7 @@ static int setup_client_ssl_session(coap_session_t *c_session,
       coap_log(LOG_ERR, "PKI setup failed\n");
       return ret;
     }
-#if !defined(ESPIDF_VERSION) || defined(CONFIG_MBEDTLS_TLS_SERVER)
+#if !defined(ESPIDF_VERSION) ||(defined(CONFIG_MBEDTLS_TLS_SERVER) && defined(CONFIG_MBEDTLS_SSL_ALPN))
     if (c_session->proto == COAP_PROTO_TLS) {
       const char *alpn_list[2];
 
@@ -1059,7 +1059,7 @@ static int setup_client_ssl_session(coap_session_t *c_session,
         coap_log(LOG_ERR, "ALPN setup failed %d)\n", ret);
       }
     }
-#endif /* !ESPIDF_VERSION || CONFIG_MBEDTLS_TLS_SERVER */
+#endif /* !ESPIDF_VERSION || (CONFIG_MBEDTLS_TLS_SERVER && CONFIG_MBEDTLS_SSL_ALPN) */
     if (m_context->setup_data.client_sni) {
       mbedtls_ssl_set_hostname(&m_env->ssl, m_context->setup_data.client_sni);
     }
