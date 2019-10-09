@@ -16,6 +16,7 @@
 #define _ESP_TRANSPORT_SSL_H_
 
 #include "esp_transport.h"
+#include "esp_tls.h"
 
 #ifdef __cplusplus
 extern "C" {
