@@ -702,11 +702,14 @@ depending on the options selected in the project configuration.
 
 ``CMakeLists.txt``::
 
-    set(COMPONENT_SRCS "foo.c" "more_foo.c")
+    set(srcs "foo.c" "more_foo.c")
 
     if(CONFIG_FOO_ENABLE_BAR)
-        list(APPEND COMPONENT_SRCS "bar.c")
+        list(APPEND srcs "bar.c")
     endif()
+
+   idf_component_register(SRCS "${srcs}"
+                        ...)
 
 This example makes use of the CMake `if <cmake if_>`_ function and `list APPEND <cmake list_>`_ function.
 
@@ -736,16 +739,18 @@ This can also be used to select or stub out an implementation, as such:
 ``CMakeLists.txt``::
 
     if(CONFIG_ENABLE_LCD_OUTPUT)
-       set(COMPONENT_SRCS lcd-real.c lcd-spi.c)
+       set(srcs lcd-real.c lcd-spi.c)
     else()
-       set(COMPONENT_SRCS lcd-dummy.c)
+       set(srcs lcd-dummy.c)
     endif()
 
     # We need font if either console or plot is enabled
     if(CONFIG_ENABLE_LCD_CONSOLE OR CONFIG_ENABLE_LCD_PLOT)
-      list(APPEND COMPONENT_SRCS "font.c")
+       list(APPEND srcs "font.c")
     endif()
 
+    idf_component_register(SRCS "${srcs}"
+                        ...)
 
 Conditions which depend on the target
 -------------------------------------
@@ -800,13 +805,13 @@ Embedding Binary Data
 
 Sometimes you have a file with some binary or text data that you'd like to make available to your component - but you don't want to reformat the file as C source.
 
-You can specify argument ``COMPONENT_EMBED_FILES`` in the component registration, giving space-delimited names of the files to embed::
+You can specify argument ``EMBED_FILES`` in the component registration, giving space-delimited names of the files to embed::
 
   idf_component_register(...
                          EMBED_FILES server_root_cert.der)
 
 
-Or if the file is a string, you can use the variable ``COMPONENT_EMBED_TXTFILES``. This will embed the contents of the text file as a null-terminated string::
+Or if the file is a string, you can use the variable ``EMBED_TXTFILES``. This will embed the contents of the text file as a null-terminated string::
 
   idf_component_register(...
                          EMBED_TXTFILES server_root_cert.pem)
@@ -818,7 +823,7 @@ The file's contents will be added to the .rodata section in flash, and are avail
   extern const uint8_t server_root_cert_pem_start[] asm("_binary_server_root_cert_pem_start");
   extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_pem_end");
 
-The names are generated from the full name of the file, as given in ``COMPONENT_EMBED_FILES``. Characters /, ., etc. are replaced with underscores. The _binary prefix in the symbol name is added by objcopy and is the same for both text and binary files.
+The names are generated from the full name of the file, as given in ``EMBED_FILES``. Characters /, ., etc. are replaced with underscores. The _binary prefix in the symbol name is added by objcopy and is the same for both text and binary files.
 
 .. highlight:: cmake
 
@@ -994,7 +999,7 @@ not yet be provided by a component, or use another library for the same function
 Importing a library might look like this for a hypothetical library ``foo`` to be used in the ``main`` component::
 
   # Register the component
-  idf_component_register()
+  idf_component_register(...)
 
   # Set values of hypothetical variables that control the build of `foo`
   set(FOO_BUILD_STATIC OFF)
@@ -1003,8 +1008,8 @@ Importing a library might look like this for a hypothetical library ``foo`` to b
   # Create and import the library targets
   add_subdirectory(foo)
 
-  # Link `foo` to `main` component
-  target_link_libraries(main foo)
+  # Publicly link `foo` to `main` component
+  target_link_libraries(main PUBLIC foo)
 
 For an actual example, take a look at :example:`build_system/cmake/import_lib`. Take note that what needs to be done in order to import
 the library may vary. It is recommended to read up on the library's documentation for instructions on how to
@@ -1290,7 +1295,7 @@ For project components (not part of ESP-IDF), there are a few different options:
 - If keeping your project file in Git, ESP-IDF will automatically track the Git revision and re-run CMake if the revision changes.
 - If some components are kept in a third git repository (not the project repository or ESP-IDF repository), you can add a call to the ``git_describe`` function in a component CMakeLists file in order to automatically trigger re-runs of CMake when the Git revision changes.
 - If not using Git, remember to manually run ``idf.py reconfigure`` whenever a source file may change.
-- To avoid this problem entirely, use ``COMPONENT_SRCS`` to list all source files in project components.
+- To avoid this problem entirely, use ``SRCS`` argument to ``idf_component_register`` to list all source files in project components.
 
 The best option will depend on your particular project and its users.
 
@@ -1362,7 +1367,10 @@ Any combination of "load", "set", and "save" can be sent in a single command and
 Migrating from ESP-IDF GNU Make System
 ======================================
 
-Some aspects of the CMake-based ESP-IDF build system are very similar to the older GNU Make-based system. For example, to adapt a ``component.mk`` file to ``CMakeLists.txt`` variables like ``COMPONENT_ADD_INCLUDEDIRS`` and ``COMPONENT_SRCDIRS`` can stay the same and the syntax only needs changing to CMake syntax.
+Some aspects of the CMake-based ESP-IDF build system are very similar to the older GNU Make-based system. The developer needs to provide values
+the include directories, source files etc. There is a syntactical difference, however, as the developer needs to pass these as arguments
+to the registration command, `idf_component_register`.
+
 
 Automatic Conversion Tool
 -------------------------
@@ -1393,27 +1401,28 @@ Some features are significantly different or removed in the CMake-based system. 
 - ``COMPONENT_ADD_LDFLAGS``: Used to override linker flags. Use the CMake `target_link_libraries`_ command instead.
 - ``COMPONENT_ADD_LINKER_DEPS``: List of files that linking should depend on. `target_link_libraries`_ will usually infer these dependencies automatically. For linker scripts, use the provided custom CMake function ``target_linker_scripts``.
 - ``COMPONENT_SUBMODULES``: No longer used, the build system will automatically enumerate all submodules in the ESP-IDF repository.
-- ``COMPONENT_EXTRA_INCLUDES``: Used to be an alternative to ``COMPONENT_PRIV_INCLUDEDIRS`` for absolute paths. Use ``COMPONENT_PRIV_INCLUDEDIRS`` for all cases now (can be relative or absolute).
-- ``COMPONENT_OBJS``: Previously, component sources could be specified as a list of object files. Now they can be specified as an list of source files via ``COMPONENT_SRCS``.
-- ``COMPONENT_OBJEXCLUDE``: Has been replaced with ``COMPONENT_SRCEXCLUDE``. Specify source files (as absolute paths or relative to component directory), instead.
+- ``COMPONENT_EXTRA_INCLUDES``: Used to be an alternative to ``COMPONENT_PRIV_INCLUDEDIRS`` for absolute paths. Use ``PRIV_INCLUDE_DIRS`` argument to ``idf_component_register`` for all cases now (can be relative or absolute).
+- ``COMPONENT_OBJS``: Previously, component sources could be specified as a list of object files. Now they can be specified as a list of source files via ``SRCS`` argument to `idf_component_register`.
+- ``COMPONENT_OBJEXCLUDE``: Has been replaced with ``EXCLUDE_SRCS`` argument to ``idf_component_register``. Specify source files (as absolute paths or relative to component directory), instead.
 - ``COMPONENT_EXTRA_CLEAN``: Set property ``ADDITIONAL_MAKE_CLEAN_FILES`` instead but note :ref:`CMake has some restrictions around this functionality <ADDITIONAL_MAKE_CLEAN_FILES_note>`.
 - ``COMPONENT_OWNBUILDTARGET`` & ``COMPONENT_OWNCLEANTARGET``: Use CMake `ExternalProject`_ instead. See :ref:`component-build-full-override` for full details.
-- ``COMPONENT_CONFIG_ONLY``: Call ``register_config_only_component()`` instead. See `Configuration-Only Components`_.
+- ``COMPONENT_CONFIG_ONLY``: Call ``idf_component_register`` without any arguments instead. See `Configuration-Only Components`_.
 - ``CFLAGS``, ``CPPFLAGS``, ``CXXFLAGS``: Use equivalent CMake commands instead. See `Controlling Component Compilation`_.
 
 
 No Default Values
 -----------------
 
-The following variables no longer have default values:
+Unlike in the legacy Make-based build system, the following have no default values:
 
-- ``COMPONENT_SRCDIRS``
-- ``COMPONENT_ADD_INCLUDEDIRS``
+- Source directories (``COMPONENT_SRCDIRS`` variable in Make, ``SRC_DIRS`` argument to ``idf_component_register`` in CMake)
+- Include directories (``COMPONENT_ADD_INCLUDEDIRS`` variable in Make, ``INCLUDE_DIRS`` argument to ``idf_component_register`` in CMake)
 
 No Longer Necessary
 -------------------
 
-It is no longer necessary to set ``COMPONENT_SRCDIRS`` if setting ``COMPONENT_SRCS`` (in fact, in the CMake-based system ``COMPONENT_SRCS`` is ignored if ``COMPONENT_SRCDIRS`` is set).
+- In the legacy Make-based build system, it is required to also set ``COMPONENT_SRCDIRS`` if ``COMPONENT_SRCS`` is set. In CMake, the equivalent is not necessary i.e. specifying ``SRC_DIRS`` to ``idf_component_register`` if ``SRCS`` is also specified (in fact, ``SRCS`` is ignored if ``SRC_DIRS`` is specified).
+
 
 Flashing from make
 ------------------
