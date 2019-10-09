@@ -28,13 +28,13 @@ test cases:
   - - SSC SSC2 sta -C -s <target_ssid> -p <target_password>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 1
-    - - R SSC1 C +SAP:OK
+    - - R SSC1 C +SAP:ERROR
   - - SSC SSC2 sta -D
     - - R SSC2 C +QAP:OK
   - - SSC SSC2 sta -S
     - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
   - - SSC SSC1 ap -S -s <target_ssid> -p <target_password> -t 5
-    - - R SSC1 C +SAP:OK
+    - - R SSC1 C +SAP:ERROR
   - - SSC SSC2 sta -S
     - - R SSC2 RE "\+SCAN:%%s,.+,0,\d+"%%(<target_ssid>) C +SCANDONE
   execution time: 0.0
