@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include "esp_err.h"
 
 #include "mbedtls/platform.h"
 #include "mbedtls/net_sockets.h"
