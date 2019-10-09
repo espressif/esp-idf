@@ -80,10 +80,14 @@ static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
-            int mbedtls_err = 0;
-            esp_err_t err = esp_tls_get_and_clear_last_error(event->error_handle, &mbedtls_err, NULL);
-            ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
-            ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
+            if (event->error_handle->error_type == MQTT_ERROR_TYPE_ESP_TLS) {
+                ESP_LOGI(TAG, "Last error code reported from esp-tls: 0x%x", event->error_handle->esp_tls_last_esp_err);
+                ESP_LOGI(TAG, "Last tls stack error number: 0x%x", event->error_handle->esp_tls_stack_err);
+            } else if (event->error_handle->error_type == MQTT_ERROR_TYPE_CONNECTION_REFUSED) {
+                ESP_LOGI(TAG, "Connection refused error: 0x%x", event->error_handle->connect_return_code);
+            } else {
+                ESP_LOGW(TAG, "Unknown error type: 0x%x", event->error_handle->error_type);
+            }
             break;
         default:
             ESP_LOGI(TAG, "Other event id:%d", event->event_id);
