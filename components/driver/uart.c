@@ -1113,7 +1113,7 @@ static int uart_fill_fifo(uart_port_t uart_num, const char* buffer, uint32_t len
     // Set the RTS pin if RS485 mode is enabled
     if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
         UART[uart_num]->conf0.sw_rts = 0;
-		uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);	// Clear interrupt before enabling to fix (IDFGH-1983)
+        uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);	// Clear interrupt before enabling to fix (IDFGH-1983)
         UART[uart_num]->int_ena.tx_done = 1;
     }
     for (i = 0; i < copy_cnt; i++) {
