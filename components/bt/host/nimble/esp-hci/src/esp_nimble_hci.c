@@ -66,6 +66,8 @@ static os_membuf_t ble_hci_evt_lo_buf[
                     MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE))
 ];
 
+const static char *TAG = "NimBLE";
+
 void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
                      void *cmd_arg,
                      ble_hci_trans_rx_acl_fn *acl_cb,
@@ -85,7 +87,9 @@ int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
     assert(cmd != NULL);
     *cmd = BLE_HCI_UART_H4_CMD;
     len = BLE_HCI_CMD_HDR_LEN + cmd[3] + 1;
-    while (!esp_vhci_host_check_send_available()) {
+    if (!esp_vhci_host_check_send_available()) {
+        ESP_LOGE(TAG, "Controller not ready to receive packets from host at this time, try again after sometime");
+        return BLE_HS_EAGAIN;
     }
     esp_vhci_host_send_packet(cmd, len);
 
@@ -115,8 +119,9 @@ int ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
     data[0] = BLE_HCI_UART_H4_ACL;
     len++;
 
-    while (!esp_vhci_host_check_send_available()) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    if (!esp_vhci_host_check_send_available()) {
+        ESP_LOGE(TAG, "Controller not ready to receive packets from host at this time, try again after sometime");
+        return BLE_HS_EAGAIN;
     }
 
     os_mbuf_copydata(om, 0, OS_MBUF_PKTLEN(om), &data[1]);
