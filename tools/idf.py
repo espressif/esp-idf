@@ -253,6 +253,7 @@ def _ensure_build_directory(args, always_run_cmake=False):
             ]
             if not args.no_warnings:
                 cmake_args += ["--warn-uninitialized"]
+                cmake_args += ["-DWARN_UNINITIALIZED=1"]
 
             if args.define_cache_entry:
                 cmake_args += ["-D" + d for d in args.define_cache_entry]
