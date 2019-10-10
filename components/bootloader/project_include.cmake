@@ -96,11 +96,13 @@ endif()
 idf_build_get_property(idf_path IDF_PATH)
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(sdkconfig SDKCONFIG)
+idf_build_get_property(python PYTHON)
+idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
 externalproject_add(bootloader
     SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
     BINARY_DIR "${BOOTLOADER_BUILD_DIR}"
-    CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
+    CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target} -DPYTHON=${python}
                 -DPYTHON_DEPS_CHECKED=1
                 -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
                 ${sign_key_arg} ${ver_key_arg}
@@ -108,6 +110,7 @@ externalproject_add(bootloader
                 # the bootloader common component requirements depends on this and
                 # config variables are not available before project() call.
                 -DLEGACY_INCLUDE_COMMON_HEADERS=${CONFIG_LEGACY_INCLUDE_COMMON_HEADERS}
+                ${extra_cmake_args}
     INSTALL_COMMAND ""
     BUILD_ALWAYS 1  # no easy way around this...
     BUILD_BYPRODUCTS ${bootloader_binary_files}
