@@ -105,6 +105,15 @@ config BT_NIMBLE_DEBUG
     help
         This enables extra runtime asserts and host debugging
 
+config BT_NIMBLE_SM_SC_DEBUG_KEYS
+    bool "Use predefined public-private key pair"
+    default n
+    depends on BT_NIMBLE_SM_SC
+    help
+        If this option is enabled, SM uses predefined DH key pair as described
+        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
+        decrypt air traffic easily and thus should only be used for debugging.
+
 config BT_NIMBLE_SVC_GAP_DEVICE_NAME
     string "BLE GAP default device name"
     depends on BT_NIMBLE_ENABLED
