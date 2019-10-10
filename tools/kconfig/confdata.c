@@ -831,6 +831,74 @@ next:
 	return 0;
 }
 
+static int conf_load_auto_conf(void)
+{
+	const char *name;
+	char *s, *d, c;
+	struct symbol *sym;
+	struct stat sb;
+	int res, i, fd;
+
+	name = conf_get_autoconfig_name();
+	conf_read_simple(name, S_DEF_AUTO);
+	sym_calc_value(modules_sym);
+
+	res = 0;
+	for_all_symbols(i, sym) {
+		sym_calc_value(sym);
+		if ((sym->flags & SYMBOL_AUTO) || !sym->name)
+			continue;
+		if (sym->flags & SYMBOL_WRITE) {
+			if (sym->flags & SYMBOL_DEF_AUTO) {
+				/*
+				 * symbol has old and new value,
+				 * so compare them...
+				 */
+				switch (sym->type) {
+				case S_BOOLEAN:
+				case S_TRISTATE:
+					if (sym_get_tristate_value(sym) ==
+					    sym->def[S_DEF_AUTO].tri)
+						continue;
+					break;
+				case S_STRING:
+				case S_HEX:
+				case S_INT:
+					if (!strcmp(sym_get_string_value(sym),
+						    sym->def[S_DEF_AUTO].val))
+						continue;
+					break;
+				default:
+					break;
+				}
+			} else {
+				/*
+				 * If there is no old value, only 'no' (unset)
+				 * is allowed as new value.
+				 */
+				switch (sym->type) {
+				case S_BOOLEAN:
+				case S_TRISTATE:
+					if (sym_get_tristate_value(sym) == no)
+						continue;
+					break;
+				default:
+					break;
+				}
+			}
+		} else if (!(sym->flags & SYMBOL_DEF_AUTO))
+			/* There is neither an old nor a new value. */
+			continue;
+		/* else
+		 *	There is an old value, but no new value ('no' (unset)
+		 *	isn't saved in auto.conf, so the old value is always
+		 *	different from 'no').
+		 */
+	}
+out:
+	return res;
+}
+
 int conf_write_autoconf(void)
 {
 	struct symbol *sym;
@@ -841,6 +909,9 @@ int conf_write_autoconf(void)
 	sym_clear_all_valid();
 
 	file_write_dep("include/config/auto.conf.cmd");
+
+	if (conf_load_auto_conf())
+		return 1;
 
 	out = fopen(".tmpconfig", "w");
 	if (!out)
