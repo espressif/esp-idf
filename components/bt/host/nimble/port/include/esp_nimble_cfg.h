@@ -423,6 +423,14 @@
 #endif
 #endif
 
+#ifndef MYNEWT_VAL_BLE_SM_SC_DEBUG_KEYS
+#ifdef CONFIG_BT_NIMBLE_SM_SC_DEBUG_KEYS
+#define MYNEWT_VAL_BLE_SM_SC_DEBUG_KEYS (1)
+#else
+#define MYNEWT_VAL_BLE_SM_SC_DEBUG_KEYS (0)
+#endif
+#endif
+
 #ifndef MYNEWT_VAL_BLE_HS_AUTO_START
 #define MYNEWT_VAL_BLE_HS_AUTO_START (1)
 #endif
