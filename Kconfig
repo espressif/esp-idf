@@ -23,6 +23,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "IDF_TARGET_NOT_SET" if IDF_TARGET_ENV=""
         default IDF_TARGET_ENV
 
+    config IDF_FIRMWARE_CHIP_ID
+        hex
+        default 0x0000 if IDF_TARGET="esp32"
+        default 0xFFFF
 
     menu "SDK tool configuration"
         config TOOLPREFIX
