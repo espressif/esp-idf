@@ -184,6 +184,7 @@ INPUT = \
     ../../components/driver/include/driver/sdspi_host.h \
     ## SDIO slave
     ../../components/driver/include/driver/sdio_slave.h \
+    ../../components/soc/include/hal/sdio_slave_types.h \
     ## Non-Volatile Storage
     ../../components/nvs_flash/include/nvs.h \
     ../../components/nvs_flash/include/nvs_flash.h \
