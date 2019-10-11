@@ -14,6 +14,7 @@ set(srcs
     "lwip/src/api/api_lib.c"
     "lwip/src/api/api_msg.c"
     "lwip/src/api/err.c"
+    "lwip/src/api/if_api.c"
     "lwip/src/api/netbuf.c"
     "lwip/src/api/netdb.c"
     "lwip/src/api/netifapi.c"
