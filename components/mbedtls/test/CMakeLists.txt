@@ -1,6 +1,6 @@
 idf_component_register(SRC_DIRS "."
                     INCLUDE_DIRS "."
-                    REQUIRES unity test_utils mbedtls)
+                    REQUIRES unity test_utils mbedtls libsodium)
 
 idf_component_get_property(mbedtls mbedtls COMPONENT_LIB)
 target_compile_definitions(${mbedtls} INTERFACE "-DMBEDTLS_DEPRECATED_WARNING")
