@@ -298,7 +298,7 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
         }
         err = ESP_ERR_IMAGE_INVALID;
     }
-    if (bootloader_common_check_chip_validity(image) != ESP_OK) {
+    if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
         err = ESP_ERR_IMAGE_INVALID;
     }
     if (!silent) {
